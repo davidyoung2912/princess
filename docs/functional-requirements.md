@@ -1,6 +1,6 @@
 # Princess Cruises Guest Web App — Functional Requirements (Draft v0.1)
 
-Status: **Draft v0.7 — scope decisions recorded (§22); single vessel = Sun Princess, single cruise = 7-night Western Caribbean with Mexico from Fort Lauderdale (§22.6; see `sun-princess-ship-profile.md`). No code has been written.**
+Status: **Draft v0.9 — scope decisions recorded (§22, including round five in §22.7); single vessel = Sun Princess, single cruise = 7-night Western Caribbean with Mexico from Fort Lauderdale (§22.6; see `sun-princess-ship-profile.md`). Round-five research gap analysis (§23) approved. No code has been written.**
 Date: 2026-10-28
 Target: mobile-first, responsive, installable PWA (React + Vite + TypeScript, see `CLAUDE.md`).
 
@@ -161,7 +161,7 @@ Fictional people and names. Every account already exists with Captain's Circle m
 
 | Persona | Name | Profile | Status / booking |
 | --- | --- | --- | --- |
-| Platinum repeat guest (primary, older repeat guest) | **Gerald Whitfield**, 71 | Retired engineer, 18 prior Princess cruises, prefers large text, traditional dining, phone-call fallback, specialty-dining regular | Captain's Circle Platinum; balcony stateroom |
+| Platinum repeat guest (primary, older repeat guest) | **Gerald Whitfield**, 71 | Retired engineer, 18 prior Princess cruises, prefers large text (**default text size "Large"**, §22.7), traditional dining, phone-call fallback, specialty-dining regular; has a simulated family **helper** (e.g. his son) who can manage bookings on his behalf with consent | Captain's Circle Platinum; balcony stateroom |
 | First-timer | **Maria Delgado**, 38 | Nurse, first cruise, anxious about logistics, price-conscious, cruising solo | New account, Gold-eligible after sailing; interior or oceanview stateroom |
 | Accessibility guest | **Linda Okafor**, 66 | Wheelchair user, travels with a mobility scooter; needs accessible stateroom, accessible routes, tender assistance, assistance requests | Ruby; accessible balcony stateroom (one of the 51 accessible rooms) |
 | Sanctuary suite guest | **Alexander Reyes**, 54 | Business owner, premium traveller | Captain's Circle Elite; Sanctuary Collection Mini-Suite with Premier bundle |
@@ -727,7 +727,7 @@ No concern with this approach for a concept/demo; the items above are the main d
 | Main demo cruise | **7-night Western Caribbean with Mexico, round trip Fort Lauderdale, Sun Princess** (§22.6). |
 | Imagery | **Use real Princess web imagery** and gathered content for the concept. Handling notes: (1) the repo is on GitHub, so avoid committing bulk copies of copyrighted images; prefer referencing the source URLs, or keep downloaded assets in a git-ignored folder with a manifest recording each image's source URL; (2) keep the "unofficial concept, not affiliated with Princess Cruises" notice visible; (3) alt text for every image (A11Y); (4) offline/PWA caching of remote images needs care (cross-origin opaque responses), so key images used offline are best bundled locally and kept out of git. |
 
-**Still open (minor, can be decided during Phase 0):** primary persona's default text size, the exact set of demo sailing dates, and the final design language (to be proposed for your review before any component code).
+**Still open (minor, can be decided during Phase 0):** ~~primary persona's default text size, the exact set of demo sailing dates~~ (both answered in §22.7), and the final design language (to be proposed for your review before any component code).
 
 ### 22.5a Round-four decisions
 
@@ -748,11 +748,186 @@ No concern with this approach for a concept/demo; the items above are the main d
 | DIS-06 (quiz), DIS-08 (compare list), DIS-10 (alerts) | Reduced: quiz recommends cabin category/packages instead of cruises; price alert applies to the one cruise |
 | BOK-14, BOK-15 | Cruisetours and air/hotel packages dropped (W); optional pre/post hotel and transfer add-ons only as simple mock upsells |
 | BOK | Booking = choose sailing date, cabin category/cabin, guests, fare/package, extras, pay |
-| Sailing dates | A small set of dates (e.g. several 7-night departures around Nov 2026 – Mar 2027) so booking, pre-cruise countdown, and past/post-cruise can all be demonstrated, with the scenario switcher and demo clock selecting the stage |
+| Sailing dates | 6 to 8 mock 7-night departures, one every 1 to 2 weeks, Nov 2026 – Mar 2027 (reference sailing 21–28 Mar 2027; §22.7) so booking, pre-cruise countdown, and past/post-cruise can all be demonstrated, with the scenario switcher and demo clock selecting the stage |
 | Itinerary changes (MNG-15) | Retained as a demo scenario (e.g. port swap) |
 | Ports | Only Cozumel, Belize City (tender), Roatán, plus Fort Lauderdale; port guides and excursions authored for these |
 | POS-06 Rebooking | Rebook the same cruise (different date), plus a teaser for "other Princess voyages" |
 | Phase 1 | Re-scoped from "Discover" to "Discover the cruise and ship" |
+
+### 22.7 Round-five decisions (answers to the §23 questions)
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | Gerald's default text size | **"Large" by default for Gerald**; every persona can change text size in settings. Other personas default to standard. |
+| 2 | Demo sailing dates | **6 to 8 mock departures**, roughly one every 1 to 2 weeks between Nov 2026 and Mar 2027, with **21–28 Mar 2027 as the reference sailing**. All mock. Departures before the demo clock's date are past sailings; the demo clock and scenario switcher select the stage. |
+| 3 | Design language | **Agreed.** Phase 0 starts with a design-language document (proposed direction: warm navy and gold based on Princess colours, large type, generous spacing) for review before any component code. |
+| 4 | New Must items from §23 | **Approved**: UX-01, UX-02, OB-08, DIN-10, CHK-13, CHK-14, SUP-08, POR-11, PRE-16, and the promotions of POR-04 and MNG-11 to Must. The remaining §23.4 items stand at their stated priorities. |
+| 5 | Offer restraint (UX-02) | **Yes, strict.** No countdown-pressure timers or false scarcity, even though the real app uses them. It is a deliberate differentiator. |
+| 6 | Helper role (INC-01) | **Yes, in scope** (not deferred). A family member can manage bookings for another guest with that guest's consent. Demo case: a simulated helper account for Gerald (a family member such as his son). This is a seventh relationship type in the account model, in addition to booker/party member and linked-group member; the helper is simulated and is not a thirteenth full persona. Raised in the account model alongside ACT-05 and SUP-07, and scheduled for Phase 2. |
+| 7 | Printable views | **Yes, a real feature.** Daily plan, boarding pass, itinerary and excursion tickets get print layouts (plain CSS, large-print option). INC-01 is therefore firm for printing. |
+| 8 | "Verify" facts | **Authored as plausible content** (passport rules, terminal number, time-zone behaviour), covered by the concept disclaimer; no extra visible flag in the UI. |
+| 9 | Commit | Done at the user's request; changes committed and pushed. |
+| 10 | API key | The provided key continues to be used for now (git-ignored `.env.local`, as in §22.5a); the user will rotate it on a regular basis. `.env.example` (no key) is added in Phase 0. |
+
+---
+
+## 23. Round-five research: gap analysis for a best-in-class experience
+
+Purpose: test whether §5–§19 are sufficient for a best-in-class guest experience, using fresh research on the live Princess app, competitors, guest complaints and the specific cruise. Findings are mostly from App Store listings, trade press and cruise blogs/forums, so treat them as indicative; items marked **(verify)** need a check.
+
+### 23.1 What the new research found
+
+**Princess app, current state (Oct 2026)**
+- A major redesign shipped 30 Jun 2026 (v1.10: new navigation bar, renamed tabs, simplified terminology, promotional offers with countdown timers, shore-excursion browsing for back-to-back cruisers). v1.11 (Oct 2026) added a credit-card application, login redesign and email-verified account creation. Apple Wallet boarding pass arrived in v1.9. iPhone App Store rating is about 3.1 from ~4.5K ratings.
+- Current feature list includes OceanReady, dining, Plus/Premier purchase, excursions, spa, OceanNow, Safety Essentials, shipmate location, bookmarks, "CrewCall" 24/7 chat, and live spend/package tracking.
+- Recent review complaints: key features buried several menu levels deep; events cannot be sorted; one unavailable item blocks a whole food order; drink delivery 30–45 minutes with no way to contact anyone about the order; photo download errors and photo packages purchasable without selecting photos; rescheduling a dinner left the guest with no booking and unable to book any slot; lost check-in data and payment methods with hard-to-reach support; app feels like it promotes upsells over required tasks.
+
+**Competitors (new items not already in §3)**
+- Royal Caribbean: escalating "all aboard" alert in the final hour (Mar 2026), casino rewards tracking, digital keycard, digital safety drill, ship/destination badges, and app room-service ordering still being piloted (beta charged $7.95 + 18%).
+- MSC for Me: free on-ship chat with no internet package; internet-usage management in-app.
+- Virgin Voyages: the Planner (schedule + personal agenda + excursions in one view) shipped with bugs, including missing evening events and empty schedules, which shows how quickly trust is lost when a schedule is wrong.
+- Holland America: mixed reviews citing login failures, unreliable connectivity and missing features after a rebuild.
+
+**Cross-line guest pain points**
+- Reliability before boarding (the app is needed just to board), reachable humans for urgent non-medical problems (e.g. a key that fails), an option for guests who do not use the app, and the risk that heavy app dependence disadvantages less tech-savvy guests.
+
+**This cruise specifically**
+- Fort Lauderdale round trip with Mexico is a "closed-loop" cruise: US citizens can generally sail with a birth certificate plus photo ID (a passport is still strongly recommended); non-citizens need a passport. Sources conflict on Belize and Honduras passport rules **(verify)**; the app should present a clear per-guest document requirement and the safe recommendation.
+- Belize City is a tender port (ship anchors roughly five miles out; boats take about 15–20 minutes); ship-sponsored excursions usually tender first; tender tickets are issued at Guest Services/tender area. Roatán can tender depending on port congestion; Cozumel has multiple piers, so which pier and walking distance vary by day.
+- Princess uses Port Everglades Terminal 2 (Terminal 4 when two Princess ships are in port) **(verify)**; bags should be dropped with porters before parking; porters are port employees and expect tips; no luggage storage; staterooms are often not ready on arrival; arrival windows exist to stagger crowds.
+- Time zones: in March 2027 Florida is on daylight time (from 14 Mar) while Cozumel (EST all year), Belize and Roatán (CST all year) do not change, so ship time, local time and phone time can all differ **(inferred; verify)**. This is a real missed-ship risk and a differentiator if handled well.
+- Plus/Premier pricing rose $5 per person per day for sailings from 13 Oct 2026 (Sun Princess: Plus $75, Premier $110; earlier purchases are price-honoured). Plus includes up to 15 drinks per day (capped $15 each), four casual specialty meals, room service, gratuities, one-device Wi-Fi; Premier is unlimited drinks (capped $20), unrestricted casual and specialty dining, up to four Wi-Fi devices, and up to $300 excursion credit **(verify package terms; sources conflict on Wi-Fi)**. Mock fixtures should use these numbers.
+- Dine My Way access is loyalty-gated: Elite and Platinum guests can reserve main and specialty dining at booking, others after full payment; Anytime Dining guests are not assigned a time; guests can select travel companions to coordinate. This affects Gerald (Platinum) versus Maria and the families.
+- Accessibility services often need advance notice (large-print/Braille menus and daily plans 30–60 days, other requests 45–90 days at some lines); tenders are a known barrier for wheelchair users; companion policies differ.
+- Health: about half of cruise medical patients are over 65; ship doctors ask guests to report vomiting/diarrhoea immediately rather than self-treat; medical centre hours are limited and fees are not usually covered by home insurance.
+- Post-cruise practice at Princess is thinly documented; other lines convert leftover future-cruise credit to onboard credit and offer reduced deposits/onboard credit for booking at sea.
+
+### 23.2 Verdict
+
+The existing requirements cover the **breadth** a best-in-class app needs: every stage of the journey, the five headline competitive features, accessibility, offline and the persona set. The gaps are in **depth and trust**: the research shows guests do not abandon cruise apps for lack of features but because of broken flows (lost reservations, blocked orders, empty schedules), unreachable help, buried navigation and upsell pressure. The requirements below turn those failure modes into explicit, testable requirements, and add specifics for this cruise (tender, time zones, closed-loop documents, package entitlements, loyalty-gated dining).
+
+### 23.3 Complaint-to-requirement traceability
+
+Each documented failure mode must have a specific requirement and a demo scenario (§23.5) that proves it is handled.
+
+| Reported failure | Requirement(s) |
+| --- | --- |
+| Booking or check-in data "disappears"; payment methods lost | MNG-01, PERF-06, **CHK-13** (permanent "what we have on file" receipt) |
+| Rescheduled dinner leaves no booking | **DIN-10** (atomic change: old booking held until new one confirmed) |
+| One unavailable item blocks the whole order | **DIN-11** (partial availability, substitutions) |
+| Delivery slow, nobody to contact about it | DIN-04, **DIN-11** (live status, contact-about-this-order, cancel/refund) |
+| Events cannot be sorted; schedule wrong or missing | OB-02, **OB-08** (schedule integrity), **OB-09** (sort/filter, simple view) |
+| Features buried several levels deep | **UX-01** (navigation depth budget) |
+| Photo download errors; packages bought without selecting photos | SHP-02, **SHP-07** (select-before-buy, resumable downloads) |
+| App is upsell-first, not task-first | **UX-02** (task-first, offer restraint), CNT-02 |
+| Support chat goes unanswered; no human for urgent non-medical issues | MSG-02, SUP-02, **SUP-08** (urgent help always visible, ship phone number offline) |
+| Guests who do not use the app are disadvantaged | **INC-01** (non-app parity) |
+| App needed just to board; fails pre-cruise | CHK-04, PERF-03, **CHK-14** (boarding-pass failsafes) |
+| Missed ship through time confusion | POR-02, **POR-11** (three clocks) |
+| Tender ports hard to plan and hard for wheelchair users | POR-04 raised to **M**, **POR-12**, ACS-02 |
+
+### 23.4 New and changed requirements
+
+#### Trust and reliability
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| UX-01 | M | **Navigation depth budget**: any of the top 15 tasks (show boarding pass, find today's events, my reservations, order food, ask for help, my bill, deck map, call/chat Guest Services, change a dining reservation, find my family, add a package, all-aboard time, emergency info, my excursions, settings/text size) reachable in at most two taps from home. Verified by a task-path test in Phase 10 and checked at the end of every phase |
+| UX-02 | M | **Task-first, offer-restrained**: required tasks (check-in, documents, payments due, safety) always outrank offers; offers live in one dedicated area plus at most one contextual card on home; no countdown-pressure timers, no false scarcity; "dismiss for this trip" on every offer; no offers on safety, emergency or checkout screens |
+| OB-08 | M | **Schedule integrity**: every schedule view shows "last updated"; changed, moved or cancelled events are visibly flagged with what changed; bookmarked items notify on change; an event can never silently disappear (cancelled items remain, struck through, until the day ends); offline copy shows its age |
+| OB-09 | M | **Planner usability**: sort and filter by time, venue, deck, interest, age group, accessibility and "included vs extra cost"; "happening now" and "next up" shortcuts; a one-column simple view for large text; personal agenda and ship schedule are one view (à la Virgin) with clear distinction |
+| DIN-10 | M | **Atomic reservation changes**: modifying or moving a reservation holds the original until the replacement is confirmed; failures leave the guest with their original booking and a clear message; every change produces a confirmation and an entry in an audit trail the guest can see; waitlist and no-show rules shown before booking |
+| DIN-11 | S | **Order resilience**: unavailable items are flagged before checkout and during preparation; the guest chooses substitute, remove item or cancel that item without losing the order; live order status with realistic ETA, a "contact about this order" action, delivery-location correction, cancel and refund rules; package entitlements applied visibly |
+| SHP-07 | S | **Photo purchase integrity**: pick photos first, then see package options priced against the selection; included-with-Premier photos shown as included; downloads are resumable, retried automatically and verifiable ("12 of 12 saved"); purchase receipts and a re-download window |
+| CHK-13 | M | **"What we have on file"** receipt after check-in: per guest, shows each item saved (passport, photo, card, contract, emergency contact) with timestamp and how to correct it; survives sign-out and app updates; a visible "not saved yet" state if offline |
+| CHK-14 | M | **Boarding-pass failsafes**: pass cached offline and shown in simulated Wallet; printable PDF version; pass retrievable by booking number from the login screen without full sign-in; plain-language "what if my phone dies or has no signal" card; keycard/Guest Services fallback described |
+| SUP-08 | M | **Urgent help always reachable**: a persistent "Get help now" action showing the ship phone number and emergency extension available offline; urgent non-medical issues (key fails, locked out, lost child, lost documents) have a dedicated path that does not rely on chat; chat shows expected response time and queue position |
+| INC-01 | **M** (raised in §22.7) | **Non-app parity and low-tech support**: printable daily plan, boarding pass, excursion tickets and itinerary (large-print option); a "helper" role so a family member can view and manage bookings on someone's behalf with their consent (ties to ACT-05, SUP-07); every critical task has a documented desk or phone alternative shown in-app |
+
+#### This cruise: ports, time and documents
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| POR-04 | **M** (was S) | Tender information is core because Belize City is a tender port: ticket groups and call times, live tender status and wait estimate, ship-excursion priority explained, return-tender planning, last tender back, weather-dependent "may switch to tender" flag for Roatán, and accessibility on tenders (see POR-12) |
+| POR-11 | M | **Three clocks**: ship time, local port time and phone time shown together on port days and in the all-aboard card; a change-of-time notice when the ship clock changes; reminders always fire against ship time; "all aboard" stated in ship time with the local equivalent. Authored mock data must encode the March 2027 daylight-saving difference **(verify)** |
+| POR-12 | S | **Accessible port planning**: per-port accessible route, pier or tender arrangement, accessible transport, which excursions are wheelchair-suitable, and how to request tender assistance; links to MNG-12 requests |
+| POR-08 | **S** (was C) | "What if I'm late" explainer: ship-sponsored versus independent excursion guarantees, what the agent can do, what to do if the ship has left, with the contacts from POR-07 |
+| POR-13 | S | **Port-day readiness checklist**: ID/sail-and-sign card, sun protection, cash, swimwear, tender ticket, all-aboard time, back-on-board route; one tap to share with the travel party |
+| MNG-11 | M (was S) | **Documents engine for closed-loop cruises**: per guest by citizenship and age, show what is required (e.g. US citizens: birth certificate plus photo ID acceptable, passport strongly recommended; non-citizens: passport), with a clear recommendation, an "I have this" tracker, expiry warnings, and a flag where rules differ by country **(verify)**; local port or passenger fees explained where applicable **(verify)** |
+| CHK-15 | S | **Embarkation specifics**: terminal assignment shown (Terminal 2, sometimes 4) with change alerts; "drop bags with porters before you park" guidance and tipping norms; carry-on checklist (documents, medication, swimwear, chargers); "your stateroom is ready" notification; luggage-delivered-to-cabin status; first-afternoon plan (lunch, muster, sail-away) |
+| MNG-12 | S | Extend: deadline tracker for services needing notice (large-print menus/daily plans, assistive listening, accessible equipment, dietary, medical-device power); countdown with "request now" before the cut-off; confirmation visible to the guest and recorded in their profile |
+
+#### Entitlements, loyalty and money
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| PRE-16 | M | **Entitlement engine**: one place that computes what each guest gets from fare, package (Plus, Premier), loyalty tier (Gold, Ruby, Platinum, Elite) and suite class (Sanctuary), and applies it everywhere (drink cap per beverage, casual versus specialty meals remaining, Wi-Fi devices, excursion credit, gratuities). Guests see "what's included for me" in plain words, and a running balance of used versus remaining |
+| DIN-12 | S | **Loyalty-gated dining windows**: reservations open for Elite/Platinum at booking and for others after full payment (mock rules); Anytime Dining guests see no assigned time; companion selection for group dining; the app explains why a slot is not yet available and when it will be |
+| PRE-17 | S | **Price-change protection**: show "your price is locked" when a package was bought before a price rise; price-drop refund or credit on add-ons (extends PRE-11); package value calculator uses the current Sun Princess figures |
+| POS-06 | S | Extend rebooking: onboard-booking incentives (reduced deposit, onboard credit), conversion of leftover future-cruise credit to onboard credit, and a bookable appointment with the Future Cruise desk (deck 9 midship) |
+
+#### Health and wellbeing
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| SAF-03 | S | Extend: medical centre hours (sea day versus port day), fee disclosure and insurance reminder, "report illness early" flow for vomiting/diarrhoea with clear isolation and meal-delivery guidance, seasickness help request, medication and device-power requests; sensitive-data handling per SEC-07 |
+| SAF-08 | S | Cardiac and mobility alerts: guided "I need medical help now" path with the emergency number and cabin number ready to read aloud; designed for stress (very large buttons, minimal text) |
+| MNG-19 | C | Pre-cruise health and comfort preparation: motion-sickness tips, medications to pack, travel-insurance reminders |
+
+### 23.5 Demo scenarios the mock layer must support
+
+The scenario switcher (§22) should include these, because each exercises a documented failure or a cruise-specific risk. Each persona in §4.1 should be steerable into at least two.
+
+| Scenario | Exercises |
+| --- | --- |
+| Booking not visible after sign-in (sync lag), then recovers | MNG-01, MNG-18, PERF-06 |
+| Check-in interrupted by lost connection at the passport step | CHK-02, CHK-13, NET-03 |
+| Dinner reschedule fails halfway | DIN-10 |
+| Food order with one item out of stock; delivery runs late | DIN-11 |
+| Daily plan changes mid-day (show moved, event cancelled) | OB-08 |
+| Belize tender: ticket groups, delay, weather switch for Roatán | POR-04, POR-12 |
+| Ship clock change and daylight-saving mismatch on a port day | POR-11, POR-02 |
+| Port skipped for weather; itinerary change with options and credit | MNG-15, SUP-06 |
+| Guest running late in port; missed-ship guidance | POR-02, POR-08 |
+| Phone dead or offline at embarkation | CHK-14 |
+| Illness report and medical request | SAF-03 |
+| Package price rise after purchase | PRE-17 |
+| Photo download fails mid-way and resumes | SHP-07 |
+| Child missing from expected zone | SAF-05, SUP-08 |
+| Chat with Guest Services slow; escalate to phone | MSG-02, SUP-08 |
+
+### 23.6 Experience quality bar
+
+"Best-in-class" is made measurable so each phase can be judged against it (checked with unit and a11y tests plus manual walkthroughs; no browser automation per project rules):
+
+1. **Two-tap rule** for the top 15 tasks (UX-01).
+2. **First useful screen** after sign-in shows the single next required action (MNG-02) with no offer above it.
+3. **Check-in** completable by Maria in a single sitting, resumable if interrupted, and by Daniel for all four Harpers without re-entering shared data (A11Y-05 redundant entry).
+4. **Gerald test**: every top-15 task usable at the largest text size, with high contrast and a visible phone alternative, without gestures.
+5. **Linda test**: every port-day and route screen shows accessibility information up front; no feature needs drag, hover or fine motor control.
+6. **No dead ends**: every error state offers a next step and a human route; every offline state shows data age.
+7. **Trust ledger**: nothing the guest booked, paid for, requested or saved can vanish silently; every change is visible in history.
+8. **Offer restraint**: at most one contextual offer per screen and none on task-critical screens.
+9. **Consistency**: one planner, one wallet of documents, one inbox, one place for help (A11Y-05 consistent help).
+
+### 23.7 Phase impacts (§21)
+
+| Phase | Additions |
+| --- | --- |
+| 0 | UX-01 and UX-02 as design-language rules; entitlement-engine data model (PRE-16); three-clock time model and demo clock (POR-11); scenario catalogue (§23.5); printable-view styles (INC-01) |
+| 2 | Documents engine MNG-11; helper role (INC-01) |
+| 3–4 | PRE-16, PRE-17, DIN-12, MNG-12 deadline tracker |
+| 5 | CHK-13, CHK-14, CHK-15 |
+| 6 | OB-08, OB-09, DIN-10, SUP-08, POR-04, POR-11, POR-12 |
+| 7 | DIN-11, SHP-07, SAF-03, SAF-08 |
+| 8 | POS-06 extension |
+| 10 | UX-01 task-path audit, quality bar review (§23.6) |
+
+### 23.8 Remaining uncertainty
+
+- Several facts are from fan sites, forums and aggregators; the "verify" items (Belize/Honduras passport rules, terminal assignment, time zones, package terms, accessibility notice periods) should be confirmed before they appear as fact in the UI. Per round-four decisions they may be authored as plausible mock content; the concept disclaimer covers this.
+- Unofficial Google Sites pages in the results (claiming voice-controlled cabins and AR/VR) were disregarded as unreliable.
+- Viking, Celebrity and Disney app detail is still thin; the current requirements already cover their headline strengths (smart-room remote, Disney delight, youth-club registration). No further research is needed for Phase 0.
 
 ---
 
@@ -775,6 +950,21 @@ Competitors
 - Carnival HUB: https://www.cruisehive.com/18-must-know-things-about-carnival-hub-app/22834 · https://cruzely.com/the-complete-guide-to-carnivals-hub-app/
 - Cross-line comparison: https://www.cruisecritic.com/articles/cruise-apps-you-need-right-now · https://thepointsguy.com/cruise/best-cruise-apps · https://www.cruisebooking.com/articles/first-time-cruisers/ultimate-guide-to-the-best-cruise-apps
 - Virgin Voyages: https://www.virginvoyages.com/app · https://vvinsider.com/virgin-voyages-app-update-introduces-new-planner-tab/ · https://vvinsider.com/virgin-voyages-rolls-out-virtual-dining-queues-across-the-fleet/
+
+Round five (§23)
+- Princess app on the App Store (v1.11, reviews): https://apps.apple.com/us/app/princess-cruises/id6469049279
+- Princess app redesign (Jun 2026), via search summary: https://crew-center.com/princess-cruises-unveils-major-mobile-app-redesign
+- Princess AI app announcement: https://www.princess.com/news/news-releases/2026/09/princess-cruises-becomes-first-global-cruise-line-to-launch-AI-powered-cruise-planning-app
+- Royal Caribbean app updates (all-aboard alert, room-service pilot), via search summary: https://www.royalcaribbeanblog.com/2026/03/12/royal-caribbean-app-alert-prevent-missing-cruise-ship · https://www.royalcaribbeanblog.com/2026/09/21/royal-caribbean-testing-room-service-delivery-app-one-ship
+- MSC for Me: https://www.msccruisesusa.com/en-us/Discover-MSC/MSC-For-Me.aspx
+- Virgin Voyages Planner: https://vvinsider.com/virgin-voyages-app-update-introduces-new-planner-tab/
+- Plus/Premier 2026 pricing: https://www.cruisemummy.co.uk/?p=12034 · https://www.cruisemapper.com/news/16653-princess-cruises-details-dining-beverage-benefits-plus-premier-packages-sun-princess
+- Dine My Way: https://cruisemapper.com/news/8862-princess-cruises-introduces-new-medallionclass-enhancement-dine-my-way
+- Closed-loop cruise documents: https://www.afar.com/magazine/what-is-a-closed-loop-cruise · https://www.royalcaribbeanblog.com/2025/11/07/cruise-without-passport
+- Belize tender discussions: https://boards.cruisecritic.co.uk/topic/2094023-tendering-in-belize/
+- Port Everglades logistics: https://www.cruisecritic.com/articles/port-everglades-cruise-port-parking-address-amenity-info
+- Cruise accessibility overview: https://cluballiance.aaa.com/the-extra-mile/articles/prepare/travel/cruise-passengers-with-disabilities
+- Cruise health overview: https://kffhealthnews.org/aging/how-cruise-ship-passengers-should-prepare-for-sickness-or-injury-at-sea/
 
 ## Appendix B — Research gaps to close next
 
