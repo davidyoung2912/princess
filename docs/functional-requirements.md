@@ -1,6 +1,6 @@
 # Princess Cruises Guest Web App — Functional Requirements (Draft v0.1)
 
-Status: **Draft v0.2 — scope decisions recorded (§22). No code has been written.**
+Status: **Draft v0.6 — scope decisions recorded (§22); single vessel = Sun Princess, single cruise = 7-night Western Caribbean with Mexico from Fort Lauderdale (§22.6; see `sun-princess-ship-profile.md`). No code has been written.**
 Date: 2026-10-28
 Target: mobile-first, responsive, installable PWA (React + Vite + TypeScript, see `CLAUDE.md`).
 
@@ -150,6 +150,59 @@ Medallion stores only an encrypted guest ID; location hiding in settings; keycar
 | **Group/organiser (Tom, 45)** | Wedding/reunion block, invite flow, roster, payments tracking |
 | **Travel advisor (Ann)** | Agent-booked guests need linkage to their reservation; agents need guest visibility (out of scope for v1, noted) |
 | **Crew / Guest Services (internal)** | Responding to chat, issuing replacements; assumed out of scope except API contracts |
+
+---
+
+### 4.1 Demo accounts (mock, all with established Princess/Carnival accounts)
+
+Fictional people and names. Every account already exists with Captain's Circle membership, saved profile, payment method, passport on file (fictional data) and a booking on the single supported cruise (§22.6). The scenario switcher moves each account through journey stages independently.
+
+**Solo / independent personas** (do not interact with anyone else in the app)
+
+| Persona | Name | Profile | Status / booking |
+| --- | --- | --- | --- |
+| Platinum repeat guest (primary, older repeat guest) | **Gerald Whitfield**, 71 | Retired engineer, 18 prior Princess cruises, prefers large text, traditional dining, phone-call fallback, specialty-dining regular | Captain's Circle Platinum; balcony stateroom |
+| First-timer | **Maria Delgado**, 38 | Nurse, first cruise, anxious about logistics, price-conscious, cruising solo | New account, Gold-eligible after sailing; interior or oceanview stateroom |
+| Accessibility guest | **Linda Okafor**, 66 | Wheelchair user, travels with a mobility scooter; needs accessible stateroom, accessible routes, tender assistance, assistance requests | Ruby; accessible balcony stateroom (one of the 51 accessible rooms) |
+| Sanctuary suite guest | **Alexander Reyes**, 54 | Business owner, premium traveller | Captain's Circle Elite; Sanctuary Collection Mini-Suite with Premier bundle |
+
+**The two linked families** (friends who share a travel group, activities and messaging; they interact with each other only)
+
+*The Harper family* (Family A)
+
+| Role | Name | Age | Notes |
+| --- | --- | --- | --- |
+| Father (booker, account holder) | **Daniel Harper** | 41 | Software manager; organiser of the shared trip; Ruby |
+| Mother | **Priya Harper** | 39 | Dietary: vegetarian; wants spa time |
+| Son | **Ethan Harper** | 14 | Teen: The Underground; has own supervised account |
+| Daughter | **Maya Harper** | 8 | Neon Grove (ages 8–12); nut allergy (exercises allergy flows) |
+
+*The Brennan family* (Family B)
+
+| Role | Name | Age | Notes |
+| --- | --- | --- | --- |
+| Father (booker, account holder) | **Marcus Brennan** | 43 | Teacher; enthusiastic about excursions; Gold |
+| Mother | **Elena Brennan** | 40 | Pharmacist; wants quiet time; interested in wine and spa |
+| Son | **Lucas Brennan** | 6 | Firefly Park (ages 3–7) |
+| Daughter | **Sofia Brennan** | 11 | Neon Grove (ages 8–12) |
+
+Together the kids cover all three youth venues (Firefly Park, Neon Grove, The Underground), which exercises Find-My-Kid, club check-in/out and age gating.
+
+**Staterooms (illustrative):** Harpers: two connecting balcony staterooms. Brennans: one family-size balcony stateroom plus an adjoining interior or oceanview for the children, to show different cabin arrangements. Family members hold individual Medallion identities; the booker sees and manages the party.
+
+**Interaction rules**
+1. The Harpers and Brennans form one **linked travel group** ("friends travelling together"). Members can see each other's shared itinerary items, join each other's excursions, dining reservations and show plans, use free group and one-to-one chat, and (with consent) share location.
+2. Parents control what their children can see and share; children (Ethan 14, Sofia 11, Maya 8, Lucas 6) have age-appropriate accounts: teens can message approved contacts, under-13s cannot chat freely and are visible to parents through Find-My-Kid.
+3. **Solo personas are isolated**: Gerald, Maria, Linda and Alexander never appear in the families' contacts, chats, group plans or location sharing, and the families do not appear in theirs. Cross-persona realism (other guests on the ship) is simulated by the mock layer as anonymous crowd data only.
+4. All other travellers, crew and Guest Services contacts are simulated (scripted or AI-backed).
+
+**Resulting requirements**
+- ACT-05 (household/companion accounts) and MNG-16 (travel party coordination) are raised to **Must** and are demonstrated by the families.
+- A **linked travel group** concept (distinct from a booking party) is required: invite, accept, permissions per member, per-child controls, leave group.
+- MSG-01 includes group chats (families together, parents only, kids), with parental supervision rules and age gating (MSG-05).
+- DIN-09, PRE-13 and ENT-07 (group dining, shared itinerary, social) are raised to **Should** and are exercised by the families.
+- A persona switcher in demo mode signs in as any of the 12 people; chat and shared plans update across the two families' accounts using local storage/BroadcastChannel.
+- One person per device is the real-world model; the switcher is a demo-only control.
 
 ---
 
@@ -651,12 +704,46 @@ No concern with this approach for a concept/demo; the items above are the main d
 | CNT-01 | Content from public Princess material and mock fixtures; branding disclaimer shown |
 | SEC-02 / SEC-03 | Reframed for a demo: no real card/passport data stored; warnings and wipe controls |
 
-### 22.4 Remaining questions
+### 22.4 Round-two decisions
 
-1. **API key handling (§22.2):** dev-only proxy, bring-your-own-key, scripted fallback, or a combination?
-2. **Demo mode:** do you want the scenario switcher and demo clock described in §22.1?
-3. **Design language:** may I propose it in Phase 0 (colour tokens drawn from Princess blue, typography, motion, iconography) for your approval before building components?
-4. **Content gathering:** how far should I go sourcing real Princess ship/itinerary/imagery content (respecting site terms), versus authoring representative fixtures?
+| Question | Decision |
+| --- | --- |
+| API key handling | User suggested inlining the key. **Recommendation, adopted unless you object:** read it from a Vite env variable (`VITE_ANTHROPIC_API_KEY`) in a git-ignored `.env.local`, never in source. Inlining would commit the key to the GitHub repo (already pushed). Either way the key is visible in the browser bundle; env use avoids leaking it through git history. A server-side proxy remains a later hardening step. If no key is set the concierge falls back to a scripted mock. |
+| Scenario switcher and demo clock | **Yes to both.** |
+| Design language | **Proposed first and reviewed by you before any component code.** Phase 0 begins with a design-language document, not code. |
+| Real vs sample content | **Deep research on Sun Princess as the single supported vessel**, captured in `sun-princess-ship-profile.md`. Remaining content (cabins, prices, schedules, itineraries) is authored as representative fixtures and flagged as illustrative. |
+
+**Single-vessel consequences**
+- One ship profile: the deck plan, venues, capacities, staterooms and entertainment come from the ship profile.
+- Discover/Book: ship comparison (DIS-03) is reduced to Sun Princess vs "other Princess ships" teaser content; itineraries are all Sun Princess sailings.
+- Onboard features (daily planner, queues, Find-My-Kid zones, smart room, photos) are designed against the real Sun Princess venue geography.
+- Sanctuary Collection (215 staterooms) entitlements are a first-class segment.
+
+### 22.5 Round-three decisions
+
+| Question | Decision |
+| --- | --- |
+| Demo accounts | **Originally five personas; revised in §4.1:** four solo personas (Gerald Whitfield, Maria Delgado, Linda Okafor, Alexander Reyes) plus **two linked families of four** (Harper, Brennan) = 12 people, all with existing mock Princess/Carnival accounts. Each has seeded bookings, preferences and a loyalty tier; the scenario switcher moves any of them through the journey stages. |
+| Main demo cruise | **7-night Western Caribbean with Mexico, round trip Fort Lauderdale, Sun Princess** (§22.6). |
+| Imagery | **Use real Princess web imagery** and gathered content for the concept. Handling notes: (1) the repo is on GitHub, so avoid committing bulk copies of copyrighted images; prefer referencing the source URLs, or keep downloaded assets in a git-ignored folder with a manifest recording each image's source URL; (2) keep the "unofficial concept, not affiliated with Princess Cruises" notice visible; (3) alt text for every image (A11Y); (4) offline/PWA caching of remote images needs care (cross-origin opaque responses), so key images used offline are best bundled locally and kept out of git. |
+
+**Still open (minor, can be decided during Phase 0):** primary persona's default text size, the exact set of demo sailing dates, and the final design language (to be proposed for your review before any component code).
+
+### 22.6 Single-cruise scope
+
+**Decision:** guests can only book the **7-night Western Caribbean with Mexico**, round trip Fort Lauderdale, on Sun Princess (reference sailing 21–28 Mar 2027: sea day, Cozumel, Belize City (tender), Roatán, two sea days). Popularity could not be verified from sources; the choice is a judgement (see ship profile §11.1) and is easy to change because the mock data is fixture-driven.
+
+| Area | Change |
+| --- | --- |
+| DIS-02, DIS-03, DIS-04 | Destination/ship/cruise search collapses to one featured cruise and ship; no filters or comparison. Browse = the cruise, the ship, the ports, the sailing dates |
+| DIS-06 (quiz), DIS-08 (compare list), DIS-10 (alerts) | Reduced: quiz recommends cabin category/packages instead of cruises; price alert applies to the one cruise |
+| BOK-14, BOK-15 | Cruisetours and air/hotel packages dropped (W); optional pre/post hotel and transfer add-ons only as simple mock upsells |
+| BOK | Booking = choose sailing date, cabin category/cabin, guests, fare/package, extras, pay |
+| Sailing dates | A small set of dates (e.g. several 7-night departures around Nov 2026 – Mar 2027) so booking, pre-cruise countdown, and past/post-cruise can all be demonstrated, with the scenario switcher and demo clock selecting the stage |
+| Itinerary changes (MNG-15) | Retained as a demo scenario (e.g. port swap) |
+| Ports | Only Cozumel, Belize City (tender), Roatán, plus Fort Lauderdale; port guides and excursions authored for these |
+| POS-06 Rebooking | Rebook the same cruise (different date), plus a teaser for "other Princess voyages" |
+| Phase 1 | Re-scoped from "Discover" to "Discover the cruise and ship" |
 
 ---
 
