@@ -1,6 +1,6 @@
 # Princess Cruises Guest Web App — Functional Requirements (Draft v0.1)
 
-Status: **Research draft for review and discussion. No code has been written.**
+Status: **Draft v0.2 — scope decisions recorded (§22). No code has been written.**
 Date: 2026-10-28
 Target: mobile-first, responsive, installable PWA (React + Vite + TypeScript, see `CLAUDE.md`).
 
@@ -565,7 +565,7 @@ Medallion stores only an encrypted guest ID; location hiding in settings; keycar
 | Background sync | Chromium only | Must degrade gracefully |
 | App store presence | Not by default | Option: wrap as TWA/Capacitor later if required |
 
-**Critical dependency:** The product needs **APIs from Princess/Carnival Corp** (bookings, inventory, pricing, check-in, folio, reservations, messaging, ship location). We do not have these. Until access is secured, the application will use a **mock/sandbox backend** with realistic fixtures and clean API contracts so we can swap in real services. This is the largest scope and feasibility risk and should be a decision point (Q1 below).
+**Critical dependency:** The product needs **APIs from Princess/Carnival Corp** (bookings, inventory, pricing, check-in, folio, reservations, messaging, ship location). We do not have these. **Decision (§22):** the application uses a **mock API layer** with realistic fixtures, IndexedDB persistence and clean contracts, so real services could be swapped in later.
 
 ---
 
@@ -575,7 +575,7 @@ Aligned with the project's rule: build one phase, commit, stop. Each phase inclu
 
 | Phase | Theme | Contents |
 | --- | --- | --- |
-| **0** | Foundations | Project scaffold, design system (tokens, components, themes), routing, PWA shell, accessibility baseline, mock API layer and domain models, i18n |
+| **0** | Foundations | Project scaffold, design language proposal and system (tokens, components, themes), routing, PWA shell, accessibility baseline, mock API client + IndexedDB persistence, demo clock/scenario switcher, string externalisation |
 | **1** | Discover | DIS-01…DIS-05, DIS-08, DIS-11, destinations/ships/itineraries with mock data, search & compare |
 | **2** | Account & My Trips | ACT-01…03, MNG-01…05, MNG-14, SUP-01/02 |
 | **3** | Book | BOK-01…08, BOK-18/19 |
@@ -584,25 +584,79 @@ Aligned with the project's rule: build one phase, commit, stop. Each phase inclu
 | **6** | Onboard core | OB-01…04, SAF-01/02, DIN-01/02, POR-01…03, ACC-01, MSG-01/02, offline |
 | **7** | Onboard extended | DIN-04/05 (ordering), ENT, SHP, ROM, NET, kids' tools |
 | **8** | Disembark & post-cruise | DEB-*, POS-* |
-| **9** | AI concierge & delight | DIS-09, SUP-03, PRE-12, POS-03 |
+| **9** | AI concierge & delight (Claude API; see §22.2) | DIS-09, SUP-03, PRE-12, POS-03 |
 | **10** | Hardening | Performance, a11y audit, security review, observability |
 
 ---
 
-## 22. Open questions for you
+## 22. Scope decisions (answered) and resulting constraints
 
-1. **Backend/API access.** Do we have (or expect to get) access to Princess APIs? Or is this a standalone concept/prototype with mock data? (Determines the entire integration strategy.)
-2. **Positioning.** Is this an official Princess product, an independent concept/redesign, or a portfolio demonstration? (Affects branding, logos, trademark use, and content.)
-3. **Scope of "soup to nuts".** Do you want booking/payment implemented end-to-end (mock), or the booking flow as a UI only?
-4. **Hardware.** Should we assume the Medallion/keycard remains the door/payment device and the app integrates with its data, or should we design for a phone-only experience?
-5. **Markets and languages.** US-only English first, or multi-region from day one?
-6. **Auth.** Passkeys + email, or integration with an existing Princess/Carnival identity?
-7. **Priority of experiences.** Which journey stage should be the showpiece? (My recommendation: onboard daily-planner + offline + free messaging, and a best-in-class check-in flow, since these are Princess's biggest weaknesses.)
-8. **AI.** Should the concierge (DIS-09/SUP-03) be in scope? If so, with what model/provider and guardrails?
-9. **Persona priority.** Do you want to optimise first for older repeat guests, families, or first-timers?
-10. **Brand/design.** Do you have visual direction (Princess brand blue, "Come Back New" tone, fonts), or should I propose a design language?
-11. **Crew/admin side.** Out of scope, or do you want a minimal staff console for chat and requests?
-12. **Competitor features to emphasise.** Free chat, Find-My-Kid, smart-room control, photo browsing, virtual queues: which of these should be headline features?
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | Backend/API access | **None.** All data is mock. A simulated API layer (async, with latency and failure injection) returns fixture data; user-provided data persists in browser storage. No real backend is built. |
+| 2 | Positioning | **Independent concept/redesign.** Use Princess colours, logos, imagery and gathered content to feel real. Show a clear "unofficial concept, not affiliated with Princess Cruises" notice. |
+| 3 | Scope of "soup to nuts" | **All phases end to end**, including booking and payment, against the mock API. |
+| 4 | Hardware | **Medallion/keycard remains the door and payment device.** The app reads/displays its data (status, charges, location as supplied by ship systems) and never replaces it. |
+| 5 | Markets/languages | **US English only.** Keep strings externalised so i18n can be added later (cheap now, costly later). |
+| 6 | Auth | **Assume the existing Princess/Carnival identity** (mocked), behind an auth-provider abstraction so passkeys, email/password, magic link and SSO options can be configured as the industry offers. |
+| 7 | Showpiece | **Onboard daily planner + offline + free messaging, and a best-in-class check-in flow.** |
+| 8 | AI concierge | **In scope** (DIS-09, SUP-03). See §22.2 for the API key handling. |
+| 9 | Persona priority | **Older repeat guests first**, while every persona (§4) must be properly served. |
+| 10 | Brand/design | Borrow Princess colours, icons and imagery, but pursue a **new UX design not bound by existing Princess design constraints**. A design language will be proposed in Phase 0. |
+| 11 | Crew/admin | **Out of scope.** Crew-side behaviour (chat replies, request fulfilment, queues) is simulated by the mock layer. |
+| 12 | Competitive headline features | **All five are headline features**: free chat, Find-My-Kid, smart-room control, photo browsing, virtual queues. |
+
+### 22.1 Consequences of the mock-only, local-storage approach
+
+| Area | Implication | Handling |
+| --- | --- | --- |
+| Storage limits | localStorage is ~5 MB and synchronous; photos/documents will not fit | Use IndexedDB for structured data, photos and documents; localStorage only for small settings. Request persistent storage; handle quota errors |
+| Eviction | Safari may evict storage for sites unused ~7 days (less so when installed) | Prompt install; offer export/import of "my data" backup; versioned schema with migrations |
+| Single device | No cross-device sync or real multi-user | Offer a "reset demo" and "load scenario" control (e.g. pre-booking, day 3 at sea, disembarkation day) so every stage can be demoed. Time can be simulated (a "demo clock") |
+| Free messaging | Real guest-to-guest chat is impossible without a server | Simulate travel-party members and crew as scripted/AI-backed contacts; use BroadcastChannel so two tabs can chat to demonstrate behaviour. Architecture keeps a transport interface for a real service later |
+| Find-My-Kid / locator | No real location source | Simulated ship positions on deck plans from the mock layer, with the same consent and privacy UX as the real thing |
+| Smart room, queues, photos | No ship systems | Mock devices, mock queue progression, and a bundled photo set with simulated face/venue grouping |
+| Payments | No real processing | Mock gateway with test-card behaviours (success, decline, 3-D Secure challenge, timeout). Never collect or store real card numbers; show a "demo payments only" notice and block real PANs |
+| Passports/IDs | Real personal documents must not be stored casually | Warn users to use fictional data; keep on-device only; offer one-click wipe |
+| Auth | Identity is mocked | Mock identity provider with demo accounts per persona and per loyalty tier; no real credentials |
+| Contract fidelity | Mocks tend to be unrealistically perfect | Mock layer includes latency, intermittent failures, offline behaviour and the real-world failure modes found in research (e.g. booking temporarily not loading) so the resilience requirements (PERF-04/06) are genuinely exercised |
+
+No concern with this approach for a concept/demo; the items above are the main design consequences. Keeping a clean API client interface means the mock can later be swapped for real services.
+
+### 22.2 AI concierge and the API key
+
+- **A browser-only app cannot keep an API key secret.** Any key bundled into client code, or called directly from the browser, can be read by any visitor. This is the main concern with the AI scope.
+- **The key was pasted into the chat and has intentionally not been written into this document or the repository.** Because it appeared in plain text, treat it as exposed and consider rotating it.
+- Proposed handling, for you to confirm:
+  1. Keep the key out of source control (a git-ignored `.env.local`, or entered by the user at runtime in a settings screen and held only on their device).
+  2. For local development, call the API through a small dev-only proxy so the key never ships in the production bundle. A deployed demo would need a real proxy/serverless function; if that is unwanted, the concierge can run in a "bring your own key" mode, or fall back to a scripted mock concierge when no key is present.
+  3. Guardrails: grounded only on app data (itineraries, ships, ports, venues, the guest's own mock bookings) via tools; no real booking/payment actions without an explicit confirmation step; refuse medical/legal/safety-critical advice and hand off to the simulated crew/Guest Services; visible "AI-generated" labelling; conversation history stored on device and clearable; spend/rate limits.
+  4. Model choice to be set in configuration; default to a current Claude model chosen when Phase 9 starts.
+
+### 22.3 Requirement adjustments from these decisions
+
+| ID | Change |
+| --- | --- |
+| ALL | Backed by a mock API client + IndexedDB persistence; every requirement is satisfied against mock data |
+| ACT-01 | Mock Princess/Carnival identity with pluggable auth methods; demo personas |
+| ROM-05 | Smart-room control raised from **C to S** (headline feature), implemented against mock devices |
+| SAF-05 / ENT-04 | Find-My-Kid raised to **S, headline**: parent-set kid zones, last-seen location on deck plan, geofence alerts, club check-in/out |
+| SHP-02 | Photo browsing raised to **S, headline**: by day/venue/person, favourites, purchase flow (mock) |
+| DIN-02 | Virtual queues raised to **S, headline**: join/leave, live position and ETA, "your table is ready" alert |
+| MSG-01 | Free chat is a headline **M**; includes travel party, friends and Guest Services |
+| NET-01 | Messaging and all app functions must work without paid internet; offline outbox applies |
+| ACS-* / A11Y-* | Older repeat guests first: default-large text option, simple mode, high contrast, minimal-gesture navigation, phone-call fallback visible |
+| ACC-09 / CHK-11 | Medallion/keycard stays the physical device; app shows its status, charges and activation only |
+| DIS-18 | US English, USD only for v1 |
+| CNT-01 | Content from public Princess material and mock fixtures; branding disclaimer shown |
+| SEC-02 / SEC-03 | Reframed for a demo: no real card/passport data stored; warnings and wipe controls |
+
+### 22.4 Remaining questions
+
+1. **API key handling (§22.2):** dev-only proxy, bring-your-own-key, scripted fallback, or a combination?
+2. **Demo mode:** do you want the scenario switcher and demo clock described in §22.1?
+3. **Design language:** may I propose it in Phase 0 (colour tokens drawn from Princess blue, typography, motion, iconography) for your approval before building components?
+4. **Content gathering:** how far should I go sourcing real Princess ship/itinerary/imagery content (respecting site terms), versus authoring representative fixtures?
 
 ---
 
