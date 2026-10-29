@@ -1,3 +1,4 @@
+import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
 import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/personas'
 import type { PortId } from '../domain/sailings'
@@ -678,6 +679,11 @@ export interface Api {
   room: RoomApi
   laundry: LaundryApi
   wifi: WifiApi
+  budget: BudgetApi
+  shows: ShowsApi
+  waits: WaitsApi
+  updates: UpdatesApi
+  privacy: PrivacyApi
   disembark: DisembarkApi
   cases: CasesApi
   post: PostApi

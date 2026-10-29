@@ -14,6 +14,7 @@ import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
+import { QueueControl } from './Waits'
 import { BackLink } from './common'
 
 /** The diets of everyone on the signed-in booking who has told us about one, so the menus can hide what does not suit. */
@@ -88,6 +89,7 @@ export function VenueScreen() {
             </ul>
             {reservableVenue(v) && <p><LinkButton to="/plan/dining" variant="secondary">{t('ven.reserve')}</LinkButton></p>}
           </Card>
+          {!reservableVenue(v) && v.id !== 'soleil' && <QueueControl venueId={v.id} />}
           <section aria-labelledby="hours-h">
             <h2 id="hours-h">{t('ven.hours')}</h2>
             <dl className="plain-dl">

@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { Chat, Help, Home, Me, Plan, Ship } from './icons'
 import { HelpSheet } from './HelpSheet'
+import { UpdateBanner } from './UpdateBanner'
 
 const TAB_ICONS = { home: Home, plan: Plan, ship: Ship, chat: Chat, me: Me } as const
 
@@ -52,6 +53,7 @@ export function Shell() {
           )
         })}
       </nav>
+      <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />

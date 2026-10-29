@@ -18,6 +18,8 @@ import { Chip } from '../Chip'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError } from '../account/parts'
 import { Saved } from './common'
+import { MyTickets, SeatControl, type SeatsInfo } from './Tickets'
+import { useAsync } from '../../hooks/useAsync'
 import { useShipTime } from './shipTime'
 
 /** The daily planner on board (OB-02, OB-09): the ship's schedule and the guest's own plan in one list, with filters, sorting, "happening now" and "next up". */
@@ -58,6 +60,10 @@ interface DayProps {
 function Day({ view, filter, setFilter, mineOnly, setMineOnly, sort, setSort, reload }: DayProps) {
   const now = useNow()
   const toggle = useAction(async (id: string, on: boolean) => { await api.onboard.togglePlan(id, on); reload() })
+  const seats = useAsync(() => api.shows.day(view.day), [view.day])
+  const tickets = useAsync(() => api.shows.mine(), [view.day])
+  const party = useAsync(() => api.account.party(), [view.day])
+  const info: SeatsInfo | null = seats.data && tickets.data && party.data ? { seats: seats.data, tickets: tickets.data, party: party.data, reload: () => { seats.retry(); tickets.retry() } } : null
   const nn = nowAndNext(view.events, now)
   const shown = sortEvents(filterEvents(view.events, filter, now).filter((e) => !mineOnly || view.mine.includes(e.id)), sort)
   const mine = view.events.filter((e) => view.mine.includes(e.id))
@@ -112,10 +118,11 @@ function Day({ view, filter, setFilter, mineOnly, setMineOnly, sort, setSort, re
       )}
       {!view.canEdit && <p className="muted">{t('onb.readOnly')}</p>}
       <ActionError error={toggle.error} />
+      {info && <MyTickets tickets={info.tickets} />}
       <p role="status" className="muted">{t('onb.count', { count: shown.length })}</p>
       {shown.length === 0 ? <p>{t('onb.none')}</p> : (
         <ul className="event-list">
-          {shown.map((e) => <Event key={e.id} e={e} inPlan={view.mine.includes(e.id)} canEdit={view.canEdit} busy={toggle.busy} onToggle={() => void toggle.run(e.id, !view.mine.includes(e.id))} />)}
+          {shown.map((e) => <Event key={e.id} e={e} inPlan={view.mine.includes(e.id)} canEdit={view.canEdit} busy={toggle.busy} info={info} onToggle={() => void toggle.run(e.id, !view.mine.includes(e.id))} />)}
         </ul>
       )}
     </>
@@ -132,7 +139,7 @@ function Time({ at }: { at: number }) {
   return <strong>{shipTime(at)}</strong>
 }
 
-function Event({ e, inPlan, canEdit, busy, onToggle }: { e: DatedEvent; inPlan: boolean; canEdit: boolean; busy: boolean; onToggle: () => void }) {
+function Event({ e, inPlan, canEdit, busy, info, onToggle }: { e: DatedEvent; inPlan: boolean; canEdit: boolean; busy: boolean; info: SeatsInfo | null; onToggle: () => void }) {
   const shipTime = useShipTime()
   const p = placeById(e.placeId)
   const cancelled = e.status === 'cancelled'
@@ -150,6 +157,7 @@ function Event({ e, inPlan, canEdit, busy, onToggle }: { e: DatedEvent; inPlan: 
         {p && !p.stepFree && <span className="tag">{t('onb.notStepFree')}</span>}
         {p?.note && <span className="muted">{p.note}</span>}
       </p>
+      {info && <SeatControl e={e} info={info} canEdit={canEdit} />}
       {canEdit && !cancelled && (
         <>
           <Button variant="secondary" aria-pressed={inPlan} disabled={busy} onClick={onToggle}>

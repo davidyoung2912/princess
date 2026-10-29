@@ -2,6 +2,10 @@
 
 Status: **Proposed, for your review. No code has been changed.** Written 2026-10-29 after Phase 10, from a read of the requirements (`docs/functional-requirements.md`), the per-phase notes (`docs/design-language.md` §11 to §19), the route table, the API types, the i18n strings and keyword searches across `src`.
 
+## Progress
+
+**After Phase 11 (2026-10-29):** 13 requirements moved to Done (ACC-02, ACS-01, ACS-02, ACS-06, ACT-06, DIN-02, ENT-01, INC-01, MNG-15, PERF-02, PERF-08, SAF-06, SUP-06) and two moved from Not built to Partial (SEC-03, PRE-14). Must requirements: 69 of 85 done or done in reduced scope, 16 open. Totals: 133 done or done in reduced scope, 42 partial, 73 not built (115 open, down from 128). The open Must items are BOK-02, CHK-01 (passport scan), MNG-14, POR-02, NOT-01, ACT-01, SEC-01 (a server), PERF-01 (needs a device), CNT-01, UX-02 (deferred), OB-04, SAF-01 (text stands in for a drawing and a video), MSG-01 (photos in chat), PERF-04 (reads are not retried, no optimistic updates), SEC-03 (encryption at rest) and SEC-04 (region rules). The detailed tables below are the original analysis and have not been rewritten.
+
 ## 1. How this was done, and how far to trust it
 
 - **Source of truth for the list:** every requirement ID that has its own table row in the requirements document: **248 IDs** (the document restates some IDs in §23 with a new priority; the highest priority wins, so POR-04, MNG-11 and INC-01 count as Must).

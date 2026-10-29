@@ -41,7 +41,10 @@ export interface PlanReads {
   tours: () => Promise<{ id: string; excursionId: string; guests: PersonaId[] }[]>
 }
 
-export function createPlanApi(d: PlanDeps): { api: PlanApi } & PlanReads {
+/** A table input as `dining.reserve` takes it. */
+type TableInput = { venueId: string; day: number; time: string; guests: PersonaId[]; note: string }
+
+export function createPlanApi(d: PlanDeps): { api: PlanApi; reserveFromWaitlist: (input: TableInput) => Promise<DiningView> } & PlanReads {
   const authorise = createAuthoriser(d)
   const owner = () => d.actor().booker
   const rows = async <T>(kind: string): Promise<Row<T>[]> => (await d.store.list(kind, owner())).map((r) => ({ id: r.id, at: r.updatedAt, data: r.data as T }))
@@ -362,31 +365,7 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi } & PlanReads {
         const mine = (await tables()).filter((t) => t.data.venueId === venueId && t.data.day === day)
         return slotsFor(venueId, d.sailing().id, day).map((s) => ({ ...s, tables: Math.max(0, s.tables - mine.filter((t) => t.data.time === s.time).length) }))
       }),
-      reserve: (input) => d.run('plan.dining.reserve', async () => {
-        diningWritable()
-        const v = venueById(input.venueId)
-        if (!v || v.walkIn || !DINNER_DAYS.includes(input.day) || !DINNER_TIMES.includes(input.time)) throw new ApiError('invalid', 'Choose a restaurant, a night and a time')
-        const who = guestsIn(input.guests)
-        if (who.length > MAX_PARTY) throw new ApiError('invalid', 'Too many people for one table')
-        if (!who.some((g) => ageOf(g) >= 18)) throw new ApiError('conflict', 'age')
-        const view = await diningOf()
-        if (!view.window.open) throw new ApiError('conflict', 'notOpen')
-        if (v.kind === 'main' && view.plan !== 'anytime') throw new ApiError('conflict', 'fixedSeating')
-        if (dinnerPast(input.day, input.time)) throw new ApiError('conflict', 'closed')
-        const existing = await tables()
-        const mine = existing.filter((t) => t.data.venueId === v.id && t.data.day === input.day && t.data.time === input.time).length
-        const grid = slotsFor(v.id, d.sailing().id, input.day).find((s) => s.time === input.time)!
-        if (grid.tables - mine <= 0) throw new ApiError('conflict', 'full')
-        const reserved: ReservedTable[] = existing.map((t) => ({ venueId: t.data.venueId, day: t.data.day, time: t.data.time, guests: t.data.guests }))
-        if (tableClash(reserved, input.day, input.time, who).length > 0) throw new ApiError('conflict', 'clash')
-        const ps = await purchases()
-        const left = new Map(party().map((g) => [g.id, Math.max(0, entitlementsFor(g.id, ps).specialtyMeals - mealsUsed(existing, g.id))]))
-        const covered = v.kind === 'specialty' ? who.filter((g) => (left.get(g) ?? 0) > 0) : []
-        const charge = mealCharge(v, who.length, covered.length).charge
-        await put('table', d.newId('table'), { venueId: v.id, day: input.day, time: input.time, guests: who, note: str(input.note, 200), covered, charge } satisfies StoredTable)
-        await d.log('dining', `${v.name}, night ${input.day}, ${input.time}`)
-        return diningOf()
-      }),
+      reserve: (input) => d.run('plan.dining.reserve', () => reserveTable(input, false)),
       cancel: (id) => d.run('plan.dining.cancel', async () => {
         d.adult()
         const t = (await tables()).find((r) => r.id === id)
@@ -548,10 +527,36 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi } & PlanReads {
     } satisfies StoredTour)
   }
 
+  const reserveTable = async (input: TableInput, allowFull: boolean): Promise<DiningView> => {
+    diningWritable()
+    const v = venueById(input.venueId)
+    if (!v || v.walkIn || !DINNER_DAYS.includes(input.day) || !DINNER_TIMES.includes(input.time)) throw new ApiError('invalid', 'Choose a restaurant, a night and a time')
+    const who = guestsIn(input.guests)
+    if (who.length > MAX_PARTY) throw new ApiError('invalid', 'Too many people for one table')
+    if (!who.some((g) => ageOf(g) >= 18)) throw new ApiError('conflict', 'age')
+    const view = await diningOf()
+    if (!view.window.open) throw new ApiError('conflict', 'notOpen')
+    if (v.kind === 'main' && view.plan !== 'anytime') throw new ApiError('conflict', 'fixedSeating')
+    if (dinnerPast(input.day, input.time)) throw new ApiError('conflict', 'closed')
+    const existing = await tables()
+    const mine = existing.filter((t) => t.data.venueId === v.id && t.data.day === input.day && t.data.time === input.time).length
+    const grid = slotsFor(v.id, d.sailing().id, input.day).find((s) => s.time === input.time)!
+    if (!allowFull && grid.tables - mine <= 0) throw new ApiError('conflict', 'full')
+    const reserved: ReservedTable[] = existing.map((t) => ({ venueId: t.data.venueId, day: t.data.day, time: t.data.time, guests: t.data.guests }))
+    if (tableClash(reserved, input.day, input.time, who).length > 0) throw new ApiError('conflict', 'clash')
+    const ps = await purchases()
+    const left = new Map(party().map((g) => [g.id, Math.max(0, entitlementsFor(g.id, ps).specialtyMeals - mealsUsed(existing, g.id))]))
+    const covered = v.kind === 'specialty' ? who.filter((g) => (left.get(g) ?? 0) > 0) : []
+    const charge = mealCharge(v, who.length, covered.length).charge
+    await put('table', d.newId('table'), { venueId: v.id, day: input.day, time: input.time, guests: who, note: str(input.note, 200), covered, charge } satisfies StoredTable)
+    await d.log('dining', `${v.name}, night ${input.day}, ${input.time}`)
+    return diningOf()
+  }
+
   const reads: PlanReads = {
     entitlementsOf,
     tables: async () => (await tables()).map((t) => ({ id: t.id, ...t.data })),
     tours: async () => (await tours()).filter((t) => t.data.status === 'booked').map((t) => ({ id: t.id, excursionId: t.data.excursionId, guests: t.data.guests })),
   }
-  return { api, ...reads }
+  return { api, ...reads, reserveFromWaitlist: (input) => reserveTable(input, true) }
 }

@@ -15,6 +15,7 @@ import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { SupervisedNote } from '../account/parts'
 import { BackLink, Saved } from './common'
+import { BudgetAlert, BudgetCard } from './BudgetCard'
 
 /** The onboard account, or folio (ACC-01): every charge, credit and package saving, with a running total, search and filters. Kept on the phone so it opens without signal. */
 export function BillScreen() {
@@ -51,6 +52,9 @@ function Folio({ f }: { f: FolioView }) {
         <p className="muted">{f.throughDay === 0 ? t('bill.notYet') : t('bill.through', { day: f.throughDay })}</p>
         <p className="muted">{t('bill.how')} <Link to="/me/payments">{t('route.payments')}</Link></p>
       </Card>
+
+      <BudgetAlert lines={f.lines} />
+      <BudgetCard lines={f.lines} />
 
       <section aria-labelledby="lines-h">
         <h2 id="lines-h">{t('bill.lines')}</h2>

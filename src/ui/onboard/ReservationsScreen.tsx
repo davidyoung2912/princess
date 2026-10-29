@@ -22,6 +22,7 @@ import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { names } from '../plan/people'
 import { PlanError, ReadOnly } from '../plan/common'
+import { WaitsList } from './Waits'
 import { BackLink, Saved } from './common'
 
 /** Everything the guest has reserved: dinners (change or cancel) and tours (DIN-02, POR-03). */
@@ -46,6 +47,7 @@ export function ReservationsScreen() {
           )}
         </Saved>
       </section>
+      <WaitsList />
       <section aria-labelledby="res-tours-h">
         <h2 id="res-tours-h">{t('res.tours')}</h2>
         <Load state={tours}>

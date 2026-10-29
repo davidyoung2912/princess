@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { bounded } from '../api/bounded'
 import { ApiError, isApiError } from '../api/errors'
 import { useLatest } from './useLatest'
 
@@ -18,7 +19,7 @@ export function useAction<A extends unknown[], R>(fn: (...args: A) => Promise<R>
     setBusy(true)
     setError(null)
     try {
-      return await latest(...args)
+      return await bounded(Promise.resolve().then(() => latest(...args)))
     } catch (e) {
       setError(isApiError(e) ? e : new ApiError('server'))
       return undefined

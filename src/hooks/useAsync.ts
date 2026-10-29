@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { bounded } from '../api/bounded'
 
 export type Async<T> = { status: 'loading'; data: T | null } | { status: 'ready'; data: T } | { status: 'error'; data: T | null; error: unknown }
 
@@ -14,7 +15,7 @@ export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): A
   useEffect(() => {
     let current = true
     setState((s) => ({ status: 'loading', data: s.data }))
-    run().then(
+    bounded(Promise.resolve().then(run)).then(
       (data) => { if (current) setState({ status: 'ready', data }) },
       (error: unknown) => { if (current) setState((s) => ({ status: 'error', data: s.data, error })) },
     )

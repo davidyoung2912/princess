@@ -5,6 +5,7 @@ import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { BackLink } from './common'
+import { RouteFinder } from './RouteFinder'
 
 const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
 
@@ -22,6 +23,8 @@ export function DeckMapScreen() {
     <div className="page">
       <h1>{t('route.deckMap')}</h1>
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
+
+      <RouteFinder />
 
       <div className="field">
         <label htmlFor="map-search">{t('map.search')}</label>

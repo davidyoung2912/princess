@@ -94,13 +94,16 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
   const [guests, setGuests] = useState<PersonaId[]>(view.party.filter((g) => g.age >= 18).slice(0, 1).map((g) => g.id))
   const [note, setNote] = useState('')
   const [done, setDone] = useState<string | null>(null)
+  const [listed, setListed] = useState(false)
   const venue = venueById(venueId)!
   const slots = useAsync(() => api.plan.dining.slots(venueId, day), [venueId, day, view.reservations.length])
   const book = useAction(async () => { const v = await api.plan.dining.reserve({ venueId, day, time, guests, note }); onDone(); return v })
+  const waitlist = useAction(async () => { await api.waits.joinWaitlist({ venueId, day, time, guests }); setListed(true) })
   const days = itinerary(s)
   const cost = mealCharge(venue, guests.length, view.mealsLeft)
   const free = slots.data?.find((x) => x.time === time)
-  const blocked = !open ? t('dine.blocked.closed') : guests.length === 0 ? t('dine.blocked.guests') : !time || !free || free.tables === 0 ? t('dine.blocked.time') : ''
+  const full = !!free && free.tables === 0
+  const blocked = !open ? t('dine.blocked.closed') : guests.length === 0 ? t('dine.blocked.guests') : !time || !free || full ? t('dine.blocked.time') : ''
 
   const submit = async () => {
     if (await book.run()) { setDone(venue.name); setTime(''); setNote('') }
@@ -139,7 +142,7 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
               {slots.data.map((x) => (
                 <li key={x.time}>
                   <label className={`choice${x.tables === 0 ? ' choice--full' : ''}`}>
-                    <input type="radio" name="time" checked={time === x.time} disabled={x.tables === 0} onChange={() => { setTime(x.time); setDone(null) }} />
+                    <input type="radio" name="time" checked={time === x.time} onChange={() => { setTime(x.time); setDone(null); setListed(false) }} />
                     <span>{formatTime(x.time)}<small>{x.tables === 0 ? t('dine.full') : x.tables <= 2 ? t('dine.few') : t('dine.free')}</small></span>
                   </label>
                 </li>
@@ -153,6 +156,13 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
         )}
         <TextArea label={t('dine.note')} hint={t('dine.noteHint')} value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} />
         <PlanError error={book.error} />
+        {full && open && guests.length > 0 && (
+          <div>
+            <p>{t('wait.fullHint')}</p>
+            <PlanError error={waitlist.error} />
+            {listed ? <p role="status">{t('wait.listed')} <Link to="/plan/reservations">{t('wait.see')}</Link></p> : <Button variant="secondary" disabled={waitlist.busy} onClick={() => void waitlist.run()}>{t('wait.join')}</Button>}
+          </div>
+        )}
         {done && <p role="status" className="muted">{t('dine.booked', { name: done })}</p>}
         <Button type="submit" disabled={book.busy || !!blocked}>{book.busy ? t('account.saving') : t('dine.reserve')}</Button>
         {blocked && <p className="muted">{blocked}</p>}

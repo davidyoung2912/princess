@@ -1,9 +1,10 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { auth } from '../runtime'
 import { demoNow, getDemo, subscribeDemo } from '../demo/store'
 import { sailingById, type Sailing } from '../domain/sailings'
 import { personaById, type Persona } from '../domain/personas'
 import type { DemoState } from '../demo/state'
+import { useVisibleInterval } from './useVisibleInterval'
 
 /** The demo controls (clock, scenarios, network). */
 export function useDemo(): DemoState {
@@ -15,13 +16,10 @@ export function useSailing(): Sailing {
   return sailingById(useDemo().sailingId)!
 }
 
-/** The demo clock's "now", refreshed every second. */
+/** The demo clock's "now", refreshed every second while the page is visible. */
 export function useNow(): number {
   const [now, setNow] = useState(demoNow)
-  useEffect(() => {
-    const id = setInterval(() => setNow(demoNow()), 1000)
-    return () => clearInterval(id)
-  }, [])
+  useVisibleInterval(() => setNow(demoNow()), 1000)
   return now
 }
 

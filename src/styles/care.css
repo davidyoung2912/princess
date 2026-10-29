@@ -1,0 +1,32 @@
+/* Phase 11: simple view, seats, outbox, update banner and paper copies. */
+
+/* Simple view (ACS-01): one column, bigger targets, fewer extras. */
+:root[data-simple='on'] { --target-min: 3.5rem; }
+:root[data-simple='on'] .card-grid,
+:root[data-simple='on'] .slot-grid,
+:root[data-simple='on'] .event-list { grid-template-columns: 1fr; }
+:root[data-simple='on'] .simple-hide { display: none; }
+:root[data-simple='on'] .shell__main { line-height: 1.7; }
+:root[data-simple='on'] .card { padding: var(--space-5); }
+
+.event__seats { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
+.outbox { border-left: 4px solid var(--border); padding-left: var(--space-3); margin: var(--space-3) 0; }
+.update-banner { padding: 0 var(--space-4); }
+
+/* Paper copies (INC-01): plain black on white, with a large-print option. */
+.print-sheet { background: #fff; color: #000; border: 1px solid var(--border); border-radius: var(--radius-card); padding: var(--space-5); margin: var(--space-4) 0; }
+.print-sheet h2 { margin-top: 0; }
+.print-sheet--large { font-size: 1.5rem; line-height: 1.6; }
+.print-sheet--large .print-table th, .print-sheet--large .print-table td { padding: var(--space-3); }
+.print-table { width: 100%; border-collapse: collapse; }
+.print-table th, .print-table td { text-align: left; border-bottom: 1px solid #000; padding: var(--space-2); vertical-align: top; }
+.print-ticket { border: 2px solid #000; padding: var(--space-4); margin-bottom: var(--space-4); break-inside: avoid; }
+.print-dl > div { margin-bottom: var(--space-3); break-inside: avoid; }
+.print-dl dt { font-weight: 700; }
+.print-dl dd { margin: 0; }
+.print-sheet__foot { margin-top: var(--space-5); font-size: 0.8em; }
+
+@media print {
+  .print-sheet { border: 0; padding: 0; margin: 0; }
+  .page--print > :not(.print-sheet):not(.no-print) { display: none; }
+}

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import type { OrderGuest, OrderMenuView, OrderView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/pricing'
@@ -29,10 +30,7 @@ export function OrderScreen() {
   const menu = useMine(() => api.orders.menu(), [])
   const orders = useMine(() => api.orders.list(), [])
   // Orders move while the screen is open, so look again every so often (the demo clock may run fast).
-  useEffect(() => {
-    const id = setInterval(orders.retry, 10_000)
-    return () => clearInterval(id)
-  }, [orders.retry])
+  useVisibleInterval(orders.retry, 10_000)
   return (
     <div className="page">
       <h1>{t('route.order')}</h1>

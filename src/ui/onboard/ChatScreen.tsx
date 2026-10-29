@@ -4,7 +4,10 @@ import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type Channe
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { personaById } from '../../domain/personas'
 import { api } from '../../runtime'
+import type { OutboxItem } from '../../data/outbox'
 import { useAction } from '../../hooks/useAction'
+import { useVisibleInterval } from '../../hooks/useVisibleInterval'
+import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
@@ -44,7 +47,11 @@ function Party() {
   const list = useMine(() => api.messages.list())
   const receipts = useMine(() => api.messages.receipts())
   const [text, setText] = useState('')
-  const send = useAction(async () => { await api.messages.send(text); setText(''); list.retry() })
+  const outbox = useOutbox(me?.id ?? 'none', 'chat', (p) => api.messages.send(p.text), () => list.retry())
+  const send = useAction(async () => {
+    try { await sendWithin(api.messages.send(text)); setText(''); list.retry() }
+    catch (e) { if (worthRetrying(e)) { outbox.hold({ text }); setText('') } else throw e }
+  })
   const flip = useAction(async (on: boolean) => { await api.messages.setReceipts(on); receipts.retry(); list.retry() })
   const seen = useAction(async () => { await api.messages.markSeen(); list.retry() })
   useEffect(() => { if (list.status === 'ready' && receipts.data) void api.messages.markSeen() }, [list.status, list.data?.length, receipts.data])
@@ -74,6 +81,7 @@ function Party() {
         <Field label={t('chat.message')} value={text} maxLength={MAX_MESSAGE} onChange={(e) => setText(e.target.value)} autoComplete="off" />
         <ActionError error={send.error} />
         {send.error && <p className="muted">{t('chat.kept')}</p>}
+        <Waiting items={outbox.items} />
         <div className="button-row">
           <Button type="submit" disabled={send.busy || !text.trim()}>{t('chat.send')}</Button>
           <Button variant="tertiary" onClick={() => void seen.run()}>{t('chat.refresh')}</Button>
@@ -94,11 +102,7 @@ function Service() {
   const channels = useMine(() => api.service.channels())
   const thread = useMine(() => api.service.thread(channel), [channel])
   const waiting = thread.data?.state?.status === 'waiting'
-  useEffect(() => {
-    if (!waiting) return
-    const id = setInterval(() => thread.retry(), 10_000)
-    return () => clearInterval(id)
-  }, [waiting, thread])
+  useVisibleInterval(thread.retry, 10_000, waiting)
   const c = channelById(channel)!
   const minutes = channels.data?.find((x) => x.id === channel)?.minutes ?? c.minutes
   return (
@@ -127,7 +131,12 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
   const shipTime = useShipTime()
   const [text, setText] = useState('')
   const [phone, setPhone] = useState('')
-  const send = useAction(async () => { await api.service.send(th.channel, text); setText(''); reload() })
+  const me = usePersona()
+  const outbox = useOutbox(me?.id ?? 'none', 'service', (p) => api.service.send(p.channel as ChannelId, p.text), reload)
+  const send = useAction(async () => {
+    try { await sendWithin(api.service.send(th.channel, text)); setText(''); reload() }
+    catch (e) { if (worthRetrying(e)) { outbox.hold({ channel: th.channel, text }); setText('') } else throw e }
+  })
   const call = useAction(async () => { await api.service.escalate(th.channel, phone); setPhone(''); reload() })
   const st = th.state
   return (
@@ -155,6 +164,7 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
             <TextArea label={t('chat.message')} value={text} maxLength={MAX_MESSAGE} onChange={(e) => setText(e.target.value)} />
             <ActionError error={send.error} />
             {send.error && <p className="muted">{t('chat.kept')}</p>}
+            <Waiting items={outbox.items.filter((x) => x.payload.channel === th.channel)} />
             <Button type="submit" disabled={send.busy || !text.trim()}>{t('chat.send')}</Button>
           </form>
           {(st?.canEscalate || th.slow) && st?.status !== 'escalated' && (
@@ -171,5 +181,16 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
         </>
       )}
     </>
+  )
+}
+
+/** Messages that could not be sent yet. They go on their own when the link comes back, and stay here until then (NET-03). */
+function Waiting({ items }: { items: readonly OutboxItem[] }) {
+  if (items.length === 0) return null
+  return (
+    <div role="status" className="outbox">
+      <p><strong>{t('box.title', { count: items.length })}</strong> {t('box.body')}</p>
+      <ul className="plain-bullets">{items.map((x) => <li key={x.id}>{x.payload.text}</li>)}</ul>
+    </div>
   )
 }

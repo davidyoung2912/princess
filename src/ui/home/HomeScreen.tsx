@@ -7,6 +7,7 @@ import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t } from '../../i18n'
 import { Banner } from '../Banner'
+import { UpdatesBanner } from '../onboard/Updates'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ConceptNotice } from '../ConceptNotice'
@@ -38,11 +39,12 @@ export function HomeScreen() {
   return (
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
+      <UpdatesBanner />
       <AfterCruiseCard />
       {trip && <Journey trip={trip} />}
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
       <p><Link to="/home/concierge">{t('route.concierge')}</Link></p>
-      <Explore />
+      <div className="simple-hide"><Explore /></div>
       <ConceptNotice />
     </div>
   )

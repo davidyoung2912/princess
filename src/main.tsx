@@ -11,6 +11,7 @@ import App from './App.tsx'
 import { watchProblems } from './diagnostics/watch'
 import { ErrorBoundary } from './ErrorBoundary'
 import { startRuntime } from './runtime'
+import { markUpdateReady } from './runtime/update'
 import { applySettings, watchDeviceTheme } from './settings/store'
 
 watchProblems()
@@ -43,3 +44,10 @@ void Promise.all([fontsReady, startRuntime().catch(() => {})]).then(() => {
   )
   dismissBoot()
 })
+
+// Download new versions quietly and let the guest choose when to switch (PERF-02).
+if (import.meta.env.PROD) {
+  void import('virtual:pwa-register').then(({ registerSW }) => {
+    const update = registerSW({ onNeedRefresh: () => markUpdateReady(() => void update(true)) })
+  })
+}

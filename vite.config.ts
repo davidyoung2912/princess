@@ -35,7 +35,7 @@ export default defineConfig({
     react(),
     contentSecurityPolicy(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], navigateFallback: 'index.html' },
       manifest: {

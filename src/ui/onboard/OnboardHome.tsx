@@ -16,6 +16,8 @@ import { Saved } from './common'
 import { useShipTime } from './shipTime'
 import { PortCard } from './PortCard'
 import { DisembarkCard } from '../finish/HomeCards'
+import { HomeBudgetAlert } from './BudgetCard'
+import { UpdatesBanner } from './Updates'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
 export function OnboardHome({ today }: { today: OnboardToday }) {
@@ -34,6 +36,9 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
         {today.weather && <p>{t('onb.weather', { summary: today.weather.summary, high: today.weather.highF, low: today.weather.lowF })} {today.weather.sea}</p>}
         {today.sailAwayAt && <p>{t('onb.sailAway', { time: shipTime(today.sailAwayAt) })}</p>}
       </Card>
+
+      <UpdatesBanner />
+      <HomeBudgetAlert />
 
       {today.clockChange && (
         <Banner kind="warning" title={t('onb.clockChange', { count: Math.abs(today.clockChange.hours), time: shipTime(today.clockChange.at), dir: t(today.clockChange.hours < 0 ? 'onb.clockBack' : 'onb.clockForward') })}>

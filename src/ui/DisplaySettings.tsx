@@ -46,6 +46,20 @@ export function DisplaySettings() {
           <small>{t('settings.reduceMotionHint')}</small>
         </span>
       </label>
+      <label className="choice">
+        <input type="checkbox" checked={settings.simple} onChange={(e) => update({ simple: e.target.checked })} />
+        <span>
+          {t('settings.simple')}
+          <small>{t('settings.simpleHint')}</small>
+        </span>
+      </label>
+      <label className="choice">
+        <input type="checkbox" checked={settings.captions} onChange={(e) => update({ captions: e.target.checked })} />
+        <span>
+          {t('settings.captions')}
+          <small>{t('settings.captionsHint')}</small>
+        </span>
+      </label>
     </section>
   )
 }

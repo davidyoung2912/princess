@@ -21,6 +21,7 @@ import type { DemoState } from '../demo/state'
 import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
 import { createOnboardApi, createServiceApi } from './onboardMock'
+import { createCareApi } from './careMock'
 import { createExtrasApi } from './extrasMock'
 import { createFinishApi } from './finishMock'
 import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
@@ -204,6 +205,7 @@ export function createMockApi(ctx: MockContext): Api {
   const checkinApi = createCheckinApi({ store: ctx.store, channel: ctx.channel, actor, adult, now, save, log, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, documents: documentsView, terminalMoved: () => ctx.demo().scenarios.includes('terminalChange') })
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
+  const care = createCareApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reserveFromWaitlist: plan.reserveFromWaitlist })
   const extras = createExtrasApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const finish = createFinishApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, cardsOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: async () => [...(await extras.folioLines()), ...(await finish.folioLines())] })
@@ -266,6 +268,15 @@ export function createMockApi(ctx: MockContext): Api {
       sailings: () => run('bookings.sailings', () => SAILINGS.map((s) => ({ id: s.id, departure: s.departure }))),
     },
     ...checkinApi,
+    checkin: {
+      ...checkinApi.checkin,
+      save: async (input) => {
+        const view = await checkinApi.checkin.save(input)
+        if (input.step === 'document') await care.access('passport', 'saved')
+        if (input.step === 'photo') await care.access('photo', 'saved')
+        return view
+      },
+    },
     dining: {
       list: () => run('dining.list', () => mine('dining')),
       reschedule: (id, to) => run('dining.reschedule', async () => {
@@ -281,6 +292,11 @@ export function createMockApi(ctx: MockContext): Api {
     room: extras.room,
     laundry: extras.laundry,
     wifi: extras.wifi,
+    budget: care.budget,
+    shows: care.shows,
+    waits: care.waits,
+    updates: care.updates,
+    privacy: care.privacy,
     disembark: finish.disembark,
     cases: finish.cases,
     post: finish.post,
@@ -428,7 +444,7 @@ export function createMockApi(ctx: MockContext): Api {
       }),
     },
     documents: {
-      get: () => run('documents.get', documentsView),
+      get: () => run('documents.get', async () => { await care.access('documents', 'viewed'); return documentsView() }),
       set: (guest, doc, held) => run('documents.set', async () => {
         adult()
         if (!inParty(guest)) throw new ApiError('forbidden', 'Not on your booking')
@@ -441,6 +457,7 @@ export function createMockApi(ctx: MockContext): Api {
           current[doc] = DOCS[doc].hasExpiry && expires ? { expires } : {}
         }
         await save('documents', actor().booker, guest, current)
+        await care.access('documents', 'saved')
         await log('documents', `${personaById(guest)!.firstName}: ${DOCS[doc].name}${held === null ? ' removed' : ''}`)
         return documentsView()
       }),

@@ -11,8 +11,8 @@ export function SettingsScreen() {
       <DisplaySettings />
       <DataSettings />
       <DiagnosticsSettings />
-      <p><Link to="/me/demo">{t('demo.link')}</Link></p>
-      <p><Link to="/kit">{t('settings.kitLink')}</Link></p>
+      <p className="simple-hide"><Link to="/me/demo">{t('demo.link')}</Link></p>
+      <p className="simple-hide"><Link to="/kit">{t('settings.kitLink')}</Link></p>
     </div>
   )
 }
