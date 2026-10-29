@@ -1,6 +1,9 @@
-import { loadSettings, saveSettings, settingsToAttributes, type Settings } from './settings'
+import { DEFAULT_SETTINGS, defaultsFor, loadSettings, saveSettings, settingsKeyFor, settingsToAttributes, type Settings } from './settings'
+import type { Persona } from '../domain/personas'
 
 let current: Settings = loadSettings()
+let key = settingsKeyFor(null)
+let defaults: Settings = DEFAULT_SETTINGS
 const listeners = new Set<() => void>()
 let darkQuery: MediaQueryList | null = null
 
@@ -23,7 +26,23 @@ export function applySettings(root: HTMLElement = document.documentElement): voi
 /** Changes some settings, saves them, applies them and tells subscribers. */
 export function updateSettings(patch: Partial<Settings>): void {
   current = { ...current, ...patch }
-  saveSettings(current)
+  saveSettings(current, undefined, key)
+  applySettings()
+  listeners.forEach((l) => l())
+}
+
+/** Switches to a person's own settings (their saved ones, or their defaults), applies them and tells subscribers. Null is signed out. */
+export function switchSettingsOwner(persona: Pick<Persona, 'id' | 'defaultTextSize'> | null): void {
+  key = settingsKeyFor(persona?.id ?? null)
+  defaults = defaultsFor(persona)
+  current = loadSettings(undefined, defaults, key)
+  applySettings()
+  listeners.forEach((l) => l())
+}
+
+/** Puts the current person's settings back to what they started with (used by "Wipe everything"). */
+export function resetSettingsToDefaults(): void {
+  current = { ...defaults }
   applySettings()
   listeners.forEach((l) => l())
 }

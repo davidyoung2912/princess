@@ -9,6 +9,7 @@ import '@fontsource/lora/latin-700.css'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './ErrorBoundary'
+import { startRuntime } from './runtime'
 import { applySettings, watchDeviceTheme } from './settings/store'
 
 applySettings()
@@ -30,7 +31,7 @@ const fontsReady = Promise.race([
   new Promise((done) => setTimeout(done, 1500)),
 ]).catch(() => {})
 
-void fontsReady.then(() => {
+void Promise.all([fontsReady, startRuntime().catch(() => {})]).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>

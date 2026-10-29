@@ -14,8 +14,14 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false }
 
-/** Small preferences live in localStorage; structured data goes to IndexedDB (later steps). */
+/** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
+
+/** Each signed-in person keeps their own settings, so Gerald's Large text does not follow Maria. */
+export const settingsKeyFor = (personaId: string | null): string => (personaId ? `${SETTINGS_KEY}:${personaId}` : SETTINGS_KEY)
+
+/** What a persona starts with before they change anything: their own default text size (Gerald on Large). */
+export const defaultsFor = (persona: { defaultTextSize: TextSize } | null): Settings => ({ ...DEFAULT_SETTINGS, textSize: persona?.defaultTextSize ?? DEFAULT_SETTINGS.textSize })
 
 type ReadStore = Pick<Storage, 'getItem'>
 type WriteStore = Pick<Storage, 'setItem'>
@@ -32,9 +38,9 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
 }
 
 /** The saved settings, or the defaults when nothing usable is stored or storage is unavailable. */
-export function loadSettings(storage: ReadStore | null = safeStorage(), defaults: Settings = DEFAULT_SETTINGS): Settings {
+export function loadSettings(storage: ReadStore | null = safeStorage(), defaults: Settings = DEFAULT_SETTINGS, key: string = SETTINGS_KEY): Settings {
   try {
-    const text = storage?.getItem(SETTINGS_KEY)
+    const text = storage?.getItem(key)
     return normalizeSettings(text ? JSON.parse(text) : null, defaults)
   } catch {
     return { ...defaults }
@@ -42,9 +48,9 @@ export function loadSettings(storage: ReadStore | null = safeStorage(), defaults
 }
 
 /** Saves settings; false when storage refuses (private mode, quota). */
-export function saveSettings(settings: Settings, storage: WriteStore | null = safeStorage()): boolean {
+export function saveSettings(settings: Settings, storage: WriteStore | null = safeStorage(), key: string = SETTINGS_KEY): boolean {
   try {
-    storage?.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    storage?.setItem(key, JSON.stringify(settings))
     return !!storage
   } catch {
     return false

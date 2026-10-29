@@ -30,7 +30,7 @@ describe('navigation model', () => {
   it('finds a route and the screens below a screen', () => {
     expect(routeForPath('/me/bill')?.titleKey).toBe('route.bill')
     expect(routeForPath('/nowhere')).toBeNull()
-    expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/bill', '/me/packages', '/me/settings'])
+    expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/bill', '/me/packages', '/me/settings', '/me/demo'])
     expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass'])
     expect(childLinks('/plan').map((r) => r.path)).toEqual(['/plan/reservations', '/plan/excursions'])
     expect(childLinks('/chat')).toEqual([])

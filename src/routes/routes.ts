@@ -32,5 +32,6 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/bill', titleKey: 'route.bill', tab: 'me', phase: 6 },
   { path: '/me/packages', titleKey: 'route.packages', tab: 'me', phase: 4 },
   { path: '/me/settings', titleKey: 'route.settings', tab: 'me', phase: 0 },
+  { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
 ]

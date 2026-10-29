@@ -1,10 +1,8 @@
+import { GUEST_SERVICES_NUMBER } from '../domain/contacts'
 import { t } from '../i18n'
 import { Dialog } from './Dialog'
 import { LinkButton } from './Button'
 import { Phone, Siren } from './icons'
-
-/** Sample numbers for the concept; the mock ship data supplies the real ones in Phase 6. 555-01xx numbers are reserved for fiction. */
-const GUEST_SERVICES_NUMBER = '555-0100'
 
 /**
  * The help sheet reachable from the top bar on every screen (requirement SUP-08). Everything in it works offline:

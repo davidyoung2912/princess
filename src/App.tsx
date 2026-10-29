@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
+import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
 import { Placeholder } from './ui/Placeholder'
@@ -10,6 +11,7 @@ import { ROUTES } from './routes/routes'
 /** Screens that already exist; every other route shows its placeholder until the phase that builds it. */
 const SCREENS: Record<string, ComponentType> = {
   '/me/settings': SettingsScreen,
+  '/me/demo': DemoScreen,
   '/kit': Kit,
 }
 
