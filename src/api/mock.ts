@@ -21,6 +21,7 @@ import type { DemoState } from '../demo/state'
 import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
 import { createOnboardApi, createServiceApi } from './onboardMock'
+import { createExtrasApi } from './extrasMock'
 import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
 import { checkinWindow } from '../domain/checkin'
 import { ApiError } from './errors'
@@ -202,7 +203,8 @@ export function createMockApi(ctx: MockContext): Api {
   const checkinApi = createCheckinApi({ store: ctx.store, channel: ctx.channel, actor, adult, now, save, log, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, documents: documentsView, terminalMoved: () => ctx.demo().scenarios.includes('terminalChange') })
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
-  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
+  const extras = createExtrasApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
+  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: extras.folioLines })
   const service = createServiceApi({
     store: ctx.store, who, actor, adult, now, save, newId, run, demo: ctx.demo,
     callback: async (phone) => { await put('ticket', { kind: 'callback', detail: phone }) },
@@ -271,13 +273,12 @@ export function createMockApi(ctx: MockContext): Api {
       }),
     },
     queues: { list: () => run('queues.list', () => mine('queue')) },
-    orders: {
-      list: () => run('orders.list', () => mine('order')),
-      place: (items) => run('orders.place', () => {
-        if (items.length === 0) throw new ApiError('invalid', 'An order needs at least one item')
-        return save('order', who(), newId('order'), { items, status: 'received' })
-      }),
-    },
+    orders: extras.orders,
+    family: extras.family,
+    health: extras.health,
+    room: extras.room,
+    laundry: extras.laundry,
+    wifi: extras.wifi,
     messages: {
       list: () => run('messages.list', async () => {
         const ids = [who(), ...visibleTo(who()).map((p) => p.id)]
@@ -306,14 +307,7 @@ export function createMockApi(ctx: MockContext): Api {
         if (current.receipts) await save('chatPrefs', who(), 'me', { ...current, seenAt: now() })
       }),
     },
-    photos: {
-      list: () => run('photos.list', () => mine('photo')),
-      download: (id) => run('photos.download', async () => {
-        const photo = await ctx.store.get('photo', who(), id)
-        if (!photo) throw new ApiError('notFound')
-        return toItem(photo)
-      }),
-    },
+    photos: extras.photos,
     folio: {
       entitlements: () => run('folio.entitlements', () => plan.entitlementsOf(who())),
     },

@@ -34,6 +34,12 @@ export function dateIn(epoch: number, zone: string): string {
   return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`
 }
 
+/** The wall-clock time ("14:05") in `zone`. */
+export function timeIn(epoch: number, zone: string): string {
+  const p = parts(epoch, zone)
+  return `${String(p.hour % 24).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`
+}
+
 /** A calendar date moved by whole days. */
 export function addDays(date: string, days: number): string {
   const [y, m, d] = date.split('-').map(Number)

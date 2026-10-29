@@ -115,13 +115,13 @@ describe('mock API behaviour', () => {
     expect((await s.api.checkin.status()).state).toBe('open')
     expect(await failure(s.api.checkin.submit())).toMatchObject({ code: 'conflict', message: 'incomplete' })
   })
-  it('keeps each person’s orders to themselves', async () => {
-    const s = setup()
-    await s.api.orders.place(['tea'])
+  it('keeps each booking’s orders to itself', async () => {
+    const s = setup({ clock: clockAt(zonedToEpoch('2027-03-23', '12:00', 'America/New_York'), NOW, 0) })
+    await s.api.orders.place({ kind: 'delivery', lines: [{ itemId: 'fries', qty: 1, extras: [], guest: 'gerald' }], location: { kind: 'cabin' }, tip: 0 })
     expect(await s.api.orders.list()).toHaveLength(1)
     s.as('maria')
     expect(await s.api.orders.list()).toHaveLength(0)
-    expect(await failure(s.api.orders.place([]))).toMatchObject({ code: 'invalid', retryable: false })
+    expect(await failure(s.api.orders.place({ kind: 'delivery', lines: [], location: { kind: 'cabin' }, tip: 0 }))).toMatchObject({ code: 'invalid', retryable: false })
   })
   it('shares chat between the two families only', async () => {
     const s = setup({}, 'daniel')
@@ -149,7 +149,7 @@ describe('mock API behaviour', () => {
   })
   it('exposes the same groups the contract promises', () => {
     const { api } = setup()
-    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'onboard', 'service', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help']
+    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'onboard', 'service', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help', 'family', 'health', 'room', 'laundry', 'wifi']
     expect(Object.keys(api).sort()).toEqual([...groups].sort())
   })
   it('classes errors', () => {

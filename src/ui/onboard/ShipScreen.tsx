@@ -29,6 +29,7 @@ export function ShipScreen() {
         <div className="button-row">
           <LinkButton to="/ship/emergency">{t('route.emergency')}</LinkButton>
           <LinkButton to="/ship/muster" variant="secondary">{t('route.muster')}</LinkButton>
+          <LinkButton to="/ship/help-now" variant="danger">{t('route.helpNow')}</LinkButton>
         </div>
         {aboard && (
           <Saved copy={muster}>
@@ -46,6 +47,11 @@ export function ShipScreen() {
           <li><Link to="/plan/reservations">{t('route.reservations')}</Link></li>
           <li><Link to="/ship/order">{t('route.order')}</Link></li>
           <li><Link to="/ship/family">{t('route.family')}</Link></li>
+          <li><Link to="/ship/health">{t('route.health')}</Link></li>
+          <li><Link to="/ship/room">{t('route.room')}</Link></li>
+          <li><Link to="/ship/photos">{t('route.photos')}</Link></li>
+          <li><Link to="/ship/laundry">{t('route.laundry')}</Link></li>
+          <li><Link to="/ship/wifi">{t('route.wifi')}</Link></li>
         </ul>
       </nav>
     </div>

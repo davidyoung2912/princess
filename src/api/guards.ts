@@ -1,4 +1,4 @@
-import type { BoardingView, DiningView, EmbarkView, FolioView, MusterView, OnboardToday, PortDayView, ProgramView, ReceiptView } from './types'
+import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, ProgramView, ReceiptView, RoomView } from './types'
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
@@ -72,4 +72,24 @@ export function asMusterView(raw: unknown): MusterView | null {
   const o = obj(raw)
   if (!o || typeof o.station !== 'string' || typeof o.at !== 'number' || !Array.isArray(o.guests)) return null
   return raw as MusterView
+}
+
+export function asFamilyView(raw: unknown): FamilyView | null {
+  const o = obj(raw)
+  return o && Array.isArray(o.kids) && Array.isArray(o.adults) && obj(o.reunion) && Array.isArray(o.log) ? (raw as FamilyView) : null
+}
+
+export function asHealthView(raw: unknown): HealthView | null {
+  const o = obj(raw)
+  return o && typeof o.day === 'string' && typeof o.open === 'boolean' && Array.isArray(o.reports) && Array.isArray(o.requests) && Array.isArray(o.guests) ? (raw as HealthView) : null
+}
+
+export function asRoomView(raw: unknown): RoomView | null {
+  const o = obj(raw)
+  return o && typeof o.number === 'string' && typeof o.steward === 'string' && Array.isArray(o.amenities) && obj(o.housekeeping) && obj(o.devices) ? (raw as RoomView) : null
+}
+
+export function asPhotosView(raw: unknown): PhotosView | null {
+  const o = obj(raw)
+  return o && Array.isArray(o.photos) && Array.isArray(o.favourites) && Array.isArray(o.owned) && Array.isArray(o.receipts) && Array.isArray(o.people) ? (raw as PhotosView) : null
 }

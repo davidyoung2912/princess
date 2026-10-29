@@ -4,7 +4,7 @@ import { assignmentFor } from '../domain/boarding'
 import { directoryVenue } from '../domain/menus'
 import { emergencyCard, DRILL } from '../domain/safety'
 import { MUSTER_STATIONS, placeById } from '../domain/deck'
-import { buildFolio, folioTotals } from '../domain/folio'
+import { buildFolio, folioTotals, type FolioLine } from '../domain/folio'
 import { eventById, eventsOn } from '../domain/program'
 import { excursionById, backBy, dayOf } from '../domain/excursions'
 import { partyOf, personaById, type PersonaId } from '../domain/personas'
@@ -25,9 +25,11 @@ export interface OnboardDeps extends Pick<BookingDeps, 'store' | 'channel' | 'wh
   sailing: () => Sailing
   demo: () => DemoState
   reads: PlanReads
+  /** Charges put on the account by ordering, photos, laundry and Wi-Fi. */
+  extraLines?: () => Promise<FolioLine[]>
 }
 
-const ABOARD_STAGES = ['embarkation', 'seaDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell'] as const
+export const ABOARD_STAGES = ['embarkation', 'seaDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell'] as const
 const HOME = 'America/New_York'
 
 /** The cruise day, 1 to 8, for a moment in ship time; 0 before the first day and 9 after the last. */
@@ -193,8 +195,10 @@ export function createOnboardApi(d: OnboardDeps): OnboardApi {
         }),
       )
       const dining = (await d.reads.tables()).map((t) => ({ id: t.id, day: t.day, time: t.time, venue: directoryVenue(t.venueId)?.name ?? t.venueId, guests: t.guests as string[], charge: t.charge, covered: t.covered as string[] }))
-      const lines = throughDay === 0 ? [] : buildFolio({ sailing: s, throughDay, guests, dining, welcomeCredit: guests[0]?.entitlements.perks.includes('welcomeGift') ?? false }).filter((l) => l.at <= now)
-      return { lines, totals: folioTotals(lines), guests: party().map((g) => ({ id: g.id, name: g.name })), throughDay } satisfies FolioView
+      const lines = throughDay === 0 ? [] : buildFolio({ sailing: s, throughDay, guests, dining, welcomeCredit: guests[0]?.entitlements.perks.includes('welcomeGift') ?? false })
+      const extra = d.extraLines ? await d.extraLines() : []
+      const all = [...lines, ...extra].filter((l) => l.at <= now).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))
+      return { lines: all, totals: folioTotals(all), guests: party().map((g) => ({ id: g.id, name: g.name })), throughDay } satisfies FolioView
     }),
   }
   return api

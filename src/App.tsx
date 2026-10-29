@@ -44,6 +44,13 @@ import { ReservationScreen, ReservationsScreen } from './ui/onboard/Reservations
 import { EmergencyScreen, MusterScreen } from './ui/onboard/SafetyScreens'
 import { ShipScreen as ShipTabScreen } from './ui/onboard/ShipScreen'
 import { VenueScreen, VenuesScreen } from './ui/onboard/VenuesScreen'
+import { OrderScreen } from './ui/extras/OrderScreen'
+import { FamilyScreen } from './ui/extras/FamilyScreen'
+import { HealthScreen, HelpNowScreen } from './ui/extras/HealthScreens'
+import { RoomScreen } from './ui/extras/RoomScreen'
+import { PhotosScreen } from './ui/extras/PhotosScreen'
+import { LaundryScreen } from './ui/extras/LaundryScreen'
+import { WifiScreen } from './ui/extras/WifiScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -85,6 +92,14 @@ const SCREENS: Record<string, ComponentType> = {
   '/ship/muster': MusterScreen,
   '/ship/emergency': EmergencyScreen,
   '/ship/port': PortDayScreen,
+  '/ship/order': OrderScreen,
+  '/ship/family': FamilyScreen,
+  '/ship/health': HealthScreen,
+  '/ship/help-now': HelpNowScreen,
+  '/ship/room': RoomScreen,
+  '/ship/photos': PhotosScreen,
+  '/ship/laundry': LaundryScreen,
+  '/ship/wifi': WifiScreen,
   '/chat': ChatScreen,
   '/me/bill': BillScreen,
   '/me/packages': PackagesScreen,

@@ -26,6 +26,13 @@ import type { CheckinProgress, DocumentKind, GuestCheckin, GuestProgress, PhotoM
 import type { AfternoonId, CarryOnId, CompanionId, LuggageStatus, Terminal, Traffic } from '../domain/boarding'
 import type { AboardState, PortDay, TenderView } from '../domain/allaboard'
 import type { ChannelId, ChatState } from '../domain/chat'
+import type { Choice, Location, Morning, OrderInput, OrderKind, PricedLine, Stage } from '../domain/orders'
+import type { Authorisation, ClubId, KidStatus, ReunionPlan, Seen } from '../domain/family'
+import type { DayType, RequestKind, Symptom } from '../domain/health'
+import type { Amenity, Devices, Housekeeping } from '../domain/room'
+import type { OptionId, Photo, PhotoOption, PhotographerSlot } from '../domain/photos'
+import type { LaundryService, LaundryStage, PickupOption } from '../domain/laundry'
+import type { StoredDevice, WifiPlan } from '../domain/wifi'
 import type { DatedEvent } from '../domain/program'
 import type { EmergencyCard } from '../domain/safety'
 import type { FolioLine, FolioTotals } from '../domain/folio'
@@ -654,7 +661,7 @@ export interface Api {
   }
   dining: { list(): Promise<Item[]>; reschedule(id: string, to: string): Promise<Item> }
   queues: { list(): Promise<Item[]> }
-  orders: { list(): Promise<Item[]>; place(items: string[]): Promise<Item> }
+  orders: OrdersApi
   messages: {
     list(): Promise<Message[]>
     send(text: string): Promise<Message>
@@ -664,7 +671,12 @@ export interface Api {
     /** Marks the chat as read now (only recorded when receipts are on). */
     markSeen(): Promise<void>
   }
-  photos: { list(): Promise<Item[]>; download(id: string): Promise<Item> }
+  photos: PhotosApi
+  family: FamilyApi
+  health: HealthApi
+  room: RoomApi
+  laundry: LaundryApi
+  wifi: WifiApi
   folio: { entitlements(): Promise<{ entitlements: Entitlements; balances: Record<BalanceKey, Balance> }> }
   requests: { list(): Promise<Item[]>; create(kind: string, note: string): Promise<Item> }
   ports: { today(): Promise<PortToday> }
@@ -881,4 +893,216 @@ export interface ServiceApi {
   send(channel: ChannelId, text: string): Promise<ServiceThread>
   /** Asks for a phone call instead of waiting; rejects `invalid` for a bad number. */
   escalate(channel: ChannelId, phone: string): Promise<ServiceThread>
+}
+
+// ---- Phase 7: onboard extended ----
+
+export interface OrderGuest { id: PersonaId; name: string; age: number; drinkCapUsd: number }
+
+export interface OrderMenuView {
+  /** Ordering is open from embarkation to the last evening. */
+  open: boolean
+  /** Items the kitchen has run out of before checkout. */
+  outOfStock: string[]
+  guests: OrderGuest[]
+  cabin: string
+  deck: number
+  mornings: Morning[]
+  /** A guest on the booking is isolating for illness: meals and delivery are free. */
+  isolating: boolean
+  canOrder: boolean
+}
+
+export interface OrderView {
+  id: string
+  kind: OrderKind
+  placedAt: number
+  deliverAt: number | null
+  location: Location
+  tip: number
+  stage: Stage
+  etaAt: number | null
+  lines: PricedLine[]
+  fee: number
+  service: number
+  total: number
+  covered: number
+  /** Indices of lines that ran out and wait for a choice. */
+  unavailable: number[]
+  /** What is owed back after a cancellation. */
+  refund: number
+  canCancel: boolean
+  canMove: boolean
+  /** Times the guest asked Guest Services about this order. */
+  contacted: number
+  free: boolean
+}
+
+export interface OrdersApi {
+  menu(): Promise<OrderMenuView>
+  list(): Promise<OrderView[]>
+  /** Rejects `invalid` (a problem code), `conflict` (`unavailable`, `closed`, `duplicate`), or `forbidden` for a supervised account. */
+  place(input: OrderInput): Promise<OrderView>
+  /** Chooses, for each line that ran out, to swap it or remove it. */
+  resolve(id: string, choices: Record<number, Choice>): Promise<OrderView>
+  /** Rejects `conflict` (`tooLate`) once the kitchen has started. */
+  cancel(id: string): Promise<OrderView>
+  moveTo(id: string, location: Location): Promise<OrderView>
+  contact(id: string): Promise<OrderView>
+}
+
+export interface FamilyKid {
+  id: PersonaId
+  name: string
+  age: number
+  club: { id: ClubId; name: string; open: boolean; opens: string; closes: string } | null
+  inClub: { clubId: ClubId; at: number } | null
+  seen: Seen
+  status: KidStatus
+  zones: string[]
+  auth: Authorisation
+  /** This account may check the child out (a listed adult, or the child where allowed). */
+  canCheckOut: boolean
+}
+
+export interface FamilyLogEntry { id: string; at: number; text: string }
+
+export interface FamilyView {
+  kids: FamilyKid[]
+  adults: { id: PersonaId; name: string }[]
+  reunion: ReunionPlan
+  log: FamilyLogEntry[]
+  canEdit: boolean
+}
+
+export interface FamilyApi {
+  view(): Promise<FamilyView>
+  setZones(child: PersonaId, zones: string[]): Promise<FamilyView>
+  setAuth(child: PersonaId, auth: Authorisation): Promise<FamilyView>
+  /** Rejects `invalid` (`tooYoung`, `tooOld`, `alreadyIn`, `closed`) or `forbidden`. */
+  checkIn(child: PersonaId): Promise<FamilyView>
+  checkOut(child: PersonaId): Promise<FamilyView>
+  setReunion(plan: ReunionPlan): Promise<FamilyView>
+}
+
+export interface HealthReport { id: string; at: number; guests: string[]; symptoms: Symptom[]; startedHoursAgo: number }
+export interface HealthRequest { id: string; at: number; kind: RequestKind; note: string }
+
+export interface HealthView {
+  day: DayType
+  /** Medical Center open at this moment, and the next opening if not. */
+  open: boolean
+  nextOpen: string | null
+  /** An illness notice for the ship (the illness scenario). */
+  notice: boolean
+  isolating: boolean
+  reports: HealthReport[]
+  requests: HealthRequest[]
+  guests: { id: PersonaId; name: string }[]
+}
+
+export interface HealthApi {
+  view(): Promise<HealthView>
+  /** Rejects `invalid` with a problem code, `forbidden` for someone outside the booking. */
+  report(input: { guests: PersonaId[]; symptoms: Symptom[]; startedHoursAgo: number }): Promise<HealthView>
+  request(kind: RequestKind, note: string): Promise<HealthView>
+}
+
+export interface RoomView {
+  number: string
+  deck: number
+  steward: string
+  amenities: Amenity[]
+  muster: string
+  hasView: boolean
+  housekeeping: Housekeeping
+  devices: Devices
+  /** Do Not Disturb has been on long enough that the steward will check. */
+  checkDue: boolean
+  canEdit: boolean
+}
+
+export interface RoomApi {
+  view(): Promise<RoomView>
+  setHousekeeping(patch: Partial<Housekeeping>): Promise<RoomView>
+  setDevices(patch: Partial<Devices>): Promise<RoomView>
+}
+
+export interface PhotoReceipt {
+  id: string
+  at: number
+  option: OptionId | 'included'
+  photoIds: string[]
+  paid: number
+  saved: number
+  verified: boolean
+  until: number
+}
+
+export interface PhotosView {
+  photos: Photo[]
+  favourites: string[]
+  owned: string[]
+  receipts: PhotoReceipt[]
+  includedLeft: number
+  schedule: PhotographerSlot[]
+  people: { id: PersonaId; name: string }[]
+  throughDay: number
+}
+
+export interface PhotoQuote { included: number; paid: number; options: PhotoOption[]; cheapest: OptionId }
+
+export interface PhotosApi {
+  list(): Promise<PhotosView>
+  toggleFavourite(photoId: string): Promise<string[]>
+  quote(photoIds: string[]): Promise<PhotoQuote>
+  /** Rejects `invalid` (`empty`, `unknownPhoto`, `alreadyOwned`) or `forbidden`. */
+  buy(photoIds: string[], option: OptionId): Promise<PhotoReceipt>
+  /** Saves the next batch; keeps what earlier attempts saved. Rejects `network` once in the photo-failure scenario. */
+  download(receiptId: string): Promise<PhotoReceipt>
+}
+
+export interface LaundryRequest {
+  id: string
+  service: LaundryService
+  qty: number
+  pickupAt: number
+  returnAt: number
+  stage: LaundryStage
+  total: number
+  free: number
+  note: string
+}
+
+export interface LaundryView {
+  requests: LaundryRequest[]
+  pickups: Record<LaundryService, PickupOption[]>
+  freeBagLeft: boolean
+  canRequest: boolean
+}
+
+export interface LaundryApi {
+  view(): Promise<LaundryView>
+  request(input: { service: LaundryService; qty: number; pickupAt: number; note: string }): Promise<LaundryView>
+  cancel(id: string): Promise<LaundryView>
+}
+
+export interface WifiDeviceView extends StoredDevice {
+  usedMb: number
+  capMb: number | null
+  expiresAt: number
+  expired: boolean
+}
+
+export interface WifiView {
+  devices: WifiDeviceView[]
+  includedLeft: number
+  canBuy: boolean
+}
+
+export interface WifiApi {
+  view(): Promise<WifiView>
+  add(input: { name: string; plan: WifiPlan; days: number }): Promise<WifiView>
+  upgrade(id: string, plan: WifiPlan): Promise<WifiView>
+  remove(id: string): Promise<WifiView>
 }
