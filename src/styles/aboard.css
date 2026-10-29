@@ -1,0 +1,20 @@
+/* Phase 12: on-board services, games, TV, money and data-light mode. */
+.ab-controls { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.chat-msg__photo { display: block; max-width: min(100%, 20rem); height: auto; border-radius: var(--radius-card); margin: var(--space-2) 0; }
+.chat-safety { margin-top: var(--space-1); }
+
+.bingo { border-collapse: separate; border-spacing: var(--space-1); margin: var(--space-3) 0; }
+.bingo th { text-align: center; padding: var(--space-1); }
+.bingo td { padding: 0; text-align: center; }
+.bingo__cell, .bingo__free { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min, 2.75rem); min-height: var(--target-min, 2.75rem); border: 2px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: inherit; font: inherit; }
+.bingo__cell[aria-pressed='true'] { background: var(--accent, #1d4ed8); color: #fff; border-color: transparent; text-decoration: line-through; }
+.bingo__dot { position: absolute; top: 0; right: 0.2rem; font-size: 0.6rem; }
+.bingo__free { font-size: 0.75rem; border-style: dashed; }
+
+.tv-guide, .rates { width: 100%; border-collapse: collapse; margin: var(--space-3) 0; }
+.tv-guide th, .tv-guide td, .rates th, .rates td { text-align: left; padding: var(--space-2); border-bottom: 1px solid var(--border); }
+.rates caption { text-align: left; padding: var(--space-2) 0; }
+
+/* Data-light mode (NET-04): no animation, no decorative backgrounds, photos wait to be asked for. */
+:root[data-light='on'] *, :root[data-light='on'] *::before, :root[data-light='on'] *::after { animation: none !important; transition: none !important; background-image: none !important; }
+:root[data-light='on'] .chat-msg__photo { max-width: 12rem; }

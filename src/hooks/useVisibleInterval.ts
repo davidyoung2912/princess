@@ -7,6 +7,8 @@ export function useVisibleInterval(fn: () => void, ms: number, active = true): v
   const latest = useLatest(fn)
   useEffect(() => {
     if (!active) return
-    return startVisibleInterval(() => latest(), ms)
+    // Data-light mode asks for fresh data a quarter as often (NET-04).
+    const light = typeof document !== 'undefined' && document.documentElement.getAttribute('data-light') === 'on'
+    return startVisibleInterval(() => latest(), light ? ms * 4 : ms)
   }, [latest, ms, active])
 }

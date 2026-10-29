@@ -22,6 +22,8 @@ import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
 import { createOnboardApi, createServiceApi } from './onboardMock'
 import { createCareApi } from './careMock'
+import { createAboardApi } from './aboardMock'
+import { childSafeProblem } from '../domain/services'
 import { createExtrasApi } from './extrasMock'
 import { createFinishApi } from './finishMock'
 import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
@@ -206,9 +208,10 @@ export function createMockApi(ctx: MockContext): Api {
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
   const care = createCareApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reserveFromWaitlist: plan.reserveFromWaitlist })
+  const aboardMock = createAboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, cardsOf, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const extras = createExtrasApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const finish = createFinishApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, cardsOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
-  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: async () => [...(await extras.folioLines()), ...(await finish.folioLines())] })
+  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: async () => [...(await extras.folioLines()), ...(await finish.folioLines()), ...(await aboardMock.folioLines())] })
   const service = createServiceApi({
     store: ctx.store, who, actor, adult, now, save, newId, run, demo: ctx.demo,
     callback: async (phone) => { await put('ticket', { kind: 'callback', detail: phone }) },
@@ -297,6 +300,7 @@ export function createMockApi(ctx: MockContext): Api {
     waits: care.waits,
     updates: care.updates,
     privacy: care.privacy,
+    aboard: aboardMock.api,
     disembark: finish.disembark,
     cases: finish.cases,
     post: finish.post,
@@ -305,15 +309,18 @@ export function createMockApi(ctx: MockContext): Api {
         const ids = [who(), ...visibleTo(who()).map((p) => p.id)]
         const lists = await Promise.all(ids.map((id) => ctx.store.list('message', id)))
         const prefs = new Map(await Promise.all(ids.map(async (id): Promise<[PersonaId, ChatPrefs]> => [id, chatPrefsOf((await ctx.store.get('chatPrefs', id, 'me'))?.data)])))
-        return lists.flat().sort((a, b) => a.updatedAt - b.updatedAt).map((r): Message => {
+        const hidden = new Set(await aboardMock.blocked())
+        return lists.flat().filter((r) => !hidden.has(r.owner as PersonaId)).sort((a, b) => a.updatedAt - b.updatedAt).map((r): Message => {
           const from = r.owner as PersonaId
-          const base: Message = { id: r.id, from, text: (r.data as { text: string }).text, at: r.updatedAt }
+          const photo = (r.data as { photo?: unknown }).photo
+          const base: Message = { id: r.id, from, text: (r.data as { text: string }).text, at: r.updatedAt, ...(typeof photo === 'string' ? { photo } : {}) }
           if (!prefs.get(from)?.receipts) return base
           return { ...base, seenBy: ids.filter((id) => id !== from && prefs.get(id)?.receipts && (prefs.get(id)?.seenAt ?? 0) >= r.updatedAt) }
         })
       }),
       send: (text) => run('messages.send', async () => {
         if (!text.trim()) throw new ApiError('invalid', 'A message needs some text')
+        if (childSafeProblem(text, actor().age)) throw new ApiError('invalid', 'contactInfo')
         const item = await save('message', who(), newId('msg'), { text: text.trim() })
         return { id: item.id, from: who(), text: text.trim(), at: item.at }
       }),

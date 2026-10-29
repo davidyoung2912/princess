@@ -1,3 +1,4 @@
+import type { AboardApi } from './aboardTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
 import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/personas'
@@ -84,6 +85,8 @@ export interface Message {
   from: PersonaId
   text: string
   at: number
+  /** A photo sent in the chat, as a data URL. */
+  photo?: string
   /** People who have read it, when both they and the sender have read receipts on. */
   seenBy?: PersonaId[]
 }
@@ -684,6 +687,7 @@ export interface Api {
   waits: WaitsApi
   updates: UpdatesApi
   privacy: PrivacyApi
+  aboard: AboardApi
   disembark: DisembarkApi
   cases: CasesApi
   post: PostApi

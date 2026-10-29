@@ -19,6 +19,7 @@ import { Field, TextArea } from '../Field'
 import { Phone } from '../icons'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
+import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 
 type Mode = 'party' | 'service'
 
@@ -47,6 +48,7 @@ function Party() {
   const list = useMine(() => api.messages.list())
   const receipts = useMine(() => api.messages.receipts())
   const [text, setText] = useState('')
+  const [blockedVersion, setBlockedVersion] = useState(0)
   const outbox = useOutbox(me?.id ?? 'none', 'chat', (p) => api.messages.send(p.text), () => list.retry())
   const send = useAction(async () => {
     try { await sendWithin(api.messages.send(text)); setText(''); list.retry() }
@@ -68,7 +70,9 @@ function Party() {
                 {messages.map((m) => (
                   <li key={m.id} className={m.from === me?.id ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
                     <p className="chat-msg__meta"><strong>{name(m)}</strong> <span className="muted">{shipTime(m.at)}</span></p>
-                    <p>{m.text}</p>
+                    {m.text && <p>{m.text}</p>}
+                    {m.photo && <ChatPhoto src={m.photo} name={name(m)} />}
+                    {m.from !== me?.id && <MessageSafety messageId={m.id} from={m.from} onBlocked={() => { list.retry(); setBlockedVersion(blockedVersion + 1) }} />}
                     {m.seenBy && m.seenBy.length > 0 && <p className="muted">{t('chat.seenBy', { names: m.seenBy.map((id) => personaById(id)?.firstName ?? id).join(', ') })}</p>}
                   </li>
                 ))}
@@ -91,9 +95,19 @@ function Party() {
         <Chip pressed={receipts.data === true} onToggle={() => void flip.run(receipts.data !== true)}>{t('chat.receipts')}</Chip>
       </div>
       <p className="muted">{t('chat.receiptsBody')}</p>
+      <PhotoSender onSent={() => list.retry()} />
+      <BlockedList version={blockedVersion} reload={list.retry} />
       <p className="muted">{t('chat.photos')}</p>
     </section>
   )
+}
+
+/** A photo in the chat. In data-light mode it waits to be asked for, so nothing is fetched on its own (NET-04, PERF-05). */
+function ChatPhoto({ src, name }: { src: string; name: string }) {
+  const light = typeof document !== 'undefined' && document.documentElement.getAttribute('data-light') === 'on'
+  const [shown, setShown] = useState(!light)
+  if (!shown) return <Button variant="secondary" onClick={() => setShown(true)}>{t('chat.showPhoto', { name })}</Button>
+  return <img className="chat-msg__photo" src={src} alt={t('chat.photoAlt', { name })} loading="lazy" decoding="async" />
 }
 
 function Service() {

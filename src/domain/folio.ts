@@ -5,9 +5,9 @@ import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 
 /** The onboard account, or folio (ACC-01): itemised charges, credits, what a package covered, tips, with a running total. Amounts are authored concept values. */
-export type FolioCategory = 'dining' | 'drinks' | 'internet' | 'spa' | 'shops' | 'photos' | 'laundry' | 'gratuities' | 'tips' | 'credit'
+export type FolioCategory = 'dining' | 'drinks' | 'internet' | 'spa' | 'shops' | 'photos' | 'laundry' | 'excursions' | 'gratuities' | 'tips' | 'credit'
 
-export const FOLIO_CATEGORIES: readonly FolioCategory[] = ['dining', 'drinks', 'internet', 'spa', 'shops', 'photos', 'laundry', 'gratuities', 'tips', 'credit']
+export const FOLIO_CATEGORIES: readonly FolioCategory[] = ['dining', 'drinks', 'internet', 'spa', 'shops', 'photos', 'laundry', 'excursions', 'gratuities', 'tips', 'credit']
 
 export type CoveredBy = 'package' | 'fare' | 'credit'
 

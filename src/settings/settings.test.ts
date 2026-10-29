@@ -9,12 +9,12 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false }
+    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
   it('falls back field by field on bad data', () => {
-    expect(normalizeSettings({ textSize: 'huge', theme: 7, contrast: null, reduceMotion: 'yes', simple: 1, captions: 'no' })).toEqual(DEFAULT_SETTINGS)
+    expect(normalizeSettings({ textSize: 'huge', theme: 7, contrast: null, reduceMotion: 'yes', simple: 1, captions: 'no', dataLight: 'yes' })).toEqual(DEFAULT_SETTINGS)
     expect(normalizeSettings({ textSize: 'large' })).toEqual({ ...DEFAULT_SETTINGS, textSize: 'large' })
     expect(normalizeSettings(null)).toEqual(DEFAULT_SETTINGS)
     expect(normalizeSettings('text')).toEqual(DEFAULT_SETTINGS)
@@ -50,8 +50,8 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false }, false)).toEqual({
-      'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-captions': 'off',
+    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true }, false)).toEqual({
+      'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-captions': 'off', 'data-light': 'on',
     })
   })
 })

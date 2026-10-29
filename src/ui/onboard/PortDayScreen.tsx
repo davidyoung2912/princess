@@ -13,6 +13,7 @@ import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { QrCode } from '../checkin/QrCode'
+import { ContactsAshore, LastMinute, Readiness } from '../aboard/PortExtras'
 import { BackLink, Saved } from './common'
 import { duration, useShipTime } from './shipTime'
 import { PortCard } from './PortCard'
@@ -46,6 +47,9 @@ function Body({ v }: { v: PortDayView }) {
       <PortCard view={v.day} />
       {v.tender && <Tender v={v} tender={v.tender} />}
       <Tours tours={v.tours} port={v.day.port} />
+      <LastMinute />
+      <Readiness tender={v.day.tender} />
+      <ContactsAshore port={v.day.port} />
       <p><Link to={`/home/ports/${v.day.port}`}>{t('port.guide', { port: port.name })}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </>
   )

@@ -14,9 +14,11 @@ export interface Settings {
   simple: boolean
   /** Show captions or a transcript wherever sound or video has one (ACS-01). */
   captions: boolean
+  /** Save data: nothing loads until asked for, no animation, and refreshes come less often (NET-04). */
+  dataLight: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true }
+export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -40,6 +42,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     reduceMotion: typeof o.reduceMotion === 'boolean' ? o.reduceMotion : defaults.reduceMotion,
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
+    dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
   }
 }
 
@@ -72,7 +75,7 @@ function safeStorage(): Storage | null {
 }
 
 /** The attributes set on `<html>` for a set of settings; "auto" resolves against the device's colour preference. */
-export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-captions', string> {
+export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-captions' | 'data-light', string> {
   return {
     'data-theme': s.theme === 'auto' ? (deviceIsDark ? 'dark' : 'light') : s.theme,
     'data-contrast': s.contrast,
@@ -80,5 +83,6 @@ export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record
     'data-text-size': s.textSize,
     'data-simple': s.simple ? 'on' : 'off',
     'data-captions': s.captions ? 'on' : 'off',
+    'data-light': s.dataLight ? 'on' : 'off',
   }
 }

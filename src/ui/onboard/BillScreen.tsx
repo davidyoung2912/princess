@@ -1,3 +1,4 @@
+import { InCurrency } from '../aboard/MoneyScreen'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
@@ -49,6 +50,7 @@ function Folio({ f }: { f: FolioView }) {
           <div><dt>{t('bill.credits')}</dt><dd>{formatMoney(total.credits)}</dd></div>
           <div><dt>{t('bill.covered')}</dt><dd>{formatMoney(total.covered)}</dd></div>
         </dl>
+        <InCurrency cents={total.balance} />
         <p className="muted">{f.throughDay === 0 ? t('bill.notYet') : t('bill.through', { day: f.throughDay })}</p>
         <p className="muted">{t('bill.how')} <Link to="/me/payments">{t('route.payments')}</Link></p>
       </Card>

@@ -60,6 +60,13 @@ export function DisplaySettings() {
           <small>{t('settings.captionsHint')}</small>
         </span>
       </label>
+      <label className="choice">
+        <input type="checkbox" checked={settings.dataLight} onChange={(e) => update({ dataLight: e.target.checked })} />
+        <span>
+          {t('settings.dataLight')}
+          <small>{t('settings.dataLightHint')}</small>
+        </span>
+      </label>
     </section>
   )
 }
