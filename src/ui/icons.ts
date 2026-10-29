@@ -22,4 +22,9 @@ export {
   Ban,
   Phone,
   Siren,
+  Bookmark,
+  BookmarkCheck,
+  Share2 as Share,
+  Anchor,
+  Waves,
 } from 'lucide-react'

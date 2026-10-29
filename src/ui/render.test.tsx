@@ -55,3 +55,29 @@ describe('every screen renders inside the shell', () => {
     expect(render('/kit').match(/aria-current="page"/g) ?? []).toHaveLength(0)
   })
 })
+
+describe('discover screens', () => {
+  it('reach every discover screen from Home in one or two taps', () => {
+    const home = render('/')
+    for (const href of ['/home/sailings', '/home/cruise', '/home/ship', '/home/saved', '/home/ports/cozumel', '/home/ports/belize', '/home/ports/roatan']) expect(home).toContain(`href="${href}"`)
+    expect(decode(render('/home/sailings'))).toContain(t('discover.loading'))
+  })
+
+  it('shows a real sailing, port and ship, each with an h1 and a way to save', () => {
+    const sailing = decode(render('/home/sailings/sun-2027-03-21'))
+    expect(sailing).toContain('<h1>Mar 21 to Mar 28, 2027</h1>')
+    expect(sailing).toContain('Day 4')
+    for (const path of ['/home/ports/belize', '/home/ship']) expect(decode(render(path))).toContain('aria-pressed')
+  })
+
+  it('says plainly when a sailing or port does not exist, with a way on', () => {
+    expect(decode(render('/home/ports/mars'))).toContain(t('discover.notFound.port'))
+    expect(decode(render('/home/sailings/never'))).toContain(t('discover.notFound.sailing'))
+  })
+
+  it('puts the tender warning and access note on the Belize page before the rest', () => {
+    const html = decode(render('/home/ports/belize'))
+    expect(html).toContain(t('discover.tender'))
+    expect(html.indexOf(t('discover.gettingAshore'))).toBeLessThan(html.indexOf(t('discover.thingsToDo')))
+  })
+})

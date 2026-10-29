@@ -31,7 +31,7 @@ describe('navigation model', () => {
     expect(routeForPath('/me/bill')?.titleKey).toBe('route.bill')
     expect(routeForPath('/nowhere')).toBeNull()
     expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/bill', '/me/packages', '/me/settings', '/me/demo'])
-    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass'])
+    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass', '/home/cruise', '/home/sailings', '/home/ship', '/home/saved'])
     expect(childLinks('/plan').map((r) => r.path)).toEqual(['/plan/reservations', '/plan/excursions'])
     expect(childLinks('/chat')).toEqual([])
   })

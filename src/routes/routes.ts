@@ -19,6 +19,12 @@ export interface RouteDef {
 export const ROUTES: readonly RouteDef[] = [
   { path: '/', titleKey: 'route.home', tab: 'home', phase: 5, notice: true },
   { path: '/home/boarding-pass', titleKey: 'route.boardingPass', tab: 'home', phase: 5 },
+  { path: '/home/cruise', titleKey: 'route.cruise', tab: 'home', phase: 1 },
+  { path: '/home/sailings', titleKey: 'route.sailings', tab: 'home', phase: 1 },
+  { path: '/home/sailings/:id', titleKey: 'route.sailing', tab: 'home', phase: 1 },
+  { path: '/home/ports/:id', titleKey: 'route.port', tab: 'home', phase: 1 },
+  { path: '/home/ship', titleKey: 'route.sunPrincess', tab: 'home', phase: 1 },
+  { path: '/home/saved', titleKey: 'route.saved', tab: 'home', phase: 1 },
   { path: '/plan', titleKey: 'route.plan', tab: 'plan', phase: 6 },
   { path: '/plan/reservations', titleKey: 'route.reservations', tab: 'plan', phase: 6 },
   { path: '/plan/reservations/:id', titleKey: 'route.reservation', tab: 'plan', phase: 6 },

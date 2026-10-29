@@ -1,6 +1,8 @@
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../domain/contacts'
 import { balances, computeEntitlements, sourceOf } from '../domain/entitlements'
 import { partyOf, personaById, visibleTo, type PersonaId } from '../domain/personas'
+import { isSavable, toggleKey } from '../domain/favourites'
+import { fromPrice, quote } from '../domain/pricing'
 import { portAt, SAILINGS, sailingById } from '../domain/sailings'
 import { activeFaults, targetMatches } from '../domain/scenarios'
 import { addDays, zonedToEpoch } from '../domain/timezones'
@@ -72,6 +74,12 @@ export function createMockApi(ctx: MockContext): Api {
   const mine = async (kind: string) => (await ctx.store.list(kind, who())).map(toItem)
   let counter = 0
   const newId = (prefix: string) => `${prefix}-${realNow().toString(36)}-${(counter++).toString(36)}`
+
+  const favourites = async (): Promise<string[]> => {
+    const record = await ctx.store.get('favourites', who(), 'list')
+    const keys = (record?.data as { keys?: unknown } | undefined)?.keys
+    return Array.isArray(keys) ? keys.filter((k): k is string => typeof k === 'string') : []
+  }
 
   const checkinOpensAt = () => {
     const s = sailingById(ctx.demo().sailingId)!
@@ -154,6 +162,21 @@ export function createMockApi(ctx: MockContext): Api {
     },
     ports: {
       today: () => run('ports.today', () => portAt(sailingById(ctx.demo().sailingId)!, now())),
+    },
+    discover: {
+      offers: () => run('discover.offers', () => SAILINGS.map((s) => ({ id: s.id, departure: s.departure, holiday: !!s.holiday, from: fromPrice(s.id)! }))),
+      quote: (sailingId, category, guests) => run('discover.quote', () => {
+        const q = quote(sailingId, category, guests)
+        if (!q) throw new ApiError('invalid', 'Unknown sailing, room type or number of guests')
+        return q
+      }),
+      favourites: () => run('discover.favourites', favourites),
+      toggleFavourite: (key) => run('discover.toggleFavourite', async () => {
+        if (!isSavable(key)) throw new ApiError('invalid', 'Not something that can be saved')
+        const next = toggleKey(await favourites(), key)
+        await save('favourites', who(), 'list', { keys: next })
+        return next
+      }),
     },
     help: {
       contacts: () => run('help.contacts', () => ({ guestServices: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER })),

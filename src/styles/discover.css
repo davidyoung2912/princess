@@ -1,0 +1,51 @@
+/* Discover screens: the cruise, ports, ship, sailing dates and saved items. Colours come only from themes.css tokens. */
+
+.eyebrow { margin: 0 0 var(--space-2); color: var(--text-muted); font-weight: 600; font-size: var(--fs-caption); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.price { margin-bottom: var(--space-4); }
+.price__from { margin: 0 0 var(--space-1); font-size: var(--fs-lead); }
+.price__amount { font-family: var(--font-display); font-size: var(--fs-headline); }
+
+.card-grid { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+.card-grid > li > .card { height: 100%; margin-bottom: 0; }
+.card-grid > li.card { margin-bottom: 0; }
+.card-grid h3 { margin-bottom: var(--space-2); }
+.card__title { font-size: var(--fs-lead); margin-bottom: var(--space-2); }
+@media (min-width: 600px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.facts { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin: 0 0 var(--space-5); }
+.facts > div { padding: var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); }
+.facts dt { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 600; }
+.facts dd { margin: 0; font-weight: 600; }
+
+.tag { display: inline-flex; align-items: center; gap: var(--space-1); margin-right: var(--space-2); padding: 0 var(--space-3); min-height: 1.75rem; border: 2px solid var(--border-strong); border-radius: var(--radius-pill); font-size: var(--fs-caption); font-weight: 700; }
+.tag--alert { border-color: var(--warning); color: var(--warning); }
+.tag--good { border-color: var(--success); color: var(--success); }
+
+.itinerary { list-style: none; margin: 0 0 var(--space-5); padding: 0; }
+.itinerary__day { padding: var(--space-3) 0 var(--space-3) var(--space-4); border-left: 4px solid var(--primary); border-bottom: var(--border-width) solid var(--border); }
+.itinerary__head { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; }
+.itinerary__num { font-weight: 700; }
+.itinerary__place { margin: 0 0 var(--space-1); font-family: var(--font-display); font-size: var(--fs-lead); font-weight: 600; }
+.itinerary__day p { margin-bottom: var(--space-1); }
+
+.route-map { margin: 0 0 var(--space-5); display: grid; gap: var(--space-3); }
+@media (min-width: 600px) { .route-map { grid-template-columns: minmax(0, 24rem) 1fr; align-items: center; } }
+.route-map svg { width: 100%; height: auto; background: var(--surface-info); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); }
+.route-map__line { stroke: var(--primary); stroke-width: 3; stroke-dasharray: 8 6; stroke-linejoin: round; }
+.route-map__dot { fill: var(--primary); }
+.route-map__num { fill: var(--on-primary); font-weight: 700; font-size: 14px; font-family: var(--font-body); }
+.route-map__legend { margin: 0; padding-left: var(--space-5); }
+
+.price-table { width: 100%; margin: 0 0 var(--space-4); border-collapse: collapse; }
+.price-table caption { text-align: left; font-weight: 700; padding-bottom: var(--space-2); }
+.price-table th, .price-table td { padding: var(--space-2) var(--space-2) var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); text-align: left; vertical-align: top; font-weight: 500; }
+.price-table thead th { font-weight: 700; border-bottom-color: var(--border-strong); }
+.price-table small { display: block; font-weight: 400; font-size: var(--fs-caption); }
+.price-table .num { text-align: right; padding-right: 0; white-space: nowrap; }
+.price-table tfoot th, .price-table tfoot td { font-weight: 700; }
+.price-table tfoot tr:first-child th, .price-table tfoot tr:first-child td { border-top: 2px solid var(--border-strong); font-size: var(--fs-lead); }
+
+.field select { padding: 0 var(--space-3); background: var(--bg); border: 2px solid var(--border-strong); border-radius: var(--radius-card); }
+@media (min-width: 600px) { .field select { max-width: 24rem; } }

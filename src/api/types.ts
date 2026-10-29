@@ -1,6 +1,8 @@
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
 import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/personas'
 import type { PortId } from '../domain/sailings'
+import type { FromPrice, Quote } from '../domain/pricing'
+import type { CategoryId } from '../domain/ship'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -52,6 +54,13 @@ export interface PortToday {
   day: number | null
 }
 
+export interface SailingOffer {
+  id: string
+  departure: string
+  holiday: boolean
+  from: FromPrice
+}
+
 export interface Api {
   auth: { me(): Promise<Identity> }
   bookings: { get(): Promise<Booking>; sailings(): Promise<Sailing[]> }
@@ -64,5 +73,15 @@ export interface Api {
   folio: { entitlements(): Promise<{ entitlements: Entitlements; balances: Record<BalanceKey, Balance> }> }
   requests: { list(): Promise<Item[]>; create(kind: string, note: string): Promise<Item> }
   ports: { today(): Promise<PortToday> }
+  discover: {
+    /** Every sailing with its "from" price. */
+    offers(): Promise<SailingOffer[]>
+    /** An all-in estimate; rejects with `invalid` for an unknown sailing, room type or party size. */
+    quote(sailingId: string, category: CategoryId, guests: number): Promise<Quote>
+    /** Saved items (`kind:id`), in the order saved, for the signed-in person. */
+    favourites(): Promise<string[]>
+    /** Saves an item, or removes it if saved; returns the new list. */
+    toggleFavourite(key: string): Promise<string[]>
+  }
   help: { contacts(): Promise<{ guestServices: string; emergency: string }> }
 }

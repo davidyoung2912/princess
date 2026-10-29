@@ -424,3 +424,16 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 - **Demo controls screen:** Me → Settings → Demo controls (`/me/demo`): switch person, three clocks, sailing and stage jump, step and speed, phone zone, scenario switches with "Show it", offline switch, response time and random failures.
 - **Choices made:** demo controls and sign-in are not in the five tabs; the app signs in as Gerald on first run; data sync between tabs is by messages, with the database as the source of truth.
 - **Verified:** `npm run test` (131 tests), `npm run lint`, `npx tsc -b`, `npm run build`.
+
+## 12. Phase 1 progress notes
+
+### Phase 1 done (2026-10-29): Discover the cruise and ship
+
+- **Scope (requirements §22.6):** DIS-01 landing, DIS-02 seasonality, DIS-03 ship (one ship plus an "other Princess ships" teaser), DIS-04 sailing dates (no search, one cruise), DIS-05 itinerary detail, DIS-08 save and share (no compare list), DIS-11 price transparency. Quiz, alerts, reviews and the AI concierge stay in later phases.
+- **Screens (all under the Home tab):** `/` landing (no account needed); `/home/cruise` route sketch, day-by-day plan with dock or tender, best time to go; `/home/sailings` eight dates with "from" prices and a "Lowest fare" tag; `/home/sailings/:id` dated plan and an estimate by room type and party size; `/home/ports/:id` port guide with "Getting ashore" (access, tender warning) first, things to do and sample excursions; `/home/ship` accessibility first, facts, highlights, stateroom types, other ships; `/home/saved`.
+- **Content (`src/domain`):** `ship.ts` (profile facts, six illustrative room types), `ports.ts` (port guides, sample excursions), `cruise.ts` (cruise facts, date and time wording, route sketch positions), `pricing.ts`, `favourites.ts`. Prices and codes are authored mock values; the lowest interior fare is the profile's $1,539.
+- **Pricing (DIS-11):** money is whole cents; every estimate is a list of lines (fare, third and fourth guest at 75%, solo supplement at 2x, taxes and fees, gratuities) that add up to the total, shown as a table with the per-person figure. Suites pay the higher gratuity. Unknown sailings, room types and party sizes are refused.
+- **API:** new `discover` group: `offers`, `quote`, `favourites`, `toggleFavourite`. Prices work without signing in; saving needs a person (the app signs in as Gerald on first run). Saved lists are per person and sync between tabs.
+- **No dead ends:** a failed price load says what happened, offers Try again and points to Help. A missing sailing or port says so and offers the way on.
+- **Choices made:** the route sketch uses numbered stops with the legend in words (map text would not follow the text-size setting); Save uses `aria-pressed` with a fixed label; share uses the device share sheet where there is one, else copies the link, else shows it; there is no Book button until phase 3; the screens under Home before booking are replaced by the booked Home in phase 5.
+- **Verified:** `npm run test` (162 tests), `npm run lint`, `npx tsc -b`, `npm run build`.
