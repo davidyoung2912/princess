@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { CircleAlert } from './icons'
 
 interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
@@ -41,6 +41,23 @@ export function ErrorSummary({ title, errors }: ErrorSummaryProps) {
     <div className="error-summary" role="alert">
       <h2>{title}</h2>
       <ul>{errors.map((e) => <li key={e}>{e}</li>)}</ul>
+    </div>
+  )
+}
+
+interface TextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'> {
+  label: string
+  hint?: string
+}
+
+/** A multi-line field with a visible label and optional hint. */
+export function TextArea({ label, hint, ...rest }: TextAreaProps) {
+  const id = useId()
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      {hint && <p id={`${id}-hint`} className="field__hint">{hint}</p>}
+      <textarea id={id} className="field__input" rows={3} aria-describedby={hint ? `${id}-hint` : undefined} {...rest} />
     </div>
   )
 }

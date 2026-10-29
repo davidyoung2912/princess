@@ -2,6 +2,7 @@ import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { AppRoutes } from '../App'
+import { FAQS } from '../domain/help'
 import { t } from '../i18n'
 import { tabForPath, TABS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
@@ -79,5 +80,32 @@ describe('discover screens', () => {
     const html = decode(render('/home/ports/belize'))
     expect(html).toContain(t('discover.tender'))
     expect(html.indexOf(t('discover.gettingAshore'))).toBeLessThan(html.indexOf(t('discover.thingsToDo')))
+  })
+})
+
+describe('account screens', () => {
+  it('reach every account screen from Me in one tap', () => {
+    const me = render('/me')
+    for (const href of ['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/packages', '/me/settings']) expect(me).toContain(`href="${href}"`)
+    expect(decode(me)).toContain(t('app.conceptNotice'))
+  })
+
+  it('lists every help centre answer and a way to reach a person', () => {
+    const html = decode(render('/me/help'))
+    for (const f of FAQS) expect(html).toContain(f.question)
+    expect(html).toContain('href="/me/contact"')
+    expect(html).toContain('type="search"')
+  })
+
+  it('says plainly when a person is not on the booking, with a way on', () => {
+    expect(decode(render('/me/profile/nobody'))).toContain(t('profile.notFound'))
+  })
+
+  it('shows a loading note, not an empty page, while a person’s data loads', () => {
+    for (const path of ['/me/trips', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/profile', '/me/contact']) expect(decode(render(path)), path).toContain('role="status"')
+  })
+
+  it('keeps one h1 on each account screen', () => {
+    for (const route of ROUTES.filter((r) => r.path.startsWith('/me/') && r.phase === 2)) expect(render(route.path.replace(':id', 'sample')).match(/<h1/g), route.path).toHaveLength(1)
   })
 })

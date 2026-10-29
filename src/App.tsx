@@ -7,6 +7,16 @@ import { SailingScreen } from './ui/discover/SailingScreen'
 import { SailingsScreen } from './ui/discover/SailingsScreen'
 import { SavedScreen } from './ui/discover/SavedScreen'
 import { ShipScreen } from './ui/discover/ShipScreen'
+import { ContactScreen } from './ui/account/ContactScreen'
+import { DocumentsScreen } from './ui/account/DocumentsScreen'
+import { HelpCentreScreen } from './ui/account/HelpCentreScreen'
+import { HelperScreen } from './ui/account/HelperScreen'
+import { MeScreen } from './ui/account/MeScreen'
+import { NotificationsScreen } from './ui/account/NotificationsScreen'
+import { PaymentsScreen } from './ui/account/PaymentsScreen'
+import { ProfileScreen } from './ui/account/ProfileScreen'
+import { TripScreen } from './ui/account/TripScreen'
+import { TripsScreen } from './ui/account/TripsScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -24,6 +34,17 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/ports/:id': PortScreen,
   '/home/ship': ShipScreen,
   '/home/saved': SavedScreen,
+  '/me': MeScreen,
+  '/me/trips': TripsScreen,
+  '/me/trips/:id': TripScreen,
+  '/me/profile': ProfileScreen,
+  '/me/profile/:id': ProfileScreen,
+  '/me/documents': DocumentsScreen,
+  '/me/payments': PaymentsScreen,
+  '/me/notifications': NotificationsScreen,
+  '/me/helper': HelperScreen,
+  '/me/help': HelpCentreScreen,
+  '/me/contact': ContactScreen,
   '/me/settings': SettingsScreen,
   '/me/demo': DemoScreen,
   '/kit': Kit,
