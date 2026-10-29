@@ -1,6 +1,6 @@
 # Princess Cruises Guest Web App — Functional Requirements (Draft v0.1)
 
-Status: **Draft v0.6 — scope decisions recorded (§22); single vessel = Sun Princess, single cruise = 7-night Western Caribbean with Mexico from Fort Lauderdale (§22.6; see `sun-princess-ship-profile.md`). No code has been written.**
+Status: **Draft v0.7 — scope decisions recorded (§22); single vessel = Sun Princess, single cruise = 7-night Western Caribbean with Mexico from Fort Lauderdale (§22.6; see `sun-princess-ship-profile.md`). No code has been written.**
 Date: 2026-10-28
 Target: mobile-first, responsive, installable PWA (React + Vite + TypeScript, see `CLAUDE.md`).
 
@@ -728,6 +728,15 @@ No concern with this approach for a concept/demo; the items above are the main d
 | Imagery | **Use real Princess web imagery** and gathered content for the concept. Handling notes: (1) the repo is on GitHub, so avoid committing bulk copies of copyrighted images; prefer referencing the source URLs, or keep downloaded assets in a git-ignored folder with a manifest recording each image's source URL; (2) keep the "unofficial concept, not affiliated with Princess Cruises" notice visible; (3) alt text for every image (A11Y); (4) offline/PWA caching of remote images needs care (cross-origin opaque responses), so key images used offline are best bundled locally and kept out of git. |
 
 **Still open (minor, can be decided during Phase 0):** primary persona's default text size, the exact set of demo sailing dates, and the final design language (to be proposed for your review before any component code).
+
+### 22.5a Round-four decisions
+
+| Question | Decision |
+| --- | --- |
+| Cruise choice and dates | **Confirmed.** 7-night Western Caribbean with Mexico, reference sailing 21–28 Mar 2027; mock dates and port order/times are acceptable. |
+| API key | **Confirmed.** The provided key is stored in a git-ignored `.env.local` as `VITE_ANTHROPIC_API_KEY` and read at runtime via `import.meta.env`. For deployment, the same variable is set in Vercel's environment settings. The key is not in source control or in these docs. Note: any `VITE_` variable is bundled into the browser build, so the key is visible to site visitors once deployed; the earlier advice to rotate it, and eventually to move calls behind a server-side function, still stands. A `.env.example` (no key) will be added in Phase 0. |
+| Phase order | **Natural journey order**: Discover, Book, Pre-book, Check-in, Onboard, Disembark/Post-cruise, then AI and hardening (§21 stands as written). |
+| Ship data gaps | **Mock it so it feels real.** Specialty-restaurant prices, stateroom categories and codes, the show lineup, the deck plan and daily programmes are authored fixtures; they need to be plausible and internally consistent, not factual. They are not marked illustrative in the UI beyond the concept disclaimer. |
 
 ### 22.6 Single-cruise scope
 
