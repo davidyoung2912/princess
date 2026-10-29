@@ -27,4 +27,6 @@ export {
   Share2 as Share,
   Anchor,
   Waves,
+  Download,
+  Printer,
 } from 'lucide-react'

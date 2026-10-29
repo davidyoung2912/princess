@@ -7,7 +7,7 @@ import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Card } from '../Card'
-import { Button } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { Bookmark, BookmarkCheck } from '../icons'
 import { FromPriceBlock, PriceState } from './parts'
 
@@ -36,6 +36,7 @@ export function SailingsScreen() {
                     {offer && lowest !== null && offer.from.fare === lowest && <span className="tag tag--good">{t('discover.lowest')}</span>}
                   </p>
                   {offer && <FromPriceBlock price={offer.from} />}
+                  <LinkButton to={`/book?sailing=${s.id}`} variant="secondary">{t('discover.bookDate')}<span className="visually-hidden"> {sailingRange(s)}</span></LinkButton>
                   <Button variant="tertiary" aria-pressed={saved} disabled={!favourites.ready} onClick={() => void favourites.toggle(key)}>
                     <Icon aria-hidden="true" />
                     <span>{t('discover.save')}<span className="visually-hidden"> {sailingRange(s)}</span></span>

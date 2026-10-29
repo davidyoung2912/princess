@@ -23,7 +23,8 @@ export function Landing() {
         <p>{CRUISE.intro}</p>
         <PriceState state={offers}><FromPriceBlock price={lowest} /></PriceState>
         <div className="button-row">
-          <LinkButton to="/home/sailings">{t('discover.seeDates')}</LinkButton>
+          <LinkButton to="/book">{t('discover.book')}</LinkButton>
+          <LinkButton to="/home/sailings" variant="secondary">{t('discover.seeDates')}</LinkButton>
           <LinkButton to="/home/cruise" variant="secondary">{t('discover.seePlan')}</LinkButton>
         </div>
       </Card>

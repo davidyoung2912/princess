@@ -1,5 +1,9 @@
 import type { ComponentType } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
+import { BalanceScreen } from './ui/book/BalanceScreen'
+import { BookScreen } from './ui/book/BookScreen'
+import { ConfirmedScreen } from './ui/book/ConfirmedScreen'
+import { ResumeScreen } from './ui/book/ResumeScreen'
 import { CruiseScreen } from './ui/discover/CruiseScreen'
 import { Landing } from './ui/discover/Landing'
 import { PortScreen } from './ui/discover/PortScreen'
@@ -34,6 +38,11 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/ports/:id': PortScreen,
   '/home/ship': ShipScreen,
   '/home/saved': SavedScreen,
+  '/book': BookScreen,
+  '/book/:id': BookScreen,
+  '/book/confirmed/:id': ConfirmedScreen,
+  '/book/resume/:id': ResumeScreen,
+  '/book/pay/:id': BalanceScreen,
   '/me': MeScreen,
   '/me/trips': TripsScreen,
   '/me/trips/:id': TripScreen,

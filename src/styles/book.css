@@ -1,0 +1,24 @@
+/* Booking funnel (Phase 3). Colours come only from themes.css tokens. */
+
+.choice--top { align-items: flex-start; padding: var(--space-2) 0; }
+.choice--top input { margin-top: 0.15rem; }
+.choice--top small { margin-top: var(--space-1); }
+.choice--top small + small { margin-top: 0; }
+
+.fare-grid { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+.fare { margin-bottom: 0; border: 2px solid var(--border); }
+.fare--chosen { border-color: var(--primary); }
+.fare__total { margin: var(--space-2) 0; font-family: var(--font-display); font-size: var(--fs-lead); font-weight: 700; }
+.plain-bullets { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+.plain-bullets li { margin-bottom: var(--space-1); }
+@media (min-width: 760px) { .fare-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.summary { margin: 0 0 var(--space-4); }
+.summary__row { display: grid; gap: var(--space-1); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
+.summary dt { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 600; }
+.summary dd { margin: 0; }
+@media (min-width: 600px) { .summary__row { grid-template-columns: 10rem 1fr; gap: var(--space-4); } }
+
+.booking-number { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: var(--fs-headline); font-weight: 700; letter-spacing: 0.06em; }
+.book-nav { margin-top: var(--space-5); }
+.price-table tr[aria-current='true'] th, .price-table tr[aria-current='true'] td { background: var(--surface-info); }

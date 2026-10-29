@@ -50,7 +50,7 @@ export function TripsScreen() {
               <h2 id="past-h">{t('trips.past')}</h2>
               {data.past.length === 0 ? <p className="muted">{t('trips.nonePast')}</p> : (
                 <ul className="plain-list">
-                  {data.past.map((p) => <li key={p.id}><span>{p.title} <span className="muted">· {p.ship} · {formatDate(p.departure)} · {t('trips.nights', { count: p.nights })}</span></span></li>)}
+                  {data.past.map((p) => <li key={p.id}><span>{p.title} <span className="muted">· {p.ship} · {formatDate(p.departure)} · {t('trips.nights', { count: p.nights })}{p.cancelled ? ` · ${t('trips.cancelled')}` : ''}</span></span></li>)}
                 </ul>
               )}
             </section>

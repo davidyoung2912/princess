@@ -10,6 +10,7 @@ import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
+import { ManageBooking } from '../book/ManageBooking'
 import { Load } from './parts'
 import { countdown } from './format'
 import { NextStep, PaymentBadge } from './tripParts'
@@ -44,6 +45,7 @@ export function TripScreen() {
                   <p><PaymentBadge trip={x} /></p>
                   <p className="muted">{t('trip.total', { total: formatMoney(x.plan.total) })}{x.plan.balance > 0 && x.payment !== 'paid' ? ` · ${t('trip.balance', { balance: formatMoney(x.plan.balance), date: formatDate(x.plan.finalDue) })}` : ''}</p>
                   {x.kind === 'current' && <Link to="/me/payments">{t('route.payments')}</Link>}
+                  {x.kind === 'booked' && x.payment !== 'paid' && <Link to={`/book/pay/${x.number}`}>{t('trip.next.payDue.go')}</Link>}
                 </li>
                 <li className="card">
                   <h3 className="card__title">{t('trip.documents')}</h3>
@@ -52,7 +54,7 @@ export function TripScreen() {
                       <p>{x.documents.missing === 0 ? t('trip.documents.ready') : t('trip.documents.missing', { count: x.documents.missing })}</p>
                       <Link to="/me/documents">{t('route.documents')}</Link>
                     </>
-                  ) : <p className="muted">{t('trip.documents.agent', { agent: x.agent ?? '' })}</p>}
+                  ) : x.kind === 'booked' ? <p className="muted">{t('trip.documents.booked')}</p> : <p className="muted">{t('trip.documents.agent', { agent: x.agent ?? '' })}</p>}
                 </li>
                 <li className="card">
                   <h3 className="card__title">{t('trip.checkin')}</h3>
@@ -61,6 +63,7 @@ export function TripScreen() {
               </ul>
             </section>
 
+            {x.kind === 'booked' && <ManageBooking number={x.number} onChanged={trip.retry} />}
             <Card info><p>{t('trip.sailingNote')} <Link to={`/home/sailings/${x.sailingId}`}>{t('trip.sailingLink')}</Link></p></Card>
             <p><Link to="/me/trips">{t('route.trips')}</Link></p>
           </>

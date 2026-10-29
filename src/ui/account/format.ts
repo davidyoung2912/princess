@@ -13,3 +13,6 @@ export const NEXT_LINK: Record<NextActionId, string | null> = { payOverdue: '/me
 
 /** "Sat, 6 Mar 2027" for a moment in ship home time. */
 export const formatMoment = (epoch: number): string => formatDate(dateIn(epoch, 'America/New_York'))
+
+/** "Oct 30, 2026, 4:15 PM" for a moment in ship home time. */
+export const formatDateTime = (epoch: number): string => new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' }).format(epoch)

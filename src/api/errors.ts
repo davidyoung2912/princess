@@ -1,5 +1,5 @@
 /** Why a mock API call failed. Screens decide wording from the code; `retryable` says whether trying again can help. */
-export type ApiErrorCode = 'offline' | 'network' | 'timeout' | 'server' | 'notFound' | 'conflict' | 'forbidden' | 'invalid'
+export type ApiErrorCode = 'offline' | 'network' | 'timeout' | 'server' | 'notFound' | 'conflict' | 'forbidden' | 'invalid' | 'challenge' | 'declined'
 
 const RETRYABLE: ReadonlySet<ApiErrorCode> = new Set(['offline', 'network', 'timeout', 'server', 'notFound'])
 

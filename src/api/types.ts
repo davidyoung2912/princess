@@ -8,6 +8,10 @@ import type { Citizenship, DocId, Held, ReqResult } from '../domain/documents'
 import type { Notice, NotificationPrefs } from '../domain/notifications'
 import type { TicketStatus } from '../domain/help'
 import type { NextActionId, PastTrip, PaymentPlan, PaymentState } from '../domain/trip'
+import type { Draft, GuestDraft, LeadContact, DiningChoice, Occasion } from '../domain/booking'
+import type { Cabin } from '../domain/cabins'
+import type { BookingQuote, FareId, PayOption, PayPlan, PaymentPart, Promotion } from '../domain/fares'
+import type { Acceptance, CancelTerms, ChangeCheck } from '../domain/policy'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -77,7 +81,7 @@ export interface PartyMember {
 export interface TripView {
   /** Booking number. */
   number: string
-  kind: 'current' | 'linked'
+  kind: 'current' | 'linked' | 'booked'
   sailingId: string
   departure: string
   categoryName: string
@@ -151,6 +155,115 @@ export interface ProfileView {
   daysToDeparture: number
 }
 
+/** A sailing as the booking funnel shows it. */
+export interface BookableSailing extends SailingOffer {
+  open: boolean
+  daysToDeparture: number
+}
+
+export interface RoomOption {
+  id: CategoryId
+  /** Fare per person for two sharing, before taxes and extras. */
+  fare: number
+  capacity: number
+  /** The package the room type includes, if any. */
+  includes: FareId | null
+}
+
+export interface FareOption {
+  id: FareId
+  /** The all-in total with this fare. */
+  total: number
+  /** Compared with the lowest-priced fare for this room type. */
+  difference: number
+  included: boolean
+  perNight: number
+}
+
+export interface QuoteView {
+  quote: BookingQuote
+  promotions: Promotion[]
+  /** Until when the price is held, in ms since 1970. */
+  lockedUntil: number
+  pay: PayPlan
+  daysToDeparture: number
+}
+
+export interface PrefillView {
+  people: GuestDraft[]
+  contact: LeadContact
+}
+
+export interface ResumeSent {
+  via: 'email' | 'sms'
+  /** Where it was sent, with the middle hidden. */
+  to: string
+  /** The address of the link in the message. */
+  link: string
+  at: number
+}
+
+export interface BookingReceipt {
+  id: string
+  label: 'deposit' | 'full' | 'balance' | 'refund'
+  cents: number
+  at: number
+  /** One entry per way the payment was made. */
+  methods: string[]
+}
+
+export interface BookingView {
+  number: string
+  status: 'confirmed' | 'cancelled'
+  sailingId: string
+  departure: string
+  returnDate: string
+  category: CategoryId
+  categoryName: string
+  /** The stateroom number, or null when it is a guaranteed room to be assigned. */
+  cabin: string | null
+  fare: FareId
+  people: GuestDraft[]
+  contact: LeadContact
+  dining: DiningChoice
+  occasion: Occasion
+  total: number
+  paid: number
+  balance: number
+  finalDue: string
+  payment: PaymentState
+  receipts: BookingReceipt[]
+  accepted: Acceptance[]
+  /** Where the confirmation was sent. */
+  notified: { via: 'email' | 'sms'; to: string }[]
+  daysToDeparture: number
+  createdAt: number
+  /** What cancelling now would cost and refund. */
+  cancel: CancelTerms
+  canCancel: boolean
+  canChange: boolean
+  cancelled: { at: number; fee: number; refund: number } | null
+}
+
+export interface ChangePreview {
+  check: ChangeCheck
+  newTotal: number
+  /** New total minus the old; negative is a saving. */
+  difference: number
+  /** Whether a stateroom picked earlier is kept. A moved booking goes back to a guaranteed room. */
+  cabinKept: boolean
+}
+
+export interface BookInput {
+  draft: Draft
+  /** The total the guest saw; if the price has moved, the booking is refused so nothing is charged unseen. */
+  expectedTotal: number
+  option: PayOption
+  parts: PaymentPart[]
+  /** The bank's one-time code, when the bank asks. */
+  challenge?: string
+}
+
 export interface Api {
   auth: { me(): Promise<Identity> }
   bookings: { get(): Promise<Booking>; sailings(): Promise<Sailing[]> }
@@ -209,6 +322,33 @@ export interface Api {
     tickets(): Promise<Ticket[]>
     callback(phone: string): Promise<Ticket>
     email(message: string): Promise<Ticket>
+  }
+  booking: {
+    /** Every sailing, with whether it can still be booked. */
+    dates(): Promise<BookableSailing[]>
+    rooms(sailingId: string): Promise<RoomOption[]>
+    /** Sample staterooms for a room type with which are free; rejects `invalid` for an unknown sailing or room type. */
+    cabins(sailingId: string, category: CategoryId): Promise<Cabin[]>
+    fares(draft: Draft): Promise<FareOption[]>
+    quote(draft: Draft): Promise<QuoteView>
+    prefill(): Promise<PrefillView>
+    /** The saved draft, or null. */
+    draft(): Promise<Draft | null>
+    saveDraft(draft: Draft): Promise<Draft>
+    discardDraft(): Promise<void>
+    /** Sends a link back to the draft by email or text; rejects `invalid` for an unusable address or number, `notFound` when nothing is saved. */
+    sendResumeLink(via: 'email' | 'sms', to: string): Promise<ResumeSent>
+    /**
+     * Books and charges. Rejects `invalid` (incomplete answers or bad payment), `conflict` (message `priceChanged`,
+     * `cabinTaken` or `closed`), `challenge` (the bank's code is missing or wrong) or `declined`. Booking the same draft twice returns the first booking.
+     */
+    book(input: BookInput): Promise<BookingView>
+    get(number: string): Promise<BookingView>
+    /** Pays the rest of the balance; rejects `conflict` when nothing is owed. */
+    payBalance(number: string, parts: PaymentPart[], challenge?: string): Promise<BookingView>
+    changePreview(number: string, sailingId: string): Promise<ChangePreview>
+    change(number: string, sailingId: string): Promise<BookingView>
+    cancel(number: string): Promise<BookingView>
   }
   help: { contacts(): Promise<{ guestServices: string; emergency: string }> }
 }

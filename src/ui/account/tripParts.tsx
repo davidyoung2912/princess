@@ -20,10 +20,10 @@ const NEXT_KIND: Record<NextActionId, BannerKind> = { payOverdue: 'danger', docu
 
 /** The one next best action for a trip (MNG-02), as a message with a button to do it. */
 export function NextStep({ trip }: { trip: TripView }) {
-  const to = NEXT_LINK[trip.next]
+  const to = trip.kind === 'booked' && (trip.next === 'payDue' || trip.next === 'payOverdue') ? `/book/pay/${trip.number}` : trip.kind === 'booked' ? null : NEXT_LINK[trip.next]
   const params = { date: formatDate(trip.plan.finalDue), count: trip.documents?.missing ?? 0 }
   return (
-    <Banner kind={NEXT_KIND[trip.next]} title={t(`trip.next.${trip.next}` as StringKey, params)} action={to && trip.kind === 'current' ? <LinkButton to={to} variant="secondary">{t(`trip.next.${trip.next}.go` as StringKey)}</LinkButton> : undefined}>
+    <Banner kind={NEXT_KIND[trip.next]} title={t(`trip.next.${trip.next}` as StringKey, params)} action={to && trip.kind !== 'linked' ? <LinkButton to={to} variant="secondary">{t(`trip.next.${trip.next}.go` as StringKey)}</LinkButton> : undefined}>
       {trip.next === 'checkin' && <p>{t('trip.next.checkin.body')}</p>}
     </Banner>
   )

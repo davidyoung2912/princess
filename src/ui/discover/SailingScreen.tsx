@@ -37,6 +37,7 @@ export function SailingScreen() {
     <div className="page">
       <h1>{range}</h1>
       {sailing.holiday && <p><span className="tag">{t('discover.holiday')}</span></p>}
+      <div className="button-row"><LinkButton to={`/book?sailing=${sailing.id}`}>{t('discover.book')}</LinkButton></div>
       <SaveShare kind="sailing" id={sailing.id} name={range} favourites={favourites} />
 
       <section aria-labelledby="price-h">

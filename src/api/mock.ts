@@ -9,7 +9,7 @@ import { BRAND_NAMES, CARD_BRANDS, normalizeHelper, normalizeProfile, nameChange
 import { DEFAULT_HELD, DOC_IDS, DOCS, guestDocuments, normalizeHeld, type Held } from '../domain/documents'
 import { buildNotices, normalizePrefs, type NotificationPrefs } from '../domain/notifications'
 import { ticketStatus } from '../domain/help'
-import { AGENT_BOOKINGS, bookingNumber, bookingTotal, categoryOfStateroom, daysBetween, finalPaymentDays, matchBooking, nextAction, pastTrips, paymentPlan, paymentState, paysLate, type PastTrip } from '../domain/trip'
+import { AGENT_BOOKINGS, bookingNumber, bookingTotal, categoryOfStateroom, daysBetween, finalPaymentDays, matchBooking, nextAction, pastTrips, paymentPlan, paymentState, paysLate, type PastTrip, type PaymentPlan } from '../domain/trip'
 import { categoryById } from '../domain/ship'
 import { CRUISE } from '../domain/cruise'
 import { NIGHTS } from '../domain/pricing'
@@ -19,9 +19,10 @@ import { clockNow } from '../domain/clock'
 import type { Channel } from '../data/sync'
 import type { DataRecord, DataStore } from '../data/store'
 import type { DemoState } from '../demo/state'
+import { createBookingApi } from './bookingMock'
 import { ApiError } from './errors'
 import { createRng, type Rng } from './rng'
-import type { Api, DocumentsView, GuestDocumentsView, Item, Message, PaymentsView, ProfileView, Receipt, Ticket, TripView, TripsView } from './types'
+import type { Api, BookingView, DocumentsView, GuestDocumentsView, Item, Message, PaymentsView, ProfileView, Receipt, Ticket, TripView, TripsView } from './types'
 
 export interface MockContext {
   store: DataStore
@@ -127,6 +128,7 @@ export function createMockApi(ctx: MockContext): Api {
     return list.filter((c): c is Card => !!c && typeof c.id === 'string' && CARD_BRANDS.includes(c.brand) && /^\d{4}$/.test(c.last4) && typeof c.expiry === 'string')
   }
   const saveCards = async (cards: Card[]) => { await save('cards', actor().booker, 'list', { cards }); return cards }
+  const booking = createBookingApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run })
 
   const documentsView = async (): Promise<DocumentsView> => {
     const s = sailingById(ctx.demo().sailingId)!
@@ -178,12 +180,24 @@ export function createMockApi(ctx: MockContext): Api {
     }
   }
 
+  const bookedTrip = async (b: BookingView): Promise<TripView> => {
+    const checkin = await checkinStatus(sailingById(b.sailingId)!)
+    const plan: PaymentPlan = { total: b.total, deposit: b.paid, balance: b.balance, finalDue: b.finalDue, booked: dateIn(b.createdAt, 'America/New_York') }
+    return {
+      number: b.number, kind: 'booked', sailingId: b.sailingId, departure: b.departure, categoryName: b.categoryName, guests: b.people.length, daysToDeparture: b.daysToDeparture,
+      plan, payment: b.payment, documents: null, checkin, next: nextAction({ payment: b.payment, documentsMissing: 0, checkinOpen: checkin.state === 'open', checkinDone: false }),
+    }
+  }
+
   const tripsView = async (): Promise<TripsView> => {
-    const all = [await currentTrip(), ...(await Promise.all((await linkedNumbers()).map(linkedTrip))).filter((t): t is TripView => !!t)]
+    const booked = await booking.list()
+    const bookedTrips = await Promise.all(booked.filter((b) => b.status === 'confirmed').map(bookedTrip))
+    const all = [await currentTrip(), ...(await Promise.all((await linkedNumbers()).map(linkedTrip))).filter((t): t is TripView => !!t), ...bookedTrips]
     const day = today()
     const sailed = all.filter((t) => addDays(t.departure, NIGHTS) < day)
+    const cancelled = booked.filter((b) => b.status === 'cancelled').map((b): PastTrip => ({ ...sailedPast(sailingById(b.sailingId)!), id: b.number, cancelled: true }))
     const upcoming = all.filter((t) => !sailed.includes(t)).sort((a, b) => a.departure.localeCompare(b.departure))
-    const past = [...sailed.map((t) => sailedPast(sailingById(t.sailingId)!)), ...pastTrips(who())].sort((a, b) => b.departure.localeCompare(a.departure))
+    const past = [...sailed.map((t) => sailedPast(sailingById(t.sailingId)!)), ...cancelled, ...pastTrips(who())].sort((a, b) => b.departure.localeCompare(a.departure))
     return { upcoming, past }
   }
 
@@ -440,6 +454,7 @@ export function createMockApi(ctx: MockContext): Api {
         return ticket(await put('ticket', { kind: 'email', detail: message.trim().slice(0, 1000) }))
       }),
     },
+    booking: booking.api,
     help: {
       contacts: () => run('help.contacts', () => ({ guestServices: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER })),
     },

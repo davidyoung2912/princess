@@ -59,7 +59,7 @@ export function paymentState(plan: PaymentPlan, balancePaid: boolean, today: str
 }
 
 /** A past sailing, shown in My Trips. */
-export interface PastTrip { id: string; title: string; ship: string; departure: string; nights: number }
+export interface PastTrip { id: string; title: string; ship: string; departure: string; nights: number; /** A booking that was cancelled before sailing. */ cancelled?: boolean }
 
 const PAST: Partial<Record<PersonaId, readonly PastTrip[]>> = {
   gerald: [
