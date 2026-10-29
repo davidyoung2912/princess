@@ -76,13 +76,15 @@ describe('catalog', () => {
     const files = sourceFiles()
     const code = files.map((f) => readFileSync(f, 'utf8')).join('\n')
     const used = new Set([...code.matchAll(/\bt\(\s*['"]([a-z][A-Za-z0-9.]*)['"]/g)].map((m) => m[1]))
+    // A key named anywhere as a string literal (a `labelKey: 'tab.home'` in a table) also counts as used; the type checker guards typos there.
+    const named = new Set([...code.matchAll(/['"]([a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)+)['"]/g)].map((m) => m[1]))
     // Keys built from a prefix, e.g. t(`settings.theme.${value}`), count as using every key under that prefix.
     const prefixes = [...code.matchAll(/\bt\(\s*`([a-z][A-Za-z0-9.]*\.)\$\{/g)].map((m) => m[1])
     const base = (k: string) => k.replace(/_(one|other)$/, '')
     const defined = new Set(Object.keys(en).map(base))
     for (const k of used) expect(defined.has(k), `t('${k}') has no catalog entry`).toBe(true)
     for (const p of prefixes) expect([...defined].some((k) => k.startsWith(p)), `no key starts with ${p}`).toBe(true)
-    const unused = [...defined].filter((k) => !used.has(k) && !prefixes.some((p) => k.startsWith(p)))
+    const unused = [...defined].filter((k) => !used.has(k) && !named.has(k) && !prefixes.some((p) => k.startsWith(p)))
     expect(unused, 'catalog keys never used in the source').toEqual([])
   })
 })

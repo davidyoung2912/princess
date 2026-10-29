@@ -4,6 +4,6 @@ import type { Settings } from '../settings/settings'
 
 /** The current display settings and a function to change some of them. */
 export function useSettings(): [Settings, (patch: Partial<Settings>) => void] {
-  const settings = useSyncExternalStore(subscribeSettings, getSettings)
+  const settings = useSyncExternalStore(subscribeSettings, getSettings, getSettings)
   return [settings, updateSettings]
 }

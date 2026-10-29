@@ -1,6 +1,38 @@
-import { Foundations } from './Foundations'
+import type { ComponentType } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { Kit } from './ui/Kit'
+import { NotFound } from './ui/NotFound'
+import { Placeholder } from './ui/Placeholder'
+import { SettingsScreen } from './ui/SettingsScreen'
+import { Shell } from './ui/Shell'
+import { ROUTES } from './routes/routes'
 
-/** The app root. Step 0b only shows the foundations preview; routing and the shell arrive in step 0c. */
+/** Screens that already exist; every other route shows its placeholder until the phase that builds it. */
+const SCREENS: Record<string, ComponentType> = {
+  '/me/settings': SettingsScreen,
+  '/kit': Kit,
+}
+
+/** Every screen, built from the route table, inside the shell. Separate from the router so tests can render it in memory. */
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<Shell />}>
+        {ROUTES.map((route) => {
+          const Screen = SCREENS[route.path]
+          return <Route key={route.path} path={route.path} element={Screen ? <Screen /> : <Placeholder route={route} />} />
+        })}
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  )
+}
+
+/** The app root: the browser router around the routes. */
 export default function App() {
-  return <Foundations />
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  )
 }

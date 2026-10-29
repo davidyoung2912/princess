@@ -399,3 +399,16 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 - **Shell:** `ErrorBoundary` (reloads once on a stale installed copy), `ConceptNotice`, boot splash with the concept notice, and a throwaway **Foundations preview** page (type sample, display settings, colour swatches) to judge the design language. It is replaced in 0c.
 - **Not yet built (later steps):** routing, tab bar and rail, components (0c); IndexedDB, mock API, demo clock, personas, auth, entitlements (0d). Dependencies `react-router`, `lucide-react` and `idb` are added when first used.
 - **Verified:** `npm run test` (30 tests), `npm run lint`, `npx tsc -b`, `npm run build`.
+
+### 0c done (2026-10-29): app shell and component kit
+
+- **Routing:** `react-router` (library mode) with deep links. One route table (`src/routes/routes.ts`) drives the router, the tab bar and the placeholders; each screen not yet built shows its title, the phase that builds it, and links to the screens below it, so the two-tap paths can be walked now.
+- **Shell:** skip link; top bar with a persistent **Help** button; five labelled tabs (bottom bar on phones, left rail from 1024px) with `aria-current`; on every change of screen the page title updates, the new screen is announced, and focus moves to the main area.
+- **Help sheet (SUP-08):** guest services number (`tel:` link), chat, emergency text; all plain text so it works offline. Numbers are fictional 555-01xx samples.
+- **Navigation model (UX-01):** the top 15 tasks and their tap paths are data in `src/routes/nav.ts`; a unit test fails if any task needs more than two taps, uses an unknown screen, or does not start at a tab or Help.
+- **Components (`src/ui`):** Button / LinkButton, Card, Dialog (focus trap, Escape, Close button, focus return), Field and ErrorSummary, Banner, SyncChip (words from `src/domain/syncAge.ts`), StatusBadge, Chip, Stepper, Timeline (changed and cancelled events stay visible, struck through and labelled), DisplaySettings. Icons come from one file (`icons.ts`, lucide).
+- **Component kit:** `/kit`, linked from Me → Settings, shows every component in each state and the colour tokens.
+- **Print:** `print.css` hides the frame and prints cards plainly.
+- **Test without a browser:** `src/ui/render.test.tsx` server-renders every route and checks the title, tabs, Help, main landmark, the current-tab marker, and that the concept notice appears on Home and Me only.
+- **Choices made:** tapping outside a dialog does not close it (a stray tap should not discard work); sheet drag-to-dismiss is not built (the Close button satisfies 2.5.7); the desktop "Today" panel waits for real data in Phase 6; text wordmark in the top bar until the Princess logo asset is handled; the Help button on the rail layout stays in the top bar.
+- **Verified:** `npm run test` (61 tests), `npm run lint`, `npx tsc -b`, `npm run build`.
