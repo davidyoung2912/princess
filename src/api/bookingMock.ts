@@ -2,10 +2,12 @@ import type { DataStore } from '../data/store'
 import { BRAND_NAMES, phoneOk, validateCard, type Card, type HistoryEntry, type Profile } from '../domain/account'
 import { blankContact, blankGuest, maskEmail, maskPhone, normalizeDraft, stepProblems, STEPS, type DiningChoice, type Draft, type GuestDraft, type LeadContact, type Occasion } from '../domain/booking'
 import { cabinAvailable, cabinsFor } from '../domain/cabins'
+import { applyPerks, loyaltyNumberOk, tierForNumber } from '../domain/ahead'
+import { fccBefore } from '../domain/postcruise'
 import { bookable, bookingQuote, capacityOf, checkParts, dueNow, fareIncluded, fareOptions, FARES, payPlan, PRICE_LOCK_HOURS, promotionsFor, scaRequired, SCA_DEMO_CODE, DECLINED_LAST4, type FareId, type PaymentPart } from '../domain/fares'
 import { acceptanceLog, cancelTerms, changeCheck, type Acceptance } from '../domain/policy'
 import { fareFor, fromPrice, NIGHTS } from '../domain/pricing'
-import { partyOf, type Persona, type PersonaId } from '../domain/personas'
+import { partyOf, personaById, type Persona, type PersonaId } from '../domain/personas'
 import { SAILINGS, sailingById } from '../domain/sailings'
 import { categoryById, CATEGORIES, type CategoryId } from '../domain/ship'
 import { addDays } from '../domain/timezones'
@@ -129,6 +131,17 @@ export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: (
     }
   }
 
+  /** The Captain's Circle discount and future cruise credit for a draft (BOK-11, BOK-12), and what is left to pay. */
+  const perksFor = async (draft: Draft, total: number) => {
+    const who = d.who()
+    const used = ((await d.store.get('fccUsed', who, 'used'))?.data as { cents?: number } | undefined)?.cents ?? 0
+    const creditLeft = Math.max(0, fccBefore(who) - used)
+    const numberOk = loyaltyNumberOk(draft.loyaltyNumber)
+    const tier = numberOk ? tierForNumber(draft.loyaltyNumber, who, personaById(who)?.tier ?? 'none') : 'none'
+    const sums = applyPerks(total, { number: draft.loyaltyNumber, tier, useCredit: draft.useCredit }, creditLeft)
+    return { numberOk, tier, discount: sums.discount, credit: sums.credit, creditLeft, total: sums.total }
+  }
+
   const draftIn = (draft: Draft) => {
     const sailing = sailingById(draft.sailingId)
     if (!sailing || !draft.category || !draft.fare) throw new ApiError('invalid', 'Choose a date, room type and fare first')
@@ -162,13 +175,17 @@ export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: (
       return options.map((o) => ({ ...o, difference: o.total - lowest, included: fareIncluded(x.category as CategoryId) === o.id, perNight: FARES[o.id].perNight }))
     }),
 
-    quote: (draft) => d.run('booking.quote', () => {
+    quote: (draft) => d.run('booking.quote', async () => {
       const x = normalizeDraft(draft)
       const { sailing, category, fare } = draftIn(x)
       const q = bookingQuote(sailing.id, category, x.guests, fare)
       if (!q) throw new ApiError('invalid', 'That room type, fare and number of guests cannot be booked together')
       const toDeparture = days(sailing.departure)
-      return { quote: q, promotions: promotionsFor(category, toDeparture), lockedUntil: d.now() + PRICE_LOCK_HOURS * HOUR, pay: payPlan(q.total, sailing.departure, toDeparture), daysToDeparture: toDeparture }
+      const p = await perksFor(x, q.total)
+      return {
+        quote: q, promotions: promotionsFor(category, toDeparture), lockedUntil: d.now() + PRICE_LOCK_HOURS * HOUR, pay: payPlan(p.total, sailing.departure, toDeparture), daysToDeparture: toDeparture,
+        total: p.total, perks: { numberOk: p.numberOk, tier: p.tier, discount: p.discount, credit: p.credit, creditLeft: p.creditLeft },
+      }
     }),
 
     prefill: () => d.run('booking.prefill', async (): Promise<PrefillView> => {
@@ -216,12 +233,13 @@ export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: (
       if (!bookable(toDeparture)) throw new ApiError('conflict', 'closed')
       const q = bookingQuote(sailing.id, category, draft.guests, fare)
       if (!q) throw new ApiError('invalid', 'That room type, fare and number of guests cannot be booked together')
-      if (q.total !== input.expectedTotal) throw new ApiError('conflict', 'priceChanged')
+      const p = await perksFor(draft, q.total)
+      if (p.total !== input.expectedTotal) throw new ApiError('conflict', 'priceChanged')
       if (draft.cabinMode === 'pick') {
         const taken = (await stored()).some((s) => s.status === 'confirmed' && s.sailingId === sailing.id && s.category === category && s.cabin === draft.cabinNumber)
         if (taken || !cabinAvailable(sailing.id, category, draft.cabinNumber)) throw new ApiError('conflict', 'cabinTaken')
       }
-      const plan = payPlan(q.total, sailing.departure, toDeparture)
+      const plan = payPlan(p.total, sailing.departure, toDeparture)
       if (!plan.options.includes(input.option)) throw new ApiError('invalid', 'That payment option is not available for this sailing')
       const methods = await authorise(input.parts, dueNow(plan, input.option), input.challenge)
       const at = d.now()
@@ -229,12 +247,16 @@ export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: (
       const contact = draft.contact
       const booking: StoredBooking = {
         number, draftId: draft.id, sailingId: sailing.id, category, cabin: draft.cabinMode === 'pick' ? draft.cabinNumber : null, fare,
-        people: draft.people, contact, dining: draft.dining as DiningChoice, occasion: draft.occasion, accepted: acceptanceLog(draft.accepted, at), total: q.total,
+        people: draft.people, contact, dining: draft.dining as DiningChoice, occasion: draft.occasion, accepted: acceptanceLog(draft.accepted, at), total: p.total,
         payments: [{ id: `RC-${number}-1`, label: input.option === 'full' ? 'full' : 'deposit', cents: dueNow(plan, input.option), at, methods }],
         createdAt: at, status: 'confirmed', cancelled: null,
         notified: [{ via: 'email', to: maskEmail(contact.email) }, { via: 'sms', to: maskPhone(contact.phone) }],
       }
       await put(booking)
+      if (p.credit > 0) {
+        const used = ((await d.store.get('fccUsed', d.who(), 'used'))?.data as { cents?: number } | undefined)?.cents ?? 0
+        await d.save('fccUsed', d.who(), 'used', { cents: used + p.credit })
+      }
       await d.store.delete(DRAFT, d.who(), 'current')
       d.channel?.post({ type: 'records', kind: DRAFT, owner: d.who() })
       await d.log('booking', `${number}: booked`)

@@ -4,9 +4,9 @@ import type { Cents } from './pricing'
  * What can be booked, ordered or joined on board (ENT-03, SHP-01, SHP-04, SHP-06, ACS-04): spa and fitness, shops and gift cards,
  * auctions and specials, faith and community services, and captioned or signed showings. Names, times and prices are authored concept values.
  */
-export type Group = 'spa' | 'fitness' | 'shop' | 'special' | 'faith' | 'access'
+export type Group = 'spa' | 'fitness' | 'shop' | 'special' | 'faith' | 'access' | 'gift'
 
-export const GROUPS: readonly Group[] = ['spa', 'fitness', 'shop', 'special', 'faith', 'access']
+export const GROUPS: readonly Group[] = ['spa', 'fitness', 'shop', 'special', 'faith', 'access', 'gift']
 
 export type Support = 'captioned' | 'signed' | 'transcript'
 
@@ -58,6 +58,11 @@ export const ITEMS: readonly Item[] = [
   item({ id: 'gift-25', group: 'shop', title: 'Gift card, $25', detail: 'Emailed or left in the recipient’s cabin.', placeId: 'shops', price: 2500, mode: 'order' }),
   item({ id: 'gift-50', group: 'shop', title: 'Gift card, $50', detail: 'Emailed or left in the recipient’s cabin.', placeId: 'shops', price: 5000, mode: 'order' }),
   item({ id: 'gift-100', group: 'shop', title: 'Gift card, $100', detail: 'Emailed or left in the recipient’s cabin.', placeId: 'shops', price: 10000, mode: 'order' }),
+  item({ id: 'gift-flowers', group: 'gift', title: 'Fresh flowers in the cabin', detail: 'A mixed bouquet, waiting when you arrive. Tell us the occasion.', placeId: 'shops', price: 4500, limit: 20, mode: 'order' }),
+  item({ id: 'gift-champagne', group: 'gift', title: 'Champagne and strawberries', detail: 'A half bottle with chocolate-dipped strawberries, delivered on the first evening.', placeId: 'shops', price: 7500, limit: 20, minAge: 21, mode: 'order' }),
+  item({ id: 'gift-cake', group: 'gift', title: 'Celebration cake', detail: 'A small cake with a message, brought to your table at dinner.', placeId: 'shops', price: 3500, limit: 16, mode: 'order' }),
+  item({ id: 'gift-decor', group: 'gift', title: 'Stateroom decorating', detail: 'Balloons, banner and petals for a birthday, anniversary or honeymoon.', placeId: 'shops', price: 5500, limit: 12, mode: 'order' }),
+  item({ id: 'gift-kids', group: 'gift', title: 'Kids’ welcome package', detail: 'A plush toy, colouring pack and a snack box in the cabin on arrival.', placeId: 'shops', price: 3000, limit: 24, mode: 'order' }),
   item({ id: 'sp-art', group: 'special', title: 'Art auction', detail: 'Free champagne. You are not obliged to bid.', placeId: 'piazza', days: [2, 6], times: ['15:30'], minutes: 60 }),
   item({ id: 'sp-jewel', group: 'special', title: 'Jewellery event', detail: 'Port-day offers on watches and gems.', placeId: 'shops', days: PORT, times: ['11:00'], minutes: 45 }),
   item({ id: 'sp-bingo', group: 'special', title: 'Bingo book, three games', detail: 'Pre-order a book to skip the line before play.', placeId: 'live', days: SEA, times: ['14:00'], minutes: 60, price: 2500, limit: 40, minAge: 18, mode: 'order' }),

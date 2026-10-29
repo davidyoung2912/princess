@@ -40,6 +40,8 @@ export function createCareApi(d: CareDeps): CareApi {
   const scenario = (id: ScenarioId) => d.demo().scenarios.includes(id)
   const aboard = () => (ABOARD_STAGES as readonly string[]).includes(stageAt(d.sailing(), d.now()))
   const needAboard = () => { if (!aboard()) throw new ApiError('conflict', 'closed') }
+  /** Show seats can be reserved before sailing too (PRE-04). */
+  const needOpen = () => { if (!aboard() && !['booked', 'preCruise', 'checkIn'].includes(stageAt(d.sailing(), d.now()))) throw new ApiError('conflict', 'closed') }
   const rows = async <T>(kind: string, owner: string = booker()) => (await d.store.list(kind, owner)).map((r) => ({ id: r.id, at: r.updatedAt, data: r.data as T }))
   const one = async <T>(kind: string, id: string, owner: string = booker()): Promise<T | null> => ((await d.store.get(kind, owner, id))?.data as T | undefined) ?? null
   const put = (kind: string, id: string, data: unknown, owner: string = booker()) => d.save(kind, owner, id, data)
@@ -95,7 +97,7 @@ export function createCareApi(d: CareDeps): CareApi {
     mine: () => d.run('shows.mine', ticketViews),
     reserve: (eventId, day, guests) => d.run('shows.reserve', async () => {
       d.adult()
-      needAboard()
+      needOpen()
       if (!eventById(eventId) || !Number.isInteger(day)) throw new ApiError('invalid', 'Choose a show')
       const who = guestsIn(guests)
       const event = eventsOn(d.sailing(), day, scenario('planChange')).find((e) => e.id === eventId)
@@ -123,21 +125,33 @@ export function createCareApi(d: CareDeps): CareApi {
 
   // ---- Virtual queue and waitlist (DIN-02) ----
   interface StoredQueue { venueId: string; joinedAt: number; start: number }
-  interface StoredWait { venueId: string; day: number; time: string; guests: PersonaId[]; joinedAt: number; taken?: boolean }
+  interface StoredWait { venueId: string; day: number; time: string; guests: PersonaId[]; joinedAt: number; taken?: boolean; auto?: boolean; autoBooked?: boolean }
   const dayType = (): DayType => (portAt(d.sailing(), d.now()).port === 'sea' ? 'sea' : 'port')
   const slotAt = (day: number, time: string) => { const date = itinerary(d.sailing())[day - 1].date; return zonedToEpoch(date, time, shipZoneOnDate(d.sailing(), date)) }
   const queueable = (id: string) => { const v = directoryVenue(id); return v && !reservableVenue(v) && v.id !== 'soleil' ? v : null }
   const openNow = () => DIRECTORY.filter((v) => !reservableVenue(v) && v.id !== 'soleil' && openAt(v, dayType(), timeIn(d.now(), shipZoneAt(d.sailing(), d.now())))).map((v) => v.id)
   const waitsView = async (): Promise<WaitsView> => {
     const now = d.now()
+    // A table the guest asked to have booked is booked the moment it is offered (PRE-14).
+    for (const w of await rows<StoredWait>('waitlist')) {
+      if (!w.data.auto || w.data.taken || waitlistState(w.data.joinedAt, slotAt(w.data.day, w.data.time), now, 1 + (w.data.joinedAt % 4)).stage !== 'offered') continue
+      try {
+        await d.reserveFromWaitlist({ venueId: w.data.venueId, day: w.data.day, time: w.data.time, guests: w.data.guests, note: 'Booked automatically from the waitlist' })
+        await put('waitlist', w.id, { ...w.data, taken: true, autoBooked: true })
+      } catch {
+        // The guest keeps the offer and can take it by hand.
+      }
+    }
     const queues = (await rows<StoredQueue>('vqueue'))
       .map((q) => ({ id: q.id, venueId: q.data.venueId, joinedAt: q.data.joinedAt, ...queueState(q.data.joinedAt, q.data.start, now) }))
       .sort((a, b) => a.joinedAt - b.joinedAt)
-    const waitlist = (await rows<StoredWait>('waitlist')).filter((w) => !w.data.taken).map((w) => {
+    const all = await rows<StoredWait>('waitlist')
+    const waitlist = all.filter((w) => !w.data.taken).map((w) => {
       const at = slotAt(w.data.day, w.data.time)
-      return { id: w.id, venueId: w.data.venueId, day: w.data.day, time: w.data.time, slotAt: at, guests: w.data.guests.map((g) => ({ id: g, name: nameOf(g) })), ...waitlistState(w.data.joinedAt, at, now, 1 + (w.data.joinedAt % 4)) }
+      return { id: w.id, venueId: w.data.venueId, day: w.data.day, time: w.data.time, slotAt: at, guests: w.data.guests.map((g) => ({ id: g, name: nameOf(g) })), auto: w.data.auto === true, ...waitlistState(w.data.joinedAt, at, now, 1 + (w.data.joinedAt % 4)) }
     }).sort((a, b) => a.slotAt - b.slotAt)
-    return { open: openNow(), queues, waitlist }
+    const autoBooked = all.filter((w) => w.data.autoBooked).map((w) => ({ id: w.id, venueId: w.data.venueId, day: w.data.day, time: w.data.time }))
+    return { open: openNow(), queues, waitlist, autoBooked }
   }
   const waits: WaitsApi = {
     list: () => d.run('waits.list', waitsView),
@@ -169,7 +183,7 @@ export function createCareApi(d: CareDeps): CareApi {
       if (!canJoinWaitlist(slotAt(input.day, input.time), d.now())) throw new ApiError('conflict', 'tooLate')
       const have = (await rows<StoredWait>('waitlist')).filter((w) => !w.data.taken)
       if (have.some((w) => w.data.venueId === v.id && w.data.day === input.day && w.data.time === input.time)) throw new ApiError('conflict', 'duplicate')
-      await put('waitlist', d.newId('wl'), { venueId: v.id, day: input.day, time: input.time, guests: who, joinedAt: d.now() } satisfies StoredWait)
+      await put('waitlist', d.newId('wl'), { venueId: v.id, day: input.day, time: input.time, guests: who, joinedAt: d.now(), auto: input.auto === true } satisfies StoredWait)
       return waitsView()
     }),
     leaveWaitlist: (id) => d.run('waits.leaveWaitlist', async () => {

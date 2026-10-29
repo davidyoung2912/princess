@@ -23,6 +23,7 @@ import { createPlanApi } from './planMock'
 import { createOnboardApi, createServiceApi } from './onboardMock'
 import { createCareApi } from './careMock'
 import { createAboardApi } from './aboardMock'
+import { createAheadApi } from './aheadMock'
 import { childSafeProblem } from '../domain/services'
 import { createExtrasApi } from './extrasMock'
 import { createFinishApi } from './finishMock'
@@ -209,6 +210,7 @@ export function createMockApi(ctx: MockContext): Api {
 
   const care = createCareApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reserveFromWaitlist: plan.reserveFromWaitlist })
   const aboardMock = createAboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, cardsOf, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
+  const ahead = createAheadApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, run, cardsOf, profileOf, sailing: () => sailingById(ctx.demo().sailingId)! })
   const extras = createExtrasApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const finish = createFinishApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, cardsOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
   const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: async () => [...(await extras.folioLines()), ...(await finish.folioLines()), ...(await aboardMock.folioLines())] })
@@ -301,6 +303,7 @@ export function createMockApi(ctx: MockContext): Api {
     updates: care.updates,
     privacy: care.privacy,
     aboard: aboardMock.api,
+    ahead,
     disembark: finish.disembark,
     cases: finish.cases,
     post: finish.post,

@@ -22,6 +22,13 @@ const TOOLS = [
   { to: '/plan/packing', key: 'route.packing' },
   { to: '/plan/travel', key: 'route.travel' },
   { to: '/plan/assistance', key: 'route.assistance' },
+  { to: '/plan/ahead', key: 'route.ahead' },
+  { to: '/plan/cart', key: 'route.cart' },
+  { to: '/plan/prepay', key: 'route.prepay' },
+  { to: '/plan/clubs', key: 'route.clubs' },
+  { to: '/plan/upgrades', key: 'route.upgrades' },
+  { to: '/plan/weather', key: 'route.weather' },
+  { to: '/plan/health-prep', key: 'route.healthPrep' },
 ] as const
 
 /** Everything booked and not yet booked, day by day (PRE-15). */

@@ -15,10 +15,11 @@ import { formatDateTime } from '../account/format'
 import { ChoiceError } from './ChoiceError'
 import { StepSection, type StepProps } from './common'
 import { CancellationTable } from './Policy'
+import { PerksPanel } from './PerksPanel'
 
 /** Step 6: everything in one place before paying (BOK-05, BOK-08, BOK-19): choices with a way to change each, the full price, the payment plan, the cancellation terms, and the documents to accept. */
 export function ReviewStep({ draft, update, error }: StepProps) {
-  const quote = useAsync(() => api.booking.quote(draft), [draft.sailingId, draft.category, draft.guests, draft.fare])
+  const quote = useAsync(() => api.booking.quote(draft), [draft.sailingId, draft.category, draft.guests, draft.fare, draft.loyaltyNumber, draft.useCredit])
   const sailing = sailingById(draft.sailingId)
   const category = categoryById(draft.category)
   if (!sailing || !category || !draft.fare) return null
@@ -40,6 +41,8 @@ export function ReviewStep({ draft, update, error }: StepProps) {
         ))}
       </dl>
 
+      <PerksPanel draft={draft} update={update} quote={quote.data} />
+
       <section aria-labelledby="price-h">
         <h3 id="price-h">{t('book.review.price')}</h3>
         <PriceState state={quote}>
@@ -49,10 +52,11 @@ export function ReviewStep({ draft, update, error }: StepProps) {
               <Card info>
                 <p>{t('book.review.lock', { time: formatDateTime(quote.data.lockedUntil) })}</p>
                 {quote.data.promotions.map((p) => <p key={p.id}><strong>{t('book.review.credit', { amount: formatMoney(p.creditCents) })}</strong> {t('book.review.creditBody')}</p>)}
+                {quote.data.total !== quote.data.quote.total && <p><strong>{t('book.review.youPay', { total: formatMoney(quote.data.total) })}</strong></p>}
                 <p>
                   {quote.data.pay.options.includes('deposit')
-                    ? t('book.review.planDeposit', { deposit: formatMoney(quote.data.pay.deposit), balance: formatMoney(quote.data.quote.total - quote.data.pay.deposit), date: formatDate(quote.data.pay.finalDue) })
-                    : t('book.review.planFull', { total: formatMoney(quote.data.quote.total) })}
+                    ? t('book.review.planDeposit', { deposit: formatMoney(quote.data.pay.deposit), balance: formatMoney(quote.data.total - quote.data.pay.deposit), date: formatDate(quote.data.pay.finalDue) })
+                    : t('book.review.planFull', { total: formatMoney(quote.data.total) })}
                 </p>
               </Card>
             </>

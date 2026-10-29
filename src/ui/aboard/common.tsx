@@ -16,6 +16,7 @@ import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { personaById } from '../../domain/personas'
+import { SaveButton } from '../ahead/common'
 
 /** Why a change was refused, in words that say what to do next. Falls back to the general wording. */
 export function AboardError({ error }: { error: ApiError | null }) {
@@ -62,6 +63,7 @@ export function ItemCard({ item, mine, reload, canEdit, day }: { item: Item; min
         {item.price !== null ? ` ${item.price === 0 ? t('ab.free') : formatMoney(item.price)}` : ''}
         {item.minAge > 0 ? ` ${t('ab.minAge', { age: item.minAge })}` : ''}
       </p>
+      <p><SaveButton saveKey={`item:${item.id}`} name={item.title} /></p>
       {item.support && <p>{item.support.map((s) => <StatusBadge key={s} kind="ready" label={t(`ab.support.${s}` as StringKey)} />)}</p>}
       {has.length > 0 && (
         <ul className="plain-bullets">

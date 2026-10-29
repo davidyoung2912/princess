@@ -75,7 +75,7 @@ function Currency({ v, reload }: { v: MoneyView; reload: () => void }) {
   )
 }
 
-function TopUps({ v, reload }: { v: MoneyView; reload: () => void }) {
+export function TopUps({ v, reload }: { v: MoneyView; reload: () => void }) {
   const shipTime = useShipTime()
   const [dollars, setDollars] = useState(100)
   const [source, setSource] = useState<'card' | 'cash'>(v.hasCard ? 'card' : 'cash')
@@ -136,7 +136,7 @@ function Pin({ v, reload }: { v: MoneyView; reload: () => void }) {
   )
 }
 
-function Gratuities({ v, reload }: { v: MoneyView; reload: () => void }) {
+export function Gratuities({ v, reload }: { v: MoneyView; reload: () => void }) {
   const g = v.gratuity
   const [reason, setReason] = useState('')
   const [asking, setAsking] = useState(false)

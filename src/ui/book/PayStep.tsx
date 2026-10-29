@@ -25,13 +25,13 @@ export function BookingConflict({ message, onRefresh }: { message: string; onRef
 
 /** Step 7: how much to pay now, and how (BOK-05, BOK-06). */
 export function PayStep({ draft, onBooked }: { draft: Draft; onBooked: (booking: BookingView) => void }) {
-  const quote = useAsync(() => api.booking.quote(draft), [draft.sailingId, draft.category, draft.guests, draft.fare])
+  const quote = useAsync(() => api.booking.quote(draft), [draft.sailingId, draft.category, draft.guests, draft.fare, draft.loyaltyNumber, draft.useCredit])
   const [choice, setChoice] = useState<PayOption>('deposit')
   const plan = quote.data?.pay
   const option: PayOption = plan && plan.options.includes(choice) ? choice : (plan?.options[0] ?? 'full')
   const due = plan ? dueNow(plan, option) : 0
   const book = useAction(async (parts: PaymentPart[], challenge: string | undefined) => {
-    const booking = await api.booking.book({ draft, expectedTotal: quote.data!.quote.total, option, parts, challenge })
+    const booking = await api.booking.book({ draft, expectedTotal: quote.data!.total, option, parts, challenge })
     onBooked(booking)
     return booking
   })
@@ -40,7 +40,7 @@ export function PayStep({ draft, onBooked }: { draft: Draft; onBooked: (booking:
       <PriceState state={quote}>
         {quote.data && plan && (
           <>
-            <p className="trip-count">{t('book.pay.total', { total: formatMoney(quote.data.quote.total) })}</p>
+            <p className="trip-count">{t('book.pay.total', { total: formatMoney(quote.data.total) })}</p>
             {plan.options.length > 1 ? (
               <fieldset>
                 <legend>{t('book.pay.option')}</legend>

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { formatTemp } from '../../domain/readiness'
+import { useSettings } from '../../hooks/useSettings'
 import { PACK_GROUPS, packingText } from '../../domain/packing'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -12,6 +14,7 @@ import { Back, PlanError } from './common'
 
 /** A packing list built from the itinerary, the season, the dress codes and what the party has booked (MNG-08), shareable as text. */
 export function PackingScreen() {
+  const [settings] = useSettings()
   const list = useMine(() => api.plan.packing.get())
   const tick = useAction(async (id: string, done: boolean) => { await api.plan.packing.tick(id, done); list.retry() })
   const [note, setNote] = useState('')
@@ -35,7 +38,7 @@ export function PackingScreen() {
             <>
               <Card info>
                 <h2 className="card__title">{t('pack.weather')}</h2>
-                <p>{t('pack.weatherLine', { high: p.weather.highF, low: p.weather.lowF })} {p.weather.note}</p>
+                <p>{t('pack.weatherLine', { high: formatTemp(p.weather.highF, settings.units), low: formatTemp(p.weather.lowF, settings.units) })} {p.weather.note}</p>
               </Card>
               <p className="progress-line" role="status">{t('pack.progress', { done: p.ticked.length, total: p.items.length })}</p>
               <progress className="meter" max={p.items.length} value={p.ticked.length} aria-label={t('pack.progress', { done: p.ticked.length, total: p.items.length })} />

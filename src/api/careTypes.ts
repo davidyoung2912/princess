@@ -66,6 +66,8 @@ export interface WaitlistView {
   position: number
   offerAt: number
   expiresAt: number
+  /** Whether the table is booked for the guest when it frees up (PRE-14). */
+  auto: boolean
 }
 
 export interface WaitsView {
@@ -73,6 +75,8 @@ export interface WaitsView {
   open: string[]
   queues: QueueView[]
   waitlist: WaitlistView[]
+  /** Tables booked for the guest from a waitlist without them having to accept. */
+  autoBooked: { id: string; venueId: string; day: number; time: string }[]
 }
 
 export interface WaitsApi {
@@ -81,7 +85,7 @@ export interface WaitsApi {
   joinQueue(venueId: string): Promise<WaitsView>
   leaveQueue(id: string): Promise<WaitsView>
   /** Rejects `conflict` with `notFull` (a table is free: book it), `tooLate`, `duplicate`, `closed`, `clash`; `invalid` for a bad venue, night, time or party. */
-  joinWaitlist(input: { venueId: string; day: number; time: string; guests: PersonaId[] }): Promise<WaitsView>
+  joinWaitlist(input: { venueId: string; day: number; time: string; guests: PersonaId[]; auto?: boolean }): Promise<WaitsView>
   leaveWaitlist(id: string): Promise<WaitsView>
   /** Takes an offered table; rejects `conflict` (`notOffered`, `expired`) or the same codes as `plan.dining.reserve`. Returns the dining view with the new table. */
   acceptWaitlist(id: string): Promise<DiningView>

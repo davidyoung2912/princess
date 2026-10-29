@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { PrivacyPerson } from '../../api/careTypes'
 import { formatDate } from '../../domain/cruise'
+import { DATA_RULES } from '../../domain/dataRules'
 import { consentsFor, RETENTION, type ConsentId } from '../../domain/privacy'
 import { api } from '../../runtime'
 import { wipeAll } from '../../runtime'
@@ -54,6 +55,26 @@ export function PrivacyScreen() {
             <h2 id="priv-storage-h" className="card__title">{t('priv.storage')}</h2>
             <p>{t('priv.storageBody')}</p>
           </Card>
+
+          <section aria-labelledby="priv-rules-h">
+            <h2 id="priv-rules-h">{t('priv.rules')}</h2>
+            <p>{t('priv.rulesBody')}</p>
+            <ul className="card-grid">
+              {DATA_RULES.map((r) => (
+                <li key={r.id}>
+                  <Card>
+                    <h3 className="card__title">{r.title}</h3>
+                    <p className="muted">{t(`priv.rules.${r.sensitivity}`)}</p>
+                    <dl className="facts">
+                      <div><dt>{t('priv.rules.seen')}</dt><dd>{r.seenBy}</dd></div>
+                      <div><dt>{t('priv.rules.minimal')}</dt><dd>{r.minimal}</dd></div>
+                      <div><dt>{t('priv.rules.control')}</dt><dd>{r.control}</dd></div>
+                    </dl>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <section aria-labelledby="priv-access-h">
             <h2 id="priv-access-h">{t('priv.access')}</h2>

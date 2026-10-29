@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { formatTemp } from '../../domain/readiness'
+import { useSettings } from '../../hooks/useSettings'
 import { Link } from 'react-router'
 import { PORTS } from '../../domain/sailings'
 import { MIN_QUERY, searchContent, type Hit } from '../../domain/searchIndex'
@@ -15,6 +17,7 @@ import { Back } from './common'
 
 /** Ship news (OB-06): the captain's announcement, where the ship is and how fast, the weather and the sea, as the noon report. */
 export function ShipInfoScreen() {
+  const [settings] = useSettings()
   const today = useOnboardToday()
   const sailing = useSailing()
   return (
@@ -39,8 +42,8 @@ export function ShipInfoScreen() {
                   <div><dt>{t('info.position')}</dt><dd>{r.at === 'sea' ? t('info.atSea', { miles: r.milesToNext, port: near }) : t('info.inPort', { port: near })}</dd></div>
                   <div><dt>{t('info.speed')}</dt><dd>{r.knots === 0 ? t('info.alongside') : t('info.knots', { knots: r.knots })}</dd></div>
                   <div><dt>{t('info.sky')}</dt><dd>{t(`info.sky.${r.sky}` as StringKey)}</dd></div>
-                  <div><dt>{t('info.air')}</dt><dd>{r.airF}°F</dd></div>
-                  <div><dt>{t('info.water')}</dt><dd>{r.waterF}°F</dd></div>
+                  <div><dt>{t('info.air')}</dt><dd>{formatTemp(r.airF, settings.units)}</dd></div>
+                  <div><dt>{t('info.water')}</dt><dd>{formatTemp(r.waterF, settings.units)}</dd></div>
                   <div><dt>{t('info.sea')}</dt><dd>{t('info.seaBody', { wind: r.windKnots, wave: r.waveFt })}</dd></div>
                 </dl>
                 <p className="muted">{t('info.concept')}</p>

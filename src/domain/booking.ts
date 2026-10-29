@@ -48,6 +48,10 @@ export interface Draft {
   contact: LeadContact
   dining: DiningChoice
   occasion: Occasion
+  /** Captain's Circle number, or "" (BOK-12). */
+  loyaltyNumber: string
+  /** Use future cruise credit on this booking (BOK-11). */
+  useCredit: boolean
   accepted: Partial<Record<LegalId, boolean>>
   updatedAt: number
 }
@@ -61,7 +65,7 @@ export const blankGuest = (): GuestDraft => ({ firstName: '', lastName: '', dob:
 export const blankContact = (): LeadContact => ({ email: '', phone: '', street: '', city: '', region: '', postcode: '', country: 'United States' })
 
 export function emptyDraft(id: string, now = 0): Draft {
-  return { id, sailingId: '', category: '', guests: 2, cabinMode: 'guaranteed', cabinNumber: '', fare: '', people: [blankGuest(), blankGuest()], contact: blankContact(), dining: '', occasion: 'none', accepted: {}, updatedAt: now }
+  return { id, sailingId: '', category: '', guests: 2, cabinMode: 'guaranteed', cabinNumber: '', fare: '', people: [blankGuest(), blankGuest()], contact: blankContact(), dining: '', occasion: 'none', loyaltyNumber: '', useCredit: false, accepted: {}, updatedAt: now }
 }
 
 export const guestIsBlank = (g: GuestDraft): boolean => !g.firstName && !g.lastName && !g.dob && !g.gender && !g.citizenship && g.needs.length === 0 && g.dietaryStatus === '' && g.dietary.length === 0 && !g.allergyNote
@@ -110,6 +114,7 @@ export function normalizeDraft(raw: unknown, fallbackId = newDraftId()): Draft {
     contact: { email: str(c.email), phone: str(c.phone, 30), street: str(c.street), city: str(c.city), region: str(c.region), postcode: str(c.postcode, 12), country: str(c.country) || 'United States' },
     dining: pick(['', ...DINING_CHOICES] as const, o.dining, ''),
     occasion: pick(OCCASIONS, o.occasion, 'none'),
+    loyaltyNumber: str(o.loyaltyNumber, 9).trim().toUpperCase(), useCredit: o.useCredit === true,
     accepted, updatedAt: typeof o.updatedAt === 'number' && Number.isFinite(o.updatedAt) ? o.updatedAt : 0,
   }
   const guests = typeof o.guests === 'number' && Number.isInteger(o.guests) ? o.guests : base.people.length || 2

@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import { formatTemp } from '../../domain/readiness'
+import { useSettings } from '../../hooks/useSettings'
 import { asDiningView, asProgramView } from '../../api/guards'
 import type { OnboardToday } from '../../api/types'
 import { nowAndNext } from '../../domain/program'
@@ -21,6 +23,7 @@ import { UpdatesBanner } from './Updates'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
 export function OnboardHome({ today }: { today: OnboardToday }) {
+  const [settings] = useSettings()
   const me = usePersona()
   const now = useNow()
   const shipTime = useShipTime()
@@ -33,7 +36,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
       <Card hero labelledBy="now-h">
         <h2 id="now-h" className="card__title">{t('onb.today', { day: today.day ?? 0, date: formatDate(today.date) })}</h2>
         <p className="onb__place"><strong>{place}</strong></p>
-        {today.weather && <p>{t('onb.weather', { summary: today.weather.summary, high: today.weather.highF, low: today.weather.lowF })} {today.weather.sea}</p>}
+        {today.weather && <p>{t('onb.weather', { summary: today.weather.summary, high: formatTemp(today.weather.highF, settings.units), low: formatTemp(today.weather.lowF, settings.units) })} {today.weather.sea}</p>}
         {today.sailAwayAt && <p>{t('onb.sailAway', { time: shipTime(today.sailAwayAt) })}</p>}
       </Card>
 

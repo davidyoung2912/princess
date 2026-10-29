@@ -1,3 +1,5 @@
+import { isConsentRegion, type ConsentRegion } from '../domain/ahead'
+import { isUnits, type Units } from '../domain/readiness'
 import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../design/textSize'
 
 /** How the guest chose the colour theme; "auto" follows the device. */
@@ -16,9 +18,13 @@ export interface Settings {
   captions: boolean
   /** Save data: nothing loads until asked for, no animation, and refreshes come less often (NET-04). */
   dataLight: boolean
+  /** Temperatures and lengths in this system (ACT-08). */
+  units: Units
+  /** Where the guest lives, for the rules that depend on it, such as marketing consent (ACT-08). */
+  region: ConsentRegion
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false }
+export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false, units: 'imperial', region: 'us' }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -43,6 +49,8 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
+    units: isUnits(o.units) ? o.units : defaults.units,
+    region: isConsentRegion(o.region) ? o.region : defaults.region,
   }
 }
 

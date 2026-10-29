@@ -2,6 +2,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
+import { applyPageMeta, seoFor } from '../seo'
 import { Chat, Help, Home, Me, Plan, Ship } from './icons'
 import { HelpSheet } from './HelpSheet'
 import { UpdateBanner } from './UpdateBanner'
@@ -24,12 +25,14 @@ export function Shell() {
   const title = route ? t(route.titleKey) : t('shell.notFound.title')
 
   useEffect(() => {
-    document.title = `${title} · ${t('app.name')}`
+    const seo = seoFor(route?.path)
+    const full = `${title} · ${t('app.name')}`
+    applyPageMeta(document, { title: full, description: t(seo?.description ?? 'seo.private'), indexable: !!seo, url: `${window.location.origin}${pathname}` })
     if (first.current) { first.current = false; return }
     setAnnouncement(t('shell.announce', { title }))
     main.current?.focus({ preventScroll: true })
     window.scrollTo(0, 0)
-  }, [pathname, title])
+  }, [pathname, title, route?.path])
 
   return (
     <div className="shell">

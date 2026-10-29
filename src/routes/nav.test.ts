@@ -33,9 +33,9 @@ describe('navigation model', () => {
     expect(routeForPath('/home/check-in/receipt')?.titleKey).toBe('route.receipt')
     expect(routeForPath('/home/check-in/photo')?.titleKey).toBe('route.checkin')
     expect(tabForPath('/home/embarkation/steps')).toBe('home')
-    expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/cases', '/me/feedback', '/me/history', '/me/loyalty', '/me/rebook', '/me/privacy', '/me/print', '/me/money', '/me/status', '/me/report-problem', '/me/recap', '/me/sustainability', '/me/packages', '/me/settings', '/me/demo'])
-    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass', '/home/find-pass', '/home/check-in', '/home/embarkation', '/home/disembark', '/home/updates', '/home/concierge', '/home/cruise', '/home/sailings', '/home/ship', '/home/saved'])
-    expect(childLinks('/plan').map((r) => r.path)).toEqual(['/plan/day', '/plan/reservations', '/plan/excursions', '/plan/dining', '/plan/checklist', '/plan/packing', '/plan/travel', '/plan/assistance'])
+    expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/cases', '/me/feedback', '/me/history', '/me/loyalty', '/me/rebook', '/me/privacy', '/me/print', '/me/money', '/me/status', '/me/report-problem', '/me/marketing', '/me/fix-it', '/me/assist', '/me/recap', '/me/sustainability', '/me/packages', '/me/settings', '/me/demo'])
+    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass', '/home/find-pass', '/home/check-in', '/home/embarkation', '/home/disembark', '/home/updates', '/home/concierge', '/home/cruise', '/home/sailings', '/home/ship', '/home/saved', '/home/quiz', '/home/advisors', '/home/medallion', '/home/luggage', '/home/clearance'])
+    expect(childLinks('/plan').map((r) => r.path)).toEqual(['/plan/day', '/plan/reservations', '/plan/excursions', '/plan/dining', '/plan/checklist', '/plan/packing', '/plan/travel', '/plan/assistance', '/plan/ahead', '/plan/clubs', '/plan/prepay', '/plan/cart', '/plan/weather', '/plan/health-prep', '/plan/upgrades'])
     expect(childLinks('/chat')).toEqual([])
   })
 

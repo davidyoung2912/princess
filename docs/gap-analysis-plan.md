@@ -8,6 +8,8 @@ Status: **Proposed, for your review. No code has been changed.** Written 2026-10
 
 **After Phase 12 (2026-10-29):** 25 requirements moved to Done or done in reduced scope (OB-06, OB-07, SAF-04, MSG-01, MSG-03, MSG-05, DIN-06, DIN-09, ENT-03, ENT-05, ENT-06, POR-05, POR-07, POR-13, ACC-03, ACC-05, ACC-07, SHP-01, SHP-04, SHP-06, ROM-06, ACS-04, SUP-04, SUP-05, NET-04) and PERF-05 moved to Partial with lazy images and data-light mode. Reduced scope means the behaviour is real in the mock but delivery is simulated: moderation is report-only, the TV remote and casting change a saved setting, friends and cabin-party invitees have no accounts, and exchange rates are samples. MSG-01 is no longer open. The count of open Must items drops by one (MSG-01).
 
+**After Phase 13 (2026-10-29):** 25 requirements moved to Done or done in reduced scope (DIS-06, DIS-15, DIS-16, BOK-11, BOK-12, MNG-06, MNG-09, MNG-13, MNG-18, MNG-19, PRE-04, PRE-05, PRE-07, PRE-08, PRE-10, PRE-11, PRE-14, CHK-06, CHK-09, CHK-10, SEC-07, SEC-08, ACT-08, SUP-07, and CNT-05 for tags only). Reduced scope means the behaviour is real in the mock but delivery is simulated: advisors, the post and upgrade decisions are made up, and CNT-05 has the tags but no server rendering or prerendering. The open Must items are unchanged by this phase (none of the 25 was a Must). SEC-03 is still Partial.
+
 ## 1. How this was done, and how far to trust it
 
 - **Source of truth for the list:** every requirement ID that has its own table row in the requirements document: **248 IDs** (the document restates some IDs in §23 with a new priority; the highest priority wins, so POR-04, MNG-11 and INC-01 count as Must).

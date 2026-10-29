@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SaveButton } from '../ahead/common'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
 import type { PaymentPart } from '../../domain/fares'
 import { formatDate, formatTime } from '../../domain/cruise'
@@ -217,6 +218,7 @@ function Tour({ offer, view, busy, onAdd }: { offer: ExcursionOffer; view: Excur
       {view.canBook && !soldOut && !offer.timing && (
         <Button variant="secondary" disabled={busy || inCart} onClick={onAdd}>{inCart ? t('exc.inCart') : t('exc.add')}<span className="visually-hidden"> {x.name}</span></Button>
       )}
+      <SaveButton saveKey={`excursion:${x.id}`} name={x.name} />
     </li>
   )
 }

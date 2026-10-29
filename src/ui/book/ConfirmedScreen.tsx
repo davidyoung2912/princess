@@ -108,6 +108,7 @@ function Confirmation({ b }: { b: BookingView }) {
         </ul>
       </section>
 
+      {b.occasion !== 'none' && <p>{t('book.done.gifts')} <Link to="/plan/ahead">{t('route.ahead')}</Link></p>}
       <p><Link to={`/me/trips/${b.number}`}>{t('book.done.manage')}</Link> · <Link to="/me/trips">{t('route.trips')}</Link></p>
     </>
   )

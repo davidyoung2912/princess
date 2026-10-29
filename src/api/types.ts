@@ -1,4 +1,5 @@
 import type { AboardApi } from './aboardTypes'
+import type { AheadApi } from './aheadTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
 import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/personas'
@@ -220,6 +221,9 @@ export interface QuoteView {
   lockedUntil: number
   pay: PayPlan
   daysToDeparture: number
+  /** What the guest pays after the Captain's Circle discount and any future cruise credit; the price to send back with `book`. */
+  total: number
+  perks: { numberOk: boolean; tier: Tier; discount: number; credit: number; creditLeft: number }
 }
 
 export interface PrefillView {
@@ -688,6 +692,7 @@ export interface Api {
   updates: UpdatesApi
   privacy: PrivacyApi
   aboard: AboardApi
+  ahead: AheadApi
   disembark: DisembarkApi
   cases: CasesApi
   post: PostApi

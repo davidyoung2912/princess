@@ -1,5 +1,8 @@
+import { Link } from 'react-router'
 import { t, type StringKey } from '../i18n'
 import { TEXT_SIZES } from '../design/textSize'
+import { CONSENT_REGIONS } from '../domain/ahead'
+import { UNITS } from '../domain/readiness'
 import { useSettings } from '../hooks/useSettings'
 import type { ContrastChoice, ThemeChoice } from '../settings/settings'
 
@@ -67,6 +70,22 @@ export function DisplaySettings() {
           <small>{t('settings.dataLightHint')}</small>
         </span>
       </label>
+      <fieldset>
+        <legend>{t('settings.units')}</legend>
+        {UNITS.map((units) => (
+          <label key={units} className="choice">
+            <input type="radio" name="units" checked={settings.units === units} onChange={() => update({ units })} />
+            {t(`settings.units.${units}` as StringKey)}
+          </label>
+        ))}
+      </fieldset>
+      <div className="field">
+        <label htmlFor="settings-region">{t('settings.region')}</label>
+        <p className="field__hint">{t('settings.regionHint')} <Link to="/me/money">{t('settings.currencyLink')}</Link></p>
+        <select id="settings-region" className="field__input" value={settings.region} onChange={(e) => update({ region: e.target.value as typeof settings.region })}>
+          {CONSENT_REGIONS.map((r) => <option key={r.id} value={r.id}>{t(`settings.region.${r.id}` as StringKey)}</option>)}
+        </select>
+      </div>
     </section>
   )
 }

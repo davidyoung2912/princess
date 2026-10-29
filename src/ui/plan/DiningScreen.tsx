@@ -95,10 +95,11 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
   const [note, setNote] = useState('')
   const [done, setDone] = useState<string | null>(null)
   const [listed, setListed] = useState(false)
+  const [auto, setAuto] = useState(false)
   const venue = venueById(venueId)!
   const slots = useAsync(() => api.plan.dining.slots(venueId, day), [venueId, day, view.reservations.length])
   const book = useAction(async () => { const v = await api.plan.dining.reserve({ venueId, day, time, guests, note }); onDone(); return v })
-  const waitlist = useAction(async () => { await api.waits.joinWaitlist({ venueId, day, time, guests }); setListed(true) })
+  const waitlist = useAction(async () => { await api.waits.joinWaitlist({ venueId, day, time, guests, auto }); setListed(true) })
   const days = itinerary(s)
   const cost = mealCharge(venue, guests.length, view.mealsLeft)
   const free = slots.data?.find((x) => x.time === time)
@@ -160,6 +161,10 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
           <div>
             <p>{t('wait.fullHint')}</p>
             <PlanError error={waitlist.error} />
+            <label className="choice choice--top">
+              <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
+              <span>{t('wait.auto')}<small>{t('wait.autoBody')}</small></span>
+            </label>
             {listed ? <p role="status">{t('wait.listed')} <Link to="/plan/reservations">{t('wait.see')}</Link></p> : <Button variant="secondary" disabled={waitlist.busy} onClick={() => void waitlist.run()}>{t('wait.join')}</Button>}
           </div>
         )}

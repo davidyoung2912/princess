@@ -44,6 +44,7 @@ export function HomeScreen() {
       {trip && <Journey trip={trip} />}
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
       <p><Link to="/home/concierge">{t('route.concierge')}</Link></p>
+      <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>
       <div className="simple-hide"><Explore /></div>
       <ConceptNotice />
     </div>
@@ -78,6 +79,7 @@ function Journey({ trip }: { trip: TripView }) {
       )}
       {near && !done && <p><Link to="/home/embarkation">{t('route.embarkation')}</Link></p>}
       <p><Link to={`/me/trips/${trip.number}`}>{t('home.tripPage')}</Link> · <Link to="/plan">{t('route.plan')}</Link></p>
+      <p><Link to="/home/medallion">{t('route.medallion')}</Link> · <Link to="/home/luggage">{t('route.luggage')}</Link> · <Link to="/home/clearance">{t('route.clearance')}</Link></p>
     </section>
   )
 }

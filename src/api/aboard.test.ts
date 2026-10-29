@@ -59,9 +59,11 @@ describe('bookings and orders on board', () => {
     expect(list[0].total).toBe(0)
   })
 
-  it('refuses before boarding, for a time that has passed, bad input, and for a supervised child', async () => {
+  it('can be booked before boarding (PRE-05), but not after the cruise; refuses a time that has passed, bad input, and a supervised child', async () => {
     const s = setup()
-    expect(await code(s.api.aboard.selections.add({ item: 'spa-swedish', day: 3, time: '10:00', qty: 1 }))).toBe('conflict:closed')
+    expect(await s.api.aboard.selections.add({ item: 'spa-swedish', day: 3, time: '10:00', qty: 1 })).toHaveLength(1)
+    s.at('2027-03-29', '12:00')
+    expect(await code(s.api.aboard.selections.add({ item: 'spa-swedish', day: 4, time: '10:00', qty: 1 }))).toBe('conflict:closed')
     s.at('2027-03-22', '14:00')
     expect(await code(s.api.aboard.selections.add({ item: 'spa-swedish', day: 2, time: '13:00', qty: 1 }))).toBe('conflict:past')
     expect(await code(s.api.aboard.selections.add({ item: 'nope', day: 2, time: '', qty: 1 }))).toBe('invalid:unknown')

@@ -126,7 +126,7 @@ describe('privacy', () => {
     expect(deleteOn(RETENTION.find((r) => r.id === 'payment')!, '2027-03-28')).toBeNull()
     expect(kindsToDelete('2027-03-28', '2027-04-01')).toEqual([])
     expect(kindsToDelete('2027-03-28', '2027-04-27').sort()).toEqual(['ci-guest', 'documents'])
-    expect(kindsToDelete('2027-03-28', '2027-07-01').sort()).toEqual(['ci-guest', 'documents', 'illness'])
+    expect(kindsToDelete('2027-03-28', '2027-07-01').sort()).toEqual(['ci-guest', 'clubReg', 'documents', 'illness'])
   })
 
   it('starts every consent off and ignores bad data', () => {

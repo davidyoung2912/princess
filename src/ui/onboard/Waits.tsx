@@ -60,10 +60,12 @@ export function WaitsList() {
   if (!waits.data) return null
   const queues = waits.data.queues.filter((q) => q.stage !== 'expired')
   const waiting = waits.data.waitlist.filter((w) => w.stage !== 'expired')
-  if (queues.length === 0 && waiting.length === 0) return null
+  const booked = waits.data.autoBooked
+  if (queues.length === 0 && waiting.length === 0 && booked.length === 0) return null
   return (
     <section aria-labelledby="waits-h">
       <h2 id="waits-h">{t('wait.title')}</h2>
+      {booked.map((b) => <p key={b.id} role="status"><StatusBadge kind="booked" label={t('wait.autoDone', { venue: directoryVenue(b.venueId)?.name ?? '', day: b.day, time: formatTime(b.time) })} /></p>)}
       <ActionError error={accept.error ?? leaveQueue.error ?? leaveList.error} />
       <ul className="card-grid">
         {queues.map((q) => (
@@ -93,7 +95,7 @@ export function WaitsList() {
               ) : (
                 <>
                   <StatusBadge kind="waitlist" label={t('wait.waiting', { position: w.position })} />
-                  <p className="muted">{t('wait.waitingBody', { time: shipTime(w.offerAt) })}</p>
+                  <p className="muted">{t('wait.waitingBody', { time: shipTime(w.offerAt) })}{w.auto ? ` ${t('wait.autoOn')}` : ''}</p>
                   <Button variant="secondary" disabled={leaveList.busy} onClick={() => void leaveList.run(w.id)}>{t('wait.leave')}</Button>
                 </>
               )}

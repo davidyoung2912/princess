@@ -54,9 +54,11 @@ describe('budget (ACC-02)', () => {
 })
 
 describe('show seats (ENT-01)', () => {
-  it('is closed before boarding', async () => {
+  it('opens before boarding (PRE-04) and closes after the cruise', async () => {
     const s = setup()
-    expect(await code(s.api.shows.reserve('stage-show', 2, ['daniel']))).toBe('conflict:closed')
+    expect(await s.api.shows.reserve('stage-show', 2, ['daniel'])).toHaveLength(1)
+    s.at('2027-03-29', '12:00')
+    expect(await code(s.api.shows.reserve('stage-show', 2, ['priya']))).toMatch(/^conflict:(closed|started)/)
   })
 
   it('reserves, refuses a second seat for the same person, and gives seats back', async () => {

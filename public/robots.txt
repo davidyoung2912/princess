@@ -1,0 +1,6 @@
+# Unofficial concept. Discovery pages may be indexed; account and booking pages carry noindex.
+User-agent: *
+Allow: /
+Disallow: /me/
+Disallow: /book/
+Disallow: /chat

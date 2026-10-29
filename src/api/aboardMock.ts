@@ -50,6 +50,9 @@ export function createAboardApi(d: AboardDeps): AboardMock {
   const party = () => partyOf(d.who())
   const aboard = () => (ABOARD_STAGES as readonly string[]).includes(stageAt(d.sailing(), d.now()))
   const needAboard = () => { if (!aboard()) throw new ApiError('conflict', 'closed') }
+  /** Before sailing or aboard, but not after the cruise: the things you can book or buy ahead (PRE-04, PRE-05, PRE-07, PRE-10). */
+  const beforeOrAboard = () => aboard() || ['booked', 'preCruise', 'checkIn'].includes(stageAt(d.sailing(), d.now()))
+  const needOpen = () => { if (!beforeOrAboard()) throw new ApiError('conflict', 'closed') }
   const dayNow = () => Math.min(8, Math.max(1, cruiseDay(d.sailing(), d.now())))
   const dayAt = (at: number) => Math.min(8, Math.max(1, cruiseDay(d.sailing(), at)))
   const rows = async <T>(kind: string, owner: string = booker()) => (await d.store.list(kind, owner)).map((r) => ({ id: r.id, at: r.updatedAt, data: r.data as T }))
@@ -73,7 +76,7 @@ export function createAboardApi(d: AboardDeps): AboardMock {
     list: () => d.run('aboard.selections.list', selectionViews),
     add: (s) => d.run('aboard.selections.add', async () => {
       d.adult()
-      needAboard()
+      needOpen()
       const problem = selectionProblem(s, d.actor().age, itemById(s?.item) ? takenByOthers(itemById(s.item)!, s.day, s.time) : 0)
       if (problem === 'soldOut') throw new ApiError('conflict', 'soldOut')
       if (problem) throw new ApiError('invalid', problem)
@@ -176,7 +179,7 @@ export function createAboardApi(d: AboardDeps): AboardMock {
     const stored = await one<StoredGratuity>('gratuity', 'choice')
     const due = gratuityDue(await gratuityGuests())
     const gratuity: GratuityView = {
-      due, choice: stored?.choice ?? 'standard', reason: stored?.reason ?? '', canChange: due > 0 && !stored && aboard() && dayNow() < 7, paidAt: stored?.choice === 'prepaid' ? stored.at : null,
+      due, choice: stored?.choice ?? 'standard', reason: stored?.reason ?? '', canChange: due > 0 && !stored && beforeOrAboard() && (!aboard() || dayNow() < 7), paidAt: stored?.choice === 'prepaid' ? stored.at : null,
     }
     const prefs = await one<{ currency: string }>('moneyPrefs', 'me', me())
     return {
@@ -192,7 +195,7 @@ export function createAboardApi(d: AboardDeps): AboardMock {
       const problem = topUpProblem(dollars, (await topUpRows()).reduce((n, t) => n + t.dollars, 0))
       if (problem === 'tooMuch') throw new ApiError('conflict', 'tooMuch')
       if (problem) throw new ApiError('invalid', problem)
-      needAboard()
+      needOpen()
       if (source === 'card' && (await d.cardsOf()).length === 0) throw new ApiError('conflict', 'noCard')
       const count = (await rows('topup')).length
       await put('topup', d.newId('top'), { dollars, source, reference: `TOP-${String(count + 1).padStart(3, '0')}` } satisfies StoredTopUp)
@@ -217,7 +220,7 @@ export function createAboardApi(d: AboardDeps): AboardMock {
     gratuity: (choice, reason = '') => d.run('aboard.money.gratuity', async () => {
       d.adult()
       if (choice !== 'prepaid' && choice !== 'removal') throw new ApiError('invalid', 'badChoice')
-      needAboard()
+      needOpen()
       const view = (await moneyView()).gratuity
       if (view.due <= 0) throw new ApiError('conflict', 'nothingDue')
       if (!view.canChange) throw new ApiError('conflict', 'already')
