@@ -1,0 +1,12 @@
+/* Motion is limited to state changes. The device preference and the in-app setting both turn it off. */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.fade-in { animation: fade-in var(--t-mid) var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

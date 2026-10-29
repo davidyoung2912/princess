@@ -1,0 +1,61 @@
+/*
+ * Non-colour design tokens: type, spacing, shape, motion. Colours live in themes.css.
+ * All sizes are rem so the text-size setting scales the whole interface.
+ */
+:root {
+  --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* Type scale (at the Standard 18px root). */
+  --fs-caption: 0.875rem;
+  --fs-body: 1rem;
+  --fs-lead: 1.125rem;
+  --fs-title: 1.5rem;
+  --fs-headline: 2rem;
+  --fs-display: 2.5rem;
+  --lh-body: 1.5;
+  --lh-heading: 1.2;
+  --measure: 70ch;
+
+  /* Spacing: a 4px base unit expressed in rem at the 18px root (so 1 unit = 0.25rem). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --gutter: 1rem;
+
+  /* Shape: pill buttons, 8px cards and fields, a large top-left corner for hero cards. */
+  --radius-pill: 100px;
+  --radius-card: 8px;
+  --radius-hero: 48px 8px 8px 8px;
+  --border-width: 1px;
+  --target-min: 3rem;
+
+  /* One soft shadow, for sheets and dialogs only. */
+  --shadow-sheet: 0 8px 24px rgba(2, 2, 21, 0.18);
+
+  /* Motion: one curve, three durations. */
+  --ease: cubic-bezier(0.3, 0, 0.2, 1);
+  --t-fast: 120ms;
+  --t-mid: 220ms;
+  --t-slow: 360ms;
+
+  --content-max: 72rem;
+}
+
+@media (min-width: 600px) {
+  :root { --gutter: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  :root { --gutter: 2rem; }
+}
+
+/* Text size: a percentage of the browser's own setting, so a device preference still counts. */
+:root,
+:root[data-text-size='standard'] { font-size: 112.5%; }
+:root[data-text-size='large'] { font-size: 137.5%; --target-min: 3.25rem; }
+:root[data-text-size='xlarge'] { font-size: 162.5%; --target-min: 3.5rem; }

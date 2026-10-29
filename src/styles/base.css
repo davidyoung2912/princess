@@ -1,0 +1,103 @@
+* { box-sizing: border-box; }
+
+html, body, #root { min-height: 100%; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--lh-heading);
+  margin: 0 0 var(--space-3);
+}
+h1 { font-size: var(--fs-headline); }
+h2 { font-size: var(--fs-title); }
+h3 { font-size: var(--fs-lead); }
+
+p { margin: 0 0 var(--space-4); max-width: var(--measure); }
+
+a { color: var(--link); text-decoration: underline; text-underline-offset: 0.15em; }
+a:hover { text-decoration-thickness: 2px; }
+
+/* A visible focus ring on every focusable element: a two-tone ring that works on blue, white, sand and photos. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--focus-inner);
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+img, svg { max-width: 100%; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute; left: var(--space-3); top: -4rem; z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary); color: var(--on-primary);
+  border-radius: var(--radius-pill);
+}
+.skip-link:focus { top: var(--space-3); }
+
+/* Screens respect the notch and home-indicator areas (viewport-fit=cover). */
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding:
+    calc(env(safe-area-inset-top) + var(--space-4))
+    calc(env(safe-area-inset-right) + var(--gutter))
+    calc(env(safe-area-inset-bottom) + var(--space-6))
+    calc(env(safe-area-inset-left) + var(--gutter));
+}
+
+.concept-notice {
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-caption);
+}
+
+.card {
+  background: var(--surface-warm);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.card--hero { border-radius: var(--radius-hero); }
+.card--info { background: var(--surface-info); }
+
+fieldset { border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-card); margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); }
+legend { font-weight: 600; padding: 0 var(--space-2); }
+
+/* Choice rows: a native radio or checkbox with a label, large enough to tap. */
+.choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target-min); cursor: pointer; }
+.choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--primary); flex: none; }
+.choice small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
+
+.swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); padding: 0; margin: 0; list-style: none; }
+.swatch { border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-card); padding: var(--space-3); min-height: 4rem; display: flex; align-items: flex-end; font-weight: 600; font-size: var(--fs-caption); }
+.swatch--primary { background: var(--primary); color: var(--on-primary); }
+.swatch--warm { background: var(--surface-warm); }
+.swatch--info { background: var(--surface-info); }
+.swatch--success { border-left: 0.5rem solid var(--success); color: var(--success); }
+.swatch--warning { border-left: 0.5rem solid var(--warning); color: var(--warning); }
+.swatch--danger { border-left: 0.5rem solid var(--danger); color: var(--danger); }
+.swatch--gold { border-bottom: 0.5rem solid var(--gold); color: var(--gold-text); }

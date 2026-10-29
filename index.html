@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-contrast="standard" data-motion="full" data-text-size="standard">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#003595" />
+    <meta name="description" content="An unofficial concept for a Princess Cruises guest app. Not affiliated with Princess Cruises." />
+    <title>Princess guest app (unofficial concept)</title>
+    <style>
+      /* First-load splash: plain CSS so it paints before any script. Zoom is never disabled. */
+      html, body { margin: 0; background: #003595; }
+      #boot { position: fixed; inset: 0; z-index: 9999; display: grid; place-content: center; justify-items: center; gap: 1.5rem; background: #003595; color: #ffffff; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; text-align: center; padding: 1.5rem; transition: opacity 0.35s ease; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .sphere { position: relative; width: min(30vw, 7rem); aspect-ratio: 1; border: 3px solid #ffffff; border-radius: 50%; }
+      #boot .sphere::after { content: ''; position: absolute; inset: 24%; border-radius: 50%; background: #e8c98a; animation: boot-pulse 2.4s ease-in-out infinite alternate; }
+      #boot p { margin: 0; max-width: 24rem; font-size: 1rem; line-height: 1.5; }
+      @keyframes boot-pulse { from { transform: scale(0.85); opacity: 0.85; } to { transform: scale(1); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { #boot .sphere::after { animation: none; } #boot { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- The splash text is static HTML, so it sits outside the i18n catalog; keep it in step with app.conceptNotice. -->
+    <div id="boot" role="status" aria-label="Loading"><div class="sphere"></div><p>Unofficial concept. Not affiliated with Princess Cruises.</p></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

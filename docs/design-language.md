@@ -384,3 +384,18 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 - Homepage structure (header strip, booking quick links, four-menu main navigation, 4:5 cards, mobile accordion) from the live page.
 - Contrast figures computed with the WCAG relative-luminance formula; they will be re-asserted by the Phase 0 contrast test.
 - eclipse-court review: `package.json`, `vite.config.ts`, `index.html`, `.oxlintrc.json`, `tsconfig.app.json`, `src/styles/base.css`, `src/hooks/useDialog.ts`, `src/contrast.ts`, `src/backup.ts`, `src/appMotion.ts`, `src/i18n/en.ts`, `docs/accessibility-plan.md`.
+
+---
+
+## 11. Phase 0 progress notes
+
+### 0b done (2026-10-29): scaffold and foundations
+
+- **Project:** Vite 8, React 19, TypeScript 6 (same strict settings as eclipse-court), Oxlint (react, typescript, oxc, jsx-a11y), Vitest in a node environment, `vite-plugin-pwa` (autoUpdate, precache, maskable icon), build-only CSP, `viewport-fit=cover`, zoom never disabled. `.env.example` added; `.env.local` stays git-ignored.
+- **Design tokens:** `src/styles/themes.css` (colour: Light, Evening, and high contrast for each), `tokens.css` (type, spacing, shape, motion, three text sizes as a percentage of the browser's own size), `base.css`, `motion.css` (device and in-app reduced motion), `print.css`.
+- **Contrast guard:** `src/design/contrast.ts` and `palettes.ts` parse `themes.css` itself, so the stylesheet is the single source of truth. 28 colour pairs are asserted in all four palettes (4.5:1 text and 3:1 controls; 7:1 text in high contrast). `npm run contrast` prints the table. Negative tests prove the guard fails when it should.
+- **Settings:** text size, theme (auto/light/Evening), contrast, reduce motion; validated on load, saved to `localStorage` (`princess:settings`), applied to `<html>` before first render, "auto" follows the device. Persona defaults (Gerald on Large) arrive in 0d through the `defaults` argument.
+- **i18n:** `t()` over `en.ts` with plural pairs and a test that fails on any catalog key that is unused or any `t('key')` that is undefined.
+- **Shell:** `ErrorBoundary` (reloads once on a stale installed copy), `ConceptNotice`, boot splash with the concept notice, and a throwaway **Foundations preview** page (type sample, display settings, colour swatches) to judge the design language. It is replaced in 0c.
+- **Not yet built (later steps):** routing, tab bar and rail, components (0c); IndexedDB, mock API, demo clock, personas, auth, entitlements (0d). Dependencies `react-router`, `lucide-react` and `idb` are added when first used.
+- **Verified:** `npm run test` (30 tests), `npm run lint`, `npx tsc -b`, `npm run build`.

@@ -1,0 +1,8 @@
+/* Plain black-on-white output for printed plans, passes and receipts; screens add their own layouts later. */
+@media print {
+  :root { font-size: 100%; --bg: #fff; --text: #000; --text-muted: #000; --border: #000; }
+  body { background: #fff; color: #000; }
+  .no-print, .skip-link { display: none !important; }
+  a { color: #000; text-decoration: underline; }
+  .card { border: 1px solid #000; background: #fff; break-inside: avoid; }
+}

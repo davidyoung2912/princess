@@ -1,0 +1,103 @@
+/*
+ * Colour themes. Every colour in the app comes from these custom properties; nothing else sets a colour.
+ * `src/design/contrast.test.ts` reads this file and fails if any pair used together drops below WCAG AA
+ * (AAA in the high-contrast themes). Light is the default; `applySettings` resolves "auto" to light or dark.
+ * Princess brand values (blue, black, sand, silver blue, steel gray, gold, pink, focus) come from princess.com;
+ * muted text, gold text, status colours and the dark theme are our own, chosen to pass contrast.
+ */
+
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --text: #020215;
+  --text-muted: #595965;
+  --bg: #ffffff;
+  --surface-warm: #f2efed;
+  --surface-info: #f0f8f9;
+  --border: #d3d3d7;
+  --border-strong: #82828e;
+  --primary: #003595;
+  --primary-dark: #002a77;
+  --on-primary: #ffffff;
+  --link: #003595;
+  --brand-tint: #cce7eb;
+  --gold: #aa8247;
+  --gold-text: #7a5a24;
+  --success: #1b6b3a;
+  --warning: #8a4b00;
+  --danger: #b00020;
+  --attention: #e60060;
+  --on-attention: #ffffff;
+  --focus: #007cdb;
+  --focus-inner: #ffffff;
+  --scrim: rgba(2, 2, 21, 0.72);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --text: #f2efed;
+  --text-muted: #b5b5c0;
+  --bg: #020215;
+  --surface-warm: #0d1330;
+  --surface-info: #101a40;
+  --border: #2a3055;
+  --border-strong: #7d84a8;
+  --primary: #8fb0ff;
+  --primary-dark: #b4c9ff;
+  --on-primary: #020215;
+  --link: #8fb0ff;
+  --brand-tint: #1a2a5e;
+  --gold: #e8c98a;
+  --gold-text: #e8c98a;
+  --success: #6fd495;
+  --warning: #f0b45c;
+  --danger: #ff8a9a;
+  --attention: #ff6fa5;
+  --on-attention: #020215;
+  --focus: #8fb0ff;
+  --focus-inner: #020215;
+  --scrim: rgba(2, 2, 21, 0.82);
+}
+
+/* High contrast: pure surfaces, strong borders, no tints. Applies on top of light or dark. */
+:root[data-theme='light'][data-contrast='high'] {
+  --text: #000000;
+  --text-muted: #000000;
+  --bg: #ffffff;
+  --surface-warm: #ffffff;
+  --surface-info: #ffffff;
+  --border: #000000;
+  --border-strong: #000000;
+  --primary: #00205a;
+  --primary-dark: #000000;
+  --link: #00205a;
+  --brand-tint: #ffffff;
+  --gold: #5a4018;
+  --gold-text: #5a4018;
+  --success: #0f4d27;
+  --warning: #6b3a00;
+  --danger: #8a0019;
+  --attention: #a30046;
+  --focus: #00205a;
+}
+
+:root[data-theme='dark'][data-contrast='high'] {
+  --text: #ffffff;
+  --text-muted: #ffffff;
+  --bg: #000000;
+  --surface-warm: #000000;
+  --surface-info: #000000;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --primary: #b4c9ff;
+  --primary-dark: #ffffff;
+  --link: #b4c9ff;
+  --brand-tint: #000000;
+  --gold: #f5dba5;
+  --gold-text: #f5dba5;
+  --success: #8ee8ae;
+  --warning: #ffc978;
+  --danger: #ffa3b0;
+  --attention: #ff8fbb;
+  --focus: #b4c9ff;
+}
