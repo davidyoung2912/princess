@@ -62,6 +62,9 @@ import { HistoryScreen } from './ui/finish/HistoryScreen'
 import { LoyaltyScreen } from './ui/finish/LoyaltyScreen'
 import { RebookScreen } from './ui/finish/RebookScreen'
 import { SustainabilityScreen } from './ui/finish/SustainabilityScreen'
+import { ConciergeScreen } from './ui/ai/ConciergeScreen'
+import { DayScreen } from './ui/ai/DayScreen'
+import { RecapScreen } from './ui/ai/RecapScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -85,6 +88,7 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/disembark/customs': CustomsScreen,
   '/home/disembark/onward': OnwardScreen,
   '/home/disembark/final-night': FinalNightScreen,
+  '/home/concierge': ConciergeScreen,
   '/home/cruise': CruiseScreen,
   '/home/sailings': SailingsScreen,
   '/home/sailings/:id': SailingScreen,
@@ -92,6 +96,7 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/ship': ShipScreen,
   '/home/saved': SavedScreen,
   '/plan': PlanScreen,
+  '/plan/day': DayScreen,
   '/plan/reservations': ReservationsScreen,
   '/plan/reservations/:id': ReservationScreen,
   '/plan/excursions': ExcursionsScreen,
@@ -123,6 +128,7 @@ const SCREENS: Record<string, ComponentType> = {
   '/me/history': HistoryScreen,
   '/me/loyalty': LoyaltyScreen,
   '/me/rebook': RebookScreen,
+  '/me/recap': RecapScreen,
   '/me/sustainability': SustainabilityScreen,
   '/me/packages': PackagesScreen,
   '/book': BookScreen,

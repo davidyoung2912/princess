@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import { phoneOk } from '../../domain/account'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { CONTACT_OPTIONS, contactStatus, SUPPORT_EMAIL } from '../../domain/help'
@@ -47,6 +48,7 @@ export function ContactScreen() {
     <div className="page">
       <h1>{t('route.contact')}</h1>
       <p>{t('contact.intro')}</p>
+      <p><Link to="/home/concierge">{t('contact.tryConcierge')}</Link></p>
       <ul className="card-grid">
         {CONTACT_OPTIONS.map((o) => {
           const s = contactStatus(o, hour)

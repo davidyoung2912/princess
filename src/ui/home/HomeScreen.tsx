@@ -41,6 +41,7 @@ export function HomeScreen() {
       <AfterCruiseCard />
       {trip && <Journey trip={trip} />}
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
+      <p><Link to="/home/concierge">{t('route.concierge')}</Link></p>
       <Explore />
       <ConceptNotice />
     </div>

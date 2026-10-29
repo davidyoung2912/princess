@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 /**
  * Production pages may only load from their own origin, plus Princess image hosts for guest imagery. The mock API runs
- * in-process, so there is no network call yet; Phase 9 adds the Anthropic API to `connect-src`. Build-only: the dev
+ * in-process; the only network call is the concierge's, to the Anthropic API (`connect-src`), and only when a key is set. Build-only: the dev
  * server needs inline scripts for hot reload. React sets styles through the DOM, hence 'unsafe-inline' for styles alone.
  */
 const CSP = [
@@ -12,7 +12,7 @@ const CSP = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.princess.com",
-  "connect-src 'self'",
+  "connect-src 'self' https://api.anthropic.com",
   "worker-src 'self'",
   "manifest-src 'self'",
   "object-src 'none'",

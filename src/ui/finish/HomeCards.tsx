@@ -51,6 +51,7 @@ export function AfterCruiseCard() {
         <li><Link to="/me/cases">{t('route.cases')}</Link></li>
         <li><Link to="/me/loyalty">{t('route.loyalty')}</Link></li>
         <li><Link to="/me/rebook">{t('route.rebook')}</Link></li>
+        <li><Link to="/me/recap">{t('route.recap')}</Link></li>
         <li><Link to="/me/history">{t('route.history')}</Link></li>
       </ul>
     </Card>

@@ -321,7 +321,7 @@ Framework-free modules (`domain`, `mock`, `data`, `design`) have no React import
 | `idb` (tiny) | Promise wrapper for IndexedDB | Or our own 100-line wrapper; **Decision §10** |
 | `qrcode` (or similar small generator) | Boarding-pass QR codes | On-device, no network |
 | `sharp` (dev) | Icon generation script | As in peer |
-| `@anthropic-ai/sdk` | Concierge | Added in Phase 9 only |
+| ~~`@anthropic-ai/sdk`~~ | Concierge | Not added: Phase 9 calls the Messages API with plain `fetch` (smaller bundle, testable in node) |
 
 No CSS framework, no state library (React state plus small context providers and `useSyncExternalStore` over the data layer), no component library.
 
@@ -555,3 +555,18 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 - **Domain (`src/domain`):** `disembark.ts` and `postcruise.ts`. Four next-season departures (`FUTURE_DEPARTURES` in `pricing.ts`) can be held but not booked; they are not in the sailings list.
 - **Choices made:** a hold keeps a price and an offer but does not take a payment; the "Continue to book" link goes to the Phase 3 funnel for dates that are open to book. Query amounts are sent by the screen from the bill line (the mock does not look the line up again). The photo download window stays at 14 days (Phase 7); POS-04 is a link to it from the history. Tax summaries, receipts and the other documents are listed, not generated as files. Hours, groups, allowances, credits and the sustainability figures are authored concept values (verify before real use).
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`.
+
+## 19. Phase 9 progress notes
+
+### Phase 9 done (2026-10-29): AI concierge and delight
+
+- **Scope:** DIS-09, SUP-03, PRE-12 and POS-03. No new dependency.
+- **Ask the concierge (`/home/concierge`):** a chat that is labelled as AI at the top and on every answer ("Concierge (AI)", "built-in helper", or "please talk to a person"), says it can be wrong and cannot book, pay or change anything, and shows which screens an answer came from as links. The conversation is kept on the device for the signed-in person, trimmed to 60 messages, and cleared from a confirm dialog. Linked from Home and from Contact us.
+- **Grounding (`src/ai/tools.ts`):** seven tools over app data (sailings and prices, itinerary, port guide, excursions, restaurants, build a day, the guest's own trip). Each returns its screen as a citation. Bad input answers with an error the model can read. The prompt tells the model the app has one cruise, so a request such as a 7-night Alaska trip gets an honest "this app covers one cruise".
+- **Guardrails (`src/ai/guard.ts`):** a message about an emergency, a medical or legal question, or a request for a person never reaches a model: the app answers with the right numbers and links (emergency card, Health Center, Contact us, chat). A handoff offers "Send this conversation to Guest Services", which opens a support request with the last eight messages, so the history travels with the guest. Messages are capped at 500 characters, 12 are sent as context, and 20 questions an hour go to the model.
+- **The key (`src/ai/concierge.ts`):** `VITE_ANTHROPIC_API_KEY` from a git-ignored `.env.local`, and `VITE_ANTHROPIC_MODEL` (default `claude-sonnet-5-5`). The key is visible in the browser bundle of any build that has one; a server-side proxy remains the later hardening step (requirements §22.2). With no key, offline, over the limit, or on any API failure, the scripted helper (`src/ai/scripted.ts`) answers from the same tools and the screen says why. The CSP allows `https://api.anthropic.com` in `connect-src`.
+- **Client (`src/ai/client.ts`):** the Messages API over `fetch` with the tool loop (at most 5 steps). The SDK was not added.
+- **Build my day (`/plan/day`, PRE-12):** pick a day, tour interests, ship interests, how you get around and whether children are along. A port day gets the best-rated tour that fits the all-aboard time (with the time to be back), one ship event and dinner; a sea day gets up to three events at least an hour apart. Wheelchair and easy settings use the same access data as the Excursions screen. The same planner is the concierge's `build_day` tool (`src/domain/day.ts`).
+- **Trip memories (`/me/recap`, POS-03):** the route map, nights, ports, sea days, nautical miles, photos, tours taken, dinners and the favourite table, with a share-or-copy button (Web Share where it exists, else the clipboard) and a text that carries first names only (`src/domain/recap.ts`). Linked from Me and from the Home "Welcome home" list. **Not built:** a video or story export.
+- **Choices made:** history lives in the shared IndexedDB store under kind `concierge`; the hourly limit counts the guest's own messages on the demo clock; the tools never return the guest’s email, phone or card, so the model sees only what the guest types; a model-written answer is plain text, not formatted.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. The real API call was not run (no key, and no network testing here); it is covered by tests with a stubbed `fetch`.

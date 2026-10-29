@@ -13,7 +13,7 @@ import { NextStep, PaymentBadge } from './tripParts'
 
 const GROUPS: readonly { id: string; titleKey: StringKey; links: readonly { to: string; key: StringKey; badge?: 'unread' }[] }[] = [
   { id: 'trip', titleKey: 'me.group.trip', links: [{ to: '/me/trips', key: 'route.trips' }, { to: '/me/documents', key: 'route.documents' }, { to: '/me/payments', key: 'route.payments' }, { to: '/me/bill', key: 'route.bill' }, { to: '/me/bill/final', key: 'route.finalBill' }, { to: '/me/packages', key: 'route.packages' }] },
-  { id: 'after', titleKey: 'me.group.after', links: [{ to: '/me/history', key: 'route.history' }, { to: '/me/feedback', key: 'route.feedback' }, { to: '/me/cases', key: 'route.cases' }, { to: '/me/loyalty', key: 'route.loyalty' }, { to: '/me/rebook', key: 'route.rebook' }, { to: '/me/sustainability', key: 'route.sustainability' }] },
+  { id: 'after', titleKey: 'me.group.after', links: [{ to: '/me/recap', key: 'route.recap' }, { to: '/me/history', key: 'route.history' }, { to: '/me/feedback', key: 'route.feedback' }, { to: '/me/cases', key: 'route.cases' }, { to: '/me/loyalty', key: 'route.loyalty' }, { to: '/me/rebook', key: 'route.rebook' }, { to: '/me/sustainability', key: 'route.sustainability' }] },
   { id: 'account', titleKey: 'me.group.account', links: [{ to: '/me/profile', key: 'route.profile' }, { to: '/me/notifications', key: 'route.notifications', badge: 'unread' }, { to: '/me/helper', key: 'route.helper' }, { to: '/me/settings', key: 'route.settings' }] },
   { id: 'help', titleKey: 'me.group.help', links: [{ to: '/me/help', key: 'route.helpCentre' }, { to: '/me/contact', key: 'route.contact' }] },
 ]

@@ -13,6 +13,7 @@ import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { Planner } from '../onboard/Planner'
 
 const TOOLS = [
+  { to: '/plan/day', key: 'route.buildDay' },
   { to: '/plan/reservations', key: 'route.reservations' },
   { to: '/plan/excursions', key: 'route.excursions' },
   { to: '/plan/dining', key: 'route.dining' },
