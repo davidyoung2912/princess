@@ -191,7 +191,7 @@ ACC-09 (Won't) stays out: a browser cannot take contactless payments, and the Me
 The same rules as before: one phase at a time, tests with each, `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` to verify, commit and stop after each phase, and nothing started until you ask. Each phase lists the requirements it closes, so the scoreboard can be re-counted at the end.
 
 **Phase 11: Close the Must gaps that need only code** (closes every "Build now" Must item)
-- *Money and offers:* ACC-02 (budget and alerts, kids’ limits), UX-02 with CNT-02 and NOT-04 (one offers area, at most one Home card, "dismiss for this trip", per-week cap, none on safety, emergency or checkout screens).
+- *Money:* ACC-02 (budget and alerts, kids’ limits). The offers area (UX-02, CNT-02, NOT-04) is deferred (section 9).
 - *Low-tech parity:* INC-01 and ACS-06 (print layouts for the daily plan, itinerary and excursion tickets, a large-print option, the desk or phone alternative on every top task), ACS-01 (simple mode, captions setting) and ACS-02 (accessible route finder for ship and port).
 - *Queues and tickets:* DIN-02 (waitlist and a virtual queue), ENT-01 (reserve and ticket shows and classes).
 - *Disruption:* SUP-06 with SAF-06 and MNG-15 (one disruption flow: what changed, options, compensation, acknowledgement, a record).
@@ -220,8 +220,8 @@ The same rules as before: one phase at a time, tests with each, `npm run test`, 
 - **Priorities:** the document’s two priority views differ for a few IDs (POR-04, MNG-11, INC-01, CHK-13 to CHK-15). I used the raised priority.
 - **Scope reductions:** I counted DIS-02, DIS-03, DIS-04 and DIS-08 as done in reduced scope only because §22.6 says so.
 
-## 9. Decisions I need from you before Phase 11
+## 9. Decisions (answered 2026-10-29)
 
-1. Do you want the **offers area** (UX-02) at all? It is a Must, but it means building something the product also chooses to restrain.
-2. For items that **need a server** (Section 6), do you want a Phase 15 later, or should the concept stay front-end only and those items be recorded as out of scope?
-3. For **media** (muster video, graphic deck plan, 360), will you supply assets, or should text and simple drawings stand in?
+1. **Offers area (UX-02, CNT-02, NOT-04): deferred.** Phase 11 does not build it. UX-02 stays Partial; the restraint rules already in place (no offers on required, safety, emergency or checkout screens; no timers or false scarcity) remain.
+2. **Phase 15 server: deferred.** The 23 server-dependent items stay open and unscheduled. Phase 15 is a placeholder, not a commitment.
+3. **Media: text and simple drawings are sufficient for now.** The muster video (SAF-01) and graphic deck plan (OB-04) are built as text plus simple drawings in the phase that reaches them, not as supplied assets.
