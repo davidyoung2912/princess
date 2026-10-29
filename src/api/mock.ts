@@ -22,6 +22,7 @@ import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
 import { createOnboardApi, createServiceApi } from './onboardMock'
 import { createExtrasApi } from './extrasMock'
+import { createFinishApi } from './finishMock'
 import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
 import { checkinWindow } from '../domain/checkin'
 import { ApiError } from './errors'
@@ -204,7 +205,8 @@ export function createMockApi(ctx: MockContext): Api {
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
   const extras = createExtrasApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
-  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: extras.folioLines })
+  const finish = createFinishApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, newId, profileOf, cardsOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
+  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan, extraLines: async () => [...(await extras.folioLines()), ...(await finish.folioLines())] })
   const service = createServiceApi({
     store: ctx.store, who, actor, adult, now, save, newId, run, demo: ctx.demo,
     callback: async (phone) => { await put('ticket', { kind: 'callback', detail: phone }) },
@@ -279,6 +281,9 @@ export function createMockApi(ctx: MockContext): Api {
     room: extras.room,
     laundry: extras.laundry,
     wifi: extras.wifi,
+    disembark: finish.disembark,
+    cases: finish.cases,
+    post: finish.post,
     messages: {
       list: () => run('messages.list', async () => {
         const ids = [who(), ...visibleTo(who()).map((p) => p.id)]

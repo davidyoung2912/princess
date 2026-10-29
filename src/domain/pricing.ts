@@ -14,7 +14,20 @@ const INTERIOR_FARE: Record<string, Cents> = {
   'sun-2027-02-07': 199_900,
   'sun-2027-02-28': 214_900,
   'sun-2027-03-21': 189_900,
+  // Departures not yet open for booking; they can be held after a cruise (POS-06) but are not in the sailings list.
+  'sun-2027-11-07': 164_900,
+  'sun-2027-11-21': 169_900,
+  'sun-2027-12-05': 167_900,
+  'sun-2028-01-09': 179_900,
 }
+
+/** Next-season departures that can be held but not yet booked (POS-06). */
+export const FUTURE_DEPARTURES: readonly { id: string; departure: string }[] = [
+  { id: 'sun-2027-11-07', departure: '2027-11-07' },
+  { id: 'sun-2027-11-21', departure: '2027-11-21' },
+  { id: 'sun-2027-12-05', departure: '2027-12-05' },
+  { id: 'sun-2028-01-09', departure: '2028-01-09' },
+]
 
 export const NIGHTS = 7
 /** Government taxes, port charges and fees per person (illustrative). */

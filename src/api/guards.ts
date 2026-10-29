@@ -1,3 +1,4 @@
+import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
 import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, ProgramView, ReceiptView, RoomView } from './types'
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
@@ -92,4 +93,26 @@ export function asRoomView(raw: unknown): RoomView | null {
 export function asPhotosView(raw: unknown): PhotosView | null {
   const o = obj(raw)
   return o && Array.isArray(o.photos) && Array.isArray(o.favourites) && Array.isArray(o.owned) && Array.isArray(o.receipts) && Array.isArray(o.people) ? (raw as PhotosView) : null
+}
+
+export function asDisembarkView(raw: unknown): DisembarkView | null {
+  const o = obj(raw)
+  if (!o || !obj(o.group) || !obj(o.times) || !obj(o.offAt) || !Array.isArray(o.guests) || typeof o.closed !== 'boolean') return null
+  return o.guests.every((g) => !!obj(g) && typeof obj(g)!.id === 'string' && typeof obj(g)!.bags === 'number') ? (raw as DisembarkView) : null
+}
+
+export function asCustomsView(raw: unknown): CustomsView | null {
+  const o = obj(raw)
+  return o && typeof o.people === 'number' && Array.isArray(o.declare) ? (raw as CustomsView) : null
+}
+
+export function asOnwardView(raw: unknown): OnwardView | null {
+  const o = obj(raw)
+  return o && typeof o.offFrom === 'number' && typeof o.people === 'number' ? (raw as OnwardView) : null
+}
+
+export function asNightView(raw: unknown): NightView | null {
+  const o = obj(raw)
+  if (!o || !Array.isArray(o.entries)) return null
+  return o.entries.every((e) => !!obj(e) && typeof obj(e)!.id === 'string' && typeof obj(e)!.dueAt === 'number' && typeof obj(e)!.state === 'string') ? (raw as NightView) : null
 }

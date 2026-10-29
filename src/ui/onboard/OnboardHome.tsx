@@ -15,6 +15,7 @@ import { Card } from '../Card'
 import { Saved } from './common'
 import { useShipTime } from './shipTime'
 import { PortCard } from './PortCard'
+import { DisembarkCard } from '../finish/HomeCards'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
 export function OnboardHome({ today }: { today: OnboardToday }) {
@@ -39,6 +40,8 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
           <p>{t('onb.clockChangeBody')}</p>
         </Banner>
       )}
+
+      <DisembarkCard />
 
       {today.muster.required && (
         <Banner kind="warning" title={t('onb.muster.banner')} action={<LinkButton to="/ship/muster" variant="secondary">{t('route.muster')}</LinkButton>}>

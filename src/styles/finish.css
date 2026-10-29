@@ -1,0 +1,17 @@
+/* Disembarkation and after the cruise (Phase 8). Colours come only from themes.css tokens. */
+
+.dis__group { font-family: var(--font-display); font-size: var(--fs-headline); font-weight: 700; margin: 0 0 var(--space-2); }
+.fin-progress { width: 100%; height: 1.25rem; margin: 0 0 var(--space-3); accent-color: var(--primary); }
+.fin-state { font-weight: 700; }
+.fin-state--overdue { color: var(--danger); }
+.fin-state--dueSoon { color: var(--warning); }
+.fin-state--done { color: var(--success); }
+
+.rate { display: flex; flex-wrap: wrap; gap: var(--space-2); border: 0; margin: 0 0 var(--space-4); padding: 0; }
+.rate legend { font-weight: 700; margin-bottom: var(--space-2); }
+.rate .choice { min-width: var(--target-min); justify-content: center; border: 2px solid var(--border-strong); border-radius: var(--radius-pill); padding: 0 var(--space-4); }
+.rate .choice:has(input:checked) { border-color: var(--primary); font-weight: 700; }
+
+.case-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-3); }
+.case { padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.case__title { margin: 0 0 var(--space-2); }

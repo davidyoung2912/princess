@@ -16,6 +16,7 @@ import { NextStep } from '../account/tripParts'
 import { Saved } from '../onboard/common'
 import { OnboardHome } from '../onboard/OnboardHome'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
+import { AfterCruiseCard } from '../finish/HomeCards'
 
 /** The trip the guest is on, from the trips list: their own booking first. */
 const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.find((x) => x.kind === 'current') ?? upcoming[0] ?? null
@@ -37,6 +38,7 @@ export function HomeScreen() {
   return (
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
+      <AfterCruiseCard />
       {trip && <Journey trip={trip} />}
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
       <Explore />

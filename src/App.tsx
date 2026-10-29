@@ -51,6 +51,17 @@ import { RoomScreen } from './ui/extras/RoomScreen'
 import { PhotosScreen } from './ui/extras/PhotosScreen'
 import { LaundryScreen } from './ui/extras/LaundryScreen'
 import { WifiScreen } from './ui/extras/WifiScreen'
+import { CustomsScreen } from './ui/finish/CustomsScreen'
+import { DisembarkScreen } from './ui/finish/DisembarkScreen'
+import { FinalNightScreen } from './ui/finish/FinalNightScreen'
+import { OnwardScreen } from './ui/finish/OnwardScreen'
+import { FinalBillScreen } from './ui/finish/FinalBillScreen'
+import { CasesScreen } from './ui/finish/CasesScreen'
+import { FeedbackScreen } from './ui/finish/FeedbackScreen'
+import { HistoryScreen } from './ui/finish/HistoryScreen'
+import { LoyaltyScreen } from './ui/finish/LoyaltyScreen'
+import { RebookScreen } from './ui/finish/RebookScreen'
+import { SustainabilityScreen } from './ui/finish/SustainabilityScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -70,6 +81,10 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/check-in/:id': CheckinScreen,
   '/home/embarkation': EmbarkScreen,
   '/home/embarkation/steps': CompanionScreen,
+  '/home/disembark': DisembarkScreen,
+  '/home/disembark/customs': CustomsScreen,
+  '/home/disembark/onward': OnwardScreen,
+  '/home/disembark/final-night': FinalNightScreen,
   '/home/cruise': CruiseScreen,
   '/home/sailings': SailingsScreen,
   '/home/sailings/:id': SailingScreen,
@@ -102,6 +117,13 @@ const SCREENS: Record<string, ComponentType> = {
   '/ship/wifi': WifiScreen,
   '/chat': ChatScreen,
   '/me/bill': BillScreen,
+  '/me/bill/final': FinalBillScreen,
+  '/me/cases': CasesScreen,
+  '/me/feedback': FeedbackScreen,
+  '/me/history': HistoryScreen,
+  '/me/loyalty': LoyaltyScreen,
+  '/me/rebook': RebookScreen,
+  '/me/sustainability': SustainabilityScreen,
   '/me/packages': PackagesScreen,
   '/book': BookScreen,
   '/book/:id': BookScreen,

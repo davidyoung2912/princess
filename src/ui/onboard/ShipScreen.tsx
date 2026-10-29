@@ -52,6 +52,8 @@ export function ShipScreen() {
           <li><Link to="/ship/photos">{t('route.photos')}</Link></li>
           <li><Link to="/ship/laundry">{t('route.laundry')}</Link></li>
           <li><Link to="/ship/wifi">{t('route.wifi')}</Link></li>
+          <li><Link to="/home/disembark">{t('route.disembark')}</Link></li>
+          <li><Link to="/me/cases">{t('route.cases')}</Link></li>
         </ul>
       </nav>
     </div>

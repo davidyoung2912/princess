@@ -36,6 +36,7 @@ import type { StoredDevice, WifiPlan } from '../domain/wifi'
 import type { DatedEvent } from '../domain/program'
 import type { EmergencyCard } from '../domain/safety'
 import type { FolioLine, FolioTotals } from '../domain/folio'
+import type { CasesApi, DisembarkApi, PostApi } from './finishTypes'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -677,6 +678,9 @@ export interface Api {
   room: RoomApi
   laundry: LaundryApi
   wifi: WifiApi
+  disembark: DisembarkApi
+  cases: CasesApi
+  post: PostApi
   folio: { entitlements(): Promise<{ entitlements: Entitlements; balances: Record<BalanceKey, Balance> }> }
   requests: { list(): Promise<Item[]>; create(kind: string, note: string): Promise<Item> }
   ports: { today(): Promise<PortToday> }
