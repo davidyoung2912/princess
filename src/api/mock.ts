@@ -1,5 +1,4 @@
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../domain/contacts'
-import { balances, computeEntitlements, sourceOf } from '../domain/entitlements'
 import { partyOf, personaById, visibleTo, type PersonaId } from '../domain/personas'
 import { SHIP } from '../domain/ship'
 import { isSavable, toggleKey } from '../domain/favourites'
@@ -20,6 +19,7 @@ import type { Channel } from '../data/sync'
 import type { DataRecord, DataStore } from '../data/store'
 import type { DemoState } from '../demo/state'
 import { createBookingApi } from './bookingMock'
+import { createPlanApi } from './planMock'
 import { ApiError } from './errors'
 import { createRng, type Rng } from './rng'
 import type { Api, BookingView, DocumentsView, GuestDocumentsView, Item, Message, PaymentsView, ProfileView, Receipt, Ticket, TripView, TripsView } from './types'
@@ -189,6 +189,8 @@ export function createMockApi(ctx: MockContext): Api {
     }
   }
 
+  const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
+
   const tripsView = async (): Promise<TripsView> => {
     const booked = await booking.list()
     const bookedTrips = await Promise.all(booked.filter((b) => b.status === 'confirmed').map(bookedTrip))
@@ -288,10 +290,7 @@ export function createMockApi(ctx: MockContext): Api {
       }),
     },
     folio: {
-      entitlements: () => run('folio.entitlements', () => {
-        const e = computeEntitlements(sourceOf(personaById(who())!))
-        return { entitlements: e, balances: balances(e) }
-      }),
+      entitlements: () => run('folio.entitlements', () => plan.entitlementsOf(who())),
     },
     requests: {
       list: () => run('requests.list', () => mine('request')),
@@ -455,6 +454,7 @@ export function createMockApi(ctx: MockContext): Api {
       }),
     },
     booking: booking.api,
+    plan: plan.api,
     help: {
       contacts: () => run('help.contacts', () => ({ guestServices: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER })),
     },

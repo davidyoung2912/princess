@@ -66,6 +66,30 @@ const KIND = 'booking'
 const DRAFT = 'bookingDraft'
 const HOUR = 3_600_000
 
+/** Checks a payment before any money moves: amounts, cards, the pretend bank's decline, and the bank's one-time code. Returns how each part was paid, in words. */
+export function createAuthoriser(d: Pick<BookingDeps, 'cardsOf' | 'today'>) {
+  const method = (part: PaymentPart, cards: Card[]): string => {
+    if (part.method === 'wallet') return 'Device wallet'
+    const card = cards.find((c) => c.id === part.cardId)!
+    return `${BRAND_NAMES[card.brand]} ending ${card.last4}`
+  }
+  return async function authorise(parts: readonly PaymentPart[], due: number, challenge: string | undefined): Promise<string[]> {
+    if (checkParts(parts, due)) throw new ApiError('invalid', 'The amounts do not add up to what is due')
+    const cards = await d.cardsOf()
+    for (const p of parts) {
+      if (p.method !== 'card') continue
+      const card = cards.find((c) => c.id === p.cardId)
+      if (!card || validateCard(card.last4, card.expiry, d.today())) throw new ApiError('invalid', 'Choose a card that has not expired')
+      if (card.last4 === DECLINED_LAST4) throw new ApiError('declined', method(p, cards))
+    }
+    if (parts.some(scaRequired)) {
+      if (!challenge) throw new ApiError('challenge', 'required')
+      if (challenge.trim() !== SCA_DEMO_CODE) throw new ApiError('challenge', 'wrong')
+    }
+    return parts.map((p) => method(p, cards))
+  }
+}
+
 export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: () => Promise<BookingView[]> } {
   const stored = async (): Promise<StoredBooking[]> => (await d.store.list(KIND, d.who())).map((r) => readStored(r.data)).filter((s): s is StoredBooking => !!s)
   const find = async (number: string): Promise<StoredBooking> => {
@@ -93,28 +117,7 @@ export function createBookingApi(d: BookingDeps): { api: Api['booking']; list: (
   }
   const put = async (s: StoredBooking) => { await d.save(KIND, d.who(), s.number, s) }
 
-  const method = (part: PaymentPart, cards: Card[]): string => {
-    if (part.method === 'wallet') return 'Device wallet'
-    const card = cards.find((c) => c.id === part.cardId)!
-    return `${BRAND_NAMES[card.brand]} ending ${card.last4}`
-  }
-
-  /** Checks a payment before any money moves: amounts, cards, the pretend bank's decline, and the bank's one-time code. */
-  async function authorise(parts: readonly PaymentPart[], due: number, challenge: string | undefined): Promise<string[]> {
-    if (checkParts(parts, due)) throw new ApiError('invalid', 'The amounts do not add up to what is due')
-    const cards = await d.cardsOf()
-    for (const p of parts) {
-      if (p.method !== 'card') continue
-      const card = cards.find((c) => c.id === p.cardId)
-      if (!card || validateCard(card.last4, card.expiry, d.today())) throw new ApiError('invalid', 'Choose a card that has not expired')
-      if (card.last4 === DECLINED_LAST4) throw new ApiError('declined', method(p, cards))
-    }
-    if (parts.some(scaRequired)) {
-      if (!challenge) throw new ApiError('challenge', 'required')
-      if (challenge.trim() !== SCA_DEMO_CODE) throw new ApiError('challenge', 'wrong')
-    }
-    return parts.map((p) => method(p, cards))
-  }
+  const authorise = createAuthoriser(d)
 
   const newNumber = async (draftId: string): Promise<string> => {
     const taken = new Set((await stored()).map((s) => s.number))

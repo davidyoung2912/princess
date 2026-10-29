@@ -12,6 +12,15 @@ import type { Draft, GuestDraft, LeadContact, DiningChoice, Occasion } from '../
 import type { Cabin } from '../domain/cabins'
 import type { BookingQuote, FareId, PayOption, PayPlan, PaymentPart, Promotion } from '../domain/fares'
 import type { Acceptance, CancelTerms, ChangeCheck } from '../domain/policy'
+import type { DietaryId, NeedId } from '../domain/account'
+import type { ExcursionItem, TimingProblem, TourRefund } from '../domain/excursions'
+import type { DiningPlan, Slot, Window as DiningWindow } from '../domain/dining'
+import type { AddOnId, PriceState, Unit } from '../domain/packages'
+import type { ChecklistEntry, Milestone } from '../domain/checklist'
+import type { PackItem, Weather } from '../domain/packing'
+import type { TravelPlan, Window as ArrivalWindow } from '../domain/travel'
+import type { AssistId, Deadline, RequestStatus } from '../domain/assistance'
+import type { PlanDay } from '../domain/plan'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -264,6 +273,238 @@ export interface BookInput {
   challenge?: string
 }
 
+
+// ---- Pre-book and personalise (Phase 4) ----
+
+export interface ExcursionOffer {
+  item: ExcursionItem
+  /** The day it runs, "YYYY-MM-DD", and the itinerary day number. */
+  date: string
+  day: number
+  /** Places left on the sailing; 0 is sold out. */
+  spots: number
+  /** Whether it fits the ship's day. Every authored tour does; a tour that did not would be shown but not bookable. */
+  timing: TimingProblem | null
+  /** Be back at the landing by this local time, "HH:MM". */
+  backBy: string
+  daysToTour: number
+  tender: boolean
+}
+
+export interface TourBooking {
+  id: string
+  excursionId: string
+  guests: PersonaId[]
+  /** Price of the tour for these guests. */
+  total: number
+  /** Part of it covered by the excursion credit. */
+  credit: number
+  methods: string[]
+  at: number
+  status: 'booked' | 'cancelled'
+  /** What cancelling now would cost and refund; for a cancelled tour, what was refunded. */
+  cancel: TourRefund
+}
+
+export interface CartLine {
+  excursionId: string
+  guests: PersonaId[]
+  total: number
+}
+
+export interface ExcursionsView {
+  offers: ExcursionOffer[]
+  booked: TourBooking[]
+  cart: CartLine[]
+  cartTotal: number
+  /** Excursion credit left across the party, and how much of it the cart would use. */
+  creditLeft: number
+  creditApplied: number
+  party: PartyMember[]
+  /** Whether the signed-in person may book (an adult, before the ship sails). */
+  canBook: boolean
+  daysToDeparture: number
+}
+
+export interface Reservation {
+  id: string
+  venueId: string
+  day: number
+  time: string
+  guests: PersonaId[]
+  note: string
+  /** Dietary needs of the guests, passed on with the reservation. */
+  dietary: { name: string; needs: DietaryId[] }[]
+  /** Guests whose dinner is covered by their package. */
+  covered: PersonaId[]
+  charge: number
+  at: number
+  /** The day the reminder goes, "YYYY-MM-DD". */
+  reminderOn: string
+}
+
+export interface DiningView {
+  window: DiningWindow
+  plan: DiningPlan
+  /** The assigned time for a fixed seating, or null for Anytime Dining. */
+  seating: string | null
+  reservations: Reservation[]
+  party: PartyMember[]
+  /** Specialty dinners the party's packages still cover. */
+  mealsLeft: number
+  canBook: boolean
+  daysToDeparture: number
+}
+
+export interface Pooled { total: number; used: number; remaining: number }
+
+export interface PersonEntitlements {
+  id: PersonaId
+  name: string
+  package: PackageId
+  entitlements: Entitlements
+  balances: Record<BalanceKey, Balance>
+}
+
+export interface AddOnOffer {
+  id: AddOnId
+  unit: Unit
+  /** The price of one unit now, and what it was before (or will be after) the change. */
+  price: number
+  base: number
+  /** The day the price changes, "YYYY-MM-DD", and what it changes to. */
+  changeOn: string
+  changesTo: number
+  eligible: PartyMember[]
+}
+
+export interface UpgradeOffer {
+  guest: PersonaId
+  name: string
+  from: PackageId
+  options: { to: Exclude<PackageId, 'none'>; price: number; changeOn: string; changesTo: number }[]
+}
+
+export interface PurchaseView {
+  id: string
+  kind: 'addOn' | 'upgrade'
+  item: AddOnId | Exclude<PackageId, 'none'>
+  guests: PersonaId[]
+  /** Price paid for each unit, and how many units. */
+  unit: number
+  units: number
+  total: number
+  at: number
+  methods: string[]
+  status: 'active' | 'cancelled'
+  /** Price protection: locked (the price has gone up since), dropped (it is lower now) or same; per unit and in all. */
+  price: { state: PriceState; perUnit: number; total: number }
+  /** Credit already given for a price drop. */
+  credited: number
+  canCancel: boolean
+}
+
+export interface PackagesView {
+  addOns: AddOnOffer[]
+  upgrades: UpgradeOffer[]
+  purchases: PurchaseView[]
+  people: PersonEntitlements[]
+  credit: Pooled
+  party: PartyMember[]
+  daysToDeparture: number
+  canBuy: boolean
+}
+
+export type BuyInput = { kind: 'addOn'; item: AddOnId; guests: PersonaId[] } | { kind: 'upgrade'; to: Exclude<PackageId, 'none'>; guests: PersonaId[] }
+
+export interface PlanOverview {
+  days: PlanDay[]
+  daysToDeparture: number
+  departure: string
+}
+
+export interface ChecklistView {
+  entries: ChecklistEntry[]
+  milestones: Milestone[]
+  progress: { done: number; total: number }
+  next: ChecklistEntry | null
+  daysToDeparture: number
+}
+
+export interface PackingView {
+  items: PackItem[]
+  ticked: string[]
+  weather: Weather
+  nights: number
+  daysToDeparture: number
+}
+
+export interface TravelView {
+  plan: TravelPlan
+  windows: ArrivalWindow[]
+  priority: boolean
+  suggested: string
+  canEdit: boolean
+}
+
+export interface AssistRequest {
+  id: string
+  kind: AssistId
+  guest: PersonaId
+  note: string
+  at: number
+  status: RequestStatus
+}
+
+export interface AssistanceView {
+  deadlines: { kind: AssistId; deadline: Deadline }[]
+  requests: AssistRequest[]
+  party: PartyMember[]
+  canRequest: boolean
+  daysToDeparture: number
+  /** Needs already in each guest's profile. */
+  needs: Partial<Record<PersonaId, NeedId[]>>
+}
+
+export interface PlanApi {
+  overview(): Promise<PlanOverview>
+  excursions: {
+    list(): Promise<ExcursionsView>
+    /** Rejects `conflict` with a message: `soldOut`, `overlap`, `timing`, `age`, `closed`, `inCart`; `invalid` for an unknown tour or guest. */
+    addToCart(excursionId: string, guests: PersonaId[]): Promise<ExcursionsView>
+    removeFromCart(excursionId: string): Promise<ExcursionsView>
+    /** Books everything in the cart. The excursion credit is used first; the rest is paid as `parts`. Rejects as `booking.book` does for payment problems. */
+    checkout(parts: PaymentPart[], challenge?: string): Promise<ExcursionsView>
+    /** Changes who is on a booked tour (at least one guest stays). */
+    changeGuests(bookingId: string, guests: PersonaId[]): Promise<ExcursionsView>
+    cancel(bookingId: string): Promise<ExcursionsView>
+  }
+  dining: {
+    view(): Promise<DiningView>
+    /** The table grid for a restaurant on a night. */
+    slots(venueId: string, day: number): Promise<Slot[]>
+    /** Rejects `forbidden` (supervised), `conflict` with `notOpen`, `full` or `clash`, `invalid` for a bad venue, night, time or party. */
+    reserve(input: { venueId: string; day: number; time: string; guests: PersonaId[]; note: string }): Promise<DiningView>
+    cancel(id: string): Promise<DiningView>
+  }
+  packages: {
+    view(): Promise<PackagesView>
+    /** Rejects `invalid` for a guest who is not eligible, `conflict` when it is already held, payment errors as `booking.book`. */
+    buy(input: BuyInput, parts: PaymentPart[], challenge?: string): Promise<PackagesView>
+    /** Takes the credit owed after a price drop (PRE-17). */
+    claimDrop(purchaseId: string): Promise<PackagesView>
+    cancel(purchaseId: string): Promise<PackagesView>
+  }
+  checklist: { get(): Promise<ChecklistView>; tick(id: string, done: boolean): Promise<ChecklistView> }
+  packing: { get(): Promise<PackingView>; tick(id: string, done: boolean): Promise<PackingView> }
+  travel: { get(): Promise<TravelView>; save(plan: TravelPlan): Promise<TravelView> }
+  assistance: {
+    get(): Promise<AssistanceView>
+    request(input: { kind: AssistId; guest: PersonaId; note: string }): Promise<AssistanceView>
+    cancel(id: string): Promise<AssistanceView>
+  }
+}
+
 export interface Api {
   auth: { me(): Promise<Identity> }
   bookings: { get(): Promise<Booking>; sailings(): Promise<Sailing[]> }
@@ -350,5 +591,6 @@ export interface Api {
     change(number: string, sailingId: string): Promise<BookingView>
     cancel(number: string): Promise<BookingView>
   }
+  plan: PlanApi
   help: { contacts(): Promise<{ guestServices: string; emergency: string }> }
 }

@@ -21,6 +21,14 @@ import { PaymentsScreen } from './ui/account/PaymentsScreen'
 import { ProfileScreen } from './ui/account/ProfileScreen'
 import { TripScreen } from './ui/account/TripScreen'
 import { TripsScreen } from './ui/account/TripsScreen'
+import { AssistanceScreen } from './ui/plan/AssistanceScreen'
+import { ChecklistScreen } from './ui/plan/ChecklistScreen'
+import { DiningScreen } from './ui/plan/DiningScreen'
+import { ExcursionsScreen } from './ui/plan/ExcursionsScreen'
+import { PackagesScreen } from './ui/plan/PackagesScreen'
+import { PackingScreen } from './ui/plan/PackingScreen'
+import { PlanScreen } from './ui/plan/PlanScreen'
+import { TravelScreen } from './ui/plan/TravelScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -38,6 +46,14 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/ports/:id': PortScreen,
   '/home/ship': ShipScreen,
   '/home/saved': SavedScreen,
+  '/plan': PlanScreen,
+  '/plan/excursions': ExcursionsScreen,
+  '/plan/dining': DiningScreen,
+  '/plan/checklist': ChecklistScreen,
+  '/plan/packing': PackingScreen,
+  '/plan/travel': TravelScreen,
+  '/plan/assistance': AssistanceScreen,
+  '/me/packages': PackagesScreen,
   '/book': BookScreen,
   '/book/:id': BookScreen,
   '/book/confirmed/:id': ConfirmedScreen,

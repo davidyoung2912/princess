@@ -63,6 +63,7 @@ export function TripScreen() {
               </ul>
             </section>
 
+            {x.kind === 'current' && <Card info><p>{t('trip.planNote')} <Link to="/plan">{t('route.plan')}</Link></p></Card>}
             {x.kind === 'booked' && <ManageBooking number={x.number} onChanged={trip.retry} />}
             <Card info><p>{t('trip.sailingNote')} <Link to={`/home/sailings/${x.sailingId}`}>{t('trip.sailingLink')}</Link></p></Card>
             <p><Link to="/me/trips">{t('route.trips')}</Link></p>

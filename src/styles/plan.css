@@ -1,0 +1,32 @@
+/* Pre-book and personalise (Phase 4). Colours come only from themes.css tokens. */
+
+.filters { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: flex-end; margin-bottom: var(--space-3); }
+.filters .field { margin-bottom: 0; }
+.chip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0; border: 0; min-width: 0; }
+
+.tour h3 { margin-top: 0; }
+.tour__facts { margin: 0 0 var(--space-3); padding: 0; list-style: none; color: var(--text-muted); }
+.tour__facts li { margin-bottom: var(--space-1); }
+.tour__price { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lead); margin: 0 0 var(--space-2); }
+
+.day-list { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; gap: var(--space-3); }
+.day-card { margin-bottom: 0; }
+.day-card h3 { margin-bottom: var(--space-2); }
+.day-card__entries { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
+.day-card__entries li { display: grid; grid-template-columns: 5.5rem 1fr; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
+.day-card__time { font-weight: 700; }
+.day-card__gap { margin: 0 0 var(--space-2); color: var(--text-muted); }
+
+.slot-grid { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+.slot-grid .choice { border: 2px solid var(--border-strong); border-radius: var(--radius-card); padding: 0 var(--space-3); }
+.slot-grid .choice--full { color: var(--text-muted); cursor: not-allowed; border-style: dashed; }
+
+.meter { display: block; width: 100%; height: 0.75rem; margin: var(--space-1) 0 var(--space-2); }
+.progress-line { margin: 0 0 var(--space-2); font-weight: 600; }
+.price-note { margin: 0 0 var(--space-2); }
+.calc-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.verdict { font-weight: 700; }
+.milestone { margin-bottom: var(--space-5); }
+.check-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
+.check-row__text { flex: 1 1 14rem; }
+.check-row small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }

@@ -171,4 +171,4 @@ export function normalizeHelper(raw: unknown): Helper | null {
 /** Whether a helper may do something: only while active, and view is needed for everything. */
 export const helperMay = (h: Helper | null, permission: PermissionId): boolean => !!h && h.status === 'active' && h.permissions.includes('view') && h.permissions.includes(permission)
 
-export interface HistoryEntry { id: string; at: number; /** Who made the change. */ by: string; what: 'profile' | 'documents' | 'payment' | 'card' | 'helper' | 'trip' | 'notifications' | 'booking'; detail: string }
+export interface HistoryEntry { id: string; at: number; /** Who made the change. */ by: string; what: 'profile' | 'documents' | 'payment' | 'card' | 'helper' | 'trip' | 'notifications' | 'booking' | 'tour' | 'dining' | 'purchase' | 'assistance' | 'travel'; detail: string }
