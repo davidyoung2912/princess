@@ -9,7 +9,7 @@ export function countdown(days: number): string {
 }
 
 /** Where each next action leads. */
-export const NEXT_LINK: Record<NextActionId, string | null> = { payOverdue: '/me/payments', documents: '/me/documents', payDue: '/me/payments', checkin: '/home/boarding-pass', allSet: null }
+export const NEXT_LINK: Record<NextActionId, string | null> = { payOverdue: '/me/payments', documents: '/me/documents', payDue: '/me/payments', checkin: '/home/check-in', allSet: null }
 
 /** "Sat, 6 Mar 2027" for a moment in ship home time. */
 export const formatMoment = (epoch: number): string => formatDate(dateIn(epoch, 'America/New_York'))

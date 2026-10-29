@@ -109,3 +109,36 @@ describe('account screens', () => {
     for (const route of ROUTES.filter((r) => r.path.startsWith('/me/') && r.phase === 2)) expect(render(route.path.replace(':id', 'sample')).match(/<h1/g), route.path).toHaveLength(1)
   })
 })
+
+describe('check-in and boarding screens', () => {
+  it('reach the no-sign-in pass finder from Home before anything has loaded', () => {
+    const home = render('/')
+    for (const href of ['/home/find-pass', '/home/sailings', '/home/cruise']) expect(home).toContain(`href="${href}"`)
+  })
+
+  it('shows one h1 and a loading note while a guest’s check-in loads', () => {
+    for (const path of ['/home/check-in', '/home/check-in/photo', '/home/check-in/receipt', '/home/boarding-pass', '/home/embarkation', '/home/embarkation/steps']) {
+      const html = decode(render(path))
+      expect(html.match(/<h1/g), path).toHaveLength(1)
+      expect(html, path).toContain('role="status"')
+    }
+  })
+
+  it('names the step on a step address and the overview on an unknown one', () => {
+    expect(decode(render('/home/check-in/photo'))).toContain(`<h1>${t('checkin.step.photo')}</h1>`)
+    expect(decode(render('/home/check-in/nonsense'))).toContain(`<h1>${t('route.checkin')}</h1>`)
+  })
+
+  it('needs no sign-in to find a pass, and asks only for the booking number and a last name', () => {
+    const html = decode(render('/home/find-pass'))
+    expect(html).toContain(t('find.number'))
+    expect(html).toContain(t('find.lastName'))
+  })
+
+  it('explains the terminal fallback before anything else matters, with a way back to online check-in', () => {
+    const html = decode(render('/home/check-in/terminal'))
+    expect(html).toContain(t('terminal.reassure'))
+    expect(html).toContain('href="/home/check-in"')
+    expect(html).toContain(t('terminal.blue'))
+  })
+})

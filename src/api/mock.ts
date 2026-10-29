@@ -20,6 +20,8 @@ import type { DataRecord, DataStore } from '../data/store'
 import type { DemoState } from '../demo/state'
 import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
+import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
+import { checkinWindow } from '../domain/checkin'
 import { ApiError } from './errors'
 import { createRng, type Rng } from './rng'
 import type { Api, BookingView, DocumentsView, GuestDocumentsView, Item, Message, PaymentsView, ProfileView, Receipt, Ticket, TripView, TripsView } from './types'
@@ -97,11 +99,12 @@ export function createMockApi(ctx: MockContext): Api {
     return Array.isArray(keys) ? keys.filter((k): k is string => typeof k === 'string') : []
   }
 
-  const checkinOpensAt = (s: Sailing = sailingById(ctx.demo().sailingId)!) => zonedToEpoch(addDays(s.departure, -3), '00:00', 'America/New_York')
   const checkinStatus = async (s?: Sailing) => {
-    const done = s ? undefined : await ctx.store.get('checkin', who(), 'status')
-    const opensAt = checkinOpensAt(s)
-    return { state: done ? ('done' as const) : now() >= opensAt ? ('open' as const) : ('notOpen' as const), opensAt }
+    const sailing = s ?? sailingById(ctx.demo().sailingId)!
+    const done = s ? undefined : await ctx.store.get('checkin', personaById(who())!.booker, 'status')
+    const opensAt = checkinOpensAt(sailing)
+    const closesAt = checkinClosesAt(sailing)
+    return { state: done ? ('done' as const) : checkinWindow(now(), opensAt, closesAt), opensAt, closesAt }
   }
 
   // ---- Account and My Trips (Phase 2) ----
@@ -189,6 +192,7 @@ export function createMockApi(ctx: MockContext): Api {
     }
   }
 
+  const checkinApi = createCheckinApi({ store: ctx.store, channel: ctx.channel, actor, adult, now, save, log, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, documents: documentsView, terminalMoved: () => ctx.demo().scenarios.includes('terminalChange') })
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
   const tripsView = async (): Promise<TripsView> => {
@@ -244,15 +248,7 @@ export function createMockApi(ctx: MockContext): Api {
       }),
       sailings: () => run('bookings.sailings', () => SAILINGS.map((s) => ({ id: s.id, departure: s.departure }))),
     },
-    checkin: {
-      status: () => run('checkin.status', checkinStatus),
-      submit: () => run('checkin.submit', async () => {
-        const status = await checkinStatus()
-        if (status.state === 'notOpen') throw new ApiError('conflict', 'Check-in is not open yet')
-        await save('checkin', who(), 'status', { done: true })
-        return { ...status, state: 'done' as const }
-      }),
-    },
+    ...checkinApi,
     dining: {
       list: () => run('dining.list', () => mine('dining')),
       reschedule: (id, to) => run('dining.reschedule', async () => {

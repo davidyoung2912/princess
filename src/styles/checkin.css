@@ -1,0 +1,28 @@
+/* Check-in, boarding pass and embarkation day (Phase 5). Colours come from themes.css tokens, except the bright and printed pass, which is always black on white so it scans. */
+
+.qr { display: block; width: 100%; max-width: 20rem; height: auto; margin: 0 auto var(--space-3); border: 2px solid var(--border-strong); border-radius: var(--radius-card); }
+
+.pass-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-5); }
+.pass { display: grid; gap: var(--space-3); justify-items: start; }
+.pass__face { width: 100%; padding: var(--space-4); border: 3px solid var(--text); border-radius: var(--radius-card); background: var(--bg); color: var(--text); }
+.pass__name { margin: 0 0 var(--space-1); }
+.pass__printed { margin: 0 0 var(--space-3); font-family: var(--font-display); font-size: var(--fs-lead); font-weight: 700; letter-spacing: 0.06em; }
+.pass__facts { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin: 0; }
+.pass__facts dt { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 600; }
+.pass__facts dd { margin: 0; font-size: var(--fs-lead); font-weight: 700; }
+.pass__missing { margin: 0 0 var(--space-3); padding: var(--space-4); border: 2px dashed var(--border-strong); border-radius: var(--radius-card); font-weight: 600; }
+
+.pass__face--big, .pass--bright .pass__face { background: #fff; color: #000; border-color: #000; }
+.pass__face--big .pass__facts dt, .pass--bright .pass__facts dt { color: #000; }
+.pass__face--big .qr { max-width: min(100%, 26rem); border: 0; }
+
+.demo-box { margin: 0 0 var(--space-4); }
+.demo-box summary { display: flex; align-items: center; min-height: var(--target-min); font-weight: 600; cursor: pointer; }
+
+@media print {
+  .pass-list { gap: 1rem; }
+  .pass { break-inside: avoid; }
+  .pass__face { border: 2px solid #000; background: #fff; color: #000; }
+  .pass__facts dt { color: #000; }
+  .qr { border: 0; }
+}

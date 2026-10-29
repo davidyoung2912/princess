@@ -7,19 +7,18 @@ import { SHIP } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { Card } from '../Card'
-import { ConceptNotice } from '../ConceptNotice'
 import { LinkButton } from '../Button'
 import { FromPriceBlock, PriceState } from './parts'
 
-/** Home before booking (DIS-01): what the cruise is, what it costs, where it goes, with no account needed. */
-export function Landing() {
+/** The cruise, its price, where it goes and the ship (DIS-01): what a guest browses from Home, with no account needed. */
+export function Explore() {
   const offers = useAsync(() => api.discover.offers(), [])
   const lowest = offers.data ? offers.data.map((o) => o.from).reduce((a, b) => (b.fare < a.fare ? b : a)) : lowestFromPrice()
   return (
-    <div className="page">
+    <>
       <Card hero labelledBy="cruise-h">
         <p className="eyebrow">{t('discover.eyebrow', { ship: SHIP.name })}</p>
-        <h1 id="cruise-h">{CRUISE.name}</h1>
+        <h2 id="cruise-h">{CRUISE.name}</h2>
         <p>{CRUISE.intro}</p>
         <PriceState state={offers}><FromPriceBlock price={lowest} /></PriceState>
         <div className="button-row">
@@ -50,7 +49,6 @@ export function Landing() {
       </section>
 
       <p><Link to="/home/saved">{t('discover.savedLink')}</Link></p>
-      <ConceptNotice />
-    </div>
+    </>
   )
 }

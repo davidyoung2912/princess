@@ -21,6 +21,9 @@ import type { PackItem, Weather } from '../domain/packing'
 import type { TravelPlan, Window as ArrivalWindow } from '../domain/travel'
 import type { AssistId, Deadline, RequestStatus } from '../domain/assistance'
 import type { PlanDay } from '../domain/plan'
+import type { EmergencyContact } from '../domain/account'
+import type { CheckinProgress, DocumentKind, GuestCheckin, GuestProgress, PhotoMetrics, StepId } from '../domain/checkin'
+import type { AfternoonId, CarryOnId, CompanionId, LuggageStatus, Terminal, Traffic } from '../domain/boarding'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -49,9 +52,11 @@ export interface Sailing {
 }
 
 export interface CheckinStatus {
-  state: 'notOpen' | 'open' | 'done'
+  state: 'notOpen' | 'open' | 'closed' | 'done'
   /** When online check-in opens (three days before departure). */
   opensAt: number
+  /** When it closes (10:00 on sailing day); the terminal desk takes over after that. */
+  closesAt: number
 }
 
 export interface Item {
@@ -505,10 +510,132 @@ export interface PlanApi {
   }
 }
 
+export interface CheckinGuestView {
+  id: PersonaId
+  name: string
+  first: string
+  age: number
+  child: boolean
+  citizenship: Citizenship
+  record: GuestCheckin
+  progress: GuestProgress
+  /** What the app already knows, so nothing is typed twice. */
+  defaults: { emergency: EmergencyContact; documentKind: DocumentKind; passportExpires: string }
+}
+
+export interface CheckinView {
+  status: CheckinStatus
+  guests: CheckinGuestView[]
+  payment: { cardId: string; label: string; at: number } | null
+  arrival: string | null
+  cards: Card[]
+  windows: ArrivalWindow[]
+  priority: boolean
+  suggested: string
+  progress: CheckinProgress
+  returnDate: string
+  /** False for a supervised child account, or once check-in has closed. */
+  canEdit: boolean
+  /** When the guest finished check-in, if they have. */
+  finishedAt: number | null
+}
+
+export type CheckinSave =
+  | { step: 'confirm'; guests: PersonaId[] }
+  | { step: 'document'; guest: PersonaId; kind: DocumentKind; country: string; number: string; expires: string }
+  | { step: 'photo'; guest: PersonaId; metrics: PhotoMetrics }
+  | { step: 'emergency'; guests: PersonaId[]; name: string; phone: string; relationship: string }
+  | { step: 'contract'; guests: PersonaId[] }
+  | { step: 'health'; guest: PersonaId; answers: Record<string, boolean> }
+  | { step: 'payment'; cardId: string }
+  | { step: 'arrival'; window: string }
+
+/** One line of the "what we have on file" receipt (CHK-13). */
+export interface ReceiptItem {
+  step: StepId
+  /** What was saved, in words, never the whole number: "Passport ending 4821". */
+  detail: string | null
+  savedAt: number | null
+}
+
+export interface ReceiptView {
+  number: string
+  guests: { id: PersonaId; name: string; items: ReceiptItem[] }[]
+  booking: ReceiptItem[]
+  complete: boolean
+  finishedAt: number | null
+}
+
+export interface GuestPass {
+  id: PersonaId
+  name: string
+  /** Printed name, "WHITFIELD/GERALD". */
+  printed: string
+  seq: number
+  ready: boolean
+  /** The text inside the QR code. */
+  code: string
+  cabin: string
+  deck: number
+  muster: string
+  group: string
+}
+
+export interface BoardingView {
+  number: string
+  departure: string
+  checkinDone: boolean
+  lane: 'green' | 'blue'
+  terminal: Terminal
+  arrival: ArrivalWindow | null
+  waitMinutes: number | null
+  passes: GuestPass[]
+  inWallet: boolean
+  /** When this copy was made. */
+  issuedAt: number
+}
+
+export interface EmbarkView {
+  boarding: BoardingView
+  opensAt: number
+  gangwayClosesAt: number
+  stateroomReadyAt: number
+  stateroomReady: boolean
+  traffic: Traffic | null
+  luggage: { status: LuggageStatus; droppedAt: number | null }
+  carryOn: { id: CarryOnId; done: boolean }[]
+  companion: { id: CompanionId; done: boolean }[]
+  current: CompanionId | null
+  documents: { id: PersonaId; name: string; ready: boolean }[]
+  afternoon: { id: AfternoonId; at: number }[]
+  /** Anyone's health answer that will be passed to the terminal nurse. */
+  nurseCheck: string[]
+  canEdit: boolean
+}
+
 export interface Api {
   auth: { me(): Promise<Identity> }
   bookings: { get(): Promise<Booking>; sailings(): Promise<Sailing[]> }
-  checkin: { status(): Promise<CheckinStatus>; submit(): Promise<CheckinStatus> }
+  checkin: {
+    status(): Promise<CheckinStatus>
+    /** Finishes check-in; rejects `conflict` (message `notOpen`, `closed` or `incomplete`). */
+    submit(): Promise<CheckinStatus>
+    view(): Promise<CheckinView>
+    /** Saves one step; rejects `invalid` (message is a problem code the screen explains), `conflict` (`notOpen`, `closed`) or `forbidden` for a child account. */
+    save(input: CheckinSave): Promise<CheckinView>
+    receipt(): Promise<ReceiptView>
+  }
+  boarding: {
+    /** The signed-in booking's passes. */
+    pass(): Promise<BoardingView>
+    /** A pass by booking number and a guest's last name, with no sign-in; rejects `notFound` for any mismatch. */
+    lookup(number: string, lastName: string): Promise<BoardingView>
+    addToWallet(): Promise<BoardingView>
+    embark(): Promise<EmbarkView>
+    setCompanion(step: CompanionId, done: boolean): Promise<EmbarkView>
+    setCarryOn(item: CarryOnId, done: boolean): Promise<EmbarkView>
+    setBags(dropped: boolean): Promise<EmbarkView>
+  }
   dining: { list(): Promise<Item[]>; reschedule(id: string, to: string): Promise<Item> }
   queues: { list(): Promise<Item[]> }
   orders: { list(): Promise<Item[]>; place(items: string[]): Promise<Item> }

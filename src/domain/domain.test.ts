@@ -159,7 +159,7 @@ describe('entitlements', () => {
 
 describe('scenarios', () => {
   it('covers the fifteen scenarios and steers every persona into at least two', () => {
-    expect(SCENARIOS).toHaveLength(15)
+    expect(SCENARIOS).toHaveLength(16)
     for (const p of PERSONAS) expect(SCENARIOS.filter((s) => appliesTo(s, p.id)).length, p.id).toBeGreaterThanOrEqual(2)
   })
   it('has unique ids, valid stages and unique fault rule ids', () => {

@@ -53,7 +53,7 @@ export interface NoticeInput {
   documentsMissing: number
   /** Guests whose passport does not last six months past the return. */
   passportProblems: number
-  checkinState: 'notOpen' | 'open' | 'done'
+  checkinState: 'notOpen' | 'open' | 'closed' | 'done'
   checkinOpens: string
 }
 

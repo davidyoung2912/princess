@@ -5,7 +5,14 @@ import { BookScreen } from './ui/book/BookScreen'
 import { ConfirmedScreen } from './ui/book/ConfirmedScreen'
 import { ResumeScreen } from './ui/book/ResumeScreen'
 import { CruiseScreen } from './ui/discover/CruiseScreen'
-import { Landing } from './ui/discover/Landing'
+import { HomeScreen } from './ui/home/HomeScreen'
+import { CheckinScreen } from './ui/checkin/CheckinScreen'
+import { ReceiptScreen } from './ui/checkin/ReceiptScreen'
+import { TerminalScreen } from './ui/checkin/TerminalScreen'
+import { CompanionScreen } from './ui/boarding/CompanionScreen'
+import { EmbarkScreen } from './ui/boarding/EmbarkScreen'
+import { FindPassScreen } from './ui/boarding/FindPassScreen'
+import { PassScreen } from './ui/boarding/PassScreen'
 import { PortScreen } from './ui/discover/PortScreen'
 import { SailingScreen } from './ui/discover/SailingScreen'
 import { SailingsScreen } from './ui/discover/SailingsScreen'
@@ -39,7 +46,15 @@ import { ROUTES } from './routes/routes'
 
 /** Screens that already exist; every other route shows its placeholder until the phase that builds it. */
 const SCREENS: Record<string, ComponentType> = {
-  '/': Landing,
+  '/': HomeScreen,
+  '/home/boarding-pass': PassScreen,
+  '/home/find-pass': FindPassScreen,
+  '/home/check-in': CheckinScreen,
+  '/home/check-in/receipt': ReceiptScreen,
+  '/home/check-in/terminal': TerminalScreen,
+  '/home/check-in/:id': CheckinScreen,
+  '/home/embarkation': EmbarkScreen,
+  '/home/embarkation/steps': CompanionScreen,
   '/home/cruise': CruiseScreen,
   '/home/sailings': SailingsScreen,
   '/home/sailings/:id': SailingScreen,

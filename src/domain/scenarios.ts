@@ -17,7 +17,7 @@ export interface FaultRule {
 export type ScenarioId =
   | 'bookingLag' | 'checkinDrop' | 'dinnerReschedule' | 'orderStock' | 'planChange'
   | 'belizeTender' | 'clockChange' | 'portSkipped' | 'lateInPort' | 'phoneDead'
-  | 'illness' | 'packageRise' | 'photoFail' | 'childMissing' | 'chatSlow'
+  | 'illness' | 'packageRise' | 'terminalChange' | 'photoFail' | 'childMissing' | 'chatSlow'
 
 export interface Scenario {
   id: ScenarioId
@@ -35,7 +35,7 @@ const PARENTS_AND_KIDS: readonly PersonaId[] = ['daniel', 'priya', 'ethan', 'may
 /** The failure and risk scenarios from requirements §23.5. Data effects arrive with the phases that build each feature; the fault rules work now. */
 export const SCENARIOS: readonly Scenario[] = [
   { id: 'bookingLag', refs: 'MNG-01, MNG-18, PERF-06', stage: 'booked', personas: 'all', faults: [{ id: 'bookingLag.get', target: 'bookings.get', code: 'notFound', failTimes: 2 }] },
-  { id: 'checkinDrop', refs: 'CHK-02, CHK-13, NET-03', stage: 'checkIn', personas: 'all', faults: [{ id: 'checkinDrop.submit', target: 'checkin.submit', code: 'network', failTimes: 1 }] },
+  { id: 'checkinDrop', refs: 'CHK-02, CHK-13, NET-03', stage: 'checkIn', personas: 'all', faults: [{ id: 'checkinDrop.save', target: 'checkin.save', code: 'network', failTimes: 1 }, { id: 'checkinDrop.submit', target: 'checkin.submit', code: 'network', failTimes: 1 }] },
   { id: 'dinnerReschedule', refs: 'DIN-10', stage: 'seaDay', personas: 'all', faults: [{ id: 'dinnerReschedule.move', target: 'dining.reschedule', code: 'server', failTimes: 1 }] },
   { id: 'orderStock', refs: 'DIN-11', stage: 'seaDay', personas: 'all', faults: [{ id: 'orderStock.place', target: 'orders.place', code: 'conflict', failTimes: 1 }] },
   { id: 'planChange', refs: 'OB-08', stage: 'seaDay', personas: 'all', faults: [] },
@@ -44,6 +44,7 @@ export const SCENARIOS: readonly Scenario[] = [
   { id: 'portSkipped', refs: 'MNG-15, SUP-06', stage: 'cozumel', personas: 'all', faults: [] },
   { id: 'lateInPort', refs: 'POR-02, POR-08', stage: 'roatan', personas: 'all', faults: [] },
   { id: 'phoneDead', refs: 'CHK-14', stage: 'embarkation', personas: 'all', faults: [{ id: 'phoneDead.all', target: '*', code: 'offline', failTimes: Infinity }] },
+  { id: 'terminalChange', refs: 'CHK-15', stage: 'embarkation', personas: 'all', faults: [] },
   { id: 'illness', refs: 'SAF-03', stage: 'seaDay2', personas: 'all', faults: [] },
   { id: 'packageRise', refs: 'PRE-17', stage: 'preCruise', personas: ['gerald', 'maria', 'alexander', 'daniel', 'priya', 'marcus'], faults: [] },
   { id: 'photoFail', refs: 'SHP-07', stage: 'farewell', personas: 'all', faults: [{ id: 'photoFail.download', target: 'photos.download', code: 'network', failTimes: 1 }] },

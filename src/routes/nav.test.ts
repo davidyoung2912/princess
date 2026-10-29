@@ -30,8 +30,11 @@ describe('navigation model', () => {
   it('finds a route and the screens below a screen', () => {
     expect(routeForPath('/me/bill')?.titleKey).toBe('route.bill')
     expect(routeForPath('/nowhere')).toBeNull()
+    expect(routeForPath('/home/check-in/receipt')?.titleKey).toBe('route.receipt')
+    expect(routeForPath('/home/check-in/photo')?.titleKey).toBe('route.checkin')
+    expect(tabForPath('/home/embarkation/steps')).toBe('home')
     expect(childLinks('/me').map((r) => r.path)).toEqual(['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/packages', '/me/settings', '/me/demo'])
-    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass', '/home/cruise', '/home/sailings', '/home/ship', '/home/saved'])
+    expect(childLinks('/').map((r) => r.path)).toEqual(['/home/boarding-pass', '/home/find-pass', '/home/check-in', '/home/embarkation', '/home/cruise', '/home/sailings', '/home/ship', '/home/saved'])
     expect(childLinks('/plan').map((r) => r.path)).toEqual(['/plan/reservations', '/plan/excursions', '/plan/dining', '/plan/checklist', '/plan/packing', '/plan/travel', '/plan/assistance'])
     expect(childLinks('/chat')).toEqual([])
   })

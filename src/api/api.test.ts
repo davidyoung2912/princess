@@ -106,15 +106,14 @@ describe('scenario faults', () => {
 })
 
 describe('mock API behaviour', () => {
-  it('opens check-in three days before departure and records completion', async () => {
+  it('opens check-in three days before departure and will not finish it until every step is done', async () => {
     const before = zonedToEpoch('2027-03-17', '12:00', 'America/New_York')
     const s = setup({ clock: clockAt(before, NOW, 0) })
     expect((await s.api.checkin.status()).state).toBe('notOpen')
     expect(await failure(s.api.checkin.submit())).toMatchObject({ code: 'conflict' })
     s.set({ clock: clockAt(zonedToEpoch('2027-03-19', '12:00', 'America/New_York'), NOW, 0) })
     expect((await s.api.checkin.status()).state).toBe('open')
-    expect((await s.api.checkin.submit()).state).toBe('done')
-    expect((await s.api.checkin.status()).state).toBe('done')
+    expect(await failure(s.api.checkin.submit())).toMatchObject({ code: 'conflict', message: 'incomplete' })
   })
   it('keeps each person’s orders to themselves', async () => {
     const s = setup()
@@ -150,7 +149,7 @@ describe('mock API behaviour', () => {
   })
   it('exposes the same groups the contract promises', () => {
     const { api } = setup()
-    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help']
+    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help']
     expect(Object.keys(api).sort()).toEqual([...groups].sort())
   })
   it('classes errors', () => {

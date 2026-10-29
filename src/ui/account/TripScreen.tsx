@@ -58,7 +58,8 @@ export function TripScreen() {
                 </li>
                 <li className="card">
                   <h3 className="card__title">{t('trip.checkin')}</h3>
-                  <p>{x.checkin.state === 'done' ? t('trip.checkin.done') : x.checkin.state === 'open' ? t('trip.checkin.open') : t('trip.checkin.opens', { date: formatDate(dateIn(x.checkin.opensAt, 'America/New_York')) })}</p>
+                  <p>{x.checkin.state === 'done' ? t('trip.checkin.done') : x.checkin.state === 'open' ? t('trip.checkin.open') : x.checkin.state === 'closed' ? t('trip.checkin.closed') : t('trip.checkin.opens', { date: formatDate(dateIn(x.checkin.opensAt, 'America/New_York')) })}</p>
+                  {x.kind === 'current' && <Link to="/home/check-in">{t('route.checkin')}</Link>}
                 </li>
               </ul>
             </section>
