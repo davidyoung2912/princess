@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { t } from '../i18n'
 import { DataSettings } from './DataSettings'
+import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
 
 export function SettingsScreen() {
@@ -9,6 +10,7 @@ export function SettingsScreen() {
       <h1>{t('route.settings')}</h1>
       <DisplaySettings />
       <DataSettings />
+      <DiagnosticsSettings />
       <p><Link to="/me/demo">{t('demo.link')}</Link></p>
       <p><Link to="/kit">{t('settings.kitLink')}</Link></p>
     </div>

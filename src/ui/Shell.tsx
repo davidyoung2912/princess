@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
@@ -53,7 +53,9 @@ export function Shell() {
         })}
       </nav>
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        <Outlet />
+        <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
+          <Outlet />
+        </Suspense>
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
       {helpOpen && <HelpSheet onClose={() => setHelpOpen(false)} />}

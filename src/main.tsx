@@ -8,10 +8,12 @@ import '@fontsource/lora/latin-600.css'
 import '@fontsource/lora/latin-700.css'
 import './index.css'
 import App from './App.tsx'
+import { watchProblems } from './diagnostics/watch'
 import { ErrorBoundary } from './ErrorBoundary'
 import { startRuntime } from './runtime'
 import { applySettings, watchDeviceTheme } from './settings/store'
 
+watchProblems()
 applySettings()
 watchDeviceTheme()
 

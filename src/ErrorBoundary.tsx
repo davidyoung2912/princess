@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { report } from './diagnostics/watch'
 import { t } from './i18n'
 
 interface Props {
@@ -37,6 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
+    report('screen', error)
     if (staleFiles(error)) reloadOnce()
   }
 

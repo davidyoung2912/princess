@@ -37,8 +37,8 @@ export function MeScreen() {
         </Card>
       )}
 
-      <section aria-labelledby="trip-h">
-        <h2 id="trip-h">{t('me.yourTrip')}</h2>
+      <section aria-labelledby="me-trip-h">
+        <h2 id="me-trip-h">{t('me.yourTrip')}</h2>
         <Load state={trips}>
           {() => trip ? (
             <Card>

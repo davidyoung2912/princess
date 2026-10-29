@@ -1,11 +1,17 @@
 import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { AppRoutes } from '../App'
 import { FAQS } from '../domain/help'
 import { t } from '../i18n'
 import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
+import { SCREENS } from '../screens'
+
+// Screens load on first visit; load them all first so each renders in a single pass.
+beforeAll(async () => {
+  await Promise.all(Object.values(SCREENS).map((s) => ('preload' in s ? s.preload() : null)))
+})
 
 /** Server-renders a screen at an address, with no browser: catches a screen that throws, or a missing title or landmark. */
 const render = (path: string) =>
