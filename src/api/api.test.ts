@@ -149,7 +149,7 @@ describe('mock API behaviour', () => {
   })
   it('exposes the same groups the contract promises', () => {
     const { api } = setup()
-    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help']
+    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'onboard', 'service', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help']
     expect(Object.keys(api).sort()).toEqual([...groups].sort())
   })
   it('classes errors', () => {

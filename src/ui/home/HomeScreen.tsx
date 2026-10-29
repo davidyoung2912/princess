@@ -13,6 +13,9 @@ import { ConceptNotice } from '../ConceptNotice'
 import { Explore } from '../discover/Landing'
 import { countdown } from '../account/format'
 import { NextStep } from '../account/tripParts'
+import { Saved } from '../onboard/common'
+import { OnboardHome } from '../onboard/OnboardHome'
+import { useOnboardToday } from '../../hooks/useOnboardToday'
 
 /** The trip the guest is on, from the trips list: their own booking first. */
 const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.find((x) => x.kind === 'current') ?? upcoming[0] ?? null
@@ -21,6 +24,16 @@ const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.fi
 export function HomeScreen() {
   const trips = useMine(() => api.trips.list())
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
+  const today = useOnboardToday()
+  if (today.data?.aboard) {
+    return (
+      <div className="page">
+        <h1>{t('route.home')}</h1>
+        <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
+        <ConceptNotice />
+      </div>
+    )
+  }
   return (
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>

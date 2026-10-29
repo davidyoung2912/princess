@@ -20,6 +20,7 @@ import type { DataRecord, DataStore } from '../data/store'
 import type { DemoState } from '../demo/state'
 import { createBookingApi } from './bookingMock'
 import { createPlanApi } from './planMock'
+import { createOnboardApi, createServiceApi } from './onboardMock'
 import { checkinClosesAt, checkinOpensAt, createCheckinApi } from './checkinMock'
 import { checkinWindow } from '../domain/checkin'
 import { ApiError } from './errors'
@@ -37,6 +38,12 @@ export interface MockContext {
   /** Waits; replaced in tests so latency is recorded, not slept. */
   sleep?: (ms: number) => Promise<void>
   channel?: Channel
+}
+
+interface ChatPrefs { receipts: boolean; seenAt: number }
+const chatPrefsOf = (raw: unknown): ChatPrefs => {
+  const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  return { receipts: o.receipts === true, seenAt: typeof o.seenAt === 'number' ? o.seenAt : 0 }
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms))
@@ -195,6 +202,12 @@ export function createMockApi(ctx: MockContext): Api {
   const checkinApi = createCheckinApi({ store: ctx.store, channel: ctx.channel, actor, adult, now, save, log, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, documents: documentsView, terminalMoved: () => ctx.demo().scenarios.includes('terminalChange') })
   const plan = createPlanApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, today, save, log, newId, cardsOf, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, trip: currentTrip, documents: documentsView })
 
+  const onboard = createOnboardApi({ store: ctx.store, channel: ctx.channel, who, actor, adult, now, save, profileOf, run, sailing: () => sailingById(ctx.demo().sailingId)!, demo: ctx.demo, reads: plan })
+  const service = createServiceApi({
+    store: ctx.store, who, actor, adult, now, save, newId, run, demo: ctx.demo,
+    callback: async (phone) => { await put('ticket', { kind: 'callback', detail: phone }) },
+  })
+
   const tripsView = async (): Promise<TripsView> => {
     const booked = await booking.list()
     const bookedTrips = await Promise.all(booked.filter((b) => b.status === 'confirmed').map(bookedTrip))
@@ -269,12 +282,28 @@ export function createMockApi(ctx: MockContext): Api {
       list: () => run('messages.list', async () => {
         const ids = [who(), ...visibleTo(who()).map((p) => p.id)]
         const lists = await Promise.all(ids.map((id) => ctx.store.list('message', id)))
-        return lists.flat().sort((a, b) => a.updatedAt - b.updatedAt).map((r): Message => ({ id: r.id, from: r.owner as PersonaId, text: (r.data as { text: string }).text, at: r.updatedAt }))
+        const prefs = new Map(await Promise.all(ids.map(async (id): Promise<[PersonaId, ChatPrefs]> => [id, chatPrefsOf((await ctx.store.get('chatPrefs', id, 'me'))?.data)])))
+        return lists.flat().sort((a, b) => a.updatedAt - b.updatedAt).map((r): Message => {
+          const from = r.owner as PersonaId
+          const base: Message = { id: r.id, from, text: (r.data as { text: string }).text, at: r.updatedAt }
+          if (!prefs.get(from)?.receipts) return base
+          return { ...base, seenBy: ids.filter((id) => id !== from && prefs.get(id)?.receipts && (prefs.get(id)?.seenAt ?? 0) >= r.updatedAt) }
+        })
       }),
       send: (text) => run('messages.send', async () => {
         if (!text.trim()) throw new ApiError('invalid', 'A message needs some text')
         const item = await save('message', who(), newId('msg'), { text: text.trim() })
         return { id: item.id, from: who(), text: text.trim(), at: item.at }
+      }),
+      receipts: () => run('messages.receipts', async () => chatPrefsOf((await ctx.store.get('chatPrefs', who(), 'me'))?.data).receipts),
+      setReceipts: (on) => run('messages.setReceipts', async () => {
+        const current = chatPrefsOf((await ctx.store.get('chatPrefs', who(), 'me'))?.data)
+        await save('chatPrefs', who(), 'me', { ...current, receipts: !!on })
+        return !!on
+      }),
+      markSeen: () => run('messages.markSeen', async () => {
+        const current = chatPrefsOf((await ctx.store.get('chatPrefs', who(), 'me'))?.data)
+        if (current.receipts) await save('chatPrefs', who(), 'me', { ...current, seenAt: now() })
       }),
     },
     photos: {
@@ -295,6 +324,8 @@ export function createMockApi(ctx: MockContext): Api {
     ports: {
       today: () => run('ports.today', () => portAt(sailingById(ctx.demo().sailingId)!, now())),
     },
+    onboard,
+    service,
     discover: {
       offers: () => run('discover.offers', () => SAILINGS.map((s) => ({ id: s.id, departure: s.departure, holiday: !!s.holiday, from: fromPrice(s.id)! }))),
       quote: (sailingId, category, guests) => run('discover.quote', () => {

@@ -24,6 +24,11 @@ import type { PlanDay } from '../domain/plan'
 import type { EmergencyContact } from '../domain/account'
 import type { CheckinProgress, DocumentKind, GuestCheckin, GuestProgress, PhotoMetrics, StepId } from '../domain/checkin'
 import type { AfternoonId, CarryOnId, CompanionId, LuggageStatus, Terminal, Traffic } from '../domain/boarding'
+import type { AboardState, PortDay, TenderView } from '../domain/allaboard'
+import type { ChannelId, ChatState } from '../domain/chat'
+import type { DatedEvent } from '../domain/program'
+import type { EmergencyCard } from '../domain/safety'
+import type { FolioLine, FolioTotals } from '../domain/folio'
 
 /**
  * The contract between screens and "the server". Screens only ever use this interface; the mock below implements it with
@@ -70,6 +75,8 @@ export interface Message {
   from: PersonaId
   text: string
   at: number
+  /** People who have read it, when both they and the sender have read receipts on. */
+  seenBy?: PersonaId[]
 }
 
 export interface PortToday {
@@ -346,6 +353,8 @@ export interface Reservation {
   at: number
   /** The day the reminder goes, "YYYY-MM-DD". */
   reminderOn: string
+  /** Minutes the party said they would be late, or 0. */
+  lateMinutes: number
 }
 
 export interface DiningView {
@@ -491,6 +500,13 @@ export interface PlanApi {
     /** Rejects `forbidden` (supervised), `conflict` with `notOpen`, `full` or `clash`, `invalid` for a bad venue, night, time or party. */
     reserve(input: { venueId: string; day: number; time: string; guests: PersonaId[]; note: string }): Promise<DiningView>
     cancel(id: string): Promise<DiningView>
+    /**
+     * Moves a reservation to another night or time (DIN-10). The original is held until the new table is confirmed; any failure
+     * leaves the original as it was. Rejects `conflict` with `full`, `clash`, `closed`, `unchanged`, `invalid` for a bad night or time.
+     */
+    move(id: string, to: { day: number; time: string }): Promise<DiningView>
+    /** Tells the restaurant the party will be late; the table is held for that long (up to 30 minutes). */
+    late(id: string, minutes: number): Promise<DiningView>
   }
   packages: {
     view(): Promise<PackagesView>
@@ -639,11 +655,21 @@ export interface Api {
   dining: { list(): Promise<Item[]>; reschedule(id: string, to: string): Promise<Item> }
   queues: { list(): Promise<Item[]> }
   orders: { list(): Promise<Item[]>; place(items: string[]): Promise<Item> }
-  messages: { list(): Promise<Message[]>; send(text: string): Promise<Message> }
+  messages: {
+    list(): Promise<Message[]>
+    send(text: string): Promise<Message>
+    /** Whether the signed-in person shows and sees read receipts. */
+    receipts(): Promise<boolean>
+    setReceipts(on: boolean): Promise<boolean>
+    /** Marks the chat as read now (only recorded when receipts are on). */
+    markSeen(): Promise<void>
+  }
   photos: { list(): Promise<Item[]>; download(id: string): Promise<Item> }
   folio: { entitlements(): Promise<{ entitlements: Entitlements; balances: Record<BalanceKey, Balance> }> }
   requests: { list(): Promise<Item[]>; create(kind: string, note: string): Promise<Item> }
   ports: { today(): Promise<PortToday> }
+  onboard: OnboardApi
+  service: ServiceApi
   discover: {
     /** Every sailing with its "from" price. */
     offers(): Promise<SailingOffer[]>
@@ -720,4 +746,139 @@ export interface Api {
   }
   plan: PlanApi
   help: { contacts(): Promise<{ guestServices: string; emergency: string }> }
+}
+
+// ---- Onboard core (Phase 6) ----
+
+export interface WeatherToday {
+  summary: string
+  highF: number
+  lowF: number
+  /** "Light breeze, calm sea." */
+  sea: string
+}
+
+export interface MusterGuest { id: PersonaId; name: string; confirmedAt: number | null }
+
+export interface MusterView {
+  /** Drill time, ship epoch. */
+  at: number
+  /** True until every guest has checked in or the sailing has left on day 1. */
+  required: boolean
+  done: boolean
+  station: string
+  stationName: string
+  stationPlace: string
+  deck: number
+  guests: MusterGuest[]
+  canConfirm: boolean
+}
+
+export interface OnboardToday {
+  /** The guest is aboard: embarkation day to the morning of arrival. */
+  aboard: boolean
+  day: number | null
+  date: string
+  port: PortId
+  shipZone: string
+  weather: WeatherToday | null
+  /** The next port day (or today's), with the all-aboard countdown; null when none is left. */
+  portDay: (PortDay & { state: AboardState }) | null
+  muster: { required: boolean; done: boolean; at: number }
+  /** The sail-away moment on day 1, or null after. */
+  sailAwayAt: number | null
+  /** Today's changes to the programme are on (the scenario). */
+  changes: boolean
+  /** The ship's clock moves tonight: hours and the moment, or null. */
+  clockChange: { at: number; hours: number } | null
+}
+
+export interface ProgramView {
+  day: number
+  date: string
+  port: PortId
+  events: DatedEvent[]
+  /** Ids of events in the signed-in person's plan. */
+  mine: string[]
+  changed: boolean
+  canEdit: boolean
+}
+
+export interface TourToday {
+  id: string
+  excursionId: string
+  name: string
+  meeting: string
+  /** Local start time, "HH:MM". */
+  start: string
+  backBy: string
+  guests: { id: PersonaId; name: string; code: string }[]
+  tender: boolean
+}
+
+export interface TenderInfo extends TenderView {
+  mayTender: boolean
+  assistance: boolean
+}
+
+export interface PortDayView {
+  day: PortDay & { state: AboardState }
+  tender: TenderInfo | null
+  tours: TourToday[]
+  /** Minutes the day's tender operation is late (the Belize scenario), 0 otherwise. */
+  delayMinutes: number
+  /** The port is not being visited as planned. */
+  skipped: boolean
+}
+
+export interface FolioView {
+  lines: FolioLine[]
+  totals: FolioTotals
+  guests: { id: PersonaId; name: string }[]
+  throughDay: number
+}
+
+export interface OnboardApi {
+  today(): Promise<OnboardToday>
+  program(day: number): Promise<ProgramView>
+  /** Adds or removes an event from the signed-in person's plan; rejects `forbidden` for a supervised account, `invalid` for an unknown event. */
+  togglePlan(eventId: string, on: boolean): Promise<string[]>
+  portDay(): Promise<PortDayView | null>
+  muster(): Promise<MusterView>
+  /** Checks guests in at the muster station; rejects `forbidden` for someone outside the booking. */
+  confirmMuster(guests: PersonaId[]): Promise<MusterView>
+  emergency(): Promise<EmergencyCard>
+  folio(): Promise<FolioView>
+}
+
+export interface ServiceChannelView {
+  id: ChannelId
+  /** Typical minutes to a first reply right now (longer when chat is slow). */
+  minutes: number
+  slow: boolean
+  unanswered: boolean
+}
+
+export interface ServiceMessage {
+  id: string
+  from: 'me' | 'crew'
+  crew?: string
+  text: string
+  at: number
+}
+
+export interface ServiceThread {
+  channel: ChannelId
+  messages: ServiceMessage[]
+  state: ChatState | null
+  slow: boolean
+}
+
+export interface ServiceApi {
+  channels(): Promise<ServiceChannelView[]>
+  thread(channel: ChannelId): Promise<ServiceThread>
+  /** Rejects `invalid` for an empty message or unknown channel. */
+  send(channel: ChannelId, text: string): Promise<ServiceThread>
+  /** Asks for a phone call instead of waiting; rejects `invalid` for a bad number. */
+  escalate(channel: ChannelId, phone: string): Promise<ServiceThread>
 }

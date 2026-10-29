@@ -9,8 +9,11 @@ import { t } from '../../i18n'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
 import { names } from './people'
+import { useOnboardToday } from '../../hooks/useOnboardToday'
+import { Planner } from '../onboard/Planner'
 
 const TOOLS = [
+  { to: '/plan/reservations', key: 'route.reservations' },
   { to: '/plan/excursions', key: 'route.excursions' },
   { to: '/plan/dining', key: 'route.dining' },
   { to: '/me/packages', key: 'route.packages' },
@@ -24,10 +27,12 @@ const TOOLS = [
 export function PlanScreen() {
   const plan = useMine(() => api.plan.overview())
   const list = useMine(() => api.plan.checklist.get())
+  const today = useOnboardToday()
+  const aboard = today.data?.aboard ? today.data : null
   return (
     <div className="page">
       <h1>{t('route.plan')}</h1>
-      <p>{t('plan.intro')}</p>
+      {aboard ? <Planner today={aboard} /> : <p>{t('plan.intro')}</p>}
 
       <Load state={list}>
         {(c) => (

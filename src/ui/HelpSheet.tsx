@@ -3,6 +3,7 @@ import { t } from '../i18n'
 import { Dialog } from './Dialog'
 import { LinkButton } from './Button'
 import { Phone, Siren } from './icons'
+import { UrgentIssues } from './onboard/UrgentIssues'
 
 /**
  * The help sheet reachable from the top bar on every screen (requirement SUP-08). Everything in it works offline:
@@ -23,7 +24,9 @@ export function HelpSheet({ onClose }: { onClose: () => void }) {
           <h3 id="help-emergency-h"><Siren aria-hidden="true" /> {t('help.emergency')}</h3>
           <p>{t('help.emergencyText')}</p>
           <p className="muted">{t('help.medical')}</p>
+          <LinkButton to="/ship/emergency" variant="secondary" block onClick={onClose}>{t('help.card')}</LinkButton>
         </section>
+        <UrgentIssues headingId="help-urgent-h" />
       </div>
       <p className="muted">{t('help.sample')}</p>
     </Dialog>

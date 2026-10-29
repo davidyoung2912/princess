@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { AppRoutes } from '../App'
 import { FAQS } from '../domain/help'
 import { t } from '../i18n'
-import { tabForPath, TABS } from '../routes/nav'
+import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
 
 /** Server-renders a screen at an address, with no browser: catches a screen that throws, or a missing title or landmark. */
@@ -140,5 +140,81 @@ describe('check-in and boarding screens', () => {
     expect(html).toContain(t('terminal.reassure'))
     expect(html).toContain('href="/home/check-in"')
     expect(html).toContain(t('terminal.blue'))
+  })
+})
+
+describe('onboard screens', () => {
+  it('reaches every top task in the taps the model promises, by a real link on the screen before (Home depends on the booking, so it is checked in the app)', () => {
+    for (const task of TOP_TASKS) {
+      const steps = task.taps.filter((s) => s !== 'help')
+      for (let i = 0; i < steps.length - 1; i++) {
+        if (steps[i] === '/' || steps[i + 1].includes(':')) continue
+        expect(render(steps[i].replace(':id', 'sample')), `${task.id}: ${steps[i]} → ${steps[i + 1]}`).toContain(`href="${steps[i + 1]}"`)
+      }
+    }
+  })
+
+  it('puts the emergency card and the muster drill first on the Ship tab', () => {
+    const html = decode(render('/ship'))
+    expect(html.indexOf('href="/ship/emergency"')).toBeLessThan(html.indexOf('href="/ship/map"'))
+    expect(html).toContain('href="/ship/muster"')
+    expect(html).toContain('href="/ship/venues"')
+    expect(html).toContain('href="/ship/port"')
+  })
+
+  it('opens the emergency card with the numbers built in, so it shows with no signal', () => {
+    const html = decode(render('/ship/emergency'))
+    expect(html).toContain(t('emerg.dial'))
+    for (const n of ['555-0111', '555-0112', '555-0100']) expect(html).toContain(`href="tel:${n}"`)
+    expect(html).toContain(t('emerg.contacts'))
+    expect(html).toContain(t('help.urgent.title'))
+    expect(html).toContain(t('help.urgent.child'))
+  })
+
+  it('shows the deck map as text a screen reader can read, with a table per deck and the lifts', () => {
+    const html = decode(render('/ship/map'))
+    expect(html).toContain('<table')
+    expect(html).toContain('<caption>')
+    expect(html).toContain('Princess Arena')
+    expect(html).toContain(t('map.noLocation'))
+    expect(html).toContain(t('map.search'))
+  })
+
+  it('lists every restaurant and bar, and gives a menu with what each dish contains', () => {
+    const list = decode(render('/ship/venues'))
+    for (const id of ['soleil', 'eclipse', 'crown', 'alfredo', 'intl-cafe']) expect(list).toContain(`href="/ship/venues/${id}"`)
+    const one = decode(render('/ship/venues/sabatini'))
+    expect(one).toContain('Sabatini’s')
+    expect(one).toContain('Veal Milanese')
+    expect(one).toContain(t('ven.allergyNote'))
+    expect(one).toContain('href="/plan/dining"')
+  })
+
+  it('says plainly when a restaurant does not exist, with a way on', () => {
+    const html = decode(render('/ship/venues/nowhere'))
+    expect(html).toContain(t('ven.gone'))
+    expect(html).toContain('href="/ship/venues"')
+  })
+
+  it('gives the muster drill in five languages with the right lang on the text', () => {
+    const html = decode(render('/ship/muster'))
+    for (const name of ['English', 'Español', 'Français', 'Deutsch', '中文']) expect(html).toContain(name)
+    expect(html).toContain('lang="en"')
+    expect(html).toContain(t('muster.alt'))
+  })
+
+  it('offers party chat first with Guest Services one press away, and always shows the phone number', () => {
+    const html = decode(render('/chat'))
+    expect(html).toContain(t('chat.party'))
+    expect(html).toContain(t('chat.service'))
+    expect(html).toContain('href="tel:555-0100"')
+  })
+
+  it('shows one h1 and a loading note while the planner, bill, reservations and port day load', () => {
+    for (const path of ['/plan/reservations', '/plan/reservations/sample', '/ship/port', '/me/bill']) {
+      const html = decode(render(path))
+      expect(html.match(/<h1/g), path).toHaveLength(1)
+      expect(html, path).toContain('role="status"')
+    }
   })
 })

@@ -8,7 +8,7 @@ import { buildPackingList, elegantNights, weatherFor } from '../domain/packing'
 import { buildPlan } from '../domain/plan'
 import { partyOf, personaById, type PackageId, type PersonaId } from '../domain/personas'
 import { NIGHTS } from '../domain/pricing'
-import type { Sailing } from '../domain/sailings'
+import { shipZoneOnDate, type Sailing } from '../domain/sailings'
 import { addDays, zonedToEpoch } from '../domain/timezones'
 import { arrivalWindows, EMPTY_PLAN, isMode, isWindow, normalizePlan, suggestedWindow, HOTELS, type TravelPlan } from '../domain/travel'
 import { daysBetween } from '../domain/trip'
@@ -25,7 +25,7 @@ export interface PlanDeps extends Pick<BookingDeps, 'store' | 'channel' | 'who' 
 }
 
 interface StoredTour { excursionId: string; guests: PersonaId[]; total: number; credit: number; cash: number; kept: number; refunded: number; methods: string[]; status: 'booked' | 'cancelled' }
-interface StoredTable { venueId: string; day: number; time: string; guests: PersonaId[]; note: string; covered: PersonaId[]; charge: number }
+interface StoredTable { venueId: string; day: number; time: string; guests: PersonaId[]; note: string; covered: PersonaId[]; charge: number; late?: number }
 interface StoredPurchase { kind: 'addOn' | 'upgrade'; item: string; from?: PackageId; guests: PersonaId[]; unit: number; units: number; methods: string[]; at: number; seededDaysBefore?: number }
 interface PurchaseMod { status?: 'active' | 'cancelled'; credited?: number }
 interface Row<T> { id: string; at: number; data: T }
@@ -34,7 +34,14 @@ const UPGRADE_CHANGE = { atDays: 15, share: 0.1 }
 
 const str = (v: unknown, max: number): string => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
-export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id: PersonaId) => Promise<{ entitlements: Entitlements; balances: ReturnType<typeof balances> }> } {
+/** What the onboard part of the mock reads from the pre-book records: held entitlements, tables and booked tours. */
+export interface PlanReads {
+  entitlementsOf: (id: PersonaId) => Promise<{ entitlements: Entitlements; balances: ReturnType<typeof balances> }>
+  tables: () => Promise<{ id: string; venueId: string; day: number; time: string; guests: PersonaId[]; covered: PersonaId[]; charge: number }[]>
+  tours: () => Promise<{ id: string; excursionId: string; guests: PersonaId[] }[]>
+}
+
+export function createPlanApi(d: PlanDeps): { api: PlanApi } & PlanReads {
   const authorise = createAuthoriser(d)
   const owner = () => d.actor().booker
   const rows = async <T>(kind: string): Promise<Row<T>[]> => (await d.store.list(kind, owner())).map((r) => ({ id: r.id, at: r.updatedAt, data: r.data as T }))
@@ -52,6 +59,13 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
   const ageOf = (id: PersonaId) => personaById(id)!.age
   const daysToDeparture = () => daysBetween(d.today(), d.sailing().departure)
   const writable = () => { d.adult(); if (daysToDeparture() < 1) throw new ApiError('conflict', 'closed') }
+  /** Dining stays open on board, until the night itself has passed (DIN-02). */
+  const diningWritable = () => { d.adult(); if (d.today() > addDays(d.sailing().departure, NIGHTS)) throw new ApiError('conflict', 'closed') }
+  /** Whether a dinner's start has already gone by: the time is on the ship's clock for that night. */
+  const dinnerPast = (day: number, time: string) => {
+    const date = addDays(d.sailing().departure, day - 1)
+    return zonedToEpoch(date, time, shipZoneOnDate(d.sailing(), date)) <= d.now()
+  }
 
   // ---- Purchases and entitlements ----
 
@@ -172,14 +186,14 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
       .map((t): Reservation => {
         const date = addDays(s.departure, t.data.day - 1)
         return {
-          id: t.id, venueId: t.data.venueId, day: t.data.day, time: t.data.time, guests: t.data.guests, note: t.data.note, covered: t.data.covered, charge: t.data.charge, at: t.at, reminderOn: addDays(date, -1),
+          id: t.id, venueId: t.data.venueId, day: t.data.day, time: t.data.time, guests: t.data.guests, note: t.data.note, covered: t.data.covered, charge: t.data.charge, at: t.at, reminderOn: addDays(date, -1), lateMinutes: t.data.late ?? 0,
           dietary: t.data.guests.flatMap((g) => { const p = profiles.find((x) => x.id === g); return p && p.needs.length > 0 ? [{ name: personaById(g)!.firstName, needs: p.needs }] : [] }),
         }
       })
       .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
     return {
       window: diningWindow(ent, trip.payment, trip.plan.finalDue), plan, seating: plan === 'anytime' ? null : SEATINGS[plan], reservations, party: party(), mealsLeft: meals,
-      canBook: !d.actor().child && daysToDeparture() >= 1, daysToDeparture: daysToDeparture(),
+      canBook: !d.actor().child && d.today() <= addDays(s.departure, NIGHTS), daysToDeparture: daysToDeparture(),
     }
   }
 
@@ -349,7 +363,7 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
         return slotsFor(venueId, d.sailing().id, day).map((s) => ({ ...s, tables: Math.max(0, s.tables - mine.filter((t) => t.data.time === s.time).length) }))
       }),
       reserve: (input) => d.run('plan.dining.reserve', async () => {
-        writable()
+        diningWritable()
         const v = venueById(input.venueId)
         if (!v || v.walkIn || !DINNER_DAYS.includes(input.day) || !DINNER_TIMES.includes(input.time)) throw new ApiError('invalid', 'Choose a restaurant, a night and a time')
         const who = guestsIn(input.guests)
@@ -358,7 +372,7 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
         const view = await diningOf()
         if (!view.window.open) throw new ApiError('conflict', 'notOpen')
         if (v.kind === 'main' && view.plan !== 'anytime') throw new ApiError('conflict', 'fixedSeating')
-        if (addDays(d.sailing().departure, input.day - 1) < d.today()) throw new ApiError('conflict', 'closed')
+        if (dinnerPast(input.day, input.time)) throw new ApiError('conflict', 'closed')
         const existing = await tables()
         const mine = existing.filter((t) => t.data.venueId === v.id && t.data.day === input.day && t.data.time === input.time).length
         const grid = slotsFor(v.id, d.sailing().id, input.day).find((s) => s.time === input.time)!
@@ -379,6 +393,35 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
         if (!t) throw new ApiError('notFound')
         await drop('table', id)
         await d.log('dining', `${venueById(t.data.venueId)?.name ?? t.data.venueId}, night ${t.data.day}: cancelled`)
+        return diningOf()
+      }),
+      move: (id, to) => d.run('plan.dining.move', async () => {
+        diningWritable()
+        const old = (await tables()).find((r) => r.id === id)
+        if (!old) throw new ApiError('notFound')
+        const v = venueById(old.data.venueId)!
+        if (!DINNER_DAYS.includes(to.day) || !DINNER_TIMES.includes(to.time)) throw new ApiError('invalid', 'Choose a night and a time')
+        if (to.day === old.data.day && to.time === old.data.time) throw new ApiError('conflict', 'unchanged')
+        if (dinnerPast(old.data.day, old.data.time) || dinnerPast(to.day, to.time)) throw new ApiError('conflict', 'closed')
+        // Check everything about the new table first. Nothing is written until all of it passes, so a refusal leaves the original untouched.
+        const existing = await tables()
+        const taken = existing.filter((t) => t.id !== id && t.data.venueId === v.id && t.data.day === to.day && t.data.time === to.time).length
+        const grid = slotsFor(v.id, d.sailing().id, to.day).find((s) => s.time === to.time)!
+        if (grid.tables - taken <= 0) throw new ApiError('conflict', 'full')
+        const others: ReservedTable[] = existing.filter((t) => t.id !== id).map((t) => ({ venueId: t.data.venueId, day: t.data.day, time: t.data.time, guests: t.data.guests }))
+        if (tableClash(others, to.day, to.time, old.data.guests).length > 0) throw new ApiError('conflict', 'clash')
+        // One write replaces the table in place, so the reservation keeps its address and is never missing or doubled.
+        await put('table', id, { ...old.data, day: to.day, time: to.time, late: undefined } satisfies StoredTable)
+        await d.log('dining', `${v.name}: night ${old.data.day}, ${old.data.time} moved to night ${to.day}, ${to.time}`)
+        return diningOf()
+      }),
+      late: (id, minutes) => d.run('plan.dining.late', async () => {
+        d.adult()
+        const t = (await tables()).find((r) => r.id === id)
+        if (!t) throw new ApiError('notFound')
+        if (!Number.isFinite(minutes) || minutes < 5 || minutes > 30) throw new ApiError('invalid', 'Choose 5 to 30 minutes')
+        await put('table', id, { ...t.data, late: Math.round(minutes) } satisfies StoredTable)
+        await d.log('dining', `${venueById(t.data.venueId)?.name ?? t.data.venueId}, night ${t.data.day}: running ${Math.round(minutes)} minutes late`)
         return diningOf()
       }),
     },
@@ -505,5 +548,10 @@ export function createPlanApi(d: PlanDeps): { api: PlanApi; entitlementsOf: (id:
     } satisfies StoredTour)
   }
 
-  return { api, entitlementsOf }
+  const reads: PlanReads = {
+    entitlementsOf,
+    tables: async () => (await tables()).map((t) => ({ id: t.id, ...t.data })),
+    tours: async () => (await tours()).filter((t) => t.data.status === 'booked').map((t) => ({ id: t.id, excursionId: t.data.excursionId, guests: t.data.guests })),
+  }
+  return { api, ...reads }
 }

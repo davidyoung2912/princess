@@ -36,7 +36,7 @@ const PARENTS_AND_KIDS: readonly PersonaId[] = ['daniel', 'priya', 'ethan', 'may
 export const SCENARIOS: readonly Scenario[] = [
   { id: 'bookingLag', refs: 'MNG-01, MNG-18, PERF-06', stage: 'booked', personas: 'all', faults: [{ id: 'bookingLag.get', target: 'bookings.get', code: 'notFound', failTimes: 2 }] },
   { id: 'checkinDrop', refs: 'CHK-02, CHK-13, NET-03', stage: 'checkIn', personas: 'all', faults: [{ id: 'checkinDrop.save', target: 'checkin.save', code: 'network', failTimes: 1 }, { id: 'checkinDrop.submit', target: 'checkin.submit', code: 'network', failTimes: 1 }] },
-  { id: 'dinnerReschedule', refs: 'DIN-10', stage: 'seaDay', personas: 'all', faults: [{ id: 'dinnerReschedule.move', target: 'dining.reschedule', code: 'server', failTimes: 1 }] },
+  { id: 'dinnerReschedule', refs: 'DIN-10', stage: 'seaDay', personas: 'all', faults: [{ id: 'dinnerReschedule.move', target: 'dining.reschedule', code: 'server', failTimes: 1 }, { id: 'dinnerReschedule.plan', target: 'plan.dining.move', code: 'server', failTimes: 1 }] },
   { id: 'orderStock', refs: 'DIN-11', stage: 'seaDay', personas: 'all', faults: [{ id: 'orderStock.place', target: 'orders.place', code: 'conflict', failTimes: 1 }] },
   { id: 'planChange', refs: 'OB-08', stage: 'seaDay', personas: 'all', faults: [] },
   { id: 'belizeTender', refs: 'POR-04, POR-12', stage: 'belize', personas: 'all', faults: [] },
@@ -49,7 +49,7 @@ export const SCENARIOS: readonly Scenario[] = [
   { id: 'packageRise', refs: 'PRE-17', stage: 'preCruise', personas: ['gerald', 'maria', 'alexander', 'daniel', 'priya', 'marcus'], faults: [] },
   { id: 'photoFail', refs: 'SHP-07', stage: 'farewell', personas: 'all', faults: [{ id: 'photoFail.download', target: 'photos.download', code: 'network', failTimes: 1 }] },
   { id: 'childMissing', refs: 'SAF-05, SUP-08', stage: 'seaDay', personas: PARENTS_AND_KIDS, faults: [] },
-  { id: 'chatSlow', refs: 'MSG-02, SUP-08', stage: 'seaDay', personas: 'all', faults: [{ id: 'chatSlow.send', target: 'messages.send', code: 'timeout', failTimes: 1, delayMs: 6000 }] },
+  { id: 'chatSlow', refs: 'MSG-02, SUP-08', stage: 'seaDay', personas: 'all', faults: [{ id: 'chatSlow.send', target: 'messages.send', code: 'timeout', failTimes: 1, delayMs: 6000 }, { id: 'chatSlow.service', target: 'service.send', code: 'timeout', failTimes: 1, delayMs: 6000 }] },
 ]
 
 export const scenarioById = (id: unknown): Scenario | undefined => SCENARIOS.find((s) => s.id === id)

@@ -102,6 +102,9 @@ export function shipZoneAt(s: Sailing, at: number): string {
   return zone
 }
 
+/** The zone the ship's clocks follow on a calendar date, judged at noon (both clock changes happen at 02:00). */
+export const shipZoneOnDate = (s: Sailing, date: string): string => shipZoneAt(s, zonedToEpoch(date, '12:00', SHIP_HOME_ZONE))
+
 /** The port the ship is at (or 'sea') at a moment, going by calendar day in ship time and the posted hours. */
 export function portAt(s: Sailing, at: number): { port: PortId; day: number | null } {
   const days = itinerary(s)

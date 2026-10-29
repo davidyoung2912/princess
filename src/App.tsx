@@ -36,6 +36,14 @@ import { PackagesScreen } from './ui/plan/PackagesScreen'
 import { PackingScreen } from './ui/plan/PackingScreen'
 import { PlanScreen } from './ui/plan/PlanScreen'
 import { TravelScreen } from './ui/plan/TravelScreen'
+import { BillScreen } from './ui/onboard/BillScreen'
+import { ChatScreen } from './ui/onboard/ChatScreen'
+import { DeckMapScreen } from './ui/onboard/DeckMapScreen'
+import { PortDayScreen } from './ui/onboard/PortDayScreen'
+import { ReservationScreen, ReservationsScreen } from './ui/onboard/ReservationsScreen'
+import { EmergencyScreen, MusterScreen } from './ui/onboard/SafetyScreens'
+import { ShipScreen as ShipTabScreen } from './ui/onboard/ShipScreen'
+import { VenueScreen, VenuesScreen } from './ui/onboard/VenuesScreen'
 import { DemoScreen } from './ui/DemoScreen'
 import { Kit } from './ui/Kit'
 import { NotFound } from './ui/NotFound'
@@ -62,12 +70,23 @@ const SCREENS: Record<string, ComponentType> = {
   '/home/ship': ShipScreen,
   '/home/saved': SavedScreen,
   '/plan': PlanScreen,
+  '/plan/reservations': ReservationsScreen,
+  '/plan/reservations/:id': ReservationScreen,
   '/plan/excursions': ExcursionsScreen,
   '/plan/dining': DiningScreen,
   '/plan/checklist': ChecklistScreen,
   '/plan/packing': PackingScreen,
   '/plan/travel': TravelScreen,
   '/plan/assistance': AssistanceScreen,
+  '/ship': ShipTabScreen,
+  '/ship/map': DeckMapScreen,
+  '/ship/venues': VenuesScreen,
+  '/ship/venues/:id': VenueScreen,
+  '/ship/muster': MusterScreen,
+  '/ship/emergency': EmergencyScreen,
+  '/ship/port': PortDayScreen,
+  '/chat': ChatScreen,
+  '/me/bill': BillScreen,
   '/me/packages': PackagesScreen,
   '/book': BookScreen,
   '/book/:id': BookScreen,

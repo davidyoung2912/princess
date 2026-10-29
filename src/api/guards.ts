@@ -1,4 +1,4 @@
-import type { BoardingView, EmbarkView, ReceiptView } from './types'
+import type { BoardingView, DiningView, EmbarkView, FolioView, MusterView, OnboardToday, PortDayView, ProgramView, ReceiptView } from './types'
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
@@ -23,4 +23,53 @@ export function asEmbarkView(raw: unknown): EmbarkView | null {
   const o = obj(raw)
   if (!o || !asBoardingView(o.boarding) || !Array.isArray(o.companion) || !Array.isArray(o.carryOn) || !Array.isArray(o.afternoon)) return null
   return raw as EmbarkView
+}
+
+export function asOnboardToday(raw: unknown): OnboardToday | null {
+  const o = obj(raw)
+  if (!o || typeof o.aboard !== 'boolean' || typeof o.date !== 'string' || typeof o.shipZone !== 'string' || typeof o.port !== 'string' || !obj(o.muster)) return null
+  return raw as OnboardToday
+}
+
+export function asProgramView(raw: unknown): ProgramView | null {
+  const o = obj(raw)
+  if (!o || typeof o.day !== 'number' || typeof o.date !== 'string' || !Array.isArray(o.events) || !Array.isArray(o.mine)) return null
+  const ok = o.events.every((e) => {
+    const x = obj(e)
+    return !!x && typeof x.id === 'string' && typeof x.title === 'string' && typeof x.startAt === 'number' && typeof x.endAt === 'number' && typeof x.placeId === 'string' && typeof x.status === 'string'
+  })
+  return ok ? (raw as ProgramView) : null
+}
+
+export function asDiningView(raw: unknown): DiningView | null {
+  const o = obj(raw)
+  if (!o || !Array.isArray(o.reservations) || !obj(o.window) || !Array.isArray(o.party)) return null
+  return o.reservations.every((r) => !!obj(r) && typeof obj(r)!.id === 'string' && typeof obj(r)!.venueId === 'string') ? (raw as DiningView) : null
+}
+
+export function asFolioView(raw: unknown): FolioView | null {
+  const o = obj(raw)
+  if (!o || !Array.isArray(o.lines) || !obj(o.totals) || !Array.isArray(o.guests)) return null
+  return o.lines.every((l) => !!obj(l) && typeof obj(l)!.id === 'string' && typeof obj(l)!.cents === 'number') ? (raw as FolioView) : null
+}
+
+export function asPortDayView(raw: unknown): PortDayView | null {
+  const o = obj(raw)
+  if (!o || !obj(o.day) || !Array.isArray(o.tours)) return null
+  return raw as PortDayView
+}
+
+/** The port day as kept on the phone. "No more port days" is a real answer, so it is wrapped: a bare null would look like "nothing saved". */
+export interface PortDayCopy { view: PortDayView | null }
+
+export function asPortDayCopy(raw: unknown): PortDayCopy | null {
+  const o = obj(raw)
+  if (!o || !('view' in o)) return null
+  return o.view === null ? { view: null } : asPortDayView(o.view) ? (raw as PortDayCopy) : null
+}
+
+export function asMusterView(raw: unknown): MusterView | null {
+  const o = obj(raw)
+  if (!o || typeof o.station !== 'string' || typeof o.at !== 'number' || !Array.isArray(o.guests)) return null
+  return raw as MusterView
 }
