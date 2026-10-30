@@ -152,9 +152,13 @@ CREATE TABLE ref.MenuItems (
   PriceCents BIGINT NOT NULL DEFAULT 0,
   Dietary NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_Dietary DEFAULT N'[]',
   Orderable BIT NOT NULL DEFAULT 1, Stock INT NULL,
+  Alcohol BIT NOT NULL DEFAULT 0, Packaged BIT NOT NULL DEFAULT 0,   -- Packaged: a drinks package pays for it
+  OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]',   -- which menus carry it: delivery, room
+  SubstituteId NVARCHAR(40) NULL,   -- offered in its place when it runs out
   CONSTRAINT FK_MenuItems_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
   CONSTRAINT CK_MenuItems_MenuGroup CHECK (MenuGroup IN ('mains','snacks','desserts','drinks','breakfast')),
-  CONSTRAINT CK_MenuItems_Dietary CHECK (ISJSON(Dietary) = 1)
+  CONSTRAINT CK_MenuItems_Dietary CHECK (ISJSON(Dietary) = 1),
+  CONSTRAINT CK_MenuItems_OnMenus CHECK (ISJSON(OnMenus) = 1)
 );
 CREATE INDEX IX_MenuItems_VenueId ON ref.MenuItems (VenueId);
 END
@@ -179,6 +183,7 @@ CREATE TABLE ref.Excursions (
   StartLocal TIME(0) NOT NULL, BackByLocal TIME(0) NOT NULL, Tender BIT NOT NULL DEFAULT 0,
   Capacity INT NOT NULL, Meeting NVARCHAR(200) NOT NULL DEFAULT N'', Description NVARCHAR(1000) NOT NULL DEFAULT N'',
   Tags NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Excursions_Tags DEFAULT N'[]',
+  Rating INT NOT NULL DEFAULT 0, Reviews INT NOT NULL DEFAULT 0,   -- Rating in tenths of a star (47 = 4.7)
   CONSTRAINT FK_Excursions_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id),
   CONSTRAINT CK_Excursions_Activity CHECK (Activity IN ('easy','moderate','strenuous')),
   CONSTRAINT CK_Excursions_Tags CHECK (ISJSON(Tags) = 1)
@@ -206,6 +211,8 @@ CREATE TABLE ref.Events (
   AgeGroup VARCHAR(6) NOT NULL DEFAULT 'all',
   Interests NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Events_Interests DEFAULT N'[]',
   Ticketed BIT NOT NULL DEFAULT 0, Seats INT NULL, Deck INT NULL,
+  ExtraCents BIGINT NOT NULL DEFAULT 0,   -- extra cost per person; 0 is in the fare
+  AfterAllAboard BIT NOT NULL DEFAULT 0,  -- on a port day, listed only once the ship is back aboard
   CONSTRAINT CK_Events_AgeGroup CHECK (AgeGroup IN ('all','kids','teens','adults')),
   CONSTRAINT CK_Events_Interests CHECK (ISJSON(Interests) = 1)
 );
@@ -255,6 +262,7 @@ CREATE TABLE ref.AddOns (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_AddOns PRIMARY KEY,
   Name NVARCHAR(80) NOT NULL, Unit VARCHAR(11) NOT NULL, BaseCents BIGINT NOT NULL,
   ChangeOn DATE NULL, ChangesToCents BIGINT NULL, Description NVARCHAR(500) NOT NULL DEFAULT N'',
+  ChangeAtDays INT NULL, ChangeShare INT NULL, MinAge INT NOT NULL DEFAULT 0,   -- price moves ChangeShare basis points (+up, -down) from ChangeAtDays before sailing; ChangeOn/ChangesToCents are that rule worked out for the reference sailing
   CONSTRAINT CK_AddOns_Unit CHECK (Unit IN ('personNight','person','room'))
 );
 END
@@ -264,6 +272,7 @@ BEGIN
 CREATE TABLE ref.PackageUpgrades (
   ToPackageId NVARCHAR(30) NOT NULL CONSTRAINT PK_PackageUpgrades PRIMARY KEY,
   PriceCents BIGINT NOT NULL, ChangeOn DATE NULL, ChangesToCents BIGINT NULL,
+  ChangeAtDays INT NULL, ChangeShare INT NULL,   -- as AddOns; PriceCents is the price from "no package"
   CONSTRAINT FK_PackageUpgrades_Packages FOREIGN KEY (ToPackageId) REFERENCES ref.Packages (Id)
 );
 END
@@ -431,6 +440,24 @@ CREATE TABLE ref.DeskSlots (
   Capacity INT NOT NULL DEFAULT 1
 );
 END
+GO
+
+/* Phase 3 additions. The CREATE TABLE statements above already carry these columns; this block adds them to a
+   database where the tables were created by an earlier version of this script. Safe to re-run. */
+IF COL_LENGTH(N'ref.MenuItems', N'Alcohol') IS NULL ALTER TABLE ref.MenuItems ADD Alcohol BIT NOT NULL CONSTRAINT DF_MenuItems_Alcohol DEFAULT 0;
+IF COL_LENGTH(N'ref.MenuItems', N'Packaged') IS NULL ALTER TABLE ref.MenuItems ADD Packaged BIT NOT NULL CONSTRAINT DF_MenuItems_Packaged DEFAULT 0;
+IF COL_LENGTH(N'ref.MenuItems', N'OnMenus') IS NULL ALTER TABLE ref.MenuItems ADD OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]';
+IF COL_LENGTH(N'ref.MenuItems', N'SubstituteId') IS NULL ALTER TABLE ref.MenuItems ADD SubstituteId NVARCHAR(40) NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Rating') IS NULL ALTER TABLE ref.Excursions ADD Rating INT NOT NULL CONSTRAINT DF_Excursions_Rating DEFAULT 0;
+IF COL_LENGTH(N'ref.Excursions', N'Reviews') IS NULL ALTER TABLE ref.Excursions ADD Reviews INT NOT NULL CONSTRAINT DF_Excursions_Reviews DEFAULT 0;
+IF COL_LENGTH(N'ref.Events', N'ExtraCents') IS NULL ALTER TABLE ref.Events ADD ExtraCents BIGINT NOT NULL CONSTRAINT DF_Events_ExtraCents DEFAULT 0;
+IF COL_LENGTH(N'ref.Events', N'AfterAllAboard') IS NULL ALTER TABLE ref.Events ADD AfterAllAboard BIT NOT NULL CONSTRAINT DF_Events_AfterAllAboard DEFAULT 0;
+IF COL_LENGTH(N'ref.AddOns', N'ChangeAtDays') IS NULL ALTER TABLE ref.AddOns ADD ChangeAtDays INT NULL;
+IF COL_LENGTH(N'ref.AddOns', N'ChangeShare') IS NULL ALTER TABLE ref.AddOns ADD ChangeShare INT NULL;
+IF COL_LENGTH(N'ref.AddOns', N'MinAge') IS NULL ALTER TABLE ref.AddOns ADD MinAge INT NOT NULL CONSTRAINT DF_AddOns_MinAge DEFAULT 0;
+IF COL_LENGTH(N'ref.PackageUpgrades', N'ChangeAtDays') IS NULL ALTER TABLE ref.PackageUpgrades ADD ChangeAtDays INT NULL;
+IF COL_LENGTH(N'ref.PackageUpgrades', N'ChangeShare') IS NULL ALTER TABLE ref.PackageUpgrades ADD ChangeShare INT NULL;
+IF OBJECT_ID(N'ref.CK_MenuItems_OnMenus', N'C') IS NULL ALTER TABLE ref.MenuItems ADD CONSTRAINT CK_MenuItems_OnMenus CHECK (ISJSON(OnMenus) = 1);
 GO
 
 /* =====================================================================================================

@@ -8,7 +8,7 @@ SQL Server (T-SQL). The scripts are plain `.sql` files that you run by hand; the
 | --- | --- | --- |
 | 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. |
 | 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 157 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
-| 2 | `seed/reference/*` | Phase 3. Reference data (ship, ports, sailings, venues, excursions, fares, legal text and so on). |
+| 2 | `seed/reference/run-all.sql` | Phase 3. Reference data for all 38 `ref` tables (ship, ports, sailings, venues, excursions, fares, legal text and so on), nine files, run in order. |
 | 3 | `seed/personas/*` | Phase 4. Demo users and their bookings, in partial-completion states. |
 
 Create an empty database first, then run the scripts inside it:
@@ -27,6 +27,41 @@ sqlcmd -S <server> -d <database> -b -i db/01-schema.sql
 ```
 
 Re-running `01-schema.sql` never alters an existing table. A schema change after the first run is a new numbered script, or a drop and re-create on a test database.
+
+## Reference seeds (`seed/reference`)
+
+```
+sqlcmd -S <server> -d <database> -b -i db/seed/reference/run-all.sql
+```
+
+Run it from the repository root (the paths inside are relative to it), after `01-schema.sql`. Or run the nine numbered files one at a time. They are plain ASCII, so no code page option is needed.
+
+- **Generated, not written.** `npm run db:seed:gen` builds the files from the TypeScript fixtures in `src/` (`scripts/reference-seed.ts` says which source feeds which table). To change reference data, change the source and regenerate; do not edit the SQL.
+- **Idempotent.** Each table is one `MERGE` on its key. Re-running updates rows in place and adds missing ones; it never deletes, so a row removed from the source stays in the database until you drop it by hand.
+- **`npm run db:seed:check`** proves the files on disk match the source, that every `ref` table is seeded, every column exists, text fits, closed lists hold, JSON parses, and every foreign key between `ref` tables points at a seeded row. It does not replace running them.
+
+### What the seeds decide
+
+These are the places where the TypeScript and the schema did not line up one for one. Overrule any of them.
+
+- **Schema additions.** To hold data the API needs, `01-schema.sql` gained columns: `MenuItems` (`Alcohol`, `Packaged`, `OnMenus`, `SubstituteId`), `Events` (`ExtraCents`, `AfterAllAboard`), `Excursions` (`Rating` in tenths, `Reviews`), `AddOns` and `PackageUpgrades` (`ChangeAtDays`, `ChangeShare` in basis points; `AddOns` also `MinAge`). A block after the `ref` tables adds them to a database created by the earlier script, so re-running `01-schema.sql` is enough.
+- **Relative price changes.** The source moves a price a number of days before sailing; `ChangeOn` is a date. `ChangeOn` and `ChangesToCents` are worked out for the reference sailing (21 Mar 2027); the API should use `ChangeAtDays` and `ChangeShare` for any sailing.
+- **`PackageUpgrades`** is keyed by the target, so it holds the price from "no package". Plus to Premier is the difference, worked out in code.
+- **Sailings** all use the same seven-night itinerary; the two ship clock changes (days 4 and 7, 02:00) carry the real hour change for each sailing's date.
+- **`ref.Ports`** has a row `sea` ("At sea") because itinerary days point at it.
+- **Cabins** are the 54 sample staterooms (9 per type), the same on every sailing; which are free is the API's job. `Connecting` is false, and the muster station is the one beside the cabin's elevator bank (forward/midship/aft, port/starboard = stations A to F).
+- **Decks** are every deck that has a place or a stateroom (4 to 18), with the places on it as the summary. The deck plan places themselves have no table.
+- **Cabin categories:** `SizeSqFt` is the first number in the size text, and 0 where the text gives none (mini-suites). The text, the category code, the view and the fare ratio are in `Features`.
+- **Venues** merge the reservation list (`dining.ts`) and the directory (`menus.ts`). `Capacity` is 4 (tables per seating) for rooms that can be reserved and 0 for the rest: the source has no real capacity. `Hours` holds sea and port day hours; `OpenFrom`/`OpenTo` are the earliest and latest across them (24:00 is stored as 23:59:59).
+- **Menu items** are the delivery and room-service menu plus the directory dishes (`Orderable` 0, price 0, ids `<venue>-<dish>`).
+- **Excursions:** `Interest` is the first interest and `Tags` holds all of them plus `family` and `wheelchair`. `BackByLocal` is when the tour ends. Every sailing runs every tour at full `Capacity`; the "sold out" demo case (Roatan zip-line on the reference sailing) is left to the persona seeds.
+- **Events:** `Kind` is the event's interest, `Ticketed` means `ExtraCents > 0`, and `StatusOverride` is empty (the plan-change scenario applies in code).
+- **Legal documents:** the version `2026-10` is stored as the number `202610`.
+- **Entitlements:** `LaundryBags` is 1 where the tier has the free-laundry perk. `PhotoIncluded` is true for the Premier package.
+- **Photos:** `PhotoCatalogue` is the eight photo spots (`Place` is the kind of spot); `Thumb` is empty because the source has no image files. `PhotoOptions.Count` 0 means every photo.
+- **Content:** `Faqs` drop their "link" (the screen decides where to link); `HelpTopics` holds the muster drill text in five languages; `ContentBlocks` holds the ship profile text, the port guides (body is JSON), and the port facts, transport modes and hotels for getting to the terminal.
+- **Checklists:** labels are the English text from `src/i18n`. `Auto`/link/timing of checklist and last-night items stay in code.
+- **Not seeded** because the schema has no table for them: the deck plan places, dish prices, the drinks-package break-even figures and the weather table.
 
 ## Checking the script without a server
 

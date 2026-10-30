@@ -90,8 +90,8 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - `db/README.md` with run order.
 - **Verify:** no SQL Server is available here, so a careful self-review of syntax and dependency order, a script that lists tables against the Phase 1 document, and you run it. Report anything it rejects and I fix it.
 
-### Phase 3. Reference data seeds `db/seed/reference/`
-- Port the authored fixtures from the frontend (`src/domain/*`, `*Mock.ts`: ship profile, decks, cabins, ports, itinerary, 8 sailings, venues and menus, excursions, events and shows, fares, packages and add-ons, crew, FAQs and content) into idempotent `MERGE` scripts, one file per area.
+### Phase 3. Reference data seeds `db/seed/reference/` (built)
+- Port the authored fixtures from the frontend (`src/domain/*`, `*Mock.ts`: ship profile, decks, cabins, ports, itinerary, 8 sailings, venues and menus, excursions, events and shows, fares, packages and add-ons, crew, FAQs and content) into idempotent `MERGE` scripts, one file per area. Built as a generator (`npm run db:seed:gen`) so the SQL cannot drift from the TypeScript.
 - **Verify:** counts and ids cross-checked against the TypeScript source with a small script; you run them.
 
 ### Phase 4. Persona seed scripts `db/seed/personas/`

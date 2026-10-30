@@ -9,9 +9,9 @@ export type PhotoVenue = 'gangway' | 'portrait' | 'port' | 'pool' | 'dining'
 
 export const PHOTO_VENUES: readonly PhotoVenue[] = ['gangway', 'portrait', 'port', 'pool', 'dining']
 
-interface Spot { id: string; day: number; venue: PhotoVenue; title: string; time: string; individual: boolean }
+export interface Spot { id: string; day: number; venue: PhotoVenue; title: string; time: string; individual: boolean }
 
-const SPOTS: readonly Spot[] = [
+export const SPOTS: readonly Spot[] = [
   { id: 'gangway', day: 1, venue: 'gangway', title: 'Welcome aboard, the gangway', time: '12:30', individual: false },
   { id: 'formal1', day: 2, venue: 'portrait', title: 'Formal night portraits, the Piazza', time: '18:00', individual: true },
   { id: 'cozumel', day: 3, venue: 'port', title: 'Cozumel, back at the dock', time: '16:00', individual: false },
