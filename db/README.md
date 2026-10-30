@@ -19,7 +19,7 @@ sqlcmd -S <server> -d <database> -b -i db/01-schema.sql
 
 `-b` stops at the first error. In SSMS or Azure Data Studio, open the file with the database selected and run it. The script sets `QUOTED_IDENTIFIER ON`, which filtered indexes need.
 
-To start again on a test database:
+To start again on a test database (or just run `reset-db.ps1`, below, which does all of it):
 
 ```
 sqlcmd -S <server> -d <database> -b -i db/00-drop-all.sql
@@ -27,6 +27,26 @@ sqlcmd -S <server> -d <database> -b -i db/01-schema.sql
 ```
 
 Re-running `01-schema.sql` never alters an existing table. A schema change after the first run is a new numbered script, or a drop and re-create on a test database.
+
+## Full reset in one command (`reset-db.ps1`)
+
+For a clean database ready for re-testing, run from PowerShell (the database itself must already exist):
+
+```
+./db/reset-db.ps1
+```
+
+It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sql`, `seed/reference/run-all.sql`, then any `seed/personas/*.sql` in name order (Phase 4; skipped until that folder exists). It needs `sqlcmd` on the PATH and trusts the server certificate, like the connection string in use.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `-Server` | `localhost` | SQL Server instance, for example `(localdb)\MSSQLLocalDB`. |
+| `-Database` | `princess` | Target database. |
+| `-User`, `-Password` | none | SQL login. Without them it uses Windows authentication. |
+| `-SkipDrop` | off | Skip the drop step, for a new empty database. |
+| `-Force` | off | Do not ask first. Without it you must type the database name to continue. |
+
+It destroys all data in the Princess tables, so use it on test databases only. It stores no connection string and writes nothing to disk.
 
 ## Reference seeds (`seed/reference`)
 
