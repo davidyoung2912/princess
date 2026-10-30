@@ -8,7 +8,7 @@
     2. db/01-schema.sql              creates the schemas and all tables
     3. db/seed/reference/*.sql       the nine reference seed files, in name order (not run-all.sql, which needs the repository root as working folder)
        reference data (ship, ports, sailings, venues, fares, legal text ...)
-    4. db/seed/personas/*.sql        demo users and bookings (Phase 4; skipped while the folder does not exist)
+    4. db/seed/personas/*.sql        demo users and bookings (reset, users, bookings, journey)
 
   DESTRUCTIVE: all data in those tables is lost. Use on test databases only. The database itself must already exist.
   Windows authentication is used unless -User and -Password are given. Nothing is written to disk and no connection string is stored.

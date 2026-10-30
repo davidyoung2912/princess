@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["vite.config.ts", "scripts"],
-  "exclude": ["scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts"]
+  "exclude": ["scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts", "scripts/persona-seed.ts", "scripts/gen-persona-seed.ts", "scripts/check-persona-seed.ts"]
 }

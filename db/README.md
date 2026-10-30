@@ -9,7 +9,7 @@ SQL Server (T-SQL). The scripts are plain `.sql` files that you run by hand; the
 | 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. |
 | 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 157 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
 | 2 | `seed/reference/run-all.sql` | Phase 3. Reference data for all 38 `ref` tables (ship, ports, sailings, venues, excursions, fares, legal text and so on), nine files, run in order. |
-| 3 | `seed/personas/*` | Phase 4. Demo users and their bookings, in partial-completion states. |
+| 3 | `seed/personas/run-all.sql` | Phase 4. Resets then loads 34 demo people, 22 bookings and their journey data, in partial-completion states. Catalogue in `seed/personas/README.md`. |
 
 Create an empty database first, then run the scripts inside it:
 
@@ -36,7 +36,7 @@ For a clean database ready for re-testing, run from PowerShell (the database its
 ./db/reset-db.ps1
 ```
 
-It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sql`, `seed/reference/run-all.sql`, then any `seed/personas/*.sql` in name order (Phase 4; skipped until that folder exists). It needs `sqlcmd` on the PATH and trusts the server certificate, like the connection string in use.
+It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sql`, `seed/reference/run-all.sql`, then the four `seed/personas/*.sql` files in name order. It needs `sqlcmd` on the PATH and trusts the server certificate, like the connection string in use.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -117,3 +117,18 @@ The document is column-level for most tables and looser for some. These are the 
 - **Dining double-booking** stays a code rule (section 4.5); the script only indexes the lookup.
 - **`ChatBlocks.BlockedUserId`** does not cascade (the other side of a pair can only have one cascade path).
 - **`ref.DeskSlots`** is reference-like and generated, so it is in `ref` and `DeskAppointments` points at it.
+
+## Persona seeds (`seed/personas`)
+
+```
+sqlcmd -S <server> -d <database> -b -i db/seed/personas/run-all.sql
+```
+
+Run from the repository root, after the schema and the reference seeds. `00-reset-personas.sql` goes first: it deletes every seeded person (found by `Slug`) and all they own, then `01-users`, `02-bookings` and `03-journey` insert. So `run-all.sql` is the re-runnable, "back to the starting state" script; the numbered files alone are not re-runnable. Reference data is never touched.
+
+- **Generated.** `npm run db:persona:gen` builds the files and the catalogue from `scripts/persona-seed.ts`, using the same pricing, payment-plan, cabin and stage code as the app. `npm run db:persona:check` proves the files are current, ASCII, use real columns, fit their columns and closed lists, and have unique slugs, account numbers and booking numbers.
+- **Passwords.** One shared demo password (in the catalogue), hashed per person as `pbkdf2$600000$salt$hash` (PBKDF2-HMAC-SHA512, data model D12) with a salt derived from the slug, so regenerating gives the same file. Supervised children have no password.
+- **Clock.** `demo.DemoState.ClockOffsetSeconds` is computed in SQL at run time so that each person's "now" is the instant in the catalogue, whenever you run it.
+- **Ids.** Rows an API route addresses have fixed `PublicId`s derived from a key, so test ids are stable between runs.
+- **Reset limit.** The reset clears what the seeds create. If you have used the app since and created rows that name a seeded person as actor in tables the seeds do not touch, drop and reseed instead (`reset-db.ps1`).
+- **Not seeded:** chat, orders, kids club, health, room, photos, laundry, Wi-Fi, budgets, games, TV, parties, medallions, bag tags, upgrade bids, club registrations, waitlists, queues and show tickets. They start empty.

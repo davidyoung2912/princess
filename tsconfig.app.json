@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts"]
+  "include": ["src", "scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts", "scripts/persona-seed.ts", "scripts/gen-persona-seed.ts", "scripts/check-persona-seed.ts"]
 }
