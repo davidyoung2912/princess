@@ -141,3 +141,24 @@ curl -s -X POST $B/api/v1/bookings -H "$H" -H 'content-type: application/json' -
 ```
 
 Send the same call again: the same booking number comes back and `GET .../payments` shows one deposit. A wrong `expectedTotal` is 409 `priceChanged`. Then `GET /api/v1/bookings/<number>/detail`, `GET .../change?sailingId=sun-2027-02-28`, `POST .../cancel` (free within 24 hours when more than 7 days out).
+
+## Phase 8a endpoints
+
+The pre-cruise plan: 25 routes under `/bookings/{number}/...`, listed in `docs/backend-data-model.md` section 6.3 and in Swagger (tags `Plan`, `Plan: excursions`, `Plan: dining`, `Plan: packages`, `Plan: lists`, `Plan: assistance`). Any guest on the booking may read; an adult guest may write (a supervised child gets `403 supervised`); a stranger gets `404`. Tours, add-ons and upgrades are paid with the same `parts` and `challenge` as booking, and the pretend bank behaves the same.
+
+## Smoke calls for Phase 8a (run against your database)
+
+Sign in as a persona with a booking (for example Daniel on `PC243902`) and a saved default card.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902
+curl -s $N/plan -H "$H"                                                           # eight days, with gaps where nothing is booked
+curl -s $N/excursions -H "$H"                                                     # 12 tours; rtb-zip shows 0 spots on the 21 March sailing
+curl -s -X PUT $N/excursions/cart/coz-snorkel -H "$H" -H 'content-type: application/json' -d '{"guests":["<daniel guid>"]}'
+curl -s -X POST $N/excursions/checkout -H "$H" -H 'content-type: application/json' -d '{"parts":[{"method":"card","cardId":"<guid>","cents":7900}]}'
+curl -s "$N/dining/slots?venue=crown&day=3" -H "$H"                               # 2 tables at 18:30 and 4 at 20:00
+curl -s $N/packages -H "$H"                                                       # upgrades from Plus to Premier at 21,000 cents
+curl -s $N/checklist -H "$H"; curl -s $N/packing -H "$H"; curl -s $N/travel -H "$H"; curl -s $N/assistance -H "$H"
+```
+
+Then book a table in `dining/reservations` and confirm the same slot shows one fewer table for a second booking on the same sailing. Dining only opens once the cruise is paid in full (or the booker is Platinum or Elite), so a persona who still owes a balance gets `409 notOpen`.

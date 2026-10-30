@@ -64,7 +64,7 @@ WHEN MATCHED THEN UPDATE SET t.[Phase] = s.[Phase], t.[DueDaysBefore] = s.[DueDa
 WHEN NOT MATCHED THEN INSERT ([Id], [Phase], [DueDaysBefore], [Label]) VALUES (s.[Id], s.[Phase], s.[DueDaysBefore], s.[Label]);
 GO
 
--- ref.PackingItems: 28 rows
+-- ref.PackingItems: 29 rows
 MERGE ref.PackingItems AS t
 USING (VALUES
   (N'passport', N'Passports for everyone', N'{"group":"documents","why":"Needed to board and to come home. Keep them in your hand luggage.","always":true}'),
@@ -94,7 +94,8 @@ USING (VALUES
   (N'offline', N'Offline copies of your tickets and maps', N'{"group":"tech","why":"Wi-Fi at sea is slow. Download them before you leave home.","always":true}'),
   (N'swimDiapers', N'Swim nappies and baby supplies', N'{"group":"kids","why":"The pools require swim nappies for babies and toddlers.","always":false}'),
   (N'games', N'Cards, small games and books', N'{"group":"kids","why":"For quiet time in the cabin and long days at sea.","always":false}'),
-  (N'teenClothes', N'Clothes for the Underground and the pool deck', N'{"group":"kids","why":"Teen club nights have their own dress ideas.","always":false}')
+  (N'teenClothes', N'Clothes for the Underground and the pool deck', N'{"group":"kids","why":"Teen club nights have their own dress ideas.","always":false}'),
+  (N'rain', N'A light rain jacket or compact umbrella', N'{"group":"clothes","why":"Showers are possible at this time of year.","always":false}')
 ) AS s ([Id], [Label], [Rule])
 ON t.[Id] = s.[Id]
 WHEN MATCHED THEN UPDATE SET t.[Label] = s.[Label], t.[Rule] = s.[Rule]

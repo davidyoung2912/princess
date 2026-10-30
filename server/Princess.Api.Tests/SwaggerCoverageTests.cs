@@ -58,6 +58,59 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/me/favourites/toggle" },
     };
 
+    /// <summary>Phase 8 (data model 6.3, plan group); all of them need a sign-in.</summary>
+    public static TheoryData<string, string> PlanRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/plan" },
+        { "get", "/api/v1/bookings/{number}/excursions" },
+        { "put", "/api/v1/bookings/{number}/excursions/cart/{excursionId}" },
+        { "delete", "/api/v1/bookings/{number}/excursions/cart/{excursionId}" },
+        { "post", "/api/v1/bookings/{number}/excursions/checkout" },
+        { "put", "/api/v1/bookings/{number}/excursions/bookings/{id}" },
+        { "delete", "/api/v1/bookings/{number}/excursions/bookings/{id}" },
+        { "get", "/api/v1/bookings/{number}/dining" },
+        { "get", "/api/v1/bookings/{number}/dining/slots" },
+        { "post", "/api/v1/bookings/{number}/dining/reservations" },
+        { "delete", "/api/v1/bookings/{number}/dining/reservations/{id}" },
+        { "post", "/api/v1/bookings/{number}/dining/reservations/{id}/move" },
+        { "post", "/api/v1/bookings/{number}/dining/reservations/{id}/late" },
+        { "get", "/api/v1/bookings/{number}/packages" },
+        { "post", "/api/v1/bookings/{number}/packages/purchases" },
+        { "post", "/api/v1/bookings/{number}/packages/purchases/{id}/claim-drop" },
+        { "delete", "/api/v1/bookings/{number}/packages/purchases/{id}" },
+        { "get", "/api/v1/bookings/{number}/checklist" },
+        { "put", "/api/v1/bookings/{number}/checklist/{id}" },
+        { "get", "/api/v1/bookings/{number}/packing" },
+        { "put", "/api/v1/bookings/{number}/packing/{id}" },
+        { "get", "/api/v1/bookings/{number}/travel" },
+        { "put", "/api/v1/bookings/{number}/travel" },
+        { "get", "/api/v1/bookings/{number}/assistance" },
+        { "post", "/api/v1/bookings/{number}/assistance" },
+        { "delete", "/api/v1/bookings/{number}/assistance/{id}" },
+    };
+
+    [Theory]
+    [MemberData(nameof(PlanRoutes))]
+    public async Task EveryPhaseEightRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task PlanRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in PlanRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{excursionId}", "coz-snorkel");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
     /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>
     public static TheoryData<string, string> BookingRoutes => new()
     {

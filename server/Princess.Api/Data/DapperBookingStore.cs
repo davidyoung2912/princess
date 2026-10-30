@@ -200,7 +200,7 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
         return id;
     }
 
-    private static async Task InsertPaymentAsync(DbConnection c, DbTransaction? tx, long bookingId, NewBookingPayment p, CancellationToken ct)
+    internal static async Task<long> InsertPaymentAsync(DbConnection c, DbTransaction? tx, long bookingId, NewBookingPayment p, CancellationToken ct)
     {
         var paymentId = await c.ExecuteScalarAsync<long>(Sql.Cmd("""
             INSERT INTO dbo.Payments (BookingId, UserId, Label, AmountCents, [At], Reference, Status)
@@ -213,6 +213,7 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
                 INSERT INTO dbo.PaymentParts (PaymentId, Seq, Method, CardId, CardBrand, Last4, Cents, ChallengeUsed)
                 VALUES (@paymentId, @seq, @Method, @CardId, @CardBrand, @Last4, @Cents, @ChallengeUsed)
                 """, new { paymentId, seq = ++seq, part.Method, part.CardId, part.CardBrand, part.Last4, part.Cents, part.ChallengeUsed }, tx, ct));
+        return paymentId;
     }
 
     // ---- Read ----

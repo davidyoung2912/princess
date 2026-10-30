@@ -272,9 +272,12 @@ export function buildTables(): Table[] {
   const everything = { departure: REFERENCE.departure, nights: 7, tours: EXCURSIONS.map((x) => x.id), ages: [1, 15, 40], needs: ['cpap', 'oxygen', 'hearing', 'mobility'] as never[], tender: true, elegantNights: 2 }
   const nothing = { departure: '2027-01-17', nights: 7, tours: [] as string[], ages: [40], needs: [] as never[], tender: false, elegantNights: 0 }
   const always = new Set(buildPackingList(nothing).map((i) => i.id))
+  // The rain jacket only appears in the wetter months, so the reference (March) sailing never lists it; its tick row needs the item to exist.
+  const rainy = buildPackingList({ ...everything, departure: '2026-11-08' }).find((i) => i.id === 'rain')
+  const packing = [...buildPackingList(everything), ...(rainy ? [rainy] : [])]
   add('09-lists', 'ref.PackingItems', ['Id'],
     [t('Id', 'str'), t('Label', 'str'), t('Rule', 'json')],
-    buildPackingList(everything).map((i) => [i.id, i.label, { group: i.group, why: i.why, always: always.has(i.id) }]))
+    packing.map((i) => [i.id, i.label, { group: i.group, why: i.why, always: always.has(i.id) }]))
 
   return tables
 }

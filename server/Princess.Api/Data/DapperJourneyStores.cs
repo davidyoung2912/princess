@@ -24,7 +24,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db) : IAccountStore
     {
         await using var c = await db.OpenAsync(ct);
         var guests = (await c.QueryAsync<GuestRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, p.Dob, p.Citizenship, u.IsSupervised, u.BookerUserId, g.Seq
+            SELECT u.Id AS UserId, u.PublicId, u.Tier, p.FirstName, p.LastName, p.Dob, p.Citizenship, u.IsSupervised, u.BookerUserId, g.Seq
             FROM dbo.BookingGuests g
             JOIN dbo.Users u ON u.Id = g.UserId
             JOIN dbo.Profiles p ON p.UserId = u.Id
@@ -167,7 +167,7 @@ public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
 {
     internal const string BookingSelect = """
         SELECT b.Id AS BookingId, b.Number, b.Kind, b.AgentName, b.BookerUserId, b.SailingId, s.Title AS SailingTitle, sh.Name AS ShipName,
-               s.Departure, s.Nights, b.CategoryId, c.Name AS CategoryName, b.FareId, b.CabinNumber, b.Status, b.TotalCents, b.DepositCents, b.FinalDueDate, b.ConfirmedAt,
+               s.Departure, s.Nights, b.CategoryId, c.Name AS CategoryName, b.FareId, b.Dining, b.CabinNumber, b.Status, b.TotalCents, b.DepositCents, b.FinalDueDate, b.ConfirmedAt,
                (SELECT COUNT(*) FROM dbo.BookingGuests g WHERE g.BookingId = b.Id) AS GuestAccounts,
                (SELECT COUNT(*) FROM dbo.BookingGuestDetails d WHERE d.BookingId = b.Id) AS GuestDetails,
                ck.FinishedAt AS CheckinFinishedAt,

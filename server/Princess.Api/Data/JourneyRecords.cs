@@ -5,6 +5,8 @@ public sealed class GuestRow
 {
     public long UserId { get; set; }
     public Guid PublicId { get; set; }
+    /// <summary>Captain's Circle tier, which sets some entitlements.</summary>
+    public string Tier { get; set; } = "none";
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public DateTime Dob { get; set; }
@@ -77,6 +79,8 @@ public sealed class BookingRow
     public string CategoryId { get; set; } = "";
     public string CategoryName { get; set; } = "";
     public string FareId { get; set; } = "";
+    /// <summary>How the main dinner is arranged: anytime, early or late.</summary>
+    public string Dining { get; set; } = "anytime";
     public string? CabinNumber { get; set; }
     public string Status { get; set; } = "confirmed";
     public long TotalCents { get; set; }

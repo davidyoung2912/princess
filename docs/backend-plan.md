@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 7 built.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 7 built, Phase 8 built in two parts (8a done, 8b next).** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -119,9 +119,19 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - Interior fares by sailing and the room type multipliers have no table in the schema, so they are constants in `Pricing.cs` (sailings, dates and open or closed still come from `ref.Sailings`). The sample staterooms use the same formula as `ref.Cabins`.
 - **Verify:** `dotnet build`, `dotnet test` (337 tests: ported rules, then the HTTP pipeline for discover, the funnel, booking, charging, idempotency, pay balance, change and cancel, and an OpenAPI coverage check). As before, none of the Dapper SQL (`DapperBookingStore`) has touched SQL Server; the smoke calls in `server/README.md` are the check.
 
-### Phase 8. API: pre-cruise plan
-- Maps to `plan` (overview, excursions, dining, packages, checklist, packing, travel, assistance), `waits`, `shows`, `ahead.*` (advisors, marketing, perks, upgrades, clubs, medallion, tags, fix, assist, prep).
-- **Verify:** tests for entitlements, price protection and drop credit, dining slot rules, cart conflict rules.
+### Phase 8a. API: pre-cruise plan (built)
+- Maps to the `plan` group (data model section 6.3): overview, excursions (cart, checkout, change guests, cancel), dining (slots, reserve, move, late, cancel), packages (buy, claim a price drop, cancel), checklist, packing, travel and assistance. 25 routes, all under `/bookings/{number}/...`; any guest on the booking may read, an adult guest may write.
+- Ported to `server/Princess.Api/Domain`: `Itinerary.cs` (days, ports, ship clock zones), `Entitlements.cs`, `PackageRules.cs` (add-ons, upgrades net of gratuities, price protection), `ExcursionRules.cs` (catalogue generated from the TypeScript, ages, places left, timing, overlap, refunds), `DiningRules.cs` (grid, window, meal cover, clash, dinner past) and `PlanRules.cs` (checklist, assistance deadlines, travel windows, packing list, day-by-day overview). The grid and places-left hash is the same djb2 as the screens, and a test pins numbers worked out by the TypeScript.
+- Charging goes through `IPaymentGateway` as in Phase 7, now shared in `Services/PaymentPlumbing.cs`; tours, add-ons and upgrades are recorded as `tour`, `purchase` and `upgrade` payments and refunds as `refund` payments, each in the same transaction as the thing bought.
+- Deliberate differences from the mock: places left and table capacity are counted across **every booking on the sailing**, not just the caller's; an upgrade records where it started in `Purchases.ItemId` as `from>to` (for example `plus>premier`) because the table has no column for it, which price protection needs; a tour that loses guests after the free window keeps the fee and the remaining guests' share is worked out from the total less credit rather than tracked as a separate cash figure; a purchase cancelled for a refund returns its total less any price-drop credit already given; booking, adding and paying close when less than one day is left (on sailing day), and dining stays open until the last night has passed; the dining window uses the booker's tier and the booking's paid state.
+- No `Idempotency-Key` on checkout or buy: a repeat finds an empty cart or a held item and is refused, so nothing is charged twice.
+- Also fixed while here: the reference seed never listed the `rain` packing item (it only appears in wetter months), so ticking it would have broken the foreign key; `scripts/reference-seed.ts` now adds it and `09-lists.sql` is regenerated (29 items).
+- **Verify:** `dotnet build`, `dotnet test` (433 tests: ported rules, then the HTTP pipeline for access, the cart and checkout, credit-first payment, declines, refunds, shared capacity, dining rules, price protection, checklist, packing, travel and assistance, and an OpenAPI check). None of `DapperPlanStore` has touched SQL Server; the smoke calls in `server/README.md` are the check.
+
+### Phase 8b. API: waits, shows and ahead
+- Maps to `waits` (queues and waitlists), `shows`, and `ahead.*` (advisors, marketing consent, perks, upgrades, clubs, medallion, bag tags, fix and assist cases, prep ticks). The tables already exist (`Waitlists`, `Queues`, `ShowTickets`, `AdvisorRequests`, `MarketingConsents`, `UpgradeBids`, `ClubRegistrations`, `Medallions`, `BagTagOrders`, `FixCases`, `AssistCases`, `PrepTicks`).
+- `waits.acceptWaitlist` books through the same table rules as `dining.reserve`, so `PlanService`'s reservation check should be shared rather than copied.
+- **Verify:** tests for the waitlist offer window, queue positions, show ticket limits, marketing double opt-in by region, upgrade bids and club registration for a supervised child.
 
 ### Phase 9. API: check-in and boarding
 - Maps to `checkin`, `boarding` (including the public pass lookup by booking number and last name, rate-limited), embark progress.

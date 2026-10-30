@@ -299,7 +299,9 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `booking.changePreview` / `change` | `GET /bookings/{n}/change?sailingId=`, `POST /bookings/{n}/change?sailingId=`; 409 `tooLate`\|`newTooSoon`\|`same` | Booker |
 | `booking.cancel` | `POST /bookings/{n}/cancel`; 409 `closed` | Booker |
 
-### 6.3 Pre-cruise (Phase 8)
+### 6.3 Pre-cruise (Phase 8a built: the `plan` rows; 8b: `waits`, `shows` and `ahead`)
+
+Built routes sit under `/bookings/{number}`, so `GET /plan` is `GET /bookings/{number}/plan`, `GET /excursions` is `GET /bookings/{number}/excursions`, and so on. Differences from the table: `PUT /excursions/bookings/{id}` takes `{guests}`, `PUT /checklist/{id}` and `PUT /packing/{id}` take `{done}`, `POST /packages/purchases` takes `{kind, item | to, guests, parts, challenge}`, and the dining routes are `/dining/reservations` and `/dining/reservations/{id}/move|late`. Ids in the responses are public guids; a guest is the public id of their user.
 | Api method | Route | Auth |
 | --- | --- | --- |
 | `plan.overview` | `GET /plan` | B |
