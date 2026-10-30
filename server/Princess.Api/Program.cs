@@ -8,6 +8,7 @@ using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Endpoints;
+using Princess.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -26,6 +27,18 @@ services.AddScoped<IRefreshTokenStore, DapperRefreshTokenStore>();
 services.AddScoped<IAccessStore, DapperAccessStore>();
 services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<AccessService>();
+services.AddScoped<IAccountStore, DapperAccountStore>();
+services.AddScoped<ITripStore, DapperTripStore>();
+services.AddScoped<IInboxStore, DapperInboxStore>();
+services.AddScoped<IPrivacyStore, DapperPrivacyStore>();
+services.AddScoped<IDemoStore, DapperDemoStore>();
+services.AddScoped<IUserClock, UserClock>();
+services.AddScoped<SubjectAccess>();
+services.AddScoped<AccountService>();
+services.AddScoped<TripService>();
+services.AddScoped<DocumentService>();
+services.AddScoped<InboxService>();
+services.AddScoped<PrivacyService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -43,13 +56,23 @@ services.AddRateLimiter(o =>
     o.OnRejected = (ctx, _) => new ValueTask(Problems.Write(ctx.HttpContext, ApiErrorCode.Forbidden, "tooManyRequests", StatusCodes.Status429TooManyRequests));
 });
 services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, auth) =>
+{
     o.AddPolicy(AuthEndpoints.LoginLimiter, http =>
         RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = auth.Value.LoginAttemptsPerMinute,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
-        })));
+        }));
+    // Guessing agent booking numbers is the thing to stop, so the window is per signed-in person (their sub), falling back to the address.
+    o.AddPolicy(JourneyEndpoints.LinkLimiter, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = auth.Value.LoginAttemptsPerMinute,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
@@ -83,7 +106,9 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthEndpoints();
-app.MapGroup("/api/v1").MapAuthEndpoints();
+var v1 = app.MapGroup("/api/v1");
+v1.MapAuthEndpoints();
+v1.MapJourneyEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

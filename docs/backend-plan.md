@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 5 built.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 6 built.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -106,9 +106,11 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - Test project with auth tests.
 - **Verify:** `dotnet build`, `dotnet test`, and a smoke call list in `server/README.md` (you run it against your database). Built with 52 tests over in-memory stores; nothing in it has touched SQL Server yet, so the Dapper SQL is verified only by your smoke run.
 
-### Phase 6. API: account, trips, payments, documents, notifications, support, privacy
-- Maps to `account`, `trips`, `payments`, `documents`, `notifications`, `support`, `help`, `privacy`, `budget`, `aboard.feedback`, `saved`. Ports the name-change rules and document requirement rules.
-- **Verify:** tests for the rules; Swagger smoke.
+### Phase 6. API: account, trips, payments, documents, notifications, support, privacy (built)
+- Maps to `account`, `trips`, `payments`, `documents`, `notifications`, `support`, `help`, `privacy`, `budget`, `aboard.feedback`, `saved` and `discover.favourites` (33 routes, data model section 6.1). Ports the name-change, document requirement, payment state, check-in window, notification, retention, consent and budget rules to `server/Princess.Api/Domain`.
+- Adds the demo-aware clock (`IUserClock`, D4): a user flagged `IsDemo` gets real time plus `demo.DemoState.ClockOffsetSeconds`, everyone else real time. `GET /bookings/{n}` returns the booking core (the old `bookings.get`) and `GET /sailings` is public.
+- Deliberate differences from the mock, all stricter: a profile or document is changed only by the person, the booker of the booking (for anyone on it), a supervised child's booker, or a helper holding the permission; a child's budget limit is set by that child's booker; outsiders always get `notFound`. Card charging for `payBalance` is recorded as captured; `IPaymentGateway` and idempotency keys arrive in Phase 7.
+- **Verify:** `dotnet build`, `dotnet test` (246 tests: pure rules, then the real HTTP pipeline over in-memory stores, then an OpenAPI check that every route is documented and secured). As in Phase 5, none of the Dapper SQL has touched SQL Server; the smoke calls in `server/README.md` are the check.
 
 ### Phase 7. API: discover and booking
 - Maps to `discover`, `booking` (dates, rooms, cabins, fares, quote, draft, resume link, book, pay balance, change, cancel). Ports pricing, fares, promotions, cancel policy, change checks and loyalty discount to C#, with tests mirroring `booking.test.ts` and `prebook.test.ts`. Payment charging stays mocked behind an interface (`IPaymentGateway`) with the same declined and challenge behaviours.

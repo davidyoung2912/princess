@@ -260,23 +260,23 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | *(new)* view-as | `POST /me/view-as/{userId}` | Booker |
 | `account.party` | `GET /bookings/{n}/party` | B |
 | `account.profile(id)` | `GET /users/{id}/profile` | B same booking |
-| `account.saveProfile` | `PUT /users/{id}/profile` | BA; rules: name change, `forbidden` for child |
-| `account.helper` / `saveHelper` / `revokeHelper` | `GET/PUT/DELETE /me/helper` | U |
+| `account.saveProfile` | `PUT /users/{id}/profile` | the person, their booker (a child), the booking's booker, or a helper with `profile`; rules: name change (`conflict` late or large), `forbidden` for child |
+| `account.helper` / `saveHelper` / `revokeHelper` | `GET/PUT/DELETE /me/helper` (GET returns JSON `null` when there is none) | U |
 | `account.history` | `GET /me/history` | U |
 | `trips.list` | `GET /trips` | U |
 | `trips.get` | `GET /trips/{n}` | B |
 | `trips.link` | `POST /trips/link` {number,lastName,departure} | U (rate-limited) |
 | `payments.get` | `GET /bookings/{n}/payments` | B |
 | `payments.addCard` / `removeCard` | `POST/DELETE /me/cards[/{id}]` | BA |
-| `payments.payBalance(cardId)` | `POST /bookings/{n}/payments/balance` | BA (+helper `payments`) |
+| `payments.payBalance(cardId)` | `POST /bookings/{n}/payments/balance` {cardId}; 409 `paid` when nothing is owed | BA (a helper paying with `payments` is not built) |
 | `documents.get` | `GET /bookings/{n}/documents` | B |
-| `documents.set` | `PUT /users/{id}/documents/{doc}` / `DELETE` | BA (+helper `documents`) |
+| `documents.set` | `PUT /users/{id}/documents/{doc}` {expires?} / `DELETE`; optional `?booking={n}` picks the booking whose view comes back (a helper gets only that guest) | as profile, with helper `documents` |
 | `notifications.list/markRead/savePrefs` | `GET /me/notifications`, `POST /me/notifications/read`, `PUT /me/notification-prefs` | U |
-| `support.tickets/callback/email` | `GET/POST /me/support-tickets` | U |
+| `support.tickets/callback/email` | `GET /me/support-tickets`; `POST /me/support-tickets` {kind:`callback`,phone} or {kind:`email`,message} | U |
 | `help.contacts` | `GET /help/contacts` | P |
-| `privacy.view/setConsent` | `GET /bookings/{n}/privacy`, `PUT /users/{id}/consents/{id}` | B / BA (parent for child) |
-| `budget.get/save` | `GET/PUT /bookings/{n}/budget` | B / BA |
-| `bookings.get` / `bookings.sailings` | `GET /bookings/{n}` (core), `GET /sailings` | B / P |
+| `privacy.view/setConsent` | `GET /bookings/{n}/privacy`; `PUT /users/{id}/consents/{consent}` {on}, optional `?booking={n}` | B / the adult themself or the child's booker |
+| `budget.get/save` | `GET/PUT /bookings/{n}/budget` | B / BA; a child's limit needs that child's booker |
+| `bookings.get` / `bookings.sailings` | `GET /bookings/{n}` (core: number, personaId, bookerId, sailingId, departure, party ids, category, stateroom, cabinNumber, tier, package), `GET /sailings` | B / P |
 | `aboard.feedback.list/send` | `GET/POST /me/feedback` | U |
 | `ahead.saved.list/toggle`, `discover.favourites/toggleFavourite` | `GET /me/favourites`, `POST /me/favourites/toggle` | U |
 

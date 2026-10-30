@@ -51,7 +51,7 @@ RFC 7807 problem details. `type` is one of the `src/api/errors.ts` codes (`inval
 
 ## Authorisation helpers (`Auth/AccessService.cs`)
 
-`RequireMemberAsync`, `RequireAdultMemberAsync`, `RequireBookerAsync`, `RequireParentOf`, `RequireSelfOrHelperAsync` implement section 7 of the data-model document. The Phase 6 onward endpoints call them; the pure rules (`AccessRules`) are unit tested.
+`RequireMemberAsync`, `RequireAdultMemberAsync`, `RequireBookerAsync`, `RequireParentOf`, `RequireSelfOrHelperAsync` implement section 7 of the data-model document. Every journey endpoint calls them (Phase 6 onward; `Auth/SubjectAccess.cs` adds the person-or-booker-or-helper rule for profiles and documents); the pure rules (`AccessRules`) are unit tested.
 
 ## Smoke calls (run against your database)
 
@@ -75,3 +75,37 @@ curl -s -X POST $B/api/v1/me/view-as/<childPublicId> -H "authorization: Bearer $
 ```
 
 In Swagger: run `/auth/login`, press **Authorize**, paste the `accessToken`, then try `/me`. Also try the account number `4100007919` as the identifier, and a wrong password six times (the sixth call and the correct password both return 401 until the lock expires).
+
+## Phase 6 endpoints
+
+Account, trips, payments, documents, notifications, support, help, privacy, budget, feedback and favourites: 33 routes, listed with verbs and auth in `docs/backend-data-model.md` section 6.1 and in Swagger (tags Account, Trips, Payments, Documents, Notifications, Support, Help, Privacy, Budget, Feedback, Favourites). Booking-scoped routes take the booking number (`/bookings/PC163342/...`); people are addressed by their public guid. Only `GET /sailings` and `GET /help/contacts` are public.
+
+"Now" comes from `IUserClock`: real time for a normal user, real time plus `demo.DemoState.ClockOffsetSeconds` for a user flagged `IsDemo` (all the seeded personas), so each persona sits at its own stage.
+
+## Smoke calls for Phase 6 (run against your database)
+
+Sign in as each persona (password `Sailaway!2027`) and keep the token: `ACCESS=$(curl -s -X POST $B/api/v1/auth/login -H 'content-type: application/json' -d '{"identifier":"maria@demo.princess.example","password":"Sailaway!2027"}' | jq -r .accessToken)`.
+
+```
+H="authorization: Bearer $ACCESS"
+curl -s $B/api/v1/trips -H "$H"                                   # Maria: PC179254, payment dueSoon, next documents (no passport)
+curl -s $B/api/v1/bookings/PC179254/party -H "$H"
+curl -s $B/api/v1/bookings/PC179254/documents -H "$H"             # citizenship-based requirements, blocking count
+curl -s $B/api/v1/bookings/PC179254/payments -H "$H"              # one deposit receipt, a saved Visa
+curl -s $B/api/v1/me/notifications -H "$H"                        # payDue, documentsMissing, checkinOpens
+curl -s $B/api/v1/help/contacts
+curl -s $B/api/v1/sailings
+```
+
+Per persona (each is a different rule):
+- **Owen** `owen@demo...` (PC301776): `POST /api/v1/bookings/PC301776/payments/balance` with `{"cardId":"<id from GET .../payments>"}` settles it; a second call is 409 `paid`.
+- **Priscilla** (PC317688): the declined attempt is not a receipt; the trip is `overdue`, next `payOverdue`. Add a card with `POST /api/v1/me/cards` `{"brand":"visa","last4":"4242","expiry":"12/30"}` and pay.
+- **Victor** (PC333500): `passportProblems` is 1 in `/trips`; `PUT /api/v1/users/<his id>/documents/passport` `{"expires":"2031-05-01"}` clears it.
+- **Gerald** (PC163342): `PUT /api/v1/users/<his id>/profile` changing a surname by one letter is accepted; to a different name is 409 `large`.
+- **Ruth and Paul** (PC428972): sign in as Paul and `GET /api/v1/users/<Ruth's id>/profile`, then `PUT .../documents/photoId`: allowed only while Ruth's helper grant is active with `view` plus the permission. Mei's revoked helper gets 404.
+- **Daniel** then view-as Maya (`POST /api/v1/me/view-as/<Maya's id>`): every `PUT`, `POST /me/cards` and `PUT /bookings/.../budget` returns 403 `supervised`.
+- **Nina** (no booking): `POST /api/v1/trips/link` `{"number":"AG7P31BK","lastName":"<lead guest's surname, BookingGuestDetails seq 1>","departure":"2027-03-21"}` links Edith's agent booking; any wrong field is the same 404 `noMatch`. The eleventh try in a minute is 429.
+- **Frank/Grace/Harold** (post-cruise): `GET /api/v1/bookings/<number>/privacy` deletes nothing yet (retention starts 30 days after 28 March 2027).
+- **Rosa/Theo**: `GET /api/v1/me/favourites`, then `POST /api/v1/me/favourites/toggle` `{"key":"excursion:coz-snorkel"}` twice.
+
+Check in Swagger that `GET /me/helper` for someone with no helper returns `null` (a JSON body, not empty).

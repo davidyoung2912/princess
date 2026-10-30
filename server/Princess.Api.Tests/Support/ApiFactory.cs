@@ -14,6 +14,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryUserStore Users { get; } = new();
     public InMemoryRefreshTokenStore RefreshTokens { get; } = new();
     public InMemoryAccessStore Access { get; } = new();
+    public InMemoryJourney Journey { get; } = new();
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -30,10 +31,20 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IUserStore>();
             services.RemoveAll<IRefreshTokenStore>();
             services.RemoveAll<IAccessStore>();
+            services.RemoveAll<IAccountStore>();
+            services.RemoveAll<ITripStore>();
+            services.RemoveAll<IInboxStore>();
+            services.RemoveAll<IPrivacyStore>();
+            services.RemoveAll<IDemoStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
             services.AddSingleton<IAccessStore>(Access);
+            services.AddSingleton<IAccountStore>(Journey);
+            services.AddSingleton<ITripStore>(Journey);
+            services.AddSingleton<IInboxStore>(Journey);
+            services.AddSingleton<IPrivacyStore>(Journey);
+            services.AddSingleton<IDemoStore>(Journey);
             services.AddSingleton<IClock>(Clock);
         });
     }
