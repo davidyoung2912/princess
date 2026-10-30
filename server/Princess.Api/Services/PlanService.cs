@@ -38,10 +38,15 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var m = write ? await access.RequireAdultMemberAsync(actor, number, ct) : await access.RequireMemberAsync(actor, number, ct);
         var booking = await trips.GetAsync(m.BookingId, ct) ?? throw ApiException.NotFound();
+        return await BuildAsync(actor, booking, ct);
+    }
+
+    private async Task<Ctx> BuildAsync(UserRecord actor, BookingRow booking, CancellationToken ct)
+    {
         var now = await clock.NowAsync(actor, ct);
         var departure = D(booking.Departure);
         var today = TripRules.Today(now);
-        var party = (await accounts.GetPartyAsync(m.BookingId, ct))
+        var party = (await accounts.GetPartyAsync(booking.BookingId, ct))
             .Select(g => new Person(g.PublicId, g.UserId, AccountService.FullName(g), AccountRules.AgeOn(D(g.Dob), departure), g.IsSupervised, g.Tier)).ToList();
         return new Ctx
         {
@@ -582,6 +587,13 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     }
 
     // ---- Travel, checklist, packing ----
+
+    /// <summary>Whether the booking's booker has priority embarkation (a suite, a top Captain's Circle tier or a package). Check-in uses it for the early arrival window and the boarding group; <paramref name="viewer"/> only sets whose clock counts.</summary>
+    public async Task<bool> HasPriorityAsync(UserRecord viewer, BookingRow booking, CancellationToken ct)
+    {
+        var c = await BuildAsync(viewer, booking, ct);
+        return c.Party.Count > 0 && Priority(c, BuildPurchases(c, await plan.ListPurchasesAsync(booking.BookingId, ct)));
+    }
 
     private bool Priority(Ctx c, IReadOnlyList<PurchaseCalc> ps) => EntitlementRules.HasPriority(EntitlementsFor(c, Booker(c), ps));
 

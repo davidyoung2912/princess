@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 8 built (Phase 8 in two parts, 8a and 8b); Phase 9 is next.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is next.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -137,9 +137,12 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - `ClubRegistrations` has no columns for the medical and medication notes or for "confirmed", so the notes travel in the `Pickups` JSON beside the list (an object `{pickups, medical, medication}`; a plain list from a seed still reads) and a saved registration is always confirmed. `Waitlists` has no joined-at column, so `CreatedAt` is it.
 - **Verify:** `dotnet build`, `dotnet test` (541 tests: the ported rules, then the HTTP pipeline for queue positions and the hold, the waitlist offer window, the shared reservation rules, auto-booking, show seats across bookings, the marketing double opt-in by region, upgrade bids, club registration for a supervised child, medallion, bag tags, cases and an OpenAPI check). None of `DapperAheadStore` has touched SQL Server; the smoke calls in `server/README.md` are the check.
 
-### Phase 9. API: check-in and boarding
-- Maps to `checkin`, `boarding` (including the public pass lookup by booking number and last name, rate-limited), embark progress.
-- **Verify:** tests for step order, window open and close, child accounts.
+### Phase 9. API: check-in and boarding (built)
+- Maps to `checkin` (view, status, receipt, save one step, submit), `boarding` (passes, wallet, and the public pass lookup by booking number and last name, rate-limited per address) and the embark progress (companion, carry-on, bags): 12 routes, data model section 6.4. Rules ported to `server/Princess.Api/Domain`: `CheckinRules.cs` (the eight steps and their order, document, photo, emergency and health validation, progress, the window) and `BoardingRules.cs` (stateroom and muster station, boarding group, lane, the signed pass code, embarkation times, luggage delivery, companion and carry-on lists).
+- Answers are stored per guest in `CheckinGuests` (the photo is only measured: the server sees width, height, brightness and sharpness and keeps nothing but the time). Payment card and finish time are in `CheckinBooking`; the arrival window is written to the travel plan (`TravelPlans`) as well, so the travel screen and check-in always agree. Passes are stored in `BoardingPasses` on submit and signed with an HMAC of `Jwt:SigningKey` (the mock used a plain checksum), so a code cannot be made up.
+- `PlanService.HasPriorityAsync` shares the entitlement rules, so the early 10:30 window, the Priority boarding group and the 10:30 terminal opening follow the booker's real entitlements.
+- Deliberate differences from the mock: the window is checked against the raw clock, so a finished check-in can be corrected while it is open but not after 10:00 on sailing day (the mock let `done` mask `closed`); a cancelled booking is `409 closed`; the payment card is one of the **caller's own** saved cards and `payment.cardId` is null when another guest chose theirs; the stateroom on the pass is the one chosen at booking when it is one of the sample staterooms, else the stable pick; a terminal change comes from `EmbarkProgress.Terminal` (set by operations) rather than a client scenario; the public lookup answers only for a confirmed booking with guest accounts, so an agent booking is `404`, and it uses the booker's clock; the receipt's arrival line has no time when the window was chosen on the travel screen.
+- **Verify:** `dotnet build`, `dotnet test` (647 tests: the ported rules, then the HTTP pipeline for access and child accounts, window open and close, every step's refusals, progress and submit, the receipt, passes in boarding order, groups, wallet, the public lookup and its rate limit, embarkation day, luggage and priority guests, and an OpenAPI check). None of `DapperCheckinStore` has touched SQL Server; the smoke calls in `server/README.md` are the check.
 
 ### Phase 10. API: on board
 - Maps to `onboard` (today, programme, port day, muster, emergency, folio), `orders`, `messages`, `service` chat, `family`, `health`, `room`, `photos`, `laundry`, `wifi`, `updates`, `requests`, `queues`, and the `aboard.*` group. Weather and ship telemetry stay mocked behind interfaces.

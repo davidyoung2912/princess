@@ -19,7 +19,7 @@ public static class CabinRules
     private const int PerCategory = 9;
 
     /// <summary>FNV-1a over UTF-16 code units, as the screens' <c>hash</c>.</summary>
-    private static uint Hash(string text)
+    internal static uint Hash(string text)
     {
         var h = 2166136261u;
         foreach (var c in text) h = unchecked((h ^ c) * 16777619u);

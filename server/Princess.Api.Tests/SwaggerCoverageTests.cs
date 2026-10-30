@@ -174,6 +174,55 @@ public class SwaggerCoverageTests : IDisposable
         }
     }
 
+    /// <summary>Phase 9 (data model 6.4, check-in and boarding); all need a sign-in except the pass lookup.</summary>
+    public static TheoryData<string, string> CheckinRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/checkin" },
+        { "get", "/api/v1/bookings/{number}/checkin/status" },
+        { "get", "/api/v1/bookings/{number}/checkin/receipt" },
+        { "put", "/api/v1/bookings/{number}/checkin/steps/{step}" },
+        { "post", "/api/v1/bookings/{number}/checkin/submit" },
+        { "get", "/api/v1/bookings/{number}/boarding" },
+        { "post", "/api/v1/bookings/{number}/boarding/wallet" },
+        { "get", "/api/v1/bookings/{number}/embark" },
+        { "put", "/api/v1/bookings/{number}/embark/companion/{id}" },
+        { "put", "/api/v1/bookings/{number}/embark/carry-on/{id}" },
+        { "put", "/api/v1/bookings/{number}/embark/bags" },
+    };
+
+    [Theory]
+    [MemberData(nameof(CheckinRoutes))]
+    public async Task EveryPhaseNineRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task CheckinRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in CheckinRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{step}", "confirm").Replace("{id}", "terminal");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
+    [Fact]
+    public async Task ThePassLookupIsTheOnePublicCheckinRoute()
+    {
+        var paths = await Paths();
+        var op = paths.GetProperty("/api/v1/pass/lookup").GetProperty("get");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+        Assert.False(op.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, "the pass lookup must not ask for a token");
+        using var http = _f.CreateClient();
+        Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, (await http.GetAsync("/api/v1/pass/lookup?number=PC243902&lastName=Harper")).StatusCode);
+    }
+
     /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>
     public static TheoryData<string, string> BookingRoutes => new()
     {

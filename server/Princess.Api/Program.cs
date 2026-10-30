@@ -35,6 +35,7 @@ services.AddScoped<IDemoStore, DapperDemoStore>();
 services.AddScoped<IBookingStore, DapperBookingStore>();
 services.AddScoped<IPlanStore, DapperPlanStore>();
 services.AddScoped<IAheadStore, DapperAheadStore>();
+services.AddScoped<ICheckinStore, DapperCheckinStore>();
 services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
@@ -49,6 +50,7 @@ services.AddScoped<PlanService>();
 services.AddScoped<ScopeLoader>();
 services.AddScoped<WaitService>();
 services.AddScoped<AheadService>();
+services.AddScoped<CheckinService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -68,6 +70,14 @@ services.AddRateLimiter(o =>
 services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, auth) =>
 {
     o.AddPolicy(AuthEndpoints.LoginLimiter, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = auth.Value.LoginAttemptsPerMinute,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    // The public pass lookup answers to anyone, so it is limited by address.
+    o.AddPolicy(CheckinEndpoints.LookupLimiter, http =>
         RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = auth.Value.LoginAttemptsPerMinute,
@@ -122,6 +132,7 @@ v1.MapJourneyEndpoints();
 v1.MapBookingEndpoints();
 v1.MapPlanEndpoints();
 v1.MapAheadEndpoints();
+v1.MapCheckinEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

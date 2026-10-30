@@ -337,6 +337,8 @@ Phase 8b built these as listed, under `/bookings/{number}` for the `B` rows and 
 | `boarding.lookup` | `GET /pass/lookup?number=&lastName=` | **P**, rate-limited, uniform `notFound` |
 | `boarding.embark/setCompanion/setCarryOn/setBags` | `GET /embark`, `PUT /embark/companion/{id}`, `PUT /embark/carry-on/{id}`, `PUT /embark/bags` | B / BA |
 
+Phase 9 built these as listed, under `/bookings/{number}` (the lookup is the only route outside it). The save route takes one body for every step (`guests`, `guest`, `kind`, `country`, `number`, `expires`, `metrics`, `name`, `phone`, `relationship`, `answers`, `cardId`, `window`); `PUT /embark/companion/{id}` and `/carry-on/{id}` take `{done}` and `PUT /embark/bags` takes `{dropped}`. Problem titles: `document:` + `kind|country|number|expiry|expired|tooSoon|notAllowed`, `photo:` + a comma list of `small|shape|dark|bright|blurry`, `emergency:` + `name|phone|relationship|travelling`, `health:answers`, `payment:card`, `arrival:window`, `guests`, `step`; `402` for a declined card; `409` `notOpen`, `closed`, `incomplete` or `notDone`.
+
 ### 6.5 On board (Phase 10)
 | Api method | Route | Auth |
 | --- | --- | --- |

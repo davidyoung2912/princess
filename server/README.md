@@ -185,3 +185,30 @@ curl -s $B/api/v1/me/loyalty -H "$H"; curl -s $B/api/v1/me/advisor-requests -H "
 ```
 
 Then fill a table's slot from a second booking on the same sailing, waitlist the first booking for it, jump the clock three hours and `POST .../waits/waitlist/{id}/accept`: the reservation appears in `GET .../dining` with the note "From the waitlist". Check that a club registration made by the booker is visible to them and shows no health notes to the other adult guest.
+
+## Phase 9 endpoints
+
+Check-in, boarding and embarkation day: 12 routes, listed in `docs/backend-data-model.md` section 6.4 and in Swagger (tags `Check-in`, `Boarding`). Under `/bookings/{number}`: `checkin` (view, `status`, `receipt`, `PUT steps/{step}`, `POST submit`), `boarding` (and `POST boarding/wallet`) and `embark` (`PUT companion/{id}`, `PUT carry-on/{id}`, `PUT bags`). Any guest reads, an adult guest writes, a supervised child gets `403 supervised`, a stranger `404`. `GET /api/v1/pass/lookup?number=&lastName=` is the one public route, rate-limited per address with the login limit, and every mismatch is the same `404`.
+
+Check-in opens at midnight three days before sailing and closes at 10:00 on sailing day (ship home time), on the caller's own clock, so jump the demo clock to test it. QR codes are signed with an HMAC of `Jwt:SigningKey`; change the key and old codes stop verifying.
+
+## Smoke calls for Phase 9 (run against your database)
+
+Use a persona with a booking sailing in the next three days (set the demo clock), signed in as an adult who has a saved card.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s $N/checkin/status -H "$H"                                                  # state: open
+curl -s $N/checkin -H "$H"                                                         # guests, progress, windows, cards
+curl -s -X PUT $N/checkin/steps/confirm -H "$H" -H "$J" -d '{"guests":["<guid>","<guid>"]}'
+curl -s -X PUT $N/checkin/steps/document -H "$H" -H "$J" -d '{"guest":"<guid>","kind":"passport","country":"United States","number":"X1234567","expires":"2030-02-01"}'
+curl -s -X PUT $N/checkin/steps/photo -H "$H" -H "$J" -d '{"guest":"<guid>","metrics":{"width":1200,"height":1500,"brightness":135,"sharpness":28}}'
+curl -s -X PUT $N/checkin/steps/payment -H "$H" -H "$J" -d '{"cardId":"<card guid>"}'
+curl -s -X PUT $N/checkin/steps/arrival -H "$H" -H "$J" -d '{"window":"11:00"}'
+# emergency, contract and health the same way, then:
+curl -s -X POST $N/checkin/submit -H "$H" -H "$J" -d '{}'                         # state: done; passes issued
+curl -s $N/boarding -H "$H"; curl -s $N/checkin/receipt -H "$H"; curl -s $N/embark -H "$H"
+curl -s "$B/api/v1/pass/lookup?number=PC243902&lastName=Harper"                    # no token needed
+```
+
+Check that the `dbo.CheckinGuests`, `dbo.CheckinBooking`, `dbo.BoardingPasses`, `dbo.EmbarkProgress` and `dbo.EmbarkTicks` rows appear, and that `dbo.TravelPlans.ArrivalWindowId` follows the arrival step.
