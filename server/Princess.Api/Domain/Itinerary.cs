@@ -52,4 +52,40 @@ public static class Itinerary
         if (tz.IsInvalidTime(local)) local = local.AddHours(1);
         return TimeZoneInfo.ConvertTimeToUtc(local, tz);
     }
+
+    /// <summary>The zone the ship's clocks follow at a moment (<c>shipZoneAt</c>): Eastern, Belize time from 02:00 on day 4, Eastern again from 02:00 on day 7.</summary>
+    public static string ShipZoneAt(DateOnly departure, DateTime utc)
+    {
+        var west = LocalToUtc(departure.AddDays(3), new TimeOnly(2, 0), ShipHomeZone);
+        var home = LocalToUtc(departure.AddDays(6), new TimeOnly(2, 0), ShipWestZone);
+        return utc >= home ? ShipHomeZone : utc >= west ? ShipWestZone : ShipHomeZone;
+    }
+
+    public static (DateOnly Date, TimeOnly Time) LocalAt(DateTime utc, string zone)
+    {
+        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
+        return (DateOnly.FromDateTime(local), TimeOnly.FromDateTime(local));
+    }
+
+    /// <summary>Whether the ship is at sea at a moment (<c>portAt</c>): a day with no port, or a port day before arrival or after departure. Fort Lauderdale days count as port.</summary>
+    public static bool AtSea(DateOnly departure, DateTime utc)
+    {
+        var (date, _) = LocalAt(utc, ShipZoneAt(departure, utc));
+        var today = Days(departure).FirstOrDefault(d => d.Date == date);
+        if (today is null || today.Port == "sea") return true;
+        if (today.Port == "fll") return false;
+        var zone = Ports[today.Port].Zone;
+        return !(utc >= LocalToUtc(date, today.Arrive!.Value, zone) && utc < LocalToUtc(date, today.Depart!.Value, zone));
+    }
+
+    /// <summary>Whether the guest can be on board: from 11:00 on embarkation day until 06:00 on the last morning (the stages <c>embarkation</c> to <c>farewell</c>).</summary>
+    public static bool Aboard(DateOnly departure, DateTime utc) =>
+        utc >= LocalToUtc(departure, new TimeOnly(11, 0), ShipHomeZone) && utc < LocalToUtc(departure.AddDays(7), new TimeOnly(6, 0), ShipHomeZone);
+
+    /// <summary>The moment all guests must be back aboard on a port day, or null on a day with none.</summary>
+    public static DateTime? AllAboardAt(DateOnly departure, int day)
+    {
+        var d = Days(departure)[day - 1];
+        return d.AllAboard is { } a && d.Port is not ("sea" or "fll") ? LocalToUtc(d.Date, a, Ports[d.Port].Zone) : null;
+    }
 }

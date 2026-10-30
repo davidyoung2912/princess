@@ -299,7 +299,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `booking.changePreview` / `change` | `GET /bookings/{n}/change?sailingId=`, `POST /bookings/{n}/change?sailingId=`; 409 `tooLate`\|`newTooSoon`\|`same` | Booker |
 | `booking.cancel` | `POST /bookings/{n}/cancel`; 409 `closed` | Booker |
 
-### 6.3 Pre-cruise (Phase 8a built: the `plan` rows; 8b: `waits`, `shows` and `ahead`)
+### 6.3 Pre-cruise (Phase 8a built: the `plan` rows; Phase 8b built: `waits`, `shows` and `ahead`)
 
 Built routes sit under `/bookings/{number}`, so `GET /plan` is `GET /bookings/{number}/plan`, `GET /excursions` is `GET /bookings/{number}/excursions`, and so on. Differences from the table: `PUT /excursions/bookings/{id}` takes `{guests}`, `PUT /checklist/{id}` and `PUT /packing/{id}` take `{done}`, `POST /packages/purchases` takes `{kind, item | to, guests, parts, challenge}`, and the dining routes are `/dining/reservations` and `/dining/reservations/{id}/move|late`. Ids in the responses are public guids; a guest is the public id of their user.
 | Api method | Route | Auth |
@@ -324,6 +324,8 @@ Built routes sit under `/bookings/{number}`, so `GET /plan` is `GET /bookings/{n
 | `ahead.fix.list/escalate` | `GET/POST /me/fix-cases` | U |
 | `ahead.assist.list/ask/choose` | `GET/POST /me/assist-cases`, `POST …/{id}/choice` | U |
 | `ahead.prep.get/set` | `GET/PUT /prep[/{id}]` | B |
+
+Phase 8b built these as listed, under `/bookings/{number}` for the `B` rows and under `/me` for the `U` rows. Differences from the table: the club write is `PUT/DELETE /clubs/{childId}` (the child's booker only), a bid is `POST /upgrades` with `{category, cents}`, `ahead.tags.choose` is `PUT /bag-tags/way` with `{way}` and `handedOver` is `PUT /bag-tags/handed-over` with `{on}`, `ahead.assist.choose` is `POST /me/assist-cases/{id}/choice`, and `ahead.prep` hangs off the booking (the `PrepTicks` table is per booking) rather than the person. `shows.day` needs `?day=` and answers 400 `day` without it.
 
 ### 6.4 Check-in and boarding (Phase 9)
 | Api method | Route | Auth |

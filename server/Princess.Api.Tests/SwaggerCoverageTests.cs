@@ -111,6 +111,69 @@ public class SwaggerCoverageTests : IDisposable
         }
     }
 
+    /// <summary>Phase 8b (data model 6.3, waits, shows and ahead groups); all of them need a sign-in.</summary>
+    public static TheoryData<string, string> AheadRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/waits" },
+        { "post", "/api/v1/bookings/{number}/waits/queue" },
+        { "delete", "/api/v1/bookings/{number}/waits/queue/{id}" },
+        { "post", "/api/v1/bookings/{number}/waits/waitlist" },
+        { "delete", "/api/v1/bookings/{number}/waits/waitlist/{id}" },
+        { "post", "/api/v1/bookings/{number}/waits/waitlist/{id}/accept" },
+        { "get", "/api/v1/bookings/{number}/shows" },
+        { "get", "/api/v1/bookings/{number}/shows/tickets" },
+        { "post", "/api/v1/bookings/{number}/shows/tickets" },
+        { "delete", "/api/v1/bookings/{number}/shows/tickets/{id}" },
+        { "get", "/api/v1/bookings/{number}/upgrades" },
+        { "post", "/api/v1/bookings/{number}/upgrades" },
+        { "delete", "/api/v1/bookings/{number}/upgrades/{id}" },
+        { "get", "/api/v1/bookings/{number}/clubs" },
+        { "put", "/api/v1/bookings/{number}/clubs/{childId}" },
+        { "delete", "/api/v1/bookings/{number}/clubs/{childId}" },
+        { "get", "/api/v1/bookings/{number}/medallion" },
+        { "post", "/api/v1/bookings/{number}/medallion/activate" },
+        { "post", "/api/v1/bookings/{number}/medallion/lost" },
+        { "get", "/api/v1/bookings/{number}/bag-tags" },
+        { "put", "/api/v1/bookings/{number}/bag-tags/way" },
+        { "put", "/api/v1/bookings/{number}/bag-tags/handed-over" },
+        { "get", "/api/v1/bookings/{number}/prep" },
+        { "put", "/api/v1/bookings/{number}/prep/{id}" },
+        { "get", "/api/v1/me/advisor-requests" },
+        { "post", "/api/v1/me/advisor-requests" },
+        { "get", "/api/v1/me/marketing" },
+        { "post", "/api/v1/me/marketing/{channel}/subscribe" },
+        { "post", "/api/v1/me/marketing/{channel}/confirm" },
+        { "delete", "/api/v1/me/marketing/{channel}" },
+        { "get", "/api/v1/me/loyalty" },
+        { "get", "/api/v1/me/fix-cases" },
+        { "post", "/api/v1/me/fix-cases" },
+        { "get", "/api/v1/me/assist-cases" },
+        { "post", "/api/v1/me/assist-cases" },
+        { "post", "/api/v1/me/assist-cases/{id}/choice" },
+    };
+
+    [Theory]
+    [MemberData(nameof(AheadRoutes))]
+    public async Task EveryPhaseEightBRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task AheadRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in AheadRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{childId}", Guid.NewGuid().ToString()).Replace("{channel}", "email");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
     /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>
     public static TheoryData<string, string> BookingRoutes => new()
     {

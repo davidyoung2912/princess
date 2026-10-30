@@ -34,6 +34,7 @@ services.AddScoped<IPrivacyStore, DapperPrivacyStore>();
 services.AddScoped<IDemoStore, DapperDemoStore>();
 services.AddScoped<IBookingStore, DapperBookingStore>();
 services.AddScoped<IPlanStore, DapperPlanStore>();
+services.AddScoped<IAheadStore, DapperAheadStore>();
 services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
@@ -45,6 +46,9 @@ services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();
 services.AddScoped<PlanService>();
+services.AddScoped<ScopeLoader>();
+services.AddScoped<WaitService>();
+services.AddScoped<AheadService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -117,6 +121,7 @@ v1.MapAuthEndpoints();
 v1.MapJourneyEndpoints();
 v1.MapBookingEndpoints();
 v1.MapPlanEndpoints();
+v1.MapAheadEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

@@ -17,6 +17,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryJourney Journey { get; } = new();
     public InMemoryBookingStore Bookings { get; }
     public InMemoryPlanStore Plan { get; }
+    public InMemoryAheadStore Ahead { get; }
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -24,6 +25,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         Bookings = new InMemoryBookingStore(Journey, Access);
         Plan = new InMemoryPlanStore(Journey);
+        Ahead = new InMemoryAheadStore(Journey);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -46,6 +48,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDemoStore>();
             services.RemoveAll<IBookingStore>();
             services.RemoveAll<IPlanStore>();
+            services.RemoveAll<IAheadStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
@@ -57,6 +60,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IDemoStore>(Journey);
             services.AddSingleton<IBookingStore>(Bookings);
             services.AddSingleton<IPlanStore>(Plan);
+            services.AddSingleton<IAheadStore>(Ahead);
             services.AddSingleton<IClock>(Clock);
         });
     }

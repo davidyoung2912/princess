@@ -162,3 +162,26 @@ curl -s $N/checklist -H "$H"; curl -s $N/packing -H "$H"; curl -s $N/travel -H "
 ```
 
 Then book a table in `dining/reservations` and confirm the same slot shows one fewer table for a second booking on the same sailing. Dining only opens once the cruise is paid in full (or the booker is Platinum or Elite), so a persona who still owes a balance gets `409 notOpen`.
+
+## Phase 8b endpoints
+
+Waits, shows and the before-the-cruise services: 36 routes, listed in `docs/backend-data-model.md` section 6.3 and in Swagger (tags `Waits`, `Shows`, `Ahead: upgrades`, `Ahead: clubs`, `Ahead: medallion`, `Ahead: bag tags`, `Ahead: preparation`, `Ahead: advisors`, `Ahead: marketing`, `Ahead: loyalty`, `Ahead: cases`). Under `/bookings/{number}`: `waits`, `shows`, `upgrades`, `clubs`, `medallion`, `bag-tags` and `prep` (any guest reads, an adult guest writes, a supervised child gets `403 supervised`, a stranger `404`). Under `/me`: `advisor-requests`, `marketing`, `loyalty`, `fix-cases` and `assist-cases` (the signed-in person's own).
+
+Queue and waitlist positions are worked out from the clock on every read, so to see them move use the demo clock (`demo.DemoState.ClockOffsetSeconds`) rather than waiting. A table waitlisted with `"auto": true` is booked by the next `GET .../waits` after it is offered (three hours after joining, or halfway to the slot when it is nearer). Marketing codes are shown only to a user flagged `IsDemo` (`demoCode`).
+
+## Smoke calls for Phase 8b (run against your database)
+
+Use a persona who is aboard (jump the demo clock to a sea day first), with a booking paid in full for the dining calls.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s $N/waits -H "$H"                                                           # "open" lists the walk-in places open now
+curl -s -X POST $N/waits/queue -H "$H" -H "$J" -d '{"venueId":"alfredo"}'          # a place in the queue; again is 409 duplicate
+curl -s "$N/shows?day=2" -H "$H"                                                   # seats left per show
+curl -s -X POST $N/shows/tickets -H "$H" -H "$J" -d '{"eventId":"stage-show","day":2,"guests":["<daniel guid>"]}'
+curl -s $N/upgrades -H "$H"; curl -s $N/clubs -H "$H"; curl -s $N/medallion -H "$H"; curl -s $N/bag-tags -H "$H"; curl -s $N/prep -H "$H"
+curl -s -X POST $B/api/v1/me/marketing/email/subscribe -H "$H" -H "$J" -d '{"contact":"daniel@demo.princess.example","region":"uk"}'   # pending; demoCode for a demo user
+curl -s $B/api/v1/me/loyalty -H "$H"; curl -s $B/api/v1/me/advisor-requests -H "$H"; curl -s $B/api/v1/me/assist-cases -H "$H"
+```
+
+Then fill a table's slot from a second booking on the same sailing, waitlist the first booking for it, jump the clock three hours and `POST .../waits/waitlist/{id}/accept`: the reservation appears in `GET .../dining` with the note "From the waitlist". Check that a club registration made by the booker is visible to them and shows no health notes to the other adult guest.

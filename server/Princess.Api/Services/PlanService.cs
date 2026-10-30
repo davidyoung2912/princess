@@ -338,7 +338,17 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         return result;
     }
 
-    public async Task<DiningViewDto> ReserveAsync(UserRecord actor, string? number, ReserveRequest? body, CancellationToken ct)
+    public async Task<DiningViewDto> ReserveAsync(UserRecord actor, string? number, ReserveRequest? body, CancellationToken ct) =>
+        await ReserveCoreAsync(actor, number, body, allowFull: false, ct);
+
+    /// <summary>
+    /// Books the table a waitlist offered. It is the same reservation as <see cref="ReserveAsync"/> (window, fixed seating, clash, entitlements, charge and history), except that
+    /// the offer is what lets it through when the grid shows no table left.
+    /// </summary>
+    public async Task<DiningViewDto> ReserveFromWaitlistAsync(UserRecord actor, string? number, ReserveRequest body, CancellationToken ct) =>
+        await ReserveCoreAsync(actor, number, body, allowFull: true, ct);
+
+    private async Task<DiningViewDto> ReserveCoreAsync(UserRecord actor, string? number, ReserveRequest? body, bool allowFull, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, true, ct);
         RequireDiningOpen(c);
@@ -354,7 +364,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
 
         var existing = await plan.ListTablesAsync(c.Booking.BookingId, ct);
         var grid = DiningRules.SlotsFor(v.Id, c.Booking.SailingId, body.Day).First(s => s.Time == body.Time);
-        if (grid.Tables - await plan.CountTablesAsync(c.Booking.SailingId, v.Id, body.Day, body.Time, null, ct) <= 0) throw ApiException.Conflict("full");
+        if (!allowFull && grid.Tables - await plan.CountTablesAsync(c.Booking.SailingId, v.Id, body.Day, body.Time, null, ct) <= 0) throw ApiException.Conflict("full");
         var ids = who.Select(g => g.Id).ToList();
         if (DiningRules.TableClash(Reserved(c, existing), body.Day, body.Time, ids).Count > 0) throw ApiException.Conflict("clash");
 
