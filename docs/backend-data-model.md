@@ -1,6 +1,6 @@
 # Backend data model and API surface (Phase 1)
 
-Status: **Draft for review. No SQL or C# has been written.** Written 2026-10-29 (revised the same day: BIGINT keys plus a public GUID, D1 and section 2) from `src/api/*Types.ts` and `src/domain/*`. Phase 2 turns section 4 into `db/01-schema.sql`; Phases 5 to 11 use section 6 as their checklist.
+Status: **Reviewed; section 9 questions answered. No SQL or C# has been written.** Written 2026-10-29 (revised the same day: BIGINT keys plus a public GUID, D1 and section 2) from `src/api/*Types.ts` and `src/domain/*`. Phase 2 turns section 4 into `db/01-schema.sql`; Phases 5 to 11 use section 6 as their checklist.
 
 Sections: 1 Decisions settled here · 2 Conventions · 3 Reading the table notation · 4 Tables · 5 JSON columns · 6 API surface · 7 Authorisation rules · 8 Mock-only behaviour that needs a home · 9 Questions for you.
 
@@ -309,7 +309,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `plan.assistance.get/request/cancel` | `GET/POST/DELETE /assistance[/{id}]` | B / BA |
 | `waits.list/joinQueue/leaveQueue/joinWaitlist/leaveWaitlist/acceptWaitlist` | `GET /waits`, `POST/DELETE /waits/queue[/{id}]`, `POST/DELETE /waits/waitlist[/{id}]`, `POST /waits/waitlist/{id}/accept` | B / BA |
 | `shows.day/mine/reserve/cancel` | `GET /shows?day=`, `GET /shows/tickets`, `POST /shows/tickets`, `DELETE /shows/tickets/{id}` | B / BA |
-| `dining.list/reschedule` (legacy `Item[]`), `queues.list` | **dropped**: superseded by `plan.dining` and `waits` — see section 9, Q3 | – |
+| `dining.list/reschedule` (legacy `Item[]`), `queues.list` | **dropped** (superseded by `plan.dining` and `waits`; decided in section 9) | – |
 | `ahead.advisors.list/ask` | `GET/POST /me/advisor-requests` | U |
 | `ahead.marketing.view/subscribe/confirm/withdraw` | `GET /me/marketing`, `POST …/{channel}/subscribe`, `…/confirm`, `DELETE …/{channel}` | U |
 | `ahead.perks.mine` | `GET /me/loyalty` | U |
@@ -346,7 +346,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `laundry.view/request/cancel` | `GET /laundry`, `POST /laundry`, `DELETE /laundry/{id}` | B / BA |
 | `wifi.view/add/upgrade/remove` | `GET /wifi`, `POST /wifi/devices`, `PUT/DELETE /wifi/devices/{id}` | B / BA |
 | `updates.list/acknowledge` | `GET /updates`, `POST /updates/{id}/ack` | B / BA |
-| `requests.list/create` (legacy) and `aboard.requests.list/create/cancel` | `GET/POST/DELETE /requests[/{id}]` | B / BA |
+| `requests.list/create` (legacy, **dropped**) and `aboard.requests.list/create/cancel` | `GET/POST/DELETE /requests[/{id}]` | B / BA |
 | `aboard.selections.list/add/remove` | `GET/POST/DELETE /selections[/{id}]` | B / BA |
 | `aboard.reports.list/create` | `GET/POST /safety-reports` | B (supervised may create) |
 | `aboard.drinks.view/log/undo` | `GET/POST/DELETE /drinks[/{id}]` | B / self |
@@ -392,11 +392,15 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | Stage progress of orders/laundry/requests/medallion/cases | Computed from stored timestamps and the clock on read (as the TS functions do); no background worker needed. |
 | Demo code for marketing consent | Returned only when `Users.IsDemo`. |
 
-## 9. Questions for you (answers change the schema)
+## 9. Questions answered (2026-10-29)
 
-1. **Chat scope (4.8).** I modelled chat as `ChatGroups`/`ChatGroupMembers` because friends in separate cabins share a chat. Is that right, or is chat always the single booking? (Group costs one extra table.)
-2. **Linked agent bookings (4.3).** Agent bookings today are fixtures with only a guest count. I assume linking creates the guest rows as `BookingGuestDetails` without user accounts, and the linker sees them as read-only-ish. OK?
-3. **Legacy groups.** `dining.list/reschedule`, `queues.list` and `requests.list/create` look superseded by `plan.dining`, `waits` and `aboard.requests`. I propose **dropping** them (and their mocks) in the frontend phases. OK, or do screens still use them?
-4. **Reference content location.** FAQs, help topics, safety text and menus are authored copy. I propose the database holds the English text and UI chrome stays in `src/i18n`. Alternatively, keep all long copy in the frontend and have the database hold only ids and numbers (smaller seeds). Which?
-5. **Photos in chat.** `Messages.photo` is a data URL today. Storing up to a few hundred KB per message in SQL Server is fine for a demo; a blob store is the real answer. Keep it in the table for now?
-6. **Hash cost.** 600,000 PBKDF2 iterations makes each login about 200 to 300 ms of CPU. Fine for this project; say if you would rather use Argon2 via a package.
+| # | Question | Answer | Effect on this document |
+| --- | --- | --- | --- |
+| 1 | Chat scope | **Groups.** Friends in separate cabins share a chat. | `ChatGroups` / `ChatGroupMembers` stay as modelled in 4.8. |
+| 2 | Linked agent bookings | Linking creates guests as `BookingGuestDetails` with no user accounts; the linker sees them read-mostly. | 4.3 stands as written. |
+| 3 | Legacy groups | **Drop** `dining.list/reschedule`, `queues.list` and `requests.list/create` (and their mocks) in the frontend phases. | The 6.3 and 6.5 rows are marked dropped; Phase 11's interface check excludes them. |
+| 4 | Reference content | **The database holds the English authored copy** (FAQs, help, safety text, menus, legal); UI chrome stays in `src/i18n`. | `ref.Faqs/HelpTopics/ContentBlocks/LegalDocs` hold full text; Phase 3 seeds are larger. |
+| 5 | Photos in chat | Keep the data URL in the `ChatMessages` table for now. | No change. Blob storage is a later option. |
+| 6 | Hash cost | 200 to 300 ms per login is fine; keep PBKDF2 at 600,000 iterations. | D12 stands. |
+
+No open questions remain for Phase 2.
