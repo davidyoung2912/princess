@@ -29,6 +29,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public List<(long BookingId, IReadOnlyCollection<string> Kinds)> Purges { get; } = [];
     public Dictionary<long, string> Budgets { get; } = [];
     public Dictionary<long, long> ClockOffsets { get; } = [];
+    public Dictionary<long, HashSet<string>> Scenarios { get; } = [];
     public HashSet<long> TakenEmailOwners { get; } = [];
     private long _next = 1000;
 
@@ -222,4 +223,6 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
 
     // ---- IDemoStore ----
     public Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct) => Task.FromResult(ClockOffsets.GetValueOrDefault(userId));
+
+    public Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct) => Task.FromResult(Scenarios.TryGetValue(userId, out var s) ? new HashSet<string>(s) : []);
 }

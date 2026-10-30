@@ -88,4 +88,35 @@ public static class Itinerary
         var d = Days(departure)[day - 1];
         return d.AllAboard is { } a && d.Port is not ("sea" or "fll") ? LocalToUtc(d.Date, a, Ports[d.Port].Zone) : null;
     }
+
+    /// <summary>The port the ship is at (or <c>sea</c>) at a moment and the cruise day, going by calendar day in ship time and the posted hours (<c>portAt</c>).</summary>
+    public static (string Port, int? Day) PortAt(DateOnly departure, DateTime utc)
+    {
+        var days = Days(departure);
+        var first = LocalToUtc(days[0].Date, new TimeOnly(0, 0), ShipHomeZone);
+        var last = LocalToUtc(days[7].Date, new TimeOnly(23, 59), ShipHomeZone);
+        if (utc < first || utc > last.AddHours(24)) return ("sea", null);
+        var (date, _) = LocalAt(utc, ShipZoneAt(departure, utc));
+        var today = days.FirstOrDefault(d => d.Date == date);
+        if (today is null) return ("sea", null);
+        if (today.Port is "sea" or "fll") return (today.Port, today.Day);
+        var zone = Ports[today.Port].Zone;
+        var inPort = utc >= LocalToUtc(date, today.Arrive!.Value, zone) && utc < LocalToUtc(date, today.Depart!.Value, zone);
+        return (inPort ? today.Port : "sea", today.Day);
+    }
+
+    /// <summary>A change of the ship's clock: the moment (02:00 ship time overnight) and the hours the clock moves, negative is back.</summary>
+    public sealed record ClockChange(DateTime At, int Hours);
+
+    /// <summary>The two clock changes of a sailing. Whether the jump is one hour or two depends on daylight saving that week.</summary>
+    public static List<ClockChange> ShipClockChanges(DateOnly departure)
+    {
+        ClockChange Make(int day, string from, string to)
+        {
+            var at = LocalToUtc(departure.AddDays(day - 1), new TimeOnly(2, 0), from);
+            var hours = (TimeZoneInfo.FindSystemTimeZoneById(to).GetUtcOffset(at) - TimeZoneInfo.FindSystemTimeZoneById(from).GetUtcOffset(at.AddMilliseconds(-1))).TotalHours;
+            return new ClockChange(at, (int)Math.Round(hours));
+        }
+        return [Make(4, ShipHomeZone, ShipWestZone), Make(7, ShipWestZone, ShipHomeZone)];
+    }
 }

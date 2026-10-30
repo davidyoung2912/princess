@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is next.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in two parts: 10a built, 10b is next.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -144,9 +144,12 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - Deliberate differences from the mock: the window is checked against the raw clock, so a finished check-in can be corrected while it is open but not after 10:00 on sailing day (the mock let `done` mask `closed`); a cancelled booking is `409 closed`; the payment card is one of the **caller's own** saved cards and `payment.cardId` is null when another guest chose theirs; the stateroom on the pass is the one chosen at booking when it is one of the sample staterooms, else the stable pick; a terminal change comes from `EmbarkProgress.Terminal` (set by operations) rather than a client scenario; the public lookup answers only for a confirmed booking with guest accounts, so an agent booking is `404`, and it uses the booker's clock; the receipt's arrival line has no time when the window was chosen on the travel screen.
 - **Verify:** `dotnet build`, `dotnet test` (647 tests: the ported rules, then the HTTP pipeline for access and child accounts, window open and close, every step's refusals, progress and submit, the receipt, passes in boarding order, groups, wallet, the public lookup and its rate limit, embarkation day, luggage and priority guests, and an OpenAPI check). None of `DapperCheckinStore` has touched SQL Server; the smoke calls in `server/README.md` are the check.
 
-### Phase 10. API: on board
-- Maps to `onboard` (today, programme, port day, muster, emergency, folio), `orders`, `messages`, `service` chat, `family`, `health`, `room`, `photos`, `laundry`, `wifi`, `updates`, `requests`, `queues`, and the `aboard.*` group. Weather and ship telemetry stay mocked behind interfaces.
-- **Verify:** tests for order staging, drink caps, kid club rules, muster.
+### Phase 10. API: on board (in two parts)
+- Maps to `onboard` (today, programme, port day, muster, emergency, folio), `orders`, `messages`, `service` chat, `family`, `health`, `room`, `photos`, `laundry`, `wifi`, `updates`, `requests`, `queues`, and the `aboard.*` group. Weather and ship telemetry stay mocked behind interfaces. It is too big for one sitting, so, like Phase 8, it is split.
+- **10a (built):** `onboard.*` (today, programme and plan, port day with tender and ship tours, muster, emergency card, folio), `ports.today`, `folio.entitlements` and the `service` chat: 14 routes, data model section 6.5. Ported to `server/Princess.Api/Domain`: `ProgramRules.cs` (the daily programme, mid-day changes, muster stations), `AboardRules.cs` (all-aboard countdown, tender groups and calls, weather, the drill and emergency card), `ServiceChatRules.cs` (channels, reply times, queue, escalation) and `FolioRules.cs` (generated charges, packages and caps, totals, cruise day); `Itinerary.cs` gained `PortAt` and `ShipClockChanges`. Store: `IOnboardStore` (`PlanEvents`, `MusterConfirmations`, `FolioLines` read, `ServiceThreads`, `ServiceMessages`); `IDemoStore` gained the active scenarios. `PlanService` exposes each guest's entitlements. Differences from the mock are in data model section 6.5.
+- **10a verify:** `dotnet build`, `dotnet test` (760 tests: all earlier ones plus the pure on-board rules, then the HTTP pipeline for access and child accounts, the clock and scenarios, plan per day, port day and tender, muster window, emergency card, folio, entitlements, chat timing and escalation, and an OpenAPI check). None of `DapperOnboardStore` has touched SQL Server; the smoke calls in `server/README.md` are the check.
+- **10b (next):** `orders`, `messages` (group chat) and `aboard.chat`, `family`, `health`, `room`, `photos`, `laundry`, `wifi`, `updates`, `aboard.requests/selections/reports/drinks/money/parties/groups/games/tv/lastMinute/ready`. Writes to `FolioLines` start here.
+- **10b verify:** tests for order staging, drink caps, kid club rules.
 
 ### Phase 11. API: after the cruise
 - Maps to `disembark`, `cases`, `post` (history, feedback, loyalty, rebook, holds, desk slots), final bill.

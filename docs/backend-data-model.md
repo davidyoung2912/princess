@@ -339,7 +339,7 @@ Phase 8b built these as listed, under `/bookings/{number}` for the `B` rows and 
 
 Phase 9 built these as listed, under `/bookings/{number}` (the lookup is the only route outside it). The save route takes one body for every step (`guests`, `guest`, `kind`, `country`, `number`, `expires`, `metrics`, `name`, `phone`, `relationship`, `answers`, `cardId`, `window`); `PUT /embark/companion/{id}` and `/carry-on/{id}` take `{done}` and `PUT /embark/bags` takes `{dropped}`. Problem titles: `document:` + `kind|country|number|expiry|expired|tooSoon|notAllowed`, `photo:` + a comma list of `small|shape|dark|bright|blurry`, `emergency:` + `name|phone|relationship|travelling`, `health:answers`, `payment:card`, `arrival:window`, `guests`, `step`; `402` for a declined card; `409` `notOpen`, `closed`, `incomplete` or `notDone`.
 
-### 6.5 On board (Phase 10)
+### 6.5 On board (Phase 10: 10a built, 10b next)
 | Api method | Route | Auth |
 | --- | --- | --- |
 | `onboard.today/program/togglePlan/portDay/muster/confirmMuster/emergency/folio` | `GET /onboard/today`, `GET /onboard/program/{day}`, `PUT /onboard/plan/{eventId}`, `GET /onboard/port-day`, `GET/POST /onboard/muster`, `GET /onboard/emergency`, `GET /onboard/folio` | B (togglePlan: BA or self) |
@@ -367,6 +367,8 @@ Phase 9 built these as listed, under `/bookings/{number}` (the lookup is the onl
 | `aboard.ready.get/set` | `GET/PUT /ready[/{id}]` | B |
 | `aboard.chat.blocked/block/report/sendPhoto` | `GET /me/chat/blocks`, `PUT …/{id}`, `POST /me/chat/reports`, `POST /me/chat/photos` | U |
 | `folio.entitlements` | `GET /entitlements` | B |
+
+Phase 10a built the `onboard.*`, `ports.today`, `service.*` and `folio.entitlements` rows above under `/bookings/{number}`; the rest of the table is Phase 10b. Differences from the mock: `PUT /onboard/plan/{eventId}` takes `{on, day}` because the plan table is keyed by event **and day** (an event that runs on several days is planned day by day) and returns that day's plan; `program(day).mine` lists the plan for that day. The muster check-in refuses a stranger or an empty list as `400 guests` (not `403`), a cancelled booking as `409 closed`, and the window as `409 notOpen` (more than an hour before the drill) or `409 closed` (18 hours after it). `onboard.folio` is for adults (`403 supervised` for a child), and stored `FolioLines` sit beside the generated lines without a "would have cost" value, since the table has none. Ship-tour QR codes end in a signature. Scenarios (`planChange`, `belizeTender`, `portSkipped`, `chatSlow`) come from `demo.DemoState.ActiveScenarios` for `IsDemo` users only. Problem titles: `day`, `event`, `guests`, `channel`, `text`, `phone`.
 
 ### 6.6 After the cruise (Phase 11)
 | Api method | Route | Auth |

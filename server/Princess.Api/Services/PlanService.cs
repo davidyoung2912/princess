@@ -588,6 +588,24 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
 
     // ---- Travel, checklist, packing ----
 
+    /// <summary>Each guest's entitlements, keyed by user, for the on-board folio and drink caps. <paramref name="viewer"/> only sets whose clock counts.</summary>
+    public async Task<Dictionary<long, Entitlements>> PartyEntitlementsAsync(UserRecord viewer, BookingRow booking, CancellationToken ct)
+    {
+        var c = await BuildAsync(viewer, booking, ct);
+        var ps = BuildPurchases(c, await plan.ListPurchasesAsync(booking.BookingId, ct));
+        return c.Party.ToDictionary(g => g.UserId, g => EntitlementsFor(c, g, ps));
+    }
+
+    /// <summary>The signed-in guest's own entitlements and what is left of them (<c>folio.entitlements</c>).</summary>
+    public async Task<OwnEntitlementsDto> OwnEntitlementsAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, write: false, ct);
+        var me = c.PersonByUser(actor.Id) ?? c.Party.First(p => p.UserId == c.Booking.BookerUserId);
+        var ps = BuildPurchases(c, await plan.ListPurchasesAsync(c.Booking.BookingId, ct));
+        var e = EntitlementsFor(c, me, ps);
+        return new OwnEntitlementsDto(e, EntitlementRules.BalancesOf(e, MealsUsed(await plan.ListTablesAsync(c.Booking.BookingId, ct), me)));
+    }
+
     /// <summary>Whether the booking's booker has priority embarkation (a suite, a top Captain's Circle tier or a package). Check-in uses it for the early arrival window and the boarding group; <paramref name="viewer"/> only sets whose clock counts.</summary>
     public async Task<bool> HasPriorityAsync(UserRecord viewer, BookingRow booking, CancellationToken ct)
     {

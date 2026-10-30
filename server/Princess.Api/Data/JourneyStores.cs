@@ -70,4 +70,6 @@ public interface IDemoStore
 {
     /// <summary>Seconds to add to real time for a demo user (D4); 0 when there is no row.</summary>
     Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct);
+    /// <summary>The scenario ids switched on for a demo user (<c>planChange</c>, <c>belizeTender</c>, <c>portSkipped</c>, <c>chatSlow</c> and so on); empty when there is no row.</summary>
+    Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct);
 }

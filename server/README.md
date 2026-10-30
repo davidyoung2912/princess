@@ -212,3 +212,27 @@ curl -s "$B/api/v1/pass/lookup?number=PC243902&lastName=Harper"                 
 ```
 
 Check that the `dbo.CheckinGuests`, `dbo.CheckinBooking`, `dbo.BoardingPasses`, `dbo.EmbarkProgress` and `dbo.EmbarkTicks` rows appear, and that `dbo.TravelPlans.ArrivalWindowId` follows the arrival step.
+
+## Phase 10a endpoints
+
+The on-board day and Guest Services chat: 14 routes, listed in `docs/backend-data-model.md` section 6.5 and in Swagger (tags `On board`, `Guest Services chat`). Under `/bookings/{number}`: `onboard/today`, `onboard/port`, `onboard/program/{day}`, `PUT onboard/plan/{eventId}` (body `{on, day}`), `onboard/port-day` (a JSON `null` after the last port), `onboard/muster` (GET, and POST `{guests}`), `onboard/emergency`, `onboard/folio`, `entitlements`, and `service/channels`, `service/{channel}` (GET, POST `{text}`), `service/{channel}/escalate` (`{phone}`). Any guest reads, an adult guest writes; the account (`folio`) is for adults only. A supervised child gets `403 supervised`, a stranger `404`.
+
+Programme, tender, muster, folio generation and chat timing are ported rules (`ProgramRules`, `AboardRules`, `FolioRules`, `ServiceChatRules`). Weather is a mocked service (`AboardRules.WeatherOn`). Crew replies are not stored: they appear on read once their time has come. The scenarios `planChange`, `belizeTender`, `portSkipped` and `chatSlow` are read from `demo.DemoState.ActiveScenarios` and apply only to users flagged `IsDemo`. Ship-tour QR codes are signed with the same HMAC key as boarding passes.
+
+## Smoke calls for Phase 10a (run against your database)
+
+Use a persona aboard (set the demo clock to a sea day) signed in as an adult.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s $N/onboard/today -H "$H"                                                   # aboard, day, port, weather, next port day, muster
+curl -s $N/onboard/program/2 -H "$H"
+curl -s -X PUT $N/onboard/plan/trivia -H "$H" -H "$J" -d '{"on":true,"day":2}'    # ["trivia"]
+curl -s $N/onboard/port-day -H "$H"; curl -s $N/onboard/emergency -H "$H"; curl -s $N/onboard/folio -H "$H"
+curl -s $N/onboard/muster -H "$H"                                                  # at the drill, jump the clock to an hour before it, then:
+curl -s -X POST $N/onboard/muster -H "$H" -H "$J" -d '{"guests":["<guid>"]}'
+curl -s -X POST $N/service/housekeeping -H "$H" -H "$J" -d '{"text":"More towels please"}'
+curl -s $N/service/housekeeping -H "$H"                                            # jump the clock ten minutes: a crew reply appears
+```
+
+Check that the `dbo.PlanEvents`, `dbo.MusterConfirmations`, `dbo.ServiceThreads` and `dbo.ServiceMessages` rows appear, and that `dbo.Tickets` gets a `callback` row after an escalation. `dbo.PlanEvents` needs a `ref.EventDays` row for the event and day, so the reference seed must be loaded.

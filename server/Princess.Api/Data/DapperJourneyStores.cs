@@ -467,4 +467,12 @@ public sealed class DapperDemoStore(IDbConnectionFactory db) : IDemoStore
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT ClockOffsetSeconds FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct)) ?? 0;
     }
+
+    public async Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var json = await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT ActiveScenarios FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
+        try { return json is null ? [] : [.. System.Text.Json.JsonSerializer.Deserialize<string[]>(json) ?? []]; }
+        catch (System.Text.Json.JsonException) { return []; }
+    }
 }

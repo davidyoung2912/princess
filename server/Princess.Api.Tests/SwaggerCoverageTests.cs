@@ -200,6 +200,47 @@ public class SwaggerCoverageTests : IDisposable
         Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
     }
 
+    /// <summary>Phase 10a (data model 6.5, the on-board day and Guest Services chat); all need a sign-in.</summary>
+    public static TheoryData<string, string> OnboardRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/onboard/today" },
+        { "get", "/api/v1/bookings/{number}/onboard/port" },
+        { "get", "/api/v1/bookings/{number}/onboard/program/{day}" },
+        { "put", "/api/v1/bookings/{number}/onboard/plan/{eventId}" },
+        { "get", "/api/v1/bookings/{number}/onboard/port-day" },
+        { "get", "/api/v1/bookings/{number}/onboard/muster" },
+        { "post", "/api/v1/bookings/{number}/onboard/muster" },
+        { "get", "/api/v1/bookings/{number}/onboard/emergency" },
+        { "get", "/api/v1/bookings/{number}/onboard/folio" },
+        { "get", "/api/v1/bookings/{number}/entitlements" },
+        { "get", "/api/v1/bookings/{number}/service/channels" },
+        { "get", "/api/v1/bookings/{number}/service/{channel}" },
+        { "post", "/api/v1/bookings/{number}/service/{channel}" },
+        { "post", "/api/v1/bookings/{number}/service/{channel}/escalate" },
+    };
+
+    [Theory]
+    [MemberData(nameof(OnboardRoutes))]
+    public async Task EveryPhaseTenARouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task OnboardRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in OnboardRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{day}", "2").Replace("{eventId}", "trivia").Replace("{channel}", "dining");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
     [Fact]
     public async Task CheckinRoutesRefuseAnonymousCallers()
     {

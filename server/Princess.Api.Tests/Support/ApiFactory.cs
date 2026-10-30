@@ -19,6 +19,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryPlanStore Plan { get; }
     public InMemoryAheadStore Ahead { get; }
     public InMemoryCheckinStore Checkin { get; }
+    public InMemoryOnboardStore Onboard { get; } = new();
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -52,6 +53,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IPlanStore>();
             services.RemoveAll<IAheadStore>();
             services.RemoveAll<ICheckinStore>();
+            services.RemoveAll<IOnboardStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
@@ -65,6 +67,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IPlanStore>(Plan);
             services.AddSingleton<IAheadStore>(Ahead);
             services.AddSingleton<ICheckinStore>(Checkin);
+            services.AddSingleton<IOnboardStore>(Onboard);
             services.AddSingleton<IClock>(Clock);
         });
     }
