@@ -6,7 +6,7 @@ public sealed class DapperUserStore(IDbConnectionFactory db) : IUserStore
 {
     private const string Select = """
         SELECT u.Id, u.PublicId, u.AccountNumber, u.Email, u.PasswordHash, u.Role, u.IsDemo, u.IsSupervised, u.BookerUserId,
-               u.Tier, u.TextSize, u.Locale, u.Currency, u.FailedLogins, u.LockedUntil,
+               u.Tier, u.[TextSize], u.Locale, u.Currency, u.FailedLogins, u.LockedUntil,
                p.FirstName, p.LastName, b.PublicId AS BookerPublicId
         FROM dbo.Users u
         LEFT JOIN dbo.Profiles p ON p.UserId = u.Id
