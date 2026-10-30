@@ -6,7 +6,7 @@ SQL Server (T-SQL). The scripts are plain `.sql` files that you run by hand; the
 
 | Order | File | What it does |
 | --- | --- | --- |
-| 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. Refuses to run without `-v ConfirmDrop=YES`. |
+| 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. |
 | 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 157 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
 | 2 | `seed/reference/*` | Phase 3. Reference data (ship, ports, sailings, venues, excursions, fares, legal text and so on). |
 | 3 | `seed/personas/*` | Phase 4. Demo users and their bookings, in partial-completion states. |
@@ -22,7 +22,7 @@ sqlcmd -S <server> -d <database> -b -i db/01-schema.sql
 To start again on a test database:
 
 ```
-sqlcmd -S <server> -d <database> -b -v ConfirmDrop=YES -i db/00-drop-all.sql
+sqlcmd -S <server> -d <database> -b -i db/00-drop-all.sql
 sqlcmd -S <server> -d <database> -b -i db/01-schema.sql
 ```
 

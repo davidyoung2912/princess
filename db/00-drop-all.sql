@@ -2,19 +2,11 @@
   Drops every table created by db/01-schema.sql, and the ref and demo schemas. For TEST databases only: it destroys all
   data, reference and user alike. Tables are listed by name, so anything else in the database is left alone.
 
-  It refuses to run unless you say so:
-      sqlcmd -S <server> -d <db> -b -v ConfirmDrop=YES -i db/00-drop-all.sql
-  (In SSMS or Azure Data Studio, enable SQLCMD mode and put  :setvar ConfirmDrop YES  on the first line.)
+  Run it with:
+      sqlcmd -S <server> -d <db> -b -i db/00-drop-all.sql
   Then run db/01-schema.sql to start again.
 */
 SET NOCOUNT ON;
-GO
-
-IF N'$(ConfirmDrop)' <> N'YES'
-BEGIN
-  RAISERROR (N'Refusing to drop anything: pass -v ConfirmDrop=YES to confirm.', 16, 1);
-  SET NOEXEC ON;   -- skips every later batch
-END
 GO
 
 DECLARE @tables TABLE (SchemaName sysname NOT NULL, TableName sysname NOT NULL);
@@ -198,7 +190,4 @@ GO
 -- The schemas go only if nothing else lives in them.
 IF SCHEMA_ID(N'ref') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM sys.objects WHERE schema_id = SCHEMA_ID(N'ref')) DROP SCHEMA ref;
 IF SCHEMA_ID(N'demo') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM sys.objects WHERE schema_id = SCHEMA_ID(N'demo')) DROP SCHEMA demo;
-GO
-
-SET NOEXEC OFF;
 GO

@@ -452,7 +452,7 @@ CREATE TABLE dbo.Users (
   BookerUserId BIGINT NULL,
   Tier VARCHAR(8) NOT NULL DEFAULT 'none',
   Sanctuary BIT NOT NULL DEFAULT 0,
-  TextSize NVARCHAR(12) NOT NULL DEFAULT N'standard',
+  [TextSize] NVARCHAR(12) NOT NULL DEFAULT N'standard',
   PhoneZone NVARCHAR(40) NOT NULL DEFAULT N'America/Chicago',
   Currency CHAR(3) NOT NULL DEFAULT 'USD',
   Locale NVARCHAR(10) NOT NULL DEFAULT N'en',

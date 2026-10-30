@@ -13,6 +13,11 @@ const doc = readFileSync(new URL('../docs/backend-data-model.md', import.meta.ur
 const errors = []
 const fail = (message) => errors.push(message)
 
+// T-SQL reserved words that must be [bracketed] when used as a column name.
+const RESERVED = new Set(
+  `ADD ALL ALTER AND ANY AS ASC AUTHORIZATION BACKUP BEGIN BETWEEN BREAK BROWSE BULK BY CASCADE CASE CHECK CHECKPOINT CLOSE CLUSTERED COALESCE COLLATE COLUMN COMMIT COMPUTE CONTAINS CONTINUE CONVERT CREATE CROSS CURRENT CURSOR DATABASE DBCC DEALLOCATE DECLARE DEFAULT DELETE DENY DESC DISK DISTINCT DISTRIBUTED DOUBLE DROP DUMP ELSE END ERRLVL ESCAPE EXCEPT EXEC EXECUTE EXISTS EXIT EXTERNAL FETCH FILE FILLFACTOR FOR FOREIGN FREETEXT FROM FULL FUNCTION GOTO GRANT GROUP HAVING HOLDLOCK IDENTITY IF IN INDEX INNER INSERT INTERSECT INTO IS JOIN KEY KILL LEFT LIKE LINENO LOAD MERGE NATIONAL NOCHECK NONCLUSTERED NOT NULL NULLIF OF OFF OFFSETS ON OPEN OPTION OR ORDER OUTER OVER PERCENT PIVOT PLAN PRECISION PRIMARY PRINT PROC PROCEDURE PUBLIC RAISERROR READ RECONFIGURE REFERENCES REPLICATION RESTORE RESTRICT RETURN REVERT REVOKE RIGHT ROLLBACK ROWCOUNT RULE SAVE SCHEMA SELECT SET SETUSER SHUTDOWN SOME STATISTICS TABLE TABLESAMPLE TEXTSIZE THEN TO TOP TRAN TRANSACTION TRIGGER TRUNCATE UNION UNIQUE UNPIVOT UPDATE USE USER VALUES VARYING VIEW WAITFOR WHEN WHERE WHILE WITH WRITETEXT`.split(' '),
+)
+
 const norm = (type) => type.replace(/\s+/g, '').toUpperCase()
 
 /** Splits on commas that are not inside parentheses. */
@@ -62,6 +67,7 @@ for (let m = header.exec(noComments); m; m = header.exec(noComments)) {
       continue
     }
     const name = col[1].replace(/[[\]]/g, '')
+    if (!col[1].startsWith('[') && RESERVED.has(name.toUpperCase())) fail(`${full}: column ${name} is a reserved word and needs [brackets]`)
     if (columns.has(name)) fail(`${full}: duplicate column ${name}`)
     columns.set(name, { type: norm(col[2]), text: part })
     for (const inline of part.matchAll(/CONSTRAINT\s+(\w+)\s+(PRIMARY KEY|UNIQUE|DEFAULT|CHECK)/gi)) {
