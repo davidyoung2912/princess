@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Proposed. No code has been written.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 5 built.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -99,12 +99,12 @@ Each phase lists its **deliverable** and **how it is verified**. Phases 1 to 4 n
 - A scenario catalogue `db/seed/personas/README.md` listing every persona, login, stage and what to test.
 - **Stop here.** You run all three scripts and give me the connection string. (If the scripts fail, we fix them before moving on.)
 
-### Phase 5. API skeleton, auth and Swagger
+### Phase 5. API skeleton, auth and Swagger (built)
 - `server/` solution, Dapper plumbing, connection factory, problem-details error model matching `src/api/errors.ts` codes (`invalid`, `conflict`, `forbidden`, `notFound`, `network`, and so on), CORS, health endpoint, Swagger with a JWT "Authorize" button.
 - Auth endpoints: login (email or account number), refresh with rotation and reuse detection, logout, me. Password hashing, token settings in user-secrets (the connection string and signing key never go in git).
 - Authorisation helpers: current user, booking membership, supervised-child rules, helper permissions.
 - Test project with auth tests.
-- **Verify:** `dotnet build`, `dotnet test`, and a smoke call list in the README (you run it against your database).
+- **Verify:** `dotnet build`, `dotnet test`, and a smoke call list in `server/README.md` (you run it against your database). Built with 52 tests over in-memory stores; nothing in it has touched SQL Server yet, so the Dapper SQL is verified only by your smoke run.
 
 ### Phase 6. API: account, trips, payments, documents, notifications, support, privacy
 - Maps to `account`, `trips`, `payments`, `documents`, `notifications`, `support`, `help`, `privacy`, `budget`, `aboard.feedback`, `saved`. Ports the name-change rules and document requirement rules.
