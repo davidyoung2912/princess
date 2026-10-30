@@ -44,9 +44,8 @@ It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sq
 | `-Database` | `princess` | Target database. |
 | `-User`, `-Password` | none | SQL login. Without them it uses Windows authentication. |
 | `-SkipDrop` | off | Skip the drop step, for a new empty database. |
-| `-Force` | off | Do not ask first. Without it you must type the database name to continue. |
 
-It destroys all data in the Princess tables, so use it on test databases only. It stores no connection string and writes nothing to disk.
+It asks no question: it destroys all data in the Princess tables as soon as it runs, so use it on test databases only. It stores no connection string and writes nothing to disk.
 
 ## Reference seeds (`seed/reference`)
 
