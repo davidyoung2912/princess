@@ -58,6 +58,53 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/me/favourites/toggle" },
     };
 
+    /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>
+    public static TheoryData<string, string> BookingRoutes => new()
+    {
+        { "get", "/api/v1/sailings/offers" },
+        { "get", "/api/v1/sailings/bookable" },
+        { "get", "/api/v1/sailings/{id}/quote" },
+        { "get", "/api/v1/sailings/{id}/rooms" },
+        { "get", "/api/v1/sailings/{id}/cabins" },
+        { "post", "/api/v1/booking/fares" },
+        { "post", "/api/v1/booking/quote" },
+        { "get", "/api/v1/me/booking-prefill" },
+        { "get", "/api/v1/me/draft" },
+        { "put", "/api/v1/me/draft" },
+        { "delete", "/api/v1/me/draft" },
+        { "post", "/api/v1/me/draft/resume-link" },
+        { "post", "/api/v1/bookings" },
+        { "get", "/api/v1/bookings/{number}/detail" },
+        { "post", "/api/v1/bookings/{number}/pay-balance" },
+        { "get", "/api/v1/bookings/{number}/change" },
+        { "post", "/api/v1/bookings/{number}/change" },
+        { "post", "/api/v1/bookings/{number}/cancel" },
+    };
+
+    [Theory]
+    [MemberData(nameof(BookingRoutes))]
+    public async Task EveryPhaseSevenRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task OnlyDiscoverIsOpenToTheWorldAndBookingNeedsASignIn()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in BookingRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", "sun-2027-03-21");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            var isPublic = route.StartsWith("/api/v1/sailings/");
+            Assert.True(isPublic ? res.StatusCode != System.Net.HttpStatusCode.Unauthorized : res.StatusCode == System.Net.HttpStatusCode.Unauthorized,
+                $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode}");
+        }
+    }
+
     [Theory]
     [MemberData(nameof(Routes))]
     public async Task EveryPhaseSixRouteIsDocumented(string verb, string route)

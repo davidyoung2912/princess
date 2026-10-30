@@ -112,6 +112,7 @@ public sealed class CardRow
     public string Brand { get; set; } = "";
     public string Last4 { get; set; } = "";
     public string Expiry { get; set; } = "";
+    public bool IsDefault { get; set; }
 }
 
 public sealed class PastTripRow
@@ -170,4 +171,7 @@ public sealed class SailingRow
     public DateTime Departure { get; set; }
     public bool IsHoliday { get; set; }
     public bool IsReference { get; set; }
+    public int Nights { get; set; } = 7;
+    /// <summary><c>ref.Sailings.BookingOpen</c>: a manual close. "One day to go" is worked out from the date.</summary>
+    public bool BookingOpen { get; set; } = true;
 }

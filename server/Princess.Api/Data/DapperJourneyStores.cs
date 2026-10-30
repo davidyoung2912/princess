@@ -165,7 +165,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db) : IAccountStore
 
 public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
 {
-    private const string BookingSelect = """
+    internal const string BookingSelect = """
         SELECT b.Id AS BookingId, b.Number, b.Kind, b.AgentName, b.BookerUserId, b.SailingId, s.Title AS SailingTitle, sh.Name AS ShipName,
                s.Departure, s.Nights, b.CategoryId, c.Name AS CategoryName, b.FareId, b.CabinNumber, b.Status, b.TotalCents, b.DepositCents, b.FinalDueDate, b.ConfirmedAt,
                (SELECT COUNT(*) FROM dbo.BookingGuests g WHERE g.BookingId = b.Id) AS GuestAccounts,
@@ -251,7 +251,7 @@ public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<CardRow>(Sql.Cmd(
-            "SELECT Id, PublicId, Brand, Last4, Expiry FROM dbo.SavedCards WHERE UserId = @userId ORDER BY IsDefault DESC, Id", new { userId }, null, ct))).ToList();
+            "SELECT Id, PublicId, Brand, Last4, Expiry, IsDefault FROM dbo.SavedCards WHERE UserId = @userId ORDER BY IsDefault DESC, Id", new { userId }, null, ct))).ToList();
     }
 
     public async Task<CardRow> AddCardAsync(long userId, string brand, string last4, string expiry, DateTime now, CancellationToken ct)
@@ -286,7 +286,7 @@ public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
     public async Task<List<SailingRow>> ListSailingsAsync(CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
+        return (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
     }
 
     public async Task<List<PastTripRow>> ListPastTripsAsync(long userId, CancellationToken ct)

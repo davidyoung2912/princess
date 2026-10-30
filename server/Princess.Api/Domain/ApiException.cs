@@ -24,6 +24,10 @@ public sealed class ApiException(ApiErrorCode code, string title, int status) : 
     public static ApiException Forbidden(string title = "forbidden") => new(ApiErrorCode.Forbidden, title, StatusCodes.Status403Forbidden);
     public static ApiException NotFound(string title = "notFound") => new(ApiErrorCode.NotFound, title, StatusCodes.Status404NotFound);
     public static ApiException Conflict(string title = "conflict") => new(ApiErrorCode.Conflict, title, StatusCodes.Status409Conflict);
+    /// <summary>The bank wants its one-time code: title <c>required</c> when missing, <c>wrong</c> when it does not match.</summary>
+    public static ApiException Challenge(string title) => new(ApiErrorCode.Challenge, title, StatusCodes.Status402PaymentRequired);
+    /// <summary>The bank declined the payment; the title names the method that was declined.</summary>
+    public static ApiException Declined(string title) => new(ApiErrorCode.Declined, title, StatusCodes.Status402PaymentRequired);
 
     public static string CodeName(ApiErrorCode code) => code switch
     {

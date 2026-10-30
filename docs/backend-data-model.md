@@ -280,24 +280,24 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `aboard.feedback.list/send` | `GET/POST /me/feedback` | U |
 | `ahead.saved.list/toggle`, `discover.favourites/toggleFavourite` | `GET /me/favourites`, `POST /me/favourites/toggle` | U |
 
-### 6.2 Discover and booking (Phase 7)
+### 6.2 Discover and booking (Phase 7, built)
 | Api method | Verb route | Auth |
 | --- | --- | --- |
 | `discover.offers` | `GET /sailings/offers` | P |
-| `discover.quote` | `GET /sailings/{id}/quote?category=&guests=` | P |
+| `discover.quote` | `GET /sailings/{id}/quote?category=&guests=`; `invalid` for an unknown sailing, room type or party size | P |
 | `booking.dates` | `GET /sailings/bookable` | P |
 | `booking.rooms` | `GET /sailings/{id}/rooms` | P |
-| `booking.cabins` | `GET /sailings/{id}/cabins?category=` | P |
+| `booking.cabins` | `GET /sailings/{id}/cabins?category=` (rooms already booked come back `available: false`) | P |
 | `booking.fares` | `POST /booking/fares` {draft} | U |
-| `booking.quote` | `POST /booking/quote` {draft} | U |
+| `booking.quote` | `POST /booking/quote` {draft}; `total` is the price to send back as `expectedTotal` | U |
 | `booking.prefill` | `GET /me/booking-prefill` | U |
-| `booking.draft/saveDraft/discardDraft` | `GET/PUT/DELETE /me/draft` | U |
-| `booking.sendResumeLink` | `POST /me/draft/resume-link` | U |
-| `booking.book` | `POST /bookings` {draft, expectedTotal, option, parts, challenge} + `Idempotency-Key` | U |
+| `booking.draft/saveDraft/discardDraft` | `GET/PUT/DELETE /me/draft`; GET returns JSON `null` when there is none; the id in the PUT response is chosen by the server | U (not a supervised child, for PUT) |
+| `booking.sendResumeLink` | `POST /me/draft/resume-link` {via,to}; 404 with no draft, 400 for a bad address | U |
+| `booking.book` | `POST /bookings` {draft, expectedTotal, option, parts:[{method:`card`,cardId,cents}\|{method:`wallet`,cents}], challenge} + optional `Idempotency-Key`; 400 `incomplete`\|`payment`\|`card`\|`option`, 409 `priceChanged`\|`cabinTaken`\|`closed`\|`draftTaken`, 402 `challenge`\|`declined` | U (not a supervised child) |
 | `booking.get` | `GET /bookings/{n}/detail` | B |
-| `booking.payBalance` | `POST /bookings/{n}/pay-balance` | BA |
-| `booking.changePreview` / `change` | `GET/POST /bookings/{n}/change?sailingId=` | Booker |
-| `booking.cancel` | `POST /bookings/{n}/cancel` | Booker |
+| `booking.payBalance` | `POST /bookings/{n}/pay-balance` {parts, challenge} + optional `Idempotency-Key`; 409 `nothingDue` | BA |
+| `booking.changePreview` / `change` | `GET /bookings/{n}/change?sailingId=`, `POST /bookings/{n}/change?sailingId=`; 409 `tooLate`\|`newTooSoon`\|`same` | Booker |
+| `booking.cancel` | `POST /bookings/{n}/cancel`; 409 `closed` | Booker |
 
 ### 6.3 Pre-cruise (Phase 8)
 | Api method | Route | Auth |

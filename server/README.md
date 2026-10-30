@@ -109,3 +109,35 @@ Per persona (each is a different rule):
 - **Rosa/Theo**: `GET /api/v1/me/favourites`, then `POST /api/v1/me/favourites/toggle` `{"key":"excursion:coz-snorkel"}` twice.
 
 Check in Swagger that `GET /me/helper` for someone with no helper returns `null` (a JSON body, not empty).
+
+## Phase 7 endpoints
+
+Discover and booking: 18 routes, listed in `docs/backend-data-model.md` section 6.2 and in Swagger (tags Discover, Booking). The five `GET /sailings/...` routes are public; everything else needs a sign-in. Payments go through `IPaymentGateway` (`Services/PaymentGateway.cs`), the pretend bank:
+
+- a card ending `0002` is declined (`402`, type `declined`, title "Visa ending 0002");
+- a card that is not the person's default card, or any card payment of $3,000 or more, needs the one-time code `123456` in `challenge` (`402`, type `challenge`, title `required` or `wrong`);
+- a device wallet (`{"method":"wallet","cents":...}`) never needs it.
+
+`POST /bookings` and `POST /bookings/{n}/pay-balance` accept an `Idempotency-Key` header (8 to 80 characters of letters, digits and `_ . : -`). Booking the same draft twice, or repeating a key, returns the first result and charges nothing.
+
+## Smoke calls for Phase 7 (run against your database)
+
+```
+curl -s $B/api/v1/sailings/offers                                              # 8 sailings with a "from" price
+curl -s $B/api/v1/sailings/bookable                                            # days to go and open true or false
+curl -s "$B/api/v1/sailings/sun-2027-03-21/quote?category=balcony&guests=2"    # total 621,100 cents
+curl -s $B/api/v1/sailings/sun-2027-03-21/rooms
+curl -s "$B/api/v1/sailings/sun-2027-03-21/cabins?category=interior"          # first room 8188
+```
+
+Then sign in as a persona with a saved card (for example Owen) and book. Cards are listed by `GET /api/v1/bookings/<number>/payments`; use the guid of the default Visa as `cardId`.
+
+```
+H="authorization: Bearer $ACCESS"
+curl -s -X PUT $B/api/v1/me/draft -H "$H" -H 'content-type: application/json' -d @draft.json     # returns the server-chosen id
+curl -s -X POST $B/api/v1/booking/quote -H "$H" -H 'content-type: application/json' -d @draft.json   # note "total"
+curl -s -X POST $B/api/v1/bookings -H "$H" -H 'content-type: application/json' -H 'Idempotency-Key: smoke-0001' \
+  -d '{"draft":<the draft, with the id from the PUT>,"expectedTotal":<total>,"option":"deposit","parts":[{"method":"card","cardId":"<guid>","cents":<deposit>}]}'
+```
+
+Send the same call again: the same booking number comes back and `GET .../payments` shows one deposit. A wrong `expectedTotal` is 409 `priceChanged`. Then `GET /api/v1/bookings/<number>/detail`, `GET .../change?sailingId=sun-2027-02-28`, `POST .../cancel` (free within 24 hours when more than 7 days out).
