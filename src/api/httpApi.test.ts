@@ -128,3 +128,80 @@ describe('REST discover and booking groups', () => {
     expect(calls.find((c) => c.path === '/me/draft/resume-link')?.body).toEqual({ via: 'email', to: 'a@b.example' })
   })
 })
+
+describe('REST plan, waits, shows and ahead groups', () => {
+  it('uses the trip routes with guest ids as guids', async () => {
+    const { http, calls } = fake({
+      '/trips': trips,
+      '/bookings/PC2/plan': { days: [] },
+      '/bookings/PC2/dining/slots?venue=v%201&day=3': [],
+      '/bookings/PC2/excursions/cart/e1': {},
+      '/bookings/PC2/dining/reservations': {},
+      '/bookings/PC2/packages/purchases': {},
+      '/bookings/PC2/checklist/c1': {},
+      '/bookings/PC2/waits/queue': {},
+      '/bookings/PC2/shows?day=2': [],
+      '/bookings/PC2/shows/tickets': [],
+      ['/bookings/PC2/clubs/' + PERSONA_GUIDS.maya]: {},
+      '/bookings/PC2/bag-tags/way': {},
+      '/bookings/PC2/prep/p1': [],
+      '/me/favourites/toggle': ['a'],
+      '/me/marketing/email/subscribe': {},
+    })
+    const g = createHttpGroups(http).groups
+    await g.plan.overview()
+    await g.plan.dining.slots('v 1', 3)
+    await g.plan.excursions.addToCart('e1', ['maya', 'ethan'])
+    await g.plan.dining.reserve({ venueId: 'v', day: 1, time: '18:00', guests: ['maya'], note: '' })
+    await g.plan.packages.buy({ kind: 'addOn', item: 'x', guests: ['maya'] } as never, [], '1')
+    await g.plan.checklist.tick('c1', true)
+    await g.waits.joinQueue('v')
+    await g.shows.day(2)
+    await g.shows.reserve('s', 2, ['maya'])
+    await g.ahead.clubs.save({ childId: 'maya', allergies: '' } as never)
+    await g.ahead.tags.choose('print' as never)
+    await g.ahead.prep.set('p1', true)
+    await g.ahead.saved.toggle('a')
+    await g.ahead.marketing.subscribe('email' as never, 'a@b.example', 'us' as never)
+    const body = (path: string) => calls.find((c) => c.path === path)?.body
+    expect(body('/bookings/PC2/excursions/cart/e1')).toEqual({ guests: [PERSONA_GUIDS.maya, PERSONA_GUIDS.ethan] })
+    expect(body('/bookings/PC2/dining/reservations')).toMatchObject({ guests: [PERSONA_GUIDS.maya] })
+    expect(body('/bookings/PC2/packages/purchases')).toEqual({ kind: 'addOn', item: 'x', guests: [PERSONA_GUIDS.maya], parts: [], challenge: '1' })
+    expect(body('/bookings/PC2/checklist/c1')).toEqual({ done: true })
+    expect(body('/bookings/PC2/shows/tickets')).toEqual({ eventId: 's', day: 2, guests: [PERSONA_GUIDS.maya] })
+    expect(body(`/bookings/PC2/clubs/${PERSONA_GUIDS.maya}`)).toEqual({ allergies: '' })
+    expect(body('/bookings/PC2/prep/p1')).toEqual({ done: true })
+    expect(body('/me/marketing/email/subscribe')).toEqual({ contact: 'a@b.example', region: 'us' })
+  })
+})
+
+describe('REST check-in and boarding groups', () => {
+  it('saves a step by path with guests as guids and uses the embark routes', async () => {
+    const { http, calls } = fake({
+      '/trips': trips,
+      '/bookings/PC2/checkin': {},
+      '/bookings/PC2/checkin/steps/document': {},
+      '/bookings/PC2/checkin/steps/confirm': {},
+      '/bookings/PC2/checkin/submit': {},
+      '/bookings/PC2/embark/companion/c1': {},
+      '/bookings/PC2/embark/carry-on/k1': {},
+      '/bookings/PC2/embark/bags': {},
+      "/pass/lookup?number=PC%202&lastName=O'Neil": {},
+    })
+    const g = createHttpGroups(http).groups
+    await g.checkin.view()
+    await g.checkin.save({ step: 'document', guest: 'maya', kind: 'passport', country: 'US', number: 'X1', expires: '2030-01-01' } as never)
+    await g.checkin.save({ step: 'confirm', guests: ['maya', 'ethan'] })
+    await g.checkin.submit()
+    await g.boarding.setCompanion('c1' as never, true)
+    await g.boarding.setCarryOn('k1' as never, false)
+    await g.boarding.setBags(true)
+    await g.boarding.lookup('PC 2', "O'Neil")
+    const body = (path: string) => calls.find((c) => c.path === path)?.body
+    expect(body('/bookings/PC2/checkin/steps/document')).toEqual({ guest: PERSONA_GUIDS.maya, kind: 'passport', country: 'US', number: 'X1', expires: '2030-01-01' })
+    expect(body('/bookings/PC2/checkin/steps/confirm')).toEqual({ guests: [PERSONA_GUIDS.maya, PERSONA_GUIDS.ethan] })
+    expect(body('/bookings/PC2/embark/companion/c1')).toEqual({ done: true })
+    expect(body('/bookings/PC2/embark/bags')).toEqual({ dropped: true })
+    expect(calls.some((c) => c.path === "/pass/lookup?number=PC%202&lastName=O'Neil")).toBe(true)
+  })
+})
