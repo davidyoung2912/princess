@@ -13,5 +13,6 @@ A new React web site, designed for both mobile phone and desktop use (mobile-fir
 ## Working rules (apply to every code request)
 
 - Do not do Playwright testing or any browser testing. Verify with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` only.
+- Never run a full `dotnet test` for any change; verify with the npm checks only.
 - Work in phases. Commit and stop after each build phase so the user can `/clear`. Do not start the next phase until asked.
 - Only commit or push when asked.

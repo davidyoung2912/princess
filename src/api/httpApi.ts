@@ -4,7 +4,8 @@ import { fromWire, toWireId } from './personaIds'
 import type { AheadApi } from './aheadTypes'
 import type { FeedbackApi } from './aboardTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, WaitsApi } from './careTypes'
-import type { Api, Booking, Identity, TripsView } from './types'
+import type { AboardApi } from './aboardTypes'
+import type { Api, Booking, Identity, ProgramView, TripsView } from './types'
 import type { Tier } from '../domain/personas'
 
 /** The groups of the `Api` that Phase 13 serves from the REST API (account, trips, payments, documents, notifications, support, privacy, budget). */
@@ -33,6 +34,26 @@ export interface HttpGroups {
   /** Phase 16: check-in and boarding. */
   checkin: Api['checkin']
   boarding: Api['boarding']
+  /** Phase 17: everything on board. */
+  onboard: Api['onboard']
+  ports: Api['ports']
+  folio: Api['folio']
+  service: Api['service']
+  orders: Api['orders']
+  messages: Api['messages']
+  family: Api['family']
+  health: Api['health']
+  room: Api['room']
+  photos: Api['photos']
+  laundry: Api['laundry']
+  wifi: Api['wifi']
+  updates: Api['updates']
+  /** The `aboard` group without `feedback` (Phase 13). */
+  aboard: Omit<AboardApi, 'feedback'>
+  /** Phase 18: after the cruise. */
+  disembark: Api['disembark']
+  cases: Api['cases']
+  post: Api['post']
 }
 
 interface WireMe { id: string; firstName: string | null; lastName: string | null; tier: string }
@@ -58,11 +79,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   }
   const inBooking = async <T>(path: string): Promise<T> => fromWire<T>(await http.get(`/bookings/${seg(await number())}${path}`))
   const get = async <T>(path: string): Promise<T> => fromWire<T>(await http.get(path))
-  const send = async <T>(method: 'post' | 'put' | 'delete', path: string, body?: unknown): Promise<T> =>
+  const send = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown): Promise<T> =>
     fromWire<T>(method === 'delete' ? await http.delete(path) : await http[method](path, body))
   const ids = (guests: readonly string[]) => guests.map(toWireId)
   /** A write under the current trip: `/bookings/{number}{path}`. */
-  const inTrip = async <T>(method: 'post' | 'put' | 'delete', path: string, body?: unknown): Promise<T> =>
+  const inTrip = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown): Promise<T> =>
     send<T>(method, `/bookings/${seg(await number())}${path}`, body)
 
   const checkin: HttpGroups['checkin'] = {
@@ -87,7 +108,166 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     setCarryOn: (item, done) => inTrip('put', `/embark/carry-on/${seg(item)}`, { done }),
     setBags: (dropped) => inTrip('put', '/embark/bags', { dropped }),
   }
+  /** The cruise day each programme event was last seen on: the plan route is per event and day, the `Api` call has only the event. */
+  const eventDay = new Map<string, number>()
+  let lastDay = 1
+  const onboard: HttpGroups['onboard'] = {
+    today: () => inBooking('/onboard/today'),
+    program: async (day) => {
+      const view = await inBooking<ProgramView>(`/onboard/program/${day}`)
+      lastDay = day
+      for (const e of view.events) eventDay.set(e.id, day)
+      return view
+    },
+    togglePlan: (eventId, on) => inTrip('put', `/onboard/plan/${seg(eventId)}`, { on, day: eventDay.get(eventId) ?? lastDay }),
+    portDay: () => inBooking('/onboard/port-day'),
+    muster: () => inBooking('/onboard/muster'),
+    confirmMuster: (guests) => inTrip('post', '/onboard/muster', { guests: ids(guests) }),
+    emergency: () => inBooking('/onboard/emergency'),
+    folio: () => inBooking('/onboard/folio'),
+  }
+  const orders: HttpGroups['orders'] = {
+    menu: () => inBooking('/orders/menu'),
+    list: () => inBooking('/orders'),
+    place: (input) => inTrip('post', '/orders', { ...input, lines: input.lines.map((l) => ({ ...l, guest: toWireId(l.guest) })) }),
+    resolve: (id, choices) => inTrip('post', `/orders/${seg(id)}/resolve`, { choices }),
+    cancel: (id) => inTrip('delete', `/orders/${seg(id)}`),
+    moveTo: (id, location) => inTrip('put', `/orders/${seg(id)}/location`, { location }),
+    contact: (id) => inTrip('post', `/orders/${seg(id)}/contact`),
+  }
+  const family: HttpGroups['family'] = {
+    view: () => inBooking('/family'),
+    setZones: (child, zones) => inTrip('put', `/family/${seg(toWireId(child))}/zones`, { zones }),
+    setAuth: (child, auth) => inTrip('put', `/family/${seg(toWireId(child))}/auth`, { ...auth, pickup: ids(auth.pickup) }),
+    checkIn: (child) => inTrip('post', `/family/${seg(toWireId(child))}/check-in`),
+    checkOut: (child) => inTrip('post', `/family/${seg(toWireId(child))}/check-out`),
+    setReunion: (plan) => inTrip('put', '/family/reunion', plan),
+  }
+  const health: HttpGroups['health'] = {
+    view: () => inBooking('/health'),
+    report: (input) => inTrip('post', '/health/reports', { ...input, guests: ids(input.guests) }),
+    request: (kind, note) => inTrip('post', '/health/requests', { kind, note }),
+  }
+  const room: HttpGroups['room'] = {
+    view: () => inBooking('/room'),
+    setHousekeeping: (patch) => inTrip('patch', '/room/housekeeping', patch),
+    setDevices: (patch) => inTrip('patch', '/room/devices', patch),
+  }
+  const photos: HttpGroups['photos'] = {
+    list: () => inBooking('/photos'),
+    toggleFavourite: (photoId) => inTrip('put', `/photos/${seg(photoId)}/favourite`),
+    quote: (photoIds) => inTrip('post', '/photos/quote', { photoIds }),
+    buy: (photoIds, option) => inTrip('post', '/photos/purchases', { photoIds, option }),
+    download: (receiptId) => inTrip('post', `/photos/purchases/${seg(receiptId)}/download`),
+  }
+  const laundry: HttpGroups['laundry'] = {
+    view: () => inBooking('/laundry'),
+    request: (input) => inTrip('post', '/laundry', input),
+    cancel: (id) => inTrip('delete', `/laundry/${seg(id)}`),
+  }
+  const wifi: HttpGroups['wifi'] = {
+    view: () => inBooking('/wifi'),
+    add: (input) => inTrip('post', '/wifi/devices', input),
+    upgrade: (id, plan) => inTrip('put', `/wifi/devices/${seg(id)}`, { plan }),
+    remove: (id) => inTrip('delete', `/wifi/devices/${seg(id)}`),
+  }
+  const updates: HttpGroups['updates'] = {
+    list: () => inBooking('/updates'),
+    acknowledge: (id, option) => inTrip('post', `/updates/${seg(id)}/ack`, { option }),
+  }
+  const service: HttpGroups['service'] = {
+    channels: () => inBooking('/service/channels'),
+    thread: (channel) => inBooking(`/service/${seg(channel)}`),
+    send: (channel, text) => inTrip('post', `/service/${seg(channel)}`, { text }),
+    escalate: (channel, phone) => inTrip('post', `/service/${seg(channel)}/escalate`, { phone }),
+  }
+  const messages: HttpGroups['messages'] = {
+    list: () => get('/me/chat/messages'),
+    send: (text) => send('post', '/me/chat/messages', { text }),
+    receipts: () => get('/me/chat/receipts'),
+    setReceipts: (on) => send('put', '/me/chat/receipts', { on }),
+    markSeen: async () => { await http.post('/me/chat/seen') },
+  }
+  const aboard: HttpGroups['aboard'] = {
+    selections: {
+      list: () => inBooking('/selections'),
+      add: (s) => inTrip('post', '/selections', s),
+      remove: (id) => inTrip('delete', `/selections/${seg(id)}`),
+    },
+    requests: {
+      list: () => inBooking('/requests'),
+      create: (item, qty, note) => inTrip('post', '/requests', { item, qty, note }),
+      cancel: (id) => inTrip('delete', `/requests/${seg(id)}`),
+    },
+    reports: {
+      list: () => inBooking('/safety-reports'),
+      create: (input) => inTrip('post', '/safety-reports', input),
+    },
+    drinks: {
+      view: () => inBooking('/drinks'),
+      log: (drinkId) => inTrip('post', '/drinks', { drinkId }),
+      undo: (id) => inTrip('delete', `/drinks/${seg(id)}`),
+    },
+    money: {
+      view: () => inBooking('/money'),
+      topUp: (dollars, source) => inTrip('post', '/money/top-ups', { dollars, source }),
+      setPin: (next, current) => inTrip('put', '/money/pin', { next, current }),
+      forgotPin: () => inTrip('post', '/money/forgot-pin'),
+      gratuity: (choice, reason) => inTrip('put', '/money/gratuity', { choice, reason }),
+      setCurrency: (code) => inTrip('put', '/money/currency', { code }),
+    },
+    parties: {
+      list: () => inBooking('/parties'),
+      create: (input) => inTrip('post', '/parties', input),
+      cancel: (id) => inTrip('delete', `/parties/${seg(id)}`),
+    },
+    groups: {
+      get: (reservationId) => inBooking(`/dining/reservations/${seg(reservationId)}/group`),
+      // The seats taken are the guests on the reservation, so the party size is not sent.
+      addFriend: (reservationId, friend) => inTrip('post', `/dining/reservations/${seg(reservationId)}/group/friends`, friend),
+      removeFriend: (reservationId, index) => inTrip('delete', `/dining/reservations/${seg(reservationId)}/group/friends/${index}`),
+      setSplit: (reservationId, split) => inTrip('put', `/dining/reservations/${seg(reservationId)}/group/split`, { split }),
+    },
+    games: {
+      get: () => inBooking('/games'),
+      find: (clueId, on) => inTrip('put', `/games/clues/${seg(clueId)}`, { on }),
+      answer: (questionId, option) => inTrip('put', `/games/trivia/${seg(questionId)}`, { option }),
+      mark: (n, on) => inTrip('put', `/games/bingo/${n}`, { on }),
+    },
+    tv: {
+      get: () => inBooking('/tv'),
+      set: (patch) => inTrip('patch', '/tv', patch),
+    },
+    lastMinute: {
+      list: () => inBooking('/last-minute'),
+      book: (excursionId, guests) => inTrip('post', `/last-minute/${seg(excursionId)}`, { guests: ids(guests) }),
+    },
+    ready: {
+      get: () => inBooking('/ready'),
+      set: (id, on) => inTrip('put', `/ready/${seg(id)}`, { on }),
+    },
+    chat: {
+      blocked: () => get('/me/chat/blocks'),
+      block: (id, on) => send('put', `/me/chat/blocks/${seg(toWireId(id))}`, { on }),
+      report: async (messageId, reason) => { await http.post('/me/chat/reports', { messageId, reason }) },
+      sendPhoto: async (input) => { await http.post('/me/chat/photos', input) },
+    },
+  }
   const groups: HttpGroups = {
+    onboard,
+    ports: { today: () => inBooking('/onboard/port') },
+    folio: { entitlements: () => inBooking('/entitlements') },
+    service,
+    orders,
+    messages,
+    family,
+    health,
+    room,
+    photos,
+    laundry,
+    wifi,
+    updates,
+    aboard,
     checkin,
     boarding,
     auth: {
@@ -282,11 +462,43 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
         toggle: (key) => send('post', '/me/favourites/toggle', { key }),
       },
     },
+    disembark: {
+      view: () => inBooking('/disembark'),
+      choose: ({ option, bags }) =>
+        inTrip('put', '/disembark/choice', { option, bags: Object.fromEntries(Object.entries(bags).map(([guest, n]) => [toWireId(guest), n])) }),
+      setTagsOn: (on) => inTrip('put', '/disembark/tags', { on }),
+      customs: () => inBooking('/disembark/customs'),
+      saveCustoms: (d) => inTrip('put', '/disembark/customs', d),
+      onward: () => inBooking('/disembark/onward'),
+      saveOnward: (plan) => inTrip('put', '/disembark/onward', plan),
+      night: () => inBooking('/disembark/night'),
+      tick: (id, done) => inTrip('put', `/disembark/night/${seg(id)}`, { done }),
+      finalBill: () => inBooking('/disembark/final-bill'),
+      adjustTip: (keepPercent) => inTrip('put', '/disembark/final-bill/tip', { keepPercent }),
+      emailReceipt: () => inTrip('post', '/disembark/final-bill/email'),
+    },
+    cases: {
+      list: () => inBooking('/cases'),
+      open: (input) => inTrip('post', '/cases', input),
+      withdraw: (id) => inTrip('delete', `/cases/${seg(id)}`),
+    },
+    post: {
+      history: () => inBooking('/history'),
+      feedback: () => inBooking('/post-feedback'),
+      saveFeedback: (f) => inTrip('put', '/post-feedback', f),
+      loyalty: () => get('/me/loyalty-summary'),
+      rebook: () => inBooking('/rebook'),
+      hold: (departureId) => inTrip('post', '/rebook/holds', { departureId }),
+      releaseHold: (id) => inTrip('delete', `/rebook/holds/${seg(id)}`),
+      convertFcc: () => inTrip('post', '/rebook/convert-fcc'),
+      bookSlot: (at) => inTrip('post', '/rebook/appointment', { at }),
+      cancelSlot: () => inTrip('delete', '/rebook/appointment'),
+    },
   }
   return { groups, reset: () => { current = null } }
 }
 
-/** The mock `Api` with the Phase 13 to 16 groups replaced by the REST ones. */
+/** The mock `Api` with the Phase 13 to 18 groups replaced by the REST ones. */
 export function withHttpGroups(base: Api, g: HttpGroups): Api {
   return {
     ...base,
@@ -301,7 +513,7 @@ export function withHttpGroups(base: Api, g: HttpGroups): Api {
     help: g.help,
     budget: g.budget,
     privacy: g.privacy,
-    aboard: { ...base.aboard, feedback: g.feedback },
+    aboard: { ...g.aboard, feedback: g.feedback },
     discover: { ...base.discover, ...g.favourites, ...g.discover },
     booking: { ...base.booking, ...g.booking },
     plan: g.plan,
@@ -310,5 +522,21 @@ export function withHttpGroups(base: Api, g: HttpGroups): Api {
     ahead: g.ahead,
     checkin: g.checkin,
     boarding: g.boarding,
+    onboard: g.onboard,
+    ports: g.ports,
+    folio: g.folio,
+    service: g.service,
+    orders: g.orders,
+    messages: g.messages,
+    family: g.family,
+    health: g.health,
+    room: g.room,
+    photos: g.photos,
+    laundry: g.laundry,
+    wifi: g.wifi,
+    updates: g.updates,
+    disembark: g.disembark,
+    cases: g.cases,
+    post: g.post,
   }
 }

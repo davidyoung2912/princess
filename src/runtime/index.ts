@@ -50,7 +50,7 @@ const mockApi: Api = createMockApi({
   channel,
 })
 
-/** With real sign-in, the account area (Phase 13), discover and booking (Phase 14) and the pre-cruise groups (Phase 15) are served by the REST API; the other groups stay on the mock until Phases 16 to 18. */
+/** With real sign-in, the account area (Phase 13), discover and booking (Phase 14), the pre-cruise groups (Phase 15), check-in and boarding (Phase 16) everything on board (Phase 17) and the after-cruise groups (Phase 18) are served by the REST API; only dining/queues/requests (legacy, dropped) stay on the mock. */
 const rest = usesRealAuth ? createHttpGroups((auth as ReturnType<typeof createHttpAuthProvider>).http) : null
 if (rest) auth.subscribe(rest.reset)
 export const api: Api = rest ? withHttpGroups(mockApi, rest.groups) : mockApi

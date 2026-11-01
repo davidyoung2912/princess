@@ -205,3 +205,80 @@ describe('REST check-in and boarding groups', () => {
     expect(calls.some((c) => c.path === "/pass/lookup?number=PC%202&lastName=O'Neil")).toBe(true)
   })
 })
+
+describe('REST on-board groups', () => {
+  it('plans an event on the day it was last listed, and sends guests as guids', async () => {
+    const { http, calls } = fake({
+      '/trips': trips,
+      '/bookings/PC2/onboard/program/3': { day: 3, events: [{ id: 'ev1' }], mine: [] },
+      '/bookings/PC2/onboard/plan/ev1': [],
+      '/bookings/PC2/onboard/muster': {},
+      '/bookings/PC2/orders': {},
+      ['/bookings/PC2/family/' + PERSONA_GUIDS.maya + '/auth']: {},
+      '/bookings/PC2/tv': {},
+      '/bookings/PC2/dining/reservations/r1/group/friends': {},
+      '/bookings/PC2/ready/p1': [],
+      ['/me/chat/blocks/' + PERSONA_GUIDS.gerald]: [],
+      '/bookings/PC2/last-minute/x1': {},
+    })
+    const g = createHttpGroups(http).groups
+    await g.onboard.program(3)
+    await g.onboard.togglePlan('ev1', true)
+    await g.onboard.confirmMuster(['maya'])
+    await g.orders.place({ kind: 'food', lines: [{ itemId: 'i', qty: 1, extras: [], guest: 'maya' }], location: { kind: 'cabin' }, tip: 0 } as never)
+    await g.family.setAuth('maya', { pickup: ['gerald'], signOutAlone: false, photos: true })
+    await g.aboard.tv.set({ volume: 5 })
+    await g.aboard.groups.addFriend('r1', { name: 'A', cabin: '1234' }, 4)
+    await g.aboard.ready.set('p1', true)
+    await g.aboard.chat.block('gerald', true)
+    await g.aboard.lastMinute.book('x1', ['maya'])
+    const call = (method: string, path: string) => calls.find((c) => c.method === method && c.path === path)?.body
+    expect(call('PUT', '/bookings/PC2/onboard/plan/ev1')).toEqual({ on: true, day: 3 })
+    expect(call('POST', '/bookings/PC2/onboard/muster')).toEqual({ guests: [PERSONA_GUIDS.maya] })
+    expect(call('POST', '/bookings/PC2/orders')).toMatchObject({ lines: [{ guest: PERSONA_GUIDS.maya }] })
+    expect(call('PUT', `/bookings/PC2/family/${PERSONA_GUIDS.maya}/auth`)).toEqual({ pickup: [PERSONA_GUIDS.gerald], signOutAlone: false, photos: true })
+    expect(call('PATCH', '/bookings/PC2/tv')).toEqual({ volume: 5 })
+    expect(call('POST', '/bookings/PC2/dining/reservations/r1/group/friends')).toEqual({ name: 'A', cabin: '1234' })
+    expect(call('PUT', '/bookings/PC2/ready/p1')).toEqual({ on: true })
+    expect(call('PUT', `/me/chat/blocks/${PERSONA_GUIDS.gerald}`)).toEqual({ on: true })
+    expect(call('POST', '/bookings/PC2/last-minute/x1')).toEqual({ guests: [PERSONA_GUIDS.maya] })
+  })
+})
+
+describe('REST after-cruise groups', () => {
+  it('sends bags by guest guid and uses the booking routes', async () => {
+    const { http, calls } = fake({
+      '/trips': trips,
+      '/bookings/PC2/disembark/choice': {},
+      '/bookings/PC2/disembark/night/n1': {},
+      '/bookings/PC2/disembark/final-bill/tip': {},
+      '/bookings/PC2/disembark/final-bill/email': {},
+      '/bookings/PC2/cases/c1': {},
+      '/bookings/PC2/post-feedback': {},
+      '/bookings/PC2/rebook/holds': {},
+      '/bookings/PC2/rebook/appointment': {},
+      '/me/loyalty-summary': {},
+      '/bookings/PC2/history': {},
+    })
+    const g = createHttpGroups(http).groups
+    await g.disembark.choose({ option: 'selfWalk' as never, bags: { maya: 2 } })
+    await g.disembark.tick('n1', true)
+    await g.disembark.adjustTip(50)
+    await g.disembark.emailReceipt()
+    await g.cases.withdraw('c1')
+    await g.post.saveFeedback({ overall: 5 } as never)
+    await g.post.hold('d1')
+    await g.post.bookSlot(123)
+    await g.post.cancelSlot()
+    await g.post.loyalty()
+    await g.post.history()
+    const call = (method: string, path: string) => calls.find((c) => c.method === method && c.path === path)?.body
+    expect(call('PUT', '/bookings/PC2/disembark/choice')).toEqual({ option: 'selfWalk', bags: { [PERSONA_GUIDS.maya]: 2 } })
+    expect(call('PUT', '/bookings/PC2/disembark/night/n1')).toEqual({ done: true })
+    expect(call('PUT', '/bookings/PC2/disembark/final-bill/tip')).toEqual({ keepPercent: 50 })
+    expect(call('POST', '/bookings/PC2/rebook/holds')).toEqual({ departureId: 'd1' })
+    expect(call('POST', '/bookings/PC2/rebook/appointment')).toEqual({ at: 123 })
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/bookings/PC2/cases/c1')).toBe(true)
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/bookings/PC2/rebook/appointment')).toBe(true)
+  })
+})
