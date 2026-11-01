@@ -1,3 +1,4 @@
+import { optimistic } from '../../data/optimistic'
 import { useEffect, useState } from 'react'
 import type { Message, ServiceThread } from '../../api/types'
 import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type ChannelId } from '../../domain/chat'
@@ -54,7 +55,13 @@ function Party() {
     try { await sendWithin(api.messages.send(text)); setText(''); list.retry() }
     catch (e) { if (worthRetrying(e)) { outbox.hold({ text }); setText('') } else throw e }
   })
-  const flip = useAction(async (on: boolean) => { await api.messages.setReceipts(on); receipts.retry(); list.retry() })
+  // The switch moves at once and goes back if saving fails (PERF-04).
+  const [shownReceipts, setShownReceipts] = useState<boolean | null>(null)
+  const receiptsOn = shownReceipts ?? receipts.data === true
+  const flip = useAction(async (on: boolean) => {
+    await optimistic(() => setShownReceipts(on), () => api.messages.setReceipts(on), () => setShownReceipts(null))
+    receipts.retry(); list.retry(); setShownReceipts(null)
+  })
   const seen = useAction(async () => { await api.messages.markSeen(); list.retry() })
   useEffect(() => { if (list.status === 'ready' && receipts.data) void api.messages.markSeen() }, [list.status, list.data?.length, receipts.data])
   const name = (m: Message) => (m.from === me?.id ? t('chat.you') : personaById(m.from)?.firstName ?? m.from)
@@ -92,7 +99,7 @@ function Party() {
         </div>
       </form>
       <div className="chip-row">
-        <Chip pressed={receipts.data === true} onToggle={() => void flip.run(receipts.data !== true)}>{t('chat.receipts')}</Chip>
+        <Chip pressed={receiptsOn} onToggle={() => void flip.run(!receiptsOn)}>{t('chat.receipts')}</Chip>
       </div>
       <p className="muted">{t('chat.receiptsBody')}</p>
       <PhotoSender onSent={() => list.retry()} />

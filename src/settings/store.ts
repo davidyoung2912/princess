@@ -1,9 +1,9 @@
-import { DEFAULT_SETTINGS, defaultsFor, loadSettings, saveSettings, settingsKeyFor, settingsToAttributes, type Settings } from './settings'
+import { defaultsFor, loadSettings, saveSettings, settingsKeyFor, settingsToAttributes, type Settings } from './settings'
 import type { Persona } from '../domain/personas'
 
-let current: Settings = loadSettings()
+let defaults: Settings = defaultsFor(null)
+let current: Settings = loadSettings(undefined, defaults)
 let key = settingsKeyFor(null)
-let defaults: Settings = DEFAULT_SETTINGS
 const listeners = new Set<() => void>()
 let darkQuery: MediaQueryList | null = null
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { personaById } from '../domain/personas'
-import { DEFAULT_SETTINGS, SETTINGS_KEY, defaultsFor, loadSettings, normalizeSettings, saveSettings, settingsKeyFor, settingsToAttributes } from './settings'
+import { DEFAULT_SETTINGS, SETTINGS_KEY, defaultsFor, loadSettings, normalizeSettings, saveSettings, settingsKeyFor, settingsToAttributes, saveDataRequested } from './settings'
 
 const memory = (initial?: string) => {
   const data = new Map<string, string>(initial === undefined ? [] : [[SETTINGS_KEY, initial]])
@@ -66,5 +66,22 @@ describe('per-person settings', () => {
     saveSettings({ ...gerald, textSize: 'xlarge' }, store, settingsKeyFor('gerald'))
     expect(loadSettings(store, gerald, settingsKeyFor('gerald')).textSize).toBe('xlarge')
     expect(loadSettings(store, defaultsFor(personaById('maria')!), settingsKeyFor('maria')).textSize).toBe('standard')
+  })
+})
+
+describe('save-data signal (NET-04)', () => {
+  it('reads the browser’s request for less data', () => {
+    expect(saveDataRequested({ connection: { saveData: true } })).toBe(true)
+    expect(saveDataRequested({ connection: { saveData: false } })).toBe(false)
+    expect(saveDataRequested({})).toBe(false)
+    expect(saveDataRequested(undefined)).toBe(false)
+  })
+
+  it('starts data-light on only when asked, and a saved choice still wins', () => {
+    expect(defaultsFor(null, true).dataLight).toBe(true)
+    expect(defaultsFor(null, false).dataLight).toBe(false)
+    const store = { getItem: () => JSON.stringify({ dataLight: false }) }
+    expect(loadSettings(store, defaultsFor(null, true)).dataLight).toBe(false)
+    expect(loadSettings({ getItem: () => null }, defaultsFor(null, true)).dataLight).toBe(true)
   })
 })

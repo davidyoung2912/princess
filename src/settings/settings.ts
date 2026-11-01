@@ -32,8 +32,18 @@ export const SETTINGS_KEY = 'princess:settings'
 /** Each signed-in person keeps their own settings, so Gerald's Large text does not follow Maria. */
 export const settingsKeyFor = (personaId: string | null): string => (personaId ? `${SETTINGS_KEY}:${personaId}` : SETTINGS_KEY)
 
-/** What a persona starts with before they change anything: their own default text size (Gerald on Large). */
-export const defaultsFor = (persona: { defaultTextSize: TextSize } | null): Settings => ({ ...DEFAULT_SETTINGS, textSize: persona?.defaultTextSize ?? DEFAULT_SETTINGS.textSize })
+/** Whether the browser says the person asked for less data ("Data Saver" or similar), so data-light mode starts on (NET-04). */
+export function saveDataRequested(nav: unknown = typeof navigator === 'undefined' ? undefined : navigator): boolean {
+  const connection = nav && typeof nav === 'object' ? (nav as { connection?: { saveData?: unknown } }).connection : undefined
+  return connection?.saveData === true
+}
+
+/** What a persona starts with before they change anything: their own default text size (Gerald on Large), and data-light when the device asks for it. */
+export const defaultsFor = (persona: { defaultTextSize: TextSize } | null, saveData: boolean = saveDataRequested()): Settings => ({
+  ...DEFAULT_SETTINGS,
+  textSize: persona?.defaultTextSize ?? DEFAULT_SETTINGS.textSize,
+  dataLight: saveData,
+})
 
 type ReadStore = Pick<Storage, 'getItem'>
 type WriteStore = Pick<Storage, 'setItem'>

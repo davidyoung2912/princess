@@ -4,6 +4,9 @@ import type { PrivacyPerson } from '../../api/careTypes'
 import { formatDate } from '../../domain/cruise'
 import { DATA_RULES } from '../../domain/dataRules'
 import { consentsFor, RETENTION, type ConsentId } from '../../domain/privacy'
+import { parentDecidesIn, regionRules } from '../../domain/regions'
+import { useSettings } from '../../hooks/useSettings'
+import type { StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { wipeAll } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -16,6 +19,7 @@ import { Card } from '../Card'
 import { Dialog } from '../Dialog'
 import { LoadError } from '../discover/parts'
 import { BackLink } from '../onboard/common'
+import type { ConsentRegion } from '../../domain/ahead'
 import { useShipTime } from '../onboard/shipTime'
 import { ActionError } from './parts'
 
@@ -27,6 +31,8 @@ export function PrivacyScreen() {
   const [confirm, setConfirm] = useState(false)
   const today = dateIn(useNow(), 'America/New_York')
   const shipTime = useShipTime()
+  const [settings] = useSettings()
+  const rules = regionRules(settings.region)
   return (
     <div className="page">
       <h1>{t('route.privacy')}</h1>
@@ -45,10 +51,19 @@ export function PrivacyScreen() {
             {view.data.deleted.length > 0 && <p role="status">{t('priv.deleted', { count: view.data.deleted.length })}</p>}
           </Card>
 
+          <Card labelledBy="priv-region-h">
+            <h2 id="priv-region-h" className="card__title">{t('priv.region.title', { region: t(`settings.region.${settings.region}` as StringKey) })}</h2>
+            <p>{t(`priv.region.law.${settings.region}` as StringKey)}</p>
+            <ul className="plain-bullets">
+              {rules.rights.map((r) => <li key={r}>{t(`priv.right.${r}` as StringKey)}</li>)}
+            </ul>
+            <p className="muted">{t('priv.region.age', { age: rules.consentAge })} <Link to="/me/settings">{t('priv.region.change')}</Link></p>
+          </Card>
+
           <section aria-labelledby="priv-consent-h">
             <h2 id="priv-consent-h">{t('priv.consents')}</h2>
             <ActionError error={set.error} forbidden="priv.err.forbidden" />
-            {view.data.people.map((p) => <Person key={p.id} p={p} busy={set.busy} onChange={(c, on) => void set.run(p.id, c, on)} />)}
+            {view.data.people.map((p) => <Person key={p.id} p={p} busy={set.busy} onChange={(c, on) => void set.run(p.id, c, on)} region={settings.region} />)}
           </section>
 
           <Card labelledBy="priv-storage-h">
@@ -110,13 +125,15 @@ export function PrivacyScreen() {
   )
 }
 
-function Person({ p, busy, onChange }: { p: PrivacyPerson; busy: boolean; onChange: (c: ConsentId, on: boolean) => void }) {
+function Person({ p, busy, onChange, region }: { p: PrivacyPerson; busy: boolean; onChange: (c: ConsentId, on: boolean) => void; region: ConsentRegion }) {
   const first = p.name.split(' ')[0]
+  const parentDecides = parentDecidesIn(region, p.age)
   return (
     <Card>
       <h3 className="card__title">{first}</h3>
       {p.age < 13 && <p className="muted">{t('priv.child', { name: first })}</p>}
-      {consentsFor(p.age).map((c) => (
+      {parentDecides && <p className="muted">{t('priv.region.parent', { name: first, age: regionRules(region).consentAge })}</p>}
+      {consentsFor(p.age).filter((c) => !parentDecides || !c.adultsOnly).map((c) => (
         <label key={c.id} className="choice">
           <input type="checkbox" checked={p.consents[c.id]} disabled={!p.canEdit || busy} onChange={(e) => onChange(c.id, e.target.checked)} />
           <span>{t(c.label)}<small>{t(c.hint)}</small></span>

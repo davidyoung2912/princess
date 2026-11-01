@@ -205,7 +205,7 @@ public class PrivacyAndBudgetApiTests : JourneyWorld
         var r = await Get($"{Harpers}/privacy", token);
         var deleted = r.Json.GetProperty("deleted").EnumerateArray().ToList();
         Assert.Single(deleted);
-        Assert.Equal(["ci-guest", "documents"], deleted[0].GetProperty("kinds").EnumerateArray().Select(k => k.GetString()));
+        Assert.Equal(["ci-guest", "documents", "message"], deleted[0].GetProperty("kinds").EnumerateArray().Select(k => k.GetString()));
         Assert.Empty(GuestOf(Daniel).Held);
         Assert.Contains(r.Json.GetProperty("access").EnumerateArray(), a => a.GetProperty("what").GetString() == "documents" && a.GetProperty("action").GetString() == "deleted");
 
@@ -230,7 +230,7 @@ public class PrivacyAndBudgetApiTests : JourneyWorld
         {
             var sweep = scope.ServiceProvider.GetRequiredService<Princess.Api.Services.PrivacyService>();
             Assert.True(await sweep.PurgeAllDueAsync(default) > 0);
-            Assert.Equal(["ci-guest", "documents"], F.Journey.Purges[0].Kinds);
+            Assert.Equal(["ci-guest", "documents", "message"], F.Journey.Purges[0].Kinds);
             Assert.Empty(GuestOf(Daniel).Held);
             var count = F.Journey.Purges.Count;
             Assert.Equal(0, await sweep.PurgeAllDueAsync(default));   // not again

@@ -85,3 +85,6 @@ export function saveOutbox(store: Store | null, persona: string, list: readonly 
     // Storage full or blocked: the screen still shows the message as waiting for this visit.
   }
 }
+
+/** Waits `ms` milliseconds. */
+export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))

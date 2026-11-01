@@ -17,7 +17,7 @@ export const RETENTION: readonly RetentionRule[] = [
   { id: 'photo', label: 'priv.r.photo', why: 'priv.r.photo.why', days: 30, kinds: ['ci-guest'] },
   { id: 'health', label: 'priv.r.health', why: 'priv.r.health.why', days: 90, kinds: ['illness', 'clubReg'] },
   { id: 'payment', label: 'priv.r.payment', why: 'priv.r.payment.why', days: null, kinds: [] },
-  { id: 'messages', label: 'priv.r.messages', why: 'priv.r.messages.why', days: null, kinds: [] },
+  { id: 'messages', label: 'priv.r.messages', why: 'priv.r.messages.why', days: 30, kinds: ['message'] },
   { id: 'history', label: 'priv.r.history', why: 'priv.r.history.why', days: null, kinds: [] },
 ]
 

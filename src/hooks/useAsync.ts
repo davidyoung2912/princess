@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { bounded } from '../api/bounded'
+import { bounded, withRetries } from '../api/bounded'
 
 export type Async<T> = { status: 'loading'; data: T | null } | { status: 'ready'; data: T } | { status: 'error'; data: T | null; error: unknown }
 
 /**
- * Runs an async call when it first renders and whenever `deps` change, and again on `retry()`. Earlier data stays in
+ * Runs an async call (retried with growing gaps when the link fails, PERF-04) when it first renders and whenever `deps` change, and again on `retry()`. Earlier data stays in
  * `data` while a newer call runs, and an answer from a call that has since been replaced is ignored.
  */
 export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): Async<T> & { retry: () => void } {
@@ -15,7 +15,7 @@ export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): A
   useEffect(() => {
     let current = true
     setState((s) => ({ status: 'loading', data: s.data }))
-    bounded(Promise.resolve().then(run)).then(
+    withRetries(() => bounded(Promise.resolve().then(run)), { keepGoing: () => current }).then(
       (data) => { if (current) setState({ status: 'ready', data }) },
       (error: unknown) => { if (current) setState((s) => ({ status: 'error', data: s.data, error })) },
     )

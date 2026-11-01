@@ -653,3 +653,7 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 - **Choices made:** nothing is posted, emailed or texted, and the advisors, medallion tracking and upgrade decisions are simulated; stage times for requests that change (support, fix-it) come from the time the request was made, not the last time it was saved; upgrade and booking credit are not returned if the booking is cancelled in the demo.
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. Not tried in a browser, by the project rule.
 
+
+## 23. Phase G2 progress notes
+
+See `docs/gap-analysis-plan.md` section 7. In short: loads retry twice with backoff (`withRetries`), the read-receipts switch updates optimistically (`optimistic`), data-light starts on when the browser sends the save-data signal, chat messages are deleted 30 days after the cruise (client and server rules), and the privacy centre shows the guest's region rules (`src/domain/regions.ts`).

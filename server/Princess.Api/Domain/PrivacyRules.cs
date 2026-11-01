@@ -17,7 +17,7 @@ public static class PrivacyRules
         new("photo", 30, ["ci-guest"]),
         new("health", 90, ["illness", "clubReg"]),
         new("payment", null, []),
-        new("messages", null, []),
+        new("messages", 30, ["message"]),
         new("history", null, []),
     ];
 

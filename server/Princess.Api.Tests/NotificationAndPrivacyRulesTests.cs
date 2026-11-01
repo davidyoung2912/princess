@@ -64,8 +64,8 @@ public class PrivacyRulesTests
 
     [Theory]
     [InlineData("2027-04-26", 0)]
-    [InlineData("2027-04-27", 2)]   // ci-guest, documents
-    [InlineData("2027-06-26", 4)]   // plus illness, clubReg
+    [InlineData("2027-04-27", 3)]   // ci-guest, documents, message
+    [InlineData("2027-06-26", 5)]   // plus illness, clubReg
     public void KindsToDeleteGrowAsRulesFallDue(string today, int count) =>
         Assert.Equal(count, PrivacyRules.KindsToDelete(Ends, DateOnly.Parse(today)).Count);
 

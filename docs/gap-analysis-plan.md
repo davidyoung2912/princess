@@ -69,7 +69,7 @@ Same rules as before: one phase at a time, tests with each, `npm run test`, `npm
 | Phase | Name | Closes | Status |
 | --- | --- | --- | --- |
 | G1 | Server hardening and housekeeping | SEC-01 (headers), SEC-03 (scheduled purge), SEC-10 (`security.txt`), encryption-at-rest note, stale docs | Built (see section 6) |
-| G2 | Resilience and privacy in the front end | PERF-04 (load retries with backoff, optimistic updates), NET-04 (save-data signal), MSG-05 (30-day chat retention enforced), SEC-04 (region rules) | Not started |
+| G2 | Resilience and privacy in the front end | PERF-04 (load retries with backoff, optimistic updates), NET-04 (save-data signal), MSG-05 (30-day chat retention enforced), SEC-04 (region rules) | Built (see section 7) |
 | G3 | Offers area | UX-02, CNT-02, NOT-04 | Not started |
 | G4 | Sign-in and delivery | ACT-01 (sign-up, forgot-password, magic link; passkey and MFA only if you ask), NOT-01 and MNG-14 (stub sender and outbox), PERF-07 and CNT-03 (error reporting and consent-based analytics) | Not started |
 | G5 | Money and shop | ACC-03 (PIN reset), ACC-07 (exchange rates), SHP-05 (cabin delivery), POS-13 (gifting) | Not started |
@@ -88,7 +88,18 @@ Built 2026-11-01.
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. **The C# changes and their new tests were not compiled or run**: `dotnet` is not installed in this environment, and the project rule bars `dotnet test`. Run `dotnet build` in `server/` first and report any errors.
 - **Not done:** HSTS and `frame-ancestors` for the static front end; a rendered disclosure page inside the app (the static HTML page stands in).
 
-## 7. Things I am least sure about
+## 7. Phase G2 notes
+
+Built 2026-11-01.
+
+- **Load retries (PERF-04):** `withRetries` in `src/api/bounded.ts` retries a read twice after `offline`, `network`, `timeout` or `server` failures, waiting with the outbox's jittered backoff. `useAsync` uses it, so every screen load gets it, and it stops once the screen has moved on. Changes (`useAction`) are not retried blindly; they still use the outbox.
+- **Optimistic updates (PERF-04):** `optimistic()` in `src/data/optimistic.ts`. Used for the read-receipts switch in the party chat: it moves at once and goes back if saving fails. Other switches can adopt it the same way.
+- **Save-data signal (NET-04):** `saveDataRequested()` reads `navigator.connection.saveData`; data-light mode starts on when it is set. A saved choice wins.
+- **Chat retention (MSG-05):** the `messages` rule is now 30 days after the cruise ends and deletes the `message` kind, matching the text in the chat. Mirrored in `PrivacyRules.cs`, and `DapperJourneyStores.PurgeAsync` deletes `ChatMessages` sent by the party. Tests on both sides updated.
+- **Region rules (SEC-04):** `src/domain/regions.ts` gives each region its law, its age below which a parent decides about marketing and analytics (EU 16, Australia 15, others 13) and its rights. The privacy centre shows them, and hides the marketing and analytics switches for someone in that age band. This is display only: the server does not yet take region into account.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. **The C# edits were not compiled or run** (no `dotnet`, and `dotnet test` is barred). Run `dotnet build` in `server/` first.
+
+## 8. Things I am least sure about
 
 - The "Done" marks from the first edition (see section 1).
 - Whether `Placeholder` is still reachable (G6 checks).

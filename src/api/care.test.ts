@@ -217,7 +217,7 @@ describe('privacy centre (SEC-03, SEC-04, ACT-06)', () => {
     s.at('2027-04-28', '09:00')
     const later = await s.api.privacy.view()
     expect(later.deleted).toHaveLength(1)
-    expect(later.deleted[0].kinds.sort()).toEqual(['ci-guest', 'documents'])
+    expect(later.deleted[0].kinds.sort()).toEqual(['ci-guest', 'documents', 'message'])
     expect((await s.api.privacy.view()).deleted).toHaveLength(1)
     expect(later.access.some((a) => a.action === 'deleted')).toBe(true)
   })

@@ -436,6 +436,7 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
                 "documents" => "DELETE FROM dbo.GuestDocuments WHERE UserId IN @guestUserIds",
                 "illness" => "DELETE FROM dbo.HealthReports WHERE BookingId = @bookingId",
                 "clubReg" => "DELETE FROM dbo.ClubRegistrations WHERE BookingId = @bookingId",
+                "message" => "DELETE FROM dbo.ChatMessages WHERE FromUserId IN @guestUserIds",
                 _ => throw new InvalidOperationException($"Unknown retention kind {kind}"),
             };
             await c.ExecuteAsync(Sql.Cmd(sql, new { bookingId, guestUserIds }, tx, ct));
