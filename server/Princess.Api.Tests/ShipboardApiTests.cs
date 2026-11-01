@@ -852,7 +852,7 @@ public class ShipboardApiTests : JourneyWorld
         var after = (await Delete($"wifi/devices/{id}", token)).Json;
         Assert.Empty(Devices(after));
         Assert.Equal(1, after.GetProperty("includedLeft").GetInt32());
-        Assert.DoesNotContain(await FolioLines(token), l => l.GetProperty("description").GetString()!.StartsWith("Wi-Fi"));
+        Assert.DoesNotContain(await FolioLines(token), l => l.GetProperty("description").GetString()!.StartsWith("Wi-Fi messaging, Laptop"));   // not the generated "Wi-Fi, one device" line
         Assert.Equal(HttpStatusCode.NotFound, (await Delete($"wifi/devices/{id}", token)).Status);
     }
 

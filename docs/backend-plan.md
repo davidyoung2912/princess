@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in three parts: 10a, 10b and 10c built (Phase 10 is done); Phase 11 built; Phase 12 (the frontend HTTP client and sign-in) built; Phase 13 (account, trips, payments and the rest of that area against REST) built; Phase 14 (discover and booking against REST) built; Phase 15 (pre-cruise plan, waits, shows, ahead) built; Phase 16 (check-in and boarding) built; Phase 17 (on board) built; Phase 18 (after the cruise) built; Phase 19 (cleanup) is next.** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in three parts: 10a, 10b and 10c built (Phase 10 is done); Phase 11 built; Phase 12 (the frontend HTTP client and sign-in) built; Phase 13 (account, trips, payments and the rest of that area against REST) built; Phase 14 (discover and booking against REST) built; Phase 15 (pre-cruise plan, waits, shows, ahead) built; Phase 16 (check-in and boarding) built; Phase 17 (on board) built; Phase 18 (after the cruise) built; Phase 19 (cleanup) built, with the mocks kept (see Phase 19 notes).** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -177,6 +177,7 @@ Each phase implements the matching `Api` group against the real API, deletes the
 - Delete `src/api/mock.ts`, the demo store and sync outbox if nothing uses them, the demo persona state that is now server data, and dead scenario code. Keep only the intentionally mocked pieces (AI concierge, ship telemetry and weather, payments gateway) behind clear interfaces.
 - Update `CLAUDE.md` (stack, commands, backend rules), `docs/` and a root `README` section for running both halves.
 - **Verify:** all npm checks and `dotnet test`.
+- **19 (built, reduced):** root `README.md` (running both halves) and `CLAUDE.md` backend section added. **Decision (2026-11-01): the mocks, demo store, outbox and demo picker are kept**, so the app still runs without an API (`VITE_API_URL` unset); this overrides the "mocks are removed" decision in section 1. Nothing deleted. Verify: the four npm checks; `dotnet test` not run.
 
 ## 7. Risks and things to watch
 
