@@ -1,5 +1,6 @@
 import { createMockApi } from '../api/mock'
 import type { Api } from '../api/types'
+import { createHttpAuthProvider } from '../auth/httpProvider'
 import { createMockAuthProvider } from '../auth/mockProvider'
 import type { AuthProvider } from '../auth/provider'
 import { deleteDatabase, openStore } from '../data/idbStore'
@@ -33,7 +34,13 @@ const lazyStore: DataStore = {
   close: () => { void opening?.then((s) => s.close()) },
 }
 
-export const auth: AuthProvider = createMockAuthProvider({ session: session(), local: local(), channel })
+/** Set `VITE_API_URL` (for example `/api/v1`, served by the Vite proxy) to sign in against the real API; otherwise the demo picker is used. */
+export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? ''
+export const usesRealAuth = API_URL !== ''
+
+export const auth: AuthProvider = usesRealAuth
+  ? createHttpAuthProvider({ baseUrl: API_URL, storage: session(), channel })
+  : createMockAuthProvider({ session: session(), local: local(), channel })
 
 export const api: Api = createMockApi({
   store: lazyStore,
@@ -46,6 +53,11 @@ export const api: Api = createMockApi({
 export async function startRuntime(): Promise<void> {
   watchOtherTabs()
   auth.subscribe(() => switchSettingsOwner(personaById(auth.current()?.personaId) ?? null))
+  if (usesRealAuth) {
+    await auth.restore()
+    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null)
+    return
+  }
   if (!auth.current()) await auth.signIn({ method: 'demo', personaId: DEFAULT_PERSONA })
   else switchSettingsOwner(personaById(auth.current()!.personaId) ?? null)
 }

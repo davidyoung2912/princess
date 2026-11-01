@@ -3,6 +3,7 @@ import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
 import { Placeholder } from './ui/Placeholder'
 import { Shell } from './ui/Shell'
+import { SignInGate } from './ui/SignInScreen'
 import { ROUTES } from './routes/routes'
 
 /** Every screen, built from the route table, inside the shell. Separate from the router so tests can render it in memory. */
@@ -24,7 +25,9 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <SignInGate>
+        <AppRoutes />
+      </SignInGate>
     </BrowserRouter>
   )
 }

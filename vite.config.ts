@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import { loadEnv } from 'vite'
 import { defineConfig, type Plugin } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -30,7 +31,8 @@ const contentSecurityPolicy = (): Plugin => ({
 })
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  server: { proxy: { '/api': { target: loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182', changeOrigin: true } } },
   plugins: [
     react(),
     contentSecurityPolicy(),
@@ -55,4 +57,4 @@ export default defineConfig({
     }),
   ],
   test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'] },
-})
+}))

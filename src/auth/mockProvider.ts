@@ -44,6 +44,8 @@ export function createMockAuthProvider(opts: MockAuthOptions): AuthProvider {
     methods: ['demo'],
     identities: () => PERSONAS.map((p) => p.id),
     current: () => current,
+    accessToken: () => null,
+    restore: async () => current !== null,
     async signIn(c: Credentials) {
       if (c.method !== 'demo') throw new AuthError('unsupportedMethod')
       if (!isPersonaId(c.personaId)) throw new AuthError('unknownIdentity')
@@ -51,7 +53,7 @@ export function createMockAuthProvider(opts: MockAuthOptions): AuthProvider {
       current = session
       try {
         opts.session?.setItem(SESSION_KEY, JSON.stringify(session))
-        opts.local?.setItem(LAST_PERSONA_KEY, session.personaId)
+        opts.local?.setItem(LAST_PERSONA_KEY, c.personaId)
       } catch { /* storage full or blocked: the session still works for this page */ }
       notify()
       opts.channel?.post({ type: 'session' })

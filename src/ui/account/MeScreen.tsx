@@ -1,10 +1,11 @@
 import { Link } from 'react-router'
 import { sailingRange } from '../../domain/cruise'
 import { sailingById } from '../../domain/sailings'
-import { api } from '../../runtime'
+import { api, auth, usesRealAuth } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
+import { Button } from '../Button'
 import { Card } from '../Card'
 import { ConceptNotice } from '../ConceptNotice'
 import { countdown, formatMoment } from './format'
@@ -36,6 +37,8 @@ export function MeScreen() {
           <p className="muted">{me.tier === 'none' ? t('me.noTier') : t('me.tier', { tier: t(`me.tier.${me.tier}` as StringKey) })}</p>
         </Card>
       )}
+
+      {usesRealAuth && <p><Button variant="secondary" onClick={() => void auth.signOut()}>{t('signin.signOut')}</Button></p>}
 
       <section aria-labelledby="me-trip-h">
         <h2 id="me-trip-h">{t('me.yourTrip')}</h2>

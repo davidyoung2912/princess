@@ -1,4 +1,4 @@
-import { auth } from '../runtime'
+import { auth, usesRealAuth } from '../runtime'
 import { setNetwork, setSpeed, stepBy, jumpToStage, toggleScenario, updateDemo } from '../demo/store'
 import { CLOCK_SPEEDS, PHONE_ZONES } from '../domain/clock'
 import { PERSONAS, type PersonaGroup } from '../domain/personas'
@@ -36,7 +36,8 @@ export function DemoScreen() {
       <Card labelledBy="demo-persona-h">
         <h2 id="demo-persona-h">{t('demo.persona.title')}</h2>
         {persona && <p aria-live="polite">{t('demo.persona.current', { name: persona.name })}</p>}
-        {GROUPS.map((group) => (
+        {usesRealAuth && <p>{t('demo.persona.real')}</p>}
+        {!usesRealAuth && GROUPS.map((group) => (
           <fieldset key={group}>
             <legend>{t(`demo.persona.group.${group}` as StringKey)}</legend>
             {PERSONAS.filter((p) => p.group === group).map((p) => (
