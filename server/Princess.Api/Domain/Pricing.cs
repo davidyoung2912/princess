@@ -57,6 +57,15 @@ public static class Pricing
         ["sun-2027-03-21"] = 189_900,
     };
 
+    /// <summary>Departures not yet open for booking. They can be held after a cruise (POS-06) and priced, but are not offered by Discover or Booking.</summary>
+    private static readonly Dictionary<string, long> NextSeasonFare = new()
+    {
+        ["sun-2027-11-07"] = 164_900,
+        ["sun-2027-11-21"] = 169_900,
+        ["sun-2027-12-05"] = 167_900,
+        ["sun-2028-01-09"] = 179_900,
+    };
+
     public static readonly IReadOnlyList<RoomCategory> Categories =
     [
         new("interior", "Interior", 1, false, 4),
@@ -88,7 +97,7 @@ public static class Pricing
     public static long? FareFor(string sailingId, string category)
     {
         var cat = Category(category);
-        return !InteriorFare.TryGetValue(sailingId, out var baseFare) || cat is null ? null : RoundToDollar(baseFare * cat.Ratio);
+        return !(InteriorFare.TryGetValue(sailingId, out var baseFare) || NextSeasonFare.TryGetValue(sailingId, out baseFare)) || cat is null ? null : RoundToDollar(baseFare * cat.Ratio);
     }
 
     /// <summary>The Sanctuary Mini-Suite and Signature Suite include the Premier package in their fare.</summary>

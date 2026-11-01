@@ -8,6 +8,7 @@
 import { readFileSync } from 'node:fs'
 import { buildTables, FILE_TITLES, renderFile, type Table } from './reference-seed.ts'
 import { SAILINGS } from '../src/domain/sailings.ts'
+import { FUTURE_DEPARTURES } from '../src/domain/pricing.ts'
 import { EXCURSIONS } from '../src/domain/excursions.ts'
 import { EVENTS } from '../src/domain/program.ts'
 import { VENUES } from '../src/domain/dining.ts'
@@ -131,7 +132,7 @@ const count = (name: string, expected: number) => {
   const got = byName.get(name)?.rows.length
   if (got !== expected) fail(`${name} has ${got} rows, the source has ${expected}`)
 }
-count('ref.Sailings', SAILINGS.length)
+count('ref.Sailings', SAILINGS.length + FUTURE_DEPARTURES.length)
 count('ref.ItineraryDays', SAILINGS.length * 8)
 count('ref.Excursions', EXCURSIONS.length)
 count('ref.ExcursionDepartures', EXCURSIONS.length * SAILINGS.length)

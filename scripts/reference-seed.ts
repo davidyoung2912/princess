@@ -18,6 +18,7 @@ import { ADD_ONS, unitPrice, upgradesFrom, upgradePrice } from '../src/domain/pa
 import { computeEntitlements } from '../src/domain/entitlements.ts'
 import { INCLUDED_WITH_PREMIER, PHOTOGRAPHERS, PRICES, SPOTS } from '../src/domain/photos.ts'
 import { CREW, DESK, deskTimes } from '../src/domain/postcruise.ts'
+import { FUTURE_DEPARTURES } from '../src/domain/pricing.ts'
 import { ADVISORS } from '../src/domain/ahead.ts'
 import { CLUBS } from '../src/domain/family.ts'
 import { FAQS } from '../src/domain/help.ts'
@@ -91,7 +92,9 @@ export function buildTables(): Table[] {
 
   add('02-itinerary', 'ref.Sailings', ['Id'],
     [t('Id', 'str'), t('ShipId', 'str'), t('Departure', 'date'), t('Nights', 'int'), t('IsHoliday', 'bit'), t('IsReference', 'bit'), t('Title', 'str'), t('BookingOpen', 'bit')],
-    SAILINGS.map((s) => [s.id, SHIP_ID, s.departure, 7, !!s.holiday, !!s.reference, `${s.holiday ? 'Holiday ' : ''}Western Caribbean, 7 nights from Fort Lauderdale, ${s.departure}`, true]))
+    [...SAILINGS.map((s) => [s.id, SHIP_ID, s.departure, 7, !!s.holiday, !!s.reference, `${s.holiday ? 'Holiday ' : ''}Western Caribbean, 7 nights from Fort Lauderdale, ${s.departure}`, true] as Cell[]),
+      // Next season: can be held after a cruise (POS-06, RebookHolds.SailingId) but is not open for booking.
+      ...FUTURE_DEPARTURES.map((f) => [f.id, SHIP_ID, f.departure, 7, false, false, `Western Caribbean, 7 nights from Fort Lauderdale, ${f.departure}`, false] as Cell[])])
 
   add('02-itinerary', 'ref.ItineraryDays', ['SailingId', 'Day'],
     [t('SailingId', 'str'), t('Day', 'int'), t('Date', 'date'), t('PortId', 'str'), t('ArriveLocal', 'time'), t('DepartLocal', 'time'), t('AllAboardLocal', 'time'), t('ClockChangeHours', 'int'), t('ClockChangeAtLocal', 'time')],

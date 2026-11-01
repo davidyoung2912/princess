@@ -347,6 +347,58 @@ public class SwaggerCoverageTests : IDisposable
         Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
     }
 
+    /// <summary>Phase 11 (data model 6.6: disembarkation, cases, the trip history, feedback, loyalty, rebooking); all need a sign-in.</summary>
+    public static TheoryData<string, string> FinishRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/disembark" },
+        { "put", "/api/v1/bookings/{number}/disembark/choice" },
+        { "put", "/api/v1/bookings/{number}/disembark/tags" },
+        { "get", "/api/v1/bookings/{number}/disembark/customs" },
+        { "put", "/api/v1/bookings/{number}/disembark/customs" },
+        { "get", "/api/v1/bookings/{number}/disembark/onward" },
+        { "put", "/api/v1/bookings/{number}/disembark/onward" },
+        { "get", "/api/v1/bookings/{number}/disembark/night" },
+        { "put", "/api/v1/bookings/{number}/disembark/night/{id}" },
+        { "get", "/api/v1/bookings/{number}/disembark/final-bill" },
+        { "put", "/api/v1/bookings/{number}/disembark/final-bill/tip" },
+        { "post", "/api/v1/bookings/{number}/disembark/final-bill/email" },
+        { "get", "/api/v1/bookings/{number}/cases" },
+        { "post", "/api/v1/bookings/{number}/cases" },
+        { "delete", "/api/v1/bookings/{number}/cases/{id}" },
+        { "get", "/api/v1/bookings/{number}/history" },
+        { "get", "/api/v1/bookings/{number}/post-feedback" },
+        { "put", "/api/v1/bookings/{number}/post-feedback" },
+        { "get", "/api/v1/me/loyalty-summary" },
+        { "get", "/api/v1/bookings/{number}/rebook" },
+        { "post", "/api/v1/bookings/{number}/rebook/holds" },
+        { "delete", "/api/v1/bookings/{number}/rebook/holds/{id}" },
+        { "post", "/api/v1/bookings/{number}/rebook/convert-fcc" },
+        { "post", "/api/v1/bookings/{number}/rebook/appointment" },
+        { "delete", "/api/v1/bookings/{number}/rebook/appointment" },
+    };
+
+    [Theory]
+    [MemberData(nameof(FinishRoutes))]
+    public async Task EveryPhaseElevenRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task FinishRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in FinishRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString());
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
     [Fact]
     public async Task AboardRoutesRefuseAnonymousCallers()
     {

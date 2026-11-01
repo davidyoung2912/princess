@@ -288,3 +288,34 @@ curl -s -X POST $B/api/v1/me/chat/messages -H "$H" -H "$J" -d '{"text":"Hello"}'
 ```
 
 Check that `dbo.Selections`, `dbo.ServiceRequests`, `dbo.DrinkLogs`, `dbo.TopUps`, `dbo.OnboardAccount` (a salted `PinHash`), `dbo.Parties`, `dbo.PartyInvites`, `dbo.TvState`, `dbo.TourBookings` (`Source = onboard`), `dbo.ChatGroups`, `dbo.ChatGroupMembers` and `dbo.ChatMessages` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `selection`, `topup`, `gratuity` and `tour`. None of `DapperAboardStore` or `DapperChatStore` has touched SQL Server yet. Requests need `ref.ServiceItems` and drinks need `ref.Drinks` seeded.
+
+## Phase 11 endpoints
+
+After the cruise: 25 routes, listed in `docs/backend-data-model.md` section 6.6 and in Swagger (tags `Disembarkation`, `Cases`, `After the cruise`, `Rebooking`). Under `/bookings/{number}`: `disembark` (GET), `PUT disembark/choice`, `PUT disembark/tags`, `disembark/customs` (GET, PUT), `disembark/onward` (GET, PUT), `disembark/night` (GET), `PUT disembark/night/{id}`, `disembark/final-bill` (GET), `PUT disembark/final-bill/tip`, `POST disembark/final-bill/email`; `cases` (GET, POST, `DELETE {id}`); `history`; `post-feedback` (GET, PUT); `rebook` (GET), `POST rebook/holds`, `DELETE rebook/holds/{id}`, `POST rebook/convert-fcc`, `POST` and `DELETE rebook/appointment`. Loyalty is `GET /me/loyalty-summary`.
+
+Rules are ported to `DisembarkRules` and `PostCruiseRules`. **More writes to `dbo.FolioLines`**: the gratuity adjustment (`tip`), a future cruise credit changed to onboard credit (`fcc`) and the onboard credit that comes with a hold (`hold`). **Reference data**: `ref.Sailings` now also holds the four next-season departures (`BookingOpen = 0`), because `dbo.RebookHolds.SailingId` references it; re-run `db/seed/reference` (or `db/reset-db.ps1`). Discover, booking and `GET /sailings` still list only the priced, bookable sailings. The Future Cruise Desk slots in `ref.DeskSlots` are ship wall-clock times, as seeded.
+
+## Smoke calls for Phase 11 (run against your database)
+
+Use a persona on the last evening (set the demo clock to about 12:00 on day 7), signed in as an adult, then Grace Imani (`grace@demo.princess.example`) for the post-cruise ones.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s $N/disembark -H "$H"                                                      # note a guest's id for the bags
+curl -s -X PUT $N/disembark/choice -H "$H" -H "$J" -d '{"option":"tagged","bags":{"<guest guid>":2}}'
+curl -s -X PUT $N/disembark/tags -H "$H" -H "$J" -d '{"on":true}'
+curl -s -X PUT $N/disembark/customs -H "$H" -H "$J" -d '{"food":false,"cash":false,"goodsUsd":0,"note":""}'
+curl -s -X PUT $N/disembark/onward -H "$H" -H "$J" -d '{"mode":"rideshare","flightAt":"14:30","flight":"UA 482","note":""}'
+curl -s $N/disembark/night -H "$H"; curl -s -X PUT $N/disembark/night/carryOn -H "$H" -H "$J" -d '{"done":true}'
+curl -s -X PUT $N/disembark/final-bill/tip -H "$H" -H "$J" -d '{"keepPercent":50}'; curl -s -X POST $N/disembark/final-bill/email -H "$H"
+curl -s -X POST $N/cases -H "$H" -H "$J" -d '{"kind":"lostItem","summary":"Blue scarf left in the theatre","place":"Princess Theater","lineId":"","cents":0}'
+curl -s -X POST $N/rebook/holds -H "$H" -H "$J" -d '{"departureId":"sun-2027-11-07"}'; curl -s $N/rebook -H "$H"
+curl -s -X POST $N/rebook/appointment -H "$H" -H "$J" -d '{"at":<epoch ms of a slot in "slots">}'
+curl -s $N/onboard/folio -H "$H"                                                  # the tip, hold credit and conversion lines
+curl -s $N/history -H "$H"; curl -s -X PUT $N/post-feedback -H "$H" -H "$J" -d '{"overall":2,"areas":{"dining":2},"comment":"The cabin was never cleaned.","crew":[],"allowContact":true,"shareName":false}'
+curl -s $B/api/v1/me/loyalty-summary -H "$H"
+```
+
+Check that `dbo.DisembarkChoices` and `dbo.DisembarkBags`, `dbo.Customs`, `dbo.OnwardPlans`, `dbo.NightTicks`, `dbo.FinalBill`, `dbo.Cases` (a `recovery` row with `FromFeedback = 1` after the poor feedback), `dbo.PostFeedback`, `dbo.RebookHolds` and `dbo.DeskAppointments` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `tip`, `hold` and `fcc`. Stored rows from the persona scripts are read as far as they fit (a customs declaration with `goods`, an onward `Mode` of `flight`, feedback with the area scores at the top level). None of `DapperFinishStore` has touched SQL Server yet.
+
+`npm run api:check` (Node, no server needed) compares every method of the TypeScript `Api` interface with the rows of section 6; `ApiSurfaceTests` compares the routes those rows state in full with the OpenAPI document.

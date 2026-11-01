@@ -22,7 +22,7 @@ WHEN MATCHED THEN UPDATE SET t.[Name] = s.[Name], t.[Country] = s.[Country], t.[
 WHEN NOT MATCHED THEN INSERT ([Id], [Name], [Country], [TimeZone], [Tender], [EntryNote], [Contacts]) VALUES (s.[Id], s.[Name], s.[Country], s.[TimeZone], s.[Tender], s.[EntryNote], s.[Contacts]);
 GO
 
--- ref.Sailings: 8 rows
+-- ref.Sailings: 12 rows
 MERGE ref.Sailings AS t
 USING (VALUES
   (N'sun-2026-11-08', N'sun-princess', CAST('2026-11-08' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2026-11-08', 1),
@@ -32,7 +32,11 @@ USING (VALUES
   (N'sun-2027-01-17', N'sun-princess', CAST('2027-01-17' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-01-17', 1),
   (N'sun-2027-02-07', N'sun-princess', CAST('2027-02-07' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-02-07', 1),
   (N'sun-2027-02-28', N'sun-princess', CAST('2027-02-28' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-02-28', 1),
-  (N'sun-2027-03-21', N'sun-princess', CAST('2027-03-21' AS DATE), 7, 0, 1, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-03-21', 1)
+  (N'sun-2027-03-21', N'sun-princess', CAST('2027-03-21' AS DATE), 7, 0, 1, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-03-21', 1),
+  (N'sun-2027-11-07', N'sun-princess', CAST('2027-11-07' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-07', 0),
+  (N'sun-2027-11-21', N'sun-princess', CAST('2027-11-21' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-11-21', 0),
+  (N'sun-2027-12-05', N'sun-princess', CAST('2027-12-05' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2027-12-05', 0),
+  (N'sun-2028-01-09', N'sun-princess', CAST('2028-01-09' AS DATE), 7, 0, 0, N'Western Caribbean, 7 nights from Fort Lauderdale, 2028-01-09', 0)
 ) AS s ([Id], [ShipId], [Departure], [Nights], [IsHoliday], [IsReference], [Title], [BookingOpen])
 ON t.[Id] = s.[Id]
 WHEN MATCHED THEN UPDATE SET t.[ShipId] = s.[ShipId], t.[Departure] = s.[Departure], t.[Nights] = s.[Nights], t.[IsHoliday] = s.[IsHoliday], t.[IsReference] = s.[IsReference], t.[Title] = s.[Title], t.[BookingOpen] = s.[BookingOpen]

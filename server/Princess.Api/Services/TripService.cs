@@ -110,7 +110,7 @@ public sealed class TripService(AccessService access, ITripStore trips, IAccount
     }
 
     public async Task<List<SailingDto>> SailingsAsync(CancellationToken ct) =>
-        (await trips.ListSailingsAsync(ct)).Select(s => new SailingDto(s.Id, Iso(D(s.Departure)), s.IsHoliday, s.IsReference)).ToList();
+        (await trips.ListSailingsAsync(ct)).Where(s => Pricing.HasPrice(s.Id)).Select(s => new SailingDto(s.Id, Iso(D(s.Departure)), s.IsHoliday, s.IsReference)).ToList();
 
     // ---- Payments ----
 

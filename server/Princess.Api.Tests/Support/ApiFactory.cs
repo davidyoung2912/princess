@@ -23,6 +23,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryShipboardStore Shipboard { get; }
     public InMemoryAboardStore Aboard { get; }
     public InMemoryChatStore Chat { get; }
+    public InMemoryFinishStore Finish { get; }
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -35,6 +36,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         Shipboard = new InMemoryShipboardStore(Onboard);
         Aboard = new InMemoryAboardStore(Shipboard, Plan);
         Chat = new InMemoryChatStore(Users);
+        Finish = new InMemoryFinishStore(Shipboard);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -63,6 +65,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IShipboardStore>();
             services.RemoveAll<IAboardStore>();
             services.RemoveAll<IChatStore>();
+            services.RemoveAll<IFinishStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
@@ -80,6 +83,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IShipboardStore>(Shipboard);
             services.AddSingleton<IAboardStore>(Aboard);
             services.AddSingleton<IChatStore>(Chat);
+            services.AddSingleton<IFinishStore>(Finish);
             services.AddSingleton<IClock>(Clock);
         });
     }
