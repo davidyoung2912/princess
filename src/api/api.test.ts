@@ -131,12 +131,6 @@ describe('mock API behaviour', () => {
     s.as('gerald')
     expect(await s.api.messages.list()).toEqual([])
   })
-  it('reschedules only reservations that exist', async () => {
-    const s = setup()
-    expect(await failure(s.api.dining.reschedule('nope', '19:00'))).toMatchObject({ code: 'notFound' })
-    await s.store.put({ kind: 'dining', owner: 'gerald', id: 'd1', updatedAt: 1, data: { venue: 'Crown Grill', time: '18:00' } })
-    expect((await s.api.dining.reschedule('d1', '19:30')).data).toEqual({ venue: 'Crown Grill', time: '19:30' })
-  })
   it('tells the entitlement engine’s story for the signed-in person', async () => {
     const s = setup({}, 'alexander')
     const { entitlements, balances } = await s.api.folio.entitlements()
@@ -149,7 +143,7 @@ describe('mock API behaviour', () => {
   })
   it('exposes the same groups the contract promises', () => {
     const { api } = setup()
-    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'dining', 'queues', 'orders', 'messages', 'photos', 'folio', 'requests', 'ports', 'onboard', 'service', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help', 'family', 'health', 'room', 'laundry', 'wifi', 'disembark', 'cases', 'post', 'budget', 'shows', 'waits', 'updates', 'privacy', 'aboard', 'ahead']
+    const groups: (keyof Api)[] = ['auth', 'bookings', 'checkin', 'boarding', 'orders', 'messages', 'photos', 'folio', 'ports', 'onboard', 'service', 'discover', 'account', 'trips', 'payments', 'documents', 'notifications', 'support', 'booking', 'plan', 'help', 'family', 'health', 'room', 'laundry', 'wifi', 'disembark', 'cases', 'post', 'budget', 'shows', 'waits', 'updates', 'privacy', 'aboard', 'ahead']
     expect(Object.keys(api).sort()).toEqual([...groups].sort())
   })
   it('classes errors', () => {

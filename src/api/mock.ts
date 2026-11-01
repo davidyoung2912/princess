@@ -282,15 +282,6 @@ export function createMockApi(ctx: MockContext): Api {
         return view
       },
     },
-    dining: {
-      list: () => run('dining.list', () => mine('dining')),
-      reschedule: (id, to) => run('dining.reschedule', async () => {
-        const existing = await ctx.store.get('dining', who(), id)
-        if (!existing) throw new ApiError('notFound')
-        return save('dining', who(), id, { ...(existing.data as object), time: to })
-      }),
-    },
-    queues: { list: () => run('queues.list', () => mine('queue')) },
     orders: extras.orders,
     family: extras.family,
     health: extras.health,
@@ -341,10 +332,6 @@ export function createMockApi(ctx: MockContext): Api {
     photos: extras.photos,
     folio: {
       entitlements: () => run('folio.entitlements', () => plan.entitlementsOf(who())),
-    },
-    requests: {
-      list: () => run('requests.list', () => mine('request')),
-      create: (kind, note) => run('requests.create', () => save('request', who(), newId('req'), { kind, note, status: 'received' })),
     },
     ports: {
       today: () => run('ports.today', () => portAt(sailingById(ctx.demo().sailingId)!, now())),

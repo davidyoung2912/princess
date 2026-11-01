@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 import { screen, type Screen } from './screen'
 import { HomeScreen } from './ui/home/HomeScreen'
 
-/** Screens that already exist, loaded on first visit so the first load carries only Home and the shell; every other route shows its placeholder. */
+/** Screens that already exist, loaded on first visit so the first load carries only Home and the shell; a test checks that every route has one. */
 export const SCREENS: Record<string, ComponentType | Screen> = {
   '/': HomeScreen,
   '/home/boarding-pass': screen(() => import('./ui/boarding/PassScreen'), 'PassScreen'),
@@ -19,11 +19,13 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/home/disembark/final-night': screen(() => import('./ui/finish/FinalNightScreen'), 'FinalNightScreen'),
   '/home/concierge': screen(() => import('./ui/ai/ConciergeScreen'), 'ConciergeScreen'),
   '/home/cruise': screen(() => import('./ui/discover/CruiseScreen'), 'CruiseScreen'),
+  '/home/cruise/cost': screen(() => import('./ui/discover/TripCostScreen'), 'TripCostScreen'),
   '/home/sailings': screen(() => import('./ui/discover/SailingsScreen'), 'SailingsScreen'),
   '/home/sailings/:id': screen(() => import('./ui/discover/SailingScreen'), 'SailingScreen'),
   '/home/ports/:id': screen(() => import('./ui/discover/PortScreen'), 'PortScreen'),
   '/home/ship': screen(() => import('./ui/discover/ShipScreen'), 'ShipScreen'),
   '/home/saved': screen(() => import('./ui/discover/SavedScreen'), 'SavedScreen'),
+  '/plan/party': screen(() => import('./ui/party/PartyScreen'), 'PartyScreen'),
   '/plan': screen(() => import('./ui/plan/PlanScreen'), 'PlanScreen'),
   '/plan/day': screen(() => import('./ui/ai/DayScreen'), 'DayScreen'),
   '/plan/reservations': screen(() => import('./ui/onboard/ReservationsScreen'), 'ReservationsScreen'),

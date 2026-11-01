@@ -60,6 +60,7 @@ export function SailingScreen() {
           <PriceState state={quote}>{quote.data && <PriceBreakdown quote={quote.data} />}</PriceState>
         </div>
         <Card info><p>{t('discover.estimateNote')}</p></Card>
+        <p><Link to="/home/cruise/cost">{t('cost.link')}</Link></p>
       </section>
 
       <section aria-labelledby="plan-h">

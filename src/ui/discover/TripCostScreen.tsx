@@ -1,0 +1,144 @@
+import { useState } from 'react'
+import { Link } from 'react-router'
+import { EXCURSIONS } from '../../domain/excursions'
+import { formatMoney, MAX_GUESTS, parseMoney } from '../../domain/pricing'
+import { fareName, MAX_DINNERS, tripCost, type CostKey } from '../../domain/tripCost'
+import { sailingById, SAILINGS } from '../../domain/sailings'
+import { CATEGORIES, type CategoryId } from '../../domain/ship'
+import { zonedToEpoch } from '../../domain/timezones'
+import { useNow, useSailing } from '../../hooks/useDemo'
+import { t, type StringKey } from '../../i18n'
+import { Card } from '../Card'
+import { Field } from '../Field'
+
+const DAY = 86_400_000
+
+/** Whole-trip cost (DIS-12): the cruise, the extras the guest expects to want, and the money spent around it, compared across the fares. */
+export function TripCostScreen() {
+  const demoSailing = useSailing()
+  const now = useNow()
+  const [sailingId, setSailingId] = useState(demoSailing.id)
+  const [category, setCategory] = useState<CategoryId>('balcony')
+  const [guests, setGuests] = useState(2)
+  const [adults, setAdults] = useState(2)
+  const [drinks, setDrinks] = useState(false)
+  const [wifi, setWifi] = useState(false)
+  const [dinners, setDinners] = useState(0)
+  const [picked, setPicked] = useState<string[]>([])
+  const [text, setText] = useState({ flights: '', hotel: '', other: '' })
+
+  const sailing = sailingById(sailingId)!
+  const days = Math.max(0, Math.ceil((zonedToEpoch(sailing.departure, '00:00', 'America/New_York') - now) / DAY))
+  const amounts = (['flights', 'hotel', 'other'] as const).map((k) => [k, text[k].trim() === '' ? 0 : parseMoney(text[k])] as const)
+  const bad = (k: 'flights' | 'hotel' | 'other') => amounts.find(([key]) => key === k)![1] === null
+  const money = (k: 'flights' | 'hotel' | 'other') => amounts.find(([key]) => key === k)![1] ?? 0
+  const cost = tripCost({ sailingId, category, guests, adults: Math.min(adults, guests), daysToDeparture: days, drinks, wifi, dinners, excursionIds: picked, flights: money('flights'), hotel: money('hotel'), other: money('other') })
+  const rows = cost ? [...new Set(cost.options.flatMap((o) => o.lines.map((l) => l.key)))] as CostKey[] : []
+  const order: CostKey[] = ['cruise', 'gratuities', 'package', 'drinks', 'wifi', 'dining', 'excursions', 'excursionCredit', 'flights', 'hotel', 'other']
+  rows.sort((a, b) => order.indexOf(a) - order.indexOf(b))
+  const cents = (fare: string, key: CostKey) => cost!.options.find((o) => o.fare === fare)!.lines.find((l) => l.key === key)?.cents
+
+  return (
+    <div className="page">
+      <h1>{t('route.tripCost')}</h1>
+      <p>{t('cost.intro')}</p>
+
+      <Card>
+        <div className="field">
+          <label htmlFor="cost-sailing">{t('cost.sailing')}</label>
+          <select id="cost-sailing" value={sailingId} onChange={(e) => setSailingId(e.target.value)}>
+            {SAILINGS.map((s) => <option key={s.id} value={s.id}>{s.departure}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="cost-room">{t('cost.room')}</label>
+          <select id="cost-room" value={category} onChange={(e) => setCategory(e.target.value as CategoryId)}>
+            {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="cost-guests">{t('cost.guests')}</label>
+          <select id="cost-guests" value={guests} onChange={(e) => { const n = Number(e.target.value); setGuests(n); setAdults(Math.min(adults, n)) }}>
+            {Array.from({ length: MAX_GUESTS }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="cost-adults">{t('cost.adults')}</label>
+          <p className="field__hint">{t('cost.adults.hint')}</p>
+          <select id="cost-adults" value={Math.min(adults, guests)} onChange={(e) => setAdults(Number(e.target.value))}>
+            {Array.from({ length: guests + 1 }, (_, i) => i).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+      </Card>
+
+      <section aria-labelledby="cost-wants-h">
+        <h2 id="cost-wants-h">{t('cost.wants')}</h2>
+        <div className="field">
+          <label><input type="checkbox" checked={drinks} onChange={(e) => setDrinks(e.target.checked)} /> {t('cost.drinks')}</label>
+        </div>
+        <div className="field">
+          <label><input type="checkbox" checked={wifi} onChange={(e) => setWifi(e.target.checked)} /> {t('cost.wifi')}</label>
+        </div>
+        <div className="field">
+          <label htmlFor="cost-dinners">{t('cost.dinners')}</label>
+          <select id="cost-dinners" value={dinners} onChange={(e) => setDinners(Number(e.target.value))}>
+            {Array.from({ length: MAX_DINNERS + 1 }, (_, i) => i).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <fieldset className="field">
+          <legend>{t('cost.excursions')}</legend>
+          {EXCURSIONS.map((x) => (
+            <label key={x.id} className="check-row">
+              <input type="checkbox" checked={picked.includes(x.id)} onChange={(e) => setPicked(e.target.checked ? [...picked, x.id] : picked.filter((id) => id !== x.id))} /> {x.name} <span className="muted">{formatMoney(x.price)}</span>
+            </label>
+          ))}
+        </fieldset>
+      </section>
+
+      <section aria-labelledby="cost-out-h">
+        <h2 id="cost-out-h">{t('cost.outside')}</h2>
+        <p className="muted">{t('cost.outside.hint')}</p>
+        {(['flights', 'hotel', 'other'] as const).map((k) => (
+          <Field key={k} label={t(`cost.${k}` as StringKey)} inputMode="numeric" value={text[k]} onChange={(e) => setText({ ...text, [k]: e.target.value })} error={bad(k) ? t('cost.bad') : undefined} />
+        ))}
+      </section>
+
+      <section aria-labelledby="cost-cmp-h" aria-live="polite">
+        <h2 id="cost-cmp-h">{t('cost.compare')}</h2>
+        {!cost ? <p role="status">{t('cost.notFound')}</p> : (
+          <>
+            <Card info>
+              <p><strong>{t('cost.cheapest', { fare: fareName(cost.cheapest) })}</strong></p>
+              <p>{cost.savingVsStandard > 0 ? t('cost.saving', { fare: fareName(cost.cheapest), amount: formatMoney(cost.savingVsStandard) }) : t('cost.noSaving')}</p>
+            </Card>
+            <table className="cost-table">
+              <caption className="visually-hidden">{t('cost.table')}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t('cost.item')}</th>
+                  {cost.options.map((o) => <th key={o.fare} scope="col">{fareName(o.fare)}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((key) => (
+                  <tr key={key}>
+                    <th scope="row">{t(`cost.line.${key}` as StringKey)}</th>
+                    {cost.options.map((o) => { const c = cents(o.fare, key); return <td key={o.fare}>{c === undefined ? '–' : formatMoney(c)}</td> })}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">{t('cost.total')}</th>
+                  {cost.options.map((o) => <td key={o.fare}><strong>{formatMoney(o.total)}</strong><br /><span className="muted">{t('cost.perPerson', { amount: formatMoney(o.perPerson) })}</span></td>)}
+                </tr>
+              </tfoot>
+            </table>
+          </>
+        )}
+        <p className="muted">{t('cost.footnote')}</p>
+        <p><Link to={`/home/sailings/${sailingId}`}>{t('route.sailing')}</Link></p>
+      </section>
+    </div>
+  )
+}

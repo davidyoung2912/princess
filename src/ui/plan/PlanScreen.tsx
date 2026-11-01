@@ -21,6 +21,8 @@ const TOOLS = [
   { to: '/plan/checklist', key: 'route.checklist' },
   { to: '/plan/packing', key: 'route.packing' },
   { to: '/plan/travel', key: 'route.travel' },
+  { to: '/plan/party', key: 'route.party' },
+  { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/plan/assistance', key: 'route.assistance' },
   { to: '/plan/ahead', key: 'route.ahead' },
   { to: '/plan/cart', key: 'route.cart' },

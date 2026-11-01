@@ -668,8 +668,6 @@ export interface Api {
     setCarryOn(item: CarryOnId, done: boolean): Promise<EmbarkView>
     setBags(dropped: boolean): Promise<EmbarkView>
   }
-  dining: { list(): Promise<Item[]>; reschedule(id: string, to: string): Promise<Item> }
-  queues: { list(): Promise<Item[]> }
   orders: OrdersApi
   messages: {
     list(): Promise<Message[]>
@@ -697,7 +695,6 @@ export interface Api {
   cases: CasesApi
   post: PostApi
   folio: { entitlements(): Promise<{ entitlements: Entitlements; balances: Record<BalanceKey, Balance> }> }
-  requests: { list(): Promise<Item[]>; create(kind: string, note: string): Promise<Item> }
   ports: { today(): Promise<PortToday> }
   onboard: OnboardApi
   service: ServiceApi

@@ -1,6 +1,6 @@
 # Functional gap analysis and plan to close it (second edition)
 
-Status: **Refreshed 2026-11-01, after backend Phase 19. The phased plan in section 5 is approved; Phase G1 is the first to be built.** This replaces the first edition (written 2026-10-29), whose phase numbers 11 to 15 collided with the backend phases of the same numbers. The new phases are named **G1 to G6** to keep them apart.
+Status: **Refreshed 2026-11-01, after backend Phase 19. The phased plan in section 5 is approved; Phases G1 to G6 are built.** This replaces the first edition (written 2026-10-29), whose phase numbers 11 to 15 collided with the backend phases of the same numbers. The new phases are named **G1 to G6** to keep them apart.
 
 ## 1. How this was done, and how far to trust it
 
@@ -52,8 +52,8 @@ Last full count (after Phase 13, 2026-10-29): Must 85 IDs with about 16 open at 
 ### Housekeeping
 
 - This file and `docs/backend-plan.md` were stale. **Done in Phase G1**: this rewrite, and the decision-table correction in `backend-plan.md` section 1 (the mocks are kept).
-- Three calls stay mock-only in REST mode (`dining.list/reschedule`, `queues.list`, the legacy `requests`). The README says no screen uses them. Delete them in G6.
-- `src/ui/Placeholder.tsx` and the `placeholder.*` strings: `App.tsx` falls back to it for a route with no screen. Check in G6 whether any route still does; delete if none.
+- Three calls stay mock-only in REST mode (`dining.list/reschedule`, `queues.list`, the legacy `requests`). The README says no screen uses them. **Done in G6.**
+- `src/ui/Placeholder.tsx` and the `placeholder.*` strings: `App.tsx` falls back to it for a route with no screen. **Done in G6**: no route lacked a screen, so it was deleted.
 
 ## 4. Still out of reach for code alone (unchanged)
 
@@ -73,7 +73,7 @@ Same rules as before: one phase at a time, tests with each, `npm run test`, `npm
 | G3 | Offers area | UX-02, CNT-02, NOT-04 | Built (see section 8) |
 | G4 | Sign-in and delivery | ACT-01 (sign-up, forgot-password, emailed code; passkey and MFA only if you ask), NOT-01 and MNG-14 (stub sender and outbox), PERF-07 and CNT-03 (error reporting and consent-based analytics) | Built (see section 9) |
 | G5 | Money and shop | ACC-03 (PIN reset), ACC-07 (exchange rates), SHP-05 (cabin delivery), POS-13 (gifting) | Built (see section 10) |
-| G6 | Planning and cleanup | DIS-12 (whole-trip cost), MNG-16 (invites, shared notes), delete the three mock-only calls and any unused placeholder | Not started |
+| G6 | Planning and cleanup | DIS-12 (whole-trip cost), MNG-16 (invites, shared notes), delete the three mock-only calls and any unused placeholder | Built (see section 11) |
 
 Each phase's notes will be added to `docs/design-language.md` (front end) or `docs/backend-plan.md` (server), and the "Status" column above updated.
 
@@ -132,8 +132,17 @@ Built 2026-11-01. All four pieces are front end and mock only; no server or REST
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code changed.
 - **Not done:** server storage for reset requests, delivery and gifts; a real rate feed; a rendered check (no browser testing by rule).
 
-## 11. Things I am least sure about
+## 11. Phase G6 notes
+
+Built 2026-11-01. Front end only; no server or REST contract changes.
+
+- **Whole-trip cost (DIS-12):** `src/domain/tripCost.ts` and `/home/cruise/cost` (linked from the sailing page and the Plan tools list). For a sailing, room type and party it prices every fare the room offers (the booking quote, plus drinks, Wi-Fi, specialty dinners and excursions the fare does not cover, less the Premier excursion credit, plus flights, hotel and other costs the guest types in) and names the cheapest and what it saves against Standard. Drinks count adults only; the specialty pass is priced per dinner (a third of the pass). Add-on prices use the days to departure, so a rising price shows. It works in both modes because it uses only the domain's price tables.
+- **Travel party (MNG-16):** `src/domain/party.ts`, `src/party/store.ts`, `useParty` and `/plan/party`. The page shows who has finished their own check-in steps (from `checkin.view`), lets an adult invite co-travellers by email (up to 8) and keep shared notes (280 characters, 50 kept, only the writer can delete). Supervised child accounts can read but not add. **Invitations and notes stay on this device** under the booker, so they are shared between the people who sign in on one device (the demo) and do not reach other phones. **No email is sent**: the invitation is a saved address. A server table and a sender call (`IMessageSender` from G4) are the next step.
+- **Deleted:** `dining.list/reschedule`, `queues.list` and the legacy `requests` from `Api`, the mock and the contract test; the `dinnerReschedule.move` fault (its `plan.dining.move` fault stays); `src/ui/Placeholder.tsx` and the `placeholder.*` strings. `src/screens.test.ts` now fails if a route has no screen.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code changed.
+- **Not done:** party invitations and notes on the server, accepting an invitation, showing co-travellers' flights or hotel, cost for onboard spending (shop, spa, casino), a rendered check (no browser testing by rule).
+
+## 12. Things I am least sure about
 
 - The "Done" marks from the first edition (see section 1).
-- Whether `Placeholder` is still reachable (G6 checks).
 - The weekly cap of 2 marketing messages (G3) is my choice; change `MARKETING_WEEKLY_CAP` if you want another number.

@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
-import { Placeholder } from './ui/Placeholder'
 import { Shell } from './ui/Shell'
 import { SignInGate } from './ui/SignInScreen'
 import { ROUTES } from './routes/routes'
@@ -13,7 +12,7 @@ export function AppRoutes() {
       <Route element={<Shell />}>
         {ROUTES.map((route) => {
           const Screen = SCREENS[route.path]
-          return <Route key={route.path} path={route.path} element={Screen ? <Screen /> : <Placeholder route={route} />} />
+          return <Route key={route.path} path={route.path} element={<Screen />} />
         })}
         <Route path="*" element={<NotFound />} />
       </Route>
