@@ -262,3 +262,29 @@ curl -s -X POST $N/updates/planChange/ack -H "$H" -H "$J" -d '{"option":"ok"}'  
 ```
 
 Check that `dbo.Orders`, `dbo.OrderLines`, `dbo.KidClubCheckins`, `dbo.FamilyLog`, `dbo.HealthReports`, `dbo.RoomSettings`, `dbo.PhotoPurchases`, `dbo.WifiDevices` and `dbo.UpdateAcks` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `order`, `photo`, `laundry` and `wifi`. None of `DapperShipboardStore` has touched SQL Server yet. Photos need `ref.PhotoCatalogue` and orders need `ref.MenuItems` seeded.
+
+## Phase 10c endpoints
+
+On-board bookings, requests and the group chat: 41 routes, listed in `docs/backend-data-model.md` section 6.5 and in Swagger (tags `Bookings on board`, `Stateroom requests`, `Safety reports`, `Drinks tracker`, `Money`, `Cabin parties`, `Group tables`, `Games`, `Cabin TV`, `Last-minute tours`, `Port readiness`, `Chat`). Under `/bookings/{number}`: `selections` (GET, POST, `DELETE {id}`); `requests` (GET, POST, `DELETE {id}`); `safety-reports` (GET, POST); `drinks` (GET, POST, `DELETE {id}`); `money`, `money/top-ups`, `PUT money/pin`, `money/forgot-pin`, `PUT money/gratuity`, `PUT money/currency`; `parties` (GET, POST, `DELETE {id}`); `dining/reservations/{id}/group` (GET), `…/group/friends` (POST, `DELETE {index}`), `PUT …/group/split`; `games`, `PUT games/clues/{id}`, `PUT games/trivia/{id}`, `PUT games/bingo/{n}`; `tv` (GET, PATCH); `last-minute` (GET), `POST last-minute/{excursionId}`; `ready` (GET), `PUT ready/{id}`. Chat is under `/me/chat`: `messages` (GET, POST), `receipts` (GET, PUT), `seen`, `blocks` (GET), `PUT blocks/{id}`, `reports`, `photos`.
+
+Rules are ported to `ServiceRules`, `CatalogueRules` and `TvAndGameRules`. **More writes to `dbo.FolioLines`**: a booking (`selection`), a top-up (`topup`, a credit), a prepaid gratuity (`gratuity`, a credit) and a last-minute tour (`tour`). Chat needs `dbo.ChatGroups` and `dbo.ChatGroupMembers` to contain the people who should talk to each other; the persona scripts have to create them (a person in no group who sends a message gets a group of their own).
+
+## Smoke calls for Phase 10c (run against your database)
+
+Use a persona aboard (set the demo clock to a sea day, then to a Cozumel morning for the last two) signed in as an adult.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s -X POST $N/selections -H "$H" -H "$J" -d '{"item":"spa-swedish","day":2,"time":"13:00","qty":1}'
+curl -s -X POST $N/requests -H "$H" -H "$J" -d '{"item":"towels","qty":2,"note":""}'
+curl -s -X POST $N/drinks -H "$H" -H "$J" -d '{"drinkId":"beer"}'; curl -s $N/drinks -H "$H"
+curl -s -X POST $N/money/top-ups -H "$H" -H "$J" -d '{"dollars":100,"source":"card"}'
+curl -s -X PUT $N/money/pin -H "$H" -H "$J" -d '{"next":"1357"}'
+curl -s -X POST $N/parties -H "$H" -H "$J" -d '{"title":"Birthday","day":3,"time":"20:00","cabins":["8101","8102"]}'
+curl -s -X PATCH $N/tv -H "$H" -H "$J" -d '{"on":true,"channel":5}'
+curl -s $N/last-minute -H "$H"; curl -s -X POST $N/last-minute/coz-glass -H "$H" -H "$J" -d '{"guests":["<guid>"]}'
+curl -s $N/onboard/folio -H "$H"                                                 # the lines from all of the above
+curl -s -X POST $B/api/v1/me/chat/messages -H "$H" -H "$J" -d '{"text":"Hello"}'; curl -s $B/api/v1/me/chat/messages -H "$H"
+```
+
+Check that `dbo.Selections`, `dbo.ServiceRequests`, `dbo.DrinkLogs`, `dbo.TopUps`, `dbo.OnboardAccount` (a salted `PinHash`), `dbo.Parties`, `dbo.PartyInvites`, `dbo.TvState`, `dbo.TourBookings` (`Source = onboard`), `dbo.ChatGroups`, `dbo.ChatGroupMembers` and `dbo.ChatMessages` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `selection`, `topup`, `gratuity` and `tour`. None of `DapperAboardStore` or `DapperChatStore` has touched SQL Server yet. Requests need `ref.ServiceItems` and drinks need `ref.Drinks` seeded.

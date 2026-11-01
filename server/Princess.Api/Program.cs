@@ -38,6 +38,8 @@ services.AddScoped<IAheadStore, DapperAheadStore>();
 services.AddScoped<ICheckinStore, DapperCheckinStore>();
 services.AddScoped<IOnboardStore, DapperOnboardStore>();
 services.AddScoped<IShipboardStore, DapperShipboardStore>();
+services.AddScoped<IAboardStore, DapperAboardStore>();
+services.AddScoped<IChatStore, DapperChatStore>();
 services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
@@ -63,6 +65,18 @@ services.AddScoped<PhotoService>();
 services.AddScoped<LaundryService>();
 services.AddScoped<WifiService>();
 services.AddScoped<UpdatesService>();
+services.AddScoped<SelectionService>();
+services.AddScoped<ServiceRequestService>();
+services.AddScoped<SafetyReportService>();
+services.AddScoped<DrinkService>();
+services.AddScoped<MoneyService>();
+services.AddScoped<PartyService>();
+services.AddScoped<GroupTableService>();
+services.AddScoped<GameService>();
+services.AddScoped<TvService>();
+services.AddScoped<LastMinuteService>();
+services.AddScoped<ReadyService>();
+services.AddScoped<ChatService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -147,6 +161,7 @@ v1.MapAheadEndpoints();
 v1.MapCheckinEndpoints();
 v1.MapOnboardEndpoints();
 v1.MapShipboardEndpoints();
+v1.MapAboardEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

@@ -279,6 +279,54 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/bookings/{number}/updates/{id}/ack" },
     };
 
+    /// <summary>Phase 10c (data model 6.5: on-board bookings, requests, reports, drinks, money, parties, group tables, games, TV, last-minute tours, readiness, group chat); all need a sign-in.</summary>
+    public static TheoryData<string, string> AboardRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/selections" },
+        { "post", "/api/v1/bookings/{number}/selections" },
+        { "delete", "/api/v1/bookings/{number}/selections/{id}" },
+        { "get", "/api/v1/bookings/{number}/requests" },
+        { "post", "/api/v1/bookings/{number}/requests" },
+        { "delete", "/api/v1/bookings/{number}/requests/{id}" },
+        { "get", "/api/v1/bookings/{number}/safety-reports" },
+        { "post", "/api/v1/bookings/{number}/safety-reports" },
+        { "get", "/api/v1/bookings/{number}/drinks" },
+        { "post", "/api/v1/bookings/{number}/drinks" },
+        { "delete", "/api/v1/bookings/{number}/drinks/{id}" },
+        { "get", "/api/v1/bookings/{number}/money" },
+        { "post", "/api/v1/bookings/{number}/money/top-ups" },
+        { "put", "/api/v1/bookings/{number}/money/pin" },
+        { "post", "/api/v1/bookings/{number}/money/forgot-pin" },
+        { "put", "/api/v1/bookings/{number}/money/gratuity" },
+        { "put", "/api/v1/bookings/{number}/money/currency" },
+        { "get", "/api/v1/bookings/{number}/parties" },
+        { "post", "/api/v1/bookings/{number}/parties" },
+        { "delete", "/api/v1/bookings/{number}/parties/{id}" },
+        { "get", "/api/v1/bookings/{number}/dining/reservations/{reservation}/group" },
+        { "post", "/api/v1/bookings/{number}/dining/reservations/{reservation}/group/friends" },
+        { "delete", "/api/v1/bookings/{number}/dining/reservations/{reservation}/group/friends/{index}" },
+        { "put", "/api/v1/bookings/{number}/dining/reservations/{reservation}/group/split" },
+        { "get", "/api/v1/bookings/{number}/games" },
+        { "put", "/api/v1/bookings/{number}/games/clues/{clue}" },
+        { "put", "/api/v1/bookings/{number}/games/trivia/{question}" },
+        { "put", "/api/v1/bookings/{number}/games/bingo/{n}" },
+        { "get", "/api/v1/bookings/{number}/tv" },
+        { "patch", "/api/v1/bookings/{number}/tv" },
+        { "get", "/api/v1/bookings/{number}/last-minute" },
+        { "post", "/api/v1/bookings/{number}/last-minute/{excursionId}" },
+        { "get", "/api/v1/bookings/{number}/ready" },
+        { "put", "/api/v1/bookings/{number}/ready/{id}" },
+        { "get", "/api/v1/me/chat/messages" },
+        { "post", "/api/v1/me/chat/messages" },
+        { "get", "/api/v1/me/chat/receipts" },
+        { "put", "/api/v1/me/chat/receipts" },
+        { "post", "/api/v1/me/chat/seen" },
+        { "get", "/api/v1/me/chat/blocks" },
+        { "put", "/api/v1/me/chat/blocks/{id}" },
+        { "post", "/api/v1/me/chat/reports" },
+        { "post", "/api/v1/me/chat/photos" },
+    };
+
     [Theory]
     [MemberData(nameof(ShipboardRoutes))]
     public async Task EveryPhaseTenBRouteIsDocumented(string verb, string route)
@@ -287,6 +335,29 @@ public class SwaggerCoverageTests : IDisposable
         Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
         Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
         Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Theory]
+    [MemberData(nameof(AboardRoutes))]
+    public async Task EveryPhaseTenCRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task AboardRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in AboardRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{reservation}", Guid.NewGuid().ToString()).Replace("{index}", "0")
+                .Replace("{clue}", "h-pool").Replace("{question}", "q-ports").Replace("{n}", "5").Replace("{excursionId}", "coz-glass");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
     }
 
     [Fact]

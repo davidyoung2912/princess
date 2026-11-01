@@ -22,7 +22,7 @@ public sealed class InMemoryShipboardStore(InMemoryOnboardStore onboard) : IShip
     public List<(long BookingId, WifiRow Row)> Wifi { get; } = [];
     public Dictionary<(long UserId, string ScenarioId), UpdateAckRow> Acks { get; } = [];
 
-    private void Replace(long bookingId, string type, long id, IReadOnlyList<FolioWrite> folio)
+    public void Replace(long bookingId, string type, long id, IReadOnlyList<FolioWrite> folio)
     {
         if (_lines.Remove((type, id), out var old)) foreach (var row in old) onboard.Folio.RemoveAll(f => ReferenceEquals(f.Row, row));
         var rows = folio.Select(l => new FolioRow { PublicId = Guid.NewGuid(), UserId = l.UserId, Day = l.Day, Category = l.Category, Description = l.Description, Cents = l.Cents, CoveredBy = l.CoveredBy, At = l.At }).ToList();

@@ -10,7 +10,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     // ---- The account ----
 
     /// <summary>Replaces every account line of one source (an order, a photo purchase, a laundry request, a Wi-Fi device) in the caller's transaction.</summary>
-    private static async Task ReplaceFolioAsync(DbConnection c, DbTransaction tx, long bookingId, string sourceType, long sourceId, IReadOnlyList<FolioWrite> folio, CancellationToken ct)
+    internal static async Task ReplaceFolioAsync(DbConnection c, DbTransaction tx, long bookingId, string sourceType, long sourceId, IReadOnlyList<FolioWrite> folio, CancellationToken ct)
     {
         await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.FolioLines WHERE BookingId = @bookingId AND SourceType = @sourceType AND SourceId = @sourceId", new { bookingId, sourceType, sourceId }, tx, ct));
         foreach (var l in folio)

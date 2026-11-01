@@ -1,3 +1,4 @@
+using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 
@@ -11,6 +12,18 @@ internal static class Shipboard
     public static DateTime FromMs(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
 
     public static bool IsAboard(Scope c) => Itinerary.Aboard(c.Departure, c.Now);
+
+    /// <summary>Before sailing day's 11:00 boarding opens, or aboard: when things can be booked or bought ahead of time or on the ship.</summary>
+    public static bool BeforeOrAboard(Scope c) =>
+        c.Confirmed && (IsAboard(c) || c.Now < Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), Itinerary.ShipHomeZone));
+
+    public static void RequireOpen(Scope c)
+    {
+        if (!BeforeOrAboard(c)) throw ApiException.Conflict("closed");
+    }
+
+    /// <summary>The caller's age on the sailing date.</summary>
+    public static int AgeOf(Scope c, UserRecord actor) => c.PersonByUser(actor.Id)?.Age ?? 18;
 
     /// <summary>Actions on board need the ship to be under way (or boarded) and the booking not cancelled.</summary>
     public static void RequireAboard(Scope c)

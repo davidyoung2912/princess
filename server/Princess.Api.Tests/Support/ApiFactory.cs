@@ -21,6 +21,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryCheckinStore Checkin { get; }
     public InMemoryOnboardStore Onboard { get; } = new();
     public InMemoryShipboardStore Shipboard { get; }
+    public InMemoryAboardStore Aboard { get; }
+    public InMemoryChatStore Chat { get; }
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -31,6 +33,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         Ahead = new InMemoryAheadStore(Journey);
         Checkin = new InMemoryCheckinStore(Journey);
         Shipboard = new InMemoryShipboardStore(Onboard);
+        Aboard = new InMemoryAboardStore(Shipboard, Plan);
+        Chat = new InMemoryChatStore(Users);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -57,6 +61,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<ICheckinStore>();
             services.RemoveAll<IOnboardStore>();
             services.RemoveAll<IShipboardStore>();
+            services.RemoveAll<IAboardStore>();
+            services.RemoveAll<IChatStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
@@ -72,6 +78,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<ICheckinStore>(Checkin);
             services.AddSingleton<IOnboardStore>(Onboard);
             services.AddSingleton<IShipboardStore>(Shipboard);
+            services.AddSingleton<IAboardStore>(Aboard);
+            services.AddSingleton<IChatStore>(Chat);
             services.AddSingleton<IClock>(Clock);
         });
     }
