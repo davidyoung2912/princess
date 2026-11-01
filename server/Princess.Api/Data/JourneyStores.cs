@@ -62,6 +62,8 @@ public interface IPrivacyStore
     Task<List<RetentionRow>> ListRetentionRunsAsync(IReadOnlyCollection<long> userIds, CancellationToken ct);
     /// <summary>Hard-deletes the named kinds for the booking in one transaction and records the run against <paramref name="runUserId"/>.</summary>
     Task PurgeAsync(long bookingId, IReadOnlyCollection<long> guestUserIds, long runUserId, IReadOnlyCollection<string> kinds, DateTime now, CancellationToken ct);
+    /// <summary>Confirmed bookings whose sailing has started by <paramref name="now"/>; the caller works out which have ended.</summary>
+    Task<List<BookingRow>> ListEndedBookingsAsync(DateTime now, CancellationToken ct);
     Task<string?> GetBudgetJsonAsync(long bookingId, CancellationToken ct);
     Task SaveBudgetJsonAsync(long bookingId, string json, DateTime now, CancellationToken ct);
 }

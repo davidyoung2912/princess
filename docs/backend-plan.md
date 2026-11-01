@@ -1,6 +1,6 @@
 # Backend plan: SQL Server + C# REST API (side project to the UX)
 
-Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in three parts: 10a, 10b and 10c built (Phase 10 is done); Phase 11 built; Phase 12 (the frontend HTTP client and sign-in) built; Phase 13 (account, trips, payments and the rest of that area against REST) built; Phase 14 (discover and booking against REST) built; Phase 15 (pre-cruise plan, waits, shows, ahead) built; Phase 16 (check-in and boarding) built; Phase 17 (on board) built; Phase 18 (after the cruise) built; Phase 19 (cleanup) built, with the mocks kept (see Phase 19 notes).** Written 2026-10-29. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
+Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in three parts: 10a, 10b and 10c built (Phase 10 is done); Phase 11 built; Phase 12 (the frontend HTTP client and sign-in) built; Phase 13 (account, trips, payments and the rest of that area against REST) built; Phase 14 (discover and booking against REST) built; Phase 15 (pre-cruise plan, waits, shows, ahead) built; Phase 16 (check-in and boarding) built; Phase 17 (on board) built; Phase 18 (after the cruise) built; Phase 19 (cleanup) built, with the mocks kept (see Phase 19 notes).** Written 2026-10-29; stale text corrected 2026-11-01 (mocks kept). Follow-on hardening is tracked as phases G1 to G6 in `docs/gap-analysis-plan.md`. Each phase ends with a commit (when asked) and a stop, so you can `/clear` and start the next one with "Start Phase N of docs/backend-plan.md".
 
 ## 1. Decisions (answered 2026-10-29)
 
@@ -13,7 +13,7 @@ Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in 
 | Still mocked | The AI concierge, live ship telemetry and weather, and payments (card charging; stored card last four digits and receipts are real data). |
 | Reference data | Seeded by separate scripts, outside the schema script. |
 | User data | Seeded by separate persona scripts: a strong set of people in partial-completion states across the whole journey, so UAT never starts from scratch. |
-| Offline | Not a goal. Every non-mocked data call is async REST. The backend is assumed always available. The mocks are **removed**, not kept behind a flag. |
+| Offline | Not a goal. Every non-mocked data call is async REST. The backend is assumed always available. **Revised 2026-11-01:** the mocks, demo store, outbox and demo picker are **kept**, so the app still runs without `VITE_API_URL` (see Phase 19 notes and `CLAUDE.md`). |
 | Connection string | You give it to me after the provisioning script is done (after Phase 4). |
 
 ## 2. Assumptions I am making (tell me if wrong, ideally before Phase 1)
@@ -174,9 +174,9 @@ Each phase implements the matching `Api` group against the real API, deletes the
 - **18 (built):** `disembark` (view, choice with bags keyed by guest guid, tags, customs, onward, night ticks, final bill, tip, email), `cases` and `post` (history, feedback, loyalty summary, rebook holds, future cruise credit, desk appointment) against the routes in data model 6.6, added to `createHttpGroups`/`withHttpGroups` in `src/api/httpApi.ts`. Screens are untouched; the mocks stay for demo mode until Phase 19. Verify: the four npm checks. Not run against a live API.
 
 ### Phase 19. Cleanup
-- Delete `src/api/mock.ts`, the demo store and sync outbox if nothing uses them, the demo persona state that is now server data, and dead scenario code. Keep only the intentionally mocked pieces (AI concierge, ship telemetry and weather, payments gateway) behind clear interfaces.
+- (Original plan, **not carried out**: see the 2026-11-01 decision below.) Delete `src/api/mock.ts`, the demo store and sync outbox if nothing uses them, the demo persona state that is now server data, and dead scenario code. Keep only the intentionally mocked pieces (AI concierge, ship telemetry and weather, payments gateway) behind clear interfaces.
 - Update `CLAUDE.md` (stack, commands, backend rules), `docs/` and a root `README` section for running both halves.
-- **Verify:** all npm checks and `dotnet test`.
+- **Verify:** all npm checks (a full `dotnet test` is not run in this project).
 - **19 (built, reduced):** root `README.md` (running both halves) and `CLAUDE.md` backend section added. **Decision (2026-11-01): the mocks, demo store, outbox and demo picker are kept**, so the app still runs without an API (`VITE_API_URL` unset); this overrides the "mocks are removed" decision in section 1. Nothing deleted. Verify: the four npm checks; `dotnet test` not run.
 
 ## 7. Risks and things to watch

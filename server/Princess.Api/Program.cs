@@ -81,6 +81,8 @@ services.AddScoped<ChatService>();
 services.AddScoped<DisembarkService>();
 services.AddScoped<CaseService>();
 services.AddScoped<PostService>();
+services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.Section);
+services.AddHostedService<RetentionPurgeService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
@@ -143,6 +145,7 @@ services.AddSwaggerGen(o =>
 
 var app = builder.Build();
 
+app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 if (app.Configuration.GetValue("Swagger:Enabled", true))
@@ -156,6 +159,7 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthEndpoints();
+app.MapSecurityTxt();
 var v1 = app.MapGroup("/api/v1");
 v1.MapAuthEndpoints();
 v1.MapJourneyEndpoints();

@@ -7,7 +7,7 @@ using Princess.Api.Domain;
 namespace Princess.Api.Services;
 
 public sealed class PrivacyService(
-    AccessService access, IAccountStore accounts, ITripStore trips, IPrivacyStore privacy, IUserStore users, IUserClock clock)
+    AccessService access, IAccountStore accounts, ITripStore trips, IPrivacyStore privacy, IUserStore users, IUserClock clock, IClock realClock)
 {
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -41,16 +41,31 @@ public sealed class PrivacyService(
     private async Task PurgeDueAsync(UserRecord actor, long bookingId, CancellationToken ct)
     {
         var b = await trips.GetAsync(bookingId, ct) ?? throw ApiException.NotFound();
-        var now = await clock.NowAsync(actor, ct);
+        await PurgeBookingAsync(b, await clock.NowAsync(actor, ct), actor.Id, actor.FirstName ?? "", ct);
+    }
+
+    /// <summary>The scheduled sweep (SEC-03): every ended booking, at real time. Returns how many had something deleted.</summary>
+    public async Task<int> PurgeAllDueAsync(CancellationToken ct)
+    {
+        var now = realClock.UtcNow;
+        var done = 0;
+        foreach (var b in await privacy.ListEndedBookingsAsync(now, ct))
+            if (await PurgeBookingAsync(b, now, b.BookerUserId, "System", ct)) done++;
+        return done;
+    }
+
+    private async Task<bool> PurgeBookingAsync(BookingRow b, DateTime now, long runUserId, string actorName, CancellationToken ct)
+    {
         var kinds = PrivacyRules.KindsToDelete(D(b.Departure).AddDays(b.Nights), TripRules.Today(now));
-        if (kinds.Count == 0) return;
-        var party = await accounts.GetPartyAsync(bookingId, ct);
+        if (kinds.Count == 0) return false;
+        var party = await accounts.GetPartyAsync(b.BookingId, ct);
         var ids = party.Select(g => g.UserId).ToList();
         var done = (await privacy.ListRetentionRunsAsync(ids, ct)).SelectMany(r => r.Kinds.Split(',')).ToHashSet();
         var fresh = kinds.Where(k => !done.Contains(k)).ToList();
-        if (fresh.Count == 0) return;
-        await privacy.PurgeAsync(bookingId, ids, b.BookerUserId, fresh, now, ct);
-        await privacy.AddAccessAsync(actor.Id, actor.FirstName ?? "", "documents:deleted", now, ct);
+        if (fresh.Count == 0) return false;
+        await privacy.PurgeAsync(b.BookingId, ids, b.BookerUserId, fresh, now, ct);
+        await privacy.AddAccessAsync(runUserId, actorName, "documents:deleted", now, ct);
+        return true;
     }
 
     private async Task<PrivacyViewDto> BuildAsync(UserRecord actor, long bookingId, CancellationToken ct)

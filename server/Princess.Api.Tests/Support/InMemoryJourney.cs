@@ -213,6 +213,9 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         return Task.CompletedTask;
     }
 
+    public Task<List<BookingRow>> ListEndedBookingsAsync(DateTime now, CancellationToken ct) =>
+        Task.FromResult(Bookings.Where(b => b.Status == "confirmed" && b.Departure <= now).ToList());
+
     public Task<string?> GetBudgetJsonAsync(long bookingId, CancellationToken ct) => Task.FromResult(Budgets.GetValueOrDefault(bookingId));
 
     public Task SaveBudgetJsonAsync(long bookingId, string json, DateTime now, CancellationToken ct)

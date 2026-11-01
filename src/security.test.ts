@@ -46,3 +46,18 @@ describe('security guards', () => {
     expect(hosts).toEqual(['https://*.princess.com', 'https://api.anthropic.com'])
   })
 })
+
+describe('responsible disclosure (SEC-10)', () => {
+  const txt = readFileSync('public/.well-known/security.txt', 'utf8')
+  it('has the fields RFC 9116 requires and a policy page that exists', () => {
+    expect(txt).toMatch(/^Contact: mailto:\S+$/m)
+    expect(txt).toMatch(/^Expires: \d{4}-\d{2}-\d{2}T/m)
+    const policy = /^Policy: (\S+)$/m.exec(txt)?.[1]
+    expect(policy).toBe('/security-policy.html')
+    expect(statSync('public/security-policy.html').isFile()).toBe(true)
+  })
+  it('matches the text the server sends', () => {
+    const cs = readFileSync('server/Princess.Api/Endpoints/SecurityTxtEndpoint.cs', 'utf8')
+    for (const line of txt.trim().split('\n')) expect(cs).toContain(line)
+  })
+})

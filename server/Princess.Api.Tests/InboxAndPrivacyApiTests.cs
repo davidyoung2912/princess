@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text.Json.Nodes;
 using Princess.Api.Contracts;
@@ -215,6 +216,26 @@ public class PrivacyAndBudgetApiTests : JourneyWorld
         await Get($"{Harpers}/privacy", token);
         Assert.Equal(2, F.Journey.Purges.Count);
         Assert.Equal(["illness", "clubReg"], F.Journey.Purges[1].Kinds);
+    }
+
+    [Fact]
+    public async Task TheScheduledSweepDeletesDueDataWithoutAVisitAndOnlyOnce()
+    {
+        await using (var scope = F.Services.CreateAsyncScope())
+            Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<Princess.Api.Services.PrivacyService>().PurgeAllDueAsync(default));
+        Assert.Empty(F.Journey.Purges);
+
+        F.Clock.UtcNow = new DateTime(2027, 4, 28, 17, 0, 0, DateTimeKind.Utc);   // 31 days after the cruise
+        await using (var scope = F.Services.CreateAsyncScope())
+        {
+            var sweep = scope.ServiceProvider.GetRequiredService<Princess.Api.Services.PrivacyService>();
+            Assert.True(await sweep.PurgeAllDueAsync(default) > 0);
+            Assert.Equal(["ci-guest", "documents"], F.Journey.Purges[0].Kinds);
+            Assert.Empty(GuestOf(Daniel).Held);
+            var count = F.Journey.Purges.Count;
+            Assert.Equal(0, await sweep.PurgeAllDueAsync(default));   // not again
+            Assert.Equal(count, F.Journey.Purges.Count);
+        }
     }
 
     // ---- Budget ----

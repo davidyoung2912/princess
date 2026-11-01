@@ -46,6 +46,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         {
             ["Jwt:SigningKey"] = "test-signing-key-test-signing-key-0123456789",
             ["Auth:LoginAttemptsPerMinute"] = LoginAttemptsPerMinute.ToString(),
+            ["Retention:IntervalMinutes"] = "0",
         }));
         builder.ConfigureServices(services =>
         {

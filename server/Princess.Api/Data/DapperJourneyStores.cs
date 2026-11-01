@@ -444,6 +444,12 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
         await tx.CommitAsync(ct);
     }
 
+    public async Task<List<BookingRow>> ListEndedBookingsAsync(DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<BookingRow>(Sql.Cmd($"{DapperTripStore.BookingSelect} WHERE b.Status = 'confirmed' AND s.Departure <= @now ORDER BY b.Id", new { now }, null, ct))).ToList();
+    }
+
     public async Task<string?> GetBudgetJsonAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

@@ -32,6 +32,13 @@ dotnet run --project Princess.Api      # http://localhost:5182, Swagger at /swag
 
 Run it where it can reach SQL Server (the Windows side, for a Windows-authentication connection string). The schema and both seeds must already be loaded (`db/README.md`).
 
+## Hardening (phase G1)
+
+- **Headers.** `Services/SecurityHeaders.cs` sets `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a locked `Permissions-Policy`, and for `/api` and `/health` a `default-src 'none'; frame-ancestors 'none'` policy with `Cache-Control: no-store`. HSTS is added outside Development when the request is HTTPS. The front end is static files, so its own headers must be set by whatever hosts `dist/`.
+- **Disclosure.** `GET /.well-known/security.txt` (RFC 9116); the contact is a placeholder to replace before a real deployment.
+- **Scheduled retention purge.** `RetentionPurgeService` runs every `Retention:IntervalMinutes` (default 360, 0 turns it off) and deletes data past its retention date for every ended booking, using real time. Opening the privacy centre also purges, at the demo clock.
+- **Encryption at rest (a hosting setting, not code).** Turn on Transparent Data Encryption for the `princess` database (`ALTER DATABASE princess SET ENCRYPTION ON` after creating a database encryption key and certificate), encrypt backups (`BACKUP ... WITH ENCRYPTION`), and connect with `Encrypt=True` and a trusted certificate outside local development. LocalDB on a developer machine does not need it. Column-level encryption of passport numbers is not done.
+
 ## Auth model
 
 | | |
