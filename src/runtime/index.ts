@@ -1,3 +1,4 @@
+import { createHttpGroups, withHttpGroups } from '../api/httpApi'
 import { createMockApi } from '../api/mock'
 import type { Api } from '../api/types'
 import { createHttpAuthProvider } from '../auth/httpProvider'
@@ -42,12 +43,17 @@ export const auth: AuthProvider = usesRealAuth
   ? createHttpAuthProvider({ baseUrl: API_URL, storage: session(), channel })
   : createMockAuthProvider({ session: session(), local: local(), channel })
 
-export const api: Api = createMockApi({
+const mockApi: Api = createMockApi({
   store: lazyStore,
   demo: getDemo,
   persona: () => auth.current()?.personaId ?? null,
   channel,
 })
+
+/** With real sign-in, the account area (Phase 13) and discover and booking (Phase 14) are served by the REST API; the other groups stay on the mock until Phases 15 to 18. */
+const rest = usesRealAuth ? createHttpGroups((auth as ReturnType<typeof createHttpAuthProvider>).http) : null
+if (rest) auth.subscribe(rest.reset)
+export const api: Api = rest ? withHttpGroups(mockApi, rest.groups) : mockApi
 
 /** Start-up: sign in as the last person (or Gerald, the primary persona), use their settings, and listen to other tabs. Call once before first render. */
 export async function startRuntime(): Promise<void> {
