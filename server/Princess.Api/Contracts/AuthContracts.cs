@@ -26,3 +26,13 @@ public sealed record MeResponse(
 public sealed record SessionResponse(string AccessToken, long ExpiresAt, string RefreshToken, long RefreshExpiresAt, MeResponse User);
 
 public sealed record ViewAsResponse(string AccessToken, long ExpiresAt, MeResponse User);
+
+/// <summary>Sign-up. The account holder must be an adult; children are added as supervised guests by their booker. <c>Dob</c> is "yyyy-MM-dd".</summary>
+public sealed record RegisterRequest(string? Email, string? Password, string? FirstName, string? LastName, string? Dob);
+
+/// <summary>Asks for a one-time code by email: for <c>/auth/forgot</c> a password reset, for <c>/auth/magic</c> a sign-in.</summary>
+public sealed record CodeRequest(string? Email);
+
+public sealed record ResetRequest(string? Email, string? Code, string? NewPassword);
+
+public sealed record MagicRedeemRequest(string? Email, string? Code);

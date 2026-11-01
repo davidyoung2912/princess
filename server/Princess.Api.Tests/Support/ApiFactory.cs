@@ -13,6 +13,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public InMemoryUserStore Users { get; } = new();
     public InMemoryRefreshTokenStore RefreshTokens { get; } = new();
+    public InMemorySignInStore SignIn { get; }
     public InMemoryAccessStore Access { get; } = new();
     public InMemoryJourney Journey { get; } = new();
     public InMemoryBookingStore Bookings { get; }
@@ -29,6 +30,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 
     public ApiFactory()
     {
+        SignIn = new InMemorySignInStore(Users, RefreshTokens);
         Bookings = new InMemoryBookingStore(Journey, Access);
         Plan = new InMemoryPlanStore(Journey);
         Ahead = new InMemoryAheadStore(Journey);
@@ -52,6 +54,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IUserStore>();
             services.RemoveAll<IRefreshTokenStore>();
+            services.RemoveAll<ISignInStore>();
             services.RemoveAll<IAccessStore>();
             services.RemoveAll<IAccountStore>();
             services.RemoveAll<ITripStore>();
@@ -70,6 +73,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
+            services.AddSingleton<ISignInStore>(SignIn);
             services.AddSingleton<IAccessStore>(Access);
             services.AddSingleton<IAccountStore>(Journey);
             services.AddSingleton<ITripStore>(Journey);

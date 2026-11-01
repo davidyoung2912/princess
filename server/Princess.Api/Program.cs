@@ -25,6 +25,8 @@ services.AddSingleton<ITokenService, TokenService>();
 services.AddScoped<IUserStore, DapperUserStore>();
 services.AddScoped<IRefreshTokenStore, DapperRefreshTokenStore>();
 services.AddScoped<IAccessStore, DapperAccessStore>();
+services.AddScoped<ISignInStore, DapperSignInStore>();
+services.AddScoped<IMessageSender, StubMessageSender>();
 services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<AccessService>();
 services.AddScoped<IAccountStore, DapperAccountStore>();

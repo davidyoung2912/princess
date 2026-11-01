@@ -19,6 +19,45 @@ public static class AuthEndpoints
             .RequireRateLimiting(LoginLimiter)
             .WithSummary("Sign in with email or 10-digit account number plus password.");
 
+        auth.MapPost("/register", async (RegisterRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
+                Results.Ok(await svc.RegisterAsync(body, UserAgent(http), Ip(http), ct)))
+            .AllowAnonymous()
+            .RequireRateLimiting(LoginLimiter)
+            .WithSummary("Create an account (adults only) and sign in. 409 emailTaken when the address has one.");
+
+        auth.MapPost("/forgot", async (CodeRequest body, IAuthService svc, CancellationToken ct) =>
+            {
+                await svc.RequestCodeAsync(AuthService.Reset, body, ct);
+                return Results.NoContent();
+            })
+            .AllowAnonymous()
+            .RequireRateLimiting(LoginLimiter)
+            .WithSummary("Email a one-time password-reset code. Always 204, whether or not the address has an account.");
+
+        auth.MapPost("/reset", async (ResetRequest body, IAuthService svc, CancellationToken ct) =>
+            {
+                await svc.ResetPasswordAsync(body, ct);
+                return Results.NoContent();
+            })
+            .AllowAnonymous()
+            .RequireRateLimiting(LoginLimiter)
+            .WithSummary("Set a new password with the emailed code. Ends every session the person had.");
+
+        auth.MapPost("/magic", async (CodeRequest body, IAuthService svc, CancellationToken ct) =>
+            {
+                await svc.RequestCodeAsync(AuthService.Magic, body, ct);
+                return Results.NoContent();
+            })
+            .AllowAnonymous()
+            .RequireRateLimiting(LoginLimiter)
+            .WithSummary("Email a one-time sign-in code. Always 204, whether or not the address has an account.");
+
+        auth.MapPost("/magic/redeem", async (MagicRedeemRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
+                Results.Ok(await svc.RedeemMagicAsync(body, UserAgent(http), Ip(http), ct)))
+            .AllowAnonymous()
+            .RequireRateLimiting(LoginLimiter)
+            .WithSummary("Sign in with the emailed code.");
+
         auth.MapPost("/refresh", async (RefreshRequest body, IAuthService svc, HttpContext http, CancellationToken ct) =>
                 Results.Ok(await svc.RefreshAsync(body, UserAgent(http), Ip(http), ct)))
             .AllowAnonymous()

@@ -3,6 +3,7 @@ import type { Selection } from '../domain/catalogue'
 import type { GameState } from '../domain/games'
 import type { Friend, ChatReportReason, GratuityChoice, PartyInput, ReportKind, RequestStage } from '../domain/services'
 import type { PersonaId } from '../domain/personas'
+import type { PinReset } from '../domain/pinReset'
 
 /** Shapes for the Phase 12 groups: bookings and orders on board, requests, reports, drinks, money, parties, games and the TV. */
 export interface SelectionView extends Selection {
@@ -74,6 +75,8 @@ export interface MoneyView {
   topUpTotal: number
   hasCard: boolean
   pinSet: boolean
+  /** A forgotten-PIN request waiting at, or ready from, Guest Services (ACC-03). Absent when none, and always absent over REST until the server keeps it. */
+  pinReset?: PinReset | null
   gratuity: GratuityView
   canEdit: boolean
 }
@@ -81,7 +84,7 @@ export interface MoneyApi {
   view(): Promise<MoneyView>
   /** Rejects `invalid` (`badAmount`), `conflict` (`tooMuch`, `noCard`, `closed`). Cash waits for the desk. */
   topUp(dollars: number, source: 'card' | 'cash'): Promise<MoneyView>
-  /** Rejects `invalid` (`format`, `weak`), `forbidden` with a wrong current PIN. */
+  /** Rejects `invalid` (`format`, `weak`), `forbidden` with a wrong current PIN. Without a current PIN it works only once a reset request is `ready`. */
   setPin(next: string, current?: string): Promise<MoneyView>
   /** Forgotten PIN: asks Guest Services to reset it in person. */
   forgotPin(): Promise<MoneyView>

@@ -1,4 +1,5 @@
 import { portDayAt } from '../domain/allaboard'
+import { canResetPin, pinReset, type PinReset } from '../domain/pinReset'
 import { chargeFor, itemById, placesLeft, selectionKey, selectionProblem, takenByOthers, type Selection } from '../domain/catalogue'
 import type { FolioLine } from '../domain/folio'
 import { VOD_CHANNEL, channelByNumber, titleAllowed, titleById } from '../domain/tv'
@@ -184,8 +185,12 @@ export function createAboardApi(d: AboardDeps): AboardMock {
     const prefs = await one<{ currency: string }>('moneyPrefs', 'me', me())
     return {
       currency: currencyByCode(prefs?.currency) ? prefs!.currency : 'USD', topUps: tops, topUpTotal: tops.reduce((n, t) => n + t.dollars, 0),
-      hasCard: (await d.cardsOf()).length > 0, pinSet: !!(await one('pin', 'pin', me())), gratuity, canEdit: !d.actor().child,
+      hasCard: (await d.cardsOf()).length > 0, pinSet: !!(await one('pin', 'pin', me())), pinReset: await pinResetView(), gratuity, canEdit: !d.actor().child,
     }
+  }
+  const pinResetView = async (): Promise<PinReset | null> => {
+    const asked = await one<{ at: number }>('pinDesk', 'pinDesk', me())
+    return asked ? pinReset(asked.at, d.now()) : null
   }
   const money: AboardApi['money'] = {
     view: () => d.run('aboard.money.view', moneyView),
@@ -206,7 +211,9 @@ export function createAboardApi(d: AboardDeps): AboardMock {
       const problem = pinProblem(next)
       if (problem) throw new ApiError('invalid', problem)
       const stored = await one<{ digest: string; salt: string }>('pin', 'pin', me())
-      if (stored && pinDigest(String(current ?? ''), stored.salt) !== stored.digest) throw new ApiError('forbidden', 'wrongPin')
+      const asked = await one<{ at: number }>('pinDesk', 'pinDesk', me())
+      const reset = !current && canResetPin(asked?.at, d.now())
+      if (stored && !reset && pinDigest(String(current ?? ''), stored.salt) !== stored.digest) throw new ApiError('forbidden', 'wrongPin')
       const salt = d.newId('salt')
       await put('pin', 'pin', { digest: pinDigest(next, salt), salt }, me())
       await drop('pinDesk', 'pinDesk', me())
@@ -214,6 +221,8 @@ export function createAboardApi(d: AboardDeps): AboardMock {
     }),
     forgotPin: () => d.run('aboard.money.forgotPin', async () => {
       d.adult()
+      const asked = await one<{ at: number }>('pinDesk', 'pinDesk', me())
+      if (asked && pinReset(asked.at, d.now()).stage !== 'expired') return moneyView()
       await put('pinDesk', 'pinDesk', { at: d.now() }, me())
       return moneyView()
     }),

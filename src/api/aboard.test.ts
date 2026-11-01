@@ -196,6 +196,25 @@ describe('money (ACC-03, ACC-05, ACC-07)', () => {
     expect((await s.api.aboard.money.forgotPin()).pinSet).toBe(true)
   })
 
+  it('resets a forgotten PIN once the desk has checked ID, for a day only (ACC-03)', async () => {
+    const s = setup()
+    s.at(...SEA_DAY)
+    await s.api.aboard.money.setPin('4827')
+    expect((await s.api.aboard.money.view()).pinReset).toBeNull()
+    expect((await s.api.aboard.money.forgotPin()).pinReset?.stage).toBe('waiting')
+    expect(await code(s.api.aboard.money.setPin('9051'))).toBe('forbidden:wrongPin')
+    s.later(31)
+    expect((await s.api.aboard.money.view()).pinReset?.stage).toBe('ready')
+    expect((await s.api.aboard.money.setPin('9051')).pinReset).toBeNull()
+    expect(await code(s.api.aboard.money.setPin('8264'))).toBe('forbidden:wrongPin')
+    expect((await s.api.aboard.money.setPin('8264', '9051')).pinSet).toBe(true)
+    await s.api.aboard.money.forgotPin()
+    s.later(31 + 24 * 60)
+    expect((await s.api.aboard.money.view()).pinReset?.stage).toBe('expired')
+    expect(await code(s.api.aboard.money.setPin('7391'))).toBe('forbidden:wrongPin')
+    expect((await s.api.aboard.money.forgotPin()).pinReset?.stage).toBe('waiting')
+  })
+
   it('prepays gratuities once, with a credit on the bill', async () => {
     const s = setup('maria')
     s.at(...SEA_DAY)

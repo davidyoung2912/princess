@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { formatMoney } from '../../domain/pricing'
-import { CURRENCIES, CASH_DESK_MIN, GRATUITY_REASON_MIN, RATES_AS_OF, TOPUP_MAX, TOPUP_MIN, TOPUP_TOTAL_MAX, inCurrency } from '../../domain/services'
+import { CURRENCIES, CASH_DESK_MIN, GRATUITY_REASON_MIN, TOPUP_MAX, TOPUP_MIN, TOPUP_TOTAL_MAX } from '../../domain/services'
+import { inCurrencyAt, rateAgeDays, ratesStale } from '../../domain/rates'
+import { PIN_DESK_MIN } from '../../domain/pinReset'
+import { useRates } from '../../hooks/useRates'
+import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -49,12 +53,16 @@ export function MoneyScreen() {
 /** The bill total in the chosen currency, as a plain note; nothing when the currency is dollars. */
 export function InCurrency({ cents }: { cents: number }) {
   const view = useMine(() => api.aboard.money.view())
+  const { table } = useRates()
   if (!view.data || view.data.currency === 'USD') return null
-  return <p className="muted">{t('money.about', { amount: inCurrency(cents, view.data.currency), code: view.data.currency })}</p>
+  return <p className="muted">{t('money.about', { amount: inCurrencyAt(cents, view.data.currency, table), code: view.data.currency })}</p>
 }
 
 function Currency({ v, reload }: { v: MoneyView; reload: () => void }) {
   const set = useAction(async (code: string) => { await api.aboard.money.setCurrency(code); reload() })
+  const { table, refresh } = useRates()
+  const now = useNow()
+  const stale = ratesStale(table, now)
   return (
     <section aria-labelledby="cur-h">
       <h2 id="cur-h">{t('money.currency')}</h2>
@@ -66,11 +74,13 @@ function Currency({ v, reload }: { v: MoneyView; reload: () => void }) {
       </div>
       <AboardError error={set.error} />
       <table className="rates">
-        <caption>{t('money.rates', { date: RATES_AS_OF })}</caption>
+        <caption>{t('money.rates', { date: table.asOf })}</caption>
         <thead><tr><th scope="col">{t('money.usd')}</th><th scope="col">{v.currency}</th></tr></thead>
-        <tbody>{[10, 50, 100].map((n) => <tr key={n}><td>{formatMoney(n * 100)}</td><td>{inCurrency(n * 100, v.currency)}</td></tr>)}</tbody>
+        <tbody>{[10, 50, 100].map((n) => <tr key={n}><td>{formatMoney(n * 100)}</td><td>{inCurrencyAt(n * 100, v.currency, table)}</td></tr>)}</tbody>
       </table>
       <p className="muted">{t('money.currencyNote')}</p>
+      {stale && <p role="status">{t('money.ratesOld', { days: Number.isFinite(rateAgeDays(table, now)) ? rateAgeDays(table, now) : 0 })}</p>}
+      <Button variant="secondary" onClick={() => refresh(now)}>{t('money.ratesUpdate')}</Button>
     </section>
   )
 }
@@ -114,21 +124,29 @@ export function TopUps({ v, reload }: { v: MoneyView; reload: () => void }) {
 }
 
 function Pin({ v, reload }: { v: MoneyView; reload: () => void }) {
+  const shipTime = useShipTime()
+  const reset = v.pinReset ?? null
+  const ready = reset?.stage === 'ready'
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
-  const save = useAction(async () => { await api.aboard.money.setPin(next, v.pinSet ? current : undefined); setCurrent(''); setNext(''); reload() })
+  const save = useAction(async () => { await api.aboard.money.setPin(next, v.pinSet && !ready ? current : undefined); setCurrent(''); setNext(''); reload() })
   const forgot = useAction(async () => { await api.aboard.money.forgotPin(); reload() })
   return (
     <section aria-labelledby="pin-h">
       <h2 id="pin-h">{t('money.pin')}</h2>
       <p>{v.pinSet ? t('money.pinSet') : t('money.pinNone')}</p>
+      {reset && (
+        <Banner kind={reset.stage === 'ready' ? 'success' : 'info'} title={t(`money.reset.${reset.stage}` as StringKey)}>
+          <p>{reset.stage === 'waiting' ? t('money.reset.waitingBody', { minutes: PIN_DESK_MIN, time: shipTime(reset.readyAt) }) : reset.stage === 'ready' ? t('money.reset.readyBody', { time: shipTime(reset.expiresAt) }) : t('money.reset.expiredBody')}</p>
+        </Banner>
+      )}
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void save.run() }}>
-        {v.pinSet && <Field label={t('money.pinCurrent')} type="password" inputMode="numeric" autoComplete="off" maxLength={4} value={current} onChange={(e) => setCurrent(e.target.value)} />}
+        {v.pinSet && !ready && <Field label={t('money.pinCurrent')} type="password" inputMode="numeric" autoComplete="off" maxLength={4} value={current} onChange={(e) => setCurrent(e.target.value)} />}
         <Field label={t('money.pinNew')} hint={t('money.pinHint')} type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={next} onChange={(e) => setNext(e.target.value)} />
         <AboardError error={save.error ?? forgot.error} />
         <div className="button-row">
-          <Button type="submit" disabled={save.busy || next.length !== 4 || (v.pinSet && current.length !== 4)}>{v.pinSet ? t('money.pinChange') : t('money.pinSave')}</Button>
-          {v.pinSet && <Button variant="tertiary" disabled={forgot.busy} onClick={() => void forgot.run()}>{t('money.pinForgot')}</Button>}
+          <Button type="submit" disabled={save.busy || next.length !== 4 || (v.pinSet && !ready && current.length !== 4)}>{v.pinSet ? t('money.pinChange') : t('money.pinSave')}</Button>
+          {v.pinSet && !ready && reset?.stage !== 'waiting' && <Button variant="tertiary" disabled={forgot.busy} onClick={() => void forgot.run()}>{t('money.pinForgot')}</Button>}
         </div>
       </form>
       <p className="muted">{t('money.pinDesk')}</p>

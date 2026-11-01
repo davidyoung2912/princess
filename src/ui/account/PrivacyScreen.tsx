@@ -5,6 +5,7 @@ import { formatDate } from '../../domain/cruise'
 import { DATA_RULES } from '../../domain/dataRules'
 import { consentsFor, RETENTION, type ConsentId } from '../../domain/privacy'
 import { parentDecidesIn, regionRules } from '../../domain/regions'
+import { setImproveConsent } from '../../diagnostics/watch'
 import { useSettings } from '../../hooks/useSettings'
 import type { StringKey } from '../../i18n'
 import { api } from '../../runtime'
@@ -27,7 +28,7 @@ import { ActionError } from './parts'
 export function PrivacyScreen() {
   const me = usePersona()
   const view = useAsync(() => api.privacy.view(), [me?.id])
-  const set = useAction(async (person: string, consent: ConsentId, on: boolean) => { await api.privacy.setConsent(person as never, consent, on); view.retry() })
+  const set = useAction(async (person: string, consent: ConsentId, on: boolean) => { await api.privacy.setConsent(person as never, consent, on); if (consent === 'improve') setImproveConsent(on); view.retry() })
   const [confirm, setConfirm] = useState(false)
   const today = dateIn(useNow(), 'America/New_York')
   const shipTime = useShipTime()

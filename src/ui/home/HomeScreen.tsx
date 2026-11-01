@@ -18,6 +18,7 @@ import { Saved } from '../onboard/common'
 import { OnboardHome } from '../onboard/OnboardHome'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { AfterCruiseCard } from '../finish/HomeCards'
+import { HomeOfferCard } from '../offers/Offers'
 
 /** The trip the guest is on, from the trips list: their own booking first. */
 const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.find((x) => x.kind === 'current') ?? upcoming[0] ?? null
@@ -32,6 +33,7 @@ export function HomeScreen() {
       <div className="page">
         <h1>{t('route.home')}</h1>
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
+        <HomeOfferCard />
         <ConceptNotice />
       </div>
     )
@@ -42,6 +44,7 @@ export function HomeScreen() {
       <UpdatesBanner />
       <AfterCruiseCard />
       {trip && <Journey trip={trip} />}
+      <HomeOfferCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
       <p><Link to="/home/concierge">{t('route.concierge')}</Link></p>
       <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>

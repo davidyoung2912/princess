@@ -7,9 +7,19 @@ import { Button } from './Button'
 import { Card } from './Card'
 import { ConceptNotice } from './ConceptNotice'
 import { ErrorSummary, Field } from './Field'
+import { CodeFlow, SignUpForm } from './SignInFlows'
 
-/** The sign-in page: email or 10-digit account number plus password. */
+type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
+
+/** The sign-in page: email or 10-digit account number plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
 export function SignInScreen() {
+  const [mode, setMode] = useState<Mode>('signin')
+  if (mode === 'signup') return <main className="page signin" id="main"><SignUpForm onBack={() => setMode('signin')} /><ConceptNotice /></main>
+  if (mode === 'forgot' || mode === 'magic') return <main className="page signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /><ConceptNotice /></main>
+  return <PasswordSignIn go={setMode} />
+}
+
+function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -46,6 +56,11 @@ export function SignInScreen() {
           <Button type="submit" block disabled={busy}>{busy ? t('signin.busy') : t('signin.submit')}</Button>
         </form>
       </Card>
+      <ul className="plain-list">
+        <li><Button variant="secondary" onClick={() => go('forgot')}>{t('signin.mode.forgot')}</Button></li>
+        <li><Button variant="secondary" onClick={() => go('magic')}>{t('signin.mode.magic')}</Button></li>
+        <li><Button variant="secondary" onClick={() => go('signup')}>{t('signin.mode.signup')}</Button></li>
+      </ul>
       {!import.meta.env.PROD && <TestAccounts />}
       <ConceptNotice />
     </main>

@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
+import { track } from '../diagnostics/watch'
 import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { applyPageMeta, seoFor } from '../seo'
@@ -28,6 +29,7 @@ export function Shell() {
     const seo = seoFor(route?.path)
     const full = `${title} · ${t('app.name')}`
     applyPageMeta(document, { title: full, description: t(seo?.description ?? 'seo.private'), indexable: !!seo, url: `${window.location.origin}${pathname}` })
+    track('screen', route?.path)
     if (first.current) { first.current = false; return }
     setAnnouncement(t('shell.announce', { title }))
     main.current?.focus({ preventScroll: true })

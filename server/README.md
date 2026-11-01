@@ -45,6 +45,10 @@ Run it where it can reach SQL Server (the Windows side, for a Windows-authentica
 | --- | --- |
 | Sign in | `POST /api/v1/auth/login` `{identifier, password}`; identifier is the email or the 10-digit account number. Returns an access token (15 min), a refresh token (30 days, stored only as a SHA-256 hash) and the person. |
 | Refresh | `POST /api/v1/auth/refresh` `{refreshToken}`. The old token is spent and a new one issued. Presenting a spent token again revokes that whole session family. |
+| Sign up | `POST /api/v1/auth/register` `{email, password, firstName, lastName, dob}`. Adults only (18+), password 10+ characters. Returns a session. 409 `emailTaken` if the address has an account. |
+| Forgot password | `POST /api/v1/auth/forgot` `{email}` always answers 204. If the address has an account, a 6-digit code (15 minutes, one use, five wrong tries) goes to the outbox. Then `POST /api/v1/auth/reset` `{email, code, newPassword}`, which also ends every session. |
+| Email code sign-in | `POST /api/v1/auth/magic` `{email}` then `POST /api/v1/auth/magic/redeem` `{email, code}`; same code rules as reset. |
+| Messages (stub) | There is no email or SMS provider. `StubMessageSender` writes each message to `dbo.Outbox` as `sent` and sends nothing. In Development the text, with the code, is also in the server log; in other environments it is never logged. Replace `IMessageSender` to deliver for real. Passkeys and MFA are not built. |
 | Sign out | `POST /api/v1/auth/logout` `{refreshToken}` with the bearer token. |
 | Who am I | `GET /api/v1/me`. |
 | View as a child | `POST /api/v1/me/view-as/{childId}`, booker only. A 15 minute token whose `sub` is the child and `act` the booker. The child's supervised restrictions apply. |

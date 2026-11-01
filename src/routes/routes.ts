@@ -30,6 +30,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/home/disembark/customs', titleKey: 'route.customs', tab: 'home', phase: 8 },
   { path: '/home/disembark/onward', titleKey: 'route.onward', tab: 'home', phase: 8 },
   { path: '/home/disembark/final-night', titleKey: 'route.finalNight', tab: 'home', phase: 8 },
+  { path: '/home/offers', titleKey: 'route.offers', tab: 'home', phase: 14 },
   { path: '/home/updates', titleKey: 'route.updates', tab: 'home', phase: 11 },
   { path: '/home/concierge', titleKey: 'route.concierge', tab: 'home', phase: 9 },
   { path: '/home/cruise', titleKey: 'route.cruise', tab: 'home', phase: 1 },

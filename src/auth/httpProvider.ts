@@ -2,7 +2,7 @@ import type { Channel } from '../data/sync'
 import { isPersonaId, type PersonaId } from '../domain/personas'
 import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
-import { AuthError, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
+import { AuthError, type AuthMethod, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
 
 /** Per-tab storage for the refresh token (see the token decision in docs/backend-plan.md, Phase 12). */
 export const REFRESH_KEY = 'princess:refresh'
@@ -48,11 +48,11 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       else opts.storage?.removeItem(REFRESH_KEY)
     } catch { /* storage blocked: the session works until the page closes */ }
   }
-  const take = (w: WireSession): Session => {
+  const take = (w: WireSession, method: AuthMethod = 'password'): Session => {
     access = w.accessToken
     store(w.refreshToken)
     const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo }
-    current = { personaId: personaForEmail(w.user.email), signedInAt: now(), method: 'password', user }
+    current = { personaId: personaForEmail(w.user.email), signedInAt: now(), method, user }
     return current
   }
   const clear = () => {
@@ -79,24 +79,50 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     }
   })().finally(() => { restoring = null }))
 
+  /** Maps a failed call to an AuthError: the server's named reasons first, then network trouble, then `fallback`. */
+  const failure = (e: unknown, fallback: AuthError['code'] = 'invalid'): unknown => {
+    if (!isApiError(e)) return e
+    if (e.code === 'offline') return new AuthError('offline')
+    if (e.retryable) return new AuthError('unavailable')
+    const named: AuthError['code'][] = ['emailTaken', 'tooYoung', 'badCode']
+    return new AuthError(named.find((n) => n === e.message) ?? fallback)
+  }
+
   return {
     id: 'http',
     http: raw,
-    methods: ['password'],
+    methods: ['password', 'code'],
     identities: () => [],
     current: () => current,
     accessToken: () => access,
     restore,
+    account: {
+      async register(input) {
+        try {
+          const session = take(await raw.post<WireSession>('/auth/register', { ...input, email: input.email.trim() }, { anonymous: true }))
+          notify()
+          opts.channel?.post({ type: 'session' })
+          return session
+        } catch (e) { throw failure(e) }
+      },
+      async requestCode(purpose, email) {
+        try { await raw.post(purpose === 'reset' ? '/auth/forgot' : '/auth/magic', { email: email.trim() }, { anonymous: true }) } catch (e) { throw failure(e) }
+      },
+      async resetPassword(email, code, newPassword) {
+        try { await raw.post('/auth/reset', { email: email.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
+      },
+    },
     async signIn(c: Credentials) {
-      if (c.method !== 'password') throw new AuthError('unsupportedMethod')
+      if (c.method === 'demo') throw new AuthError('unsupportedMethod')
       try {
-        const session = take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true }))
+        const session = c.method === 'code'
+          ? take(await raw.post<WireSession>('/auth/magic/redeem', { email: c.email.trim(), code: c.code.trim() }, { anonymous: true }), 'code')
+          : take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true }))
         notify()
         opts.channel?.post({ type: 'session' })
         return session
       } catch (e) {
-        if (isApiError(e)) throw new AuthError(e.code === 'offline' ? 'offline' : e.retryable ? 'unavailable' : 'badCredentials')
-        throw e
+        throw failure(e, c.method === 'code' ? 'badCode' : 'badCredentials')
       }
     },
     async signOut() {

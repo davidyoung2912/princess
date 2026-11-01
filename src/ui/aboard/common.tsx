@@ -17,6 +17,8 @@ import { StatusBadge } from '../StatusBadge'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { personaById } from '../../domain/personas'
 import { SaveButton } from '../ahead/common'
+import { OrderExtras } from './OrderExtras'
+import { useShopExtras } from '../../hooks/useShopExtras'
 
 /** Why a change was refused, in words that say what to do next. Falls back to the general wording. */
 export function AboardError({ error }: { error: ApiError | null }) {
@@ -47,7 +49,8 @@ export function ItemCard({ item, mine, reload, canEdit, day }: { item: Item; min
   const [pick, setPick] = useState<{ day: number; time: string }>({ day: days[0] ?? 0, time: item.times[0] ?? '' })
   const [qty, setQty] = useState(1)
   const add = useAction(async (s: Selection) => { await api.aboard.selections.add(s); reload() })
-  const remove = useAction(async (id: string) => { await api.aboard.selections.remove(id); reload() })
+  const { deliver, gift } = useShopExtras()
+  const remove = useAction(async (id: string) => { await api.aboard.selections.remove(id); deliver(id, 'pickup'); gift(id, null); reload() })
   const place = placeById(item.placeId)
   const asked = item.mode === 'order' ? { item: item.id, day: 0, time: '', qty } : { item: item.id, day: pick.day, time: pick.time, qty: 1 }
   const left = placesLeft(item, asked.day, asked.time, mine.filter((m) => m.item === item.id && m.day === asked.day && m.time === asked.time).reduce((n, m) => n + m.qty, 0))
@@ -72,6 +75,7 @@ export function ItemCard({ item, mine, reload, canEdit, day }: { item: Item; min
               {m.day > 0 ? `${ordinal(m.day)} ${formatTime(m.time || '00:00')}` : t('ab.ordered', { count: m.qty })}
               {chargeFor(m) > 0 && ` · ${formatMoney(chargeFor(m))}`}{' '}
               <Button variant="tertiary" disabled={remove.busy || !canEdit} onClick={() => void remove.run(own(m))}>{t('ab.remove')}</Button>
+              {m.day === 0 && <OrderExtras itemId={m.item} lineId={own(m)} canEdit={canEdit} />}
             </li>
           ))}
         </ul>

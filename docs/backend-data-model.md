@@ -29,7 +29,7 @@ These close the open items in `backend-plan.md` section 2 and the "settle in Pha
 ## 2. Conventions
 
 - Schema name: everything in `dbo` except `ref` (reference data) and `demo` (`DemoState`, `RetentionRuns`). Three schemas make "reset persona data without touching reference data" a simple rule: persona scripts only write to `dbo` and `demo`; reference scripts only write to `ref`. (`demo` holds only `DemoState`; `RetentionRuns` is in `dbo`.)
-- **Ids.** In the tables below, `Id ID* PK` means `BIGINT IDENTITY` clustered. **Every table with `Id ID* PK` also has `PublicId PUB* UQ` (not repeated in each column list) unless listed here as having none:** `PaymentParts`, `OrderLines`, `BookingGuestDetails`, `BookingGuestTags`, `TourBookingGuests`, `TourCartGuests`, `DiningReservationGuests`, `GroupTableFriends`, `WaitlistGuests`, `PurchaseGuests`, `ShowTicketGuests`, `HealthReportGuests`, `PhotoPurchaseItems`, `MedallionGuests`, `ServiceMessages`, `ChatReads`, `PartyInvites`, `NotificationsSent`, `RefreshTokens`, `IdempotencyKeys`, `AccessLog`, `ProfileTags`. Tables keyed by a pair or a parent's key (for example `Profiles.UserId`, `CheckinBooking.BookingId`) have no `Id` or `PublicId`.
+- **Ids.** In the tables below, `Id ID* PK` means `BIGINT IDENTITY` clustered. **Every table with `Id ID* PK` also has `PublicId PUB* UQ` (not repeated in each column list) unless listed here as having none:** `PaymentParts`, `OrderLines`, `BookingGuestDetails`, `BookingGuestTags`, `TourBookingGuests`, `TourCartGuests`, `DiningReservationGuests`, `GroupTableFriends`, `WaitlistGuests`, `PurchaseGuests`, `ShowTicketGuests`, `HealthReportGuests`, `PhotoPurchaseItems`, `MedallionGuests`, `ServiceMessages`, `ChatReads`, `PartyInvites`, `NotificationsSent`, `RefreshTokens`, `AuthChallenges`, `IdempotencyKeys`, `AccessLog`, `ProfileTags`. Tables keyed by a pair or a parent's key (for example `Profiles.UserId`, `CheckinBooking.BookingId`) have no `Id` or `PublicId`.
 - **The API never accepts or returns an internal `Id`.** Routes and payloads carry `PublicId` only; the API resolves it to `Id` once per request (indexed seek), then joins on `Id`. Dapper query code and DTOs are reviewed for this in every C# phase. `Users` and `Bookings` are always resolved first because every authorisation check starts there.
 - **Seeds** set `PublicId` explicitly (fixed guids for personas and scenario rows, kept in the persona catalogue) and find rows by natural key (`Slug`, `Number`, `AccountNumber`) or `PublicId`, never by a hard-coded `Id`.
 - Every table in `dbo` has `CreatedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME()`. Mutable ones also have `UpdatedAt`. Not repeated in the column lists below.
@@ -60,6 +60,13 @@ Email lives on `Users`. `dietary` and `needs` lists are in `ProfileTags` (below)
 **RefreshTokens** — auth W.
 `Id ID* PK` · `UserId ID* FK→Users` · `FamilyId ID*` · `TokenHash BINARY(32)* UQ` · `ExpiresAt TS*` · `UsedAt TS?` · `RevokedAt TS?` · `ReplacedById ID?` · `UserAgent STR(200)?` · `Ip VARCHAR(45)?`.
 Index: `IX_RefreshTokens_UserId_FamilyId`.
+
+**AuthChallenges** — auth W (Phase G4). One-time codes for password reset and email sign-in.
+`Id ID* PK` · `UserId ID* FK→Users` · `Purpose {reset|magic}*` · `CodeHash BINARY(32)*` (SHA-256 of `purpose:userId:code`) · `Attempts INT*` · `ExpiresAt TS*` (15 minutes) · `UsedAt TS?`.
+Index: `IX_AuthChallenges_UserId_Purpose`. A new request spends the older codes; five wrong tries end a code.
+
+**Outbox** — delivery W (Phase G4). Every message the stub sender "sends".
+`Id ID* PK` · `PublicId PUB* UQ` · `UserId ID?` (no FK) · `Channel {email|sms|push}*` · `Category STR(10)*` · `ToAddress STR(254)*` · `Subject STR(150)*` · `Body STR(1000)*` · `Status {queued|sent|failed}*` · `SentAt TS?`. A real sender replaces the stub and works through `queued` rows.
 
 **HelperLinks** — account R/W (`helper`, `saveHelper`, `revokeHelper`).
 `Id ID* PK` · `GuestUserId ID* FK→Users` (the guest who consents) · `HelperName STR(80)*` · `HelperUserId ID? FK→Users` (set once the helper has an account) · `Relationship STR(40)*` · `Permissions [csv view,documents,payments,profile]` stored as `Permissions STR(60)` · `Status {requested|active|revoked}*` · `ChangedAt TS*`.

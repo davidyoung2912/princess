@@ -127,4 +127,39 @@ describe('createHttpAuthProvider', () => {
     await expect(down.auth.signOut()).resolves.toBeUndefined()
     expect(down.auth.current()).toBeNull()
   })
+
+  describe('sign-up and recovery', () => {
+    it('registers and signs in, trimming the email', async () => {
+      const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))
+      const got = await auth.account!.register({ email: ' new@example.com ', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01' })
+      expect(got.user?.email).toBe('new@example.com')
+      expect(s.calls[0]).toMatchObject({ url: '/api/v1/auth/register', auth: null })
+      expect(JSON.parse(s.calls[0].body!).email).toBe('new@example.com')
+      expect(storage.m.get(REFRESH_KEY)).toBe('r1')
+      expect(auth.current()?.personaId).toBeNull()
+    })
+    it('maps the named failures', async () => {
+      const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01' }
+      await expect(make(() => reply(409, { title: 'emailTaken' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'emailTaken' })
+      await expect(make(() => reply(400, { title: 'tooYoung' })).auth.account!.register(input)).rejects.toMatchObject({ code: 'tooYoung' })
+      await expect(make(() => reply(400, { title: 'badCode' })).auth.account!.resetPassword('a@b.co', '123456', 'a-long-password')).rejects.toMatchObject({ code: 'badCode' })
+      await expect(make(() => reply(503)).auth.account!.requestCode('reset', 'a@b.co')).rejects.toMatchObject({ code: 'unavailable' })
+    })
+    it('asks for each kind of code on its own route and sends the reset', async () => {
+      const { auth, s } = make(() => reply(204))
+      await auth.account!.requestCode('reset', ' a@b.co ')
+      await auth.account!.requestCode('magic', 'a@b.co')
+      await auth.account!.resetPassword('a@b.co', ' 123456 ', 'a-long-password')
+      expect(s.calls.map((c) => c.url)).toEqual(['/api/v1/auth/forgot', '/api/v1/auth/magic', '/api/v1/auth/reset'])
+      expect(JSON.parse(s.calls[0].body!)).toEqual({ email: 'a@b.co' })
+      expect(JSON.parse(s.calls[2].body!)).toEqual({ email: 'a@b.co', code: '123456', newPassword: 'a-long-password' })
+    })
+    it('signs in with an emailed code', async () => {
+      const { auth, s } = make(() => reply(200, session(1)))
+      const got = await auth.signIn({ method: 'code', email: 'maya@demo.princess.example', code: '123456' })
+      expect(got).toMatchObject({ method: 'code', personaId: 'maya' })
+      expect(s.calls[0].url).toBe('/api/v1/auth/magic/redeem')
+      await expect(make(() => reply(400, { title: 'badCode' })).auth.signIn({ method: 'code', email: 'a@b.co', code: '000000' })).rejects.toMatchObject({ code: 'badCode' })
+    })
+  })
 })

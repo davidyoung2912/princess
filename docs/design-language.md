@@ -657,3 +657,13 @@ Per `CLAUDE.md`, I will stop after each step and not begin the next until you as
 ## 23. Phase G2 progress notes
 
 See `docs/gap-analysis-plan.md` section 7. In short: loads retry twice with backoff (`withRetries`), the read-receipts switch updates optimistically (`optimistic`), data-light starts on when the browser sends the save-data signal, chat messages are deleted 30 days after the cruise (client and server rules), and the privacy centre shows the guest's region rules (`src/domain/regions.ts`).
+
+## 23. Phase G3: offers area
+
+- **Offers (`/home/offers`, UX-02, CNT-02):** one page for every offer, and at most one contextual card on Home that gives way to any waiting required task. Every offer can be set aside for the trip and brought back. No countdowns or scarcity wording (tested). Logic in `src/domain/offers.ts`; choices stored per person in `src/offers/store.ts`.
+- **Weekly cap (NOT-04):** at most 2 marketing messages in any 7 days; booking, payment and safety messages are exempt. The rule is in place for the sender added in a later phase.
+
+
+## 24. Phase G5: money and shop
+
+See `docs/gap-analysis-plan.md` section 10. In short: a forgotten PIN can be reset after the desk has checked ID (`pinReset.ts`, mock only), exchange rates are a dated table with an update button and an out-of-date note (`rates.ts`, stub source), ordered shop goods can go to the cabin, and gift cards can be given by email or to a cabin with a message (`shopExtras.ts`). Delivery and gift choices stay on this device. Not tried in a browser, by the project rule.

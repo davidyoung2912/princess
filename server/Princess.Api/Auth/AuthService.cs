@@ -1,3 +1,6 @@
+using System.Net.Mail;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Options;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
@@ -11,6 +14,11 @@ public interface IAuthService
     Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct);
     Task LogoutAsync(UserRecord user, LogoutRequest request, CancellationToken ct);
     Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct);
+    Task<SessionResponse> RegisterAsync(RegisterRequest request, string? userAgent, string? ip, CancellationToken ct);
+    /// <summary>Always completes without saying whether the address has an account.</summary>
+    Task RequestCodeAsync(string purpose, CodeRequest request, CancellationToken ct);
+    Task ResetPasswordAsync(ResetRequest request, CancellationToken ct);
+    Task<SessionResponse> RedeemMagicAsync(MagicRedeemRequest request, string? userAgent, string? ip, CancellationToken ct);
 }
 
 public sealed class AuthService(
@@ -19,6 +27,8 @@ public sealed class AuthService(
     IPasswordHasher hasher,
     ITokenService tokens,
     IClock clock,
+    ISignInStore signIn,
+    IMessageSender sender,
     IOptions<JwtOptions> jwt,
     IOptions<AuthOptions> auth) : IAuthService
 {
@@ -85,6 +95,90 @@ public sealed class AuthService(
         if (child is null || !child.IsSupervised || child.BookerUserId != booker.Id) throw ApiException.NotFound();
         var token = tokens.CreateViewAsToken(child, booker.PublicId);
         return new ViewAsResponse(token.Token, Ms(token.ExpiresAt), Me(child));
+    }
+
+    public const string Reset = "reset";
+    public const string Magic = "magic";
+    public const int MinPasswordLength = 10;
+    public const int CodeMinutes = 15;
+    public const int MaxCodeAttempts = 5;
+    public const int MinAccountAge = 18;
+
+    public async Task<SessionResponse> RegisterAsync(RegisterRequest request, string? userAgent, string? ip, CancellationToken ct)
+    {
+        var email = NormaliseEmail(request.Email);
+        var first = request.FirstName?.Trim();
+        var last = request.LastName?.Trim();
+        if (email is null || !ValidPassword(request.Password) || string.IsNullOrEmpty(first) || string.IsNullOrEmpty(last) || first.Length > 60 || last.Length > 60)
+            throw ApiException.Invalid();
+        if (!DateOnly.TryParseExact(request.Dob, "yyyy-MM-dd", out var dob) || !AdultOn(dob, DateOnly.FromDateTime(clock.UtcNow)))
+            throw ApiException.Invalid("tooYoung");
+
+        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob), clock.UtcNow, ct)
+            ?? throw ApiException.Conflict("emailTaken");
+        var user = await users.FindByIdAsync(id, ct) ?? throw ApiException.Invalid();
+        return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
+    }
+
+    public async Task RequestCodeAsync(string purpose, CodeRequest request, CancellationToken ct)
+    {
+        var email = NormaliseEmail(request.Email);
+        if (email is null) throw ApiException.Invalid();
+        var user = await users.FindByIdentifierAsync(email, ct);
+        // No answer differs for an unknown address, a child account or an account with no password.
+        if (user is null || user.IsSupervised || user.PasswordHash is null || user.Email is null) return;
+
+        var now = clock.UtcNow;
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        await signIn.ReplaceChallengeAsync(user.Id, purpose, CodeHash(purpose, user.Id, code), now.AddMinutes(CodeMinutes), now, ct);
+        var subject = purpose == Reset ? "Your Princess password reset code" : "Your Princess sign-in code";
+        var body = $"Your code is {code}. It works once and lasts {CodeMinutes} minutes. If you did not ask for it, ignore this message; nothing has changed.";
+        await sender.SendAsync(new OutboxMessage(user.Id, "email", "critical", user.Email, subject, body), ct);
+    }
+
+    public async Task ResetPasswordAsync(ResetRequest request, CancellationToken ct)
+    {
+        if (!ValidPassword(request.NewPassword)) throw ApiException.Invalid();
+        var user = await RedeemAsync(Reset, request.Email, request.Code, ct);
+        await signIn.SetPasswordAsync(user.Id, hasher.Hash(request.NewPassword!), clock.UtcNow, ct);
+    }
+
+    public async Task<SessionResponse> RedeemMagicAsync(MagicRedeemRequest request, string? userAgent, string? ip, CancellationToken ct)
+    {
+        var user = await RedeemAsync(Magic, request.Email, request.Code, ct);
+        await users.RecordLoginSuccessAsync(user.Id, clock.UtcNow, ct);
+        return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
+    }
+
+    /// <summary>Checks a one-time code and spends it. Every failure is the same <c>badCode</c>: wrong, expired, used, too many tries, unknown address.</summary>
+    private async Task<UserRecord> RedeemAsync(string purpose, string? emailText, string? code, CancellationToken ct)
+    {
+        var email = NormaliseEmail(emailText);
+        if (email is null || code is null || code.Length != 6 || !code.All(char.IsAsciiDigit)) throw ApiException.Invalid("badCode");
+        var user = await users.FindByIdentifierAsync(email, ct);
+        var challenge = user is null ? null : await signIn.FindOpenChallengeAsync(user.Id, purpose, clock.UtcNow, ct);
+        if (user is null || challenge is null || challenge.Attempts >= MaxCodeAttempts) throw ApiException.Invalid("badCode");
+        if (!CryptographicOperations.FixedTimeEquals(challenge.CodeHash, CodeHash(purpose, user.Id, code)))
+        {
+            await signIn.AddChallengeAttemptAsync(challenge.Id, ct);
+            throw ApiException.Invalid("badCode");
+        }
+        if (!await signIn.UseChallengeAsync(challenge.Id, clock.UtcNow, ct)) throw ApiException.Invalid("badCode");
+        return user;
+    }
+
+    public static byte[] CodeHash(string purpose, long userId, string code) => SHA256.HashData(Encoding.UTF8.GetBytes($"{purpose}:{userId}:{code}"));
+
+    public static bool ValidPassword(string? p) => p is { Length: >= MinPasswordLength and <= 200 };
+
+    public static bool AdultOn(DateOnly dob, DateOnly today) => dob <= today.AddYears(-MinAccountAge) && dob.Year >= 1900;
+
+    /// <summary>A lower-cased address that looks like one, or null.</summary>
+    public static string? NormaliseEmail(string? email)
+    {
+        var e = email?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(e) || e.Length > 254 || !MailAddress.TryCreate(e, out var m) || m.Address != e || !e.Contains('.', StringComparison.Ordinal)) return null;
+        return e;
     }
 
     private async Task<SessionResponse> IssueAsync(UserRecord user, long familyId, long? refreshTokenId, string? userAgent, string? ip, CancellationToken ct)

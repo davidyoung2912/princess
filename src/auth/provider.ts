@@ -23,12 +23,29 @@ export interface Session {
   user?: SessionUser
 }
 
-export type AuthMethod = 'demo' | 'password'
+export type AuthMethod = 'demo' | 'password' | 'code'
 
 /** Ways to sign in. The demo picker is the mock's; `password` takes an email or 10-digit account number (ACT-01). */
-export type Credentials = { method: 'demo'; personaId: string } | { method: 'password'; identifier: string; password: string }
+export type Credentials =
+  | { method: 'demo'; personaId: string }
+  | { method: 'password'; identifier: string; password: string }
+  /** The one-time code emailed after `requestCode('magic', email)`. */
+  | { method: 'code'; email: string; code: string }
 
-export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline'
+export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'invalid'
+
+/** What a new account needs. `dob` is "YYYY-MM-DD"; the account holder must be an adult. */
+export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string }
+
+export type CodePurpose = 'reset' | 'magic'
+
+/** Sign-up and recovery (ACT-01). Only the real provider has them; the demo picker has no accounts to create or recover. */
+export interface AccountActions {
+  register(input: Registration): Promise<Session>
+  /** Asks for a one-time code by email. Completes the same way whether or not the address has an account. */
+  requestCode(purpose: CodePurpose, email: string): Promise<void>
+  resetPassword(email: string, code: string, newPassword: string): Promise<void>
+}
 
 export class AuthError extends Error {
   readonly code: AuthErrorCode
@@ -43,6 +60,8 @@ export class AuthError extends Error {
 export interface AuthProvider {
   readonly id: string
   readonly methods: readonly AuthMethod[]
+  /** Present on the real provider only. */
+  readonly account?: AccountActions
   /** The people the demo can sign in as. The real provider returns none. */
   identities(): readonly PersonaId[]
   current(): Session | null

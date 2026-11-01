@@ -70,9 +70,9 @@ Same rules as before: one phase at a time, tests with each, `npm run test`, `npm
 | --- | --- | --- | --- |
 | G1 | Server hardening and housekeeping | SEC-01 (headers), SEC-03 (scheduled purge), SEC-10 (`security.txt`), encryption-at-rest note, stale docs | Built (see section 6) |
 | G2 | Resilience and privacy in the front end | PERF-04 (load retries with backoff, optimistic updates), NET-04 (save-data signal), MSG-05 (30-day chat retention enforced), SEC-04 (region rules) | Built (see section 7) |
-| G3 | Offers area | UX-02, CNT-02, NOT-04 | Not started |
-| G4 | Sign-in and delivery | ACT-01 (sign-up, forgot-password, magic link; passkey and MFA only if you ask), NOT-01 and MNG-14 (stub sender and outbox), PERF-07 and CNT-03 (error reporting and consent-based analytics) | Not started |
-| G5 | Money and shop | ACC-03 (PIN reset), ACC-07 (exchange rates), SHP-05 (cabin delivery), POS-13 (gifting) | Not started |
+| G3 | Offers area | UX-02, CNT-02, NOT-04 | Built (see section 8) |
+| G4 | Sign-in and delivery | ACT-01 (sign-up, forgot-password, emailed code; passkey and MFA only if you ask), NOT-01 and MNG-14 (stub sender and outbox), PERF-07 and CNT-03 (error reporting and consent-based analytics) | Built (see section 9) |
+| G5 | Money and shop | ACC-03 (PIN reset), ACC-07 (exchange rates), SHP-05 (cabin delivery), POS-13 (gifting) | Built (see section 10) |
 | G6 | Planning and cleanup | DIS-12 (whole-trip cost), MNG-16 (invites, shared notes), delete the three mock-only calls and any unused placeholder | Not started |
 
 Each phase's notes will be added to `docs/design-language.md` (front end) or `docs/backend-plan.md` (server), and the "Status" column above updated.
@@ -99,8 +99,41 @@ Built 2026-11-01.
 - **Region rules (SEC-04):** `src/domain/regions.ts` gives each region its law, its age below which a parent decides about marketing and analytics (EU 16, Australia 15, others 13) and its rights. The privacy centre shows them, and hides the marketing and analytics switches for someone in that age band. This is display only: the server does not yet take region into account.
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. **The C# edits were not compiled or run** (no `dotnet`, and `dotnet test` is barred). Run `dotnet build` in `server/` first.
 
-## 8. Things I am least sure about
+## 8. Phase G3 notes
+
+Built 2026-11-01.
+
+- **Offers page (UX-02, CNT-02):** `/home/offers`, with nine authored concept offers (`src/domain/offers.ts`) filtered by part of the trip (before, aboard, after), loyalty tier and package. A guest who holds a package is not offered one (suppression after purchase). Each offer has "See it" and "Not for this trip"; dismissed offers sit under "Set aside for this trip" with "Show again". Dismissals are per booking, kept on the device per person (`princess:offers:<person>`, so "Wipe everything" clears them).
+- **One card on Home:** `HomeOfferCard` shows the first offer that applies, never while a payment, document or check-in task is waiting, at embarkation, on the farewell day, or after disembarking. `isOfferFree` lists screens that must never carry an offer (muster, emergency, health, check-in, disembark, bills); none of those screens renders one.
+- **Restraint:** a test fails if an offer's text uses countdown or scarcity wording.
+- **Weekly cap (NOT-04):** `MARKETING_WEEKLY_CAP = 2`; `sendMarketing` allows at most two per rolling seven days, and `countsAgainstCap` exempts everything but the `offers` category. The page states the cap. **Nothing sends marketing yet**, so the rule is tested but has no caller until the G4 outbox; use `sendMarketing` there.
+- **Not done:** server-side offers or cap storage (device-local only), purchase suppression beyond the package the guest holds, and ordering by relevance.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`.
+
+## 9. Phase G4 notes
+
+Built 2026-11-01.
+
+- **Sign-up, reset and emailed code (ACT-01):** server routes `/auth/register`, `/auth/forgot`, `/auth/reset`, `/auth/magic`, `/auth/magic/redeem` (all anonymous and rate limited like login). Accounts are for adults (18+), password 10 or more characters. A "magic link" is a six-digit code, not a link: it works once, lasts 15 minutes, dies after five wrong tries, and a new request spends the old one. The code is stored only as a SHA-256 hash in the new `AuthChallenges` table. `forgot` and `magic` answer 204 whether or not the address has an account (no enumeration); children and password-less accounts get nothing. A reset ends every session the person had. The sign-in page has the three new paths (`SignInFlows.tsx`); rules in `src/domain/signup.ts`. **Not built: passkey and MFA** (you said only if asked).
+- **Stub sender and outbox (NOT-01, MNG-14):** `IMessageSender` with `StubMessageSender`, which writes each message to the new `Outbox` table as `sent` and sends nothing. In Development the text is also in the server log so a code can be read; elsewhere the body is never logged. Front-end rules in `src/domain/delivery.ts`: critical always goes; other messages respect the channel switch and quiet hours (held, then `releaseHeld`); marketing also needs the channel consent and uses `sendMarketing`, so the weekly cap of 2 now has a caller. **Nothing in the screens or server calls `deliver` yet**: the rules and the outbox exist and are tested, but no event produces messages until a real sender is chosen.
+- **Error reporting and analytics (PERF-07, CNT-03):** `src/diagnostics/telemetry.ts`. Errors (scrubbed text, no stack) and four named events (`screen`, `install`, `offlineUse`, `dataLight`; screen names drop ids) are queued only while the "Help improve the app" consent is on; turning it off forgets the queue. The privacy centre switch sets the device flag. **The queue is the stub sink: nothing leaves the device**, and only `screen` is wired (the shell). `install`, `offlineUse` and `dataLight` are defined but not yet raised.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. **The C# (new store, sender, service methods, endpoints, `SignInFlowsApiTests`, in-memory fake) was not compiled or run**: no `dotnet`, and `dotnet test` is barred. Run `dotnet build` in `server/` first. The schema change (`AuthChallenges`, `Outbox`) is in `db/01-schema.sql` and `db/00-drop-all.sql`.
+- **Not done:** a rendered check of the new sign-in screens (no browser testing by rule), HTTP-level tests for the front-end forms, region-aware sign-up age (18 everywhere), a real email provider.
+
+## 10. Phase G5 notes
+
+Built 2026-11-01. All four pieces are front end and mock only; no server or REST contract changes.
+
+- **PIN reset (ACC-03):** `src/domain/pinReset.ts`. "I forgot my PIN" opens a request; about 30 minutes later (the demo clock stands in for Guest Services checking ID) the guest can set a new PIN without the old one, for 24 hours, after which the request lapses and can be made again. The money view has an optional `pinReset` (waiting, ready, expired) that the privacy-safe mock fills in. **Over REST the field is absent**, so the screen shows the old behaviour (the request goes to the desk chat and the old PIN is still needed); the server does not yet keep the request or accept a reset.
+- **Exchange rates (ACC-07):** `src/domain/rates.ts`. A dated rate table, kept on this device (`src/rates/store.ts`). The only source is a stub that moves the sample rates up to 3% by day, so "Update rates" works and the "N days old" note appears after 3 days. **Nothing is fetched**; swap `stubRates` for a real feed when one is chosen. The bill is still in US dollars; other currencies are an estimate.
+- **Cabin delivery (SHP-05):** `src/domain/shopExtras.ts`. Ordered shop goods and cabin gifts get a "Bring it to my cabin" switch (delivered this evening if ordered before 16:00, else next morning). Gift cards are excluded. No fee.
+- **Gifting (POS-13):** gift cards can be given to a named person by email or left in their cabin, with a 140-character message. This is the existing gift-card catalogue; a separate "cruise credit" gift was not built.
+- **Delivery and gift choices stay on this device** (`src/shop/store.ts`, per person) because the server's order record has no place for them, so nothing is delivered or sent. Removing an order line forgets its choices.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code changed.
+- **Not done:** server storage for reset requests, delivery and gifts; a real rate feed; a rendered check (no browser testing by rule).
+
+## 11. Things I am least sure about
 
 - The "Done" marks from the first edition (see section 1).
 - Whether `Placeholder` is still reachable (G6 checks).
-- The weekly cap on marketing messages in G3 (I suggest 2) is a choice for you to confirm at that phase.
+- The weekly cap of 2 marketing messages (G3) is my choice; change `MARKETING_WEEKLY_CAP` if you want another number.

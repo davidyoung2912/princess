@@ -551,6 +551,42 @@ CREATE TABLE dbo.RefreshTokens (
 CREATE INDEX IX_RefreshTokens_UserId_FamilyId ON dbo.RefreshTokens (UserId, FamilyId);
 END
 
+IF OBJECT_ID(N'dbo.AuthChallenges', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.AuthChallenges (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AuthChallenges PRIMARY KEY,
+  UserId BIGINT NOT NULL,
+  Purpose VARCHAR(5) NOT NULL,
+  CodeHash BINARY(32) NOT NULL,                 -- SHA-256 of purpose:userId:code; the code itself is never stored
+  Attempts INT NOT NULL DEFAULT 0,
+  ExpiresAt DATETIME2(0) NOT NULL, UsedAt DATETIME2(0) NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AuthChallenges_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_AuthChallenges_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_AuthChallenges_Purpose CHECK (Purpose IN ('reset','magic'))
+);
+CREATE INDEX IX_AuthChallenges_UserId_Purpose ON dbo.AuthChallenges (UserId, Purpose, CreatedAt DESC);
+END
+
+IF OBJECT_ID(N'dbo.Outbox', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.Outbox (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Outbox PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Outbox_PublicId DEFAULT NEWID() CONSTRAINT UX_Outbox_PublicId UNIQUE,
+  UserId BIGINT NULL,                           -- no FK: the record of a message outlives the account it went to
+  Channel VARCHAR(5) NOT NULL,
+  Category VARCHAR(10) NOT NULL,
+  ToAddress NVARCHAR(254) NOT NULL,
+  Subject NVARCHAR(150) NOT NULL,
+  Body NVARCHAR(1000) NOT NULL,
+  Status VARCHAR(7) NOT NULL DEFAULT 'queued',
+  SentAt DATETIME2(0) NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Outbox_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT CK_Outbox_Channel CHECK (Channel IN ('email','sms','push')),
+  CONSTRAINT CK_Outbox_Status CHECK (Status IN ('queued','sent','failed'))
+);
+CREATE INDEX IX_Outbox_Status_CreatedAt ON dbo.Outbox (Status, CreatedAt);
+END
+
 IF OBJECT_ID(N'dbo.HelperLinks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.HelperLinks (
