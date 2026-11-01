@@ -35,8 +35,11 @@ public sealed class Scope
 
 
 /// <summary>Loads a <see cref="Scope"/> after the access check: any guest to read, an adult guest to write (data model section 7). A stranger gets the same <c>notFound</c> as a missing booking.</summary>
-public sealed class ScopeLoader(AccessService access, ITripStore trips, IAccountStore accounts, IUserClock clock)
+public sealed class ScopeLoader(AccessService access, ITripStore trips, IAccountStore accounts, IUserClock clock, IDemoStore demo)
 {
+    /// <summary>The scenarios switched on for the person, who must be a demo user; real users never have any.</summary>
+    public async Task<HashSet<string>> ScenariosAsync(UserRecord actor, CancellationToken ct) => actor.IsDemo ? await demo.GetScenariosAsync(actor.Id, ct) : [];
+
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
 
     public async Task<Scope> LoadAsync(UserRecord actor, string? number, bool write, CancellationToken ct)

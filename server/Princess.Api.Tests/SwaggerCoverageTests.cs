@@ -241,6 +241,66 @@ public class SwaggerCoverageTests : IDisposable
         }
     }
 
+    /// <summary>Phase 10b (data model 6.5: orders, family, health, stateroom, photos, laundry, Wi-Fi, trip updates); all need a sign-in.</summary>
+    public static TheoryData<string, string> ShipboardRoutes => new()
+    {
+        { "get", "/api/v1/bookings/{number}/orders/menu" },
+        { "get", "/api/v1/bookings/{number}/orders" },
+        { "post", "/api/v1/bookings/{number}/orders" },
+        { "post", "/api/v1/bookings/{number}/orders/{id}/resolve" },
+        { "delete", "/api/v1/bookings/{number}/orders/{id}" },
+        { "put", "/api/v1/bookings/{number}/orders/{id}/location" },
+        { "post", "/api/v1/bookings/{number}/orders/{id}/contact" },
+        { "get", "/api/v1/bookings/{number}/family" },
+        { "put", "/api/v1/bookings/{number}/family/{child}/zones" },
+        { "put", "/api/v1/bookings/{number}/family/{child}/auth" },
+        { "post", "/api/v1/bookings/{number}/family/{child}/check-in" },
+        { "post", "/api/v1/bookings/{number}/family/{child}/check-out" },
+        { "put", "/api/v1/bookings/{number}/family/reunion" },
+        { "get", "/api/v1/bookings/{number}/health" },
+        { "post", "/api/v1/bookings/{number}/health/reports" },
+        { "post", "/api/v1/bookings/{number}/health/requests" },
+        { "get", "/api/v1/bookings/{number}/room" },
+        { "patch", "/api/v1/bookings/{number}/room/housekeeping" },
+        { "patch", "/api/v1/bookings/{number}/room/devices" },
+        { "get", "/api/v1/bookings/{number}/photos" },
+        { "put", "/api/v1/bookings/{number}/photos/{photoId}/favourite" },
+        { "post", "/api/v1/bookings/{number}/photos/quote" },
+        { "post", "/api/v1/bookings/{number}/photos/purchases" },
+        { "post", "/api/v1/bookings/{number}/photos/purchases/{id}/download" },
+        { "get", "/api/v1/bookings/{number}/laundry" },
+        { "post", "/api/v1/bookings/{number}/laundry" },
+        { "delete", "/api/v1/bookings/{number}/laundry/{id}" },
+        { "get", "/api/v1/bookings/{number}/wifi" },
+        { "post", "/api/v1/bookings/{number}/wifi/devices" },
+        { "put", "/api/v1/bookings/{number}/wifi/devices/{id}" },
+        { "delete", "/api/v1/bookings/{number}/wifi/devices/{id}" },
+        { "get", "/api/v1/bookings/{number}/updates" },
+        { "post", "/api/v1/bookings/{number}/updates/{id}/ack" },
+    };
+
+    [Theory]
+    [MemberData(nameof(ShipboardRoutes))]
+    public async Task EveryPhaseTenBRouteIsDocumented(string verb, string route)
+    {
+        var paths = await Paths();
+        Assert.True(paths.TryGetProperty(route, out var path), $"{route} is missing from the OpenAPI document");
+        Assert.True(path.TryGetProperty(verb, out var op), $"{verb.ToUpperInvariant()} {route} is missing");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+    }
+
+    [Fact]
+    public async Task ShipboardRoutesRefuseAnonymousCallers()
+    {
+        using var http = _f.CreateClient();
+        foreach (var (verb, route) in ShipboardRoutes.Select(r => ((string)r[0], (string)r[1])))
+        {
+            var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{child}", Guid.NewGuid().ToString()).Replace("{photoId}", "gangway");
+            var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));
+            Assert.True(res.StatusCode == System.Net.HttpStatusCode.Unauthorized, $"{verb.ToUpperInvariant()} {route} answered {(int)res.StatusCode} without a token");
+        }
+    }
+
     [Fact]
     public async Task CheckinRoutesRefuseAnonymousCallers()
     {

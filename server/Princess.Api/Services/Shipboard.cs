@@ -1,0 +1,38 @@
+using Princess.Api.Data;
+using Princess.Api.Domain;
+
+namespace Princess.Api.Services;
+
+/// <summary>What the Phase 10b services share: the on-board check, ship time and the lines they put on the account.</summary>
+internal static class Shipboard
+{
+    public static long Ms(DateTime utc) => TripRules.ToMs(utc);
+
+    public static DateTime FromMs(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
+
+    public static bool IsAboard(Scope c) => Itinerary.Aboard(c.Departure, c.Now);
+
+    /// <summary>Actions on board need the ship to be under way (or boarded) and the booking not cancelled.</summary>
+    public static void RequireAboard(Scope c)
+    {
+        if (!IsAboard(c) || !c.Confirmed) throw ApiException.Conflict("closed");
+    }
+
+    /// <summary>The cruise day, 1 to 8, that a moment falls on.</summary>
+    public static int DayAt(Scope c, DateTime at) => Math.Clamp(FolioRules.CruiseDay(c.Departure, at), 1, 8);
+
+    /// <summary>Ship time as "HH:mm".</summary>
+    public static string ShipTime(Scope c) => Itinerary.LocalAt(c.Now, Itinerary.ShipZoneAt(c.Departure, c.Now)).Time.ToString("HH:mm");
+
+    public static async Task<bool> NeedsStepFreeAsync(IAccountStore accounts, Scope c, CancellationToken ct) =>
+        (await accounts.GetProfileAsync(c.Booking.BookerUserId, ct))?.Needs.Contains("mobility") == true;
+
+    public static StateroomAssignment Stateroom(Scope c, bool needsStepFree) =>
+        BoardingRules.AssignmentFor(c.Booking.Number, c.Booking.SailingId, c.Booking.CategoryId, c.Booking.CabinNumber, needsStepFree);
+
+    /// <summary>Account lines for the store: the guest on each is the person's user, and an unknown guest falls back to the booker.</summary>
+    public static List<FolioWrite> Writes(Scope c, IEnumerable<FolioLine> lines) =>
+        [.. lines.Select(l => new FolioWrite(c.PersonById(l.Guest)?.UserId ?? c.Booking.BookerUserId, l.Day, l.Category, l.Description, l.Cents, l.CoveredBy, FromMs(l.At)))];
+
+    public static string FirstName(Scope c, long userId) => c.PersonByUser(userId)?.First ?? "";
+}

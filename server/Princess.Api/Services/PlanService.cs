@@ -596,6 +596,15 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         return c.Party.ToDictionary(g => g.UserId, g => EntitlementsFor(c, g, ps));
     }
 
+    /// <summary>The booker's entitlements and the package they are on, for what depends on the booking (Wi-Fi devices, the laundry perk, included photos). <paramref name="viewer"/> only sets whose clock counts.</summary>
+    public async Task<(Entitlements Entitlements, string Package)> BookerEntitlementsAsync(UserRecord viewer, BookingRow booking, CancellationToken ct)
+    {
+        var c = await BuildAsync(viewer, booking, ct);
+        var ps = BuildPurchases(c, await plan.ListPurchasesAsync(booking.BookingId, ct));
+        var booker = Booker(c);
+        return (EntitlementsFor(c, booker, ps), Effective(c, booker, ps));
+    }
+
     /// <summary>The signed-in guest's own entitlements and what is left of them (<c>folio.entitlements</c>).</summary>
     public async Task<OwnEntitlementsDto> OwnEntitlementsAsync(UserRecord actor, string? number, CancellationToken ct)
     {

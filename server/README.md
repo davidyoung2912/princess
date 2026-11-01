@@ -236,3 +236,29 @@ curl -s $N/service/housekeeping -H "$H"                                         
 ```
 
 Check that the `dbo.PlanEvents`, `dbo.MusterConfirmations`, `dbo.ServiceThreads` and `dbo.ServiceMessages` rows appear, and that `dbo.Tickets` gets a `callback` row after an escalation. `dbo.PlanEvents` needs a `ref.EventDays` row for the event and day, so the reference seed must be loaded.
+
+## Phase 10b endpoints
+
+Orders and the ship's services: 33 routes, listed in `docs/backend-data-model.md` section 6.5 and in Swagger (tags `Orders`, `Family`, `Health`, `Stateroom`, `Photos`, `Laundry`, `Wi-Fi`, `Trip updates`). Under `/bookings/{number}`: `orders/menu`, `orders` (GET, POST), `orders/{id}/resolve`, `DELETE orders/{id}`, `PUT orders/{id}/location`, `orders/{id}/contact`; `family`, `PUT family/{child}/zones`, `PUT family/{child}/auth`, `family/{child}/check-in`, `family/{child}/check-out`, `PUT family/reunion`; `health`, `health/reports`, `health/requests`; `room`, `PATCH room/housekeeping`, `PATCH room/devices`; `photos`, `PUT photos/{photoId}/favourite`, `photos/quote`, `photos/purchases`, `photos/purchases/{id}/download`; `laundry` (GET, POST, `DELETE {id}`); `wifi`, `wifi/devices` (POST, `PUT` and `DELETE {id}`); `updates`, `updates/{id}/ack`. Any guest reads, an adult guest writes (a child may check themselves out of a club where the parent allows it).
+
+Rules are ported to `OrderRules`, `FamilyRules`, `HealthRules`, `RoomRules`, `PhotoRules`, `LaundryRules`, `WifiRules` and `DisruptionRules`. **This phase starts writing to `dbo.FolioLines`**: an order, a photo purchase, a laundry request and a Wi-Fi device each put their lines on the account in the same transaction as the record, and a change (cancel, move, resolve, upgrade, remove) replaces that record's lines. The scenarios `orderStock`, `childMissing`, `illness` and the trip updates are read from `demo.DemoState.ActiveScenarios` for `IsDemo` users only.
+
+## Smoke calls for Phase 10b (run against your database)
+
+Use a persona aboard (set the demo clock to a sea day) signed in as an adult.
+
+```
+H="authorization: Bearer $ACCESS"; N=$B/api/v1/bookings/PC243902; J='content-type: application/json'
+curl -s $N/orders/menu -H "$H"
+curl -s -X POST $N/orders -H "$H" -H "$J" -d '{"kind":"delivery","lines":[{"itemId":"cheeseburger","qty":2,"extras":[],"guest":"<guid>"}],"location":{"kind":"zone","placeId":"lido-pool"},"tip":200}'
+curl -s $N/orders -H "$H"; curl -s $N/onboard/folio -H "$H"                      # the order's lines are on the account
+curl -s -X DELETE $N/orders/<order guid> -H "$H"                                   # within five minutes: refund line appears
+curl -s $N/family -H "$H"; curl -s -X POST $N/family/<child guid>/check-in -H "$H"
+curl -s -X POST $N/health/reports -H "$H" -H "$J" -d '{"guests":["<guid>"],"symptoms":["cough"],"startedHoursAgo":3}'
+curl -s -X PATCH $N/room/housekeeping -H "$H" -H "$J" -d '{"mode":"dnd"}'
+curl -s -X POST $N/photos/purchases -H "$H" -H "$J" -d '{"photoIds":["gangway"],"option":"each"}'
+curl -s -X POST $N/wifi/devices -H "$H" -H "$J" -d '{"name":"Laptop","plan":"surf","days":3}'
+curl -s -X POST $N/updates/planChange/ack -H "$H" -H "$J" -d '{"option":"ok"}'     # with the planChange scenario on
+```
+
+Check that `dbo.Orders`, `dbo.OrderLines`, `dbo.KidClubCheckins`, `dbo.FamilyLog`, `dbo.HealthReports`, `dbo.RoomSettings`, `dbo.PhotoPurchases`, `dbo.WifiDevices` and `dbo.UpdateAcks` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `order`, `photo`, `laundry` and `wifi`. None of `DapperShipboardStore` has touched SQL Server yet. Photos need `ref.PhotoCatalogue` and orders need `ref.MenuItems` seeded.
