@@ -682,3 +682,8 @@ See `docs/leading-features-plan.md` section 6. In short: one page (`/home/disrup
 ## 27. Phase H3: Port Day Pilot
 
 See `docs/leading-features-plan.md` section 7. In short: the port day is one plan worked backward from the ship's all-aboard time, with a leave-by time shown in ship time first and local time beside it, never a countdown that pushes. Crowd and ships-in-port are labelled as estimates. The back-aboard nudge is calm, names people, and lists a child separately in plain words. Local rules are tagged "(verify)", vendor and day-pass lists are fixed and unranked with no commission, and the split ledger only adds up what families owe each other; nothing in it charges or moves money.
+
+
+## 28. Phase H4: door to door and embark
+
+See `docs/leading-features-plan.md` section 8. In short: `/plan/getting-there` is one timeline from the door or hotel to the gangway with a plain on-track, tight or at-risk status and the spare time on every leg; flight, traffic and weather are labelled as simulated. `/home/embarkation/plan` picks an arrival window with the consequence of a swap shown, forecasts each step with an accessible lane and an optional quiet lane, and plans the first hours around whether the cabin is ready. Warnings are plain and name the fix; the welcome shares only what the guest ticks and never sells. Not tried in a browser, by the project rule.

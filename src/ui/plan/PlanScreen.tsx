@@ -25,6 +25,7 @@ const TOOLS = [
   { to: '/plan/phone', key: 'route.phone' },
   { to: '/plan/family-link', key: 'route.familyLink' },
   { to: '/plan/split', key: 'route.split' },
+  { to: '/plan/getting-there', key: 'route.gettingThere' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/plan/assistance', key: 'route.assistance' },
   { to: '/plan/ahead', key: 'route.ahead' },

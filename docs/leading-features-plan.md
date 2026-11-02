@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1, H2 and H3 are built (sections 5 to 7); H4 to H6 are not started.**
+Status: **Plan saved 2026-11-01. Phases H1 to H4 are built (sections 5 to 8); H5 and H6 are not started.**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -20,7 +20,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | **H1** | Trust and money | XT-01…XT-07, XT-10, S3-07, S6-06, S7-05, XA-03 | none | **Built** (section 5) |
 | **H2** | Disruption Hub and family-at-home | XD-01…XD-10, S3-08, S6-24, S4A-03, S4A-08 | H1 (nudge budget, ledger) | **Built** (section 6) |
 | H3 | Port Day Pilot | S6A-01…S6A-15, S6-12, XG-03 | H1 (confirm, ledger), H2 (disruption hooks) | **Built** (section 7) |
-| H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | Not started |
+| H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | **Built** (section 8) |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | Not started |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | Not started |
 | H7 | Backlog | Remaining S and C items, sorted after each phase review | | Not started |
@@ -122,3 +122,20 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 - **Routes:** `/ship/port/guide`, `/plan/split`. `/ship/port` gains the pilot, crowd, plan B, shared plan, back-aboard and meeting cards.
 - **Verified:** `npm run test` (1265 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** audio for phrases and walks (text only; no recordings exist) and a map layer for walks; a port photo snapshot (S6A-14); split items in the trust ledger; shared state across devices (it only crosses people on the same device until a server holds it); a push or local notification for the back-aboard nudge (it shows when the page is open; critical-notice delivery and the nudge budget are not wired to it); real crowd, ship and hour data; rendered tests of the port-day screen with data (the first paint in tests shows the loading state); a rendered check (no browser testing by rule).
+
+## 8. Phase H4 notes
+
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/journey/store.ts` (door-to-ship plan, packing ticks, bag log, embarkation plan).
+
+- **Door-to-ship timeline (S4A-01, S4A-11, S4A-12):** `src/domain/journey.ts` `buildJourney` works back from the terminal and forward from landing or the road time to give each leg, the spare time before the gangway closes (13:30) and a status: on track (2 hours or more), tight (1 to 2 hours), at risk (under 1 hour). Staying the night before starts the day at the hotel, with a checkout and leave-hotel time. `/plan/getting-there`.
+- **Fly the day before (S4A-02):** `flyEarlyAdvice` recommends it when same-day spare time is under two hours, sets a hotel night beside the cost of missing the ship (authored guides, tagged "(verify)"), and names a landing time that would be comfortable.
+- **Flight watch (S4A-04):** `flightStatus`, a stable simulated status per flight and date (`source: 'sim'`): mostly on time, some late, a few cancelled. A delay is pushed through the timeline so "at risk" shows early, and links to `/home/delayed`.
+- **Ground transport, driving, conditions (S4A-06, S4A-07, S4A-12):** authored ground options (one step-free), pick-up notes that sit on the page offline, bags-first driving steps, a countdown to the window, and simulated traffic and weather with a "leave earlier" figure. There is no map; directions are text.
+- **Packing split and bag log (S4A-09, S4A-10):** carry-on against checked lists with ticks, and a bag list with a "photographed" tick. **The app does not take or store pictures**; they stay in the phone's camera roll.
+- **Arrival window (S5-01):** `src/domain/embark.ts` `recommendWindow` picks the quietest reachable window, earliest first; `swapEffect` shows the change in waiting and in when the guest is aboard.
+- **Forecast, quiet lane (S5-02):** `forecast` gives walk and queue per step (terminal, security, photo, gangway) with an accessible lane always shown, a quiet lane option, and shorter queues for priority boarding. Queue times are a simulation from window crowd.
+- **First three hours (S5-03), quick-start (S5-04):** the plan changes order by whether the cabin is ready (13:00); a five-line stateroom card with an authored steward name.
+- **Family plan (S5-05), welcome (S5-06):** roles (together, ahead, parking), a plain warning when only children go ahead or a child is set to park, a meeting place and a ready tick per person, with the booking's check-in state. The welcome shares only the fields the guest ticks, and the wording is tested for selling words.
+- **Routes:** `/plan/getting-there`, `/home/embarkation/plan` (linked from Plan and from Embarkation).
+- **Verified:** `npm run test` (1310 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** an offline map and real pick-up points; real flight, traffic and weather feeds; parking booking; photos in the bag log; a per-person check-in status (the API gives the booking's only); sharing the family plan and the ETA across devices; the welcome reaching the ship; the delay screen taking its reason from flight watch; a rendered check (no browser testing by rule).

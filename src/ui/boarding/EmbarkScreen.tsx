@@ -59,6 +59,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
         <div className="button-row">
           <LinkButton to="/home/boarding-pass">{t('route.boardingPass')}</LinkButton>
           <LinkButton to="/home/embarkation/steps" variant="secondary">{t('embark.companion')}</LinkButton>
+          <LinkButton to="/home/embarkation/plan" variant="secondary">{t('route.embarkPlan')}</LinkButton>
         </div>
       </Card>
 
