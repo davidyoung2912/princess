@@ -80,3 +80,10 @@ textarea.field__input { resize: vertical; }
 .kept-picture figcaption, .book-pictures figcaption { margin-top: var(--space-1); }
 .book-pictures { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); margin-block: var(--space-3); }
 .book-pictures figure { margin: 0; break-inside: avoid; }
+
+/* Small delights DL3: the sea and port strip. Each block says what it is in words; the border style is only a second cue. */
+.day-strip { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: var(--space-2); }
+.day-strip__day { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-2, 6px); }
+.day-strip__day--sea { border-style: dashed; }
+.day-strip__day--tender { border-width: 3px; }
+.day-strip__num { font-weight: 700; }

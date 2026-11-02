@@ -13,6 +13,7 @@ import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { ItineraryList, PriceBreakdown, PriceState, SaveShare } from './parts'
 import { PriceUnitLine } from '../delights/Delights'
+import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDelights'
 
 /** One sailing: its dated plan and an all-in price estimate for a room type and party size (DIS-05, DIS-11). */
 export function SailingScreen() {
@@ -61,14 +62,18 @@ export function SailingScreen() {
           <PriceState state={quote}>{quote.data && <PriceBreakdown quote={quote.data} />}</PriceState>
         </div>
         {quote.data && <PriceUnitLine total={quote.data.total} guests={guests} nights={sailingNights(sailing)} />}
+        {quote.data && <LandHolidayCompare sailing={sailing} total={quote.data.total} guests={guests} />}
         <Card info><p>{t('discover.estimateNote')}</p></Card>
         <p><Link to="/home/cruise/cost">{t('cost.link')}</Link> · <Link to="/home/cabins">{t('route.cabins')}</Link> · <Link to="/home/decide">{t('route.decide')}</Link></p>
       </section>
+
+      <DayStrip sailing={sailing} />
 
       <section aria-labelledby="plan-h">
         <h2 id="plan-h">{t('discover.dayByDay')}</h2>
         <ItineraryList sailing={sailing} dated />
       </section>
+      <OnThatDate sailing={sailing} />
       <p><Link to="/home/sailings">{t('discover.allDates')}</Link></p>
     </div>
   )

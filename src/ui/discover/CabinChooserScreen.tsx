@@ -12,6 +12,8 @@ import { RegretCards } from './RegretCards'
 import { CabinPhotos } from './CabinPhotos'
 import { FeedWaiting } from '../FeedWaiting'
 import { ShareCard } from '../delights/Exports'
+import { CabinExtras, LeftOffCard } from '../delights/DiscoverDelights'
+import { loadLastComparison, saveLastComparison } from '../../settings/lastComparison'
 import { compareQuery, comparisonCard, parseCompareQuery } from '../../domain/export'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
@@ -33,6 +35,21 @@ export function CabinChooserScreen() {
   const [filter, setFilter] = useState<CabinFilter>(NO_FILTER)
   const [picked, setPicked] = useState<{ category: CategoryId; number: string }[]>(() => (shared.picks ?? []).filter((p) => categoryById(p.category)).map((p) => ({ category: p.category as CategoryId, number: p.number })))
 
+  // D1-7: the comparison this device had open last time, offered once and only when this visit did not start from a shared link.
+  const [left, setLeft] = useState<Partial<ReturnType<typeof parseCompareQuery>> | null>(() => {
+    if (params.toString()) return null
+    const last = parseCompareQuery(loadLastComparison())
+    return last.picks?.length ? last : null
+  })
+  const reopen = () => {
+    if (!left) return
+    if (left.sailingId && sailingById(left.sailingId)) setSailingId(left.sailingId)
+    if (left.guests) setGuests(left.guests)
+    if (left.fare && left.fare in FARES) setFare(left.fare as FareId)
+    setPicked((left.picks ?? []).filter((p) => categoryById(p.category)).map((p) => ({ category: p.category as CategoryId, number: p.number })))
+    setLeft(null)
+  }
+
   const sailing = sailingById(sailingId) ?? demo
   const options = fareOptions(category)
   const useFare: FareId = options.includes(fare) ? fare : options[0]
@@ -42,7 +59,12 @@ export function CabinChooserScreen() {
   const cabins = guide ?? []
   const pickedGuides = useFeedList(cabinGuideFeed, picked.map((p) => [sailing.id, p.category, { ...NO_FILTER, availableOnly: false }] as [string, CategoryId, CabinFilter]))
   const isPicked = (c: CabinScore) => picked.some((p) => p.category === c.category && p.number === c.cabin.number)
-  const toggle = (c: CabinScore) => setPicked((list) => (isPicked(c) ? list.filter((p) => !(p.category === c.category && p.number === c.cabin.number)) : list.length >= MAX_COMPARE ? list : [...list, { category: c.category, number: c.cabin.number }]))
+  const toggle = (c: CabinScore) => {
+    const next = isPicked(c) ? picked.filter((p) => !(p.category === c.category && p.number === c.cabin.number)) : picked.length >= MAX_COMPARE ? picked : [...picked, { category: c.category, number: c.cabin.number }]
+    setPicked(next)
+    // D1-7: remembered on this device when the guest picks, never on a timer.
+    if (next.length > 0) saveLastComparison(compareQuery({ sailingId, guests: useGuests, fare: useFare, picks: next }))
+  }
 
   const columns: CompareColumn[] = picked.flatMap((p, i): CompareColumn[] => {
     const found = pickedGuides[i]?.find((c) => c.cabin.number === p.number)
@@ -57,6 +79,8 @@ export function CabinChooserScreen() {
       <h1>{t('route.cabins')}</h1>
       <p>{t('cabins.intro')}</p>
       <p className="muted">{t('cabins.sample')}</p>
+
+      {left && picked.length === 0 && <LeftOffCard picks={left.picks ?? []} onOpen={reopen} onForget={() => { saveLastComparison(''); setLeft(null) }} />}
 
       <Card labelledBy="cabins-pick">
         <h2 id="cabins-pick" className="card__title">{t('cabins.choose')}</h2>
@@ -118,6 +142,7 @@ export function CabinChooserScreen() {
             ))}
             {c.sun && <><h4>{t('cabins.sun')}</h4><p>{c.sun.text} {t('cabins.sunSim')}</p></>}
           </details>
+          <CabinExtras cabin={c.cabin} sailing={sailing} />
           <label className="choice">
             <input type="checkbox" checked={isPicked(c)} disabled={!isPicked(c) && picked.length >= MAX_COMPARE} onChange={() => toggle(c)} />
             <span>{t('cabins.compare')}{!isPicked(c) && picked.length >= MAX_COMPARE && <small>{t('cabins.compareFull', { count: MAX_COMPARE })}</small>}</span>

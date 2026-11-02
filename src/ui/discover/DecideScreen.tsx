@@ -15,6 +15,7 @@ import { FeedWaiting } from '../FeedWaiting'
 import { qualityFeed } from '../../feeds/sailingQuality'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { Field, TextArea } from '../Field'
+import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
 
 async function send(text: string, title: string): Promise<'shared' | 'copied' | 'failed' | null> {
   try {
@@ -119,6 +120,8 @@ export function DecideScreen() {
         )}
       </Card>
 
+      <GutCheckFlip initial={sailing.id} />
+
       <Card labelledBy="dec-quality">
         <h2 id="dec-quality" className="card__title">{t('decide.quality')}</h2>
         <ul className="plain-list">
@@ -155,7 +158,10 @@ export function DecideScreen() {
             <ul className="plain-bullets">{list.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
         ))}
-        <Button variant="secondary" onClick={() => void say(decisionText(summary), t('decide.summary'))}>{t('decide.sendSummary')}</Button>
+        <div className="button-row">
+          <Button variant="secondary" onClick={() => void say(decisionText(summary), t('decide.summary'))}>{t('decide.sendSummary')}</Button>
+          <ReadAloud text={decisionText(summary)} />
+        </div>
         <p><Link to="/home/cabins">{t('route.cabins')}</Link> · <Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
       </Card>
 

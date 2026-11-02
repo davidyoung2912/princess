@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 and DL2 are built (sections 5 and 6); DL3 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL3 are built (sections 5 to 7); DL4 to DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -27,7 +27,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | --- | --- | --- | --- | --- |
 | **DL1** | Words, texts and small checks (pure, no storage) | D1-1, D1-3, D2-1, D2-2, D2-3, D3-7, D4A-3, D4A-4, D4A-7, D6A-5, D7-3, D7-7 | none | **Built** (section 5) |
 | DL2 | Calendar, print and share cards | D2-4, D4-7, D8-6, D4-8, D1-8, D8-4, D8-9, D3-6, D7-5 | DL1 (`delights.ts`) | **Built** (section 6) |
-| DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | Planned |
+| DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | **Built** (section 7) |
 | DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | Planned |
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | Planned |
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | Planned |
@@ -126,3 +126,22 @@ Front end only; no REST contract changes. `calendar.ts` now also writes timed ev
   - Spanish for all 108 `dl.*` strings (DL1 and DL2); native review still needed.
 - **Verified:** `npm run test` (1736 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** the text baked into calendar files and card layouts (event titles, "Sail-away", "Tables:") is English only; the image is a plain layout with no ship artwork.
+
+## 7. Phase DL3 in detail: discover and cabin helpers
+
+**Goal:** nine small helpers on the sailing, cabin chooser and decide screens, as pure tested functions (`src/domain/discoverDelights.ts`, 20 tests) with thin cards in `src/ui/delights/DiscoverDelights.tsx`.
+
+### 7.1 Built (2026-11-02)
+
+Front end only; no REST contract changes.
+
+- **D1-2** on the sailing screen: a strip of days (sea, home port, dock, tender) with hours in port and a one-line count. Words carry the meaning; border style is only a second cue.
+- **D0-3** on the sailing screen: pick a day and see where the ship would be, with times and a link to the port guide.
+- **D0-6** on the sailing screen's price: cost per person per day beside an authored land-holiday range ($180 to $320 a day), with the method in a details block and "a guide, not a quote".
+- **D1-4, D1-5, D1-6** on each cabin card, in one details block: sun by day (from the ship's heading on each sea day; nothing claimed on port days), walking minutes to the buffet, the arena and Guest Services plus the lift bank, and the public rooms above and below with a noise note.
+- **D1-7** on the cabin chooser: the last comparison is remembered on this device when the guest ticks a cabin (not on a timer, per the H6 promise test), and offered once as "Pick up where you left off" with Reopen and Forget. A visit from a shared link ignores it.
+- **D0-1** on Decide: a coin between two sailings, then "Were you hoping for that one?", then a hint that says only the guest can decide.
+- **D0-7** on Decide: a read-aloud button on the decision summary (the same browser speech as the briefing).
+- Spanish for all `dl3.*` strings; native review still needed.
+- **Verified:** `npm run test` (1756 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** sun uses a simple east and west rule from the heading, with no time of year or latitude; walk times assume the cabin sits in the middle of its section; the cabin's deck and section come from the served cabin guide, not from a real deck plan; the land-holiday range is one authored figure for all destinations; read-aloud is on the decision summary only, not on the "is this for me" card; the last comparison keeps only picks, sailing, party and fare, and is not shared between devices.
