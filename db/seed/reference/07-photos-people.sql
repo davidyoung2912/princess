@@ -45,10 +45,10 @@ USING (VALUES
   (N'each', 1995, 1, N'One photo'),
   (N'five', 7995, 5, N'A pack of five photos'),
   (N'all', 14995, 0, N'Every photo (the Premier package includes 12)')
-) AS s ([Id], [Cents], [Count], [Description])
+) AS s ([Id], [Cents], [PhotoCount], [Description])
 ON t.[Id] = s.[Id]
-WHEN MATCHED THEN UPDATE SET t.[Cents] = s.[Cents], t.[Count] = s.[Count], t.[Description] = s.[Description]
-WHEN NOT MATCHED THEN INSERT ([Id], [Cents], [Count], [Description]) VALUES (s.[Id], s.[Cents], s.[Count], s.[Description]);
+WHEN MATCHED THEN UPDATE SET t.[Cents] = s.[Cents], t.[PhotoCount] = s.[PhotoCount], t.[Description] = s.[Description]
+WHEN NOT MATCHED THEN INSERT ([Id], [Cents], [PhotoCount], [Description]) VALUES (s.[Id], s.[Cents], s.[PhotoCount], s.[Description]);
 GO
 
 -- ref.Advisors: 5 rows

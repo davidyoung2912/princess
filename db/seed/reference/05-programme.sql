@@ -737,10 +737,10 @@ USING (VALUES
   (N'aircon', N'maintenance', 45, 1),
   (N'plumbing', N'maintenance', 40, 1),
   (N'tv', N'maintenance', 60, 1)
-) AS s ([Id], [Group], [EtaMin], [MaxQty])
+) AS s ([Id], [ItemGroup], [EtaMin], [MaxQty])
 ON t.[Id] = s.[Id]
-WHEN MATCHED THEN UPDATE SET t.[Group] = s.[Group], t.[EtaMin] = s.[EtaMin], t.[MaxQty] = s.[MaxQty]
-WHEN NOT MATCHED THEN INSERT ([Id], [Group], [EtaMin], [MaxQty]) VALUES (s.[Id], s.[Group], s.[EtaMin], s.[MaxQty]);
+WHEN MATCHED THEN UPDATE SET t.[ItemGroup] = s.[ItemGroup], t.[EtaMin] = s.[EtaMin], t.[MaxQty] = s.[MaxQty]
+WHEN NOT MATCHED THEN INSERT ([Id], [ItemGroup], [EtaMin], [MaxQty]) VALUES (s.[Id], s.[ItemGroup], s.[EtaMin], s.[MaxQty]);
 GO
 
 -- ref.CrewMembers: 7 rows

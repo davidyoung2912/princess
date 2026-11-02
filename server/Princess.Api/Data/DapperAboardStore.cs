@@ -329,12 +329,12 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var id = await c.ExecuteScalarAsync<long>(Sql.Cmd("""
-            INSERT INTO dbo.TourBookings (BookingId, ExcursionId, [Day], Source, TotalCents, CreditCents, Status, [At])
+            INSERT INTO dbo.TourBookings (BookingId, SailingId, ExcursionId, [Day], Source, TotalCents, CreditCents, Status, [At])
             OUTPUT INSERTED.Id
-            VALUES (@bookingId, @ExcursionId, @Day, 'onboard', @TotalCents, 0, 'booked', @at)
+            SELECT b.Id, b.SailingId, @ExcursionId, @Day, 'onboard', @TotalCents, 0, 'booked', @at FROM dbo.Bookings b WHERE b.Id = @bookingId
             """, new { bookingId, t.ExcursionId, t.Day, t.TotalCents, at }, tx, ct));
         foreach (var userId in t.GuestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, UserId) VALUES (@id, @userId)", new { id, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id, bookingId, userId }, tx, ct));
         await ReplaceFolio(c, tx, bookingId, "tour", id, folio, ct);
         await tx.CommitAsync(ct);
     }

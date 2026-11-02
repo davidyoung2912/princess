@@ -172,7 +172,7 @@ export function buildTables(): Table[] {
     CLUBS.map((c) => [c.id, c.name, c.minAge, c.maxAge, placeById(c.placeId)!.deck, clock(c.opens), clock(c.closes)]))
 
   add('05-programme', 'ref.ServiceItems', ['Id'],
-    [t('Id', 'str'), t('Group', 'str'), t('EtaMin', 'int'), t('MaxQty', 'int')],
+    [t('Id', 'str'), t('ItemGroup', 'str'), t('EtaMin', 'int'), t('MaxQty', 'int')],
     REQUEST_ITEMS.map((r) => [r.id, r.group, r.etaMin, r.maxQty]))
 
   add('05-programme', 'ref.CrewMembers', ['Id'],
@@ -228,7 +228,7 @@ export function buildTables(): Table[] {
     PHOTOGRAPHERS.map((p) => [p.day, p.placeId, clock(p.time)]))
 
   add('07-photos-people', 'ref.PhotoOptions', ['Id'],
-    [t('Id', 'str'), t('Cents', 'int'), t('Count', 'int'), t('Description', 'str')],
+    [t('Id', 'str'), t('Cents', 'int'), t('PhotoCount', 'int'), t('Description', 'str')],
     [['each', PRICES.each, 1, 'One photo'], ['five', PRICES.five, 5, 'A pack of five photos'], ['all', PRICES.all, 0, `Every photo (the Premier package includes ${INCLUDED_WITH_PREMIER})`]])
 
   add('07-photos-people', 'ref.Advisors', ['Id'],
@@ -284,7 +284,7 @@ export function buildTables(): Table[] {
   const rainy = buildPackingList({ ...everything, departure: '2026-11-08' }).find((i) => i.id === 'rain')
   const packing = [...buildPackingList(everything), ...(rainy ? [rainy] : [])]
   add('09-lists', 'ref.PackingItems', ['Id'],
-    [t('Id', 'str'), t('Label', 'str'), t('Rule', 'json')],
+    [t('Id', 'str'), t('Label', 'str'), t('RuleJson', 'json')],
     packing.map((i) => [i.id, i.label, { group: i.group, why: i.why, always: always.has(i.id) }]))
 
   return tables

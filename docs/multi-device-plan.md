@@ -58,8 +58,8 @@ Family-at-home links (signed with a per-device secret, so they open only on the 
 
 Precedent: `UserPrefs.Json`, `Budgets.Json`, `NotificationPrefs.Prefs`, `GameProgress`, `TvState`.
 
-- `dbo.UserState (UserId, [Key], Json, CreatedAt, UpdatedAt, RowVersion)`, PK (`UserId`, `Key`), `ISJSON` check.
-- `dbo.BookingState (BookingId, [Key], Json, ...)`, same shape, booking-scoped.
+- `dbo.UserState (UserId, StateKey, Json, CreatedAt, UpdatedAt, RowVersion)`, PK (`UserId`, `StateKey`), `ISJSON` check.
+- `dbo.BookingState (BookingId, StateKey, Json, ...)`, same shape, booking-scoped.
 - Routes: `GET/PUT/DELETE /me/state/{key}`, `GET/PUT/DELETE /bookings/{number}/state/{key}`. `GET /me/state` lists every key with its version so a device can load in one call.
 - Keys are a fixed whitelist per scope, each with a size cap (a key outside the list is `400 invalid`, an oversize body is `400 invalid`).
 - Concurrency: each document has an integer `version` (starts at 1, +1 per save). `PUT` carries `{ data, baseVersion }` in the body (the HTTP wrapper has no header support, and the body is easier to test); a different current version is `409` (`stale`) and the client fetches the newer copy. On a clash this device's copy is sent on top of the newer version unless the store supplies a `merge`.

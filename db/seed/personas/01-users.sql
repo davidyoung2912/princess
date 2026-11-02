@@ -218,7 +218,7 @@ INSERT INTO dbo.NotificationPrefs ([UserId], [Prefs]) VALUES
   (@u_cora, N'{"channels":{"critical":{"push":true,"email":true,"sms":true},"payments":{"push":true,"email":true,"sms":false},"documents":{"push":true,"email":true,"sms":false},"checkin":{"push":true,"email":true,"sms":false},"offers":{"push":false,"email":false,"sms":false}},"quiet":{"on":false,"from":"22:00","to":"07:00"}}');
 
 -- dbo.ConsentChoices: 72 rows
-INSERT INTO dbo.ConsentChoices ([UserId], [ConsentId], [On], [ChangedByUserId], [At]) VALUES
+INSERT INTO dbo.ConsentChoices ([UserId], [ConsentId], [IsOn], [ChangedByUserId], [At]) VALUES
   (@u_gerald, N'improve', 0, @u_gerald, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
   (@u_gerald, N'marketingEmail', 0, @u_gerald, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),
   (@u_maria, N'improve', 1, @u_maria, CAST('2026-09-15T14:00:00' AS DATETIME2(0))),

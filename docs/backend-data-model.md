@@ -37,6 +37,12 @@ These close the open items in `backend-plan.md` section 2 and the "settle in Pha
 - Foreign keys are real and named `FK_<Child>_<Parent>`; `ON DELETE CASCADE` from `Users` and `Bookings` to their child rows (so a retention delete is one statement), `NO ACTION` everywhere else.
 - Checks use named constraints `CK_<Table>_<Column>`.
 - Index naming `IX_<Table>_<Cols>`; unique `UX_<Table>_<Cols>`. Only indexes with a stated reason are listed.
+- **Defaults are named** `DF_<Table>_<Column>`, so a column can be altered or dropped without looking the generated name up. The script is not an upgrade script: a table change means resetting the database.
+- **Reserved words are not column names.** `Key`, `Option`, `Group`, `On`, `Rule`, `Plan`, `Count` were renamed (`StateKey`, `RequestKey`, `OptionId`/`OptionCode`, `ItemGroup`, `IsOn`, `RuleName`/`RuleJson`, `PlanCode`, `PhotoCount`), so no query needs `[brackets]` for them. `At`, `Day`, `Text`, `Time`, `Log` are not reserved and stay.
+- **A person on a booking row is a person on the booking.** Every per-person child table (`TourBookingGuests`, `TourCartGuests`, `DiningReservationGuests`, `WaitlistGuests`, `PurchaseGuests`, `ShowTicketGuests`, `HealthReportGuests`, `MedallionGuests`, `OrderLines.GuestUserId`, `ClubRegistrations`, `FamilyZones`, plus the check-in tables) carries `BookingId` and a foreign key to `BookingGuests (BookingId, UserId)`. Where the parent has an `Id`, the child references `(ParentId, BookingId)` against a `UX_<Parent>_Id_BookingId` unique key, so a child cannot point at another booking's parent. The `BookingGuests` key is `NO ACTION` (a second cascade path is not allowed); the row goes with its parent or its user through the other keys.
+- **Day-bound rows carry `SailingId`** (`TourBookings`, `DiningReservations`, `ShowTickets`): `(BookingId, SailingId)` must match `Bookings (Id, SailingId)` and `(SailingId, Day)` must be a real `ref.ItineraryDays` row, so a booking cannot hold a tour on a day its sailing does not have. Inserts take `SailingId` from the booking row.
+- **One confirmed booking per cabin per sailing:** `UX_Bookings_SailingId_CabinNumber` (filtered to confirmed, cabin assigned). It is also the free-cabin lookup.
+- Every foreign key that a cascade or a lookup walks has an index that leads with the key column (or `UserId, BookingId` for the person keys), so a retention delete never scans a child table.
 
 ## 3. Reading the table notation
 
@@ -88,14 +94,14 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 
 **AccessLog** — privacy R. `Id BIGINT IDENTITY PK` · `UserId ID* FK→Users` (whose data) · `Actor STR(80)*` · `Purpose STR(120)*` · `At TS*`. Index `IX_AccessLog_UserId_At`.
 
-**RetentionRuns** — privacy R. `Id ID PK` · `UserId ID* FK→Users` · `Rule STR(30)*` · `Kinds STR(200)*` · `At TS*`.
+**RetentionRuns** — privacy R. `Id ID PK` · `UserId ID* FK→Users` · `RuleName STR(30)*` · `Kinds STR(200)*` · `At TS*`.
 
 **SupportTickets** — support R/W.
 `Id ID* PK` · `UserId ID* FK→Users` · `Kind {callback|email}*` · `Status {open|inProgress|done}*` (the `TicketStatus` union) · `Detail STR(1000)*` · `At TS*`.
 
 **Favourites** — discover R/W (`favourites`, `toggleFavourite`) **and** `ahead.saved` R/W (same concept: keys `item:…`, `excursion:…`, `kind:id`). `UserId ID* FK→Users` · `ItemKey STR(80)*` · `Position INT*` · PK (`UserId, ItemKey`).
 
-**UserState** — state R/W (multi-device, `docs/multi-device-plan.md`). One small JSON document per person and key, so settings and device-only stores follow the guest to every device. `UserId ID* FK→Users` · `Key STR(30)*` (a fixed whitelist in `StateRules`: `settings`, `offers`, `shop`, `phone`, `memory`, `health`, `concierge`, `calm`, `family`, `pilot`, `trip`, `hub`; `concierge` is the AI conversation (newest 60 messages), held back by `syncPrivate` like `memory`; `health` holds the medical card, access profile and allergy flag, `calm` the sensory / calm profile and `family` the family-at-home contacts, links and link secret; all three are stored as `{"enc": ...}` encrypted with ASP.NET Data Protection and written only while `settings.syncPrivate` is true, and `pilot` and `hub` no longer carry those parts) · `Json [json]*` · `Version INT*` (starts at 1, +1 per save; a save names the version it was based on) · PK (`UserId`, `Key`).
+**UserState** — state R/W (multi-device, `docs/multi-device-plan.md`). One small JSON document per person and key, so settings and device-only stores follow the guest to every device. `UserId ID* FK→Users` · `StateKey STR(30)*` (a fixed whitelist in `StateRules`: `settings`, `offers`, `shop`, `phone`, `memory`, `health`, `concierge`, `calm`, `family`, `pilot`, `trip`, `hub`; `concierge` is the AI conversation (newest 60 messages), held back by `syncPrivate` like `memory`; `health` holds the medical card, access profile and allergy flag, `calm` the sensory / calm profile and `family` the family-at-home contacts, links and link secret; all three are stored as `{"enc": ...}` encrypted with ASP.NET Data Protection and written only while `settings.syncPrivate` is true, and `pilot` and `hub` no longer carry those parts) · `Json [json]*` · `Version INT*` (starts at 1, +1 per save; a save names the version it was based on) · PK (`UserId`, `Key`).
 
 **ConciergeUses** — the concierge's hourly limit R/W (multi-device plan 3, Phase 6). One row per question that reached the model, so the limit of 20 an hour per person holds across restarts and instances; rows older than an hour are deleted on the next question. `Id ID` · `PublicId GUID` · `UserId ID FK→Users` (cascade) · `UsedAt DT*` · `CreatedAt DT*`.
 
@@ -135,7 +141,7 @@ Phase 3 adds columns to the tables above (needed to hold the authored data; see 
 **Advisors** — `Id` · `Name` · `Agency` · `Region` · `Languages [json]` · `Speciality {family|luxury|accessible|groups|first}` · `Hours` (from `ahead.ts`).
 **Faqs / HelpTopics / ContentBlocks** — `Id` · `Area` · `Title` · `Body TXT` · `Locale` · `SortOrder`. Holds `help.ts`, `safety` text, legal documents (see below), and authored copy that the UI today ships in `src/i18n`/`domain`. UI chrome strings stay in the frontend.
 **LegalDocs** — `Id` ({terms|health|age|pregnancy}) · `Version` · `Title` · `Statement` · `Body [json array]`. PK (`Id, Version`).
-**ServiceItems** (housekeeping/maintenance request catalogue): `Id` · `Group {housekeeping|maintenance}` · `EtaMin` · `MaxQty`. **Drinks**: `Id` · `Cents` · `Alcohol BIT`. **Clubs** (family): `Id` ({firefly|neon-grove|underground}) · `Name` · `MinAge` · `MaxAge` · `Deck` · `OpenFrom/OpenTo`. **TravelWindows** (arrival windows): `Id` · `StartLocal` · `EndLocal` · `Priority BIT`. **NightChecklistItems**, **PackingItems** (`Id`, `Label`, `Rule [json]`), **ChecklistItems** (`Id`, `Phase`, `DueDaysBefore`, `Label`), **AdvisorQuiz** *stays in code* (pure scoring over `CabinCategories`).
+**ServiceItems** (housekeeping/maintenance request catalogue): `Id` · `ItemGroup {housekeeping|maintenance}` · `EtaMin` · `MaxQty`. **Drinks**: `Id` · `Cents` · `Alcohol BIT`. **Clubs** (family): `Id` ({firefly|neon-grove|underground}) · `Name` · `MinAge` · `MaxAge` · `Deck` · `OpenFrom/OpenTo`. **TravelWindows** (arrival windows): `Id` · `StartLocal` · `EndLocal` · `Priority BIT`. **NightChecklistItems**, **PackingItems** (`Id`, `Label`, `RuleJson [json]`), **ChecklistItems** (`Id`, `Phase`, `DueDaysBefore`, `Label`), **AdvisorQuiz** *stays in code* (pure scoring over `CabinCategories`).
 
 ### 4.3 Bookings and money (`dbo`)
 
@@ -158,7 +164,7 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 **Payments** (receipts and ledger) — payments R, booking R/W, plan/packages/tours/upgrades W.
 `Id ID* PK` · `BookingId ID* FK→Bookings` · `UserId ID* FK→Users` (who paid) · `Label {deposit|full|balance|refund|tour|purchase|photo|upgrade|checkin}*` · `AmountCents BIG*` (negative = refund) · `At TS*` · `Reference STR(40)*` · `Status {captured|declined|refunded}*` · `RelatedType STR(20)?` · `RelatedId ID?`. Index `IX_Payments_BookingId_At`.
 **PaymentParts** — one per method: `PaymentId FK` · `Seq INT` · `Method {card|wallet}` · `CardId ID? FK→SavedCards` · `CardBrand/Last4` (snapshot) · `Cents BIG` · `ChallengeUsed BIT`. (`checkParts`: ≤ 2 parts, sums exactly.)
-**IdempotencyKeys** — `Key STR(80)* PK` · `UserId` · `Route STR(80)` · `ResponseHash` · `CreatedAt`. Used for `book`, `checkout`, `buy`, `payBalance`.
+**IdempotencyKeys** — `RequestKey STR(80)* PK` · `UserId` · `Route STR(80)` · `ResponseHash` · `CreatedAt`. Used for `book`, `checkout`, `buy`, `payBalance`.
 
 **Acceptances** — `BookingId FK` · `LegalId` · `Version` · `At TS` · PK (`BookingId, LegalId`).
 **NotificationsSent** — `BookingId FK` · `Via {email|sms}` · `ToMasked STR(80)` · `At` (the `notified` list on `BookingView`).
@@ -176,12 +182,12 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 
 ### 4.5 Pre-cruise (`dbo`)
 
-**TourBookings** — plan.excursions R/W. `Id ID PK` · `BookingId FK` · `ExcursionId FK` · `Day INT` · `TotalCents BIG` · `CreditCents BIG` · `Status {booked|cancelled}` · `CancelFeeCents BIG?` · `CancelRefundCents BIG?` · `PaymentId ID? FK→Payments` · `At`. **TourBookingGuests**: (`TourBookingId`, `UserId`). Index on (`ExcursionId`, `Day`) to count spots.
+**TourBookings** — plan.excursions R/W. `Id ID PK` · `BookingId FK` · `SailingId FK` (the booking's sailing) · `ExcursionId FK` · `Day INT` · `TotalCents BIG` · `CreditCents BIG` · `Status {booked|cancelled}` · `CancelFeeCents BIG?` · `CancelRefundCents BIG?` · `PaymentId ID? FK→Payments` · `At`. **TourBookingGuests**: (`TourBookingId`, `UserId`). Index on (`ExcursionId`, `Day`) to count spots.
 **TourCartLines** — `BookingId` · `ExcursionId` · `Guests [csv user ids]` → normalised as **TourCartGuests** (`BookingId, ExcursionId, UserId`) · PK (`BookingId, ExcursionId`). Cart is server-side so it survives devices.
 **LastMinuteTours** — on-board booking of tours leaving soon: modelled as `TourBookings` with `Source {pre|onboard}`; add column `Source` to `TourBookings`; charged to `FolioLines`.
-**DiningReservations** — plan.dining R/W + waits. `Id ID PK` · `BookingId FK` · `VenueId FK` · `Day INT` · `TimeLocal TIME` · `Note STR(300)` · `ChargeCents BIG` · `LateMinutes INT` · `ReminderOn DATE` · `Status {booked|cancelled|moved}` · `RowVersion`. **DiningReservationGuests** (`ReservationId`, `UserId`, `Covered BIT`). Unique filtered (`VenueId, Day, TimeLocal, UserId`) enforced in code via the guests table to catch double booking (`clash`). **GroupTableFriends** (`ReservationId`, `Seq`, `Name`, `Cabin`) plus `GroupSplit {mine|even}` on the reservation (aboard.groups).
+**DiningReservations** — plan.dining R/W + waits. `Id ID PK` · `BookingId FK` · `SailingId FK` · `VenueId FK` · `Day INT` · `TimeLocal TIME` · `Note STR(300)` · `ChargeCents BIG` · `LateMinutes INT` · `ReminderOn DATE` · `Status {booked|cancelled|moved}` · `RowVersion`. **DiningReservationGuests** (`ReservationId`, `UserId`, `Covered BIT`). Unique filtered (`VenueId, Day, TimeLocal, UserId`) enforced in code via the guests table to catch double booking (`clash`). **GroupTableFriends** (`ReservationId`, `Seq`, `Name`, `Cabin`) plus `GroupSplit {mine|even}` on the reservation (aboard.groups).
 **Waitlists** — `Id ID` · `BookingId` · `VenueId` · `Day` · `TimeLocal` · `Stage {waiting|offered|expired|booked}` · `Position INT` · `OfferAt TS?` · `ExpiresAt TS?` · `Auto BIT`; **WaitlistGuests**. **Queues** — walk-in virtual queue: `Id` · `BookingId` · `VenueId` · `JoinedAt` · `Stage {waiting|ready|expired|left}` · `Position` · `ReadyAt` · `ExpiresAt`.
-**Purchases** — plan.packages R/W. `Id ID PK` · `BookingId FK` · `Kind {addOn|upgrade}` · `ItemId STR(20)` · `Units INT` · `UnitCents BIG` · `TotalCents BIG` · `Status {active|cancelled}` · `CreditedCents BIG` · `PaymentId?` · `At`. **PurchaseGuests** (`PurchaseId`, `UserId`). Price state (locked/dropped/same) is computed against `ref.AddOns`/`PackageUpgrades` and the clock.
+**Purchases** — plan.packages R/W. `Id ID PK` · `BookingId FK` · `Kind {addOn|upgrade}` · `ItemId STR(30)` · `Units INT` · `UnitCents BIG` · `TotalCents BIG` · `Status {active|cancelled}` · `CreditedCents BIG` · `PaymentId?` · `At`. **PurchaseGuests** (`PurchaseId`, `UserId`). Price state (locked/dropped/same) is computed against `ref.AddOns`/`PackageUpgrades` and the clock.
 **ChecklistTicks** / **PackingTicks** / **PrepTicks** / **ReadyTicks** / **NightTicks** — all `BookingId FK` (or `UserId` for per-person) · `ItemId STR(40)` · `Done BIT` · `At` · PK (`BookingId, ItemId`) — one generic table is **not** used, to keep each group's FK/PK obvious; they share a column shape. `ReadyTicks` also has `Day INT` (today's port-day readiness list resets daily).
 **TravelPlans** — `BookingId PK FK` · `ArrivalMode STR(20)` · `ArrivalDate DATE` · `ArrivalWindowId?` · `FlightNo STR(12)?` · `Details [json]` · `UpdatedAt`.
 **AssistanceRequests** — plan.assistance. `Id ID` · `BookingId` · `GuestUserId FK` · `Kind STR(20)` (`AssistId`) · `Note STR(500)` · `Status {received|confirmed|declined|cancelled}` · `At`.
@@ -209,9 +215,9 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 ### 4.8 On board
 
 **PlanEvents** (my programme) — `UserId FK` · `SailingId` · `EventId` · `Day INT` · PK (`UserId, SailingId, EventId, Day`).
-**ShowTickets** — `Id ID` · `BookingId` · `EventId` · `Day` · `Status {on|moved|cancelled}` · `At`; **ShowTicketGuests**. Seats left = `ref.Events.Seats − Σ guests` (check inside a serialisable transaction for `soldOut`).
+**ShowTickets** — `Id ID` · `BookingId` · `SailingId` · `EventId` · `Day` · `Status {on|moved|cancelled}` · `At`; **ShowTicketGuests**. Seats left = `ref.Events.Seats − Σ guests` (check inside a serialisable transaction for `soldOut`).
 **Orders** — orders R/W. `Id ID PK` · `BookingId FK` · `PlacedByUserId FK` · `Kind {delivery|room|breakfast}` · `PlacedAt TS` · `DeliverAt TS?` · `LocationKind {cabin|zone|other}` · `LocationRef STR(80)?` · `TipCents BIG` · `FeeCents BIG` · `ServiceCents BIG` · `TotalCents BIG` · `CoveredCents BIG` · `RefundCents BIG` · `Stage {scheduled|received|preparing|needsChoice|onTheWay|delivered|cancelled}` · `EtaAt TS?` · `Contacted INT` · `RowVersion`. Stage is *derived on read* from timestamps and the clock (`orders.ts progress`), with the stored value updated lazily and by cancel/resolve.
-**OrderLines** — `OrderId FK` · `Seq INT` · `ItemId FK→ref.MenuItems` · `Qty INT` · `GuestUserId FK` · `Extras [csv]` · `Note STR(200)?` · `UnitCents BIG` · `Choice {substitute|remove}?` · `Unavailable BIT`.
+**OrderLines** — `OrderId FK` · `BookingId FK` · `Seq INT` · `ItemId FK→ref.MenuItems` · `Qty INT` · `GuestUserId FK→BookingGuests` · `Extras [csv]` · `Note STR(200)?` · `UnitCents BIG` · `Choice {substitute|remove}?` · `Unavailable BIT`.
 **ChatMessages** (travel-party chat, `messages`) — `Id ID` · `BookingGroupKey` (see below) · `FromUserId FK` · `Text STR(2000)` · `Photo TXT?` (data URL; capped by `ChatSafeApi.sendPhoto` rules) · `At`. **ChatReads** — `MessageId` · `UserId` · `SeenAt` (written only when both sides have receipts on). `ReadReceipts BIT` is on `Users`… stored as `UserPrefs.ReceiptsOn` (see `UserPrefs`).
 *Chat scope:* the chat is "your group", not "your booking" (friends in separate cabins share it). Table **ChatGroups** (`Id ID`, `Name`) + **ChatGroupMembers** (`GroupId`, `UserId`); messages reference `GroupId`. Seeded groups follow `visibleTo()` (Harper and Brennan families; solos have none).
 **ChatBlocks** — `UserId` · `BlockedUserId` · PK pair. **ChatReports** — `Id` · `MessageId` · `ByUserId` · `Reason` · `At`.
@@ -222,12 +228,12 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 **RoomSettings** — `BookingId PK` · `Housekeeping [json]` · `Devices [json]` · `DndSince TS?` · `RowVersion`.
 **PhotoSelections** — `UserId` · `PhotoId FK` · PK pair (favourites). **PhotoPurchases** — `Id ID` · `BookingId` · `Option` · `PaidCents` · `SavedCents` · `Verified BIT` · `Until TS` · `At`; **PhotoPurchaseItems** (`PurchaseId`, `PhotoId`, `Downloaded BIT`).
 **LaundryRequests** — `Id` · `BookingId` · `Service` · `Qty` · `PickupAt` · `ReturnAt` · `Stage` · `TotalCents` · `FreeCents` · `Note`.
-**WifiDevices** — `Id` · `BookingId` · `Name STR(60)` · `Plan` · `Days INT` · `ExpiresAt` · `UsedMb BIG`.
+**WifiDevices** — `Id` · `BookingId` · `Name STR(60)` · `PlanCode` · `Days INT` · `ExpiresAt` · `UsedMb BIG`.
 **Budgets** — `BookingId PK` · `Json [json]` (the `Budget`: overall and per-child limits) · `RowVersion`.
 
-**BookingState** — state R/W (multi-device). As `UserState` but per booking, shared by everyone on it. `BookingId ID* FK→Bookings` · `Key STR(30)*` (`port`, `party`) · `Json [json]*` · `Version INT*` · PK (`BookingId`, `Key`).
+**BookingState** — state R/W (multi-device). As `UserState` but per booking, shared by everyone on it. `BookingId ID* FK→Bookings` · `StateKey STR(30)*` (`port`, `party`) · `Json [json]*` · `Version INT*` · PK (`BookingId`, `StateKey`).
 **PortRows** — the port day's shared record as rows (multi-device plan 2, Phase 6), so a delete is a row that stays: the old `port` document unions both devices' copies and brings a deleted expense back. `BookingId ID* FK→Bookings` (cascade) · `Kind STR(12)*` (`presence`, `plan`, `planB`, `setting`, `meet`, `meetState`, `party`, `item`) · `RowKey STR(90)*` · `Json [json]?` (at most 2,000 characters; null for a deleted row) · `At BIG*` (ms, from the device that made the change; the later `At` wins a clash, a tie keeps the stored row) · `Deleted BIT*` · PK (`BookingId`, `Kind`, `RowKey`). A deleted row is kept for 30 days so another device that was offline learns of it; at most 1,000 rows a booking. Keys: `presence` `date|person`, `plan` and `planB` `date`, `setting` `alertBefore` or `settledAt`, `meet` a meeting's id, `meetState` `meetingId|person`, `party` a family's id (the split ledger), `item` an expense's id.
-**UpdateAcks** — `UserId` · `ScenarioId` · `Option STR(30)` · `At` · PK pair.
+**UpdateAcks** — `UserId` · `ScenarioId` · `OptionCode STR(30)` · `At` · PK pair.
 **ServiceRequests** (`aboard.requests`) — `Id` · `BookingId` · `ItemId` · `Qty` · `Note` · `PlacedAt` · `EtaAt` · `Stage {received|onTheWay|done|cancelled}`.
 **SafetyReports** (`aboard.reports`) — `Id` · `BookingId` · `Kind` · `Place` · `Note` · `Anonymous BIT` · `Reference` · `At`.
 **DrinkLogs** — `Id` · `UserId` · `DrinkId FK` · `At`. **TopUps** — `Id` · `BookingId` · `Dollars INT` · `Source {card|cash}` · `At` · `SettledAt?` · `Reference`. **OnboardAccount** — `BookingId PK` · `PinHash BINARY(32)?` · `PinSalt` · `PinFails INT` · `GratuityChoice {standard|prepaid|removal}` · `GratuityReason STR(300)?` · `GratuityPaidAt?` · `DisplayCurrency CHAR(3)`.
@@ -239,7 +245,7 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 
 ### 4.9 After the cruise
 
-**DisembarkChoices** — `BookingId PK` · `Option {tagged|selfAssist|earlyWalkOff}` · `TagsOn BIT` · `DecidedAt`; **DisembarkBags** (`BookingId`, `UserId`, `Bags INT`).
+**DisembarkChoices** — `BookingId PK` · `OptionCode {tagged|selfAssist|earlyWalkOff}` · `TagsOn BIT` · `DecidedAt`; **DisembarkBags** (`BookingId`, `UserId`, `Bags INT`).
 **Customs** — `BookingId PK` · `Declaration [json]` (`food`, `cash`, `goodsUsd`, `note`) · `SubmittedAt`.
 **OnwardPlans** — `BookingId PK` · `Mode` · `FlightAtLocal TIME?` · `Flight STR(12)` · `Note`.
 **FinalBill** — `BookingId PK` · `TipKeepPercent INT` · `EmailedAt?` · `EmailedTo STR(254)?` · `SettledAt?`. Plus `BillQueries` are `Cases` with `Kind=billing` and `LineId`.

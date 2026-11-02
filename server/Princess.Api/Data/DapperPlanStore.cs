@@ -111,12 +111,12 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         foreach (var t in tours)
         {
             var id = await c.ExecuteScalarAsync<long>(Sql.Cmd("""
-                INSERT INTO dbo.TourBookings (BookingId, ExcursionId, [Day], Source, TotalCents, CreditCents, Status, PaymentId, [At])
+                INSERT INTO dbo.TourBookings (BookingId, SailingId, ExcursionId, [Day], Source, TotalCents, CreditCents, Status, PaymentId, [At])
                 OUTPUT INSERTED.Id
-                VALUES (@bookingId, @ExcursionId, @Day, 'pre', @TotalCents, @CreditCents, 'booked', @paymentId, @at)
+                SELECT b.Id, b.SailingId, @ExcursionId, @Day, 'pre', @TotalCents, @CreditCents, 'booked', @paymentId, @at FROM dbo.Bookings b WHERE b.Id = @bookingId
                 """, new { bookingId, t.ExcursionId, t.Day, t.TotalCents, t.CreditCents, paymentId, at }, tx, ct));
             foreach (var userId in t.GuestIds)
-                await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, UserId) VALUES (@id, @userId)", new { id, userId }, tx, ct));
+                await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id, bookingId, userId }, tx, ct));
         }
         await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.TourCartLines WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
         await tx.CommitAsync(ct);
@@ -132,7 +132,7 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
             """, new { change.TourId, bookingId, change.TotalCents, change.CreditCents, change.Status, change.FeeCents, change.RefundCents, change.At }, tx, ct));
         await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.TourBookingGuests WHERE TourBookingId = @TourId", new { change.TourId }, tx, ct));
         foreach (var userId in change.GuestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, UserId) VALUES (@TourId, @userId)", new { change.TourId, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.TourBookingGuests (TourBookingId, BookingId, UserId) VALUES (@TourId, @bookingId, @userId)", new { change.TourId, bookingId, userId }, tx, ct));
         if (refund is not null) await DapperBookingStore.InsertPaymentAsync(c, tx, bookingId, refund, ct);
         await tx.CommitAsync(ct);
     }
@@ -188,13 +188,13 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var row = await c.QuerySingleAsync<(long Id, Guid PublicId)>(Sql.Cmd("""
-            INSERT INTO dbo.DiningReservations (BookingId, VenueId, [Day], TimeLocal, Note, ChargeCents, Status, CreatedAt)
+            INSERT INTO dbo.DiningReservations (BookingId, SailingId, VenueId, [Day], TimeLocal, Note, ChargeCents, Status, CreatedAt)
             OUTPUT INSERTED.Id, INSERTED.PublicId
-            VALUES (@bookingId, @VenueId, @Day, @at, @Note, @ChargeCents, 'booked', @At)
+            SELECT b.Id, b.SailingId, @VenueId, @Day, @at, @Note, @ChargeCents, 'booked', @At FROM dbo.Bookings b WHERE b.Id = @bookingId
             """, new { bookingId, t.VenueId, t.Day, at = TimeSpan.Parse(t.Time + ":00"), t.Note, t.ChargeCents, t.At }, tx, ct));
         foreach (var userId in t.GuestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.DiningReservationGuests (ReservationId, UserId, Covered) VALUES (@id, @userId, @covered)",
-                new { id = row.Id, userId, covered = t.CoveredIds.Contains(userId) }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.DiningReservationGuests (ReservationId, BookingId, UserId, Covered) VALUES (@id, @bookingId, @userId, @covered)",
+                new { id = row.Id, bookingId, userId, covered = t.CoveredIds.Contains(userId) }, tx, ct));
         await tx.CommitAsync(ct);
         return new TableRow
         {
@@ -270,7 +270,7 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
             VALUES (@bookingId, @Kind, @ItemId, @Units, @UnitCents, @TotalCents, 'active', @paymentId, @At)
             """, new { bookingId, p.Kind, p.ItemId, p.Units, p.UnitCents, p.TotalCents, paymentId, p.At }, tx, ct));
         foreach (var userId in p.GuestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.PurchaseGuests (PurchaseId, UserId) VALUES (@id, @userId)", new { id, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.PurchaseGuests (PurchaseId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id, bookingId, userId }, tx, ct));
         await tx.CommitAsync(ct);
     }
 

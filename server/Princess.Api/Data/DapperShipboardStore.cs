@@ -77,9 +77,9 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
             foreach (var l in o.Lines)
             {
                 await c.ExecuteAsync(Sql.Cmd("""
-                    INSERT INTO dbo.OrderLines (OrderId, Seq, ItemId, Qty, GuestUserId, Extras, Note, UnitCents, Choice, Unavailable)
-                    VALUES (@id, @Seq, @ItemId, @Qty, @GuestUserId, @Extras, @Note, @UnitCents, @Choice, @Unavailable)
-                    """, new { id, l.Seq, l.ItemId, l.Qty, l.GuestUserId, l.Extras, l.Note, l.UnitCents, l.Choice, l.Unavailable }, tx, ct));
+                    INSERT INTO dbo.OrderLines (OrderId, BookingId, Seq, ItemId, Qty, GuestUserId, Extras, Note, UnitCents, Choice, Unavailable)
+                    VALUES (@id, @bookingId, @Seq, @ItemId, @Qty, @GuestUserId, @Extras, @Note, @UnitCents, @Choice, @Unavailable)
+                    """, new { id, bookingId, l.Seq, l.ItemId, l.Qty, l.GuestUserId, l.Extras, l.Note, l.UnitCents, l.Choice, l.Unavailable }, tx, ct));
             }
         }
         else
@@ -201,7 +201,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
             INSERT INTO dbo.HealthReports (BookingId, ByUserId, Symptoms, StartedHoursAgo, [At]) OUTPUT INSERTED.Id VALUES (@bookingId, @byUserId, @symptoms, @startedHoursAgo, @at)
             """, new { bookingId, byUserId, symptoms = JsonSerializer.Serialize(symptoms), startedHoursAgo, at }, tx, ct));
         foreach (var userId in guestUserIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.HealthReportGuests (ReportId, UserId) VALUES (@id, @userId)", new { id, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.HealthReportGuests (ReportId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id, bookingId, userId }, tx, ct));
         await tx.CommitAsync(ct);
     }
 
@@ -259,7 +259,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     private static async Task<List<PhotoPurchaseRow>> LoadPurchasesAsync(DbConnection c, long bookingId, Guid? publicId, CancellationToken ct)
     {
         var rows = (await c.QueryAsync<PhotoPurchaseRow>(Sql.Cmd("""
-            SELECT p.Id, p.PublicId, p.[Option] AS [Option], p.PaidCents, p.SavedCents, p.Until, p.[At], ISNULL(f.UserId, 0) AS BuyerUserId
+            SELECT p.Id, p.PublicId, p.OptionId AS [Option], p.PaidCents, p.SavedCents, p.Until, p.[At], ISNULL(f.UserId, 0) AS BuyerUserId
             FROM dbo.PhotoPurchases p LEFT JOIN dbo.FolioLines f ON f.SourceType = 'photo' AND f.SourceId = p.Id
             WHERE p.BookingId = @bookingId AND (@publicId IS NULL OR p.PublicId = @publicId) ORDER BY p.[At], p.Id
             """, new { bookingId, publicId }, null, ct))).ToList();
@@ -282,7 +282,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-            INSERT INTO dbo.PhotoPurchases (BookingId, [Option], PaidCents, SavedCents, Verified, Until, [At])
+            INSERT INTO dbo.PhotoPurchases (BookingId, OptionId, PaidCents, SavedCents, Verified, Until, [At])
             OUTPUT INSERTED.Id, INSERTED.PublicId
             VALUES (@bookingId, @Option, @PaidCents, @SavedCents, 0, @Until, @At)
             """, new { bookingId, p.Option, p.PaidCents, p.SavedCents, p.Until, p.At }, tx, ct));
@@ -360,7 +360,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<WifiRow>(Sql.Cmd("""
-            SELECT w.Id, w.PublicId, w.Name, w.[Plan] AS [Plan], w.Days, w.CreatedAt AS AddedAt, w.ExpiresAt, ISNULL(f.Cents, 0) AS PaidCents,
+            SELECT w.Id, w.PublicId, w.Name, w.PlanCode AS [Plan], w.Days, w.CreatedAt AS AddedAt, w.ExpiresAt, ISNULL(f.Cents, 0) AS PaidCents,
               CAST(CASE WHEN f.CoveredBy = 'package' THEN 1 ELSE 0 END AS BIT) AS Included, ISNULL(f.UserId, 0) AS BuyerUserId
             FROM dbo.WifiDevices w LEFT JOIN dbo.FolioLines f ON f.SourceType = 'wifi' AND f.SourceId = w.Id
             WHERE w.BookingId = @bookingId ORDER BY w.CreatedAt, w.Id
@@ -372,7 +372,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-            INSERT INTO dbo.WifiDevices (BookingId, Name, [Plan], Days, ExpiresAt, CreatedAt)
+            INSERT INTO dbo.WifiDevices (BookingId, Name, PlanCode, Days, ExpiresAt, CreatedAt)
             OUTPUT INSERTED.Id, INSERTED.PublicId
             VALUES (@bookingId, @Name, @Plan, @Days, @ExpiresAt, @AddedAt)
             """, new { bookingId, d.Name, d.Plan, d.Days, d.ExpiresAt, d.AddedAt }, tx, ct));
@@ -389,7 +389,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         await using var tx = await c.BeginTransactionAsync(ct);
         var id = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT Id FROM dbo.WifiDevices WHERE BookingId = @bookingId AND PublicId = @publicId", new { bookingId, publicId }, tx, ct));
         if (id is null) return;
-        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.WifiDevices SET [Plan] = @plan, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id", new { id, plan }, tx, ct));
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.WifiDevices SET PlanCode = @plan, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id", new { id, plan }, tx, ct));
         await ReplaceFolioAsync(c, tx, bookingId, "wifi", id.Value, folio, ct);
         await tx.CommitAsync(ct);
     }
@@ -411,7 +411,7 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
     public async Task<List<UpdateAckRow>> ListAcksAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<UpdateAckRow>(Sql.Cmd("SELECT ScenarioId, [Option] AS [Option], [At] FROM dbo.UpdateAcks WHERE UserId = @userId", new { userId }, null, ct))).ToList();
+        return (await c.QueryAsync<UpdateAckRow>(Sql.Cmd("SELECT ScenarioId, OptionCode AS [Option], [At] FROM dbo.UpdateAcks WHERE UserId = @userId", new { userId }, null, ct))).ToList();
     }
 
     public async Task SaveAckAsync(long userId, string scenarioId, string option, DateTime at, CancellationToken ct)
@@ -419,8 +419,8 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
             MERGE dbo.UpdateAcks AS t USING (SELECT @userId AS UserId, @scenarioId AS ScenarioId) AS s ON t.UserId = s.UserId AND t.ScenarioId = s.ScenarioId
-            WHEN MATCHED THEN UPDATE SET [Option] = @option, [At] = @at
-            WHEN NOT MATCHED THEN INSERT (UserId, ScenarioId, [Option], [At]) VALUES (@userId, @scenarioId, @option, @at);
+            WHEN MATCHED THEN UPDATE SET OptionCode = @option, [At] = @at
+            WHEN NOT MATCHED THEN INSERT (UserId, ScenarioId, OptionCode, [At]) VALUES (@userId, @scenarioId, @option, @at);
             """, new { userId, scenarioId, option, at }, null, ct));
     }
 }

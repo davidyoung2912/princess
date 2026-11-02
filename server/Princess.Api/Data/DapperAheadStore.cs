@@ -80,7 +80,7 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
             VALUES (@bookingId, @venueId, @day, @clock, 'waiting', @start, @auto, @at)
             """, new { bookingId, venueId, day, clock = Clock(time), start, auto, at }, tx, ct));
         foreach (var userId in guestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.WaitlistGuests (WaitlistId, UserId) VALUES (@id, @userId)", new { id = row.Id, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.WaitlistGuests (WaitlistId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id = row.Id, bookingId, userId }, tx, ct));
         await tx.CommitAsync(ct);
         return new WaitlistRow { Id = row.Id, PublicId = row.PublicId, VenueId = venueId, Day = day, Time = time, JoinedAt = at, Start = start, Stage = "waiting", Auto = auto, GuestIds = [.. guestIds] };
     }
@@ -127,12 +127,12 @@ public sealed class DapperAheadStore(IDbConnectionFactory db) : IAheadStore
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var row = await c.QuerySingleAsync<(long Id, Guid PublicId)>(Sql.Cmd("""
-            INSERT INTO dbo.ShowTickets (BookingId, EventId, [Day], Status, [At])
+            INSERT INTO dbo.ShowTickets (BookingId, SailingId, EventId, [Day], Status, [At])
             OUTPUT INSERTED.Id, INSERTED.PublicId
-            VALUES (@bookingId, @eventId, @day, 'on', @at)
+            SELECT b.Id, b.SailingId, @eventId, @day, 'on', @at FROM dbo.Bookings b WHERE b.Id = @bookingId
             """, new { bookingId, eventId, day, at }, tx, ct));
         foreach (var userId in guestIds)
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ShowTicketGuests (ShowTicketId, UserId) VALUES (@id, @userId)", new { id = row.Id, userId }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ShowTicketGuests (ShowTicketId, BookingId, UserId) VALUES (@id, @bookingId, @userId)", new { id = row.Id, bookingId, userId }, tx, ct));
         await tx.CommitAsync(ct);
         return new ShowTicketRow { Id = row.Id, PublicId = row.PublicId, EventId = eventId, Day = day, GuestIds = [.. guestIds] };
     }

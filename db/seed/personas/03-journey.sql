@@ -184,22 +184,22 @@ INSERT INTO dbo.AssistanceRequests ([PublicId], [BookingId], [GuestUserId], [Kin
   ('6660B285-4168-2479-F602-01E9FEA4D463', @b_colin, @u_colin, N'equipment', N'CPAP machine needs a power point beside the bed. Service dog travelling with me.', N'received', CAST('2027-02-27T15:00:00' AS DATETIME2(0)));
 
 -- dbo.TourBookings: 4 rows
-INSERT INTO dbo.TourBookings ([PublicId], [BookingId], [ExcursionId], [Day], [Source], [TotalCents], [CreditCents], [Status], [PaymentId], [At]) VALUES
-  ('2CF5B386-F20C-019E-AF9F-76831EDCE0D6', @b_gerald, N'coz-ruins', 3, N'pre', 6900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC163342-T-coz-ruins'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
-  ('4BD989FE-2DCB-2774-A67C-74452A3C0C4C', @b_daniel, N'coz-beach', 3, N'pre', 21800, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC243902-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
-  ('9DF63AF6-6269-E973-2256-2485582F5967', @b_ruth, N'bze-walk', 4, N'pre', 9000, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC428972-T-bze-walk'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
-  ('9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D', @b_bea, N'coz-beach', 3, N'pre', 5900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC476708-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0)));
+INSERT INTO dbo.TourBookings ([PublicId], [BookingId], [SailingId], [ExcursionId], [Day], [Source], [TotalCents], [CreditCents], [Status], [PaymentId], [At]) VALUES
+  ('2CF5B386-F20C-019E-AF9F-76831EDCE0D6', @b_gerald, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_gerald), N'coz-ruins', 3, N'pre', 6900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC163342-T-coz-ruins'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
+  ('4BD989FE-2DCB-2774-A67C-74452A3C0C4C', @b_daniel, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_daniel), N'coz-beach', 3, N'pre', 21800, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC243902-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
+  ('9DF63AF6-6269-E973-2256-2485582F5967', @b_ruth, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_ruth), N'bze-walk', 4, N'pre', 9000, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC428972-T-bze-walk'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
+  ('9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D', @b_bea, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_bea), N'coz-beach', 3, N'pre', 5900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC476708-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0)));
 
 -- dbo.TourBookingGuests: 8 rows
-INSERT INTO dbo.TourBookingGuests ([TourBookingId], [UserId]) VALUES
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '2CF5B386-F20C-019E-AF9F-76831EDCE0D6'), @u_gerald),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @u_daniel),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @u_priya),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @u_ethan),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @u_maya),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @u_ruth),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @u_paul),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D'), @u_bea);
+INSERT INTO dbo.TourBookingGuests ([TourBookingId], [BookingId], [UserId]) VALUES
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '2CF5B386-F20C-019E-AF9F-76831EDCE0D6'), @b_gerald, @u_gerald),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_daniel),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_priya),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_ethan),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_maya),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @b_ruth, @u_ruth),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @b_ruth, @u_paul),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D'), @b_bea, @u_bea);
 
 -- dbo.TourCartLines: 2 rows
 INSERT INTO dbo.TourCartLines ([BookingId], [ExcursionId]) VALUES
@@ -216,18 +216,18 @@ INSERT INTO dbo.TourCartGuests ([BookingId], [ExcursionId], [UserId]) VALUES
   (@b_marcus, N'coz-snorkel', @u_sofia);
 
 -- dbo.DiningReservations: 3 rows
-INSERT INTO dbo.DiningReservations ([PublicId], [BookingId], [VenueId], [Day], [TimeLocal], [Note], [ChargeCents], [Status]) VALUES
-  ('ADA56D06-78E5-70D7-F168-3ACD358D2B6C', @b_gerald, N'crown', 2, CAST('19:00:00' AS TIME(0)), N'', 4500, N'booked'),
-  ('BE30F651-2EC3-B683-6C2A-9C0E55CB6947', @b_daniel, N'sabatini', 4, CAST('19:30:00' AS TIME(0)), N'', 9000, N'booked'),
-  ('D6B4E417-0F3A-689E-F6AB-BF8544458875', @b_jordan, N'love', 5, CAST('20:00:00' AS TIME(0)), N'Honeymoon: a quiet table if possible.', 9000, N'booked');
+INSERT INTO dbo.DiningReservations ([PublicId], [BookingId], [SailingId], [VenueId], [Day], [TimeLocal], [Note], [ChargeCents], [Status]) VALUES
+  ('ADA56D06-78E5-70D7-F168-3ACD358D2B6C', @b_gerald, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_gerald), N'crown', 2, CAST('19:00:00' AS TIME(0)), N'', 4500, N'booked'),
+  ('BE30F651-2EC3-B683-6C2A-9C0E55CB6947', @b_daniel, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_daniel), N'sabatini', 4, CAST('19:30:00' AS TIME(0)), N'', 9000, N'booked'),
+  ('D6B4E417-0F3A-689E-F6AB-BF8544458875', @b_jordan, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_jordan), N'love', 5, CAST('20:00:00' AS TIME(0)), N'Honeymoon: a quiet table if possible.', 9000, N'booked');
 
 -- dbo.DiningReservationGuests: 5 rows
-INSERT INTO dbo.DiningReservationGuests ([ReservationId], [UserId], [Covered]) VALUES
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'ADA56D06-78E5-70D7-F168-3ACD358D2B6C'), @u_gerald, 0),
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @u_daniel, 1),
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @u_priya, 1),
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @u_jordan, 1),
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @u_casey, 1);
+INSERT INTO dbo.DiningReservationGuests ([ReservationId], [BookingId], [UserId], [Covered]) VALUES
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'ADA56D06-78E5-70D7-F168-3ACD358D2B6C'), @b_gerald, @u_gerald, 0),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @b_daniel, @u_daniel, 1),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @b_daniel, @u_priya, 1),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @b_jordan, @u_jordan, 1),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @b_jordan, @u_casey, 1);
 
 -- dbo.Purchases: 2 rows
 INSERT INTO dbo.Purchases ([PublicId], [BookingId], [Kind], [ItemId], [Units], [UnitCents], [TotalCents], [Status], [CreditedCents], [PaymentId], [At]) VALUES
@@ -235,9 +235,9 @@ INSERT INTO dbo.Purchases ([PublicId], [BookingId], [Kind], [ItemId], [Units], [
   ('F19F0941-9CC9-A488-8CE4-FE03FC4B3C6E', @b_dev, N'addOn', N'photo', 1, 14900, 14900, N'active', 3000, (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC365324-P1'), CAST('2027-02-20T15:00:00' AS DATETIME2(0)));
 
 -- dbo.PurchaseGuests: 2 rows
-INSERT INTO dbo.PurchaseGuests ([PurchaseId], [UserId]) VALUES
-  ((SELECT Id FROM dbo.Purchases WHERE PublicId = '7A0C90E4-3821-5EDC-FD44-5AF910C6A21F'), @u_gerald),
-  ((SELECT Id FROM dbo.Purchases WHERE PublicId = 'F19F0941-9CC9-A488-8CE4-FE03FC4B3C6E'), @u_dev);
+INSERT INTO dbo.PurchaseGuests ([PurchaseId], [BookingId], [UserId]) VALUES
+  ((SELECT Id FROM dbo.Purchases WHERE PublicId = '7A0C90E4-3821-5EDC-FD44-5AF910C6A21F'), @b_gerald, @u_gerald),
+  ((SELECT Id FROM dbo.Purchases WHERE PublicId = 'F19F0941-9CC9-A488-8CE4-FE03FC4B3C6E'), @b_dev, @u_dev);
 
 -- dbo.CheckinGuests: 110 rows
 INSERT INTO dbo.CheckinGuests ([BookingId], [UserId], [Step], [DoneAt], [Data]) VALUES
@@ -462,7 +462,7 @@ INSERT INTO dbo.FolioLines ([PublicId], [BookingId], [UserId], [Day], [Category]
   ('90E09806-DEE5-941E-992F-2D6D5A037504', @b_harold, @u_harold, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0)));
 
 -- dbo.DisembarkChoices: 2 rows
-INSERT INTO dbo.DisembarkChoices ([BookingId], [Option], [TagsOn], [DecidedAt]) VALUES
+INSERT INTO dbo.DisembarkChoices ([BookingId], [OptionCode], [TagsOn], [DecidedAt]) VALUES
   (@b_frank, N'earlyWalkOff', 0, CAST('2027-03-27T18:00:00' AS DATETIME2(0))),
   (@b_grace, N'tagged', 1, CAST('2027-03-27T18:00:00' AS DATETIME2(0)));
 

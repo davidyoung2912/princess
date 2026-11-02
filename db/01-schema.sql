@@ -2,7 +2,8 @@
   Princess database schema (SQL Server / T-SQL). Phase 2 of docs/backend-plan.md.
   Source of truth for the design: docs/backend-data-model.md (section 4 tables, section 2 conventions).
 
-  - Runs top to bottom on an empty database, and is safe to re-run: every object is created only if missing.
+  - Runs top to bottom on an empty database; every table is created only if missing, so a re-run is harmless. It is not
+    an upgrade script: a change to a table means resetting the database (db/00-drop-all.sql, then this script and the seeds).
   - Creates no data. Reference data is seeded by db/seed/reference (Phase 3), personas by db/seed/personas (Phase 4).
   - Schemas: ref (reference data), dbo (everything a user owns), demo (clock and scenarios).
   - Run it in the target database (USE <db> first), as a user who may create schemas and tables:
@@ -34,7 +35,8 @@ CREATE TABLE ref.Ships (
   Decks INT NOT NULL, Tonnage INT NOT NULL, Capacity INT NOT NULL,
   HomeZone NVARCHAR(40) NOT NULL,
   ProfileJson NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Ships_ProfileJson DEFAULT N'{}',
-  CONSTRAINT CK_Ships_ProfileJson CHECK (ISJSON(ProfileJson) = 1)
+  CONSTRAINT CK_Ships_ProfileJson CHECK (ISJSON(ProfileJson) = 1),
+  CONSTRAINT CK_Ships_Sizes CHECK (Decks > 0 AND Tonnage > 0 AND Capacity > 0)
 );
 END
 
@@ -42,7 +44,7 @@ IF OBJECT_ID(N'ref.Decks', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Decks (
   ShipId NVARCHAR(40) NOT NULL, Number INT NOT NULL,
-  Name NVARCHAR(80) NOT NULL, Summary NVARCHAR(500) NOT NULL DEFAULT N'',
+  Name NVARCHAR(80) NOT NULL, Summary NVARCHAR(500) NOT NULL CONSTRAINT DF_Decks_Summary DEFAULT N'',
   CONSTRAINT PK_Decks PRIMARY KEY (ShipId, Number),
   CONSTRAINT FK_Decks_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id)
 );
@@ -52,11 +54,11 @@ IF OBJECT_ID(N'ref.CabinCategories', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.CabinCategories (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_CabinCategories PRIMARY KEY,
-  Name NVARCHAR(80) NOT NULL, IsSuite BIT NOT NULL DEFAULT 0,
+  Name NVARCHAR(80) NOT NULL, IsSuite BIT NOT NULL CONSTRAINT DF_CabinCategories_IsSuite DEFAULT 0,
   Capacity INT NOT NULL, SizeSqFt INT NOT NULL,
-  Description NVARCHAR(1000) NOT NULL DEFAULT N'',
+  Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_CabinCategories_Description DEFAULT N'',
   Features NVARCHAR(MAX) NOT NULL CONSTRAINT DF_CabinCategories_Features DEFAULT N'[]',
-  SortOrder INT NOT NULL DEFAULT 0,
+  SortOrder INT NOT NULL CONSTRAINT DF_CabinCategories_SortOrder DEFAULT 0,
   CONSTRAINT CK_CabinCategories_Features CHECK (ISJSON(Features) = 1),
   CONSTRAINT CK_CabinCategories_Capacity CHECK (Capacity > 0)
 );
@@ -77,7 +79,7 @@ CREATE TABLE ref.Cabins (
   ShipId NVARCHAR(40) NOT NULL, Number NVARCHAR(8) NOT NULL,
   CategoryId NVARCHAR(30) NOT NULL, Deck INT NOT NULL,
   Section VARCHAR(3) NOT NULL, Side VARCHAR(9) NOT NULL,
-  Accessible BIT NOT NULL DEFAULT 0, Connecting BIT NOT NULL DEFAULT 0,
+  Accessible BIT NOT NULL CONSTRAINT DF_Cabins_Accessible DEFAULT 0, Connecting BIT NOT NULL CONSTRAINT DF_Cabins_Connecting DEFAULT 0,
   MusterStationId NVARCHAR(40) NOT NULL,
   CONSTRAINT PK_Cabins PRIMARY KEY (ShipId, Number),
   CONSTRAINT FK_Cabins_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
@@ -87,16 +89,16 @@ CREATE TABLE ref.Cabins (
   CONSTRAINT CK_Cabins_Section CHECK (Section IN ('fwd','mid','aft')),
   CONSTRAINT CK_Cabins_Side CHECK (Side IN ('port','starboard'))
 );
-CREATE INDEX IX_Cabins_CategoryId ON ref.Cabins (CategoryId);   -- booking.cabins lists free cabins by category
+CREATE INDEX IX_Cabins_ShipId_CategoryId ON ref.Cabins (ShipId, CategoryId);   -- booking.cabins lists free cabins by category
 END
 
 IF OBJECT_ID(N'ref.Ports', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Ports (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Ports PRIMARY KEY,
-  Name NVARCHAR(80) NOT NULL, Country NVARCHAR(80) NOT NULL DEFAULT N'',
-  TimeZone NVARCHAR(40) NOT NULL, Tender BIT NOT NULL DEFAULT 0,
-  EntryNote NVARCHAR(1000) NOT NULL DEFAULT N'',
+  Name NVARCHAR(80) NOT NULL, Country NVARCHAR(80) NOT NULL CONSTRAINT DF_Ports_Country DEFAULT N'',
+  TimeZone NVARCHAR(40) NOT NULL, Tender BIT NOT NULL CONSTRAINT DF_Ports_Tender DEFAULT 0,
+  EntryNote NVARCHAR(1000) NOT NULL CONSTRAINT DF_Ports_EntryNote DEFAULT N'',
   Contacts NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Ports_Contacts DEFAULT N'[]',
   CONSTRAINT CK_Ports_Contacts CHECK (ISJSON(Contacts) = 1)
 );
@@ -107,13 +109,14 @@ BEGIN
 CREATE TABLE ref.Sailings (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Sailings PRIMARY KEY,
   ShipId NVARCHAR(40) NOT NULL, Departure DATE NOT NULL, Nights INT NOT NULL,
-  IsHoliday BIT NOT NULL DEFAULT 0, IsReference BIT NOT NULL DEFAULT 0,
+  IsHoliday BIT NOT NULL CONSTRAINT DF_Sailings_IsHoliday DEFAULT 0, IsReference BIT NOT NULL CONSTRAINT DF_Sailings_IsReference DEFAULT 0,
   Title NVARCHAR(120) NOT NULL,
-  BookingOpen BIT NOT NULL DEFAULT 1,   -- manual close only; "1 day to go" is computed in the API
+  BookingOpen BIT NOT NULL CONSTRAINT DF_Sailings_BookingOpen DEFAULT 1,   -- manual close only; "1 day to go" is computed in the API
   CONSTRAINT FK_Sailings_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   CONSTRAINT CK_Sailings_Nights CHECK (Nights > 0)
 );
 CREATE INDEX IX_Sailings_Departure ON ref.Sailings (Departure);
+CREATE UNIQUE INDEX UX_Sailings_ShipId_Departure ON ref.Sailings (ShipId, Departure);
 END
 
 IF OBJECT_ID(N'ref.ItineraryDays', N'U') IS NULL
@@ -126,20 +129,23 @@ CREATE TABLE ref.ItineraryDays (
   CONSTRAINT FK_ItineraryDays_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
   CONSTRAINT FK_ItineraryDays_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id)
 );
+CREATE UNIQUE INDEX UX_ItineraryDays_SailingId_Date ON ref.ItineraryDays (SailingId, [Date]);
+CREATE INDEX IX_ItineraryDays_PortId ON ref.ItineraryDays (PortId);
 END
 
 IF OBJECT_ID(N'ref.Venues', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Venues (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Venues PRIMARY KEY,
-  Kind VARCHAR(10) NOT NULL, Name NVARCHAR(80) NOT NULL, Cuisine NVARCHAR(80) NOT NULL DEFAULT N'',
-  Deck INT NOT NULL, DressCode VARCHAR(10) NOT NULL DEFAULT 'casual', Capacity INT NOT NULL,
-  Walkin BIT NOT NULL DEFAULT 0, OpenFrom TIME(0) NOT NULL, OpenTo TIME(0) NOT NULL,
-  CoverCents BIGINT NOT NULL DEFAULT 0, Description NVARCHAR(1000) NOT NULL DEFAULT N'',
+  Kind VARCHAR(10) NOT NULL, Name NVARCHAR(80) NOT NULL, Cuisine NVARCHAR(80) NOT NULL CONSTRAINT DF_Venues_Cuisine DEFAULT N'',
+  Deck INT NOT NULL, DressCode VARCHAR(10) NOT NULL CONSTRAINT DF_Venues_DressCode DEFAULT 'casual', Capacity INT NOT NULL,
+  Walkin BIT NOT NULL CONSTRAINT DF_Venues_Walkin DEFAULT 0, OpenFrom TIME(0) NOT NULL, OpenTo TIME(0) NOT NULL,
+  CoverCents BIGINT NOT NULL CONSTRAINT DF_Venues_CoverCents DEFAULT 0, Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_Venues_Description DEFAULT N'',
   Hours NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Venues_Hours DEFAULT N'{}',
   CONSTRAINT CK_Venues_Kind CHECK (Kind IN ('main','specialty','casual')),
   CONSTRAINT CK_Venues_DressCode CHECK (DressCode IN ('casual','smart','elegant')),
-  CONSTRAINT CK_Venues_Hours CHECK (ISJSON(Hours) = 1)
+  CONSTRAINT CK_Venues_Hours CHECK (ISJSON(Hours) = 1),
+  CONSTRAINT CK_Venues_Amounts CHECK (Capacity > 0 AND CoverCents >= 0)
 );
 END
 
@@ -148,17 +154,19 @@ BEGIN
 CREATE TABLE ref.MenuItems (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_MenuItems PRIMARY KEY,
   VenueId NVARCHAR(40) NULL, MenuGroup VARCHAR(10) NOT NULL,
-  Name NVARCHAR(120) NOT NULL, Description NVARCHAR(500) NOT NULL DEFAULT N'',
-  PriceCents BIGINT NOT NULL DEFAULT 0,
+  Name NVARCHAR(120) NOT NULL, Description NVARCHAR(500) NOT NULL CONSTRAINT DF_MenuItems_Description DEFAULT N'',
+  PriceCents BIGINT NOT NULL CONSTRAINT DF_MenuItems_PriceCents DEFAULT 0,
   Dietary NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_Dietary DEFAULT N'[]',
-  Orderable BIT NOT NULL DEFAULT 1, Stock INT NULL,
-  Alcohol BIT NOT NULL DEFAULT 0, Packaged BIT NOT NULL DEFAULT 0,   -- Packaged: a drinks package pays for it
+  Orderable BIT NOT NULL CONSTRAINT DF_MenuItems_Orderable DEFAULT 1, Stock INT NULL,
+  Alcohol BIT NOT NULL CONSTRAINT DF_MenuItems_Alcohol DEFAULT 0, Packaged BIT NOT NULL CONSTRAINT DF_MenuItems_Packaged DEFAULT 0,   -- Packaged: a drinks package pays for it
   OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]',   -- which menus carry it: delivery, room
   SubstituteId NVARCHAR(40) NULL,   -- offered in its place when it runs out
   CONSTRAINT FK_MenuItems_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
+  CONSTRAINT FK_MenuItems_MenuItems_Substitute FOREIGN KEY (SubstituteId) REFERENCES ref.MenuItems (Id),
   CONSTRAINT CK_MenuItems_MenuGroup CHECK (MenuGroup IN ('mains','snacks','desserts','drinks','breakfast')),
   CONSTRAINT CK_MenuItems_Dietary CHECK (ISJSON(Dietary) = 1),
-  CONSTRAINT CK_MenuItems_OnMenus CHECK (ISJSON(OnMenus) = 1)
+  CONSTRAINT CK_MenuItems_OnMenus CHECK (ISJSON(OnMenus) = 1),
+  CONSTRAINT CK_MenuItems_PriceCents CHECK (PriceCents >= 0)
 );
 CREATE INDEX IX_MenuItems_VenueId ON ref.MenuItems (VenueId);
 END
@@ -167,8 +175,9 @@ IF OBJECT_ID(N'ref.MenuExtras', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.MenuExtras (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_MenuExtras PRIMARY KEY,
-  ItemId NVARCHAR(40) NOT NULL, Label NVARCHAR(80) NOT NULL, Cents BIGINT NOT NULL DEFAULT 0,
-  CONSTRAINT FK_MenuExtras_MenuItems FOREIGN KEY (ItemId) REFERENCES ref.MenuItems (Id)
+  ItemId NVARCHAR(40) NOT NULL, Label NVARCHAR(80) NOT NULL, Cents BIGINT NOT NULL CONSTRAINT DF_MenuExtras_Cents DEFAULT 0,
+  CONSTRAINT FK_MenuExtras_MenuItems FOREIGN KEY (ItemId) REFERENCES ref.MenuItems (Id),
+  CONSTRAINT CK_MenuExtras_Cents CHECK (Cents >= 0)
 );
 CREATE INDEX IX_MenuExtras_ItemId ON ref.MenuExtras (ItemId);
 END
@@ -179,15 +188,17 @@ CREATE TABLE ref.Excursions (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Excursions PRIMARY KEY,
   PortId NVARCHAR(40) NOT NULL, Name NVARCHAR(120) NOT NULL, Interest NVARCHAR(30) NOT NULL,
   Activity VARCHAR(10) NOT NULL, AdultCents BIGINT NOT NULL, ChildCents BIGINT NOT NULL,
-  MinAge INT NOT NULL DEFAULT 0, DurationMin INT NOT NULL,
-  StartLocal TIME(0) NOT NULL, BackByLocal TIME(0) NOT NULL, Tender BIT NOT NULL DEFAULT 0,
-  Capacity INT NOT NULL, Meeting NVARCHAR(200) NOT NULL DEFAULT N'', Description NVARCHAR(1000) NOT NULL DEFAULT N'',
+  MinAge INT NOT NULL CONSTRAINT DF_Excursions_MinAge DEFAULT 0, DurationMin INT NOT NULL,
+  StartLocal TIME(0) NOT NULL, BackByLocal TIME(0) NOT NULL, Tender BIT NOT NULL CONSTRAINT DF_Excursions_Tender DEFAULT 0,
+  Capacity INT NOT NULL, Meeting NVARCHAR(200) NOT NULL CONSTRAINT DF_Excursions_Meeting DEFAULT N'', Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_Excursions_Description DEFAULT N'',
   Tags NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Excursions_Tags DEFAULT N'[]',
-  Rating INT NOT NULL DEFAULT 0, Reviews INT NOT NULL DEFAULT 0,   -- Rating in tenths of a star (47 = 4.7)
+  Rating INT NOT NULL CONSTRAINT DF_Excursions_Rating DEFAULT 0, Reviews INT NOT NULL CONSTRAINT DF_Excursions_Reviews DEFAULT 0,   -- Rating in tenths of a star (47 = 4.7)
   WalkKm DECIMAL(4,1) NULL, Steps BIT NULL, Heat VARCHAR(6) NULL, Shade VARCHAR(6) NULL, Seats BIT NULL, Restrooms BIT NULL, Wet BIT NULL,   -- difficulty on foot (NULL = none authored)
   CONSTRAINT FK_Excursions_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id),
   CONSTRAINT CK_Excursions_Activity CHECK (Activity IN ('easy','moderate','strenuous')),
-  CONSTRAINT CK_Excursions_Tags CHECK (ISJSON(Tags) = 1)
+  CONSTRAINT CK_Excursions_Tags CHECK (ISJSON(Tags) = 1),
+  CONSTRAINT CK_Excursions_Amounts CHECK (AdultCents >= 0 AND ChildCents >= 0 AND MinAge >= 0 AND DurationMin > 0 AND Capacity > 0),
+  CONSTRAINT CK_Excursions_Rating CHECK (Rating BETWEEN 0 AND 50 AND Reviews >= 0)
 );
 CREATE INDEX IX_Excursions_PortId ON ref.Excursions (PortId);
 END
@@ -201,6 +212,7 @@ CREATE TABLE ref.ExcursionDepartures (
   CONSTRAINT FK_ExcursionDepartures_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day]),
   CONSTRAINT CK_ExcursionDepartures_SpotsTotal CHECK (SpotsTotal >= 0)
 );
+CREATE INDEX IX_ExcursionDepartures_SailingId_Day ON ref.ExcursionDepartures (SailingId, [Day]);   -- tours running on a day
 END
 
 IF OBJECT_ID(N'ref.Events', N'U') IS NULL
@@ -209,13 +221,14 @@ CREATE TABLE ref.Events (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Events PRIMARY KEY,
   Kind NVARCHAR(30) NOT NULL, Title NVARCHAR(120) NOT NULL, Place NVARCHAR(40) NOT NULL,
   StartLocal TIME(0) NOT NULL, DurationMin INT NOT NULL,
-  AgeGroup VARCHAR(6) NOT NULL DEFAULT 'all',
+  AgeGroup VARCHAR(6) NOT NULL CONSTRAINT DF_Events_AgeGroup DEFAULT 'all',
   Interests NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Events_Interests DEFAULT N'[]',
-  Ticketed BIT NOT NULL DEFAULT 0, Seats INT NULL, Deck INT NULL,
-  ExtraCents BIGINT NOT NULL DEFAULT 0,   -- extra cost per person; 0 is in the fare
-  AfterAllAboard BIT NOT NULL DEFAULT 0,  -- on a port day, listed only once the ship is back aboard
+  Ticketed BIT NOT NULL CONSTRAINT DF_Events_Ticketed DEFAULT 0, Seats INT NULL, Deck INT NULL,
+  ExtraCents BIGINT NOT NULL CONSTRAINT DF_Events_ExtraCents DEFAULT 0,   -- extra cost per person; 0 is in the fare
+  AfterAllAboard BIT NOT NULL CONSTRAINT DF_Events_AfterAllAboard DEFAULT 0,  -- on a port day, listed only once the ship is back aboard
   CONSTRAINT CK_Events_AgeGroup CHECK (AgeGroup IN ('all','kids','teens','adults')),
-  CONSTRAINT CK_Events_Interests CHECK (ISJSON(Interests) = 1)
+  CONSTRAINT CK_Events_Interests CHECK (ISJSON(Interests) = 1),
+  CONSTRAINT CK_Events_Amounts CHECK (DurationMin > 0 AND ExtraCents >= 0)
 );
 END
 
@@ -235,7 +248,8 @@ IF OBJECT_ID(N'ref.Fares', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Fares (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_Fares PRIMARY KEY,
-  Name NVARCHAR(60) NOT NULL, PerNightCents BIGINT NOT NULL, Tagline NVARCHAR(200) NOT NULL DEFAULT N''
+  Name NVARCHAR(60) NOT NULL, PerNightCents BIGINT NOT NULL, Tagline NVARCHAR(200) NOT NULL CONSTRAINT DF_Fares_Tagline DEFAULT N'',
+  CONSTRAINT CK_Fares_PerNightCents CHECK (PerNightCents >= 0)
 );
 END
 
@@ -243,7 +257,8 @@ IF OBJECT_ID(N'ref.Promotions', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Promotions (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_Promotions PRIMARY KEY,
-  MinDaysOut INT NOT NULL, CreditCentsStandard BIGINT NOT NULL, CreditCentsSuite BIGINT NOT NULL
+  MinDaysOut INT NOT NULL, CreditCentsStandard BIGINT NOT NULL, CreditCentsSuite BIGINT NOT NULL,
+  CONSTRAINT CK_Promotions_Amounts CHECK (MinDaysOut >= 0 AND CreditCentsStandard >= 0 AND CreditCentsSuite >= 0)
 );
 END
 
@@ -252,8 +267,9 @@ BEGIN
 CREATE TABLE ref.Packages (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_Packages PRIMARY KEY,
   Name NVARCHAR(80) NOT NULL, Unit VARCHAR(11) NOT NULL, BaseCents BIGINT NOT NULL,
-  ChangeOn DATE NULL, ChangesToCents BIGINT NULL, Description NVARCHAR(500) NOT NULL DEFAULT N'',
-  CONSTRAINT CK_Packages_Unit CHECK (Unit IN ('personNight','person','room'))
+  ChangeOn DATE NULL, ChangesToCents BIGINT NULL, Description NVARCHAR(500) NOT NULL CONSTRAINT DF_Packages_Description DEFAULT N'',
+  CONSTRAINT CK_Packages_Unit CHECK (Unit IN ('personNight','person','room')),
+  CONSTRAINT CK_Packages_BaseCents CHECK (BaseCents >= 0)
 );
 END
 
@@ -262,9 +278,10 @@ BEGIN
 CREATE TABLE ref.AddOns (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_AddOns PRIMARY KEY,
   Name NVARCHAR(80) NOT NULL, Unit VARCHAR(11) NOT NULL, BaseCents BIGINT NOT NULL,
-  ChangeOn DATE NULL, ChangesToCents BIGINT NULL, Description NVARCHAR(500) NOT NULL DEFAULT N'',
-  ChangeAtDays INT NULL, ChangeShare INT NULL, MinAge INT NOT NULL DEFAULT 0,   -- price moves ChangeShare basis points (+up, -down) from ChangeAtDays before sailing; ChangeOn/ChangesToCents are that rule worked out for the reference sailing
-  CONSTRAINT CK_AddOns_Unit CHECK (Unit IN ('personNight','person','room'))
+  ChangeOn DATE NULL, ChangesToCents BIGINT NULL, Description NVARCHAR(500) NOT NULL CONSTRAINT DF_AddOns_Description DEFAULT N'',
+  ChangeAtDays INT NULL, ChangeShare INT NULL, MinAge INT NOT NULL CONSTRAINT DF_AddOns_MinAge DEFAULT 0,   -- price moves ChangeShare basis points (+up, -down) from ChangeAtDays before sailing; ChangeOn/ChangesToCents are that rule worked out for the reference sailing
+  CONSTRAINT CK_AddOns_Unit CHECK (Unit IN ('personNight','person','room')),
+  CONSTRAINT CK_AddOns_BaseCents CHECK (BaseCents >= 0 AND MinAge >= 0)
 );
 END
 
@@ -274,7 +291,8 @@ CREATE TABLE ref.PackageUpgrades (
   ToPackageId NVARCHAR(30) NOT NULL CONSTRAINT PK_PackageUpgrades PRIMARY KEY,
   PriceCents BIGINT NOT NULL, ChangeOn DATE NULL, ChangesToCents BIGINT NULL,
   ChangeAtDays INT NULL, ChangeShare INT NULL,   -- as AddOns; PriceCents is the price from "no package"
-  CONSTRAINT FK_PackageUpgrades_Packages FOREIGN KEY (ToPackageId) REFERENCES ref.Packages (Id)
+  CONSTRAINT FK_PackageUpgrades_Packages FOREIGN KEY (ToPackageId) REFERENCES ref.Packages (Id),
+  CONSTRAINT CK_PackageUpgrades_PriceCents CHECK (PriceCents >= 0)
 );
 END
 
@@ -282,9 +300,9 @@ IF OBJECT_ID(N'ref.Entitlements', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Entitlements (
   SourceKind VARCHAR(7) NOT NULL, SourceId NVARCHAR(30) NOT NULL,   -- a loyalty tier or a package id
-  DrinkCapUsd INT NOT NULL DEFAULT 0, WifiDevices INT NOT NULL DEFAULT 0, SpecialtyMeals INT NOT NULL DEFAULT 0,
-  ExcursionCreditUsd INT NOT NULL DEFAULT 0, PhotoIncluded BIT NOT NULL DEFAULT 0, LaundryBags INT NOT NULL DEFAULT 0,
-  Priority BIT NOT NULL DEFAULT 0,
+  DrinkCapUsd INT NOT NULL CONSTRAINT DF_Entitlements_DrinkCapUsd DEFAULT 0, WifiDevices INT NOT NULL CONSTRAINT DF_Entitlements_WifiDevices DEFAULT 0, SpecialtyMeals INT NOT NULL CONSTRAINT DF_Entitlements_SpecialtyMeals DEFAULT 0,
+  ExcursionCreditUsd INT NOT NULL CONSTRAINT DF_Entitlements_ExcursionCreditUsd DEFAULT 0, PhotoIncluded BIT NOT NULL CONSTRAINT DF_Entitlements_PhotoIncluded DEFAULT 0, LaundryBags INT NOT NULL CONSTRAINT DF_Entitlements_LaundryBags DEFAULT 0,
+  Priority BIT NOT NULL CONSTRAINT DF_Entitlements_Priority DEFAULT 0,
   CONSTRAINT PK_Entitlements PRIMARY KEY (SourceKind, SourceId),
   CONSTRAINT CK_Entitlements_SourceKind CHECK (SourceKind IN ('tier','package'))
 );
@@ -294,7 +312,7 @@ IF OBJECT_ID(N'ref.PhotoCatalogue', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.PhotoCatalogue (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_PhotoCatalogue PRIMARY KEY,
-  [Day] INT NOT NULL, Place NVARCHAR(80) NOT NULL, Caption NVARCHAR(200) NOT NULL DEFAULT N'', Thumb NVARCHAR(200) NOT NULL
+  [Day] INT NOT NULL, Place NVARCHAR(80) NOT NULL, Caption NVARCHAR(200) NOT NULL CONSTRAINT DF_PhotoCatalogue_Caption DEFAULT N'', Thumb NVARCHAR(200) NOT NULL
 );
 END
 
@@ -310,7 +328,8 @@ IF OBJECT_ID(N'ref.PhotoOptions', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.PhotoOptions (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_PhotoOptions PRIMARY KEY,
-  Cents BIGINT NOT NULL, [Count] INT NOT NULL, Description NVARCHAR(200) NOT NULL DEFAULT N''
+  Cents BIGINT NOT NULL, PhotoCount INT NOT NULL, Description NVARCHAR(200) NOT NULL CONSTRAINT DF_PhotoOptions_Description DEFAULT N'',
+  CONSTRAINT CK_PhotoOptions_Amounts CHECK (Cents >= 0 AND PhotoCount >= 0)
 );
 END
 
@@ -328,9 +347,9 @@ IF OBJECT_ID(N'ref.Advisors', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Advisors (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Advisors PRIMARY KEY,
-  Name NVARCHAR(80) NOT NULL, Agency NVARCHAR(80) NOT NULL DEFAULT N'', Region NVARCHAR(60) NOT NULL DEFAULT N'',
+  Name NVARCHAR(80) NOT NULL, Agency NVARCHAR(80) NOT NULL CONSTRAINT DF_Advisors_Agency DEFAULT N'', Region NVARCHAR(60) NOT NULL CONSTRAINT DF_Advisors_Region DEFAULT N'',
   Languages NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Advisors_Languages DEFAULT N'[]',
-  Speciality VARCHAR(10) NOT NULL, Hours NVARCHAR(120) NOT NULL DEFAULT N'',
+  Speciality VARCHAR(10) NOT NULL, Hours NVARCHAR(120) NOT NULL CONSTRAINT DF_Advisors_Hours DEFAULT N'',
   CONSTRAINT CK_Advisors_Languages CHECK (ISJSON(Languages) = 1),
   CONSTRAINT CK_Advisors_Speciality CHECK (Speciality IN ('family','luxury','accessible','groups','first'))
 );
@@ -341,7 +360,7 @@ BEGIN
 CREATE TABLE ref.Faqs (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Faqs PRIMARY KEY,
   Area NVARCHAR(40) NOT NULL, Title NVARCHAR(200) NOT NULL, Body NVARCHAR(MAX) NOT NULL,
-  Locale NVARCHAR(10) NOT NULL DEFAULT N'en', SortOrder INT NOT NULL DEFAULT 0
+  Locale NVARCHAR(10) NOT NULL CONSTRAINT DF_Faqs_Locale DEFAULT N'en', SortOrder INT NOT NULL CONSTRAINT DF_Faqs_SortOrder DEFAULT 0
 );
 END
 
@@ -350,7 +369,7 @@ BEGIN
 CREATE TABLE ref.HelpTopics (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_HelpTopics PRIMARY KEY,
   Area NVARCHAR(40) NOT NULL, Title NVARCHAR(200) NOT NULL, Body NVARCHAR(MAX) NOT NULL,
-  Locale NVARCHAR(10) NOT NULL DEFAULT N'en', SortOrder INT NOT NULL DEFAULT 0
+  Locale NVARCHAR(10) NOT NULL CONSTRAINT DF_HelpTopics_Locale DEFAULT N'en', SortOrder INT NOT NULL CONSTRAINT DF_HelpTopics_SortOrder DEFAULT 0
 );
 END
 
@@ -359,7 +378,7 @@ BEGIN
 CREATE TABLE ref.ContentBlocks (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_ContentBlocks PRIMARY KEY,
   Area NVARCHAR(40) NOT NULL, Title NVARCHAR(200) NOT NULL, Body NVARCHAR(MAX) NOT NULL,
-  Locale NVARCHAR(10) NOT NULL DEFAULT N'en', SortOrder INT NOT NULL DEFAULT 0
+  Locale NVARCHAR(10) NOT NULL CONSTRAINT DF_ContentBlocks_Locale DEFAULT N'en', SortOrder INT NOT NULL CONSTRAINT DF_ContentBlocks_SortOrder DEFAULT 0
 );
 END
 
@@ -377,8 +396,8 @@ IF OBJECT_ID(N'ref.ServiceItems', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.ServiceItems (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_ServiceItems PRIMARY KEY,
-  [Group] VARCHAR(12) NOT NULL, EtaMin INT NOT NULL, MaxQty INT NOT NULL DEFAULT 1,
-  CONSTRAINT CK_ServiceItems_Group CHECK ([Group] IN ('housekeeping','maintenance'))
+  ItemGroup VARCHAR(12) NOT NULL, EtaMin INT NOT NULL, MaxQty INT NOT NULL CONSTRAINT DF_ServiceItems_MaxQty DEFAULT 1,
+  CONSTRAINT CK_ServiceItems_Group CHECK (ItemGroup IN ('housekeeping','maintenance'))
 );
 END
 
@@ -386,7 +405,8 @@ IF OBJECT_ID(N'ref.Drinks', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Drinks (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Drinks PRIMARY KEY,
-  Cents BIGINT NOT NULL, Alcohol BIT NOT NULL DEFAULT 0
+  Cents BIGINT NOT NULL, Alcohol BIT NOT NULL CONSTRAINT DF_Drinks_Alcohol DEFAULT 0,
+  CONSTRAINT CK_Drinks_Cents CHECK (Cents >= 0)
 );
 END
 
@@ -404,7 +424,7 @@ IF OBJECT_ID(N'ref.TravelWindows', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.TravelWindows (
   Id NVARCHAR(30) NOT NULL CONSTRAINT PK_TravelWindows PRIMARY KEY,
-  StartLocal TIME(0) NOT NULL, EndLocal TIME(0) NOT NULL, Priority BIT NOT NULL DEFAULT 0
+  StartLocal TIME(0) NOT NULL, EndLocal TIME(0) NOT NULL, Priority BIT NOT NULL CONSTRAINT DF_TravelWindows_Priority DEFAULT 0
 );
 END
 
@@ -412,7 +432,7 @@ IF OBJECT_ID(N'ref.NightChecklistItems', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.NightChecklistItems (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_NightChecklistItems PRIMARY KEY,
-  Label NVARCHAR(200) NOT NULL, SortOrder INT NOT NULL DEFAULT 0
+  Label NVARCHAR(200) NOT NULL, SortOrder INT NOT NULL CONSTRAINT DF_NightChecklistItems_SortOrder DEFAULT 0
 );
 END
 
@@ -421,8 +441,8 @@ BEGIN
 CREATE TABLE ref.PackingItems (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_PackingItems PRIMARY KEY,
   Label NVARCHAR(200) NOT NULL,
-  [Rule] NVARCHAR(MAX) NOT NULL CONSTRAINT DF_PackingItems_Rule DEFAULT N'{}',
-  CONSTRAINT CK_PackingItems_Rule CHECK (ISJSON([Rule]) = 1)
+  RuleJson NVARCHAR(MAX) NOT NULL CONSTRAINT DF_PackingItems_RuleJson DEFAULT N'{}',
+  CONSTRAINT CK_PackingItems_RuleJson CHECK (ISJSON(RuleJson) = 1)
 );
 END
 
@@ -438,34 +458,9 @@ IF OBJECT_ID(N'ref.DeskSlots', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.DeskSlots (
   [At] DATETIME2(0) NOT NULL CONSTRAINT PK_DeskSlots PRIMARY KEY,
-  Capacity INT NOT NULL DEFAULT 1
+  Capacity INT NOT NULL CONSTRAINT DF_DeskSlots_Capacity DEFAULT 1
 );
 END
-GO
-
-/* Phase 3 additions. The CREATE TABLE statements above already carry these columns; this block adds them to a
-   database where the tables were created by an earlier version of this script. Safe to re-run. */
-IF COL_LENGTH(N'ref.MenuItems', N'Alcohol') IS NULL ALTER TABLE ref.MenuItems ADD Alcohol BIT NOT NULL CONSTRAINT DF_MenuItems_Alcohol DEFAULT 0;
-IF COL_LENGTH(N'ref.MenuItems', N'Packaged') IS NULL ALTER TABLE ref.MenuItems ADD Packaged BIT NOT NULL CONSTRAINT DF_MenuItems_Packaged DEFAULT 0;
-IF COL_LENGTH(N'ref.MenuItems', N'OnMenus') IS NULL ALTER TABLE ref.MenuItems ADD OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]';
-IF COL_LENGTH(N'ref.MenuItems', N'SubstituteId') IS NULL ALTER TABLE ref.MenuItems ADD SubstituteId NVARCHAR(40) NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Rating') IS NULL ALTER TABLE ref.Excursions ADD Rating INT NOT NULL CONSTRAINT DF_Excursions_Rating DEFAULT 0;
-IF COL_LENGTH(N'ref.Excursions', N'WalkKm') IS NULL ALTER TABLE ref.Excursions ADD WalkKm DECIMAL(4,1) NULL;   -- how far on foot; the difficulty figures are NULL when none is authored
-IF COL_LENGTH(N'ref.Excursions', N'Steps') IS NULL ALTER TABLE ref.Excursions ADD Steps BIT NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Heat') IS NULL ALTER TABLE ref.Excursions ADD Heat VARCHAR(6) NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Shade') IS NULL ALTER TABLE ref.Excursions ADD Shade VARCHAR(6) NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Seats') IS NULL ALTER TABLE ref.Excursions ADD Seats BIT NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Restrooms') IS NULL ALTER TABLE ref.Excursions ADD Restrooms BIT NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Wet') IS NULL ALTER TABLE ref.Excursions ADD Wet BIT NULL;
-IF COL_LENGTH(N'ref.Excursions', N'Reviews') IS NULL ALTER TABLE ref.Excursions ADD Reviews INT NOT NULL CONSTRAINT DF_Excursions_Reviews DEFAULT 0;
-IF COL_LENGTH(N'ref.Events', N'ExtraCents') IS NULL ALTER TABLE ref.Events ADD ExtraCents BIGINT NOT NULL CONSTRAINT DF_Events_ExtraCents DEFAULT 0;
-IF COL_LENGTH(N'ref.Events', N'AfterAllAboard') IS NULL ALTER TABLE ref.Events ADD AfterAllAboard BIT NOT NULL CONSTRAINT DF_Events_AfterAllAboard DEFAULT 0;
-IF COL_LENGTH(N'ref.AddOns', N'ChangeAtDays') IS NULL ALTER TABLE ref.AddOns ADD ChangeAtDays INT NULL;
-IF COL_LENGTH(N'ref.AddOns', N'ChangeShare') IS NULL ALTER TABLE ref.AddOns ADD ChangeShare INT NULL;
-IF COL_LENGTH(N'ref.AddOns', N'MinAge') IS NULL ALTER TABLE ref.AddOns ADD MinAge INT NOT NULL CONSTRAINT DF_AddOns_MinAge DEFAULT 0;
-IF COL_LENGTH(N'ref.PackageUpgrades', N'ChangeAtDays') IS NULL ALTER TABLE ref.PackageUpgrades ADD ChangeAtDays INT NULL;
-IF COL_LENGTH(N'ref.PackageUpgrades', N'ChangeShare') IS NULL ALTER TABLE ref.PackageUpgrades ADD ChangeShare INT NULL;
-IF OBJECT_ID(N'ref.CK_MenuItems_OnMenus', N'C') IS NULL ALTER TABLE ref.MenuItems ADD CONSTRAINT CK_MenuItems_OnMenus CHECK (ISJSON(OnMenus) = 1);
 GO
 
 /* =====================================================================================================
@@ -481,18 +476,18 @@ CREATE TABLE dbo.Users (
   AccountNumber CHAR(10) NOT NULL,
   Email NVARCHAR(254) NULL,
   PasswordHash NVARCHAR(200) NULL,              -- pbkdf2$iter$salt$hash (D12)
-  Role VARCHAR(5) NOT NULL DEFAULT 'guest',
-  IsDemo BIT NOT NULL DEFAULT 0,
-  IsSupervised BIT NOT NULL DEFAULT 0,
+  Role VARCHAR(5) NOT NULL CONSTRAINT DF_Users_Role DEFAULT 'guest',
+  IsDemo BIT NOT NULL CONSTRAINT DF_Users_IsDemo DEFAULT 0,
+  IsSupervised BIT NOT NULL CONSTRAINT DF_Users_IsSupervised DEFAULT 0,
   BookerUserId BIGINT NULL,
-  Tier VARCHAR(8) NOT NULL DEFAULT 'none',
-  Sanctuary BIT NOT NULL DEFAULT 0,
-  [TextSize] NVARCHAR(12) NOT NULL DEFAULT N'standard',
-  PhoneZone NVARCHAR(40) NOT NULL DEFAULT N'America/Chicago',
-  Currency CHAR(3) NOT NULL DEFAULT 'USD',
-  Locale NVARCHAR(10) NOT NULL DEFAULT N'en',
+  Tier VARCHAR(8) NOT NULL CONSTRAINT DF_Users_Tier DEFAULT 'none',
+  Sanctuary BIT NOT NULL CONSTRAINT DF_Users_Sanctuary DEFAULT 0,
+  [TextSize] NVARCHAR(12) NOT NULL CONSTRAINT DF_Users_TextSize DEFAULT N'standard',
+  PhoneZone NVARCHAR(40) NOT NULL CONSTRAINT DF_Users_PhoneZone DEFAULT N'America/Chicago',
+  Currency CHAR(3) NOT NULL CONSTRAINT DF_Users_Currency DEFAULT 'USD',
+  Locale NVARCHAR(10) NOT NULL CONSTRAINT DF_Users_Locale DEFAULT N'en',
   LockedUntil DATETIME2(0) NULL,
-  FailedLogins INT NOT NULL DEFAULT 0,
+  FailedLogins INT NOT NULL CONSTRAINT DF_Users_FailedLogins DEFAULT 0,
   LastLoginAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -503,7 +498,8 @@ CREATE TABLE dbo.Users (
   CONSTRAINT CK_Users_Role CHECK (Role IN ('guest','staff','admin')),
   CONSTRAINT CK_Users_Tier CHECK (Tier IN ('none','gold','ruby','platinum','elite')),
   CONSTRAINT CK_Users_Supervised CHECK (IsSupervised = 0 OR (BookerUserId IS NOT NULL AND PasswordHash IS NULL)),
-  CONSTRAINT CK_Users_Password CHECK (IsSupervised = 1 OR IsDemo = 1 OR PasswordHash IS NOT NULL)
+  CONSTRAINT CK_Users_Password CHECK (IsSupervised = 1 OR IsDemo = 1 OR PasswordHash IS NOT NULL),
+  CONSTRAINT CK_Users_Currency CHECK (Currency LIKE '[A-Z][A-Z][A-Z]')
 );
 CREATE UNIQUE INDEX UX_Users_Email ON dbo.Users (Email) WHERE Email IS NOT NULL;
 CREATE UNIQUE INDEX UX_Users_Slug ON dbo.Users (Slug) WHERE Slug IS NOT NULL;
@@ -516,11 +512,11 @@ CREATE TABLE dbo.Profiles (
   UserId BIGINT NOT NULL CONSTRAINT PK_Profiles PRIMARY KEY,
   FirstName NVARCHAR(60) NOT NULL, LastName NVARCHAR(60) NOT NULL, Dob DATE NOT NULL,
   Phone NVARCHAR(30) NULL,
-  Citizenship VARCHAR(5) NOT NULL DEFAULT 'us',
-  Bedding VARCHAR(12) NOT NULL DEFAULT 'noPreference',
-  SpecialRequests NVARCHAR(500) NOT NULL DEFAULT N'',
-  EmergencyName NVARCHAR(80) NOT NULL DEFAULT N'', EmergencyPhone NVARCHAR(30) NOT NULL DEFAULT N'',
-  EmergencyRelationship NVARCHAR(40) NOT NULL DEFAULT N'',
+  Citizenship VARCHAR(5) NOT NULL CONSTRAINT DF_Profiles_Citizenship DEFAULT 'us',
+  Bedding VARCHAR(12) NOT NULL CONSTRAINT DF_Profiles_Bedding DEFAULT 'noPreference',
+  SpecialRequests NVARCHAR(500) NOT NULL CONSTRAINT DF_Profiles_SpecialRequests DEFAULT N'',
+  EmergencyName NVARCHAR(80) NOT NULL CONSTRAINT DF_Profiles_EmergencyName DEFAULT N'', EmergencyPhone NVARCHAR(30) NOT NULL CONSTRAINT DF_Profiles_EmergencyPhone DEFAULT N'',
+  EmergencyRelationship NVARCHAR(40) NOT NULL CONSTRAINT DF_Profiles_EmergencyRelationship DEFAULT N'',
   Street NVARCHAR(120) NULL, City NVARCHAR(80) NULL, Region NVARCHAR(80) NULL, Postcode NVARCHAR(20) NULL, Country NVARCHAR(80) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Profiles_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Profiles_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -557,6 +553,8 @@ CREATE TABLE dbo.RefreshTokens (
   CONSTRAINT FK_RefreshTokens_RefreshTokens_Replaced FOREIGN KEY (ReplacedById) REFERENCES dbo.RefreshTokens (Id)
 );
 CREATE INDEX IX_RefreshTokens_UserId_FamilyId ON dbo.RefreshTokens (UserId, FamilyId);
+CREATE INDEX IX_RefreshTokens_ExpiresAt ON dbo.RefreshTokens (ExpiresAt);   -- expiry sweep
+CREATE INDEX IX_RefreshTokens_ReplacedById ON dbo.RefreshTokens (ReplacedById) WHERE ReplacedById IS NOT NULL;
 END
 
 IF OBJECT_ID(N'dbo.AuthChallenges', N'U') IS NULL
@@ -566,13 +564,14 @@ CREATE TABLE dbo.AuthChallenges (
   UserId BIGINT NOT NULL,
   Purpose VARCHAR(5) NOT NULL,
   CodeHash BINARY(32) NOT NULL,                 -- SHA-256 of purpose:userId:code; the code itself is never stored
-  Attempts INT NOT NULL DEFAULT 0,
+  Attempts INT NOT NULL CONSTRAINT DF_AuthChallenges_Attempts DEFAULT 0,
   ExpiresAt DATETIME2(0) NOT NULL, UsedAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AuthChallenges_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_AuthChallenges_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_AuthChallenges_Purpose CHECK (Purpose IN ('reset','magic'))
 );
 CREATE INDEX IX_AuthChallenges_UserId_Purpose ON dbo.AuthChallenges (UserId, Purpose, CreatedAt DESC);
+CREATE INDEX IX_AuthChallenges_ExpiresAt ON dbo.AuthChallenges (ExpiresAt);   -- expiry sweep
 END
 
 IF OBJECT_ID(N'dbo.Outbox', N'U') IS NULL
@@ -586,7 +585,7 @@ CREATE TABLE dbo.Outbox (
   ToAddress NVARCHAR(254) NOT NULL,
   Subject NVARCHAR(150) NOT NULL,
   Body NVARCHAR(1000) NOT NULL,
-  Status VARCHAR(7) NOT NULL DEFAULT 'queued',
+  Status VARCHAR(7) NOT NULL CONSTRAINT DF_Outbox_Status DEFAULT 'queued',
   SentAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Outbox_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT CK_Outbox_Channel CHECK (Channel IN ('email','sms','push')),
@@ -605,8 +604,8 @@ CREATE TABLE dbo.HelperLinks (
   HelperUserId BIGINT NULL,
   Relationship NVARCHAR(40) NOT NULL,
   Permissions NVARCHAR(60) NOT NULL,            -- csv of view, documents, payments, profile
-  Status VARCHAR(9) NOT NULL DEFAULT 'requested',
-  ChangedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_HelperLinks_Status DEFAULT 'requested',
+  ChangedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HelperLinks_ChangedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HelperLinks_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HelperLinks_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_HelperLinks_Users_Guest FOREIGN KEY (GuestUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -625,13 +624,14 @@ CREATE TABLE dbo.HistoryEntries (
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_HistoryEntries_PublicId DEFAULT NEWID() CONSTRAINT UX_HistoryEntries_PublicId UNIQUE,
   UserId BIGINT NOT NULL, ByUserId BIGINT NOT NULL,
   What VARCHAR(13) NOT NULL, Detail NVARCHAR(300) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_HistoryEntries_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HistoryEntries_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_HistoryEntries_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_HistoryEntries_Users_By FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id),
   CONSTRAINT CK_HistoryEntries_What CHECK (What IN ('profile','documents','payment','card','helper','trip','notifications','booking','tour','dining','purchase','assistance','travel','checkin'))
 );
 CREATE INDEX IX_HistoryEntries_UserId_At ON dbo.HistoryEntries (UserId, [At] DESC);
+CREATE INDEX IX_HistoryEntries_ByUserId ON dbo.HistoryEntries (ByUserId);
 END
 
 IF OBJECT_ID(N'dbo.SavedCards', N'U') IS NULL
@@ -641,7 +641,7 @@ CREATE TABLE dbo.SavedCards (
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SavedCards_PublicId DEFAULT NEWID() CONSTRAINT UX_SavedCards_PublicId UNIQUE,
   UserId BIGINT NOT NULL,
   Brand VARCHAR(10) NOT NULL, Last4 CHAR(4) NOT NULL, Expiry CHAR(5) NOT NULL,   -- MM/YY; no full number is ever stored
-  IsDefault BIT NOT NULL DEFAULT 0,
+  IsDefault BIT NOT NULL CONSTRAINT DF_SavedCards_IsDefault DEFAULT 0,
   GatewayToken NVARCHAR(100) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SavedCards_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_SavedCards_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -659,9 +659,9 @@ CREATE TABLE dbo.Notices (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Notices PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Notices_PublicId DEFAULT NEWID() CONSTRAINT UX_Notices_PublicId UNIQUE,
   UserId BIGINT NOT NULL,
-  Kind NVARCHAR(30) NOT NULL, Severity VARCHAR(9) NOT NULL DEFAULT 'info',
+  Kind NVARCHAR(30) NOT NULL, Severity VARCHAR(9) NOT NULL CONSTRAINT DF_Notices_Severity DEFAULT 'info',
   Title NVARCHAR(120) NOT NULL, Body NVARCHAR(1000) NOT NULL, LinkRoute NVARCHAR(120) NULL,
-  ReadAt DATETIME2(0) NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  ReadAt DATETIME2(0) NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_Notices_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Notices_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Notices_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_Notices_Severity CHECK (Severity IN ('info','important','urgent'))
@@ -684,13 +684,14 @@ END
 IF OBJECT_ID(N'dbo.ConsentChoices', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ConsentChoices (
-  UserId BIGINT NOT NULL, ConsentId NVARCHAR(30) NOT NULL, [On] BIT NOT NULL,
-  ChangedByUserId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  UserId BIGINT NOT NULL, ConsentId NVARCHAR(30) NOT NULL, IsOn BIT NOT NULL,
+  ChangedByUserId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ConsentChoices_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ConsentChoices_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ConsentChoices PRIMARY KEY (UserId, ConsentId),
   CONSTRAINT FK_ConsentChoices_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ConsentChoices_Users_ChangedBy FOREIGN KEY (ChangedByUserId) REFERENCES dbo.Users (Id)
 );
+CREATE INDEX IX_ConsentChoices_ChangedByUserId ON dbo.ConsentChoices (ChangedByUserId);
 END
 
 IF OBJECT_ID(N'dbo.AccessLog', N'U') IS NULL
@@ -699,7 +700,7 @@ CREATE TABLE dbo.AccessLog (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AccessLog PRIMARY KEY,
   UserId BIGINT NOT NULL,                       -- whose data was accessed
   Actor NVARCHAR(80) NOT NULL, Purpose NVARCHAR(120) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_AccessLog_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AccessLog_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_AccessLog_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
@@ -712,8 +713,8 @@ CREATE TABLE dbo.RetentionRuns (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RetentionRuns PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_RetentionRuns_PublicId DEFAULT NEWID() CONSTRAINT UX_RetentionRuns_PublicId UNIQUE,
   UserId BIGINT NOT NULL,                       -- no FK: the run record must outlive the hard delete it describes
-  [Rule] NVARCHAR(30) NOT NULL, Kinds NVARCHAR(200) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  RuleName NVARCHAR(30) NOT NULL, Kinds NVARCHAR(200) NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_RetentionRuns_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_RetentionRuns_CreatedAt DEFAULT SYSUTCDATETIME()
 );
 CREATE INDEX IX_RetentionRuns_UserId ON dbo.RetentionRuns (UserId);
@@ -725,8 +726,8 @@ CREATE TABLE dbo.SupportTickets (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportTickets PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SupportTickets_PublicId DEFAULT NEWID() CONSTRAINT UX_SupportTickets_PublicId UNIQUE,
   UserId BIGINT NOT NULL,
-  Kind VARCHAR(8) NOT NULL, Status VARCHAR(10) NOT NULL DEFAULT 'open',
-  Detail NVARCHAR(1000) NOT NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  Kind VARCHAR(8) NOT NULL, Status VARCHAR(10) NOT NULL CONSTRAINT DF_SupportTickets_Status DEFAULT 'open',
+  Detail NVARCHAR(1000) NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_SupportTickets_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SupportTickets_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SupportTickets_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_SupportTickets_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -739,7 +740,7 @@ END
 IF OBJECT_ID(N'dbo.Favourites', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Favourites (
-  UserId BIGINT NOT NULL, ItemKey NVARCHAR(80) NOT NULL, Position INT NOT NULL DEFAULT 0,
+  UserId BIGINT NOT NULL, ItemKey NVARCHAR(80) NOT NULL, Position INT NOT NULL CONSTRAINT DF_Favourites_Position DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Favourites_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_Favourites PRIMARY KEY (UserId, ItemKey),
   CONSTRAINT FK_Favourites_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
@@ -749,11 +750,11 @@ END
 IF OBJECT_ID(N'dbo.UserState', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UserState (
-  UserId BIGINT NOT NULL, [Key] VARCHAR(30) NOT NULL,
+  UserId BIGINT NOT NULL, StateKey VARCHAR(30) NOT NULL,
   Json NVARCHAR(MAX) NOT NULL, Version INT NOT NULL CONSTRAINT DF_UserState_Version DEFAULT 1,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UserState_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UserState_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT PK_UserState PRIMARY KEY (UserId, [Key]),
+  CONSTRAINT PK_UserState PRIMARY KEY (UserId, StateKey),
   CONSTRAINT FK_UserState_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_UserState_Json CHECK (ISJSON(Json) = 1)
 );
@@ -770,7 +771,7 @@ CREATE TABLE dbo.FamilyLinks (
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyLinks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FamilyLinks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
-CREATE INDEX IX_FamilyLinks_User ON dbo.FamilyLinks (UserId);
+CREATE INDEX IX_FamilyLinks_UserId ON dbo.FamilyLinks (UserId);
 END
 
 IF OBJECT_ID(N'dbo.StaffTickets', N'U') IS NULL
@@ -790,7 +791,7 @@ CREATE TABLE dbo.StaffTickets (
   CONSTRAINT FK_StaffTickets_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_StaffTickets_Kind CHECK (Kind IN ('callback','caregiver','kit'))
 );
-CREATE INDEX IX_StaffTickets_User ON dbo.StaffTickets (UserId, RequestedAtMs);
+CREATE INDEX IX_StaffTickets_UserId_RequestedAtMs ON dbo.StaffTickets (UserId, RequestedAtMs);
 END
 
 IF OBJECT_ID(N'dbo.ConciergeUses', N'U') IS NULL
@@ -803,7 +804,7 @@ CREATE TABLE dbo.ConciergeUses (
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ConciergeUses_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ConciergeUses_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
-CREATE INDEX IX_ConciergeUses_User ON dbo.ConciergeUses (UserId, UsedAt);
+CREATE INDEX IX_ConciergeUses_UserId_UsedAt ON dbo.ConciergeUses (UserId, UsedAt);
 END
 
 IF OBJECT_ID(N'dbo.FamilyPostcards', N'U') IS NULL
@@ -819,24 +820,24 @@ CREATE TABLE dbo.FamilyPostcards (
   CONSTRAINT FK_FamilyPostcards_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_FamilyPostcards_Kind CHECK (Kind IN ('ok','sea','port','late','love'))
 );
-CREATE INDEX IX_FamilyPostcards_User ON dbo.FamilyPostcards (UserId, SentAt);
+CREATE INDEX IX_FamilyPostcards_UserId_SentAt ON dbo.FamilyPostcards (UserId, SentAt);
 END
 
 IF OBJECT_ID(N'demo.DemoState', N'U') IS NULL
 BEGIN
 CREATE TABLE demo.DemoState (
   UserId BIGINT NOT NULL CONSTRAINT PK_DemoState PRIMARY KEY,
-  ClockOffsetSeconds BIGINT NOT NULL DEFAULT 0,
-  ClockSpeed INT NOT NULL DEFAULT 1,
+  ClockOffsetSeconds BIGINT NOT NULL CONSTRAINT DF_DemoState_ClockOffsetSeconds DEFAULT 0,
+  ClockSpeed INT NOT NULL CONSTRAINT DF_DemoState_ClockSpeed DEFAULT 1,
+  SailingId NVARCHAR(40) NULL, PhoneZone NVARCHAR(40) NULL,
   ActiveScenarios NVARCHAR(MAX) NOT NULL CONSTRAINT DF_DemoState_ActiveScenarios DEFAULT N'[]',
-  UpdatedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DemoState_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_DemoState_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_DemoState_ActiveScenarios CHECK (ISJSON(ActiveScenarios) = 1),
-  CONSTRAINT CK_DemoState_ClockSpeed CHECK (ClockSpeed >= 1)
+  CONSTRAINT CK_DemoState_ClockSpeed CHECK (ClockSpeed >= 1),
+  CONSTRAINT FK_DemoState_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id)
 );
 END
-IF COL_LENGTH(N'demo.DemoState', N'SailingId') IS NULL ALTER TABLE demo.DemoState ADD SailingId NVARCHAR(40) NULL;
-IF COL_LENGTH(N'demo.DemoState', N'PhoneZone') IS NULL ALTER TABLE demo.DemoState ADD PhoneZone NVARCHAR(64) NULL;
 GO
 
 /* =====================================================================================================
@@ -849,24 +850,24 @@ CREATE TABLE dbo.Bookings (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Bookings PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Bookings_PublicId DEFAULT NEWID() CONSTRAINT UX_Bookings_PublicId UNIQUE,
   Number CHAR(8) NOT NULL,
-  Kind VARCHAR(6) NOT NULL DEFAULT 'direct',
+  Kind VARCHAR(6) NOT NULL CONSTRAINT DF_Bookings_Kind DEFAULT 'direct',
   AgentName NVARCHAR(80) NULL,
   BookerUserId BIGINT NOT NULL,
   SailingId NVARCHAR(40) NOT NULL,
   CategoryId NVARCHAR(30) NOT NULL,
   CabinNumber NVARCHAR(8) NULL,                 -- null = guaranteed cabin; the ship comes from the sailing, so no FK to ref.Cabins
   FareId NVARCHAR(30) NOT NULL,
-  Status VARCHAR(9) NOT NULL DEFAULT 'confirmed',
-  Dining VARCHAR(7) NOT NULL DEFAULT 'anytime',
-  Occasion VARCHAR(11) NOT NULL DEFAULT 'none',
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_Bookings_Status DEFAULT 'confirmed',
+  Dining VARCHAR(7) NOT NULL CONSTRAINT DF_Bookings_Dining DEFAULT 'anytime',
+  Occasion VARCHAR(11) NOT NULL CONSTRAINT DF_Bookings_Occasion DEFAULT 'none',
   TotalCents BIGINT NOT NULL, DepositCents BIGINT NOT NULL,
   FinalDueDate DATE NOT NULL,
-  FinalPaymentDays INT NOT NULL DEFAULT 90,
-  LoyaltyNumber NVARCHAR(9) NULL,
-  DiscountCents BIGINT NOT NULL DEFAULT 0, CreditUsedCents BIGINT NOT NULL DEFAULT 0,
+  FinalPaymentDays INT NOT NULL CONSTRAINT DF_Bookings_FinalPaymentDays DEFAULT 90,
+  LoyaltyNumber CHAR(9) NULL,
+  DiscountCents BIGINT NOT NULL CONSTRAINT DF_Bookings_DiscountCents DEFAULT 0, CreditUsedCents BIGINT NOT NULL CONSTRAINT DF_Bookings_CreditUsedCents DEFAULT 0,
   DraftId NVARCHAR(40) NULL,                    -- the draft this came from; no FK, the draft is discarded after booking
   ContactEmail NVARCHAR(254) NULL, ContactPhone NVARCHAR(30) NULL,
-  ConfirmedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  ConfirmedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_ConfirmedAt DEFAULT SYSUTCDATETIME(),
   CancelledAt DATETIME2(0) NULL, CancelFeeCents BIGINT NULL, CancelRefundCents BIGINT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -882,18 +883,22 @@ CREATE TABLE dbo.Bookings (
   CONSTRAINT CK_Bookings_Dining CHECK (Dining IN ('anytime','early','late')),
   CONSTRAINT CK_Bookings_Occasion CHECK (Occasion IN ('none','birthday','anniversary','honeymoon','other')),
   CONSTRAINT CK_Bookings_Deposit CHECK (DepositCents <= TotalCents),
-  CONSTRAINT CK_Bookings_Cancelled CHECK (Status <> 'cancelled' OR CancelledAt IS NOT NULL)
+  CONSTRAINT CK_Bookings_Cancelled CHECK (Status <> 'cancelled' OR CancelledAt IS NOT NULL),
+  CONSTRAINT UX_Bookings_Id_SailingId UNIQUE (Id, SailingId),
+  CONSTRAINT CK_Bookings_Amounts CHECK (TotalCents >= 0 AND DepositCents >= 0 AND DiscountCents >= 0 AND CreditUsedCents >= 0)
 );
 CREATE UNIQUE INDEX UX_Bookings_DraftId ON dbo.Bookings (DraftId) WHERE DraftId IS NOT NULL;   -- booking is idempotent per draft (D11)
 CREATE INDEX IX_Bookings_BookerUserId ON dbo.Bookings (BookerUserId);
 CREATE INDEX IX_Bookings_SailingId ON dbo.Bookings (SailingId);
+CREATE UNIQUE INDEX UX_Bookings_SailingId_CabinNumber ON dbo.Bookings (SailingId, CabinNumber) WHERE CabinNumber IS NOT NULL AND Status = 'confirmed';   -- one booking per cabin per sailing; also the free-cabin lookup
+CREATE INDEX IX_Bookings_FinalDueDate ON dbo.Bookings (FinalDueDate) WHERE Status = 'confirmed';   -- balance-due reminders
 END
 
 IF OBJECT_ID(N'dbo.BookingGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.BookingGuests (
   BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
-  Seq INT NOT NULL, IsLead BIT NOT NULL DEFAULT 0, Printed NVARCHAR(80) NOT NULL,
+  Seq INT NOT NULL, IsLead BIT NOT NULL CONSTRAINT DF_BookingGuests_IsLead DEFAULT 0, Printed NVARCHAR(80) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BookingGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_BookingGuests PRIMARY KEY (BookingId, UserId),
   CONSTRAINT UX_BookingGuests_BookingId_Seq UNIQUE (BookingId, Seq),
@@ -909,8 +914,8 @@ CREATE TABLE dbo.BookingGuestDetails (
   BookingId BIGINT NOT NULL, Seq INT NOT NULL,
   UserId BIGINT NULL,
   FirstName NVARCHAR(60) NOT NULL, LastName NVARCHAR(60) NOT NULL, Dob DATE NOT NULL,
-  Gender CHAR(1) NOT NULL, Citizenship VARCHAR(5) NOT NULL DEFAULT 'us',
-  DietaryStatus VARCHAR(4) NOT NULL DEFAULT 'none', AllergyNote NVARCHAR(300) NOT NULL DEFAULT N'',
+  Gender CHAR(1) NOT NULL, Citizenship VARCHAR(5) NOT NULL CONSTRAINT DF_BookingGuestDetails_Citizenship DEFAULT 'us',
+  DietaryStatus VARCHAR(4) NOT NULL CONSTRAINT DF_BookingGuestDetails_DietaryStatus DEFAULT 'none', AllergyNote NVARCHAR(300) NOT NULL CONSTRAINT DF_BookingGuestDetails_AllergyNote DEFAULT N'',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BookingGuestDetails_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BookingGuestDetails_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_BookingGuestDetails PRIMARY KEY (BookingId, Seq),
@@ -920,6 +925,7 @@ CREATE TABLE dbo.BookingGuestDetails (
   CONSTRAINT CK_BookingGuestDetails_Citizenship CHECK (Citizenship IN ('us','other')),
   CONSTRAINT CK_BookingGuestDetails_DietaryStatus CHECK (DietaryStatus IN ('none','some'))
 );
+CREATE INDEX IX_BookingGuestDetails_UserId ON dbo.BookingGuestDetails (UserId) WHERE UserId IS NOT NULL;
 END
 
 IF OBJECT_ID(N'dbo.BookingGuestTags', N'U') IS NULL
@@ -939,10 +945,10 @@ CREATE TABLE dbo.BookingDrafts (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_BookingDrafts PRIMARY KEY,   -- random and unguessable: it is the resume link secret
   UserId BIGINT NOT NULL,
   SailingId NVARCHAR(40) NULL, CategoryId NVARCHAR(30) NULL,
-  Guests INT NOT NULL DEFAULT 1,
-  CabinMode VARCHAR(10) NOT NULL DEFAULT 'guaranteed', CabinNumber NVARCHAR(8) NULL,
-  FareId NVARCHAR(30) NULL, Dining VARCHAR(7) NULL, Occasion VARCHAR(11) NOT NULL DEFAULT 'none',
-  LoyaltyNumber NVARCHAR(9) NULL, UseCredit BIT NOT NULL DEFAULT 0,
+  Guests INT NOT NULL CONSTRAINT DF_BookingDrafts_Guests DEFAULT 1,
+  CabinMode VARCHAR(10) NOT NULL CONSTRAINT DF_BookingDrafts_CabinMode DEFAULT 'guaranteed', CabinNumber NVARCHAR(8) NULL,
+  FareId NVARCHAR(30) NULL, Dining VARCHAR(7) NULL, Occasion VARCHAR(11) NOT NULL CONSTRAINT DF_BookingDrafts_Occasion DEFAULT 'none',
+  LoyaltyNumber CHAR(9) NULL, UseCredit BIT NOT NULL CONSTRAINT DF_BookingDrafts_UseCredit DEFAULT 0,
   Accepted NVARCHAR(MAX) NOT NULL CONSTRAINT DF_BookingDrafts_Accepted DEFAULT N'{}',
   People NVARCHAR(MAX) NOT NULL CONSTRAINT DF_BookingDrafts_People DEFAULT N'[]',
   Contact NVARCHAR(MAX) NOT NULL CONSTRAINT DF_BookingDrafts_Contact DEFAULT N'{}',
@@ -963,6 +969,7 @@ CREATE TABLE dbo.BookingDrafts (
   CONSTRAINT CK_BookingDrafts_People CHECK (ISJSON(People) = 1),
   CONSTRAINT CK_BookingDrafts_Contact CHECK (ISJSON(Contact) = 1)
 );
+CREATE INDEX IX_BookingDrafts_UpdatedAt ON dbo.BookingDrafts (UpdatedAt);   -- abandoned-draft sweep
 END
 
 IF OBJECT_ID(N'dbo.QuoteLocks', N'U') IS NULL
@@ -975,6 +982,7 @@ CREATE TABLE dbo.QuoteLocks (
   CONSTRAINT FK_QuoteLocks_BookingDrafts FOREIGN KEY (DraftId) REFERENCES dbo.BookingDrafts (Id) ON DELETE CASCADE,
   CONSTRAINT CK_QuoteLocks_QuoteJson CHECK (ISJSON(QuoteJson) = 1)
 );
+CREATE INDEX IX_QuoteLocks_LockedUntil ON dbo.QuoteLocks (LockedUntil);   -- expiry sweep
 END
 
 IF OBJECT_ID(N'dbo.Payments', N'U') IS NULL
@@ -986,15 +994,16 @@ CREATE TABLE dbo.Payments (
   UserId BIGINT NOT NULL,                       -- who paid
   Label VARCHAR(8) NOT NULL,
   AmountCents BIGINT NOT NULL,                  -- negative = refund
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_Payments_At DEFAULT SYSUTCDATETIME(),
   Reference NVARCHAR(40) NOT NULL,
-  Status VARCHAR(8) NOT NULL DEFAULT 'captured',
+  Status VARCHAR(8) NOT NULL CONSTRAINT DF_Payments_Status DEFAULT 'captured',
   RelatedType NVARCHAR(20) NULL, RelatedId BIGINT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Payments_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Payments_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_Payments_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id),
   CONSTRAINT CK_Payments_Label CHECK (Label IN ('deposit','full','balance','refund','tour','purchase','photo','upgrade','checkin')),
-  CONSTRAINT CK_Payments_Status CHECK (Status IN ('captured','declined','refunded'))
+  CONSTRAINT CK_Payments_Status CHECK (Status IN ('captured','declined','refunded')),
+  CONSTRAINT CK_Payments_Sign CHECK ((Label = 'refund' AND AmountCents <= 0) OR (Label <> 'refund' AND AmountCents >= 0))
 );
 CREATE INDEX IX_Payments_BookingId_At ON dbo.Payments (BookingId, [At]);
 CREATE INDEX IX_Payments_UserId ON dbo.Payments (UserId);
@@ -1007,19 +1016,21 @@ CREATE TABLE dbo.PaymentParts (
   Method VARCHAR(6) NOT NULL,
   CardId BIGINT NULL,                           -- no FK: removing a saved card must not touch receipts; brand and last four are snapshotted
   CardBrand VARCHAR(10) NULL, Last4 CHAR(4) NULL,
-  Cents BIGINT NOT NULL, ChallengeUsed BIT NOT NULL DEFAULT 0,
+  Cents BIGINT NOT NULL, ChallengeUsed BIT NOT NULL CONSTRAINT DF_PaymentParts_ChallengeUsed DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PaymentParts_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PaymentParts PRIMARY KEY (PaymentId, Seq),
   CONSTRAINT FK_PaymentParts_Payments FOREIGN KEY (PaymentId) REFERENCES dbo.Payments (Id) ON DELETE CASCADE,
   CONSTRAINT CK_PaymentParts_Method CHECK (Method IN ('card','wallet')),
-  CONSTRAINT CK_PaymentParts_Seq CHECK (Seq BETWEEN 1 AND 2)   -- checkParts: at most two parts
+  CONSTRAINT CK_PaymentParts_Seq CHECK (Seq BETWEEN 1 AND 2)   -- checkParts: at most two parts,
+  CONSTRAINT CK_PaymentParts_CardBrand CHECK (CardBrand IS NULL OR CardBrand IN ('visa','mastercard','amex','discover')),
+  CONSTRAINT CK_PaymentParts_Cents CHECK (Cents >= 0)
 );
 END
 
 IF OBJECT_ID(N'dbo.IdempotencyKeys', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.IdempotencyKeys (
-  [Key] NVARCHAR(80) NOT NULL CONSTRAINT PK_IdempotencyKeys PRIMARY KEY,
+  RequestKey NVARCHAR(80) NOT NULL CONSTRAINT PK_IdempotencyKeys PRIMARY KEY,
   UserId BIGINT NOT NULL, Route NVARCHAR(80) NOT NULL, ResponseHash NVARCHAR(100) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_IdempotencyKeys_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_IdempotencyKeys_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
@@ -1031,7 +1042,7 @@ IF OBJECT_ID(N'dbo.Acceptances', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Acceptances (
   BookingId BIGINT NOT NULL, LegalId NVARCHAR(30) NOT NULL, Version INT NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_Acceptances_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Acceptances_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_Acceptances PRIMARY KEY (BookingId, LegalId),
   CONSTRAINT FK_Acceptances_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1044,7 +1055,7 @@ BEGIN
 CREATE TABLE dbo.NotificationsSent (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_NotificationsSent PRIMARY KEY,
   BookingId BIGINT NOT NULL, Via VARCHAR(5) NOT NULL, ToMasked NVARCHAR(80) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_NotificationsSent_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_NotificationsSent_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_NotificationsSent_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT CK_NotificationsSent_Via CHECK (Via IN ('email','sms'))
@@ -1057,12 +1068,13 @@ BEGIN
 CREATE TABLE dbo.ResumeLinks (
   LinkToken CHAR(32) NOT NULL CONSTRAINT PK_ResumeLinks PRIMARY KEY,
   DraftId NVARCHAR(40) NOT NULL, Via VARCHAR(5) NOT NULL, ToMasked NVARCHAR(80) NOT NULL,
-  SentAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), ExpiresAt DATETIME2(0) NOT NULL,
+  SentAt DATETIME2(0) NOT NULL CONSTRAINT DF_ResumeLinks_SentAt DEFAULT SYSUTCDATETIME(), ExpiresAt DATETIME2(0) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ResumeLinks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ResumeLinks_BookingDrafts FOREIGN KEY (DraftId) REFERENCES dbo.BookingDrafts (Id) ON DELETE CASCADE,
   CONSTRAINT CK_ResumeLinks_Via CHECK (Via IN ('email','sms'))
 );
 CREATE INDEX IX_ResumeLinks_DraftId ON dbo.ResumeLinks (DraftId);
+CREATE INDEX IX_ResumeLinks_ExpiresAt ON dbo.ResumeLinks (ExpiresAt);   -- expiry sweep
 END
 
 IF OBJECT_ID(N'dbo.PastTrips', N'U') IS NULL
@@ -1071,7 +1083,7 @@ CREATE TABLE dbo.PastTrips (
   Id NVARCHAR(40) NOT NULL CONSTRAINT PK_PastTrips PRIMARY KEY,
   UserId BIGINT NOT NULL,
   Title NVARCHAR(120) NOT NULL, Ship NVARCHAR(80) NOT NULL, Departure DATE NOT NULL, Nights INT NOT NULL,
-  Cancelled BIT NOT NULL DEFAULT 0, FareCents BIGINT NULL,
+  Cancelled BIT NOT NULL CONSTRAINT DF_PastTrips_Cancelled DEFAULT 0, FareCents BIGINT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PastTrips_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_PastTrips_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
@@ -1081,7 +1093,7 @@ END
 IF OBJECT_ID(N'dbo.PastTripDocs', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PastTripDocs (
-  PastTripId NVARCHAR(40) NOT NULL, Doc VARCHAR(18) NOT NULL, Ready BIT NOT NULL DEFAULT 0,
+  PastTripId NVARCHAR(40) NOT NULL, Doc VARCHAR(18) NOT NULL, Ready BIT NOT NULL CONSTRAINT DF_PastTripDocs_Ready DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PastTripDocs_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PastTripDocs PRIMARY KEY (PastTripId, Doc),
   CONSTRAINT FK_PastTripDocs_PastTrips FOREIGN KEY (PastTripId) REFERENCES dbo.PastTrips (Id) ON DELETE CASCADE,
@@ -1094,7 +1106,7 @@ BEGIN
 CREATE TABLE dbo.Loyalty (
   UserId BIGINT NOT NULL CONSTRAINT PK_Loyalty PRIMARY KEY,
   Number CHAR(9) NOT NULL,                      -- the tier itself lives on Users.Tier
-  DaysCounted INT NOT NULL DEFAULT 0, ReferralCode NVARCHAR(12) NULL, ReferralCreditCents BIGINT NOT NULL DEFAULT 0,
+  DaysCounted INT NOT NULL CONSTRAINT DF_Loyalty_DaysCounted DEFAULT 0, ReferralCode NVARCHAR(12) NULL, ReferralCreditCents BIGINT NOT NULL CONSTRAINT DF_Loyalty_ReferralCreditCents DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Loyalty_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Loyalty_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT UX_Loyalty_Number UNIQUE (Number),
@@ -1124,7 +1136,7 @@ CREATE TABLE dbo.Referrals (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Referrals PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Referrals_PublicId DEFAULT NEWID() CONSTRAINT UX_Referrals_PublicId UNIQUE,
   UserId BIGINT NOT NULL,                       -- the referrer
-  FriendName NVARCHAR(80) NOT NULL, State VARCHAR(7) NOT NULL DEFAULT 'invited',
+  FriendName NVARCHAR(80) NOT NULL, State VARCHAR(7) NOT NULL CONSTRAINT DF_Referrals_State DEFAULT 'invited',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Referrals_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Referrals_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Referrals_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -1137,7 +1149,7 @@ IF OBJECT_ID(N'dbo.LinkedBookings', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.LinkedBookings (
   UserId BIGINT NOT NULL, BookingId BIGINT NOT NULL,
-  LinkedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  LinkedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LinkedBookings_LinkedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LinkedBookings_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_LinkedBookings PRIMARY KEY (UserId, BookingId),
   CONSTRAINT FK_LinkedBookings_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -1173,35 +1185,39 @@ BEGIN
 CREATE TABLE dbo.TourBookings (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_TourBookings PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_TourBookings_PublicId DEFAULT NEWID() CONSTRAINT UX_TourBookings_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, ExcursionId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
-  Source VARCHAR(7) NOT NULL DEFAULT 'pre',     -- 'onboard' = last-minute tours (charged to FolioLines)
-  TotalCents BIGINT NOT NULL, CreditCents BIGINT NOT NULL DEFAULT 0,
-  Status VARCHAR(9) NOT NULL DEFAULT 'booked',
+  BookingId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL, ExcursionId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
+  Source VARCHAR(7) NOT NULL CONSTRAINT DF_TourBookings_Source DEFAULT 'pre',     -- 'onboard' = last-minute tours (charged to FolioLines)
+  TotalCents BIGINT NOT NULL, CreditCents BIGINT NOT NULL CONSTRAINT DF_TourBookings_CreditCents DEFAULT 0,
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_TourBookings_Status DEFAULT 'booked',
   CancelFeeCents BIGINT NULL, CancelRefundCents BIGINT NULL,
   PaymentId BIGINT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_TourBookings_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TourBookings_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TourBookings_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT FK_TourBookings_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_TourBookings_Bookings FOREIGN KEY (BookingId, SailingId) REFERENCES dbo.Bookings (Id, SailingId) ON DELETE CASCADE,
+  CONSTRAINT FK_TourBookings_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day]),
   CONSTRAINT FK_TourBookings_Excursions FOREIGN KEY (ExcursionId) REFERENCES ref.Excursions (Id),
   CONSTRAINT FK_TourBookings_Payments FOREIGN KEY (PaymentId) REFERENCES dbo.Payments (Id),
   CONSTRAINT CK_TourBookings_Source CHECK (Source IN ('pre','onboard')),
-  CONSTRAINT CK_TourBookings_Status CHECK (Status IN ('booked','cancelled'))
+  CONSTRAINT CK_TourBookings_Status CHECK (Status IN ('booked','cancelled')),
+  CONSTRAINT UX_TourBookings_Id_BookingId UNIQUE (Id, BookingId)
 );
 CREATE INDEX IX_TourBookings_BookingId ON dbo.TourBookings (BookingId);
 CREATE INDEX IX_TourBookings_ExcursionId_Day ON dbo.TourBookings (ExcursionId, [Day]) INCLUDE (Status);   -- counting spots left
+CREATE INDEX IX_TourBookings_PaymentId ON dbo.TourBookings (PaymentId) WHERE PaymentId IS NOT NULL;
 END
 
 IF OBJECT_ID(N'dbo.TourBookingGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.TourBookingGuests (
-  TourBookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  TourBookingId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TourBookingGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_TourBookingGuests PRIMARY KEY (TourBookingId, UserId),
-  CONSTRAINT FK_TourBookingGuests_TourBookings FOREIGN KEY (TourBookingId) REFERENCES dbo.TourBookings (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_TourBookingGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_TourBookingGuests_TourBookings FOREIGN KEY (TourBookingId, BookingId) REFERENCES dbo.TourBookings (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_TourBookingGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_TourBookingGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_TourBookingGuests_UserId ON dbo.TourBookingGuests (UserId);
+CREATE INDEX IX_TourBookingGuests_UserId_BookingId ON dbo.TourBookingGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.TourCartLines', N'U') IS NULL
@@ -1222,8 +1238,10 @@ CREATE TABLE dbo.TourCartGuests (
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TourCartGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_TourCartGuests PRIMARY KEY (BookingId, ExcursionId, UserId),
   CONSTRAINT FK_TourCartGuests_TourCartLines FOREIGN KEY (BookingId, ExcursionId) REFERENCES dbo.TourCartLines (BookingId, ExcursionId) ON DELETE CASCADE,
-  CONSTRAINT FK_TourCartGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_TourCartGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_TourCartGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
+CREATE INDEX IX_TourCartGuests_UserId_BookingId ON dbo.TourCartGuests (UserId, BookingId);
 END
 
 IF OBJECT_ID(N'dbo.DiningReservations', N'U') IS NULL
@@ -1231,18 +1249,20 @@ BEGIN
 CREATE TABLE dbo.DiningReservations (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DiningReservations PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_DiningReservations_PublicId DEFAULT NEWID() CONSTRAINT UX_DiningReservations_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, VenueId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, TimeLocal TIME(0) NOT NULL,
-  Note NVARCHAR(300) NOT NULL DEFAULT N'', ChargeCents BIGINT NOT NULL DEFAULT 0,
-  LateMinutes INT NOT NULL DEFAULT 0, ReminderOn DATE NULL,
-  Status VARCHAR(9) NOT NULL DEFAULT 'booked',
+  BookingId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL, VenueId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, TimeLocal TIME(0) NOT NULL,
+  Note NVARCHAR(300) NOT NULL CONSTRAINT DF_DiningReservations_Note DEFAULT N'', ChargeCents BIGINT NOT NULL CONSTRAINT DF_DiningReservations_ChargeCents DEFAULT 0,
+  LateMinutes INT NOT NULL CONSTRAINT DF_DiningReservations_LateMinutes DEFAULT 0, ReminderOn DATE NULL,
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_DiningReservations_Status DEFAULT 'booked',
   GroupSplit VARCHAR(4) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DiningReservations_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DiningReservations_UpdatedAt DEFAULT SYSUTCDATETIME(),
   RowVersion ROWVERSION NOT NULL,
-  CONSTRAINT FK_DiningReservations_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_DiningReservations_Bookings FOREIGN KEY (BookingId, SailingId) REFERENCES dbo.Bookings (Id, SailingId) ON DELETE CASCADE,
+  CONSTRAINT FK_DiningReservations_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day]),
   CONSTRAINT FK_DiningReservations_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
   CONSTRAINT CK_DiningReservations_Status CHECK (Status IN ('booked','cancelled','moved')),
-  CONSTRAINT CK_DiningReservations_GroupSplit CHECK (GroupSplit IS NULL OR GroupSplit IN ('mine','even'))
+  CONSTRAINT CK_DiningReservations_GroupSplit CHECK (GroupSplit IS NULL OR GroupSplit IN ('mine','even')),
+  CONSTRAINT UX_DiningReservations_Id_BookingId UNIQUE (Id, BookingId)
 );
 CREATE INDEX IX_DiningReservations_BookingId ON dbo.DiningReservations (BookingId);
 CREATE INDEX IX_DiningReservations_VenueId_Day_TimeLocal ON dbo.DiningReservations (VenueId, [Day], TimeLocal) INCLUDE (Status);   -- slot capacity
@@ -1251,13 +1271,14 @@ END
 IF OBJECT_ID(N'dbo.DiningReservationGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.DiningReservationGuests (
-  ReservationId BIGINT NOT NULL, UserId BIGINT NOT NULL, Covered BIT NOT NULL DEFAULT 0,
+  ReservationId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL, Covered BIT NOT NULL CONSTRAINT DF_DiningReservationGuests_Covered DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DiningReservationGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_DiningReservationGuests PRIMARY KEY (ReservationId, UserId),
-  CONSTRAINT FK_DiningReservationGuests_DiningReservations FOREIGN KEY (ReservationId) REFERENCES dbo.DiningReservations (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_DiningReservationGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_DiningReservationGuests_DiningReservations FOREIGN KEY (ReservationId, BookingId) REFERENCES dbo.DiningReservations (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_DiningReservationGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_DiningReservationGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_DiningReservationGuests_UserId ON dbo.DiningReservationGuests (UserId);   -- double-booking (clash) check
+CREATE INDEX IX_DiningReservationGuests_UserId_BookingId ON dbo.DiningReservationGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.GroupTableFriends', N'U') IS NULL
@@ -1276,13 +1297,15 @@ CREATE TABLE dbo.Waitlists (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Waitlists PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Waitlists_PublicId DEFAULT NEWID() CONSTRAINT UX_Waitlists_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, VenueId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, TimeLocal TIME(0) NOT NULL,
-  Stage VARCHAR(7) NOT NULL DEFAULT 'waiting', Position INT NOT NULL DEFAULT 1,
-  OfferAt DATETIME2(0) NULL, ExpiresAt DATETIME2(0) NULL, Auto BIT NOT NULL DEFAULT 0,
+  Stage VARCHAR(7) NOT NULL CONSTRAINT DF_Waitlists_Stage DEFAULT 'waiting', Position INT NOT NULL CONSTRAINT DF_Waitlists_Position DEFAULT 1,
+  OfferAt DATETIME2(0) NULL, ExpiresAt DATETIME2(0) NULL, Auto BIT NOT NULL CONSTRAINT DF_Waitlists_Auto DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Waitlists_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Waitlists_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Waitlists_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_Waitlists_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
-  CONSTRAINT CK_Waitlists_Stage CHECK (Stage IN ('waiting','offered','expired','booked'))
+  CONSTRAINT CK_Waitlists_Stage CHECK (Stage IN ('waiting','offered','expired','booked')),
+  CONSTRAINT UX_Waitlists_Id_BookingId UNIQUE (Id, BookingId),
+  CONSTRAINT CK_Waitlists_Position CHECK (Position >= 1)
 );
 CREATE INDEX IX_Waitlists_BookingId ON dbo.Waitlists (BookingId);
 CREATE INDEX IX_Waitlists_VenueId_Day_TimeLocal ON dbo.Waitlists (VenueId, [Day], TimeLocal) INCLUDE (Stage, Position);
@@ -1291,12 +1314,14 @@ END
 IF OBJECT_ID(N'dbo.WaitlistGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.WaitlistGuests (
-  WaitlistId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  WaitlistId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_WaitlistGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_WaitlistGuests PRIMARY KEY (WaitlistId, UserId),
-  CONSTRAINT FK_WaitlistGuests_Waitlists FOREIGN KEY (WaitlistId) REFERENCES dbo.Waitlists (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_WaitlistGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_WaitlistGuests_Waitlists FOREIGN KEY (WaitlistId, BookingId) REFERENCES dbo.Waitlists (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_WaitlistGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_WaitlistGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
+CREATE INDEX IX_WaitlistGuests_UserId_BookingId ON dbo.WaitlistGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.Queues', N'U') IS NULL
@@ -1305,14 +1330,15 @@ CREATE TABLE dbo.Queues (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Queues PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Queues_PublicId DEFAULT NEWID() CONSTRAINT UX_Queues_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, VenueId NVARCHAR(40) NOT NULL,
-  JoinedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
-  Stage VARCHAR(7) NOT NULL DEFAULT 'waiting', Position INT NOT NULL DEFAULT 1,
+  JoinedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Queues_JoinedAt DEFAULT SYSUTCDATETIME(),
+  Stage VARCHAR(7) NOT NULL CONSTRAINT DF_Queues_Stage DEFAULT 'waiting', Position INT NOT NULL CONSTRAINT DF_Queues_Position DEFAULT 1,
   ReadyAt DATETIME2(0) NULL, ExpiresAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Queues_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Queues_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Queues_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_Queues_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
-  CONSTRAINT CK_Queues_Stage CHECK (Stage IN ('waiting','ready','expired','left'))
+  CONSTRAINT CK_Queues_Stage CHECK (Stage IN ('waiting','ready','expired','left')),
+  CONSTRAINT CK_Queues_Position CHECK (Position >= 1)
 );
 CREATE INDEX IX_Queues_BookingId ON dbo.Queues (BookingId);
 CREATE INDEX IX_Queues_VenueId_Stage ON dbo.Queues (VenueId, Stage) INCLUDE (Position);
@@ -1324,39 +1350,43 @@ CREATE TABLE dbo.Purchases (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Purchases PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Purchases_PublicId DEFAULT NEWID() CONSTRAINT UX_Purchases_PublicId UNIQUE,
   BookingId BIGINT NOT NULL,
-  Kind VARCHAR(7) NOT NULL, ItemId NVARCHAR(20) NOT NULL,   -- an ref.AddOns id or a ref.Packages id, by Kind
+  Kind VARCHAR(7) NOT NULL, ItemId NVARCHAR(30) NOT NULL,   -- an ref.AddOns id or a ref.Packages id, by Kind
   Units INT NOT NULL, UnitCents BIGINT NOT NULL, TotalCents BIGINT NOT NULL,
-  Status VARCHAR(9) NOT NULL DEFAULT 'active', CreditedCents BIGINT NOT NULL DEFAULT 0,
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_Purchases_Status DEFAULT 'active', CreditedCents BIGINT NOT NULL CONSTRAINT DF_Purchases_CreditedCents DEFAULT 0,
   PaymentId BIGINT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_Purchases_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Purchases_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Purchases_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Purchases_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_Purchases_Payments FOREIGN KEY (PaymentId) REFERENCES dbo.Payments (Id),
   CONSTRAINT CK_Purchases_Kind CHECK (Kind IN ('addOn','upgrade')),
   CONSTRAINT CK_Purchases_Status CHECK (Status IN ('active','cancelled')),
-  CONSTRAINT CK_Purchases_Units CHECK (Units > 0)
+  CONSTRAINT CK_Purchases_Units CHECK (Units > 0),
+  CONSTRAINT UX_Purchases_Id_BookingId UNIQUE (Id, BookingId),
+  CONSTRAINT CK_Purchases_Amounts CHECK (UnitCents >= 0 AND TotalCents >= 0 AND CreditedCents >= 0)
 );
 CREATE INDEX IX_Purchases_BookingId ON dbo.Purchases (BookingId);
+CREATE INDEX IX_Purchases_PaymentId ON dbo.Purchases (PaymentId) WHERE PaymentId IS NOT NULL;
 END
 
 IF OBJECT_ID(N'dbo.PurchaseGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PurchaseGuests (
-  PurchaseId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  PurchaseId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PurchaseGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PurchaseGuests PRIMARY KEY (PurchaseId, UserId),
-  CONSTRAINT FK_PurchaseGuests_Purchases FOREIGN KEY (PurchaseId) REFERENCES dbo.Purchases (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_PurchaseGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_PurchaseGuests_Purchases FOREIGN KEY (PurchaseId, BookingId) REFERENCES dbo.Purchases (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_PurchaseGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_PurchaseGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_PurchaseGuests_UserId ON dbo.PurchaseGuests (UserId);   -- entitlements per person
+CREATE INDEX IX_PurchaseGuests_UserId_BookingId ON dbo.PurchaseGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.ChecklistTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ChecklistTicks (
-  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL DEFAULT 1,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_ChecklistTicks_Done DEFAULT 1,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChecklistTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChecklistTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ChecklistTicks PRIMARY KEY (BookingId, ItemId),
   CONSTRAINT FK_ChecklistTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1367,8 +1397,8 @@ END
 IF OBJECT_ID(N'dbo.PackingTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PackingTicks (
-  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL DEFAULT 1,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_PackingTicks_Done DEFAULT 1,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_PackingTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PackingTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PackingTicks PRIMARY KEY (BookingId, ItemId),
   CONSTRAINT FK_PackingTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1379,8 +1409,8 @@ END
 IF OBJECT_ID(N'dbo.PrepTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PrepTicks (
-  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL DEFAULT 1,   -- item ids come from code, so no FK
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_PrepTicks_Done DEFAULT 1,   -- item ids come from code, so no FK
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_PrepTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PrepTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PrepTicks PRIMARY KEY (BookingId, ItemId),
   CONSTRAINT FK_PrepTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
@@ -1390,8 +1420,8 @@ END
 IF OBJECT_ID(N'dbo.ReadyTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ReadyTicks (
-  BookingId BIGINT NOT NULL, [Day] INT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL DEFAULT 1,   -- resets daily; ids from code
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, [Day] INT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_ReadyTicks_Done DEFAULT 1,   -- resets daily; ids from code
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ReadyTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ReadyTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ReadyTicks PRIMARY KEY (BookingId, [Day], ItemId),
   CONSTRAINT FK_ReadyTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
@@ -1401,8 +1431,8 @@ END
 IF OBJECT_ID(N'dbo.NightTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.NightTicks (
-  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL DEFAULT 1,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_NightTicks_Done DEFAULT 1,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_NightTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_NightTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_NightTicks PRIMARY KEY (BookingId, ItemId),
   CONSTRAINT FK_NightTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1430,9 +1460,9 @@ CREATE TABLE dbo.AssistanceRequests (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AssistanceRequests PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AssistanceRequests_PublicId DEFAULT NEWID() CONSTRAINT UX_AssistanceRequests_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, GuestUserId BIGINT NOT NULL,
-  Kind NVARCHAR(20) NOT NULL, Note NVARCHAR(500) NOT NULL DEFAULT N'',
-  Status VARCHAR(9) NOT NULL DEFAULT 'received',
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  Kind NVARCHAR(20) NOT NULL, Note NVARCHAR(500) NOT NULL CONSTRAINT DF_AssistanceRequests_Note DEFAULT N'',
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_AssistanceRequests_Status DEFAULT 'received',
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_AssistanceRequests_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AssistanceRequests_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AssistanceRequests_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_AssistanceRequests_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1440,6 +1470,7 @@ CREATE TABLE dbo.AssistanceRequests (
   CONSTRAINT CK_AssistanceRequests_Status CHECK (Status IN ('received','confirmed','declined','cancelled'))
 );
 CREATE INDEX IX_AssistanceRequests_BookingId ON dbo.AssistanceRequests (BookingId);
+CREATE INDEX IX_AssistanceRequests_GuestUserId ON dbo.AssistanceRequests (GuestUserId);
 END
 GO
 
@@ -1455,7 +1486,7 @@ CREATE TABLE dbo.AdvisorRequests (
   UserId BIGINT NOT NULL, AdvisorId NVARCHAR(40) NOT NULL,
   Way VARCHAR(8) NOT NULL, Phone NVARCHAR(30) NULL, Question NVARCHAR(1000) NOT NULL,
   Reply NVARCHAR(MAX) NULL, CallbackBy DATETIME2(0) NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_AdvisorRequests_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AdvisorRequests_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AdvisorRequests_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_AdvisorRequests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -1470,8 +1501,8 @@ BEGIN
 CREATE TABLE dbo.MarketingConsents (
   UserId BIGINT NOT NULL, Channel VARCHAR(5) NOT NULL,
   Contact NVARCHAR(254) NOT NULL, Region VARCHAR(2) NOT NULL,
-  State VARCHAR(9) NOT NULL DEFAULT 'pending', CodeHash BINARY(32) NULL,
-  AskedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), ConfirmedAt DATETIME2(0) NULL, ExpiresAt DATETIME2(0) NULL,
+  State VARCHAR(9) NOT NULL CONSTRAINT DF_MarketingConsents_State DEFAULT 'pending', CodeHash BINARY(32) NULL,
+  AskedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MarketingConsents_AskedAt DEFAULT SYSUTCDATETIME(), ConfirmedAt DATETIME2(0) NULL, ExpiresAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MarketingConsents_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MarketingConsents_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_MarketingConsents PRIMARY KEY (UserId, Channel),
@@ -1488,13 +1519,14 @@ CREATE TABLE dbo.UpgradeBids (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UpgradeBids PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_UpgradeBids_PublicId DEFAULT NEWID() CONSTRAINT UX_UpgradeBids_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, CategoryId NVARCHAR(30) NOT NULL, Cents BIGINT NOT NULL,
-  Status VARCHAR(9) NOT NULL DEFAULT 'open', BuyNow BIT NOT NULL DEFAULT 0,
-  DecidedAt DATETIME2(0) NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_UpgradeBids_Status DEFAULT 'open', BuyNow BIT NOT NULL CONSTRAINT DF_UpgradeBids_BuyNow DEFAULT 0,
+  DecidedAt DATETIME2(0) NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_UpgradeBids_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UpgradeBids_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UpgradeBids_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_UpgradeBids_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_UpgradeBids_CabinCategories FOREIGN KEY (CategoryId) REFERENCES ref.CabinCategories (Id),
-  CONSTRAINT CK_UpgradeBids_Status CHECK (Status IN ('open','accepted','declined','withdrawn'))
+  CONSTRAINT CK_UpgradeBids_Status CHECK (Status IN ('open','accepted','declined','withdrawn')),
+  CONSTRAINT CK_UpgradeBids_Cents CHECK (Cents > 0)
 );
 CREATE INDEX IX_UpgradeBids_BookingId ON dbo.UpgradeBids (BookingId);
 CREATE UNIQUE INDEX UX_UpgradeBids_BookingId_CategoryId_Open ON dbo.UpgradeBids (BookingId, CategoryId) WHERE Status = 'open';
@@ -1506,25 +1538,26 @@ CREATE TABLE dbo.ClubRegistrations (
   ChildUserId BIGINT NOT NULL, BookingId BIGINT NOT NULL, ClubId NVARCHAR(30) NOT NULL,
   EmergencyName NVARCHAR(80) NOT NULL, EmergencyPhone NVARCHAR(30) NOT NULL,
   Pickups NVARCHAR(MAX) NOT NULL CONSTRAINT DF_ClubRegistrations_Pickups DEFAULT N'[]',
-  Allergies NVARCHAR(300) NOT NULL DEFAULT N'', Notes NVARCHAR(500) NOT NULL DEFAULT N'',
-  SignOutAlone BIT NOT NULL DEFAULT 0, Photos BIT NOT NULL DEFAULT 0,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  Allergies NVARCHAR(300) NOT NULL CONSTRAINT DF_ClubRegistrations_Allergies DEFAULT N'', Notes NVARCHAR(500) NOT NULL CONSTRAINT DF_ClubRegistrations_Notes DEFAULT N'',
+  SignOutAlone BIT NOT NULL CONSTRAINT DF_ClubRegistrations_SignOutAlone DEFAULT 0, Photos BIT NOT NULL CONSTRAINT DF_ClubRegistrations_Photos DEFAULT 0,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ClubRegistrations_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ClubRegistrations_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ClubRegistrations_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ClubRegistrations PRIMARY KEY (ChildUserId, BookingId),
   CONSTRAINT FK_ClubRegistrations_Users_Child FOREIGN KEY (ChildUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ClubRegistrations_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ClubRegistrations_Clubs FOREIGN KEY (ClubId) REFERENCES ref.Clubs (Id),
-  CONSTRAINT CK_ClubRegistrations_Pickups CHECK (ISJSON(Pickups) = 1)
+  CONSTRAINT CK_ClubRegistrations_Pickups CHECK (ISJSON(Pickups) = 1),
+  CONSTRAINT FK_ClubRegistrations_BookingGuests FOREIGN KEY (BookingId, ChildUserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_ClubRegistrations_BookingId ON dbo.ClubRegistrations (BookingId);
+CREATE INDEX IX_ClubRegistrations_BookingId_ChildUserId ON dbo.ClubRegistrations (BookingId, ChildUserId);
 END
 
 IF OBJECT_ID(N'dbo.Medallions', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Medallions (
   BookingId BIGINT NOT NULL CONSTRAINT PK_Medallions PRIMARY KEY,
-  Stage VARCHAR(9) NOT NULL DEFAULT 'preparing',
+  Stage VARCHAR(9) NOT NULL CONSTRAINT DF_Medallions_Stage DEFAULT 'preparing',
   ActivatedAt DATETIME2(0) NULL, LostAt DATETIME2(0) NULL, TrackingNumber NVARCHAR(30) NULL,
   Address NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Medallions_Address DEFAULT N'{}',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Medallions_CreatedAt DEFAULT SYSUTCDATETIME(),
@@ -1542,17 +1575,18 @@ CREATE TABLE dbo.MedallionGuests (
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MedallionGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_MedallionGuests PRIMARY KEY (BookingId, UserId),
   CONSTRAINT FK_MedallionGuests_Medallions FOREIGN KEY (BookingId) REFERENCES dbo.Medallions (BookingId) ON DELETE CASCADE,
-  CONSTRAINT FK_MedallionGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_MedallionGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_MedallionGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_MedallionGuests_UserId ON dbo.MedallionGuests (UserId);
+CREATE INDEX IX_MedallionGuests_UserId_BookingId ON dbo.MedallionGuests (UserId, BookingId);
 END
 
 IF OBJECT_ID(N'dbo.BagTagOrders', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.BagTagOrders (
   BookingId BIGINT NOT NULL CONSTRAINT PK_BagTagOrders PRIMARY KEY,
-  Way VARCHAR(5) NOT NULL, OrderedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), HandedOverAt DATETIME2(0) NULL,
-  Stage VARCHAR(10) NOT NULL DEFAULT 'none',
+  Way VARCHAR(5) NOT NULL, OrderedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BagTagOrders_OrderedAt DEFAULT SYSUTCDATETIME(), HandedOverAt DATETIME2(0) NULL,
+  Stage VARCHAR(10) NOT NULL CONSTRAINT DF_BagTagOrders_Stage DEFAULT 'none',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BagTagOrders_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BagTagOrders_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_BagTagOrders_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1567,9 +1601,9 @@ CREATE TABLE dbo.FixCases (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_FixCases PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_FixCases_PublicId DEFAULT NEWID() CONSTRAINT UX_FixCases_PublicId UNIQUE,
   UserId BIGINT NOT NULL,
-  Flow NVARCHAR(20) NOT NULL, Note NVARCHAR(500) NOT NULL DEFAULT N'', Stage NVARCHAR(20) NOT NULL DEFAULT N'received',
+  Flow NVARCHAR(20) NOT NULL, Note NVARCHAR(500) NOT NULL CONSTRAINT DF_FixCases_Note DEFAULT N'', Stage NVARCHAR(20) NOT NULL CONSTRAINT DF_FixCases_Stage DEFAULT N'received',
   Reference NVARCHAR(16) NOT NULL, ContactBy DATETIME2(0) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_FixCases_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FixCases_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FixCases_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FixCases_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
@@ -1583,10 +1617,10 @@ CREATE TABLE dbo.AssistCases (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AssistCases PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AssistCases_PublicId DEFAULT NEWID() CONSTRAINT UX_AssistCases_PublicId UNIQUE,
   UserId BIGINT NOT NULL, BookingId BIGINT NULL,
-  Kind VARCHAR(15) NOT NULL, Phone NVARCHAR(30) NULL, Note NVARCHAR(1000) NOT NULL DEFAULT N'',
-  Stage VARCHAR(9) NOT NULL DEFAULT 'received', Reference NVARCHAR(16) NOT NULL,
+  Kind VARCHAR(15) NOT NULL, Phone NVARCHAR(30) NULL, Note NVARCHAR(1000) NOT NULL CONSTRAINT DF_AssistCases_Note DEFAULT N'',
+  Stage VARCHAR(9) NOT NULL CONSTRAINT DF_AssistCases_Stage DEFAULT 'received', Reference NVARCHAR(16) NOT NULL,
   FeeCents BIGINT NULL, RefundCents BIGINT NULL, CreditCents BIGINT NULL, Choice VARCHAR(6) NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_AssistCases_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AssistCases_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AssistCases_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_AssistCases_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
@@ -1596,6 +1630,7 @@ CREATE TABLE dbo.AssistCases (
   CONSTRAINT CK_AssistCases_Choice CHECK (Choice IS NULL OR Choice IN ('refund','credit'))
 );
 CREATE INDEX IX_AssistCases_UserId ON dbo.AssistCases (UserId);
+CREATE INDEX IX_AssistCases_BookingId ON dbo.AssistCases (BookingId) WHERE BookingId IS NOT NULL;
 END
 GO
 
@@ -1609,7 +1644,7 @@ IF OBJECT_ID(N'dbo.CheckinGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.CheckinGuests (
   BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL, Step VARCHAR(9) NOT NULL,
-  DoneAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  DoneAt DATETIME2(0) NOT NULL CONSTRAINT DF_CheckinGuests_DoneAt DEFAULT SYSUTCDATETIME(),
   Data NVARCHAR(MAX) NOT NULL CONSTRAINT DF_CheckinGuests_Data DEFAULT N'{}',   -- per-step payload; the photo itself is never kept
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_CheckinGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_CheckinGuests_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -1627,10 +1662,11 @@ CREATE TABLE dbo.CheckinBooking (
   BookingId BIGINT NOT NULL CONSTRAINT PK_CheckinBooking PRIMARY KEY,
   PaymentCardId BIGINT NULL,                    -- no FK, as PaymentParts.CardId
   PaymentLabel NVARCHAR(60) NULL, PaymentAt DATETIME2(0) NULL,
-  ArrivalWindowId NVARCHAR(20) NULL, ArrivalAt DATETIME2(0) NULL, FinishedAt DATETIME2(0) NULL,
+  ArrivalWindowId NVARCHAR(30) NULL, ArrivalAt DATETIME2(0) NULL, FinishedAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_CheckinBooking_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_CheckinBooking_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT FK_CheckinBooking_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
+  CONSTRAINT FK_CheckinBooking_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_CheckinBooking_TravelWindows FOREIGN KEY (ArrivalWindowId) REFERENCES ref.TravelWindows (Id)
 );
 END
 
@@ -1639,7 +1675,7 @@ BEGIN
 CREATE TABLE dbo.BoardingPasses (
   BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL, Seq INT NOT NULL,
   Code NVARCHAR(200) NOT NULL,                  -- signed PassData v1 payload, re-verifiable
-  InWallet BIT NOT NULL DEFAULT 0, IssuedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  InWallet BIT NOT NULL CONSTRAINT DF_BoardingPasses_InWallet DEFAULT 0, IssuedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BoardingPasses_IssuedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BoardingPasses_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_BoardingPasses PRIMARY KEY (BookingId, UserId),
   CONSTRAINT UX_BoardingPasses_Code UNIQUE (Code),
@@ -1651,8 +1687,8 @@ IF OBJECT_ID(N'dbo.EmbarkProgress', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.EmbarkProgress (
   BookingId BIGINT NOT NULL CONSTRAINT PK_EmbarkProgress PRIMARY KEY,
-  LuggageStatus VARCHAR(10) NOT NULL DEFAULT 'notDropped', LuggageDroppedAt DATETIME2(0) NULL,
-  Terminal NVARCHAR(60) NOT NULL DEFAULT N'',
+  LuggageStatus VARCHAR(10) NOT NULL CONSTRAINT DF_EmbarkProgress_LuggageStatus DEFAULT 'notDropped', LuggageDroppedAt DATETIME2(0) NULL,
+  Terminal NVARCHAR(60) NOT NULL CONSTRAINT DF_EmbarkProgress_Terminal DEFAULT N'',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_EmbarkProgress_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_EmbarkProgress_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_EmbarkProgress_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1663,7 +1699,7 @@ END
 IF OBJECT_ID(N'dbo.EmbarkTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.EmbarkTicks (
-  BookingId BIGINT NOT NULL, Kind VARCHAR(9) NOT NULL, ItemId NVARCHAR(30) NOT NULL, Done BIT NOT NULL DEFAULT 1,
+  BookingId BIGINT NOT NULL, Kind VARCHAR(9) NOT NULL, ItemId NVARCHAR(30) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_EmbarkTicks_Done DEFAULT 1,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_EmbarkTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_EmbarkTicks PRIMARY KEY (BookingId, Kind, ItemId),
   CONSTRAINT FK_EmbarkTicks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -1675,12 +1711,13 @@ IF OBJECT_ID(N'dbo.MusterConfirmations', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.MusterConfirmations (
   BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
-  ConfirmedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), ByUserId BIGINT NOT NULL,
+  ConfirmedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MusterConfirmations_ConfirmedAt DEFAULT SYSUTCDATETIME(), ByUserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_MusterConfirmations_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_MusterConfirmations PRIMARY KEY (BookingId, UserId),
   CONSTRAINT FK_MusterConfirmations_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId) ON DELETE CASCADE,
   CONSTRAINT FK_MusterConfirmations_Users_By FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id)
 );
+CREATE INDEX IX_MusterConfirmations_ByUserId ON dbo.MusterConfirmations (ByUserId);
 END
 GO
 
@@ -1704,13 +1741,15 @@ BEGIN
 CREATE TABLE dbo.ShowTickets (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ShowTickets PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ShowTickets_PublicId DEFAULT NEWID() CONSTRAINT UX_ShowTickets_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, EventId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
-  Status VARCHAR(9) NOT NULL DEFAULT 'on', [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL, EventId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_ShowTickets_Status DEFAULT 'on', [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ShowTickets_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ShowTickets_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ShowTickets_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT FK_ShowTickets_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ShowTickets_Bookings FOREIGN KEY (BookingId, SailingId) REFERENCES dbo.Bookings (Id, SailingId) ON DELETE CASCADE,
+  CONSTRAINT FK_ShowTickets_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day]),
   CONSTRAINT FK_ShowTickets_Events FOREIGN KEY (EventId) REFERENCES ref.Events (Id),
-  CONSTRAINT CK_ShowTickets_Status CHECK (Status IN ('on','moved','cancelled'))
+  CONSTRAINT CK_ShowTickets_Status CHECK (Status IN ('on','moved','cancelled')),
+  CONSTRAINT UX_ShowTickets_Id_BookingId UNIQUE (Id, BookingId)
 );
 CREATE INDEX IX_ShowTickets_BookingId ON dbo.ShowTickets (BookingId);
 CREATE INDEX IX_ShowTickets_EventId_Day ON dbo.ShowTickets (EventId, [Day]) INCLUDE (Status);   -- seats left (soldOut)
@@ -1719,12 +1758,14 @@ END
 IF OBJECT_ID(N'dbo.ShowTicketGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ShowTicketGuests (
-  ShowTicketId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  ShowTicketId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ShowTicketGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ShowTicketGuests PRIMARY KEY (ShowTicketId, UserId),
-  CONSTRAINT FK_ShowTicketGuests_ShowTickets FOREIGN KEY (ShowTicketId) REFERENCES dbo.ShowTickets (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_ShowTicketGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_ShowTicketGuests_ShowTickets FOREIGN KEY (ShowTicketId, BookingId) REFERENCES dbo.ShowTickets (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_ShowTicketGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ShowTicketGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
+CREATE INDEX IX_ShowTicketGuests_UserId_BookingId ON dbo.ShowTicketGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.Orders', N'U') IS NULL
@@ -1734,12 +1775,12 @@ CREATE TABLE dbo.Orders (
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Orders_PublicId DEFAULT NEWID() CONSTRAINT UX_Orders_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, PlacedByUserId BIGINT NOT NULL,
   Kind VARCHAR(9) NOT NULL,
-  PlacedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), DeliverAt DATETIME2(0) NULL,
-  LocationKind VARCHAR(5) NOT NULL DEFAULT 'cabin', LocationRef NVARCHAR(80) NULL,
-  TipCents BIGINT NOT NULL DEFAULT 0, FeeCents BIGINT NOT NULL DEFAULT 0, ServiceCents BIGINT NOT NULL DEFAULT 0,
-  TotalCents BIGINT NOT NULL DEFAULT 0, CoveredCents BIGINT NOT NULL DEFAULT 0, RefundCents BIGINT NOT NULL DEFAULT 0,
-  Stage VARCHAR(11) NOT NULL DEFAULT 'received',   -- derived on read from timestamps and the clock; stored lazily
-  EtaAt DATETIME2(0) NULL, Contacted INT NOT NULL DEFAULT 0,
+  PlacedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_PlacedAt DEFAULT SYSUTCDATETIME(), DeliverAt DATETIME2(0) NULL,
+  LocationKind VARCHAR(5) NOT NULL CONSTRAINT DF_Orders_LocationKind DEFAULT 'cabin', LocationRef NVARCHAR(80) NULL,
+  TipCents BIGINT NOT NULL CONSTRAINT DF_Orders_TipCents DEFAULT 0, FeeCents BIGINT NOT NULL CONSTRAINT DF_Orders_FeeCents DEFAULT 0, ServiceCents BIGINT NOT NULL CONSTRAINT DF_Orders_ServiceCents DEFAULT 0,
+  TotalCents BIGINT NOT NULL CONSTRAINT DF_Orders_TotalCents DEFAULT 0, CoveredCents BIGINT NOT NULL CONSTRAINT DF_Orders_CoveredCents DEFAULT 0, RefundCents BIGINT NOT NULL CONSTRAINT DF_Orders_RefundCents DEFAULT 0,
+  Stage VARCHAR(11) NOT NULL CONSTRAINT DF_Orders_Stage DEFAULT 'received',   -- derived on read from timestamps and the clock; stored lazily
+  EtaAt DATETIME2(0) NULL, Contacted INT NOT NULL CONSTRAINT DF_Orders_Contacted DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_UpdatedAt DEFAULT SYSUTCDATETIME(),
   RowVersion ROWVERSION NOT NULL,
@@ -1747,7 +1788,9 @@ CREATE TABLE dbo.Orders (
   CONSTRAINT FK_Orders_Users_PlacedBy FOREIGN KEY (PlacedByUserId) REFERENCES dbo.Users (Id),
   CONSTRAINT CK_Orders_Kind CHECK (Kind IN ('delivery','room','breakfast')),
   CONSTRAINT CK_Orders_LocationKind CHECK (LocationKind IN ('cabin','zone','other')),
-  CONSTRAINT CK_Orders_Stage CHECK (Stage IN ('scheduled','received','preparing','needsChoice','onTheWay','delivered','cancelled'))
+  CONSTRAINT CK_Orders_Stage CHECK (Stage IN ('scheduled','received','preparing','needsChoice','onTheWay','delivered','cancelled')),
+  CONSTRAINT UX_Orders_Id_BookingId UNIQUE (Id, BookingId),
+  CONSTRAINT CK_Orders_Amounts CHECK (TipCents >= 0 AND FeeCents >= 0 AND ServiceCents >= 0 AND TotalCents >= 0 AND CoveredCents >= 0 AND RefundCents >= 0)
 );
 CREATE INDEX IX_Orders_BookingId_PlacedAt ON dbo.Orders (BookingId, PlacedAt DESC);
 CREATE INDEX IX_Orders_PlacedByUserId ON dbo.Orders (PlacedByUserId);
@@ -1756,18 +1799,19 @@ END
 IF OBJECT_ID(N'dbo.OrderLines', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.OrderLines (
-  OrderId BIGINT NOT NULL, Seq INT NOT NULL,
-  ItemId NVARCHAR(40) NOT NULL, Qty INT NOT NULL DEFAULT 1, GuestUserId BIGINT NOT NULL,
+  OrderId BIGINT NOT NULL, BookingId BIGINT NOT NULL, Seq INT NOT NULL,
+  ItemId NVARCHAR(40) NOT NULL, Qty INT NOT NULL CONSTRAINT DF_OrderLines_Qty DEFAULT 1, GuestUserId BIGINT NOT NULL,
   Extras NVARCHAR(200) NULL,                    -- csv of MenuExtras ids
-  Note NVARCHAR(200) NULL, UnitCents BIGINT NOT NULL, Choice VARCHAR(10) NULL, Unavailable BIT NOT NULL DEFAULT 0,
+  Note NVARCHAR(200) NULL, UnitCents BIGINT NOT NULL, Choice VARCHAR(10) NULL, Unavailable BIT NOT NULL CONSTRAINT DF_OrderLines_Unavailable DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_OrderLines_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_OrderLines PRIMARY KEY (OrderId, Seq),
-  CONSTRAINT FK_OrderLines_Orders FOREIGN KEY (OrderId) REFERENCES dbo.Orders (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_OrderLines_Orders FOREIGN KEY (OrderId, BookingId) REFERENCES dbo.Orders (Id, BookingId) ON DELETE CASCADE,
   CONSTRAINT FK_OrderLines_MenuItems FOREIGN KEY (ItemId) REFERENCES ref.MenuItems (Id),
-  CONSTRAINT FK_OrderLines_Users_Guest FOREIGN KEY (GuestUserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_OrderLines_BookingGuests FOREIGN KEY (BookingId, GuestUserId) REFERENCES dbo.BookingGuests (BookingId, UserId),
   CONSTRAINT CK_OrderLines_Qty CHECK (Qty > 0),
   CONSTRAINT CK_OrderLines_Choice CHECK (Choice IS NULL OR Choice IN ('substitute','remove'))
 );
+CREATE INDEX IX_OrderLines_GuestUserId_BookingId ON dbo.OrderLines (GuestUserId, BookingId);
 END
 
 IF OBJECT_ID(N'dbo.ChatGroups', N'U') IS NULL
@@ -1799,9 +1843,9 @@ CREATE TABLE dbo.ChatMessages (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatMessages PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatMessages_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatMessages_PublicId UNIQUE,
   GroupId BIGINT NOT NULL, FromUserId BIGINT NOT NULL,
-  [Text] NVARCHAR(2000) NOT NULL DEFAULT N'',
+  [Text] NVARCHAR(2000) NOT NULL CONSTRAINT DF_ChatMessages_Text DEFAULT N'',
   Photo NVARCHAR(MAX) NULL,                     -- data URL, capped by the API (decision 5: blob storage is a later option)
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatMessages_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatMessages_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ChatMessages_ChatGroups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ChatMessages_Users_From FOREIGN KEY (FromUserId) REFERENCES dbo.Users (Id)
@@ -1813,12 +1857,13 @@ END
 IF OBJECT_ID(N'dbo.ChatReads', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ChatReads (
-  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, SeenAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, SeenAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatReads_SeenAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatReads_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_ChatReads PRIMARY KEY (MessageId, UserId),
   CONSTRAINT FK_ChatReads_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ChatReads_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
+CREATE INDEX IX_ChatReads_UserId ON dbo.ChatReads (UserId);
 END
 
 IF OBJECT_ID(N'dbo.ChatBlocks', N'U') IS NULL
@@ -1831,6 +1876,7 @@ CREATE TABLE dbo.ChatBlocks (
   CONSTRAINT FK_ChatBlocks_Users_Blocked FOREIGN KEY (BlockedUserId) REFERENCES dbo.Users (Id),
   CONSTRAINT CK_ChatBlocks_Self CHECK (UserId <> BlockedUserId)
 );
+CREATE INDEX IX_ChatBlocks_BlockedUserId ON dbo.ChatBlocks (BlockedUserId);
 END
 
 IF OBJECT_ID(N'dbo.ChatReports', N'U') IS NULL
@@ -1838,8 +1884,8 @@ BEGIN
 CREATE TABLE dbo.ChatReports (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatReports PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatReports_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatReports_PublicId UNIQUE,
-  MessageId BIGINT NOT NULL, ByUserId BIGINT NOT NULL, Reason NVARCHAR(300) NOT NULL DEFAULT N'',
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  MessageId BIGINT NOT NULL, ByUserId BIGINT NOT NULL, Reason NVARCHAR(300) NOT NULL CONSTRAINT DF_ChatReports_Reason DEFAULT N'',
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatReports_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatReports_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ChatReports_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ChatReports_Users_By FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id)
@@ -1852,7 +1898,7 @@ IF OBJECT_ID(N'dbo.UserPrefs', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UserPrefs (
   UserId BIGINT NOT NULL CONSTRAINT PK_UserPrefs PRIMARY KEY,
-  ReceiptsOn BIT NOT NULL DEFAULT 0,
+  ReceiptsOn BIT NOT NULL CONSTRAINT DF_UserPrefs_ReceiptsOn DEFAULT 0,
   Json NVARCHAR(MAX) NOT NULL CONSTRAINT DF_UserPrefs_Json DEFAULT N'{}',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UserPrefs_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UserPrefs_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -1881,7 +1927,7 @@ CREATE TABLE dbo.ServiceMessages (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ServiceMessages PRIMARY KEY,
   ThreadId BIGINT NOT NULL, FromRole VARCHAR(4) NOT NULL, CrewName NVARCHAR(60) NULL,
   [Text] NVARCHAR(2000) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),   -- may be in the future: the mocked crew reply "arrives" on read
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ServiceMessages_At DEFAULT SYSUTCDATETIME(),   -- may be in the future: the mocked crew reply "arrives" on read
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ServiceMessages_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ServiceMessages_ServiceThreads FOREIGN KEY (ThreadId) REFERENCES dbo.ServiceThreads (Id) ON DELETE CASCADE,
   CONSTRAINT CK_ServiceMessages_FromRole CHECK (FromRole IN ('me','crew'))
@@ -1901,9 +1947,10 @@ CREATE TABLE dbo.FamilyZones (
   CONSTRAINT FK_FamilyZones_Users_Child FOREIGN KEY (ChildUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_FamilyZones_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT CK_FamilyZones_ZoneIds CHECK (ISJSON(ZoneIds) = 1),
-  CONSTRAINT CK_FamilyZones_Auth CHECK (ISJSON(Auth) = 1)
+  CONSTRAINT CK_FamilyZones_Auth CHECK (ISJSON(Auth) = 1),
+  CONSTRAINT FK_FamilyZones_BookingGuests FOREIGN KEY (BookingId, ChildUserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
-CREATE INDEX IX_FamilyZones_BookingId ON dbo.FamilyZones (BookingId);
+CREATE INDEX IX_FamilyZones_BookingId_ChildUserId ON dbo.FamilyZones (BookingId, ChildUserId);
 END
 
 IF OBJECT_ID(N'dbo.KidClubCheckins', N'U') IS NULL
@@ -1912,13 +1959,14 @@ CREATE TABLE dbo.KidClubCheckins (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_KidClubCheckins PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_KidClubCheckins_PublicId DEFAULT NEWID() CONSTRAINT UX_KidClubCheckins_PublicId UNIQUE,
   ChildUserId BIGINT NOT NULL, ClubId NVARCHAR(30) NOT NULL,
-  InAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), OutAt DATETIME2(0) NULL,
+  InAt DATETIME2(0) NOT NULL CONSTRAINT DF_KidClubCheckins_InAt DEFAULT SYSUTCDATETIME(), OutAt DATETIME2(0) NULL,
   ByUserId BIGINT NOT NULL, OutByUserId BIGINT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_KidClubCheckins_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_KidClubCheckins_Users_Child FOREIGN KEY (ChildUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_KidClubCheckins_Clubs FOREIGN KEY (ClubId) REFERENCES ref.Clubs (Id),
   CONSTRAINT FK_KidClubCheckins_Users_By FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id),
-  CONSTRAINT FK_KidClubCheckins_Users_OutBy FOREIGN KEY (OutByUserId) REFERENCES dbo.Users (Id)
+  CONSTRAINT FK_KidClubCheckins_Users_OutBy FOREIGN KEY (OutByUserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_KidClubCheckins_Out CHECK ((OutAt IS NULL AND OutByUserId IS NULL) OR (OutAt IS NOT NULL AND OutByUserId IS NOT NULL AND OutAt >= InAt))
 );
 CREATE INDEX IX_KidClubCheckins_ChildUserId_InAt ON dbo.KidClubCheckins (ChildUserId, InAt DESC);
 CREATE INDEX IX_KidClubCheckins_ByUserId ON dbo.KidClubCheckins (ByUserId);
@@ -1930,7 +1978,7 @@ BEGIN
 CREATE TABLE dbo.KidSightings (
   ChildUserId BIGINT NOT NULL CONSTRAINT PK_KidSightings PRIMARY KEY,   -- the latest sighting only; it drives kidStatus
   PlaceId NVARCHAR(40) NOT NULL, Source VARCHAR(4) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_KidSightings_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_KidSightings_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_KidSightings_Users_Child FOREIGN KEY (ChildUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_KidSightings_Source CHECK (Source IN ('club','band'))
@@ -1942,7 +1990,7 @@ BEGIN
 CREATE TABLE dbo.FamilyLog (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_FamilyLog PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_FamilyLog_PublicId DEFAULT NEWID() CONSTRAINT UX_FamilyLog_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), [Text] NVARCHAR(500) NOT NULL,
+  BookingId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyLog_At DEFAULT SYSUTCDATETIME(), [Text] NVARCHAR(500) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyLog_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FamilyLog_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
 );
@@ -1953,7 +2001,7 @@ IF OBJECT_ID(N'dbo.ReunionPlans', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ReunionPlans (
   BookingId BIGINT NOT NULL CONSTRAINT PK_ReunionPlans PRIMARY KEY,
-  PlaceId NVARCHAR(40) NOT NULL, BackupId NVARCHAR(40) NULL, Note NVARCHAR(300) NOT NULL DEFAULT N'',
+  PlaceId NVARCHAR(40) NOT NULL, BackupId NVARCHAR(40) NULL, Note NVARCHAR(300) NOT NULL CONSTRAINT DF_ReunionPlans_Note DEFAULT N'',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ReunionPlans_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ReunionPlans_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ReunionPlans_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
@@ -1967,11 +2015,12 @@ CREATE TABLE dbo.HealthReports (
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_HealthReports_PublicId DEFAULT NEWID() CONSTRAINT UX_HealthReports_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, ByUserId BIGINT NOT NULL,
   Symptoms NVARCHAR(MAX) NOT NULL CONSTRAINT DF_HealthReports_Symptoms DEFAULT N'[]',
-  StartedHoursAgo INT NOT NULL DEFAULT 0, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  StartedHoursAgo INT NOT NULL CONSTRAINT DF_HealthReports_StartedHoursAgo DEFAULT 0, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_HealthReports_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HealthReports_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_HealthReports_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_HealthReports_Users_By FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id),
-  CONSTRAINT CK_HealthReports_Symptoms CHECK (ISJSON(Symptoms) = 1)
+  CONSTRAINT CK_HealthReports_Symptoms CHECK (ISJSON(Symptoms) = 1),
+  CONSTRAINT UX_HealthReports_Id_BookingId UNIQUE (Id, BookingId)
 );
 CREATE INDEX IX_HealthReports_BookingId ON dbo.HealthReports (BookingId);
 CREATE INDEX IX_HealthReports_ByUserId ON dbo.HealthReports (ByUserId);
@@ -1980,12 +2029,14 @@ END
 IF OBJECT_ID(N'dbo.HealthReportGuests', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.HealthReportGuests (
-  ReportId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  ReportId BIGINT NOT NULL, BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HealthReportGuests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_HealthReportGuests PRIMARY KEY (ReportId, UserId),
-  CONSTRAINT FK_HealthReportGuests_HealthReports FOREIGN KEY (ReportId) REFERENCES dbo.HealthReports (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_HealthReportGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+  CONSTRAINT FK_HealthReportGuests_HealthReports FOREIGN KEY (ReportId, BookingId) REFERENCES dbo.HealthReports (Id, BookingId) ON DELETE CASCADE,
+  CONSTRAINT FK_HealthReportGuests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_HealthReportGuests_BookingGuests FOREIGN KEY (BookingId, UserId) REFERENCES dbo.BookingGuests (BookingId, UserId)
 );
+CREATE INDEX IX_HealthReportGuests_UserId_BookingId ON dbo.HealthReportGuests (UserId, BookingId);   -- both foreign keys on the person
 END
 
 IF OBJECT_ID(N'dbo.HealthRequests', N'U') IS NULL
@@ -1993,8 +2044,8 @@ BEGIN
 CREATE TABLE dbo.HealthRequests (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_HealthRequests PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_HealthRequests_PublicId DEFAULT NEWID() CONSTRAINT UX_HealthRequests_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, Kind NVARCHAR(30) NOT NULL, Note NVARCHAR(500) NOT NULL DEFAULT N'',
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, Kind NVARCHAR(30) NOT NULL, Note NVARCHAR(500) NOT NULL CONSTRAINT DF_HealthRequests_Note DEFAULT N'',
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_HealthRequests_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HealthRequests_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_HealthRequests_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
 );
@@ -2033,12 +2084,13 @@ BEGIN
 CREATE TABLE dbo.PhotoPurchases (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PhotoPurchases PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PhotoPurchases_PublicId DEFAULT NEWID() CONSTRAINT UX_PhotoPurchases_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, [Option] NVARCHAR(30) NOT NULL,
-  PaidCents BIGINT NOT NULL DEFAULT 0, SavedCents BIGINT NOT NULL DEFAULT 0, Verified BIT NOT NULL DEFAULT 0,
-  Until DATETIME2(0) NOT NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, OptionId NVARCHAR(30) NOT NULL,
+  PaidCents BIGINT NOT NULL CONSTRAINT DF_PhotoPurchases_PaidCents DEFAULT 0, SavedCents BIGINT NOT NULL CONSTRAINT DF_PhotoPurchases_SavedCents DEFAULT 0, Verified BIT NOT NULL CONSTRAINT DF_PhotoPurchases_Verified DEFAULT 0,
+  Until DATETIME2(0) NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoPurchases_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoPurchases_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_PhotoPurchases_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_PhotoPurchases_PhotoOptions FOREIGN KEY ([Option]) REFERENCES ref.PhotoOptions (Id)
+  CONSTRAINT FK_PhotoPurchases_PhotoOptions FOREIGN KEY (OptionId) REFERENCES ref.PhotoOptions (Id),
+  CONSTRAINT CK_PhotoPurchases_Amounts CHECK (PaidCents >= 0 AND SavedCents >= 0)
 );
 CREATE INDEX IX_PhotoPurchases_BookingId ON dbo.PhotoPurchases (BookingId);
 END
@@ -2046,7 +2098,7 @@ END
 IF OBJECT_ID(N'dbo.PhotoPurchaseItems', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PhotoPurchaseItems (
-  PurchaseId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL, Downloaded BIT NOT NULL DEFAULT 0,
+  PurchaseId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL, Downloaded BIT NOT NULL CONSTRAINT DF_PhotoPurchaseItems_Downloaded DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoPurchaseItems_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PhotoPurchaseItems PRIMARY KEY (PurchaseId, PhotoId),
   CONSTRAINT FK_PhotoPurchaseItems_PhotoPurchases FOREIGN KEY (PurchaseId) REFERENCES dbo.PhotoPurchases (Id) ON DELETE CASCADE,
@@ -2059,13 +2111,15 @@ BEGIN
 CREATE TABLE dbo.LaundryRequests (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_LaundryRequests PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_LaundryRequests_PublicId DEFAULT NEWID() CONSTRAINT UX_LaundryRequests_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, Service NVARCHAR(30) NOT NULL, Qty INT NOT NULL DEFAULT 1,
+  BookingId BIGINT NOT NULL, Service NVARCHAR(30) NOT NULL, Qty INT NOT NULL CONSTRAINT DF_LaundryRequests_Qty DEFAULT 1,
   PickupAt DATETIME2(0) NOT NULL, ReturnAt DATETIME2(0) NOT NULL,
-  Stage NVARCHAR(20) NOT NULL DEFAULT N'received',   -- derived on read from the timestamps
-  TotalCents BIGINT NOT NULL DEFAULT 0, FreeCents BIGINT NOT NULL DEFAULT 0, Note NVARCHAR(300) NULL,
+  Stage NVARCHAR(20) NOT NULL CONSTRAINT DF_LaundryRequests_Stage DEFAULT N'received',   -- derived on read from the timestamps
+  TotalCents BIGINT NOT NULL CONSTRAINT DF_LaundryRequests_TotalCents DEFAULT 0, FreeCents BIGINT NOT NULL CONSTRAINT DF_LaundryRequests_FreeCents DEFAULT 0, Note NVARCHAR(300) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LaundryRequests_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LaundryRequests_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT FK_LaundryRequests_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
+  CONSTRAINT FK_LaundryRequests_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_LaundryRequests_Qty CHECK (Qty > 0 AND TotalCents >= 0 AND FreeCents >= 0),
+  CONSTRAINT CK_LaundryRequests_Window CHECK (PickupAt < ReturnAt)
 );
 CREATE INDEX IX_LaundryRequests_BookingId ON dbo.LaundryRequests (BookingId);
 END
@@ -2075,8 +2129,8 @@ BEGIN
 CREATE TABLE dbo.WifiDevices (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_WifiDevices PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_WifiDevices_PublicId DEFAULT NEWID() CONSTRAINT UX_WifiDevices_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, Name NVARCHAR(60) NOT NULL, [Plan] NVARCHAR(30) NOT NULL,
-  Days INT NOT NULL DEFAULT 1, ExpiresAt DATETIME2(0) NOT NULL, UsedMb BIGINT NOT NULL DEFAULT 0,
+  BookingId BIGINT NOT NULL, Name NVARCHAR(60) NOT NULL, PlanCode NVARCHAR(30) NOT NULL,
+  Days INT NOT NULL CONSTRAINT DF_WifiDevices_Days DEFAULT 1, ExpiresAt DATETIME2(0) NOT NULL, UsedMb BIGINT NOT NULL CONSTRAINT DF_WifiDevices_UsedMb DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_WifiDevices_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_WifiDevices_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_WifiDevices_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
@@ -2100,11 +2154,11 @@ END
 IF OBJECT_ID(N'dbo.BookingState', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.BookingState (
-  BookingId BIGINT NOT NULL, [Key] VARCHAR(30) NOT NULL,
+  BookingId BIGINT NOT NULL, StateKey VARCHAR(30) NOT NULL,
   Json NVARCHAR(MAX) NOT NULL, Version INT NOT NULL CONSTRAINT DF_BookingState_Version DEFAULT 1,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BookingState_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_BookingState_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT PK_BookingState PRIMARY KEY (BookingId, [Key]),
+  CONSTRAINT PK_BookingState PRIMARY KEY (BookingId, StateKey),
   CONSTRAINT FK_BookingState_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT CK_BookingState_Json CHECK (ISJSON(Json) = 1)
 );
@@ -2127,8 +2181,8 @@ END
 IF OBJECT_ID(N'dbo.UpdateAcks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UpdateAcks (
-  UserId BIGINT NOT NULL, ScenarioId NVARCHAR(30) NOT NULL, [Option] NVARCHAR(30) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  UserId BIGINT NOT NULL, ScenarioId NVARCHAR(30) NOT NULL, OptionCode NVARCHAR(30) NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_UpdateAcks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_UpdateAcks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_UpdateAcks PRIMARY KEY (UserId, ScenarioId),
   CONSTRAINT FK_UpdateAcks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
@@ -2140,14 +2194,15 @@ BEGIN
 CREATE TABLE dbo.ServiceRequests (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ServiceRequests PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ServiceRequests_PublicId DEFAULT NEWID() CONSTRAINT UX_ServiceRequests_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Qty INT NOT NULL DEFAULT 1, Note NVARCHAR(300) NULL,
-  PlacedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), EtaAt DATETIME2(0) NULL,
-  Stage VARCHAR(9) NOT NULL DEFAULT 'received',
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Qty INT NOT NULL CONSTRAINT DF_ServiceRequests_Qty DEFAULT 1, Note NVARCHAR(300) NULL,
+  PlacedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ServiceRequests_PlacedAt DEFAULT SYSUTCDATETIME(), EtaAt DATETIME2(0) NULL,
+  Stage VARCHAR(9) NOT NULL CONSTRAINT DF_ServiceRequests_Stage DEFAULT 'received',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ServiceRequests_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ServiceRequests_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_ServiceRequests_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_ServiceRequests_ServiceItems FOREIGN KEY (ItemId) REFERENCES ref.ServiceItems (Id),
-  CONSTRAINT CK_ServiceRequests_Stage CHECK (Stage IN ('received','onTheWay','done','cancelled'))
+  CONSTRAINT CK_ServiceRequests_Stage CHECK (Stage IN ('received','onTheWay','done','cancelled')),
+  CONSTRAINT CK_ServiceRequests_Qty CHECK (Qty > 0)
 );
 CREATE INDEX IX_ServiceRequests_BookingId ON dbo.ServiceRequests (BookingId);
 END
@@ -2157,9 +2212,9 @@ BEGIN
 CREATE TABLE dbo.SafetyReports (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SafetyReports PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SafetyReports_PublicId DEFAULT NEWID() CONSTRAINT UX_SafetyReports_PublicId UNIQUE,
-  BookingId BIGINT NOT NULL, Kind NVARCHAR(30) NOT NULL, Place NVARCHAR(80) NULL, Note NVARCHAR(1000) NOT NULL DEFAULT N'',
-  Anonymous BIT NOT NULL DEFAULT 0, Reference NVARCHAR(16) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  BookingId BIGINT NOT NULL, Kind NVARCHAR(30) NOT NULL, Place NVARCHAR(80) NULL, Note NVARCHAR(1000) NOT NULL CONSTRAINT DF_SafetyReports_Note DEFAULT N'',
+  Anonymous BIT NOT NULL CONSTRAINT DF_SafetyReports_Anonymous DEFAULT 0, Reference NVARCHAR(16) NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_SafetyReports_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_SafetyReports_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_SafetyReports_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
 );
@@ -2171,7 +2226,7 @@ BEGIN
 CREATE TABLE dbo.DrinkLogs (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DrinkLogs PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_DrinkLogs_PublicId DEFAULT NEWID() CONSTRAINT UX_DrinkLogs_PublicId UNIQUE,
-  UserId BIGINT NOT NULL, DrinkId NVARCHAR(40) NOT NULL, [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  UserId BIGINT NOT NULL, DrinkId NVARCHAR(40) NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_DrinkLogs_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DrinkLogs_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_DrinkLogs_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_DrinkLogs_Drinks FOREIGN KEY (DrinkId) REFERENCES ref.Drinks (Id)
@@ -2185,7 +2240,7 @@ CREATE TABLE dbo.TopUps (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_TopUps PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_TopUps_PublicId DEFAULT NEWID() CONSTRAINT UX_TopUps_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, Dollars INT NOT NULL, Source VARCHAR(4) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), SettledAt DATETIME2(0) NULL, Reference NVARCHAR(16) NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_TopUps_At DEFAULT SYSUTCDATETIME(), SettledAt DATETIME2(0) NULL, Reference NVARCHAR(16) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_TopUps_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_TopUps_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT CK_TopUps_Source CHECK (Source IN ('card','cash')),
@@ -2198,13 +2253,14 @@ IF OBJECT_ID(N'dbo.OnboardAccount', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.OnboardAccount (
   BookingId BIGINT NOT NULL CONSTRAINT PK_OnboardAccount PRIMARY KEY,
-  PinHash BINARY(32) NULL, PinSalt BINARY(16) NULL, PinFails INT NOT NULL DEFAULT 0,
-  GratuityChoice VARCHAR(8) NOT NULL DEFAULT 'standard', GratuityReason NVARCHAR(300) NULL, GratuityPaidAt DATETIME2(0) NULL,
-  DisplayCurrency CHAR(3) NOT NULL DEFAULT 'USD',
+  PinHash BINARY(32) NULL, PinSalt BINARY(16) NULL, PinFails INT NOT NULL CONSTRAINT DF_OnboardAccount_PinFails DEFAULT 0,
+  GratuityChoice VARCHAR(8) NOT NULL CONSTRAINT DF_OnboardAccount_GratuityChoice DEFAULT 'standard', GratuityReason NVARCHAR(300) NULL, GratuityPaidAt DATETIME2(0) NULL,
+  DisplayCurrency CHAR(3) NOT NULL CONSTRAINT DF_OnboardAccount_DisplayCurrency DEFAULT 'USD',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_OnboardAccount_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_OnboardAccount_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_OnboardAccount_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
-  CONSTRAINT CK_OnboardAccount_GratuityChoice CHECK (GratuityChoice IN ('standard','prepaid','removal'))
+  CONSTRAINT CK_OnboardAccount_GratuityChoice CHECK (GratuityChoice IN ('standard','prepaid','removal')),
+  CONSTRAINT CK_OnboardAccount_DisplayCurrency CHECK (DisplayCurrency LIKE '[A-Z][A-Z][A-Z]')
 );
 END
 
@@ -2262,10 +2318,11 @@ CREATE TABLE dbo.Selections (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Selections PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Selections_PublicId DEFAULT NEWID() CONSTRAINT UX_Selections_PublicId UNIQUE,
   BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, [Time] TIME(0) NULL,
-  Qty INT NOT NULL DEFAULT 1, TotalCents BIGINT NOT NULL DEFAULT 0,
+  Qty INT NOT NULL CONSTRAINT DF_Selections_Qty DEFAULT 1, TotalCents BIGINT NOT NULL CONSTRAINT DF_Selections_TotalCents DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Selections_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Selections_UpdatedAt DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT FK_Selections_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
+  CONSTRAINT FK_Selections_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_Selections_Amounts CHECK (Qty > 0 AND TotalCents >= 0)
 );
 CREATE INDEX IX_Selections_BookingId ON dbo.Selections (BookingId);
 END
@@ -2279,7 +2336,7 @@ CREATE TABLE dbo.FolioLines (
   Category NVARCHAR(30) NOT NULL, Description NVARCHAR(200) NOT NULL,
   Cents BIGINT NOT NULL,                        -- negative = credit
   CoveredBy VARCHAR(7) NULL, SourceType NVARCHAR(20) NOT NULL, SourceId BIGINT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_FolioLines_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FolioLines_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FolioLines_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_FolioLines_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id),
@@ -2297,7 +2354,7 @@ CREATE TABLE dbo.Feedback (
   UserId BIGINT NOT NULL, Kind VARCHAR(6) NOT NULL, [Text] NVARCHAR(1000) NOT NULL,
   [Log] NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Feedback_Log DEFAULT N'[]',
   Screenshot NVARCHAR(MAX) NULL, Reference NVARCHAR(16) NOT NULL,
-  [At] DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_Feedback_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Feedback_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Feedback_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT CK_Feedback_Kind CHECK (Kind IN ('bug','idea','praise')),
@@ -2315,19 +2372,19 @@ IF OBJECT_ID(N'dbo.DisembarkChoices', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.DisembarkChoices (
   BookingId BIGINT NOT NULL CONSTRAINT PK_DisembarkChoices PRIMARY KEY,
-  [Option] VARCHAR(12) NOT NULL, TagsOn BIT NOT NULL DEFAULT 0,
-  DecidedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  OptionCode VARCHAR(12) NOT NULL, TagsOn BIT NOT NULL CONSTRAINT DF_DisembarkChoices_TagsOn DEFAULT 0,
+  DecidedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DisembarkChoices_DecidedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DisembarkChoices_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DisembarkChoices_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_DisembarkChoices_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
-  CONSTRAINT CK_DisembarkChoices_Option CHECK ([Option] IN ('tagged','selfAssist','earlyWalkOff'))
+  CONSTRAINT CK_DisembarkChoices_OptionCode CHECK (OptionCode IN ('tagged','selfAssist','earlyWalkOff'))
 );
 END
 
 IF OBJECT_ID(N'dbo.DisembarkBags', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.DisembarkBags (
-  BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL, Bags INT NOT NULL DEFAULT 0,
+  BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL, Bags INT NOT NULL CONSTRAINT DF_DisembarkBags_Bags DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DisembarkBags_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DisembarkBags_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_DisembarkBags PRIMARY KEY (BookingId, UserId),
@@ -2341,7 +2398,7 @@ BEGIN
 CREATE TABLE dbo.Customs (
   BookingId BIGINT NOT NULL CONSTRAINT PK_Customs PRIMARY KEY,
   Declaration NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Customs_Declaration DEFAULT N'{}',
-  SubmittedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
+  SubmittedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Customs_SubmittedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Customs_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Customs_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_Customs_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -2353,7 +2410,7 @@ IF OBJECT_ID(N'dbo.OnwardPlans', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.OnwardPlans (
   BookingId BIGINT NOT NULL CONSTRAINT PK_OnwardPlans PRIMARY KEY,
-  Mode NVARCHAR(20) NOT NULL, FlightAtLocal TIME(0) NULL, Flight NVARCHAR(12) NULL, Note NVARCHAR(300) NOT NULL DEFAULT N'',
+  Mode NVARCHAR(20) NOT NULL, FlightAtLocal TIME(0) NULL, Flight NVARCHAR(12) NULL, Note NVARCHAR(300) NOT NULL CONSTRAINT DF_OnwardPlans_Note DEFAULT N'',
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_OnwardPlans_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_OnwardPlans_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_OnwardPlans_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
@@ -2364,7 +2421,7 @@ IF OBJECT_ID(N'dbo.FinalBill', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.FinalBill (
   BookingId BIGINT NOT NULL CONSTRAINT PK_FinalBill PRIMARY KEY,
-  TipKeepPercent INT NOT NULL DEFAULT 100, EmailedAt DATETIME2(0) NULL, EmailedTo NVARCHAR(254) NULL, SettledAt DATETIME2(0) NULL,
+  TipKeepPercent INT NOT NULL CONSTRAINT DF_FinalBill_TipKeepPercent DEFAULT 100, EmailedAt DATETIME2(0) NULL, EmailedTo NVARCHAR(254) NULL, SettledAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FinalBill_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FinalBill_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FinalBill_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -2382,9 +2439,9 @@ CREATE TABLE dbo.Cases (
   Number NVARCHAR(12) NOT NULL,
   Summary NVARCHAR(500) NOT NULL, Place NVARCHAR(80) NULL, Cents BIGINT NULL,
   LineId NVARCHAR(40) NULL,                     -- the disputed folio line, for Kind = 'billing'
-  Stage VARCHAR(9) NOT NULL DEFAULT 'received', Outcome NVARCHAR(20) NULL,
-  OpenedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), DueAt DATETIME2(0) NULL, WithdrawnAt DATETIME2(0) NULL,
-  RefundCents BIGINT NULL, RefundSentAt DATETIME2(0) NULL, FromFeedback BIT NOT NULL DEFAULT 0,
+  Stage VARCHAR(9) NOT NULL CONSTRAINT DF_Cases_Stage DEFAULT 'received', Outcome NVARCHAR(20) NULL,
+  OpenedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Cases_OpenedAt DEFAULT SYSUTCDATETIME(), DueAt DATETIME2(0) NULL, WithdrawnAt DATETIME2(0) NULL,
+  RefundCents BIGINT NULL, RefundSentAt DATETIME2(0) NULL, FromFeedback BIT NOT NULL CONSTRAINT DF_Cases_FromFeedback DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Cases_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Cases_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT UX_Cases_Number UNIQUE (Number),
@@ -2402,7 +2459,7 @@ BEGIN
 CREATE TABLE dbo.PostFeedback (
   BookingId BIGINT NOT NULL CONSTRAINT PK_PostFeedback PRIMARY KEY,
   Json NVARCHAR(MAX) NOT NULL CONSTRAINT DF_PostFeedback_Json DEFAULT N'{}',
-  SubmittedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), EditUntil DATETIME2(0) NOT NULL,
+  SubmittedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PostFeedback_SubmittedAt DEFAULT SYSUTCDATETIME(), EditUntil DATETIME2(0) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PostFeedback_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PostFeedback_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_PostFeedback_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
@@ -2416,15 +2473,16 @@ CREATE TABLE dbo.RebookHolds (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RebookHolds PRIMARY KEY,
   PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_RebookHolds_PublicId DEFAULT NEWID() CONSTRAINT UX_RebookHolds_PublicId UNIQUE,
   UserId BIGINT NOT NULL, BookingId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL, CategoryId NVARCHAR(30) NOT NULL,
-  Guests INT NOT NULL DEFAULT 1,
-  TotalCents BIGINT NOT NULL, DepositCents BIGINT NOT NULL, CreditCents BIGINT NOT NULL DEFAULT 0, FccAppliedCents BIGINT NOT NULL DEFAULT 0,
-  Onboard BIT NOT NULL DEFAULT 0, PlacedAt DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(), ExpiresAt DATETIME2(0) NOT NULL,
+  Guests INT NOT NULL CONSTRAINT DF_RebookHolds_Guests DEFAULT 1,
+  TotalCents BIGINT NOT NULL, DepositCents BIGINT NOT NULL, CreditCents BIGINT NOT NULL CONSTRAINT DF_RebookHolds_CreditCents DEFAULT 0, FccAppliedCents BIGINT NOT NULL CONSTRAINT DF_RebookHolds_FccAppliedCents DEFAULT 0,
+  Onboard BIT NOT NULL CONSTRAINT DF_RebookHolds_Onboard DEFAULT 0, PlacedAt DATETIME2(0) NOT NULL CONSTRAINT DF_RebookHolds_PlacedAt DEFAULT SYSUTCDATETIME(), ExpiresAt DATETIME2(0) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_RebookHolds_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_RebookHolds_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_RebookHolds_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
   CONSTRAINT FK_RebookHolds_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_RebookHolds_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
-  CONSTRAINT FK_RebookHolds_CabinCategories FOREIGN KEY (CategoryId) REFERENCES ref.CabinCategories (Id)
+  CONSTRAINT FK_RebookHolds_CabinCategories FOREIGN KEY (CategoryId) REFERENCES ref.CabinCategories (Id),
+  CONSTRAINT CK_RebookHolds_Amounts CHECK (Guests >= 1 AND TotalCents >= 0 AND DepositCents >= 0 AND CreditCents >= 0 AND FccAppliedCents >= 0)
 );
 CREATE INDEX IX_RebookHolds_UserId ON dbo.RebookHolds (UserId);
 CREATE INDEX IX_RebookHolds_BookingId ON dbo.RebookHolds (BookingId);

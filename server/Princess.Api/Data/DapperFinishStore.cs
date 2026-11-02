@@ -11,7 +11,7 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
     public async Task<ChoiceRow?> GetChoiceAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var row = await c.QuerySingleOrDefaultAsync<ChoiceRow>(Sql.Cmd("SELECT [Option], TagsOn, DecidedAt FROM dbo.DisembarkChoices WHERE BookingId = @bookingId", new { bookingId }, null, ct));
+        var row = await c.QuerySingleOrDefaultAsync<ChoiceRow>(Sql.Cmd("SELECT OptionCode AS [Option], TagsOn, DecidedAt FROM dbo.DisembarkChoices WHERE BookingId = @bookingId", new { bookingId }, null, ct));
         if (row is null) return null;
         row.Bags = (await c.QueryAsync<(long UserId, int Bags)>(Sql.Cmd("SELECT UserId, Bags FROM dbo.DisembarkBags WHERE BookingId = @bookingId", new { bookingId }, null, ct))).ToDictionary(b => b.UserId, b => b.Bags);
         return row;
@@ -23,8 +23,8 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await using var tx = await c.BeginTransactionAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
             MERGE dbo.DisembarkChoices AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
-            WHEN MATCHED THEN UPDATE SET [Option] = @option, TagsOn = @tagsOn, DecidedAt = @at, UpdatedAt = SYSUTCDATETIME()
-            WHEN NOT MATCHED THEN INSERT (BookingId, [Option], TagsOn, DecidedAt) VALUES (@bookingId, @option, @tagsOn, @at);
+            WHEN MATCHED THEN UPDATE SET OptionCode = @option, TagsOn = @tagsOn, DecidedAt = @at, UpdatedAt = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN INSERT (BookingId, OptionCode, TagsOn, DecidedAt) VALUES (@bookingId, @option, @tagsOn, @at);
             """, new { bookingId, option, tagsOn, at }, tx, ct));
         await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.DisembarkBags WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
         foreach (var (userId, n) in bags)

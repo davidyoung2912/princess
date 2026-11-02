@@ -96,8 +96,8 @@ USING (VALUES
   (N'games', N'Cards, small games and books', N'{"group":"kids","why":"For quiet time in the cabin and long days at sea.","always":false}'),
   (N'teenClothes', N'Clothes for the Underground and the pool deck', N'{"group":"kids","why":"Teen club nights have their own dress ideas.","always":false}'),
   (N'rain', N'A light rain jacket or compact umbrella', N'{"group":"clothes","why":"Showers are possible at this time of year.","always":false}')
-) AS s ([Id], [Label], [Rule])
+) AS s ([Id], [Label], [RuleJson])
 ON t.[Id] = s.[Id]
-WHEN MATCHED THEN UPDATE SET t.[Label] = s.[Label], t.[Rule] = s.[Rule]
-WHEN NOT MATCHED THEN INSERT ([Id], [Label], [Rule]) VALUES (s.[Id], s.[Label], s.[Rule]);
+WHEN MATCHED THEN UPDATE SET t.[Label] = s.[Label], t.[RuleJson] = s.[RuleJson]
+WHEN NOT MATCHED THEN INSERT ([Id], [Label], [RuleJson]) VALUES (s.[Id], s.[Label], s.[RuleJson]);
 GO

@@ -31,6 +31,8 @@ type V = string | number | boolean | null | Raw
 const v = (x: V): string => (x === null ? 'NULL' : x instanceof Raw ? x.sql : typeof x === 'string' ? nstr(x) : typeof x === 'boolean' ? (x ? '1' : '0') : String(x))
 const U = (slug: string) => raw(`@u_${slug}`)
 const B = (key: string) => raw(`@b_${key}`)
+/** The sailing of a seeded booking, read back from the booking row so day-bound rows cannot disagree with it. */
+const sailingOf = (key: string) => raw(`(SELECT SailingId FROM dbo.Bookings WHERE Id = @b_${key})`)
 const ts = (ms: number) => raw(`CAST('${new Date(ms).toISOString().slice(0, 19)}' AS DATETIME2(0))`)
 const dt = (iso: string | null) => (iso === null ? raw('CAST(NULL AS DATE)') : raw(`CAST('${iso}' AS DATE)`))
 const tm = (hhmm: string) => raw(`CAST('${hhmm}:00' AS TIME(0))`)
@@ -244,7 +246,7 @@ function usersFile(): string {
     insert('dbo.SavedCards', ['PublicId', 'UserId', 'Brand', 'Last4', 'Expiry', 'IsDefault'], PEOPLE.filter((p) => !p.child && (bookingOf(p.slug)?.booker === p.slug || p.slug === 'rosa' || p.slug === 'theo'))
       .map((p, i) => [pub(`card:${p.slug}`), U(p.slug), (['visa', 'mastercard', 'amex', 'discover'] as const)[i % 4], String(4000 + i * 13).slice(-4), p.slug === 'priscilla' ? '01/27' : '09/29', true] as V[]))
     insert('dbo.NotificationPrefs', ['UserId', 'Prefs'], PEOPLE.map((p) => [U(p.slug), json(p.slug === 'gerald' ? { ...DEFAULT_PREFS, quiet: { on: true, from: '21:00', to: '07:00' } } : DEFAULT_PREFS)]))
-    insert('dbo.ConsentChoices', ['UserId', 'ConsentId', 'On', 'ChangedByUserId', 'At'], PEOPLE.flatMap((p) => {
+    insert('dbo.ConsentChoices', ['UserId', 'ConsentId', 'IsOn', 'ChangedByUserId', 'At'], PEOPLE.flatMap((p) => {
       const by = p.child ? p.child : p.slug
       return [['improve', !p.child && p.slug !== 'gerald'], ['marketingEmail', ['rosa', 'theo', 'maria'].includes(p.slug)], ...(p.child ? [['parent', true]] : [])]
         .map(([id, on]) => [U(p.slug), id as string, on as boolean, U(by), ts(Date.parse('2026-09-15T14:00:00Z'))] as V[])
@@ -398,19 +400,19 @@ function journeyFile(): string {
 
     // Tours: booked, with guests; carts.
     const tours = live.flatMap((b) => (b.tours ?? []).map((t) => ({ b, t })))
-    insert('dbo.TourBookings', ['PublicId', 'BookingId', 'ExcursionId', 'Day', 'Source', 'TotalCents', 'CreditCents', 'Status', 'PaymentId', 'At'], tours.map(({ b, t }) => {
+    insert('dbo.TourBookings', ['PublicId', 'BookingId', 'SailingId', 'ExcursionId', 'Day', 'Source', 'TotalCents', 'CreditCents', 'Status', 'PaymentId', 'At'], tours.map(({ b, t }) => {
       const x = EXCURSIONS.find((e) => e.id === t.ex)!
-      return [pub(`tour:${b.key}:${t.ex}`), B(b.key), t.ex, dayOf(REF, x).day, 'pre', t.who.reduce((n, g) => n + guestPrice(x, person(g).age), 0), 0, 'booked', payId(b, `T-${t.ex}`), ts(Date.parse('2027-02-14T15:00:00Z'))] as V[]
+      return [pub(`tour:${b.key}:${t.ex}`), B(b.key), sailingOf(b.key), t.ex, dayOf(REF, x).day, 'pre', t.who.reduce((n, g) => n + guestPrice(x, person(g).age), 0), 0, 'booked', payId(b, `T-${t.ex}`), ts(Date.parse('2027-02-14T15:00:00Z'))] as V[]
     }))
-    insert('dbo.TourBookingGuests', ['TourBookingId', 'UserId'], tours.flatMap(({ b, t }) => t.who.map((g) => [raw(`(SELECT Id FROM dbo.TourBookings WHERE PublicId = '${guid(`tour:${b.key}:${t.ex}`)}')`), U(g)] as V[])))
+    insert('dbo.TourBookingGuests', ['TourBookingId', 'BookingId', 'UserId'], tours.flatMap(({ b, t }) => t.who.map((g) => [raw(`(SELECT Id FROM dbo.TourBookings WHERE PublicId = '${guid(`tour:${b.key}:${t.ex}`)}')`), B(b.key), U(g)] as V[])))
     const carts = live.flatMap((b) => (b.cart ?? []).map((t) => ({ b, t })))
     insert('dbo.TourCartLines', ['BookingId', 'ExcursionId'], carts.map(({ b, t }) => [B(b.key), t.ex]))
     insert('dbo.TourCartGuests', ['BookingId', 'ExcursionId', 'UserId'], carts.flatMap(({ b, t }) => t.who.map((g) => [B(b.key), t.ex, U(g)] as V[])))
 
     // Dining.
     const dines = live.flatMap((b) => (b.dine ?? []).map((d) => ({ b, d })))
-    insert('dbo.DiningReservations', ['PublicId', 'BookingId', 'VenueId', 'Day', 'TimeLocal', 'Note', 'ChargeCents', 'Status'], dines.map(({ b, d }) => [pub(`dine:${b.key}:${d.venue}`), B(b.key), d.venue, d.day, tm(d.time), b.occasion === 'honeymoon' ? 'Honeymoon: a quiet table if possible.' : '', d.venue === 'eclipse' ? 0 : 4500 * d.who.length, 'booked']))
-    insert('dbo.DiningReservationGuests', ['ReservationId', 'UserId', 'Covered'], dines.flatMap(({ b, d }) => d.who.map((g) => [raw(`(SELECT Id FROM dbo.DiningReservations WHERE PublicId = '${guid(`dine:${b.key}:${d.venue}`)}')`), U(g), b.fare !== 'standard'] as V[])))
+    insert('dbo.DiningReservations', ['PublicId', 'BookingId', 'SailingId', 'VenueId', 'Day', 'TimeLocal', 'Note', 'ChargeCents', 'Status'], dines.map(({ b, d }) => [pub(`dine:${b.key}:${d.venue}`), B(b.key), sailingOf(b.key), d.venue, d.day, tm(d.time), b.occasion === 'honeymoon' ? 'Honeymoon: a quiet table if possible.' : '', d.venue === 'eclipse' ? 0 : 4500 * d.who.length, 'booked']))
+    insert('dbo.DiningReservationGuests', ['ReservationId', 'BookingId', 'UserId', 'Covered'], dines.flatMap(({ b, d }) => d.who.map((g) => [raw(`(SELECT Id FROM dbo.DiningReservations WHERE PublicId = '${guid(`dine:${b.key}:${d.venue}`)}')`), B(b.key), U(g), b.fare !== 'standard'] as V[])))
 
     // Package and add-on purchases.
     const buys = live.flatMap((b) => (b.buys ?? []).map((u, i) => ({ b, u, i })))
@@ -418,7 +420,7 @@ function journeyFile(): string {
       const a = Object.values(ADD_ONS).find((x) => x.id === u.item)!
       return [pub(`buy:${b.key}:${u.item}`), B(b.key), 'addOn', u.item, u.who.length, a.base, purchaseTotal(u), 'active', u.credited ?? 0, payId(b, `P${i + 1}`), ts(Date.parse('2027-02-20T15:00:00Z'))] as V[]
     }))
-    insert('dbo.PurchaseGuests', ['PurchaseId', 'UserId'], buys.flatMap(({ b, u }) => u.who.map((g) => [raw(`(SELECT Id FROM dbo.Purchases WHERE PublicId = '${guid(`buy:${b.key}:${u.item}`)}')`), U(g)] as V[])))
+    insert('dbo.PurchaseGuests', ['PurchaseId', 'BookingId', 'UserId'], buys.flatMap(({ b, u }) => u.who.map((g) => [raw(`(SELECT Id FROM dbo.Purchases WHERE PublicId = '${guid(`buy:${b.key}:${u.item}`)}')`), B(b.key), U(g)] as V[])))
 
     // Check-in, boarding, muster.
     const steps = ['confirm', 'document', 'photo', 'emergency', 'contract', 'health']
@@ -439,7 +441,7 @@ function journeyFile(): string {
 
     // After the cruise.
     const afters = live.filter((b) => b.after)
-    insert('dbo.DisembarkChoices', ['BookingId', 'Option', 'TagsOn', 'DecidedAt'], afters.filter((b) => b.after !== 'quiet').map((b) => [B(b.key), b.after === 'walkoff' ? 'earlyWalkOff' : 'tagged', b.after !== 'walkoff', ts(stageAtMs('farewell', 6))]))
+    insert('dbo.DisembarkChoices', ['BookingId', 'OptionCode', 'TagsOn', 'DecidedAt'], afters.filter((b) => b.after !== 'quiet').map((b) => [B(b.key), b.after === 'walkoff' ? 'earlyWalkOff' : 'tagged', b.after !== 'walkoff', ts(stageAtMs('farewell', 6))]))
     insert('dbo.DisembarkBags', ['BookingId', 'UserId', 'Bags'], afters.filter((b) => b.after === 'billing').flatMap((b) => b.guests.map((g) => [B(b.key), U(g), 2] as V[])))
     insert('dbo.Customs', ['BookingId', 'Declaration', 'SubmittedAt'], afters.filter((b) => b.after === 'billing').map((b) => [B(b.key), json({ goods: false, cash: false, food: false }), ts(stageAtMs('farewell', 8))]))
     insert('dbo.OnwardPlans', ['BookingId', 'Mode', 'FlightAtLocal', 'Flight', 'Note'], afters.filter((b) => b.after === 'billing').map((b) => [B(b.key), 'flight', tm('14:30'), 'UA 482', 'Taxi to the airport.']))

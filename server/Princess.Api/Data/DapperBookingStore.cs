@@ -299,7 +299,7 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
     public async Task<string?> FindIdempotentAsync(string key, long userId, string route, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var row = await c.QuerySingleOrDefaultAsync<IdempotentRow>(Sql.Cmd("SELECT UserId, Route, ResponseHash FROM dbo.IdempotencyKeys WHERE [Key] = @key", new { key }, null, ct));
+        var row = await c.QuerySingleOrDefaultAsync<IdempotentRow>(Sql.Cmd("SELECT UserId, Route, ResponseHash FROM dbo.IdempotencyKeys WHERE RequestKey = @key", new { key }, null, ct));
         if (row is null) return null;
         if (row.UserId != userId || row.Route != route) throw ApiException.Conflict("idempotencyKey");
         return row.ResponseHash;
@@ -309,8 +309,8 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            IF NOT EXISTS (SELECT 1 FROM dbo.IdempotencyKeys WHERE [Key] = @key)
-              INSERT INTO dbo.IdempotencyKeys ([Key], UserId, Route, ResponseHash, CreatedAt) VALUES (@key, @userId, @route, @result, @now)
+            IF NOT EXISTS (SELECT 1 FROM dbo.IdempotencyKeys WHERE RequestKey = @key)
+              INSERT INTO dbo.IdempotencyKeys (RequestKey, UserId, Route, ResponseHash, CreatedAt) VALUES (@key, @userId, @route, @result, @now)
             """, new { key, userId, route, result, now }, null, ct));
     }
 }

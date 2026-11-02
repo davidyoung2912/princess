@@ -12,14 +12,14 @@ public sealed class DapperStateStore(IDbConnectionFactory db) : IStateStore
     {
         var (t, o) = Where(booking);
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<StateRow>(Sql.Cmd($"SELECT [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId ORDER BY [Key]", new { ownerId }, null, ct))).ToList();
+        return (await c.QueryAsync<StateRow>(Sql.Cmd($"SELECT StateKey AS [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId ORDER BY StateKey", new { ownerId }, null, ct))).ToList();
     }
 
     public async Task<StateRow?> GetAsync(bool booking, long ownerId, string key, CancellationToken ct)
     {
         var (t, o) = Where(booking);
         await using var c = await db.OpenAsync(ct);
-        return await c.QuerySingleOrDefaultAsync<StateRow>(Sql.Cmd($"SELECT [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId AND [Key] = @key", new { ownerId, key }, null, ct));
+        return await c.QuerySingleOrDefaultAsync<StateRow>(Sql.Cmd($"SELECT StateKey AS [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId AND StateKey = @key", new { ownerId, key }, null, ct));
     }
 
     public async Task<StateRow?> SaveAsync(bool booking, long ownerId, string key, string json, int baseVersion, DateTime now, CancellationToken ct)
@@ -27,13 +27,13 @@ public sealed class DapperStateStore(IDbConnectionFactory db) : IStateStore
         var (t, o) = Where(booking);
         await using var c = await db.OpenAsync(ct);
         // Rows start at version 1, so a base of 0 never matches the update and goes on to the insert.
-        var n = await c.ExecuteAsync(Sql.Cmd($"UPDATE {t} SET Json = @json, Version = Version + 1, UpdatedAt = @now WHERE {o} = @ownerId AND [Key] = @key AND Version = @baseVersion",
+        var n = await c.ExecuteAsync(Sql.Cmd($"UPDATE {t} SET Json = @json, Version = Version + 1, UpdatedAt = @now WHERE {o} = @ownerId AND StateKey = @key AND Version = @baseVersion",
             new { ownerId, key, json, baseVersion, now }, null, ct));
         if (n == 0 && baseVersion == 0)
         {
             try
             {
-                n = await c.ExecuteAsync(Sql.Cmd($"INSERT INTO {t} ({o}, [Key], Json, Version, UpdatedAt) VALUES (@ownerId, @key, @json, 1, @now)", new { ownerId, key, json, now }, null, ct));
+                n = await c.ExecuteAsync(Sql.Cmd($"INSERT INTO {t} ({o}, StateKey, Json, Version, UpdatedAt) VALUES (@ownerId, @key, @json, 1, @now)", new { ownerId, key, json, now }, null, ct));
             }
             catch (SqlException e) when (e.Number is 2627 or 2601)
             {
@@ -41,14 +41,14 @@ public sealed class DapperStateStore(IDbConnectionFactory db) : IStateStore
             }
         }
         if (n == 0) return null;
-        return await c.QuerySingleOrDefaultAsync<StateRow>(Sql.Cmd($"SELECT [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId AND [Key] = @key", new { ownerId, key }, null, ct));
+        return await c.QuerySingleOrDefaultAsync<StateRow>(Sql.Cmd($"SELECT StateKey AS [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId AND StateKey = @key", new { ownerId, key }, null, ct));
     }
 
     public async Task DeleteAsync(bool booking, long ownerId, string key, CancellationToken ct)
     {
         var (t, o) = Where(booking);
         await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd($"DELETE FROM {t} WHERE {o} = @ownerId AND [Key] = @key", new { ownerId, key }, null, ct));
+        await c.ExecuteAsync(Sql.Cmd($"DELETE FROM {t} WHERE {o} = @ownerId AND StateKey = @key", new { ownerId, key }, null, ct));
     }
 
     public async Task<int> DeleteAllAsync(bool booking, long ownerId, CancellationToken ct)

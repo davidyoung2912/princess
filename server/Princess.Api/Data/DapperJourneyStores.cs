@@ -392,15 +392,15 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
     {
         if (userIds.Count == 0) return [];
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<ConsentRow>(Sql.Cmd("SELECT UserId, ConsentId, [On] FROM dbo.ConsentChoices WHERE UserId IN @userIds", new { userIds }, null, ct))).ToList();
+        return (await c.QueryAsync<ConsentRow>(Sql.Cmd("SELECT UserId, ConsentId, IsOn AS [On] FROM dbo.ConsentChoices WHERE UserId IN @userIds", new { userIds }, null, ct))).ToList();
     }
 
     public async Task SetConsentAsync(long userId, string consentId, bool on, long changedByUserId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            UPDATE dbo.ConsentChoices SET [On] = @on, ChangedByUserId = @changedByUserId, [At] = @now WHERE UserId = @userId AND ConsentId = @consentId;
-            IF @@ROWCOUNT = 0 INSERT INTO dbo.ConsentChoices (UserId, ConsentId, [On], ChangedByUserId, [At]) VALUES (@userId, @consentId, @on, @changedByUserId, @now);
+            UPDATE dbo.ConsentChoices SET IsOn = @on, ChangedByUserId = @changedByUserId, [At] = @now WHERE UserId = @userId AND ConsentId = @consentId;
+            IF @@ROWCOUNT = 0 INSERT INTO dbo.ConsentChoices (UserId, ConsentId, IsOn, ChangedByUserId, [At]) VALUES (@userId, @consentId, @on, @changedByUserId, @now);
             """, new { userId, consentId, on, changedByUserId, now }, null, ct));
     }
 
@@ -443,7 +443,7 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
             // The party's shared notes and port-day record (BookingState) go with the messages rule: same 30 days, same people.
             if (kind == "message") await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.BookingState WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
         }
-        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.RetentionRuns (UserId, [Rule], Kinds, [At]) VALUES (@runUserId, N'retention', @kinds, @now)", new { runUserId, kinds = string.Join(',', kinds), now }, tx, ct));
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.RetentionRuns (UserId, RuleName, Kinds, [At]) VALUES (@runUserId, N'retention', @kinds, @now)", new { runUserId, kinds = string.Join(',', kinds), now }, tx, ct));
         await tx.CommitAsync(ct);
     }
 
