@@ -250,7 +250,7 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Audit gate:** `src/feeds/feed.ts` is listed as a cache helper allowed to use `localStorage`.
 - **Verified:** `npm run test` (1572 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done in Phase 4 yet:**
-  - **Pulse still has a local model.** `domain/pulse.ts` (`envFor`, `levelAt`) fills every moment the server did not give (it answers the minute and nine half-hours; `goodTime`, `lineReading` and `quietSpaces` look further). Making it server-only needs a longer server window or a route per question; `pulseFeed` is already null until the answer arrives.
+  - **Pulse** was finished in Slice 3.
   - **The server providers** `IEmbarkQueue`, `ISailingQuality`, `ICabinGuide`, `IServiceStatus`, `IFriendReply`, `IDisruptionContent`, the weather unification (`IWeatherService.Climate` and `Today` through `FeedRules`) and `POST /me/autopilot/plan` are untouched. So are the client side of `optimiseWeek`, `chooseCabins`/`compareMatrix`, the embark queue and service-status simulations, the hub content, `AskScreen`'s local `ask()`, `domain/assistant.ts` and `ai/scripted.ts`/`tools.ts`/`guard.ts`.
   - **Server-side hash formulas** the client no longer mirrors: the server's feeds are now the only definition. Their C# tests should be run by the user at the next compile check.
 
@@ -269,3 +269,10 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
   - **`POST /me/autopilot/plan`:** `optimiseWeek` rests on the client's `buildDay` over the programme, which the server's concierge `build_day` does not match (no events), and `basePlan` is used by plan changes and the day screens. Porting them together is its own slice.
   - **`IDisruptionContent`/`IServiceStatus`:** the hub definitions are keyed i18n strings (`HUB`, `GUIDES`, `OUTAGE_WORKS`) and the callback queue estimate (`queueEstimate`) is still local; serving them means serving the text as well.
   - **Pulse** keeps its local model (see slice 1). `domain/cabins.ts` stays for `findCabin`, boarding and the booking helpers.
+
+### Slice 3: Pulse server-only, callback queue served (built 2026-11-02)
+
+- **Pulse:** `GET /feeds/pulse-day?departure=&day=` returns `{ day, startAt, venues: { <id>: [48 levels] }, source }` (half-hour steps from ship-zone midnight). The client's local model (`SHAPE`, `ASHORE_DROP`, wobble) is deleted; `PulseEnv` is `{ hour, served }`, `levelAt` reads the live minute first and the served day second, and a moment with neither reads 0. Pulse and Calm show `FeedWaiting` until the answers arrive.
+- **Callback:** `queueEstimate` and `requestCallback` are removed from `domain/disruptionHub.ts`; the hub asks `POST /me/staff-requests` and, if it fails, says so with the guest services number instead of pretending.
+- **Verified:** `npm run test` (1531 passed), `npm run lint`, `npx tsc -b`. C# is written but not compiled here; run its tests at the next compile check.
+- **Still not done:** weather unification (`IWeatherService.Climate`/`Today`/`Sky` through one model; the sky route needs a date); `POST /me/autopilot/plan` (needs `buildDay`/`basePlan` with programme events ported to C#, shared with plan changes and the day screens); hub content, service status and guides (i18n-keyed text). `ai/guard.ts` stays on the client on purpose, for the offline emergency screen.

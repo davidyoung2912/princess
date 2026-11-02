@@ -1,11 +1,11 @@
 import { placeById } from './deck'
-import { portAt, shipZoneAt, type Sailing } from './sailings'
+import { shipZoneAt, type Sailing } from './sailings'
 import { timeIn } from './timezones'
 
 /**
  * Ship Pulse (S6-01), the quiet-space finder (S6-04) and standby and shortest line (S6-05).
- * Every number here is a simulation over a stable seed and the demo clock (`source: 'sim'`), so the same moment always gives the same answer
- * and a real feed can replace `pulseAt` later. Nothing is ever shown without its age and how sure it is.
+ * Every level comes from the server (`GET /feeds/pulse` and `/feeds/pulse-day`, simulated there, `source: 'sim'`); this module reads them. Nothing is
+ * ever shown without its age and how sure it is.
  */
 const MIN = 60_000
 export const PULSE_STEP_MIN = 5
@@ -29,40 +29,21 @@ export const PULSE_VENUES: readonly PulseVenue[] = [
 
 export const pulseVenueById = (id: unknown): PulseVenue | undefined => PULSE_VENUES.find((v) => v.id === id)
 
-/** The usual busyness by hour of the day (0 to 23), 0 to 100, authored per kind. */
-const SHAPE: Record<PulseKind, readonly number[]> = {
-  pool: [0, 0, 0, 0, 0, 0, 5, 10, 15, 25, 45, 70, 80, 85, 85, 80, 65, 40, 20, 10, 5, 5, 0, 0],
-  buffet: [0, 0, 0, 0, 0, 5, 30, 75, 80, 55, 25, 45, 85, 80, 40, 25, 30, 55, 80, 70, 40, 15, 5, 0],
-  dining: [0, 0, 0, 0, 0, 0, 10, 40, 60, 40, 20, 50, 70, 55, 30, 25, 30, 45, 60, 55, 35, 20, 10, 0],
-  theatre: [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 15, 15, 10, 10, 15, 20, 25, 35, 55, 80, 90, 90, 50, 20],
-  spa: [0, 0, 0, 0, 0, 0, 0, 10, 30, 55, 70, 75, 70, 70, 75, 70, 55, 35, 15, 0, 0, 0, 0, 0],
-  service: [0, 0, 0, 0, 0, 0, 0, 20, 70, 85, 70, 50, 40, 40, 50, 60, 80, 60, 30, 15, 10, 5, 0, 0],
-  deck: [5, 0, 0, 0, 0, 5, 25, 40, 30, 20, 25, 30, 25, 25, 30, 35, 40, 30, 20, 10, 5, 5, 5, 5],
-}
-
-/** What the venue kinds lose when most guests are ashore. */
-const ASHORE_DROP: Record<PulseKind, number> = { pool: 40, buffet: 35, dining: 25, theatre: 15, spa: 30, service: -10, deck: 20 }
-
-/** The ship's clock and whether guests are ashore, at any moment. Built from a sailing, or by hand in tests. */
+/** The ship's clock, and the levels the server gave. A level is never worked out here. */
 export interface PulseEnv {
   /** Ship hour of the day as a fraction, 0 to 24. */
   hour(at: number): number
-  ashore(at: number): boolean
-  /** Levels the server gave for exact moments, when it has; anything else is worked out here (the same figures). */
-  served?(id: PulseId, at: number): number | undefined
+  /** The server's level for a venue at a moment (exact for the live window, the nearest half hour across a day), or undefined when it has none. */
+  served(id: PulseId, at: number): number | undefined
 }
 
-export function envFor(s: Sailing): PulseEnv {
+export function envFor(s: Sailing, served: PulseEnv['served']): PulseEnv {
   return {
     hour: (at) => {
       const hhmm = timeIn(at, shipZoneAt(s, at))
       return Number(hhmm.slice(0, 2)) + Number(hhmm.slice(3, 5)) / 60
     },
-    ashore: (at) => {
-      const { port } = portAt(s, at)
-      const h = Number(timeIn(at, shipZoneAt(s, at)).slice(0, 2))
-      return (port === 'cozumel' || port === 'belize' || port === 'roatan') && h >= 9 && h < 16
-    },
+    served,
   }
 }
 
@@ -86,20 +67,9 @@ export interface Pulse {
 
 export const labelFor = (level: number): PulseLabel => (level < 35 ? 'quiet' : level < 65 ? 'moderate' : 'busy')
 
-/** The level at a moment: the usual shape for the hour, less when guests are ashore, with a steady wobble from the seed. */
+/** The level at a moment, as the server gave it. A moment it did not answer reads as empty; the screens only ask about moments the feeds cover. */
 export function levelAt(id: PulseId, at: number, env: PulseEnv): number {
-  const venue = pulseVenueById(id)
-  if (!venue) return 0
-  const given = env.served?.(id, at)
-  if (given !== undefined) return given
-  const hour = env.hour(at)
-  const base = SHAPE[venue.kind]
-  const lo = Math.floor(hour) % 24
-  const next = base[(lo + 1) % 24]
-  const shape = base[lo] + (next - base[lo]) * (hour - Math.floor(hour))
-  const wobble = (hash(`${id}|${Math.floor(at / (15 * MIN))}`) % 21) - 10
-  const drop = env.ashore(at) ? ASHORE_DROP[venue.kind] : 0
-  return Math.max(0, Math.min(100, Math.round(shape + wobble - drop)))
+  return pulseVenueById(id) ? (env.served(id, at) ?? 0) : 0
 }
 
 /** What to show for a venue now: the reading from the last five-minute mark, with how old it is. */

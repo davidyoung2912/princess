@@ -226,6 +226,20 @@ public class OnboardFeedTests
     }
 }
 
+public class PulseDayRulesTests
+{
+    [Fact]
+    public void ADayHasFortyEightHalfHoursPerVenueThatAgreeWithTheLiveLevels()
+    {
+        var departure = new DateOnly(2027, 3, 21);
+        var day = OnboardFeedRules.PulseDay(departure, 3);
+        Assert.Equal(7, day.Venues.Count);
+        Assert.All(day.Venues.Values, levels => { Assert.Equal(48, levels.Length); Assert.All(levels, l => Assert.InRange(l, 0, 100)); });
+        Assert.Equal(OnboardFeedRules.PulseLevel("lido", day.StartAt + 20 * 30 * 60_000L, departure), day.Venues["lido"][20]);
+        Assert.False(OnboardFeedRules.ValidPulseDay("2027-03-21", 0));
+    }
+}
+
 public class EmbarkQueueRulesTests
 {
     [Fact]
@@ -266,9 +280,9 @@ public class OnboardFeedApiTests : JourneyWorld
     public async Task TheFeedRoutesRefuseBadQueriesAndAnswerGoodOnes()
     {
         var token = await SignIn(Daniel);
-        foreach (var bad in new[] { "/feeds/pulse?departure=nope&now=1", "/feeds/storm?departure=2027-03-21&days=99999", "/feeds/sky-night?departure=2027-03-21&day=12", "/feeds/loungers?now=3", "/feeds/sightings?day=0", "/feeds/watch-opening?id=a&created=1&slot=2", "/feeds/sailing-quality?sailing=nope", "/feeds/friend-reply?name=", "/feeds/embark-queue?earliest=soon" })
+        foreach (var bad in new[] { "/feeds/pulse?departure=nope&now=1", "/feeds/storm?departure=2027-03-21&days=99999", "/feeds/sky-night?departure=2027-03-21&day=12", "/feeds/loungers?now=3", "/feeds/sightings?day=0", "/feeds/watch-opening?id=a&created=1&slot=2", "/feeds/sailing-quality?sailing=nope", "/feeds/friend-reply?name=", "/feeds/embark-queue?earliest=soon", "/feeds/pulse-day?departure=2027-03-21&day=9" })
             Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Get, $"/api/v1{bad}", token)).Status);
-        foreach (var good in new[] { $"/feeds/pulse?departure=2027-03-21&now={Base}", "/feeds/storm?departure=2027-03-21&days=9", "/feeds/sky-night?departure=2027-03-21&day=3", $"/feeds/loungers?now={Base}", "/feeds/sightings?day=2", "/feeds/found", "/feeds/friend-reply?name=Sam", "/feeds/embark-queue?priority=true&mobility=true&earliest=11:30", $"/feeds/watch-opening?id=w-1&created={Base}&slot={Base + 172_800_000}" })
+        foreach (var good in new[] { $"/feeds/pulse?departure=2027-03-21&now={Base}", "/feeds/storm?departure=2027-03-21&days=9", "/feeds/sky-night?departure=2027-03-21&day=3", $"/feeds/loungers?now={Base}", "/feeds/sightings?day=2", "/feeds/found", "/feeds/friend-reply?name=Sam", "/feeds/pulse-day?departure=2027-03-21&day=3", "/feeds/embark-queue?priority=true&mobility=true&earliest=11:30", $"/feeds/watch-opening?id=w-1&created={Base}&slot={Base + 172_800_000}" })
             Assert.Equal(HttpStatusCode.OK, (await Call(HttpMethod.Get, $"/api/v1{good}", token)).Status);
     }
 }

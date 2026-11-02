@@ -1,20 +1,35 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { placeById } from '../../domain/deck'
-import { goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces } from '../../domain/pulse'
+import { goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces, type PulseEnv } from '../../domain/pulse'
+import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePulseEnv } from '../../hooks/useServedFeeds'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { BackLink } from '../onboard/common'
 import { duration, useShipTime } from './shipTime'
 
 /** Ship Pulse (S6-01), quiet spaces (S6-04) and standby lines (S6-05). Every reading is a simulation and shows how old it is and how sure it is. */
 export function PulseScreen() {
   const sailing = useSailing()
+  const { env, now } = usePulseEnv(sailing, useNow(), useCurrentDay())
+  if (!env) {
+    return (
+      <div className="page">
+        <h1>{t('route.pulse')}</h1>
+        <FeedWaiting />
+        <BackLink to="/ship" label={t('route.ship')} />
+      </div>
+    )
+  }
+  return <PulseBody env={env} now={now} />
+}
+
+function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
   const time = useShipTime()
-  const { env, now } = usePulseEnv(sailing, useNow())
   const [filter, setFilter] = useState(NO_QUIET_FILTER)
   const spaces = quietSpaces(now, env, filter)
 

@@ -135,21 +135,8 @@ const MINUTE = 60_000
 /** A callback request is kept for two hours, then lapses and the guest is told. */
 export const CALLBACK_LIFETIME_MS = 120 * MINUTE
 
-export interface CallbackRequest { id: string; at: number; position: number; readyAt: number; reason: 'urgent' | 'changes' | 'health' | 'other'; /** A simulated queue; a real feed would replace it. */ source: 'sim' }
+export interface CallbackRequest { id: string; at: number; position: number; readyAt: number; reason: 'urgent' | 'changes' | 'health' | 'other'; /** The staff queue's own place; the simulated queue says so. */ source: 'sim' }
 export type CallbackStatus = { kind: 'waiting'; minutes: number } | { kind: 'due' } | { kind: 'lapsed' }
-
-const hash = (n: number): number => { let x = (n ^ 0x9e3779b9) >>> 0; x = Math.imul(x ^ (x >>> 16), 0x45d0f4b5) >>> 0; x = Math.imul(x ^ (x >>> 13), 0x45d0f4b5) >>> 0; return (x ^ (x >>> 16)) >>> 0 }
-
-/** A pretend queue: the place is 1 to 6 and moves on every five minutes, four minutes of wait per place. The same inputs give the same answer. */
-export function queueEstimate(at: number, seed: number): { position: number; waitMinutes: number } {
-  const position = 1 + (hash(Math.floor(at / (5 * MINUTE)) + seed) % 6)
-  return { position, waitMinutes: position * 4 }
-}
-
-export function requestCallback(at: number, reason: CallbackRequest['reason'], seed: number, id: string): CallbackRequest {
-  const { position, waitMinutes } = queueEstimate(at, seed)
-  return { id, at, position, readyAt: at + waitMinutes * MINUTE, reason, source: 'sim' }
-}
 
 export function callbackStatus(c: CallbackRequest, now: number): CallbackStatus {
   if (now >= c.at + CALLBACK_LIFETIME_MS) return { kind: 'lapsed' }

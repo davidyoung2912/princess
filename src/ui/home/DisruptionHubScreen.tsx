@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { disruptionById, validOption } from '../../domain/disruption'
 import { formatDate } from '../../domain/cruise'
-import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallback, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, requestCallback, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
+import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallback, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import type { ScenarioId } from '../../domain/scenarios'
 import { api, staffRequest } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useDemo, useNow } from '../../hooks/useDemo'
-import { newHubId, useHub } from '../../hooks/useHub'
+import { useHub } from '../../hooks/useHub'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -113,12 +113,15 @@ function Callback() {
   const [reason, setReason] = useState<CallbackRequest['reason']>('changes')
   const c = state.callback
   const status = c ? callbackStatus(c, now) : null
-  const seed = me?.id.length ?? 1
-  /** The server's place in the staff queue when there is one; the on-device pretend queue otherwise, or when the server cannot be reached. */
+  const [failed, setFailed] = useState(false)
+  /** The server's place in the staff queue. If the server cannot be reached nothing is pretended: the guest is told and the desk number stays on the page. */
   const askForCall = async () => {
-    let callback = requestCallback(now, reason, seed, newHubId())
-    try { callback = normalizeCallback(await staffRequest('callback', reason)) ?? callback } catch { /* the pretend queue answers */ }
-    update((s) => ({ ...s, callback }))
+    setFailed(false)
+    try {
+      const callback = normalizeCallback(await staffRequest('callback', reason))
+      if (!callback) { setFailed(true); return }
+      update((s) => ({ ...s, callback }))
+    } catch { setFailed(true) }
   }
   return (
     <section aria-labelledby="hub-cb-h">
@@ -141,6 +144,7 @@ function Callback() {
                 <label key={r} className="choice"><input type="radio" name="cb-reason" checked={reason === r} onChange={() => setReason(r)} /><span>{t(`hub.cb.reason.${r}` as StringKey)}</span></label>
               ))}
             </fieldset>
+            {failed && <p role="alert">{t('hub.cb.failed', { number: GUEST_SERVICES_NUMBER })}</p>}
             <Button disabled={!!me?.child} onClick={() => void askForCall()}>{t('hub.cb.ask')}</Button>
           </>
         )}

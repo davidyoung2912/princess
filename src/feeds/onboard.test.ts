@@ -4,7 +4,7 @@ import { watchState, type Watch } from '../domain/autopilot'
 import { envFor, goodTime, levelAt, lineReading, PULSE_VENUES, pulseAt, quietSpaces } from '../domain/pulse'
 import { createFeed } from './feed'
 import { foundFeed, loungerFeed, normalizeFound, normalizeLoungers, normalizeOpening, normalizeSightings, openingFeed, sightingsFeed } from './onboard'
-import { minuteOf, normalizePulse, pulseFeed, withServed } from './pulse'
+import { dayLevel, minuteOf, normalizePulse, normalizePulseDay, pulseFeed, withServed } from './pulse'
 import { normalizeSkyNight, skyNightFeed } from './skyNight'
 import { normalizeStorm, stormFeed } from './storm'
 
@@ -87,17 +87,34 @@ describe('ship pulse feed', () => {
     short.venues.arena.ahead.pop()
     expect(normalizePulse(short)).toBeNull()
   })
-  it('lays the server’s levels over the environment and leaves everything else to the simulation', () => {
-    const env = envFor(sailing)
+  it('lays the live levels over the served day, and knows nothing where the server gave nothing', () => {
+    const none = envFor(sailing, () => undefined)
     const served = normalizePulse(body(77))!
-    const over = withServed(env, served)
+    const over = withServed(none, served)
     expect(levelAt('lido', NOW, over)).toBe(77)
     expect(pulseAt('lido', NOW, over).level).toBe(77)
-    expect(levelAt('lido', NOW + 60_000, over)).toBe(levelAt('lido', NOW + 60_000, env))
-    expect(withServed(env, null)).toBe(env)
+    expect(levelAt('lido', NOW + 60_000, over)).toBe(0)
+    expect(withServed(none, null).served('lido', NOW)).toBeUndefined()
     expect(goodTime('lido', NOW, over, 4).at).toBeGreaterThanOrEqual(NOW)
     expect(lineReading('show', NOW, over).waitMinutes).toBe(Math.round((77 / 100) * 25))
     expect(quietSpaces(NOW, over).length).toBeGreaterThan(0)
+  })
+  it('reads a served day at the nearest half hour', () => {
+    const venues: Record<string, number[]> = {}
+    for (const v of PULSE_VENUES) venues[v.id] = Array.from({ length: 48 }, (_, i) => i)
+    const day = normalizePulseDay({ day: 3, startAt: NOW, venues })!
+    expect(day.levels.get('lido')).toHaveLength(48)
+    expect(dayLevel(day, 'lido', NOW)).toBe(0)
+    expect(dayLevel(day, 'lido', NOW + 44 * 60_000)).toBe(1)
+    expect(dayLevel(day, 'lido', NOW + 29 * 60_000)).toBe(1)
+    expect(dayLevel(day, 'lido', NOW + 23.5 * 3_600_000)).toBe(47)
+    expect(dayLevel(day, 'lido', NOW - 3_600_000)).toBeUndefined()
+    expect(dayLevel(day, 'lido', NOW + 25 * 3_600_000)).toBeUndefined()
+    expect(dayLevel(null, 'lido', NOW)).toBeUndefined()
+    expect(withServed(envFor(sailing, () => undefined), null, day).served('lido', NOW + 30 * 60_000)).toBe(1)
+    expect(normalizePulseDay({ day: 3, startAt: NOW, venues: { ...venues, lido: [1] } })).toBeNull()
+    expect(normalizePulseDay({ day: 9, startAt: NOW, venues })).toBeNull()
+    expect(normalizePulseDay(null)).toBeNull()
   })
   it('reads whole minutes so one answer covers the minute', async () => {
     expect(minuteOf(NOW + 42_000)).toBe(NOW)

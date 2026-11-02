@@ -37,6 +37,7 @@ public interface IShipTelemetry
 {
     PortCrowdDto PortCrowd(string port, string date);
     PulseDto Pulse(DateOnly departure, long now);
+    PulseDayDto PulseDay(DateOnly departure, int day);
     LoungersDto Loungers(long now);
     SightingsDto Sightings(int day);
     SkyNightDto SkyNight(string departure, int day);
@@ -89,6 +90,7 @@ public sealed class SimShipTelemetry : IShipTelemetry
 {
     public PortCrowdDto PortCrowd(string port, string date) => ShipFeedRules.PortCrowd(port, date);
     public PulseDto Pulse(DateOnly departure, long now) => OnboardFeedRules.Pulse(departure, now);
+    public PulseDayDto PulseDay(DateOnly departure, int day) => OnboardFeedRules.PulseDay(departure, day);
     public LoungersDto Loungers(long now) => OnboardFeedRules.LoungerBoard(now);
     public SightingsDto Sightings(int day) => OnboardFeedRules.Sightings(day);
     public SkyNightDto SkyNight(string departure, int day) => OnboardFeedRules.SkyNight(departure, day);

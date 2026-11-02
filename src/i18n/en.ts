@@ -4549,6 +4549,7 @@ export const en = {
   'hub.cb.waiting': 'You are number {position} in the line. About {minutes} minutes.',
   'hub.cb.due': 'Your call is due now. Keep your phone near you.',
   'hub.cb.lapsed': 'The last call back request has ended. You can ask again.',
+  'hub.cb.failed': 'We could not reach Guest Services just now. Please try again, or call {number}.',
   'hub.cb.sim': 'This is a pretend queue for the concept. A request is kept for {hours} hours.',
 
   'hub.debrief.title': 'How did we do?',

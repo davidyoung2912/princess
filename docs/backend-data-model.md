@@ -470,6 +470,7 @@ Port rows (`PortRows`): both routes return `{ rows: [{ kind, key, data, at, dele
 | the other loungers at a minute (simulated) | `GET /feeds/loungers?now=` | U |
 | wildlife the ship is said to have seen on a day (simulated) | `GET /feeds/sightings?day=` | U |
 | the lost-property list (simulated) | `GET /feeds/found` | U |
+| a whole day of ship pulse levels (simulated) | `GET /feeds/pulse-day?departure=&day=` | U |
 | when a place opens for a slot watch (simulated) | `GET /feeds/watch-opening?id=&created=&slot=` | U |
 | the decide notes for a sailing: crowds, weather, hurricane, school, price (simulated) | `GET /feeds/sailing-quality?sailing=` → `{ sailingId, notes[5]: { key, level, text, why }, source }` | U |
 | how a friend answers a sail-again invitation (simulated; asked only after consent) | `GET /feeds/friend-reply?name=` → `{ reply: accepted\|declined, source }` | U |

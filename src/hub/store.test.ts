@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDebrief, requestCallback } from '../domain/disruptionHub'
+import { addDebrief } from '../domain/disruptionHub'
 import { reportDelay, EMPTY_DELAY } from '../domain/delay'
 import { addContact, EMPTY_HOME } from '../domain/homeLink'
 import { EMPTY_HUB, hubKeyFor, loadHub, normalizeHub, saveHub } from './store'
@@ -15,7 +15,7 @@ describe('hub storage', () => {
     const state = {
       home: addContact(EMPTY_HOME, 'Ann', 'ann@example.com', 'c1').state,
       delay: reportDelay(EMPTY_DELAY, { reason: 'flight', lateMinutes: 60, note: '', tellParty: false }, 1, 'd'),
-      callback: requestCallback(1, 'other', 1, 'cb'),
+      callback: { id: 'cb', at: 1, position: 2, readyAt: 481_000, reason: 'other' as const, source: 'sim' as const },
       debriefs: addDebrief([], 'illness', 'good', '', 1),
     }
     expect(saveHub('gerald', state, s)).toBe(true)

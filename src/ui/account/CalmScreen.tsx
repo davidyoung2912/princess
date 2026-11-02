@@ -13,6 +13,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 import { CabinWordsCard } from '../onboard/AboardMoreScreens'
@@ -27,8 +28,8 @@ export function CalmScreen() {
   const dp = useDayPlan(day)
   const { calm } = state
   const set = (change: Partial<typeof calm>) => update((s) => ({ ...s, calm: { ...s.calm, ...change } }))
-  const { env, now: minute } = usePulseEnv(sailing, now)
-  const plan = sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env)
+  const { env, now: minute, dayReady } = usePulseEnv(sailing, now, day)
+  const plan = env && dayReady ? sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env) : null
   const cards = visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
 
   /** Tells guest services in REST mode (best effort: the request is kept here either way, and a server that cannot be reached changes nothing on screen). */
@@ -65,12 +66,15 @@ export function CalmScreen() {
           <label key={k} className="choice"><input type="checkbox" checked={calm.profile[k] === 'low'} onChange={(e) => set({ profile: { ...calm.profile, [k]: e.target.checked ? 'low' : 'any' } as SensoryProfile })} /><span>{t(`calm.profile.${k}` as StringKey)}</span></label>
         ))}
         <h3>{t('calm.plan')}</h3>
+        {!plan && <FeedWaiting />}
+        {plan && (<>
         {plan.warnings.length === 0 ? <p className="muted">{t('calm.noWarnings')}</p> : (
           <ul className="plain-list">{plan.warnings.map((w, i) => <li key={`${w.id}-${w.kind}-${i}`}><strong>{w.start}</strong> {w.title}: {w.text}</li>)}</ul>
         )}
         <p>{t('calm.quietTimes', { times: plan.quietWindows.map((w) => w.start).join(', ') })}</p>
         <ul className="plain-list">{plan.spaces.map((s) => <li key={s.id}>{s.name}, {t('quiet.deck', { deck: s.deck })}</li>)}</ul>
         {plan.quietLane && <p><Link to="/home/embarkation/plan">{t('calm.quietLane')}</Link></p>}
+        </>)}
         <p className="muted"><Link to="/ship/pulse">{t('calm.pulse')}</Link> · {t('pulse.sim')}</p>
       </Card>
 

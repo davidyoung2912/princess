@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { goodTime, labelFor, levelAt, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces, type PulseEnv } from './pulse'
 
 const MIN = 60_000
-/** A clock where epoch 0 is midnight and every minute is a minute. */
-const day = (ashore = false): PulseEnv => ({ hour: (at) => ((at / MIN) % 1440) / 60, ashore: () => ashore })
+/** A clock where epoch 0 is midnight and every minute is a minute, and levels as a server might give them: busy from noon to 16:00, quiet otherwise. */
+const hourOf = (at: number): number => ((at / MIN) % 1440) / 60
+const day = (busy = 80): PulseEnv => ({ hour: hourOf, served: (_id, at) => (hourOf(at) >= 12 && hourOf(at) < 16 ? busy : 10) })
 const at = (h: number, m = 0): number => (h * 60 + m) * MIN
 
 describe('ship pulse', () => {
@@ -29,10 +30,11 @@ describe('ship pulse', () => {
     expect(p.source).toBe('sim')
   })
 
-  it('makes the pool busier at midday than at night, and lighter when guests are ashore', () => {
-    const noon = (e: PulseEnv) => levelAt('lido-pool', at(13), e)
-    expect(noon(day())).toBeGreaterThan(levelAt('lido-pool', at(22), day()))
-    expect(noon(day(true))).toBeLessThan(noon(day()))
+  it('reads only what the server gave, and nothing for an unknown venue', () => {
+    expect(levelAt('lido-pool', at(13), day())).toBe(80)
+    expect(levelAt('lido-pool', at(22), day())).toBe(10)
+    expect(levelAt('lido-pool', at(13), { hour: hourOf, served: () => undefined })).toBe(0)
+    expect(levelAt('nowhere' as never, at(13), day())).toBe(0)
   })
 
   it('finds the quietest half hour, starting with now, and says when to go now', () => {

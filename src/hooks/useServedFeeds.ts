@@ -8,7 +8,7 @@ import type { Sailing } from '../domain/sailings'
 import type { Feed } from '../feeds/feed'
 import { faresFeed } from '../feeds/fares'
 import { openingArgs, openingFeed } from '../feeds/onboard'
-import { minuteOf, pulseFeed, withServed } from '../feeds/pulse'
+import { minuteOf, pulseDayFeed, pulseFeed, withServed } from '../feeds/pulse'
 import { crowdFeed } from '../feeds/portCrowd'
 
 /**
@@ -44,14 +44,15 @@ export function useFareHistory(b: Pick<WhatIfBooking, 'plan' | 'today'>, number:
 }
 
 /**
- * The ship's environment for pulse readings, with the server's levels laid over it when they arrive, and the moment to read it at (the whole minute,
- * which changes nothing the screens show). One request covers a minute, and only while a pulse screen is open.
+ * The ship's environment for pulse readings, with the server's levels: the live window (the whole minute, so one request covers a minute) and the
+ * day's half hours. `env` is null until the live levels are here; `dayReady` says whether the day's levels are too. Only while a pulse screen is open.
  */
-export function usePulseEnv(sailing: Sailing, now: number): { env: PulseEnv; now: number } {
+export function usePulseEnv(sailing: Sailing, now: number, day: number): { env: PulseEnv | null; now: number; dayReady: boolean } {
   const minute = minuteOf(now)
-  const served = useFeed(pulseFeed, sailing.departure, minute)
-  const env = useMemo(() => withServed(envFor(sailing), served), [sailing, served])
-  return { env, now: minute }
+  const live = useFeed(pulseFeed, sailing.departure, minute)
+  const served = useFeed(pulseDayFeed, sailing.departure, day)
+  const env = useMemo(() => (live ? withServed(envFor(sailing, () => undefined), live, served) : null), [sailing, live, served])
+  return { env, now: minute, dayReady: !!served }
 }
 
 /** The same feed asked for several argument sets at once (for a side-by-side comparison); each entry is null until its answer is here. */

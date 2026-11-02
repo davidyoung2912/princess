@@ -5,7 +5,7 @@ import { applyChanges, type PlanEntry } from './planChange'
 import type { PulseEnv } from './pulse'
 
 const MIN = 60_000
-const env: PulseEnv = { hour: (at) => ((at / MIN) % 1440) / 60, ashore: () => false }
+const env: PulseEnv = { hour: (at) => ((at / MIN) % 1440) / 60, served: (_id, at) => (((at / MIN) % 1440) / 60 >= 19 ? 80 : 20) }
 const e = (id: string, start: string, minutes = 60, extra: Partial<PlanEntry> = {}): PlanEntry => ({ id, title: id, start, minutes, kind: 'event', outdoor: false, path: '/plan', ...extra })
 const accepted = (edits: never[] | { op: 'drop' | 'move'; id: string; to?: string }[]) => ({ id: 'c', day: 2, source: 'autopilot' as const, cause: '', title: '', why: '', edits: edits as never, status: 'accepted' as const, proposedAt: 0, undoUntil: 9 })
 

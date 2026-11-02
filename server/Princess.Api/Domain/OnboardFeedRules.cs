@@ -8,6 +8,9 @@ public sealed record PulseVenueDto(int Observed, int[] Ahead);
 /// <summary>Ship pulse levels: for each venue the level at the last five-minute mark and at <c>now</c> plus 0 to 8 half hours.</summary>
 public sealed record PulseDto(long Now, long ObservedAt, Dictionary<string, PulseVenueDto> Venues, string Source);
 
+/// <summary>A cruise day's levels for each venue at every half hour from midnight ship time (48 values), for plans that look across the whole day.</summary>
+public sealed record PulseDayDto(int Day, long StartAt, Dictionary<string, int[]> Venues, string Source);
+
 public sealed record StormDto(string Source, string Departure, string Returns, bool InSeason, int Percent, string Band, string Phase, string[] LineMay, string[] YouCan, bool Peak);
 
 public sealed record MoonDto(string Phase, string Name, int Lit);
@@ -92,6 +95,16 @@ public static class OnboardFeedRules
         var wobble = (int)(ExcursionRules.Hash($"{id}|{(long)Math.Floor(atMs / (double)(15 * Min))}") % 21) - 10;
         var drop = AshoreAt(departure, utc) ? AshoreDrop[kind] : 0;
         return (int)Math.Max(0, Math.Min(100, Pricing.JsRound(shape + wobble - drop)));
+    }
+
+    public static bool ValidPulseDay(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= 8;
+
+    public static PulseDayDto PulseDay(DateOnly departure, int day)
+    {
+        var date = departure.AddDays(day - 1);
+        var startAt = new DateTimeOffset(Itinerary.LocalToUtc(date, new TimeOnly(0, 0), Itinerary.ShipZoneOnDate(departure, date)), TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var venues = PulseVenues.ToDictionary(v => v.Id, v => Enumerable.Range(0, 48).Select(i => PulseLevel(v.Id, startAt + i * 30 * Min, departure)).ToArray());
+        return new PulseDayDto(day, startAt, venues, FeedRules.Sim);
     }
 
     public static PulseDto Pulse(DateOnly departure, long now)

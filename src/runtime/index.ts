@@ -8,7 +8,7 @@ import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
 import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
-import { pulseFeed } from '../feeds/pulse'
+import { pulseDayFeed, pulseFeed } from '../feeds/pulse'
 import { skyNightFeed } from '../feeds/skyNight'
 import { stormFeed } from '../feeds/storm'
 import { qualityFeed } from '../feeds/sailingQuality'
@@ -84,6 +84,7 @@ export const familyHome = {
   crowdFeed.setFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
   faresFeed.setFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
   pulseFeed.setFetcher((departure, now) => http.get<unknown>('/feeds/pulse', { query: { departure, now } }))
+  pulseDayFeed.setFetcher((departure, day) => http.get<unknown>('/feeds/pulse-day', { query: { departure, day } }))
   stormFeed.setFetcher((departure, days) => http.get<unknown>('/feeds/storm', { query: { departure, days } }))
   skyNightFeed.setFetcher((departure, day) => http.get<unknown>('/feeds/sky-night', { query: { departure, day } }))
   loungerFeed.setFetcher((minute) => http.get<unknown>('/feeds/loungers', { query: { now: minute * 60_000 } }))
@@ -94,7 +95,7 @@ export const familyHome = {
   embarkFeed.setFetcher((priority, mobility, quiet, earliest) => http.get<unknown>('/feeds/embark-queue', { query: { priority, mobility, quiet, earliest } }))
   cabinGuideFeed.setFetcher((sailing, category, f) => http.get<unknown>(`/sailings/${encodeURIComponent(sailing)}/cabin-guide`, { anonymous: true, query: { category, quiet: f.quiet, calmSea: f.calmSea, accessible: f.accessible, clearView: f.clearView, availableOnly: f.availableOnly } }))
   openingFeed.setFetcher((id, created, slot) => http.get<unknown>('/feeds/watch-opening', { query: { id, created, slot } }))
-  for (const f of [skyFeed, flightFeed, conditionsFeed, crowdFeed, faresFeed, pulseFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed, qualityFeed, friendReplyFeed, embarkFeed, cabinGuideFeed]) auth.subscribe(f.forget)
+  for (const f of [skyFeed, flightFeed, conditionsFeed, crowdFeed, faresFeed, pulseFeed, pulseDayFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed, qualityFeed, friendReplyFeed, embarkFeed, cabinGuideFeed]) auth.subscribe(f.forget)
   // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees, and a new device takes them back; real accounts send nothing.
   const demoOnly = <T,>(call: () => Promise<T>): Promise<T | undefined> => (auth.current()?.user?.isDemo ? call() : Promise.resolve(undefined))
   setDemoRemote({

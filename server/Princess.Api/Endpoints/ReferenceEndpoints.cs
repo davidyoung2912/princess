@@ -82,6 +82,13 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("How busy each ship venue is at the last five-minute mark and for the next four hours in half hours (0 to 100), for Ship Pulse, the lines and the quiet spaces. A simulated feed; `source` says so.");
 
+        api.MapGet("/feeds/pulse-day", (string departure, int day, IShipTelemetry ship) =>
+            {
+                if (!OnboardFeedRules.ValidPulseDay(departure, day)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.PulseDay(DateOnly.ParseExact(departure, "yyyy-MM-dd"), day));
+            })
+            .WithTags("Reference").WithSummary("How busy each ship venue is at every half hour of a cruise day, from midnight ship time (48 levels, 0 to 100), for plans that look across the day. A simulated feed; `source` says so.");
+
         api.MapGet("/feeds/storm", (string departure, int days, IStormOutlook storm) =>
             {
                 if (!OnboardFeedRules.ValidStormQuery(departure, days)) throw ApiException.Invalid("badFeedQuery");

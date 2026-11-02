@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DISRUPTIONS } from './disruption'
-import { addDebrief, awaitingDebrief, callbackStatus, CALLBACK_LIFETIME_MS, familyNotices, featuredGuide, GUIDES, hubFor, hubItems, knockOnCounts, needsHumanReview, normalizeCallback, normalizeDebriefs, orderedGuides, queueEstimate, requestCallback } from './disruptionHub'
+import { addDebrief, awaitingDebrief, callbackStatus, CALLBACK_LIFETIME_MS, familyNotices, featuredGuide, GUIDES, hubFor, hubItems, knockOnCounts, needsHumanReview, normalizeCallback, normalizeDebriefs, orderedGuides } from './disruptionHub'
 import { en } from '../i18n/en'
 
 describe('disruption hub', () => {
@@ -41,31 +41,19 @@ describe('disruption hub', () => {
 })
 
 describe('callback queue', () => {
-  it('gives the same place for the same inputs, between 1 and 6, four minutes a place', () => {
-    for (let t = 0; t < 40; t++) {
-      const q = queueEstimate(t * 300_000, 7)
-      expect(q).toEqual(queueEstimate(t * 300_000, 7))
-      expect(q.position).toBeGreaterThanOrEqual(1)
-      expect(q.position).toBeLessThanOrEqual(6)
-      expect(q.waitMinutes).toBe(q.position * 4)
-    }
-  })
+  const c = { id: 'c1', at: 1_000_000, position: 3, readyAt: 1_000_000 + 12 * 60_000, reason: 'changes' as const, source: 'sim' as const }
   it('counts down, comes due, then lapses after two hours', () => {
-    const c = requestCallback(1_000_000, 'changes', 3, 'c1')
-    expect(c.source).toBe('sim')
     const s = callbackStatus(c, c.at)
     expect(s.kind).toBe('waiting')
-    if (s.kind === 'waiting') expect(s.minutes).toBe(c.position * 4)
+    if (s.kind === 'waiting') expect(s.minutes).toBe(12)
     expect(callbackStatus(c, c.readyAt).kind).toBe('due')
     expect(callbackStatus(c, c.at + CALLBACK_LIFETIME_MS).kind).toBe('lapsed')
   })
   it('never says zero minutes while still waiting', () => {
-    const c = requestCallback(0, 'urgent', 1, 'c')
     const s = callbackStatus(c, c.readyAt - 1)
     expect(s.kind === 'waiting' && s.minutes).toBe(1)
   })
   it('reads a saved request and drops a bad one', () => {
-    const c = requestCallback(5, 'other', 1, 'x')
     expect(normalizeCallback(JSON.parse(JSON.stringify(c)))).toEqual(c)
     expect(normalizeCallback({ ...c, reason: 'bogus' })).toBeNull()
     expect(normalizeCallback({ ...c, at: 'soon' })).toBeNull()
