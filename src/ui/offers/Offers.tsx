@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import { marketingPaused, offersQuiet } from '../../domain/finishMore'
+import { useMemory } from '../../hooks/useMemory'
 import { homeOffer, offerReasons, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
 import { stageAt } from '../../domain/sailings'
 import { api } from '../../runtime'
@@ -49,7 +51,17 @@ export function HomeOfferCard() {
   const ctx = useOfferContext(trip?.number ?? null)
   const { dismiss } = useOffers()
   const [settings] = useSettings()
-  if (!trip || settings.nudgesPerDay === 0 || settings.calm) return null
+  const { state: mem } = useMemory()
+  const cases = useMine(() => api.cases.list())
+  if (!trip || settings.nudgesPerDay === 0 || settings.calm || offersQuiet(mem.finish)) return null
+  if (cases.data && marketingPaused(cases.data.cases)) {
+    return (
+      <section aria-labelledby="home-offer-h">
+        <h2 id="home-offer-h" className="muted">{t('offer.paused')}</h2>
+        <p>{t('offer.pausedBody')} <Link to="/me/contact">{t('route.contact')}</Link></p>
+      </section>
+    )
+  }
   const offer = homeOffer({ ...ctx, taskWaiting: trip.next !== 'allSet' })
   if (!offer) return null
   return (

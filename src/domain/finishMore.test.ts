@@ -101,3 +101,66 @@ describe('normalizeFinish', () => {
     expect(n.travellers).toEqual(['older'])
   })
 })
+
+import { homeNudges, offersQuiet, parseItemRequest, planSpeech, portSnapshot, speechRecognitionOf, VIBRATION } from './finishMore'
+
+describe('part 2: Home nudges', () => {
+  const base = { budget: 3 as const, quiet: false, backAboardMin: null, storm: 'none' as const, stormPhase: 'far' as const, proposals: 0, briefing: false }
+  it('always shows back aboard, even with a budget of none or in quiet', () => {
+    expect(homeNudges({ ...base, budget: 0, quiet: true, backAboardMin: 60 }).map((n) => n.id)).toEqual(['backAboard'])
+    expect(homeNudges({ ...base, backAboardMin: 0 })).toEqual([])
+    expect(homeNudges({ ...base, backAboardMin: 300 })).toEqual([])
+  })
+  it('spends the budget on the highest priority first and shows nothing else when quiet', () => {
+    const all = { ...base, budget: 1 as const, storm: 'higher' as const, stormPhase: 'near' as const, proposals: 2, briefing: true }
+    expect(homeNudges(all).map((n) => n.id)).toEqual(['storm'])
+    expect(homeNudges({ ...all, budget: 5 }).map((n) => n.id)).toEqual(['storm', 'proposals', 'briefing'])
+    expect(homeNudges({ ...all, quiet: true })).toEqual([])
+    expect(homeNudges({ ...base, storm: 'some', stormPhase: 'near' })).toEqual([])
+  })
+  it('hides offers in low-stress mode and gentle wording', () => {
+    expect(offersQuiet({ easy: true, gentle: false })).toBe(true)
+    expect(offersQuiet({ easy: false, gentle: true })).toBe(true)
+    expect(offersQuiet({ easy: false, gentle: false })).toBe(false)
+  })
+})
+
+describe('part 2: item requests, voice, alerts, speech, snapshot', () => {
+  it('turns a plain request into an item and a limited quantity', () => {
+    expect(parseItemRequest('Can I have two more towels please')).toEqual({ id: 'towels', qty: 2 })
+    expect(parseItemRequest('I need 9 pillows')).toEqual({ id: 'pillows', qty: 4 })
+    expect(parseItemRequest('send ice')).toEqual({ id: 'ice', qty: 1 })
+    expect(parseItemRequest('towels are soft')).toBeNull()
+    expect(parseItemRequest('what is for dinner')).toBeNull()
+  })
+  it('finds speech recognition only where it exists', () => {
+    expect(speechRecognitionOf(undefined)).toBeNull()
+    expect(speechRecognitionOf({})).toBeNull()
+    class R {}
+    expect(speechRecognitionOf({ webkitSpeechRecognition: R })).toBe(R)
+  })
+  it('has a stronger vibration for a more serious alert', () => {
+    const sum = (a: number[]) => a.reduce((n, x) => n + x, 0)
+    expect(sum(VIBRATION.notice)).toBeLessThan(sum(VIBRATION.important))
+    expect(sum(VIBRATION.important)).toBeLessThan(sum(VIBRATION.critical))
+  })
+  it('reads the day in time order and says so when empty', () => {
+    expect(planSpeech([{ title: 'Dinner', start: '19:00' }, { title: 'Show', start: '10:00' }], 'none')).toBe('10:00, Show. 19:00, Dinner.')
+    expect(planSpeech([], 'none')).toBe('none')
+  })
+  it('summarises a port as text only', () => {
+    const lines = portSnapshot('cozumel', 2)
+    expect(lines.length).toBeGreaterThan(2)
+    expect(lines.join(' ')).not.toMatch(/photo/i)
+  })
+})
+
+import { marketingPaused } from './finishMore'
+describe('S8-09 marketing pause', () => {
+  it('pauses for an open complaint or recovery case and resumes when it closes', () => {
+    expect(marketingPaused([{ kind: 'complaint', stage: 'inReview' }])).toBe(true)
+    expect(marketingPaused([{ kind: 'recovery', stage: 'received' }])).toBe(true)
+    expect(marketingPaused([{ kind: 'complaint', stage: 'resolved' }, { kind: 'billing', stage: 'received' }])).toBe(false)
+    expect(marketingPaused([])).toBe(false)
+  })
+})

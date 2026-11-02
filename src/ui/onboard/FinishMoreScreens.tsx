@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { allergyChain, askShip, BREATH, DOCTOR_TELL, easyLeaveBy, EASY_EXTRA_MIN, farewellDone, fareIndicator, FAREWELL_MOMENTS, flightAdvice, followState, FOLLOW_DAYS, GROUND_STEPS, giftsFor, HABITS, notesFor, poolRide, bagNight, SWEEP_ITEMS, sweepAllDone, tierForHabits, TRAVELLERS, RIDE_NAMES_MAX, type FinishState, type Traveller } from '../../domain/finishMore'
+import { ALERT_KINDS, planSpeech, portSnapshot, READ_RATES, VIBRATION, walkSpeech, allergyChain, askShip, BREATH, DOCTOR_TELL, easyLeaveBy, EASY_EXTRA_MIN, farewellDone, fareIndicator, FAREWELL_MOMENTS, flightAdvice, followState, FOLLOW_DAYS, GROUND_STEPS, giftsFor, HABITS, notesFor, poolRide, bagNight, SWEEP_ITEMS, sweepAllDone, tierForHabits, TRAVELLERS, RIDE_NAMES_MAX, type FinishState, type Traveller } from '../../domain/finishMore'
+import { GUIDE_PORTS, PORT_KNOWLEDGE, type GuidePort } from '../../domain/portContent'
+import { PORTS } from '../../domain/sailings'
+import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { disembarkTimes, groupFor, onwardMode, ONWARD_MODES, type OnwardMode } from '../../domain/disembark'
 import { FARES } from '../../domain/fares'
 import { formatMoney } from '../../domain/pricing'
@@ -345,6 +348,78 @@ export function GiftsScreen() {
         <p className="muted">{memory.budget === null ? t('gifts.noBudget') : t('gifts.budget', { amount: formatMoney(memory.budget) })}{memory.allergy.items.length > 0 && ` ${t('gifts.allergy')}`}</p></Card>
       {list.length === 0 ? <Banner kind="info" title={t('gifts.none')} /> : <ul className="card-grid">{list.map((g) => <li key={g.id}><Card labelledBy={`g-${g.id}`}><h2 id={`g-${g.id}`} className="card__title">{t(`gifts.g.${g.id}` as StringKey)}</h2><p>{formatMoney(g.cents)}</p></Card></li>)}</ul>}
       <p className="muted">{t('gifts.note')}</p>
+    </Page>
+  )
+}
+
+/** Visual and vibration alerts (XI-07): try each kind of alert, so you know what it looks and feels like. */
+export function AlertsScreen() {
+  const [shown, setShown] = useState<string | null>(null)
+  const canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
+  const test = (k: (typeof ALERT_KINDS)[number]) => { setShown(k); if (canVibrate) navigator.vibrate(VIBRATION[k]) }
+  return (
+    <Page title="route.alerts" intro="alerts.intro" back={ME}>
+      <Card labelledBy="al-h"><h2 id="al-h" className="card__title">{t('alerts.try')}</h2>
+        <div className="button-row">{ALERT_KINDS.map((k) => <Button key={k} variant="secondary" onClick={() => test(k)}>{t(`alerts.k.${k}` as StringKey)}</Button>)}</div>
+        <div role="status">{shown && <Banner kind={shown === 'critical' ? 'danger' : shown === 'important' ? 'warning' : 'info'} title={t(`alerts.k.${shown}` as StringKey)}><p>{t('alerts.shown')}</p></Banner>}</div>
+        <p className="muted">{canVibrate ? t('alerts.vibrate') : t('alerts.noVibrate')}</p></Card>
+      <p><LinkButton to="/me/settings" variant="secondary">{t('alerts.captions')}</LinkButton></p>
+      <Human />
+    </Page>
+  )
+}
+
+/** Read aloud (XI-06): the day, or a port walk with its accessible version, spoken by the device. */
+export function ReadAloudScreen() {
+  const day = useCurrentDay()
+  const dp = useDayPlan(day)
+  const [port, setPort] = useState<GuidePort>('cozumel')
+  const [rate, setRate] = useState<number>(1)
+  const [reading, setReading] = useState(false)
+  const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window
+  const speak = (text: string) => {
+    const synth = window.speechSynthesis
+    if (reading) { synth.cancel(); setReading(false); return }
+    const u = new SpeechSynthesisUtterance(text)
+    u.rate = rate
+    u.onend = () => setReading(false)
+    setReading(true)
+    synth.speak(u)
+  }
+  const plan = planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty'))
+  const walk = PORT_KNOWLEDGE[port].walks[0]
+  return (
+    <Page title="route.readAloud" intro="read.intro" back={SHIP}>
+      {!canSpeak && <Banner kind="info" title={t('read.unsupported')} />}
+      <Card labelledBy="rd-r"><h2 id="rd-r" className="card__title">{t('read.speed')}</h2>
+        {READ_RATES.map((r) => <label key={r} className="choice"><input type="radio" name="rd-rate" checked={rate === r} onChange={() => setRate(r)} /><span>{t(`read.rate.${String(r).replace('.', '')}` as StringKey)}</span></label>)}</Card>
+      <Card labelledBy="rd-p"><h2 id="rd-p" className="card__title">{t('read.plan')}</h2>
+        <p>{plan}</p>
+        {canSpeak && <Button onClick={() => speak(plan)}>{reading ? t('read.stop') : t('read.play')}</Button>}</Card>
+      <Card labelledBy="rd-w"><h2 id="rd-w" className="card__title">{t('read.walk')}</h2>
+        {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="rd-port" checked={port === p} onChange={() => setPort(p)} /><span>{PORTS[p].name}</span></label>)}
+        {walk && <><p>{walkSpeech(walk)}</p>{canSpeak && <Button onClick={() => speak(walkSpeech(walk))}>{reading ? t('read.stop') : t('read.play')}</Button>}</>}</Card>
+    </Page>
+  )
+}
+
+/** Port snapshot (S6A-14): a text summary of the port day to copy for the group or the recap. No photos. */
+export function PortSnapshotScreen() {
+  const [port, setPort] = useState<GuidePort>('cozumel')
+  const [people, setPeople] = useState(2)
+  const [copied, setCopied] = useState(false)
+  const lines = portSnapshot(port, people)
+  const copy = async () => { try { await navigator.clipboard.writeText(lines.join('\n')); setCopied(true) } catch { setCopied(false) } }
+  return (
+    <Page title="route.portSnapshot" intro="snap.intro" back={{ to: '/ship/port', label: 'route.portDay' }}>
+      <Card labelledBy="sn-h"><h2 id="sn-h" className="card__title">{t('snap.which')}</h2>
+        {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="sn-port" checked={port === p} onChange={() => { setPort(p); setCopied(false) }} /><span>{PORTS[p].name}</span></label>)}
+        <label className="field"><span>{t('snap.people')}</span><select value={people} onChange={(e) => setPeople(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label></Card>
+      <Card labelledBy="sn-t"><h2 id="sn-t" className="card__title">{PORTS[port].name}</h2>
+        <ul>{lines.map((l) => <li key={l}>{l}</li>)}</ul>
+        <Button onClick={() => void copy()}>{t('snap.copy')}</Button>
+        {copied && <p role="status">{t('snap.copied')}</p>}
+        <p className="muted">{t('snap.note')}</p></Card>
     </Page>
   )
 }

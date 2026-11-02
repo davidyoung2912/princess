@@ -20,6 +20,7 @@ import { OnboardHome } from '../onboard/OnboardHome'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
+import { NudgeCards } from './NudgeCards'
 
 /** The trip the guest is on, from the trips list: their own booking first. */
 const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.find((x) => x.kind === 'current') ?? upcoming[0] ?? null
@@ -33,6 +34,7 @@ export function HomeScreen() {
     return (
       <div className="page">
         <h1>{t('route.home')}</h1>
+        <NudgeCards aboard />
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
         <HomeOfferCard />
         <ConceptNotice />
@@ -43,6 +45,7 @@ export function HomeScreen() {
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
       <UpdatesBanner />
+      <NudgeCards aboard={false} />
       <AfterCruiseCard />
       <ContinueBookingCard />
       {trip && <CompanionCard daysToDeparture={trip.daysToDeparture} />}

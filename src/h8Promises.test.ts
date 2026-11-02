@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS } from './domain/autopilot'
 import { dndNow } from './domain/aboardMore'
+import { homeNudges } from './domain/finishMore'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { REFERENCE_SAILING } from './domain/sailings'
 import { en } from './i18n/en'
@@ -90,7 +91,7 @@ describe('H8 slice C promises', () => {
 
 describe('H8 slice D promises', () => {
   it('sends nothing: notes and lists live on the screen, with no timers or network', () => {
-    const text = read('src/ui/onboard/FinishMoreScreens.tsx') + read('src/domain/finishMore.ts')
+    const text = (read('src/ui/onboard/FinishMoreScreens.tsx') + read('src/domain/finishMore.ts')).replace(/synth\.cancel\(\)/g, '')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout|sendBeacon/)
     expect(en['follow.nothingSent']).toMatch(/Nothing is sent to anyone/)
     expect(en['sweep.note']).toMatch(/Nothing is sent to anyone/)
@@ -105,5 +106,12 @@ describe('H8 slice D promises', () => {
   it('never guesses and keeps gifts away from task screens', () => {
     expect(en['askShip.unknown']).toMatch(/do not have an answer/)
     expect(read('src/ui/home/HomeScreen.tsx') + read('src/ui/finish/DisembarkScreen.tsx')).not.toMatch(/giftsFor|GiftsScreen/)
+  })
+  it('keeps the budget and the safety exception on Home, and the confirm rule on voice and item requests', () => {
+    expect(homeNudges({ budget: 0, quiet: true, backAboardMin: 30, storm: 'higher', stormPhase: 'near', proposals: 3, briefing: true }).map((n) => n.id)).toEqual(['backAboard'])
+    const ask = read('src/ui/home/AskScreen.tsx')
+    expect(ask).toMatch(/onClick=\{\(\) => void confirmItem\(\)\}/)
+    expect(ask).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
+    expect(en['ask.speakNote']).toMatch(/nothing happens until you confirm/)
   })
 })

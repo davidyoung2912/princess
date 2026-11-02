@@ -2,6 +2,10 @@ import { diningPlaces } from './aboardMore'
 import { type AllergyFlag, galleyStatus, type GalleyStatus, splitEven, type Share } from './bookingPrep'
 import { CLEARANCE_MINUTES, offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
 import { FARE_IDS, type FareId } from './fares'
+import { rankNudges, type Nudge, type NudgeBudget } from './nudges'
+import { PORT_KNOWLEDGE, perPerson, type GuidePort } from './portContent'
+import { REQUEST_ITEMS } from './services'
+import type { StormBand, StormPhase } from './storm'
 import { fareFor, type Cents } from './pricing'
 import type { Sailing } from './sailings'
 import type { CategoryId } from './ship'
@@ -200,3 +204,87 @@ export function normalizeFinish(raw: unknown): FinishState {
     gentle: r.gentle === true, memorial: clean(r.memorial, 80),
   }
 }
+
+// ---- Part 2: quiet modes, Home nudges, item requests, voice, alerts, read-aloud, port snapshot ----
+/** Low-stress mode and gentle wording both mean no offers on Home. */
+export const offersQuiet = (f: Pick<FinishState, 'easy' | 'gentle'>): boolean => f.easy || f.gentle
+
+export type HomeNudgeId = 'backAboard' | 'storm' | 'proposals' | 'briefing'
+export interface HomeNudge extends Nudge { id: HomeNudgeId; path: string; params: Record<string, number> }
+export interface HomeNudgeInput {
+  budget: NudgeBudget
+  /** Do not disturb is on, or calm mode: only critical notices go through. */
+  quiet: boolean
+  /** Minutes before all aboard while in port, or null. */
+  backAboardMin: number | null
+  storm: StormBand
+  stormPhase: StormPhase
+  proposals: number
+  briefing: boolean
+}
+/** The unprompted cards Home may show now. Back aboard is a safety notice and is always shown; the rest spend the guest's daily budget, highest first, and nothing else is shown when it is zero, in calm mode or in do not disturb. */
+export function homeNudges(i: HomeNudgeInput): HomeNudge[] {
+  const items: HomeNudge[] = []
+  if (i.backAboardMin !== null && i.backAboardMin > 0 && i.backAboardMin <= 120) items.push({ id: 'backAboard', priority: 9, critical: true, path: '/ship/port', params: { min: i.backAboardMin } })
+  if (i.storm === 'higher' && (i.stormPhase === 'near' || i.stormPhase === 'watch')) items.push({ id: 'storm', priority: 4, path: '/plan/storm', params: {} })
+  if (i.proposals > 0) items.push({ id: 'proposals', priority: 3, path: '/plan/autopilot', params: { n: i.proposals } })
+  if (i.briefing) items.push({ id: 'briefing', priority: 1, path: '/home/briefing', params: {} })
+  return rankNudges(items, i.quiet ? 0 : i.budget)
+}
+
+const ITEM_WORDS: Record<string, readonly string[]> = {
+  towels: ['towel', 'towels'], pillows: ['pillow', 'pillows'], bedding: ['blanket', 'blankets', 'bedding', 'sheets', 'duvet'],
+  toiletries: ['toiletries', 'shampoo', 'soap', 'conditioner'], ice: ['ice'], turndown: ['turndown'],
+  light: ['bulb', 'lamp'], aircon: ['aircon', 'air-con', 'airconditioning'], plumbing: ['toilet', 'sink', 'shower', 'plumbing', 'leak'], tv: ['tv', 'television', 'remote'],
+}
+const NUMBERS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4 }
+export interface ItemRequest { id: string; qty: number }
+/** "Can I have two more towels" becomes an item and a quantity (never above the usual limit); anything else is null. It is only a proposal until the guest confirms. */
+export function parseItemRequest(q: string): ItemRequest | null {
+  const w = q.toLowerCase().split(/[^a-z0-9-]+/).filter(Boolean)
+  if (!w.some((x) => ['need', 'request', 'bring', 'send', 'get', 'want', 'have', 'more', 'extra', 'please', 'fix', 'broken'].includes(x))) return null
+  const hit = REQUEST_ITEMS.find((r) => (ITEM_WORDS[r.id] ?? []).some((k) => w.includes(k)))
+  if (!hit) return null
+  const n = w.map((x) => NUMBERS[x] ?? (/^\d$/.test(x) ? Number(x) : 0)).find((x) => x > 0) ?? 1
+  return { id: hit.id, qty: Math.min(Math.max(1, n), hit.maxQty) }
+}
+
+/** The browser's speech recognition, where there is one. Voice only fills the question box; sending and confirming stay a tap. */
+export const speechRecognitionOf = (win: object | undefined): (new () => unknown) | null => {
+  const w = win as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown } | undefined
+  return w?.SpeechRecognition ?? w?.webkitSpeechRecognition ?? null
+}
+
+// ---- XI-07: visual and vibration alerts ----
+export type AlertKind = 'notice' | 'important' | 'critical'
+export const ALERT_KINDS: readonly AlertKind[] = ['notice', 'important', 'critical']
+/** Vibration patterns in milliseconds: one short, two, then three long. Phones that cannot vibrate show the visual alert only. */
+export const VIBRATION: Record<AlertKind, number[]> = { notice: [200], important: [200, 100, 200], critical: [400, 150, 400, 150, 400] }
+
+// ---- XI-06: read aloud ----
+export const READ_RATES = [0.8, 1, 1.2] as const
+/** The day as one spoken passage, in the order of the day. */
+export const planSpeech = (entries: readonly { title: string; start: string }[], empty: string): string =>
+  entries.length === 0 ? empty : [...entries].sort((a, b) => a.start.localeCompare(b.start)).map((e) => `${e.start}, ${e.title}.`).join(' ')
+export const walkSpeech = (w: { name: string; minutes: number; step: string; accessible: string; sit: string; restroom: string }): string =>
+  `${w.name}. About ${w.minutes} minutes. ${w.step} Accessible version: ${w.accessible} Where to sit: ${w.sit} Restroom: ${w.restroom}`
+
+// ---- S6A-14: port snapshot as text ----
+/** A short text summary of a port day for the group chat or the recap. Text only: no photos are made or shared here. */
+export function portSnapshot(port: GuidePort, people: number): string[] {
+  const k = PORT_KNOWLEDGE[port]
+  const car = k.fairPrices[0]
+  return [
+    ...(car ? [`Taxi: ${car.route}, about $${car.car} for the car, $${perPerson(car, people)} each. Do not pay over $${car.ceiling}.`] : []),
+    `Taxi stand: ${k.taxiStand}`,
+    ...k.advisories.slice(0, 2).map((a) => `Heads up: ${a}`),
+    ...k.laws.slice(0, 2).map((a) => `Local law: ${a}`),
+    ...(k.walks[0] ? [`Walk: ${k.walks[0].name}, about ${k.walks[0].minutes} minutes.`] : []),
+    ...k.dontBringBack.slice(0, 2).map((a) => `Do not bring home: ${a}`),
+  ]
+}
+
+// ---- S8-09: complaint-aware marketing pause ----
+/** Marketing stops while a complaint or a service-recovery case is open, and starts again only when it is resolved or withdrawn. A person is offered instead. */
+export const marketingPaused = (cases: readonly { kind: string; stage: string }[]): boolean =>
+  cases.some((c) => (c.kind === 'complaint' || c.kind === 'recovery') && (c.stage === 'received' || c.stage === 'inReview'))

@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
+import { parseItemRequest, speechRecognitionOf, type ItemRequest } from '../../domain/finishMore'
+import { requestItem } from '../../domain/services'
 import { ask, EXAMPLES, type Answer, type Facts } from '../../domain/assistant'
 import { explainCharge } from '../../domain/moneyShield'
 import { acceptChange, addProposal, requestChange, type Change } from '../../domain/planChange'
@@ -40,6 +42,16 @@ export function AskScreen() {
   const [turns, setTurns] = useState<Turn[]>([])
   const [proposal, setProposal] = useState<Change | null>(null)
   const [notice, setNotice] = useState<StringKey | null>(null)
+  const [itemReq, setItemReq] = useState<ItemRequest | null>(null)
+  const [lastItem, setLastItem] = useState<string | null>(null)
+  const Recognition = typeof window === 'undefined' ? null : speechRecognitionOf(window)
+  const listen = () => {
+    if (!Recognition) return
+    const r = new Recognition() as { lang: string; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; start: () => void }
+    r.lang = 'en-US'
+    r.onresult = (e) => setText(e.results[0]?.[0]?.transcript?.slice(0, 200) ?? '')
+    r.start()
+  }
 
   const facts = (): Facts => ({
     nowHhmm: timeIn(now, shipZoneAt(sailing, now)),
@@ -55,6 +67,9 @@ export function AskScreen() {
     if (!q) return
     setNotice(null)
     setText('')
+    const item = parseItemRequest(q)
+    if (item && !me?.child) { setProposal(null); setItemReq(item); return }
+    setItemReq(null)
     if (CHANGE_WORDS.test(q)) {
       const r = requestChange(q, dp.rows, dp.alternatives, now, day)
       if (r.ok) { setProposal(r.change); return }
@@ -77,6 +92,23 @@ export function AskScreen() {
     setProposal(null)
   }
 
+  const confirmItem = async () => {
+    if (!itemReq) return
+    try {
+      const rows = await api.aboard.requests.create(itemReq.id, itemReq.qty, '')
+      setLastItem(rows.reduce((a, b) => (b.placedAt >= a.placedAt ? b : a)).id)
+      setNotice('ask.itemDone')
+    } catch {
+      setNotice('ask.itemFail')
+    }
+    setItemReq(null)
+  }
+  const undoItem = async () => {
+    if (!lastItem) return
+    try { await api.aboard.requests.cancel(lastItem); setNotice('ask.itemUndone') } catch { setNotice('ask.itemFail') }
+    setLastItem(null)
+  }
+
   return (
     <div className="page">
       <h1>{t('route.ask')}</h1>
@@ -85,7 +117,9 @@ export function AskScreen() {
       <form onSubmit={submit}>
         <Field label={t('ask.label')} hint={t('ask.hint')} value={text} maxLength={200} onChange={(e) => setText(e.target.value)} />
         <Button type="submit">{t('ask.send')}</Button>
+        {Recognition && <Button variant="secondary" onClick={listen}>{t('ask.speak')}</Button>}
       </form>
+      {Recognition && <p className="muted">{t('ask.speakNote')}</p>}
       <ul className="plain-list" aria-label={t('ask.examples')}>
         {EXAMPLES.map((q) => <li key={q}><Button variant="tertiary" onClick={() => setTurns((all) => [{ id: all.length, question: q, answer: ask(q, facts()) }, ...all])}>{q}</Button></li>)}
       </ul>
@@ -102,6 +136,19 @@ export function AskScreen() {
           </div>
         </Card>
       )}
+      {itemReq && (
+        <Card labelledBy="ask-item">
+          <h2 id="ask-item" className="card__title">{t('ask.itemPreview')}</h2>
+          <p><strong>{t('ask.itemWhat', { qty: itemReq.qty, item: t(`req.i.${itemReq.id}` as StringKey) })}</strong></p>
+          <p>{t('req.usually', { minutes: requestItem(itemReq.id)!.etaMin })}</p>
+          <p className="muted">{t('ask.itemUndo')}</p>
+          <div className="button-row">
+            <Button onClick={() => void confirmItem()}>{t('ask.confirm')}</Button>
+            <Button variant="secondary" onClick={() => setItemReq(null)}>{t('ask.cancel')}</Button>
+          </div>
+        </Card>
+      )}
+      {lastItem && notice === 'ask.itemDone' && <Button variant="secondary" onClick={() => void undoItem()}>{t('ask.itemUndoButton')}</Button>}
       {notice && <Banner kind="info" title={t(notice)}>{notice === 'ask.done' && <p><Link to="/plan/autopilot">{t('ask.seeLog')}</Link></p>}</Banner>}
 
       <section aria-label={t('ask.answers')} aria-live="polite">

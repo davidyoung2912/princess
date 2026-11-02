@@ -71,6 +71,7 @@ function Form({ v, reload }: { v: FeedbackView; reload: () => void }) {
               <fieldset className="plain-fieldset">
                 <legend>{t('fbk.crew')}</legend>
                 <p className="field__hint">{t('fbk.crewHint', { count: CREW_MAX, steward: v.steward })}</p>
+                <p className="field__hint">{t('fbk.crewSeen')}</p>
                 {v.crew.map((c) => <label key={c.id} className="choice"><input type="checkbox" checked={f.crew.includes(c.name)} onChange={() => toggleCrew(c.name)} /><span>{c.name}<small>{t(`fbk.role.${c.role}` as StringKey)}{c.name === v.steward ? ` · ${t('fbk.yourSteward')}` : ''}</small></span></label>)}
               </fieldset>
             </>
