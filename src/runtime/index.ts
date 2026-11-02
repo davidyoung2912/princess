@@ -27,6 +27,8 @@ import { resetSettingsToDefaults, switchSettingsOwner } from '../settings/store'
 import { sync, setRemote } from '../sync'
 import { registerSyncBindings } from '../sync/bindings'
 import { createHttpRemote } from '../sync/httpRemote'
+import { createHttpPortRows } from '../sync/httpPortRows'
+import { portRows, setPortRowsRemote } from '../sync/portRows'
 import { channel } from './channel'
 
 const safe = (get: () => Storage): Storage | null => {
@@ -151,16 +153,19 @@ function syncAccount(): void {
   if (!usesRealAuth) return
   loadReference()
   const session = auth.current()
-  setRemote(session ? createHttpRemote((auth as ReturnType<typeof createHttpAuthProvider>).http) : null)
+  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+  setRemote(session ? createHttpRemote(http) : null)
+  setPortRowsRemote(session ? createHttpPortRows(http) : null)
   if (sync.setOwner(session?.user?.id ?? null, ownerIdOf(session))) void sync.pull()
+  if (portRows.setOwner(session?.user?.id ?? null, ownerIdOf(session))) void portRows.pull()
   if (session?.user?.isDemo) void pullDemoFromServer()
 }
 
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
   if (!usesRealAuth || typeof window === 'undefined') return () => {}
-  const onOnline = () => { void sync.pull(); void pullDemoFromServer(); void flushTelemetry() }
-  const onVisible = () => { if (document.visibilityState === 'visible') { void sync.pull(); void pullDemoFromServer() } else void flushTelemetry() }
+  const onOnline = () => { void sync.pull(); void portRows.pull(); void pullDemoFromServer(); void flushTelemetry() }
+  const onVisible = () => { if (document.visibilityState === 'visible') { void sync.pull(); void portRows.pull(); void pullDemoFromServer() } else void flushTelemetry() }
   window.addEventListener('online', onOnline)
   document.addEventListener('visibilitychange', onVisible)
   return () => {
@@ -192,7 +197,7 @@ export async function startRuntime(): Promise<void> {
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */
 export async function signOutSaving(): Promise<void> {
-  if (usesRealAuth) await sync.flush().catch(() => {})
+  if (usesRealAuth) await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
   await auth.signOut()
 }
 

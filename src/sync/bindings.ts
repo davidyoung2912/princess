@@ -4,11 +4,10 @@ import { EMPTY_HUB, applyRemoteFamily, applyRemoteHub, getHub, hubRestOf, normal
 import { EMPTY_TRIP, applyRemoteTrip, getTrip, normalizeTrip } from '../journey/store'
 import { EMPTY_CALM } from '../domain/calm'
 import { EMPTY_PILOT, applyRemoteCalm, applyRemotePilot, getPilot, normalizePilot, pilotRestOf } from '../pilot/store'
-import { EMPTY_PORT, applyRemotePort, getPort, normalizePort } from '../port/store'
 import { EMPTY_PARTY, normalizePartyState } from '../domain/party'
 import { applyRemoteParty, getParty } from '../party/store'
 import { personaById } from '../domain/personas'
-import { mergeOffers, mergeParty, mergePort } from './merges'
+import { mergeOffers, mergeParty } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
@@ -120,17 +119,6 @@ const family: Binding = {
 /** A booking's stores are kept under its booker, so everyone on the booking reads and writes the same copy. */
 const bookerOf = (id: string | null): string | null => (id === null ? null : personaById(id)?.booker ?? id)
 
-/** Port-day presence, plan, meeting places and the split ledger: one document for the whole booking. */
-const port: Binding = {
-  key: 'port',
-  scope: 'booking',
-  localFor: bookerOf,
-  read: (id) => getPort(id),
-  apply: (id, raw) => applyRemotePort(id, raw === null ? EMPTY_PORT : normalizePort(raw)),
-  isEmpty: (raw) => json(raw) === json(EMPTY_PORT),
-  merge: mergePort,
-}
-
 /** Travel-party invitations and shared notes: one document for the whole booking. */
 const party: Binding = {
   key: 'party',
@@ -157,5 +145,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, port, party]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, party]) sync.register(b)
 }

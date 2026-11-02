@@ -11,7 +11,6 @@ import { EMPTY_HOME } from '../domain/homeLink'
 import { EMPTY_HUB, updateHub } from '../hub/store'
 import { updateTrip } from '../journey/store'
 import { EMPTY_PILOT, getPilot, updatePilot } from '../pilot/store'
-import { getPort } from '../port/store'
 import { EMPTY_PARTY } from '../domain/party'
 import { getParty, updateParty } from '../party/store'
 import { getThread, setThread } from '../ai/history'
@@ -141,13 +140,11 @@ describe('trip, plan changes, family hub and the booking\'s shared records', () 
     expect(docs.has('party')).toBe(false)   // not filed under the person
 
     // Another adult on the booking, on another device, picks it up.
-    shared.set('port', { version: 1, data: { party: { days: {}, alertBefore: 90, rendezvous: [] }, split: { parties: [], items: [], settledAt: null } } })
     sync.setOwner('user-x', 'someone')
     sync.setOwner('user-p', 'priya')
     updateParty('daniel', () => EMPTY_PARTY)
     await sync.pull()
     expect(getParty('daniel').invites).toHaveLength(1)
-    expect(getPort('daniel').party.alertBefore).toBe(90)
     setRemote(null)
   })
 })

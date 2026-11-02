@@ -143,7 +143,9 @@ describe('links signed by the server', () => {
   })
   it('turns the public answer into a page or a reason', () => {
     const ok = normalizePublicFamily({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ kind: 'ok', note: 'Hi', at: 1 }, { kind: 'spam', note: '', at: 2 }], scenarios: ['a', 3] })
-    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'] })
+    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'], delayedMinutes: null })
+    expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 90.4 })).toMatchObject({ delayedMinutes: 90 })
+    expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 'soon' })).toMatchObject({ delayedMinutes: null })
     expect(normalizePublicFamily({ ok: false, reason: 'revoked' })).toEqual({ ok: false, reason: 'revoked' })
     expect(normalizePublicFamily({ ok: false, reason: 'whatever' })).toEqual({ ok: false, reason: 'malformed' })
     expect(normalizePublicFamily('x')).toEqual({ ok: false, reason: 'malformed' })

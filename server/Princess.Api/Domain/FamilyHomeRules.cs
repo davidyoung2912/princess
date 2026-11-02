@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -50,5 +51,18 @@ public static class FamilyHomeRules
         if (!Guid.TryParseExact(parts[0], "N", out owner) || !Guid.TryParseExact(parts[1], "N", out link) || !long.TryParse(parts[2], out expiresMs) || expiresMs <= 0) return false;
         var expected = Encoding.ASCII.GetBytes(Sign(key, Payload(owner, link, expiresMs)));
         return CryptographicOperations.FixedTimeEquals(expected, Encoding.ASCII.GetBytes(parts[3]));
+    }
+
+    /// <summary>
+    /// The minutes the guest is late, when they have said so and agreed to share it: the open delay in their <c>hub</c> document, told to the party, with ETA sharing on
+    /// (the same test as the app's <c>delayVisibleToOthers</c>). Null otherwise, and for a document that is missing or not in the expected shape.
+    /// </summary>
+    public static int? SharedDelayMinutes(JsonNode? hub)
+    {
+        if (hub is not JsonObject h || h["delay"] is not JsonObject delay) return null;
+        if (delay["shareEta"] is JsonValue share && share.TryGetValue<bool>(out var on) && !on) return null;
+        if (delay["current"] is not JsonObject current || current["told"] is not JsonArray told) return null;
+        if (!told.Any(x => x is JsonValue v && v.TryGetValue<string>(out var who) && who == "party")) return null;
+        return current["lateMinutes"] is JsonValue late && late.TryGetValue<double>(out var minutes) && minutes > 0 ? (int)Math.Min(minutes, 480) : null;
     }
 }

@@ -135,7 +135,7 @@ export const liveLinkIds = (state: HomeState, now: number, contactId?: string): 
 
 /** What `GET /public/family/{token}` answers: a page, or the reason a link does not work. */
 export type PublicFamily =
-  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[] }
+  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[]; /** Minutes the guest is late, when they told their party and share it. */ delayedMinutes: number | null }
   | { ok: false; reason: LinkProblem }
 
 export function normalizePublicFamily(raw: unknown): PublicFamily {
@@ -146,6 +146,7 @@ export function normalizePublicFamily(raw: unknown): PublicFamily {
   return {
     ok: true, guestFirst: str(raw.guestFirst) ? raw.guestFirst.slice(0, 60) : '', expiresAt: typeof raw.expiresAt === 'number' ? raw.expiresAt : 0, postcards: postcards.slice(-MAX_POSTCARDS),
     scenarios: (Array.isArray(raw.scenarios) ? raw.scenarios : []).filter(str).slice(0, 30),
+    delayedMinutes: typeof raw.delayedMinutes === 'number' && raw.delayedMinutes > 0 ? Math.min(480, Math.round(raw.delayedMinutes)) : null,
   }
 }
 

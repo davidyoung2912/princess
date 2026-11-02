@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using Princess.Api.Auth;
 using Princess.Api.Data;
@@ -10,7 +11,7 @@ public sealed record FamilyLinkDto(string Id, string Token, long ExpiresAt);
 public sealed record FamilyPostcardDto(string Kind, string Note, long At);
 
 /// <summary><c>Reason</c> is malformed, signature, unknown, revoked or expired when <c>Ok</c> is false, matching the page's wording. Ship-level facts only: never where the guest is.</summary>
-public sealed record FamilyPublicDto(bool Ok, string? Reason, string GuestFirst, long ExpiresAt, IReadOnlyList<FamilyPostcardDto> Postcards, IReadOnlyList<string> Scenarios);
+public sealed record FamilyPublicDto(bool Ok, string? Reason, string GuestFirst, long ExpiresAt, IReadOnlyList<FamilyPostcardDto> Postcards, IReadOnlyList<string> Scenarios, int? DelayedMinutes = null);
 
 public sealed record NewFamilyLinkRequest(int? Days);
 
@@ -20,7 +21,7 @@ public sealed record FamilyPostcardRequest(string? Kind, string? Note);
 /// Signed family-at-home links and the public page behind them (multi-device plan 2, Phase 6). The link is signed here; the row says if it is live. The contacts' names
 /// and addresses stay in the guest's encrypted <c>family</c> document: this service never sees them.
 /// </summary>
-public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, IUserClock clock, ScopeLoader scopes, IOptions<JwtOptions> jwt)
+public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, IUserClock clock, ScopeLoader scopes, IOptions<JwtOptions> jwt, IStateStore state)
 {
     private byte[] Key => FamilyHomeRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -64,6 +65,11 @@ public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, 
         if (await clock.NowAsync(user, ct) >= link.ExpiresAt) return Bad("expired");
         var cards = (await store.ListPostcardsAsync(user.Id, FamilyHomeRules.MaxPostcards, ct)).Select(p => new FamilyPostcardDto(p.Kind, p.Note, Ms(p.SentAt))).ToList();
         var scenarios = (await scopes.ScenariosAsync(user, ct)).Order(StringComparer.Ordinal).ToList();
-        return new FamilyPublicDto(true, null, user.FirstName ?? "", Ms(link.ExpiresAt), cards, scenarios);
+        // A delay shows only when the guest told their party and left ETA sharing on; it lives in their (unencrypted) hub document.
+        var hub = await state.GetAsync(false, user.Id, "hub", ct);
+        int? delayed = null;
+        try { delayed = FamilyHomeRules.SharedDelayMinutes(hub is null ? null : JsonNode.Parse(hub.Json)); }
+        catch (System.Text.Json.JsonException) { }
+        return new FamilyPublicDto(true, null, user.FirstName ?? "", Ms(link.ExpiresAt), cards, scenarios, delayed);
     }
 }

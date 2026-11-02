@@ -53,9 +53,9 @@ export function AtSeaScreen() {
   const found: { view: FamilyView } | { reason: LinkProblem } | 'loading' = (() => {
     if (served === 'loading') return 'loading'
     if (served) {
-      // The server checked the link; it also names the guest and the scenarios that are on. A delay stays on the guest's own devices.
+      // The server checked the link; it also names the guest, the scenarios that are on and a delay the guest chose to share.
       return served.ok
-        ? { view: { guestFirst: served.guestFirst, ...shipFacts, notices: familyNotices(served.scenarios), postcards: served.postcards, delayedMinutes: null, expiresAt: served.expiresAt } }
+        ? { view: { guestFirst: served.guestFirst, ...shipFacts, notices: familyNotices(served.scenarios), postcards: served.postcards, delayedMinutes: served.delayedMinutes, expiresAt: served.expiresAt } }
         : { reason: served.reason }
     }
     if (!check || !check.ok || !hub || !guest) return { reason: check && !check.ok ? check.reason : 'malformed' }

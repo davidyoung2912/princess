@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// Account state for every device (docs/multi-device-plan.md): small documents per person (<c>/me/state</c>) and per booking (<c>/bookings/{n}/state</c>).
 /// A save carries the version the device last saw; if another device saved since, it is a 409 and the device fetches the newer copy and merges.
 /// </summary>
-public sealed class StateService(IStateStore store, ITripStore trips, AccessService access, IUserClock clock, IDataProtectionProvider protection)
+public sealed class StateService(IStateStore store, ITripStore trips, AccessService access, IUserClock clock, IDataProtectionProvider protection, IFamilyHomeStore familyHome, PortRowService portRows)
 {
     private readonly IDataProtector _protector = protection.CreateProtector("Princess.Api.State.v1");
 
@@ -60,8 +60,14 @@ public sealed class StateService(IStateStore store, ITripStore trips, AccessServ
         if (body!.BaseVersion < 0) throw ApiException.Invalid("badVersion");
         var owner = await OwnerAsync(actor, booking, number, true, ct);
         if (StateRules.EncryptedKeys.Contains(key) && !await HasConsentAsync(owner, ct)) throw ApiException.Forbidden();
-        var saved = await store.SaveAsync(booking, owner, key, Stored(key, body.Data!), body.BaseVersion, await clock.NowAsync(actor, ct), ct);
-        return saved is null ? throw ApiException.Conflict("stale") : Dto(saved);
+        var now = await clock.NowAsync(actor, ct);
+        // Whether the guest had agreed to keep private details before this save, to see if it is the moment they withdraw.
+        var hadConsent = !booking && key == "settings" && await HasConsentAsync(owner, ct);
+        var saved = await store.SaveAsync(booking, owner, key, Stored(key, body.Data!), body.BaseVersion, now, ct);
+        if (saved is null) throw ApiException.Conflict("stale");
+        // Turning "keep private details in my account" off also stops the links to the family-at-home page: the page is built from the contacts that consent covered.
+        if (hadConsent && !await HasConsentAsync(owner, ct)) await familyHome.RevokeAllAsync(owner, now, ct);
+        return Dto(saved);
     }
 
     private async Task<bool> HasConsentAsync(long userId, CancellationToken ct) =>
@@ -83,6 +89,8 @@ public sealed class StateService(IStateStore store, ITripStore trips, AccessServ
         foreach (var b in await trips.ListForUserAsync(actor.Id, ct))
         {
             var docs = (await store.ListAsync(true, b.BookingId, ct)).Select(Dto).ToList();
+            var (rows, count) = await portRows.ExportAsync(b.BookingId, ct);
+            if (count > 0) docs.Add(new StateDto("port-rows", count, rows, TripRules.ToMs(now)));
             if (docs.Count > 0) bookings.Add(new BookingStateExportDto(b.Number, docs));
         }
         return new StateExportDto(TripRules.ToMs(now), account, bookings);

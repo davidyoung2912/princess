@@ -53,6 +53,8 @@ public class SwaggerCoverageTests : IDisposable
         { "delete", "/api/v1/me/family-links/{id}" },
         { "delete", "/api/v1/me/family-links" },
         { "post", "/api/v1/me/family-postcards" },
+        { "get", "/api/v1/bookings/{number}/port-rows" },
+        { "post", "/api/v1/bookings/{number}/port-rows" },
         { "get", "/api/v1/demo/state" },
         { "put", "/api/v1/demo/state" },
         { "delete", "/api/v1/me/state" },

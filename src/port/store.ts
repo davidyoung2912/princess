@@ -1,9 +1,8 @@
 import { APP_PREFIX } from '../data/lifecycle'
-import { sync } from '../sync'
 import { EMPTY_SPLIT, normalizeSplit, type SplitState } from '../domain/ledgerSplit'
 import { EMPTY_PORT_PARTY, normalizePortParty, type PortPartyState } from '../domain/portParty'
 
-/** Everything Phase H3 keeps on this device for one booking: the port-day party state and the split ledger. Kept under the booker, so everyone on the booking sees the same record here. */
+/** Everything Phase H3 keeps on this device for one booking: the port-day party state and the split ledger. Kept under the booker, so everyone on the booking sees the same record here, and (with the real API) saved as rows by `sync/portRows.ts`. */
 export interface PortState { party: PortPartyState; split: SplitState }
 export const EMPTY_PORT: PortState = { party: EMPTY_PORT_PARTY, split: EMPTY_SPLIT }
 
@@ -56,15 +55,25 @@ export function subscribePort(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
+type ChangeListener = (bookerId: string | null, prev: PortState, next: PortState) => void
+const changeListeners = new Set<ChangeListener>()
+
+/** Told of each change a person makes (never of one taken from the server), with the state before and after: the row sync turns it into row changes. */
+export function onPortChanged(listener: ChangeListener): () => void {
+  changeListeners.add(listener)
+  return () => changeListeners.delete(listener)
+}
+
 export function updatePort(bookerId: string | null, change: (s: PortState) => PortState): void {
-  const next = change(getPort(bookerId))
+  const prev = getPort(bookerId)
+  const next = change(prev)
   cache.set(portKeyFor(bookerId), next)
   savePort(bookerId, next)
   listeners.forEach((l) => l())
-  sync.changed('port', bookerId)
+  if (next !== prev) changeListeners.forEach((l) => l(bookerId, prev, next))
 }
 
-/** Takes the server's copy without telling the sync module it changed. */
+/** Takes the server's rows without telling the row sync it changed. */
 export function applyRemotePort(bookerId: string | null, next: PortState): void {
   cache.set(portKeyFor(bookerId), next)
   savePort(bookerId, next)

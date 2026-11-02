@@ -239,4 +239,46 @@ public class FamilyHomeTests : JourneyWorld
         await Call(HttpMethod.Delete, "/api/v1/me/family-links", await SignIn(Daniel));
         Assert.Equal("revoked", (await Call(HttpMethod.Get, $"/api/v1/public/family/{made.Json.GetProperty("token").GetString()}")).Json.GetProperty("reason").GetString());
     }
+
+    private static SaveStateRequest Hub(bool told, bool share, int late) => new(new JsonObject
+    {
+        ["delay"] = new JsonObject
+        {
+            ["shareEta"] = share,
+            ["current"] = new JsonObject { ["lateMinutes"] = late, ["told"] = told ? new JsonArray("line", "party") : new JsonArray("line") },
+        },
+    }, 0);
+
+    [Fact]
+    public async Task TheDelayShowsOnThePageOnlyWhenTheGuestToldTheirPartyAndSharesTheArrivalTime()
+    {
+        var token = await SignIn(Daniel);
+        var link = (await Call(HttpMethod.Post, "/api/v1/me/family-links", token)).Json.GetProperty("token").GetString()!;
+        Assert.Equal(JsonValueKind.Null, (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("delayedMinutes").ValueKind);
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/hub", token, Hub(told: true, share: true, late: 90));
+        Assert.Equal(90, (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("delayedMinutes").GetInt32());
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/hub", token, new SaveStateRequest(Hub(told: true, share: false, late: 90).Data, 1));
+        Assert.Equal(JsonValueKind.Null, (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("delayedMinutes").ValueKind);
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/hub", token, new SaveStateRequest(Hub(told: false, share: true, late: 90).Data, 2));
+        Assert.Equal(JsonValueKind.Null, (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("delayedMinutes").ValueKind);
+    }
+
+    [Fact]
+    public async Task WithdrawingConsentToKeepPrivateDetailsStopsTheLinks()
+    {
+        var token = await SignIn(Daniel);
+        var link = (await Call(HttpMethod.Post, "/api/v1/me/family-links", token)).Json.GetProperty("token").GetString()!;
+        // A settings change that never involved the consent leaves the link alone.
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", token, new SaveStateRequest(new JsonObject { ["calm"] = true }, 0));
+        Assert.True((await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("ok").GetBoolean());
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", token, new SaveStateRequest(new JsonObject { ["syncPrivate"] = true }, 1));
+        Assert.True((await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("ok").GetBoolean());
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", token, new SaveStateRequest(new JsonObject { ["syncPrivate"] = false }, 2));
+        Assert.Equal("revoked", (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("reason").GetString());
+    }
 }

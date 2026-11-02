@@ -222,6 +222,7 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 **Budgets** — `BookingId PK` · `Json [json]` (the `Budget`: overall and per-child limits) · `RowVersion`.
 
 **BookingState** — state R/W (multi-device). As `UserState` but per booking, shared by everyone on it. `BookingId ID* FK→Bookings` · `Key STR(30)*` (`port`, `party`) · `Json [json]*` · `Version INT*` · PK (`BookingId`, `Key`).
+**PortRows** — the port day's shared record as rows (multi-device plan 2, Phase 6), so a delete is a row that stays: the old `port` document unions both devices' copies and brings a deleted expense back. `BookingId ID* FK→Bookings` (cascade) · `Kind STR(12)*` (`presence`, `plan`, `planB`, `setting`, `meet`, `meetState`, `party`, `item`) · `RowKey STR(90)*` · `Json [json]?` (at most 2,000 characters; null for a deleted row) · `At BIG*` (ms, from the device that made the change; the later `At` wins a clash, a tie keeps the stored row) · `Deleted BIT*` · PK (`BookingId`, `Kind`, `RowKey`). A deleted row is kept for 30 days so another device that was offline learns of it; at most 1,000 rows a booking. Keys: `presence` `date|person`, `plan` and `planB` `date`, `setting` `alertBefore` or `settledAt`, `meet` a meeting's id, `meetState` `meetingId|person`, `party` a family's id (the split ledger), `item` an expense's id.
 **UpdateAcks** — `UserId` · `ScenarioId` · `Option STR(30)` · `At` · PK pair.
 **ServiceRequests** (`aboard.requests`) — `Id` · `BookingId` · `ItemId` · `Qty` · `Note` · `PlacedAt` · `EtaAt` · `Stage {received|onTheWay|done|cancelled}`.
 **SafetyReports** (`aboard.reports`) — `Id` · `BookingId` · `Kind` · `Place` · `Note` · `Anonymous BIT` · `Reference` · `At`.
@@ -444,8 +445,12 @@ Phase 11 built every row above (25 routes). Differences from the table and the m
 | one booking document | `GET /bookings/{n}/state/{key}` | B |
 | save a booking document | `PUT /bookings/{n}/state/{key}` | BA |
 | delete a booking document | `DELETE /bookings/{n}/state/{key}` | BA |
+| the port day's rows (presence, plan, meeting places, split ledger) | `GET /bookings/{n}/port-rows` | B |
+| change port-day rows (a batch, later `at` wins, a delete is a row) | `POST /bookings/{n}/port-rows` body `{ ops: [{ kind, key, data, at, deleted }] }` | BA |
 
 A document is `{ key, version, data, updatedAt }`. `baseVersion` is the version the device last saw (0 for none); if the stored version differs the save is `409` (`stale`) and the device fetches the newer copy and merges. A key outside the whitelist is `400 badKey`, a body that is not a JSON object `400 badData`, and one over the key's size cap `400 tooLarge`.
+
+Port rows (`PortRows`): both routes return `{ rows: [{ kind, key, data, at, deleted }] }`, every row of the booking including deleted ones. A batch holds 1 to 100 ops; a `kind` outside the list, a `key` that is not 1 to 90 letters, digits or `_ - | :`, data of more than 2,000 characters (or missing on a change) is `400 badPortRow`, more than 100 ops `400 tooManyOps`, and a booking past 1,000 rows `409 tooManyRows`. An `at` more than five minutes ahead of the server is cut back to that, so one wrong clock cannot win for ever. A supervised child may read but not change (`403 supervised`), a stranger gets `404`. The privacy export lists the rows as a booking document named `port-rows`.
 
 ### 6.9 Reference data and feeds (multi-device Phase 5; not in the `Api` interface)
 | Route | Verb route | Auth |

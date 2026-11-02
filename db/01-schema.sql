@@ -2067,6 +2067,20 @@ CREATE TABLE dbo.BookingState (
 );
 END
 
+IF OBJECT_ID(N'dbo.PortRows', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PortRows (
+  BookingId BIGINT NOT NULL, Kind VARCHAR(12) NOT NULL, RowKey VARCHAR(90) NOT NULL,
+  Json NVARCHAR(2000) NULL, [At] BIGINT NOT NULL, Deleted BIT NOT NULL CONSTRAINT DF_PortRows_Deleted DEFAULT 0,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PortRows_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PortRows_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_PortRows PRIMARY KEY (BookingId, Kind, RowKey),
+  CONSTRAINT FK_PortRows_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_PortRows_Json CHECK (Json IS NULL OR ISJSON(Json) = 1),
+  CONSTRAINT CK_PortRows_Kind CHECK (Kind IN ('presence','plan','planB','setting','meet','meetState','party','item'))
+);
+END
+
 IF OBJECT_ID(N'dbo.UpdateAcks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UpdateAcks (
