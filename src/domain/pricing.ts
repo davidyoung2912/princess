@@ -2,8 +2,9 @@ import { CATEGORIES, categoryById, type CategoryId } from './ship'
 import { SAILINGS, sailingById } from './sailings'
 import { limit } from './limits'
 
-import { formatMoney, type Cents } from './money'
-export { formatMoney, type Cents }
+import { formatMoney, parseMoney, type Cents } from './money'
+import { MAX_GUESTS, type FromPrice, type LineKey, type Quote, type QuoteLine } from './priceShapes'
+export { formatMoney, parseMoney, MAX_GUESTS, type Cents, type FromPrice, type LineKey, type Quote, type QuoteLine }
 
 /** Interior fare per person for two sharing, by sailing. The lowest is the advertised "from" price (ship profile §11.1). */
 const INTERIOR_FARE: Record<string, Cents> = {
@@ -41,28 +42,9 @@ export let EXTRA_GUEST_SHARE = 0.75
 /** One guest alone pays this multiple of the per-person fare. */
 export let SOLO_MULTIPLE = 2
 
-export const MAX_GUESTS = 4
 
-export type LineKey = 'fare' | 'extraFare' | 'soloSupplement' | 'taxes' | 'gratuities' | 'package'
 
-export interface QuoteLine {
-  key: LineKey
-  /** The number of guests the line covers. */
-  guests: number
-  /** Amount for the whole line. */
-  cents: Cents
-}
 
-export interface Quote {
-  sailingId: string
-  category: CategoryId
-  guests: number
-  lines: QuoteLine[]
-  total: Cents
-  perPerson: Cents
-  /** Part of the total paid on board, as gratuities (still shown in the total so nothing is hidden). */
-  gratuities: Cents
-}
 
 const round = (n: number): Cents => Math.round(n / 100) * 100
 
@@ -93,13 +75,6 @@ export function quote(sailingId: string, category: CategoryId, guests: number): 
   return { sailingId, category, guests, lines, total, perPerson: Math.round(total / guests), gratuities }
 }
 
-export interface FromPrice {
-  fare: Cents
-  taxes: Cents
-  gratuities: Cents
-  /** Fare, taxes and fees, and gratuities for one guest of two. */
-  allIn: Cents
-}
 
 /** The lowest fare for a sailing, with what is added on top, for a one-person-of-two "from" price. */
 export function fromPrice(sailingId: string): FromPrice | null {
@@ -119,12 +94,6 @@ export const hasPrice = (sailingId: string): boolean => !!sailingById(sailingId)
 export const ALL_CATEGORY_IDS: readonly CategoryId[] = CATEGORIES.map((c) => c.id)
 
 
-/** Dollars typed by a person ("1,250", "99.5", "$40") as whole cents, or null when it is not an amount. */
-export function parseMoney(text: string): Cents | null {
-  const clean = text.trim().replace(/^\$/, '').replace(/,/g, '')
-  if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null
-  return Math.round(Number(clean) * 100)
-}
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('EXTRA_GUEST_SHARE', (v) => { EXTRA_GUEST_SHARE = v }, EXTRA_GUEST_SHARE)

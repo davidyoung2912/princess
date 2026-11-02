@@ -1,7 +1,6 @@
 import { Link } from 'react-router'
 import { t } from '../../i18n'
 import { CRUISE } from '../../domain/cruise'
-import { lowestFromPrice } from '../../domain/pricing'
 import { PORT_GUIDES } from '../../domain/ports'
 import { SHIP } from '../../domain/ship'
 import { api } from '../../runtime'
@@ -13,14 +12,14 @@ import { FromPriceBlock, PriceState } from './parts'
 /** The cruise, its price, where it goes and the ship (DIS-01): what a guest browses from Home, with no account needed. */
 export function Explore() {
   const offers = useAsync(() => api.discover.offers(), [])
-  const lowest = offers.data ? offers.data.map((o) => o.from).reduce((a, b) => (b.fare < a.fare ? b : a)) : lowestFromPrice()
+  const lowest = offers.data ? offers.data.map((o) => o.from).reduce((a, b) => (b.fare < a.fare ? b : a)) : null
   return (
     <>
       <Card hero labelledBy="cruise-h">
         <p className="eyebrow">{t('discover.eyebrow', { ship: SHIP.name })}</p>
         <h2 id="cruise-h">{CRUISE.name}</h2>
         <p>{CRUISE.intro}</p>
-        <PriceState state={offers}><FromPriceBlock price={lowest} /></PriceState>
+        <PriceState state={offers}>{lowest && <FromPriceBlock price={lowest} />}</PriceState>
         <div className="button-row">
           <LinkButton to="/book">{t('discover.book')}</LinkButton>
           <LinkButton to="/home/sailings" variant="secondary">{t('discover.seeDates')}</LinkButton>

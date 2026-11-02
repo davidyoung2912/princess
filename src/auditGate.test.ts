@@ -12,7 +12,7 @@ const files = (dir: string): string[] =>
 
 /** Domain modules that hold an authored catalogue or a simulation a server now serves or will serve. */
 /** (The sailings, ports, excursions and dining stores hold no authored data any more: they fill from the server's tables, so reading them is fine.) */
-const CATALOGUE = ['pricing', 'portCrowd', 'pulse', 'cabinScore']
+const CATALOGUE = ['pricing', 'pulse', 'cabinScore']
 const importsCatalogue = (text: string): boolean =>
   CATALOGUE.some((m) => new RegExp(`from '(\\.\\./)+domain/${m}'`).test(text))
 
@@ -69,15 +69,7 @@ describe('audit gate', () => {
 
 /** Screens that still read the catalogue straight from the client (Phase 4 moves them to the server's copy). */
 const KNOWN_CATALOGUE_SCREENS: string[] = [
-  'src/ui/account/WrappedScreen.tsx',
-  'src/ui/book/PayPanel.tsx',
   'src/ui/discover/CabinChooserScreen.tsx',
-  'src/ui/discover/DecideScreen.tsx',
-  'src/ui/discover/Landing.tsx',
-  'src/ui/discover/SailingScreen.tsx',
-  'src/ui/discover/TripCostScreen.tsx',
-  'src/ui/discover/parts.tsx',
-  'src/ui/onboard/PortPilot.tsx',
   'src/ui/onboard/PulseScreen.tsx',
 ]
 const LOCAL_STORAGE_OK = ['src/ai/', 'src/data/', 'src/design/', 'src/demo/', 'src/hub/', 'src/journey/', 'src/memory/', 'src/offers/', 'src/party/', 'src/phone/', 'src/pilot/', 'src/port/', 'src/runtime/', 'src/settings/', 'src/shop/', 'src/sync/', 'src/auth/', 'src/diagnostics/', 'src/rates/', 'src/feeds/feed.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useSavedCopy.ts']

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { BRAND_NAMES, CARD_BRANDS, validateCard, type Card as SavedCard, type CardBrand } from '../../domain/account'
 import { checkParts, SCA_DEMO_CODE, walletSupported, type PaymentPart } from '../../domain/fares'
-import { parseMoney } from '../../domain/pricing'
+import { parseMoney } from '../../domain/money'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'

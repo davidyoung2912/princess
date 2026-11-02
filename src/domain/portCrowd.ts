@@ -6,8 +6,6 @@ import type { CrowdLevel } from './portPilot'
  */
 export type CrowdPort = 'cozumel' | 'belize' | 'roatan'
 
-/** Guests carried by one ship, about. Authored. */
-export const SHIP_GUESTS = 4000
 export interface PortCrowd {
   /** All ships alongside or at anchor, including this one. */
   ships: number
