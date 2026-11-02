@@ -41,6 +41,23 @@ Run it where it can reach SQL Server (the Windows side, for a Windows-authentica
 - **Scheduled retention purge.** `RetentionPurgeService` runs every `Retention:IntervalMinutes` (default 360, 0 turns it off) and deletes data past its retention date for every ended booking, using real time. Opening the privacy centre also purges, at the demo clock.
 - **Encryption at rest (a hosting setting, not code).** Turn on Transparent Data Encryption for the `princess` database (`ALTER DATABASE princess SET ENCRYPTION ON` after creating a database encryption key and certificate), encrypt backups (`BACKUP ... WITH ENCRYPTION`), and connect with `Encrypt=True` and a trusted certificate outside local development. LocalDB on a developer machine does not need it. Column-level encryption of passport numbers is not done.
 
+## Providers: swapping a simulation for a real service
+
+Every external source is behind an interface and chosen in one place, `Services/ProviderRegistration.cs` (`AddProviders`). Set `Providers:<Key>` in configuration (appsettings, user-secrets or an environment variable such as `Providers__Weather`). Every key defaults to `sim`; an unregistered name stops the server at start-up and lists the choices. To add a real one: write the class, add one entry to its seam in `ProviderRegistration.Catalogue`, set the name. `ProviderContractTests` runs the same checks against every registered implementation. The front end never changes: it sees the contract shapes only (and `source` fields are not shown differently).
+
+| Key | Interface | What a real provider must return | Fall back to the simulation when |
+| --- | --- | --- | --- |
+| `Weather` | `IWeatherService` | `Sky`, `Climate` and `Today` from one model, so packing, the day brief and `/feeds/sky` agree. Timeout 3 s | the call fails or times out |
+| `Flight` | `IFlightStatusProvider` | `state` (`onTime|delayed|cancelled`) and non-negative `delayMinutes` for a normalised number and date. Timeout 3 s | the call fails; say `onTime` rather than guess |
+| `Route` | `IRouteConditionsProvider` | `traffic`, `sky`, `leaveEarlierMinutes` for the sailing date and the arrival window's crowd. Timeout 3 s | the call fails |
+| `Telemetry` | `IShipTelemetry` | port crowd, venue pulse, loungers, sightings and the night sky, as in `Providers.cs`. Timeout 2 s | the call fails; the answer is cached by the front end |
+| `StaffQueue` | `IStaffQueue` | a ticket with a position and expected time; the ticket row is kept by `IStaffTicketStore` either way, so the desk can read `dbo.StaffTickets` | the desk is unreachable: still keep the ticket and answer `waiting` |
+| `Concierge` | `IConciergeModel` | `sim` (the scripted concierge) or `anthropic` (needs `Concierge:ApiKey`). Unset: `anthropic` when a key is present, else `sim` | the model fails: the scripted concierge answers with a `fallback` code |
+| `ConciergeLimit` | `IConciergeLimiter` | `database` (default; `dbo.ConciergeUses`, shared by every instance and kept over restarts) or `memory` (one instance; tests) | n/a |
+| `FareFeed`, `ProgramChanges`, `StormOutlook`, `LostProperty`, `SlotWatchFeed`, `SailingQuality`, `EmbarkQueue`, `CabinGuide`, `FriendReply`, `PaymentGateway`, `TelemetrySink` | the interface of the same name | see the doc comment on each interface in `Services/Providers.cs` and `PaymentGateway.cs` | the call fails |
+
+After any server change run `dotnet build server/Princess.sln` yourself; this project's rule keeps `dotnet test` out of the assistant's hands. Apply the new table with `db/01-schema.sql` (it creates `dbo.ConciergeUses` if missing).
+
 ## Auth model
 
 | | |

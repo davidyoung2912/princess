@@ -105,11 +105,11 @@ public class ConciergeRulesTests
     [Fact]
     public void TheHourlyLimitCountsPerPersonAndForgetsOldQuestions()
     {
-        var limiter = new ConciergeLimiter();
-        var me = Guid.NewGuid();
+        var limiter = new MemoryConciergeLimiter();
+        var me = 1L;
         for (var i = 0; i < 3; i++) Assert.True(limiter.TryTake(me, Now, 3));
         Assert.False(limiter.TryTake(me, Now.AddMinutes(30), 3));
-        Assert.True(limiter.TryTake(Guid.NewGuid(), Now, 3));
+        Assert.True(limiter.TryTake(2L, Now, 3));
         Assert.True(limiter.TryTake(me, Now.AddMinutes(61), 3));
     }
 }

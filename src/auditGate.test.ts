@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * The audit gate of multi-device plan 2 (Phase 7). The goal is a thin client: no screen reads an authored catalogue or a simulation straight from
+ * The audit gate of multi-device plans 2 and 3 (Phase 7). The goal is a thin client: no screen reads an authored catalogue or a simulation straight from
  * a domain module, and nothing outside the stores keeps data in `localStorage`. Both lists below are a ratchet: they hold what still does so today
  * (each is work for a later phase), a new file doing the same fails the test, and a file that no longer does must be taken off the list.
  */
@@ -15,7 +15,31 @@ const CATALOGUE = ['pricing', 'sailings', 'excursions', 'dining', 'ports', 'port
 const importsCatalogue = (text: string): boolean =>
   CATALOGUE.some((m) => new RegExp(`from '(\\.\\./)+domain/${m}'`).test(text))
 
+const allSource = () => files('src').filter((f) => !f.endsWith('.d.ts')).map((f) => f.replaceAll('\\', '/')).sort()
+const textOf = (f: string) => readFileSync(f, 'utf8')
+const withoutComments = (text: string) => text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+
 describe('audit gate', () => {
+  it('has no in-browser backend: no IndexedDB store, no mock API or mock auth provider', () => {
+    const offenders = allSource().filter((f) => /idbStore|from '[^']*Mock'|\bmockApi\b|mockProvider|indexedDB/.test(withoutComments(textOf(f))))
+    expect(offenders).toEqual([])
+  })
+
+  it('reads VITE_API_URL in exactly one place', () => {
+    const readers = allSource().filter((f) => /VITE_API_URL/.test(withoutComments(textOf(f))))
+    expect(readers).toEqual(['src/runtime/index.ts'])
+  })
+
+  it('has no file beyond the known list importing the demo persona table or ids', () => {
+    const found = allSource().filter((f) => /from '(\.\.?\/)+(\w+\/)*(personas|personaIds)'|from '\.\/(personas|personaIds)'/.test(textOf(f)))
+    expect(found).toEqual(KNOWN_PERSONA_IMPORTERS)
+  })
+
+  it('has no file beyond the known list naming a simulated source', () => {
+    const found = allSource().filter((f) => /'sim'/.test(withoutComments(textOf(f))))
+    expect(found).toEqual(KNOWN_SIM_LITERALS)
+  })
+
   it('has no screen importing an authored catalogue or simulation module beyond the known list', () => {
     const found = files('src/ui').filter((f) => importsCatalogue(readFileSync(f, 'utf8'))).map((f) => f.replaceAll('\\', '/')).sort()
     expect(found).toEqual(KNOWN_CATALOGUE_SCREENS)
@@ -135,3 +159,72 @@ const KNOWN_CATALOGUE_SCREENS: string[] = [
 const LOCAL_STORAGE_OK = ['src/ai/', 'src/data/', 'src/design/', 'src/demo/', 'src/hub/', 'src/journey/', 'src/memory/', 'src/offers/', 'src/party/', 'src/phone/', 'src/pilot/', 'src/port/', 'src/runtime/', 'src/settings/', 'src/shop/', 'src/sync/', 'src/auth/', 'src/diagnostics/', 'src/rates/', 'src/feeds/feed.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useSavedCopy.ts']
 /** Screens that keep a small device-only setting themselves (diagnostics switch, a support draft, the pass finder). */
 const KNOWN_LOCAL_STORAGE_OUTSIDE: string[] = ['src/ui/DiagnosticsSettings.tsx', 'src/ui/aboard/SupportScreens.tsx', 'src/ui/boarding/FindPassScreen.tsx']
+
+/**
+ * Files that still import the twelve-persona table or its ids. Most use only the `PersonaId` type or a name lookup; the table and the ids belong to the
+ * demo accounts and go when the screens take names, roles and parties from the server's person records (a later plan).
+ */
+const KNOWN_PERSONA_IMPORTERS: string[] = [
+  'src/account/context.ts',
+  'src/api/aboardTypes.ts',
+  'src/api/aheadTypes.ts',
+  'src/api/careTypes.ts',
+  'src/api/finishTypes.ts',
+  'src/api/httpApi.ts',
+  'src/api/personaIds.ts',
+  'src/api/types.ts',
+  'src/auth/httpProvider.ts',
+  'src/auth/provider.ts',
+  'src/domain/account.ts',
+  'src/domain/ahead.ts',
+  'src/domain/boarding.ts',
+  'src/domain/dining.ts',
+  'src/domain/entitlements.ts',
+  'src/domain/family.ts',
+  'src/domain/offers.ts',
+  'src/domain/orders.ts',
+  'src/domain/packages.ts',
+  'src/domain/photos.ts',
+  'src/domain/postcruise.ts',
+  'src/domain/room.ts',
+  'src/domain/scenarios.ts',
+  'src/domain/trip.ts',
+  'src/hooks/useDemo.ts',
+  'src/runtime/index.ts',
+  'src/settings/store.ts',
+  'src/sync/bindings.ts',
+  'src/sync/portRows.ts',
+  'src/ui/aboard/ChatSafe.tsx',
+  'src/ui/checkin/guests.ts',
+  'src/ui/checkin/parts.tsx',
+  'src/ui/checkin/steps.tsx',
+  'src/ui/extras/HealthScreens.tsx',
+  'src/ui/onboard/SafetyScreens.tsx',
+  'src/ui/onboard/Tickets.tsx',
+  'src/ui/plan/AssistanceScreen.tsx',
+  'src/ui/plan/AtSeaScreen.tsx',
+  'src/ui/plan/DiningScreen.tsx',
+  'src/ui/plan/ExcursionsScreen.tsx',
+  'src/ui/plan/PackagesScreen.tsx',
+  'src/ui/plan/PlanScreen.tsx',
+  'src/ui/plan/common.tsx',
+  'src/ui/plan/people.ts',
+]
+/** Files that still carry a `'sim'` source literal in a type or a value; the front end must not know a figure is simulated, so these go when each feed's `source` is dropped. */
+const KNOWN_SIM_LITERALS: string[] = [
+  'src/domain/autopilot.ts',
+  'src/domain/disruptionHub.ts',
+  'src/domain/dream.ts',
+  'src/domain/embark.ts',
+  'src/domain/journey.ts',
+  'src/domain/portCrowd.ts',
+  'src/domain/pulse.ts',
+  'src/domain/sky.ts',
+  'src/domain/storm.ts',
+  'src/feeds/flight.ts',
+  'src/feeds/route.ts',
+  'src/feeds/sailingQuality.ts',
+  'src/feeds/sky.ts',
+  'src/feeds/skyNight.ts',
+  'src/feeds/storm.ts',
+]

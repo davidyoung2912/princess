@@ -73,15 +73,24 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
     }
 }
 
-/// <summary>At most <see cref="ConciergeRules.HourlyLimit"/> model questions an hour per person, counted in memory (a restart resets it, which only ever lets more through).</summary>
-public sealed class ConciergeLimiter
+/// <summary>At most <see cref="ConciergeRules.HourlyLimit"/> model questions an hour per person. Counted in the database by default so the limit holds across restarts and instances.</summary>
+public interface IConciergeLimiter
+{
+    /// <summary>Counts a question and returns true when the person is still within <paramref name="limit"/> in the last hour; false (and counts nothing) when not.</summary>
+    Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct);
+}
+
+/// <summary>Counted in memory (a restart resets it, which only ever lets more through). For tests and a single-instance trial: <c>Providers:ConciergeLimit</c> = <c>memory</c>.</summary>
+public sealed class MemoryConciergeLimiter : IConciergeLimiter
 {
     private static readonly TimeSpan Hour = TimeSpan.FromHours(1);
-    private readonly ConcurrentDictionary<Guid, List<DateTime>> _asked = new();
+    private readonly ConcurrentDictionary<long, List<DateTime>> _asked = new();
 
-    public bool TryTake(Guid person, DateTime now, int limit = ConciergeRules.HourlyLimit)
+    public Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct) => Task.FromResult(TryTake(userId, now, limit));
+
+    public bool TryTake(long userId, DateTime now, int limit = ConciergeRules.HourlyLimit)
     {
-        var list = _asked.GetOrAdd(person, _ => []);
+        var list = _asked.GetOrAdd(userId, _ => []);
         lock (list)
         {
             list.RemoveAll(t => now - t >= Hour);
@@ -96,7 +105,7 @@ public sealed class ConciergeLimiter
 /// The AI concierge (multi-device plan 2, Phase 2). One turn: a message needing a person never reaches a model; otherwise the model answers (running the tools
 /// over the catalogue and the guest's booking) when one is set up and the hourly limit allows, and the scripted concierge answers when not or when the call fails.
 /// </summary>
-public sealed class ConciergeService(ITripStore trips, IAccountStore accounts, IUserClock clock, IClock realClock, IConciergeModel model, ConciergeLimiter limiter, ILogger<ConciergeService> log)
+public sealed class ConciergeService(ITripStore trips, IAccountStore accounts, IUserClock clock, IClock realClock, IConciergeModel model, IConciergeLimiter limiter, ILogger<ConciergeService> log)
 {
     public async Task<ConciergeReplyDto> AskAsync(UserRecord user, ConciergeRequestDto request, CancellationToken ct)
     {
@@ -106,7 +115,7 @@ public sealed class ConciergeService(ITripStore trips, IAccountStore accounts, I
 
         var ctx = await ContextAsync(user, request, ct);
         if (!model.Available) return Scripted(message, ctx, null);
-        if (!limiter.TryTake(user.PublicId, realClock.UtcNow)) return Scripted(message, ctx, "limit");
+        if (!await limiter.TryTakeAsync(user.Id, realClock.UtcNow, ConciergeRules.HourlyLimit, ct)) return Scripted(message, ctx, "limit");
         try
         {
             return await AskModelAsync(history, ctx, ct);

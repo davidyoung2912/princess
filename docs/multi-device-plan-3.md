@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 built in full (steps 1 to 8, see its record, with the authored first-paint copies kept); Phase 4 built in slices 1 to 7; Phase 5 built (see its record); Phases 6 and 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 built in full (steps 1 to 8, see its record, with the authored first-paint copies kept); Phase 4 built in slices 1 to 7; Phase 5 built (see its record); Phase 6 built (server C# not compiled or run); Phase 7 built as a wider ratchet, not an empty gate (see its record).** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -329,3 +329,21 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new test
 - **Unsent-change stores.** There are three, and the sync indicator covers all: the synced documents, the port day's rows (`portRows`) and the outbox of unsent messages and requests (`data/outbox.ts`, keys `princess:outbox:*`, which exist only while an outbox is non-empty). `syncStatus()` now reports `error` (waiting for the connection) when any outbox holds something. Everything else on the device is a copy of server data or a display setting.
 - **Verified:** `npm run test` (1535 passed, including `data/deviceCopies.test.ts` and the changed `sync.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.
 - **Not done:** `personaById` is still used by `bindings.ts` and `portRows.ts` (`bookerOf`) and by the settings owner switch; it goes with the persona table in Phase 7. `/reference/access` and `/rates` still have no `version`. The `hub.cb.sim` copy still says "pretend queue". Reference-table caches (thirty days) are not swept; they are refused on read and replaced on the next load.
+
+## Phase 6 record
+
+Built 2026-11-02. **Server C# not compiled or run** (project rule); the new tests are written, not run. Run `dotnet build server/Princess.sln` before relying on it.
+
+- **One registration point.** `Services/ProviderRegistration.cs` `AddProviders(config)` replaces the hand-written registrations in `Program.cs`. Each seam (`Weather`, `Flight`, `Route`, `Telemetry`, `StaffQueue`, `FareFeed`, `ProgramChanges`, `StormOutlook`, `LostProperty`, `SlotWatchFeed`, `SailingQuality`, `EmbarkQueue`, `CabinGuide`, `FriendReply`, `PaymentGateway`, `TelemetrySink`) is chosen by `Providers:<Key>`, default `sim`; an unregistered name stops start-up and lists the choices. `Providers:Concierge` is `sim` or `anthropic` (unset: `anthropic` when `Concierge:ApiKey` exists, else `sim`). No real provider exists yet, so each seam lists only `sim`.
+- **Concierge limit in the database.** `IConciergeLimiter` with `DapperConciergeLimiter` (`dbo.ConciergeUses`, schema, drop-all, data model) as the default and `MemoryConciergeLimiter` for `Providers:ConciergeLimit=memory` (the test factory sets it). The old `ConciergeLimiter` class is gone.
+- **Contract tests.** `ProviderContractTests` runs one check per implementation of every seam in the catalogue (plus start-up selection, unknown names, the limiter). A seam added without a check fails with a message.
+- **Docs.** `server/README.md` has a "Providers" section: what each interface must return, timeouts, and the fall back to the simulation.
+- **Verified:** `npm run db:check`, `npm run db:seed:check`; the npm checks below.
+- **Not done:** no real provider was written, so the timeouts and fall-backs in the README are guidance, not code (there is no wrapper that falls back to `sim` on failure); `Providers:*` is not shown in `appsettings.json`.
+
+## Phase 7 record
+
+Built 2026-11-02 as a ratchet, **not** the empty gate the plan described. `src/auditGate.test.ts` now also fails on: any IndexedDB, `idbStore`, `*Mock` or `mockProvider` reference; `VITE_API_URL` read anywhere but `src/runtime/index.ts`; a new file importing the persona table or ids (44 known); a new file naming a `'sim'` source (15 known). The two older lists (101 screens importing authored modules, 3 screens using `localStorage`) are unchanged.
+
+- **Why not empty:** the catalogue modules (`sailings`, `pricing`, `excursions`, `dining`, `ports` and so on) still hold authored first-paint copies (kept deliberately in Phase 3), so 101 screens import them for display and formatting. Emptying that list means deleting those copies and every screen waiting on the served table. The persona table is typed into 44 files (`PersonaId`).
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.

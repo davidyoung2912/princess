@@ -1,5 +1,6 @@
 using Dapper;
 using Princess.Api.Domain;
+using Princess.Api.Services;
 
 namespace Princess.Api.Data;
 
@@ -23,5 +24,21 @@ public sealed class DapperStaffTicketStore(IDbConnectionFactory db) : IStaffTick
     {
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.StaffTickets SET CancelledAt = @now WHERE PublicId = @id AND UserId = @userId AND CancelledAt IS NULL", new { id, userId, now }, null, ct)) > 0;
+    }
+}
+
+/// <summary>The hourly concierge limit kept in <c>dbo.ConciergeUses</c>, so it survives restarts and is shared by every instance.</summary>
+public sealed class DapperConciergeLimiter(IDbConnectionFactory db) : IConciergeLimiter
+{
+    public async Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct)
+    {
+        var since = now.AddHours(-1);
+        await using var c = await db.OpenAsync(ct);
+        // One batch: forget what is over an hour old, then record this question only if the person is under the limit (the lock hint stops two instances both slipping in).
+        var taken = await c.QuerySingleAsync<int>(Sql.Cmd(
+            "DELETE FROM dbo.ConciergeUses WHERE UserId = @userId AND UsedAt <= @since; " +
+            "INSERT INTO dbo.ConciergeUses (UserId, UsedAt) SELECT @userId, @now WHERE (SELECT COUNT(*) FROM dbo.ConciergeUses WITH (UPDLOCK, HOLDLOCK) WHERE UserId = @userId) < @limit; SELECT @@ROWCOUNT",
+            new { userId, since, now, limit }, null, ct));
+        return taken > 0;
     }
 }

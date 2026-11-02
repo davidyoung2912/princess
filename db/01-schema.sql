@@ -793,6 +793,19 @@ CREATE TABLE dbo.StaffTickets (
 CREATE INDEX IX_StaffTickets_User ON dbo.StaffTickets (UserId, RequestedAtMs);
 END
 
+IF OBJECT_ID(N'dbo.ConciergeUses', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ConciergeUses (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ConciergeUses PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ConciergeUses_PublicId DEFAULT NEWID() CONSTRAINT UX_ConciergeUses_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  UsedAt DATETIME2(0) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ConciergeUses_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ConciergeUses_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ConciergeUses_User ON dbo.ConciergeUses (UserId, UsedAt);
+END
+
 IF OBJECT_ID(N'dbo.FamilyPostcards', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.FamilyPostcards (

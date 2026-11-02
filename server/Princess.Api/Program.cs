@@ -43,31 +43,8 @@ services.AddScoped<IShipboardStore, DapperShipboardStore>();
 services.AddScoped<IAboardStore, DapperAboardStore>();
 services.AddScoped<IChatStore, DapperChatStore>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
-services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
-// External sources: swap a provider by changing its registration (multi-device plan 2, Phase 1).
-services.AddSingleton<IWeatherService, SimWeatherService>();
-services.AddSingleton<IFlightStatusProvider, SimFlightStatusProvider>();
-services.AddSingleton<IRouteConditionsProvider, SimRouteConditionsProvider>();
-services.AddSingleton<IStaffQueue, SimStaffQueue>();
-services.AddSingleton<IShipTelemetry, SimShipTelemetry>();
-services.AddSingleton<IFareFeed, SimFareFeed>();
-services.AddSingleton<IProgramChanges, SimProgramChanges>();
-services.AddSingleton<IStormOutlook, SimStormOutlook>();
-services.AddSingleton<ILostProperty, SimLostProperty>();
-services.AddSingleton<ISlotWatchFeed, SimSlotWatchFeed>();
-services.AddSingleton<ISailingQuality, SimSailingQuality>();
-services.AddSingleton<IEmbarkQueue, SimEmbarkQueue>();
-services.AddSingleton<ICabinGuide, SimCabinGuide>();
-services.AddSingleton<IFriendReply, SimFriendReply>();
-services.AddSingleton<ITelemetrySink, LoggingTelemetrySink>();
-// The concierge model: a key in user-secrets (Concierge:ApiKey) turns it on; without one the scripted concierge answers.
-services.AddOptions<ConciergeOptions>().BindConfiguration(ConciergeOptions.Section);
-if (!string.IsNullOrWhiteSpace(builder.Configuration[$"{ConciergeOptions.Section}:ApiKey"]))
-    services.AddHttpClient<IConciergeModel, AnthropicConciergeModel>(c => c.Timeout = TimeSpan.FromSeconds(30));
-else
-    services.AddSingleton<IConciergeModel, UnavailableConciergeModel>();
-services.AddSingleton<ConciergeLimiter>();
-services.AddScoped<ConciergeService>();
+// External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
+services.AddProviders(builder.Configuration);
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
 services.AddScoped<AccountService>();
