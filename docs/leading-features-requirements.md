@@ -1,6 +1,6 @@
 # Princess Guest Web App — Industry-Leading Features (Functional Requirements, Companion Document)
 
-Status: **Draft v0.1 — proposal for review. Nothing here is built or scheduled.**
+Status: **Draft v0.2 — decisions in §22 accepted (2026-11-01). Nothing here is built; Phase H1 is next when you ask for it.**
 Date: 2026-11-01
 Companion to: `docs/functional-requirements.md` (the base requirements, 248 IDs) and `docs/gap-analysis-plan.md` (what is built and what is open). Read those first.
 
@@ -500,9 +500,11 @@ Names avoid collision with the base numeric phases and the G phases. Each phase 
 
 ---
 
-## 22. Decisions needed from you
+## 22. Decisions (accepted 2026-11-01)
 
-| # | Question | My recommendation |
+All nine recommendations below were accepted as written. The "My recommendation" column is now the decision.
+
+| # | Question | Decision (my recommendation, accepted) |
 | --- | --- | --- |
 | 1 | Do you accept the **three new stages (0, 4A, 6A)** and the renamed Stage 8, and the numbering in §2? | Yes. They match how trips actually go wrong and are re-usable in the nav |
 | 2 | Are the **12 signatures (§3)** the right headline set? Anything to swap? | Yes. If you want fewer, drop 9 (Ship Pulse, it is the most simulation-heavy) and 12 |
@@ -511,8 +513,8 @@ Names avoid collision with the base numeric phases and the G phases. Each phase 
 | 5 | **Social features** (S3-09, S6-11, S8-06): these need moderation, which crew tooling would normally provide. Keep, or restrict to the travel group? | Keep as opt-in with block and report, but the directory stays small and only shows what each person chose |
 | 6 | **Family-at-home page** needs a public-style link. For the demo it would be a signed-in, simulated link; fine? | Yes, a simulated link with an expiry |
 | 7 | **Sensory kit, ash scattering, room-mate matching** depend on the line's real offers. Author plausible mock content, as for the other (verify) items? | Yes |
-| 8 | Where should the phase order go (H1 first)? | Money shield first, then disruption |
-| 9 | Are there features here you consider **off-brand or too much**? | Please strike freely; the list is deliberately generous |
+| 8 | Where should the phase order go (H1 first)? | Money shield first, then disruption: phase order H1 to H6 stands as written in §21 |
+| 9 | Are there features here you consider **off-brand or too much**? | None struck. All requirements stand at their stated priorities |
 
 ---
 
