@@ -161,11 +161,10 @@ export function simulatedOpening(w: Pick<Watch, 'id' | 'createdAt' | 'slotAt'>):
   return null
 }
 
-export function watchState(w: Watch, now: number): WatchState {
+export function watchState(w: Watch, now: number, opened: number | null = simulatedOpening(w)): WatchState {
   if (w.stored === 'booked') return 'booked'
   if (w.stored === 'stopped') return 'stopped'
   if (now >= w.slotAt - WATCH_LEAD_MIN * MIN) return 'expired'
-  const opened = simulatedOpening(w)
   if (opened === null || now < opened) return 'watching'
   return w.priceCents > w.capCents ? 'overCap' : 'ready'
 }
@@ -182,8 +181,8 @@ export function newWatch(input: Omit<Watch, 'stored' | 'id'> & { id: string }, n
 }
 
 /** The guest confirms: the watch ends booked, and for a swap the old slot is released in the same step. A watch that is not ready cannot be booked. */
-export function bookWatch(w: Watch, now: number): { ok: true; watch: Watch; release: Watch['current'] } | { ok: false } {
-  if (watchState(w, now) !== 'ready') return { ok: false }
+export function bookWatch(w: Watch, now: number, opened: number | null = simulatedOpening(w)): { ok: true; watch: Watch; release: Watch['current'] } | { ok: false } {
+  if (watchState(w, now, opened) !== 'ready') return { ok: false }
   return { ok: true, watch: { ...w, stored: 'booked' }, release: w.current }
 }
 

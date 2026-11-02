@@ -31,10 +31,32 @@ public interface IRouteConditionsProvider
     RouteConditionsDto Conditions(string departure, string crowd);
 }
 
-/// <summary>Live conditions around the ship and its ports. Today only how crowded a port is on a date.</summary>
+/// <summary>Live conditions around the ship and its ports: how crowded a port is, how busy the venues are, the loungers, the sun and moon, and what wildlife was seen.</summary>
 public interface IShipTelemetry
 {
     PortCrowdDto PortCrowd(string port, string date);
+    PulseDto Pulse(DateOnly departure, long now);
+    LoungersDto Loungers(long now);
+    SightingsDto Sightings(int day);
+    SkyNightDto SkyNight(string departure, int day);
+}
+
+/// <summary>How likely a named storm is to touch a sailing's route, for the storm watch. Not a forecast.</summary>
+public interface IStormOutlook
+{
+    StormDto Outlook(string departure, int daysToDeparture);
+}
+
+/// <summary>What the lost-property desk has handed in.</summary>
+public interface ILostProperty
+{
+    FoundListDto Found();
+}
+
+/// <summary>When a place opens up for a guest's slot watch (Autopilot).</summary>
+public interface ISlotWatchFeed
+{
+    WatchOpeningDto Opening(string watchId, long createdAt, long slotAt);
 }
 
 /// <summary>The fare the guest's cabin has been selling at since they booked, for the price-drop watch.</summary>
@@ -65,6 +87,25 @@ public sealed class SimWeatherService : IWeatherService
 public sealed class SimShipTelemetry : IShipTelemetry
 {
     public PortCrowdDto PortCrowd(string port, string date) => ShipFeedRules.PortCrowd(port, date);
+    public PulseDto Pulse(DateOnly departure, long now) => OnboardFeedRules.Pulse(departure, now);
+    public LoungersDto Loungers(long now) => OnboardFeedRules.LoungerBoard(now);
+    public SightingsDto Sightings(int day) => OnboardFeedRules.Sightings(day);
+    public SkyNightDto SkyNight(string departure, int day) => OnboardFeedRules.SkyNight(departure, day);
+}
+
+public sealed class SimStormOutlook : IStormOutlook
+{
+    public StormDto Outlook(string departure, int daysToDeparture) => OnboardFeedRules.Storm(departure, daysToDeparture);
+}
+
+public sealed class SimLostProperty : ILostProperty
+{
+    public FoundListDto Found() => OnboardFeedRules.FoundList();
+}
+
+public sealed class SimSlotWatchFeed : ISlotWatchFeed
+{
+    public WatchOpeningDto Opening(string watchId, long createdAt, long slotAt) => OnboardFeedRules.WatchOpening(watchId, createdAt, slotAt);
 }
 
 public sealed class SimFareFeed : IFareFeed

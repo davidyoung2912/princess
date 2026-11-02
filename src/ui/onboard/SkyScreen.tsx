@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { itinerary, PORTS } from '../../domain/sailings'
-import { bestSpot, skyNight } from '../../domain/sky'
+import { bestSpot } from '../../domain/sky'
+import { skyNightFeed } from '../../feeds/skyNight'
+import { useFeed } from '../../hooks/useServedFeeds'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useSailing } from '../../hooks/useDemo'
 import { t } from '../../i18n'
@@ -13,7 +15,7 @@ export function SkyScreen() {
   const sailing = useSailing()
   const current = useCurrentDay()
   const [day, setDay] = useState(current)
-  const n = skyNight(sailing, day)
+  const n = useFeed(skyNightFeed, sailing.departure, day)
   const days = itinerary(sailing)
   return (
     <div className="page">

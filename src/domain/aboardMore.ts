@@ -33,18 +33,26 @@ export interface LoungerHold { id: number; start: number }
 export type LoungerState = 'free' | 'held' | 'mine' | 'overdue' | 'reported' | 'lapsed'
 export interface LoungerRow { id: number; state: LoungerState; /** Minutes until a held lounger is due back, or null. */ returnsIn: number | null }
 /** A simulated board: the other loungers cycle through free, held and left too long, the same for the same minute. Yours is real on this device. */
-export function loungerBoard(now: number, mine: LoungerHold | null, reported: readonly number[]): LoungerRow[] {
+export interface LoungerOther { id: number; state: 'free' | 'held' | 'overdue'; returnsIn: number | null }
+/** The other loungers at a minute (what a feed gives; the server can answer the same). */
+export function loungerOthers(now: number): LoungerOther[] {
   const minute = Math.floor(now / MIN)
   return Array.from({ length: LOUNGERS }, (_, i) => {
     const id = i + 1
-    if (mine && mine.id === id) {
-      const left = HOLD_MINUTES - Math.floor((now - mine.start) / MIN)
-      return left > 0 ? { id, state: 'mine' as const, returnsIn: left } : { id, state: 'lapsed' as const, returnsIn: null }
-    }
     const x = (minute + hash(`lounger${id}`)) % 60
     if (x < 20) return { id, state: 'free' as const, returnsIn: null }
     if (x < 45) return { id, state: 'held' as const, returnsIn: 45 - x }
-    return reported.includes(id) ? { id, state: 'reported' as const, returnsIn: null } : { id, state: 'overdue' as const, returnsIn: null }
+    return { id, state: 'overdue' as const, returnsIn: null }
+  })
+}
+/** The board: the feed's others, with the guest's own hold and reports (which stay on their device) laid over it. */
+export function loungerBoard(now: number, mine: LoungerHold | null, reported: readonly number[], others: readonly LoungerOther[] = loungerOthers(now)): LoungerRow[] {
+  return others.map((o) => {
+    if (mine && mine.id === o.id) {
+      const left = HOLD_MINUTES - Math.floor((now - mine.start) / MIN)
+      return left > 0 ? { id: o.id, state: 'mine' as const, returnsIn: left } : { id: o.id, state: 'lapsed' as const, returnsIn: null }
+    }
+    return o.state === 'overdue' && reported.includes(o.id) ? { id: o.id, state: 'reported' as const, returnsIn: null } : o
   })
 }
 /** Take a lounger: only a free one, and only one at a time. */
@@ -149,9 +157,9 @@ export const FOUND: readonly FoundItem[] = [
   { id: 'f4', what: 'Paperback book', keywords: ['book', 'paperback'], at: 'guest-services' },
   { id: 'f5', what: 'Silver bracelet', keywords: ['bracelet', 'jewellery', 'jewelry', 'silver'], at: 'guest-services' },
 ]
-export const matchFound = (r: Pick<LostReport, 'what'>): FoundItem[] => {
+export const matchFound = (r: Pick<LostReport, 'what'>, items: readonly FoundItem[] = FOUND): FoundItem[] => {
   const words = r.what.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2)
-  return FOUND.filter((f) => f.keywords.some((k) => words.includes(k)))
+  return items.filter((f) => f.keywords.some((k) => words.includes(k)))
 }
 
 // ---- S6-08: sightings log ----

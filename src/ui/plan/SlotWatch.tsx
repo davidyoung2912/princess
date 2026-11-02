@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { bookWatch, newWatch, stopWatch, watchState, WATCH_KINDS, type Watch, type WatchKind, type WatchProblem } from '../../domain/autopilot'
 import { formatMoney } from '../../domain/pricing'
 import { useNow } from '../../hooks/useDemo'
+import { useOpenings } from '../../hooks/useServedFeeds'
 import { newPilotId, usePilot } from '../../hooks/usePilot'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
@@ -18,6 +19,7 @@ export function SlotWatch() {
   const { state, update } = usePilot()
   const now = useNow()
   const time = useShipTime()
+  const openingOf = useOpenings(state.watches)
   const sure = useConfirmCharge()
   const [kind, setKind] = useState<WatchKind>('dinner')
   const [title, setTitle] = useState('')
@@ -37,7 +39,7 @@ export function SlotWatch() {
   }
   const change = (id: string, next: (w: Watch) => Watch) => update((s) => ({ ...s, watches: s.watches.map((w) => (w.id === id ? next(w) : w)) }))
   const book = (w: Watch) => sure.ask(w.priceCents, w.title, () => {
-    const r = bookWatch(w, now)
+    const r = bookWatch(w, now, openingOf(w))
     if (r.ok) change(w.id, () => r.watch)
   })
 
@@ -60,7 +62,7 @@ export function SlotWatch() {
 
       <ul className="plain-list">
         {state.watches.map((w) => {
-          const st = watchState(w, now)
+          const st = watchState(w, now, openingOf(w))
           return (
             <li key={w.id}>
               <strong>{w.title}</strong> · {t(`watch.state.${st}` as StringKey)} · {t('watch.slot', { time: time(w.slotAt) })}

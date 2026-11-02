@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { placeById } from '../../domain/deck'
-import { envFor, goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces } from '../../domain/pulse'
+import { goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces } from '../../domain/pulse'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { usePulseEnv } from '../../hooks/useServedFeeds'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
@@ -11,10 +12,9 @@ import { duration, useShipTime } from './shipTime'
 
 /** Ship Pulse (S6-01), quiet spaces (S6-04) and standby lines (S6-05). Every reading is a simulation and shows how old it is and how sure it is. */
 export function PulseScreen() {
-  const now = useNow()
   const sailing = useSailing()
   const time = useShipTime()
-  const env = useMemo(() => envFor(sailing), [sailing])
+  const { env, now } = usePulseEnv(sailing, useNow())
   const [filter, setFilter] = useState(NO_QUIET_FILTER)
   const spaces = quietSpaces(now, env, filter)
 

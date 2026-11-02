@@ -35,7 +35,7 @@ export interface StormReading {
 const LINE_MAY = ['reroute', 'swap', 'shorten', 'delay', 'cancel'] as const
 const YOU_CAN = ['insurance', 'flights', 'early', 'follow', 'plan'] as const
 
-export function stormWatch(sailing: Sailing, daysToDeparture: number): StormReading {
+export function stormWatch(sailing: Pick<Sailing, 'departure'>, daysToDeparture: number): StormReading {
   const returns = addDays(sailing.departure, SAILING_NIGHTS)
   const months = [Number(sailing.departure.slice(5, 7)) - 1, Number(returns.slice(5, 7)) - 1]
   const percent = Math.max(...months.map((m) => MONTH_CHANCE[m] ?? 0))

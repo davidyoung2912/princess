@@ -48,6 +48,8 @@ export interface PulseEnv {
   /** Ship hour of the day as a fraction, 0 to 24. */
   hour(at: number): number
   ashore(at: number): boolean
+  /** Levels the server gave for exact moments, when it has; anything else is worked out here (the same figures). */
+  served?(id: PulseId, at: number): number | undefined
 }
 
 export function envFor(s: Sailing): PulseEnv {
@@ -88,6 +90,8 @@ export const labelFor = (level: number): PulseLabel => (level < 35 ? 'quiet' : l
 export function levelAt(id: PulseId, at: number, env: PulseEnv): number {
   const venue = pulseVenueById(id)
   if (!venue) return 0
+  const given = env.served?.(id, at)
+  if (given !== undefined) return given
   const hour = env.hour(at)
   const base = SHAPE[venue.kind]
   const lo = Math.floor(hour) % 24

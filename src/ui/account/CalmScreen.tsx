@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { addCaregiver, CAREGIVER_NEVER, CAREGIVER_SEES, kitStatus, KIT_ITEMS, PROFILE_KEYS, requestKit, sensoryPlan, STORY, visualSchedule, type Authority, type KitItem, type SensoryProfile } from '../../domain/calm'
-import { envFor } from '../../domain/pulse'
 import { shipZoneAt } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
+import { usePulseEnv } from '../../hooks/useServedFeeds'
 import { useSettings } from '../../hooks/useSettings'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -26,8 +26,8 @@ export function CalmScreen() {
   const dp = useDayPlan(day)
   const { calm } = state
   const set = (change: Partial<typeof calm>) => update((s) => ({ ...s, calm: { ...s.calm, ...change } }))
-  const env = envFor(sailing)
-  const plan = sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, now, env)
+  const { env, now: minute } = usePulseEnv(sailing, now)
+  const plan = sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env)
   const cards = visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
 
   const [items, setItems] = useState<KitItem[]>([])

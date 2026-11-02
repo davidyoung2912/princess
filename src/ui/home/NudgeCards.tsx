@@ -2,11 +2,12 @@ import { Link } from 'react-router'
 import { dndNow } from '../../domain/aboardMore'
 import { homeNudges } from '../../domain/finishMore'
 import { allAboardEpoch, portAt, shipZoneAt } from '../../domain/sailings'
-import { stormWatch } from '../../domain/storm'
+import { stormFeed } from '../../feeds/storm'
 import { timeIn, dateIn } from '../../domain/timezones'
 import { daysBetween } from '../../domain/trip'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
+import { useFeed } from '../../hooks/useServedFeeds'
 import { usePilot } from '../../hooks/usePilot'
 import { useSettings } from '../../hooks/useSettings'
 import { t, type StringKey } from '../../i18n'
@@ -25,7 +26,7 @@ export function NudgeCards({ aboard }: { aboard: boolean }) {
   const at = portAt(sailing, now)
   const allAboard = aboard && at.port !== 'sea' && at.day !== null ? allAboardEpoch(sailing, at.day) : null
   const quiet = settings.calm || dndNow(state.aboard.dnd, timeIn(now, shipZoneAt(sailing, now)), 'offers')
-  const storm = stormWatch(sailing, daysBetween(dateIn(now, 'America/New_York'), sailing.departure))
+  const storm = useFeed(stormFeed, sailing.departure, daysBetween(dateIn(now, 'America/New_York'), sailing.departure))
   const list = homeNudges({
     budget: settings.nudgesPerDay, quiet,
     backAboardMin: allAboard === null ? null : Math.ceil((allAboard - now) / 60_000),

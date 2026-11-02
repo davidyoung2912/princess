@@ -4,12 +4,13 @@ import { Link } from 'react-router'
 import { buildBriefing, kindAt, spoken, type BriefingKind } from '../../domain/briefing'
 import { basePlan } from '../../domain/planChange'
 import { shipZoneAt } from '../../domain/sailings'
-import { skyNight } from '../../domain/sky'
+import { skyNightFeed } from '../../feeds/skyNight'
 import { timeIn } from '../../domain/timezones'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { usePilot } from '../../hooks/usePilot'
+import { useFeed } from '../../hooks/useServedFeeds'
 import { t } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
@@ -25,6 +26,7 @@ export function BriefingScreen() {
   const dp = useDayPlan(day)
   const { state } = usePilot()
   const checklist = useMine(() => api.plan.checklist.get())
+  const sky = useFeed(skyNightFeed, sailing.departure, day)
   const nowHhmm = timeIn(now, shipZoneAt(sailing, now))
   const [kind, setKind] = useState<BriefingKind>(kindAt(nowHhmm))
   const [reading, setReading] = useState(false)
@@ -33,7 +35,7 @@ export function BriefingScreen() {
 
   const tomorrow = day < 8 ? basePlan(sailing, day + 1, wishOf(state.prefs)).slice().sort((a, b) => a.start.localeCompare(b.start))[0] : undefined
   const b = buildBriefing(kind, {
-    nowHhmm, plan: dp.rows, weather: dp.weather, sky: skyNight(sailing, day),
+    nowHhmm, plan: dp.rows, weather: dp.weather, sky,
     deadlines: checklist.data ? checklist.data.milestones.flatMap((m) => m.entries).filter((e) => e.state !== 'done' && !e.automatic).map((e) => ({ label: t(`plan.check.item.${e.id}` as never), path: e.to ?? '/plan/checklist' })) : null,
     allAboard: dp.itineraryDay.allAboard ?? null,
     tomorrowFirst: tomorrow ? { start: tomorrow.start, title: tomorrow.title, path: tomorrow.path } : null,

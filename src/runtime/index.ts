@@ -11,6 +11,10 @@ import type { DataRecord, DataStore } from '../data/store'
 import { setDemoPublisher } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
+import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
+import { pulseFeed } from '../feeds/pulse'
+import { skyNightFeed } from '../feeds/skyNight'
+import { stormFeed } from '../feeds/storm'
 import { forgetCrowd, setCrowdFetcher } from '../feeds/portCrowd'
 import { forgetFares, setFaresFetcher } from '../feeds/fares'
 import { forgetFlights, setFlightFetcher } from '../feeds/flight'
@@ -91,6 +95,14 @@ if (rest) {
   setRouteFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
   setCrowdFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
   setFaresFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
+  pulseFeed.setFetcher((departure, now) => http.get<unknown>('/feeds/pulse', { query: { departure, now } }))
+  stormFeed.setFetcher((departure, days) => http.get<unknown>('/feeds/storm', { query: { departure, days } }))
+  skyNightFeed.setFetcher((departure, day) => http.get<unknown>('/feeds/sky-night', { query: { departure, day } }))
+  loungerFeed.setFetcher((minute) => http.get<unknown>('/feeds/loungers', { query: { now: minute * 60_000 } }))
+  sightingsFeed.setFetcher((day) => http.get<unknown>('/feeds/sightings', { query: { day } }))
+  foundFeed.setFetcher(() => http.get<unknown>('/feeds/found'))
+  openingFeed.setFetcher((id, created, slot) => http.get<unknown>('/feeds/watch-opening', { query: { id, created, slot } }))
+  for (const f of [pulseFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed]) auth.subscribe(f.forget)
   auth.subscribe(forgetCrowd)
   auth.subscribe(forgetFares)
   auth.subscribe(forgetFlights)

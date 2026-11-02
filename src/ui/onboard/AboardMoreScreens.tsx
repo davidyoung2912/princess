@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { calmestPlaces, cabinWords, challenge, diningPlaces, DND_MAX, findCabin, HOLD_MINUTES, kidsReport, LAP_STEPS, loungerBoard, matchFound, OK_HOURS, okStatus, seasickStatus, seenToday, SEASICK_DOCTOR, SEASICK_HELPS, SIGHTINGS_MAX, soloState, SOLO_MINUTES, SPECIES, startSolo, STEP_GOAL, takeLounger, teenComplete, TEEN_RULES, YOU_SAID, FOUND, LOST_MAX, type AboardState } from '../../domain/aboardMore'
+import { calmestPlaces, cabinWords, challenge, diningPlaces, DND_MAX, findCabin, HOLD_MINUTES, kidsReport, LAP_STEPS, loungerBoard, matchFound, OK_HOURS, okStatus, seasickStatus, SEASICK_DOCTOR, SEASICK_HELPS, SIGHTINGS_MAX, soloState, SOLO_MINUTES, SPECIES, startSolo, STEP_GOAL, takeLounger, teenComplete, TEEN_RULES, YOU_SAID, LOST_MAX, type AboardState } from '../../domain/aboardMore'
 import { clubById, clubFor } from '../../domain/family'
 import { placeById } from '../../domain/deck'
 import { shipZoneAt } from '../../domain/sailings'
@@ -8,6 +8,8 @@ import { timeIn } from '../../domain/timezones'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
+import { useFeed } from '../../hooks/useServedFeeds'
+import { foundFeed, loungerFeed, sightingsFeed } from '../../feeds/onboard'
 import { api } from '../../runtime'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { normalizeBrief } from '../../domain/planning'
@@ -63,7 +65,8 @@ export function SeasickScreen() {
 export function LoungersScreen() {
   const { a, set } = useAboard()
   const now = useNow()
-  const board = loungerBoard(now, a.lounger, a.reported)
+  const others = useFeed(loungerFeed, Math.floor(now / 60_000))
+  const board = loungerBoard(now, a.lounger, a.reported, others)
   return (
     <Page title="route.loungers" intro="lounge.intro">
       <Banner kind="info" title={t('lounge.sim')} />
@@ -249,6 +252,7 @@ export function StepsScreen() {
 /** Lost and found (S6-25): a report kept on this device, matched against an authored list of what has been handed in. */
 export function LostFoundScreen() {
   const { a, set } = useAboard()
+  const found = useFeed(foundFeed)
   const now = useNow()
   const [what, setWhat] = useState('')
   const [where, setWhere] = useState('')
@@ -259,7 +263,7 @@ export function LostFoundScreen() {
       <Field label={t('lost.where')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
       <Button disabled={!what.trim() || a.lost.length >= LOST_MAX} onClick={() => { set((x) => ({ ...x, lost: [...x.lost, { id: newMemoryId(), what: what.trim(), where: where.trim(), at: now }] })); setWhat(''); setWhere('') }}>{t('lost.save')}</Button>
       {a.lost.map((r) => {
-        const m = matchFound(r)
+        const m = matchFound(r, found)
         return (
           <Card key={r.id} labelledBy={`lost-${r.id}`}>
             <h2 id={`lost-${r.id}`} className="card__title">{r.what}</h2>
@@ -269,7 +273,7 @@ export function LostFoundScreen() {
           </Card>
         )
       })}
-      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{t('lost.found')}</h2><ul>{FOUND.map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
+      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{t('lost.found')}</h2><ul>{found.map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
       <p><Link to="/me/cases">{t('route.cases')}</Link></p>
     </Page>
   )
@@ -279,11 +283,12 @@ export function LostFoundScreen() {
 export function SightingsScreen() {
   const { a, set } = useAboard()
   const day = useCurrentDay()
+  const seen = useFeed(sightingsFeed, day)
   const [pick, setPick] = useState<string>(SPECIES[0])
   return (
     <Page title="route.sightings" intro="sight.intro">
       <Card labelledBy="sight-today"><h2 id="sight-today" className="card__title">{t('sight.today')}</h2>
-        <p>{seenToday(day).map((s) => t(`sight.${s}` as StringKey)).join(', ')}</p><p className="muted">{t('sight.sim')}</p></Card>
+        <p>{seen.map((s) => t(`sight.${s}` as StringKey)).join(', ')}</p><p className="muted">{t('sight.sim')}</p></Card>
       <label htmlFor="sight-pick">{t('sight.saw')}</label>
       <select id="sight-pick" className="field__input" value={pick} onChange={(e) => setPick(e.target.value)}>{SPECIES.map((s) => <option key={s} value={s}>{t(`sight.${s}` as StringKey)}</option>)}</select>
       <Button disabled={a.sightings.length >= SIGHTINGS_MAX} onClick={() => set((x) => ({ ...x, sightings: [...x.sightings, { id: newMemoryId(), species: pick, day }] }))}>{t('sight.log')}</Button>

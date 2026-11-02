@@ -56,6 +56,51 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("The weekly fare for the same cabin since booking (for the price-drop watch), as `[{ date, total }]` in cents, at most 26 points. A simulated feed, the same for every device.");
 
+        api.MapGet("/feeds/pulse", (string departure, long now, IShipTelemetry ship) =>
+            {
+                if (!OnboardFeedRules.ValidDate(departure) || !OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.Pulse(DateOnly.ParseExact(departure, "yyyy-MM-dd"), now));
+            })
+            .WithTags("Reference").WithSummary("How busy each ship venue is at the last five-minute mark and for the next four hours in half hours (0 to 100), for Ship Pulse, the lines and the quiet spaces. A simulated feed; `source` says so.");
+
+        api.MapGet("/feeds/storm", (string departure, int days, IStormOutlook storm) =>
+            {
+                if (!OnboardFeedRules.ValidStormQuery(departure, days)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(storm.Outlook(departure, days));
+            })
+            .WithTags("Reference").WithSummary("How likely a named storm is to touch a sailing's route, from authored chances by month, with what the line may do and what a guest can do. Not a forecast; `source` says so.");
+
+        api.MapGet("/feeds/sky-night", (string departure, int day, IShipTelemetry ship) =>
+            {
+                if (!OnboardFeedRules.ValidSkyQuery(departure, day)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.SkyNight(departure, day));
+            })
+            .WithTags("Reference").WithSummary("Sunrise, sunset, the moon, easy constellations and the sunset side of the ship for a cruise day. Worked out from the date and an authored position; `source` says so.");
+
+        api.MapGet("/feeds/loungers", (long now, IShipTelemetry ship) =>
+            {
+                if (!OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.Loungers(now));
+            })
+            .WithTags("Reference").WithSummary("The other loungers on the pool deck at a minute: free, held (with minutes until due back) or left too long. A guest's own hold stays on their device. A simulated feed.");
+
+        api.MapGet("/feeds/sightings", (int day, IShipTelemetry ship) =>
+            {
+                if (day is < 1 or > 8) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.Sightings(day));
+            })
+            .WithTags("Reference").WithSummary("Which kinds of wildlife the ship is said to have seen on a cruise day. A simulated feed.");
+
+        api.MapGet("/feeds/found", (ILostProperty lost) => Results.Ok(lost.Found()))
+            .WithTags("Reference").WithSummary("What the lost-property desk has handed in, with the keywords it matches on and where it is held. A simulated list.");
+
+        api.MapGet("/feeds/watch-opening", (string id, long created, long slot, ISlotWatchFeed feed) =>
+            {
+                if (!OnboardFeedRules.ValidWatchQuery(id, created, slot)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(feed.Opening(id, created, slot));
+            })
+            .WithTags("Reference").WithSummary("When a place opens up for a slot watch, or null when none does before the slot. A simulated feed; the watch only ever ends in a proposal the guest confirms.");
+
         api.MapPost("/telemetry", async (TelemetryBatchDto body, ITelemetrySink sink, CancellationToken ct) =>
             {
                 if (!TelemetryRules.Valid(body?.Items)) throw ApiException.Invalid("badTelemetry");
