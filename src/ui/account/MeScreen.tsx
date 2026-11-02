@@ -1,7 +1,8 @@
 import { Link } from 'react-router'
 import { sailingRange } from '../../domain/cruise'
 import { sailingById } from '../../domain/sailings'
-import { api, auth, usesRealAuth } from '../../runtime'
+import { api, signOutSaving, usesRealAuth } from '../../runtime'
+import { useSyncStatus } from '../../hooks/useSyncStatus'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
@@ -27,6 +28,7 @@ export function MeScreen() {
   const history = useMine(() => api.account.history())
   const unread = notices.data ? notices.data.notices.filter((n) => !n.read).length : 0
   const trip = trips.data?.upcoming[0]
+  const syncState = useSyncStatus()
 
   return (
     <div className="page">
@@ -38,7 +40,12 @@ export function MeScreen() {
         </Card>
       )}
 
-      {usesRealAuth && <p><Button variant="secondary" onClick={() => void auth.signOut()}>{t('signin.signOut')}</Button></p>}
+      {usesRealAuth && (
+        <>
+          <p role="status" className="muted">{t(`sync.${syncState}` as StringKey)}</p>
+          <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
+        </>
+      )}
 
       <section aria-labelledby="me-trip-h">
         <h2 id="me-trip-h">{t('me.yourTrip')}</h2>

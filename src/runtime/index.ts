@@ -146,6 +146,12 @@ export async function startRuntime(): Promise<void> {
   else switchSettingsOwner(personaById(auth.current()!.personaId) ?? null)
 }
 
+/** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */
+export async function signOutSaving(): Promise<void> {
+  if (usesRealAuth) await sync.flush().catch(() => {})
+  await auth.signOut()
+}
+
 /** Settings, database and controls for "Reset demo". */
 export async function resetDemoData(): Promise<void> {
   await resetDemo(lazyStore, local())
