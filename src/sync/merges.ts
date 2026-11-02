@@ -1,3 +1,4 @@
+import { normalizeOfferState, type OfferState } from '../domain/offers'
 import { normalizePartyState, type PartyState } from '../domain/party'
 import { normalizePort, type PortState } from '../port/store'
 
@@ -39,4 +40,16 @@ export function mergePort(remote: unknown, local: unknown): PortState {
     party: { days, alertBefore: l.party.alertBefore, rendezvous: union(l.party.rendezvous, r.party.rendezvous) },
     split: { parties: union(l.split.parties, r.split.parties), items: union(l.split.items, r.split.items), settledAt: l.split.settledAt ?? r.split.settledAt },
   })
+}
+
+/**
+ * Two devices changed the offers at once: marketing messages sent on either count toward the one weekly cap, and a dismissal on either
+ * stays dismissed (a guest who dismissed an offer on the phone should not see it again on the laptop).
+ */
+export function mergeOffers(remote: unknown, local: unknown): OfferState {
+  const r = normalizeOfferState(remote)
+  const l = normalizeOfferState(local)
+  const dismissed: OfferState['dismissed'] = {}
+  for (const trip of new Set([...Object.keys(r.dismissed), ...Object.keys(l.dismissed)])) dismissed[trip] = [...new Set([...(l.dismissed[trip] ?? []), ...(r.dismissed[trip] ?? [])])]
+  return normalizeOfferState({ dismissed, sent: [...new Set([...l.sent, ...r.sent])] })
 }

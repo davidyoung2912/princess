@@ -9,7 +9,7 @@ import { Banner, type BannerKind } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ActionError, Load } from './parts'
-import { splitHeld } from '../../domain/aboardMore'
+import { splitHeld, withQuietHours } from '../../domain/aboardMore'
 import { shipZoneAt } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -32,7 +32,7 @@ export function NotificationsScreen() {
       <h1>{t('route.notifications')}</h1>
       <Load state={data}>
         {({ notices, prefs }) => {
-          const { shown, held } = splitHeld(notices, mem.aboard.dnd, at)
+          const { shown, held } = splitHeld(notices, withQuietHours(mem.aboard.dnd, prefs.quiet), at)
           const unread = shown.filter((n) => !n.read)
           const row = (n: (typeof notices)[number]) => {
             const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'

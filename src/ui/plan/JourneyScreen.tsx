@@ -8,6 +8,8 @@ import { EMBARK } from '../../domain/boarding'
 import { formatMoney } from '../../domain/pricing'
 import { newTripId, useTrip } from '../../hooks/useTrip'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { api } from '../../runtime'
+import { isCarryOn } from '../../domain/boarding'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -138,7 +140,7 @@ export function JourneyScreen() {
         <p>{t('journey.pack.why')}</p>
         <fieldset>
           <legend>{t('journey.pack.carry')}</legend>
-          {CARRY_ON_ITEMS.map((i) => <label key={i} className="choice"><input type="checkbox" checked={journey.carryOn.includes(i)} onChange={() => update((s) => ({ ...s, journey: { ...s.journey, carryOn: toggleIn(s.journey.carryOn, i) } }))} /><span>{t(`journey.pack.carry.${i}` as StringKey)}</span></label>)}
+          {CARRY_ON_ITEMS.map((i) => <label key={i} className="choice"><input type="checkbox" checked={journey.carryOn.includes(i)} onChange={() => { const on = !journey.carryOn.includes(i); update((s) => ({ ...s, journey: { ...s.journey, carryOn: toggleIn(s.journey.carryOn, i) } })); if (isCarryOn(i)) void api.boarding.setCarryOn(i, on).catch(() => undefined) }} /><span>{t(`journey.pack.carry.${i}` as StringKey)}</span></label>)}
         </fieldset>
         <fieldset>
           <legend>{t('journey.pack.checked')}</legend>

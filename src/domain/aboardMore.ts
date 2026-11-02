@@ -107,6 +107,9 @@ const hhmm = (v: unknown, d: string): string => (typeof v === 'string' && /^([01
 /** True when any schedule that is on covers the time. Critical notices are never held back. */
 export const dndNow = (list: readonly DndSchedule[], at: string, category: Category): boolean => list.some((s) => s.on && inQuietHours({ on: true, from: s.from, to: s.to }, at, category))
 
+/** The guest's account quiet hours (kept on the server with the other notification choices) count as one more schedule, so both settings hold notices back the same way. */
+export const withQuietHours = (list: readonly DndSchedule[], quiet: { on: boolean; from: string; to: string }): DndSchedule[] => [...list, { id: 'account-quiet', ...quiet }]
+
 /** The notices list while a do-not-disturb schedule is running: critical notices stay in view, the rest wait in a held list until it ends (nothing is deleted). */
 export function splitHeld<T extends { category: Category }>(notices: readonly T[], list: readonly DndSchedule[], at: string): { shown: T[]; held: T[] } {
   const shown: T[] = []

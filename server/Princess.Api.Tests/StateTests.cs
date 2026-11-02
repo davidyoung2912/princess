@@ -102,4 +102,22 @@ public class StateApiTests : JourneyWorld
         Assert.Equal(0, (await Get("/api/v1/me/export", phone)).Json.GetProperty("account").GetArrayLength());
         Assert.Equal(1, (await Get("/api/v1/me/export", priya)).Json.GetProperty("account").GetArrayLength());
     }
+
+    [Fact]
+    public async Task HealthDetailsNeedConsentAndAreEncryptedAtRest()
+    {
+        var phone = await SignIn(Daniel);
+        var refused = await Call(HttpMethod.Put, "/api/v1/me/state/health", phone, new SaveStateRequest(new JsonObject { ["allergy"] = "peanuts" }, 0));
+        Assert.Equal(HttpStatusCode.Forbidden, refused.Status);
+
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", phone, new SaveStateRequest(new JsonObject { ["syncPrivate"] = true }, 0));
+        var saved = await Call(HttpMethod.Put, "/api/v1/me/state/health", phone, new SaveStateRequest(new JsonObject { ["allergy"] = "peanuts" }, 0));
+        Assert.Equal(HttpStatusCode.OK, saved.Status);
+
+        var stored = F.State.Rows.Single(r => r.Key.Key == "health").Value.Json;
+        Assert.DoesNotContain("peanuts", stored);
+        Assert.Equal("peanuts", (await Get("/api/v1/me/state/health", phone)).Json.GetProperty("data").GetProperty("allergy").GetString());
+        var export = await Get("/api/v1/me/export", phone);
+        Assert.Contains("peanuts", export.Json.GetProperty("account").EnumerateArray().First(x => x.GetProperty("key").GetString() == "health").GetProperty("data").ToString());
+    }
 }

@@ -8,5 +8,6 @@ import { sync } from './index'
 export async function setKeepPrivate(on: boolean): Promise<boolean> {
   updateSettings({ syncPrivate: on })
   if (on) { await sync.pull(); return true }
-  return sync.withdraw('memory')   // false: the copy will be deleted when the connection returns
+  const results = await Promise.all([sync.withdraw('memory'), sync.withdraw('health')])
+  return results.every(Boolean)   // false: a copy will be deleted when the connection returns
 }

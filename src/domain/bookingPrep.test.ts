@@ -64,3 +64,12 @@ describe('allergy, ledger, watch', () => {
     expect(priceWatch({ ...b, today: '2027-02-01' }, [{ date: 'x', total: 380000 }])!.steps).toEqual([])
   })
 })
+
+describe('access profile and account needs share four answers', () => {
+  it('sets the shared needs from the access flags and keeps the others', async () => {
+    const { needsWithAccess, accessWithNeeds, EMPTY_ACCESS } = await import('./bookingPrep')
+    expect(needsWithAccess(['cpap', 'hearing'], { ...EMPTY_ACCESS, mobility: true })).toEqual(['cpap', 'mobility'])
+    const a = accessWithNeeds({ ...EMPTY_ACCESS, sensory: true, device: 'cane' }, ['hearing', 'oxygen'])
+    expect(a).toMatchObject({ hearing: true, mobility: false, sensory: true, device: 'cane' })
+  })
+})

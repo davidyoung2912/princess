@@ -440,6 +440,8 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
                 _ => throw new InvalidOperationException($"Unknown retention kind {kind}"),
             };
             await c.ExecuteAsync(Sql.Cmd(sql, new { bookingId, guestUserIds }, tx, ct));
+            // The party's shared notes and port-day record (BookingState) go with the messages rule: same 30 days, same people.
+            if (kind == "message") await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.BookingState WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
         }
         await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.RetentionRuns (UserId, [Rule], Kinds, [At]) VALUES (@runUserId, N'retention', @kinds, @now)", new { runUserId, kinds = string.Join(',', kinds), now }, tx, ct));
         await tx.CommitAsync(ct);

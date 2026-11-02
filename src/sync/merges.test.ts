@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeParty, mergePort } from './merges'
+import { mergeOffers, mergeParty, mergePort } from './merges'
 
 describe('party merge', () => {
   it('keeps what both adults added, once, oldest first', () => {
@@ -29,5 +29,15 @@ describe('port merge', () => {
     expect(m.party.alertBefore).toBe(30)
     expect(m.party.rendezvous.map((r) => r.id)).toEqual(['r1'])
     expect(m.split.items.map((i) => i.id).sort()).toEqual(['i1', 'i2'])
+  })
+})
+
+describe('offers merge', () => {
+  it('counts messages sent on either device toward one cap and keeps dismissals from both', () => {
+    const remote = { dismissed: { B1: ['package'] }, sent: [100, 300] }
+    const local = { dismissed: { B1: ['upgrade'] }, sent: [200, 300] }
+    const merged = mergeOffers(remote, local)
+    expect(merged.sent).toEqual([100, 200, 300])
+    expect([...merged.dismissed.B1].sort()).toEqual(['package', 'upgrade'])
   })
 })

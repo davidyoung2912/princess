@@ -47,6 +47,24 @@ export type AccessFlag = (typeof ACCESS_FLAGS)[number]
 export type AccessProfile = Record<AccessFlag, boolean> & { device: MobilityDevice }
 export const EMPTY_ACCESS: AccessProfile = { mobility: false, hearing: false, vision: false, sensory: false, serviceAnimal: false, companion: false, device: 'none' }
 
+/** The access flags that mean the same thing as an account profile need (the profile also has cpap and oxygen, which the access profile does not). */
+export const SHARED_NEEDS = ['mobility', 'hearing', 'vision', 'serviceAnimal'] as const
+
+/** The account profile's needs with the shared ones set to match the access profile. Other needs are kept as they are. */
+export function needsWithAccess<N extends string>(needs: readonly N[], access: AccessProfile): N[] {
+  const shared = new Set<string>(SHARED_NEEDS)
+  const kept = needs.filter((n) => !shared.has(n))
+  const fromAccess = SHARED_NEEDS.filter((n) => access[n]) as unknown as N[]
+  return [...kept, ...fromAccess]
+}
+
+/** The access profile with the shared flags set to match the account profile's needs. Other flags and the device are kept. */
+export function accessWithNeeds(access: AccessProfile, needs: readonly string[]): AccessProfile {
+  const next = { ...access }
+  for (const n of SHARED_NEEDS) next[n] = needs.includes(n)
+  return next
+}
+
 export function normalizeAccess(raw: unknown): AccessProfile {
   const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
   const out = { ...EMPTY_ACCESS }

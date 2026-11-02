@@ -152,3 +152,22 @@ Built 2026-11-01. Only this slice of Phase 4 was built; the other items in "Dedi
   - **No client screen** calls export or delete yet, and there is still no account-deletion route; export covers account state only, not the rest of the person's records.
   - **Swagger coverage list** now includes the two new routes (the eight older state routes are still covered only by `ApiSurfaceTests`).
   - **Remaining Phase 4 items:** dedicated medical/access/allergy storage, one budget, quiet hours, marketing cap, embark ticks, port ledger rows, plan changes into the day plan, signed family links, caregiver/callback/kit requests, `/demo/*`.
+
+## Phase 4 record (slice 2: the rest that could be built here)
+
+Built 2026-11-01.
+
+- **Encrypted health document.** New user key `health` (medical card, access profile, allergy flag) split out of `memory`. The server stores it as `{"enc":...}` through Data Protection and refuses a save (`403`) unless the person's `settings` document has `syncPrivate` on; reads and the export decrypt it. Client: `memory` binding now carries everything except those three, a new `health` binding carries them, both held back by the same consent switch, and withdrawing deletes both copies. (Not compiled or run; test written in `StateTests.cs`.)
+- **Booking state retention.** The retention purge deletes `BookingState` rows with the `message` kind (30 days after the cruise), in `DapperPrivacyStore.PurgeAsync`. No new retention rule, so the privacy centre and the client rule table are unchanged.
+- **Marketing cap.** A clash on `offers` now merges: messages sent on any device count toward the one weekly cap, and dismissals from both stay (`mergeOffers`).
+- **Dietary and needs.** The access profile and the account profile share four answers (mobility, hearing, vision, service animal). Changing one now sets the other (`needsWithAccess`, `accessWithNeeds`), so the server's profile tags, which dining and cabin rules read, match what the guest entered in the access profile.
+- **Quiet hours.** The account's quiet hours (server `NotificationPrefs.quiet`) now hold notices back in the notifications list the same way a do-not-disturb schedule does (`withQuietHours`). The two settings are still separate screens.
+- **Embark ticks.** A carry-on tick on the embark screen is written to the journey packing list, and a tick on the packing list is sent to the boarding record (best effort).
+- **Verified:** `npm run test` (1754 passed), `npm run lint`, `npx tsc -b`, `npm run build`. Server changes are not compiled or run.
+- **Not done, and why:**
+  - **Budget.** Left as is. On inspection these are different ideas: the server `Budgets` is the aboard spending limit; `planning.budget` is the trip-price target; `memory.budget` is read only by the gift suggestions and nothing writes it; `planning.moneyDaily` is the daily money plan. Merging them needs a product decision on which are the same thing.
+  - **Port ledger and presence as real rows, and accepted plan changes merged into the day plan.** Still documents (`port`, `pilot`). Rows need new tables, a settle-up flow and a server day-plan merge; not started.
+  - **Signed family links and the public page.** Needs a token scheme, a public unauthenticated route and a page; not started.
+  - **Caregiver, callback and sensory-kit requests reaching staff.** The callback queue is a simulation (`source: 'sim'`) and there is no staff side in this repo, so they stay documents.
+  - **`/demo/*` routes** (data model 6.7): not started.
+  - **Open from earlier phases:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, calm profile and family contacts consent decision, screen copy that says "stays on this device".

@@ -95,7 +95,7 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 
 **Favourites** — discover R/W (`favourites`, `toggleFavourite`) **and** `ahead.saved` R/W (same concept: keys `item:…`, `excursion:…`, `kind:id`). `UserId ID* FK→Users` · `ItemKey STR(80)*` · `Position INT*` · PK (`UserId, ItemKey`).
 
-**UserState** — state R/W (multi-device, `docs/multi-device-plan.md`). One small JSON document per person and key, so settings and device-only stores follow the guest to every device. `UserId ID* FK→Users` · `Key STR(30)*` (a fixed whitelist in `StateRules`: `settings`, `offers`, `shop`, `phone`, `memory`, `pilot`, `trip`, `hub`) · `Json [json]*` · `Version INT*` (starts at 1, +1 per save; a save names the version it was based on) · PK (`UserId`, `Key`).
+**UserState** — state R/W (multi-device, `docs/multi-device-plan.md`). One small JSON document per person and key, so settings and device-only stores follow the guest to every device. `UserId ID* FK→Users` · `Key STR(30)*` (a fixed whitelist in `StateRules`: `settings`, `offers`, `shop`, `phone`, `memory`, `health`, `pilot`, `trip`, `hub`; `health` holds the medical card, access profile and allergy flag, stored as `{"enc": ...}` encrypted with ASP.NET Data Protection and written only while `settings.syncPrivate` is true) · `Json [json]*` · `Version INT*` (starts at 1, +1 per save; a save names the version it was based on) · PK (`UserId`, `Key`).
 *Decision:* one table serves both groups (the two lists are the same key space in the UI).
 
 **DemoState** (`demo`) — new demo endpoints.

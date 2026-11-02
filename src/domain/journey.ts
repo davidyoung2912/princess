@@ -239,6 +239,9 @@ export const EMPTY_JOURNEY_STATE: JourneyState = { plan: EMPTY_JOURNEY, carryOn:
 
 export const toggleIn = <T,>(list: readonly T[], item: T): T[] => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item])
 
+/** The list with the item present or absent, whatever it was before. */
+export const setIn = <T,>(list: readonly T[], item: T, on: boolean): T[] => (on ? (list.includes(item) ? [...list] : [...list, item]) : list.filter((x) => x !== item))
+
 export function addBag(state: JourneyState, label: string, id: string): JourneyState {
   const clean = label.trim().slice(0, MAX_BAG_LABEL)
   if (!clean || state.bags.length >= MAX_BAGS) return state

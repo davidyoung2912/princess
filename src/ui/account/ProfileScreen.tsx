@@ -6,7 +6,9 @@ import { isPersonaId, personaById, type PersonaId } from '../../domain/personas'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
+import { accessWithNeeds } from '../../domain/bookingPrep'
 import { useNow, usePersona } from '../../hooks/useDemo'
+import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -73,6 +75,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
   const [errors, setErrors] = useState<ProfileErrors>({})
   const [nameBlocked, setNameBlocked] = useState<'late' | 'large' | null>(null)
   const [saved, setSaved] = useState(false)
+  const { me, update: updateMem } = useMemory()
   const save = useAction((next: Profile) => api.account.saveProfile(view.id, next))
   const set = (patch: Partial<Profile>) => { setP({ ...p, ...patch }); setSaved(false) }
   const err = (field: ProfileField) => (errors[field] ? t(`profile.err.${errors[field]}` as StringKey) : undefined)
@@ -85,7 +88,11 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
     const rule = nameChange(`${view.profile.firstName} ${view.profile.lastName}`, `${p.firstName} ${p.lastName}`, view.daysToDeparture)
     setNameBlocked(rule.allowed ? null : rule.reason)
     if (Object.keys(found).length > 0 || !rule.allowed) return
-    if (await save.run(p)) { setSaved(true); onSaved() }
+    if (await save.run(p)) {
+      // The access profile shares four answers with this form; keep the guest's own in step.
+      if (me && me.id === view.id) updateMem((m) => ({ ...m, access: accessWithNeeds(m.access, p.needs) }))
+      setSaved(true); onSaved()
+    }
   }
   const summary = (Object.keys(errors) as ProfileField[]).map((f) => `${t(`profile.field.${f}` as StringKey)}: ${err(f)}`)
 

@@ -76,9 +76,10 @@ describe('private notes and health details', () => {
     updateMemory('gerald', (m) => ({ ...m, medical: { ...m.medical, allergies: ['peanuts'] }, allergy: { ...m.allergy } }))
     await sync.flush()
     expect(docs.has('memory')).toBe(false)
+    expect(docs.has('health')).toBe(false)
 
     await setKeepPrivate(true)
-    expect((docs.get('memory')!.data as { medical: { allergies: string[] } }).medical.allergies).toEqual(['peanuts'])
+    expect((docs.get('health')!.data as { medical: { allergies: string[] } }).medical.allergies).toEqual(['peanuts'])
     expect(getSettings().syncPrivate).toBe(true)
 
     // A second device with an empty copy gets it.
@@ -90,6 +91,7 @@ describe('private notes and health details', () => {
 
     expect(await setKeepPrivate(false)).toBe(true)
     expect(docs.has('memory')).toBe(false)
+    expect(docs.has('health')).toBe(false)
     expect(getMemory('gerald').medical.allergies).toEqual(['peanuts'])   // this device keeps its own
     setRemote(null)
   })

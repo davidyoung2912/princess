@@ -1,7 +1,7 @@
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ACCESS_FLAGS, accessNotes, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, fareHistory, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
+import { ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, fareHistory, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/pricing'
 import { dateIn } from '../../domain/timezones'
@@ -56,16 +56,21 @@ export function HoldScreen() {
 
 /** Accessibility-first profile (S2-06): captured once; says what each part of the app will look out for. */
 export function AccessScreen() {
-  const { state, update } = useMemory()
+  const { state, update, me } = useMemory()
   const p = state.access
   const notes = accessNotes(p)
+  /** One answer in two places: the account profile's needs (which the server's dining and cabin rules read) follow the access profile. Best effort; the profile form shows any problem. */
+  const mirrorToProfile = (next: typeof p) => {
+    if (!me) return
+    void api.account.profile(me.id).then((v) => api.account.saveProfile(me.id, { ...v.profile, needs: needsWithAccess(v.profile.needs, next) })).catch(() => undefined)
+  }
   return (
     <Page title="route.accessProfile" intro="access.intro">
       <Card labelledBy="acc-t">
         <fieldset>
           <legend id="acc-t">{t('access.legend')}</legend>
           {ACCESS_FLAGS.map((f: AccessFlag) => (
-            <label key={f} className="choice"><input type="checkbox" checked={p[f]} onChange={(e) => update((m) => ({ ...m, access: { ...m.access, [f]: e.target.checked } }))} /><span>{t(`access.flag.${f}` as StringKey)}</span></label>
+            <label key={f} className="choice"><input type="checkbox" checked={p[f]} onChange={(e) => { update((m) => ({ ...m, access: { ...m.access, [f]: e.target.checked } })); mirrorToProfile({ ...p, [f]: e.target.checked }) }} /><span>{t(`access.flag.${f}` as StringKey)}</span></label>
           ))}
         </fieldset>
         <fieldset>

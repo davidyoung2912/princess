@@ -83,3 +83,14 @@ describe('aboardMore', () => {
     expect(s.sightings).toEqual([])
   })
 })
+
+describe('account quiet hours count as a do-not-disturb schedule', () => {
+  it('holds non-critical notices while quiet hours run and never critical ones', async () => {
+    const { splitHeld, withQuietHours } = await import('./aboardMore')
+    const list = withQuietHours([], { on: true, from: '22:00', to: '07:00' })
+    const { shown, held } = splitHeld([{ category: 'critical' as const }, { category: 'offers' as never }], list, '23:30')
+    expect(shown).toHaveLength(1)
+    expect(held).toHaveLength(1)
+    expect(splitHeld([{ category: 'offers' as never }], withQuietHours([], { on: false, from: '22:00', to: '07:00' }), '23:30').held).toHaveLength(0)
+  })
+})

@@ -131,12 +131,24 @@ export function subscribeMemory(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
+/** The medical card, access profile and allergy flag: kept on the server in their own encrypted document (key `health`), apart from the rest. */
+export type HealthPart = Pick<MemoryState, 'medical' | 'access' | 'allergy'>
+export const healthOf = (m: MemoryState): HealthPart => ({ medical: m.medical, access: m.access, allergy: m.allergy })
+/** Everything else in the memory document (key `memory`). */
+export const restOf = (m: MemoryState): Omit<MemoryState, keyof HealthPart> => {
+  const { medical: _m, access: _a, allergy: _l, ...rest } = m
+  return rest
+}
+
 export function updateMemory(personaId: string | null, change: (s: MemoryState) => MemoryState): void {
-  const next = change(getMemory(personaId))
+  const prev = getMemory(personaId)
+  const next = change(prev)
   cache.set(memoryKeyFor(personaId), next)
   saveMemory(personaId, next)
   listeners.forEach((l) => l())
-  sync.changed('memory', personaId)
+  const before = prev
+  if (JSON.stringify(healthOf(before)) !== JSON.stringify(healthOf(next))) sync.changed('health', personaId)
+  if (JSON.stringify(restOf(before)) !== JSON.stringify(restOf(next))) sync.changed('memory', personaId)
 }
 
 /** Takes the server's copy (null: empty) without telling the sync module it changed. */
@@ -144,4 +156,16 @@ export function applyRemoteMemory(personaId: string | null, next: MemoryState): 
   cache.set(memoryKeyFor(personaId), next)
   saveMemory(personaId, next)
   listeners.forEach((l) => l())
+}
+
+/** Takes the server's health document (null: empty) into the memory state without telling the sync module it changed. */
+export function applyRemoteHealth(personaId: string | null, raw: unknown): void {
+  const h = normalizeMemory(raw === null ? EMPTY_MEMORY : raw)
+  applyRemoteMemory(personaId, { ...getMemory(personaId), medical: h.medical, access: h.access, allergy: h.allergy })
+}
+
+/** Takes the server's memory document (null: empty) but keeps this device's health details, which have their own document. */
+export function applyRemoteMemoryRest(personaId: string | null, raw: unknown): void {
+  const r = normalizeMemory(raw === null ? EMPTY_MEMORY : raw)
+  applyRemoteMemory(personaId, { ...r, ...healthOf(getMemory(personaId)) })
 }

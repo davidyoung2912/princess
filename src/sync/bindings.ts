@@ -5,11 +5,11 @@ import { EMPTY_PORT, applyRemotePort, getPort, normalizePort } from '../port/sto
 import { EMPTY_PARTY, normalizePartyState } from '../domain/party'
 import { applyRemoteParty, getParty } from '../party/store'
 import { personaById } from '../domain/personas'
-import { mergeParty, mergePort } from './merges'
+import { mergeOffers, mergeParty, mergePort } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
-import { applyRemoteMemory, getMemory, normalizeMemory, EMPTY_MEMORY } from '../memory/store'
+import { applyRemoteHealth, applyRemoteMemoryRest, EMPTY_MEMORY, getMemory, healthOf, restOf } from '../memory/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
@@ -31,6 +31,7 @@ const offers: Binding = {
   read: (id) => getOfferState(id),
   apply: (id, raw) => applyRemoteOffers(id, raw === null ? EMPTY_OFFER_STATE : normalizeOfferState(raw)),
   isEmpty: (raw) => json(raw) === json(EMPTY_OFFER_STATE),
+  merge: mergeOffers,
 }
 
 const shop: Binding = {
@@ -54,9 +55,18 @@ const phone: Binding = {
  */
 const memory: Binding = {
   key: 'memory',
-  read: (id) => getMemory(id),
-  apply: (id, raw) => applyRemoteMemory(id, raw === null ? EMPTY_MEMORY : normalizeMemory(raw)),
-  isEmpty: (raw) => json(raw) === json(EMPTY_MEMORY),
+  read: (id) => restOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteMemoryRest(id, raw),
+  isEmpty: (raw) => json(raw) === json(restOf(EMPTY_MEMORY)),
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** The medical card, access profile and allergy flag: their own document, encrypted on the server, and held back by the same consent switch. */
+const health: Binding = {
+  key: 'health',
+  read: (id) => healthOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteHealth(id, raw),
+  isEmpty: (raw) => json(raw) === json(healthOf(EMPTY_MEMORY)),
   enabled: () => getSettings().syncPrivate,
 }
 
@@ -114,5 +124,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, trip, pilot, hub, port, party]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, trip, pilot, hub, port, party]) sync.register(b)
 }

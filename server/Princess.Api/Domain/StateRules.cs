@@ -19,7 +19,14 @@ public static class StateRules
         ["pilot"] = 64_000,
         ["trip"] = 32_000,
         ["hub"] = 64_000,
+        ["health"] = 32_000,
     };
+
+    /// <summary>
+    /// Keys held encrypted at rest (medical card, access profile, allergy flag). They are saved only while the person's own <c>settings</c>
+    /// document says <c>syncPrivate</c> is on, so withdrawing consent also stops new writes.
+    /// </summary>
+    public static readonly IReadOnlySet<string> EncryptedKeys = new HashSet<string> { "health" };
 
     /// <summary>Keys a booking may keep (shared by everyone on it).</summary>
     public static readonly IReadOnlyDictionary<string, int> BookingKeys = new Dictionary<string, int>

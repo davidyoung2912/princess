@@ -7,6 +7,8 @@ import { PORT_FACTS } from '../../domain/travel'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow, usePersona } from '../../hooks/useDemo'
+import { useTrip } from '../../hooks/useTrip'
+import { setIn } from '../../domain/journey'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -42,7 +44,13 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
   const me = usePersona()
   const { boarding } = view
   const bags = useAction(async (dropped: boolean) => { await api.boarding.setBags(dropped); reload() })
-  const carry = useAction(async (item: EmbarkView['carryOn'][number]['id'], done: boolean) => { await api.boarding.setCarryOn(item, done); reload() })
+  const trip = useTrip()
+  // The packing list on the journey screen has the same carry-on items; a tick here counts there too.
+  const carry = useAction(async (item: EmbarkView['carryOn'][number]['id'], done: boolean) => {
+    await api.boarding.setCarryOn(item, done)
+    trip.update((s) => ({ ...s, journey: { ...s.journey, carryOn: setIn(s.journey.carryOn, item, done) } }))
+    reload()
+  })
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EMBARK.mapQuery)}`
   const nurse = view.nurseCheck
   return (
