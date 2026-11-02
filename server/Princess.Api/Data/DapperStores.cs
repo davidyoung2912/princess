@@ -2,7 +2,7 @@ using Dapper;
 
 namespace Princess.Api.Data;
 
-public sealed class DapperUserStore(IDbConnectionFactory db) : IUserStore
+public sealed class DapperUserStore(IDbConnectionFactory db, UserCache cache) : IUserStore
 {
     private const string Select = """
         SELECT u.Id, u.PublicId, u.AccountNumber, u.Email, u.PasswordHash, u.Role, u.IsDemo, u.IsSupervised, u.BookerUserId,
@@ -27,11 +27,12 @@ public sealed class DapperUserStore(IDbConnectionFactory db) : IUserStore
         return await c.QuerySingleOrDefaultAsync<UserRecord>(new CommandDefinition($"{Select} WHERE u.Id = @id", new { id }, cancellationToken: ct));
     }
 
-    public async Task<UserRecord?> FindByPublicIdAsync(Guid publicId, CancellationToken ct)
+    /// <summary>Read on every authenticated request, so it is served from <see cref="UserCache"/> for up to 30 seconds.</summary>
+    public Task<UserRecord?> FindByPublicIdAsync(Guid publicId, CancellationToken ct) => cache.GetOrLoadAsync(publicId, async () =>
     {
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<UserRecord>(new CommandDefinition($"{Select} WHERE u.PublicId = @publicId", new { publicId }, cancellationToken: ct));
-    }
+    });
 
     public async Task<IReadOnlyList<UserRecord>> ListDemoAsync(CancellationToken ct)
     {

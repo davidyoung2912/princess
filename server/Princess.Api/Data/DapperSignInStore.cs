@@ -2,7 +2,7 @@ using Dapper;
 
 namespace Princess.Api.Data;
 
-public sealed class DapperSignInStore(IDbConnectionFactory db) : ISignInStore
+public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) : ISignInStore
 {
     public async Task<long?> CreateAccountAsync(NewAccount a, DateTime now, CancellationToken ct)
     {
@@ -41,6 +41,7 @@ public sealed class DapperSignInStore(IDbConnectionFactory db) : ISignInStore
             "UPDATE dbo.RefreshTokens SET RevokedAt = @now WHERE UserId = @userId AND RevokedAt IS NULL AND UsedAt IS NULL",
             new { userId, now }, tx, cancellationToken: ct));
         await tx.CommitAsync(ct);
+        users.Invalidate();
     }
 
     public async Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, DateTime expiresAt, DateTime now, CancellationToken ct)

@@ -16,6 +16,9 @@ var services = builder.Services;
 services.AddOptions<JwtOptions>().BindConfiguration(JwtOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 services.AddOptions<AuthOptions>().BindConfiguration(AuthOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 
+services.AddMemoryCache();
+services.AddSingleton<UserCache>();
+services.AddSingleton<SailingCache>();
 services.AddSingleton<IClock, SystemClock>();
 services.AddSingleton<IDbConnectionFactory>(sp =>
     new SqlConnectionFactory(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default")

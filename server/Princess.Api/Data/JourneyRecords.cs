@@ -178,4 +178,6 @@ public sealed class SailingRow
     public int Nights { get; set; } = 7;
     /// <summary><c>ref.Sailings.BookingOpen</c>: a manual close. "One day to go" is worked out from the date.</summary>
     public bool BookingOpen { get; set; } = true;
+
+    public SailingRow Copy() => (SailingRow)MemberwiseClone();
 }

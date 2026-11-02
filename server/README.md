@@ -75,6 +75,18 @@ After any server change run `dotnet build server/Princess.sln` yourself; this pr
 
 Every endpoint needs a signed-in user unless it opts out (`/health`, `/health/db`, login, refresh).
 
+## In-memory caching (`Data/DataCache.cs`)
+
+Reference data served from C# (`/reference/*`) is already held in memory for the life of the process. Only the SQL reads below are cached; everything user-owned, transactional or money-related is always read from SQL, so a guest sees the same data on every device.
+
+| What | Where | Lifetime | Invalidation |
+| --- | --- | --- | --- |
+| `ref.Sailings` list | `SailingCache`, used by `DapperTripStore.ListSailingsAsync` | 10 minutes | TTL only (the API never writes it; a manual `BookingOpen` close shows within 10 minutes) |
+| The signed-in user row | `UserCache`, used by `DapperUserStore.FindByPublicIdAsync` | 30 seconds | Cleared on profile save, email change and password reset |
+| `demo.DemoState` | `DapperDemoStore` (scoped) | One request | Dropped on save |
+
+The caches are per server instance. If you scale out, the 30-second user TTL is the bound on how long another instance can serve a stale user row.
+
 ## Errors
 
 RFC 7807 problem details. `type` is one of the `src/api/errors.ts` codes (`invalid`, `conflict`, `forbidden`, `notFound`, `challenge`, `declined`, `server`) and `title` is the token the screens switch on. Two additions that the client reads by HTTP status: **401** (`forbidden` / `unauthenticated`, `badCredentials` or `badRefreshToken`) means refresh or sign in again; **403** is final. 429 is `tooManyRequests`. A booking the caller is not on is always 404 `notFound`.

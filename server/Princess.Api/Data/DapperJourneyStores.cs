@@ -11,7 +11,7 @@ internal static class Sql
         new(sql, args, tx, cancellationToken: ct);
 }
 
-public sealed class DapperAccountStore(IDbConnectionFactory db) : IAccountStore
+public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users) : IAccountStore
 {
     private sealed class DocRow
     {
@@ -85,6 +85,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db) : IAccountStore
             if (tags.Count > 0)
                 await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ProfileTags (UserId, Kind, Code) VALUES (@UserId, @Kind, @Code)", tags, tx, ct));
             await tx.CommitAsync(ct);
+            users.Invalidate(); // name and email are part of the cached user row
         }
         catch (SqlException e) when (e.Number is 2601 or 2627)
         {
@@ -163,7 +164,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db) : IAccountStore
     }
 }
 
-public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
+public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailings) : ITripStore
 {
     internal const string BookingSelect = """
         SELECT b.Id AS BookingId, b.Number, b.Kind, b.AgentName, b.BookerUserId, b.SailingId, s.Title AS SailingTitle, sh.Name AS ShipName,
@@ -283,11 +284,12 @@ public sealed class DapperTripStore(IDbConnectionFactory db) : ITripStore
         return true;
     }
 
-    public async Task<List<SailingRow>> ListSailingsAsync(CancellationToken ct)
+    /// <summary>Served from <see cref="SailingCache"/> (10 minutes); the API never writes <c>ref.Sailings</c>.</summary>
+    public Task<List<SailingRow>> ListSailingsAsync(CancellationToken ct) => sailings.GetOrLoadAsync(async () =>
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
-    }
+    });
 
     public async Task<List<PastTripRow>> ListPastTripsAsync(long userId, CancellationToken ct)
     {
@@ -469,25 +471,29 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
     }
 }
 
+/// <summary>
+/// Scoped, so one request reads <c>demo.DemoState</c> once however many times the clock and the scenarios are asked for.
+/// Nothing is kept across requests: the clock offset and speed change from the demo controls and must show at once.
+/// </summary>
 public sealed class DapperDemoStore(IDbConnectionFactory db) : IDemoStore
 {
-    public async Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct)
-    {
-        await using var c = await db.OpenAsync(ct);
-        return await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT ClockOffsetSeconds FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct)) ?? 0;
-    }
+    private readonly Dictionary<long, DemoStateRow> _memo = [];
 
-    public async Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct)
-    {
-        await using var c = await db.OpenAsync(ct);
-        var json = await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT ActiveScenarios FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
-        try { return json is null ? [] : [.. System.Text.Json.JsonSerializer.Deserialize<string[]>(json) ?? []]; }
-        catch (System.Text.Json.JsonException) { return []; }
-    }
+    public async Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct) => (await GetStateAsync(userId, ct)).ClockOffsetSeconds;
+
+    public async Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct) => [.. (await GetStateAsync(userId, ct)).Scenarios];
 
     private sealed class DemoRowRaw { public long ClockOffsetSeconds { get; set; } public int ClockSpeed { get; set; } public string? ActiveScenarios { get; set; } public DateTime UpdatedAt { get; set; } public string? SailingId { get; set; } public string? PhoneZone { get; set; } }
 
     public async Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct)
+    {
+        if (_memo.TryGetValue(userId, out var known)) return known;
+        var state = await ReadStateAsync(userId, ct);
+        _memo[userId] = state;
+        return state;
+    }
+
+    private async Task<DemoStateRow> ReadStateAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         var r = await c.QuerySingleOrDefaultAsync<DemoRowRaw>(Sql.Cmd("SELECT ClockOffsetSeconds, ClockSpeed, ActiveScenarios, UpdatedAt, SailingId, PhoneZone FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
@@ -498,6 +504,7 @@ public sealed class DapperDemoStore(IDbConnectionFactory db) : IDemoStore
 
     public async Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct)
     {
+        _memo.Remove(userId);
         await using var c = await db.OpenAsync(ct);
         var scenarios = System.Text.Json.JsonSerializer.Serialize(state.Scenarios);
         await c.ExecuteAsync(Sql.Cmd("""

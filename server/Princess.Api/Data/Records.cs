@@ -20,6 +20,9 @@ public sealed class UserRecord
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public Guid? BookerPublicId { get; set; }
+
+    /// <summary>A copy, so a cached row is never shared between requests.</summary>
+    public UserRecord Copy() => (UserRecord)MemberwiseClone();
 }
 
 public sealed class RefreshTokenRecord
