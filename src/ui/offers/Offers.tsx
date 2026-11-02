@@ -49,7 +49,7 @@ export function HomeOfferCard() {
   const ctx = useOfferContext(trip?.number ?? null)
   const { dismiss } = useOffers()
   const [settings] = useSettings()
-  if (!trip || settings.nudgesPerDay === 0) return null
+  if (!trip || settings.nudgesPerDay === 0 || settings.calm) return null
   const offer = homeOffer({ ...ctx, taskWaiting: trip.next !== 'allSet' })
   if (!offer) return null
   return (

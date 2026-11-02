@@ -687,3 +687,12 @@ See `docs/leading-features-plan.md` section 7. In short: the port day is one pla
 ## 28. Phase H4: door to door and embark
 
 See `docs/leading-features-plan.md` section 8. In short: `/plan/getting-there` is one timeline from the door or hotel to the gangway with a plain on-track, tight or at-risk status and the spare time on every leg; flight, traffic and weather are labelled as simulated. `/home/embarkation/plan` picks an arrival window with the consequence of a swap shown, forecasts each step with an accessible lane and an optional quiet lane, and plans the first hours around whether the cabin is ready. Warnings are plain and name the fix; the welcome shares only what the guest ticks and never sells. Not tried in a browser, by the project rule.
+
+
+## 29. Phase H5: Autopilot, Ship Pulse, inclusion and the assistant
+
+See `docs/leading-features-plan.md` section 9. In short: anything that changes the guest's plan is a proposal with a preview, applies only when the guest accepts, can be undone for a stated time, and is logged. Ship Pulse readings always carry their age, a confidence and the word "estimate". Calm mode is separate from high contrast and from simple view: it removes motion, countdowns and Home suggestions. The assistant answers only from the guest's own data and says when it cannot. Not tried in a browser, by the project rule.
+
+## 30. Phase H6: cabin chooser, memory loop and dream
+
+See `docs/leading-features-plan.md` section 10. In short: a score is always shown with its reasons; sun and motion are labelled as estimates; anything that leaves the device (a card, the book, a note, an invitation) goes only from a button the guest presses and never carries a name, cabin number or booking number; drinks totals and anniversaries are off until asked for; the next trip is a draft that books and holds nothing; a contact needs consent, a first name and a line the guest chose, and can be removed or blocked.

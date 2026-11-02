@@ -34,7 +34,7 @@ export function TripScreen() {
         {(x) => (
           <>
             <p className="muted">{t('trip.booking', { number: x.number })} · {x.categoryName} · {t('trip.guests', { count: x.guests })}</p>
-            <p className="trip-count" aria-live="polite">{countdown(x.daysToDeparture)}</p>
+            <p className="trip-count calm-hide" aria-live="polite">{countdown(x.daysToDeparture)}</p>
             <NextStep trip={x} />
 
             <section aria-labelledby="status-h">

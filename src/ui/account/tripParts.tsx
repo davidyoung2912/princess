@@ -36,7 +36,7 @@ export function TripCard({ trip }: { trip: TripView }) {
     <li className="card">
       <h3 className="card__title"><Link to={`/me/trips/${trip.number}`}>{range}</Link></h3>
       <p className="muted">{t('trip.booking', { number: trip.number })} · {trip.categoryName} · {t('trip.guests', { count: trip.guests })}</p>
-      <p><strong>{countdown(trip.daysToDeparture)}</strong> <PaymentBadge trip={trip} /></p>
+      <p><strong className="calm-hide">{countdown(trip.daysToDeparture)}</strong> <PaymentBadge trip={trip} /></p>
       {trip.agent && <p className="muted">{t('trip.agent', { agent: trip.agent })}</p>}
     </li>
   )

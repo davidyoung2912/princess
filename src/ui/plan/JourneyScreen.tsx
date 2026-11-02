@@ -76,7 +76,7 @@ export function JourneyScreen() {
           ))}
         </ol>
         {result.leaveBy !== null && <p>{t('journey.leaveBy', { time: time(result.leaveBy - cond.leaveEarlierMinutes * 60_000) })}</p>}
-        {toGo > 0 && toGo < 24 * 60 && <p>{t('journey.countdown', { time: duration(toGo) })}</p>}
+        {toGo > 0 && toGo < 24 * 60 && <p className="calm-hide">{t('journey.countdown', { time: duration(toGo) })}</p>}
       </section>
 
       {plan.mode === 'fly' && (

@@ -46,7 +46,7 @@ export function HomeScreen() {
       {trip && <Journey trip={trip} />}
       <HomeOfferCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
-      <p><Link to="/home/concierge">{t('route.concierge')}</Link></p>
+      <p><Link to="/home/concierge">{t('route.concierge')}</Link> · <Link to="/home/ask">{t('route.ask')}</Link></p>
       <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>
       <div className="simple-hide"><Explore /></div>
       <ConceptNotice />
@@ -61,7 +61,7 @@ function Journey({ trip }: { trip: TripView }) {
   return (
     <section aria-labelledby="next-h">
       <h2 id="next-h">{t('home.next')}</h2>
-      <p className="muted">{t('trip.booking', { number: trip.number })} · <strong>{countdown(trip.daysToDeparture)}</strong></p>
+      <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
       {done ? (
         <Card hero labelledBy="pass-h">
           <h3 id="pass-h" className="card__title">{t('home.passReady')}</h3>

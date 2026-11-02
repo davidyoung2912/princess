@@ -30,3 +30,21 @@
   .print-sheet { border: 0; padding: 0; margin: 0; }
   .page--print > :not(.print-sheet):not(.no-print) { display: none; }
 }
+
+/* Calm mode (XI-01): one column, softened colour, no motion (set with data-motion), no countdowns, and simpler spacing. Separate from high contrast. */
+:root[data-calm='on'] { --target-min: 3.5rem; }
+:root[data-calm='on'] .shell { filter: saturate(0.6); }
+:root[data-calm='on'] .card-grid,
+:root[data-calm='on'] .slot-grid,
+:root[data-calm='on'] .event-list { grid-template-columns: 1fr; }
+:root[data-calm='on'] .calm-hide { display: none; }
+:root[data-calm='on'] .shell__main { line-height: 1.7; }
+:root[data-calm='on'] .card { padding: var(--space-5); box-shadow: none; }
+
+/* Plan changes and the quiet reading of a day. */
+.plan-row--dropped { text-decoration: line-through; opacity: 0.8; }
+.plan-row__note { display: block; font-size: 0.875rem; }
+.schedule-card { padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); margin: var(--space-2) 0; }
+.schedule-card--now { border-width: 3px; }
+.pulse-bar { display: inline-block; width: 6rem; height: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; vertical-align: middle; overflow: hidden; background: var(--bg); }
+.pulse-bar > span { display: block; height: 100%; background: currentColor; }

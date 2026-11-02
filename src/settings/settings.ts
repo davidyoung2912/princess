@@ -16,6 +16,8 @@ export interface Settings {
   reduceMotion: boolean
   /** One column, bigger targets and fewer extras (ACS-01). */
   simple: boolean
+  /** Calm mode (XI-01): reduced stimulation, softened colours, one column, simpler wording, no countdowns and at most one suggestion a day. */
+  calm: boolean
   /** Show captions or a transcript wherever sound or video has one (ACS-01). */
   captions: boolean
   /** Save data: nothing loads until asked for, no animation, and refreshes come less often (NET-04). */
@@ -30,7 +32,7 @@ export interface Settings {
   nudgesPerDay: NudgeBudget
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES }
+export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -63,6 +65,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     contrast: o.contrast === 'high' || o.contrast === 'standard' ? o.contrast : defaults.contrast,
     reduceMotion: typeof o.reduceMotion === 'boolean' ? o.reduceMotion : defaults.reduceMotion,
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,
+    calm: typeof o.calm === 'boolean' ? o.calm : defaults.calm,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
     units: isUnits(o.units) ? o.units : defaults.units,
@@ -101,13 +104,14 @@ function safeStorage(): Storage | null {
 }
 
 /** The attributes set on `<html>` for a set of settings; "auto" resolves against the device's colour preference. */
-export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-captions' | 'data-light', string> {
+export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-calm' | 'data-captions' | 'data-light', string> {
   return {
     'data-theme': s.theme === 'auto' ? (deviceIsDark ? 'dark' : 'light') : s.theme,
     'data-contrast': s.contrast,
-    'data-motion': s.reduceMotion ? 'reduced' : 'full',
+    'data-motion': s.reduceMotion || s.calm ? 'reduced' : 'full',
     'data-text-size': s.textSize,
     'data-simple': s.simple ? 'on' : 'off',
+    'data-calm': s.calm ? 'on' : 'off',
     'data-captions': s.captions ? 'on' : 'off',
     'data-light': s.dataLight ? 'on' : 'off',
   }

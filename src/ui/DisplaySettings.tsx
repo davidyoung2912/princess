@@ -57,6 +57,13 @@ export function DisplaySettings() {
         </span>
       </label>
       <label className="choice">
+        <input type="checkbox" checked={settings.calm} onChange={(e) => update({ calm: e.target.checked })} />
+        <span>
+          {t('settings.calm')}
+          <small>{t('settings.calmHint')}</small>
+        </span>
+      </label>
+      <label className="choice">
         <input type="checkbox" checked={settings.captions} onChange={(e) => update({ captions: e.target.checked })} />
         <span>
           {t('settings.captions')}
