@@ -373,3 +373,13 @@ After Phases 6 and 7, in separate commits: `Providers:*` shown in `appsettings.j
 - **Tests** seed the stores from `src/testing/reference-fixture.json` through the vitest `setupFiles` entry `src/testing/setup.ts`. `emptyStart.test.ts` loads every module unseeded and checks the stores stay empty. The gate forbids anything outside tests importing `src/testing`.
 - **Catalogue screens: 66 to 0.** The gate list is empty. `pulse` (which venues the Pulse screen shows) and `cabinScore` (comparison logic) hold no reference data and left the gate's module list; only `pricing` remains on it.
 - **Still on the client:** the fare tables (`INTERIOR_FARE`, `FUTURE_DEPARTURES`, taxes, gratuities, `FARES`) used for estimates. Real quotes come from the server. Serving these through a `GET /reference/pricing` route is the next candidate. The server C# was not compiled here.
+
+### Fare tables served, `/rates` version (2026-11-02)
+
+**Server C# not compiled or run** (please `dotnet build server/Princess.sln`).
+
+- **`GET /reference/pricing`** (`PricingReference.cs`, secured like its siblings): the interior fare by open sailing, the next-season departures (id, date, fare), taxes and fees, the nightly gratuity by room type, and the three fares (name, nightly price, tagline; `FareInfo` gained `Tagline`). `version` is a hash of all of it. Client: `pricingServed.ts` (`normalizePricing`, `applyPricing`), `replacePricing` in `pricing.ts`, in the `TABLES` list as `required`, cached under `pricing`.
+- **Client tables emptied:** `INTERIOR_FARE` (now exported and filled in place), `FUTURE_DEPARTURES`, `TAXES_AND_FEES`, `GRATUITY_PER_NIGHT(_SUITE)` and the `FARES` names, prices and taglines. The fare rules (`quote`, `bookingQuote`, `fareFor`) stay on the client over the served tables. `lowestFromPrice` returns null with no sailings.
+- **Tests** get the tables from the `pricing` entry in `reference-fixture.json`, seeded by `src/testing/setup.ts`; `emptyStart.test.ts` checks they are empty on a cold start.
+- **`/rates`** now carries a `version` (hash of the day and rates). The client ignores it for now: the table is read on demand and `asOf` still drives the stale note.
+- **Left as recorded decisions:** the provider fall-back wrapper waits for the first real provider; the ~100 content arrays keep their authored first-paint copy (their data is already served and replaced in place).

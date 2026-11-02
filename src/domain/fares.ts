@@ -6,7 +6,7 @@ import { DEFAULT_FINAL_PAYMENT_DAYS, DEPOSIT_SHARE } from './trip'
 import { addDays } from './timezones'
 import { limit } from './limits'
 
-/** What a fare includes (BOK-04). Prices are authored concept values; what each includes comes from the entitlement engine, so the two cannot disagree. */
+/** What a fare includes (BOK-04). Names, prices and taglines come from the server; what each includes comes from the entitlement engine, so the two cannot disagree. */
 export type FareId = 'standard' | 'plus' | 'premier'
 export const FARE_IDS: readonly FareId[] = ['standard', 'plus', 'premier']
 
@@ -18,10 +18,11 @@ export interface Fare {
   tagline: string
 }
 
+/** The fares, in place. Filled from `GET /reference/pricing`; the entries are blank until then. */
 export const FARES: Record<FareId, Fare> = {
-  standard: { id: 'standard', name: 'Standard', perNight: 0, tagline: 'Just the cruise. Add drinks, Wi-Fi and dining later.' },
-  plus: { id: 'plus', name: 'Princess Plus', perNight: 6000, tagline: 'Drinks, Wi-Fi, two specialty dinners and gratuities.' },
-  premier: { id: 'premier', name: 'Princess Premier', perNight: 9000, tagline: 'More of everything, with an excursion credit.' },
+  standard: { id: 'standard', name: '', perNight: 0, tagline: '' },
+  plus: { id: 'plus', name: '', perNight: 0, tagline: '' },
+  premier: { id: 'premier', name: '', perNight: 0, tagline: '' },
 }
 
 export const isFareId = (v: unknown): v is FareId => FARE_IDS.includes(v as FareId)

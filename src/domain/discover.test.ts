@@ -13,7 +13,7 @@ describe('pricing', () => {
   })
 
   it('advertises the lowest interior fare as the "from" price', () => {
-    const low = lowestFromPrice()
+    const low = lowestFromPrice()!
     expect(low.fare).toBe(153_900)
     for (const s of SAILINGS) expect(fromPrice(s.id)!.fare).toBeGreaterThanOrEqual(low.fare)
   })

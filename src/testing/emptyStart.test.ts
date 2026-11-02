@@ -16,6 +16,13 @@ describe('a cold start', () => {
     expect(failures).toEqual([])
   }, 60_000)
 
+  it('holds no authored fare tables', async () => {
+    vi.resetModules()
+    const [pricing, fares] = await Promise.all([import('../domain/pricing'), import('../domain/fares')])
+    expect([Object.keys(pricing.INTERIOR_FARE).length, pricing.FUTURE_DEPARTURES.length, pricing.TAXES_AND_FEES, pricing.GRATUITY_PER_NIGHT]).toEqual([0, 0, 0, 0])
+    expect(Object.values(fares.FARES).map((f) => f.name)).toEqual(['', '', ''])
+  })
+
   it('holds no authored sailings, ports, excursions, dining rooms or port guides', async () => {
     vi.resetModules()
     const [sailings, excursions, dining, ports, portContent] = await Promise.all([

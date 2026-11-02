@@ -19,7 +19,7 @@ public sealed record PayPlan(string[] Options, long Total, long Deposit, string 
 
 public sealed record RoomCategory(string Id, string Name, double Ratio, bool Suite, int Capacity);
 
-public sealed record FareInfo(string Id, string Name, long PerNight);
+public sealed record FareInfo(string Id, string Name, long PerNight, string Tagline);
 
 /// <summary>
 /// Ported from <c>src/domain/pricing.ts</c>, <c>fares.ts</c> and the booking part of <c>ahead.ts</c> (D15: the server is the authority for money).
@@ -45,7 +45,7 @@ public static class Pricing
     public const int MaxParts = 2;
 
     /// <summary>Interior fare per person for two sharing, by sailing. The lowest is the advertised "from" price.</summary>
-    private static readonly Dictionary<string, long> InteriorFare = new()
+    internal static readonly Dictionary<string, long> InteriorFare = new()
     {
         ["sun-2026-11-08"] = 153_900,
         ["sun-2026-11-22"] = 157_900,
@@ -58,7 +58,7 @@ public static class Pricing
     };
 
     /// <summary>Departures not yet open for booking. They can be held after a cruise (POS-06) and priced, but are not offered by Discover or Booking.</summary>
-    private static readonly Dictionary<string, long> NextSeasonFare = new()
+    internal static readonly Dictionary<string, long> NextSeasonFare = new()
     {
         ["sun-2027-11-07"] = 164_900,
         ["sun-2027-11-21"] = 169_900,
@@ -78,9 +78,9 @@ public static class Pricing
 
     public static readonly IReadOnlyList<FareInfo> Fares =
     [
-        new("standard", "Standard", 0),
-        new("plus", "Princess Plus", 6_000),
-        new("premier", "Princess Premier", 9_000),
+        new("standard", "Standard", 0, "Just the cruise. Add drinks, Wi-Fi and dining later."),
+        new("plus", "Princess Plus", 6_000, "Drinks, Wi-Fi, two specialty dinners and gratuities."),
+        new("premier", "Princess Premier", 9_000, "More of everything, with an excursion credit."),
     ];
 
     public static RoomCategory? Category(string? id) => Categories.FirstOrDefault(c => c.Id == id);

@@ -56,7 +56,7 @@
   },
   "roatan": {
    "id": "roatan",
-   "name": "Roatán, Honduras",
+   "name": "Roat\u00e1n, Honduras",
    "zone": "America/Tegucigalpa",
    "tender": false
   }
@@ -133,7 +133,7 @@
    "id": "coz-ruins",
    "port": "cozumel",
    "name": "San Gervasio Mayan ruins",
-   "summary": "An air-conditioned coach to the island’s ruins, with a guide on the history.",
+   "summary": "An air-conditioned coach to the island\u2019s ruins, with a guide on the history.",
    "hours": 4,
    "price": 6900,
    "activity": "moderate",
@@ -365,11 +365,11 @@
    "cuisine": "Steakhouse",
    "cover": 4500,
    "dress": "smart",
-   "menu": "Aged filet, a shared seafood tower, creamed spinach and a warm chocolate soufflé."
+   "menu": "Aged filet, a shared seafood tower, creamed spinach and a warm chocolate souffl\u00e9."
   },
   {
    "id": "sabatini",
-   "name": "Sabatini’s",
+   "name": "Sabatini\u2019s",
    "kind": "specialty",
    "deck": "Deck 8 aft",
    "cuisine": "Italian trattoria",
@@ -399,7 +399,7 @@
   },
   {
    "id": "alfredo",
-   "name": "Alfredo’s Pizzeria",
+   "name": "Alfredo\u2019s Pizzeria",
    "kind": "casual",
    "deck": "Deck 9 Piazza",
    "cuisine": "Neapolitan pizza",
@@ -500,7 +500,7 @@
   },
   "roatan": {
    "id": "roatan",
-   "short": "Roatán",
+   "short": "Roat\u00e1n",
    "landing": "pier",
    "blurb": "A Honduran island with white beaches, reef snorkelling and wildlife parks. The ship docks at a pier beside shops and a beach.",
    "bestTime": "February to June is driest. October to January is the rainy season.",
@@ -575,13 +575,13 @@
    ],
    "taxiStand": "Official taxis queue at the marked stand outside the pier gate and show a posted rate card. Agree the fare before you get in.",
    "scams": [
-    "A person who says the stand is “closed” or “far” and offers a cheaper ride",
+    "A person who says the stand is \u201cclosed\u201d or \u201cfar\u201d and offers a cheaper ride",
     "Tour offers at the gate that need a deposit in cash",
-    "A “free” gift or bracelet that turns into a sales talk"
+    "A \u201cfree\u201d gift or bracelet that turns into a sales talk"
    ],
    "phrases": [
     {
-     "say": "Hola, buenos días",
+     "say": "Hola, buenos d\u00edas",
      "means": "Hello, good morning",
      "sounds": "OH-la, BWEH-nos DEE-as"
     },
@@ -591,7 +591,7 @@
      "sounds": "GRAH-see-as"
     },
     {
-     "say": "¿Cuánto cuesta?",
+     "say": "\u00bfCu\u00e1nto cuesta?",
      "means": "How much is it?",
      "sounds": "KWAN-toh KWEH-sta"
     },
@@ -601,7 +601,7 @@
      "sounds": "kee-SEE-eh-ra eer ah"
     },
     {
-     "say": "¿Dónde está el baño?",
+     "say": "\u00bfD\u00f3nde est\u00e1 el ba\u00f1o?",
      "means": "Where is the restroom?",
      "sounds": "DON-deh eh-STAH el BAN-yo"
     },
@@ -620,7 +620,7 @@
     {
      "allergy": "Nuts",
      "language": "Spanish",
-     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. ¿Puede decirme qué platos son seguros?",
+     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. \u00bfPuede decirme qu\u00e9 platos son seguros?",
      "english": "I have a serious allergy to tree nuts and peanuts. I cannot eat anything that contains them, including oil or traces. Can you tell me which dishes are safe?"
     }
    ],
@@ -715,8 +715,8 @@
    "taxiStand": "Licensed taxis have green plates and wait at the Tourism Village. Agree the fare, and whether it is per person or for the car, before you get in.",
    "scams": [
     "Drivers off the village premises who quote very low and then ask for more",
-    "Unsolicited “guides” who insist on leading you",
-    "Street changers offering a “better” exchange rate"
+    "Unsolicited \u201cguides\u201d who insist on leading you",
+    "Street changers offering a \u201cbetter\u201d exchange rate"
    ],
    "phrases": [
     {
@@ -749,7 +749,7 @@
     {
      "allergy": "Nuts",
      "language": "Spanish (widely understood)",
-     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. ¿Puede decirme qué platos son seguros?",
+     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. \u00bfPuede decirme qu\u00e9 platos son seguros?",
      "english": "I have a serious allergy to tree nuts and peanuts. I cannot eat anything that contains them, including oil or traces. Can you tell me which dishes are safe?"
     },
     {
@@ -849,13 +849,13 @@
    ],
    "taxiStand": "Official taxis and tour vans wait at the pier gate with a posted rate card. Agree the fare, and the return, before you set off.",
    "scams": [
-    "Drivers who ask for the fare “per person” after you arrive",
-    "A “shortcut” to a beach that ends at a paid gate",
+    "Drivers who ask for the fare \u201cper person\u201d after you arrive",
+    "A \u201cshortcut\u201d to a beach that ends at a paid gate",
     "Tour sellers who ask for payment in advance, in cash"
    ],
    "phrases": [
     {
-     "say": "Hola, buenos días",
+     "say": "Hola, buenos d\u00edas",
      "means": "Hello, good morning",
      "sounds": "OH-la, BWEH-nos DEE-as"
     },
@@ -865,7 +865,7 @@
      "sounds": "GRAH-see-as"
     },
     {
-     "say": "¿Cuánto cuesta?",
+     "say": "\u00bfCu\u00e1nto cuesta?",
      "means": "How much is it?",
      "sounds": "KWAN-toh KWEH-sta"
     },
@@ -875,7 +875,7 @@
      "sounds": "kee-SEE-eh-ra eer ah"
     },
     {
-     "say": "¿Dónde está el baño?",
+     "say": "\u00bfD\u00f3nde est\u00e1 el ba\u00f1o?",
      "means": "Where is the restroom?",
      "sounds": "DON-deh eh-STAH el BAN-yo"
     },
@@ -894,7 +894,7 @@
     {
      "allergy": "Nuts",
      "language": "Spanish",
-     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. ¿Puede decirme qué platos son seguros?",
+     "text": "Tengo alergia grave a los frutos secos y al cacahuate. No puedo comer nada que los contenga, ni aceite o trazas. \u00bfPuede decirme qu\u00e9 platos son seguros?",
      "english": "I have a serious allergy to tree nuts and peanuts. I cannot eat anything that contains them, including oil or traces. Can you tell me which dishes are safe?"
     }
    ],
@@ -968,5 +968,63 @@
     }
    ]
   }
+ },
+ "pricing": {
+  "version": "fixture",
+  "interior": {
+   "sun-2026-11-08": 153900,
+   "sun-2026-11-22": 157900,
+   "sun-2026-12-06": 155900,
+   "sun-2026-12-27": 239900,
+   "sun-2027-01-17": 174900,
+   "sun-2027-02-07": 199900,
+   "sun-2027-02-28": 214900,
+   "sun-2027-03-21": 189900
+  },
+  "nextSeason": [
+   {
+    "id": "sun-2027-11-07",
+    "departure": "2027-11-07",
+    "fare": 164900
+   },
+   {
+    "id": "sun-2027-11-21",
+    "departure": "2027-11-21",
+    "fare": 169900
+   },
+   {
+    "id": "sun-2027-12-05",
+    "departure": "2027-12-05",
+    "fare": 167900
+   },
+   {
+    "id": "sun-2028-01-09",
+    "departure": "2028-01-09",
+    "fare": 179900
+   }
+  ],
+  "taxesAndFees": 23600,
+  "gratuityPerNight": 1650,
+  "gratuityPerNightSuite": 1850,
+  "fares": [
+   {
+    "id": "standard",
+    "name": "Standard",
+    "perNight": 0,
+    "tagline": "Just the cruise. Add drinks, Wi-Fi and dining later."
+   },
+   {
+    "id": "plus",
+    "name": "Princess Plus",
+    "perNight": 6000,
+    "tagline": "Drinks, Wi-Fi, two specialty dinners and gratuities."
+   },
+   {
+    "id": "premier",
+    "name": "Princess Premier",
+    "perNight": 9000,
+    "tagline": "More of everything, with an excursion credit."
+   }
+  ]
  }
 }

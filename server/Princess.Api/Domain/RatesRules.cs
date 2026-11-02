@@ -1,6 +1,7 @@
 namespace Princess.Api.Domain;
 
-public sealed record RateTableDto(string AsOf, Dictionary<string, double> PerUsd);
+/// <summary><c>Version</c> changes when the day or any rate does.</summary>
+public sealed record RateTableDto(string Version, string AsOf, Dictionary<string, double> PerUsd);
 
 /// <summary>
 /// Exchange rates for reading only (ACC-07; multi-device plan Phase 5). The source is a stub: the authored sample rates move a little
@@ -34,6 +35,8 @@ public static class RatesRules
             var unit = code == "USD" ? 0 : ((Hash($"{code}|{asOf}") % 2001) / 1000.0 - 1) * Drift;
             perUsd[code] = Math.Round(sample * (1 + unit) * 10_000, MidpointRounding.AwayFromZero) / 10_000;
         }
-        return new RateTableDto(asOf, perUsd);
+        var text = string.Join('|', perUsd.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => $"{kv.Key}={kv.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}"));
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"{asOf}|{text}"))).ToLowerInvariant()[..16];
+        return new RateTableDto(version, asOf, perUsd);
     }
 }

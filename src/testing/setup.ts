@@ -6,6 +6,7 @@ import { replaceExcursions } from '../domain/excursions'
 import { replaceVenues } from '../domain/dining'
 import { replacePorts } from '../domain/ports'
 import { replacePortKnowledge } from '../domain/portContent'
+import { applyPricing } from '../domain/pricingServed'
 import { markReferenceAllReady, requireReference } from '../domain/referenceStatus'
 
 export function seedReference(): void {
@@ -14,7 +15,8 @@ export function seedReference(): void {
   replaceVenues(fixture.venues as never)
   replacePorts({ guides: fixture.guides, coords: fixture.coords } as never)
   replacePortKnowledge(fixture.knowledge as never)
-  requireReference(['sailings', 'catalogue', 'ports'])
+  applyPricing(fixture.pricing as never)
+  requireReference(['sailings', 'catalogue', 'ports', 'pricing'])
   markReferenceAllReady()
 }
 

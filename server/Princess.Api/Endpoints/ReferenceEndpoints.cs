@@ -36,6 +36,9 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/limits", () => Results.Ok(LimitsReference.Get()))
             .WithTags("Reference").WithSummary("The limits, windows, fees and rates the server enforces (request caps, text lengths, notice periods, credits), by the client's constant names. Each value is the rule's own constant. `version` changes when any value does.");
 
+        api.MapGet("/reference/pricing", () => Results.Ok(PricingReference.Get()))
+            .WithTags("Reference").WithSummary("The fare tables the screens estimate with: the interior fare per person by sailing (open and next-season), taxes and fees, the nightly gratuity by room type, and the fares (name, nightly price, tagline). Real quotes are still worked out by the server. `version` changes when any of it does.");
+
         api.MapGet("/reference/content", () => Results.Text(ContentReference.Json, "application/json"))
             .WithTags("Reference").WithSummary("The option lists, menus, texts and tables the screens show (help answers, legal text, request items, menus, quizzes, tags and so on), by `module.NAME`. `version` changes when any of it does.");
 

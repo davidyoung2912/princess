@@ -16,6 +16,25 @@ public class RatesTests
     }
 
     [Fact]
+    public void TheVersionChangesWithTheDayAndStaysPutWithinOne()
+    {
+        var a = RatesRules.TableFor(new DateOnly(2026, 11, 1));
+        Assert.Equal(a.Version, RatesRules.TableFor(new DateOnly(2026, 11, 1)).Version);
+        Assert.NotEqual(a.Version, RatesRules.TableFor(new DateOnly(2026, 11, 2)).Version);
+    }
+
+    [Fact]
+    public void ThePricingTableServesTheSameFaresTheQuotesUse()
+    {
+        var p = PricingReference.Get();
+        Assert.Equal(Pricing.InteriorFare.Count, p.Interior.Count);
+        Assert.All(p.NextSeason, n => Assert.Equal(Pricing.FareFor(n.Id, "interior"), n.Fare));
+        Assert.All(p.NextSeason, n => Assert.Equal(n.Id["sun-".Length..], n.Departure));
+        Assert.Equal(Pricing.TaxesAndFees, p.TaxesAndFees);
+        Assert.Equal(PricingReference.Get().Version, p.Version);
+    }
+
+    [Fact]
     public void EveryRateStaysWithinTheDriftOfItsSample()
     {
         foreach (var day in Enumerable.Range(1, 30))

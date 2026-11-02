@@ -6,37 +6,29 @@ import { formatMoney, parseMoney, type Cents } from './money'
 import { MAX_GUESTS, type FromPrice, type LineKey, type Quote, type QuoteLine } from './priceShapes'
 export { formatMoney, parseMoney, MAX_GUESTS, type Cents, type FromPrice, type LineKey, type Quote, type QuoteLine }
 
-/** Interior fare per person for two sharing, by sailing. The lowest is the advertised "from" price (ship profile §11.1). */
-const INTERIOR_FARE: Record<string, Cents> = {
-  'sun-2026-11-08': 153_900,
-  'sun-2026-11-22': 157_900,
-  'sun-2026-12-06': 155_900,
-  'sun-2026-12-27': 239_900,
-  'sun-2027-01-17': 174_900,
-  'sun-2027-02-07': 199_900,
-  'sun-2027-02-28': 214_900,
-  'sun-2027-03-21': 189_900,
-  // Departures not yet open for booking; they can be held after a cruise (POS-06) but are not in the sailings list.
-  'sun-2027-11-07': 164_900,
-  'sun-2027-11-21': 169_900,
-  'sun-2027-12-05': 167_900,
-  'sun-2028-01-09': 179_900,
-}
+/** Interior fare per person for two sharing, by sailing (the open ones and the next season's). Filled from `GET /reference/pricing`; empty until then. */
+export const INTERIOR_FARE: Record<string, Cents> = {}
 
-/** Next-season departures that can be held but not yet booked (POS-06). */
-export const FUTURE_DEPARTURES: readonly { id: string; departure: string }[] = [
-  { id: 'sun-2027-11-07', departure: '2027-11-07' },
-  { id: 'sun-2027-11-21', departure: '2027-11-21' },
-  { id: 'sun-2027-12-05', departure: '2027-12-05' },
-  { id: 'sun-2028-01-09', departure: '2028-01-09' },
-]
+/** Next-season departures that can be held but not yet booked (POS-06). Filled from the server. */
+export const FUTURE_DEPARTURES: { id: string; departure: string }[] = []
 
 export const NIGHTS = 7
-/** Government taxes, port charges and fees per person (illustrative). */
-export const TAXES_AND_FEES: Cents = 23_600
-/** Discretionary onboard gratuity per person per night, by room type. */
-export const GRATUITY_PER_NIGHT: Cents = 1650
-export const GRATUITY_PER_NIGHT_SUITE: Cents = 1850
+/** Government taxes, port charges and fees per person. Served; zero until the table arrives. */
+export let TAXES_AND_FEES: Cents = 0
+/** Discretionary onboard gratuity per person per night, by room type. Served. */
+export let GRATUITY_PER_NIGHT: Cents = 0
+export let GRATUITY_PER_NIGHT_SUITE: Cents = 0
+
+/** Puts the served fare tables in use, in place so every importer sees them. */
+export function replacePricing(p: { interior: Record<string, Cents>; nextSeason: { id: string; departure: string; fare: Cents }[]; taxesAndFees: Cents; gratuityPerNight: Cents; gratuityPerNightSuite: Cents }): void {
+  for (const k of Object.keys(INTERIOR_FARE)) delete INTERIOR_FARE[k]
+  Object.assign(INTERIOR_FARE, p.interior)
+  FUTURE_DEPARTURES.length = 0
+  for (const n of p.nextSeason) { INTERIOR_FARE[n.id] = n.fare; FUTURE_DEPARTURES.push({ id: n.id, departure: n.departure }) }
+  TAXES_AND_FEES = p.taxesAndFees
+  GRATUITY_PER_NIGHT = p.gratuityPerNight
+  GRATUITY_PER_NIGHT_SUITE = p.gratuityPerNightSuite
+}
 /** The third and fourth guest in a stateroom pay this share of the fare. */
 export let EXTRA_GUEST_SHARE = 0.75
 /** One guest alone pays this multiple of the per-person fare. */
@@ -85,8 +77,9 @@ export function fromPrice(sailingId: string): FromPrice | null {
 }
 
 /** The lowest "from" fare over every sailing. */
-export function lowestFromPrice(): FromPrice {
-  return SAILINGS.map((s) => fromPrice(s.id)!).reduce((a, b) => (b.fare < a.fare ? b : a))
+export function lowestFromPrice(): FromPrice | null {
+  const all = SAILINGS.map((s) => fromPrice(s.id)).filter((f): f is FromPrice => f !== null)
+  return all.length === 0 ? null : all.reduce((a, b) => (b.fare < a.fare ? b : a))
 }
 
 export const hasPrice = (sailingId: string): boolean => !!sailingById(sailingId) && INTERIOR_FARE[sailingId] !== undefined

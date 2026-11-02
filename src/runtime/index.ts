@@ -29,6 +29,7 @@ import { applyShip, normalizeShip } from '../domain/shipServed'
 import { applyProgram, normalizeProgram } from '../domain/programServed'
 import { applyPorts, normalizePorts } from '../domain/portsServed'
 import { applyPackages, normalizePackages } from '../domain/packagesServed'
+import { applyPricing, normalizePricing } from '../domain/pricingServed'
 import { applyLimits, normalizeLimits } from '../domain/limitsServed'
 import { applyContent, normalizeContent } from '../domain/contentServed'
 import { markReferenceFailed, markReferenceReady, markReferenceRetry, requireReference } from '../domain/referenceStatus'
@@ -148,6 +149,7 @@ const TABLES: Table[] = [
   table('ports', '/reference/ports', normalizePorts, applyPorts, true),
   table('packages', '/reference/packages', normalizePackages, applyPackages),
   table('limits', '/reference/limits', normalizeLimits, applyLimits),
+  table('pricing', '/reference/pricing', normalizePricing, applyPricing, true),
   table('content', '/reference/content', normalizeContent, applyContent),
 ]
 const tableStore = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
