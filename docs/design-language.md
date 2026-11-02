@@ -696,3 +696,9 @@ See `docs/leading-features-plan.md` section 9. In short: anything that changes t
 ## 30. Phase H6: cabin chooser, memory loop and dream
 
 See `docs/leading-features-plan.md` section 10. In short: a score is always shown with its reasons; sun and motion are labelled as estimates; anything that leaves the device (a card, the book, a note, an invitation) goes only from a button the guest presses and never carries a name, cabin number or booking number; drinks totals and anniversaries are off until asked for; the next trip is a draft that books and holds nothing; a contact needs consent, a first name and a line the guest chose, and can be removed or blocked.
+
+## H7 slice 1: what if, sky and briefing
+
+- A calculator never looks like a button that does the thing: "What happens if" shows results in a live region and has no action beyond the calendar download.
+- A simulated reading says it is worked out and can be a few minutes out. Nothing the app has no feed for (planets) is shown at all.
+- A briefing is short (five lines), is made when opened, and every line that links says where it came from.

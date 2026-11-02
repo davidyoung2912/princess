@@ -1,0 +1,33 @@
+import { readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
+import { en } from './i18n/en'
+
+const read = (f: string): string => readFileSync(f, 'utf8')
+
+/** The promises of the first backlog phase (S2-01, S2-05, S6-07, XA-04), checked in the source and the text so a later edit cannot quietly break them. */
+describe('Phase H7 promises', () => {
+  it('only calculates in What happens if: no booking, cancel or payment call', () => {
+    expect(read('src/ui/plan/WhatIfScreen.tsx')).not.toMatch(/api\.(booking|trip|book)\b|\.cancel\(|\.payBalance\(|\.change\(/)
+    expect(read('src/domain/whatIf.ts')).not.toMatch(/from '\.\.\/api|runtime/)
+    expect(en['whatif.intro']).toMatch(/Nothing here cancels or changes your booking/)
+    expect(en['whatif.concept']).toMatch(/not Princess’s real terms/)
+  })
+
+  it('keeps the sky guide honest about being worked out, and never names a planet', () => {
+    expect(en['sky.sim']).toMatch(/can be a few minutes out/)
+    expect(en['sky.sim']).toMatch(/Planets are not shown/)
+    expect(read('src/domain/sky.ts')).not.toMatch(/'(Venus|Mars|Jupiter|Saturn)/)
+  })
+
+  it('makes the briefing only when it is opened: no timer, no effect, no notification', () => {
+    const text = read('src/ui/home/BriefingScreen.tsx') + read('src/domain/briefing.ts')
+    expect(text).not.toMatch(/useEffect|useLayoutEffect|setInterval|setTimeout|Notification|serviceWorker/)
+    expect(en['brief.intro']).toMatch(/never sent to you/)
+  })
+
+  it('reads aloud only from a button, and stops from the same button', () => {
+    const text = read('src/ui/home/BriefingScreen.tsx')
+    expect(text.match(/synth\.speak\(/g)).toHaveLength(1)
+    expect(text).toMatch(/synth\.cancel\(\)/)
+  })
+})

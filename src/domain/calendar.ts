@@ -26,14 +26,20 @@ function fold(line: string): string[] {
   return out
 }
 
-/** A calendar file (iCalendar) with one all-day event that covers the whole cruise, for "add to calendar" (BOK-07). */
-export function buildIcs(e: IcsEvent): string {
+/** A calendar file (iCalendar) with all-day events, one per entry, for "add to calendar" (BOK-07, S2-05). */
+export function buildIcsCalendar(events: readonly IcsEvent[]): string {
   const lines = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Princess concept//Booking//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    'BEGIN:VEVENT', `UID:${e.uid}`, `DTSTAMP:${stampOf(e.stamp)}`,
-    `DTSTART;VALUE=DATE:${compact(e.start)}`, `DTEND;VALUE=DATE:${compact(addDays(e.end, 1))}`,
-    `SUMMARY:${escapeText(e.summary)}`, `DESCRIPTION:${escapeText(e.description)}`, `LOCATION:${escapeText(e.location)}`,
-    'END:VEVENT', 'END:VCALENDAR',
+    ...events.flatMap((e) => [
+      'BEGIN:VEVENT', `UID:${e.uid}`, `DTSTAMP:${stampOf(e.stamp)}`,
+      `DTSTART;VALUE=DATE:${compact(e.start)}`, `DTEND;VALUE=DATE:${compact(addDays(e.end, 1))}`,
+      `SUMMARY:${escapeText(e.summary)}`, `DESCRIPTION:${escapeText(e.description)}`, `LOCATION:${escapeText(e.location)}`,
+      'END:VEVENT',
+    ]),
+    'END:VCALENDAR',
   ]
   return `${lines.flatMap(fold).join('\r\n')}\r\n`
 }
+
+/** A calendar file with one all-day event that covers the whole cruise, for "add to calendar" (BOK-07). */
+export const buildIcs = (e: IcsEvent): string => buildIcsCalendar([e])

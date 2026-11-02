@@ -27,6 +27,7 @@ const TOOLS = [
   { to: '/plan/split', key: 'route.split' },
   { to: '/plan/getting-there', key: 'route.gettingThere' },
   { to: '/plan/autopilot', key: 'route.autopilot' },
+  { to: '/plan/what-if', key: 'route.whatIf' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/home/cabins', key: 'route.cabins' },
   { to: '/home/decide', key: 'route.decide' },

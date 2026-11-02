@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is not started.**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (first slice built, section 11).**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -23,7 +23,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | **Built** (section 8) |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | **Built** (section 9) |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | **Built, in part** (section 10) |
-| H7 | Backlog | Remaining S and C items, sorted after each phase review | | Not started |
+| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slice 1 built (section 11) |
 
 Order rationale and the option to swap H3 and H5 are in the requirements doc §21.
 
@@ -170,3 +170,16 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 - **Already covered earlier, not changed:** loyalty in plain words (S8-10, `/me/loyalty`), honest referral (S8-11, `/me/rebook` and `postcruise.ts`), the marketing pause while a complaint is open (S8-09, `/me/marketing`), and data download and deletion (S8-12, `/me/privacy`). They were not re-checked against the new requirement text and may need a review.
 - **Not done:** guest photos and obstruction notes for a real cabin (S1-06); dream board with votes (S0-06); continue from an outside assistant (S0-07); real-guest day stories (S0-08); occasion starter (S0-09); a link-previewable invitation (needs a server, so it is text); photos in the memory book and the group album (XG-05); family traditions (XG-04); a real "sail again" group and real contact exchange (needs a server and moderation); package hindsight from actual purchases (the guest types the amounts); a PDF made by the app (it uses the browser's print); the real deck plan and heading; a rendered check (no browser testing by rule).
 
+## 11. Phase H7 notes (backlog, slice 1)
+
+Built 2026-11-01. H7 has no fixed list, so the first slice takes four Should items that need no server and no new store, and the remainder stays the backlog below. Front end only; no REST contract changes (`api:check` not needed).
+
+- **What happens if (S2-01):** `src/domain/whatIf.ts`, `/plan/what-if`. Cancel on a date, one traveller cannot go, the fare drops, move to another sailing; each shows dollars and dates through the same `cancelTerms` and `changeCheck` rules as the real screens, plus the dates the cost steps up. It only calculates; the screen makes no booking, cancel or payment call. Concept rules, said on the screen.
+- **Payment calendar (S2-05):** the same screen. Deposit and balance with paid, due soon, overdue or later; what a missed final payment means in dollars; a calendar file with a reminder a week before and on the day for each instalment still owing (`buildIcsCalendar` in `calendar.ts`; `buildIcs` is unchanged in behaviour). A hosted, subscribable feed needs a server and is not done.
+- **Sun, moon and stars (S6-07):** `src/domain/sky.ts`, `/ship/sky`. Sunrise and sunset from the date and an authored position for each day, in the ship's clock; the moon from the mean lunar cycle; constellations by month; the side of the ship facing the sunset; a note when sail-away falls at sunset. `source: 'sim'`, and the screen says times can be minutes out. **No planets** (no ephemeris feed), and the test checks none is named.
+- **Briefing (XA-04):** `src/domain/briefing.ts`, `/home/briefing`. Morning (weather, what changed, all-aboard, first item, one thing to do) or evening (what is left tonight, sunset and moon, tomorrow's first item, one thing to do); at most five lines, each with where it came from, and a line with nothing to say is left out. Made only when opened (no timer or effect), read aloud from a button, or copied.
+- **Assistant evaluation set (XA-09):** `src/domain/assistantEval.test.ts`. Fixed questions with required answers and sources, five questions it must decline or say it cannot see, and a check that every time or amount in an answer is in the facts it was given.
+- **Routes:** `/plan/what-if`, `/home/briefing`, `/ship/sky`. Linked from Plan, Home and Ship. `src/h7Promises.test.ts` checks the promises above.
+- **Verified:** `npm run test` (1478 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done in this slice:** the briefing as a Home card or a push (it would count against the nudge budget), a briefing text size set by the guest beyond the app's own setting, the sunset time for the real port, a map of where to stand.
+- **Backlog left (S and C, not yet built):** S2-02 price-drop watch, S2-03 short hold, S2-04 pay-your-share links, S2-06 accessibility-first booking, S2-08 trip contract page, S2-10 draft-safe checkout; S3-01 per-person readiness, S3-02 document sanity checks, S3-03 weekly companion, S3-04 storm watch, S3-05 medical card, S3-06 packing for this ship, S3-11 away-from-home checklist, S3-13 allergy confirmation; S4-03 to S4-09 (honest difficulty, comparator, group poll, surprise mode, taste profile, budget bar, child brief); S6-09 to S6-10, S6-13 to S6-22, S6-25; S6A-08 to S6A-10; XG-01, XG-02, XG-07; XA-05 to XA-07, XA-10. Some may already be covered by the base phases and need a check before building.

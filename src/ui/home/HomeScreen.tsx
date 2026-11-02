@@ -46,7 +46,7 @@ export function HomeScreen() {
       {trip && <Journey trip={trip} />}
       <HomeOfferCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
-      <p><Link to="/home/concierge">{t('route.concierge')}</Link> · <Link to="/home/ask">{t('route.ask')}</Link></p>
+      <p><Link to="/home/concierge">{t('route.concierge')}</Link> · <Link to="/home/ask">{t('route.ask')}</Link> · <Link to="/home/briefing">{t('route.briefing')}</Link></p>
       <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>
       <div className="simple-hide"><Explore /></div>
       <ConceptNotice />
