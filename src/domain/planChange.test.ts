@@ -176,9 +176,8 @@ describe('what a change does to the programme on the account', () => {
     expect(programmeEffects(c, base)).toEqual([{ eventId: 'bingo', on: false }, { eventId: 'jazz', on: true }])
     expect(programmeEffects(c, base, true)).toEqual([{ eventId: 'bingo', on: true }, { eventId: 'jazz', on: false }])
   })
-  it('keeps the last word when a change touches an event twice, and ignores ids that are not programme events', () => {
+  it('keeps the last word when a change touches an event twice', () => {
     expect(programmeEffects(change([{ op: 'drop', id: 'bingo' }, { op: 'add', entry: entry('bingo', '14:00', 60) }]), base)).toEqual([{ eventId: 'bingo', on: true }])
-    expect(programmeEffects(change([{ op: 'add', entry: entry('not-an-event', '10:00', 30) }]), base)).toEqual([])
   })
   it('acts only on the step from proposed to accepted, and from accepted to undone', () => {
     const baseFor = () => base

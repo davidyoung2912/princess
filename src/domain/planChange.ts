@@ -1,4 +1,3 @@
-import { eventById } from './program'
 
 /**
  * Changes to the day plan, shared by Autopilot (S6-02) and the assistant (XA-02).
@@ -179,15 +178,14 @@ export function proposeReflow(rows: readonly PlanRow[], cause: Cause, alternativ
 export interface ProgrammeEffect { eventId: string; on: boolean }
 
 /**
- * What an accepted change does to the guest's programme plan, or, with `undo`, what undoing it does. Only programme events count: a tour or dinner is a booking
+ * What an accepted change does to the guest's programme plan, or, with `undo`, what undoing it does. Only programme events count (an entry the server served as an event; the client holds no programme table to check against): a tour or dinner is a booking
  * that the guest changes themselves, a move has no place in the programme (events start when they start), and a line the guest pasted is not an event.
  */
 export function programmeEffects(c: Change, base: readonly PlanEntry[], undo = false): ProgrammeEffect[] {
-  const isEvent = (id: string): boolean => eventById(id) !== undefined
   const last = new Map<string, boolean>()
   for (const e of c.edits) {
-    if (e.op === 'drop' && base.find((x) => x.id === e.id)?.kind === 'event' && isEvent(e.id)) last.set(e.id, false)
-    else if (e.op === 'add' && e.entry.kind === 'event' && isEvent(e.entry.id)) last.set(e.entry.id, true)
+    if (e.op === 'drop' && base.find((x) => x.id === e.id)?.kind === 'event') last.set(e.id, false)
+    else if (e.op === 'add' && e.entry.kind === 'event') last.set(e.entry.id, true)
   }
   return [...last].map(([eventId, on]) => ({ eventId, on: undo ? !on : on }))
 }

@@ -68,7 +68,6 @@ export const EVENTS: readonly ShipEvent[] = [
   { ...ev('port-quiet', PORT, '17:45', 60, 'Quiet hour in the spa', 'lotus', 'adults', 'wellness', 2500), afterAllAboard: true },
 ]
 
-export const eventById = (id: unknown): ShipEvent | undefined => EVENTS.find((e) => e.id === id)
 
 export type EventStatus = 'on' | 'moved' | 'cancelled'
 
