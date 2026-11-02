@@ -22,3 +22,20 @@ describe('H8 slice A promises', () => {
     expect(en['hold.note']).toMatch(/no countdown anywhere else/)
   })
 })
+
+describe('H8 slice A part 2 promises', () => {
+  it('keeps pasted plans, the money plan and the story on the device with no booking call', () => {
+    const text = read('src/ui/plan/PrepMoreScreens.tsx') + read('src/domain/prepMore.ts')
+    expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout/)
+    expect(en['paste.intro']).toMatch(/nothing is kept until you tick/)
+    expect(en['paste.note']).toMatch(/nothing is booked/)
+    expect(en['mplan.note']).toMatch(/not your onboard account/)
+  })
+  it('makes the weekly companion a budgeted nudge with a one-tap off', () => {
+    const card = read('src/ui/home/PrepCards.tsx')
+    expect(card).toMatch(/nudgesPerDay === 0/)
+    expect(card).toMatch(/companionOff: true/)
+    expect(en['carbon.method']).toMatch(/not a measurement/)
+    expect(en['guar.sim']).toMatch(/not figures from a real cruise line/)
+  })
+})

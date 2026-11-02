@@ -1,5 +1,6 @@
 import { SUSTAINABILITY } from '../../domain/postcruise'
 import { t, type StringKey } from '../../i18n'
+import { CarbonCard } from '../plan/PrepMoreScreens'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
 
@@ -14,6 +15,7 @@ export function SustainabilityScreen() {
         <p>{t('sus.miles', { miles: SUSTAINABILITY.nauticalMiles.toLocaleString('en-US') })}</p>
         <p>{t(`sus.fuel.${SUSTAINABILITY.fuel}` as StringKey)}</p>
       </Card>
+      <CarbonCard />
       <Card labelledBy="sus-ship-h">
         <h2 id="sus-ship-h" className="card__title">{t('sus.ship')}</h2>
         <ul className="plain-bullets">{SUSTAINABILITY.programmes.map((p) => <li key={p}>{t(`sus.prog.${p}` as StringKey)}</li>)}</ul>

@@ -9,6 +9,7 @@ import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { UpdatesBanner } from '../onboard/Updates'
 import { LinkButton } from '../Button'
+import { CompanionCard, ContinueBookingCard } from './PrepCards'
 import { Card } from '../Card'
 import { ConceptNotice } from '../ConceptNotice'
 import { Explore } from '../discover/Landing'
@@ -43,6 +44,8 @@ export function HomeScreen() {
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
       <UpdatesBanner />
       <AfterCruiseCard />
+      <ContinueBookingCard />
+      {trip && <CompanionCard daysToDeparture={trip.daysToDeparture} />}
       {trip && <Journey trip={trip} />}
       <HomeOfferCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>

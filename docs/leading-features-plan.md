@@ -252,3 +252,21 @@ Front end only; no REST contract changes. Pure logic in `src/domain/bookingPrep.
 - **S3-13 allergy pre-flag** (`/plan/allergy`): allergies listed once; galley status is simulated (noted, then acknowledged after 12 hours) and labelled so. XI-09 can read `allergy`.
 - **Verified:** `npm run test` (1549 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done in part 1:** S2-10 audit and Home "continue" card; S3-03 weekly companion; S3-06 packing for this ship; S2-07, S2-09 and XT-08 (guaranteed-cabin odds, carbon range); S3-12 and S3-14 (money plan, child trip story); S0-07 paste-a-plan; S0-08 and S0-09. Also: the accessibility profile is shown but the cabin chooser, dining, excursions and disembark screens do not yet read it; readiness uses the booking-wide checklist for everyone and per-guest papers only; the hold is not a Home card (it would spend the nudge budget).
+
+## 14. H8 slice A, part 2: booking and preparation (2026-11-01)
+
+Front end only; no REST contract changes. Logic in `src/domain/prepMore.ts`, screens in `src/ui/plan/PrepMoreScreens.tsx`, Home cards in `src/ui/home/PrepCards.tsx`; memory store gains `companionOff` and `pasted`. Promise tests in `src/h8Promises.test.ts`.
+
+- **S2-10 audit:** the draft is already saved by the booking funnel and `/book/resume/:id` reopens it. Added a Home card "Pick up your booking" shown only when a draft with something in it exists.
+- **S3-03 weekly companion:** one note per week from eight weeks out (`companionWeek`), a Home card that is silent when the nudge budget is zero or calm mode is on, with a one-tap "Turn these off".
+- **S3-06 packing for this ship** (`/plan/ship-packing`): not-allowed list, plugs, dress nights from the same rule as `packing.ts`.
+- **S2-07 guaranteed-cabin odds** (`/plan/guarantee`): authored history by category, labelled as concept figures.
+- **S2-09 and XT-08 carbon range:** a card on `/me/sustainability` with a low to high range and the method written out.
+- **S3-12 money plan** (`/plan/money-plan`): daily budget by sea or port day, cash for ports, rest on card; editable, not saved.
+- **S3-14 child trip story** (`/plan/child-story`): ten short lines from the itinerary, printable.
+- **S0-07 paste a plan** (`/plan/paste`): lines read into a draft, links and repeats dropped; only ticked lines are kept, on the device.
+- **S0-08 and S0-09** (`/plan/starter`): occasion starter pointing at the first screens to visit, and authored day stories by style for the three port days.
+- **Verified:** `npm run test` (1569 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** the day stories follow four styles, not the demo personas; kept pasted lines are shown but not yet merged into the day plan; the money plan is not saved and not tied to the bill; the carbon range uses seven nights, not the booked sailing's length; the Home continue card does not name the step reached.
+
+Slice A is now complete apart from the part 1 gaps (screens that should read the accessibility profile, per-guest checklist).
