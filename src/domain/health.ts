@@ -16,7 +16,14 @@ export type Symptom = (typeof SYMPTOMS)[number]
 /** The symptoms that mean staying in the stateroom and telling the Medical Center at once. */
 export const GASTRO: readonly Symptom[] = ['vomiting', 'diarrhoea']
 
-export const REQUEST_KINDS = ['seasick', 'medication', 'devicePower'] as const
+export const REQUEST_KINDS = ['seasick', 'medication', 'devicePower', 'textHelp'] as const
+
+/** The kinds a guest picks from on the health screen; a text message to Guest Services has its own screen (N5.6). */
+export const PICKABLE_KINDS: readonly RequestKind[] = ['seasick', 'medication', 'devicePower']
+
+/** A written message needs words, and no more than the server allows. */
+export const TEXT_HELP_MAX = 300
+export const textHelpProblem = (text: string): 'empty' | 'tooLong' | null => (text.trim() === '' ? 'empty' : text.trim().length > TEXT_HELP_MAX ? 'tooLong' : null)
 export type RequestKind = (typeof REQUEST_KINDS)[number]
 
 export const isRequestKind = (v: unknown): v is RequestKind => REQUEST_KINDS.includes(v as RequestKind)
@@ -28,7 +35,7 @@ export let ISOLATE_HOURS = 24
 export let ISOLATION_WINDOW_HOURS = 72
 
 /** Typical minutes before a nurse calls or a request is answered. */
-export const RESPONSE_MINUTES: Record<'illness' | RequestKind, number> = { illness: 15, seasick: 20, medication: 30, devicePower: 45 }
+export const RESPONSE_MINUTES: Record<'illness' | RequestKind, number> = { illness: 15, seasick: 20, medication: 30, devicePower: 45, textHelp: 10 }
 
 export const isolating = (reportedAts: readonly number[], now: number): boolean => reportedAts.some((at) => at <= now && now - at < ISOLATION_WINDOW_HOURS * 3_600_000)
 

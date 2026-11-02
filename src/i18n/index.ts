@@ -1,4 +1,4 @@
-import { en, type StringKey } from './en'
+import { en, type StringKey } from './locales/en'
 import { LANGUAGES } from './languages'
 
 type Raw = keyof typeof en
@@ -35,7 +35,7 @@ export function setLocale(code: string) {
 export async function loadLocale(code: string): Promise<boolean> {
   if (catalogs[code]) return true
   try {
-    if (code === 'es') registerLocale('es', (await import('./es')).es)
+    if (code === 'es') registerLocale('es', (await import('./locales/es')).es)
     return !!catalogs[code]
   } catch {
     return false

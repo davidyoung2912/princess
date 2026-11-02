@@ -2,8 +2,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { LOCALES, getLocale, loadLocale, registerLocale, setLocale, t } from '.'
-import { en } from './en'
-import { es } from './es'
+import { en } from './locales/en'
+import { es } from './locales/es'
 import { isLanguage } from './languages'
 
 const sourceFiles = (): string[] => {
@@ -12,7 +12,7 @@ const sourceFiles = (): string[] => {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name)
       if (statSync(path).isDirectory()) walk(path)
-      else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && name !== 'en.ts') files.push(path)
+      else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && !path.includes('/locales/')) files.push(path)
     }
   }
   walk(join(__dirname, '..'))
@@ -93,7 +93,7 @@ describe('catalog', () => {
 })
 
 /** The groups of text a Spanish reader needs before anything else: the shell, tabs, every page title, the deck map and route finder, and the display settings. */
-const SPANISH_REQUIRED = /^(app|common|error|shell|tab|route|lang|settings|map|rt|plan2)\./
+const SPANISH_REQUIRED = /^(app|common|error|shell|tab|route|lang|settings|map|rt|plan2|txt)\./
 
 describe('Spanish', () => {
   afterEach(() => setLocale('en'))

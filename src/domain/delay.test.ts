@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { claimRecord, delayNextSteps, delayVisibleToOthers, EMPTY_DELAY, expectedArrival, MAX_DELAY_HISTORY, nextDeadline, normalizeDelay, reportDelay, resolveDelay, setShareEta } from './delay'
 import { REFERENCE_SAILING, itinerary, allAboardEpoch } from './sailings'
-import { en } from '../i18n/en'
+import { en } from '../i18n/locales/en'
 
 const input = { reason: 'traffic' as const, lateMinutes: 30, note: ' stuck ', tellParty: true }
 

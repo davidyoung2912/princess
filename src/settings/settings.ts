@@ -27,6 +27,8 @@ export interface Settings {
   dataLight: boolean
   /** Temperatures and lengths in this system (ACT-08). */
   units: Units
+  /** The guest picked the units themselves, so a change of language no longer moves them. */
+  unitsChosen: boolean
   /** Where the guest lives, for the rules that depend on it, such as marketing consent (ACT-08). */
   region: ConsentRegion
   /** When to ask before an optional charge (XT-03). */
@@ -37,7 +39,13 @@ export interface Settings {
   syncPrivate: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
+/** The measuring system most readers of each language expect; used only as a starting point when the language changes. */
+export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metric' }
+
+/** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
+export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
+
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -75,6 +83,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
     units: isUnits(o.units) ? o.units : defaults.units,
+    unitsChosen: typeof o.unitsChosen === 'boolean' ? o.unitsChosen : defaults.unitsChosen,
     region: isConsentRegion(o.region) ? o.region : defaults.region,
     chargeCheck: isChargeCheck(o.chargeCheck) ? o.chargeCheck : defaults.chargeCheck,
     nudgesPerDay: isNudgeBudget(o.nudgesPerDay) ? o.nudgesPerDay : defaults.nudgesPerDay,

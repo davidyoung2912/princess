@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/en'
+import { en } from '../i18n/locales/en'
 import type { FolioLine } from './folio'
 import { CHARGE_CHECKS, canQuestion, drinkLimitPerDay, explainCharge, feeLedger, needsConfirm, renewalNotice, spendCoach, type ExplainId } from './moneyShield'
 import { PLANS } from './wifi'

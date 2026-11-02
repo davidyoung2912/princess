@@ -4,7 +4,7 @@ import { asHealthView } from '../../api/guards'
 import type { HealthView } from '../../api/types'
 import { EMERGENCY_NUMBER } from '../../domain/contacts'
 import { formatTime } from '../../domain/cruise'
-import { GASTRO, ISOLATE_HOURS, REQUEST_KINDS, RESPONSE_MINUTES, SYMPTOMS, VISIT_FEE, type RequestKind, type Symptom } from '../../domain/health'
+import { GASTRO, ISOLATE_HOURS, PICKABLE_KINDS, RESPONSE_MINUTES, SYMPTOMS, VISIT_FEE, type RequestKind, type Symptom } from '../../domain/health'
 import { formatMoney } from '../../domain/money'
 import type { PersonaId } from '../../domain/people'
 import { isEmergencyCard, MEDICAL_HOURS, MEDICAL_NUMBER } from '../../domain/safety'
@@ -133,7 +133,7 @@ function Request({ reload }: { reload: () => void }) {
       <form onSubmit={(e) => { e.preventDefault(); setSent(false); void send.run() }}>
         <div className="field">
           <label htmlFor="req-kind">{t('hlth.kind')}</label>
-          <select id="req-kind" className="field__input" value={kind} onChange={(e) => setKind(e.target.value as RequestKind)}>{REQUEST_KINDS.map((k) => <option key={k} value={k}>{t(`hlth.kind.${k}` as StringKey)}</option>)}</select>
+          <select id="req-kind" className="field__input" value={kind} onChange={(e) => setKind(e.target.value as RequestKind)}>{PICKABLE_KINDS.map((k) => <option key={k} value={k}>{t(`hlth.kind.${k}` as StringKey)}</option>)}</select>
           <p className="field__hint">{t(`hlth.kindHelp.${kind}` as StringKey, { time: duration(RESPONSE_MINUTES[kind]) })}</p>
         </div>
         <div className="field">

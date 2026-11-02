@@ -4,7 +4,7 @@ import {
   stewardFor, swapEffect,
 } from './embark'
 import { WELCOME_FIELDS } from './embark'
-import { en } from '../i18n/en'
+import { en } from '../i18n/locales/en'
 
 describe('swapping arrival windows', () => {
   it('shows the consequence of swapping windows from the server’s waits', () => {

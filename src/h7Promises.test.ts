@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { en } from './i18n/en'
+import { en } from './i18n/locales/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
 

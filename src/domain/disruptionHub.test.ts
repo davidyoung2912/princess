@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DISRUPTIONS } from './disruption'
 import { addDebrief, awaitingDebrief, callbackStatus, CALLBACK_LIFETIME_MS, familyNotices, featuredGuide, GUIDES, hubFor, hubItems, knockOnCounts, needsHumanReview, normalizeCallback, normalizeDebriefs, orderedGuides } from './disruptionHub'
-import { en } from '../i18n/en'
+import { en } from '../i18n/locales/en'
 
 describe('disruption hub', () => {
   it('has hub detail, in English, for every disruption', () => {

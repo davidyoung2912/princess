@@ -11,7 +11,7 @@ import { applyWeek, normalizePlanning, tasteInferences, withoutSurprises } from 
 import { NOTHING_SHARED, normalizeSharing } from './domain/partyShare'
 import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
 import { DEFAULT_STYLE, STYLES } from './domain/prepMore'
-import { en } from './i18n/en'
+import { en } from './i18n/locales/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
 

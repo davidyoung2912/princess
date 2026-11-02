@@ -35,7 +35,7 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'tab.me': 'Yo',
 
   'lang.label': 'Idioma',
-  'lang.partial': 'Los menús, los títulos de página, el mapa de cubiertas y estos ajustes están traducidos. Otras pantallas siguen en inglés.',
+  'lang.partial': 'Los menús, los títulos de página, el mapa de cubiertas y estos ajustes están traducidos. Otras pantallas siguen en inglés. Las temperaturas y longitudes siguen al idioma hasta que usted las elija en los ajustes, y los precios siempre se cobran en dólares estadounidenses.',
 
   'route.home': 'Inicio',
   'route.boardingPass': 'Pase de embarque',
@@ -257,6 +257,29 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'settings.region.au': 'Australia',
   'settings.calm': 'Modo tranquilo',
   'settings.calmHint': 'Colores más suaves, una columna, sin movimiento, sin cuentas regresivas y sin sugerencias en Inicio. Es independiente del contraste alto.',
+
+  'route.textHelp': 'Pedir ayuda por texto',
+  'txt.urgentTitle': '¿Hay peligro ahora? No espere a un texto',
+  'txt.urgentBody': 'Un texto no es una alarma y puede tardar unos minutos en leerse. Si alguien está en peligro, active la alarma, pulse el botón de emergencia del teléfono del camarote o avise al tripulante más cercano, y llame al número de emergencias.',
+  'txt.title': 'Enviar un mensaje a Servicios al Huésped',
+  'txt.intro': 'Para cuando hablar o escuchar por teléfono es difícil. Escriba qué pasa y dónde está. Normalmente lo leemos en {time}, y un tripulante va a donde usted está.',
+  'txt.where': '¿Dónde está?',
+  'txt.whereCabin': 'En mi camarote o no estoy seguro',
+  'txt.at': 'cerca de',
+  'txt.message': 'Su mensaje',
+  'txt.messageHint': 'Diga lo que necesita en pocas palabras, hasta {max} letras. Diga cuántas personas necesitan ayuda.',
+  'txt.empty': 'Escriba unas palabras primero.',
+  'txt.tooLong': 'Es demasiado largo. Use {max} letras o menos.',
+  'txt.send': 'Enviar mensaje',
+  'txt.notSent': 'Su mensaje NO se envió. Use la alarma, el teléfono del camarote o al tripulante más cercano.',
+  'txt.sentTitle': 'Mensaje enviado',
+  'txt.sentBody': 'Servicios al Huésped lo tiene. Normalmente alguien llega en {time}. Quédese donde está si es seguro, y use la alarma o al tripulante más cercano si empeora.',
+  'txt.history': 'Mensajes que envió',
+  'txt.interpreters': 'Horarios de intérprete',
+  'txt.interpretersBody': 'Espectáculos con intérprete de lengua de señas. También se puede pedir un intérprete para otras cosas si lo solicita por escrito a Servicios al Huésped.',
+  'txt.signedAt': '{title}: días {days} a las {time}',
+  'hlth.kind.textHelp': 'Mensaje de texto a Servicios al Huésped',
+  'hlth.kindHelp.textHelp': 'Un mensaje escrito. Normalmente se lee en {time}.',
 
   'onb.notStepFree': 'Con escalones',
 

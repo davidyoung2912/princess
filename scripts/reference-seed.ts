@@ -2,7 +2,7 @@
 // `npm run db:seed:gen` writes the files; `npm run db:seed:check` proves the files on disk still match this source.
 // The sailings, ports, excursions, dining rooms and fares are no longer authored in the client: the test fixture is now the source of the seeds.
 import '../src/testing/setup.ts'
-import { en } from '../src/i18n/en.ts'
+import { en } from '../src/i18n/locales/en.ts'
 import { CATEGORIES, SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS, OTHER_SHIPS } from '../src/domain/ship.ts'
 import { capacityOf, FARES, FARE_IDS, EARLY_CREDIT_DAYS, promotionsFor } from '../src/domain/fares.ts'
 import { cabinsFor } from '../src/domain/cabins.ts'

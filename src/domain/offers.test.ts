@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { en } from '../i18n/en'
+import { en } from '../i18n/locales/en'
 import { STAGE_IDS } from './sailings'
 import {
   EMPTY_OFFER_STATE, MARKETING_WEEKLY_CAP, OFFERS, countsAgainstCap, dismissOffer, dismissedFor, homeOffer, isOfferFree, marketingLeft, normalizeOfferState,

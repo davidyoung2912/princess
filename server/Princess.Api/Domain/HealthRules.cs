@@ -11,7 +11,20 @@ public static class HealthRules
     /// <summary>The symptoms that mean staying in the stateroom and telling the Medical Center at once.</summary>
     public static readonly string[] Gastro = ["vomiting", "diarrhoea"];
 
-    public static readonly string[] RequestKinds = ["seasick", "medication", "devicePower"];
+    public static readonly string[] RequestKinds = ["seasick", "medication", "devicePower", "textHelp"];
+
+    /// <summary>
+    /// Checks a request: a known kind, a note within the limit, and a note at all for <c>textHelp</c>, the written message to Guest Services for a guest who cannot speak or hear
+    /// (N5.6). Returns the problem title, or null. This is not an alarm: the screens say so and point to the alarm, the cabin phone and the nearest crew member first.
+    /// </summary>
+    public static string? RequestProblem(string? kind, string? note)
+    {
+        if (kind is null || !RequestKinds.Contains(kind)) return "badKind";
+        var text = (note ?? "").Trim();
+        if (text.Length > NoteMax) return "badNote";
+        if (kind == "textHelp" && text.Length == 0) return "badNote";
+        return null;
+    }
 
     /// <summary>How long the isolation meal arrangement lasts from the report.</summary>
     public const int IsolationWindowHours = 72;

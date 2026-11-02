@@ -1,4 +1,4 @@
-import { defaultsFor, loadSettings, pickSynced, saveSettings, settingsKeyFor, settingsToAttributes, SYNCED_FIELDS, withSynced, type Settings, type SyncedSettings } from './settings'
+import { defaultsFor, loadSettings, pickSynced, saveSettings, settingsKeyFor, settingsToAttributes, SYNCED_FIELDS, unitsAfterLanguageChange, withSynced, type Settings, type SyncedSettings } from './settings'
 import { getLocale, loadLocale, setLocale } from '../i18n'
 import { sync } from '../sync'
 import type { Person } from '../domain/people'
@@ -36,6 +36,8 @@ export async function applyLanguage(root: HTMLElement = document.documentElement
 
 /** Changes some settings, saves them, applies them and tells subscribers. */
 export function updateSettings(patch: Partial<Settings>): void {
+  // Changing the language also moves the units to that language's usual ones, unless the guest chose units themselves.
+  if (patch.language !== undefined && patch.language !== current.language && patch.units === undefined) patch = { ...patch, units: unitsAfterLanguageChange(patch.language, current.unitsChosen, current.units) }
   current = { ...current, ...patch }
   saveSettings(current, undefined, key)
   applySettings()

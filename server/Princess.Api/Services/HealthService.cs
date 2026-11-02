@@ -45,9 +45,9 @@ public sealed class HealthService(ScopeLoader scopes, IShipboardStore store)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         Shipboard.RequireAboard(c);
-        if (body?.Kind is null || !HealthRules.RequestKinds.Contains(body.Kind)) throw ApiException.Invalid("badKind");
-        if ((body.Note ?? "").Length > HealthRules.NoteMax) throw ApiException.Invalid("badNote");
-        await store.AddHealthRequestAsync(c.Booking.BookingId, body.Kind, (body.Note ?? "").Trim(), c.Now, ct);
+        var problem = HealthRules.RequestProblem(body?.Kind, body?.Note);
+        if (problem is not null) throw ApiException.Invalid(problem);
+        await store.AddHealthRequestAsync(c.Booking.BookingId, body!.Kind!, (body.Note ?? "").Trim(), c.Now, ct);
         return await ViewAsync(c, ct);
     }
 }

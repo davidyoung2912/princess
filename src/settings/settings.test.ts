@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, SETTINGS_KEY, defaultsFor, loadSettings, normalizeSettings, saveSettings, settingsKeyFor, settingsToAttributes, saveDataRequested } from './settings'
+import { DEFAULT_SETTINGS, SETTINGS_KEY, defaultsFor, loadSettings, normalizeSettings, saveSettings, settingsKeyFor, settingsToAttributes, saveDataRequested, unitsAfterLanguageChange } from './settings'
 
 const memory = (initial?: string) => {
   const data = new Map<string, string>(initial === undefined ? [] : [[SETTINGS_KEY, initial]])
@@ -8,7 +8,7 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { language: 'es', textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true }
+    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
@@ -49,7 +49,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ language: 'en', textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false }, false)).toEqual({
+    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-calm': 'off', 'data-captions': 'off', 'data-light': 'on',
     })
   })
@@ -109,5 +109,14 @@ describe('charge check and suggestions settings (XT-03, XA-03)', () => {
     expect(normalizeSettings({ chargeCheck: 'always', nudgesPerDay: 0 })).toMatchObject({ chargeCheck: 'always', nudgesPerDay: 0 })
     expect(normalizeSettings({ chargeCheck: 'sometimes', nudgesPerDay: 7 })).toMatchObject({ chargeCheck: 'over50', nudgesPerDay: 3 })
     expect(normalizeSettings({ chargeCheck: 5, nudgesPerDay: '1' })).toMatchObject({ chargeCheck: 'over50', nudgesPerDay: 3 })
+  })
+})
+
+describe('units follow the language', () => {
+  it('move to the new language’s units unless the guest chose units themselves', () => {
+    expect(unitsAfterLanguageChange('es', false, 'imperial')).toBe('metric')
+    expect(unitsAfterLanguageChange('en', false, 'metric')).toBe('imperial')
+    expect(unitsAfterLanguageChange('es', true, 'imperial')).toBe('imperial')
+    expect(unitsAfterLanguageChange('xx', false, 'imperial')).toBe('imperial')
   })
 })

@@ -108,6 +108,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/ship/order': 'order food; room service; order drinks; food delivery',
   '/ship/family': 'find my family; where is my child; family location; lost child',
   '/ship/health': 'health center; medical center; doctor; nurse; unwell',
+  '/ship/text-help': 'text for help; message guest services; deaf; hard of hearing; cannot hear; cannot speak; interpreter; sign language; written help',
   '/ship/help-now': 'medical help now; urgent help; ill; emergency doctor',
   '/ship/room': 'my stateroom; cabin; room; door; steward',
   '/ship/photos': 'photos; pictures; photographer; buy photos',

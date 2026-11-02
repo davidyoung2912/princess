@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { en } from './i18n/en'
+import { en } from './i18n/locales/en'
 
 /** Source files of the app itself (not tests), read as text. */
 function sources(dir = 'src'): { file: string; text: string }[] {

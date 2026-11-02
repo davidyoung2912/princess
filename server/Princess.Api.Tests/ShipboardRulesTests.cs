@@ -593,4 +593,24 @@ public class ShipboardRulesTests
         Assert.False(DisruptionRules.ValidOption(DisruptionRules.ById("planChange")!, null));
         Assert.Null(DisruptionRules.ById("chatSlow"));
     }
+
+    // ---- Text help (N5.6) ----
+
+    [Theory]
+    [InlineData("seasick", "", null)]
+    [InlineData("textHelp", "I cannot hear. Someone is ill in cabin 8123.", null)]
+    [InlineData("textHelp", "", "badNote")]
+    [InlineData("textHelp", "   ", "badNote")]
+    [InlineData("textHelp", null, "badNote")]
+    [InlineData("spa", "", "badKind")]
+    [InlineData(null, "x", "badKind")]
+    public void ATextHelpMessageNeedsWordsAndOtherKindsStayAsTheyWere(string? kind, string? note, string? expected) =>
+        Assert.Equal(expected, HealthRules.RequestProblem(kind, note));
+
+    [Fact]
+    public void ATextHelpMessageHasTheSameLengthLimitAsANote()
+    {
+        Assert.Null(HealthRules.RequestProblem("textHelp", new string('a', HealthRules.NoteMax)));
+        Assert.Equal("badNote", HealthRules.RequestProblem("textHelp", new string('a', HealthRules.NoteMax + 1)));
+    }
 }

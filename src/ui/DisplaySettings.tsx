@@ -83,7 +83,7 @@ export function DisplaySettings() {
         <legend>{t('settings.units')}</legend>
         {UNITS.map((units) => (
           <label key={units} className="choice">
-            <input type="radio" name="units" checked={settings.units === units} onChange={() => update({ units })} />
+            <input type="radio" name="units" checked={settings.units === units} onChange={() => update({ units, unitsChosen: true })} />
             {t(`settings.units.${units}` as StringKey)}
           </label>
         ))}
