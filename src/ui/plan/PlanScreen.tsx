@@ -30,6 +30,7 @@ const TOOLS = [
   { to: '/plan/what-if', key: 'route.whatIf' },
   { to: '/plan/storm', key: 'route.storm' },
   { to: '/plan/away', key: 'route.away' },
+  { to: '/plan/medical', key: 'route.medical' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/home/cabins', key: 'route.cabins' },
   { to: '/home/decide', key: 'route.decide' },

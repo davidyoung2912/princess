@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 3 built, section 11).**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 4 built, section 11).**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -23,7 +23,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | **Built** (section 8) |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | **Built** (section 9) |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | **Built, in part** (section 10) |
-| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slices 1 to 3 built (section 11) |
+| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slices 1 to 4 built (section 11) |
 
 Order rationale and the option to swap H3 and H5 are in the requirements doc §21.
 
@@ -202,3 +202,12 @@ Built 2026-11-01. Front end only; no REST contract changes.
 - **Verified:** `npm run test` (1503 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `src/h7Promises.test.ts` checks the on-device promise.
 - **Not done:** a shared copy that two people tick (needs a server); a reminder (would count against the nudge budget).
 - **Backlog left:** as in slice 1, minus S3-02, S3-04 and S3-11.
+
+### Slice 4 (medical card)
+
+Built 2026-11-01. Front end only; no REST contract changes.
+
+- **Medical readiness card (S3-05):** `src/domain/medicalCard.ts`, `/plan/medical`. Five lists (medicines with dose, allergies, conditions, devices that need power, vaccines), up to twelve lines of 80 characters each, repeats dropped. A section with nothing says "Nothing listed" so a blank is never read as "none". Kept on the device in the H6 memory store (`medical`); printed (browser print or save as PDF), copied as text, or cleared with one button. Said on the screen: written by the guest, not checked by a doctor, not medical advice.
+- **Verified:** `npm run test` (1510 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `src/h7Promises.test.ts` checks the on-device promise.
+- **Not done:** the optional, consented pre-cruise notice to the ship's medical centre (needs a server and a privacy review); a lock or PIN on the card (it is in local storage like the rest of the memory store); per-traveller cards for a party.
+- **Backlog left:** as in slice 1, minus S3-02, S3-04, S3-05 and S3-11.

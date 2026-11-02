@@ -707,3 +707,8 @@ See `docs/leading-features-plan.md` section 10. In short: a score is always show
 
 - Anything the guest types to be compared (a passport name) stays on the device and is not saved; the screen says so.
 - A risk reading is calm and worked out: a band in words, the dates it covers, what the line may do, what you can do. No alert role, no red, no notice.
+
+## H7 slice 4: medical card
+
+- Health details the guest types stay on the device, are never sent, and can be cleared in one tap; the screen says so beside the card.
+- A printed sheet shows every section, and an empty one says "Nothing listed" rather than leaving a gap.

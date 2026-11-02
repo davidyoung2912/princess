@@ -71,6 +71,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/plan/what-if', titleKey: 'route.whatIf', tab: 'plan', phase: 27 },
   { path: '/plan/storm', titleKey: 'route.storm', tab: 'plan', phase: 27 },
   { path: '/plan/away', titleKey: 'route.away', tab: 'plan', phase: 27 },
+  { path: '/plan/medical', titleKey: 'route.medical', tab: 'plan', phase: 27 },
   { path: '/plan/getting-there', titleKey: 'route.gettingThere', tab: 'plan', phase: 24 },
   { path: '/plan/assistance', titleKey: 'route.assistance', tab: 'plan', phase: 4 },
   { path: '/plan/ahead', titleKey: 'route.ahead', tab: 'plan', phase: 13 },

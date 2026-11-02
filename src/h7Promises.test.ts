@@ -50,4 +50,11 @@ describe('Phase H7 promises', () => {
     expect(en['away.intro']).toMatch(/stays on this device/)
     expect(en['away.note']).toMatch(/not advice about your home or insurance/)
   })
+
+  it('keeps the medical card on the device: no server call, nothing sent to the ship', () => {
+    const text = read('src/ui/plan/MedicalScreen.tsx') + read('src/domain/medicalCard.ts')
+    expect(text).not.toMatch(/api\.|fetch\(|Notification|setInterval|setTimeout|useEffect/)
+    expect(en['medical.intro']).toMatch(/nothing is sent to the ship or the cruise line/)
+    expect(en['medical.foot']).toMatch(/Not checked by a doctor/)
+  })
 })

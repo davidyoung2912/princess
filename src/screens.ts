@@ -41,6 +41,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/plan/what-if': screen(() => import('./ui/plan/WhatIfScreen'), 'WhatIfScreen'),
   '/plan/storm': screen(() => import('./ui/plan/StormScreen'), 'StormScreen'),
   '/plan/away': screen(() => import('./ui/plan/AwayScreen'), 'AwayScreen'),
+  '/plan/medical': screen(() => import('./ui/plan/MedicalScreen'), 'MedicalScreen'),
   '/ship/sky': screen(() => import('./ui/onboard/SkyScreen'), 'SkyScreen'),
   '/home/ask': screen(() => import('./ui/home/AskScreen'), 'AskScreen'),
   '/plan/autopilot': screen(() => import('./ui/plan/AutopilotScreen'), 'AutopilotScreen'),

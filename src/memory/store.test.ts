@@ -39,3 +39,10 @@ describe('away-from-home checklist state (S3-11)', () => {
     expect(m.awayExtras).toHaveLength(10)
   })
 })
+
+describe('medical card state (S3-05)', () => {
+  it('is kept clean and defaults to empty', () => {
+    expect(normalizeMemory({}).medical.allergies).toEqual([])
+    expect(normalizeMemory({ medical: { allergies: [' Nuts ', 5] } }).medical.allergies).toEqual(['Nuts'])
+  })
+})
