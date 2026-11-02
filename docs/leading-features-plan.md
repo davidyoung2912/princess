@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phase H1 is built (section 5); H2 to H6 are not started.**
+Status: **Plan saved 2026-11-01. Phases H1 and H2 are built (sections 5 and 6); H3 to H6 are not started.**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -18,7 +18,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | Phase | Name | Requirements | Depends on | Status |
 | --- | --- | --- | --- | --- |
 | **H1** | Trust and money | XT-01…XT-07, XT-10, S3-07, S6-06, S7-05, XA-03 | none | **Built** (section 5) |
-| H2 | Disruption Hub and family-at-home | XD-01…XD-10, S3-08, S6-24, S4A-03, S4A-08 | H1 (nudge budget, ledger) | Not started |
+| **H2** | Disruption Hub and family-at-home | XD-01…XD-10, S3-08, S6-24, S4A-03, S4A-08 | H1 (nudge budget, ledger) | **Built** (section 6) |
 | H3 | Port Day Pilot | S6A-01…S6A-15, S6-12, XG-03 | H1 (confirm, ledger), H2 (disruption hooks) | Not started |
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | Not started |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | Not started |
@@ -92,3 +92,16 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 - **Dark-pattern tests (XT-10):** `src/darkPatterns.test.ts`.
 - **Verified:** `npm run test` (1167 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `npm ci` was needed first because `node_modules` was absent; the lockfile did not change.
 - **Not done:** server storage for the charge check, suggestions budget, phone steps and ledger; a ledger of bookings, requests and changes; a per-kind offer mute; confirm on top-ups; a rendered check (no browser testing by rule); the phone-setup list is not yet linked from Home or the check-in flow, only from Plan.
+
+## 6. Phase H2 notes
+
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per person on the device in `src/hub/store.ts` (one record: family page, delay, callback, follow-ups).
+
+- **Disruption Hub (XD-01, XD-02, XD-03):** `src/domain/disruptionHub.ts` adds hub detail to every disruption in `disruption.ts` (what it means, what is already done, knock-on items already refunded, moved, cancelled or kept, what was given, when, and what the guest must do, what happens next). `/home/disruption` shows it with the same choice buttons and acknowledgement as `/home/updates`, which stays. The Home changes banner now opens the hub. Knock-on items are authored concept values, not computed from the guest's bookings.
+- **Callback (XD-04):** `requestCallback`, `queueEstimate`, `callbackStatus`: a pretend queue (place 1 to 6, four minutes a place, lapses after two hours, `source: 'sim'`). The desk number is printed on the page for offline use.
+- **Guides (XD-05, XD-06, XD-08, XD-09):** stranded, lost phone, outage and health guides, always on the hub (health first during a health notice). Outage mode: when the demo network is offline the hub shows a banner listing what still works.
+- **Follow-up (XD-10):** one question after a change ends; a "poor" answer says a person will read it. Kept on the device only; nothing is sent.
+- **Family at home (S3-08, XD-07, S6-24):** `src/domain/homeLink.ts`, `/plan/family-link`, and the public-style `/at-sea/:token` (outside the shell, no sign-in, noindex). Links are signed with a per-device keyed hash (a simulation, not cryptography), expire after 3, 7 or 14 days, are one live link per person, and can be stopped one by one or all at once; removing a person stops their links. The page shows only a fixed list of ship-level fields (tested: no cabin, location, email, bill or deck) and an official notice for ship-wide changes. Postcards are ready-made messages with an optional short note, queued while offline and sent on reconnect. **The link only opens on the device that made it** until a server issues and checks tokens.
+- **I'm delayed (S4A-03, S4A-08):** `src/domain/delay.ts`, `/home/delayed`: reason and minutes, tells the line (mock) and optionally the party (a note on the party page), shows next steps for the stage, a new ETA against the next all-aboard, a claim-ready record, and a switch to stop sharing the flag.
+- **Routes:** `/home/disruption`, `/home/delayed`, `/plan/family-link`, `/at-sea/:token` (`public: true` in the route table; the app skips sign-in for it).
+- **Not done:** server storage and a real signed link; real callbacks; knock-on fixes computed from actual bookings; a photo on postcards; the debrief and callback as Home cards counted against the nudge budget; ledger entries for changes; a valid-link render test (only the refusal states render in tests, the logic is unit tested); a rendered check (no browser testing by rule).

@@ -29,7 +29,7 @@ export function UpdatesBanner() {
   const top = waiting[0]
   const def = disruptionById(top.id)!
   return (
-    <Banner kind={top.severity === 'info' ? 'info' : top.severity === 'critical' ? 'danger' : 'warning'} title={t(def.title)} action={<LinkButton to="/home/updates" variant="secondary">{t('disrupt.review')}</LinkButton>}>
+    <Banner kind={top.severity === 'info' ? 'info' : top.severity === 'critical' ? 'danger' : 'warning'} title={t(def.title)} action={<LinkButton to="/home/disruption" variant="secondary">{t('disrupt.review')}</LinkButton>}>
       {waiting.length > 1 && <p>{t('disrupt.more', { count: waiting.length - 1 })}</p>}
     </Banner>
   )

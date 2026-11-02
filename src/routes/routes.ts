@@ -13,6 +13,8 @@ export interface RouteDef {
   phase: number
   /** Shows the "unofficial concept" notice (Home and Me, per the design language). */
   notice?: boolean
+  /** Opened by someone without an account (a family link): no sign-in, no shell, no tab. */
+  public?: boolean
 }
 
 /** Every screen. The router is built from this table, and the navigation model is tested against it. */
@@ -33,6 +35,8 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/home/cruise/cost', titleKey: 'route.tripCost', tab: 'home', phase: 20 },
   { path: '/home/offers', titleKey: 'route.offers', tab: 'home', phase: 14 },
   { path: '/home/updates', titleKey: 'route.updates', tab: 'home', phase: 11 },
+  { path: '/home/disruption', titleKey: 'route.disruption', tab: 'home', phase: 22 },
+  { path: '/home/delayed', titleKey: 'route.delayed', tab: 'home', phase: 22 },
   { path: '/home/concierge', titleKey: 'route.concierge', tab: 'home', phase: 9 },
   { path: '/home/cruise', titleKey: 'route.cruise', tab: 'home', phase: 1 },
   { path: '/home/sailings', titleKey: 'route.sailings', tab: 'home', phase: 1 },
@@ -56,6 +60,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/plan/travel', titleKey: 'route.travel', tab: 'plan', phase: 4 },
   { path: '/plan/party', titleKey: 'route.party', tab: 'plan', phase: 20 },
   { path: '/plan/phone', titleKey: 'route.phone', tab: 'plan', phase: 21 },
+  { path: '/plan/family-link', titleKey: 'route.familyLink', tab: 'plan', phase: 22 },
   { path: '/plan/assistance', titleKey: 'route.assistance', tab: 'plan', phase: 4 },
   { path: '/plan/ahead', titleKey: 'route.ahead', tab: 'plan', phase: 13 },
   { path: '/plan/clubs', titleKey: 'route.clubs', tab: 'plan', phase: 13 },
@@ -129,4 +134,5 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/settings', titleKey: 'route.settings', tab: 'me', phase: 0 },
   { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
+  { path: '/at-sea/:token', titleKey: 'route.atSea', tab: null, phase: 22, public: true },
 ]

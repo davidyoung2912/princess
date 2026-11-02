@@ -1,4 +1,5 @@
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { Suspense, type ReactNode } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
 import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
 import { Shell } from './ui/Shell'
@@ -9,8 +10,12 @@ import { ROUTES } from './routes/routes'
 export function AppRoutes() {
   return (
     <Routes>
+      {ROUTES.filter((r) => r.public).map((route) => {
+        const Screen = SCREENS[route.path]
+        return <Route key={route.path} path={route.path} element={<Suspense fallback={null}><Screen /></Suspense>} />
+      })}
       <Route element={<Shell />}>
-        {ROUTES.map((route) => {
+        {ROUTES.filter((r) => !r.public).map((route) => {
           const Screen = SCREENS[route.path]
           return <Route key={route.path} path={route.path} element={<Screen />} />
         })}
@@ -24,9 +29,16 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <SignInGate>
+      <PublicOrSignedIn>
         <AppRoutes />
-      </SignInGate>
+      </PublicOrSignedIn>
     </BrowserRouter>
   )
+}
+
+/** A family link opens without an account; everything else waits for sign-in. */
+function PublicOrSignedIn({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
+  const isPublic = ROUTES.some((r) => r.public && pathname.startsWith(r.path.slice(0, r.path.indexOf('/:'))))
+  return isPublic ? <>{children}</> : <SignInGate>{children}</SignInGate>
 }

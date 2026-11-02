@@ -23,6 +23,7 @@ const TOOLS = [
   { to: '/plan/travel', key: 'route.travel' },
   { to: '/plan/party', key: 'route.party' },
   { to: '/plan/phone', key: 'route.phone' },
+  { to: '/plan/family-link', key: 'route.familyLink' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/plan/assistance', key: 'route.assistance' },
   { to: '/plan/ahead', key: 'route.ahead' },

@@ -24,7 +24,7 @@ const render = (path: string) =>
 const decode = (html: string) => html.replace(/&#x27;/g, "'").replace(/&amp;/g, '&')
 
 describe('every screen renders inside the shell', () => {
-  for (const route of ROUTES) {
+  for (const route of ROUTES.filter((r) => !r.public)) {
     const path = route.path.replace(':id', 'sample')
     it(`${path}`, () => {
       const html = decode(render(path))
@@ -35,6 +35,16 @@ describe('every screen renders inside the shell', () => {
       expect(html).toContain('id="main"')
     })
   }
+
+  it('shows a family link outside the shell: no tabs, no sign-in, an explained refusal', () => {
+    for (const path of ['/at-sea/:token', '/at-sea/nope', '/at-sea/gerald.a.b.c']) {
+      const html = decode(render(path))
+      expect(html).toContain(t('route.atSea'))
+      expect(html).toContain(t('home.public.bad.malformed'))
+      expect(html).not.toContain('class="tabs')
+      expect(html).not.toContain(t('app.conceptNotice'))
+    }
+  })
 
   it('shows a way back from an unknown address', () => {
     const html = decode(render('/nowhere'))
