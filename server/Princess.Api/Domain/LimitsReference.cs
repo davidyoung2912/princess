@@ -1,3 +1,5 @@
+using Princess.Api.Auth;
+
 namespace Princess.Api.Domain;
 
 /// <summary>The limits, windows, fees and rates the server enforces, as the client reads them (multi-device plan 3, Phase 3 step 6). Each entry is the server's own constant under the client's name, so a screen's limit can never differ from the rule that checks it. <c>Version</c> changes when any value does.</summary>
