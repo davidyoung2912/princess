@@ -13,7 +13,7 @@ public static class ReferenceEndpoints
             .WithTags("Reference").WithSummary("Today's exchange rates per US dollar (a stub feed, the same for every device). For reading only: the account is charged in US dollars.");
 
         api.MapGet("/reference/access", () => Results.Ok(ReferenceRules.Access()))
-            .WithTags("Reference").WithSummary("Excursion difficulty (distance, steps, heat, shade, seats, restrooms, wet footing) by excursion id, and the room types that have accessible staterooms.");
+            .WithTags("Reference").WithSummary("Excursion difficulty (distance, steps, heat, shade, seats, restrooms, wet footing) by excursion id, and the room types that have accessible staterooms. `version` changes when any of it does.");
 
         api.MapGet("/reference/catalogue", () => Results.Ok(ReferenceRules.Catalogue()))
             .WithTags("Reference").WithSummary("The authored catalogue the server holds: shore excursions, dining venues and ports (with whether guests tender ashore). The same data the concierge and booking use.");

@@ -4,7 +4,7 @@ namespace Princess.Api.Domain;
 
 public sealed record ExcursionDifficulty(double Km, bool Steps, string Heat, string Shade, bool Seats, bool Restrooms, bool Wet);
 
-public sealed record AccessReferenceDto(Dictionary<string, ExcursionDifficulty> Difficulty, IReadOnlyList<string> AccessibleCategories);
+public sealed record AccessReferenceDto(string Version, Dictionary<string, ExcursionDifficulty> Difficulty, IReadOnlyList<string> AccessibleCategories);
 
 /// <summary>One sailing in the served table. Every sailing runs the same eight-day timeline from its departure date.</summary>
 public sealed record SailingRefDto(string Id, string Departure, bool Holiday, bool Reference);
@@ -57,5 +57,11 @@ public static class ReferenceRules
         return new(version, sailings, ports, template, Itinerary.ShipHomeZone, Itinerary.ShipWestZone);
     }
 
-    public static AccessReferenceDto Access() => new(new Dictionary<string, ExcursionDifficulty>(Difficulty), CabinRules.AccessibleCategories);
+    public static AccessReferenceDto Access()
+    {
+        var difficulty = new Dictionary<string, ExcursionDifficulty>(Difficulty);
+        var text = System.Text.Json.JsonSerializer.Serialize(new { d = difficulty.OrderBy(x => x.Key, StringComparer.Ordinal).ToList(), c = CabinRules.AccessibleCategories });
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
+        return new(version, difficulty, CabinRules.AccessibleCategories);
+    }
 }

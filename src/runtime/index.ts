@@ -119,8 +119,16 @@ export const familyHome = {
 /** Fetches the access reference data (excursion difficulty, accessible room types) once a person is signed in; failures leave the authored copies in use. */
 function loadReference(): void {
   if (!auth.current()) { setServedAccess(null); return }
+  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+  const kept = cacheGet(store(), 'access', 'v1', normalizeAccessReference, Date.now())
+  if (kept) setServedAccess(kept.value)
   void http.get<unknown>('/reference/access')
-    .then((raw) => setServedAccess(normalizeAccessReference(raw)))
+    .then((raw) => {
+      const fresh = normalizeAccessReference(raw)
+      if (!fresh) return
+      if (fresh.version !== kept?.value.version) setServedAccess(fresh)
+      cachePut(store(), 'access', 'v1', raw, Date.now())
+    })
     .catch(() => {})
 }
 

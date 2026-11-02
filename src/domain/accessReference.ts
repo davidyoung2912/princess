@@ -4,7 +4,7 @@ import type { Difficulty, Level } from './planning'
  * Access reference data from the server (multi-device plan Phase 5): excursion difficulty and the room types with accessible staterooms.
  * Until the server's copy arrives (or without a server) the authored copies in `planning.ts` and `cabins.ts` are used. Pure; one module-level copy.
  */
-export interface AccessReference { difficulty: Record<string, Difficulty>; accessibleCategories: string[] }
+export interface AccessReference { version: string; difficulty: Record<string, Difficulty>; accessibleCategories: string[] }
 
 let served: AccessReference | null = null
 
@@ -17,7 +17,8 @@ const level = (v: unknown): Level | null => (LEVELS as readonly unknown[]).inclu
 /** Reads the server's answer; a bad entry is dropped, and an answer with nothing usable gives null so the authored copies stay in use. */
 export function normalizeAccessReference(raw: unknown): AccessReference | null {
   if (!raw || typeof raw !== 'object') return null
-  const r = raw as { difficulty?: unknown; accessibleCategories?: unknown }
+  const r = raw as { version?: unknown; difficulty?: unknown; accessibleCategories?: unknown }
+  if (typeof r.version !== 'string' || r.version === '') return null
   if (!r.difficulty || typeof r.difficulty !== 'object' || !Array.isArray(r.accessibleCategories)) return null
   const difficulty: Record<string, Difficulty> = {}
   for (const [id, v] of Object.entries(r.difficulty as Record<string, unknown>)) {
@@ -29,5 +30,5 @@ export function normalizeAccessReference(raw: unknown): AccessReference | null {
     difficulty[id] = { km: d.km, steps: d.steps === true, heat, shade, seats: d.seats === true, restrooms: d.restrooms === true, wet: d.wet === true }
   }
   if (Object.keys(difficulty).length === 0) return null
-  return { difficulty, accessibleCategories: r.accessibleCategories.filter((c): c is string => typeof c === 'string') }
+  return { version: r.version, difficulty, accessibleCategories: r.accessibleCategories.filter((c): c is string => typeof c === 'string') }
 }
