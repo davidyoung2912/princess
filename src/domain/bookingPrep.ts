@@ -1,6 +1,5 @@
 import { formatMoney, type Cents } from './pricing'
 import type { ChecklistEntry } from './checklist'
-import { addDays } from './timezones'
 import { priceDrop, type PriceDrop, type WhatIfBooking } from './whatIf'
 
 /**
@@ -212,20 +211,6 @@ export const ledgerSummary = (shares: readonly Share[]): { paid: Cents; owed: Ce
 
 // ---- Price-drop watch (S2-02) ----
 export interface FarePoint { date: string; total: Cents }
-
-/** A simulated weekly fare for the same cabin since booking: a gentle wander around the booked fare, the same every time for the same booking. */
-export function fareHistory(b: Pick<WhatIfBooking, 'plan' | 'today'>, number: string): FarePoint[] {
-  let seed = 0
-  for (const ch of number) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
-  const next = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32 }
-  const points: FarePoint[] = []
-  let fare = b.plan.total
-  for (let d = b.plan.booked, n = 0; d <= b.today && n < 26; d = addDays(d, 7), n++) {
-    fare = Math.max(Math.round((b.plan.total * 0.7) / 100) * 100, Math.round((fare * (0.96 + next() * 0.09)) / 100) * 100)
-    points.push({ date: d, total: n === 0 ? b.plan.total : fare })
-  }
-  return points
-}
 
 export interface PriceWatch { latest: FarePoint; lowest: FarePoint; drop: PriceDrop; steps: ('ask' | 'review' | 'confirm')[] }
 

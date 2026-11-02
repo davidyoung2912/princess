@@ -16,7 +16,8 @@ export interface DayPlanView {
   changes: Change[]
   rows: PlanRow[]
   alternatives: PlanEntry[]
-  weather: SimWeather
+  /** The server's forecast for the day; null until it has come. */
+  weather: SimWeather | null
   dayStartAt: number
   dayEndAt: number
 }

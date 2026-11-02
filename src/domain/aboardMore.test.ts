@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { calmestPlaces, cabinWords, challenge, dndNow, findCabin, HOLD_MINUTES, kidsReport, loungerBoard, matchFound, normalizeAboard, okStatus, seasickStatus, seenToday, soloState, startSolo, takeLounger, teenComplete, EMPTY_TEEN, TEEN_RULES, LAP_STEPS, STEP_GOAL } from './aboardMore'
+import { calmestPlaces, cabinWords, challenge, dndNow, findCabin, HOLD_MINUTES, kidsReport, loungerBoard, matchFound, normalizeAboard, okStatus, seasickStatus, soloState, startSolo, takeLounger, teenComplete, EMPTY_TEEN, TEEN_RULES, LAP_STEPS, STEP_GOAL } from './aboardMore'
+import type { FoundItem, LoungerOther } from './aboardMore'
 import { cabinsFor } from './cabins'
 import { REFERENCE_SAILING } from './sailings'
 
 const MIN = 60_000
+/** The other loungers as the server reports them. */
+const OTHERS: LoungerOther[] = Array.from({ length: 8 }, (_, i) => (i % 2 === 0 ? { id: i + 1, state: 'free' as const, returnsIn: null } : { id: i + 1, state: 'held' as const, returnsIn: 10 }))
+const HANDED_IN: FoundItem[] = [{ id: 'f1', what: 'Blue sunglasses case', keywords: ['sunglasses', 'glasses', 'case'], at: 'guest-services' }]
 describe('aboardMore', () => {
   it('finds calm midship places on low decks', () => {
     const p = calmestPlaces()
@@ -17,7 +21,7 @@ describe('aboardMore', () => {
   })
   it('takes only a free lounger, one at a time, and lapses after the hold time', () => {
     const now = 1_000 * MIN
-    const board = loungerBoard(now, null, [])
+    const board = loungerBoard(now, null, [], OTHERS)
     const free = board.find((r) => r.state === 'free')
     expect(board).toHaveLength(8)
     if (!free) return
@@ -25,8 +29,8 @@ describe('aboardMore', () => {
     expect(hold.id).toBe(free.id)
     const other = board.find((r) => r.state === 'free' && r.id !== free.id)
     expect(takeLounger(board, hold, other?.id ?? 99, now)).toBe(hold)
-    expect(loungerBoard(now + 10 * MIN, hold, []).find((r) => r.id === free.id)).toMatchObject({ state: 'mine', returnsIn: HOLD_MINUTES - 10 })
-    expect(loungerBoard(now + HOLD_MINUTES * MIN, hold, []).find((r) => r.id === free.id)?.state).toBe('lapsed')
+    expect(loungerBoard(now + 10 * MIN, hold, [], OTHERS).find((r) => r.id === free.id)).toMatchObject({ state: 'mine', returnsIn: HOLD_MINUTES - 10 })
+    expect(loungerBoard(now + HOLD_MINUTES * MIN, hold, [], OTHERS).find((r) => r.id === free.id)?.state).toBe('lapsed')
   })
   it('makes the same kids report each time', () => {
     expect(kidsReport('Mia', 'firefly', 3)).toEqual(kidsReport('Mia', 'firefly', 3))
@@ -68,12 +72,8 @@ describe('aboardMore', () => {
     expect(c.laps).toBe(Math.floor((STEP_GOAL + 2400) / LAP_STEPS))
   })
   it('matches a lost report to what was handed in', () => {
-    expect(matchFound({ what: 'my sunglasses' }).map((f) => f.id)).toEqual(['f1'])
-    expect(matchFound({ what: 'umbrella' })).toEqual([])
-  })
-  it('lists up to two kinds seen today, the same each time', () => {
-    expect(seenToday(3)).toEqual(seenToday(3))
-    expect(seenToday(3).length).toBeLessThanOrEqual(2)
+    expect(matchFound({ what: 'my sunglasses' }, HANDED_IN).map((f) => f.id)).toEqual(['f1'])
+    expect(matchFound({ what: 'umbrella' }, HANDED_IN)).toEqual([])
   })
   it('normalises junk to the empty state', () => {
     const s = normalizeAboard({ lounger: { id: 99 }, dnd: [{ id: 'a', from: 'bad' }], steps: { '9': 5, '1': -4 }, sightings: [{ id: 'x', species: 'dragon', day: 2 }] })

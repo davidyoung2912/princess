@@ -16,6 +16,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink, } from '../onboard/common'
 import { duration, useShipTime } from '../onboard/shipTime'
@@ -40,7 +41,9 @@ export function JourneyScreen() {
   const result = buildJourney(plan, sailing.departure, delay)
   const early = flyEarlyAdvice(plan, sailing.departure, delay)
   const cond = useRouteConditions(sailing.departure, plan.windowStart)
-  const hotel = hotelHandoff(plan, sailing.departure, cond.leaveEarlierMinutes)
+  /** Minutes to leave earlier for traffic and weather; none until the server's answer is here. */
+  const earlier = cond?.leaveEarlierMinutes ?? 0
+  const hotel = hotelHandoff(plan, sailing.departure, earlier)
   const toGo = minutesToWindow(now, sailing.departure, plan.windowStart)
 
   return (
@@ -80,7 +83,7 @@ export function JourneyScreen() {
             <li key={l.id}>{time(l.start)}: {t(l.label)}{l.minutes > 0 ? ` (${duration(l.minutes)})` : ''}</li>
           ))}
         </ol>
-        {result.leaveBy !== null && <p>{t('journey.leaveBy', { time: time(result.leaveBy - cond.leaveEarlierMinutes * 60_000) })}</p>}
+        {result.leaveBy !== null && <p>{t('journey.leaveBy', { time: time(result.leaveBy - earlier * 60_000) })}</p>}
         {toGo > 0 && toGo < 24 * 60 && <p className="calm-hide">{t('journey.countdown', { time: duration(toGo) })}</p>}
       </section>
 
@@ -109,9 +112,11 @@ export function JourneyScreen() {
 
       <Card labelledBy="j-cond">
         <h2 id="j-cond" className="card__title">{t('journey.cond')}</h2>
-        <p>{t('journey.cond.line', { traffic: t(`journey.traffic.${cond.traffic}` as StringKey), sky: t(`journey.sky.${cond.sky}` as StringKey) })}</p>
-        {cond.leaveEarlierMinutes > 0 ? <p>{t('journey.cond.earlier', { minutes: cond.leaveEarlierMinutes })}</p> : <p>{t('journey.cond.fine')}</p>}
-        <p className="muted">{t('journey.cond.sim')}</p>
+        {cond ? <>
+          <p>{t('journey.cond.line', { traffic: t(`journey.traffic.${cond.traffic}` as StringKey), sky: t(`journey.sky.${cond.sky}` as StringKey) })}</p>
+          {cond.leaveEarlierMinutes > 0 ? <p>{t('journey.cond.earlier', { minutes: cond.leaveEarlierMinutes })}</p> : <p>{t('journey.cond.fine')}</p>}
+          <p className="muted">{t('journey.cond.sim')}</p>
+        </> : <FeedWaiting />}
       </Card>
 
       {plan.hotelNight && (

@@ -32,21 +32,10 @@ export const HOLD_MINUTES = 40
 export interface LoungerHold { id: number; start: number }
 export type LoungerState = 'free' | 'held' | 'mine' | 'overdue' | 'reported' | 'lapsed'
 export interface LoungerRow { id: number; state: LoungerState; /** Minutes until a held lounger is due back, or null. */ returnsIn: number | null }
-/** A simulated board: the other loungers cycle through free, held and left too long, the same for the same minute. Yours is real on this device. */
+/** The other loungers as the server reports them: free, held or left too long. Yours is real on this device. */
 export interface LoungerOther { id: number; state: 'free' | 'held' | 'overdue'; returnsIn: number | null }
-/** The other loungers at a minute (what a feed gives; the server can answer the same). */
-export function loungerOthers(now: number): LoungerOther[] {
-  const minute = Math.floor(now / MIN)
-  return Array.from({ length: LOUNGERS }, (_, i) => {
-    const id = i + 1
-    const x = (minute + hash(`lounger${id}`)) % 60
-    if (x < 20) return { id, state: 'free' as const, returnsIn: null }
-    if (x < 45) return { id, state: 'held' as const, returnsIn: 45 - x }
-    return { id, state: 'overdue' as const, returnsIn: null }
-  })
-}
 /** The board: the feed's others, with the guest's own hold and reports (which stay on their device) laid over it. */
-export function loungerBoard(now: number, mine: LoungerHold | null, reported: readonly number[], others: readonly LoungerOther[] = loungerOthers(now)): LoungerRow[] {
+export function loungerBoard(now: number, mine: LoungerHold | null, reported: readonly number[], others: readonly LoungerOther[]): LoungerRow[] {
   return others.map((o) => {
     if (mine && mine.id === o.id) {
       const left = HOLD_MINUTES - Math.floor((now - mine.start) / MIN)
@@ -149,15 +138,7 @@ export function challenge(byDay: Record<string, number>, today: number): Challen
 export interface LostReport { id: string; what: string; where: string; at: number }
 export const LOST_MAX = 5
 export interface FoundItem { id: string; what: string; keywords: string[]; at: 'guest-services' | 'eatery' | 'lido-pool' }
-/** An authored list of what the lost-property desk has handed in. A real build reads the ship's own list. */
-export const FOUND: readonly FoundItem[] = [
-  { id: 'f1', what: 'Blue sunglasses case', keywords: ['sunglasses', 'glasses', 'case'], at: 'guest-services' },
-  { id: 'f2', what: 'Child’s green hat', keywords: ['hat', 'cap', 'green', 'child'], at: 'lido-pool' },
-  { id: 'f3', what: 'Black phone charger', keywords: ['charger', 'cable', 'phone'], at: 'eatery' },
-  { id: 'f4', what: 'Paperback book', keywords: ['book', 'paperback'], at: 'guest-services' },
-  { id: 'f5', what: 'Silver bracelet', keywords: ['bracelet', 'jewellery', 'jewelry', 'silver'], at: 'guest-services' },
-]
-export const matchFound = (r: Pick<LostReport, 'what'>, items: readonly FoundItem[] = FOUND): FoundItem[] => {
+export const matchFound = (r: Pick<LostReport, 'what'>, items: readonly FoundItem[]): FoundItem[] => {
   const words = r.what.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2)
   return items.filter((f) => f.keywords.some((k) => words.includes(k)))
 }
@@ -166,8 +147,6 @@ export const matchFound = (r: Pick<LostReport, 'what'>, items: readonly FoundIte
 export const SPECIES = ['dolphins', 'flyingFish', 'frigatebird', 'turtle', 'whale', 'ray'] as const
 export interface Sighting { id: string; species: string; day: number }
 export const SIGHTINGS_MAX = 30
-/** Two kinds the ship is said to have seen today: authored and simulated, the same for a given day. */
-export const seenToday = (day: number): string[] => [SPECIES[hash(`a${day}`) % SPECIES.length], SPECIES[hash(`b${day}`) % SPECIES.length]].filter((s, i, a) => a.indexOf(s) === i)
 
 // ---- State kept on the device ----
 export interface AboardState {

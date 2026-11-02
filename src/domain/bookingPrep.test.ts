@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accessNotes, EMPTY_ACCESS, fareHistory, galleyStatus, holdState, ledgerSummary, leftInWords, normalizeAllergy, normalizeHold, personReadiness, priceWatch, splitEven, tripContract } from './bookingPrep'
+import { accessNotes, EMPTY_ACCESS, galleyStatus, holdState, ledgerSummary, leftInWords, normalizeAllergy, normalizeHold, personReadiness, priceWatch, splitEven, tripContract } from './bookingPrep'
 import { buildChecklist } from './checklist'
 
 const H = 3_600_000
@@ -56,9 +56,8 @@ describe('allergy, ledger, watch', () => {
     expect(parts.reduce((a, p) => a + p.amount, 0)).toBe(100)
     expect(ledgerSummary(parts.map((p, i) => ({ id: String(i), ...p, paid: i === 0 })))).toEqual({ paid: 34, owed: 66, total: 100 })
   })
-  it('gives the same history every time and allows re-pricing only before the final date', () => {
+  it('allows re-pricing only before the final date', () => {
     const b = { plan, guests: 2, today: '2026-12-20', departure: '2027-04-01', balancePaid: false, finalDays: 81 }
-    expect(fareHistory(b, 'A1')).toEqual(fareHistory(b, 'A1'))
     const w = priceWatch(b, [{ date: '2026-12-20', total: 380000 }])!
     expect(w.drop).toEqual({ ok: true, saving: 20000, newTotal: 380000 })
     expect(priceWatch({ ...b, today: '2027-02-01' }, [{ date: 'x', total: 380000 }])!.steps).toEqual([])

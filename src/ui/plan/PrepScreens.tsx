@@ -17,6 +17,7 @@ import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { Printer, Share } from '../icons'
 import { Load } from '../account/parts'
@@ -255,6 +256,7 @@ export function PriceWatchScreen() {
 function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
       const b: WhatIfBooking = { plan: v.trip.plan, guests: v.trip.guests, today, departure: v.trip.departure, balancePaid: v.trip.payment === 'paid', finalDays: daysBetween(v.trip.plan.finalDue, v.trip.departure) }
       const history = useFareHistory(b, v.trip.number)
+      if (!history) return <FeedWaiting />
       const w = priceWatch(b, history)
       if (!w) return <p>{t('pwatch.none')}</p>
       return (

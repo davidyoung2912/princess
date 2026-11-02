@@ -8,6 +8,7 @@ import { useSailing } from '../../hooks/useDemo'
 import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { BackLink } from '../onboard/common'
 
 /** Sun, moon and stars guide (S6-07): sunrise and sunset by the ship's clock, the moon, constellations that are easy to find, and where to watch. Worked out from the date and route (a simulation). */
@@ -29,6 +30,8 @@ export function SkyScreen() {
           {days.map((d) => <option key={d.day} value={d.day}>{`${d.day} · ${d.port === 'sea' ? 'At sea' : d.port === 'fll' ? 'Fort Lauderdale' : PORTS[d.port].name}`}</option>)}
         </select>
       </div>
+      {!n && <FeedWaiting />}
+      {n && <>
       <Card labelledBy="sky-times">
         <h2 id="sky-times" className="card__title">{n.sunset}</h2>
         <dl className="facts">
@@ -44,6 +47,7 @@ export function SkyScreen() {
         <h3>{t('sky.stars')}</h3>
         <ul className="plain-list">{n.stars.map((s) => <li key={s}>{s}</li>)}</ul>
       </Card>
+      </>}
     </div>
   )
 }

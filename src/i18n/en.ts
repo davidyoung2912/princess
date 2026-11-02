@@ -10,6 +10,7 @@ export const en = {
 
   'error.title': 'Something went wrong',
   'shell.loading': 'Loading…',
+  'feed.waiting': 'Getting the latest figures from the ship…',
   'error.body': 'The app hit an unexpected problem. Reloading usually fixes it, and anything you saved is kept.',
   'error.stale': 'A newer version of the app is available. Reloading will bring it in, and anything you saved is kept.',
   'error.reload': 'Reload',

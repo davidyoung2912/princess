@@ -1,9 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { FOUND, loungerBoard, loungerOthers, matchFound, seenToday } from '../domain/aboardMore'
-import { simulatedOpening, watchState, type Watch } from '../domain/autopilot'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { loungerBoard, matchFound, type LoungerOther } from '../domain/aboardMore'
+import { watchState, type Watch } from '../domain/autopilot'
 import { envFor, goodTime, levelAt, lineReading, PULSE_VENUES, pulseAt, quietSpaces } from '../domain/pulse'
-import { skyNight } from '../domain/sky'
-import { stormWatch } from '../domain/storm'
 import { createFeed } from './feed'
 import { foundFeed, loungerFeed, normalizeFound, normalizeLoungers, normalizeOpening, normalizeSightings, openingFeed, sightingsFeed } from './onboard'
 import { minuteOf, normalizePulse, pulseFeed, withServed } from './pulse'
@@ -11,27 +9,61 @@ import { normalizeSkyNight, skyNightFeed } from './skyNight'
 import { normalizeStorm, stormFeed } from './storm'
 
 const sailing = { id: 'x', departure: '2027-03-21' }
+
+const storm = { source: 'sim', departure: '2027-09-12', returns: '2027-09-19', inSeason: true, percent: 15, band: 'higher', phase: 'near', lineMay: ['reroute', 'swap'], youCan: ['insurance', 'flights'], peak: true }
+const night = { day: 3, port: 'cozumel', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: '17:00', sailAwayAtSunset: false, stars: ['Orion'], darkSky: false, source: 'sim' }
+const others: LoungerOther[] = Array.from({ length: 8 }, (_, i) => (i % 3 === 0 ? { id: i + 1, state: 'free' as const, returnsIn: null } : i % 3 === 1 ? { id: i + 1, state: 'held' as const, returnsIn: 12 } : { id: i + 1, state: 'overdue' as const, returnsIn: null }))
 const NOW = Date.parse('2027-03-23T15:20:00Z')
 
 afterEach(() => { for (const f of [pulseFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed]) { f.setFetcher(null); f.forget() } })
 
 describe('createFeed', () => {
-  it('uses the local value, takes the server’s once, and ignores failures and bad shapes', async () => {
+  it('knows nothing until the server answers, takes its answer once, and ignores failures and bad shapes', async () => {
     let calls = 0
-    const feed = createFeed<[number], number>((n) => String(n), (n) => n, (raw) => (typeof raw === 'number' ? raw : null))
+    const feed = createFeed<[number], number>((n) => String(n), (raw) => (typeof raw === 'number' ? raw : null))
     expect(await feed.load(1)).toBe(false)
+    expect(feed.now(1)).toBeNull()
     feed.setFetcher(async () => { calls++; return 9 })
     expect(await feed.load(1)).toBe(true)
     expect(await feed.load(1)).toBe(false)
     expect(calls).toBe(1)
-    expect([feed.now(1), feed.now(2)]).toEqual([9, 2])
+    expect([feed.now(1), feed.now(2)]).toEqual([9, null])
     feed.setFetcher(async () => 'nope')
     expect(await feed.load(3)).toBe(false)
     feed.setFetcher(async () => { throw new Error('offline') })
     expect(await feed.load(4)).toBe(false)
-    expect(feed.now(4)).toBe(4)
+    expect(feed.now(4)).toBeNull()
     feed.forget()
-    expect(feed.now(1)).toBe(1)
+    expect(feed.now(1)).toBeNull()
+  })
+})
+
+describe('a kept feed', () => {
+  it('shows the last answer kept on the device before the server is asked, and forgets it on sign-out', async () => {
+    const data = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      get length() { return data.size },
+      key: (i: number) => [...data.keys()][i] ?? null,
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => { data.set(k, v) },
+      removeItem: (k: string) => { data.delete(k) },
+    })
+    try {
+      const feed = createFeed<[number], number>((n) => String(n), (raw) => (typeof raw === 'number' ? raw : null), 'test')
+      feed.setFetcher(async () => 7)
+      expect(await feed.load(1)).toBe(true)
+      feed.forget()
+      expect(feed.now(1)).toBeNull()
+      feed.setFetcher(async () => 7)
+      await feed.load(1)
+      // A new session: the memory is gone but the kept copy answers at once.
+      const again = createFeed<[number], number>((n) => String(n), (raw) => (typeof raw === 'number' ? raw : null), 'test')
+      expect(again.now(1)).toBe(7)
+      again.forget()
+      expect(again.now(1)).toBeNull()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
 
@@ -80,43 +112,39 @@ describe('ship pulse feed', () => {
 })
 
 describe('storm feed', () => {
-  it('matches the local reading and takes a good server reading', async () => {
-    expect(stormFeed.now('2027-09-12', 3)).toEqual(stormWatch({ departure: '2027-09-12' }, 3))
-    const served = { ...stormWatch({ departure: '2027-09-12' }, 3), percent: 8, band: 'some' }
-    stormFeed.setFetcher(async () => served)
+  it('knows nothing at first and takes a good server reading', async () => {
+    expect(stormFeed.now('2027-09-12', 3)).toBeNull()
+    stormFeed.setFetcher(async () => storm)
     expect(await stormFeed.load('2027-09-12', 3)).toBe(true)
-    expect(stormFeed.now('2027-09-12', 3)).toMatchObject({ percent: 8, band: 'some' })
+    expect(stormFeed.now('2027-09-12', 3)).toMatchObject({ percent: 15, band: 'higher' })
   })
   it('refuses unknown bands, phases, keys and dates', () => {
-    const good = stormWatch({ departure: '2027-09-12' }, 3)
-    expect(normalizeStorm(good)).toEqual(good)
-    expect(normalizeStorm({ ...good, band: 'apocalypse' })).toBeNull()
-    expect(normalizeStorm({ ...good, phase: 'now' })).toBeNull()
-    expect(normalizeStorm({ ...good, lineMay: ['evacuate'] })).toBeNull()
-    expect(normalizeStorm({ ...good, returns: 'tomorrow' })).toBeNull()
-    expect(normalizeStorm({ ...good, percent: 1.5 })).toBeNull()
+    expect(normalizeStorm(storm)).toEqual(storm)
+    expect(normalizeStorm({ ...storm, band: 'apocalypse' })).toBeNull()
+    expect(normalizeStorm({ ...storm, phase: 'now' })).toBeNull()
+    expect(normalizeStorm({ ...storm, lineMay: ['evacuate'] })).toBeNull()
+    expect(normalizeStorm({ ...storm, returns: 'tomorrow' })).toBeNull()
+    expect(normalizeStorm({ ...storm, percent: 1.5 })).toBeNull()
   })
 })
 
 describe('sun, moon and stars feed', () => {
-  it('matches the local night and reads a good server night', () => {
-    const local = skyNight(sailing, 3)
-    expect(skyNightFeed.now('2027-03-21', 3)).toEqual(local)
-    expect(normalizeSkyNight(JSON.parse(JSON.stringify(local)))).toEqual(local)
+  it('reads a good server night', () => {
+    expect(skyNightFeed.now('2027-03-21', 3)).toBeNull()
+    expect(normalizeSkyNight(JSON.parse(JSON.stringify(night)))).toMatchObject({ day: 3, sunset: '18:40', moon: { phase: 'full', name: 'Full moon', lit: 99 } })
   })
   it('refuses bad times, sides, phases and star lists', () => {
-    const local = JSON.parse(JSON.stringify(skyNight(sailing, 4)))
-    expect(normalizeSkyNight({ ...local, sunset: '7pm' })).toBeNull()
-    expect(normalizeSkyNight({ ...local, sunsetSide: 'up' })).toBeNull()
-    expect(normalizeSkyNight({ ...local, moon: { ...local.moon, phase: 'cheese' } })).toBeNull()
-    expect(normalizeSkyNight({ ...local, stars: [] })).toBeNull()
-    expect(normalizeSkyNight({ ...local, port: 'mars' })).toBeNull()
-    expect(normalizeSkyNight({ ...local, sailAway: 5 })).toBeNull()
+    expect(normalizeSkyNight({ ...night, sunset: '7pm' })).toBeNull()
+    expect(normalizeSkyNight({ ...night, sunsetSide: 'up' })).toBeNull()
+    expect(normalizeSkyNight({ ...night, moon: { ...night.moon, phase: 'cheese' } })).toBeNull()
+    expect(normalizeSkyNight({ ...night, stars: [] })).toBeNull()
+    expect(normalizeSkyNight({ ...night, port: 'mars' })).toBeNull()
+    expect(normalizeSkyNight({ ...night, sailAway: 5 })).toBeNull()
   })
 })
 
 describe('lounger feed', () => {
-  const rows = loungerOthers(NOW)
+  const rows = others
   it('reads eight rows in order and refuses anything else', () => {
     expect(normalizeLoungers({ loungers: rows })).toEqual(rows)
     expect(normalizeLoungers({ loungers: rows.slice(1) })).toBeNull()
@@ -129,31 +157,31 @@ describe('lounger feed', () => {
     const board = loungerBoard(NOW, { id: 2, start: NOW - 10 * 60_000 }, [1], served)
     expect(board[0]).toEqual({ id: 1, state: 'reported', returnsIn: null })
     expect(board[1]).toEqual({ id: 2, state: 'mine', returnsIn: 30 })
-    expect(loungerBoard(NOW, null, [])).toEqual(loungerBoard(NOW, null, [], rows))
+    expect(loungerBoard(NOW, null, [], rows)).toHaveLength(8)
   })
   it('asks per minute', async () => {
     const m = Math.floor(NOW / 60_000)
     loungerFeed.setFetcher(async () => ({ loungers: rows.map((r) => ({ ...r, state: 'free', returnsIn: null })) }))
     expect(await loungerFeed.load(m)).toBe(true)
-    expect(loungerFeed.now(m).every((r) => r.state === 'free')).toBe(true)
-    expect(loungerFeed.now(m + 1)).toEqual(loungerOthers((m + 1) * 60_000))
+    expect(loungerFeed.now(m)?.every((r) => r.state === 'free')).toBe(true)
+    expect(loungerFeed.now(m + 1)).toBeNull()
   })
 })
 
 describe('lost property and sightings feeds', () => {
   it('matches words against the served list', async () => {
-    expect(foundFeed.now()).toEqual(FOUND)
+    expect(foundFeed.now()).toBeNull()
     const served = [{ id: 'z', what: 'Red umbrella', keywords: ['umbrella'], at: 'eatery' as const }]
     expect(normalizeFound({ items: served })).toEqual(served)
     foundFeed.setFetcher(async () => ({ items: served }))
     await foundFeed.load()
-    expect(matchFound({ what: 'my umbrella' }, foundFeed.now()).map((f) => f.id)).toEqual(['z'])
-    expect(matchFound({ what: 'my umbrella' })).toEqual([])
+    expect(matchFound({ what: 'my umbrella' }, foundFeed.now() ?? []).map((f) => f.id)).toEqual(['z'])
+    expect(matchFound({ what: 'my umbrella' }, [])).toEqual([])
     expect(normalizeFound({ items: [{ ...served[0], at: 'bridge' }] })).toBeNull()
     expect(normalizeFound({ items: [] })).toBeNull()
   })
   it('reads one or two known kinds', () => {
-    expect(sightingsFeed.now(3)).toEqual(seenToday(3))
+    expect(sightingsFeed.now(3)).toBeNull()
     expect(normalizeSightings({ species: ['whale', 'ray'] })).toEqual(['whale', 'ray'])
     expect(normalizeSightings({ species: ['kraken'] })).toBeNull()
     expect(normalizeSightings({ species: ['ray', 'ray'] })).toBeNull()
@@ -171,12 +199,10 @@ describe('slot watch opening feed', () => {
     expect(normalizeOpening({})).toBeNull()
   })
   it('lets the server’s opening decide the watch state', async () => {
-    const local = simulatedOpening(w)
-    expect(openingFeed.now(w.id, w.createdAt, w.slotAt)).toEqual({ opensAt: local })
+    expect(openingFeed.now(w.id, w.createdAt, w.slotAt)).toBeNull()
     expect(watchState(w, NOW + 1000, null)).toBe('watching')
     expect(watchState(w, NOW + 3_600_000, NOW + 1000)).toBe('ready')
     expect(watchState({ ...w, priceCents: 9000 }, NOW + 3_600_000, NOW + 1000)).toBe('overCap')
     expect(watchState(w, w.slotAt, NOW + 1000)).toBe('expired')
-    expect(watchState(w, NOW + 1000)).toBe(watchState(w, NOW + 1000, local))
   })
 })

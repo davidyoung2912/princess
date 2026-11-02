@@ -9,16 +9,6 @@ export const CROWD_SOURCE = 'sim' as const
 
 /** Guests carried by one ship, about. Authored. */
 export const SHIP_GUESTS = 4000
-/** What each port handles comfortably in one day, in thousands of guests. Authored. */
-const COMFORT: Record<CrowdPort, number> = { cozumel: 12_000, belize: 6_000, roatan: 8_000 }
-const MAX_SHIPS: Record<CrowdPort, number> = { cozumel: 5, belize: 3, roatan: 4 }
-
-const hash = (text: string): number => {
-  let h = 2166136261
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
-  return h >>> 0
-}
-
 export interface PortCrowd {
   source: typeof CROWD_SOURCE
   /** All ships alongside or at anchor, including this one. */
@@ -27,14 +17,6 @@ export interface PortCrowd {
   level: CrowdLevel
   /** Busy days suggest a quiet day aboard. */
   stayAboardNote: boolean
-}
-
-export function crowdFor(port: CrowdPort, date: string): PortCrowd {
-  const ships = 1 + (hash(`${port}|${date}`) % MAX_SHIPS[port])
-  const guests = ships * SHIP_GUESTS
-  const ratio = guests / COMFORT[port]
-  const level: CrowdLevel = ratio >= 1 ? 'busy' : ratio >= 0.6 ? 'moderate' : 'quiet'
-  return { source: CROWD_SOURCE, ships, guests, level, stayAboardNote: level === 'busy' }
 }
 
 const LEVELS: CrowdLevel[] = ['quiet', 'moderate', 'busy']

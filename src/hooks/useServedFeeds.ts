@@ -6,50 +6,41 @@ import type { Watch } from '../domain/autopilot'
 import { envFor, type PulseEnv } from '../domain/pulse'
 import type { Sailing } from '../domain/sailings'
 import type { Feed } from '../feeds/feed'
-import { faresNow, loadFares } from '../feeds/fares'
+import { faresFeed } from '../feeds/fares'
 import { openingArgs, openingFeed } from '../feeds/onboard'
 import { minuteOf, pulseFeed, withServed } from '../feeds/pulse'
-import { crowdNow, loadCrowd } from '../feeds/portCrowd'
+import { crowdFeed } from '../feeds/portCrowd'
 
-/** How busy a port is on a date: the local simulation at once, then the server's when it arrives (real API only; the figures are the same). */
-export function usePortCrowd(port: CrowdPort, date: string): PortCrowd {
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    if (!date) return
-    let live = true
-    void loadCrowd(port, date).then((fresh) => { if (live && fresh) setTick((n) => n + 1) })
-    return () => { live = false }
-  }, [port, date])
-  // oxlint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => crowdNow(port, date), [port, date, tick])
-}
-
-/** A booking's weekly fare history: the local simulation at once, then the server's when it arrives. */
-export function useFareHistory(b: Pick<WhatIfBooking, 'plan' | 'today'>, number: string): FarePoint[] {
-  const [tick, setTick] = useState(0)
-  const { total, booked } = b.plan
-  useEffect(() => {
-    let live = true
-    void loadFares(b, number).then((fresh) => { if (live && fresh) setTick((n) => n + 1) })
-    return () => { live = false }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [number, total, booked, b.today])
-  // oxlint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => faresNow(b, number), [number, total, booked, b.today, tick])
-}
-
-/** Any feed from `src/feeds`: the local simulation at once, the server's answer when it arrives. `args` must be plain values (they key the cache). */
-export function useFeed<A extends unknown[], V>(feed: Feed<A, V>, ...args: A): V {
+/**
+ * Any feed from `src/feeds`: the server's answer, else the last one kept on this device, else null (loading). `args` must be plain values (they key the
+ * cache). `enabled` false asks for nothing and gives null.
+ */
+export function useServedFeed<A extends unknown[], V>(enabled: boolean, feed: Feed<A, V>, args: A): V | null {
   const [tick, setTick] = useState(0)
   const k = JSON.stringify(args)
   useEffect(() => {
+    if (!enabled) return
     let live = true
     void feed.load(...args).then((fresh) => { if (live && fresh) setTick((n) => n + 1) })
     return () => { live = false }
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [feed, k])
+  }, [enabled, feed, k])
   // oxlint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => feed.now(...args), [feed, k, tick])
+  return useMemo(() => (enabled ? feed.now(...args) : null), [enabled, feed, k, tick])
+}
+
+export function useFeed<A extends unknown[], V>(feed: Feed<A, V>, ...args: A): V | null {
+  return useServedFeed(true, feed, args)
+}
+
+/** How busy a port is on a date; null until the server's answer (or the last one kept on this device) is here. */
+export function usePortCrowd(port: CrowdPort, date: string): PortCrowd | null {
+  return useServedFeed(!!date, crowdFeed, [port, date])
+}
+
+/** A booking's weekly fare history from the server; null until it is here. */
+export function useFareHistory(b: Pick<WhatIfBooking, 'plan' | 'today'>, number: string): FarePoint[] | null {
+  return useFeed(faresFeed, number, b.plan.total, b.plan.booked, b.today)
 }
 
 /**
@@ -63,8 +54,10 @@ export function usePulseEnv(sailing: Sailing, now: number): { env: PulseEnv; now
   return { env, now: minute }
 }
 
-/** When a place opens for each slot watch (the simulation at once, the server's answer when it arrives): look a watch up with the returned function. */
-export function useOpenings(watches: readonly Pick<Watch, 'id' | 'createdAt' | 'slotAt'>[]): (w: Pick<Watch, 'id' | 'createdAt' | 'slotAt'>) => number | null {
+type WatchTimes = Pick<Watch, 'id' | 'createdAt' | 'slotAt'>
+
+/** When a place opens for each slot watch, from the server: look a watch up with the returned function (null = not here yet, or never). */
+export function useOpenings(watches: readonly WatchTimes[]): (w: WatchTimes) => number | null {
   const [tick, setTick] = useState(0)
   const k = JSON.stringify(watches.map(openingArgs))
   useEffect(() => {
@@ -74,5 +67,5 @@ export function useOpenings(watches: readonly Pick<Watch, 'id' | 'createdAt' | '
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [k])
   // oxlint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => (w) => openingFeed.now(...openingArgs(w)).opensAt, [tick])
+  return useMemo(() => (w) => openingFeed.now(...openingArgs(w))?.opensAt ?? null, [tick])
 }

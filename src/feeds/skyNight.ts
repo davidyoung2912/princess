@@ -1,4 +1,4 @@
-import { skyNight, type MoonPhase, type SkyNight, PHASE_NAMES } from '../domain/sky'
+import { type MoonPhase, type SkyNight, PHASE_NAMES } from '../domain/sky'
 import type { PortId } from '../domain/sailings'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
 
@@ -7,7 +7,7 @@ const PORT_IDS: readonly PortId[] = ['fll', 'sea', 'cozumel', 'belize', 'roatan'
 const SIDES = ['port', 'starboard', 'neither'] as const
 const HHMM = /^\d{2}:\d{2}$/
 
-/** Reads the server's sun, moon and stars for a day; anything wrong in it gives null so the local figures are used. */
+/** Reads the server's sun, moon and stars for a day; anything wrong in it gives null so nothing is shown. */
 export function normalizeSkyNight(raw: unknown): SkyNight | null {
   if (!isRecord(raw) || !isInt(raw.day, 1, 8) || !oneOf(raw.port, PORT_IDS) || !oneOf(raw.sunsetSide, SIDES)) return null
   const m = raw.moon
@@ -25,4 +25,4 @@ export function normalizeSkyNight(raw: unknown): SkyNight | null {
 }
 
 /** The sun, moon and stars for a cruise day on a sailing (by departure date). */
-export const skyNightFeed = createFeed<[departure: string, day: number], SkyNight>((d, n) => `${d}|${n}`, (d, n) => skyNight({ id: d, departure: d }, n), normalizeSkyNight)
+export const skyNightFeed = createFeed<[departure: string, day: number], SkyNight>((d, n) => `${d}|${n}`, normalizeSkyNight, 'sky-night')

@@ -1,4 +1,4 @@
-import { stormWatch, type StormBand, type StormPhase, type StormReading } from '../domain/storm'
+import { type StormBand, type StormPhase, type StormReading } from '../domain/storm'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
 
 const BANDS: readonly StormBand[] = ['none', 'low', 'some', 'higher']
@@ -10,7 +10,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/
 const keys = (v: unknown, allowed: readonly string[]): string[] | null =>
   Array.isArray(v) && v.length <= allowed.length && v.every((k) => typeof k === 'string' && allowed.includes(k)) ? (v as string[]) : null
 
-/** Reads the server's storm reading; anything wrong in it gives null so the local one is used. */
+/** Reads the server's storm reading; anything wrong in it gives null so nothing is shown. */
 export function normalizeStorm(raw: unknown): StormReading | null {
   if (!isRecord(raw) || !oneOf(raw.band, BANDS) || !oneOf(raw.phase, PHASES) || !isInt(raw.percent, 0, 100)) return null
   const lineMay = keys(raw.lineMay, LINE_MAY)
@@ -21,4 +21,4 @@ export function normalizeStorm(raw: unknown): StormReading | null {
 }
 
 /** The storm watch for a sailing (by departure date) and the days until it leaves. */
-export const stormFeed = createFeed<[departure: string, days: number], StormReading>((d, n) => `${d}|${n}`, (d, n) => stormWatch({ departure: d }, n), normalizeStorm)
+export const stormFeed = createFeed<[departure: string, days: number], StormReading>((d, n) => `${d}|${n}`, normalizeStorm, 'storm')

@@ -17,8 +17,9 @@ export interface BriefingFacts {
   /** Ship time now, "HH:MM". */
   nowHhmm: string
   plan: readonly PlanRow[]
-  weather: SimWeather
-  sky: SkyNight
+  /** Null until the server's forecast has come: the line is left out. */
+  weather: SimWeather | null
+  sky: SkyNight | null
   /** Deadlines still to meet, soonest first; null when the list has not loaded. */
   deadlines: readonly { label: string; path: string }[] | null
   /** "HH:MM" local, on a port day. */
@@ -47,14 +48,14 @@ export function buildBriefing(kind: BriefingKind, f: BriefingFacts): Briefing {
   const next = rows.find((r) => minutesOf(r.entry.start) >= now)
 
   if (kind === 'morning') {
-    add({ id: 'weather', text: weatherLine(f.weather) })
+    add(f.weather ? { id: 'weather', text: weatherLine(f.weather) } : null)
     add(changed.length ? { id: 'changed', text: `${changed.length === 1 ? 'One thing has' : `${changed.length} things have`} changed in your day: ${changed.slice(0, 2).map((r) => r.entry.title).join(', ')}.`, path: '/plan/day' } : null)
     add(f.allAboard ? { id: 'aboard', text: `Be back on the ship by ${f.allAboard} (port time).`, path: '/ship/port' } : null)
     add(next ? { id: 'next', text: `First on your plan: ${next.entry.title} at ${next.entry.start}.`, path: next.entry.path } : null)
     add(f.deadlines === null ? null : f.deadlines[0] ? { id: 'deadline', text: `Still to do: ${f.deadlines[0].label}.`, path: f.deadlines[0].path } : null)
   } else {
     add(next ? { id: 'next', text: `Still to come tonight: ${next.entry.title} at ${next.entry.start}.`, path: next.entry.path } : null)
-    add({ id: 'sunset', text: `Sunset is at ${f.sky.sunset}. ${f.sky.moon.name}, ${f.sky.moon.lit}% lit.` })
+    add(f.sky ? { id: 'sunset', text: `Sunset is at ${f.sky.sunset}. ${f.sky.moon.name}, ${f.sky.moon.lit}% lit.` } : null)
     add(f.tomorrowFirst ? { id: 'tomorrow', text: `Tomorrow starts with ${f.tomorrowFirst.title} at ${f.tomorrowFirst.start}.`, path: f.tomorrowFirst.path } : null)
     add(f.deadlines === null ? null : f.deadlines[0] ? { id: 'deadline', text: `Still to do: ${f.deadlines[0].label}.`, path: f.deadlines[0].path } : null)
   }

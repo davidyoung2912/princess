@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addBag, buildJourney, EMPTY_JOURNEY, EMPTY_JOURNEY_STATE, flightStatus, flyEarlyAdvice, hotelHandoff, latestComfortableLanding, markBagPhotographed, minutesToWindow, normalizeJourney, removeBag,
-  routeConditions, statusFor, toggleIn, validFlightNumber, watchDelay, MAX_BAGS, type JourneyPlan,
+  addBag, buildJourney, EMPTY_JOURNEY, EMPTY_JOURNEY_STATE, flyEarlyAdvice, hotelHandoff, latestComfortableLanding, markBagPhotographed, minutesToWindow, normalizeJourney, removeBag,
+  statusFor, toggleIn, validFlightNumber, watchDelay, MAX_BAGS, type JourneyPlan,
 } from './journey'
 
 const DEP = '2027-03-21'
@@ -73,31 +73,10 @@ describe('flight watch (simulated)', () => {
     expect(validFlightNumber('aa 1234')).toBe(true)
     expect(validFlightNumber('A1234')).toBe(false)
     expect(validFlightNumber('AA12345')).toBe(false)
-    expect(flightStatus('nope', DEP)).toBeNull()
-  })
-  it('is stable for a flight and date, and labelled as a simulation', () => {
-    const a = flightStatus('AA1234', DEP)!
-    expect(flightStatus('aa 1234', DEP)).toEqual(a)
-    expect(a.source).toBe('sim')
-  })
-  it('mostly on time, with some delays and rare cancellations', () => {
-    const states = Array.from({ length: 400 }, (_, i) => flightStatus(`UA${i + 1}`, DEP)!.state)
-    const share = (s: string) => states.filter((x) => x === s).length / 400
-    expect(share('onTime')).toBeGreaterThan(0.5)
-    expect(share('delayed')).toBeGreaterThan(0.1)
-    expect(share('cancelled')).toBeGreaterThan(0)
-    expect(share('cancelled')).toBeLessThan(0.1)
   })
 })
 
 describe('conditions and hotel', () => {
-  it('heavy traffic and storms add time', () => {
-    const c = routeConditions(DEP, '12:00')
-    expect(c.traffic).toBe('heavy')
-    expect(c.leaveEarlierMinutes).toBeGreaterThanOrEqual(20)
-    expect(routeConditions(DEP, '11:00').traffic).toBe('light')
-    expect(routeConditions(DEP, '11:00').source).toBe('sim')
-  })
   it('the hotel leave time counts the road and checkout', () => {
     const h = hotelHandoff(fly({ hotelNight: true }), DEP, 10)
     expect(h.checkoutBy).toBe(h.leaveHotel - 30 * 60_000)

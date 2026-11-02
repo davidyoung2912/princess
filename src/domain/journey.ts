@@ -1,6 +1,6 @@
 import type { StringKey } from '../i18n'
 import { arrivalWindows } from './travel'
-import { EMBARK, departureEpoch, trafficFor, type Traffic } from './boarding'
+import { EMBARK, departureEpoch, type Traffic } from './boarding'
 import { addDays } from './timezones'
 
 /**
@@ -149,22 +149,6 @@ export interface FlightStatus { source: typeof FLIGHT_SOURCE; state: FlightState
 export const validFlightNumber = (v: string): boolean => /^[A-Z]{2}\d{1,4}$/.test(normalizeFlight(v))
 export const normalizeFlight = (v: string): string => v.replace(/\s+/g, '').toUpperCase()
 
-const hash = (text: string): number => {
-  let h = 2166136261
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
-  return h >>> 0
-}
-
-/** A stable status per flight and date: most are on time, some late, a few cancelled. Not a real feed. */
-export function flightStatus(number: string, date: string): FlightStatus | null {
-  const n = normalizeFlight(number)
-  if (!validFlightNumber(n)) return null
-  const h = hash(`${n}|${date}`) % 100
-  if (h < 65) return { source: FLIGHT_SOURCE, state: 'onTime', delayMinutes: 0 }
-  if (h < 96) return { source: FLIGHT_SOURCE, state: 'delayed', delayMinutes: [20, 35, 50, 75, 110, 160][h % 6] }
-  return { source: FLIGHT_SOURCE, state: 'cancelled', delayMinutes: 0 }
-}
-
 /** The delay to push through the timeline: a cancelled flight is a severe one, so the timeline shows risk early. */
 export const watchDelay = (s: FlightStatus | null): number => (!s ? 0 : s.state === 'cancelled' ? 480 : s.delayMinutes)
 
@@ -180,17 +164,6 @@ export type Crowd = 'quiet' | 'busy' | 'busiest'
 
 /** How busy the guest's arrival window usually is; "busy" when they have not chosen one. */
 export const crowdOfWindow = (windowStart: string | null): Crowd => arrivalWindows(true).find((w) => w.start === windowStart)?.crowd ?? 'busy'
-
-/** Traffic from how busy the guest's window is; the sky from a stable draw for the date. Suggests leaving earlier when either is poor. */
-export function conditionsFor(departure: string, crowd: Crowd): Conditions {
-  const traffic = trafficFor(crowd)
-  const d = hash(`sky|${departure}`) % 10
-  const sky: Sky = d < 5 ? 'clear' : d < 8 ? 'cloudy' : d < 9 ? 'rain' : 'storm'
-  const extra = (traffic === 'heavy' ? 20 : traffic === 'moderate' ? 10 : 0) + (sky === 'storm' ? 25 : sky === 'rain' ? 10 : 0)
-  return { source: FLIGHT_SOURCE, traffic, sky, leaveEarlierMinutes: extra }
-}
-
-export const routeConditions = (departure: string, windowStart: string | null): Conditions => conditionsFor(departure, crowdOfWindow(windowStart))
 
 // ---- Hotel handoff (S4A-11) ----
 

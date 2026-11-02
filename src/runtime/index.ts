@@ -11,11 +11,11 @@ import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onb
 import { pulseFeed } from '../feeds/pulse'
 import { skyNightFeed } from '../feeds/skyNight'
 import { stormFeed } from '../feeds/storm'
-import { forgetCrowd, setCrowdFetcher } from '../feeds/portCrowd'
-import { forgetFares, setFaresFetcher } from '../feeds/fares'
-import { forgetFlights, setFlightFetcher } from '../feeds/flight'
-import { forgetConditions, setRouteFetcher } from '../feeds/route'
-import { forgetSky, setSkyFetcher } from '../feeds/sky'
+import { crowdFeed } from '../feeds/portCrowd'
+import { faresFeed } from '../feeds/fares'
+import { flightFeed } from '../feeds/flight'
+import { conditionsFeed } from '../feeds/route'
+import { skyFeed } from '../feeds/sky'
 import { markAccount, refreshContext, setContext } from '../account/context'
 import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
@@ -72,14 +72,13 @@ export const familyHome = {
 }
 
 {
-  setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
-  setFlightFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
-  auth.subscribe(forgetSky)
+  skyFeed.setFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
+  flightFeed.setFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
   // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
   setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))
-  setRouteFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
-  setCrowdFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
-  setFaresFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
+  conditionsFeed.setFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
+  crowdFeed.setFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
+  faresFeed.setFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
   pulseFeed.setFetcher((departure, now) => http.get<unknown>('/feeds/pulse', { query: { departure, now } }))
   stormFeed.setFetcher((departure, days) => http.get<unknown>('/feeds/storm', { query: { departure, days } }))
   skyNightFeed.setFetcher((departure, day) => http.get<unknown>('/feeds/sky-night', { query: { departure, day } }))
@@ -87,11 +86,7 @@ export const familyHome = {
   sightingsFeed.setFetcher((day) => http.get<unknown>('/feeds/sightings', { query: { day } }))
   foundFeed.setFetcher(() => http.get<unknown>('/feeds/found'))
   openingFeed.setFetcher((id, created, slot) => http.get<unknown>('/feeds/watch-opening', { query: { id, created, slot } }))
-  for (const f of [pulseFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed]) auth.subscribe(f.forget)
-  auth.subscribe(forgetCrowd)
-  auth.subscribe(forgetFares)
-  auth.subscribe(forgetFlights)
-  auth.subscribe(forgetConditions)
+  for (const f of [skyFeed, flightFeed, conditionsFeed, crowdFeed, faresFeed, pulseFeed, stormFeed, skyNightFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed]) auth.subscribe(f.forget)
   // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees, and a new device takes them back; real accounts send nothing.
   const demoOnly = <T,>(call: () => Promise<T>): Promise<T | undefined> => (auth.current()?.user?.isDemo ? call() : Promise.resolve(undefined))
   setDemoRemote({

@@ -1,5 +1,5 @@
-import { FOUND, loungerOthers, LOUNGERS, seenToday, SPECIES, type FoundItem, type LoungerOther } from '../domain/aboardMore'
-import { simulatedOpening, type Watch } from '../domain/autopilot'
+import { LOUNGERS, SPECIES, type FoundItem, type LoungerOther } from '../domain/aboardMore'
+import type { Watch } from '../domain/autopilot'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
 
 const LOUNGER_STATES = ['free', 'held', 'overdue'] as const
@@ -25,7 +25,7 @@ export function normalizeLoungers(raw: unknown): LoungerOther[] | null {
 }
 
 /** The other loungers at a whole minute. */
-export const loungerFeed = createFeed<[minute: number], LoungerOther[]>((m) => String(m), (m) => loungerOthers(m * 60_000), normalizeLoungers)
+export const loungerFeed = createFeed<[minute: number], LoungerOther[]>((m) => String(m), normalizeLoungers)
 
 /** Reads the lost-property list: a few items, each with an id, a name, match words and where it is held. */
 export function normalizeFound(raw: unknown): FoundItem[] | null {
@@ -41,7 +41,7 @@ export function normalizeFound(raw: unknown): FoundItem[] | null {
 }
 
 /** What the lost-property desk has handed in. */
-export const foundFeed = createFeed<[], FoundItem[]>(() => 'all', () => [...FOUND], normalizeFound)
+export const foundFeed = createFeed<[], FoundItem[]>(() => 'all', normalizeFound, 'found')
 
 /** Reads the kinds of wildlife the ship is said to have seen on a day: one or two known kinds. */
 export function normalizeSightings(raw: unknown): string[] | null {
@@ -50,7 +50,7 @@ export function normalizeSightings(raw: unknown): string[] | null {
   return list as string[]
 }
 
-export const sightingsFeed = createFeed<[day: number], string[]>((d) => String(d), (d) => seenToday(d), normalizeSightings)
+export const sightingsFeed = createFeed<[day: number], string[]>((d) => String(d), normalizeSightings, 'sightings')
 
 /** When a place opens for a slot watch (or never, before the slot). */
 export interface Opening { opensAt: number | null }
@@ -63,7 +63,6 @@ export function normalizeOpening(raw: unknown): Opening | null {
 type WatchTimes = Pick<Watch, 'id' | 'createdAt' | 'slotAt'>
 export const openingFeed = createFeed<[id: string, createdAt: number, slotAt: number], Opening>(
   (id, c, s) => `${id}|${c}|${s}`,
-  (id, c, s) => ({ opensAt: simulatedOpening({ id, createdAt: c, slotAt: s }) }),
   normalizeOpening,
 )
 

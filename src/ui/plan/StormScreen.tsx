@@ -7,6 +7,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { BackLink } from '../onboard/common'
 import { Link } from 'react-router'
 
@@ -21,6 +22,8 @@ export function StormScreen() {
       <h1>{t('route.storm')}</h1>
       <p>{t('storm.intro')}</p>
       <Banner kind="info" title={t('storm.sim')} />
+      {!r && <FeedWaiting />}
+      {r && <>
       <Card labelledBy="storm-now">
         <h2 id="storm-now" className="card__title">{t(`storm.band.${r.band}` as StringKey)}</h2>
         <p>{t('storm.dates', { from: formatDate(r.departure), to: formatDate(r.returns) })}</p>
@@ -42,6 +45,7 @@ export function StormScreen() {
           <ul className="plain-list">{r.youCan.map((k) => <li key={k}>{t(`storm.you.${k}` as StringKey)}</li>)}</ul>
         </Card>
       )}
+      </>}
       <p><Link to="/plan/what-if">{t('route.whatIf')}</Link> · <Link to="/home/disruption">{t('route.disruption')}</Link></p>
     </div>
   )

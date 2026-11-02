@@ -33,8 +33,8 @@ export const minuteOf = (now: number): number => Math.floor(now / MIN) * MIN
 /** The five-minute mark a reading is taken at (kept here so the contract is in one place). */
 export const observedMark = (now: number): number => Math.floor(now / (PULSE_STEP_MIN * MIN)) * PULSE_STEP_MIN * MIN
 
-/** Pulse levels from the server for a sailing (by departure date) and a whole minute; none until they arrive or without a server. */
-export const pulseFeed = createFeed<[departure: string, minute: number], ServedLevels | null>((d, m) => `${d}|${m}`, () => null, normalizePulse)
+/** Pulse levels from the server for a sailing (by departure date) and a whole minute; none until they arrive. */
+export const pulseFeed = createFeed<[departure: string, minute: number], ServedLevels>((d, m) => `${d}|${m}`, normalizePulse)
 
 /** The same environment with the server's levels laid over it where it has them. */
 export const withServed = (env: PulseEnv, served: ServedLevels | null): PulseEnv => (served ? { ...env, served: (id: PulseId, ms: number) => served.get(at(id, ms)) } : env)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bookWatch, DEFAULT_PREFS, gentleNotes, newWatch, normalizeWatches, optimiseWeek, simulatedOpening, simWeather, stopWatch, walkMinutes, watchState, weekProblems, type SimWeather, type Watch,
+  bookWatch, DEFAULT_PREFS, gentleNotes, newWatch, normalizeWatches, optimiseWeek, stopWatch, walkMinutes, watchState, weekProblems, type SimWeather, type Watch,
 } from './autopilot'
 import { applyChanges, type PlanEntry } from './planChange'
 import { REFERENCE_SAILING } from './sailings'
@@ -9,17 +9,6 @@ const MIN = 60_000
 const HOUR = 60 * MIN
 const entry = (id: string, start: string, minutes: number, extra: Partial<PlanEntry> = {}): PlanEntry => ({ id, title: id, start, minutes, kind: 'event', outdoor: false, path: '/plan', ...extra })
 const calm: SimWeather = { uv: 3, tempF: 72, rainFrom: null, rainTo: null, source: 'sim' }
-
-describe('simulated sky', () => {
-  it('is stable, labelled simulated, and sometimes rainy', () => {
-    expect(simWeather('x', 3, 'cozumel')).toEqual(simWeather('x', 3, 'cozumel'))
-    expect(simWeather('x', 3, 'cozumel').source).toBe('sim')
-    const rainy = Array.from({ length: 40 }, (_, i) => simWeather('s', i, 'sea')).filter((w) => w.rainFrom !== null)
-    expect(rainy.length).toBeGreaterThan(0)
-    expect(rainy.length).toBeLessThan(40)
-    expect(rainy.every((w) => w.rainTo !== null)).toBe(true)
-  })
-})
 
 describe('gentle mode', () => {
   const rows = (list: PlanEntry[]) => applyChanges(list, [])
@@ -91,38 +80,37 @@ describe('slot watch', () => {
     if (!w.ok) throw new Error('bad')
     return w.watch
   }
-  const opens = (w: Watch): number => simulatedOpening(w) ?? Number.NaN
-  const withOpening = (extra: Partial<Watch> = {}): Watch => {
-    for (let i = 0; i < 200; i++) { const w = watch(`w${i}`, extra); if (simulatedOpening(w) !== null) return w }
-    throw new Error('no opening found')
-  }
+  /** The moment the server says the place opens: the tests hand it in, as the screen does from the feed. */
+  const OPENS = slotAt - 6 * HOUR
+  const withOpening = (extra: Partial<Watch> = {}): Watch => watch('w1', extra)
 
-  it('opens at a stable time before the slot, and reports it only after that', () => {
+  it('reports an opening only after the server says it has happened', () => {
     const w = withOpening()
-    expect(opens(w)).toBe(simulatedOpening(w))
-    expect(opens(w)).toBeLessThan(slotAt)
-    expect(watchState(w, opens(w) - 1)).toBe('watching')
-    expect(watchState(w, opens(w))).toBe('ready')
+    expect(OPENS).toBeLessThan(slotAt)
+    expect(watchState(w, OPENS - 1, null)).toBe('watching')
+    expect(watchState(w, OPENS + 1, null)).toBe('watching')
+    expect(watchState(w, OPENS - 1, OPENS)).toBe('watching')
+    expect(watchState(w, OPENS, OPENS)).toBe('ready')
   })
 
   it('tells the guest when it opens above their cap instead of proposing it', () => {
     const w = withOpening({ priceCents: 9000 })
-    expect(watchState(w, opens(w))).toBe('overCap')
-    expect(bookWatch(w, opens(w))).toEqual({ ok: false })
+    expect(watchState(w, OPENS, OPENS)).toBe('overCap')
+    expect(bookWatch(w, OPENS, OPENS)).toEqual({ ok: false })
   })
 
   it('expires near the slot, books only when ready, and releases a swapped slot in the same step', () => {
     const w = withOpening({ current: { title: 'Sabatini’s', slotAt: slotAt + HOUR } })
-    expect(watchState(w, slotAt)).toBe('expired')
-    expect(bookWatch(w, opens(w) - 1)).toEqual({ ok: false })
-    const booked = bookWatch(w, opens(w))
+    expect(watchState(w, slotAt, OPENS)).toBe('expired')
+    expect(bookWatch(w, OPENS - 1, OPENS)).toEqual({ ok: false })
+    const booked = bookWatch(w, OPENS, OPENS)
     expect(booked.ok && booked.watch.stored).toBe('booked')
     expect(booked.ok && booked.release?.title).toBe('Sabatini’s')
-    expect(watchState(booked.ok ? booked.watch : w, 0)).toBe('booked')
+    expect(watchState(booked.ok ? booked.watch : w, 0, OPENS)).toBe('booked')
   })
 
   it('can be stopped, and stored watches are checked on load', () => {
-    expect(watchState(stopWatch(watch('s')), NOW)).toBe('stopped')
+    expect(watchState(stopWatch(watch('s')), NOW, null)).toBe('stopped')
     expect(normalizeWatches('x')).toEqual([])
     expect(normalizeWatches([{ id: 1 }, null, watch('ok')])).toHaveLength(1)
     expect(normalizeWatches([{ ...watch('ok'), stored: 'weird' }])[0].stored).toBe('active')

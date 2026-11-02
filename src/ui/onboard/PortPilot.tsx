@@ -14,6 +14,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { duration, useShipTime } from './shipTime'
 import { partyPeople } from '../../account/context'
 
@@ -30,12 +31,14 @@ export function PortPilot({ v }: { v: PortDayView }) {
   const [outing, setOuting] = useState<string>(day.plan?.outing ?? 'free')
   const [travel, setTravel] = useState<number>(day.plan?.travelMinutes ?? 20)
   const [buffer, setBuffer] = useState<number>(day.plan?.buffer ?? DEFAULT_BUFFER)
+  /** The plan is worked out with a middling crowd until the server's figure arrives. */
+  const crowdLevel = crowd?.level ?? 'moderate'
   const choice = excursions.find((x) => x.id === outing)
   const plan = planPortDay({
-    day: v.day, travelMinutes: travel, outingMinutes: choice ? Math.round(choice.hours * 60) : null, buffer, crowd: crowd.level,
+    day: v.day, travelMinutes: travel, outingMinutes: choice ? Math.round(choice.hours * 60) : null, buffer, crowd: crowdLevel,
     tenderCallAt: v.tender?.callAt ?? null, tenderDelayMinutes: v.tender ? 0 : v.delayMinutes,
   })
-  const start = latestStart({ day: v.day, travelMinutes: travel, outingMinutes: choice ? Math.round(choice.hours * 60) : null, buffer, crowd: crowd.level, tenderCallAt: v.tender?.callAt ?? null })
+  const start = latestStart({ day: v.day, travelMinutes: travel, outingMinutes: choice ? Math.round(choice.hours * 60) : null, buffer, crowd: crowdLevel, tenderCallAt: v.tender?.callAt ?? null })
   const both = (at: number) => {
     const ship = shipTime(at)
     const local = clockTime(new Date(at), v.day.portZone)
@@ -45,8 +48,7 @@ export function PortPilot({ v }: { v: PortDayView }) {
   const ids = members.map((m) => m.id)
   const agreed = planAgreed(day.plan, ids)
   const iAgreed = !!me && !!day.plan?.agreed.includes(me.id)
-  const hours = hourlyCrowd(crowd, 8, 17)
-  const quiet = quietestWindow(hours)
+  const quiet = crowd ? quietestWindow(hourlyCrowd(crowd, 8, 17)) : null
   const recommended = recommendedPlanB({ tenderDelayMinutes: v.tender?.delayMinutes ?? v.delayMinutes, tenderInstead: v.tender?.mayTender ?? false, tender: v.day.tender })
   const planB = PLAN_B[port]
   const chosenB = day.planB && (PLAN_B_TRIGGERS as readonly string[]).includes(day.planB) ? planB[day.planB as PlanBTrigger] : null
@@ -84,10 +86,13 @@ export function PortPilot({ v }: { v: PortDayView }) {
 
       <Card labelledBy="crowd-h">
         <h2 id="crowd-h" className="card__title">{t('crowd.title')}</h2>
-        <p>{t('crowd.ships', { count: crowd.ships })} <span className="muted">{t(`crowd.level.${crowd.level}` as StringKey)}</span></p>
-        {crowd.stayAboardNote && <Banner kind="info" title={t('crowd.stayAboard')}><p>{t('crowd.stayAboardBody')}</p></Banner>}
-        <p>{quiet ? t('crowd.quietest', { from: hourName(quiet.from), to: hourName(quiet.to) }) : t('crowd.noQuiet')}</p>
-        <p className="muted">{t('crowd.sim')}</p>
+        {!crowd && <FeedWaiting />}
+        {crowd && <>
+          <p>{t('crowd.ships', { count: crowd.ships })} <span className="muted">{t(`crowd.level.${crowd.level}` as StringKey)}</span></p>
+          {crowd.stayAboardNote && <Banner kind="info" title={t('crowd.stayAboard')}><p>{t('crowd.stayAboardBody')}</p></Banner>}
+          <p>{quiet ? t('crowd.quietest', { from: hourName(quiet.from), to: hourName(quiet.to) }) : t('crowd.noQuiet')}</p>
+          <p className="muted">{t('crowd.sim')}</p>
+        </>}
       </Card>
 
       <Card labelledBy="planb-h">

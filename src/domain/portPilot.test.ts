@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { portDayAt } from './allaboard'
-import { crowdFor, hourlyCrowd, quietestWindow } from './portCrowd'
+import { hourlyCrowd, quietestWindow } from './portCrowd'
 import { PORT_KNOWLEDGE, GUIDE_PORTS, overCeiling, perPerson } from './portContent'
 import { latestStart, planPortDay, PLAN_B, PLAN_B_TRIGGERS, recommendedPlanB, RETURN_QUEUE } from './portPilot'
 import { REFERENCE_SAILING } from './sailings'
@@ -98,23 +98,6 @@ describe('plan B (S6A-04)', () => {
 })
 
 describe('crowds (S6A-02)', () => {
-  it('is stable for a port and date, marked as a simulation, and between one ship and the port maximum', () => {
-    const a = crowdFor('cozumel', '2027-03-23')
-    expect(crowdFor('cozumel', '2027-03-23')).toEqual(a)
-    expect(a.source).toBe('sim')
-    expect(a.ships).toBeGreaterThanOrEqual(1)
-    expect(a.ships).toBeLessThanOrEqual(5)
-  })
-
-  it('calls a port busy only when it passes what it handles, and then suggests a quiet day aboard', () => {
-    for (const port of ['cozumel', 'belize', 'roatan'] as const) {
-      for (let d = 1; d <= 60; d++) {
-        const c = crowdFor(port, `2027-04-${String((d % 28) + 1).padStart(2, '0')}-${d}`)
-        expect(c.stayAboardNote).toBe(c.level === 'busy')
-      }
-    }
-  })
-
   it('is quietest early and late in the day', () => {
     const hours = hourlyCrowd({ level: 'moderate' }, 8, 17)
     expect(hours.find((h) => h.hour === 8)!.level).toBe('quiet')

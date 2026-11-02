@@ -14,6 +14,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
+import { FeedWaiting } from '../FeedWaiting'
 import { REFUSED } from './refused'
 import { SlotWatch } from './SlotWatch'
 import { WeekPlanner } from './WeekPlanner'
@@ -60,7 +61,7 @@ export function AutopilotScreen() {
   }
   const check = () => {
     const causes: Cause[] = shipChangesFor(dp.sailing, day, dp.rows)
-    if (dp.weather.rainFrom && dp.weather.rainTo) causes.push({ kind: 'rain', from: dp.weather.rainFrom, to: dp.weather.rainTo })
+    if (dp.weather?.rainFrom && dp.weather.rainTo) causes.push({ kind: 'rain', from: dp.weather.rainFrom, to: dp.weather.rainTo })
     propose(causes)
   }
   const accept = (id: string) => {
@@ -81,7 +82,7 @@ export function AutopilotScreen() {
         <select id="ap-pick" className="field__input" value={day} onChange={(e) => { setDay(Number(e.target.value)); setMessage(null) }}>
           {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('autopilot.dayOption', { n })}{n === today ? ` · ${t('autopilot.today')}` : ''}</option>)}
         </select>
-        <p className="muted">{t('autopilot.sky', { uv: dp.weather.uv, f: dp.weather.tempF, c: Math.round(((dp.weather.tempF - 32) * 5) / 9) })}{dp.weather.rainFrom ? ` ${t('autopilot.rain', { from: dp.weather.rainFrom, to: dp.weather.rainTo ?? '' })}` : ''} {t('autopilot.simulated')}</p>
+        {dp.weather ? <p className="muted">{t('autopilot.sky', { uv: dp.weather.uv, f: dp.weather.tempF, c: Math.round(((dp.weather.tempF - 32) * 5) / 9) })}{dp.weather.rainFrom ? ` ${t('autopilot.rain', { from: dp.weather.rainFrom, to: dp.weather.rainTo ?? '' })}` : ''} {t('autopilot.simulated')}</p> : <FeedWaiting />}
         <ul className="plain-list">
           {shown.map((r) => (
             <li key={r.entry.id} className={r.state === 'dropped' ? 'plan-row--dropped' : undefined}>

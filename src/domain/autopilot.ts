@@ -12,21 +12,8 @@ import { itinerary, type PortId, type Sailing } from './sailings'
  */
 const MIN = 60_000
 
-const hash = (text: string): number => {
-  let h = 5381
-  for (const ch of text) h = (Math.imul(h, 33) + ch.charCodeAt(0)) >>> 0
-  return h
-}
-
-/** The sky for a day (`source: 'sim'`): UV and heat from the port, and sometimes an afternoon of rain. */
+/** The sky for a day, as the server reports it: UV and heat, and sometimes an afternoon of rain. */
 export interface SimWeather { uv: number; tempF: number; rainFrom: string | null; rainTo: string | null; source: 'sim' }
-
-export function simWeather(sailingId: string, day: number, port: PortId): SimWeather {
-  const h = hash(`${sailingId}|${day}`)
-  const rain = h % 4 === 0
-  const start = 12 + (h % 4)
-  return { uv: (port === 'sea' ? 7 : 9) + (h % 3), tempF: 80 + (h % 9), rainFrom: rain ? hhmmOf(start * 60) : null, rainTo: rain ? hhmmOf((start + 3) * 60) : null, source: 'sim' }
-}
 
 export type GentleKind = 'rest' | 'water' | 'sun' | 'walk'
 export interface GentleNote { kind: GentleKind; /** "HH:MM". */ at: string; /** The item it relates to. */ about: string }
@@ -45,14 +32,14 @@ export function walkMinutes(fromPlace: string | undefined, toPlace: string | und
 }
 
 /** Gentle mode: a rest after two items close together, a drink before a hot outdoor item, a sun reminder for strong UV, and a warning for a long walk with little time. */
-export function gentleNotes(rows: readonly PlanRow[], w: SimWeather): GentleNote[] {
+export function gentleNotes(rows: readonly PlanRow[], w: SimWeather | null): GentleNote[] {
   const list = rows.filter((r) => r.state !== 'dropped').map((r) => r.entry)
   const out: GentleNote[] = []
   for (let i = 0; i < list.length; i++) {
     const e = list[i]
     const start = minutesOf(e.start)
-    if (e.outdoor && w.tempF >= HOT_F) out.push({ kind: 'water', at: hhmmOf(Math.max(0, start - 15)), about: e.id })
-    if (e.outdoor && w.uv >= STRONG_UV) out.push({ kind: 'sun', at: hhmmOf(Math.max(0, start - 10)), about: e.id })
+    if (e.outdoor && w && w.tempF >= HOT_F) out.push({ kind: 'water', at: hhmmOf(Math.max(0, start - 15)), about: e.id })
+    if (e.outdoor && w && w.uv >= STRONG_UV) out.push({ kind: 'sun', at: hhmmOf(Math.max(0, start - 10)), about: e.id })
     const next = list[i + 1]
     if (!next) continue
     const gap = minutesOf(next.start) - (start + e.minutes)
@@ -153,15 +140,7 @@ export interface Watch {
 export type WatchState = 'watching' | 'ready' | 'overCap' | 'expired' | 'stopped' | 'booked'
 export const WATCH_LEAD_MIN = 30
 
-/** When a place opens in this simulation, or null if it never does before the slot. Stable for a watch. */
-export function simulatedOpening(w: Pick<Watch, 'id' | 'createdAt' | 'slotAt'>): number | null {
-  const first = Math.floor(w.createdAt / (60 * MIN)) + 1
-  const last = Math.floor((w.slotAt - WATCH_LEAD_MIN * MIN) / (60 * MIN))
-  for (let b = first; b <= last && b < first + 48; b++) if (hash(`${w.id}|${b}`) % 6 === 0) return b * 60 * MIN
-  return null
-}
-
-export function watchState(w: Watch, now: number, opened: number | null = simulatedOpening(w)): WatchState {
+export function watchState(w: Watch, now: number, opened: number | null): WatchState {
   if (w.stored === 'booked') return 'booked'
   if (w.stored === 'stopped') return 'stopped'
   if (now >= w.slotAt - WATCH_LEAD_MIN * MIN) return 'expired'
@@ -181,7 +160,7 @@ export function newWatch(input: Omit<Watch, 'stored' | 'id'> & { id: string }, n
 }
 
 /** The guest confirms: the watch ends booked, and for a swap the old slot is released in the same step. A watch that is not ready cannot be booked. */
-export function bookWatch(w: Watch, now: number, opened: number | null = simulatedOpening(w)): { ok: true; watch: Watch; release: Watch['current'] } | { ok: false } {
+export function bookWatch(w: Watch, now: number, opened: number | null): { ok: true; watch: Watch; release: Watch['current'] } | { ok: false } {
   if (watchState(w, now, opened) !== 'ready') return { ok: false }
   return { ok: true, watch: { ...w, stored: 'booked' }, release: w.current }
 }

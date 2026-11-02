@@ -17,6 +17,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 
@@ -66,10 +67,11 @@ export function LoungersScreen() {
   const { a, set } = useAboard()
   const now = useNow()
   const others = useFeed(loungerFeed, Math.floor(now / 60_000))
-  const board = loungerBoard(now, a.lounger, a.reported, others)
+  const board = others ? loungerBoard(now, a.lounger, a.reported, others) : []
   return (
     <Page title="route.loungers" intro="lounge.intro">
       <Banner kind="info" title={t('lounge.sim')} />
+      {!others && <FeedWaiting />}
       <ul className="card-grid">
         {board.map((r) => (
           <li key={r.id}>
@@ -263,17 +265,17 @@ export function LostFoundScreen() {
       <Field label={t('lost.where')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
       <Button disabled={!what.trim() || a.lost.length >= LOST_MAX} onClick={() => { set((x) => ({ ...x, lost: [...x.lost, { id: newMemoryId(), what: what.trim(), where: where.trim(), at: now }] })); setWhat(''); setWhere('') }}>{t('lost.save')}</Button>
       {a.lost.map((r) => {
-        const m = matchFound(r, found)
+        const m = found ? matchFound(r, found) : []
         return (
           <Card key={r.id} labelledBy={`lost-${r.id}`}>
             <h2 id={`lost-${r.id}`} className="card__title">{r.what}</h2>
             {r.where && <p className="muted">{r.where}</p>}
-            <p role="status">{m.length > 0 ? t('lost.maybe', { what: m.map((f) => `${f.what} (${placeById(f.at)?.name ?? f.at})`).join('; ') }) : t('lost.none')}</p>
+            <p role="status">{!found ? t('feed.waiting') : m.length > 0 ? t('lost.maybe', { what: m.map((f) => `${f.what} (${placeById(f.at)?.name ?? f.at})`).join('; ') }) : t('lost.none')}</p>
             <Button variant="tertiary" onClick={() => set((x) => ({ ...x, lost: x.lost.filter((y) => y.id !== r.id) }))}>{t('poll.remove')}</Button>
           </Card>
         )
       })}
-      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{t('lost.found')}</h2><ul>{found.map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
+      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{t('lost.found')}</h2>{!found && <FeedWaiting />}<ul>{(found ?? []).map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
       <p><Link to="/me/cases">{t('route.cases')}</Link></p>
     </Page>
   )
@@ -288,7 +290,7 @@ export function SightingsScreen() {
   return (
     <Page title="route.sightings" intro="sight.intro">
       <Card labelledBy="sight-today"><h2 id="sight-today" className="card__title">{t('sight.today')}</h2>
-        <p>{seen.map((s) => t(`sight.${s}` as StringKey)).join(', ')}</p><p className="muted">{t('sight.sim')}</p></Card>
+        <p>{seen ? seen.map((s) => t(`sight.${s}` as StringKey)).join(', ') : t('feed.waiting')}</p><p className="muted">{t('sight.sim')}</p></Card>
       <label htmlFor="sight-pick">{t('sight.saw')}</label>
       <select id="sight-pick" className="field__input" value={pick} onChange={(e) => setPick(e.target.value)}>{SPECIES.map((s) => <option key={s} value={s}>{t(`sight.${s}` as StringKey)}</option>)}</select>
       <Button disabled={a.sightings.length >= SIGHTINGS_MAX} onClick={() => set((x) => ({ ...x, sightings: [...x.sightings, { id: newMemoryId(), species: pick, day }] }))}>{t('sight.log')}</Button>
