@@ -163,5 +163,10 @@ Front end only; no REST contract changes. State is the new `polish` part of the 
 - **D2-7** on the share ledger: a slider per person that moves the others to keep the total; shares marked paid are locked.
 - Spanish for all `dl4.*` strings; native review still needed.
 - **Verified:** `npm run test` (1771 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
-- **Not done:** notes, colours, rest days and occasions are on this device, not the server (the doc says notes should follow the guest between devices); the rest block is a whole day, not a time slot, and the server's optimiser is not told about it (only the apply step skips it); walks are only gangway to dining room because other bookings are not on the ship; the ship is not told about an occasion, the note is copied; the best sunrise and sunset places are two fixed spots, not chosen by the sun's side.
-
+- **Follow-up (same day):**
+  - The `polish` part already travels in the synced `memory` document (`restOf`), so notes, colours, rest blocks and birthdays follow the guest between devices; a test now covers the round trip. The earlier "this device only" note was wrong.
+  - A rest block can be all day, morning (before noon), afternoon (noon to 6) or evening (after 6). Applying the week and the week preview leave anything starting inside it alone (`inRest`, `applyWeek(..., rest)`). Older saves with a plain list of days load as whole days.
+  - Walks now also cover cabin to the first dining room and back from the last, when the booking has a cabin number (`dayWalks`, `useMyCabin`).
+  - Sunset is watched from the promenade on the side the sun sets; sunrise from the other side; with the sun ahead or behind, the open Lido deck (sunset) or Sea View (sunrise), either side (`watchSpot`).
+- **Verified:** `npm run test` (1777 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** the server's week builder is not told about rest blocks (the client filters its answer; a server change needs `dotnet`, not installed in this shell); the ship is not told about a birthday (there is no endpoint to change a booking's occasion after booking, and staff requests are fixed housekeeping and maintenance items), so the note is copied; walks cover only the gangway, cabin and dining rooms because tours are ashore and ship events are not in the plan.

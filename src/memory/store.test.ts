@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY_MEMORY, loadMemory, memoryKeyFor, normalizeMemory, saveMemory } from './store'
+import { EMPTY_MEMORY, loadMemory, memoryKeyFor, normalizeMemory, restOf, saveMemory } from './store'
 
 const memory = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) } }
 
@@ -50,5 +50,10 @@ describe('medical card state (S3-05)', () => {
   it('is kept clean and defaults to empty', () => {
     expect(normalizeMemory({}).medical.allergies).toEqual([])
     expect(normalizeMemory({ medical: { allergies: [' Nuts ', 5] } }).medical.allergies).toEqual(['Nuts'])
+  })
+  it('carries the plan polish in the synced memory document, so it follows the guest between devices (DL4)', () => {
+    const polish = { rest: [{ day: 2, part: 'morning' as const }], notes: { t1: 'window table' }, colours: { a: 1 }, occasions: [{ id: 'o', label: 'Birthday', date: '2015-03-22', surprise: true }] }
+    const doc = JSON.parse(JSON.stringify(restOf({ ...EMPTY_MEMORY, polish })))
+    expect(normalizeMemory(doc).polish).toEqual(polish)
   })
 })

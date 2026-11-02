@@ -1,34 +1,59 @@
 import { describe, expect, it } from 'vitest'
-import { colourFor, EMPTY_POLISH, normalizePolish, occasionNote, occasionsAtSea, placeForEntry, reslice, setNote, toggleRest, TRAVELLER_COLOURS, walksBetween, watchPlace } from './planPolish'
+import { colourFor, dayWalks, EMPTY_POLISH, inRest, normalizePolish, occasionNote, occasionsAtSea, placeForEntry, reslice, setNote, setRest, TRAVELLER_COLOURS, watchSpot } from './planPolish'
 
 describe('rest block (D4-1)', () => {
-  it('toggles a day on and off in order', () => {
-    expect(toggleRest([2], 4)).toEqual([2, 4])
-    expect(toggleRest([2, 4], 2)).toEqual([4])
-    expect(toggleRest([5], 1)).toEqual([1, 5])
+  it('sets, changes and clears one block per day, in day order', () => {
+    expect(setRest([], 4, 'all')).toEqual([{ day: 4, part: 'all' }])
+    expect(setRest([{ day: 4, part: 'all' }], 2, 'evening')).toEqual([{ day: 2, part: 'evening' }, { day: 4, part: 'all' }])
+    expect(setRest([{ day: 4, part: 'all' }], 4, 'morning')).toEqual([{ day: 4, part: 'morning' }])
+    expect(setRest([{ day: 4, part: 'all' }], 4, null)).toEqual([])
+  })
+  it('knows which times are inside the block', () => {
+    const rest = [{ day: 3, part: 'afternoon' as const }, { day: 5, part: 'all' as const }]
+    expect(inRest(rest, 3, '11:59')).toBe(false)
+    expect(inRest(rest, 3, '12:00')).toBe(true)
+    expect(inRest(rest, 3, '18:00')).toBe(false)
+    expect(inRest(rest, 5, '07:30')).toBe(true)
+    expect(inRest(rest, 4, '13:00')).toBe(false)
+    expect(inRest(rest, 3, 'noon')).toBe(false)
   })
 })
 
-describe('walks between bookings (D4-2)', () => {
+describe('walks (D4-2)', () => {
+  const tour = { kind: 'tour' as const, name: 'Reef', time: '09:00' }
+  const dinner = { kind: 'dinner' as const, name: 'Crown Grill', time: '19:00' }
   it('walks from the gangway to a dining room', () => {
-    const w = walksBetween([{ kind: 'tour', name: 'Reef', time: '09:00' }, { kind: 'dinner', name: 'Crown Grill', time: '19:00' }])
+    const w = dayWalks([tour, dinner])
     expect(w).toHaveLength(1)
-    expect(w[0]?.toName).toMatch(/Crown/)
-    expect(w[0]?.decks).toBe(3)
-    expect(w[0]?.minutes).toBeGreaterThan(0)
+    expect(w[0].toName).toMatch(/Crown/)
+    expect(w[0].decks).toBe(3)
+    expect(w[0].minutes).toBeGreaterThan(0)
   })
-  it('gives no walk between two entries at the gangway or for unknown rooms', () => {
-    expect(walksBetween([{ kind: 'tour', name: 'A', time: '09:00' }, { kind: 'allAboard', name: '', time: '16:00' }])).toEqual([null])
-    expect(walksBetween([{ kind: 'allAboard', name: '', time: '16:00' }, { kind: 'dinner', name: 'Nowhere Room', time: '19:00' }])).toEqual([null])
-    expect(walksBetween([])).toEqual([])
+  it('adds the walk from the cabin to the first room and back from the last', () => {
+    const w = dayWalks([dinner], '12045')
+    expect(w.map((x) => [x.fromName, x.toName])).toEqual([['Cabin 12045', 'Crown Grill'], ['Crown Grill', 'Cabin 12045']])
+    expect(dayWalks([tour], '12045')).toEqual([])
+  })
+  it('gives nothing for the same place, unknown rooms, a bad cabin or no entries', () => {
+    expect(dayWalks([tour, { kind: 'allAboard', name: '', time: '16:00' }])).toEqual([])
+    expect(dayWalks([{ kind: 'allAboard', name: '', time: '16:00' }, { kind: 'dinner', name: 'Nowhere Room', time: '19:00' }])).toEqual([])
+    expect(dayWalks([dinner], 'x')).toEqual([])
+    expect(dayWalks([])).toEqual([])
     expect(placeForEntry({ kind: 'sail', name: '' })?.id).toBe('landing')
   })
 })
 
 describe('sun places (D4-4)', () => {
-  it('names a step-free open place for each', () => {
-    expect(watchPlace('sunrise').stepFree).toBe(true)
-    expect(watchPlace('sunset').stepFree).toBe(true)
+  it('puts sunset on the side the sun sets and sunrise on the other', () => {
+    expect(watchSpot('sunset', 'port').side).toBe('port')
+    expect(watchSpot('sunrise', 'port').side).toBe('starboard')
+    expect(watchSpot('sunrise', 'starboard').side).toBe('port')
+  })
+  it('uses an open deck with either side when the sun is ahead or behind', () => {
+    for (const k of ['sunrise', 'sunset'] as const) { const w = watchSpot(k, 'neither'); expect(w.side).toBeNull(); expect(w.place.stepFree).toBe(true) }
+  })
+  it('is step-free everywhere', () => {
+    for (const s of ['port', 'starboard', 'neither'] as const) for (const k of ['sunrise', 'sunset'] as const) expect(watchSpot(k, s).place.stepFree).toBe(true)
   })
 })
 
@@ -83,7 +108,7 @@ describe('reslice (D2-7)', () => {
 describe('normalizePolish', () => {
   it('survives junk', () => {
     expect(normalizePolish(null)).toEqual(EMPTY_POLISH)
-    expect(normalizePolish({ rest: [3, 3, 99, 'x', 1], notes: { a: ' hi ', b: 5 }, colours: { a: 2, b: 99 }, occasions: [{ id: 'x', label: 'L', date: '2020-01-02' }, { id: 'y', label: '', date: '2020-01-02' }] }))
-      .toEqual({ rest: [1, 3], notes: { a: 'hi' }, colours: { a: 2 }, occasions: [{ id: 'x', label: 'L', date: '2020-01-02', surprise: false }] })
+    expect(normalizePolish({ rest: [3, 3, 99, 'x', 1, { day: 4, part: 'evening' }, { day: 5, part: 'bogus' }], notes: { a: ' hi ', b: 5 }, colours: { a: 2, b: 99 }, occasions: [{ id: 'x', label: 'L', date: '2020-01-02' }, { id: 'y', label: '', date: '2020-01-02' }] }))
+      .toEqual({ rest: [{ day: 1, part: 'all' }, { day: 3, part: 'all' }, { day: 4, part: 'evening' }], notes: { a: 'hi' }, colours: { a: 2 }, occasions: [{ id: 'x', label: 'L', date: '2020-01-02', surprise: false }] })
   })
 })

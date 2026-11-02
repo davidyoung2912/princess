@@ -68,6 +68,14 @@ describe('planning', () => {
     expect(r.changes.every((c) => c.status === 'accepted' && c.undoUntil > 1_000)).toBe(true)
     expect(applyWeek(REFERENCE_SAILING, week, r.changes, 2_000).applied).toBe(0)
   })
+  it('leaves a rest block alone when applying a week (D4-1)', () => {
+    const week = fixtureWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace: 'relaxed' as const, noEarly: true })
+    const all = applyWeek(REFERENCE_SAILING, week, [], 1_000)
+    const rest = Array.from({ length: 8 }, (_, i) => ({ day: i + 1, part: 'all' as const }))
+    expect(applyWeek(REFERENCE_SAILING, week, [], 1_000, rest).applied).toBe(0)
+    const evening = applyWeek(REFERENCE_SAILING, week, [], 1_000, Array.from({ length: 8 }, (_, i) => ({ day: i + 1, part: 'evening' as const })))
+    expect(evening.applied).toBeLessThanOrEqual(all.applied)
+  })
   it('normalises junk to the empty state', () => {
     const s = normalizePlanning({ polls: [{ id: 'x' }], privacy: { medical: true, plans: true }, rhythm: { wake: 'never' } })
     expect(s).not.toHaveProperty('polls')

@@ -2,20 +2,21 @@ import { useId, useState } from 'react'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import type { PlanDay, PlanEntry } from '../../domain/plan'
-import { NOTE_MAX, occasionNote, occasionsAtSea, OCCASIONS_MAX, reslice, setNote, toggleRest, TRAVELLER_COLOURS, walksBetween, watchPlace } from '../../domain/planPolish'
+import { NOTE_MAX, dayWalks, occasionNote, occasionsAtSea, OCCASIONS_MAX, REST_PARTS, reslice, setNote, setRest, TRAVELLER_COLOURS, watchSpot, type RestPart } from '../../domain/planPolish'
 import { itinerary } from '../../domain/sailings'
 import { SHIP } from '../../domain/ship'
 import { skyNightFeed } from '../../feeds/skyNight'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSailing } from '../../hooks/useDemo'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { t } from '../../i18n'
+import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
 import { Field } from '../Field'
 import { firstName } from '../plan/people'
 import { useTravellerColours } from './travellerColours'
+import { useMyCabin } from './useMyCabin'
 
 /** D4-6: who is doing what, as a coloured dot and the name. */
 export function Guests({ guests, colour }: { guests: readonly string[]; colour: (id: string) => { name: string; hex: string } }) {
@@ -58,27 +59,35 @@ export function EntryNote({ entry }: { entry: PlanEntry }) {
   )
 }
 
-/** D4-1, D4-2, D4-4: the rest block, the walks between bookings and the sun, at the foot of a day card. */
+/** D4-1, D4-2, D4-4: the rest block, the walks and the sun, at the foot of a day card. */
 export function DayPolish({ day }: { day: PlanDay }) {
   const sailing = useSailing()
   const { state, update } = useMemory()
+  const cabin = useMyCabin()
   const sky = useFeed(skyNightFeed, sailing.departure, day.day)
-  const rest = state.polish.rest.includes(day.day)
-  const walks = walksBetween(day.entries).flatMap((w) => (w ? [w] : []))
-  const sunset = watchPlace('sunset')
-  const sunrise = watchPlace('sunrise')
+  const block = state.polish.rest.find((r) => r.day === day.day)
+  const walks = dayWalks(day.entries, cabin)
+  const set = (part: RestPart | null) => update((s) => ({ ...s, polish: { ...s.polish, rest: setRest(s.polish.rest, day.day, part) } }))
+  const side = (x: ReturnType<typeof watchSpot>) => (x.side ? t('dl4.sun.on', { place: x.place.name, side: t(`dl4.sun.side.${x.side}` as StringKey) }) : x.place.name)
+  const rise = sky ? watchSpot('sunrise', sky.sunsetSide) : null
+  const sets = sky ? watchSpot('sunset', sky.sunsetSide) : null
+  const id = `rest-${day.day}`
   return (
     <div className="day-polish">
       {walks.length > 0 && (
         <ul className="plain-list day-polish__walks" aria-label={t('dl4.walk.title')}>
-          {walks.map((w) => <li key={w.toName} className="muted">{t('dl4.walk.line', { from: w.fromName, to: w.toName, minutes: w.minutes })}{' '}{w.decks === 0 ? t('dl4.walk.sameDeck') : t(w.lift ? 'dl4.walk.decksLift' : 'dl4.walk.decks', { decks: w.decks })}</li>)}
+          {walks.map((w) => <li key={`${w.fromName}>${w.toName}`} className="muted">{t('dl4.walk.line', { from: w.fromName, to: w.toName, minutes: w.minutes })}{' '}{w.decks === 0 ? t('dl4.walk.sameDeck') : t(w.lift ? 'dl4.walk.decksLift' : 'dl4.walk.decks', { decks: w.decks })}</li>)}
         </ul>
       )}
-      {sky && <p className="muted">{t('dl4.sun.line', { sunrise: sky.sunrise, sunset: sky.sunset, spot: sunset.name, deck: sunset.deck, riseSpot: sunrise.name, riseDeck: sunrise.deck })}</p>}
-      {rest && <p><strong>{t('dl4.rest.on')}</strong> {t('dl4.rest.body')}</p>}
-      <Button variant="tertiary" aria-pressed={rest} onClick={() => update((s) => ({ ...s, polish: { ...s.polish, rest: toggleRest(s.polish.rest, day.day) } }))}>
-        {rest ? t('dl4.rest.remove') : t('dl4.rest.add')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span>
-      </Button>
+      {sky && rise && sets && <p className="muted">{t('dl4.sun.line', { sunrise: sky.sunrise, sunset: sky.sunset, riseSpot: side(rise), riseDeck: rise.place.deck, spot: side(sets), deck: sets.place.deck })}</p>}
+      {block && <p><strong>{t('dl4.rest.on')}</strong> {t(`dl4.rest.body.${block.part}` as StringKey)}</p>}
+      <div className="field">
+        <label htmlFor={id}>{t('dl4.rest.label')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></label>
+        <select id={id} className="field__input" value={block?.part ?? ''} onChange={(e) => set(e.target.value ? (e.target.value as RestPart) : null)}>
+          <option value="">{t('dl4.rest.none')}</option>
+          {REST_PARTS.map((p) => <option key={p} value={p}>{t(`dl4.rest.part.${p}` as StringKey)}</option>)}
+        </select>
+      </div>
     </div>
   )
 }

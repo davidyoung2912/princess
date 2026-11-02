@@ -12,6 +12,7 @@ import { Card } from '../Card'
 import { useState } from 'react'
 import { applyWeek } from '../../domain/planning'
 import { useNow } from '../../hooks/useDemo'
+import { inRest } from '../../domain/planPolish'
 import { useMemory } from '../../hooks/useMemory'
 import { Button } from '../Button'
 
@@ -49,13 +50,13 @@ export function WeekPlanner() {
       <label className="choice"><input type="checkbox" checked={prefs.noEarly} onChange={(e) => set({ noEarly: e.target.checked })} /><span>{t('week.noEarly')}</span></label>
 
       {!week && <FeedWaiting />}
-      {memory.state.polish.rest.length > 0 && <p className="muted">{t('dl4.rest.weekNote', { days: memory.state.polish.rest.join(', ') })}</p>}
+      {memory.state.polish.rest.length > 0 && <p className="muted">{t('dl4.rest.weekNote', { days: memory.state.polish.rest.map((r) => r.day).join(', ') })}</p>}
       {week && <ol className="plain-list">
         {week.days.map((d) => (
           <li key={d.day}>
             <strong>{t('week.day', { n: d.day, place: d.port === 'sea' ? t('week.atSea') : PORTS[d.port].name })}</strong>
             <ul className="plain-list">
-              {d.items.map((i) => <li key={i.id}>{i.start} {i.title} <span className="muted">({i.why})</span></li>)}
+              {d.items.filter((i) => !inRest(memory.state.polish.rest, d.day, i.start)).map((i) => <li key={i.id}>{i.start} {i.title} <span className="muted">({i.why})</span></li>)}
             </ul>
             {d.restDay && <p className="muted">{t('week.restDay')}</p>}
             {d.alternative && <p className="muted">{t('week.alternative', { what: d.alternative })}</p>}

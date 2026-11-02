@@ -1,3 +1,4 @@
+import { inRest, type RestBlock } from './planPolish'
 import { servedAccess } from './accessReference'
 import type { AccessProfile } from './bookingPrep'
 import { clubFor, type ClubId } from './family'
@@ -154,17 +155,16 @@ export function sharedDay(cabins: readonly CabinPlan[]): { together: string[]; a
 
 // ---- S4-02 follow-up: apply a week in one tap through the change rule ----
 /** Turns the week the server built into one accepted change per day that differs from the current plan. Each stays undoable and shows in the log. */
-/** `skipDays` are days the guest set aside for rest: nothing is added to or dropped from them (D4-1). */
-export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], now: number, skipDays: readonly number[] = []): { changes: Change[]; applied: number } {
+/** `rest` are the blocks the guest set aside to do nothing: nothing that starts inside one is added or dropped (D4-1). */
+export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], now: number, rest: readonly RestBlock[] = []): { changes: Change[]; applied: number } {
   let next = [...changes]
   let applied = 0
   for (const d of itinerary(s)) {
-    if (skipDays.includes(d.day)) continue
     const { base, target, items } = week.days[d.day - 1]
     const keep = new Set(items.map((i) => i.id))
     const edits: Edit[] = [
-      ...base.filter((b) => !keep.has(b.id)).map((b): Edit => ({ op: 'drop', id: b.id })),
-      ...target.filter((e: PlanEntry) => keep.has(e.id) && !base.some((b) => b.id === e.id)).map((entry): Edit => ({ op: 'add', entry })),
+      ...base.filter((b) => !keep.has(b.id) && !inRest(rest, d.day, b.start)).map((b): Edit => ({ op: 'drop', id: b.id })),
+      ...target.filter((e: PlanEntry) => keep.has(e.id) && !base.some((b) => b.id === e.id) && !inRest(rest, d.day, e.start)).map((entry): Edit => ({ op: 'add', entry })),
     ]
     if (edits.length === 0) continue
     const id = `week:${d.day}:${edits.map((e) => (e.op === 'add' ? e.entry.id : e.op === 'drop' ? e.id : '')).join('+')}`

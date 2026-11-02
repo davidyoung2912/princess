@@ -1,5 +1,5 @@
 import { PLACES, placeById, type Place } from './deck'
-import { wayBetween } from './deckGraph'
+import { cabinPlace, wayBetween } from './deckGraph'
 import { walkMinutes } from './discoverDelights'
 import { VENUES } from './dining'
 import type { PlanEntry } from './plan'
@@ -19,9 +19,13 @@ export const OCCASION_LABEL_MAX = 40
 
 export interface Occasion { id: string; label: string; /** "YYYY-MM-DD" in the year of the trip. */ date: string; surprise: boolean }
 
+export type RestPart = 'all' | 'morning' | 'afternoon' | 'evening'
+export const REST_PARTS: readonly RestPart[] = ['all', 'morning', 'afternoon', 'evening']
+export interface RestBlock { day: number; part: RestPart }
+
 export interface PolishState {
-  /** Days (1 to 8) the guest set aside to do nothing. */
-  rest: number[]
+  /** Days (1 to 8) the guest set aside to do nothing, all day or for one part of it. */
+  rest: RestBlock[]
   /** A private note per booking id. */
   notes: Record<string, string>
   /** Chosen colour index per traveller id. */
@@ -34,7 +38,16 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function normalizePolish(raw: unknown): PolishState {
   const r = rec(raw)
-  const rest = [...new Set((Array.isArray(r.rest) ? r.rest : []).filter((d): d is number => Number.isInteger(d) && d >= 1 && d <= 8))].sort((a, b) => a - b)
+  // An older copy kept a plain list of days; each of those is a whole day.
+  const seen = new Set<string>()
+  const rest = (Array.isArray(r.rest) ? r.rest : []).flatMap((x): RestBlock[] => {
+    const o = typeof x === 'number' ? { day: x, part: 'all' } : rec(x)
+    const part = REST_PARTS.find((p) => p === o.part)
+    const key = `${o.day}`
+    if (!Number.isInteger(o.day) || (o.day as number) < 1 || (o.day as number) > 8 || !part || seen.has(key)) return []
+    seen.add(key)
+    return [{ day: o.day as number, part }]
+  }).sort((a, b) => a.day - b.day)
   const notes: Record<string, string> = {}
   for (const [k, v] of Object.entries(rec(r.notes)).slice(0, NOTES_MAX)) { const n = clean(v, NOTE_MAX); if (n && k.length <= 80) notes[k] = n }
   const colours: Record<string, number> = {}
@@ -49,7 +62,25 @@ export function normalizePolish(raw: unknown): PolishState {
 
 // ---------------------------------------------------------------- D4-1: a rest block
 
-export const toggleRest = (rest: readonly number[], day: number): number[] => (rest.includes(day) ? rest.filter((d) => d !== day) : [...rest, day].sort((a, b) => a - b))
+/** Sets, changes or (with null) clears the rest block on a day. A day has at most one. */
+export function setRest(rest: readonly RestBlock[], day: number, part: RestPart | null): RestBlock[] {
+  const others = rest.filter((r) => r.day !== day)
+  return (part ? [...others, { day, part }] : others).sort((a, b) => a.day - b.day)
+}
+
+/** The clock window of a rest part, in minutes from midnight (end not included). */
+export const REST_WINDOW: Record<RestPart, readonly [number, number]> = { all: [0, 1440], morning: [0, 12 * 60], afternoon: [12 * 60, 18 * 60], evening: [18 * 60, 1440] }
+
+const minutesOf = (hhmm: string): number => { const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm); return m ? Number(m[1]) * 60 + Number(m[2]) : -1 }
+
+/** Whether a time ("HH:MM") falls inside the day's rest block, so the week builder leaves it alone. */
+export function inRest(rest: readonly RestBlock[], day: number, time: string): boolean {
+  const b = rest.find((r) => r.day === day)
+  const at = minutesOf(time)
+  if (!b || at < 0) return false
+  const [from, to] = REST_WINDOW[b.part]
+  return at >= from && at < to
+}
 
 // ---------------------------------------------------------------- D4-2: the walk between bookings
 
@@ -64,23 +95,43 @@ export function placeForEntry(e: Pick<PlanEntry, 'kind' | 'name'>): Place | unde
   return placeById('landing')
 }
 
-/** The walks between neighbouring entries on a day, in order. Entries at the same place, or at places not on the plan, give no walk. */
-export function walksBetween(entries: readonly Pick<PlanEntry, 'kind' | 'name' | 'time'>[]): (PlanWalk | null)[] {
-  return entries.slice(1).map((b, i) => {
-    const from = placeForEntry(entries[i])
-    const to = placeForEntry(b)
-    if (!from || !to || from.id === to.id) return null
+/**
+ * The walks on a day, in order. Between neighbouring entries the walk is from where the first one ends to where the next begins; when the guest's
+ * cabin is known, the walk from the cabin to the first room and from the last room back are included. Entries at the same place, or at places
+ * not on the plan, give no walk.
+ */
+export function dayWalks(entries: readonly Pick<PlanEntry, 'kind' | 'name' | 'time'>[], cabin: string | null = null): PlanWalk[] {
+  const home = cabin ? cabinPlace(cabin) : null
+  const stops: { place: Place | undefined; room: boolean }[] = entries.map((e) => ({ place: placeForEntry(e), room: e.kind === 'dinner' }))
+  const firstRoom = stops.findIndex((x) => x.room)
+  const lastRoom = stops.length - 1 - [...stops].reverse().findIndex((x) => x.room)
+  const out: PlanWalk[] = []
+  const add = (from: Place | undefined | null, to: Place | undefined | null) => {
+    if (!from || !to || from.id === to.id) return
     const minutes = walkMinutes(from, to)
-    if (minutes === null) return null
-    const way = wayBetween(from, to)
-    return { fromName: from.name, toName: to.name, minutes, decks: Math.abs(from.deck - to.deck), lift: !!way?.some((w) => w.kind === 'lift') }
-  })
+    if (minutes === null) return
+    out.push({ fromName: from.name, toName: to.name, minutes, decks: Math.abs(from.deck - to.deck), lift: !!wayBetween(from, to)?.some((w) => w.kind === 'lift') })
+  }
+  if (home && firstRoom >= 0) add(home, stops[firstRoom].place)
+  for (let i = 1; i < stops.length; i++) add(stops[i - 1].place, stops[i].place)
+  if (home && firstRoom >= 0) add(stops[lastRoom].place, home)
+  return out
 }
 
 // ---------------------------------------------------------------- D4-4: where to watch the sun
 
-/** The best open place to watch a sunrise (forward, step-free) or a sunset (aft on the promenade, step-free). */
-export const watchPlace = (kind: 'sunrise' | 'sunset'): Place => placeById(kind === 'sunrise' ? 'sea-view' : 'promenade')!
+export type SunSide = 'port' | 'starboard' | 'neither'
+export interface WatchSpot { place: Place; /** The side of the ship to stand on, or null when either will do. */ side: 'port' | 'starboard' | null }
+
+/**
+ * Where to watch from, by the side the sun sets on. Sunset: the promenade on that side (step-free). Sunrise is on the other side, because the
+ * ship is moving about north to south; with the sun ahead or behind, the open Lido deck has the widest view and either side will do.
+ */
+export function watchSpot(kind: 'sunrise' | 'sunset', sunsetSide: SunSide): WatchSpot {
+  if (sunsetSide === 'neither') return { place: placeById(kind === 'sunrise' ? 'sea-view' : 'lido-pool')!, side: null }
+  const side = kind === 'sunset' ? sunsetSide : sunsetSide === 'port' ? 'starboard' : 'port'
+  return { place: placeById('promenade')!, side }
+}
 
 // ---------------------------------------------------------------- D4-5: a note on a booking
 

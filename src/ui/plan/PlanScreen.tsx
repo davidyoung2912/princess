@@ -61,7 +61,7 @@ export function PlanScreen() {
 function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
   const id = `day-${day.day}`
   const colour = useTravellerColours(days)
-  const rest = useMemory().state.polish.rest.includes(day.day)
+  const rest = useMemory().state.polish.rest.some((r) => r.day === day.day && r.part === 'all')
   return (
     <li>
       <Card labelledBy={id}>
