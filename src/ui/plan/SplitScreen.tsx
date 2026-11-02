@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { addItem, addParty, balances, FAMILY_PROBLEM_KEY, ITEM_PROBLEM_KEY, formatCents, markSettled, removeItem, removeParty, settleUp, SPLIT_KINDS, totalShared, type SplitKind, type SplitMode, type SplitParty } from '../../domain/ledgerSplit'
-import { partyOf } from '../../domain/personas'
+
 import { newPortId, usePort } from '../../hooks/usePort'
 import { useNow } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
@@ -9,6 +9,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
+import { partyPeople } from '../../account/context'
 
 /** The split ledger (XG-03, S6A-06): what each family paid for shared things, and a fair way to settle up. It never moves money. */
 export function SplitScreen() {
@@ -16,7 +17,7 @@ export function SplitScreen() {
   const now = useNow()
   const split = state.split
   // Until the first change is saved, the person's own family is shown as the starting point.
-  const own: SplitParty[] = me ? [{ id: me.booker, name: t('split.myFamily', { name: me.name.split(' ').slice(-1)[0] }), people: partyOf(me.id).length }] : []
+  const own: SplitParty[] = me ? [{ id: me.booker, name: t('split.myFamily', { name: me.name.split(' ').slice(-1)[0] }), people: partyPeople(me.id).length }] : []
   const parties = split.parties.length > 0 ? split.parties : own
   const working = { ...split, parties }
   const names = Object.fromEntries(parties.map((p) => [p.id, p.name]))

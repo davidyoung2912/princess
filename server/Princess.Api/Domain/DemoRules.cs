@@ -3,7 +3,7 @@ using Princess.Api.Data;
 namespace Princess.Api.Domain;
 
 /// <summary><paramref name="SavedAt"/> is only set on answers: when the offset was set (milliseconds since 1970), 0 when the person has never saved controls. A new device takes saved controls, and follows a fast clock from that moment.</summary>
-public sealed record DemoStateDto(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, long SavedAt = 0);
+public sealed record DemoStateDto(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, long SavedAt = 0, string? SailingId = null, string? PhoneZone = null);
 
 /// <summary>The jump target as a moment, in milliseconds since 1970 (the same "now" the screens show).</summary>
 public sealed record DemoJumpDto(long At);
@@ -13,6 +13,11 @@ public static class DemoRules
 {
     /// <summary>The scenario ids of <c>src/domain/scenarios.ts</c>.</summary>
     public static readonly IReadOnlySet<string> ScenarioIds = new HashSet<string> { "bookingLag", "checkinDrop", "dinnerReschedule", "orderStock", "planChange", "belizeTender", "clockChange", "portSkipped", "lateInPort", "phoneDead", "terminalChange", "illness", "packageRise", "photoFail", "childMissing", "chatSlow" };
+
+    /// <summary>A sailing id as the catalogue writes it (<c>sun-2026-11-08</c>). Whether it is bookable is not checked: the demo may sit on any departure.</summary>
+    private static readonly System.Text.RegularExpressions.Regex SailingIdPattern = new(@"^sun-\d{4}-\d{2}-\d{2}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    /// <summary>An IANA zone name such as <c>America/New_York</c>.</summary>
+    private static readonly System.Text.RegularExpressions.Regex ZonePattern = new(@"^[A-Za-z_]+(/[A-Za-z0-9_+\-]+){0,2}$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>The clock offset allowed either way: a year.</summary>
     public const long MaxOffsetSeconds = 366L * 24 * 3600;
@@ -24,6 +29,8 @@ public static class DemoRules
         if (Math.Abs(s.ClockOffsetSeconds) > MaxOffsetSeconds) return "badOffset";
         if (s.ClockSpeed is < 0 or > MaxSpeed) return "badSpeed";
         if (s.Scenarios is null || s.Scenarios.Any(x => !ScenarioIds.Contains(x))) return "badScenario";
+        if (s.SailingId is not null && !SailingIdPattern.IsMatch(s.SailingId)) return "badSailing";
+        if (s.PhoneZone is not null && !ZonePattern.IsMatch(s.PhoneZone)) return "badZone";
         return null;
     }
 
@@ -46,5 +53,5 @@ public static class DemoRules
     }
 
     /// <summary>The stored form: a stopped clock (speed 0 on the screens) is kept as 1, since the column cannot hold 0; the offset is what the server uses.</summary>
-    public static DemoStateDto Clean(DemoStateDto s) => new(s.ClockOffsetSeconds, Math.Max(1, s.ClockSpeed), [.. s.Scenarios.Distinct().Order()]);
+    public static DemoStateDto Clean(DemoStateDto s) => new(s.ClockOffsetSeconds, Math.Max(1, s.ClockSpeed), [.. s.Scenarios.Distinct().Order()], 0, s.SailingId, s.PhoneZone);
 }

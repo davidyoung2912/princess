@@ -17,7 +17,7 @@ describe('demo publish', () => {
   it('turns the clock into an offset from real time, in seconds', () => {
     const real = Date.UTC(2026, 10, 1, 12)
     const state = { ...defaultDemoState(real), clock: clockAt(real + 2 * 3600_000, real, 60), scenarios: ['planChange' as const] }
-    expect(demoPayload(state, real)).toEqual({ clockOffsetSeconds: 7200, clockSpeed: 60, scenarios: ['planChange'] })
+    expect(demoPayload(state, real)).toEqual({ clockOffsetSeconds: 7200, clockSpeed: 60, scenarios: ['planChange'], sailingId: state.sailingId, phoneZone: state.phoneZone })
   })
   it('does nothing without a remote and ignores a failed send', async () => {
     const state = defaultDemoState(Date.now())
@@ -45,9 +45,15 @@ describe('demo publish', () => {
 
 describe('the server answer', () => {
   it('is read defensively: unknown scenarios dropped, speed at least 1, nothing saved is savedAt 0', () => {
-    expect(normalizeAnswer({ clockOffsetSeconds: 60.7, clockSpeed: 0, scenarios: ['planChange', 'nope', 'planChange'] })).toEqual({ clockOffsetSeconds: 60, clockSpeed: 1, scenarios: ['planChange'], savedAt: 0 })
+    expect(normalizeAnswer({ clockOffsetSeconds: 60.7, clockSpeed: 0, scenarios: ['planChange', 'nope', 'planChange'] })).toEqual({ clockOffsetSeconds: 60, clockSpeed: 1, scenarios: ['planChange'], savedAt: 0, sailingId: null, phoneZone: null })
     expect(normalizeAnswer('x')).toBeNull()
     expect(normalizeAnswer({ clockSpeed: 1 })).toBeNull()
+  })
+  it('takes a known sailing and phone zone and ignores unknown ones', () => {
+    const a = normalizeAnswer({ clockOffsetSeconds: 0, clockSpeed: 1, scenarios: [], sailingId: 'sun-2026-11-22', phoneZone: 'America/Belize' })
+    expect(a?.sailingId).toBe('sun-2026-11-22')
+    expect(a?.phoneZone).toBe('America/Belize')
+    expect(normalizeAnswer({ clockOffsetSeconds: 0, clockSpeed: 1, scenarios: [], sailingId: 'nope' })?.sailingId).toBeNull()
   })
   it('lists the scenarios the server accepts', () => {
     expect(SCENARIOS.length).toBe(16)
@@ -55,7 +61,7 @@ describe('the server answer', () => {
   it('replaces the clock and scenarios but not the sailing or the pretend network', () => {
     const real = Date.UTC(2026, 10, 1, 12)
     const base = { ...defaultDemoState(real), phoneZone: 'America/Cancun' }
-    const next = demoFromAnswer(base, { clockOffsetSeconds: 7200, clockSpeed: 1, scenarios: ['planChange'], savedAt: real }, real)
+    const next = demoFromAnswer(base, { clockOffsetSeconds: 7200, clockSpeed: 1, scenarios: ['planChange'], savedAt: real, sailingId: null, phoneZone: null }, real)
     expect(clockNow(next.clock, real)).toBe(real + 7200_000)
     expect(next.scenarios).toEqual(['planChange'])
     expect(next.phoneZone).toBe('America/Cancun')
@@ -63,14 +69,14 @@ describe('the server answer', () => {
   })
   it('follows a fast clock from the moment it was saved', () => {
     const saved = Date.UTC(2026, 10, 1, 12)
-    const next = demoFromAnswer(defaultDemoState(saved), { clockOffsetSeconds: 0, clockSpeed: 60, scenarios: [], savedAt: saved }, saved + 60_000)
+    const next = demoFromAnswer(defaultDemoState(saved), { clockOffsetSeconds: 0, clockSpeed: 60, scenarios: [], savedAt: saved, sailingId: null, phoneZone: null }, saved + 60_000)
     expect(next.clock.speed).toBe(60)
     expect(clockNow(next.clock, saved + 60_000)).toBe(saved + 60_000 + 59 * 60_000)
   })
   it('compares answers on every field', () => {
-    const a = { clockOffsetSeconds: 1, clockSpeed: 1, scenarios: ['planChange'], savedAt: 5 }
+    const a = { clockOffsetSeconds: 1, clockSpeed: 1, scenarios: ['planChange'], savedAt: 5, sailingId: null, phoneZone: null }
     expect(sameAnswer(a, { ...a })).toBe(true)
-    expect(sameAnswer(a, { ...a, savedAt: 6 })).toBe(false)
+    expect(sameAnswer(a, { ...a, savedAt: 6, sailingId: null, phoneZone: null })).toBe(false)
     expect(sameAnswer(a, { ...a, scenarios: [] })).toBe(false)
   })
 })

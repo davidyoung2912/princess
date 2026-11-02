@@ -6,12 +6,13 @@ import { formatDayMonth, formatTime } from '../../domain/cruise'
 import { EVENT_INTERESTS, type EventInterest } from '../../domain/program'
 import { itinerary } from '../../domain/sailings'
 import { usePersona, useSailing } from '../../hooks/useDemo'
-import { partyOf } from '../../domain/personas'
+
 import { t, type StringKey } from '../../i18n'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { BackLink } from '../onboard/common'
+import { partyPeople } from '../../account/context'
 
 const MOBILITY: readonly Mobility[] = ['any', 'easy', 'wheelchair']
 const toggle = <T,>(list: readonly T[], x: T): T[] => (list.includes(x) ? list.filter((y) => y !== x) : [...list, x])
@@ -22,7 +23,7 @@ export function DayScreen() {
   const me = usePersona()
   const days = itinerary(sailing)
   const [day, setDay] = useState(3)
-  const [wish, setWish] = useState<DayWish>({ ...NO_WISH, withKids: !!me && partyOf(me.id).some((p) => p.age < 13) })
+  const [wish, setWish] = useState<DayWish>({ ...NO_WISH, withKids: !!me && partyPeople(me.id).some((p) => p.age < 13) })
   const plan = buildDay(sailing, day, wish)
   return (
     <div className="page">

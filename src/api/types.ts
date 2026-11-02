@@ -501,7 +501,7 @@ export interface PlanApi {
   excursions: {
     list(): Promise<ExcursionsView>
     /** Rejects `conflict` with a message: `soldOut`, `overlap`, `timing`, `age`, `closed`, `inCart`; `invalid` for an unknown tour or guest. */
-    addToCart(excursionId: string, guests: PersonaId[]): Promise<ExcursionsView>
+    addToCart(excursionId: string, guests: string[]): Promise<ExcursionsView>
     removeFromCart(excursionId: string): Promise<ExcursionsView>
     /** Books everything in the cart. The excursion credit is used first; the rest is paid as `parts`. Rejects as `booking.book` does for payment problems. */
     checkout(parts: PaymentPart[], challenge?: string): Promise<ExcursionsView>
@@ -710,9 +710,9 @@ export interface Api {
   }
   account: {
     party(): Promise<PartyMember[]>
-    profile(id: PersonaId): Promise<ProfileView>
+    profile(id: string): Promise<ProfileView>
     /** Rejects with `forbidden` for a child account or someone outside the party, `invalid` for bad fields, `conflict` for a name change that needs Guest Services. */
-    saveProfile(id: PersonaId, profile: Profile): Promise<ProfileView>
+    saveProfile(id: string, profile: Profile): Promise<ProfileView>
     helper(): Promise<Helper | null>
     saveHelper(input: { name: string; relationship: string; permissions: PermissionId[]; status: 'active' | 'requested' }): Promise<Helper>
     revokeHelper(): Promise<Helper>

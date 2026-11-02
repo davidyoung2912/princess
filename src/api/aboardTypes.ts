@@ -144,7 +144,7 @@ export interface LastMinuteView { port: string | null; tours: LastMinuteTour[]; 
 export interface LastMinuteApi {
   list(): Promise<LastMinuteView>
   /** Charges the onboard account. Rejects `conflict` (`closed`, `soldOut`, `tooLate`, `started`, `duplicate`), `invalid`, `forbidden`. */
-  book(excursionId: string, guests: PersonaId[]): Promise<LastMinuteView>
+  book(excursionId: string, guests: string[]): Promise<LastMinuteView>
 }
 
 export interface ReadyApi {

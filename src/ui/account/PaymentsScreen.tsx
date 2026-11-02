@@ -16,7 +16,8 @@ import { formatMoment } from './format'
 import { ActionError, Load, SupervisedNote } from './parts'
 import { PaymentBadge } from './tripParts'
 import { usePersona, useNow } from '../../hooks/useDemo'
-import { personaById } from '../../domain/personas'
+
+import { personFirstName } from '../../account/context'
 
 /** Payments (MNG-03): what is owed and when, pay the balance, receipts, and the cards on file. */
 export function PaymentsScreen() {
@@ -44,7 +45,7 @@ export function PaymentsScreen() {
           }
           return (
             <>
-              {!v.canPay && me && <SupervisedNote booker={personaById(me.booker)!.firstName} />}
+              {!v.canPay && me && <SupervisedNote booker={personFirstName(me.booker)} />}
               <Card labelledBy="summary-h">
                 <h2 id="summary-h">{t('pay.summary')}</h2>
                 <dl className="facts">

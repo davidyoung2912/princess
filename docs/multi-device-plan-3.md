@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Nothing built yet.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phase 1 built (see its record); Phases 2 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -164,3 +164,24 @@ Parity tests (`catalogueParity.test.ts` and hand-kept hashes) are deleted as eac
 ## Not decided
 
 Nothing open; the three earlier questions are settled by the assumptions above.
+
+## Phase 1 record
+
+Built 2026-11-02. **Server C# not compiled or run** (project rule: no `dotnet` commands here); the new tests are written, not run.
+
+- **Server:** `GET /me/context` (`Services/ContextService.cs`, DTOs in `JourneyContracts.cs`, route in `AuthEndpoints.cs`) answers `{ person, party, booking, sailingId, phoneZone, nowMs, isDemo }`. The current trip is the soonest confirmed, non-agent booking that has not finished (the rule `TripService` uses); `nowMs` goes through `IUserClock`, so a demo account's demo offset applies and a real account gets real time. Demo state gains `SailingId` and `PhoneZone` (`demo.DemoState` add-column lines in `db/01-schema.sql`, `DemoStateDto`, `DemoStateRow`, `DapperDemoStore`, `DemoRules.Problem` with `badSailing` and `badZone`). Data model section 6.7 describes both. Tests written, not run: `ContextTests.cs`, `DemoTests.TheSailingAndPhoneZoneAreCheckedAndKept`, the route in `SwaggerCoverageTests`.
+- **Client:**
+  - `src/account/context.ts` (framework-free): the context store (`normalizeContext`, `setContext`, `refreshContext`), `serverNow()` (this device's clock plus the offset measured at the middle of the request), `followsServer()` (true for a real account from sign-in, before the answer arrives), `personFrom`, `personFirstName`, `partyPeople`. `src/account/sailing.ts`: `sailingFor` (a real account's trip, else the next sailing that has not left; a demo account's chosen sailing).
+  - `runtime/index.ts` loads the context at sign-in, when the tab is shown and when the connection returns, clears it at sign-out, and drops an answer that arrives after the account changed.
+  - `demoNow()` is the server's time for a real account and the demo clock only for a demo account (or mock mode). `currentStage`, `jumpToStage` use `sailingFor`.
+  - `usePersona()` returns a `Person` (new type in `personas.ts`: `Persona` with `id` and `booker` as strings): the demo persona, or for a real account the person from the context. `useSailing()` and `useNow()` follow the rules above. `useMine` now reloads when a real account changes (before, a real account had no persona and its owner key was always empty).
+  - 13 screens and `people.ts` no longer look names up in the persona table (`personFirstName`); 9 screens and hooks take the party from `partyPeople` (the server's party for a real account). `ProfileScreen` accepts only people on the trip. The API types for `account.profile`, `account.saveProfile`, `plan.excursions.addToCart` and `aboard.lastMinute.book` take plain string ids.
+  - Demo controls: `DemoPayload` and the server answer carry `sailingId` and `phoneZone`; a new device takes the account's sailing and zone with its clock and scenarios.
+- **Verified:** `npm run test` (1844 passed, including `src/account/context.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.
+- **Not done:**
+  - **`PersonaId` is still in the API type files** (return types and most parameters); the wire already carries guids for real people, so those types are wrong for them. They go with the mock layer in Phase 2.
+  - **Persona-only code paths remain:** `ai/tools.ts` (`partyOf`), `AtSeaScreen`'s device-signed link branch and the mock `*Mock.ts` files. All go in Phases 2 and 4.
+  - **A real account's trip sailing that the client catalogue does not know** falls back to the next sailing until Phase 3 serves the sailings table.
+  - **Role, stateroom, group and text size** are neutral for a real account (`role: ''`, `group: 'solo'`); no screen reads them for a real account except the demo screen.
+  - **The demo sailing switcher** (`DemoScreen`) saves to the server only for demo accounts, as intended; not exercised against a running server.
+  - Before Phase 2: the user should run `dotnet build server/Princess.sln` once (everything since 2026-11-01 is uncompiled).

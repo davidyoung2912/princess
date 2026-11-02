@@ -1,5 +1,6 @@
 import type { PersonaId } from '../../domain/personas'
-import { personaById } from '../../domain/personas'
 
-export const firstName = (id: PersonaId): string => personaById(id)?.firstName ?? id
+import { personFirstName } from '../../account/context'
+
+export const firstName = (id: PersonaId): string => (personFirstName(id) || id)
 export const names = (ids: readonly PersonaId[]): string => ids.map(firstName).join(', ')

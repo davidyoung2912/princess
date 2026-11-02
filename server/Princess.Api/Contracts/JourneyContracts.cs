@@ -115,3 +115,14 @@ public sealed record SaveStateRequest(JsonNode? Data, int BaseVersion);
 /// <summary>Everything kept as account state: the person's own documents and, per booking they are on, the booking's.</summary>
 public sealed record StateExportDto(long ExportedAt, List<StateDto> Account, List<BookingStateExportDto> Bookings);
 public sealed record BookingStateExportDto(string Number, List<StateDto> Documents);
+
+/// <summary>A person on the trip. <c>Booker</c> is the person who holds the booking (themselves for an adult booker).</summary>
+public sealed record PersonDto(Guid Id, string Name, string FirstName, int? Age, bool Child, Guid Booker, string Tier);
+
+public sealed record ContextBookingDto(string Number, string SailingId, string Package, string Category);
+
+/// <summary>
+/// Everything a device needs to know about who and when: the signed-in person, the people on their current trip, the trip, the sailing the app is on
+/// (a demo account's chosen one), the phone zone a demo account chose, and the server's "now" in milliseconds since 1970.
+/// </summary>
+public sealed record ContextDto(PersonDto Person, List<PersonDto> Party, ContextBookingDto? Booking, string? SailingId, string? PhoneZone, long NowMs, bool IsDemo);

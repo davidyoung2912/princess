@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import type { ProfileView } from '../../api/types'
 import { BEDDING, DIETARY, NEEDS, nameChange, validateProfile, type Bedding, type DietaryId, type NeedId, type Profile, type ProfileErrors, type ProfileField } from '../../domain/account'
-import { isPersonaId, personaById, type PersonaId } from '../../domain/personas'
+
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -16,6 +16,7 @@ import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ErrorSummary, Field, TextArea } from '../Field'
 import { ActionError, Load, SupervisedNote } from './parts'
+import { partyPeople, personFirstName } from '../../account/context'
 
 const toggle = <T,>(list: readonly T[], item: T): T[] => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item])
 
@@ -23,7 +24,7 @@ const toggle = <T,>(list: readonly T[], item: T): T[] => (list.includes(item) ? 
 export function ProfileScreen() {
   const me = usePersona()
   const { id: param } = useParams()
-  const id: PersonaId | null = param === undefined ? (me?.id ?? null) : isPersonaId(param) ? param : null
+  const id: string | null = param === undefined ? (me?.id ?? null) : me && partyPeople(me.id).some((x) => x.id === param) ? param : null
   const party = useMine(() => api.account.party())
   const view = useMine(() => (id ? api.account.profile(id) : Promise.reject(new Error('unknown'))), [id])
   const now = useNow()
@@ -37,16 +38,16 @@ export function ProfileScreen() {
     )
   }
   const isSelf = id === me?.id
-  const person = personaById(id)!
+  const person = partyPeople(me?.id ?? '').find((x) => x.id === id)
   return (
     <div className="page">
-      <h1>{isSelf ? t('route.profile') : t('profile.titleFor', { name: person.name })}</h1>
+      <h1>{isSelf ? t('route.profile') : t('profile.titleFor', { name: person?.name ?? '' })}</h1>
       {!isSelf && <p><Link to="/me/profile">{t('profile.backToMine')}</Link></p>}
       <Load state={view}>
         {(v) => (
           <>
-            {!v.canEdit && me && <SupervisedNote booker={personaById(me.booker)!.firstName} />}
-            <ProfileForm key={v.id} view={v} onSaved={view.retry} child={person.child} now={now} />
+            {!v.canEdit && me && <SupervisedNote booker={personFirstName(me.booker)} />}
+            <ProfileForm key={v.id} view={v} onSaved={view.retry} child={person?.child ?? false} now={now} />
           </>
         )}
       </Load>

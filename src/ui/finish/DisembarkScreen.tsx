@@ -16,7 +16,8 @@ import { SupervisedNote } from '../account/parts'
 import { ExtraError, NotAboard } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
-import { personaById } from '../../domain/personas'
+
+import { personFirstName } from '../../account/context'
 
 /** Getting off the ship (DEB-01, DEB-02, DEB-08): the morning in order, the choice of how to leave, luggage tags. Opens with no signal from the copy on the phone. */
 export function DisembarkScreen() {
@@ -27,7 +28,7 @@ export function DisembarkScreen() {
       <h1>{t('route.disembark')}</h1>
       <AccessAreaNote area="disembark" />
       <p>{t('dis.intro')}</p>
-      {me?.child && <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} />}
+      {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
       <Saved copy={copy}>{(v) => <Disembark v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/" label={t('route.home')} />
     </div>

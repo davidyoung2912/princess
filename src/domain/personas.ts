@@ -62,13 +62,19 @@ export const personaById = (id: unknown): Persona | undefined => PERSONAS.find((
 export const isPersonaId = (id: unknown): id is PersonaId => !!personaById(id)
 
 /** Everyone on the same booking (the booker's party), including the booker. */
-export const partyOf = (id: PersonaId): Persona[] => {
-  const booker = personaById(id)!.booker
-  return PERSONAS.filter((x) => x.booker === booker)
+export const partyOf = (id: string): Persona[] => {
+  const booker = personaById(id)?.booker
+  return booker === undefined ? [] : PERSONAS.filter((x) => x.booker === booker)
 }
 
 /** People the persona can see and message: their own group only. Solo personas see no one (requirements §4.1 rule 3). */
-export const visibleTo = (id: PersonaId): Persona[] => {
-  const me = personaById(id)!
-  return me.group === 'solo' ? [] : PERSONAS.filter((x) => x.group !== 'solo' && x.id !== id)
+export const visibleTo = (id: string): Persona[] => {
+  const me = personaById(id)
+  return !me || me.group === 'solo' ? [] : PERSONAS.filter((x) => x.group !== 'solo' && x.id !== id)
 }
+
+/**
+ * The signed-in person as screens see them: a demo persona, or for any real account the person the server describes (`/me/context`).
+ * `id` and `booker` are strings because only the twelve demo people have slugs; everyone else is identified by the server's guid.
+ */
+export type Person = Omit<Persona, 'id' | 'booker'> & { id: string; booker: string }

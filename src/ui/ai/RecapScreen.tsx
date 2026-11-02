@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { buildRecap, recapText } from '../../domain/recap'
 import { formatDate } from '../../domain/cruise'
-import { partyOf } from '../../domain/personas'
+
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { usePersona, useSailing } from '../../hooks/useDemo'
@@ -13,6 +13,7 @@ import { Card } from '../Card'
 import { Load } from '../account/parts'
 import { RouteMap } from '../discover/parts'
 import { BackLink } from '../onboard/common'
+import { partyPeople } from '../../account/context'
 
 /** Trip memories (POS-03): the cruise gathered into one page, with a map, the numbers, the tours and the favourite table, and a short text to share. */
 export function RecapScreen() {
@@ -31,7 +32,7 @@ export function RecapScreen() {
       {!sailed && <Banner kind="info" title={t('recap.early.title')}><p>{t('recap.early.body')}</p></Banner>}
       <Load state={data}>
         {(d) => {
-          const recap = buildRecap({ sailing, party: me ? partyOf(me.id).map((p) => p.firstName) : [], ...d })
+          const recap = buildRecap({ sailing, party: me ? partyPeople(me.id).map((p) => p.firstName) : [], ...d })
           const share = async () => {
             const text = recapText(recap)
             try {

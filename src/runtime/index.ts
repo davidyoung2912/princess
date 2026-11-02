@@ -20,6 +20,8 @@ import { forgetFares, setFaresFetcher } from '../feeds/fares'
 import { forgetFlights, setFlightFetcher } from '../feeds/flight'
 import { forgetConditions, setRouteFetcher } from '../feeds/route'
 import { forgetSky, setSkyFetcher } from '../feeds/sky'
+import { markAccount, refreshContext, setContext } from '../account/context'
+import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
@@ -176,6 +178,7 @@ function syncAccount(): void {
   loadReference()
   const session = auth.current()
   const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+  loadContext()
   setRemote(session ? createHttpRemote(http) : null)
   setPortRowsRemote(session ? createHttpPortRows(http) : null)
   if (sync.setOwner(session?.user?.id ?? null, ownerIdOf(session))) void sync.pull()
@@ -183,11 +186,24 @@ function syncAccount(): void {
   if (session?.user?.isDemo) void pullDemoFromServer()
 }
 
+/** Who is signed in, their trip, the sailing and the server's time (`GET /me/context`); cleared at sign-out. Nothing about it is kept on the device. */
+let contextFor: string | undefined
+function loadContext(): void {
+  if (!usesRealAuth) return
+  const session = auth.current()
+  markAccount(session ? (session.user?.isDemo ?? null) : null)
+  if (!session) { setContext(null); contextFor = undefined; return }
+  const who = session.user?.id
+  if (who !== contextFor) { setContext(null); contextFor = who }
+  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+  void refreshContext(async () => fromWire(await http.get<unknown>('/me/context')), () => auth.current()?.user?.id === who)
+}
+
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
   if (!usesRealAuth || typeof window === 'undefined') return () => {}
-  const onOnline = () => { void sync.pull(); void portRows.pull(); void pullDemoFromServer(); void flushTelemetry() }
-  const onVisible = () => { if (document.visibilityState === 'visible') { void sync.pull(); void portRows.pull(); void pullDemoFromServer() } else void flushTelemetry() }
+  const onOnline = () => { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer(); void flushTelemetry() }
+  const onVisible = () => { if (document.visibilityState === 'visible') { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer() } else void flushTelemetry() }
   window.addEventListener('online', onOnline)
   document.addEventListener('visibilitychange', onVisible)
   return () => {

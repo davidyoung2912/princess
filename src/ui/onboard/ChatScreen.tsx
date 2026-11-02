@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import type { Message, ServiceThread } from '../../api/types'
 import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type ChannelId } from '../../domain/chat'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { personaById } from '../../domain/personas'
+
 import { api } from '../../runtime'
 import type { OutboxItem } from '../../data/outbox'
 import { useAction } from '../../hooks/useAction'
@@ -21,6 +21,7 @@ import { Phone } from '../icons'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
+import { personFirstName } from '../../account/context'
 
 type Mode = 'party' | 'service'
 
@@ -65,7 +66,7 @@ function Party() {
   })
   const seen = useAction(async () => { await api.messages.markSeen(); list.retry() })
   useEffect(() => { if (list.status === 'ready' && receipts.data) void api.messages.markSeen() }, [list.status, list.data?.length, receipts.data])
-  const name = (m: Message) => (m.from === me?.id ? t('chat.you') : personaById(m.from)?.firstName ?? m.from)
+  const name = (m: Message) => (m.from === me?.id ? t('chat.you') : (personFirstName(m.from) || m.from))
   return (
     <section aria-labelledby="party-h">
       <h2 id="party-h">{t('chat.party')}</h2>
@@ -81,7 +82,7 @@ function Party() {
                     {m.text && <p>{m.text}</p>}
                     {m.photo && <ChatPhoto src={m.photo} name={name(m)} />}
                     {m.from !== me?.id && <MessageSafety messageId={m.id} from={m.from} onBlocked={() => { list.retry(); setBlockedVersion(blockedVersion + 1) }} />}
-                    {m.seenBy && m.seenBy.length > 0 && <p className="muted">{t('chat.seenBy', { names: m.seenBy.map((id) => personaById(id)?.firstName ?? id).join(', ') })}</p>}
+                    {m.seenBy && m.seenBy.length > 0 && <p className="muted">{t('chat.seenBy', { names: m.seenBy.map((id) => (personFirstName(id) || id)).join(', ') })}</p>}
                   </li>
                 ))}
               </ol>
@@ -130,7 +131,7 @@ function Service() {
   return (
     <section aria-labelledby="svc-h">
       <h2 id="svc-h">{t('chat.service')}</h2>
-      {me?.child && <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} />}
+      {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
       <fieldset className="plain-fieldset">
         <legend>{t('chat.topic')}</legend>
         {CHANNELS.map((ch) => {

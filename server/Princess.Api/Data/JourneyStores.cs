@@ -80,4 +80,4 @@ public interface IDemoStore
 }
 
 /// <summary><paramref name="SavedAt"/> is when the offset was set (null when there is no row), so a running fast clock can be followed between saves.</summary>
-public sealed record DemoStateRow(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, DateTime? SavedAt = null);
+public sealed record DemoStateRow(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, DateTime? SavedAt = null, string? SailingId = null, string? PhoneZone = null);

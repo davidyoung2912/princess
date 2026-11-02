@@ -802,6 +802,8 @@ CREATE TABLE demo.DemoState (
   CONSTRAINT CK_DemoState_ClockSpeed CHECK (ClockSpeed >= 1)
 );
 END
+IF COL_LENGTH(N'demo.DemoState', N'SailingId') IS NULL ALTER TABLE demo.DemoState ADD SailingId NVARCHAR(40) NULL;
+IF COL_LENGTH(N'demo.DemoState', N'PhoneZone') IS NULL ALTER TABLE demo.DemoState ADD PhoneZone NVARCHAR(64) NULL;
 GO
 
 /* =====================================================================================================

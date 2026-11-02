@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { PortDayView } from '../../api/types'
-import { partyOf } from '../../domain/personas'
+
 import { PORT_GUIDES } from '../../domain/ports'
 import { usePortCrowd } from '../../hooks/useServedFeeds'
 import { hourlyCrowd, quietestWindow } from '../../domain/portCrowd'
@@ -15,6 +15,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { duration, useShipTime } from './shipTime'
+import { partyPeople } from '../../account/context'
 
 const TRAVEL_CHOICES = [0, 10, 20, 30, 45, 60] as const
 
@@ -40,7 +41,7 @@ export function PortPilot({ v }: { v: PortDayView }) {
     const local = clockTime(new Date(at), v.day.portZone)
     return ship === local ? ship : t('pilot.both', { ship, local })
   }
-  const members = me ? partyOf(me.id) : []
+  const members = me ? partyPeople(me.id) : []
   const ids = members.map((m) => m.id)
   const agreed = planAgreed(day.plan, ids)
   const iAgreed = !!me && !!day.plan?.agreed.includes(me.id)

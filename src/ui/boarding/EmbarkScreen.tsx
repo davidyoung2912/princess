@@ -18,7 +18,8 @@ import { StatusBadge } from '../StatusBadge'
 import { SyncChip } from '../SyncChip'
 import { LoadError } from '../discover/parts'
 import { ActionError, SupervisedNote } from '../account/parts'
-import { personaById } from '../../domain/personas'
+
+import { personFirstName } from '../../account/context'
 
 const time = (epoch: number) => formatTime(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(epoch))
 
@@ -55,7 +56,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
   const nurse = view.nurseCheck
   return (
     <>
-      {!view.canEdit && me && <SupervisedNote booker={personaById(me.booker)!.firstName} />}
+      {!view.canEdit && me && <SupervisedNote booker={personFirstName(me.booker)} />}
       {offline && <Banner kind="offline" title={t('pass.offline')}><p>{t('pass.offlineBody')}</p></Banner>}
       {boarding.terminal.changedFrom && <Banner kind="warning" title={t('pass.terminalChanged', { from: boarding.terminal.changedFrom, to: boarding.terminal.name })}><p>{t('pass.terminalChangedBody')}</p></Banner>}
 

@@ -3,7 +3,7 @@ import { screen } from '../../ai/guard'
 import type { ChatMessage } from '../../ai/types'
 import { EMERGENCY_NUMBER } from '../../domain/contacts'
 import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, type HandoffParts } from '../../domain/handoff'
-import { partyOf } from '../../domain/personas'
+
 import { useAction } from '../../hooks/useAction'
 import { useSailing, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
@@ -12,6 +12,7 @@ import { api } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { TextArea } from '../Field'
+import { partyPeople } from '../../account/context'
 
 /**
  * Handoff with context (XA-06). Shows the whole message that would go to Guest Services (the question, the booking facts, the last of the conversation),
@@ -37,7 +38,7 @@ export function HandoffCard({ messages }: { messages: readonly ChatMessage[] }) 
     )
   }
   const open = checklist.data ? checklist.data.milestones.flatMap((m) => m.entries).filter((e) => e.state !== 'done' && !e.automatic).length : null
-  const built = buildHandoff(topic, lastUser, messages.map((m) => ({ role: m.role, text: m.text })), { guest: me?.name ?? '', sailing: sailing.departure, party: me ? partyOf(me.id).length : 1, open }, parts) ?? ''
+  const built = buildHandoff(topic, lastUser, messages.map((m) => ({ role: m.role, text: m.text })), { guest: me?.name ?? '', sailing: sailing.departure, party: me ? partyPeople(me.id).length : 1, open }, parts) ?? ''
   const text = edited ?? built
   const toggle = (k: keyof HandoffParts) => { setParts((p) => ({ ...p, [k]: !p[k] })); setEdited(null) }
   return (

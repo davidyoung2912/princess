@@ -6,7 +6,7 @@ import {
   stewardFor, swapEffect, waitFor, WELCOME_FIELDS, type EmbarkNeeds, type FamilyRole, type WelcomeField,
 } from '../../domain/embark'
 import { isTime, toggleIn } from '../../domain/journey'
-import { partyOf } from '../../domain/personas'
+
 import { formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
@@ -17,6 +17,7 @@ import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 import { duration } from '../onboard/shipTime'
+import { partyPeople } from '../../account/context'
 
 /** Embarkation plan (S5-01 to S5-06): the arrival window and what it costs in waiting, a step-by-step forecast, the first three hours aboard, the cabin quick-start, a family plan and a welcome. */
 export function EmbarkPlanScreen() {
@@ -29,7 +30,7 @@ export function EmbarkPlanScreen() {
   const best = recommendWindow(needs)
   const chosen = windows.find((w) => w.start === embark.window) ?? null
   const shown = chosen ?? best
-  const people = me ? partyOf(me.id) : []
+  const people = me ? partyPeople(me.id) : []
   const problems = familyProblems(people.map((p) => ({ id: p.id, child: p.child })), embark.family)
   const hours = firstHours(embark.boardedAt)
   const shared = sharedWelcome(embark.welcome)

@@ -3,7 +3,6 @@ import { formatTime } from '../../domain/cruise'
 import { excursionById } from '../../domain/excursions'
 import { formatMoney } from '../../domain/pricing'
 import { PORT_CONTACTS, readyFor, readyText } from '../../domain/services'
-import type { PersonaId } from '../../domain/personas'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -22,7 +21,7 @@ type Contactable = keyof typeof PORT_CONTACTS
 export function LastMinute() {
   const view = useMine(() => api.aboard.lastMinute.list())
   const me = usePersona()
-  const [who, setWho] = useState<PersonaId[]>(me ? [me.id] : [])
+  const [who, setWho] = useState<string[]>(me ? [me.id] : [])
   const book = useAction(async (id: string) => { await api.aboard.lastMinute.book(id, who); view.retry() })
   return (
     <section aria-labelledby="lm-h">

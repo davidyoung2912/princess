@@ -6,7 +6,7 @@ import type { FolioView } from '../../api/types'
 import { filterFolio, FOLIO_CATEGORIES, NO_FOLIO_FILTER, runningTotals, folioTotals, type FolioCategory, type FolioFilter } from '../../domain/folio'
 import { formatDayMonth } from '../../domain/cruise'
 import { formatMoney } from '../../domain/pricing'
-import { personaById } from '../../domain/personas'
+
 import { itinerary } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { usePersona, useSailing } from '../../hooks/useDemo'
@@ -18,6 +18,7 @@ import { SupervisedNote } from '../account/parts'
 import { BackLink, Saved } from './common'
 import { BudgetAlert, BudgetCard } from './BudgetCard'
 import { ExplainLine, FeeLedgerCard, SpendCoachCard } from './MoneyShieldCards'
+import { personFirstName } from '../../account/context'
 
 /** The onboard account, or folio (ACC-01): every charge, credit and package saving, with a running total, search and filters. Kept on the phone so it opens without signal. */
 export function BillScreen() {
@@ -26,7 +27,7 @@ export function BillScreen() {
   return (
     <div className="page">
       <h1>{t('route.bill')}</h1>
-      {me?.child ? <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} /> : <Saved copy={copy}>{(f) => <Folio f={f} />}</Saved>}
+      {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : <Saved copy={copy}>{(f) => <Folio f={f} />}</Saved>}
       <BackLink to="/me" label={t('route.me')} />
     </div>
   )

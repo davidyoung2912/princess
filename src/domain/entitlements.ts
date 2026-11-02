@@ -26,7 +26,7 @@ export interface Source {
   sanctuary: boolean
 }
 
-export const sourceOf = (p: Persona): Source => ({ tier: p.tier, package: p.package, sanctuary: p.sanctuary })
+export const sourceOf = (p: Pick<Persona, 'tier' | 'package' | 'sanctuary'>): Source => ({ tier: p.tier, package: p.package, sanctuary: p.sanctuary })
 
 const BASE: Entitlements = { drinkCapUsd: 0, wifiDevices: 0, specialtyMeals: 0, excursionCreditUsd: 0, gratuitiesIncluded: false, diningWindow: 'afterFullPayment', perks: [] }
 

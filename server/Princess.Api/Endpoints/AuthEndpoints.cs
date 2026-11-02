@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Domain;
+using Princess.Api.Services;
 
 namespace Princess.Api.Endpoints;
 
@@ -76,6 +77,9 @@ public static class AuthEndpoints
         meGroup.MapGet("", async (ICurrentUser me, CancellationToken ct) =>
                 Results.Ok(AuthService.Me(await me.LoadAsync(ct))))
             .WithSummary("The signed-in person (the supervised child, on a view-as token).");
+
+        meGroup.MapGet("/context", async (ContextService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(ct)))
+            .WithSummary("Who is signed in, the people on their current trip, the trip and sailing the app is on, and the server's time (moved by the demo clock for a demo account). A device keeps none of this itself.");
 
         meGroup.MapPost("/view-as/{userId:guid}", async (Guid userId, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
             {

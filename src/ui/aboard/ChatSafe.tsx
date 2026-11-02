@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
-import { personaById, type PersonaId } from '../../domain/personas'
+import { type PersonaId } from '../../domain/personas'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -8,6 +8,7 @@ import { usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { AboardError } from './common'
+import { personFirstName } from '../../account/context'
 
 /** Report or hide someone's messages (MSG-05). Reporting sends the message to the ship's moderators; blocking only hides it from you. */
 export function MessageSafety({ messageId, from, onBlocked }: { messageId: string; from: PersonaId; onBlocked: () => void }) {
@@ -18,7 +19,7 @@ export function MessageSafety({ messageId, from, onBlocked }: { messageId: strin
   const block = useAction(async () => { await api.aboard.chat.block(from, true); onBlocked() })
   return (
     <div className="chat-safety">
-      <Button variant="tertiary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('safe.more')}<span className="visually-hidden"> {personaById(from)?.firstName}</span></Button>
+      <Button variant="tertiary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('safe.more')}<span className="visually-hidden"> {personFirstName(from)}</span></Button>
       {open && (
         <div>
           {sent ? <p role="status">{t('safe.reported')}</p> : (
@@ -30,7 +31,7 @@ export function MessageSafety({ messageId, from, onBlocked }: { messageId: strin
               <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('safe.report')}</Button>
             </div>
           )}
-          <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: personaById(from)?.firstName ?? '' })}</Button>
+          <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: personFirstName(from) })}</Button>
           <AboardError error={report.error ?? block.error} />
         </div>
       )}
@@ -47,7 +48,7 @@ export function BlockedList({ reload, version }: { reload: () => void; version: 
     <div>
       <p>{t('safe.hidden')}</p>
       <ul className="plain-bullets">
-        {blocked.data.map((id) => <li key={id}>{personaById(id)?.firstName} <Button variant="tertiary" disabled={unblock.busy} onClick={() => void unblock.run(id)}>{t('safe.unblock')}</Button></li>)}
+        {blocked.data.map((id) => <li key={id}>{personFirstName(id)} <Button variant="tertiary" disabled={unblock.busy} onClick={() => void unblock.run(id)}>{t('safe.unblock')}</Button></li>)}
       </ul>
     </div>
   )

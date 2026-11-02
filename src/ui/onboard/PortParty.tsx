@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { PortDayView } from '../../api/types'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { partyOf } from '../../domain/personas'
+
 import { ALERT_CHOICES, addRendezvous, anyoneOut, backCheck, dayOf, meetView, MEET_STATES, presenceOf, removeRendezvous, setAlertBefore, setMeetState, setPresence, type MeetState, type Presence } from '../../domain/portParty'
 import { PORTS } from '../../domain/sailings'
 import { zonedToEpoch } from '../../domain/timezones'
@@ -13,13 +13,14 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { duration, useShipTime } from './shipTime'
+import { partyPeople } from '../../account/context'
 
 /** "I'm back aboard" (S6A-05) and meeting up (S6-12): who is out and who is back, a nudge when all-aboard nears, and a place to meet with a plan for no signal. */
 export function PortParty({ v }: { v: PortDayView }) {
   const now = useNow()
   const shipTime = useShipTime()
   const { state, update, me } = usePort()
-  const members = me ? partyOf(me.id) : []
+  const members = me ? partyPeople(me.id) : []
   const date = v.day.date
   const day = dayOf(state.party, date)
   const check = backCheck(members.map((m) => ({ id: m.id, child: m.child })), day, v.day.allAboardAt, state.party.alertBefore, now)

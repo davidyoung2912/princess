@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
 import { formatDayMonth } from '../../domain/cruise'
-import { personaById } from '../../domain/personas'
+
 import { formatMoney } from '../../domain/pricing'
 import { buildLedger, groupByDay, ledgerNet, type PaymentRecord } from '../../domain/trustLedger'
 import { api } from '../../runtime'
@@ -13,6 +13,7 @@ import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { Load, SupervisedNote } from './parts'
+import { personFirstName } from '../../account/context'
 
 /** The trust ledger (XT-07): every payment, charge, credit and covered item in one timeline that cannot lose a line. */
 export function LedgerScreen() {
@@ -23,7 +24,7 @@ export function LedgerScreen() {
     <div className="page">
       <h1>{t('route.ledger')}</h1>
       <p>{t('ledger.intro')}</p>
-      {me?.child ? <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} /> : (
+      {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : (
         <Saved copy={folio}>
           {(f) => (
             <Load state={pay}>

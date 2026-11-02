@@ -15,10 +15,11 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError, Load, SupervisedNote } from '../account/parts'
-import { personaById } from '../../domain/personas'
+
 import { SaveButton } from '../ahead/common'
 import { OrderExtras } from './OrderExtras'
 import { useShopExtras } from '../../hooks/useShopExtras'
+import { personFirstName } from '../../account/context'
 
 /** Why a change was refused, in words that say what to do next. Falls back to the general wording. */
 export function AboardError({ error }: { error: ApiError | null }) {
@@ -38,7 +39,7 @@ export function Back({ to, label }: { to: string; label: string }) {
 export function ChildNote() {
   const me = usePersona()
   if (!me?.child) return null
-  return <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} />
+  return <SupervisedNote booker={personFirstName(me.booker)} />
 }
 
 const ordinal = (day: number) => t('ab.day', { day })

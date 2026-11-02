@@ -54,7 +54,7 @@ export const SCENARIOS: readonly Scenario[] = [
 
 export const scenarioById = (id: unknown): Scenario | undefined => SCENARIOS.find((s) => s.id === id)
 
-export const appliesTo = (s: Scenario, persona: PersonaId): boolean => s.personas === 'all' || s.personas.includes(persona)
+export const appliesTo = (s: Scenario, persona: string): boolean => s.personas === 'all' || (s.personas as readonly string[]).includes(persona)
 
 /** All fault rules of the scenarios that are switched on. */
 export const activeFaults = (active: readonly string[]): FaultRule[] => SCENARIOS.filter((s) => active.includes(s.id)).flatMap((s) => s.faults)

@@ -16,9 +16,10 @@ import { StatusBadge } from '../StatusBadge'
 import { Load, SupervisedNote } from '../account/parts'
 import { formatDateTime } from '../account/format'
 import { usePersona } from '../../hooks/useDemo'
-import { personaById } from '../../domain/personas'
+
 import { CheckinError } from './CheckinError'
 import { ArrivalStep, ConfirmStep, ContractStep, DocumentStep, EmergencyStep, HealthStep, PaymentStep, PhotoStep } from './steps'
+import { personFirstName } from '../../account/context'
 
 const REVIEW = 'review'
 const stepLabel = (step: StepId | typeof REVIEW) => t(`checkin.step.${step}` as StringKey)
@@ -44,7 +45,7 @@ function Gate({ view, children }: { view: CheckinView; children: React.ReactNode
   if (state === 'closed') return <Banner kind="warning" title={t('checkin.closed')} action={<LinkButton to="/home/check-in/terminal" variant="secondary">{t('route.terminalCheckin')}</LinkButton>}><p>{t('checkin.closedBody')}</p></Banner>
   return (
     <>
-      {!view.canEdit && me && <SupervisedNote booker={personaById(me.booker)!.firstName} />}
+      {!view.canEdit && me && <SupervisedNote booker={personFirstName(me.booker)} />}
       {children}
     </>
   )

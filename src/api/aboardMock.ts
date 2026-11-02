@@ -378,7 +378,8 @@ export function createAboardApi(d: AboardDeps): AboardMock {
   }
   const lastMinute: AboardApi['lastMinute'] = {
     list: () => d.run('aboard.lastMinute.list', lastMinuteView),
-    book: (excursionId, guestIds) => d.run('aboard.lastMinute.book', async () => {
+    book: (excursionId, given) => d.run('aboard.lastMinute.book', async () => {
+      const guestIds = given as PersonaId[]
       d.adult()
       needAboard()
       const x: ExcursionItem | undefined = excursionById(excursionId)

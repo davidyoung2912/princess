@@ -39,6 +39,17 @@ public class DemoClockTests
     }
 
     [Fact]
+    public void TheSailingAndPhoneZoneAreCheckedAndKept()
+    {
+        Assert.Null(DemoRules.Problem(new DemoStateDto(0, 1, [], 0, "sun-2026-11-22", "America/New_York")));
+        Assert.Equal("badSailing", DemoRules.Problem(new DemoStateDto(0, 1, [], 0, "../etc", null)));
+        Assert.Equal("badZone", DemoRules.Problem(new DemoStateDto(0, 1, [], 0, null, "not a zone!")));
+        var clean = DemoRules.Clean(new DemoStateDto(0, 1, [], 0, "sun-2026-11-22", "America/Belize"));
+        Assert.Equal("sun-2026-11-22", clean.SailingId);
+        Assert.Equal("America/Belize", clean.PhoneZone);
+    }
+
+    [Fact]
     public void AJumpIsMeasuredAgainstTheServersClockAndAFarMomentIsRefused()
     {
         var at = new DateTimeOffset(Saved.AddHours(3)).ToUnixTimeMilliseconds();

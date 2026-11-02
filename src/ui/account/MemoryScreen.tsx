@@ -5,7 +5,7 @@ import { contactProblem, CONTACT_NAME_MAX, CONTACT_NOTE_MAX, memoryBook, NOTE_MA
 import { categoryById, type CategoryId } from '../../domain/ship'
 import { FARES } from '../../domain/fares'
 import { itinerary } from '../../domain/sailings'
-import { partyOf } from '../../domain/personas'
+
 import { ADD_ONS } from '../../domain/packages'
 import { packageHindsight } from '../../domain/wrapped'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -17,6 +17,7 @@ import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { BackLink } from '../onboard/common'
 import { Load } from './parts'
+import { partyPeople } from '../../account/context'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
 
@@ -88,7 +89,7 @@ export function MemoryScreen() {
           const hind = state.use.paid > 0 ? packageHindsight({ paid: state.use.paid, drinks: state.use.drinks, specialtyDinners: state.use.dinners, wifiNights: state.use.wifiNights, wifiNight: ADD_ONS.wifi.base, otherFarePaid: null }) : null
           const category = stateroomCategory(me?.stateroom)
           const fare = me && me.package !== 'none' ? me.package : 'standard'
-          const next = seedNextTrip({ sailing, category, fare, guests: me ? partyOf(me.id).length : 2, tourNames: r.tourNames, favouriteMeal: r.favouriteMeal?.name ?? null, hindsight: hind, reflections: state.reflections, lastDay })
+          const next = seedNextTrip({ sailing, category, fare, guests: me ? partyPeople(me.id).length : 2, tourNames: r.tourNames, favouriteMeal: r.favouriteMeal?.name ?? null, hindsight: hind, reflections: state.reflections, lastDay })
           const sections = memoryBook(sailing, r, state.journal, state.reflections, includeChange)
           const group = sailAgainGroup(state.contacts, next)
           return (

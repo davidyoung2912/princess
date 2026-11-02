@@ -1,5 +1,7 @@
+import { followsServer, getContext, serverNow } from '../account/context'
+import { sailingFor } from '../account/sailing'
 import { clockAt, clockNow, setClockSpeed, stepClock } from '../domain/clock'
-import { sailingById, stageAt, timeForStage, type StageId } from '../domain/sailings'
+import { stageAt, timeForStage, type StageId } from '../domain/sailings'
 import { channel } from '../runtime/channel'
 import { demoFromAnswer, fetchDemo, onDemoAnswer, publishDemo, publishJump, publishReset, sameAnswer, type DemoAnswer } from './publish'
 import { defaultDemoState, loadDemoState, saveDemoState, type DemoState } from './state'
@@ -62,8 +64,8 @@ export function watchOtherTabs(): () => void {
   })
 }
 
-/** The demo clock's "now", in milliseconds since 1970. */
-export const demoNow = (): number => clockNow(current.clock, Date.now())
+/** "Now" in milliseconds since 1970: the server's time for a real account, the demo clock for a demo account. */
+export const demoNow = (): number => (followsServer() ? serverNow() : clockNow(current.clock, Date.now()))
 
 export const updateDemo = (patch: Partial<DemoState>): void => commit({ ...current, ...patch })
 
@@ -80,11 +82,10 @@ export const stepBy = (ms: number): void => commit({ ...current, clock: stepCloc
 export const setSpeed = (speed: number): void => commit({ ...current, clock: setClockSpeed(current.clock, speed, Date.now()) })
 
 export function jumpToStage(stage: StageId): void {
-  const s = sailingById(current.sailingId)!
-  jumpTo(timeForStage(s, stage))
+  jumpTo(timeForStage(sailingFor(getContext(), current.sailingId, demoNow()), stage))
 }
 
-export const currentStage = (): StageId => stageAt(sailingById(current.sailingId)!, demoNow())
+export const currentStage = (): StageId => stageAt(sailingFor(getContext(), current.sailingId, demoNow()), demoNow())
 
 export function toggleScenario(id: DemoState['scenarios'][number], on: boolean): void {
   const rest = current.scenarios.filter((x) => x !== id)

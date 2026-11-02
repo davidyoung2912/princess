@@ -355,11 +355,13 @@ export function createMockApi(ctx: MockContext): Api {
     },
     account: {
       party: () => run('account.party', () => partyOf(who()).map((p) => ({ id: p.id, name: p.name, age: p.age, child: p.child }))),
-      profile: (id) => run('account.profile', () => {
+      profile: (given) => run('account.profile', () => {
+        const id = given as PersonaId
         if (!inParty(id)) throw new ApiError('forbidden', 'Not on your booking')
         return profileView(id)
       }),
-      saveProfile: (id, profile) => run('account.saveProfile', async () => {
+      saveProfile: (given, profile) => run('account.saveProfile', async () => {
+        const id = given as PersonaId
         adult()
         if (!inParty(id)) throw new ApiError('forbidden', 'Not on your booking')
         const next = normalizeProfile(profile, id)

@@ -7,7 +7,7 @@ import { TIP_KEEP, tipCredit } from '../../domain/disembark'
 import { CASE_TEXT_MAX } from '../../domain/postcruise'
 import { folioTotals } from '../../domain/folio'
 import { formatMoney } from '../../domain/pricing'
-import { personaById } from '../../domain/personas'
+
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
@@ -24,6 +24,7 @@ import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { Human } from './common'
 import { ExplainLine } from '../onboard/MoneyShieldCards'
+import { personFirstName } from '../../account/context'
 
 /** The final bill and receipts (DEB-03): what is owed and to which card, the gratuity deadline, a way to query a charge, and receipts to print or email. */
 export function FinalBillScreen() {
@@ -34,7 +35,7 @@ export function FinalBillScreen() {
     <div className="page">
       <h1>{t('route.finalBill')}</h1>
       <p>{t('fb.intro')}</p>
-      {me?.child ? <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} /> : (
+      {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : (
         <Saved copy={folio}>{(f) => <Load state={bill}>{(b) => <FinalBill f={f} b={b} reload={() => { bill.retry(); folio.retry() }} />}</Load>}</Saved>
       )}
       <BackLink to="/me/bill" label={t('route.bill')} />
