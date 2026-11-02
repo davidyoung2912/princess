@@ -36,6 +36,14 @@ describe('load retries (PERF-04)', () => {
     expect(err).toMatchObject({ code: 'server' })
   })
 
+  it('does not wait and retry when the phone knows it is offline (the saved copy should show at once)', async () => {
+    let calls = 0
+    const waits: number[] = []
+    await expect(withRetries(async () => { calls++; throw new ApiError('offline') }, { sleep: async (ms) => { waits.push(ms) } })).rejects.toMatchObject({ code: 'offline' })
+    expect(calls).toBe(1)
+    expect(waits).toEqual([])
+  })
+
   it('does not repeat a real answer', async () => {
     let calls = 0
     await withRetries(() => { calls++; return Promise.reject(new ApiError('notFound')) }, noWait).catch(() => {})
@@ -45,10 +53,10 @@ describe('load retries (PERF-04)', () => {
   it('waits longer each time and stops when the screen has moved on', async () => {
     const waits: number[] = []
     let calls = 0
-    await withRetries(() => { calls++; return Promise.reject(new ApiError('offline')) }, { retries: 3, delayMs: (n) => 100 * 2 ** n, sleep: (ms) => { waits.push(ms); return Promise.resolve() } }).catch(() => {})
+    await withRetries(() => { calls++; return Promise.reject(new ApiError('network')) }, { retries: 3, delayMs: (n) => 100 * 2 ** n, sleep: (ms) => { waits.push(ms); return Promise.resolve() } }).catch(() => {})
     expect(waits).toEqual([100, 200, 400])
     calls = 0
-    await withRetries(() => { calls++; return Promise.reject(new ApiError('offline')) }, { ...noWait, keepGoing: () => false }).catch(() => {})
+    await withRetries(() => { calls++; return Promise.reject(new ApiError('network')) }, { ...noWait, keepGoing: () => false }).catch(() => {})
     expect(calls).toBe(1)
   })
 })

@@ -5,12 +5,14 @@ import { explainCharge } from '../../domain/moneyShield'
 import { LEGAL, type LegalId } from '../../domain/policy'
 import { SUMMARY_LEVELS, summariseBill, summariseNotice, summarisePlan, summaryText, type Summary, type SummaryLevel } from '../../domain/plainSummary'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
-import { usePersona } from '../../hooks/useDemo'
+import { shipZoneAt } from '../../domain/sailings'
+import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { SyncChip } from '../SyncChip'
 import { BackLink } from '../onboard/common'
 
 type Subject = 'day' | 'bill' | LegalId
@@ -18,6 +20,8 @@ type Subject = 'day' | 'bill' | LegalId
 /** Plain-English summaries (XA-05): the day, the bill or a notice, at a level the guest picks, always beside the original. Made by rules from the original, only when asked; nothing is reworded, sent or saved. */
 export function SummaryScreen() {
   const me = usePersona()
+  const now = useNow()
+  const sailing = useSailing()
   const day = useCurrentDay()
   const dp = useDayPlan(day)
   const folio = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
@@ -63,6 +67,7 @@ export function SummaryScreen() {
         {SUMMARY_LEVELS.map((l) => <Button key={l} variant={level === l ? 'primary' : 'secondary'} aria-pressed={level === l} onClick={() => { setLevel(l); setNote('') }}>{t(`sum.level.${l}` as StringKey)}</Button>)}
       </div>
       <p className="muted">{t(`sum.levelHint.${level}` as StringKey)}</p>
+      {subject === 'bill' && folio.at !== null && <SyncChip updated={new Date(folio.at)} now={new Date(now)} state={folio.fromCopy ? 'offline' : 'live'} timeZone={shipZoneAt(sailing, now)} />}
       {s === null ? <p role="status" className="muted">{t(folio.status === 'error' ? 'sum.cannotSee' : 'account.loading')}</p> : (
         <div className="summary-pair">
           <Card labelledBy="sum-h">

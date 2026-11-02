@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. Nothing in it is built.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 is under way (see the N1 record at the end of its section); nothing else is built.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 
@@ -94,6 +94,17 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 | N1.6 Fix list | Fix defects the above find; record the rest | Time-boxed |
 
 **Done when:** every A-tier row has a test or an explicit "no test" note, the offline test passes, the budget is set, and the server builds.
+
+**N1 record (2026-11-02):**
+- **N1.1 done:** `docs/a-tier-matrix.md`. Logic is well covered; no test shows any screen with data in it.
+- **N1.2 done:** `jsdom`, `@testing-library/react` and `@testing-library/dom` added as dev dependencies. `src/testing/harness.tsx` stubs `fetch` with a table of answers (`src/testing/fixtures.ts`: one signed-in person aboard on day 3) and renders the real app, so the real API client, guards, stores and screens run. `src/ui/dataScreens.test.tsx` has 17 tests covering the screens behind all 15 top tasks (UX-01), each written as the task's clear-to-use sentence. Other test files are unchanged and still run in `node`; only files with `// @vitest-environment jsdom` use the DOM.
+- **N1.3 done:** `src/offlineDay.test.ts` (ten must-work-offline kinds are kept; every screen showing a kept copy shows its age; cache age rules). It found and fixed one defect: the plain-English summary showed a kept bill without its age.
+- **N1.4 done:** `scripts/check-bundle.mjs`, `npm run bundle:check` (run after `npm run build`). First load 331 kB gzip of a 340 kB budget; the English strings are about 122 kB of that.
+- **N1.5 done:** you confirmed the server builds and runs.
+- **N1.6 fixes (from the new tests):**
+  - **A guest with no signal waited for a spinner before the saved boarding pass appeared.** Loads retry with a growing delay (about 3 to 6 seconds in all) and the saved copy was shown only after the last try. Now an offline phone fails at once (`withRetries` no longer retries `offline`), and on a link that answers nothing the saved copy takes the spinner's place after 1.5 seconds (`SLOW_COPY_MS` in `useSavedCopy`).
+  - The plain-English summary showed a kept bill without its age (found by N1.3).
+- **Found, not changed:** 33 strings in `en.ts` say the app is a concept or "simulated" (for example the pass screen's "Pretend wallet for this concept" and the family page's "simulated in this concept"). That is honest for a demo, but it conflicts with the rule that the front end must not know whether data is simulated. It needs a decision before a real pilot (N8).
 
 ---
 

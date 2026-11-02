@@ -35,7 +35,8 @@ export async function withRetries<T>(load: () => Promise<T>, o: RetryOptions = {
     try {
       return await load()
     } catch (e) {
-      if (attempt >= retries || !(isApiError(e) && isRetryable(e.code)) || o.keepGoing?.() === false) throw e
+      // A phone that knows it is offline gains nothing from waiting and trying again: say so now, so the saved copy can be shown at once.
+      if (attempt >= retries || !(isApiError(e) && isRetryable(e.code)) || e.code === 'offline' || o.keepGoing?.() === false) throw e
       await wait(delay(attempt))
       if (o.keepGoing?.() === false) throw e
     }

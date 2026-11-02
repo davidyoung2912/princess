@@ -13,6 +13,7 @@
     "contrast": "vite-node scripts/contrast-report.ts",
     "db:check": "node scripts/check-schema.mjs",
     "api:check": "node scripts/check-api-coverage.mjs",
+    "bundle:check": "node scripts/check-bundle.mjs",
     "content:gen": "vite-node scripts/gen-content.ts",
     "db:seed:gen": "vite-node scripts/gen-reference-seed.ts",
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
@@ -30,11 +31,14 @@
     "react-router": "^8.5.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^24.19.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
     "oxlint": "^1.90.0",
     "typescript": "~6.0.3",
     "vite": "^8.3.5",
