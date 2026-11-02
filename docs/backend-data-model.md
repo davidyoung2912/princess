@@ -94,6 +94,8 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 `Id ID* PK` · `UserId ID* FK→Users` · `Kind {callback|email}*` · `Status {open|inProgress|done}*` (the `TicketStatus` union) · `Detail STR(1000)*` · `At TS*`.
 
 **Favourites** — discover R/W (`favourites`, `toggleFavourite`) **and** `ahead.saved` R/W (same concept: keys `item:…`, `excursion:…`, `kind:id`). `UserId ID* FK→Users` · `ItemKey STR(80)*` · `Position INT*` · PK (`UserId, ItemKey`).
+
+**UserState** — state R/W (multi-device, `docs/multi-device-plan.md`). One small JSON document per person and key, so settings and device-only stores follow the guest to every device. `UserId ID* FK→Users` · `Key STR(30)*` (a fixed whitelist in `StateRules`: `settings`, `offers`, `shop`, `phone`, `memory`, `pilot`, `trip`, `hub`) · `Json [json]*` · `Version INT*` (starts at 1, +1 per save; a save names the version it was based on) · PK (`UserId`, `Key`).
 *Decision:* one table serves both groups (the two lists are the same key space in the UI).
 
 **DemoState** (`demo`) — new demo endpoints.
@@ -214,6 +216,8 @@ Checks: `DepositCents <= TotalCents`; cancelled ⇒ `CancelledAt NOT NULL`. Inde
 **LaundryRequests** — `Id` · `BookingId` · `Service` · `Qty` · `PickupAt` · `ReturnAt` · `Stage` · `TotalCents` · `FreeCents` · `Note`.
 **WifiDevices** — `Id` · `BookingId` · `Name STR(60)` · `Plan` · `Days INT` · `ExpiresAt` · `UsedMb BIG`.
 **Budgets** — `BookingId PK` · `Json [json]` (the `Budget`: overall and per-child limits) · `RowVersion`.
+
+**BookingState** — state R/W (multi-device). As `UserState` but per booking, shared by everyone on it. `BookingId ID* FK→Bookings` · `Key STR(30)*` (`port`, `party`) · `Json [json]*` · `Version INT*` · PK (`BookingId`, `Key`).
 **UpdateAcks** — `UserId` · `ScenarioId` · `Option STR(30)` · `At` · PK pair.
 **ServiceRequests** (`aboard.requests`) — `Id` · `BookingId` · `ItemId` · `Qty` · `Note` · `PlacedAt` · `EtaAt` · `Stage {received|onTheWay|done|cancelled}`.
 **SafetyReports** (`aboard.reports`) — `Id` · `BookingId` · `Kind` · `Place` · `Note` · `Anonymous BIT` · `Reference` · `At`.
@@ -421,6 +425,20 @@ Phase 11 built every row above (25 routes). Differences from the table and the m
 
 ### 6.7 Demo endpoints (not in the `Api` interface)
 `GET/PUT /demo/state` (clock offset, speed, scenarios; 404 unless `IsDemo`), `POST /demo/jump {stage}` (sets the clock for every user on the booking), `POST /demo/reset` (re-run persona reset for the caller's booking). Staff/admin or `IsDemo` only.
+
+### 6.8 Account state (multi-device; not in the `Api` interface)
+| Route | Verb route | Auth |
+| --- | --- | --- |
+| list a person's documents | `GET /me/state` | U |
+| one document (JSON `null` when none) | `GET /me/state/{key}` | U |
+| save a document | `PUT /me/state/{key}` body `{ data, baseVersion }` | U |
+| delete a document | `DELETE /me/state/{key}` | U |
+| list a booking's documents | `GET /bookings/{n}/state` | B |
+| one booking document | `GET /bookings/{n}/state/{key}` | B |
+| save a booking document | `PUT /bookings/{n}/state/{key}` | BA |
+| delete a booking document | `DELETE /bookings/{n}/state/{key}` | BA |
+
+A document is `{ key, version, data, updatedAt }`. `baseVersion` is the version the device last saw (0 for none); if the stored version differs the save is `409` (`stale`) and the device fetches the newer copy and merges. A key outside the whitelist is `400 badKey`, a body that is not a JSON object `400 badData`, and one over the key's size cap `400 tooLarge`.
 
 ## 7. Authorisation rules (one place)
 

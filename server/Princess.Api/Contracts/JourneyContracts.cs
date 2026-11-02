@@ -104,3 +104,11 @@ public sealed record SetConsentRequest(bool? On);
 public sealed record BudgetKidDto(Guid Id, string Name, int Age);
 
 public sealed record BudgetViewDto(JsonObject Budget, List<BudgetKidDto> Kids, bool CanEdit);
+
+// ---- Account state (multi-device, docs/multi-device-plan.md) ----
+
+/// <summary>One saved document. <c>Version</c> starts at 1 and goes up by one with each save.</summary>
+public sealed record StateDto(string Key, int Version, JsonNode? Data, long UpdatedAt);
+public sealed record StateSummaryDto(string Key, int Version, long UpdatedAt);
+/// <summary><c>BaseVersion</c> is the version the caller last saw (0 for none); a different current version is a 409.</summary>
+public sealed record SaveStateRequest(JsonNode? Data, int BaseVersion);

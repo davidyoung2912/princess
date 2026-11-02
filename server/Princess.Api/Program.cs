@@ -50,6 +50,8 @@ services.AddScoped<AccountService>();
 services.AddScoped<TripService>();
 services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
+services.AddScoped<IStateStore, DapperStateStore>();
+services.AddScoped<StateService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();
@@ -173,6 +175,7 @@ v1.MapOnboardEndpoints();
 v1.MapShipboardEndpoints();
 v1.MapAboardEndpoints();
 v1.MapFinishEndpoints();
+v1.MapStateEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

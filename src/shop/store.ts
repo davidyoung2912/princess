@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { EMPTY_EXTRAS, normalizeExtras, type ShopExtras } from '../domain/shopExtras'
 
 /** Delivery and gift choices stay on this device, one record per signed-in person. */
@@ -50,6 +51,14 @@ export function subscribeExtras(listener: () => void): () => void {
 
 export function updateExtras(personaId: string | null, change: (s: ShopExtras) => ShopExtras): void {
   const next = change(getExtras(personaId))
+  cache.set(shopKeyFor(personaId), next)
+  saveExtras(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('shop', personaId)
+}
+
+/** Takes the server's copy (null: empty) without telling the sync module it changed. */
+export function applyRemoteShop(personaId: string | null, next: ShopExtras): void {
   cache.set(shopKeyFor(personaId), next)
   saveExtras(personaId, next)
   listeners.forEach((l) => l())

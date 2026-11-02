@@ -1,0 +1,86 @@
+using System.Net;
+using System.Text.Json.Nodes;
+using Princess.Api.Contracts;
+using Princess.Api.Domain;
+using Princess.Api.Tests.Support;
+
+namespace Princess.Api.Tests;
+
+public class StateRulesTests
+{
+    [Fact]
+    public void OnlyListedKeysHoldingAnObjectUnderTheCapAreAccepted()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "settings", new JsonObject { ["calm"] = true }));
+        Assert.Equal("badKey", StateRules.Problem(StateRules.UserKeys, "port", new JsonObject()));
+        Assert.Equal("badKey", StateRules.Problem(StateRules.BookingKeys, "settings", new JsonObject()));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "settings", JsonValue.Create("x")));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "settings", null));
+        Assert.Equal("tooLarge", StateRules.Problem(StateRules.UserKeys, "settings", new JsonObject { ["x"] = new string('a', 5_000) }));
+    }
+}
+
+public class StateApiTests : JourneyWorld
+{
+    private static SaveStateRequest Doc(string field, int baseVersion) => new(new JsonObject { [field] = true }, baseVersion);
+
+    [Fact]
+    public async Task ADocumentSavedOnOneDeviceIsReadOnAnother()
+    {
+        var phone = await SignIn(Daniel);
+        var desktop = await SignIn(Daniel);
+        Assert.Equal("null", (await Get("/api/v1/me/state/settings", phone)).Json.ToString());
+        var saved = await Call(HttpMethod.Put, "/api/v1/me/state/settings", phone, Doc("calm", 0));
+        Assert.Equal(HttpStatusCode.OK, saved.Status);
+        Assert.Equal(1, saved.Json.GetProperty("version").GetInt32());
+        var read = await Get("/api/v1/me/state/settings", desktop);
+        Assert.True(read.Json.GetProperty("data").GetProperty("calm").GetBoolean());
+        var list = await Get("/api/v1/me/state", desktop);
+        Assert.Equal(["settings"], list.Json.EnumerateArray().Select(x => x.GetProperty("key").GetString()));
+    }
+
+    [Fact]
+    public async Task ASaveBasedOnAnOldVersionIsRefusedAndNobodyElsesStateIsVisible()
+    {
+        var phone = await SignIn(Daniel);
+        await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("a", 0));
+        var second = await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("b", 1));
+        Assert.Equal(2, second.Json.GetProperty("version").GetInt32());
+        var stale = await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("c", 1));
+        Assert.Equal(HttpStatusCode.Conflict, stale.Status);
+        Assert.Equal("stale", stale.ProblemTitle);
+        var first = await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("d", 0));
+        Assert.Equal(HttpStatusCode.Conflict, first.Status);
+        Assert.Equal("null", (await Get("/api/v1/me/state/offers", await SignIn(Priya))).Json.ToString());
+    }
+
+    [Fact]
+    public async Task BadKeysBodiesAndDeletesAreHandled()
+    {
+        var token = await SignIn(Daniel);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Put, "/api/v1/me/state/nope", token, Doc("a", 0))).Status);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Get("/api/v1/me/state/nope", token)).Status);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Put, "/api/v1/me/state/shop", token, new SaveStateRequest(JsonValue.Create(3), 0))).Status);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/v1/me/state", null)).Status);
+        await Call(HttpMethod.Put, "/api/v1/me/state/phone", token, Doc("a", 0));
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, "/api/v1/me/state/phone", token)).Status);
+        Assert.Equal("null", (await Get("/api/v1/me/state/phone", token)).Json.ToString());
+    }
+
+    [Fact]
+    public async Task BookingStateIsSharedByAdultGuestsAndHiddenFromStrangers()
+    {
+        var daniel = await SignIn(Daniel);
+        var priya = await SignIn(Priya);
+        var url = $"/api/v1/bookings/{Harper.Number}/state/port";
+        Assert.Equal(HttpStatusCode.OK, (await Call(HttpMethod.Put, url, daniel, Doc("x", 0))).Status);
+        Assert.True((await Get(url, priya)).Json.GetProperty("data").GetProperty("x").GetBoolean());
+        Assert.Equal(HttpStatusCode.OK, (await Call(HttpMethod.Put, url, priya, Doc("y", 1))).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Get(url, await SignIn(Stranger))).Status);
+        var child = await MayaToken_();
+        Assert.Equal(HttpStatusCode.OK, (await Get(url, child)).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Call(HttpMethod.Put, url, child, Doc("z", 2))).Status);
+    }
+
+    private Task<string> MayaToken_() => Task.FromResult(MayaToken());
+}

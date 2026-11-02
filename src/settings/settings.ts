@@ -75,6 +75,15 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
   }
 }
 
+/** The settings that belong to the guest's account and follow them between devices; the rest (theme, contrast, text size, motion, data-light) are chosen per device. */
+export const SYNCED_FIELDS = ['simple', 'calm', 'captions', 'units', 'region', 'chargeCheck', 'nudgesPerDay'] as const
+export type SyncedSettings = Pick<Settings, (typeof SYNCED_FIELDS)[number]>
+
+export const pickSynced = (s: Settings): SyncedSettings => ({ simple: s.simple, calm: s.calm, captions: s.captions, units: s.units, region: s.region, chargeCheck: s.chargeCheck, nudgesPerDay: s.nudgesPerDay })
+
+/** The account-level fields of a server copy laid over `base`; anything missing or malformed keeps its value from `base`. */
+export const withSynced = (base: Settings, raw: unknown): Settings => ({ ...base, ...pickSynced(normalizeSettings(raw, base)) })
+
 /** The saved settings, or the defaults when nothing usable is stored or storage is unavailable. */
 export function loadSettings(storage: ReadStore | null = safeStorage(), defaults: Settings = DEFAULT_SETTINGS, key: string = SETTINGS_KEY): Settings {
   try {

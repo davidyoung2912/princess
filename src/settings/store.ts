@@ -1,9 +1,12 @@
-import { defaultsFor, loadSettings, saveSettings, settingsKeyFor, settingsToAttributes, type Settings } from './settings'
+import { defaultsFor, loadSettings, pickSynced, saveSettings, settingsKeyFor, settingsToAttributes, SYNCED_FIELDS, withSynced, type Settings, type SyncedSettings } from './settings'
+import { sync } from '../sync'
 import type { Persona } from '../domain/personas'
 
 let defaults: Settings = defaultsFor(null)
 let current: Settings = loadSettings(undefined, defaults)
 let key = settingsKeyFor(null)
+/** The id the sync module knows this person's device copy by (their persona id, or null). */
+let syncId: string | null = null
 const listeners = new Set<() => void>()
 let darkQuery: MediaQueryList | null = null
 
@@ -29,11 +32,27 @@ export function updateSettings(patch: Partial<Settings>): void {
   saveSettings(current, undefined, key)
   applySettings()
   listeners.forEach((l) => l())
+  if (SYNCED_FIELDS.some((f) => f in patch)) sync.changed('settings', syncId)
+}
+
+/** The account-level settings, as sent to the server. */
+export const getSyncedSettings = (): SyncedSettings => pickSynced(current)
+
+/** True while the account-level settings are still what a new person starts with, so there is nothing to send. */
+export const syncedSettingsAreDefault = (): boolean => SYNCED_FIELDS.every((f) => current[f] === defaults[f])
+
+/** Takes the server's copy of the account-level settings (null: back to the defaults) without telling the sync module. */
+export function applySyncedSettings(raw: unknown): void {
+  current = withSynced(current, raw === null ? defaults : raw)
+  saveSettings(current, undefined, key)
+  applySettings()
+  listeners.forEach((l) => l())
 }
 
 /** Switches to a person's own settings (their saved ones, or their defaults), applies them and tells subscribers. Null is signed out. */
 export function switchSettingsOwner(persona: Pick<Persona, 'id' | 'defaultTextSize'> | null): void {
   key = settingsKeyFor(persona?.id ?? null)
+  syncId = persona?.id ?? null
   defaults = defaultsFor(persona)
   current = loadSettings(undefined, defaults, key)
   applySettings()

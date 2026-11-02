@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { normalizeDone, type PhoneStepId } from '../domain/phoneSetup'
 
 /** Which phone-setup steps a person ticked, kept on this device (XT-01, S3-07). */
@@ -47,6 +48,14 @@ export function subscribePhone(listener: () => void): () => void {
 
 export function updatePhone(personaId: string | null, change: (s: PhoneStepId[]) => PhoneStepId[]): void {
   const next = change(getPhone(personaId))
+  cache.set(phoneKeyFor(personaId), next)
+  savePhone(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('phone', personaId)
+}
+
+/** Takes the server's copy (null: empty) without telling the sync module it changed. */
+export function applyRemotePhone(personaId: string | null, next: PhoneStepId[]): void {
   cache.set(phoneKeyFor(personaId), next)
   savePhone(personaId, next)
   listeners.forEach((l) => l())

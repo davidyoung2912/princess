@@ -10,6 +10,9 @@ import type { DataRecord, DataStore } from '../data/store'
 import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
 import { DEFAULT_PERSONA, personaById } from '../domain/personas'
 import { resetSettingsToDefaults, switchSettingsOwner } from '../settings/store'
+import { sync, setRemote } from '../sync'
+import { registerSyncBindings } from '../sync/bindings'
+import { createHttpRemote } from '../sync/httpRemote'
 import { channel } from './channel'
 
 const safe = (get: () => Storage): Storage | null => {
@@ -55,13 +58,42 @@ const rest = usesRealAuth ? createHttpGroups((auth as ReturnType<typeof createHt
 if (rest) auth.subscribe(rest.reset)
 export const api: Api = rest ? withHttpGroups(mockApi, rest.groups) : mockApi
 
+/** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
+function syncAccount(): void {
+  if (!usesRealAuth) return
+  const session = auth.current()
+  setRemote(session ? createHttpRemote((auth as ReturnType<typeof createHttpAuthProvider>).http) : null)
+  if (sync.setOwner(session?.user?.id ?? null, session?.personaId ?? null)) void sync.pull()
+}
+
+/** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
+function watchDeviceReturn(): () => void {
+  if (!usesRealAuth || typeof window === 'undefined') return () => {}
+  const onOnline = () => void sync.pull()
+  const onVisible = () => { if (document.visibilityState === 'visible') void sync.pull() }
+  window.addEventListener('online', onOnline)
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    window.removeEventListener('online', onOnline)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
+}
+let stopWatchingDevice: () => void = () => {}
+
 /** Start-up: sign in as the last person (or Gerald, the primary persona), use their settings, and listen to other tabs. Call once before first render. */
 export async function startRuntime(): Promise<void> {
   watchOtherTabs()
-  auth.subscribe(() => switchSettingsOwner(personaById(auth.current()?.personaId) ?? null))
+  registerSyncBindings()
+  stopWatchingDevice()
+  stopWatchingDevice = watchDeviceReturn()
+  auth.subscribe(() => {
+    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null)
+    syncAccount()
+  })
   if (usesRealAuth) {
     await auth.restore()
     switchSettingsOwner(personaById(auth.current()?.personaId) ?? null)
+    syncAccount()
     return
   }
   if (!auth.current()) await auth.signIn({ method: 'demo', personaId: DEFAULT_PERSONA })

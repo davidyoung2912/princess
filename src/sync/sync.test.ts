@@ -1,0 +1,262 @@
+import { describe, expect, it } from 'vitest'
+import { ApiError } from '../api/errors'
+import { createHttpRemote } from './httpRemote'
+import { createSync, type Binding, type Remote, type RemoteDoc } from './sync'
+import { pickSynced, withSynced, DEFAULT_SETTINGS } from '../settings/settings'
+
+/** A server holding documents, with a way to make the next save fail. */
+function fakeServer() {
+  const docs = new Map<string, RemoteDoc>()
+  const log: string[] = []
+  let failNext: ApiError | null = null
+  const remote: Remote = {
+    get: async (key) => { log.push(`get ${key}`); const d = docs.get(key); return d ? { ...d } : null },
+    put: async (key, data, base) => {
+      log.push(`put ${key} ${base}`)
+      if (failNext) { const e = failNext; failNext = null; throw e }
+      const cur = docs.get(key)?.version ?? 0
+      if (cur !== base) throw new ApiError('conflict', 'stale')
+      const doc = { version: cur + 1, data }
+      docs.set(key, doc)
+      return { ...doc }
+    },
+  }
+  return { docs, log, remote, failOnce: (e: ApiError) => { failNext = e } }
+}
+
+/** A store with one value per local id, standing in for a real store. */
+function fakeStore(key = 'k', empty: unknown = { n: 0 }) {
+  const values = new Map<string | null, unknown>()
+  const applied: unknown[] = []
+  const binding: Binding = {
+    key,
+    read: (id) => values.get(id) ?? empty,
+    apply: (id, raw) => { applied.push(raw); values.set(id, raw ?? empty) },
+    isEmpty: (raw) => JSON.stringify(raw) === JSON.stringify(empty),
+  }
+  return { values, applied, binding }
+}
+
+/** Timers that only fire when told to. */
+function manualTimers() {
+  const pending = new Map<number, () => void>()
+  let next = 1
+  return {
+    setTimer: (fn: () => void) => { pending.set(next, fn); return next++ },
+    clearTimer: (h: unknown) => { pending.delete(h as number) },
+    fire: async () => { const fns = [...pending.values()]; pending.clear(); fns.forEach((f) => f()); await tick() },
+    count: () => pending.size,
+  }
+}
+const tick = () => new Promise<void>((r) => setTimeout(r, 0))
+
+const setup = (store = fakeStore()) => {
+  const server = fakeServer()
+  const timers = manualTimers()
+  let remote: Remote | null = server.remote
+  const sync = createSync({ remote: () => remote, ...timers })
+  sync.register(store.binding)
+  return { server, timers, sync, store, setRemote: (r: Remote | null) => { remote = r } }
+}
+
+describe('pull', () => {
+  it('takes the server copy on a new device', async () => {
+    const t = setup()
+    t.server.docs.set('k', { version: 3, data: { n: 7 } })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    expect(t.store.values.get('p1')).toEqual({ n: 7 })
+  })
+
+  it('sends this device\'s copy once when the server has none (first sign-in)', async () => {
+    const t = setup()
+    t.store.values.set('p1', { n: 4 })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    expect(t.server.docs.get('k')).toEqual({ version: 1, data: { n: 4 } })
+  })
+
+  it('sends nothing when this device has nothing either', async () => {
+    const t = setup()
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    expect(t.server.docs.size).toBe(0)
+  })
+
+  it('never sends the shared copy of accounts with no persona, and resets it instead', async () => {
+    const t = setup()
+    t.store.values.set(null, { n: 9 })   // left by someone else on this device
+    t.sync.setOwner('u2', null)
+    await t.sync.pull()
+    expect(t.server.docs.size).toBe(0)
+    expect(t.store.values.get(null)).toEqual({ n: 0 })
+  })
+
+  it('does nothing without a remote (mock mode) or a signed-in person', async () => {
+    const t = setup()
+    t.setRemote(null)
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    t.sync.changed('k', 'p1')
+    expect(t.timers.count()).toBe(0)
+    t.setRemote(t.server.remote)
+    t.sync.setOwner(null, null)
+    t.sync.changed('k', null)
+    expect(t.timers.count()).toBe(0)
+    expect(t.server.log).toEqual([])
+  })
+
+  it('fetches again later and applies a newer copy from another device', async () => {
+    const t = setup()
+    t.server.docs.set('k', { version: 1, data: { n: 1 } })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    t.server.docs.set('k', { version: 2, data: { n: 2 } })
+    await t.sync.pull()
+    expect(t.store.values.get('p1')).toEqual({ n: 2 })
+  })
+
+  it('keeps going when the server is unreachable and reports it', async () => {
+    const t = setup()
+    t.setRemote({ get: async () => { throw new ApiError('network') }, put: t.server.remote.put })
+    t.sync.setOwner('u1', 'p1')
+    await expect(t.sync.pull()).resolves.toBeUndefined()
+    expect(t.sync.status()).toBe('error')
+  })
+})
+
+describe('push', () => {
+  const ready = async (t: ReturnType<typeof setup>) => {
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+  }
+
+  it('sends a burst of changes as one save after the pause', async () => {
+    const t = setup()
+    await ready(t)
+    t.store.values.set('p1', { n: 1 })
+    t.sync.changed('k', 'p1')
+    t.store.values.set('p1', { n: 2 })
+    t.sync.changed('k', 'p1')
+    expect(t.timers.count()).toBe(1)
+    await t.timers.fire()
+    expect(t.server.docs.get('k')).toEqual({ version: 1, data: { n: 2 } })
+    expect(t.server.log.filter((l) => l.startsWith('put'))).toHaveLength(1)
+    expect(t.sync.status()).toBe('idle')
+  })
+
+  it('ignores changes for someone who is not the signed-in person', async () => {
+    const t = setup()
+    await ready(t)
+    t.sync.changed('k', 'someone-else')
+    expect(t.timers.count()).toBe(0)
+  })
+
+  it('on a clash, fetches the newer version and sends this device\'s copy on top of it', async () => {
+    const t = setup()
+    await ready(t)
+    t.server.docs.set('k', { version: 5, data: { n: 50 } })   // another device saved
+    t.store.values.set('p1', { n: 8 })
+    t.sync.changed('k', 'p1')
+    await t.timers.fire()
+    expect(t.server.docs.get('k')).toEqual({ version: 6, data: { n: 8 } })
+  })
+
+  it('on a clash uses the store\'s merge when it has one', async () => {
+    const store = fakeStore()
+    store.binding.merge = (remote, local) => ({ n: (remote as { n: number }).n + (local as { n: number }).n })
+    const t = setup(store)
+    await ready(t)
+    t.server.docs.set('k', { version: 2, data: { n: 10 } })
+    store.values.set('p1', { n: 1 })
+    t.sync.changed('k', 'p1')
+    await t.timers.fire()
+    expect(t.server.docs.get('k')?.data).toEqual({ n: 11 })
+    expect(store.values.get('p1')).toEqual({ n: 11 })
+  })
+
+  it('keeps a change that could not be sent and sends it on the next pull', async () => {
+    const t = setup()
+    await ready(t)
+    t.store.values.set('p1', { n: 3 })
+    t.server.failOnce(new ApiError('offline'))
+    t.sync.changed('k', 'p1')
+    await t.timers.fire()
+    expect(t.sync.status()).toBe('error')
+    expect(t.server.docs.size).toBe(0)
+    await t.sync.pull()
+    expect(t.server.docs.get('k')?.data).toEqual({ n: 3 })
+    expect(t.sync.status()).toBe('idle')
+  })
+
+  it('a change made before the first pull finishes is kept and sent, not overwritten', async () => {
+    const t = setup()
+    t.server.docs.set('k', { version: 4, data: { n: 40 } })
+    t.sync.setOwner('u1', 'p1')
+    t.store.values.set('p1', { n: 5 })
+    t.sync.changed('k', 'p1')   // before pulled: marked, not sent
+    await t.sync.pull()
+    expect(t.server.docs.get('k')).toEqual({ version: 5, data: { n: 5 } })
+  })
+
+  it('stops quietly when the person changes mid-flight', async () => {
+    const t = setup()
+    await ready(t)
+    t.store.values.set('p1', { n: 6 })
+    t.sync.changed('k', 'p1')
+    t.sync.setOwner('u9', 'p9')
+    await t.timers.fire()
+    expect(t.server.docs.size).toBe(0)
+  })
+
+  it('the same person again (a token refresh) changes nothing', () => {
+    const t = setup()
+    expect(t.sync.setOwner('u1', 'p1')).toBe(true)
+    expect(t.sync.setOwner('u1', 'p1')).toBe(false)
+    expect(t.sync.setOwner('u2', 'p1')).toBe(true)
+  })
+
+  it('flush sends waiting changes at once', async () => {
+    const t = setup()
+    await ready(t)
+    t.store.values.set('p1', { n: 2 })
+    t.sync.changed('k', 'p1')
+    await t.sync.flush()
+    expect(t.server.docs.get('k')?.data).toEqual({ n: 2 })
+    expect(t.timers.count()).toBe(0)
+  })
+})
+
+describe('http remote', () => {
+  it('reads and writes /me/state/{key}', async () => {
+    const calls: string[] = []
+    const http = {
+      get: async <T,>(path: string) => { calls.push(`GET ${path}`); return (path.endsWith('none') ? null : { key: 'k', version: 2, data: { a: 1 }, updatedAt: 1 }) as T },
+      put: async <T,>(path: string, body?: unknown) => { calls.push(`PUT ${path} ${JSON.stringify(body)}`); return { key: 'k', version: 3, data: { a: 2 }, updatedAt: 2 } as T },
+      post: async () => { throw new Error('unused') }, patch: async () => { throw new Error('unused') }, delete: async () => { throw new Error('unused') },
+    }
+    const remote = createHttpRemote(http as never)
+    expect(await remote.get('settings')).toEqual({ version: 2, data: { a: 1 } })
+    expect(await remote.get('none')).toBeNull()
+    expect(await remote.put('settings', { a: 2 }, 2)).toEqual({ version: 3, data: { a: 2 } })
+    expect(calls).toEqual(['GET /me/state/settings', 'GET /me/state/none', 'PUT /me/state/settings {"data":{"a":2},"baseVersion":2}'])
+  })
+})
+
+describe('account-level settings', () => {
+  it('sends only the fields that follow the guest', () => {
+    const s = { ...DEFAULT_SETTINGS, theme: 'dark' as const, textSize: 'large' as never, calm: true }
+    expect(Object.keys(pickSynced(s)).sort()).toEqual(['calm', 'captions', 'chargeCheck', 'nudgesPerDay', 'region', 'simple', 'units'])
+    expect(pickSynced(s).calm).toBe(true)
+  })
+
+  it('lays a server copy over this device\'s settings without touching its display choices', () => {
+    const device = { ...DEFAULT_SETTINGS, theme: 'dark' as const, contrast: 'high' as const }
+    const merged = withSynced(device, { calm: true, simple: true, theme: 'light', units: 'nonsense' })
+    expect(merged.calm).toBe(true)
+    expect(merged.simple).toBe(true)
+    expect(merged.theme).toBe('dark')
+    expect(merged.contrast).toBe('high')
+    expect(merged.units).toBe(device.units)
+  })
+})

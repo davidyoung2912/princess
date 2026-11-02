@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { EMPTY_OFFER_STATE, normalizeOfferState, type OfferState } from '../domain/offers'
 
 /** Offer choices stay on this device, one record per signed-in person (their dismissals and the marketing messages sent). */
@@ -51,6 +52,14 @@ export function subscribeOffers(listener: () => void): () => void {
 /** Changes a person's offer state, saves it and tells subscribers. */
 export function updateOfferState(personaId: string | null, change: (s: OfferState) => OfferState): void {
   const next = change(getOfferState(personaId))
+  cache.set(offerKeyFor(personaId), next)
+  saveOfferState(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('offers', personaId)
+}
+
+/** Takes the server's copy (null: empty) without telling the sync module it changed. */
+export function applyRemoteOffers(personaId: string | null, next: OfferState): void {
   cache.set(offerKeyFor(personaId), next)
   saveOfferState(personaId, next)
   listeners.forEach((l) => l())
