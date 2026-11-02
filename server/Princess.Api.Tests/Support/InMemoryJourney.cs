@@ -210,7 +210,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     {
         Purges.Add((bookingId, kinds));
         Retention.Add((runUserId, new RetentionRow { Kinds = string.Join(',', kinds), At = now }));
-        if (kinds.Contains("documents")) foreach (var g in Party[bookingId]) g.Held.Clear();
+        if (kinds.Contains("documents") && Party.TryGetValue(bookingId, out var party)) foreach (var g in party) g.Held.Clear();
         return Task.CompletedTask;
     }
 

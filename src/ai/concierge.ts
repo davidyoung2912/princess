@@ -1,42 +1,74 @@
-import { askClaude, ConciergeError, DEFAULT_MODEL, type ClaudeConfig, type FailureCode } from './client'
-import { MAX_MESSAGE, screen, withinLimit, type Handoff } from './guard'
+import { MAX_CONTEXT, MAX_MESSAGE, screen, type Handoff } from './guard'
 import { scriptedReply } from './scripted'
-import type { ChatMessage, Context, Reply } from './types'
+import type { ChatMessage, Citation, Context, Reply, Source } from './types'
 
-/** Settings from the build: the key is read from `VITE_ANTHROPIC_API_KEY` (a git-ignored `.env.local`); without one the scripted concierge answers. */
-export function configFrom(env: Record<string, unknown>): ClaudeConfig | null {
-  const key = typeof env.VITE_ANTHROPIC_API_KEY === 'string' ? env.VITE_ANTHROPIC_API_KEY.trim() : ''
-  if (!key) return null
-  const model = typeof env.VITE_ANTHROPIC_MODEL === 'string' && env.VITE_ANTHROPIC_MODEL.trim() ? env.VITE_ANTHROPIC_MODEL.trim() : DEFAULT_MODEL
-  return { apiKey: key, model }
-}
+/** Why a model was not used when it normally would be: the server's codes, or `limit` for the hourly limit. */
+export type FailureCode = 'auth' | 'rate' | 'network' | 'bad'
+export type Fallback = FailureCode | 'limit'
 
 export interface Turn {
   reply: Reply
   /** The handoff that answered instead of a model, if any. */
   handoff: Handoff | null
   /** Why the model was not used when it normally would be. */
-  fallback: FailureCode | 'limit' | null
+  fallback: Fallback | null
 }
 
 export type AskProblem = 'empty' | 'long'
 
 export const askProblem = (message: string): AskProblem | null => (!message.trim() ? 'empty' : message.trim().length > MAX_MESSAGE ? 'long' : null)
 
+/** What the server needs to answer: the thread (newest last) and what the device knows about the guest. The model key, the tools and the limit are all on the server. */
+export interface ServerAsk {
+  history: { role: 'user' | 'assistant'; text: string; at: number }[]
+  mobility?: Context['mobility']
+  likes?: string[]
+}
+
+/** Sends one turn to `POST /me/concierge`; null in mock mode, where only the built-in helper answers. Set by the runtime. */
+export type ConciergeSender = (body: ServerAsk) => Promise<unknown>
+
+const HANDOFFS: readonly Handoff[] = ['emergency', 'medical', 'legal', 'person']
+const FALLBACKS: readonly Fallback[] = ['auth', 'rate', 'network', 'bad', 'limit']
+const SOURCES: readonly Source[] = ['claude', 'scripted', 'handoff']
+
+/** Reads the server's answer; anything that is not the agreed shape gives null, and the built-in helper answers instead. */
+export function normalizeTurn(raw: unknown): Turn | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  const source = SOURCES.find((s) => s === o.source)
+  if (!source || typeof o.text !== 'string') return null
+  const handoff = HANDOFFS.find((h) => h === o.handoff) ?? null
+  if (source === 'handoff' && !handoff) return null
+  if (source !== 'handoff' && !o.text.trim()) return null
+  const citations: Citation[] = Array.isArray(o.citations)
+    ? o.citations.flatMap((c): Citation[] => {
+        const x = c as Partial<Citation> | null
+        return x && typeof x.label === 'string' && typeof x.path === 'string' && x.path.startsWith('/') ? [{ label: x.label.slice(0, 120), path: x.path.slice(0, 200) }] : []
+      }).slice(0, 5)
+    : []
+  return { reply: { text: o.text.slice(0, 4000), citations, source }, handoff, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null }
+}
+
 /**
- * One turn. A message needing a person never reaches a model; otherwise the model answers when there is a key and the
- * hourly limit allows, and the scripted concierge answers when there is not or the call fails. `history` ends with the
- * guest's new message; `askedAt` is when each of their earlier messages was sent.
+ * One turn. The server decides everything when there is one: a message needing a person never reaches a model, the model answers when it is set up and
+ * the hourly limit allows, and the server's scripted concierge answers otherwise. Without a server (mock mode) or when it cannot be reached, the built-in
+ * helper answers on this device. `history` ends with the guest's new message.
  */
-export async function ask(config: ClaudeConfig | null, history: readonly ChatMessage[], askedAt: readonly number[], ctx: Context): Promise<Turn> {
+export async function ask(send: ConciergeSender | null, history: readonly ChatMessage[], ctx: Context): Promise<Turn> {
   const message = history[history.length - 1]?.text ?? ''
   const handoff = screen(message)
   if (handoff) return { reply: { text: '', citations: [], source: 'handoff' }, handoff, fallback: null }
-  if (!config) return { reply: scriptedReply(message, ctx), handoff: null, fallback: null }
-  if (!withinLimit(askedAt, ctx.now).ok) return { reply: scriptedReply(message, ctx), handoff: null, fallback: 'limit' }
+  const local = (fallback: Fallback | null): Turn => ({ reply: scriptedReply(message, ctx), handoff: null, fallback })
+  if (!send) return local(null)
   try {
-    return { reply: await askClaude(config, history, ctx), handoff: null, fallback: null }
-  } catch (e) {
-    return { reply: scriptedReply(message, ctx), handoff: null, fallback: e instanceof ConciergeError ? e.code : 'bad' }
+    const turn = normalizeTurn(await send({
+      history: history.slice(-MAX_CONTEXT).map((m) => ({ role: m.role, text: m.text, at: m.at })),
+      mobility: ctx.mobility,
+      likes: ctx.likes ? [...ctx.likes] : undefined,
+    }))
+    return turn ?? local('bad')
+  } catch {
+    return local('network')
   }
 }

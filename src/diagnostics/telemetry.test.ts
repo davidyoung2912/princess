@@ -55,3 +55,39 @@ describe('screenName', () => {
     expect(screenName('/%%%/x y')).toBeUndefined()
   })
 })
+
+describe('telemetry flush', () => {
+  const fake = (): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> => {
+    const m = new Map<string, string>()
+    return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => { m.set(k, v) }, removeItem: (k) => { m.delete(k) } }
+  }
+  const at = () => new Date('2027-03-21T10:00:00Z')
+
+  it('sends the queue and forgets what was accepted', async () => {
+    const t = createTelemetry(fake(), () => true, at)
+    t.event('install')
+    t.error('error', new Error('boom'))
+    const sent: unknown[][] = []
+    expect(await t.flush(async (items) => { sent.push(items) })).toBe(2)
+    expect(sent[0]).toHaveLength(2)
+    expect(t.queued()).toEqual([])
+  })
+
+  it('keeps the queue when the send fails and sends nothing without consent', async () => {
+    const on = createTelemetry(fake(), () => true, at)
+    on.event('install')
+    expect(await on.flush(async () => { throw new Error('offline') })).toBe(0)
+    expect(on.queued()).toHaveLength(1)
+    const off = createTelemetry(fake(), () => false, at)
+    let called = false
+    expect(await off.flush(async () => { called = true })).toBe(0)
+    expect(called).toBe(false)
+  })
+
+  it('keeps items queued while the send was in flight', async () => {
+    const t = createTelemetry(fake(), () => true, at)
+    t.event('install')
+    await t.flush(async () => { t.event('dataLight') })
+    expect(t.queued().map((i) => (i.type === 'event' ? i.name : ''))).toEqual(['dataLight'])
+  })
+})

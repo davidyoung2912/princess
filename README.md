@@ -11,7 +11,7 @@ A mobile-first, responsive, installable (PWA) React site for a cruise line, with
 
 Vite proxies `/api` to `VITE_API_PROXY` (default `http://localhost:5182`). A different API origin also needs adding to the CSP `connect-src` and the API's CORS origins.
 
-Still mocked in both modes, on purpose: the AI concierge, live ship telemetry and weather, and card charging.
+Still mocked in both modes, on purpose: live ship telemetry and weather, and card charging. The AI concierge runs on the server when a model key is set (`Concierge:ApiKey`, user-secrets); without one, or in mock mode, a built-in helper answers.
 
 ## Running the back end
 

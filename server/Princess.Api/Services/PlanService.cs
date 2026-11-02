@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// Reads are open to anyone on the booking; writes need an adult guest on it (data model section 7). Entitlements, price protection, places left and table
 /// capacity are worked out here (D15), so two bookings on the same sailing really do compete for the same spots and tables.
 /// </summary>
-public sealed class PlanService(AccessService access, ITripStore trips, IAccountStore accounts, IPlanStore plan, TripService tripService, IUserClock clock, IPaymentGateway gateway)
+public sealed class PlanService(AccessService access, ITripStore trips, IAccountStore accounts, IPlanStore plan, TripService tripService, IUserClock clock, IPaymentGateway gateway, IWeatherService weather)
 {
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Str(string? v, int max) => v is null ? "" : v.Trim() is var t && t.Length > max ? t[..max] : v.Trim();
@@ -682,7 +682,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         foreach (var g in c.Party) foreach (var n in (await accounts.GetProfileAsync(g.UserId, ct))?.Needs ?? []) needs.Add(n);
         foreach (var r in await RequestsAsync(c, ct)) if (PlanRules.AssistKindOf(r.Kind)?.Need is { } n) needs.Add(n);
         var tours = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => t.ExcursionId);
-        var items = PlanRules.BuildPackingList(c.Departure, Pricing.Nights, tours, [.. c.Party.Select(g => g.Age)], needs, true, PlanRules.ElegantNights(Pricing.Nights));
+        var items = PlanRules.BuildPackingList(c.Departure, Pricing.Nights, tours, [.. c.Party.Select(g => g.Age)], needs, true, PlanRules.ElegantNights(Pricing.Nights), weather.Climate(c.Departure));
         var known = items.Select(i => i.Id).ToHashSet();
         return (items, [.. (await plan.GetTicksAsync(c.Booking.BookingId, "packing", ct)).Where(known.Contains)]);
     }
@@ -691,7 +691,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var c = await LoadAsync(actor, number, false, ct);
         var (items, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(items, [.. ticked], PlanRules.WeatherFor(c.Departure), Pricing.Nights, c.Days);
+        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days);
     }
 
     public async Task<PackingViewDto> TickPackingAsync(UserRecord actor, string? number, string? id, TickRequest? body, CancellationToken ct)
@@ -701,6 +701,6 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         if (id is null || items.All(i => i.Id != id)) throw ApiException.Invalid("item");
         await plan.SetTickAsync(c.Booking.BookingId, "packing", id, body?.Done ?? true, c.Now, ct);
         var (after, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(after, [.. ticked], PlanRules.WeatherFor(c.Departure), Pricing.Nights, c.Days);
+        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days);
     }
 }

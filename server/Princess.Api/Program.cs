@@ -44,6 +44,19 @@ services.AddScoped<IAboardStore, DapperAboardStore>();
 services.AddScoped<IChatStore, DapperChatStore>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
+// External sources: swap a provider by changing its registration (multi-device plan 2, Phase 1).
+services.AddSingleton<IWeatherService, SimWeatherService>();
+services.AddSingleton<IFlightStatusProvider, SimFlightStatusProvider>();
+services.AddSingleton<IRouteConditionsProvider, SimRouteConditionsProvider>();
+services.AddSingleton<ITelemetrySink, LoggingTelemetrySink>();
+// The concierge model: a key in user-secrets (Concierge:ApiKey) turns it on; without one the scripted concierge answers.
+services.AddOptions<ConciergeOptions>().BindConfiguration(ConciergeOptions.Section);
+if (!string.IsNullOrWhiteSpace(builder.Configuration[$"{ConciergeOptions.Section}:ApiKey"]))
+    services.AddHttpClient<IConciergeModel, AnthropicConciergeModel>(c => c.Timeout = TimeSpan.FromSeconds(30));
+else
+    services.AddSingleton<IConciergeModel, UnavailableConciergeModel>();
+services.AddSingleton<ConciergeLimiter>();
+services.AddScoped<ConciergeService>();
 services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
 services.AddScoped<AccountService>();
@@ -178,6 +191,7 @@ v1.MapAboardEndpoints();
 v1.MapFinishEndpoints();
 v1.MapStateEndpoints();
 v1.MapReferenceEndpoints();
+v1.MapConciergeEndpoints();
 v1.MapDemoEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.

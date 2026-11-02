@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// Any guest on the booking reads; an adult guest writes. "Now" is the person's own clock (D4). Weather is a mocked service (data model section 8); scenarios apply only to demo users.
 /// </summary>
 public sealed class OnboardService(
-    ScopeLoader scopes, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt)
+    ScopeLoader scopes, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt, IWeatherService weather)
 {
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -35,7 +35,7 @@ public sealed class OnboardService(
         var change = Itinerary.ShipClockChanges(c.Departure).FirstOrDefault(x => x.At > c.Now && x.At - c.Now < TimeSpan.FromHours(24));
         return new OnboardTodayDto(
             aboard, day is >= 1 and <= 8 ? day : null, Iso(date), Itinerary.PortAt(c.Departure, c.Now).Port, zone,
-            aboard ? AboardRules.WeatherOn(date, scenarios.Contains("belizeTender")) : null,
+            aboard ? weather.Today(date, scenarios.Contains("belizeTender")) : null,
             portDay is null ? null : AboardRules.WithState(portDay, c.Now),
             new MusterBriefDto(aboard && !all, all, Ms(AboardRules.DrillAt(c.Departure))),
             c.Now < sail ? Ms(sail) : null, scenarios.Contains("planChange"), change is null ? null : new ClockChangeDto(Ms(change.At), change.Hours));

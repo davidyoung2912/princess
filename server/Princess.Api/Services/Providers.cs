@@ -1,0 +1,65 @@
+using Princess.Api.Domain;
+
+namespace Princess.Api.Services;
+
+/// <summary>
+/// Seams for every external source the app depends on (multi-device plan 2, Phase 1). Each interface is what a real provider must
+/// supply; the simulated implementation below is what runs today. The front end only ever sees the contract shapes, so swapping a
+/// provider is a registration change in <c>Program.cs</c>.
+/// </summary>
+public interface IWeatherService
+{
+    /// <summary>The sky for a cruise day: UV, temperature and any afternoon rain.</summary>
+    SkyDto Sky(string sailingId, int day, string port);
+
+    /// <summary>The usual weather for the time of year, used for packing advice.</summary>
+    Weather Climate(DateOnly date);
+
+    /// <summary>Today's weather on board, with the sea state; <paramref name="rough"/> is a weather scenario or warning.</summary>
+    WeatherToday Today(DateOnly date, bool rough);
+}
+
+public interface IFlightStatusProvider
+{
+    /// <summary>Status of a flight (number already normalised) on a <c>YYYY-MM-DD</c> date.</summary>
+    FlightStatusDto Status(string normalizedNumber, string date);
+}
+
+public interface IRouteConditionsProvider
+{
+    /// <summary>Traffic and weather on the way to the port on the sailing date, given how busy the guest's arrival window is.</summary>
+    RouteConditionsDto Conditions(string departure, string crowd);
+}
+
+/// <summary>Where consented error reports and usage counts go. A batch carries no person, booking or typed text.</summary>
+public interface ITelemetrySink
+{
+    Task AcceptAsync(IReadOnlyList<TelemetryItemDto> items, CancellationToken ct);
+}
+
+public sealed class SimWeatherService : IWeatherService
+{
+    public SkyDto Sky(string sailingId, int day, string port) => FeedRules.Sky(sailingId, day, port);
+    public Weather Climate(DateOnly date) => PlanRules.WeatherFor(date);
+    public WeatherToday Today(DateOnly date, bool rough) => AboardRules.WeatherOn(date, rough);
+}
+
+public sealed class SimFlightStatusProvider : IFlightStatusProvider
+{
+    public FlightStatusDto Status(string normalizedNumber, string date) => FeedRules.Flight(normalizedNumber, date);
+}
+
+public sealed class SimRouteConditionsProvider : IRouteConditionsProvider
+{
+    public RouteConditionsDto Conditions(string departure, string crowd) => FeedRules.Route(departure, crowd);
+}
+
+/// <summary>Counts the batch in the log and keeps nothing; a real sink replaces this.</summary>
+public sealed class LoggingTelemetrySink(ILogger<LoggingTelemetrySink> log) : ITelemetrySink
+{
+    public Task AcceptAsync(IReadOnlyList<TelemetryItemDto> items, CancellationToken ct)
+    {
+        log.LogInformation("Telemetry batch: {Errors} errors, {Events} events", items.Count(i => i.Type == "error"), items.Count(i => i.Type == "event"));
+        return Task.CompletedTask;
+    }
+}

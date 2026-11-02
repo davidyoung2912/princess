@@ -23,13 +23,3 @@ export function screen(message: string): Handoff | null {
 export const MAX_MESSAGE = 500
 /** Messages sent in one request, newest last; older ones stay on screen but are not sent. */
 export const MAX_CONTEXT = 12
-/** At most this many questions an hour per guest on the real model. */
-export const HOURLY_LIMIT = 20
-export const HOUR_MS = 3_600_000
-
-/** Whether another question may go to the model: counts the guest's own messages in the last hour. */
-export function withinLimit(askedAt: readonly number[], now: number, limit = HOURLY_LIMIT): { ok: boolean; retryAt: number | null } {
-  const recent = askedAt.filter((t) => now - t < HOUR_MS).sort((a, b) => a - b)
-  if (recent.length < limit) return { ok: true, retryAt: null }
-  return { ok: false, retryAt: recent[recent.length - limit] + HOUR_MS }
-}

@@ -12,6 +12,7 @@ import { updatePilot } from '../pilot/store'
 import { getPort } from '../port/store'
 import { EMPTY_PARTY } from '../domain/party'
 import { getParty, updateParty } from '../party/store'
+import { getThread, setThread } from '../ai/history'
 import { registerSyncBindings } from './bindings'
 import { setKeepPrivate } from './consent'
 import { setRemote, sync } from './index'
@@ -74,11 +75,14 @@ describe('private notes and health details', () => {
     await sync.pull()
 
     updateMemory('gerald', (m) => ({ ...m, medical: { ...m.medical, allergies: ['peanuts'] }, allergy: { ...m.allergy } }))
+    setThread('gerald', [{ id: 'u1', role: 'user', text: 'Where can we eat?', at: 1 }])
     await sync.flush()
     expect(docs.has('memory')).toBe(false)
     expect(docs.has('health')).toBe(false)
+    expect(docs.has('concierge')).toBe(false)
 
     await setKeepPrivate(true)
+    expect((docs.get('concierge')!.data as { messages: { text: string }[] }).messages[0].text).toBe('Where can we eat?')
     expect((docs.get('health')!.data as { medical: { allergies: string[] } }).medical.allergies).toEqual(['peanuts'])
     expect(getSettings().syncPrivate).toBe(true)
 
@@ -92,6 +96,8 @@ describe('private notes and health details', () => {
     expect(await setKeepPrivate(false)).toBe(true)
     expect(docs.has('memory')).toBe(false)
     expect(docs.has('health')).toBe(false)
+    expect(docs.has('concierge')).toBe(false)
+    expect(getThread('gerald').messages).toHaveLength(1)
     expect(getMemory('gerald').medical.allergies).toEqual(['peanuts'])   // this device keeps its own
     setRemote(null)
   })

@@ -1,3 +1,4 @@
+import { applyRemoteThread, EMPTY_THREAD, getThread, mergeThreads, normalizeThread } from '../ai/history'
 import { EMPTY_HUB, applyRemoteHub, getHub, normalizeHub } from '../hub/store'
 import { EMPTY_TRIP, applyRemoteTrip, getTrip, normalizeTrip } from '../journey/store'
 import { EMPTY_PILOT, applyRemotePilot, getPilot, normalizePilot } from '../pilot/store'
@@ -119,10 +120,20 @@ const party: Binding = {
   merge: mergeParty,
 }
 
+/** The concierge conversation. Held back until the guest agrees (Settings: syncPrivate), like private notes: what they asked may say a lot about them. */
+const concierge: Binding = {
+  key: 'concierge',
+  read: (id) => getThread(id),
+  apply: (id, raw) => applyRemoteThread(id, raw === null ? EMPTY_THREAD : normalizeThread(raw)),
+  isEmpty: (raw) => (raw as { messages: unknown[] }).messages.length === 0,
+  merge: mergeThreads,
+  enabled: () => getSettings().syncPrivate,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, trip, pilot, hub, port, party]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, hub, port, party]) sync.register(b)
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Net;
 using System.Text.Json.Nodes;
 using Princess.Api.Contracts;
@@ -29,7 +30,7 @@ public class StateApiTests : JourneyWorld
     {
         var phone = await SignIn(Daniel);
         var desktop = await SignIn(Daniel);
-        Assert.Equal("null", (await Get("/api/v1/me/state/settings", phone)).Json.ToString());
+        Assert.Equal(JsonValueKind.Null, (await Get("/api/v1/me/state/settings", phone)).Json.ValueKind);
         var saved = await Call(HttpMethod.Put, "/api/v1/me/state/settings", phone, Doc("calm", 0));
         Assert.Equal(HttpStatusCode.OK, saved.Status);
         Assert.Equal(1, saved.Json.GetProperty("version").GetInt32());
@@ -51,7 +52,7 @@ public class StateApiTests : JourneyWorld
         Assert.Equal("stale", stale.ProblemTitle);
         var first = await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("d", 0));
         Assert.Equal(HttpStatusCode.Conflict, first.Status);
-        Assert.Equal("null", (await Get("/api/v1/me/state/offers", await SignIn(Priya))).Json.ToString());
+        Assert.Equal(JsonValueKind.Null, (await Get("/api/v1/me/state/offers", await SignIn(Priya))).Json.ValueKind);
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public class StateApiTests : JourneyWorld
         Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/v1/me/state", null)).Status);
         await Call(HttpMethod.Put, "/api/v1/me/state/phone", token, Doc("a", 0));
         Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, "/api/v1/me/state/phone", token)).Status);
-        Assert.Equal("null", (await Get("/api/v1/me/state/phone", token)).Json.ToString());
+        Assert.Equal(JsonValueKind.Null, (await Get("/api/v1/me/state/phone", token)).Json.ValueKind);
     }
 
     [Fact]

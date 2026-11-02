@@ -1,12 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { createMemoryStore } from '../data/store'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildDay, NO_WISH } from '../domain/day'
 import { buildRecap, recapText } from '../domain/recap'
 import { REFERENCE_SAILING } from '../domain/sailings'
-import { ask, askProblem, configFrom } from './concierge'
-import { askClaude, ConciergeError, DEFAULT_MODEL, systemPrompt } from './client'
-import { HOURLY_LIMIT, HOUR_MS, MAX_MESSAGE, screen, withinLimit } from './guard'
-import { clearThread, KEEP, loadThread, saveThread } from './history'
+import { ask, askProblem, normalizeTurn } from './concierge'
+import { MAX_MESSAGE, screen } from './guard'
+import { applyRemoteThread, clearThread, getThread, KEEP, mergeThreads, normalizeThread, setThread, threadKeyFor } from './history'
 import { scriptedReply } from './scripted'
 import { runTool, TOOLS } from './tools'
 import type { ChatMessage, Context } from './types'
@@ -26,15 +24,6 @@ describe('guard', () => {
   })
   it('lets ordinary questions through', () => {
     for (const m of ['what is the price in March', 'plan my day in Cozumel', 'where can we eat']) expect(screen(m)).toBeNull()
-  })
-  it('limits questions per hour and says when more are allowed', () => {
-    const now = 10 * HOUR_MS
-    const times = Array.from({ length: HOURLY_LIMIT }, (_, i) => now - 1000 * (i + 1))
-    expect(withinLimit(times.slice(1), now).ok).toBe(true)
-    const r = withinLimit(times, now)
-    expect(r.ok).toBe(false)
-    expect(r.retryAt).toBe(times[times.length - 1] + HOUR_MS)
-    expect(withinLimit(times.map((t) => t - HOUR_MS), now).ok).toBe(true)
   })
   it('checks the message length', () => {
     expect(askProblem('  ')).toBe('empty')
@@ -96,98 +85,75 @@ describe('scripted concierge', () => {
   })
 })
 
-describe('Claude client', () => {
-  const replyWith = (...bodies: unknown[]) => {
-    const calls: { body: Record<string, unknown>; headers: Record<string, string> }[] = []
-    const fetch = (async (_url: string, init: RequestInit) => {
-      calls.push({ body: JSON.parse(String(init.body)), headers: init.headers as Record<string, string> })
-      const body = bodies.shift()
-      return typeof body === 'number' ? new Response('{}', { status: body }) : new Response(JSON.stringify(body), { status: 200 })
-    }) as unknown as typeof globalThis.fetch
-    return { fetch, calls }
-  }
-  const config = (fetch: typeof globalThis.fetch) => ({ apiKey: 'k', model: 'm', fetch })
-
-  it('runs the tools the model asks for, then returns its answer with citations', async () => {
-    const { fetch, calls } = replyWith(
-      { stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 't1', name: 'get_port', input: { port: 'cozumel' } }] },
-      { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Cozumel is a pier port.' }] },
-    )
-    const r = await askClaude(config(fetch), [user('tell me about Cozumel')], ctx)
-    expect(r).toMatchObject({ text: 'Cozumel is a pier port.', source: 'claude' })
-    expect(r.citations.map((c) => c.path)).toEqual(['/home/ports/cozumel'])
-    expect(calls).toHaveLength(2)
-    expect(calls[0].headers['x-api-key']).toBe('k')
-    const second = calls[1].body.messages as { role: string; content: { type: string; tool_use_id?: string }[] }[]
-    expect(second[second.length - 1].content[0]).toMatchObject({ type: 'tool_result', tool_use_id: 't1' })
-    expect((calls[0].body.tools as unknown[]).length).toBe(TOOLS.length)
-  })
-  it('maps failures to codes', async () => {
-    for (const [status, code] of [[401, 'auth'], [429, 'rate'], [500, 'bad']] as const) {
-      await expect(askClaude(config(replyWith(status).fetch), [user('hi')], ctx)).rejects.toMatchObject({ code })
-    }
-    const down = (async () => { throw new TypeError('offline') }) as unknown as typeof globalThis.fetch
-    await expect(askClaude(config(down), [user('hi')], ctx)).rejects.toBeInstanceOf(ConciergeError)
-  })
-  it('gives up when the model keeps calling tools', async () => {
-    const loop = { stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 't', name: 'list_restaurants', input: {} }] }
-    await expect(askClaude(config(replyWith(loop, loop, loop, loop, loop, loop).fetch), [user('hi')], ctx)).rejects.toMatchObject({ code: 'bad' })
-  })
-  it('sends only the latest messages, and tells the model the rules', async () => {
-    const { fetch, calls } = replyWith({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'ok' }] })
-    await askClaude(config(fetch), Array.from({ length: 30 }, (_, i) => user(`m${i}`, i)), ctx)
-    expect((calls[0].body.messages as unknown[]).length).toBe(12)
-    expect(String(calls[0].body.system)).toContain('cannot book')
-    expect(systemPrompt(ctx)).toContain('Daniel Harper')
-  })
-})
-
 describe('ask', () => {
-  const fail = (async () => new Response('{}', { status: 500 })) as unknown as typeof globalThis.fetch
-  const good = (async () => new Response(JSON.stringify({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'From the model.' }] }), { status: 200 })) as unknown as typeof globalThis.fetch
+  const served = { text: 'From the model.', citations: [{ label: 'Dining', path: '/plan/dining' }], source: 'claude', handoff: null, fallback: null }
 
-  it('never sends a handoff message to the model', async () => {
+  it('never sends a handoff message to the server', async () => {
     let called = false
-    const spy = (async () => { called = true; return good(''); }) as unknown as typeof globalThis.fetch
-    const turn = await ask({ apiKey: 'k', model: 'm', fetch: spy }, [user('he is unconscious')], [], ctx)
+    const send = async () => { called = true; return served }
+    const turn = await ask(send, [user('he is unconscious')], ctx)
     expect(turn.handoff).toBe('emergency')
     expect(called).toBe(false)
   })
-  it('uses the scripted helper with no key', async () => {
-    const turn = await ask(null, [user('where can we eat dinner')], [], ctx)
+  it('uses the built-in helper in mock mode', async () => {
+    const turn = await ask(null, [user('where can we eat dinner')], ctx)
     expect(turn.reply.source).toBe('scripted')
     expect(turn.fallback).toBeNull()
   })
-  it('uses the model when it answers, and falls back to the script when it fails or the limit is reached', async () => {
-    expect((await ask({ apiKey: 'k', model: 'm', fetch: good }, [user('hi')], [], ctx)).reply.text).toBe('From the model.')
-    expect(await ask({ apiKey: 'k', model: 'm', fetch: fail }, [user('where can we eat dinner')], [], ctx)).toMatchObject({ fallback: 'bad', reply: { source: 'scripted' } })
-    const many = Array.from({ length: HOURLY_LIMIT }, () => ctx.now - 1000)
-    expect(await ask({ apiKey: 'k', model: 'm', fetch: good }, [user('where can we eat dinner')], many, ctx)).toMatchObject({ fallback: 'limit', reply: { source: 'scripted' } })
+  it('sends the latest messages and the guest’s preferences, and returns the server’s answer', async () => {
+    const bodies: unknown[] = []
+    const turn = await ask(async (b) => { bodies.push(b); return served }, Array.from({ length: 30 }, (_, i) => user(`m${i}`, i)), { ...ctx, mobility: 'easy', likes: ['quiet mornings'] })
+    expect(turn.reply).toEqual({ text: 'From the model.', citations: [{ label: 'Dining', path: '/plan/dining' }], source: 'claude' })
+    const body = bodies[0] as { history: { text: string }[]; mobility: string; likes: string[] }
+    expect(body.history).toHaveLength(12)
+    expect(body.history[11].text).toBe('m29')
+    expect(body).toMatchObject({ mobility: 'easy', likes: ['quiet mornings'] })
   })
-  it('reads the key and model from the build settings', () => {
-    expect(configFrom({})).toBeNull()
-    expect(configFrom({ VITE_ANTHROPIC_API_KEY: '  ' })).toBeNull()
-    expect(configFrom({ VITE_ANTHROPIC_API_KEY: 'sk-x' })).toEqual({ apiKey: 'sk-x', model: DEFAULT_MODEL })
-    expect(configFrom({ VITE_ANTHROPIC_API_KEY: 'sk-x', VITE_ANTHROPIC_MODEL: 'other' })?.model).toBe('other')
+  it('passes on the server’s own fallback and handoff', async () => {
+    expect(await ask(async () => ({ text: 'Script.', citations: [], source: 'scripted', handoff: null, fallback: 'limit' }), [user('hi')], ctx)).toMatchObject({ fallback: 'limit', reply: { source: 'scripted' } })
+  })
+  it('answers on the device when the server cannot be reached or sends something unreadable', async () => {
+    expect(await ask(async () => { throw new Error('offline') }, [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'network', reply: { source: 'scripted' } })
+    expect(await ask(async () => ({ nonsense: true }), [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'bad', reply: { source: 'scripted' } })
+  })
+  it('reads only the agreed shape', () => {
+    expect(normalizeTurn(null)).toBeNull()
+    expect(normalizeTurn({ text: '', source: 'claude' })).toBeNull()
+    expect(normalizeTurn({ text: 'x', source: 'other' })).toBeNull()
+    expect(normalizeTurn({ text: '', source: 'handoff', handoff: 'nope' })).toBeNull()
+    expect(normalizeTurn({ text: '', source: 'handoff', handoff: 'medical' })).toMatchObject({ handoff: 'medical' })
+    expect(normalizeTurn({ text: 'x', source: 'claude', citations: [{ label: 'A', path: 'https://evil' }, { label: 'B', path: '/ok' }], fallback: 'weird' })).toMatchObject({ reply: { citations: [{ label: 'B', path: '/ok' }] }, fallback: null })
   })
 })
 
 describe('history', () => {
-  it('keeps a thread per person, trims it, and clears it', async () => {
-    const store = createMemoryStore()
-    expect(await loadThread(store, 'daniel')).toEqual([])
-    await saveThread(store, 'daniel', Array.from({ length: KEEP + 5 }, (_, i) => user(`m${i}`, i)), 1)
-    await saveThread(store, 'priya', [user('hi')], 1)
-    expect(await loadThread(store, 'daniel')).toHaveLength(KEEP)
-    expect((await loadThread(store, 'daniel'))[KEEP - 1].text).toBe(`m${KEEP + 4}`)
-    await clearThread(store, 'daniel')
-    expect(await loadThread(store, 'daniel')).toEqual([])
-    expect(await loadThread(store, 'priya')).toHaveLength(1)
+  let kept: Map<string, string>
+  beforeEach(() => {
+    kept = new Map()
+    vi.stubGlobal('localStorage', { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => { kept.set(k, v) }, removeItem: (k: string) => { kept.delete(k) } })
   })
-  it('ignores damaged records', async () => {
-    const store = createMemoryStore()
-    await store.put({ kind: 'concierge', owner: 'a', id: 'thread', updatedAt: 1, data: { messages: [1, { role: 'user', text: 'ok', at: 1, id: 'x' }, { role: 'system' }] } })
-    expect(await loadThread(store, 'a')).toHaveLength(1)
+  it('keeps a thread per person, trims it, and clears it', () => {
+    expect(getThread('daniel').messages).toEqual([])
+    setThread('daniel', Array.from({ length: KEEP + 5 }, (_, i) => user(`m${i}`, i)))
+    setThread('priya', [user('hi')])
+    expect(getThread('daniel').messages).toHaveLength(KEEP)
+    expect(getThread('daniel').messages[KEEP - 1].text).toBe(`m${KEEP + 4}`)
+    expect(kept.get(threadKeyFor('daniel'))).toContain(`m${KEEP + 4}`)
+    clearThread('daniel')
+    expect(getThread('daniel').messages).toEqual([])
+    expect(getThread('priya').messages).toHaveLength(1)
+  })
+  it('ignores damaged records', () => {
+    expect(normalizeThread({ messages: [1, { role: 'user', text: 'ok', at: 1, id: 'x' }, { role: 'system' }, { role: 'assistant', text: 'a', at: 2, id: 'y', source: 'bogus', citations: [{ label: 'x', path: 'http://z' }] }] }).messages).toEqual([
+      { id: 'x', role: 'user', text: 'ok', at: 1 }, { id: 'y', role: 'assistant', text: 'a', at: 2 },
+    ])
+    expect(normalizeThread('nope').messages).toEqual([])
+  })
+  it('takes the account’s copy, and joins two devices’ threads in time order', () => {
+    applyRemoteThread('amy', normalizeThread({ messages: [{ id: 'a', role: 'user', text: 'hi', at: 1 }] }))
+    expect(getThread('amy').messages).toHaveLength(1)
+    const merged = mergeThreads({ messages: [{ id: 'b', role: 'user', text: 'two', at: 2 }, { id: 'a', role: 'user', text: 'hi', at: 1 }] }, { messages: [{ id: 'c', role: 'user', text: 'three', at: 3 }, { id: 'a', role: 'user', text: 'hi', at: 1 }] })
+    expect(merged.messages.map((m) => m.id)).toEqual(['a', 'b', 'c'])
   })
 })
 

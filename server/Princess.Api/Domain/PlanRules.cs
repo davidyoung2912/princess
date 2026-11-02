@@ -144,9 +144,9 @@ public static class PlanRules
 
     public static int ElegantNights(int nights) => nights >= 7 ? 2 : nights >= 5 ? 1 : 0;
 
-    public static List<PackItem> BuildPackingList(DateOnly departure, int nights, IEnumerable<string> tours, IReadOnlyCollection<int> ages, IReadOnlyCollection<string> needs, bool tender, int elegantNights)
+    public static List<PackItem> BuildPackingList(DateOnly departure, int nights, IEnumerable<string> tours, IReadOnlyCollection<int> ages, IReadOnlyCollection<string> needs, bool tender, int elegantNights, Weather? weather = null)
     {
-        var w = WeatherFor(departure);
+        var w = weather ?? WeatherFor(departure);
         var kinds = tours.Select(ExcursionRules.ById).OfType<Excursion>().SelectMany(x => new[] { x.Activity }.Concat(x.Interests)).ToHashSet();
         var items = new List<PackItem>();
         void Add(string id, string group, string label, string why) => items.Add(new(id, group, label, why));

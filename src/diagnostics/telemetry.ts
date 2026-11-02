@@ -29,6 +29,8 @@ export interface Telemetry {
   error(kind: DiagnosticKind, message: unknown): void
   event(name: EventName, screen?: string): void
   queued(): TelemetryItem[]
+  /** Sends what is queued (only with consent) and forgets exactly what was accepted; a failed send keeps the queue. Returns how many were sent. */
+  flush(send: (items: TelemetryItem[]) => Promise<unknown>): Promise<number>
   /** Forgets everything queued. Called when consent is withdrawn. */
   clear(): void
 }
@@ -55,6 +57,15 @@ export function createTelemetry(store: Store | null, consent: () => boolean, now
       push({ type: 'event', name, ...(safe ? { screen: safe } : {}), at: now().toISOString() })
     },
     queued: () => (consent() ? read() : []),
+    async flush(send) {
+      if (!consent()) return 0
+      const items = read()
+      if (items.length === 0) return 0
+      try { await send(items) } catch { return 0 }
+      // Items queued while the send was in flight stay.
+      try { store?.setItem(TELEMETRY_KEY, JSON.stringify(read().slice(items.length))) } catch { /* blocked storage */ }
+      return items.length
+    },
     clear() { try { store?.removeItem(TELEMETRY_KEY) } catch { /* nothing to clear */ } },
   }
 }

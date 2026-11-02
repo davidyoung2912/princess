@@ -30,12 +30,13 @@ describe('security guards', () => {
     for (const { file, text } of all) expect(text, file).not.toMatch(/sk-ant-[A-Za-z0-9_-]{8,}/)
   })
 
-  it('reads the concierge key only from the build environment', () => {
-    const users = all.filter((s) => s.text.includes('ANTHROPIC_API_KEY')).map((s) => s.file)
-    expect(users).toEqual([join('src', 'ai', 'concierge.ts')])
+  it('keeps the concierge key off the device: no front-end file reads it or calls the model host', () => {
+    const others = all.filter((s) => s.file !== join('src', 'security.test.ts'))
+    expect(others.filter((s) => s.text.includes('ANTHROPIC_API_KEY')).map((s) => s.file)).toEqual([])
+    expect(others.filter((s) => s.text.includes('api.anthropic.com')).map((s) => s.file)).toEqual([])
   })
 
-  it('keeps the built page locked to its own origin, plus the two hosts it needs', () => {
+  it('keeps the built page locked to its own origin, plus the one host it needs', () => {
     const config = readFileSync('vite.config.ts', 'utf8')
     const csp = config.slice(config.indexOf('const cspFor = '), config.indexOf('].join'))
     expect(csp).toContain(`"script-src 'self'"`)
@@ -43,7 +44,7 @@ describe('security guards', () => {
     expect(csp).toContain(`"form-action 'none'"`)
     expect(csp).not.toMatch(/script-src[^"]*unsafe/)
     const hosts = [...csp.matchAll(/https:\/\/[^\s"';`$]+/g)].map((m) => m[0]).sort()
-    expect(hosts).toEqual(['https://*.princess.com', 'https://api.anthropic.com'])
+    expect(hosts).toEqual(['https://*.princess.com'])
   })
 })
 

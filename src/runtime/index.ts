@@ -1,6 +1,7 @@
 import { createHttpGroups, withHttpGroups } from '../api/httpApi'
 import { createMockApi } from '../api/mock'
 import type { Api } from '../api/types'
+import type { ConciergeSender } from '../ai/concierge'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { createMockAuthProvider } from '../auth/mockProvider'
 import type { AuthProvider } from '../auth/provider'
@@ -8,6 +9,7 @@ import { deleteDatabase, openStore } from '../data/idbStore'
 import { resetDemo, wipeEverything } from '../data/lifecycle'
 import type { DataRecord, DataStore } from '../data/store'
 import { setDemoPublisher } from '../demo/publish'
+import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
 import { forgetFlights, setFlightFetcher } from '../feeds/flight'
 import { forgetConditions, setRouteFetcher } from '../feeds/route'
@@ -69,11 +71,16 @@ export const fetchRates: (() => Promise<RateTable>) | null = rest
   ? async () => normalizeRates(await (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/rates'))
   : null
 
+/** The concierge is answered by the server (model key, tools, guard and hourly limit stay there); null in mock mode, where the built-in helper answers on the device. */
+export const sendConcierge: ConciergeSender | null = rest ? (body) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/concierge', body) : null
+
 if (rest) {
   const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
   setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
   setFlightFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
   auth.subscribe(forgetSky)
+  // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
+  setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))
   setRouteFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
   auth.subscribe(forgetFlights)
   auth.subscribe(forgetConditions)
@@ -102,8 +109,8 @@ function syncAccount(): void {
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
   if (!usesRealAuth || typeof window === 'undefined') return () => {}
-  const onOnline = () => void sync.pull()
-  const onVisible = () => { if (document.visibilityState === 'visible') void sync.pull() }
+  const onOnline = () => { void sync.pull(); void flushTelemetry() }
+  const onVisible = () => { if (document.visibilityState === 'visible') void sync.pull(); else void flushTelemetry() }
   window.addEventListener('online', onOnline)
   document.addEventListener('visibilitychange', onVisible)
   return () => {

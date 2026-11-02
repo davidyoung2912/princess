@@ -10,7 +10,7 @@ Status: **Phases 1 to 9 built (Phase 8 in two parts, 8a and 8b); Phase 10 is in 
 | Data access | **Dapper** with hand-written SQL. No EF Core, no migrations. The script is the schema source of truth. |
 | Service | .NET 9 C# REST API in `/server`, Swagger (OpenAPI) enabled, JWT bearer auth. |
 | Auth | Email or account number plus password. Short-lived access token plus a rotating refresh token stored hashed. Passwords hashed with PBKDF2 or Argon2. No external sign-in. A user profile has a **10-digit account reference number** (Princess style). |
-| Still mocked | The AI concierge, live ship telemetry and weather, and payments (card charging; stored card last four digits and receipts are real data). |
+| Still mocked | Live ship telemetry and weather, the AI concierge's model unless a key is set (server-side, `Concierge:ApiKey`), and payments (card charging; stored card last four digits and receipts are real data). |
 | Reference data | Seeded by separate scripts, outside the schema script. |
 | User data | Seeded by separate persona scripts: a strong set of people in partial-completion states across the whole journey, so UAT never starts from scratch. |
 | Offline | Not a goal. Every non-mocked data call is async REST. The backend is assumed always available. **Revised 2026-11-01:** the mocks, demo store, outbox and demo picker are **kept**, so the app still runs without `VITE_API_URL` (see Phase 19 notes and `CLAUDE.md`). |

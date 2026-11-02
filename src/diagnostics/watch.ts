@@ -1,5 +1,5 @@
 import { record, type DiagnosticKind } from './log'
-import { createTelemetry, type EventName } from './telemetry'
+import { createTelemetry, type EventName, type TelemetryItem } from './telemetry'
 
 /** Device flag for the "Help improve the app" consent, set from the privacy centre. Off until the guest turns it on. */
 export const IMPROVE_KEY = 'princess:improve'
@@ -17,6 +17,14 @@ const improveOn = (): boolean => {
 
 /** Consent-gated reports and counts (PERF-07, CNT-03). Nothing is queued while the flag is off. */
 export const telemetry = createTelemetry(local(), improveOn)
+
+let sender: ((items: TelemetryItem[]) => Promise<unknown>) | null = null
+
+/** Where queued reports go. Set by the runtime when a server is configured; without one the queue stays on the device. */
+export function setTelemetrySender(send: ((items: TelemetryItem[]) => Promise<unknown>) | null): void { sender = send }
+
+/** Sends the queue now if a sender is set and the guest agreed. Never throws. */
+export const flushTelemetry = (): Promise<number> => (sender ? telemetry.flush(sender) : Promise.resolve(0))
 
 /** Records the guest's choice about helping improve the app; withdrawing it also forgets what was queued. */
 export function setImproveConsent(on: boolean): void {

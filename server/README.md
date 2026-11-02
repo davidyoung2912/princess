@@ -17,6 +17,8 @@ Secrets never go in git. Set them once with user-secrets (stored outside the rep
 cd server/Princess.Api
 dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost;Database=princess;Trusted_Connection=True;TrustServerCertificate=True;"
 dotnet user-secrets set "Jwt:SigningKey" "<random string, 32+ characters>"
+# Optional: turns the AI concierge on (the model is called from the server; without a key the scripted concierge answers)
+dotnet user-secrets set "Concierge:ApiKey" "<Anthropic API key>"
 ```
 
 The API refuses to start without a signing key of at least 32 characters. In any other environment use the environment variables `ConnectionStrings__Default` and `Jwt__SigningKey`. Non-secret settings (issuer, token lifetimes, lockout, rate limit, CORS origins) are in `appsettings.json`.

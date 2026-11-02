@@ -20,6 +20,7 @@ public static class StateRules
         ["trip"] = 32_000,
         ["hub"] = 64_000,
         ["health"] = 32_000,
+        ["concierge"] = 128_000,
     };
 
     /// <summary>

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { ask, askProblem, configFrom } from '../../ai/concierge'
-import { clearThread, loadThread, saveThread } from '../../ai/history'
+import { ask, askProblem } from '../../ai/concierge'
+import { clearThread, getThread, setThread, subscribeThread } from '../../ai/history'
 import { MAX_MESSAGE, type Handoff } from '../../ai/guard'
 import type { ChatMessage, Citation } from '../../ai/types'
 import { assistantMobility } from '../../domain/bookingPrep'
@@ -9,7 +9,7 @@ import { tasteInferences } from '../../domain/planning'
 import { useMemory } from '../../hooks/useMemory'
 import { usePilot } from '../../hooks/usePilot'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { getStore } from '../../runtime'
+import { sendConcierge } from '../../runtime'
 import { useDemo, useNow, usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { HandoffCard } from './HandoffCard'
@@ -19,8 +19,6 @@ import { Card } from '../Card'
 import { Dialog } from '../Dialog'
 import { TextArea } from '../Field'
 import { BackLink } from '../onboard/common'
-
-const config = configFrom(import.meta.env)
 
 const HANDOFF_LINKS: Record<Handoff, Citation[]> = {
   emergency: [{ label: 'route.emergency', path: '/ship/emergency' }],
@@ -36,36 +34,28 @@ export function ConciergeScreen() {
   const { state: pilot } = usePilot()
   const demo = useDemo()
   const now = useNow()
-  const [thread, setThread] = useState<{ owner: string; messages: ChatMessage[] } | null>(null)
   const [draft, setDraft] = useState('')
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const end = useRef<HTMLDivElement>(null)
-  const owner = me?.id ?? ''
-  const messages = thread?.owner === owner ? thread.messages : null
-  const setMessages = (m: ChatMessage[]) => setThread({ owner, messages: m })
-
-  useEffect(() => {
-    let current = true
-    getStore().then((s) => loadThread(s, owner)).then((m) => { if (current) setThread({ owner, messages: m }) }, () => { if (current) setThread({ owner, messages: [] }) })
-    return () => { current = false }
-  }, [owner])
+  const owner = me?.id ?? null
+  const messages = useSyncExternalStore(subscribeThread, () => getThread(owner), () => getThread(owner)).messages
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages?.length])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const p = askProblem(draft)
-    if (p || busy || !messages || !me) { setProblem(p ? t(`ai.problem.${p}` as StringKey, { max: MAX_MESSAGE }) : null); return }
+    if (p || busy || !me) { setProblem(p ? t(`ai.problem.${p}` as StringKey, { max: MAX_MESSAGE }) : null); return }
     setProblem(null)
     setNotice(null)
     const user: ChatMessage = { id: `u-${now}-${messages.length}`, role: 'user', text: draft.trim(), at: now }
     const withUser = [...messages, user]
-    setMessages(withUser)
+    const savedUser = setThread(owner, withUser)
     setDraft('')
     setBusy(true)
-    const turn = await ask(config, withUser, messages.filter((m) => m.role === 'user').map((m) => m.at), {
+    const turn = await ask(sendConcierge, withUser, {
       sailingId: demo.sailingId, personaId: me.id, now, mobility: assistantMobility(mem.access),
       likes: tasteInferences({ fit: mem.fit, pasted: mem.pasted, pace: pilot.prefs.pace, rhythm: mem.planning.rhythm }, mem.planning.tasteOff, mem.planning.tasteRemoved).map((i) => i.text),
     })
@@ -73,27 +63,26 @@ export function ConciergeScreen() {
     const reply: ChatMessage = turn.handoff
       ? { id: `a-${now}-${withUser.length}`, role: 'assistant', text: t(`ai.handoff.${turn.handoff}` as StringKey, { phone: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER }), at: now, source: 'handoff', citations: HANDOFF_LINKS[turn.handoff].map((c) => ({ label: t(c.label as StringKey), path: c.path })) }
       : { id: `a-${now}-${withUser.length}`, role: 'assistant', text: turn.reply.text, at: now, source: turn.reply.source, citations: turn.reply.citations }
-    const all = [...withUser, reply]
-    setMessages(all)
+    const saved = setThread(owner, [...withUser, reply])
     setBusy(false)
-    try { await saveThread(await getStore(), owner, all, now) } catch { setNotice(t('ai.saveFailed')) }
+    if (!saved || !savedUser) setNotice(t('ai.saveFailed'))
   }
 
-  const clear = async () => {
+  const clear = () => {
     setConfirmClear(false)
-    try { await clearThread(await getStore(), owner) } catch { /* the screen below is cleared either way */ }
-    setMessages([])
+    clearThread(owner)
     setNotice(null)
   }
 
-  const last = messages?.[messages.length - 1]
+  const last = messages[messages.length - 1]
+  const lastReply = [...messages].reverse().find((m) => m.role === 'assistant' && m.source !== 'handoff')
   return (
     <div className="page">
       <h1>{t('route.concierge')}</h1>
-      <Banner kind="info" title={t('ai.label.title')}><p>{t('ai.label.body')}</p><p className="muted">{config ? t('ai.mode.claude') : t('ai.mode.scripted')}</p></Banner>
+      <Banner kind="info" title={t('ai.label.title')}><p>{t('ai.label.body')}</p><p className="muted">{lastReply?.source === 'claude' ? t('ai.mode.claude') : t('ai.mode.scripted')}</p></Banner>
       <Card labelledBy="ai-log-h">
         <h2 id="ai-log-h" className="card__title">{t('ai.conversation')}</h2>
-        {messages === null ? <p role="status" className="muted">{t('account.loading')}</p> : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <div>
             <p>{t('ai.empty')}</p>
             <ul className="plain-bullets">{(['ai.try.1', 'ai.try.2', 'ai.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button></li>)}</ul>
@@ -115,13 +104,13 @@ export function ConciergeScreen() {
         <div ref={end} />
       </Card>
       {notice && <Banner kind="warning" title={t('ai.notice')}><p>{notice}</p></Banner>}
-      {last?.source === 'handoff' && messages && <HandoffCard key={last.id} messages={messages} />}
+      {last?.source === 'handoff' && <HandoffCard key={last.id} messages={messages} />}
       <form onSubmit={(e) => void submit(e)} noValidate>
         <TextArea label={t('ai.ask')} hint={t('ai.askHint', { max: MAX_MESSAGE })} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} />
         {problem && <p role="alert" className="field__error">{problem}</p>}
         <div className="button-row">
           <Button type="submit" disabled={busy}>{t('ai.send')}</Button>
-          <Button variant="tertiary" onClick={() => setConfirmClear(true)} disabled={!messages || messages.length === 0}>{t('ai.clear')}</Button>
+          <Button variant="tertiary" onClick={() => setConfirmClear(true)} disabled={messages.length === 0}>{t('ai.clear')}</Button>
         </div>
       </form>
       <p className="muted">{t('ai.stored')} <Link to="/me/contact">{t('ai.person')}</Link></p>
@@ -129,7 +118,7 @@ export function ConciergeScreen() {
         <Dialog title={t('ai.clearTitle')} onClose={() => setConfirmClear(false)}>
           <p>{t('ai.clearBody')}</p>
           <div className="button-row">
-            <Button variant="danger" onClick={() => void clear()}>{t('ai.clearYes')}</Button>
+            <Button variant="danger" onClick={clear}>{t('ai.clearYes')}</Button>
             <Button variant="secondary" onClick={() => setConfirmClear(false)}>{t('ai.clearNo')}</Button>
           </div>
         </Dialog>
