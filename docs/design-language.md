@@ -677,3 +677,8 @@ See `docs/leading-features-plan.md` section 3. In short: every charge on the bil
 ## 26. Phase H2: Disruption Hub and family at home
 
 See `docs/leading-features-plan.md` section 6. In short: one page (`/home/disruption`) answers what changed, what it means, what is already done (including refunds and moves already made), what is given and when, what happens next and how to reach a person, with a callback that shows a place in the line and always-available guides for missing the ship, lost phones, outages and illness. `/home/delayed` is a one-step "I'm delayed" with a claim-ready record. `/plan/family-link` lets named people follow the ship (never the guest's location) through an expiring, revocable link that opens `/at-sea/:token` without an account. The link is simulated on the device. Not tried in a browser, by the project rule.
+
+
+## 27. Phase H3: Port Day Pilot
+
+See `docs/leading-features-plan.md` section 7. In short: the port day is one plan worked backward from the ship's all-aboard time, with a leave-by time shown in ship time first and local time beside it, never a countdown that pushes. Crowd and ships-in-port are labelled as estimates. The back-aboard nudge is calm, names people, and lists a child separately in plain words. Local rules are tagged "(verify)", vendor and day-pass lists are fixed and unranked with no commission, and the split ledger only adds up what families owe each other; nothing in it charges or moves money.

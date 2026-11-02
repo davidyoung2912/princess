@@ -17,6 +17,8 @@ import { ContactsAshore, LastMinute, Readiness } from '../aboard/PortExtras'
 import { BackLink, Saved } from './common'
 import { duration, useShipTime } from './shipTime'
 import { PortCard } from './PortCard'
+import { PortParty } from './PortParty'
+import { PortPilot } from './PortPilot'
 
 /** The port day (POR-01 to POR-04, POR-11, POR-12): all-aboard, tender arrangements, and the day's tours with codes that work with no signal. */
 export function PortDayScreen() {
@@ -45,12 +47,14 @@ function Body({ v }: { v: PortDayView }) {
         </Banner>
       )}
       <PortCard view={v.day} />
+      <PortPilot v={v} />
+      <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
       <Tours tours={v.tours} port={v.day.port} />
       <LastMinute />
       <Readiness tender={v.day.tender} />
       <ContactsAshore port={v.day.port} />
-      <p><Link to={`/home/ports/${v.day.port}`}>{t('port.guide', { port: port.name })}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
+      <p><Link to={`/home/ports/${v.day.port}`}>{t('port.guide', { port: port.name })}</Link> · <Link to="/ship/port/guide">{t('route.portGuide')}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </>
   )
 }

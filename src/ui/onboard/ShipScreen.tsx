@@ -47,6 +47,7 @@ export function ShipScreen() {
           <li><Link to="/ship/map">{t('route.deckMap')}</Link></li>
           <li><Link to="/ship/venues">{t('route.venues')}</Link></li>
           <li><Link to="/ship/port">{t('route.portDay')}</Link></li>
+          <li><Link to="/ship/port/guide">{t('route.portGuide')}</Link></li>
           <li><Link to="/plan/reservations">{t('route.reservations')}</Link></li>
           <li><Link to="/ship/order">{t('route.order')}</Link></li>
           <li><Link to="/ship/family">{t('route.family')}</Link></li>

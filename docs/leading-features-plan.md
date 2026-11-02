@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 and H2 are built (sections 5 and 6); H3 to H6 are not started.**
+Status: **Plan saved 2026-11-01. Phases H1, H2 and H3 are built (sections 5 to 7); H4 to H6 are not started.**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -19,7 +19,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | --- | --- | --- | --- | --- |
 | **H1** | Trust and money | XT-01…XT-07, XT-10, S3-07, S6-06, S7-05, XA-03 | none | **Built** (section 5) |
 | **H2** | Disruption Hub and family-at-home | XD-01…XD-10, S3-08, S6-24, S4A-03, S4A-08 | H1 (nudge budget, ledger) | **Built** (section 6) |
-| H3 | Port Day Pilot | S6A-01…S6A-15, S6-12, XG-03 | H1 (confirm, ledger), H2 (disruption hooks) | Not started |
+| H3 | Port Day Pilot | S6A-01…S6A-15, S6-12, XG-03 | H1 (confirm, ledger), H2 (disruption hooks) | **Built** (section 7) |
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | Not started |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | Not started |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | Not started |
@@ -105,3 +105,20 @@ Built 2026-11-01. Front end only; no server or REST contract changes (`api:check
 - **I'm delayed (S4A-03, S4A-08):** `src/domain/delay.ts`, `/home/delayed`: reason and minutes, tells the line (mock) and optionally the party (a note on the party page), shows next steps for the stage, a new ETA against the next all-aboard, a claim-ready record, and a switch to stop sharing the flag.
 - **Routes:** `/home/disruption`, `/home/delayed`, `/plan/family-link`, `/at-sea/:token` (`public: true` in the route table; the app skips sign-in for it).
 - **Not done:** server storage and a real signed link; real callbacks; knock-on fixes computed from actual bookings; a photo on postcards; the debrief and callback as Home cards counted against the nudge budget; ledger entries for changes; a valid-link render test (only the refusal states render in tests, the logic is unit tested); a rendered check (no browser testing by rule).
+
+## 7. Phase H3 notes
+
+Built 2026-11-01. Front end only; no server or REST contract changes (`api:check` not needed). State is per booking on the device in `src/port/store.ts` (kept under the booker like the party notes, so everyone on the booking sees the same record on this device).
+
+- **Port Day Pilot (S6A-01):** `src/domain/portPilot.ts` `planPortDay` works backward from all-aboard: safety buffer (30, 45 or 60 minutes), return queue by crowd, gate walk (pier) or last tender (tender day), then the trip back, giving a leave-by time, a time-at-destination figure and whether a chosen excursion fits (`latestStart` gives the latest start). Times show in ship time with local time beside them; a late tender moves the first time ashore, never the deadline. On `/ship/port`.
+- **Crowd and ships in port (S6A-02):** `src/domain/portCrowd.ts`: a stable simulated count per port and date (`source: 'sim'`), a crowd level, an hourly shape, the quietest window, and a "the ship is quiet" note when a port is busy.
+- **Fair prices, scam alerts, safety, local rules, don't bring it back, phrases, allergy cards, walks, day passes, kids, local vendors (S6A-03, 07 to 13):** `src/domain/portContent.ts` (authored, every local-law line tagged "(verify)") and a new offline-friendly page `/ship/port/guide` with a port chooser.
+- **Plan B (S6A-04):** four plan Bs per port (rain, heat, tender late, low energy), one tap to choose, and the tender one is suggested when tenders are late or the ship may tender.
+- **I'm back aboard (S6A-05):** `src/domain/portParty.ts` `backCheck`: three states (ashore, heading back, back), a nudge inside a window the guest chooses (30 to 90 minutes), a child listed apart for a plain "call or find them" line, and gangway guidance under 30 minutes. It records what people tell the app; it never reads a position.
+- **Shared plan (S6A-06):** one person proposes, everyone in the booking says yes, and one tap stops it.
+- **Split ledger (XG-03):** `src/domain/ledgerSplit.ts` and `/plan/split`: families, shared costs in whole cents, equal or by-head split with leftover cents shared out so shares add up, balances that sum to zero, and the fewest payments to settle. No money moves.
+- **Rendezvous (S6-12):** a place and a time in port time, "on my way" and "here" per person, a no-signal fallback place after a grace period, and a quiet note to adults only when a child is late.
+- **Tender day card (S6A-15):** ticket group, wait, last tender, weather switch and accessible-tender steps in one card (the existing tender card stays).
+- **Routes:** `/ship/port/guide`, `/plan/split`. `/ship/port` gains the pilot, crowd, plan B, shared plan, back-aboard and meeting cards.
+- **Verified:** `npm run test` (1265 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** audio for phrases and walks (text only; no recordings exist) and a map layer for walks; a port photo snapshot (S6A-14); split items in the trust ledger; shared state across devices (it only crosses people on the same device until a server holds it); a push or local notification for the back-aboard nudge (it shows when the page is open; critical-notice delivery and the nudge budget are not wired to it); real crowd, ship and hour data; rendered tests of the port-day screen with data (the first paint in tests shows the loading state); a rendered check (no browser testing by rule).
