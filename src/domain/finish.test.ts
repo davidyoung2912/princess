@@ -4,7 +4,7 @@ import {
   type OnwardPlan,
 } from './disembark'
 import {
-  FEEDBACK_EDIT_DAYS, SLA_HOURS, blankFeedback, caseNumber, caseProblem, caseStatus, caseWithdrawable, feedbackProblem, holdDeposit, loyaltyStatus, needsRecovery, referralCode, tierForDays,
+  FEEDBACK_EDIT_DAYS, SLA_HOURS, blankFeedback, caseNumber, caseProblem, caseStatus, caseWithdrawable, feedbackProblem, holdDeposit, needsRecovery, tierForDays,
 } from './postcruise'
 import { REFERENCE_SAILING } from './sailings'
 import { zonedToEpoch } from './timezones'
@@ -204,21 +204,6 @@ describe("Captain's Circle", () => {
     expect(tierForDays(150)).toBe('elite')
   })
 
-  it('moves a first-time cruiser to Gold and a nearly-Ruby guest to Ruby once the cruise is counted', () => {
-    expect(loyaltyStatus('maria', 7, false)).toMatchObject({ after: 'none', promoted: false, next: 'gold', daysToNext: 5 })
-    expect(loyaltyStatus('maria', 7, true)).toMatchObject({ after: 'gold', promoted: true, daysAfter: 7, daysToNext: 23 })
-    expect(loyaltyStatus('marcus', 7, true)).toMatchObject({ before: 'gold', after: 'ruby', promoted: true })
-  })
-
-  it('never loses a level and has no next level at the top', () => {
-    expect(loyaltyStatus('alexander', 7, true)).toMatchObject({ after: 'elite', next: null, daysToNext: null, promoted: false })
-    expect(loyaltyStatus('gerald', 7, false).after).toBe('platinum')
-  })
-
-  it('makes a steady referral code from the name', () => {
-    expect(referralCode('gerald')).toMatch(/^GERALD\d{3}$/)
-    expect(referralCode('gerald')).toBe(referralCode('gerald'))
-  })
 })
 
 describe('holding a cruise', () => {

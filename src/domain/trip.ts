@@ -1,4 +1,4 @@
-import { PERSONAS, personaById, type PersonaId, type StateroomKind } from './personas'
+import type { StateroomKind } from './personas'
 import { quote } from './pricing'
 import { type Cents } from './money'
 import { sailingById } from './sailings'
@@ -15,21 +15,10 @@ export function daysBetween(from: string, to: string): number {
 export const categoryOfStateroom = (kind: StateroomKind): CategoryId =>
   kind === 'interior' ? 'interior' : kind === 'oceanview' ? 'oceanview' : kind === 'miniSuite' ? 'miniSuite' : 'balcony'
 
-/** A stable, made-up booking number for a booker, such as "PC482113". */
-export function bookingNumber(booker: PersonaId): string {
-  const i = PERSONAS.findIndex((p) => p.id === booker)
-  return `PC${String(100_000 + ((i + 1) * 7919) % 900_000).padStart(6, '0')}`
-}
-
 /** Booking numbers are letters and digits only; people type spaces and lower case. */
 export const normalizeBookingNumber = (text: string): string => text.replace(/[\s-]/g, '').toUpperCase()
 
 export let DEFAULT_FINAL_PAYMENT_DAYS = 90
-/** Guests who booked late pay in full closer to sailing. */
-const LATE_BOOKERS: Partial<Record<PersonaId, number>> = { maria: 10, marcus: 10 }
-/** Late bookers have not paid by default; everyone else has paid by the due date. */
-export const paysLate = (booker: PersonaId): boolean => booker in LATE_BOOKERS
-export const finalPaymentDays = (booker: PersonaId): number => LATE_BOOKERS[booker] ?? DEFAULT_FINAL_PAYMENT_DAYS
 
 export let DEPOSIT_SHARE = 0.2
 
@@ -62,23 +51,6 @@ export function paymentState(plan: PaymentPlan, balancePaid: boolean, today: str
 
 /** A past sailing, shown in My Trips. */
 export interface PastTrip { id: string; title: string; ship: string; departure: string; nights: number; /** A booking that was cancelled before sailing. */ cancelled?: boolean }
-
-const PAST: Partial<Record<PersonaId, readonly PastTrip[]>> = {
-  gerald: [
-    { id: 'past-gerald-1', title: 'Alaska Inside Passage', ship: 'Discovery Princess', departure: '2024-06-09', nights: 7 },
-    { id: 'past-gerald-2', title: 'Panama Canal', ship: 'Emerald Princess', departure: '2023-01-14', nights: 10 },
-    { id: 'past-gerald-3', title: 'Eastern Caribbean', ship: 'Caribbean Princess', departure: '2019-11-03', nights: 7 },
-  ],
-  linda: [{ id: 'past-linda-1', title: 'Mexican Riviera', ship: 'Royal Princess', departure: '2025-02-16', nights: 7 }],
-  alexander: [
-    { id: 'past-alexander-1', title: 'Mediterranean', ship: 'Sky Princess', departure: '2025-09-07', nights: 10 },
-    { id: 'past-alexander-2', title: 'Hawaii', ship: 'Star Princess', departure: '2024-03-02', nights: 14 },
-  ],
-  daniel: [{ id: 'past-daniel-1', title: 'Bahamas', ship: 'Regal Princess', departure: '2025-06-22', nights: 4 }],
-}
-
-/** Trips already sailed by the person's booking (a family shares the booker's). */
-export const pastTrips = (persona: PersonaId): readonly PastTrip[] => PAST[personaById(persona)?.booker ?? persona] ?? []
 
 /** A booking made through a travel agent, which a guest can link to their account (ACT-02). */
 export interface AgentBooking { number: string; lastName: string; sailingId: string; category: CategoryId; guests: number; agent: string }

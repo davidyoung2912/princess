@@ -1,8 +1,5 @@
-import { cabinsFor, type Cabin } from './cabins'
+import type { Cabin } from './cabins'
 import { arrivalWindows, type Window } from './travel'
-import { PERSONAS, personaById, type PersonaId } from './personas'
-import type { CategoryId } from './ship'
-import { categoryOfStateroom } from './trip'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'
 
@@ -31,16 +28,6 @@ const POSITION_ROW = { forward: 0, midship: 1, aft: 2 } as const
 
 /** The muster station follows where the stateroom is: front, middle or back of the ship, port or starboard side. */
 export const musterStation = (c: Pick<Cabin, 'position' | 'side'>): string => `Station ${STATIONS[POSITION_ROW[c.position]][c.side === 'port' ? 0 : 1]}`
-
-/** The stateroom for a booking: a stable pick from the free sample staterooms of its room type, a step-free one when the booker needs it. */
-export function assignmentFor(booker: PersonaId, sailingId: string, needsStepFree: boolean): Assignment {
-  const p = personaById(booker)!
-  const category: CategoryId = categoryOfStateroom(p.stateroom)
-  const free = cabinsFor(sailingId, category).filter((c) => c.available)
-  const pool = needsStepFree && free.some((c) => c.accessible) ? free.filter((c) => c.accessible) : free.filter((c) => !c.accessible)
-  const cabin = pool[hash(`${sailingId}|${booker}`) % pool.length] ?? free[0]
-  return { number: cabin.number, deck: cabin.deck, accessible: cabin.accessible, muster: musterStation(cabin) }
-}
 
 /** Priority guests board first; everyone else boards by the arrival window they chose, so the group number follows it. */
 export function boardingGroup(priority: boolean, window: string | null): string {
@@ -133,9 +120,6 @@ export const AFTERNOON: readonly { id: AfternoonId; time: string }[] = [
   { id: 'muster', time: EMBARK.muster },
   { id: 'sailAway', time: EMBARK.sailAway },
 ]
-
-/** Who is on the booking, in persona order, with their position on the pass. */
-export const seqOf = (booker: PersonaId, guest: PersonaId): number => PERSONAS.filter((p) => p.booker === booker).findIndex((p) => p.id === guest) + 1
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('DELIVERY_HOURS', (v) => { DELIVERY_HOURS = v }, DELIVERY_HOURS)

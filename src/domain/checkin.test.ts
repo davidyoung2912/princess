@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  assignmentFor, boardingGroup, currentCompanion, decodePass, encodePass, laneFor, luggageStatus, musterStation, passName, seqOf, terminalFor, trafficFor, windowFor, WAIT_MINUTES,
+  boardingGroup, currentCompanion, decodePass, encodePass, laneFor, luggageStatus, musterStation, passName, terminalFor, trafficFor, windowFor, WAIT_MINUTES,
 } from './boarding'
 import {
   checkinProgress, checkinWindow, guestProgress, judgePhoto, measurePhoto, normalizeGuestCheckin, SAMPLE_PHOTOS, stepDone, validateDocument, validateEmergency, validateHealth,
@@ -112,10 +112,7 @@ describe('boarding pass', () => {
     expect(decodePass('hello')).toBeNull()
   })
 
-  it('gives the same stateroom every time, and a step-free one when needed', () => {
-    expect(assignmentFor('gerald', 'sun-2027-03-21', false)).toEqual(assignmentFor('gerald', 'sun-2027-03-21', false))
-    expect(assignmentFor('linda', 'sun-2027-03-21', true).accessible).toBe(true)
-    expect(assignmentFor('gerald', 'sun-2027-03-21', false).accessible).toBe(false)
+  it('names the muster station from where the stateroom is', () => {
     expect(musterStation({ position: 'forward', side: 'port' })).toBe('Station A')
     expect(musterStation({ position: 'aft', side: 'starboard' })).toBe('Station F')
   })
@@ -127,7 +124,6 @@ describe('boarding pass', () => {
     expect(boardingGroup(false, null)).toBe('Not set')
     expect(laneFor(true)).toBe('green')
     expect(laneFor(false)).toBe('blue')
-    expect(seqOf('daniel', 'ethan')).toBe(3)
   })
 
   it('gives wait guides and traffic from how busy the window is', () => {

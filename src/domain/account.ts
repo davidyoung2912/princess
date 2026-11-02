@@ -1,4 +1,3 @@
-import { PERSONAS, personaById, type PersonaId } from './personas'
 import type { Citizenship } from './documents'
 import { limit } from './limits'
 
@@ -28,51 +27,8 @@ export interface Profile {
   emergency: EmergencyContact
 }
 
-const NEEDS_BY_PERSONA: Partial<Record<PersonaId, NeedId[]>> = { gerald: ['hearing'], linda: ['mobility'] }
-const DIET_BY_PERSONA: Partial<Record<PersonaId, DietaryId[]>> = { priya: ['vegetarian'], maya: ['nutAllergy'] }
-
-/** The profile a demo person starts with: made-up, with example.com addresses and 555-01xx numbers. */
-export function defaultProfile(id: PersonaId): Profile {
-  const p = personaById(id)!
-  const last = p.name.split(' ').slice(1).join(' ')
-  const n = (PERSONAS.findIndex((x) => x.id === id) + 1) * 3
-  return {
-    firstName: p.firstName,
-    lastName: last,
-    dob: `${2027 - p.age}-01-15`,
-    email: p.child ? '' : `${p.firstName}.${last}`.toLowerCase().replace(/\s/g, '') + '@example.com',
-    phone: p.child ? '' : `555-01${String(n).padStart(2, '0')}`,
-    citizenship: id === 'alexander' ? 'other' : 'us',
-    dietary: DIET_BY_PERSONA[id] ?? [],
-    needs: NEEDS_BY_PERSONA[id] ?? [],
-    bedding: 'noPreference',
-    specialRequests: '',
-    emergency: p.child ? { name: '', phone: '', relationship: '' } : { name: 'Sam Example', phone: `555-01${String(n + 1).padStart(2, '0')}`, relationship: 'Friend' },
-  }
-}
-
 const str = (v: unknown, fallback: string, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : fallback)
 const pick = <T extends string>(list: readonly T[], v: unknown): T[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is T => (list as readonly unknown[]).includes(x)))] : [])
-
-/** A profile from untrusted stored or submitted data; anything unknown falls back to the default for that field. */
-export function normalizeProfile(raw: unknown, id: PersonaId): Profile {
-  const base = defaultProfile(id)
-  const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
-  const e = o.emergency && typeof o.emergency === 'object' ? (o.emergency as Record<string, unknown>) : {}
-  return {
-    firstName: str(o.firstName, base.firstName, 60),
-    lastName: str(o.lastName, base.lastName, 60),
-    dob: str(o.dob, base.dob, 10),
-    email: str(o.email, base.email, 120),
-    phone: str(o.phone, base.phone, 30),
-    citizenship: o.citizenship === 'other' ? 'other' : o.citizenship === 'us' ? 'us' : base.citizenship,
-    dietary: 'dietary' in o ? pick(DIETARY, o.dietary) : base.dietary,
-    needs: 'needs' in o ? pick(NEEDS, o.needs) : base.needs,
-    bedding: (BEDDING as readonly unknown[]).includes(o.bedding) ? (o.bedding as Bedding) : base.bedding,
-    specialRequests: str(o.specialRequests, base.specialRequests, 500),
-    emergency: { name: str(e.name, base.emergency.name, 80), phone: str(e.phone, base.emergency.phone, 30), relationship: str(e.relationship, base.emergency.relationship, 40) },
-  }
-}
 
 export type ProfileField = 'firstName' | 'lastName' | 'dob' | 'email' | 'phone' | 'emergencyName' | 'emergencyPhone'
 export type FieldProblem = 'required' | 'email' | 'phone' | 'date' | 'future' | 'pair'
@@ -156,11 +112,6 @@ export type HelperStatus = 'requested' | 'active' | 'revoked'
 
 /** A family member or friend who can manage the booking for a guest, only with that guest's consent (INC-01). */
 export interface Helper { name: string; relationship: string; permissions: PermissionId[]; status: HelperStatus; /** When the guest last changed it. */ at: number }
-
-/** Gerald's son has asked to help; nothing is shared until Gerald agrees. */
-export const SEEDED_HELPER: Partial<Record<PersonaId, Omit<Helper, 'at'>>> = {
-  gerald: { name: 'Paul Whitfield', relationship: 'Son', permissions: ['view', 'documents', 'payments'], status: 'requested' },
-}
 
 export function normalizeHelper(raw: unknown): Helper | null {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null

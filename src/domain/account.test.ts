@@ -1,22 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { ageOn, defaultProfile, helperMay, nameChange, normalizeHelper, normalizeProfile, validateCard, validateProfile } from './account'
+import { ageOn, helperMay, nameChange, normalizeHelper, validateCard, validateProfile, type Profile } from './account'
 import { DEFAULT_HELD, docStatus, guestDocuments, normalizeHeld, passportValidUntil, requirementsFor } from './documents'
 import { CONTACT_OPTIONS, contactStatus, FAQS, searchFaqs, ticketStatus } from './help'
 import { buildNotices, DEFAULT_PREFS, inQuietHours, normalizePrefs } from './notifications'
-import { PERSONAS } from './personas'
-import { AGENT_BOOKINGS, bookingNumber, categoryOfStateroom, daysBetween, matchBooking, nextAction, normalizeBookingNumber, paymentPlan, paymentState, pastTrips } from './trip'
+import { AGENT_BOOKINGS, categoryOfStateroom, daysBetween, matchBooking, nextAction, normalizeBookingNumber, paymentPlan, paymentState } from './trip'
 
 describe('trip and payments', () => {
   it('counts days between dates', () => {
     expect(daysBetween('2027-03-07', '2027-03-21')).toBe(14)
     expect(daysBetween('2027-03-21', '2027-03-07')).toBe(-14)
-  })
-
-  it('gives every booker a stable, different booking number', () => {
-    const numbers = PERSONAS.map((p) => bookingNumber(p.id))
-    expect(new Set(numbers).size).toBe(numbers.length)
-    expect(bookingNumber('gerald')).toBe(bookingNumber('gerald'))
-    expect(numbers.every((n) => /^PC\d{6}$/.test(n))).toBe(true)
   })
 
   it('splits the total into a whole-dollar deposit and a balance that add up', () => {
@@ -61,12 +53,6 @@ describe('trip and payments', () => {
     expect(matchBooking(b.number, '', date, [])).toEqual({ ok: false, reason: 'format' })
     expect(matchBooking(b.number, 'Whitfield', date, [b.number])).toEqual({ ok: false, reason: 'alreadyLinked' })
     expect(normalizeBookingNumber('ag 4k-72q')).toBe('AG4K72Q')
-  })
-
-  it('lists past trips for repeat guests and none for a first-time cruiser', () => {
-    expect(pastTrips('gerald').length).toBeGreaterThan(1)
-    expect(pastTrips('maria')).toEqual([])
-    expect(pastTrips('priya')).toEqual(pastTrips('daniel'))
   })
 })
 
@@ -118,32 +104,23 @@ describe('documents engine', () => {
   })
 })
 
+const GERALD: Profile = {
+  firstName: 'Gerald', lastName: 'Whitfield', dob: '1956-01-15', email: 'gerald.whitfield@example.com', phone: '555-0103', citizenship: 'us', dietary: [], needs: ['hearing'],
+  bedding: 'noPreference', specialRequests: '', emergency: { name: 'Sam Example', phone: '555-0104', relationship: 'Friend' },
+}
+
 describe('profile', () => {
-  it('starts every demo person with a valid profile, using example addresses', () => {
-    for (const p of PERSONAS) {
-      const profile = defaultProfile(p.id)
-      expect(validateProfile(profile, '2027-03-07', p.child), p.id).toEqual({})
-      if (profile.email) expect(profile.email.endsWith('@example.com')).toBe(true)
-      expect(ageOn(profile.dob, '2027-03-07')).toBe(p.age)
-    }
+  it('accepts a complete profile and counts the age on a date', () => {
+    expect(validateProfile(GERALD, '2027-03-07', false)).toEqual({})
+    expect(ageOn(GERALD.dob, '2027-03-07')).toBe(71)
   })
+
 
   it('reports each problem on its field', () => {
-    const p = { ...defaultProfile('gerald'), firstName: ' ', dob: '2030-01-01', email: 'nope', phone: 'abc', emergency: { name: 'Sam', phone: '', relationship: '' } }
+    const p = { ...GERALD, firstName: ' ', dob: '2030-01-01', email: 'nope', phone: 'abc', emergency: { name: 'Sam', phone: '', relationship: '' } }
     expect(validateProfile(p, '2027-03-07', false)).toEqual({ firstName: 'required', dob: 'future', email: 'email', phone: 'phone', emergencyPhone: 'pair' })
     expect(validateProfile({ ...p, dob: '' }, '2027-03-07', false).dob).toBe('required')
-    expect(validateProfile({ ...defaultProfile('maya'), email: '' }, '2027-03-07', true).email).toBeUndefined()
-  })
-
-  it('cleans stored data, keeping defaults for what is missing or wrong', () => {
-    const p = normalizeProfile({ firstName: 'Gerry', dietary: ['vegan', 'pizza'], bedding: 'bunk', citizenship: 'mars', emergency: { name: 7 } }, 'gerald')
-    expect(p.firstName).toBe('Gerry')
-    expect(p.lastName).toBe('Whitfield')
-    expect(p.dietary).toEqual(['vegan'])
-    expect(p.bedding).toBe('noPreference')
-    expect(p.citizenship).toBe('us')
-    expect(p.emergency.name).toBe(defaultProfile('gerald').emergency.name)
-    expect(normalizeProfile({ needs: [] }, 'gerald').needs).toEqual([])
+    expect(validateProfile({ ...GERALD, email: '' }, '2027-03-07', true).email).toBeUndefined()
   })
 
   it('lets small spelling fixes through early and sends bigger or later changes to Guest Services', () => {

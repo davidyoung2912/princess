@@ -1,5 +1,5 @@
 import type { Cents } from './money'
-import { personaById, type PersonaId, type Tier } from './personas'
+import type { PersonaId, Tier } from './personas'
 import { addDays } from './timezones'
 import { limit } from './limits'
 import { registerContent } from './content'
@@ -142,41 +142,14 @@ export const TIER_ORDER: readonly Tier[] = ['none', 'gold', 'ruby', 'platinum', 
 /** Cruise days that reach each level. */
 export const TIER_DAYS: Record<Tier, number> = { none: 0, gold: 5, ruby: 30, platinum: 90, elite: 150 }
 
-/** Days on the guest's record before this cruise: the level's minimum, unless an authored record says more. */
-const DAYS_BEFORE: Partial<Record<PersonaId, number>> = { maria: 0, marcus: 28, daniel: 33, priya: 33, gerald: 112 }
-
-export const daysBefore = (id: PersonaId): number => DAYS_BEFORE[id] ?? TIER_DAYS[personaById(id)?.tier ?? 'none']
-
 export const tierForDays = (days: number): Tier => [...TIER_ORDER].reverse().find((t) => days >= TIER_DAYS[t]) ?? 'none'
 
 export interface LoyaltyStatus { before: Tier; after: Tier; daysBefore: number; daysAfter: number; next: Tier | null; daysToNext: number | null; promoted: boolean }
-
-/** Level and days before and after this cruise (7 nights). A level already held is never lost. */
-export function loyaltyStatus(id: PersonaId, nights: number, counted: boolean): LoyaltyStatus {
-  const p = personaById(id)!
-  const before = daysBefore(id)
-  const daysAfter = before + (counted ? nights : 0)
-  const reached = tierForDays(daysAfter)
-  const heldIndex = TIER_ORDER.indexOf(p.tier)
-  const after = TIER_ORDER[Math.max(TIER_ORDER.indexOf(reached), heldIndex)]
-  const next = TIER_ORDER[TIER_ORDER.indexOf(after) + 1] ?? null
-  return { before: p.tier, after, daysBefore: before, daysAfter, next, daysToNext: next ? Math.max(0, TIER_DAYS[next] - daysAfter) : null, promoted: counted && TIER_ORDER.indexOf(after) > heldIndex }
-}
 
 // ---- Referral (POS-08) ----
 
 export let REFERRAL_CREDIT: Cents = 5000
 export type ReferralState = 'invited' | 'booked' | 'sailed'
-
-export const referralCode = (id: PersonaId): string => `${personaById(id)!.firstName.toUpperCase()}${100 + (hash(`ref|${id}`) % 900)}`
-
-export const REFERRALS: Partial<Record<PersonaId, readonly { name: string; state: ReferralState }[]>> = {
-  gerald: [{ name: 'Ruth', state: 'sailed' }, { name: 'Frank', state: 'invited' }],
-  alexander: [{ name: 'Camille', state: 'booked' }],
-}
-
-/** Credit earned: both sides get it when the friend has sailed. */
-export const referralEarned = (id: PersonaId): Cents => (REFERRALS[id] ?? []).filter((r) => r.state === 'sailed').length * REFERRAL_CREDIT
 
 // ---- Rebooking (POS-06) ----
 
@@ -187,12 +160,8 @@ export let ONBOARD_DEPOSIT: Cents = 10_000
 /** Onboard credit for booking on board, and the extra for each level. */
 export let BOOKING_CREDIT: Cents = 10_000
 export const LEVEL_CREDIT: Record<Tier, Cents> = { none: 0, gold: 2500, ruby: 5000, platinum: 7500, elite: 10_000 }
-/** Future cruise credit left from an earlier cruise. */
-export const FCC_LEFT: Partial<Record<PersonaId, Cents>> = { gerald: 15_000, linda: 10_000, alexander: 25_000 }
 /** Booking at least this many days after the cruise ends. */
 export let REBOOK_GAP_DAYS = 14
-
-export const fccBefore = (id: PersonaId): Cents => FCC_LEFT[id] ?? 0
 
 /** The deposit for a held cruise: a fifth of the fare in whole dollars, or the lower onboard deposit when held on board. */
 export function holdDeposit(total: Cents, guests: number, onboard: boolean): Cents {
