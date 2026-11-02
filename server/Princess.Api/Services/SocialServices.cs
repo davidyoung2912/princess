@@ -7,7 +7,7 @@ using Princess.Api.Domain;
 namespace Princess.Api.Services;
 
 /// <summary>Cabin parties (ROM-06): invite neighbours by cabin. Ports <c>parties</c> of <c>src/api/aboardMock.ts</c>. Neighbours' answers are made up, the same every time (<c>ServiceRules.Rsvp</c>).</summary>
-public sealed class PartyService(ScopeLoader scopes, IAboardStore store)
+public sealed class CabinPartyService(ScopeLoader scopes, IAboardStore store)
 {
     private async Task<List<PartyDto>> ListAsync(Scope c, CancellationToken ct) =>
         [.. (await store.ListPartiesAsync(c.Booking.BookingId, ct)).OrderBy(p => p.Day).ThenBy(p => p.Time, StringComparer.Ordinal)

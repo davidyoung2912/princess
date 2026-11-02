@@ -56,11 +56,11 @@ public static class AboardEndpoints
             .WithSummary("Chooses the currency the account is shown in. 400 badCurrency.");
 
         var p = b.MapGroup("/parties").WithTags("Cabin parties");
-        p.MapGet("", async (string number, ICurrentUser me, PartyService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), number, ct)))
+        p.MapGet("", async (string number, ICurrentUser me, CabinPartyService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), number, ct)))
             .WithSummary("The booking's cabin parties with the neighbours invited.");
-        p.MapPost("", async (string number, CreatePartyRequest body, ICurrentUser me, PartyService svc, CancellationToken ct) => Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), number, body, ct)))
+        p.MapPost("", async (string number, CreatePartyRequest body, ICurrentUser me, CabinPartyService svc, CancellationToken ct) => Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Plans a party. 400 noTitle, badDay, badTime, quiet, noCabins, tooMany or badCabin; 403 age under 21; 409 closed or past.");
-        p.MapDelete("/{id:guid}", async (string number, Guid id, ICurrentUser me, PartyService svc, CancellationToken ct) => Results.Ok(await svc.CancelAsync(await me.LoadAsync(ct), number, id, ct)))
+        p.MapDelete("/{id:guid}", async (string number, Guid id, ICurrentUser me, CabinPartyService svc, CancellationToken ct) => Results.Ok(await svc.CancelAsync(await me.LoadAsync(ct), number, id, ct)))
             .WithSummary("Cancels a party.");
 
         var g = b.MapGroup("/dining/reservations/{reservation:guid}/group").WithTags("Group tables");

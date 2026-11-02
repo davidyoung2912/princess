@@ -94,7 +94,7 @@ services.AddScoped<ServiceRequestService>();
 services.AddScoped<SafetyReportService>();
 services.AddScoped<DrinkService>();
 services.AddScoped<MoneyService>();
-services.AddScoped<PartyService>();
+services.AddScoped<CabinPartyService>();
 services.AddScoped<GroupTableService>();
 services.AddScoped<GameService>();
 services.AddScoped<TvService>();
