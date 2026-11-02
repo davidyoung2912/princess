@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { buildDay, NO_WISH, type DayWish, type Mobility } from '../../domain/day'
+import { NO_WISH, type DayWish, type Mobility } from '../../domain/day'
+import { dayPlanFeed, wishKey } from '../../feeds/dayPlan'
+import { useFeed } from '../../hooks/useServedFeeds'
+import { FeedWaiting } from '../FeedWaiting'
 import { INTERESTS, type Interest } from '../../domain/excursions'
 import { formatDayMonth, formatTime } from '../../domain/cruise'
 import { EVENT_INTERESTS, type EventInterest } from '../../domain/program'
@@ -24,7 +27,7 @@ export function DayScreen() {
   const days = itinerary(sailing)
   const [day, setDay] = useState(3)
   const [wish, setWish] = useState<DayWish>({ ...NO_WISH, withKids: !!me && partyPeople(me.id).some((p) => p.age < 13) })
-  const plan = buildDay(sailing, day, wish)
+  const plan = useFeed(dayPlanFeed, sailing.id, day, wishKey(wish))
   return (
     <div className="page">
       <h1>{t('route.buildDay')}</h1>
@@ -55,9 +58,10 @@ export function DayScreen() {
       </Card>
       <Card hero labelledBy="day-plan-h">
         <h2 id="day-plan-h" className="card__title">{t('day.yours', { day })}</h2>
-        {plan.empty && <p role="status">{t('day.empty')}</p>}
+        {!plan && <FeedWaiting />}
+        {plan?.empty && <p role="status">{t('day.empty')}</p>}
         <ol className="build-list">
-          {plan.items.map((i) => (
+          {plan?.items.map((i) => (
             <li key={`${i.kind}-${i.id}`}>
               <p className="build-list__time">{formatTime(i.start)}</p>
               <div>
@@ -67,7 +71,7 @@ export function DayScreen() {
             </li>
           ))}
         </ol>
-        {plan.backBy && <p>{t('day.backBy', { time: formatTime(plan.backBy) })}</p>}
+        {plan?.backBy && <p>{t('day.backBy', { time: formatTime(plan.backBy) })}</p>}
         <p className="muted">{t('day.note')}</p>
         <LinkButton to="/home/concierge" variant="secondary">{t('day.askConcierge')}</LinkButton>
       </Card>

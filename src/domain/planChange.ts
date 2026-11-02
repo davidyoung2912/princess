@@ -1,7 +1,4 @@
-import { buildDay, type DayWish } from './day'
-import { EXCURSIONS } from './excursions'
-import { eventById, eventsOn, type DatedEvent } from './program'
-import type { Sailing } from './sailings'
+import { eventById } from './program'
 
 /**
  * Changes to the day plan, shared by Autopilot (S6-02) and the assistant (XA-02).
@@ -53,34 +50,7 @@ export const minutesOf = (hhmm: string): number => Number(hhmm.slice(0, 2)) * 60
 export const hhmmOf = (m: number): string => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
 export const isHhmm = (v: unknown): v is string => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v)
 
-const OUTDOOR_PLACES: ReadonlySet<string> = new Set(['lido-pool', 'promenade', 'sea-view', 'sun-bar'])
 export const UNDO_ASSISTANT_MIN = 120
-export const DINNER_MINUTES = 90
-
-const fromEvent = (e: { id: string; title: string; start: string; minutes: number; placeId: string }, kind: PlanKind = 'event'): PlanEntry => ({
-  id: e.id, title: e.title, start: e.start, minutes: e.minutes, kind, placeId: e.placeId, outdoor: OUTDOOR_PLACES.has(e.placeId), path: '/plan',
-})
-
-/** The day's plan from the guest's wishes (the same one Build my day gives), as entries that carry their length. */
-export function basePlan(s: Sailing, day: number, wish: DayWish): PlanEntry[] {
-  return buildDay(s, day, wish).items.map((i): PlanEntry => {
-    if (i.kind === 'tour') {
-      const x = EXCURSIONS.find((e) => e.id === i.id)
-      return { id: i.id, title: i.title, start: i.start, minutes: Math.round((x?.hours ?? 4) * 60), kind: 'tour', outdoor: true, path: i.path }
-    }
-    if (i.kind === 'dinner') return { id: i.id, title: i.title, start: i.start, minutes: DINNER_MINUTES, kind: 'dinner', outdoor: false, path: i.path }
-    const e = eventById(i.id)
-    return { id: i.id, title: i.title, start: i.start, minutes: e?.minutes ?? 60, kind: 'event', placeId: e?.placeId, outdoor: !!e && OUTDOOR_PLACES.has(e.placeId), path: i.path }
-  })
-}
-
-/** Other things on that day that could replace or join the plan: events that are on, suit the party, and are not already in it. */
-export function alternativesFor(s: Sailing, day: number, wish: DayWish, taken: readonly string[]): PlanEntry[] {
-  const ages: readonly string[] = wish.withKids ? ['all', 'kids', 'teens'] : ['all', 'adults']
-  return eventsOn(s, day, true)
-    .filter((e: DatedEvent) => e.status === 'on' && ages.includes(e.age) && e.extra === 0 && !taken.includes(e.id))
-    .map((e) => fromEvent(e))
-}
 
 export type RowState = 'planned' | 'moved' | 'dropped' | 'added'
 export interface PlanRow { entry: PlanEntry; state: RowState; /** The start before a move. */ was?: string; changeId?: string }
@@ -134,13 +104,13 @@ export interface ReflowContext { now: number; day: number; /** When the guest's 
 const LATEST_END = 23 * 60 + 30
 const fits = (e: PlanEntry, rows: readonly PlanRow[]): boolean => endOf(e) <= LATEST_END && !live(rows).some((r) => clash(e, r.entry))
 
-/** The ship's own mid-day changes for a day that touch the plan, as causes. */
-export function shipChangesFor(s: Sailing, day: number, rows: readonly PlanRow[]): Cause[] {
+/** The ship's own mid-day changes (the server's list for the day) that touch the plan, as causes. */
+export function shipChangesFor(served: readonly { id: string; kind: 'moved' | 'cancelled'; start: string | null; reason: string | null }[], rows: readonly PlanRow[]): Cause[] {
   const ids = new Set(rows.map((r) => r.entry.id))
-  return eventsOn(s, day, true).flatMap((e): Cause[] => {
-    if (!ids.has(e.id)) return []
-    if (e.status === 'moved') return [{ kind: 'moved', id: e.id, to: e.start, reason: e.reason }]
-    if (e.status === 'cancelled') return [{ kind: 'cancelled', id: e.id, reason: e.reason }]
+  return served.flatMap((c): Cause[] => {
+    if (!ids.has(c.id)) return []
+    if (c.kind === 'moved' && c.start) return [{ kind: 'moved', id: c.id, to: c.start, reason: c.reason ?? undefined }]
+    if (c.kind === 'cancelled') return [{ kind: 'cancelled', id: c.id, reason: c.reason ?? undefined }]
     return []
   })
 }

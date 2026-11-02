@@ -95,7 +95,7 @@ export function AskScreen() {
     const next = addProposal(dp.changes, proposal)
     const r = acceptChange(dp.base, next, proposal.id, now)
     if (r.ok) {
-      programmeFollows(api.onboard, dp.sailing, pilot.prefs, dp.changes, r.changes.filter((c) => c.day === day))
+      void programmeFollows(api.onboard, dp.sailing, pilot.prefs, dp.changes, r.changes.filter((c) => c.day === day))
       update((s) => ({ ...s, changes: [...s.changes.filter((c) => c.day !== day), ...r.changes] }))
       setNotice('ask.done')
     } else setNotice(REFUSED[r.reason])

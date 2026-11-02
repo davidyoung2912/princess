@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
-import { optimiseWeek, PACES, weekProblems, type Pace } from '../../domain/autopilot'
+import { PACES, type Pace } from '../../domain/autopilot'
 import { PORTS } from '../../domain/sailings'
 import { formatMoney } from '../../domain/pricing'
 import { useSailing } from '../../hooks/useDemo'
+import { useWeek } from '../../hooks/useWeek'
+import { FeedWaiting } from '../FeedWaiting'
 import { usePilot } from '../../hooks/usePilot'
 import { programmeFollows } from '../../pilot/programme'
 import { api } from '../../runtime'
@@ -20,11 +21,10 @@ export function WeekPlanner() {
   const { state, update } = usePilot()
   const sailing = useSailing()
   const { prefs } = state
-  const week = useMemo(() => optimiseWeek(sailing, prefs), [sailing, prefs])
-  const problems = weekProblems(week)
+  const week = useWeek(sailing.id, prefs)
   const now = useNow()
   const [applied, setApplied] = useState<number | null>(null)
-  const apply = () => { const r = applyWeek(sailing, prefs, state.changes, now); programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
+  const apply = () => { if (!week) return; const r = applyWeek(sailing, week, state.changes, now); void programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
   const set = (change: Partial<typeof prefs>) => update((s) => ({ ...s, prefs: { ...s.prefs, ...change } }))
 
   return (
@@ -46,7 +46,8 @@ export function WeekPlanner() {
       <label className="choice"><input type="checkbox" checked={prefs.withKids} onChange={(e) => set({ withKids: e.target.checked })} /><span>{t('week.kids')}</span></label>
       <label className="choice"><input type="checkbox" checked={prefs.noEarly} onChange={(e) => set({ noEarly: e.target.checked })} /><span>{t('week.noEarly')}</span></label>
 
-      <ol className="plain-list">
+      {!week && <FeedWaiting />}
+      {week && <ol className="plain-list">
         {week.days.map((d) => (
           <li key={d.day}>
             <strong>{t('week.day', { n: d.day, place: d.port === 'sea' ? t('week.atSea') : PORTS[d.port].name })}</strong>
@@ -57,10 +58,10 @@ export function WeekPlanner() {
             {d.alternative && <p className="muted">{t('week.alternative', { what: d.alternative })}</p>}
           </li>
         ))}
-      </ol>
-      <Button onClick={apply}>{t('week.apply')}</Button>
+      </ol>}
+      <Button onClick={apply} disabled={!week}>{t('week.apply')}</Button>
       {applied !== null && <p role="status">{applied === 0 ? t('week.appliedNone') : t('week.applied', { n: applied })}</p>}
-      <p role="status">{t('week.total', { amount: formatMoney(week.totalTours) })}{problems.length > 0 ? ` ${t('week.problems')}` : ''}</p>
+      {week && <p role="status">{t('week.total', { amount: formatMoney(week.totalTours) })}</p>}
     </Card>
   )
 }

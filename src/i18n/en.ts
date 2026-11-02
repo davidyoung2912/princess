@@ -5217,7 +5217,6 @@ export const en = {
   'week.restDay': 'No tour fits, so this is a free day ashore.',
   'week.alternative': 'Instead: {what}.',
   'week.total': 'Tours in this week: {amount} per adult.',
-  'week.problems': 'Some items cross; please tell us.',
   'watch.title': 'Slot watch',
   'watch.intro': 'A dinner, show or tour is full. Tell us what you want and we watch for a place.',
   'watch.promise': 'We never book for you. When a place opens within your limit you see it here and book with one tap. A swap keeps your current slot until the new one is booked.',

@@ -82,6 +82,7 @@ services.AddScoped<PortRowService>();
 services.AddScoped<FamilyHomeService>();
 services.AddScoped<DemoService>();
 services.AddScoped<ContextService>();
+services.AddScoped<AutopilotService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();

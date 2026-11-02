@@ -1,13 +1,13 @@
 import { placeById } from './deck'
-import { buildDay, type DayWish, type Mobility } from './day'
-import { EXCURSIONS, type Interest } from './excursions'
-import { eventById, type EventInterest } from './program'
-import { hhmmOf, minutesOf, type PlanRow } from './planChange'
+import type { DayWish, Mobility } from './day'
+import type { Interest } from './excursions'
+import type { EventInterest } from './program'
+import { hhmmOf, minutesOf, type PlanEntry, type PlanRow } from './planChange'
 import type { Cents } from './pricing'
-import { itinerary, type PortId, type Sailing } from './sailings'
+import type { PortId } from './sailings'
 
 /**
- * The week optimiser (S4-01), gentle mode (S6-03) and slot watch (S4-02), plus the simulated sky they use.
+ * The shape of the week the server builds (S4-01, `POST /me/autopilot/plan`), gentle mode (S6-03) and slot watch (S4-02), plus the simulated sky they use.
  * Pure and deterministic. Nothing here books or charges: a watch can only end in a proposal the guest confirms.
  */
 const MIN = 60_000
@@ -72,49 +72,11 @@ export const wishOf = (prefs: WeekPrefs, mobility: Mobility = prefs.mobility): D
 
 export const DEFAULT_PREFS: WeekPrefs = { pace: 'balanced', mobility: 'any', withKids: false, tours: [], events: [], maxTour: null, noEarly: false }
 
-const EVENTS_PER_DAY: Record<Pace, { sea: number; port: number }> = { relaxed: { sea: 1, port: 0 }, balanced: { sea: 2, port: 1 }, packed: { sea: 3, port: 2 } }
-
 export interface WeekItem { kind: 'tour' | 'event' | 'dinner'; id: string; title: string; start: string; why: string }
-export interface WeekDay { day: number; port: PortId; items: WeekItem[]; restDay: boolean; /** What a different choice would have been, when there is one. */ alternative: string | null; tourCost: Cents }
+export interface WeekDay { day: number; port: PortId; items: WeekItem[]; restDay: boolean; /** What a different choice would have been, when there is one. */ alternative: string | null; tourCost: Cents
+  /** The day under the guest's own wishes, and under the week's (a relaxed week keeps tours easy): what applying the week changes. */
+  base: PlanEntry[]; target: PlanEntry[] }
 export interface Week { days: WeekDay[]; totalTours: Cents; prefs: WeekPrefs }
-
-/** One conflict-free plan for the whole week from the pace, mobility, budget and likes. A relaxed week keeps tours easy and leaves some port days free. */
-export function optimiseWeek(s: Sailing, prefs: WeekPrefs): Week {
-  const days: WeekDay[] = []
-  for (const d of itinerary(s)) {
-    const mobility: Mobility = prefs.pace === 'relaxed' && prefs.mobility === 'any' ? 'easy' : prefs.mobility
-    const wish = wishOf(prefs, mobility)
-    const plan = buildDay(s, d.day, wish)
-    const port = d.port !== 'sea' && d.port !== 'fll'
-    const limit = EVENTS_PER_DAY[prefs.pace][port ? 'port' : 'sea']
-    let events = 0
-    const items: WeekItem[] = []
-    for (const i of plan.items) {
-      if (i.kind === 'event') { if (events >= limit) continue; events++ }
-      if (prefs.noEarly && minutesOf(i.start) < 9 * 60 && i.kind !== 'dinner') continue
-      items.push({ kind: i.kind, id: i.id, title: i.title, start: i.start, why: i.why })
-    }
-    const tour = items.find((i) => i.kind === 'tour')
-    const x = tour ? EXCURSIONS.find((e) => e.id === tour.id) : undefined
-    const stronger = port && !tour ? plan.items.find((i) => i.kind === 'tour') : undefined
-    days.push({
-      day: d.day, port: d.port, items, restDay: port && !tour,
-      alternative: stronger ? `${stronger.title}, if you want to go ashore` : tour && prefs.pace !== 'packed' ? 'A free day on board instead of the tour' : null,
-      tourCost: x?.price ?? 0,
-    })
-  }
-  return { days, totalTours: days.reduce((n, d) => n + d.tourCost, 0), prefs }
-}
-
-/** Anything in the week that crosses another item the same day. Always empty for a plan this module builds; checked in tests. */
-export function weekProblems(week: Week): string[] {
-  const out: string[] = []
-  for (const d of week.days) {
-    const spans = d.items.map((i) => ({ i, a: minutesOf(i.start), b: minutesOf(i.start) + (i.kind === 'dinner' ? 90 : i.kind === 'tour' ? (EXCURSIONS.find((e) => e.id === i.id)?.hours ?? 4) * 60 : (eventById(i.id)?.minutes ?? 60)) }))
-    for (let x = 0; x < spans.length; x++) for (let y = x + 1; y < spans.length; y++) if (spans[x].a < spans[y].b && spans[y].a < spans[x].b) out.push(`day ${d.day}: ${spans[x].i.title} and ${spans[y].i.title}`)
-  }
-  return out
-}
 
 /** Slot watch (S4-02): the guest asks to be told when a full dinner, show or excursion opens. It ends in a proposal; the guest still confirms the booking. */
 export type WatchKind = 'dinner' | 'show' | 'excursion'

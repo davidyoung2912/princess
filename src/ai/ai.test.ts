@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildDay, NO_WISH } from '../domain/day'
 import { buildRecap, recapText } from '../domain/recap'
 import { REFERENCE_SAILING } from '../domain/sailings'
 import { ask, askProblem, normalizeTurn } from './concierge'
@@ -93,32 +92,6 @@ describe('history', () => {
     expect(getThread('amy').messages).toHaveLength(1)
     const merged = mergeThreads({ messages: [{ id: 'b', role: 'user', text: 'two', at: 2 }, { id: 'a', role: 'user', text: 'hi', at: 1 }] }, { messages: [{ id: 'c', role: 'user', text: 'three', at: 3 }, { id: 'a', role: 'user', text: 'hi', at: 1 }] })
     expect(merged.messages.map((m) => m.id)).toEqual(['a', 'b', 'c'])
-  })
-})
-
-describe('build my day', () => {
-  it('fits a tour to the ship’s day and gives a time to be back', () => {
-    const plan = buildDay(REFERENCE_SAILING, 3, { ...NO_WISH, tours: ['water'] })
-    const tour = plan.items.find((i) => i.kind === 'tour')!
-    expect(tour.id).toBe('coz-snorkel')
-    expect(plan.backBy).toBe('15:45')
-    expect(plan.items.some((i) => i.kind === 'dinner')).toBe(true)
-  })
-  it('offers only level, wheelchair-friendly tours when asked', () => {
-    const plan = buildDay(REFERENCE_SAILING, 4, { ...NO_WISH, mobility: 'wheelchair' })
-    expect(plan.items.find((i) => i.kind === 'tour')?.id).toBe('bze-walk')
-  })
-  it('spreads a sea day and keeps adults-only events away from children', () => {
-    const plan = buildDay(REFERENCE_SAILING, 2, { ...NO_WISH, withKids: true })
-    expect(plan.items.filter((i) => i.kind === 'event').length).toBeGreaterThan(0)
-    expect(plan.backBy).toBeNull()
-    const starts = plan.items.map((i) => Number(i.start.slice(0, 2)) * 60 + Number(i.start.slice(3)))
-    expect(starts).toEqual([...starts].sort((a, b) => a - b))
-  })
-  it('is the same every time, and has no dinner on the last morning', () => {
-    expect(buildDay(REFERENCE_SAILING, 5, NO_WISH)).toEqual(buildDay(REFERENCE_SAILING, 5, NO_WISH))
-    expect(buildDay(REFERENCE_SAILING, 8, NO_WISH).items.some((i) => i.kind === 'dinner')).toBe(false)
-    expect(buildDay(REFERENCE_SAILING, 9, NO_WISH).empty).toBe(true)
   })
 })
 

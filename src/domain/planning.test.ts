@@ -3,6 +3,7 @@ import { EMPTY_ACCESS } from './bookingPrep'
 import { DEFAULT_PREFS } from './autopilot'
 import { EXCURSIONS, excursionById } from './excursions'
 import { REFERENCE_SAILING } from './sailings'
+import { fixtureWeek } from './weekFixture'
 import { addIdea, addTradition, applyWeek, briefFor, budgetNote, carryOver, castVote, compareExcursion, difficultyConcerns, DIFFICULTY, heartIdea, leader, newPoll, normalizePlanning, rhythmPrefs, sharedDay, tasteInferences, tally, withoutSurprises } from './planning'
 
 describe('planning', () => {
@@ -78,10 +79,11 @@ describe('planning', () => {
   })
   it('applies a relaxed week as accepted, undoable changes and does not repeat', () => {
     const prefs = { ...DEFAULT_PREFS, pace: 'relaxed' as const, noEarly: true }
-    const r = applyWeek(REFERENCE_SAILING, prefs, [], 1_000)
+    const week = fixtureWeek(REFERENCE_SAILING, prefs)
+    const r = applyWeek(REFERENCE_SAILING, week, [], 1_000)
     expect(r.applied).toBeGreaterThan(0)
     expect(r.changes.every((c) => c.status === 'accepted' && c.undoUntil > 1_000)).toBe(true)
-    expect(applyWeek(REFERENCE_SAILING, prefs, r.changes, 2_000).applied).toBe(0)
+    expect(applyWeek(REFERENCE_SAILING, week, r.changes, 2_000).applied).toBe(0)
   })
   it('normalises junk to the empty state', () => {
     const s = normalizePlanning({ polls: [{ id: 'x' }], privacy: { medical: true, plans: true }, rhythm: { wake: 'never' } })

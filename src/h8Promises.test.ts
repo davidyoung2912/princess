@@ -6,6 +6,7 @@ import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offe
 import { giftsFor, homeNudges, parseExcursionRequest } from './domain/finishMore'
 import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
 import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
+import { fixtureWeek } from './domain/weekFixture'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
 import { styleFor, STYLES } from './domain/prepMore'
@@ -67,7 +68,7 @@ describe('H8 slice B promises', () => {
     expect(tasteInferences(input, false, tasteInferences(input, false, []).map((i) => i.id))).toEqual([])
   })
   it('applies a week only through accepted, undoable changes', () => {
-    const r = applyWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace: 'relaxed' }, [], 5)
+    const r = applyWeek(REFERENCE_SAILING, fixtureWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace: 'relaxed' }), [], 5)
     expect(r.changes.every((c) => c.status === 'accepted' && c.undoUntil > 5)).toBe(true)
   })
 })

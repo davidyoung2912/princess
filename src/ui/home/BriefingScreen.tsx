@@ -2,7 +2,8 @@ import { PastedLines } from '../PastedLines'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { buildBriefing, kindAt, spoken, type BriefingKind } from '../../domain/briefing'
-import { basePlan } from '../../domain/planChange'
+import { dayPlanFeed, wishKey } from '../../feeds/dayPlan'
+import { useServedFeed } from '../../hooks/useServedFeeds'
 import { shipZoneAt } from '../../domain/sailings'
 import { skyNightFeed } from '../../feeds/skyNight'
 import { timeIn } from '../../domain/timezones'
@@ -33,7 +34,8 @@ export function BriefingScreen() {
   const [copied, setCopied] = useState(false)
   const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window
 
-  const tomorrow = day < 8 ? basePlan(sailing, day + 1, wishOf(state.prefs)).slice().sort((a, b) => a.start.localeCompare(b.start))[0] : undefined
+  const next = useServedFeed(day < 8, dayPlanFeed, [sailing.id, day + 1, wishKey(wishOf(state.prefs))])
+  const tomorrow = next?.items.slice().sort((a, b) => a.start.localeCompare(b.start))[0]
   const b = buildBriefing(kind, {
     nowHhmm, plan: dp.rows, weather: dp.weather, sky,
     deadlines: checklist.data ? checklist.data.milestones.flatMap((m) => m.entries).filter((e) => e.state !== 'done' && !e.automatic).map((e) => ({ label: t(`plan.check.item.${e.id}` as never), path: e.to ?? '/plan/checklist' })) : null,

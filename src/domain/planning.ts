@@ -1,8 +1,8 @@
 import { servedAccess } from './accessReference'
 import type { AccessProfile } from './bookingPrep'
 import { clubFor, type ClubId } from './family'
-import { acceptChange, addProposal, basePlan, type Change, type Edit, type PlanEntry } from './planChange'
-import { optimiseWeek, wishOf, type Pace, type WeekPrefs } from './autopilot'
+import { acceptChange, addProposal, type Change, type Edit, type PlanEntry } from './planChange'
+import type { Pace, Week, WeekPrefs } from './autopilot'
 import { FIT_QUESTIONS, type FitKey } from './dream'
 import { excursionById, type ExcursionItem } from './excursions'
 import { itinerary, type Sailing } from './sailings'
@@ -195,16 +195,13 @@ export function sharedDay(cabins: readonly CabinPlan[]): { together: string[]; a
 }
 
 // ---- S4-02 follow-up: apply a week in one tap through the change rule ----
-/** Turns the optimised week into one accepted change per day that differs from the current plan. Each stays undoable and shows in the log. */
-export function applyWeek(s: Sailing, prefs: WeekPrefs, changes: readonly Change[], now: number): { changes: Change[]; applied: number } {
+/** Turns the week the server built into one accepted change per day that differs from the current plan. Each stays undoable and shows in the log. */
+export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], now: number): { changes: Change[]; applied: number } {
   let next = [...changes]
   let applied = 0
-  const week = optimiseWeek(s, prefs)
-  const mobility = prefs.pace === 'relaxed' && prefs.mobility === 'any' ? 'easy' : prefs.mobility
   for (const d of itinerary(s)) {
-    const base = basePlan(s, d.day, wishOf(prefs))
-    const target = basePlan(s, d.day, wishOf(prefs, mobility))
-    const keep = new Set(week.days[d.day - 1].items.map((i) => i.id))
+    const { base, target, items } = week.days[d.day - 1]
+    const keep = new Set(items.map((i) => i.id))
     const edits: Edit[] = [
       ...base.filter((b) => !keep.has(b.id)).map((b): Edit => ({ op: 'drop', id: b.id })),
       ...target.filter((e: PlanEntry) => keep.has(e.id) && !base.some((b) => b.id === e.id)).map((entry): Edit => ({ op: 'add', entry })),

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bookWatch, DEFAULT_PREFS, gentleNotes, newWatch, normalizeWatches, optimiseWeek, stopWatch, walkMinutes, watchState, weekProblems, type SimWeather, type Watch,
+  bookWatch, gentleNotes, newWatch, normalizeWatches, stopWatch, walkMinutes, watchState, type SimWeather, type Watch,
 } from './autopilot'
 import { applyChanges, type PlanEntry } from './planChange'
-import { REFERENCE_SAILING } from './sailings'
 
 const MIN = 60_000
 const HOUR = 60 * MIN
@@ -30,35 +29,6 @@ describe('gentle mode', () => {
     expect(walkMinutes('lido-pool', 'soleil')).toBeGreaterThanOrEqual(8)
     const tight = [entry('a', '10:00', 60, { placeId: 'lido-pool' }), entry('b', '11:05', 30, { placeId: 'soleil' })]
     expect(gentleNotes(rows(tight), calm).some((n) => n.kind === 'walk')).toBe(true)
-  })
-})
-
-describe('week optimiser', () => {
-  it('gives eight days with no crossing items at every pace', () => {
-    for (const pace of ['relaxed', 'balanced', 'packed'] as const) {
-      const w = optimiseWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace })
-      expect(w.days).toHaveLength(8)
-      expect(weekProblems(w), pace).toEqual([])
-    }
-  })
-
-  it('packs more at a higher pace', () => {
-    const count = (pace: 'relaxed' | 'balanced' | 'packed') => optimiseWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace }).days.flatMap((d) => d.items).filter((i) => i.kind === 'event').length
-    expect(count('relaxed')).toBeLessThan(count('balanced'))
-    expect(count('balanced')).toBeLessThanOrEqual(count('packed'))
-  })
-
-  it('keeps to the tour budget and adds up the cost', () => {
-    const w = optimiseWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, maxTour: 10_000 })
-    expect(w.days.every((d) => d.tourCost <= 10_000)).toBe(true)
-    expect(w.totalTours).toBe(w.days.reduce((n, d) => n + d.tourCost, 0))
-  })
-
-  it('leaves out early starts when asked and names a rest day', () => {
-    const w = optimiseWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, noEarly: true })
-    expect(w.days.flatMap((d) => d.items).filter((i) => i.kind !== 'dinner').every((i) => i.start >= '09:00')).toBe(true)
-    const none = optimiseWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, maxTour: 1 })
-    expect(none.days.some((d) => d.restDay)).toBe(true)
   })
 })
 

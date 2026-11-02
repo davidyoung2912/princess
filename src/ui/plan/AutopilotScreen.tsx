@@ -46,7 +46,7 @@ export function AutopilotScreen() {
   const notes = state.gentle ? gentleNotes(dp.rows, dp.weather) : []
 
   const commit = (next: readonly Change[]) => {
-    programmeFollows(api.onboard, dp.sailing, state.prefs, dp.changes, next)
+    void programmeFollows(api.onboard, dp.sailing, state.prefs, dp.changes, next)
     update((s) => ({ ...s, changes: [...s.changes.filter((c) => c.day !== day), ...next] }))
   }
   const propose = (causes: Cause[]) => {
@@ -60,11 +60,13 @@ export function AutopilotScreen() {
     setMessage(added > 0 ? 'autopilot.found' : 'autopilot.none')
   }
   const check = () => {
-    const causes: Cause[] = shipChangesFor(dp.sailing, day, dp.rows)
+    if (!dp.ready) return
+    const causes: Cause[] = shipChangesFor(dp.shipChanges, dp.rows)
     if (dp.weather?.rainFrom && dp.weather.rainTo) causes.push({ kind: 'rain', from: dp.weather.rainFrom, to: dp.weather.rainTo })
     propose(causes)
   }
   const accept = (id: string) => {
+    if (!dp.ready) return
     const r = acceptChange(dp.base, dp.changes, id, now)
     if (r.ok) { commit(r.changes); setMessage('autopilot.accepted') } else setMessage(REFUSED[r.reason])
   }
@@ -91,7 +93,8 @@ export function AutopilotScreen() {
             </li>
           ))}
         </ul>
-        {shown.length === 0 && <p>{t('autopilot.empty')}</p>}
+        {!dp.ready && <FeedWaiting />}
+        {dp.ready && shown.length === 0 && <p>{t('autopilot.empty')}</p>}
         <label className="choice"><input type="checkbox" checked={state.gentle} onChange={(e) => update((s) => ({ ...s, gentle: e.target.checked }))} /><span>{t('gentle.on')}<small>{t('gentle.hint')}</small></span></label>
         {notes.length > 0 && (
           <ul className="plain-list" aria-label={t('gentle.list')}>
@@ -104,7 +107,7 @@ export function AutopilotScreen() {
         <h2 id="ap-check" className="card__title">{t('autopilot.check')}</h2>
         <p>{t('autopilot.checkBody')}</p>
         <div className="button-row">
-          <Button onClick={check}>{t('autopilot.checkNow')}</Button>
+          <Button onClick={check} disabled={!dp.ready}>{t('autopilot.checkNow')}</Button>
           {port && dp.itineraryDay.allAboard && (
             <>
               <label htmlFor="ap-delay" className="muted">{t('autopilot.tender')}</label>

@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { NO_WISH } from './day'
 import {
-  acceptChange, addProposal, alternativesFor, applyChanges, basePlan, canUndo, changeLog, conflicts, programmeDiff, programmeEffects, declineChange, parseTime, proposeReflow, requestChange, shipChangesFor, undoChange, visibleRows,
+  acceptChange, addProposal, applyChanges, canUndo, changeLog, programmeDiff, programmeEffects, declineChange, parseTime, proposeReflow, requestChange, shipChangesFor, undoChange, visibleRows,
   type Change, type PlanEntry,
 } from './planChange'
-import { REFERENCE_SAILING } from './sailings'
 
 const MIN = 60_000
 const NOW = 1_000_000
@@ -12,22 +10,6 @@ const DAY_END = NOW + 600 * MIN
 const ctx = { now: NOW, day: 2, dayEndAt: DAY_END }
 const entry = (id: string, start: string, minutes: number, extra: Partial<PlanEntry> = {}): PlanEntry => ({ id, title: id, start, minutes, kind: 'event', outdoor: false, path: '/plan', ...extra })
 const rowsOf = (list: PlanEntry[]) => applyChanges(list, [])
-
-describe('plan from wishes', () => {
-  it('carries lengths and a dinner on a sea day', () => {
-    const plan = basePlan(REFERENCE_SAILING, 2, NO_WISH)
-    expect(plan.some((e) => e.kind === 'dinner')).toBe(true)
-    expect(plan.every((e) => e.minutes > 0)).toBe(true)
-    expect(conflicts(rowsOf(plan))).toEqual([])
-  })
-
-  it('offers only free, suitable alternatives that are not already in the plan', () => {
-    const plan = basePlan(REFERENCE_SAILING, 2, NO_WISH)
-    const alts = alternativesFor(REFERENCE_SAILING, 2, NO_WISH, plan.map((p) => p.id))
-    expect(alts.length).toBeGreaterThan(0)
-    expect(alts.some((a) => plan.some((p) => p.id === a.id))).toBe(false)
-  })
-})
 
 describe('reflow is only ever a proposal', () => {
   const plan = [entry('show', '20:30', 60), entry('dinner', '18:30', 90, { kind: 'dinner' }), entry('talk', '15:00', 45)]
@@ -96,9 +78,9 @@ describe('reflow is only ever a proposal', () => {
   })
 
   it('finds the real ship changes on a day', () => {
-    const plan2 = basePlan(REFERENCE_SAILING, 2, NO_WISH)
-    const causes = shipChangesFor(REFERENCE_SAILING, 2, rowsOf([...plan2.filter((p) => p.id !== 'trivia'), entry('trivia', '10:30', 45), entry('stage-show', '20:30', 60)]))
-    expect(causes.map((c) => c.kind).sort()).toEqual(['cancelled', 'moved'])
+    const served = [{ id: 'stage-show', kind: 'moved' as const, start: '21:15', reason: 'Weather' }, { id: 'trivia', kind: 'cancelled' as const, start: null, reason: null }, { id: 'gone', kind: 'cancelled' as const, start: null, reason: null }]
+    const causes = shipChangesFor(served, rowsOf([entry('trivia', '10:30', 45), entry('stage-show', '20:30', 60)]))
+    expect(causes.map((c) => c.kind).sort()).toEqual(['cancelled', 'moved'])   // a change to an event that is not in the plan is left out
   })
 })
 

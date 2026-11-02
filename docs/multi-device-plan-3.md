@@ -286,3 +286,23 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Tests:** `FeedRulesTests` rewritten, plus `TheSkyTodaysWeatherAndThePackingAdviceAgree` (a year of dates), `ProviderTests` updated.
 - **Verified:** `npm run test` (1531 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Remaining Phase 4:** see below.
+
+### Slice 5: the week optimiser on the server (built 2026-11-02)
+
+**Server C# not compiled or run** (project rule); tests written, not run.
+
+- **Scope, narrower than first feared.** The optimiser needs only `buildDay` (tour pick, event pick, dinner) over the server's own excursion catalogue, programme (`ProgramRules.On`, `TimingProblem`) and ship places (`StepFree`), all already there. It does **not** need `basePlan`, so `basePlan`, the plan-change rules and the day screens were not ported. The client keeps `buildDay`/`basePlan` for those.
+- **Server:** `POST /me/autopilot/plan` (`Domain/AutopilotRules.cs`, `Services/AutopilotService.cs`, route in `ConciergeEndpoints.cs`) takes `{ sailingId, prefs }` and answers the week. It keeps and books nothing; the sailing must be a known sailing; bad prefs or sailing are `400 badAutopilot`. Ties break on id in ordinal order, as the client did. Tests: `AutopilotRulesTests` (same cases as the deleted client tests, plus validation) and the Swagger list.
+- **Client:** `optimiseWeek`, `weekProblems` and their tests are deleted from `domain/autopilot.ts` (the shapes stay). `feeds/week.ts` (`weekFeed`, `normalizeWeek`, `weekKey`) and `hooks/useWeek.ts`; `WeekPlanner` shows `FeedWaiting` and a disabled Apply button until the week arrives. `applyWeek` takes the served week; its two tests use `domain/weekFixture.ts` (test only).
+- **Verified:** `npm run test` (1530 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Still open in Phase 4:** `buildDay`, `basePlan` and the plan-change rules are still client copies behind the day screens (a `POST /me/day-plan` style route would retire them); `applyWeek` computes the per-day edits from the client's `basePlan`, so it can disagree with the server's week if the two catalogues ever differ. Hub content, service status and guides wait on a localisation decision; `ai/guard.ts` stays by design.
+
+### Slice 6: the day plan on the server (built 2026-11-02)
+
+**Server C# not compiled or run** (project rule); tests written, not run.
+
+- **Server:** `POST /me/day-plan` (`Domain/DayPlanRules.cs`, `AutopilotService.DayAsync`) is `buildDay` plus the day parts of `planChange.ts`: the items with their lengths, outdoor flag, path and reason, the "back by" time, the included events that could join the day, and the ship's moved or cancelled events (from `IProgramChanges`). `AutopilotRules` now builds on `DayPlanRules.Build`, and each day in the week carries `base` (the guest's wishes) and `target` (the week's), so applying a week needs no day plan of its own. Tests: `DayPlanRulesTests` (the deleted client cases plus ship changes, wish checks and base/target); Swagger list updated.
+- **Client:** `buildDay`, `bestTour`, `pickEvents`, `basePlan`, `alternativesFor` and their tests are deleted. `domain/day.ts` holds only `DayWish`. `feeds/dayPlan.ts` (`dayPlanFeed`, `wishKey`, `normalizeDay`) feeds `useDayPlan` (which now says `ready`), the Build my day screen, tomorrow's first item in the briefing and `programmeFollows` (now async: it asks for the day it needs first). `shipChangesFor` reads the server's list. `applyWeek(s, week, changes, now)` uses the week's own `base` and `target`, so it can no longer disagree with the server's week.
+- **Plan-change rules stay on the client on purpose:** `applyChanges`, `proposeReflow`, `acceptChange`, `undoChange` and `requestChange` work on the guest's own changes and the rows the server gave, and use no catalogue. They are the guest's decisions, not data the server serves.
+- **Verified:** `npm run test` (1528 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:** until the day arrives, `useDayPlan` gives an empty plan with `ready: false`; only Autopilot and Build my day wait on it, the briefing, summary, calm, ask and finish screens still read the empty plan for that moment. `programmeEffects` still checks `eventById` on the client programme table. Hub content, service status and guides still wait on a localisation decision, and `ai/guard.ts` stays by design.
