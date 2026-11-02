@@ -15,7 +15,7 @@ public sealed record ItineraryRefDto(int Day, string Port, string? Arrive, strin
 /// <summary>The sailings, the ports they call at, the shared itinerary and the zones the ship's clocks follow (multi-device plan 3, Phase 3). <c>Version</c> changes when the content does.</summary>
 public sealed record SailingsReferenceDto(string Version, IReadOnlyList<SailingRefDto> Sailings, IReadOnlyList<Port> Ports, IReadOnlyList<ItineraryRefDto> Itinerary, string ShipHomeZone, string ShipWestZone);
 
-public sealed record CatalogueReferenceDto(IReadOnlyList<Excursion> Excursions, IReadOnlyList<Venue> Venues, IReadOnlyList<Port> Ports);
+public sealed record CatalogueReferenceDto(string Version, IReadOnlyList<Excursion> Excursions, IReadOnlyList<Venue> Venues, IReadOnlyList<Port> Ports);
 
 /// <summary>
 /// Authored access reference data that the screens used to hold alone (multi-device plan Phase 5): how hard each excursion is on foot,
@@ -39,7 +39,13 @@ public static class ReferenceRules
         ["rtb-drive"] = new(0.3, false, "medium", "medium", true, false, false),
     };
 
-    public static CatalogueReferenceDto Catalogue() => new(ExcursionRules.Catalogue, DiningRules.Venues, [.. Itinerary.Ports.Values]);
+    public static CatalogueReferenceDto Catalogue()
+    {
+        var ports = Itinerary.Ports.Values.ToList();
+        var text = System.Text.Json.JsonSerializer.Serialize(new { e = ExcursionRules.Catalogue, v = DiningRules.Venues, p = ports });
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
+        return new(version, ExcursionRules.Catalogue, DiningRules.Venues, ports);
+    }
 
     public static SailingsReferenceDto Sailings(IEnumerable<SailingRow> rows)
     {

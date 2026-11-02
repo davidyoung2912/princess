@@ -1,6 +1,7 @@
 import type { Cents } from './pricing'
 import { personaById, type PersonaId, type Tier } from './personas'
 import { addDays } from './timezones'
+import { limit } from './limits'
 
 /**
  * After the cruise (POS-01 to POS-14): cases for lost items, bills, claims and complaints, feedback with service
@@ -25,12 +26,12 @@ export const OPEN_KINDS: readonly CaseKind[] = ['lostItem', 'billing', 'claim', 
 export const SLA_HOURS: Record<CaseKind, number> = { lostItem: 72, billing: 120, claim: 240, complaint: 72, recovery: 48 }
 const CODES: Record<CaseKind, string> = { lostItem: 'LF', billing: 'BD', claim: 'CL', complaint: 'CP', recovery: 'SR' }
 
-export const CASE_TEXT_MAX = 600
-export const CASE_PLACE_MAX = 80
-export const CLAIM_MAX = 500_000
-export const RECOVERY_CREDIT: Cents = 5000
+export let CASE_TEXT_MAX = 600
+export let CASE_PLACE_MAX = 80
+export let CLAIM_MAX = 500_000
+export let RECOVERY_CREDIT: Cents = 5000
 /** Days after the answer that a refund takes to reach the card. */
-export const REFUND_DAYS = 3
+export let REFUND_DAYS = 3
 
 export interface CaseInput { kind: CaseKind; summary: string; place: string; /** For a bill query, the line and its amount; for a claim, the amount asked for. */ lineId: string; cents: number }
 
@@ -101,11 +102,11 @@ export interface Feedback {
 
 export const blankFeedback = (): Feedback => ({ overall: 0, areas: {}, comment: '', crew: [], allowContact: false, shareName: false })
 
-export const COMMENT_MAX = 1000
-export const CREW_MAX = 3
-export const CREW_NAME_MAX = 60
+export let COMMENT_MAX = 1000
+export let CREW_MAX = 3
+export let CREW_NAME_MAX = 60
 /** Feedback can be changed this many days after the cruise. */
-export const FEEDBACK_EDIT_DAYS = 14
+export let FEEDBACK_EDIT_DAYS = 14
 
 const rating = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 5
 
@@ -163,7 +164,7 @@ export function loyaltyStatus(id: PersonaId, nights: number, counted: boolean): 
 
 // ---- Referral (POS-08) ----
 
-export const REFERRAL_CREDIT: Cents = 5000
+export let REFERRAL_CREDIT: Cents = 5000
 export type ReferralState = 'invited' | 'booked' | 'sailed'
 
 export const referralCode = (id: PersonaId): string => `${personaById(id)!.firstName.toUpperCase()}${100 + (hash(`ref|${id}`) % 900)}`
@@ -179,16 +180,16 @@ export const referralEarned = (id: PersonaId): Cents => (REFERRALS[id] ?? []).fi
 // ---- Rebooking (POS-06) ----
 
 /** Hold a price and an offer for this many days (a week). */
-export const HOLD_DAYS = 7
+export let HOLD_DAYS = 7
 /** Deposit per guest when booking on board, instead of a fifth of the fare. */
-export const ONBOARD_DEPOSIT: Cents = 10_000
+export let ONBOARD_DEPOSIT: Cents = 10_000
 /** Onboard credit for booking on board, and the extra for each level. */
-export const BOOKING_CREDIT: Cents = 10_000
+export let BOOKING_CREDIT: Cents = 10_000
 export const LEVEL_CREDIT: Record<Tier, Cents> = { none: 0, gold: 2500, ruby: 5000, platinum: 7500, elite: 10_000 }
 /** Future cruise credit left from an earlier cruise. */
 export const FCC_LEFT: Partial<Record<PersonaId, Cents>> = { gerald: 15_000, linda: 10_000, alexander: 25_000 }
 /** Booking at least this many days after the cruise ends. */
-export const REBOOK_GAP_DAYS = 14
+export let REBOOK_GAP_DAYS = 14
 
 export const fccBefore = (id: PersonaId): Cents => FCC_LEFT[id] ?? 0
 
@@ -221,3 +222,19 @@ export const SUSTAINABILITY = {
   programmes: ['shorePower', 'foodWaste', 'noPlastic', 'ecoExcursions'] as const,
   tips: ['towels', 'refill', 'excursions', 'lights'] as const,
 } as const
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('CASE_TEXT_MAX', (v) => { CASE_TEXT_MAX = v }, CASE_TEXT_MAX)
+limit('CASE_PLACE_MAX', (v) => { CASE_PLACE_MAX = v }, CASE_PLACE_MAX)
+limit('CLAIM_MAX', (v) => { CLAIM_MAX = v }, CLAIM_MAX)
+limit('RECOVERY_CREDIT', (v) => { RECOVERY_CREDIT = v }, RECOVERY_CREDIT)
+limit('REFUND_DAYS', (v) => { REFUND_DAYS = v }, REFUND_DAYS)
+limit('COMMENT_MAX', (v) => { COMMENT_MAX = v }, COMMENT_MAX)
+limit('CREW_MAX', (v) => { CREW_MAX = v }, CREW_MAX)
+limit('CREW_NAME_MAX', (v) => { CREW_NAME_MAX = v }, CREW_NAME_MAX)
+limit('FEEDBACK_EDIT_DAYS', (v) => { FEEDBACK_EDIT_DAYS = v }, FEEDBACK_EDIT_DAYS)
+limit('REFERRAL_CREDIT', (v) => { REFERRAL_CREDIT = v }, REFERRAL_CREDIT)
+limit('HOLD_DAYS', (v) => { HOLD_DAYS = v }, HOLD_DAYS)
+limit('ONBOARD_DEPOSIT', (v) => { ONBOARD_DEPOSIT = v }, ONBOARD_DEPOSIT)
+limit('BOOKING_CREDIT', (v) => { BOOKING_CREDIT = v }, BOOKING_CREDIT)
+limit('REBOOK_GAP_DAYS', (v) => { REBOOK_GAP_DAYS = v }, REBOOK_GAP_DAYS)

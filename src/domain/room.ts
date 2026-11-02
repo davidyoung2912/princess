@@ -1,4 +1,5 @@
 import type { StateroomKind } from './personas'
+import { limit } from './limits'
 
 /**
  * The stateroom (ROM-01, ROM-02, ROM-03, ROM-05): the information card, housekeeping preferences, Do Not Disturb, and
@@ -87,6 +88,9 @@ export function devicesProblem(p: Partial<Devices>, view: boolean): RoomProblem 
 }
 
 /** After this many hours of Do Not Disturb the steward checks on the guest (a safety rule on many ships). */
-export const DND_CHECK_HOURS = 24
+export let DND_CHECK_HOURS = 24
 
 export const dndCheckDue = (h: Housekeeping, now: number): boolean => h.mode === 'dnd' && h.since !== null && now - h.since >= DND_CHECK_HOURS * 3_600_000
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('DND_CHECK_HOURS', (v) => { DND_CHECK_HOURS = v }, DND_CHECK_HOURS)

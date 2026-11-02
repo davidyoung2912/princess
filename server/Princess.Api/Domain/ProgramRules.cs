@@ -10,6 +10,9 @@ public sealed record DatedEvent(
 
 public sealed record PlanChange(string EventId, int Day, string Kind, string? Start, string Reason);
 
+/// <summary>The programme as the client reads it: every event with the days it runs, and the mid-day changes now in force (shown only when a plan-change scenario is on).</summary>
+public sealed record ProgramReferenceDto(string Version, IReadOnlyList<ShipEvent> Events, IReadOnlyList<PlanChange> PlanChanges);
+
 public sealed record MusterStation(string Letter, string Name, string PlaceId, int Deck);
 
 /// <summary>Ported from <c>src/domain/program.ts</c> (the daily programme, "Patter") and the muster stations of <c>src/domain/deck.ts</c>. Titles, times and prices are authored concept values.</summary>
@@ -58,6 +61,14 @@ public static class ProgramRules
         Ev("port-quiet", Port, "17:45", 60, "Quiet hour in the spa", "lotus", "adults", "wellness", 2500, true),
     ];
 
+    public static ProgramReferenceDto Reference(IReadOnlyList<PlanChange> feed)
+    {
+        var text = string.Join('|', Events.Select(e => $"{e.Id}:{string.Join(',', e.Days)}:{e.Start}:{e.Minutes}:{e.Title}:{e.PlaceId}:{e.Age}:{e.Interest}:{e.Extra}:{e.AfterAllAboard}"))
+            + "#" + string.Join('|', feed.Select(c => $"{c.EventId}:{c.Day}:{c.Kind}:{c.Start}:{c.Reason}"));
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
+        return new(version, Events, feed);
+    }
+
     public static ShipEvent? ById(string? id) => Events.FirstOrDefault(e => e.Id == id);
 
     /// <summary>A change the ship makes mid-day (OB-08): the scenario "Daily plan changes mid-day".</summary>
@@ -68,8 +79,9 @@ public static class ProgramRules
     ];
 
     /// <summary>The events on a day of the cruise, in time order, with any mid-day changes applied when <paramref name="changes"/> is on. A port-day event is listed only once the ship is back aboard.</summary>
-    public static List<DatedEvent> On(DateOnly departure, int day, bool changes)
+    public static List<DatedEvent> On(DateOnly departure, int day, bool changes, IReadOnlyList<PlanChange>? feed = null)
     {
+        feed ??= PlanChanges;
         if (day is < 1 or > 8) return [];
         var date = departure.AddDays(day - 1);
         var zone = Itinerary.ShipZoneOnDate(departure, date);
@@ -77,7 +89,7 @@ public static class ProgramRules
         var list = new List<DatedEvent>();
         foreach (var e in Events.Where(e => e.Days.Contains(day)))
         {
-            var change = changes ? PlanChanges.FirstOrDefault(c => c.EventId == e.Id && c.Day == day) : null;
+            var change = changes ? feed.FirstOrDefault(c => c.EventId == e.Id && c.Day == day) : null;
             var start = change is { Kind: "moved", Start: { } s } ? s : e.Start;
             var startAt = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(start, "HH:mm"), zone);
             if (e.AfterAllAboard && aboard is { } a && startAt < a) continue;

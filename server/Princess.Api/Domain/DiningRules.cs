@@ -1,6 +1,6 @@
 namespace Princess.Api.Domain;
 
-public sealed record Venue(string Id, string Name, string Kind, long Cover, bool WalkIn);
+public sealed record Venue(string Id, string Name, string Kind, long Cover, bool WalkIn, string Deck, string Cuisine, string Dress, string Menu);
 
 public sealed record Slot(string Time, int Tables);
 
@@ -19,12 +19,12 @@ public static class DiningRules
 {
     public static readonly IReadOnlyList<Venue> Venues =
     [
-        new("eclipse", "Eclipse Dining Room", "main", 0, false),
-        new("crown", "Crown Grill", "specialty", 4_500, false),
-        new("sabatini", "Sabatini’s", "specialty", 4_200, false),
-        new("catch", "The Catch by Rudi", "specialty", 4_800, false),
-        new("love", "Love by Britto", "specialty", 6_500, false),
-        new("alfredo", "Alfredo’s Pizzeria", "casual", 1_499, true),
+        new("eclipse", "Eclipse Dining Room", "main", 0, false, "Deck 7 aft", "Traditional three-course dinner", "smart", "Seared sea bass, braised short rib, a vegetarian tasting plate, and a different dessert every night."),
+        new("crown", "Crown Grill", "specialty", 4_500, false, "Deck 7 aft", "Steakhouse", "smart", "Aged filet, a shared seafood tower, creamed spinach and a warm chocolate soufflé."),
+        new("sabatini", "Sabatini’s", "specialty", 4_200, false, "Deck 8 aft", "Italian trattoria", "smart", "Hand-rolled pasta, veal Milanese, a tiramisu made at the table."),
+        new("catch", "The Catch by Rudi", "specialty", 4_800, false, "Deck 7 midship", "Seafood", "smart", "Lobster bisque, grilled catch of the day, and a key lime tart."),
+        new("love", "Love by Britto", "specialty", 6_500, false, "Deck 17 aft", "Prix fixe with a wake view", "elegant", "Five small courses, with wine pairings available, served as the sun sets behind the ship."),
+        new("alfredo", "Alfredo’s Pizzeria", "casual", 1_499, true, "Deck 9 Piazza", "Neapolitan pizza", "casual", "Margherita, diavola and a pizza of the day, with a dessert to share."),
     ];
 
     public static Venue? VenueById(string? id) => Venues.FirstOrDefault(v => v.Id == id);

@@ -1,5 +1,6 @@
 import type { PersonaId } from './personas'
 import type { Cents } from './pricing'
+import { limit } from './limits'
 
 /**
  * Ship photos (SHP-02, SHP-07): browse by day, place and person, choose photos first, see package options priced
@@ -49,7 +50,7 @@ export type OptionId = 'each' | 'five' | 'all'
 export const OPTION_IDS: readonly OptionId[] = ['each', 'five', 'all']
 
 /** Digital photos the Premier package includes. */
-export const INCLUDED_WITH_PREMIER = 12
+export let INCLUDED_WITH_PREMIER = 12
 
 export interface PhotoOption { id: OptionId; total: Cents; /** Photos in the choice paid for by this option. */ covers: number }
 
@@ -70,7 +71,7 @@ export function photoOptions(selected: number, includedLeft: number): { included
 export const cheapest = (options: readonly PhotoOption[]): OptionId => options.reduce((a, b) => (b.total < a.total ? b : a)).id
 
 /** Photos saved per attempt; an attempt that is cut short keeps what it saved. */
-export const DOWNLOAD_BATCH = 5
+export let DOWNLOAD_BATCH = 5
 
 /** A simple check value for a saved photo, so "12 of 12 saved" means 12 that match. */
 export function checksum(id: string): string {
@@ -79,7 +80,7 @@ export function checksum(id: string): string {
   return (h >>> 0).toString(16).padStart(8, '0')
 }
 
-export const REDOWNLOAD_DAYS = 14
+export let REDOWNLOAD_DAYS = 14
 
 export interface PhotographerSlot { day: number; time: string; placeId: string; what: string }
 
@@ -91,3 +92,8 @@ export const PHOTOGRAPHERS: readonly PhotographerSlot[] = [
   { day: 6, time: '19:00', placeId: 'eclipse', what: 'Dining room table photos' },
   { day: 7, time: '18:00', placeId: 'piazza', what: 'Second formal night portraits' },
 ]
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('INCLUDED_WITH_PREMIER', (v) => { INCLUDED_WITH_PREMIER = v }, INCLUDED_WITH_PREMIER)
+limit('DOWNLOAD_BATCH', (v) => { DOWNLOAD_BATCH = v }, DOWNLOAD_BATCH)
+limit('REDOWNLOAD_DAYS', (v) => { REDOWNLOAD_DAYS = v }, REDOWNLOAD_DAYS)

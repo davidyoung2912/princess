@@ -87,16 +87,16 @@ export function priceState(paidUnit: Cents, nowUnit: Cents): { state: PriceState
 }
 
 /** Purchases can be cancelled for a full refund until this many days before sailing. */
-export const CANCEL_UNTIL_DAYS = 3
+export let CANCEL_UNTIL_DAYS = 3
 export const canCancelPurchase = (daysToDeparture: number): boolean => daysToDeparture >= CANCEL_UNTIL_DAYS
 
 // ---- "Is it worth it?" ----
 
 /** The average price of one drink on board, before the 18% service charge. */
-export const AVG_DRINK: Cents = 1100
-export const SERVICE_CHARGE = 0.18
+export let AVG_DRINK: Cents = 1100
+export let SERVICE_CHARGE = 0.18
 /** Average cover charge across the specialty restaurants. */
-export const AVG_COVER: Cents = 4500
+export let AVG_COVER: Cents = 4500
 
 export interface Usage {
   drinksPerDay: number
@@ -161,4 +161,14 @@ export interface SeedPurchase {
 export const SEEDED_PURCHASES: Record<string, readonly SeedPurchase[]> = {
   marcus: [{ item: 'drinks', guests: ['marcus', 'elena'], boughtDaysBefore: 40 }],
   gerald: [{ item: 'photo', guests: ['gerald'], boughtDaysBefore: 30 }],
+}
+
+/** Replaces the add-on table and the worth-it figures in place (`packagesServed.ts`), so earlier imports see the served values. */
+export function replacePackages(next: { addOns: readonly AddOn[]; avgDrink: Cents; serviceCharge: number; avgCover: Cents; cancelUntilDays: number }): void {
+  for (const a of next.addOns) ADD_ONS[a.id] = a
+  AVG_DRINK = next.avgDrink
+  SERVICE_CHARGE = next.serviceCharge
+  AVG_COVER = next.avgCover
+  CANCEL_UNTIL_DAYS = next.cancelUntilDays
+  DEFAULT_USAGE.avgDrink = next.avgDrink
 }

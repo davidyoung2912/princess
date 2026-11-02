@@ -108,6 +108,17 @@ public sealed class SimSlotWatchFeed : ISlotWatchFeed
     public WatchOpeningDto Opening(string watchId, long createdAt, long slotAt) => OnboardFeedRules.WatchOpening(watchId, createdAt, slotAt);
 }
 
+/// <summary>The mid-day changes the ship makes to the programme (moved or cancelled events, with a reason). A real operations feed replaces the simulated one.</summary>
+public interface IProgramChanges
+{
+    IReadOnlyList<PlanChange> Current();
+}
+
+public sealed class SimProgramChanges : IProgramChanges
+{
+    public IReadOnlyList<PlanChange> Current() => ProgramRules.PlanChanges;
+}
+
 public sealed class SimFareFeed : IFareFeed
 {
     public IReadOnlyList<FarePointDto> History(string bookingNumber, long bookedTotal, string bookedOn, string today) => ShipFeedRules.FareHistory(bookingNumber, bookedTotal, bookedOn, today);

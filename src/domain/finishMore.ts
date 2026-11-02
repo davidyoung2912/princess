@@ -1,7 +1,7 @@
 import { EXCURSIONS } from './excursions'
 import { diningPlaces } from './aboardMore'
 import { type AllergyFlag, galleyStatus, type GalleyStatus, splitEven, type Share } from './bookingPrep'
-import { CLEARANCE_MINUTES, offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
+import { offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
 import { FARE_IDS, type FareId } from './fares'
 import { rankNudges, type Nudge, type NudgeBudget } from './nudges'
 import { PORT_KNOWLEDGE, perPerson, type GuidePort } from './portContent'
@@ -59,7 +59,6 @@ export function flightAdvice(s: Sailing, plan: OnwardPlan, group: TagGroup, easy
 }
 /** In low-stress mode the leave-by time is earlier by an hour. */
 export const easyLeaveBy = (leaveBy: number, easy: boolean): number => (easy ? leaveBy - EASY_EXTRA_MIN * MIN : leaveBy)
-export const CLEARANCE_TEXT_MIN = CLEARANCE_MINUTES
 
 // ---- S7-07: ride pool through a ledger ----
 export interface RidePool { meet: string; total: Cents; shares: Share[] }

@@ -134,3 +134,10 @@ export const overCeiling = (quoted: number, p: FairPrice): boolean => quoted > p
 
 /** The most a guest should pay for a route given how many people share the car; per-person prices stay under the car ceiling. */
 export const perPerson = (p: FairPrice, people: number): number => Math.round((p.car / Math.max(1, Math.min(4, people))) * 100) / 100
+
+/** Replaces the port knowledge in place (`portsServed.ts`), so earlier imports see the served values. */
+export function replacePortKnowledge(next: Record<string, PortKnowledge>): void {
+  const k = PORT_KNOWLEDGE as Record<string, PortKnowledge>
+  for (const id of Object.keys(k)) delete k[id]
+  Object.assign(k, next)
+}

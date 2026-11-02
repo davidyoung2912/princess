@@ -24,6 +24,18 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/ship", () => Results.Ok(ShipReference.Get()))
             .WithTags("Reference").WithSummary("The ship (facts, highlights, accessibility notes), its stateroom categories, the deck plan, the six elevator banks and the muster stations. `version` changes when any of it does.");
 
+        api.MapGet("/reference/program", (IProgramChanges changes) => Results.Ok(ProgramRules.Reference(changes.Current())))
+            .WithTags("Reference").WithSummary("Every programme event with the days it runs, and the mid-day changes the ship has made (moved or cancelled, with a reason). A guest sees the changes only when the day's plan-change scenario applies to them; `GET /onboard/program/{day}` is the guest's own day.");
+
+        api.MapGet("/reference/ports", () => Results.Ok(PortsReference.Get()))
+            .WithTags("Reference").WithSummary("The port guides (landing, access, what to do, excursion summaries), the port knowledge (fair taxi prices, scam alerts, phrases, allergy cards, walks, day passes, family notes, vendors) and the map coordinates, by port id. `version` changes when any of it does.");
+
+        api.MapGet("/reference/packages", () => Results.Ok(PackageRules.Reference()))
+            .WithTags("Reference").WithSummary("The add-ons (name, blurb, unit, base price, price change, minimum age), the average drink and cover figures the worth-it screens use, and the refund window in days. Prices a guest pays are still worked out by the server.");
+
+        api.MapGet("/reference/limits", () => Results.Ok(LimitsReference.Get()))
+            .WithTags("Reference").WithSummary("The limits, windows, fees and rates the server enforces (request caps, text lengths, notice periods, credits), by the client's constant names. Each value is the rule's own constant. `version` changes when any value does.");
+
         api.MapGet("/feeds/sky", (string sailing, int day, string port, IWeatherService weather) =>
             {
                 if (string.IsNullOrWhiteSpace(sailing) || sailing.Length > 40 || string.IsNullOrWhiteSpace(port) || port.Length > 40 || day is < 1 or > 60)

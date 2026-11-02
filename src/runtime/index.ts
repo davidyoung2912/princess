@@ -21,6 +21,10 @@ import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
 import { applyShip, normalizeShip } from '../domain/shipServed'
+import { applyProgram, normalizeProgram } from '../domain/programServed'
+import { applyPorts, normalizePorts } from '../domain/portsServed'
+import { applyPackages, normalizePackages } from '../domain/packagesServed'
+import { applyLimits, normalizeLimits } from '../domain/limitsServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
@@ -106,56 +110,31 @@ function loadReference(): void {
     .catch(() => {})
 }
 
+
 /**
- * The catalogue (excursions, dining terms) is public: the copy kept on this device is used at once, then the server's answer replaces it and is kept
- * for next time. Without a server, or when it cannot be reached or read, the authored copy (or the kept one) stays in use.
+ * A served reference table (sailings, ship, programme, and the rest): public, so the copy kept on this device is applied at once, then the server's
+ * answer if its `version` differs, and the raw answer is kept for next time. A missing, unreachable or malformed answer leaves what is in use.
  */
-function loadCatalogue(): void {
+function loadTable<T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void): void {
   const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
-  const kept = cacheGet(store(), 'catalogue', 'v1', normalizeCatalogue)
-  if (kept) applyCatalogue(kept.value)
-  void http.get<unknown>('/reference/catalogue', { anonymous: true })
+  const kept = cacheGet(store(), kind, 'v1', normalize)
+  if (kept) apply(kept.value)
+  void http.get<unknown>(path, { anonymous: true })
     .then((raw) => {
-      const fresh = normalizeCatalogue(raw)
+      const fresh = normalize(raw)
       if (!fresh) return
-      applyCatalogue(fresh)
-      cachePut(store(), 'catalogue', 'v1', fresh, Date.now())
+      if (fresh.version !== kept?.value.version) apply(fresh)
+      cachePut(store(), kind, 'v1', raw, Date.now())
     })
     .catch(() => {})
 }
-loadCatalogue()
-
-/** The sailings table (sailings, ports, itinerary, ship zones): public, kept on the device as a cache and refreshed from the server, like the catalogue. */
-function loadSailings(): void {
-  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
-  const kept = cacheGet(store(), 'sailings', 'v1', normalizeSailings)
-  if (kept) applySailings(kept.value)
-  void http.get<unknown>('/reference/sailings', { anonymous: true })
-    .then((raw) => {
-      const fresh = normalizeSailings(raw)
-      if (!fresh) return
-      if (fresh.version !== kept?.value.version) applySailings(fresh)
-      cachePut(store(), 'sailings', 'v1', raw, Date.now())
-    })
-    .catch(() => {})
-}
-loadSailings()
-
-/** The ship reference (facts, categories, deck plan, elevators, muster stations): public, cached on the device and refreshed from the server. */
-function loadShip(): void {
-  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
-  const kept = cacheGet(store(), 'ship', 'v1', normalizeShip)
-  if (kept) applyShip(kept.value)
-  void http.get<unknown>('/reference/ship', { anonymous: true })
-    .then((raw) => {
-      const fresh = normalizeShip(raw)
-      if (!fresh) return
-      if (fresh.version !== kept?.value.version) applyShip(fresh)
-      cachePut(store(), 'ship', 'v1', raw, Date.now())
-    })
-    .catch(() => {})
-}
-loadShip()
+loadTable('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue)
+loadTable('sailings', '/reference/sailings', normalizeSailings, applySailings)
+loadTable('ship', '/reference/ship', normalizeShip, applyShip)
+loadTable('program', '/reference/program', normalizeProgram, applyProgram)
+loadTable('ports', '/reference/ports', normalizePorts, applyPorts)
+loadTable('packages', '/reference/packages', normalizePackages, applyPackages)
+loadTable('limits', '/reference/limits', normalizeLimits, applyLimits)
 
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {

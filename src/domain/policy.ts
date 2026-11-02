@@ -1,5 +1,6 @@
 import type { Cents } from './pricing'
 import { DEFAULT_FINAL_PAYMENT_DAYS } from './trip'
+import { limit } from './limits'
 
 /** Cancellation and change rules (BOK-08), and the legal documents a guest accepts (BOK-19). All authored concept content, not Princess's terms. */
 export type CancelTier = 'free24h' | 'early' | 'mid' | 'late' | 'final'
@@ -21,8 +22,8 @@ export const CANCEL_ROWS: readonly CancelRow[] = [
 ]
 
 /** Free cancellation for a day after booking, if sailing is at least this many days away. */
-export const FREE_CANCEL_HOURS = 24
-export const FREE_CANCEL_MIN_DAYS = 7
+export let FREE_CANCEL_HOURS = 24
+export let FREE_CANCEL_MIN_DAYS = 7
 
 export interface CancelInput {
   total: Cents
@@ -116,3 +117,7 @@ export interface Acceptance { id: LegalId; version: string; at: number }
 /** The log written when someone books: one entry per document, with the version they were shown. */
 export const acceptanceLog = (accepted: Partial<Record<LegalId, boolean>>, at: number): Acceptance[] =>
   LEGAL.filter((l) => accepted[l.id] === true).map((l) => ({ id: l.id, version: l.version, at }))
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('FREE_CANCEL_HOURS', (v) => { FREE_CANCEL_HOURS = v }, FREE_CANCEL_HOURS)
+limit('FREE_CANCEL_MIN_DAYS', (v) => { FREE_CANCEL_MIN_DAYS = v }, FREE_CANCEL_MIN_DAYS)

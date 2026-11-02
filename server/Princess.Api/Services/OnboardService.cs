@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// Any guest on the booking reads; an adult guest writes. "Now" is the person's own clock (D4). Weather is a mocked service (data model section 8); scenarios apply only to demo users.
 /// </summary>
 public sealed class OnboardService(
-    ScopeLoader scopes, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt, IWeatherService weather)
+    ScopeLoader scopes, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt, IWeatherService weather, IProgramChanges programChanges)
 {
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -55,7 +55,7 @@ public sealed class OnboardService(
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         if (day is < 1 or > 8) throw ApiException.Invalid("day");
         var changes = (await ScenariosAsync(actor, ct)).Contains("planChange");
-        var events = ProgramRules.On(c.Departure, day, changes);
+        var events = ProgramRules.On(c.Departure, day, changes, programChanges.Current());
         var x = Itinerary.Days(c.Departure)[day - 1];
         var mine = (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == day).Select(r => r.EventId).ToHashSet();
         return new ProgramViewDto(day, Iso(x.Date), x.Port, events, [.. events.Select(e => e.Id).Where(mine.Contains)], events.Any(e => e.Status != "on"), !actor.IsSupervised);

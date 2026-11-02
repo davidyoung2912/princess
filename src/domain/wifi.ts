@@ -1,4 +1,5 @@
 import type { Cents } from './pricing'
+import { limit } from './limits'
 
 /** Ship Wi-Fi (NET-02): plans, devices, a usage meter and sign-in help. The app itself never needs a paid plan (NET-01). Plans and prices are authored concept values. */
 export type WifiPlan = 'messaging' | 'surf' | 'stream'
@@ -16,7 +17,7 @@ export const planById = (id: unknown): PlanDef | undefined => PLANS.find((p) => 
 export const MAX_DEVICES = 6
 export const MAX_DAYS = 8
 /** The plan a package or tier gives for free. */
-export const INCLUDED_PLAN: WifiPlan = 'surf'
+export let INCLUDED_PLAN: WifiPlan = 'surf'
 
 export interface StoredDevice { id: string; name: string; plan: WifiPlan; addedAt: number; days: number; included: boolean; paid: Cents }
 
@@ -52,3 +53,6 @@ export function addProblem(name: unknown, plan: unknown, days: unknown, existing
 export const daysLeft = (d: StoredDevice, now: number): number => Math.max(1, Math.ceil((expiresAt(d) - now) / DAY))
 
 export const upgradeCost = (d: StoredDevice, to: PlanDef, now: number): Cents => Math.max(0, to.perDay - (planById(d.plan)?.perDay ?? 0)) * daysLeft(d, now)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('INCLUDED_PLAN', (v) => { INCLUDED_PLAN = v }, INCLUDED_PLAN)

@@ -1,4 +1,5 @@
 import { MEDICAL_HOURS } from './safety'
+import { limit } from './limits'
 
 /**
  * Health on board (SAF-03): Medical Center hours, the fee and insurance reminder, reporting illness early, and requests
@@ -23,7 +24,7 @@ export const isSymptom = (v: unknown): v is Symptom => SYMPTOMS.includes(v as Sy
 /** Hours a guest stays in the stateroom after the last symptom. */
 export const ISOLATE_HOURS = 24
 /** How long the isolation meal arrangement lasts from the report, if nothing else is said. */
-export const ISOLATION_WINDOW_HOURS = 72
+export let ISOLATION_WINDOW_HOURS = 72
 
 /** Typical minutes before a nurse calls or a request is answered. */
 export const RESPONSE_MINUTES: Record<'illness' | RequestKind, number> = { illness: 15, seasick: 20, medication: 30, devicePower: 45 }
@@ -50,3 +51,6 @@ export function reportProblem(guests: readonly string[], symptoms: readonly unkn
   if (typeof startedHoursAgo !== 'number' || !Number.isInteger(startedHoursAgo) || startedHoursAgo < 0 || startedHoursAgo > 96) return 'badStart'
   return null
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('ISOLATION_WINDOW_HOURS', (v) => { ISOLATION_WINDOW_HOURS = v }, ISOLATION_WINDOW_HOURS)

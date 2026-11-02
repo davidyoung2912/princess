@@ -4,6 +4,7 @@ import type { PersonaId } from './personas'
 import type { Cents } from './pricing'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
+import { limit } from './limits'
 
 /**
  * Ordering to a stateroom or a spot on deck (DIN-04), room service and scheduled breakfast (DIN-05), and what happens
@@ -88,13 +89,13 @@ export function locationProblem(l: Location): 'badLocation' | null {
   return typeof l.text === 'string' && l.text.trim().length >= 3 && l.text.trim().length <= 80 ? null : 'badLocation'
 }
 
-export const DELIVERY_FEE: Cents = 200
+export let DELIVERY_FEE: Cents = 200
 export const TIPS: readonly Cents[] = [0, 200, 500]
 export const MAX_PER_LINE = 10
 export const MAX_LINES = 12
-export const DRINKING_AGE = 21
+export let DRINKING_AGE = 21
 /** Alcohol carries the same service charge as at a bar. */
-export const SERVICE_RATE = 0.18
+export let SERVICE_RATE = 0.18
 
 export interface OrderLine { itemId: string; qty: number; extras: string[]; guest: PersonaId; note?: string }
 
@@ -232,7 +233,7 @@ export const canMove = (stage: Stage): boolean => stage !== 'delivered' && stage
 
 export const BREAKFAST_SLOTS: readonly string[] = ['06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30']
 /** Breakfast needs this much notice. */
-export const BREAKFAST_LEAD_MINUTES = 120
+export let BREAKFAST_LEAD_MINUTES = 120
 
 export interface Morning { date: string; day: number; slots: { time: string; at: number }[] }
 
@@ -265,3 +266,9 @@ export function orderFolioLines(id: string, priced: Priced, at: number, day: num
   if (cancelledAt !== undefined && priced.total > 0) lines.push({ id: `order-${id}-refund`, day, at: cancelledAt, category: 'credit', description: 'Refund, order cancelled', guest: who, cents: -priced.total })
   return lines
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('DELIVERY_FEE', (v) => { DELIVERY_FEE = v }, DELIVERY_FEE)
+limit('DRINKING_AGE', (v) => { DRINKING_AGE = v }, DRINKING_AGE)
+limit('SERVICE_RATE', (v) => { SERVICE_RATE = v }, SERVICE_RATE)
+limit('BREAKFAST_LEAD_MINUTES', (v) => { BREAKFAST_LEAD_MINUTES = v }, BREAKFAST_LEAD_MINUTES)

@@ -1,6 +1,7 @@
 import type { Cents } from './pricing'
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, NIGHTS } from './pricing'
 import type { ScenarioId } from './scenarios'
+import { limit } from './limits'
 
 /** Service requests, security reports, the drinks tracker, group bills, money, cabin parties, safeguards and system status (MSG-03, SAF-04, DIN-06, DIN-09, ACC-03, ACC-05, ACC-07, ROM-06, MSG-05, SUP-04). */
 const MIN = 60_000
@@ -34,14 +35,14 @@ export function requestStage(placedAt: number, etaMin: number, now: number, canc
   return waited >= (etaMin * MIN) / 2 ? 'onTheWay' : 'received'
 }
 
-export const MAX_OPEN_REQUESTS = 6
+export let MAX_OPEN_REQUESTS = 6
 
 // ---- Security and man-overboard reporting (SAF-04) ----
 export type ReportKind = 'overboard' | 'theft' | 'harassment' | 'suspicious' | 'hazard'
 export const REPORT_KINDS: readonly ReportKind[] = ['overboard', 'theft', 'harassment', 'suspicious', 'hazard']
 /** These need a call at once, not a form. */
 export const URGENT_REPORTS: readonly ReportKind[] = ['overboard']
-export const MAX_REPORT_TEXT = 600
+export let MAX_REPORT_TEXT = 600
 
 export type ReportProblem = 'badKind' | 'noWhere' | 'noNote' | 'tooLong'
 export function reportProblem(kind: unknown, where: unknown, note: unknown): ReportProblem | null {
@@ -67,10 +68,10 @@ export const BAR_MENU: readonly Drink[] = [
 export const drinkById = (id: unknown): Drink | undefined => BAR_MENU.find((d) => d.id === id)
 
 /** A drinks package covers this many drinks a day, up to a price per drink. */
-export const DAILY_PACKAGE_DRINKS = 15
-export const ALERT_AFTER = 4
-export const ALERT_WINDOW_MIN = 180
-export const STOP_AFTER = 6
+export let DAILY_PACKAGE_DRINKS = 15
+export let ALERT_AFTER = 4
+export let ALERT_WINDOW_MIN = 180
+export let STOP_AFTER = 6
 
 export interface DrinkLog { id: string; drinkId: string; at: number }
 
@@ -99,7 +100,7 @@ export function drinkSummary(today: readonly DrinkLog[], capUsd: number, now: nu
 }
 
 // ---- Group dining and splitting the bill (DIN-09) ----
-export const MAX_TABLE = 8
+export let MAX_TABLE = 8
 export interface Friend { name: string; cabin: string }
 
 /** Dollars split fairly: shares add up to the total, with spare cents going to the first people. */
@@ -133,7 +134,7 @@ export function topUpProblem(dollars: unknown, alreadyDollars: number): TopUpPro
 }
 
 /** Cash is handed in at Guest Services and counts after the desk has entered it: this long after the guest asks. */
-export const CASH_DESK_MIN = 120
+export let CASH_DESK_MIN = 120
 
 export type PinProblem = 'format' | 'weak'
 export function pinProblem(pin: unknown): PinProblem | null {
@@ -149,7 +150,7 @@ export function pinDigest(pin: string, salt: string): string {
   return h.toString(36)
 }
 
-export const GRATUITY_REASON_MIN = 15
+export let GRATUITY_REASON_MIN = 15
 
 /** Gratuities due for the whole cruise for the guests who pay them (a package includes them for others). */
 export function gratuityDue(guests: readonly { suite: boolean; included: boolean }[]): Cents {
@@ -180,8 +181,8 @@ export function inCurrency(cents: Cents, code: string): string {
 }
 
 // ---- Cabin parties (ROM-06) ----
-export const MAX_PARTY_CABINS = 6
-export const QUIET_FROM = '23:00'
+export let MAX_PARTY_CABINS = 6
+export let QUIET_FROM = '23:00'
 export interface PartyInput { title: string; day: number; time: string; cabins: readonly string[] }
 export type PartyProblem = 'noTitle' | 'badDay' | 'badTime' | 'quiet' | 'noCabins' | 'tooMany' | 'badCabin'
 export function partyProblem(p: PartyInput): PartyProblem | null {
@@ -204,8 +205,8 @@ export function rsvp(cabin: string, title: string): 'yes' | 'maybe' | 'no' {
 
 // ---- Safeguards in chat (MSG-01, MSG-05) ----
 export const PHOTO_TYPES: readonly string[] = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_PHOTO_BYTES = 1_000_000
-export const PHOTO_MIN_AGE = 18
+export let MAX_PHOTO_BYTES = 1_000_000
+export let PHOTO_MIN_AGE = 18
 /** Messages stay on the ship's servers this long after the cruise, then go (the retention rule in the privacy centre). */
 export const CHAT_RETENTION_DAYS = 30
 
@@ -241,7 +242,7 @@ export function systemStatus(scenarios: readonly ScenarioId[], offline: boolean)
 }
 
 // ---- Port days (POR-05, POR-07, POR-13) ----
-export const LAST_MINUTE_LEAD_MIN = 120
+export let LAST_MINUTE_LEAD_MIN = 120
 
 export interface PortContacts { consulate: string; emergency: string; agent: string }
 /** Sample numbers: 555 numbers are reserved for fiction. */
@@ -266,3 +267,19 @@ export function readyText(title: string, lines: readonly { label: string; done: 
 export function childSafeProblem(text: string, age: number): 'contactInfo' | null {
   return age < PHOTO_MIN_AGE && /(\d[\s.-]?){7,}|https?:\/\/|www\./i.test(text) ? 'contactInfo' : null
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_OPEN_REQUESTS', (v) => { MAX_OPEN_REQUESTS = v }, MAX_OPEN_REQUESTS)
+limit('MAX_REPORT_TEXT', (v) => { MAX_REPORT_TEXT = v }, MAX_REPORT_TEXT)
+limit('DAILY_PACKAGE_DRINKS', (v) => { DAILY_PACKAGE_DRINKS = v }, DAILY_PACKAGE_DRINKS)
+limit('ALERT_AFTER', (v) => { ALERT_AFTER = v }, ALERT_AFTER)
+limit('ALERT_WINDOW_MIN', (v) => { ALERT_WINDOW_MIN = v }, ALERT_WINDOW_MIN)
+limit('STOP_AFTER', (v) => { STOP_AFTER = v }, STOP_AFTER)
+limit('MAX_TABLE', (v) => { MAX_TABLE = v }, MAX_TABLE)
+limit('CASH_DESK_MIN', (v) => { CASH_DESK_MIN = v }, CASH_DESK_MIN)
+limit('GRATUITY_REASON_MIN', (v) => { GRATUITY_REASON_MIN = v }, GRATUITY_REASON_MIN)
+limit('MAX_PARTY_CABINS', (v) => { MAX_PARTY_CABINS = v }, MAX_PARTY_CABINS)
+limit('QUIET_FROM', (v) => { QUIET_FROM = v }, QUIET_FROM)
+limit('MAX_PHOTO_BYTES', (v) => { MAX_PHOTO_BYTES = v }, MAX_PHOTO_BYTES)
+limit('PHOTO_MIN_AGE', (v) => { PHOTO_MIN_AGE = v }, PHOTO_MIN_AGE)
+limit('LAST_MINUTE_LEAD_MIN', (v) => { LAST_MINUTE_LEAD_MIN = v }, LAST_MINUTE_LEAD_MIN)

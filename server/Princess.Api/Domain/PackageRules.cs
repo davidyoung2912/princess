@@ -4,6 +4,12 @@ public sealed record AddOnInfo(string Id, string Unit, long Base, int ChangeAtDa
 
 public sealed record PackageUpgrade(string From, string To, long Base, int ChangeAtDays, double ChangeShare);
 
+/// <summary>One add-on as the client lists it: the authored name and blurb with the unit, base price and price change of <see cref="AddOnInfo"/>.</summary>
+public sealed record AddOnRefDto(string Id, string Name, string Blurb, string Unit, long Base, int ChangeAtDays, double ChangeShare, int MinAge);
+
+/// <summary>The add-ons, the figures the "is it worth it" screens work from, and the refund window (multi-device plan 3, Phase 3 step 5). Prices stay server-computed; these are the bases.</summary>
+public sealed record PackagesReferenceDto(string Version, IReadOnlyList<AddOnRefDto> AddOns, long AvgDrink, double ServiceCharge, long AvgCover, int CancelUntilDays);
+
 public sealed record PriceStateResult(string State, long PerUnit);
 
 /// <summary>Packages, add-ons and price-change protection, ported from <c>src/domain/packages.ts</c>. Prices are authored concept values.</summary>
@@ -24,6 +30,28 @@ public static class PackageRules
 
     /// <summary>Purchases can be cancelled for a full refund until this many days before sailing.</summary>
     public const int CancelUntilDays = 3;
+
+    /// <summary>The average price of one drink on board, before the service charge; the average cover charge across the specialty restaurants.</summary>
+    public const long AvgDrink = 1_100;
+    public const double ServiceCharge = 0.18;
+    public const long AvgCover = 4_500;
+
+    private static readonly Dictionary<string, (string Name, string Blurb)> Copy = new()
+    {
+        ["drinks"] = ("Drinks package", "Cocktails, wine by the glass, beer and coffee, up to $15 a drink, with the gratuity included."),
+        ["wifi"] = ("Wi-Fi, one device", "Messaging and browsing for one phone or tablet all cruise."),
+        ["specialtyPass"] = ("Specialty dining pass", "Three dinners at Crown Grill, Sabatini’s, The Catch or Love by Britto."),
+        ["photo"] = ("Photo package", "Every photo the ship’s photographers take of you, to download."),
+        ["laundry"] = ("Laundry package", "Wash and fold, with up to five bags for the whole stateroom."),
+    };
+
+    public static PackagesReferenceDto Reference()
+    {
+        var list = AddOns.Select(a => new AddOnRefDto(a.Id, Copy[a.Id].Name, Copy[a.Id].Blurb, a.Unit, a.Base, a.ChangeAtDays, a.ChangeShare, a.MinAge)).ToList();
+        var text = string.Join('|', list.Select(a => $"{a.Id}:{a.Name}:{a.Blurb}:{a.Unit}:{a.Base}:{a.ChangeAtDays}:{a.ChangeShare}:{a.MinAge}")) + $"#{AvgDrink}:{ServiceCharge}:{AvgCover}:{CancelUntilDays}";
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
+        return new(version, list, AvgDrink, ServiceCharge, AvgCover, CancelUntilDays);
+    }
 
     public static AddOnInfo? AddOn(string? id) => AddOns.FirstOrDefault(a => a.Id == id);
 

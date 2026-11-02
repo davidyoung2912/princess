@@ -31,16 +31,13 @@ const AUTHORED_VENUES: readonly Venue[] = [
   { id: 'alfredo', name: 'Alfredo’s Pizzeria', kind: 'casual', deck: 'Deck 9 Piazza', cuisine: 'Neapolitan pizza', cover: 1499, dress: 'casual', menu: 'Margherita, diavola and a pizza of the day, with a dessert to share.', walkIn: true },
 ]
 
-/** The live list (see `EXCURSIONS`): the server's name, kind, cover charge and walk-in flag laid over the authored rooms, which keep their deck, cuisine, dress code and menu. */
+/** The live list (see `EXCURSIONS`): the authored rooms until the server's catalogue arrives (`replaceVenues`), then the server's, replaced in place so every importer sees it. */
 const live: Venue[] = AUTHORED_VENUES.map((v) => ({ ...v }))
 export const VENUES: readonly Venue[] = live
-export type VenueTerms = Pick<Venue, 'id' | 'name' | 'kind' | 'cover' | 'walkIn'>
-export function replaceVenueTerms(next: readonly VenueTerms[] | null): void {
-  const byId = new Map((next ?? []).map((v) => [v.id, v]))
-  live.splice(0, live.length, ...AUTHORED_VENUES.map((v) => {
-    const t = byId.get(v.id)
-    return t ? { ...v, name: t.name, kind: t.kind, cover: t.cover, walkIn: t.walkIn || undefined } : { ...v }
-  }))
+/** Swaps in the server's rooms, with their deck, cuisine, dress code and menu; an empty list is ignored. `null` goes back to the authored copy. */
+export function replaceVenues(next: readonly Venue[] | null): void {
+  const list = next ?? AUTHORED_VENUES
+  if (list.length > 0) live.splice(0, live.length, ...list.map((v) => ({ ...v })))
 }
 
 export const venueById = (id: unknown): Venue | undefined => VENUES.find((v) => v.id === id)

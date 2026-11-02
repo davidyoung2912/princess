@@ -51,6 +51,7 @@ services.AddSingleton<IRouteConditionsProvider, SimRouteConditionsProvider>();
 services.AddSingleton<IStaffQueue, SimStaffQueue>();
 services.AddSingleton<IShipTelemetry, SimShipTelemetry>();
 services.AddSingleton<IFareFeed, SimFareFeed>();
+services.AddSingleton<IProgramChanges, SimProgramChanges>();
 services.AddSingleton<IStormOutlook, SimStormOutlook>();
 services.AddSingleton<ILostProperty, SimLostProperty>();
 services.AddSingleton<ISlotWatchFeed, SimSlotWatchFeed>();

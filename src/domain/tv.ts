@@ -1,3 +1,4 @@
+import { limit } from './limits'
 /** The cabin TV (ENT-06): the channel guide, video on demand and the remote. Channels and titles are authored concept content. */
 export interface Channel { n: number; name: string; shows: readonly string[] }
 
@@ -22,7 +23,7 @@ export const channelByNumber = (n: number): Channel | undefined => CHANNELS.find
 /** What is on a channel at a ship-time hour, 0 to 23. */
 export const onNow = (channel: Channel, hour: number): string => channel.shows[Math.min(5, Math.max(0, Math.floor(hour / 4)))]
 
-export const VOD_CHANNEL = 12
+export let VOD_CHANNEL = 12
 
 export interface Title { id: string; name: string; minutes: number; rating: string }
 export const VOD: readonly Title[] = [
@@ -37,3 +38,6 @@ export const titleById = (id: unknown): Title | undefined => VOD.find((v) => v.i
 
 /** Whether a title is suitable for a guest: ratings above PG need an adult, and PG-13 needs 13. */
 export const titleAllowed = (rating: string, age: number): boolean => rating === 'G' || (rating === 'PG' && age >= 8) || (rating === 'PG-13' && age >= 13)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('VOD_CHANNEL', (v) => { VOD_CHANNEL = v }, VOD_CHANNEL)

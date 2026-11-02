@@ -167,3 +167,9 @@ export function overlapping(plan: readonly DatedEvent[]): [DatedEvent, DatedEven
   for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length && live[j].startAt < live[i].endAt; j++) pairs.push([live[i], live[j]])
   return pairs
 }
+
+/** Replaces the events and the plan changes in place (`programServed.ts`), so earlier imports see the served values. */
+export function replaceProgram(next: { events: readonly ShipEvent[]; changes: readonly PlanChange[] }): void {
+  ;(EVENTS as ShipEvent[]).splice(0, EVENTS.length, ...next.events)
+  ;(PLAN_CHANGES as PlanChange[]).splice(0, PLAN_CHANGES.length, ...next.changes)
+}

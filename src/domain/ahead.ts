@@ -2,6 +2,7 @@ import type { Occasion } from './booking'
 import type { PackageId, PersonaId, Tier } from './personas'
 import { fareFor, type Cents } from './pricing'
 import { CATEGORIES, type CategoryId } from './ship'
+import { limit } from './limits'
 
 /**
  * Before-the-cruise services (Phase 13): the "find my cruise" quiz, travel advisors, marketing consent, Captain's Circle and credit
@@ -139,7 +140,7 @@ export type MarketingChannel = 'email' | 'sms'
 export const MARKETING_CHANNELS: readonly MarketingChannel[] = ['email', 'sms']
 export const isMarketingChannel = (v: unknown): v is MarketingChannel => v === 'email' || v === 'sms'
 
-export const CONSENT_CODE_HOURS = 24
+export let CONSENT_CODE_HOURS = 24
 
 export function contactProblem(channel: MarketingChannel, value: unknown): 'badEmail' | 'badPhone' | null {
   if (typeof value !== 'string') return channel === 'email' ? 'badEmail' : 'badPhone'
@@ -182,7 +183,7 @@ export function loyaltyNumberOf(id: PersonaId): string {
 export const tierForNumber = (n: string, id: PersonaId, ownTier: Tier): Tier => (n === loyaltyNumberOf(id) ? ownTier : 'gold')
 
 /** Credit never takes the price below this: some of every booking is paid by card. */
-export const MIN_PAID: Cents = 10_000
+export let MIN_PAID: Cents = 10_000
 
 export interface Perks { number: string; tier: Tier; useCredit: boolean }
 export interface PerkSums { discount: Cents; credit: Cents; total: Cents }
@@ -222,7 +223,7 @@ export function bidProblem(offer: UpgradeOffer | undefined, cents: unknown): Bid
 }
 
 /** Bids are decided this many days before departure. */
-export const BID_DECIDED_DAYS = 3
+export let BID_DECIDED_DAYS = 3
 
 /** A bid at "buy now" always wins. Otherwise the share of the range it covers decides: above the hidden line wins. The same bid always gets the same answer. */
 export function bidWins(offer: UpgradeOffer, cents: Cents, key: string): boolean {
@@ -255,8 +256,8 @@ export interface ClubRegistration {
   emergencyPhone: string
   confirmed: boolean
 }
-export const MAX_PICKUPS = 4
-export const MAX_CLUB_TEXT = 300
+export let MAX_PICKUPS = 4
+export let MAX_CLUB_TEXT = 300
 export const blankRegistration = (childId: PersonaId): ClubRegistration => ({ childId, allergies: '', medical: '', medication: '', photoConsent: false, pickups: [], selfSignOut: false, emergencyPhone: '', confirmed: false })
 
 export type ClubProblem = 'noClub' | 'noEmergency' | 'noPickup' | 'badPickup' | 'tooMany' | 'tooLong' | 'selfSignOut' | 'confirm'
@@ -285,8 +286,8 @@ export interface MedallionStatus {
   replacement: boolean
 }
 
-export const MEDALLION_SHIP_DAYS = 14
-export const MEDALLION_DELIVER_DAYS = 8
+export let MEDALLION_SHIP_DAYS = 14
+export let MEDALLION_DELIVER_DAYS = 8
 
 /** Made after booking, posted 14 days before sailing and delivered 8 days before. Booked later than that, it is collected at the terminal. */
 export function medallionStatus(departureAt: number, bookedAt: number, now: number, activatedAt: number | null, lostAt: number | null): MedallionStatus {
@@ -304,9 +305,9 @@ export function medallionStatus(departureAt: number, bookedAt: number, now: numb
 export type TagWay = 'print' | 'etag' | 'order'
 export const TAG_WAYS: readonly TagWay[] = ['print', 'etag', 'order']
 export const isTagWay = (v: unknown): v is TagWay => TAG_WAYS.includes(v as TagWay)
-export const TAGS_PER_GUEST = 2
+export let TAGS_PER_GUEST = 2
 /** A mailed set must be asked for this many days before sailing. */
-export const TAG_ORDER_DAYS = 14
+export let TAG_ORDER_DAYS = 14
 
 export type BagStage = 'none' | 'atHome' | 'handedOver' | 'onShip' | 'inCorridor' | 'delivered'
 export const BAG_STAGES: readonly BagStage[] = ['atHome', 'handedOver', 'onShip', 'inCorridor', 'delivered']
@@ -332,8 +333,8 @@ export type AssistKind = 'assistedBooking' | 'bereavement' | 'medical'
 export const ASSIST_KINDS: readonly AssistKind[] = ['assistedBooking', 'bereavement', 'medical']
 export const isAssistKind = (v: unknown): v is AssistKind => ASSIST_KINDS.includes(v as AssistKind)
 export type AssistStage = 'received' | 'reviewing' | 'decided'
-export const ASSIST_REVIEW_HOURS = 4
-export const ASSIST_DECIDE_HOURS = 48
+export let ASSIST_REVIEW_HOURS = 4
+export let ASSIST_DECIDE_HOURS = 48
 
 export function assistStage(askedAt: number, now: number): AssistStage {
   const since = now - askedAt
@@ -363,3 +364,16 @@ export const GIFTS_FOR: Record<Occasion, readonly string[]> = {
   honeymoon: ['gift-champagne', 'gift-flowers', 'gift-decor'],
   other: ['gift-flowers', 'gift-champagne'],
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('CONSENT_CODE_HOURS', (v) => { CONSENT_CODE_HOURS = v }, CONSENT_CODE_HOURS)
+limit('MIN_PAID', (v) => { MIN_PAID = v }, MIN_PAID)
+limit('BID_DECIDED_DAYS', (v) => { BID_DECIDED_DAYS = v }, BID_DECIDED_DAYS)
+limit('MAX_PICKUPS', (v) => { MAX_PICKUPS = v }, MAX_PICKUPS)
+limit('MAX_CLUB_TEXT', (v) => { MAX_CLUB_TEXT = v }, MAX_CLUB_TEXT)
+limit('MEDALLION_SHIP_DAYS', (v) => { MEDALLION_SHIP_DAYS = v }, MEDALLION_SHIP_DAYS)
+limit('MEDALLION_DELIVER_DAYS', (v) => { MEDALLION_DELIVER_DAYS = v }, MEDALLION_DELIVER_DAYS)
+limit('TAGS_PER_GUEST', (v) => { TAGS_PER_GUEST = v }, TAGS_PER_GUEST)
+limit('TAG_ORDER_DAYS', (v) => { TAG_ORDER_DAYS = v }, TAG_ORDER_DAYS)
+limit('ASSIST_REVIEW_HOURS', (v) => { ASSIST_REVIEW_HOURS = v }, ASSIST_REVIEW_HOURS)
+limit('ASSIST_DECIDE_HOURS', (v) => { ASSIST_DECIDE_HOURS = v }, ASSIST_DECIDE_HOURS)

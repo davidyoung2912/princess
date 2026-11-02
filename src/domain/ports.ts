@@ -79,3 +79,13 @@ export const PORT_COORDS: Record<Exclude<PortId, 'sea'>, [number, number]> = {
   belize: [-88.2, 17.5],
   roatan: [-86.5, 16.3],
 }
+
+/** Replaces the guides and coordinates in place (`portsServed.ts`), so earlier imports see the served values. */
+export function replacePorts(next: { guides: Record<string, PortGuide>; coords: Record<string, [number, number]> }): void {
+  const g = PORT_GUIDES as Record<string, PortGuide>
+  for (const k of Object.keys(g)) delete g[k]
+  Object.assign(g, next.guides)
+  const c = PORT_COORDS as Record<string, [number, number]>
+  for (const k of Object.keys(c)) delete c[k]
+  Object.assign(c, next.coords)
+}

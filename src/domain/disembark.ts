@@ -1,6 +1,7 @@
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, type Cents } from './pricing'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
+import { limit } from './limits'
 
 /**
  * Disembarkation (DEB-01 to DEB-07): how to get off, luggage tags, customs, onward travel, the final night and the
@@ -26,13 +27,13 @@ export const TAG_GROUPS: readonly TagGroup[] = [
 ]
 
 /** Carrying your own bags: from this time, and from the earliest time for an early walk-off. */
-export const SELF_ASSIST_FROM = '07:30'
-export const EARLY_FROM = '06:30'
+export let SELF_ASSIST_FROM = '07:30'
+export let EARLY_FROM = '06:30'
 /** Walking from the gangway through customs and out to the curb. */
-export const CLEARANCE_MINUTES = 45
+export let CLEARANCE_MINUTES = 45
 /** Most bags one guest can carry off themselves. */
-export const MAX_CARRY_BAGS = 2
-export const MAX_BAGS = 6
+export let MAX_CARRY_BAGS = 2
+export let MAX_BAGS = 6
 
 const hash = (text: string): number => {
   let h = 2166136261
@@ -104,10 +105,10 @@ export const tagLabel = (g: TagGroup, printed: string, cabin: string): string =>
 export interface CustomsDeclaration { food: boolean; cash: boolean; goodsUsd: number; note: string }
 
 /** Duty-free goods each person may bring in, and the cash amount above which a report is needed. */
-export const ALLOWANCE_USD = 800
+export let ALLOWANCE_USD = 800
 export const CASH_LIMIT_USD = 10_000
-export const GOODS_MAX = 100_000
-export const CUSTOMS_NOTE_MAX = 200
+export let GOODS_MAX = 100_000
+export let CUSTOMS_NOTE_MAX = 200
 
 export const blankCustoms = (): CustomsDeclaration => ({ food: false, cash: false, goodsUsd: 0, note: '' })
 
@@ -151,10 +152,10 @@ export const onwardMode = (id: unknown): OnwardModeDef | undefined => ONWARD_MOD
 
 export interface OnwardPlan { mode: OnwardMode; /** Flight time on the last day, "HH:MM", or empty for no flight. */ flightAt: string; flight: string; note: string }
 
-export const ONWARD_NOTE_MAX = 200
+export let ONWARD_NOTE_MAX = 200
 /** Be at the airport this long before a flight. */
-export const AIRPORT_MINUTES = 180
-export const TIGHT_MINUTES = 45
+export let AIRPORT_MINUTES = 180
+export let TIGHT_MINUTES = 45
 
 export function onwardProblem(p: OnwardPlan): string | null {
   if (!onwardMode(p.mode)) return 'badMode'
@@ -215,7 +216,7 @@ export const NIGHT_ITEMS: readonly NightItem[] = [
 export const isNightItem = (id: unknown): id is string => NIGHT_ITEMS.some((i) => i.id === id)
 
 export type NightState = 'done' | 'overdue' | 'dueSoon' | 'upcoming'
-export const DUE_SOON_MINUTES = 120
+export let DUE_SOON_MINUTES = 120
 
 export interface NightEntry extends NightItem { dueAt: number; state: NightState; automatic: boolean }
 
@@ -252,3 +253,17 @@ export const tipCredit = (charged: Cents, keepPercent: number): Cents => Math.ro
 
 export const RECEIPT_IDS = ['folio', 'gratuities', 'fare'] as const
 export type ReceiptId = (typeof RECEIPT_IDS)[number]
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('SELF_ASSIST_FROM', (v) => { SELF_ASSIST_FROM = v }, SELF_ASSIST_FROM)
+limit('EARLY_FROM', (v) => { EARLY_FROM = v }, EARLY_FROM)
+limit('CLEARANCE_MINUTES', (v) => { CLEARANCE_MINUTES = v }, CLEARANCE_MINUTES)
+limit('MAX_CARRY_BAGS', (v) => { MAX_CARRY_BAGS = v }, MAX_CARRY_BAGS)
+limit('MAX_BAGS', (v) => { MAX_BAGS = v }, MAX_BAGS)
+limit('ALLOWANCE_USD', (v) => { ALLOWANCE_USD = v }, ALLOWANCE_USD)
+limit('GOODS_MAX', (v) => { GOODS_MAX = v }, GOODS_MAX)
+limit('CUSTOMS_NOTE_MAX', (v) => { CUSTOMS_NOTE_MAX = v }, CUSTOMS_NOTE_MAX)
+limit('ONWARD_NOTE_MAX', (v) => { ONWARD_NOTE_MAX = v }, ONWARD_NOTE_MAX)
+limit('AIRPORT_MINUTES', (v) => { AIRPORT_MINUTES = v }, AIRPORT_MINUTES)
+limit('TIGHT_MINUTES', (v) => { TIGHT_MINUTES = v }, TIGHT_MINUTES)
+limit('DUE_SOON_MINUTES', (v) => { DUE_SOON_MINUTES = v }, DUE_SOON_MINUTES)
