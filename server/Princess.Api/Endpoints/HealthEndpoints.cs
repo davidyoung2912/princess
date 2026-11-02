@@ -1,6 +1,7 @@
 using Dapper;
 using Princess.Api.Data;
 using Princess.Api.Domain;
+using Princess.Api.Services;
 
 namespace Princess.Api.Endpoints;
 
