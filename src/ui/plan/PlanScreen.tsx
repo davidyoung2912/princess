@@ -54,6 +54,8 @@ const TOOLS = [
   { to: '/plan/organiser', key: 'route.organiser' },
   { to: '/plan/cabins', key: 'route.cabins2' },
   { to: '/plan/traditions', key: 'route.traditions' },
+  { to: '/plan/fare-check', key: 'route.fareCheck' },
+  { to: '/plan/gifts', key: 'route.gifts' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/home/cabins', key: 'route.cabins' },
   { to: '/home/decide', key: 'route.decide' },

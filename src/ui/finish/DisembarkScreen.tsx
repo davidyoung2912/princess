@@ -116,6 +116,10 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
           <li><Link to="/home/disembark/final-night">{t('route.finalNight')}{!v.customsDone && <span className="tag tag--alert">{t('dis.todo')}</span>}</Link></li>
           <li><Link to="/home/disembark/customs">{t('route.customs')}{v.customsDone && <span className="tag tag--good">{t('dis.done')}</span>}</Link></li>
           <li><Link to="/home/disembark/onward">{t('route.onward')}{v.onwardSaved && <span className="tag tag--good">{t('dis.done')}</span>}</Link></li>
+          <li><Link to="/home/disembark/flight">{t('route.flight')}</Link></li>
+          <li><Link to="/home/disembark/sweep">{t('route.sweep')}</Link></li>
+          <li><Link to="/home/disembark/bags">{t('route.bags')}</Link></li>
+          <li><Link to="/home/disembark/ride">{t('route.ride')}</Link></li>
           <li><Link to="/me/bill/final">{t('route.finalBill')}</Link></li>
           <li><Link to="/me/cases">{t('route.cases')}</Link></li>
           <li><Link to="/ship/photos">{t('route.photos')}</Link></li>

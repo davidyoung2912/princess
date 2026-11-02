@@ -303,3 +303,18 @@ Front end only; no REST contract changes. Logic in `src/domain/aboardMore.ts`, s
 - **S6-08 sightings** (`/ship/sightings`): the guest's log plus an authored, simulated "told about today".
 - **Verified:** `npm run test` (1645 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** only the weekly companion obeys do not disturb (other Home nudges and the notification screen do not read it yet); the cabin number is typed, not read from the booking; the kids' report uses the child brief's age and name, not the club check-in; the lounger board, kids' report, found list and sightings are simulated; steps are typed, not read from a phone sensor; nothing here reaches another device, a crew member or a caregiver.
+
+## 17. H8 slice D: the last day, trust and care (2026-11-01)
+
+Front end only; no REST contract changes. Logic in `src/domain/finishMore.ts`, screens in `src/ui/onboard/FinishMoreScreens.tsx`, state per person in the H6 memory store under one `finish` field. Promise tests in `src/h8Promises.test.ts`. Notes and lists are on the screen and say plainly that nothing is sent to anyone.
+
+- **S7-01, S7-06 flight and low-stress** (`/home/disembark/flight`): rates each way off against the flight time, picks the latest that leaves enough spare time, warns on an impossible or very early flight; low-stress mode wants 90 minutes spare, leaves an hour earlier, shows no offers, and has a tick for "I asked for an assist".
+- **S7-02, S7-03** (`/home/disembark/sweep`, `/home/disembark/bags`): cabin sweep with one-tap "all checked"; bag night with the hallway countdown and "out" and "collected".
+- **S7-07 ride pool** (`/home/disembark/ride`): a meeting place and one ride split between two to four parties, with paid ticks; nothing is collected.
+- **S7-08, S7-09** (`/me/farewell`, `/me/follow-up`): moment, rating, done; consented day 3 and day 7 health note with what to tell a doctor.
+- **S6-26 ask the ship** (`/ship/ask-ship`): authored facts, "I do not have an answer" with Guest Services otherwise.
+- **XI-08, XI-09, XI-10, XI-11** (`/ship/safe-ashore`, `/ship/allergy-chain`, `/me/gentle`, `/me/anxiety`): notes by traveller type, the allergy chain from the S3-13 pre-flag to each venue (simulated acknowledgements), gentle wording and a memorial note, breathing and grounding with no scores and a path to a person.
+- **S1-01, S4-11** (`/plan/fare-check`, `/plan/gifts`): fare low, typical or high against a simulated history and the tier that fits the guest's habits; gift ideas filtered by budget, occasion, noted allergens and alcohol, on a screen of its own.
+- **Audited, already built:** XA-10's client part (`withinLimit` and the scripted fallback in `src/ai/concierge.ts`), S6A-08 to S6A-12 (`portContent.ts`).
+- **Verified:** `npm run test` (1686 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** XI-06 spoken wayfinding and XI-07 visual and vibration alerts; XA-08 voice mode; assistant actions beyond the day plan (request an item, add an excursion); nudge wiring of Home cards for the briefing, Autopilot, storm notice and back-aboard; S6A-14 port snapshot; S4-08 80 and 100 percent notes; S6-23 crew thanks check; XG-06 reunion mode; S8-09 to S8-12 re-check; per-room fare indicator is a simulated history, not a feed; low-stress mode is read only on the flight screen (other screens do not yet hide offers); gentle wording is stored but other screens do not yet read it; no reminder reaches another device or person.

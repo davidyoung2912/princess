@@ -83,6 +83,9 @@ export function ShipScreen() {
           <li><Link to="/ship/steps">{t('route.steps')}</Link></li>
           <li><Link to="/ship/lost-found">{t('route.lostFound')}</Link></li>
           <li><Link to="/ship/sightings">{t('route.sightings')}</Link></li>
+          <li><Link to="/ship/ask-ship">{t('route.askShip')}</Link></li>
+          <li><Link to="/ship/safe-ashore">{t('route.safeAshore')}</Link></li>
+          <li><Link to="/ship/allergy-chain">{t('route.allergyChain')}</Link></li>
         </ul>
       </nav>
     </div>

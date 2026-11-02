@@ -87,3 +87,23 @@ describe('H8 slice C promises', () => {
     expect(en['dnd.critical']).toMatch(/always come through/)
   })
 })
+
+describe('H8 slice D promises', () => {
+  it('sends nothing: notes and lists live on the screen, with no timers or network', () => {
+    const text = read('src/ui/onboard/FinishMoreScreens.tsx') + read('src/domain/finishMore.ts')
+    expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout|sendBeacon/)
+    expect(en['follow.nothingSent']).toMatch(/Nothing is sent to anyone/)
+    expect(en['sweep.note']).toMatch(/Nothing is sent to anyone/)
+    expect(en['bags.note']).toMatch(/Nothing is sent to anyone/)
+    expect(en['ride.note']).toMatch(/does not collect money/)
+  })
+  it('labels simulated and authored content as such', () => {
+    expect(en['chain.sim']).toMatch(/Simulated/)
+    expect(en['fare.sim']).toMatch(/not a live fare/)
+    expect(en['ashore.verify']).toMatch(/official travel advice/)
+  })
+  it('never guesses and keeps gifts away from task screens', () => {
+    expect(en['askShip.unknown']).toMatch(/do not have an answer/)
+    expect(read('src/ui/home/HomeScreen.tsx') + read('src/ui/finish/DisembarkScreen.tsx')).not.toMatch(/giftsFor|GiftsScreen/)
+  })
+})
