@@ -1,8 +1,8 @@
-import { useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { AuthError } from '../auth/provider'
-import { PERSONAS } from '../domain/personas'
 import { t } from '../i18n'
-import { auth, usesRealAuth } from '../runtime'
+import { auth } from '../runtime'
+import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
 import { Button } from './Button'
 import { Card } from './Card'
 import { ConceptNotice } from './ConceptNotice'
@@ -67,23 +67,30 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   )
 }
 
-/** Non-production help only: the seeded accounts and the shared demo password. Never shown in a production build. */
+/** Non-production help only: the seeded accounts, listed by the server (which refuses in production), and the shared demo password. */
 function TestAccounts() {
+  const [accounts, setAccounts] = useState<readonly DemoAccount[]>([])
+  useEffect(() => {
+    let live = true
+    void fetchDemoAccounts(auth.http).then((list) => { if (live) setAccounts(list) }).catch(() => {})
+    return () => { live = false }
+  }, [])
+  if (accounts.length === 0) return null
   return (
     <Card>
       <h2>{t('signin.test.title')}</h2>
       <p>{t('signin.test.body')}</p>
       <ul>
-        {PERSONAS.map((p) => <li key={p.id}>{p.name}: <code>{p.id}@demo.princess.example</code></li>)}
+        {accounts.map((a) => <li key={a.email}>{a.name}: <code>{a.email}</code></li>)}
       </ul>
     </Card>
   )
 }
 
-/** Shows the sign-in page instead of the app while there is no session. The mock's demo picker needs no gate. */
+/** Shows the sign-in page instead of the app while there is no session. */
 export function SignInGate({ children }: { children: ReactNode }) {
   const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
-  if (usesRealAuth && !session) return <SignInScreen />
+  if (!session) return <SignInScreen />
   return <>{children}</>
 }
 

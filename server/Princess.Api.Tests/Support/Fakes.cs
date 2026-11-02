@@ -42,6 +42,9 @@ public sealed class InMemoryUserStore : IUserStore
 
     public Task<UserRecord?> FindByPublicIdAsync(Guid publicId, CancellationToken ct) => Task.FromResult(Users.FirstOrDefault(u => u.PublicId == publicId));
 
+    public Task<IReadOnlyList<UserRecord>> ListDemoAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<UserRecord>>(Users.Where(u => u.IsDemo).OrderBy(u => u.FirstName).ToList());
+
     public Task RecordLoginFailureAsync(long userId, int maxFailures, TimeSpan lockout, DateTime now, CancellationToken ct)
     {
         var u = Users.Single(x => x.Id == userId);

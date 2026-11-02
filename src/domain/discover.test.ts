@@ -1,9 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { createMockApi } from '../api/mock'
-import { isApiError } from '../api/errors'
-import { createMemoryStore } from '../data/store'
-import { clockAt } from './clock'
-import { defaultDemoState } from '../demo/state'
 import { formatDate, formatTime, routePoints, ROUTE, sailingRange, stops } from './cruise'
 import { favouriteKey, favouritePath, isSavable, parseFavouriteKey, shareUrl, toggleKey } from './favourites'
 import { PORT_GUIDES, portGuideById } from './ports'
@@ -144,51 +139,5 @@ describe('favourites', () => {
     expect(shareUrl('https://x.test', 'sailing', 'sun-2027-03-21')).toBe('https://x.test/home/sailings/sun-2027-03-21')
     expect(favouritePath('port', 'belize')).toBe('/home/ports/belize')
     expect(favouritePath('ship', 'sun-princess')).toBe('/home/ship')
-  })
-})
-
-describe('discover API', () => {
-  const NOW = Date.UTC(2027, 2, 1)
-  function setup(who: 'gerald' | 'maria' | null = 'gerald') {
-    const demo = { ...defaultDemoState(NOW), clock: clockAt(NOW, NOW, 0) }
-    let persona = who
-    const api = createMockApi({ store: createMemoryStore(), demo: () => demo, persona: () => persona, realNow: () => NOW, sleep: async () => {} })
-    return { api, as: (p: typeof who) => { persona = p } }
-  }
-  const failure = async (p: Promise<unknown>) => { try { await p } catch (e) { return e } return null }
-
-  it('lists every sailing with its from price, with no sign-in', async () => {
-    const { api } = setup(null)
-    const offers = await api.discover.offers()
-    expect(offers).toHaveLength(SAILINGS.length)
-    expect(offers.find((o) => o.holiday)!.id).toBe('sun-2026-12-27')
-  })
-
-  it('quotes, and rejects what it cannot price as invalid', async () => {
-    const { api } = setup(null)
-    expect((await api.discover.quote(REFERENCE_SAILING.id, 'interior', 2)).guests).toBe(2)
-    const err = await failure(api.discover.quote('nope', 'interior', 2))
-    expect(isApiError(err) && err.code).toBe('invalid')
-  })
-
-  it('saves, removes and keeps each person’s list apart', async () => {
-    const { api, as } = setup()
-    expect(await api.discover.favourites()).toEqual([])
-    expect(await api.discover.toggleFavourite('port:cozumel')).toEqual(['port:cozumel'])
-    expect(await api.discover.toggleFavourite('ship:sun-princess')).toEqual(['port:cozumel', 'ship:sun-princess'])
-    expect(await api.discover.toggleFavourite('port:cozumel')).toEqual(['ship:sun-princess'])
-    as('maria')
-    expect(await api.discover.favourites()).toEqual([])
-    as('gerald')
-    expect(await api.discover.favourites()).toEqual(['ship:sun-princess'])
-  })
-
-  it('refuses to save something that does not exist, and needs sign-in to save', async () => {
-    const { api, as } = setup()
-    const err = await failure(api.discover.toggleFavourite('port:mars'))
-    expect(isApiError(err) && err.code).toBe('invalid')
-    as(null)
-    const out = await failure(api.discover.toggleFavourite('port:cozumel'))
-    expect(isApiError(out) && out.code).toBe('forbidden')
   })
 })

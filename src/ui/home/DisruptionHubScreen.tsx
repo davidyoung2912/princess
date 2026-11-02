@@ -117,9 +117,7 @@ function Callback() {
   /** The server's place in the staff queue when there is one; the on-device pretend queue otherwise, or when the server cannot be reached. */
   const askForCall = async () => {
     let callback = requestCallback(now, reason, seed, newHubId())
-    if (staffRequest) {
-      try { callback = normalizeCallback(await staffRequest('callback', reason)) ?? callback } catch { /* the pretend queue answers */ }
-    }
+    try { callback = normalizeCallback(await staffRequest('callback', reason)) ?? callback } catch { /* the pretend queue answers */ }
     update((s) => ({ ...s, callback }))
   }
   return (

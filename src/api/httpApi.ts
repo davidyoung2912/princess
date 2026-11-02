@@ -498,10 +498,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   return { groups, reset: () => { current = null } }
 }
 
-/** The mock `Api` with the Phase 13 to 18 groups replaced by the REST ones. */
-export function withHttpGroups(base: Api, g: HttpGroups): Api {
+/** The `Api` the screens use: the REST groups, joined. */
+export function toApi(g: HttpGroups): Api {
   return {
-    ...base,
     auth: g.auth,
     bookings: g.bookings,
     account: g.account,
@@ -514,8 +513,8 @@ export function withHttpGroups(base: Api, g: HttpGroups): Api {
     budget: g.budget,
     privacy: g.privacy,
     aboard: { ...g.aboard, feedback: g.feedback },
-    discover: { ...base.discover, ...g.favourites, ...g.discover },
-    booking: { ...base.booking, ...g.booking },
+    discover: { ...g.favourites, ...g.discover },
+    booking: g.booking,
     plan: g.plan,
     waits: g.waits,
     shows: g.shows,

@@ -33,6 +33,13 @@ public sealed class DapperUserStore(IDbConnectionFactory db) : IUserStore
         return await c.QuerySingleOrDefaultAsync<UserRecord>(new CommandDefinition($"{Select} WHERE u.PublicId = @publicId", new { publicId }, cancellationToken: ct));
     }
 
+    public async Task<IReadOnlyList<UserRecord>> ListDemoAsync(CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<UserRecord>(new CommandDefinition($"{Select} WHERE u.IsDemo = 1 ORDER BY p.FirstName, u.Id", cancellationToken: ct));
+        return rows.ToList();
+    }
+
     public async Task RecordLoginFailureAsync(long userId, int maxFailures, TimeSpan lockout, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

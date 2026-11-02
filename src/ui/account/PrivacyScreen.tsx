@@ -8,7 +8,7 @@ import { parentDecidesIn, regionRules } from '../../domain/regions'
 import { setImproveConsent } from '../../diagnostics/watch'
 import { useSettings } from '../../hooks/useSettings'
 import type { StringKey } from '../../i18n'
-import { api, usesRealAuth, wipeAll } from '../../runtime'
+import { api, wipeAll } from '../../runtime'
 import { setKeepPrivate } from '../../sync/consent'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
@@ -68,15 +68,13 @@ export function PrivacyScreen() {
             <p className="muted">{t('priv.region.age', { age: rules.consentAge })} <Link to="/me/settings">{t('priv.region.change')}</Link></p>
           </Card>
 
-          {usesRealAuth && (
-            <Card labelledBy="priv-keep-private-h">
-              <h2 id="priv-keep-private-h" className="card__title">{t('priv.keep.title')}</h2>
-              <p>{t('priv.keep.body')}</p>
-              <p>{t('priv.keep.who')}</p>
-              <label className="choice"><input type="checkbox" checked={settings.syncPrivate} disabled={keep.busy} onChange={(e) => void keep.run(e.target.checked).then((done) => setKeepPending(done === false))} /><span>{t('priv.keep.label')}<small>{t('priv.keep.off')}</small></span></label>
-              {keepPending && <p role="status">{t('priv.keep.pending')}</p>}
-            </Card>
-          )}
+          <Card labelledBy="priv-keep-private-h">
+            <h2 id="priv-keep-private-h" className="card__title">{t('priv.keep.title')}</h2>
+            <p>{t('priv.keep.body')}</p>
+            <p>{t('priv.keep.who')}</p>
+            <label className="choice"><input type="checkbox" checked={settings.syncPrivate} disabled={keep.busy} onChange={(e) => void keep.run(e.target.checked).then((done) => setKeepPending(done === false))} /><span>{t('priv.keep.label')}<small>{t('priv.keep.off')}</small></span></label>
+            {keepPending && <p role="status">{t('priv.keep.pending')}</p>}
+          </Card>
 
           <section aria-labelledby="priv-consent-h">
             <h2 id="priv-consent-h">{t('priv.consents')}</h2>

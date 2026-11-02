@@ -72,6 +72,16 @@ public static class AuthEndpoints
             })
             .WithSummary("Revoke the session family of the given refresh token.");
 
+        auth.MapGet("/demo-accounts", async (IUserStore users, IHostEnvironment env, CancellationToken ct) =>
+            {
+                if (env.IsProduction()) throw ApiException.NotFound();
+                var rows = await users.ListDemoAsync(ct);
+                return Results.Ok(rows.Where(u => !string.IsNullOrEmpty(u.Email))
+                    .Select(u => new DemoAccountDto(u.Email!, u.FirstName ?? "", u.LastName, u.Role)));
+            })
+            .AllowAnonymous()
+            .WithSummary("The seeded demo accounts (email, name, role) so a non-production sign-in page can list them. 404 in production.");
+
         var meGroup = api.MapGroup("/me").WithTags("Me");
 
         meGroup.MapGet("", async (ICurrentUser me, CancellationToken ct) =>

@@ -28,7 +28,7 @@ export const ownerIdOf = (session: Pick<Session, 'personaId' | 'user'> | null | 
 
 export type AuthMethod = 'demo' | 'password' | 'code'
 
-/** Ways to sign in. The demo picker is the mock's; `password` takes an email or 10-digit account number (ACT-01). */
+/** Ways to sign in. `demo` is not accepted by the server provider; `password` takes an email or 10-digit account number (ACT-01). */
 export type Credentials =
   | { method: 'demo'; personaId: string }
   | { method: 'password'; identifier: string; password: string }
@@ -59,7 +59,7 @@ export class AuthError extends Error {
   }
 }
 
-/** What screens and the API layer depend on; the mock below is one implementation. */
+/** What screens and the API layer depend on. */
 export interface AuthProvider {
   readonly id: string
   readonly methods: readonly AuthMethod[]
@@ -70,7 +70,7 @@ export interface AuthProvider {
   current(): Session | null
   signIn(credentials: Credentials): Promise<Session>
   signOut(): Promise<void>
-  /** The access token for API calls, or null when signed out or when the provider has none (the mock). */
+  /** The access token for API calls, or null when signed out . */
   accessToken(): string | null
   /** Try to get a new access token from the stored refresh token (page load, or after a 401). True when signed in afterwards. */
   restore(): Promise<boolean>

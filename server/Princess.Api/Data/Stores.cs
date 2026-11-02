@@ -9,6 +9,8 @@ public interface IUserStore
     /// <summary>Adds a failure; at <paramref name="maxFailures"/> locks the account for <paramref name="lockout"/> and resets the count.</summary>
     Task RecordLoginFailureAsync(long userId, int maxFailures, TimeSpan lockout, DateTime now, CancellationToken ct);
     Task RecordLoginSuccessAsync(long userId, DateTime now, CancellationToken ct);
+    /// <summary>The seeded demo accounts (not supervised children), by first name, for the non-production sign-in help.</summary>
+    Task<IReadOnlyList<UserRecord>> ListDemoAsync(CancellationToken ct);
 }
 
 public interface IRefreshTokenStore

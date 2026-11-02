@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phase 1 built (see its record); Phases 2 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built (see their records); Phases 3 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -185,3 +185,14 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule: no `dotnet` c
   - **Role, stateroom, group and text size** are neutral for a real account (`role: ''`, `group: 'solo'`); no screen reads them for a real account except the demo screen.
   - **The demo sailing switcher** (`DemoScreen`) saves to the server only for demo accounts, as intended; not exercised against a running server.
   - Before Phase 2: the user should run `dotnet build server/Princess.sln` once (everything since 2026-11-01 is uncompiled).
+
+## Phase 2 record
+
+Built 2026-11-02. **Server C# not compiled or run** (project rule); the new route is registered in `SwaggerCoverageTests` but no test exercises it.
+
+- **Removed:** all `src/api/*Mock.ts`, `mock.ts`, `rng.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `backup.ts`, `errors.ts`, the network/latency simulation in the runtime, `withHttpGroups` (now `toApi`, which joins the REST groups; the groups already covered all of `Api`), `usesRealAuth` and every `if (!rest)` branch, the `fake-indexeddb` dev dependency, and the demo screen's persona picker and pretend-network card. `Export my data` is gone from the device settings (nothing is kept there to export). `sendConcierge`, `staffRequest`, `familyHome` and `fetchRates` are no longer nullable.
+- **One mode:** `API_URL` defaults to `/api/v1`; `startRuntime` restores the session and never signs in on its own. `data/sync.ts` (the cross-tab channel) stays for the session. `data/lifecycle.ts` now only clears this device's keys.
+- **Server:** `GET /auth/demo-accounts` (anonymous; 404 in production) lists the seeded demo accounts; the sign-in page shows them in non-production builds (`src/auth/demoAccounts.ts`). `IUserStore.ListDemoAsync`, `DemoAccountDto`; documented in data model 6.1.
+- **Tests:** deleted the eleven `src/api/*.test.ts` files that drove the mocks and the discover-API block in `domain/discover.test.ts`; `data.test.ts` keeps the reset/wipe and channel tests. **The assertions were not ported to C#** (the plan asked to list and move the useful ones); the rules they covered live in the server services, and the C# suite is the place to check them when the user next runs it. `guards`, `httpApi` and `bounded` tests stay.
+- **Verified:** `npm run test` (1519 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
+- **Not done (Phase 4 or later):** the device-signed family link branch (`FamilyLinkScreen`, `AtSeaScreen` with `issueLink`/`verifyLink`), the pretend callback queue in `DisruptionHubScreen`, the local feed simulations, `PersonaId` in the API type files and `domain/personas` use in domain code, and the `src/api/personaIds.ts` guid mapping. Stale "mock mode" comments remain in `feeds/*`, `sync/*` and `ai/concierge.ts`.

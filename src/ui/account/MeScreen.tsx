@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { sailingRange } from '../../domain/cruise'
 import { sailingById } from '../../domain/sailings'
-import { api, signOutSaving, usesRealAuth } from '../../runtime'
+import { api, signOutSaving } from '../../runtime'
 import { useSyncStatus } from '../../hooks/useSyncStatus'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
@@ -40,12 +40,8 @@ export function MeScreen() {
         </Card>
       )}
 
-      {usesRealAuth && (
-        <>
-          <p role="status" className="muted">{t(`sync.${syncState}` as StringKey)}</p>
-          <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
-        </>
-      )}
+      <p role="status" className="muted">{t(`sync.${syncState}` as StringKey)}</p>
+      <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
 
       <section aria-labelledby="me-trip-h">
         <h2 id="me-trip-h">{t('me.yourTrip')}</h2>

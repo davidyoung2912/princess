@@ -36,3 +36,6 @@ public sealed record CodeRequest(string? Email);
 public sealed record ResetRequest(string? Email, string? Code, string? NewPassword);
 
 public sealed record MagicRedeemRequest(string? Email, string? Code);
+
+/// <summary>One seeded demo account for the non-production sign-in help. The shared demo password is not part of it.</summary>
+public sealed record DemoAccountDto(string Email, string FirstName, string? LastName, string Role);

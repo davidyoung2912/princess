@@ -2,22 +2,19 @@
 
 A mobile-first, responsive, installable (PWA) React site for a cruise line, with a C# REST API over SQL Server in `server/` and `db/`.
 
-## Two ways to run the front end
+## Running the front end
 
-| Mode | How | What you get |
-| --- | --- | --- |
-| Demo (no API) | `npm install && npm run dev` | The demo persona picker and the in-browser mock API (IndexedDB). No server needed. |
-| Real API | Set `VITE_API_URL=/api/v1` (for example in `.env.local`), then `npm run dev` | Email or account number plus password sign-in; every journey group is served by the REST API. |
+There is one mode: the front end always talks to the REST API and keeps no data of its own (only display settings, the session token, diagnostics and caches of server answers). The server must be running for `npm run dev`. `VITE_API_URL` is optional and defaults to `/api/v1`, which the Vite proxy sends to the API.
 
 Vite proxies `/api` to `VITE_API_PROXY` (default `http://localhost:5182`). A different API origin also needs adding to the CSP `connect-src` and the API's CORS origins.
 
-Still mocked in both modes, on purpose: live ship telemetry and weather, and card charging. The AI concierge runs on the server when a model key is set (`Concierge:ApiKey`, user-secrets); without one, or in mock mode, a built-in helper answers.
+Still mocked, on the server, on purpose: live ship telemetry and weather, and card charging. The AI concierge runs on the server when a model key is set (`Concierge:ApiKey`, user-secrets); without one, a scripted helper on the server answers.
 
 ## Running the back end
 
 1. **Database** (SQL Server, run by hand): see `db/README.md`. Schema `db/01-schema.sql`, then the reference and persona seeds.
 2. **API**: see `server/README.md`. Set the connection string and JWT signing key with user-secrets, then `cd server && dotnet run --project Princess.Api` (http://localhost:5182, Swagger at `/swagger`).
-3. **Front end**: `VITE_API_URL=/api/v1 npm run dev`, sign in with a seeded `<slug>@demo.princess.example` account (demo password in `server/README.md`).
+3. **Front end**: `npm run dev`, sign in with a seeded `<slug>@demo.princess.example` account (demo password in `server/README.md`).
 
 ## Front-end checks
 

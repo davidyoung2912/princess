@@ -1,5 +1,4 @@
 import { DEMO_KEY } from '../demo/state'
-import type { DataStore } from './store'
 
 /** The part of Storage these functions need; localStorage, sessionStorage and test fakes all fit. */
 export interface KeyValueStorage {
@@ -21,16 +20,13 @@ export function removeAppKeys(storage: KeyValueStorage | null, except: readonly 
   keys.forEach((k) => storage.removeItem(k))
 }
 
-/** "Reset demo": all saved records and the demo controls go back to first-run. Display settings and who is signed in are kept. */
-export async function resetDemo(store: DataStore, local: KeyValueStorage | null): Promise<void> {
-  await store.clear()
+/** "Reset demo": the demo controls go back to first-run. */
+export async function resetDemo(local: KeyValueStorage | null): Promise<void> {
   local?.removeItem(DEMO_KEY)
 }
 
-/** "Wipe everything": every record, setting, session and the database itself. */
-export async function wipeEverything(opts: { store: DataStore | null; deleteDatabase: () => Promise<void>; local: KeyValueStorage | null; session: KeyValueStorage | null }): Promise<void> {
-  opts.store?.close()
+/** "Wipe everything": every setting and session kept on this device. */
+export function wipeEverything(opts: { local: KeyValueStorage | null; session: KeyValueStorage | null }): void {
   removeAppKeys(opts.local)
   removeAppKeys(opts.session)
-  await opts.deleteDatabase()
 }

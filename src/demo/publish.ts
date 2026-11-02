@@ -46,7 +46,7 @@ export function demoFromAnswer(state: DemoState, a: DemoAnswer, realNow: number)
   }
 }
 
-/** The server's demo routes; unset in mock mode and for real accounts. Set by the runtime. */
+/** The server's demo routes; unset for real accounts. Set by the runtime. */
 export interface DemoRemote {
   save(payload: DemoPayload): Promise<unknown>
   /** Moves the clock so its "now" is `at` (ms), measured on the server's clock. */

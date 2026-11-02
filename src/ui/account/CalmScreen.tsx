@@ -32,7 +32,7 @@ export function CalmScreen() {
   const cards = visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
 
   /** Tells guest services in REST mode (best effort: the request is kept here either way, and a server that cannot be reached changes nothing on screen). */
-  const tellStaff = (kind: 'caregiver' | 'kit') => { if (staffRequest) void staffRequest(kind).catch(() => undefined) }
+  const tellStaff = (kind: 'caregiver' | 'kit') => { void staffRequest(kind).catch(() => undefined) }
   const [items, setItems] = useState<KitItem[]>([])
   const [kitMsg, setKitMsg] = useState(false)
   const [name, setName] = useState('')

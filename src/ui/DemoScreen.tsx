@@ -1,7 +1,5 @@
-import { auth, usesRealAuth } from '../runtime'
-import { setNetwork, setSpeed, stepBy, jumpToStage, toggleScenario, updateDemo } from '../demo/store'
+import { setSpeed, stepBy, jumpToStage, toggleScenario, updateDemo } from '../demo/store'
 import { CLOCK_SPEEDS, PHONE_ZONES } from '../domain/clock'
-import { PERSONAS, type PersonaGroup } from '../domain/personas'
 import { SAILINGS, STAGE_IDS, stageAt, type StageId } from '../domain/sailings'
 import { appliesTo, SCENARIOS } from '../domain/scenarios'
 import { dayLabel } from '../domain/timezones'
@@ -11,22 +9,16 @@ import { Button } from './Button'
 import { Card } from './Card'
 import { ThreeClocks } from './ThreeClocks'
 
-const GROUPS: readonly PersonaGroup[] = ['solo', 'harper', 'brennan']
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
 
-const LATENCY = { fast: [50, 150], normal: [120, 450], slow: [1500, 4000] } as const
-const FAILURES = { none: 0, some: 0.1, many: 0.4 } as const
-
-/** Demo-only controls: who is signed in, the clock, scenarios and the pretend network. */
+/** Demo-only controls: who is signed in, the clock and scenarios. */
 export function DemoScreen() {
   const demo = useDemo()
   const persona = usePersona()
   const sailing = useSailing()
   const now = useNow()
   const stage = stageAt(sailing, now)
-  const latency = (Object.keys(LATENCY) as (keyof typeof LATENCY)[]).find((k) => LATENCY[k][0] === demo.network.latencyMinMs && LATENCY[k][1] === demo.network.latencyMaxMs)
-  const failures = (Object.keys(FAILURES) as (keyof typeof FAILURES)[]).find((k) => FAILURES[k] === demo.network.failureRate)
 
   return (
     <div className="page">
@@ -36,18 +28,6 @@ export function DemoScreen() {
       <Card labelledBy="demo-persona-h">
         <h2 id="demo-persona-h">{t('demo.persona.title')}</h2>
         {persona && <p aria-live="polite">{t('demo.persona.current', { name: persona.name })}</p>}
-        {usesRealAuth && <p>{t('demo.persona.real')}</p>}
-        {!usesRealAuth && GROUPS.map((group) => (
-          <fieldset key={group}>
-            <legend>{t(`demo.persona.group.${group}` as StringKey)}</legend>
-            {PERSONAS.filter((p) => p.group === group).map((p) => (
-              <label key={p.id} className="choice">
-                <input type="radio" name="persona" checked={persona?.id === p.id} onChange={() => void auth.signIn({ method: 'demo', personaId: p.id })} />
-                <span>{p.name}, {p.role}<small>{p.summary}</small></span>
-              </label>
-            ))}
-          </fieldset>
-        ))}
         <p><small>{t('demo.persona.note')}</small></p>
       </Card>
 
@@ -114,32 +94,6 @@ export function DemoScreen() {
             )
           })}
         </ul>
-      </Card>
-
-      <Card labelledBy="demo-network-h">
-        <h2 id="demo-network-h">{t('demo.network.title')}</h2>
-        <label className="choice">
-          <input type="checkbox" checked={demo.network.offline} onChange={(e) => setNetwork({ offline: e.target.checked })} />
-          {t('demo.network.offline')}
-        </label>
-        <fieldset>
-          <legend>{t('demo.network.speed')}</legend>
-          {(Object.keys(LATENCY) as (keyof typeof LATENCY)[]).map((k) => (
-            <label key={k} className="choice">
-              <input type="radio" name="latency" checked={latency === k} onChange={() => setNetwork({ latencyMinMs: LATENCY[k][0], latencyMaxMs: LATENCY[k][1] })} />
-              {t(`demo.network.speed.${k}` as StringKey)}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset>
-          <legend>{t('demo.network.failures')}</legend>
-          {(Object.keys(FAILURES) as (keyof typeof FAILURES)[]).map((k) => (
-            <label key={k} className="choice">
-              <input type="radio" name="failures" checked={failures === k} onChange={() => setNetwork({ failureRate: FAILURES[k] })} />
-              {t(`demo.network.failures.${k}` as StringKey)}
-            </label>
-          ))}
-        </fieldset>
       </Card>
     </div>
   )

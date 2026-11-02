@@ -1,16 +1,12 @@
-import { createHttpGroups, withHttpGroups } from '../api/httpApi'
-import { createMockApi } from '../api/mock'
+import { createHttpGroups, toApi } from '../api/httpApi'
 import type { Api } from '../api/types'
 import type { ConciergeSender } from '../ai/concierge'
 import { createHttpAuthProvider } from '../auth/httpProvider'
-import { createMockAuthProvider } from '../auth/mockProvider'
-import { ownerIdOf, type AuthProvider } from '../auth/provider'
-import { deleteDatabase, openStore } from '../data/idbStore'
+import { ownerIdOf } from '../auth/provider'
 import { resetDemo, wipeEverything } from '../data/lifecycle'
-import type { DataRecord, DataStore } from '../data/store'
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
-import { getDemo, pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
+import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
 import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
 import { pulseFeed } from '../feeds/pulse'
 import { skyNightFeed } from '../feeds/skyNight'
@@ -26,7 +22,7 @@ import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
-import { DEFAULT_PERSONA, personaById } from '../domain/personas'
+import { personaById } from '../domain/personas'
 import { resetSettingsToDefaults, switchSettingsOwner } from '../settings/store'
 import { sync, setRemote } from '../sync'
 import { registerSyncBindings } from '../sync/bindings'
@@ -41,78 +37,35 @@ const safe = (get: () => Storage): Storage | null => {
 const local = () => safe(() => localStorage)
 const session = () => safe(() => sessionStorage)
 
-let opening: Promise<DataStore> | null = null
-/** The database, opened on first use. */
-export const getStore = (): Promise<DataStore> => (opening ??= openStore())
+/** The server's address: `VITE_API_URL`, or `/api/v1` (the Vite proxy in development). There is no other mode; the server must be running. */
+export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || '/api/v1'
 
-/** A DataStore that opens the database on its first call, so the mock API can be built before anything is opened. */
-const lazyStore: DataStore = {
-  get: async (k, o, i) => (await getStore()).get(k, o, i),
-  put: async (r: DataRecord) => (await getStore()).put(r),
-  delete: async (k, o, i) => (await getStore()).delete(k, o, i),
-  list: async (k, o) => (await getStore()).list(k, o),
-  all: async (o) => (await getStore()).all(o),
-  clear: async () => (await getStore()).clear(),
-  getMeta: async (k) => (await getStore()).getMeta(k),
-  setMeta: async (k, v) => (await getStore()).setMeta(k, v),
-  close: () => { void opening?.then((s) => s.close()) },
+export const auth = createHttpAuthProvider({ baseUrl: API_URL, storage: session(), channel })
+const http = auth.http
+
+const rest = createHttpGroups(http)
+auth.subscribe(rest.reset)
+export const api: Api = toApi(rest.groups)
+
+/** Today's rate table from the server, so every device shows the same one. */
+export const fetchRates = async (): Promise<RateTable> => normalizeRates(await http.get<unknown>('/rates'))
+
+/** The concierge is answered by the server (model key, tools, guard and hourly limit stay there). */
+export const sendConcierge: ConciergeSender = (body) => http.post<unknown>('/me/concierge', body)
+
+/** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. */
+export const staffRequest = (kind: 'callback' | 'caregiver' | 'kit', reason?: string): Promise<unknown> => http.post<unknown>('/me/staff-requests', { kind, reason })
+
+/** Family-at-home links signed by the server: make, stop, stop all, send a postcard and open a link's page (no sign-in). */
+export const familyHome = {
+  issue: (days: number) => http.post<unknown>('/me/family-links', { days }),
+  revoke: (id: string) => http.delete<void>(`/me/family-links/${encodeURIComponent(id)}`),
+  revokeAll: () => http.delete<void>('/me/family-links'),
+  postcard: (kind: string, note: string) => http.post<void>('/me/family-postcards', { kind, note }),
+  view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
 }
 
-/** Set `VITE_API_URL` (for example `/api/v1`, served by the Vite proxy) to sign in against the real API; otherwise the demo picker is used. */
-export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? ''
-export const usesRealAuth = API_URL !== ''
-
-export const auth: AuthProvider = usesRealAuth
-  ? createHttpAuthProvider({ baseUrl: API_URL, storage: session(), channel })
-  : createMockAuthProvider({ session: session(), local: local(), channel })
-
-const mockApi: Api = createMockApi({
-  store: lazyStore,
-  demo: getDemo,
-  persona: () => auth.current()?.personaId ?? null,
-  channel,
-})
-
-/** With real sign-in, the account area (Phase 13), discover and booking (Phase 14), the pre-cruise groups (Phase 15), check-in and boarding (Phase 16) everything on board (Phase 17) and the after-cruise groups (Phase 18) are served by the REST API; only dining/queues/requests (legacy, dropped) stay on the mock. */
-const rest = usesRealAuth ? createHttpGroups((auth as ReturnType<typeof createHttpAuthProvider>).http) : null
-if (rest) auth.subscribe(rest.reset)
-export const api: Api = rest ? withHttpGroups(mockApi, rest.groups) : mockApi
-
-/** Today's rate table from the server, so every device shows the same one; null in mock mode (the hook then uses the local stub). */
-export const fetchRates: (() => Promise<RateTable>) | null = rest
-  ? async () => normalizeRates(await (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/rates'))
-  : null
-
-/** The concierge is answered by the server (model key, tools, guard and hourly limit stay there); null in mock mode, where the built-in helper answers on the device. */
-export const sendConcierge: ConciergeSender | null = rest ? (body) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/concierge', body) : null
-
-/** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. Null in mock mode (the on-device pretend queue is used). */
-export const staffRequest: ((kind: 'callback' | 'caregiver' | 'kit', reason?: string) => Promise<unknown>) | null = rest
-  ? (kind, reason) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/staff-requests', { kind, reason })
-  : null
-
-/** Family-at-home links signed by the server (null in mock mode, where the device signs them): make, stop, stop all, send a postcard and open a link's page (no sign-in). */
-export const familyHome: {
-  issue: (days: number) => Promise<unknown>
-  revoke: (id: string) => Promise<void>
-  revokeAll: () => Promise<void>
-  postcard: (kind: string, note: string) => Promise<void>
-  view: (token: string) => Promise<unknown>
-} | null = rest
-  ? (() => {
-      const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
-      return {
-        issue: (days: number) => http.post<unknown>('/me/family-links', { days }),
-        revoke: (id: string) => http.delete<void>(`/me/family-links/${encodeURIComponent(id)}`),
-        revokeAll: () => http.delete<void>('/me/family-links'),
-        postcard: (kind: string, note: string) => http.post<void>('/me/family-postcards', { kind, note }),
-        view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
-      }
-    })()
-  : null
-
-if (rest) {
-  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+{
   setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
   setFlightFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
   auth.subscribe(forgetSky)
@@ -145,9 +98,8 @@ if (rest) {
 
 /** Fetches the access reference data (excursion difficulty, accessible room types) once a person is signed in; failures leave the authored copies in use. */
 function loadReference(): void {
-  if (!usesRealAuth) return
   if (!auth.current()) { setServedAccess(null); return }
-  void (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/reference/access')
+  void http.get<unknown>('/reference/access')
     .then((raw) => setServedAccess(normalizeAccessReference(raw)))
     .catch(() => {})
 }
@@ -157,11 +109,10 @@ function loadReference(): void {
  * for next time. Without a server, or when it cannot be reached or read, the authored copy (or the kept one) stays in use.
  */
 function loadCatalogue(): void {
-  if (!usesRealAuth) return
   const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
   const kept = cacheGet(store(), 'catalogue', 'v1', normalizeCatalogue)
   if (kept) applyCatalogue(kept.value)
-  void (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/reference/catalogue', { anonymous: true })
+  void http.get<unknown>('/reference/catalogue', { anonymous: true })
     .then((raw) => {
       const fresh = normalizeCatalogue(raw)
       if (!fresh) return
@@ -170,14 +121,12 @@ function loadCatalogue(): void {
     })
     .catch(() => {})
 }
-if (usesRealAuth) loadCatalogue()
+loadCatalogue()
 
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {
-  if (!usesRealAuth) return
   loadReference()
   const session = auth.current()
-  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
   loadContext()
   setRemote(session ? createHttpRemote(http) : null)
   setPortRowsRemote(session ? createHttpPortRows(http) : null)
@@ -189,19 +138,17 @@ function syncAccount(): void {
 /** Who is signed in, their trip, the sailing and the server's time (`GET /me/context`); cleared at sign-out. Nothing about it is kept on the device. */
 let contextFor: string | undefined
 function loadContext(): void {
-  if (!usesRealAuth) return
   const session = auth.current()
   markAccount(session ? (session.user?.isDemo ?? null) : null)
   if (!session) { setContext(null); contextFor = undefined; return }
   const who = session.user?.id
   if (who !== contextFor) { setContext(null); contextFor = who }
-  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
   void refreshContext(async () => fromWire(await http.get<unknown>('/me/context')), () => auth.current()?.user?.id === who)
 }
 
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
-  if (!usesRealAuth || typeof window === 'undefined') return () => {}
+  if (typeof window === 'undefined') return () => {}
   const onOnline = () => { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer(); void flushTelemetry() }
   const onVisible = () => { if (document.visibilityState === 'visible') { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer() } else void flushTelemetry() }
   window.addEventListener('online', onOnline)
@@ -223,34 +170,26 @@ export async function startRuntime(): Promise<void> {
     switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
     syncAccount()
   })
-  if (usesRealAuth) {
-    await auth.restore()
-    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
-    syncAccount()
-    return
-  }
-  if (!auth.current()) await auth.signIn({ method: 'demo', personaId: DEFAULT_PERSONA })
-  else switchSettingsOwner(personaById(auth.current()!.personaId) ?? null, ownerIdOf(auth.current()))
+  await auth.restore()
+  switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
+  syncAccount()
 }
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */
 export async function signOutSaving(): Promise<void> {
-  if (usesRealAuth) await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
+  await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
   await auth.signOut()
 }
 
-/** Settings, database and controls for "Reset demo". */
+/** "Reset demo": the demo controls go back to first-run and the account's demo data is reset on the server. Display settings and who is signed in are kept. */
 export async function resetDemoData(): Promise<void> {
-  await resetDemo(lazyStore, local())
+  await resetDemo(local())
   resetDemoState()
-  channel.post({ type: 'records' })
 }
 
-/** "Wipe everything": all saved data, settings and the sign-in; the page reloads to a clean first run. */
+/** "Wipe everything": every setting and the sign-in kept on this device; the page reloads to a clean first run. The account's data stays on the server. */
 export async function wipeAll(): Promise<void> {
-  const store = opening ? await opening.catch(() => null) : null
-  opening = null
-  await wipeEverything({ store, deleteDatabase, local: local(), session: session() })
+  wipeEverything({ local: local(), session: session() })
   resetSettingsToDefaults()
   location.reload()
 }

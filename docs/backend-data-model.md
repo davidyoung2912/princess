@@ -272,6 +272,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `auth.login` (new) | `POST /auth/login` {identifier, password} | P |
 | `auth.refresh` (new) | `POST /auth/refresh` | P (cookie/body) |
 | `auth.logout` (new) | `POST /auth/logout` | U |
+| *(new)* demo accounts | `GET /auth/demo-accounts` → `[{ email, firstName, lastName, role }]`; 404 in production; the sign-in page lists them in non-production builds | P |
 | `auth.me` | `GET /me` | U |
 | *(new)* view-as | `POST /me/view-as/{userId}` | Booker |
 | `account.party` | `GET /bookings/{n}/party` | B |
