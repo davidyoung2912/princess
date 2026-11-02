@@ -7,6 +7,8 @@ import { shipZoneAt } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { useMine } from '../../hooks/useMine'
+import { api } from '../../runtime'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { normalizeBrief } from '../../domain/planning'
 import { t, type StringKey } from '../../i18n'
@@ -87,16 +89,21 @@ export function LoungersScreen() {
 export function KidsReportScreen() {
   const { a, set, memory } = useAboard()
   const day = useCurrentDay()
+  const family = useMine(() => api.family.view())
   const brief = memory.planning.brief
-  const club = brief.age === null ? undefined : clubFor(brief.age)
+  // The children the club knows (from check-in) come first; the child brief is the fallback for a family not using check-in.
+  const fromClub = (family.data?.kids ?? []).flatMap((k) => (k.club ? [{ key: k.id, name: k.name, clubId: k.club.id, here: k.inClub !== null }] : []))
+  const briefClub = brief.age === null ? undefined : clubFor(brief.age)
+  const kids = fromClub.length > 0 ? fromClub : briefClub ? [{ key: 'brief', name: normalizeBrief(brief).name, clubId: briefClub.id, here: false }] : []
   return (
     <Page title="route.kidsReport" intro="kreport.intro">
       <label className="choice"><input type="checkbox" checked={a.kidsConsent} onChange={(e) => set((x) => ({ ...x, kidsConsent: e.target.checked }))} /><span>{t('kreport.consent')}</span></label>
-      {!club ? <p>{t('kreport.needBrief')} <Link to="/plan/child-brief">{t('route.childBrief')}</Link></p> : !a.kidsConsent ? <Nothing k="kreport.waiting" /> : (
-        <Card labelledBy="kr-h"><h2 id="kr-h" className="card__title">{t('kreport.title', { club: clubById(club.id)?.name ?? club.id, day })}</h2>
-          {kidsReport(normalizeBrief(brief).name, club.id, day).map((l) => <p key={l}>{l}</p>)}
+      {kids.length === 0 ? <p>{t('kreport.needBrief')} <Link to="/plan/child-brief">{t('route.childBrief')}</Link></p> : !a.kidsConsent ? <Nothing k="kreport.waiting" /> : kids.map((k) => (
+        <Card key={k.key} labelledBy={`kr-${k.key}`}><h2 id={`kr-${k.key}`} className="card__title">{t('kreport.title', { club: clubById(k.clubId)?.name ?? k.clubId, day })}</h2>
+          {fromClub.length > 0 && <p className="muted">{k.here ? t('kreport.here', { name: k.name }) : t('kreport.notHere', { name: k.name })}</p>}
+          {kidsReport(k.name, k.clubId, day).map((l) => <p key={l}>{l}</p>)}
           <p className="muted">{t('kreport.sim')}</p></Card>
-      )}
+      ))}
     </Page>
   )
 }
@@ -288,13 +295,19 @@ export function SightingsScreen() {
 /** A words-only route to the cabin (S6-16), for the calm screen: lift bank, deck, side and number, with no map to read. */
 export function CabinWordsCard() {
   const { a, set } = useAboard()
+  const trips = useMine(() => api.trips.list())
+  const tripNo = trips.data?.upcoming.find((x) => x.kind === 'current')?.number ?? trips.data?.upcoming[0]?.number
+  const booked = useMine(() => (tripNo ? api.booking.get(tripNo) : Promise.resolve(null)), [tripNo])
   const [text, setText] = useState(a.cabin)
-  const cabin = a.cabin ? findCabin(a.cabin) : null
+  const fromBooking = booked.data?.cabin ?? null
+  const shownNumber = a.cabin || fromBooking || ''
+  const cabin = shownNumber ? findCabin(shownNumber) : null
   const words = cabin ? cabinWords(cabin) : null
   return (
     <Card labelledBy="cw-h">
       <h2 id="cw-h" className="card__title">{t('cw.title')}</h2>
       <Field label={t('cw.number')} inputMode="numeric" value={text} maxLength={6} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))} error={a.cabin && !cabin ? t('cw.unknown') : undefined} />
+      {fromBooking && !a.cabin && <p>{t('cw.fromBooking', { number: fromBooking })}</p>}
       <Button variant="secondary" onClick={() => set((x) => ({ ...x, cabin: text.trim() }))}>{t('cw.show')}</Button>
       {words && <ol>{words.steps.map((s) => <li key={s.key}>{t(`cw.step.${s.key}` as StringKey, s.params)}</li>)}</ol>}
       <p className="muted">{t('cw.note')}</p>

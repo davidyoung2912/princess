@@ -3,12 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS } from './domain/autopilot'
 import { dndNow, splitHeld } from './domain/aboardMore'
 import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offers'
-import { giftsFor, homeNudges } from './domain/finishMore'
+import { giftsFor, homeNudges, parseExcursionRequest } from './domain/finishMore'
 import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
 import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
 import { scriptedReply } from './ai/scripted'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
-import { REFERENCE_SAILING } from './domain/sailings'
+import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
+import { styleFor, STYLES } from './domain/prepMore'
 import { en } from './i18n/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
@@ -179,5 +180,43 @@ describe('H8 wire-through promises', () => {
     expect(cabinsFor('x', 'sanctuaryMiniSuite').some((c) => c.accessible)).toBe(false)
     expect(cabinsFor('x', 'balcony').some((c) => c.accessible)).toBe(true)
     expect(read('src/ui/book/RoomStep.tsx')).toMatch(/useState\(stepFreeNeeded\)/)
+  })
+  it('carbon uses the sailing length, and the money plan is kept and can become the trip budget', () => {
+    expect(sailingNights(REFERENCE_SAILING)).toBe(itinerary(REFERENCE_SAILING).length - 1)
+    expect(read('src/ui/plan/PrepMoreScreens.tsx')).toMatch(/carbonRange\(nights,/)
+    expect(normalizePlanning({ moneyDaily: { sea: 5000, port: 8000 } }).moneyDaily).toEqual({ sea: 5000, port: 8000 })
+    expect(normalizePlanning({ moneyDaily: { sea: -1, port: 'x' } }).moneyDaily).toBeNull()
+    expect(read('src/ui/plan/PrepMoreScreens.tsx')).toMatch(/budget: plan\.total/)
+  })
+  it('the cabin route offers the booked cabin and the Home continue card names the step', () => {
+    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.booking\.get\(tripNo\)/)
+    expect(read('src/ui/home/PrepCards.tsx')).toMatch(/continue\.at/)
+    expect(en['continue.at']).toMatch(/as far as/)
+  })
+  it('kept pasted lines show on their own day, day stories start from the persona, and the kids report reads club check-in', () => {
+    expect(read('src/ui/PastedLines.tsx')).toMatch(/l\.day === day/)
+    expect(read('src/ui/home/BriefingScreen.tsx') + read('src/ui/plan/AutopilotScreen.tsx')).toMatch(/<PastedLines day=\{day\}/)
+    expect(en['paste.todayNote']).toMatch(/not bookings/)
+    expect(styleFor('ethan')).toBe('active')
+    expect(styleFor('maya')).toBe('family')
+    expect(styleFor('nobody')).toBe('relaxed')
+    expect(STYLES).toContain(styleFor('alexander'))
+    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.family\.view\(\)/)
+  })
+  it('the assistant adds a named excursion to the cart only after a confirm tap, and never guesses', () => {
+    expect(parseExcursionRequest('add the San Gervasio ruins to my cart')?.id).toBe('coz-ruins')
+    expect(parseExcursionRequest('add the reef snorkel to my cart')).toBeNull() // two tours match: ask, do not guess
+    expect(parseExcursionRequest('please add an excursion')).toBeNull()
+    expect(parseExcursionRequest('what is the reef snorkel like')).toBeNull()
+    const ask = read('src/ui/home/AskScreen.tsx')
+    expect(ask).toMatch(/onClick=\{\(\) => void confirmExcursion\(\)\}/)
+    expect(ask).not.toMatch(/excursions\.(checkout|pay)/)
+    expect(en['ask.excNote']).toMatch(/Nothing is booked or charged/)
+  })
+  it('a higher storm chance shows a Home card aboard that points to route changes, but never after the cruise', () => {
+    const base = { budget: 3 as const, quiet: false, backAboardMin: null, storm: 'higher' as const, proposals: 0, briefing: false }
+    expect(homeNudges({ ...base, stormPhase: 'sailing' }).map((n) => n.id)).toEqual(['stormAboard'])
+    expect(homeNudges({ ...base, stormPhase: 'sailing' })[0].path).toBe('/home/disruption')
+    expect(homeNudges({ ...base, stormPhase: 'sailing', quiet: true })).toEqual([])
   })
 })

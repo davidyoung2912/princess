@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
-import { parseItemRequest, speechRecognitionOf, type ItemRequest } from '../../domain/finishMore'
+import { parseExcursionRequest, parseItemRequest, speechRecognitionOf, type ExcursionRequest, type ItemRequest } from '../../domain/finishMore'
 import { requestItem } from '../../domain/services'
 import { ask, EXAMPLES, type Answer, type Facts } from '../../domain/assistant'
 import { explainCharge } from '../../domain/moneyShield'
@@ -43,6 +43,7 @@ export function AskScreen() {
   const [proposal, setProposal] = useState<Change | null>(null)
   const [notice, setNotice] = useState<StringKey | null>(null)
   const [itemReq, setItemReq] = useState<ItemRequest | null>(null)
+  const [excReq, setExcReq] = useState<ExcursionRequest | null>(null)
   const [lastItem, setLastItem] = useState<string | null>(null)
   const Recognition = typeof window === 'undefined' ? null : speechRecognitionOf(window)
   const listen = () => {
@@ -70,6 +71,9 @@ export function AskScreen() {
     const item = parseItemRequest(q)
     if (item && !me?.child) { setProposal(null); setItemReq(item); return }
     setItemReq(null)
+    const exc = parseExcursionRequest(q)
+    if (exc && me && !me.child) { setProposal(null); setExcReq(exc); return }
+    setExcReq(null)
     if (CHANGE_WORDS.test(q)) {
       const r = requestChange(q, dp.rows, dp.alternatives, now, day)
       if (r.ok) { setProposal(r.change); return }
@@ -102,6 +106,11 @@ export function AskScreen() {
       setNotice('ask.itemFail')
     }
     setItemReq(null)
+  }
+  const confirmExcursion = async () => {
+    if (!excReq || !me) return
+    try { await api.plan.excursions.addToCart(excReq.id, [me.id]); setNotice('ask.excDone') } catch { setNotice('ask.excFail') }
+    setExcReq(null)
   }
   const undoItem = async () => {
     if (!lastItem) return
@@ -148,8 +157,19 @@ export function AskScreen() {
           </div>
         </Card>
       )}
+      {excReq && (
+        <Card labelledBy="ask-exc">
+          <h2 id="ask-exc" className="card__title">{t('ask.excPreview')}</h2>
+          <p><strong>{t('ask.excWhat', { name: excReq.name })}</strong></p>
+          <p className="muted">{t('ask.excNote')}</p>
+          <div className="button-row">
+            <Button onClick={() => void confirmExcursion()}>{t('ask.confirm')}</Button>
+            <Button variant="secondary" onClick={() => setExcReq(null)}>{t('ask.cancel')}</Button>
+          </div>
+        </Card>
+      )}
       {lastItem && notice === 'ask.itemDone' && <Button variant="secondary" onClick={() => void undoItem()}>{t('ask.itemUndoButton')}</Button>}
-      {notice && <Banner kind="info" title={t(notice)}>{notice === 'ask.done' && <p><Link to="/plan/autopilot">{t('ask.seeLog')}</Link></p>}</Banner>}
+      {notice && <Banner kind="info" title={t(notice)}>{notice === 'ask.done' && <p><Link to="/plan/autopilot">{t('ask.seeLog')}</Link></p>}{notice === 'ask.excDone' && <p><Link to="/plan/excursions">{t('ask.excGo')}</Link></p>}</Banner>}
 
       <section aria-label={t('ask.answers')} aria-live="polite">
         {turns.map((turn) => (

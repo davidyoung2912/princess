@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { TripView } from '../../api/types'
 import { categoryById } from '../../domain/ship'
-import { carbonRange, childStory, cleanName, DEFAULT_DAILY, dressNights, guaranteeOdds, KG_PER_GUEST_NIGHT, moneyPlan, OCCASIONS, OUTLETS, parsePlan, PROHIBITED, STARTERS, STORY_DAYS, STYLES, type Occasion, type PlanLine, type Style } from '../../domain/prepMore'
+import { usePersona } from '../../hooks/useDemo'
+import { carbonRange, childStory, cleanName, DEFAULT_DAILY, dressNights, guaranteeOdds, KG_PER_GUEST_NIGHT, moneyPlan, OCCASIONS, OUTLETS, parsePlan, PROHIBITED, STARTERS, STORY_DAYS, STYLES, styleFor, type Occasion, type PlanLine, type Style } from '../../domain/prepMore'
 import { formatMoney } from '../../domain/pricing'
-import { itinerary, PORTS, REFERENCE_SAILING, sailingById, type PortId } from '../../domain/sailings'
+import { itinerary, PORTS, REFERENCE_SAILING, sailingById, sailingNights, type PortId } from '../../domain/sailings'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
@@ -65,11 +66,12 @@ export function GuaranteeScreen() {
 export function CarbonCard() {
   const trips = useMine(() => api.trips.list())
   const trip: TripView | undefined = trips.data?.upcoming[0]
-  const r = carbonRange(7, trip?.guests ?? 1)
+  const nights = sailingNights((trip && sailingById(trip.sailingId)) || REFERENCE_SAILING)
+  const r = carbonRange(nights, trip?.guests ?? 1)
   return (
     <Card labelledBy="sus-co2-h">
       <h2 id="sus-co2-h" className="card__title">{t('carbon.title')}</h2>
-      <p>{t('carbon.range', { low: r.lowKg.toLocaleString('en-US'), high: r.highKg.toLocaleString('en-US'), guests: trip?.guests ?? 1 })}</p>
+      <p>{t('carbon.range', { low: r.lowKg.toLocaleString('en-US'), high: r.highKg.toLocaleString('en-US'), guests: trip?.guests ?? 1, nights })}</p>
       <p className="muted">{t('carbon.method', { low: KG_PER_GUEST_NIGHT.low, high: KG_PER_GUEST_NIGHT.high })}</p>
     </Card>
   )
@@ -79,10 +81,15 @@ export function CarbonCard() {
 export function MoneyPlanScreen() {
   const trips = useMine(() => api.trips.list())
   const trip = trips.data?.upcoming[0]
-  const [sea, setSea] = useState(String(DEFAULT_DAILY.sea / 100))
-  const [port, setPort] = useState(String(DEFAULT_DAILY.port / 100))
+  const { state: mem, update } = useMemory()
+  const saved = mem.planning.moneyDaily ?? DEFAULT_DAILY
+  const [sea, setSea] = useState(String(saved.sea / 100))
+  const [port, setPort] = useState(String(saved.port / 100))
   const s = (trip && sailingById(trip.sailingId)) || REFERENCE_SAILING
-  const plan = moneyPlan(s, trip?.guests ?? 1, { sea: Number(sea || '0') * 100, port: Number(port || '0') * 100 })
+  const daily = { sea: Number(sea || '0') * 100, port: Number(port || '0') * 100 }
+  const plan = moneyPlan(s, trip?.guests ?? 1, daily)
+  const keep = (next: { sea: number; port: number }) => update((m) => ({ ...m, planning: { ...m.planning, moneyDaily: next } }))
+  const isBudget = mem.planning.budget === plan.total
   return (
     <Page title="route.moneyPlan" intro="mplan.intro">
       <Load state={trips}>
@@ -90,13 +97,15 @@ export function MoneyPlanScreen() {
           <>
             <Card labelledBy="mp-in">
               <h2 id="mp-in" className="card__title">{t('mplan.perPerson')}</h2>
-              <Field label={t('mplan.seaDay')} inputMode="numeric" value={sea} onChange={(e) => setSea(e.target.value.replace(/\D/g, '').slice(0, 5))} />
-              <Field label={t('mplan.portDay')} inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value.replace(/\D/g, '').slice(0, 5))} />
+              <Field label={t('mplan.seaDay')} inputMode="numeric" value={sea} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setSea(v); keep({ ...daily, sea: Number(v || '0') * 100 }) }} />
+              <Field label={t('mplan.portDay')} inputMode="numeric" value={port} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setPort(v); keep({ ...daily, port: Number(v || '0') * 100 }) }} />
             </Card>
             <Card labelledBy="mp-out">
               <h2 id="mp-out" className="card__title">{t('mplan.plan')}</h2>
               <ul className="plain-list">{plan.days.map((d) => <li key={d.day}>{t('mplan.row', { day: d.day, where: portName(d.port), amount: formatMoney(d.budget) })}</li>)}</ul>
               <p role="status"><strong>{t('mplan.total', { total: formatMoney(plan.total), cash: formatMoney(plan.cash), card: formatMoney(plan.card) })}</strong></p>
+              <Button variant="secondary" disabled={isBudget || plan.total <= 0} onClick={() => update((m) => ({ ...m, planning: { ...m.planning, budget: plan.total } }))}>{isBudget ? t('mplan.isBudget') : t('mplan.useBudget')}</Button>
+              <p className="muted">{t('mplan.budgetNote')} <Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
             </Card>
           </>
         )}
@@ -161,7 +170,8 @@ export function PasteScreen() {
 /** Occasion starter and authored day stories (S0-09, S0-08). */
 export function StarterScreen() {
   const [occasion, setOccasion] = useState<Occasion>('firstCruise')
-  const [style, setStyle] = useState<Style>('relaxed')
+  const me = usePersona()
+  const [style, setStyle] = useState<Style>(styleFor(me?.id))
   const days = itinerary(REFERENCE_SAILING)
   return (
     <Page title="route.starter" intro="starter.intro">
@@ -177,6 +187,7 @@ export function StarterScreen() {
           <legend id="st-s">{t('starter.style')}</legend>
           {STYLES.map((s) => <label key={s} className="choice"><input type="radio" name="style" checked={style === s} onChange={() => setStyle(s)} /><span>{t(`starter.style.${s}` as StringKey)}</span></label>)}
         </fieldset>
+        {style === styleFor(me?.id) && <p className="muted">{t('starter.forYou')}</p>}
         {STORY_DAYS.map((d) => <p key={d}><strong>{t('paste.day', { n: d })} · {portName(days[d - 1].port)}.</strong> {t(`dstory.${style}.${d}` as StringKey)}</p>)}
         <p className="muted">{t('starter.note')}</p>
       </Card>

@@ -1,3 +1,4 @@
+import { PastedLines } from '../PastedLines'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { gentleNotes } from '../../domain/autopilot'
@@ -68,6 +69,7 @@ export function AutopilotScreen() {
       <p>{t('autopilot.intro')}</p>
       <p className="muted">{t('autopilot.promise')}</p>
 
+      <PastedLines day={day} />
       <Card labelledBy="ap-day">
         <h2 id="ap-day" className="card__title">{t('autopilot.day')}</h2>
         <label htmlFor="ap-pick">{t('autopilot.pick')}</label>

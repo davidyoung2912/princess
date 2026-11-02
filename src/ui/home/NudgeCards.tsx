@@ -29,7 +29,7 @@ export function NudgeCards({ aboard }: { aboard: boolean }) {
   const list = homeNudges({
     budget: settings.nudgesPerDay, quiet,
     backAboardMin: allAboard === null ? null : Math.ceil((allAboard - now) / 60_000),
-    storm: aboard ? 'none' : storm.band, stormPhase: storm.phase,
+    storm: aboard || storm.phase !== 'sailing' ? storm.band : 'none', stormPhase: storm.phase,
     proposals: pilot.changes.filter((c) => c.status === 'proposed').length,
     briefing: aboard,
   })

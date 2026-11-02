@@ -1,9 +1,10 @@
 import { Link } from 'react-router'
 import { dndNow } from '../../domain/aboardMore'
 import { offersQuiet } from '../../domain/finishMore'
+import { firstIncomplete } from '../../domain/booking'
 import { companionWeek } from '../../domain/prepMore'
-import { shipZoneAt } from '../../domain/sailings'
-import { timeIn } from '../../domain/timezones'
+import { sailingById, shipZoneAt } from '../../domain/sailings'
+import { dateIn, timeIn } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
@@ -35,11 +36,13 @@ export function CompanionCard({ daysToDeparture }: { daysToDeparture: number }) 
 export function ContinueBookingCard() {
   const saved = useMine(() => api.booking.draft())
   const d = saved.data
+  const today = dateIn(useNow(), 'America/New_York')
   if (!d || (d.category === '' && d.people.every((p) => p.firstName === '' && p.lastName === ''))) return null
   return (
     <Card labelledBy="cont-h">
       <h2 id="cont-h" className="card__title">{t('continue.title')}</h2>
       <p>{t('continue.body')}</p>
+      <p>{t('continue.at', { step: t(`book.step.${firstIncomplete(d, { departure: sailingById(d.sailingId)?.departure ?? null, today })}` as StringKey) })}</p>
       <LinkButton to="/book">{t('continue.go')}</LinkButton>
       <p className="muted"><Link to={`/book/resume/${d.id}`}>{t('continue.link')}</Link></p>
     </Card>

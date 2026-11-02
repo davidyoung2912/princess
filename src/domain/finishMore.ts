@@ -1,3 +1,4 @@
+import { EXCURSIONS } from './excursions'
 import { diningPlaces } from './aboardMore'
 import { type AllergyFlag, galleyStatus, type GalleyStatus, splitEven, type Share } from './bookingPrep'
 import { CLEARANCE_MINUTES, offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
@@ -209,7 +210,7 @@ export function normalizeFinish(raw: unknown): FinishState {
 /** Low-stress mode and gentle wording both mean no offers on Home. */
 export const offersQuiet = (f: Pick<FinishState, 'easy' | 'gentle'>): boolean => f.easy || f.gentle
 
-export type HomeNudgeId = 'backAboard' | 'storm' | 'proposals' | 'briefing'
+export type HomeNudgeId = 'backAboard' | 'storm' | 'stormAboard' | 'proposals' | 'briefing'
 export interface HomeNudge extends Nudge { id: HomeNudgeId; path: string; params: Record<string, number> }
 export interface HomeNudgeInput {
   budget: NudgeBudget
@@ -227,6 +228,7 @@ export function homeNudges(i: HomeNudgeInput): HomeNudge[] {
   const items: HomeNudge[] = []
   if (i.backAboardMin !== null && i.backAboardMin > 0 && i.backAboardMin <= 120) items.push({ id: 'backAboard', priority: 9, critical: true, path: '/ship/port', params: { min: i.backAboardMin } })
   if (i.storm === 'higher' && (i.stormPhase === 'near' || i.stormPhase === 'watch')) items.push({ id: 'storm', priority: 4, path: '/plan/storm', params: {} })
+  if (i.storm === 'higher' && i.stormPhase === 'sailing') items.push({ id: 'stormAboard', priority: 5, path: '/home/disruption', params: {} })
   if (i.proposals > 0) items.push({ id: 'proposals', priority: 3, path: '/plan/autopilot', params: { n: i.proposals } })
   if (i.briefing) items.push({ id: 'briefing', priority: 1, path: '/home/briefing', params: {} })
   return rankNudges(items, i.quiet ? 0 : i.budget)
@@ -247,6 +249,23 @@ export function parseItemRequest(q: string): ItemRequest | null {
   if (!hit) return null
   const n = w.map((x) => NUMBERS[x] ?? (/^\d$/.test(x) ? Number(x) : 0)).find((x) => x > 0) ?? 1
   return { id: hit.id, qty: Math.min(Math.max(1, n), hit.maxQty) }
+}
+
+export interface ExcursionRequest { id: string; name: string }
+const FILLER = new Set(['the', 'a', 'an', 'to', 'my', 'in', 'on', 'of', 'by', 'day', 'pass', 'and', 'for', 'at', 'me', 'cart', 'trip', 'tour', 'excursion'])
+const tokens = (s: string): string[] => s.toLowerCase().split(/[^a-z0-9]+/).filter((x) => x.length > 2 && !FILLER.has(x))
+/**
+ * "Add the reef snorkel to my cart" becomes one named excursion, or null when it is not clearly one. It only goes in the cart on confirm;
+ * paying is a separate step on the excursions screen.
+ */
+export function parseExcursionRequest(q: string, list: readonly { id: string; name: string }[] = EXCURSIONS): ExcursionRequest | null {
+  const w = q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+  if (!w.some((x) => ['add', 'book', 'put', 'reserve'].includes(x)) || !(w.includes('cart') || w.includes('excursion') || w.includes('tour') || list.some((e) => q.toLowerCase().includes(e.name.toLowerCase())))) return null
+  const asked = new Set(tokens(q))
+  const scored = list.map((e) => ({ e, hits: tokens(e.name).filter((x) => asked.has(x)).length })).filter((x) => x.hits >= 2 || (x.hits >= 1 && tokens(x.e.name).length === 1))
+  scored.sort((a, b) => b.hits - a.hits)
+  if (scored.length === 0 || (scored.length > 1 && scored[0].hits === scored[1].hits)) return null
+  return { id: scored[0].e.id, name: scored[0].e.name }
 }
 
 /** The browser's speech recognition, where there is one. Voice only fills the question box; sending and confirming stay a tap. */

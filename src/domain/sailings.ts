@@ -57,6 +57,9 @@ export interface ItineraryDay {
 }
 
 /** The authored reference timeline (ship profile §11.2); the same order for every sailing. */
+/** Nights on a sailing, read from its itinerary (the last day is the morning of arrival, so nights are days minus one). */
+export const sailingNights = (s: Sailing): number => Math.max(1, itinerary(s).length - 1)
+
 export function itinerary(s: Sailing): ItineraryDay[] {
   const d = (n: number) => addDays(s.departure, n - 1)
   return [

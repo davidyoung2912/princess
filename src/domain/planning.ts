@@ -223,8 +223,16 @@ export interface PlanningState {
   tasteOff: boolean; tasteRemoved: string[]
   budget: Cents | null; brief: ChildBrief; rhythm: Rhythm | null; privacy: Privacy
   traditions: Tradition[]; cabins: CabinPlan[]
+  /** The money plan's per-person daily amounts (S3-12), kept so the plan is the same next time. */
+  moneyDaily: { sea: Cents; port: Cents } | null
 }
-export const EMPTY_PLANNING: PlanningState = { polls: [], ideas: [], surprises: [], tasteOff: false, tasteRemoved: [], budget: null, brief: EMPTY_BRIEF, rhythm: null, privacy: SAFEST, traditions: [], cabins: [] }
+export const EMPTY_PLANNING: PlanningState = { polls: [], ideas: [], surprises: [], tasteOff: false, tasteRemoved: [], budget: null, brief: EMPTY_BRIEF, rhythm: null, privacy: SAFEST, traditions: [], cabins: [], moneyDaily: null }
+
+const normalizeDaily = (raw: unknown): { sea: Cents; port: Cents } | null => {
+  const m = rec(raw)
+  const ok = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 9_999_900
+  return ok(m.sea) && ok(m.port) ? { sea: m.sea, port: m.port } : null
+}
 
 export function normalizePlanning(raw: unknown): PlanningState {
   const r = rec(raw)
@@ -242,6 +250,7 @@ export function normalizePlanning(raw: unknown): PlanningState {
   const cabins = arr(r.cabins).flatMap((x): CabinPlan[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.name, 30) ? [{ id: o.id, name: clean(o.name, 30), tourIds: arr(o.tourIds).filter((i): i is string => typeof i === 'string' && !!excursionById(i)) }] : [] }).slice(0, CABINS_MAX)
   return {
     polls, ideas, surprises, traditions, cabins,
+    moneyDaily: normalizeDaily(r.moneyDaily),
     tasteOff: r.tasteOff === true, tasteRemoved: arr(r.tasteRemoved).filter((i): i is string => typeof i === 'string').map((i) => i.slice(0, 60)).slice(0, 50),
     budget: typeof r.budget === 'number' && r.budget > 0 ? Math.min(100_000_000, Math.round(r.budget)) : null,
     brief: normalizeBrief(r.brief), rhythm: normalizeRhythm(r.rhythm), privacy: normalizePrivacy(r.privacy),

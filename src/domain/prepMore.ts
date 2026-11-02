@@ -116,4 +116,8 @@ export const STARTERS: Record<Occasion, readonly string[]> = {
 }
 export const STYLES = ['relaxed', 'active', 'foodie', 'family'] as const
 export type Style = (typeof STYLES)[number]
+/** The story style that suits each demo persona, as the starting choice on the starter screen. The guest can pick any. */
+const STYLE_FOR: Record<string, Style> = { gerald: 'relaxed', maria: 'relaxed', linda: 'relaxed', alexander: 'foodie', daniel: 'family', priya: 'relaxed', ethan: 'active', maya: 'family', marcus: 'active', elena: 'relaxed', lucas: 'family', sofia: 'family' }
+export const styleFor = (personaId: string | null | undefined): Style => (personaId ? STYLE_FOR[personaId] : undefined) ?? 'relaxed'
+
 export const STORY_DAYS = [3, 4, 5] as const

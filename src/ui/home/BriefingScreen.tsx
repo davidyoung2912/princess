@@ -1,3 +1,4 @@
+import { PastedLines } from '../PastedLines'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { buildBriefing, kindAt, spoken, type BriefingKind } from '../../domain/briefing'
@@ -58,6 +59,7 @@ export function BriefingScreen() {
       <div className="button-row" role="group" aria-label={t('route.briefing')}>
         {(['morning', 'evening'] as const).map((k) => <Button key={k} variant={kind === k ? 'primary' : 'secondary'} aria-pressed={kind === k} onClick={() => { setKind(k); setCopied(false) }}>{t(k === 'morning' ? 'brief.morning' : 'brief.evening')}</Button>)}
       </div>
+      <PastedLines day={day} />
       <Card labelledBy="brief-h">
         <h2 id="brief-h" className="card__title">{b.title}</h2>
         {b.lines.length ? (
