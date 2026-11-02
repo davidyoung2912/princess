@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useWakeLock } from '../../hooks/useWakeLock'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { asBoardingView } from '../../api/guards'
 import type { BoardingView, GuestPass } from '../../api/types'
@@ -21,6 +22,7 @@ import { FailsafeCard, PassFace } from './parts'
 
 /** The boarding pass (CHK-04, CHK-14): large, high-contrast, kept on the phone, with a bright full-screen view, wallet, print, and a plan for a dead phone. */
 export function PassScreen() {
+  useWakeLock()
   const me = usePersona()
   const pass = useSavedCopy('pass', me?.booker ?? 'none', () => api.boarding.pass(), asBoardingView, [me?.id])
   const now = useNow()
@@ -82,12 +84,6 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
 
 /** A full-screen white pass with the biggest possible code. Browsers cannot raise screen brightness, so this keeps the screen awake where it can and asks the guest to turn brightness up. */
 function BrightView({ pass, p, onClose }: { pass: BoardingView; p: GuestPass; onClose: () => void }) {
-  useEffect(() => {
-    let lock: WakeLockSentinel | null = null
-    const wake = (navigator as Navigator & { wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinel> } }).wakeLock
-    void wake?.request('screen').then((l) => { lock = l }).catch(() => undefined)
-    return () => { void lock?.release().catch(() => undefined) }
-  }, [])
   return (
     <Dialog title={t('pass.brightTitle', { name: p.name })} onClose={onClose}>
       <div className="pass pass--bright"><PassFace pass={pass} p={p} big /></div>

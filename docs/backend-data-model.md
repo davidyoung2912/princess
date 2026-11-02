@@ -89,6 +89,12 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 
 **NotificationPrefs** — `UserId ID* PK FK→Users` · `Prefs [json]` (the `NotificationPrefs` object; channel × category matrix, quiet hours).
 
+**PushSubscriptions** — push. `Id ID* PK` · `UserId ID* FK→Users` · `Endpoint STR(450)* UQ` · `P256dh STR(200)*` · `Auth STR(200)*` · `Budget {0|1|3|5}*` · `Calm BIT*` · `Watch STR(900)*` (event ids, space separated) · `CreatedAt` · `UpdatedAt`. At most five per person.
+
+**PushDeliveries** — the delivery log. `Id ID* PK` · `UserId ID* FK→Users` · `NoticeKey STR(120)*` (stable for one occasion, so a notice is sent once) · `Kind STR(20)*` · `Bypass BIT*` (safety notices skip the limits) · `Outcome {sent|held}*` · `Reason {channelOff|calm|quiet|budget}?` · `Devices TINYINT*` · `Params STR(500)*` (json) · `ReadAt TS?` · `At TS*`. Newest 200 kept per person.
+
+**CalendarFeeds** — `UserId ID* PK FK→Users` · `TokenHash CHAR(64)* UQ` (SHA-256 of the address token; the token itself is never stored) · `CreatedAt TS*`.
+
 **ConsentChoices** — privacy R/W (`setConsent`).
 `UserId ID* FK→Users` · `ConsentId STR(30)*` · `On BIT*` · `ChangedByUserId ID* FK→Users` · `At TS*` · PK (`UserId, ConsentId`). Consent ids from `privacy.ts`.
 
@@ -299,6 +305,8 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `documents.get` | `GET /bookings/{n}/documents` | B |
 | `documents.set` | `PUT /users/{id}/documents/{doc}` {expires?} / `DELETE`; optional `?booking={n}` picks the booking whose view comes back (a helper gets only that guest) | as profile, with helper `documents` |
 | `notifications.list/markRead/savePrefs` | `GET /me/notifications`, `POST /me/notifications/read`, `PUT /me/notification-prefs` | U |
+| `push.status/subscribe/unsubscribe/dispatch/markRead` | `GET /me/push[?endpoint=]`, `PUT /me/push/subscription` {endpoint,p256dh,auth,budget,calm,watch}, `POST /me/push/unsubscribe` {endpoint}, `POST /me/push/dispatch[?endpoint=]`, `POST /me/push/read`; 409 `pushUnavailable` when the server cannot send, 409 `tooManyDevices` past 5 phones. Dispatch applies the budget, calm mode and quiet hours on the server (safety notices skip them) and writes the delivery log | U |
+| `calendar.status/create/revoke` | `GET/POST/DELETE /me/calendar-feed`; the address (`path`) is returned once, by POST. `GET /calendar/{token}.ics` serves the feed with no sign-in | U (the feed itself P) |
 | `support.tickets/callback/email` | `GET /me/support-tickets`; `POST /me/support-tickets` {kind:`callback`,phone} or {kind:`email`,message} | U |
 | `help.contacts` | `GET /help/contacts` | P |
 | `privacy.view/setConsent` | `GET /bookings/{n}/privacy`; `PUT /users/{id}/consents/{consent}` {on}, optional `?booking={n}` | B / the adult themself or the child's booker |

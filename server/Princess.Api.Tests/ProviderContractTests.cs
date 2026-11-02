@@ -131,6 +131,11 @@ public class ProviderContractTests
             case IFriendReply fr: Assert.NotNull(fr.Reply("Sam")); break;
             case ICabinGuide c: Assert.NotNull(c.Guide("S1", "balcony", new CabinFilterDto(false, false, false, false, false), null)); break;
             case ITelemetrySink sink: await sink.AcceptAsync([], CancellationToken.None); break;
+            case IPushSender push:
+                Assert.False(string.IsNullOrEmpty(push.PublicKey));
+                var sent = await push.SendAsync(new PushSubscriptionRow("https://push.example/abc", "k", "a", 3, false, ""), new PushMessage("k", "payment", "t", "b", "/me/payments", false, []), CancellationToken.None);
+                Assert.Equal(PushResult.Delivered, sent);
+                break;
             case IPaymentGateway pay:
                 var result = await pay.ChargeAsync("ref-1", [new ChargePart("wallet", null, null, null, false, 1_000)], null, CancellationToken.None);
                 Assert.False(string.IsNullOrEmpty(result.Reference));

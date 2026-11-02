@@ -26,8 +26,8 @@ describe('timers and wake locks', () => {
   })
 
   it('asks for the screen wake lock in one place and gives it back', () => {
-    expect(usersOf(/wakeLock/)).toEqual(['src/ui/boarding/PassScreen.tsx'])
-    expect(all.find((s) => s.file.split('\\').join('/') === 'src/ui/boarding/PassScreen.tsx')!.text).toContain('release()')
+    expect(usersOf(/wakeLock/)).toEqual(['src/hooks/useWakeLock.ts'])
+    expect(all.find((s) => s.file.split('\\').join('/') === 'src/hooks/useWakeLock.ts')!.text).toContain('release()')
   })
 
   it('removes every window or document listener it adds', () => {

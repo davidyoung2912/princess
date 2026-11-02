@@ -1,0 +1,16 @@
+using System.Text.Json.Nodes;
+
+namespace Princess.Api.Contracts;
+
+// Next-level plan N3: reaching the guest. Instants are epoch ms.
+
+public sealed record PushSubscribeRequest(string? Endpoint, string? P256dh, string? Auth, int? Budget, bool? Calm, List<string>? Watch);
+
+public sealed record PushUnsubscribeRequest(string? Endpoint);
+
+public sealed record PushLogDto(string Key, string Kind, string Outcome, string? Reason, bool Critical, int Devices, JsonNode Params, long At, bool Read);
+
+/// <summary>What this server can do for the guest's phone, and what it has done. <see cref="PublicKey"/> is null when it cannot send at all.</summary>
+public sealed record PushStatusDto(bool Available, string? PublicKey, bool Subscribed, int Devices, int Budget, bool Calm, List<string> Watch, int Unread, List<PushLogDto> Log);
+
+public sealed record CalendarFeedDto(bool On, string? Path);

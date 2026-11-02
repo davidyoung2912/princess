@@ -16,6 +16,8 @@ export interface HttpGroups {
   payments: Api['payments']
   documents: Api['documents']
   notifications: Api['notifications']
+  push: Api['push']
+  calendar: Api['calendar']
   support: Api['support']
   help: Api['help']
   budget: BudgetApi
@@ -305,6 +307,18 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
         return held === null ? send('delete', path) : send('put', path, { expires: held.expires })
       },
     },
+    push: {
+      status: (endpoint) => get(`/me/push${endpoint ? `?endpoint=${seg(endpoint)}` : ''}`),
+      subscribe: (input) => send('put', '/me/push/subscription', { endpoint: input.endpoint, p256dh: input.p256dh, auth: input.auth, budget: input.budget, calm: input.calm, watch: input.watch }),
+      unsubscribe: (endpoint) => send('post', '/me/push/unsubscribe', { endpoint }),
+      dispatch: (endpoint) => send('post', `/me/push/dispatch${endpoint ? `?endpoint=${seg(endpoint)}` : ''}`),
+      markRead: () => send('post', '/me/push/read'),
+    },
+    calendar: {
+      status: () => get('/me/calendar-feed'),
+      create: () => send('post', '/me/calendar-feed'),
+      revoke: () => send('delete', '/me/calendar-feed'),
+    },
     notifications: {
       list: () => get('/me/notifications'),
       markRead: async (ids) => { await http.post('/me/notifications/read', { ids }) },
@@ -506,6 +520,8 @@ export function toApi(g: HttpGroups): Api {
     payments: g.payments,
     documents: g.documents,
     notifications: g.notifications,
+    push: g.push,
+    calendar: g.calendar,
     support: g.support,
     help: g.help,
     budget: g.budget,

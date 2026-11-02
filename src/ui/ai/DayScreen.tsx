@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { setWatched } from '../../push/browser'
 import { Link } from 'react-router'
 import { NO_WISH, type DayWish, type Mobility } from '../../domain/day'
 import { dayPlanFeed, wishKey } from '../../feeds/dayPlan'
@@ -28,6 +29,9 @@ export function DayScreen() {
   const [day, setDay] = useState(3)
   const [wish, setWish] = useState<DayWish>({ ...NO_WISH, withKids: !!me && partyPeople(me.id).some((p) => p.age < 13) })
   const plan = useFeed(dayPlanFeed, sailing.id, day, wishKey(wish))
+  // The events in the day shown are the ones to hear about if the ship moves or cancels them (N3.3).
+  const followed = plan?.items.filter((i) => i.kind === 'event').map((i) => i.id).join(' ') ?? ''
+  useEffect(() => { setWatched(followed.split(' ').filter(Boolean)) }, [followed])
   return (
     <div className="page">
       <h1>{t('route.buildDay')}</h1>

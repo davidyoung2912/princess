@@ -16,6 +16,7 @@ import { QrCode } from '../checkin/QrCode'
 import { ContactsAshore, LastMinute, Readiness } from '../aboard/PortExtras'
 import { BackLink, Saved } from './common'
 import { duration, useShipTime } from './shipTime'
+import { PushSwitch } from '../account/PushPanels'
 import { PortCard } from './PortCard'
 import { PortParty } from './PortParty'
 import { PortPilot } from './PortPilot'
@@ -27,6 +28,7 @@ export function PortDayScreen() {
   return (
     <div className="page">
       <h1>{t('route.portDay')}</h1>
+      <PushSwitch question={t('push.allAboard.question')} />
       <Saved copy={copy}>
         {(c) => (c.view ? <Body v={c.view} /> : (
           <Banner kind="info" title={t('port.none')}><p>{t('port.noneBody')}</p></Banner>

@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 import { track } from '../diagnostics/watch'
+import { usePushSync } from '../hooks/usePushSync'
 import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { applyPageMeta, seoFor } from '../seo'
@@ -19,6 +20,7 @@ export function Shell() {
   const { pathname } = useLocation()
   const [helpOpen, setHelpOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('')
+  usePushSync()
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
   const activeTab = tabForPath(pathname)

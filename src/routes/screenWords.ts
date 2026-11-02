@@ -150,7 +150,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/me/profile': 'my details; name; address; contact details; passport details',
   '/me/documents': 'documents; passport; papers; uploads; visas',
   '/me/payments': 'payments; card; pay balance; payment method; deposit',
-  '/me/notifications': 'notifications; messages; inbox; unread; alerts',
+  '/me/notifications': 'notifications; messages; inbox; unread; alerts; push; calendar link; subscribe calendar; sent to my phone; quiet hours',
   '/me/helper': 'family helper; someone helps me; delegate; trusted person',
   '/me/help': 'help centre; faq; how do I; questions; guides',
   '/me/contact': 'contact us; phone number; email; call; speak to someone',

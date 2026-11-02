@@ -48,6 +48,7 @@ public static class ProviderRegistration
         S<IFriendReply, SimFriendReply>(),
         S<IPaymentGateway, MockPaymentGateway>(),
         S<ITelemetrySink, LoggingTelemetrySink>(),
+        S<IPushSender, SimPushSender>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)

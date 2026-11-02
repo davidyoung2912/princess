@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
+      workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
       manifest: {
         name: 'Princess guest app (unofficial concept)',
         short_name: 'Princess',

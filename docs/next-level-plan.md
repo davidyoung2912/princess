@@ -149,6 +149,21 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 
 **Done when:** a notice created by the server reaches the service worker in tests (simulated sender), the budget and quiet rules are enforced server-side and unit tested, and the screen tells the guest honestly what their browser can and cannot do.
 
+**N3 record (2026-11-02):**
+- **N3.1 done:** `public/push-sw.js` (push and tap handlers) is loaded by the generated worker through `importScripts` in `vite.config.ts`; tested by running the real script against a stand-in worker scope (`src/push/serviceWorker.test.ts`). `PushSwitch` asks only on a tap, in context ("Allow all-aboard warnings?" on the port day, "Get alerts on this phone?" on Notifications), and says honestly when the phone needs the app on the Home Screen (iOS), the browser cannot do it, the browser blocked it, or the server cannot send.
+- **N3.2 done:** `IPushSender` (seam `Providers:PushSender`, simulation `SimPushSender` records and delivers nothing; its key is a real P-256 point so a browser can subscribe), `PushService`, `/me/push*` endpoints, tables `PushSubscriptions`, `PushDeliveries`, `CalendarFeeds`. The budget, calm mode, quiet hours and the push channel per category are applied on the server in `PushRules.Decide`; safety notices (all-aboard, a critical disruption, an overdue payment) bypass them. With several phones the strictest limit applies.
+- **N3.3 done:** the five notices are built in `PushRules.Build` from what the server knows: all-aboard in the final hour (60, 30 and 10 minute steps), the back-aboard nudge (a person in the port rows not marked back, inside the guest's lead time), a schedule change on an event in the day the guest built, a disruption, payment due or overdue. Each is sent once (stable key).
+- **N3.4 done:** `GET/POST/DELETE /me/calendar-feed` and the public `GET /calendar/{token}.ics`: payment date, each day, and all-aboard times with a one-hour reminder. Only a hash of the token is stored, so the address is shown once; a new one cancels the old.
+- **N3.5 done:** `useWakeLock` (one place, now also used by the boarding pass and the meeting place screen) and the app-icon badge from the unread count.
+- **N3.6 done:** "What we sent you" on Notifications: each alert sent or held back with the reason.
+- **Decisions and limits (read these):**
+  - **Web Push, not SignalR.** Push has to reach a closed or backgrounded app; a SignalR connection only exists while the app is open. SignalR could be added later for live in-app updates (N4's shared rendezvous), alongside this.
+  - **Nothing is delivered for real yet.** The simulated sender records only; a real Web Push sender with VAPID keys is N8. Until then the log shows what would have been sent.
+  - **The check runs when the app asks** (on open, on return to the front, every five minutes while visible) through `POST /me/push/dispatch`. A scheduler calling `PushService.DispatchAsync` for every subscribed person is the missing piece for alerts to a phone with the app closed; the rules do not change.
+  - "Bookmarked item" is the events in the day the guest built on the Build my day screen (the server has no other list of saved events).
+  - The C# was written without a compiler on this machine (no `dotnet`), so `PushRulesTests.cs` and the server build have **not been run**; build the server before relying on them.
+
+
 **Risks:** push permission is easy to annoy people with; the Wallet pass (real Apple/Google signing) is deliberately **not** in this phase because it needs certificates (a decision for you; see §6).
 
 ---

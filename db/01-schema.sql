@@ -669,6 +669,51 @@ CREATE TABLE dbo.Notices (
 CREATE INDEX IX_Notices_UserId_At ON dbo.Notices (UserId, [At] DESC);
 END
 
+IF OBJECT_ID(N'dbo.PushSubscriptions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PushSubscriptions (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PushSubscriptions PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PushSubscriptions_PublicId DEFAULT NEWID() CONSTRAINT UX_PushSubscriptions_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Endpoint NVARCHAR(450) NOT NULL, P256dh NVARCHAR(200) NOT NULL, Auth NVARCHAR(200) NOT NULL,
+  Budget TINYINT NOT NULL CONSTRAINT DF_PushSubscriptions_Budget DEFAULT 3, Calm BIT NOT NULL CONSTRAINT DF_PushSubscriptions_Calm DEFAULT 0,
+  Watch NVARCHAR(900) NOT NULL CONSTRAINT DF_PushSubscriptions_Watch DEFAULT N'',
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PushSubscriptions_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PushSubscriptions_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_PushSubscriptions_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT UX_PushSubscriptions_Endpoint UNIQUE (Endpoint),
+  CONSTRAINT CK_PushSubscriptions_Budget CHECK (Budget IN (0,1,3,5))
+);
+CREATE INDEX IX_PushSubscriptions_UserId ON dbo.PushSubscriptions (UserId);
+END
+
+IF OBJECT_ID(N'dbo.PushDeliveries', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PushDeliveries (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PushDeliveries PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PushDeliveries_PublicId DEFAULT NEWID() CONSTRAINT UX_PushDeliveries_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  NoticeKey NVARCHAR(120) NOT NULL, Kind NVARCHAR(20) NOT NULL, Bypass BIT NOT NULL,
+  Outcome VARCHAR(4) NOT NULL, Reason VARCHAR(12) NULL, Devices TINYINT NOT NULL CONSTRAINT DF_PushDeliveries_Devices DEFAULT 0,
+  Params NVARCHAR(500) NOT NULL CONSTRAINT DF_PushDeliveries_Params DEFAULT N'{}',
+  ReadAt DATETIME2(0) NULL,
+  [At] DATETIME2(0) NOT NULL, CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PushDeliveries_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_PushDeliveries_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_PushDeliveries_Outcome CHECK (Outcome IN ('sent','held'))
+);
+CREATE INDEX IX_PushDeliveries_UserId_At ON dbo.PushDeliveries (UserId, [At] DESC);
+END
+
+IF OBJECT_ID(N'dbo.CalendarFeeds', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.CalendarFeeds (
+  UserId BIGINT NOT NULL CONSTRAINT PK_CalendarFeeds PRIMARY KEY,
+  TokenHash CHAR(64) NOT NULL CONSTRAINT UX_CalendarFeeds_TokenHash UNIQUE,
+  CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_CalendarFeeds_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.NotificationPrefs', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.NotificationPrefs (

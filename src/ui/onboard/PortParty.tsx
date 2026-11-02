@@ -5,6 +5,7 @@ import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { ALERT_CHOICES, addRendezvous, anyoneOut, backCheck, dayOf, meetView, MEET_STATES, presenceOf, removeRendezvous, setAlertBefore, setMeetState, setPresence, type MeetState, type Presence } from '../../domain/portParty'
 import { PORTS } from '../../domain/sailings'
 import { zonedToEpoch } from '../../domain/timezones'
+import { useWakeLock } from '../../hooks/useWakeLock'
 import { useNow } from '../../hooks/useDemo'
 import { newPortId, usePort } from '../../hooks/usePort'
 import { t, type StringKey } from '../../i18n'
@@ -17,6 +18,7 @@ import { partyPeople } from '../../account/context'
 
 /** "I'm back aboard" (S6A-05) and meeting up (S6-12): who is out and who is back, a nudge when all-aboard nears, and a place to meet with a plan for no signal. */
 export function PortParty({ v }: { v: PortDayView }) {
+  useWakeLock()
   const now = useNow()
   const shipTime = useShipTime()
   const { state, update, me } = usePort()

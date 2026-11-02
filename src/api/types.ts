@@ -9,6 +9,7 @@ import type { CategoryId } from '../domain/ship'
 import type { Card, CardBrand, Helper, HistoryEntry, PermissionId, Profile } from '../domain/account'
 import type { Citizenship, DocId, Held, ReqResult } from '../domain/documents'
 import type { Notice, NotificationPrefs } from '../domain/notifications'
+import type { PushStatus, PushSubscribeInput } from '../push/push'
 import type { TicketStatus } from '../domain/help'
 import type { NextActionId, PastTrip, PaymentPlan, PaymentState } from '../domain/trip'
 import type { Draft, GuestDraft, LeadContact, DiningChoice, Occasion } from '../domain/booking'
@@ -734,6 +735,23 @@ export interface Api {
     get(): Promise<DocumentsView>
     /** Records that a guest holds a document (with its expiry), or removes it when `held` is null. */
     set(guest: PersonaId, doc: DocId, held: { expires?: string } | null): Promise<DocumentsView>
+  }
+  /** Alerts to the phone and the log of what was sent or held back (N3). The server applies the guest's limits. */
+  push: {
+    /** `endpoint` says which phone is asking, so `subscribed` is about this one. */
+    status(endpoint?: string): Promise<PushStatus>
+    /** Registers this phone, or changes its limits. */
+    subscribe(input: PushSubscribeInput): Promise<PushStatus>
+    unsubscribe(endpoint: string): Promise<PushStatus>
+    /** Checks what the guest should hear now; the server sends it within their limits. */
+    dispatch(endpoint?: string): Promise<PushStatus>
+    markRead(): Promise<PushStatus>
+  }
+  /** The subscribable calendar (N3.4). The address comes back once, from `create`. */
+  calendar: {
+    status(): Promise<{ on: boolean; path: string | null }>
+    create(): Promise<{ on: boolean; path: string | null }>
+    revoke(): Promise<{ on: boolean; path: string | null }>
   }
   notifications: {
     list(): Promise<{ notices: NoticeView[]; prefs: NotificationPrefs }>

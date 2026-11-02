@@ -16,6 +16,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
+import { CalendarFeed, DeliveryLog, PushSwitch } from './PushPanels'
 
 const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', checkinOpens: '/me/trips' } as const
 
@@ -59,8 +60,11 @@ export function NotificationsScreen() {
                 {unread.length > 0 && <Button variant="secondary" disabled={markRead.busy} onClick={async () => { await markRead.run(unread.map((n) => n.id)); data.retry() }}>{t('notices.markRead')}</Button>}
                 <ActionError error={markRead.error} />
               </section>
+              <PushSwitch />
               <Prefs prefs={prefs} onSaved={data.retry} />
               <Nudges />
+              <DeliveryLog />
+              <CalendarFeed />
             </>
           )
         }}
