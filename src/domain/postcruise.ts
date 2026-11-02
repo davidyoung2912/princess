@@ -2,6 +2,7 @@ import type { Cents } from './pricing'
 import { personaById, type PersonaId, type Tier } from './personas'
 import { addDays } from './timezones'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * After the cruise (POS-01 to POS-14): cases for lost items, bills, claims and complaints, feedback with service
@@ -238,3 +239,5 @@ limit('HOLD_DAYS', (v) => { HOLD_DAYS = v }, HOLD_DAYS)
 limit('ONBOARD_DEPOSIT', (v) => { ONBOARD_DEPOSIT = v }, ONBOARD_DEPOSIT)
 limit('BOOKING_CREDIT', (v) => { BOOKING_CREDIT = v }, BOOKING_CREDIT)
 limit('REBOOK_GAP_DAYS', (v) => { REBOOK_GAP_DAYS = v }, REBOOK_GAP_DAYS)
+
+registerContent('postcruise', { OPEN_KINDS, SLA_HOURS, AREAS, CREW, TIER_ORDER, TIER_DAYS, LEVEL_CREDIT, DESK, SUSTAINABILITY })

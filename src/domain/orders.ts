@@ -5,6 +5,7 @@ import type { Cents } from './pricing'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * Ordering to a stateroom or a spot on deck (DIN-04), room service and scheduled breakfast (DIN-05), and what happens
@@ -276,3 +277,5 @@ limit('BREAKFAST_LEAD_MINUTES', (v) => { BREAKFAST_LEAD_MINUTES = v }, BREAKFAST
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('MAX_PER_LINE', (v) => { MAX_PER_LINE = v }, MAX_PER_LINE)
 limit('MAX_LINES', (v) => { MAX_LINES = v }, MAX_LINES)
+
+registerContent('orders', { MENU_GROUPS, MENU, OUT_AT_MENU, OUT_WHILE_PREPARING, DELIVERY_ZONES, TIPS, TIMELINE, BREAKFAST_SLOTS })

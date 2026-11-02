@@ -2,6 +2,7 @@ import type { Cents } from './pricing'
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, NIGHTS } from './pricing'
 import type { ScenarioId } from './scenarios'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /** Service requests, security reports, the drinks tracker, group bills, money, cabin parties, safeguards and system status (MSG-03, SAF-04, DIN-06, DIN-09, ACC-03, ACC-05, ACC-07, ROM-06, MSG-05, SUP-04). */
 const MIN = 60_000
@@ -289,3 +290,5 @@ limit('TOPUP_MIN', (v) => { TOPUP_MIN = v }, TOPUP_MIN)
 limit('TOPUP_MAX', (v) => { TOPUP_MAX = v }, TOPUP_MAX)
 limit('TOPUP_TOTAL_MAX', (v) => { TOPUP_TOTAL_MAX = v }, TOPUP_TOTAL_MAX)
 limit('TOPUP_STEP', (v) => { TOPUP_STEP = v }, TOPUP_STEP)
+
+registerContent('services', { REQUEST_ITEMS, REPORT_KINDS, URGENT_REPORTS, BAR_MENU, CURRENCIES, PHOTO_TYPES, REPORT_REASONS, PORT_CONTACTS, PORT_READY })

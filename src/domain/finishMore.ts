@@ -10,6 +10,7 @@ import type { StormBand, StormPhase } from './storm'
 import { fareFor, type Cents } from './pricing'
 import type { Sailing } from './sailings'
 import type { CategoryId } from './ship'
+import { registerContent } from './content'
 
 /**
  * H8 slice D: the last day, trust and care leftovers (S7-01 to S7-03, S7-06 to S7-09, S6-26, S1-01, S4-11, XI-08 to XI-11).
@@ -306,3 +307,5 @@ export function portSnapshot(port: GuidePort, people: number): string[] {
 /** Marketing stops while a complaint or a service-recovery case is open, and starts again only when it is resolved or withdrawn. A person is offered instead. */
 export const marketingPaused = (cases: readonly { kind: string; stage: string }[]): boolean =>
   cases.some((c) => (c.kind === 'complaint' || c.kind === 'recovery') && (c.stage === 'received' || c.stage === 'inReview'))
+
+registerContent('finishMore', { SWEEP_ITEMS, FAREWELL_MOMENTS, FOLLOW_DAYS, DOCTOR_TELL, SHIP_FACTS, TRAVELLERS, ASHORE_NOTES, HABITS, GIFTS, GROUND_STEPS, BREATH, ALERT_KINDS, VIBRATION, READ_RATES })

@@ -3,6 +3,7 @@ import type { PackageId, PersonaId, Tier } from './personas'
 import { fareFor, type Cents } from './pricing'
 import { CATEGORIES, type CategoryId } from './ship'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * Before-the-cruise services (Phase 13): the "find my cruise" quiz, travel advisors, marketing consent, Captain's Circle and credit
@@ -377,3 +378,5 @@ limit('TAGS_PER_GUEST', (v) => { TAGS_PER_GUEST = v }, TAGS_PER_GUEST)
 limit('TAG_ORDER_DAYS', (v) => { TAG_ORDER_DAYS = v }, TAG_ORDER_DAYS)
 limit('ASSIST_REVIEW_HOURS', (v) => { ASSIST_REVIEW_HOURS = v }, ASSIST_REVIEW_HOURS)
 limit('ASSIST_DECIDE_HOURS', (v) => { ASSIST_DECIDE_HOURS = v }, ASSIST_DECIDE_HOURS)
+
+registerContent('ahead', { QUIZ_VIBES, QUIZ_BUDGETS, QUIZ_WITH, QUIZ_MOBILITY, QUIZ_MUSTS, ADVISORS, ADVISOR_LANGUAGES, ADVISOR_SPECIALITIES, CONSENT_REGIONS, MARKETING_CHANNELS, MEMBER_PERCENT, CLUBS, TAG_WAYS, BAG_STAGES, ASSIST_KINDS, GIFTS_FOR })

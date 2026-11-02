@@ -1,4 +1,5 @@
 import { limit } from './limits'
+import { registerContent } from './content'
 /** The cabin TV (ENT-06): the channel guide, video on demand and the remote. Channels and titles are authored concept content. */
 export interface Channel { n: number; name: string; shows: readonly string[] }
 
@@ -41,3 +42,5 @@ export const titleAllowed = (rating: string, age: number): boolean => rating ===
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('VOD_CHANNEL', (v) => { VOD_CHANNEL = v }, VOD_CHANNEL)
+
+registerContent('tv', { CHANNELS, VOD })

@@ -1,3 +1,4 @@
+import { registerContent } from './content'
 /** Games on board (ENT-05): a scavenger hunt around the ship, trivia, a bingo card and the achievements they earn. Questions and clues are authored concept content. */
 export interface Clue { id: string; clue: string; placeId: string }
 
@@ -105,3 +106,5 @@ export function achievements(state: GameState, card: readonly (readonly number[]
   if (bingoLines(card, state.marked) > 0) out.push('bingo')
   return out
 }
+
+registerContent('games', { HUNT, TRIVIA, ACHIEVEMENTS })

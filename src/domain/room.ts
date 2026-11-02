@@ -1,5 +1,6 @@
 import type { StateroomKind } from './personas'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * The stateroom (ROM-01, ROM-02, ROM-03, ROM-05): the information card, housekeeping preferences, Do Not Disturb, and
@@ -94,3 +95,5 @@ export const dndCheckDue = (h: Housekeeping, now: number): boolean => h.mode ===
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('DND_CHECK_HOURS', (v) => { DND_CHECK_HOURS = v }, DND_CHECK_HOURS)
+
+registerContent('room', { STEWARDS, CLEANING_WINDOWS, SERVICE_MODES, LIGHTS, TEMP_RANGE })

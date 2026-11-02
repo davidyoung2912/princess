@@ -1,3 +1,4 @@
+import { registerContent } from './content'
 /** The help centre and contact options (SUP-01, SUP-02). Authored mock content; numbers are the fictional 555-01xx range. */
 export interface Faq { id: string; topic: 'booking' | 'payment' | 'documents' | 'account' | 'onboard'; question: string; answer: string; link?: { to: string; label: string } }
 
@@ -64,3 +65,5 @@ export function ticketStatus(createdAt: number, now: number): TicketStatus {
   const age = now - createdAt
   return age < TICKET_RECEIVED_MS ? 'received' : age < TICKET_IN_PROGRESS_MS ? 'inProgress' : 'resolved'
 }
+
+registerContent('help', { FAQS, CONTACT_OPTIONS })

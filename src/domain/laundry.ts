@@ -1,6 +1,7 @@
 import type { Cents } from './pricing'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
+import { registerContent } from './content'
 
 /** Laundry, pressing and dry cleaning (SHP-03): request, pick-up window, tracking. Prices and turnaround are authored concept values. */
 export type LaundryService = 'washFold' | 'press' | 'dryClean'
@@ -60,3 +61,5 @@ export function laundryStage(r: { pickupAt: number; hours: number; cancelledAt?:
 
 /** A request can be cancelled until the steward collects it. */
 export const laundryCancellable = (stage: LaundryStage): boolean => stage === 'requested'
+
+registerContent('laundry', { SERVICES, WINDOWS })

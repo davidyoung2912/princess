@@ -31,6 +31,7 @@ import { applyProgram, normalizeProgram } from '../domain/programServed'
 import { applyPorts, normalizePorts } from '../domain/portsServed'
 import { applyPackages, normalizePackages } from '../domain/packagesServed'
 import { applyLimits, normalizeLimits } from '../domain/limitsServed'
+import { applyContent, normalizeContent } from '../domain/contentServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
@@ -157,6 +158,7 @@ loadTable('program', '/reference/program', normalizeProgram, applyProgram)
 loadTable('ports', '/reference/ports', normalizePorts, applyPorts)
 loadTable('packages', '/reference/packages', normalizePackages, applyPackages)
 loadTable('limits', '/reference/limits', normalizeLimits, applyLimits)
+loadTable('content', '/reference/content', normalizeContent, applyContent)
 
 /**
  * The copies on this device belong to one person. When someone else signs in, the earlier person's copies are removed (only changes that have not

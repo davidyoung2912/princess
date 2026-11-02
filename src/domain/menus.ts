@@ -1,6 +1,7 @@
 import type { DietaryId } from './account'
 import { VENUES, venueById } from './dining'
 import type { Cents } from './pricing'
+import { registerContent } from './content'
 
 /** The venue directory with hours, price and menus tagged for allergens and diets (DIN-01, DIN-03). Dishes and hours are authored concept values. */
 export type Contains = 'meat' | 'pork' | 'fish' | 'shellfish' | 'dairy' | 'egg' | 'gluten' | 'nuts'
@@ -112,3 +113,5 @@ export function hoursText(hours: Hours, format: (time: string) => string): strin
   if (hours.length === 1 && hours[0][0] === '00:00' && hours[0][1] === '24:00') return ''
   return hours.map(([a, b]) => `${format(a)} to ${format(b === '24:00' ? '23:59' : b)}`).join(', ')
 }
+
+registerContent('menus', { CONTAINS, DIRECTORY, NEEDS_ASKING })

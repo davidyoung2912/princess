@@ -1,5 +1,6 @@
 import type { Cents } from './pricing'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /** Ship Wi-Fi (NET-02): plans, devices, a usage meter and sign-in help. The app itself never needs a paid plan (NET-01). Plans and prices are authored concept values. */
 export type WifiPlan = 'messaging' | 'surf' | 'stream'
@@ -60,3 +61,5 @@ limit('INCLUDED_PLAN', (v) => { INCLUDED_PLAN = v }, INCLUDED_PLAN)
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('MAX_DEVICES', (v) => { MAX_DEVICES = v }, MAX_DEVICES)
 limit('MAX_DAYS', (v) => { MAX_DAYS = v }, MAX_DAYS)
+
+registerContent('wifi', { PLANS })

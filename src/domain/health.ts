@@ -1,5 +1,6 @@
 import { MEDICAL_HOURS } from './safety'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * Health on board (SAF-03): Medical Center hours, the fee and insurance reminder, reporting illness early, and requests
@@ -57,3 +58,5 @@ limit('ISOLATION_WINDOW_HOURS', (v) => { ISOLATION_WINDOW_HOURS = v }, ISOLATION
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('ISOLATE_HOURS', (v) => { ISOLATE_HOURS = v }, ISOLATE_HOURS)
+
+registerContent('health', { VISIT_FEE, SYMPTOMS, GASTRO, REQUEST_KINDS, RESPONSE_MINUTES })

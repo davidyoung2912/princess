@@ -1,6 +1,7 @@
 import type { Cents } from './pricing'
 import { DEFAULT_FINAL_PAYMENT_DAYS } from './trip'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /** Cancellation and change rules (BOK-08), and the legal documents a guest accepts (BOK-19). All authored concept content, not Princess's terms. */
 export type CancelTier = 'free24h' | 'early' | 'mid' | 'late' | 'final'
@@ -121,3 +122,5 @@ export const acceptanceLog = (accepted: Partial<Record<LegalId, boolean>>, at: n
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('FREE_CANCEL_HOURS', (v) => { FREE_CANCEL_HOURS = v }, FREE_CANCEL_HOURS)
 limit('FREE_CANCEL_MIN_DAYS', (v) => { FREE_CANCEL_MIN_DAYS = v }, FREE_CANCEL_MIN_DAYS)
+
+registerContent('policy', { CANCEL_ROWS, LEGAL_IDS, LEGAL })

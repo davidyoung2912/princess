@@ -27,7 +27,7 @@ export const OWNER_KEY = 'princess:owner'
 /** Kept when a person's copies are cleared: display settings, diagnostics and the reports waiting to go, who the copies belong to, and the shared reference tables. */
 const KEPT_PREFIXES = ['princess:settings', 'princess:diagnostics', 'princess:improve', 'princess:telemetry', 'princess:reloaded', OWNER_KEY] as const
 /** Reference tables are the same for everyone, so they are kept for reading with no signal. */
-const SHARED_CACHE_KINDS = ['catalogue', 'sailings', 'ship', 'program', 'ports', 'packages', 'limits', 'access', 'rates'] as const
+const SHARED_CACHE_KINDS = ['catalogue', 'sailings', 'ship', 'program', 'ports', 'packages', 'limits', 'content', 'access', 'rates'] as const
 /** The outbox of unsent messages and requests (an empty outbox keeps no key). The other place a change can wait is the sync stores, which `syncStatus()` reports (documents and the port day's rows). */
 export const UNSENT_PREFIXES = ['princess:outbox:'] as const
 

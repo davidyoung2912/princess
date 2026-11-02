@@ -13,6 +13,7 @@
     "contrast": "vite-node scripts/contrast-report.ts",
     "db:check": "node scripts/check-schema.mjs",
     "api:check": "node scripts/check-api-coverage.mjs",
+    "content:gen": "vite-node scripts/gen-content.ts",
     "db:seed:gen": "vite-node scripts/gen-reference-seed.ts",
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
     "db:persona:gen": "vite-node scripts/gen-persona-seed.ts",

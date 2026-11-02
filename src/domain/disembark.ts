@@ -2,6 +2,7 @@ import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, type Cents } from './pric
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * Disembarkation (DEB-01 to DEB-07): how to get off, luggage tags, customs, onward travel, the final night and the
@@ -270,3 +271,5 @@ limit('DUE_SOON_MINUTES', (v) => { DUE_SOON_MINUTES = v }, DUE_SOON_MINUTES)
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('CASH_LIMIT_USD', (v) => { CASH_LIMIT_USD = v }, CASH_LIMIT_USD)
+
+registerContent('disembark', { WALKOFF_IDS, TAG_GROUPS, CUSTOMS_CARRY, CUSTOMS_DECLARE, ONWARD_MODES, NIGHT_ITEMS, TIP_KEEP, RECEIPT_IDS })

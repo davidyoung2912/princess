@@ -1,6 +1,7 @@
 import type { PersonaId } from './personas'
 import type { Cents } from './pricing'
 import { limit } from './limits'
+import { registerContent } from './content'
 
 /**
  * Ship photos (SHP-02, SHP-07): browse by day, place and person, choose photos first, see package options priced
@@ -97,3 +98,5 @@ export const PHOTOGRAPHERS: readonly PhotographerSlot[] = [
 limit('INCLUDED_WITH_PREMIER', (v) => { INCLUDED_WITH_PREMIER = v }, INCLUDED_WITH_PREMIER)
 limit('DOWNLOAD_BATCH', (v) => { DOWNLOAD_BATCH = v }, DOWNLOAD_BATCH)
 limit('REDOWNLOAD_DAYS', (v) => { REDOWNLOAD_DAYS = v }, REDOWNLOAD_DAYS)
+
+registerContent('photos', { PHOTO_VENUES, SPOTS, NO_PHOTO_FILTER, PRICES, OPTION_IDS, PHOTOGRAPHERS })

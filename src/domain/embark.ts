@@ -2,6 +2,7 @@ import type { StringKey } from '../i18n'
 import { EMBARK, DELIVERY_HOURS } from './boarding'
 import type { Window } from './travel'
 import { fromMinutes, toMinutes, isTime } from './journey'
+import { registerContent } from './content'
 
 /**
  * Embarkation planning (S5-01 to S5-06). Queue times come from the server (`GET /feeds/embark-queue`);
@@ -135,3 +136,5 @@ export function normalizeEmbark(raw: unknown): EmbarkState {
     },
   }
 }
+
+registerContent('embark', { QUICK_START, STEWARDS, FAMILY_ROLES, WELCOME_FIELDS })

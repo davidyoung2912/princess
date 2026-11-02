@@ -1,5 +1,6 @@
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from './contacts'
 import { musterByLabel, type MusterStation } from './deck'
+import { registerContent } from './content'
 
 /** Muster drill and the emergency card (SAF-01, SAF-02). The drill time and wording are authored concept values (verify before real use). */
 export const DRILL = { day: 1, time: '14:00', minutes: 30 } as const
@@ -63,3 +64,5 @@ export function isEmergencyCard(v: unknown): v is EmergencyCard {
   const o = v as Partial<EmergencyCard> | null
   return !!o && typeof o.guest === 'string' && typeof o.stateroom === 'string' && typeof o.deck === 'number' && typeof o.muster === 'string' && typeof o.script === 'string' && Array.isArray(o.contacts)
 }
+
+registerContent('safety', { DRILL, DRILL_STEPS, DRILL_LANGUAGES, DRILL_ALTERNATIVES, EMERGENCY_CONTACTS, MEDICAL_HOURS })
