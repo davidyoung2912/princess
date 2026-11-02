@@ -1,5 +1,6 @@
 using System.Net;
 using Princess.Api.Domain;
+using Princess.Api.Tests.Support;
 using Xunit;
 
 namespace Princess.Api.Tests;

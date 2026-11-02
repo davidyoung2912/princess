@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Net;
 using System.Text.Json.Nodes;
+using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
