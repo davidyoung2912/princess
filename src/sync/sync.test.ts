@@ -20,6 +20,7 @@ function fakeServer() {
       docs.set(key, doc)
       return { ...doc }
     },
+    remove: async (key) => { log.push(`remove ${key}`); docs.delete(key) },
   }
   return { docs, log, remote, failOnce: (e: ApiError) => { failNext = e } }
 }
@@ -118,7 +119,7 @@ describe('pull', () => {
 
   it('keeps going when the server is unreachable and reports it', async () => {
     const t = setup()
-    t.setRemote({ get: async () => { throw new ApiError('network') }, put: t.server.remote.put })
+    t.setRemote({ get: async () => { throw new ApiError('network') }, put: t.server.remote.put, remove: t.server.remote.remove })
     t.sync.setOwner('u1', 'p1')
     await expect(t.sync.pull()).resolves.toBeUndefined()
     expect(t.sync.status()).toBe('error')
@@ -227,26 +228,102 @@ describe('push', () => {
   })
 })
 
+describe('a key that needs the guest\'s agreement', () => {
+  const gated = () => {
+    let on = false
+    const store = fakeStore('m')
+    store.binding.enabled = () => on
+    const t = setup(store)
+    return { ...t, allow: (v: boolean) => { on = v } }
+  }
+
+  it('sends and fetches nothing while it is off', async () => {
+    const t = gated()
+    t.store.values.set('p1', { n: 5 })
+    t.server.docs.set('m', { version: 2, data: { n: 9 } })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    t.sync.changed('m', 'p1')
+    await t.timers.fire()
+    expect(t.server.log).toEqual([])
+    expect(t.store.values.get('p1')).toEqual({ n: 5 })
+  })
+
+  it('sends this device\'s copy once it is turned on', async () => {
+    const t = gated()
+    t.store.values.set('p1', { n: 5 })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    t.allow(true)
+    await t.sync.pull()
+    expect(t.server.docs.get('m')).toEqual({ version: 1, data: { n: 5 } })
+  })
+
+  it('deletes the server copy and stops sending when it is turned off', async () => {
+    const t = gated()
+    t.allow(true)
+    t.store.values.set('p1', { n: 5 })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    expect(t.server.docs.has('m')).toBe(true)
+    t.allow(false)
+    expect(await t.sync.withdraw('m')).toBe(true)
+    expect(t.server.docs.has('m')).toBe(false)
+    t.sync.changed('m', 'p1')
+    await t.timers.fire()
+    expect(t.server.docs.has('m')).toBe(false)
+  })
+
+  it('retries the deletion at the next pull when it could not be made', async () => {
+    const t = gated()
+    t.allow(true)
+    t.store.values.set('p1', { n: 5 })
+    t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    t.allow(false)
+    const real = t.server.remote.remove
+    t.server.remote.remove = async () => { throw new Error('offline') }
+    expect(await t.sync.withdraw('m')).toBe(false)
+    expect(t.server.docs.has('m')).toBe(true)
+    t.server.remote.remove = real
+    await t.sync.pull()
+    expect(t.server.docs.has('m')).toBe(false)
+  })
+
+  it('takes a consent that arrives in the same pull from another key before looking at the gated one', async () => {
+    const t = gated()
+    t.server.docs.set('m', { version: 1, data: { n: 8 } })
+    t.sync.setOwner('u1', 'p1')
+    const consent = fakeStore('c')
+    consent.binding.apply = () => t.allow(true)
+    t.sync.register(consent.binding)
+    t.server.docs.set('c', { version: 1, data: { n: 1 } })
+    await t.sync.pull()
+    expect(t.store.values.get('p1')).toEqual({ n: 8 })
+  })
+})
+
 describe('http remote', () => {
   it('reads and writes /me/state/{key}', async () => {
     const calls: string[] = []
     const http = {
       get: async <T,>(path: string) => { calls.push(`GET ${path}`); return (path.endsWith('none') ? null : { key: 'k', version: 2, data: { a: 1 }, updatedAt: 1 }) as T },
       put: async <T,>(path: string, body?: unknown) => { calls.push(`PUT ${path} ${JSON.stringify(body)}`); return { key: 'k', version: 3, data: { a: 2 }, updatedAt: 2 } as T },
-      post: async () => { throw new Error('unused') }, patch: async () => { throw new Error('unused') }, delete: async () => { throw new Error('unused') },
+      post: async () => { throw new Error('unused') }, patch: async () => { throw new Error('unused') }, delete: async <T,>(path: string) => { calls.push(`DELETE ${path}`); return undefined as T },
     }
     const remote = createHttpRemote(http as never)
     expect(await remote.get('settings')).toEqual({ version: 2, data: { a: 1 } })
     expect(await remote.get('none')).toBeNull()
     expect(await remote.put('settings', { a: 2 }, 2)).toEqual({ version: 3, data: { a: 2 } })
-    expect(calls).toEqual(['GET /me/state/settings', 'GET /me/state/none', 'PUT /me/state/settings {"data":{"a":2},"baseVersion":2}'])
+    await remote.remove('memory')
+    expect(calls).toEqual(['GET /me/state/settings', 'GET /me/state/none', 'PUT /me/state/settings {"data":{"a":2},"baseVersion":2}', 'DELETE /me/state/memory'])
   })
 })
 
 describe('account-level settings', () => {
   it('sends only the fields that follow the guest', () => {
     const s = { ...DEFAULT_SETTINGS, theme: 'dark' as const, textSize: 'large' as never, calm: true }
-    expect(Object.keys(pickSynced(s)).sort()).toEqual(['calm', 'captions', 'chargeCheck', 'nudgesPerDay', 'region', 'simple', 'units'])
+    expect(Object.keys(pickSynced(s)).sort()).toEqual(['calm', 'captions', 'chargeCheck', 'nudgesPerDay', 'region', 'simple', 'syncPrivate', 'units'])
     expect(pickSynced(s).calm).toBe(true)
   })
 

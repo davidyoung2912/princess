@@ -30,9 +30,11 @@ export interface Settings {
   chargeCheck: ChargeCheck
   /** How many unprompted suggestions a day, including none (XA-03). */
   nudgesPerDay: NudgeBudget
+  /** The guest agreed to keep their private notes and health details (medical card, access needs, allergy flag, child brief, journal) in their account so every device shows them. Off until they say so. */
+  syncPrivate: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES }
+export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -72,14 +74,15 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     region: isConsentRegion(o.region) ? o.region : defaults.region,
     chargeCheck: isChargeCheck(o.chargeCheck) ? o.chargeCheck : defaults.chargeCheck,
     nudgesPerDay: isNudgeBudget(o.nudgesPerDay) ? o.nudgesPerDay : defaults.nudgesPerDay,
+    syncPrivate: typeof o.syncPrivate === 'boolean' ? o.syncPrivate : defaults.syncPrivate,
   }
 }
 
 /** The settings that belong to the guest's account and follow them between devices; the rest (theme, contrast, text size, motion, data-light) are chosen per device. */
-export const SYNCED_FIELDS = ['simple', 'calm', 'captions', 'units', 'region', 'chargeCheck', 'nudgesPerDay'] as const
+export const SYNCED_FIELDS = ['simple', 'calm', 'captions', 'units', 'region', 'chargeCheck', 'nudgesPerDay', 'syncPrivate'] as const
 export type SyncedSettings = Pick<Settings, (typeof SYNCED_FIELDS)[number]>
 
-export const pickSynced = (s: Settings): SyncedSettings => ({ simple: s.simple, calm: s.calm, captions: s.captions, units: s.units, region: s.region, chargeCheck: s.chargeCheck, nudgesPerDay: s.nudgesPerDay })
+export const pickSynced = (s: Settings): SyncedSettings => ({ simple: s.simple, calm: s.calm, captions: s.captions, units: s.units, region: s.region, chargeCheck: s.chargeCheck, nudgesPerDay: s.nudgesPerDay, syncPrivate: s.syncPrivate })
 
 /** The account-level fields of a server copy laid over `base`; anything missing or malformed keeps its value from `base`. */
 export const withSynced = (base: Settings, raw: unknown): Settings => ({ ...base, ...pickSynced(normalizeSettings(raw, base)) })

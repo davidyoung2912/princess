@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { AWAY_ITEMS, cleanExtra, EXTRAS_MAX, type Extra } from '../domain/awayHome'
 import { EMPTY_ACCESS, EMPTY_ALLERGY, normalizeAccess, normalizeAllergy, normalizeHold, normalizeShares, type AccessProfile, type AllergyFlag, type Hold, type Share } from '../domain/bookingPrep'
 import { EMPTY_ABOARD, normalizeAboard, type AboardState } from '../domain/aboardMore'
@@ -26,7 +27,7 @@ export interface MemoryState {
   /** The away-from-home checklist (S3-11): ticked item ids and the guest's own items. */
   away: string[]
   awayExtras: Extra[]
-  /** The medical readiness card (S3-05), on this device only. */
+  /** The medical readiness card (S3-05): on this device, and in the account only if the guest turned on "keep my private notes on all my devices". */
   medical: MedicalCard
   /** Slice A of H8, all on this device: the 48 hour hold (S2-03), accessibility profile (S2-06), allergy pre-flag (S3-13) and pay-your-share ledger (S2-04). */
   hold: Hold | null
@@ -132,6 +133,14 @@ export function subscribeMemory(listener: () => void): () => void {
 
 export function updateMemory(personaId: string | null, change: (s: MemoryState) => MemoryState): void {
   const next = change(getMemory(personaId))
+  cache.set(memoryKeyFor(personaId), next)
+  saveMemory(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('memory', personaId)
+}
+
+/** Takes the server's copy (null: empty) without telling the sync module it changed. */
+export function applyRemoteMemory(personaId: string | null, next: MemoryState): void {
   cache.set(memoryKeyFor(personaId), next)
   saveMemory(personaId, next)
   listeners.forEach((l) => l())

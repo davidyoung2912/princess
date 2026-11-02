@@ -13,4 +13,5 @@ export const createHttpRemote = (http: Http): Remote => ({
     const doc = await http.put<StateDto>(`/me/state/${encodeURIComponent(key)}`, { data, baseVersion })
     return { version: doc.version, data: doc.data }
   },
+  remove: async (key) => { await http.delete(`/me/state/${encodeURIComponent(key)}`) },
 })

@@ -1,9 +1,10 @@
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
+import { applyRemoteMemory, getMemory, normalizeMemory, EMPTY_MEMORY } from '../memory/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
-import { applySyncedSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
+import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
 import { applyRemoteShop, getExtras } from '../shop/store'
 import { sync } from './index'
 import type { Binding } from './sync'
@@ -39,10 +40,22 @@ const phone: Binding = {
   isEmpty: (raw) => ((raw as { done: unknown[] }).done).length === 0,
 }
 
+/**
+ * Health details and private notes. Held back until the guest agrees (Settings: syncPrivate); the whole document is one key, so when it is off
+ * nothing from it reaches the server, and switching it off deletes the server's copy.
+ */
+const memory: Binding = {
+  key: 'memory',
+  read: (id) => getMemory(id),
+  apply: (id, raw) => applyRemoteMemory(id, raw === null ? EMPTY_MEMORY : normalizeMemory(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_MEMORY),
+  enabled: () => getSettings().syncPrivate,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory]) sync.register(b)
 }

@@ -9,7 +9,7 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0 }
+    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
@@ -50,7 +50,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0 }, false)).toEqual({
+    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-calm': 'off', 'data-captions': 'off', 'data-light': 'on',
     })
   })

@@ -15,6 +15,8 @@ export interface Remote {
   get(key: string): Promise<RemoteDoc | null>
   /** Saves based on the version last seen (0 for none); rejects with an ApiError `conflict` when another device saved first. */
   put(key: string, data: unknown, baseVersion: number): Promise<RemoteDoc>
+  /** Deletes the saved document (nothing saved is fine). */
+  remove(key: string): Promise<void>
 }
 
 /** How one store plugs in. `localId` is whatever the store keys its device copy by (a persona id, or null). */
@@ -28,6 +30,8 @@ export interface Binding {
   isEmpty(raw: unknown): boolean
   /** Combines the server copy with this device's after a clash; without it this device's copy wins. */
   merge?(remote: unknown, local: unknown): unknown
+  /** False while the guest has not agreed to keep this document on the server (health details and private notes): nothing is sent, fetched or kept there. Absent means always on. */
+  enabled?(): boolean
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'error'
@@ -43,6 +47,8 @@ export interface SyncOptions {
 
 interface KeyState { version: number; pulled: boolean; dirty: boolean; timer: unknown; running: Promise<void> | null }
 
+const allowed = (b: Binding): boolean => b.enabled?.() !== false
+
 const MAX_TRIES = 3
 
 export function createSync(opts: SyncOptions) {
@@ -54,6 +60,8 @@ export function createSync(opts: SyncOptions) {
   let account: string | null = null
   let localId: string | null = null
   let status: SyncStatus = 'idle'
+  /** Keys whose server copy still has to be deleted (the guest withdrew consent while offline). */
+  const removals = new Set<string>()
 
   const stateOf = (key: string): KeyState => {
     let s = states.get(key)
@@ -69,7 +77,7 @@ export function createSync(opts: SyncOptions) {
   async function push(key: string, b: Binding, acct: string): Promise<void> {
     const remote = opts.remote()
     const s = stateOf(key)
-    if (!remote || !s.pulled) return
+    if (!remote || !s.pulled || !allowed(b)) return
     for (let tries = 0; tries < MAX_TRIES; tries++) {
       s.dirty = false
       const sent = b.read(localId)
@@ -101,7 +109,7 @@ export function createSync(opts: SyncOptions) {
     setStatus('syncing')
     s.running = (async () => {
       try {
-        while (s.dirty && s.pulled && current(acct) && opts.remote()) await push(key, b, acct)
+        while (s.dirty && s.pulled && allowed(b) && current(acct) && opts.remote()) await push(key, b, acct)
         if (current(acct)) setStatus([...states.values()].some((x) => x.dirty) ? 'error' : 'idle')
       } catch {
         setStatus('error')   // stays dirty: the next change, focus or reconnect tries again
@@ -120,7 +128,7 @@ export function createSync(opts: SyncOptions) {
 
   async function pullKey(key: string, b: Binding, acct: string): Promise<void> {
     const remote = opts.remote()
-    if (!remote) return
+    if (!remote || !allowed(b)) return
     const s = stateOf(key)
     const doc = await remote.get(key)
     if (!current(acct)) return
@@ -153,7 +161,8 @@ export function createSync(opts: SyncOptions) {
 
     /** A store changed `key` for `forLocalId`; send it soon. */
     changed(key: string, forLocalId: string | null): void {
-      if (!account || forLocalId !== localId || !bindings.has(key) || !opts.remote()) return
+      const b = bindings.get(key)
+      if (!account || forLocalId !== localId || !b || !allowed(b) || !opts.remote()) return
       stateOf(key).dirty = true
       schedule(key)
     },
@@ -164,13 +173,41 @@ export function createSync(opts: SyncOptions) {
       if (!acct || !opts.remote()) return
       setStatus('syncing')
       let failed = false
-      await Promise.all([...bindings].map(async ([key, b]) => {
+      const one = async (key: string, b: Binding) => {
         try {
+          if (removals.has(key)) { await opts.remote()?.remove(key); removals.delete(key); return }
+          if (!allowed(b)) return
           if (stateOf(key).pulled) { if (stateOf(key).dirty) await run(key); else await pullKey(key, b, acct) }
           else await pullKey(key, b, acct)
         } catch { failed = true }
-      }))
+      }
+      const entries = [...bindings]
+      // A key that needs consent is looked at again once the others are in: the consent itself may be one of them.
+      const waiting = entries.filter(([, b]) => !allowed(b))
+      await Promise.all(entries.map(([key, b]) => one(key, b)))
+      await Promise.all(waiting.filter(([, b]) => allowed(b)).map(([key, b]) => one(key, b)))
       if (current(acct)) setStatus(failed ? 'error' : 'idle')
+    },
+
+    /**
+     * The guest turned `key` off: nothing more is sent and the server's copy is deleted (retried at the next pull if that fails). Resolves to whether the server's copy is gone now.
+     * Turning it on needs only a `pull()`, which imports this device's copy if the server has none.
+     */
+    async withdraw(key: string): Promise<boolean> {
+      const s = stateOf(key)
+      if (s.timer !== null) { clearTimer(s.timer); s.timer = null }
+      s.dirty = false; s.pulled = false; s.version = 0
+      if (!account) return true
+      removals.add(key)
+      const acct = account
+      try {
+        await opts.remote()?.remove(key)
+        removals.delete(key)
+        return true
+      } catch {
+        if (current(acct)) setStatus('error')
+        return false
+      }
     },
 
     /** Sends waiting changes now (before sign-out). */

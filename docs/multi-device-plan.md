@@ -1,6 +1,6 @@
 # Multi-device plan: account data lives on the server
 
-Status: **Plan written 2026-11-01. Phase 1 built (not committed); Phases 2 to 5 open.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
+Status: **Plan written 2026-11-01. Phases 1 and 2 built; Phases 3 to 5 open.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
 
 ## Goal and rules
 
@@ -109,3 +109,18 @@ Built 2026-11-01. Nothing committed yet.
   - **Sync indicator.** `sync.status()` exists; no screen shows it yet.
   - **Settings per user in REST mode** still use the persona key for the device copy.
   - **Swagger coverage list** (`SwaggerCoverageTests.Routes`) does not include the eight state routes; `ApiSurfaceTests` covers them from the data-model table.
+
+## Phase 2 record
+
+Built 2026-11-01.
+
+- **Consent first.** New account-level setting `syncPrivate` (default off, synced with the other account settings). Privacy centre card "Private notes and health details" (REST mode only) explains what is kept, who can read it, that this version stores it with ordinary account data (not yet the separate encrypted store of Phase 4), and that turning it off deletes the account copy. `medical.intro` now says the card can follow the guest if they choose.
+- **Memory binding.** `memory` (including `planning`, `aboard`, `finish`) syncs through `UserState` key `memory`, but only while `syncPrivate` is on. `Binding.enabled` gates push, pull and change tracking; with it off nothing is read from or sent to the server.
+- **Turning on** (`src/sync/consent.ts`, `setKeepPrivate`) pulls: the account copy is taken if there is one, otherwise this device's copy is sent. **Turning off** calls `sync.withdraw('memory')`, which deletes the server copy (new `Remote.remove`, `DELETE /me/state/memory`) and retries at the next pull if offline. The device keeps its own copy.
+- **New device:** `pull()` fetches the settings first, then looks again at keys that were gated, so a consent that arrived in the same pull enables `memory` at once.
+- **Verified:** `npm run test` (1742 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code changed in this phase, so no schema or REST checks were needed.
+- **Not done:**
+  - **Privacy export and "delete my data".** The server has no export route or account-deletion route to extend; `UserState` rows cascade on user delete and the retention purge does not touch them. Both belong with the privacy work in Phase 4.
+  - **Dedicated storage** for the medical card, access profile and allergy (encryption, server-side use) is still Phase 4. Until then they are plain JSON inside `memory`.
+  - **Copy on other screens.** Many memory-backed screens still say "stays on this device" (kept so as not to claim more than is true in mock mode, and `h7Promises.test.ts` pins some of it). Only `medical.intro` and the privacy centre mention the account option.
+  - **Carried over from Phase 1:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, Swagger coverage list.

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { EMPTY_OFFER_STATE } from '../domain/offers'
 import { getOfferState, updateOfferState } from '../offers/store'
+import { applyRemoteMemory, EMPTY_MEMORY, getMemory, updateMemory } from '../memory/store'
 import { getPhone, updatePhone } from '../phone/store'
 import { DEFAULT_TEXT_SIZE } from '../design/textSize'
 import { getSettings, switchSettingsOwner, updateSettings } from '../settings/store'
 import { getExtras } from '../shop/store'
 import { registerSyncBindings } from './bindings'
+import { setKeepPrivate } from './consent'
 import { setRemote, sync } from './index'
 import type { Remote, RemoteDoc } from './sync'
 
@@ -22,6 +24,7 @@ const remote: Remote = {
     docs.set(key, doc)
     return doc
   },
+  remove: async (key) => { docs.delete(key) },
 }
 
 describe('the real stores through the sync module', () => {
@@ -51,6 +54,37 @@ describe('the real stores through the sync module', () => {
     await sync.flush()
     expect((docs.get("offers")!.data as { sent: number[] }).sent).toEqual([1])
     expect(EMPTY_OFFER_STATE.sent).toEqual([])
+    setRemote(null)
+  })
+})
+
+describe('private notes and health details', () => {
+  it('stay on the device until the guest agrees, then follow them, and are deleted when they withdraw', async () => {
+    docs.clear()
+    registerSyncBindings()
+    setRemote(remote)
+    switchSettingsOwner({ id: 'gerald', defaultTextSize: DEFAULT_TEXT_SIZE } as never)
+    sync.setOwner('user-9', 'gerald')
+    await sync.pull()
+
+    updateMemory('gerald', (m) => ({ ...m, medical: { ...m.medical, allergies: ['peanuts'] }, allergy: { ...m.allergy } }))
+    await sync.flush()
+    expect(docs.has('memory')).toBe(false)
+
+    await setKeepPrivate(true)
+    expect((docs.get('memory')!.data as { medical: { allergies: string[] } }).medical.allergies).toEqual(['peanuts'])
+    expect(getSettings().syncPrivate).toBe(true)
+
+    // A second device with an empty copy gets it.
+    sync.setOwner('user-x', 'other')
+    sync.setOwner('user-9', 'gerald')
+    applyRemoteMemory('gerald', EMPTY_MEMORY)
+    await sync.pull()
+    expect(getMemory('gerald').medical.allergies).toEqual(['peanuts'])
+
+    expect(await setKeepPrivate(false)).toBe(true)
+    expect(docs.has('memory')).toBe(false)
+    expect(getMemory('gerald').medical.allergies).toEqual(['peanuts'])   // this device keeps its own
     setRemote(null)
   })
 })
