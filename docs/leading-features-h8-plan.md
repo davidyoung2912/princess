@@ -1,6 +1,6 @@
 # H8 mini-plan: finish the leading-features requirements without a server
 
-Status: **Plan accepted; slice 0 (audit) in progress.** Companion to `docs/leading-features-requirements.md` and `docs/leading-features-plan.md` (which stays the record of what is built).
+Status: **Plan accepted; slice 0 (audit) done, see section 12 of `docs/leading-features-plan.md`: 76 IDs open (7 blocked, 16 partly built, 53 doable). Slice A is next when asked.** Companion to `docs/leading-features-requirements.md` and `docs/leading-features-plan.md` (which stays the record of what is built).
 
 ## Rules for H8
 
@@ -34,6 +34,9 @@ All pure domain plus one small store each.
 | S3-03 | Weekly companion: one note per week from 8 weeks out, hard cap of one a week, off in one tap, counted in the nudge budget |
 | S3-06 | Packing for this ship: prohibited items, outlets, dress nights on top of `packing.ts` |
 | S3-13 | Allergy pre-flag with a simulated galley acknowledgement shown as a status (feeds XI-09) |
+| S2-04 | Pay-your-share ledger of who has paid what part (on the booker's device; no links) |
+| S2-07, S2-09 with XT-08 | Guaranteed-cabin odds from authored history; a carbon estimate range with its method shown, on the existing sustainability screen |
+| S3-12, S3-14 | Money plan (cash, card, ashore, daily budget by day type) and a child-friendly trip story |
 | S0-07 (partial) | Paste a plan from an outside assistant, parse into a draft the guest confirms |
 | S0-09, S0-08 | Occasion starter and authored day stories by persona |
 
@@ -66,7 +69,9 @@ All pure domain plus one small store each.
 | S6-19, S6-20, S6-21, S6-25 | "You said, we did" board (authored), dining favourites and table preferences, step and deck-lap challenge, lost and found with a local report and an authored found list |
 | S6-08 | Sightings log (Could, authored and simulated) |
 
-## Slice D: ports, trust and assistant leftovers
+## Slice D: disembark, ports, trust and assistant leftovers
+
+Added by the audit: top up S7-01 to S7-04, S7-08 and S7-10, and build S7-06, S7-07 (ride pool through the ledger) and S7-09 (follow-up note, in-page only); S1-01 per-room fare indicator; S4-08 thresholds; S4-11 gifts that read the room; S6-23 crew thanks check; S6-26 ask the ship; XG-06 reunion mode (Could).
 
 | ID | Build |
 | --- | --- |

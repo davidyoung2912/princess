@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 5 built, section 11).**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 5 built, section 11). H8 slice 0, the audit, is done (section 12).**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -222,3 +222,19 @@ Built 2026-11-01. Front end only; no REST contract changes (the handoff uses the
 - **Signature feature 11 (Ask your cruise, XA-01 to XA-06) is now complete** on the front end.
 - **Not done:** summaries of free text the app does not hold (a long notice from the line is not in the app); a summary reworded by a model (kept rule-based so it cannot invent); the handoff arriving in the chat thread or the crew's own view (the message goes into Contact us as an email request, as before); XA-07 preference memory and XA-10 cost caps and a server-side key proxy (left on the backlog; the proxy needs backend work).
 - **Backlog left:** as in slice 1, minus S3-02, S3-04, S3-05, S3-11, XA-05 and XA-06.
+
+## 12. H8 slice 0: requirements audit (2026-11-01)
+
+Method: every ID in `docs/leading-features-requirements.md` (183) checked against the phases this file records as built, the route list in `src/screens.ts`, and keyword checks of `src/domain` and `src/ui`. This is an inventory, not a line-by-line review: each "partly" item is opened and confirmed when its slice starts. No code changed.
+
+**Result: 107 built, 76 open.** The 107 are H1 to H5 in full, H6 except the items below, and the H7 slices 1 to 5 (S2-01, S2-05, S3-02, S3-04, S3-05, S3-11, S6-07, XA-04, XA-05, XA-06, XA-09). S6A-09, S6A-11 and S6A-12 look uncited in code but are built (`src/domain/portContent.ts`: don't-bring-it-back lists, day passes, local-law notes), so they are not open.
+
+| Group | Count | IDs |
+| --- | --- | --- |
+| Blocked (needs a server, moderation or guest photos; stays out of H8) | 7 | S1-06, S1-09, S3-09, S3-10, S6-11, XG-05, XT-09 (S1-06: the obstruction note is built, the photos are not) |
+| Partly built (a stand-in exists; top up) | 16 | S1-01, S2-09, XT-08, S2-10, S4-08, S6-16, S6-22, S6-23, S7-01, S7-02, S7-03, S7-04, S7-08, S7-10, XI-06, XI-07 |
+| Not built, doable on one device | 53 | S0-06, S0-07, S0-08, S0-09, S2-02, S2-03, S2-04, S2-06, S2-07, S2-08, S3-01, S3-03, S3-06, S3-12, S3-13, S3-14, S4-03, S4-04, S4-05, S4-06, S4-07, S4-09, S4-10, S4-11, S6-08, S6-09, S6-10, S6-13, S6-14, S6-15, S6-17, S6-18, S6-19, S6-20, S6-21, S6-25, S6-26, S6A-14, S7-06, S7-07, S7-09, XA-07, XA-08, XA-10, XG-01, XG-02, XG-04, XG-06, XG-07, XI-08, XI-09, XI-10, XI-11 |
+
+What the partly-built items already have: S1-01 a price note per sailing in `dream.ts` but no per-room fare indicator; S2-09 and XT-08 a `/me/sustainability` screen but no estimate range with its method; S2-10 `/book/resume/:id`; S4-08 `/home/cruise/cost` without the 80 and 100 percent notes; S6-16 the cabin button on `/me/calm` linking to the deck map but with no words-only route; S6-22 per-day notes in `memoryBook.ts` but no automatic timeline; S6-23 crew thanks in `postcruise.ts`; S7-01 to S7-04, S7-08, S7-10 the disembark, customs, onward, final-night and feedback screens without the new behaviour; XI-06 read-aloud on the summary and briefing only; XI-07 a captions setting and captioned showings but no visual or vibration alerts.
+
+Corrections to the H7 backlog list: XG-04 and XG-05 sit with H6's "not done" items; S4-11, S6-26, XG-06, XI-08 to XI-11, S2-07, S2-09, S3-12, S3-14 and all of S7 were missing from it and are now counted.
