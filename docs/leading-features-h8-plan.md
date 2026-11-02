@@ -1,6 +1,6 @@
 # H8 mini-plan: finish the leading-features requirements without a server
 
-Status: **Plan accepted; slice 0 (audit) done, see section 12 of `docs/leading-features-plan.md`: 76 IDs open (7 blocked, 16 partly built, 53 doable). Slice A is next when asked.** Companion to `docs/leading-features-requirements.md` and `docs/leading-features-plan.md` (which stays the record of what is built).
+Status: **Plan accepted; slice 0 (audit) done, see section 12 of `docs/leading-features-plan.md`: 76 IDs open (7 blocked, 16 partly built, 53 doable). Slice A part 1 done (section 13: S2-02, S2-03, S2-04, S2-06, S2-08, S3-01, S3-13); the rest of slice A is next when asked.** Companion to `docs/leading-features-requirements.md` and `docs/leading-features-plan.md` (which stays the record of what is built).
 
 ## Rules for H8
 

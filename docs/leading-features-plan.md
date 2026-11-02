@@ -238,3 +238,17 @@ Method: every ID in `docs/leading-features-requirements.md` (183) checked agains
 What the partly-built items already have: S1-01 a price note per sailing in `dream.ts` but no per-room fare indicator; S2-09 and XT-08 a `/me/sustainability` screen but no estimate range with its method; S2-10 `/book/resume/:id`; S4-08 `/home/cruise/cost` without the 80 and 100 percent notes; S6-16 the cabin button on `/me/calm` linking to the deck map but with no words-only route; S6-22 per-day notes in `memoryBook.ts` but no automatic timeline; S6-23 crew thanks in `postcruise.ts`; S7-01 to S7-04, S7-08, S7-10 the disembark, customs, onward, final-night and feedback screens without the new behaviour; XI-06 read-aloud on the summary and briefing only; XI-07 a captions setting and captioned showings but no visual or vibration alerts.
 
 Corrections to the H7 backlog list: XG-04 and XG-05 sit with H6's "not done" items; S4-11, S6-26, XG-06, XI-08 to XI-11, S2-07, S2-09, S3-12, S3-14 and all of S7 were missing from it and are now counted.
+
+## 13. H8 slice A, part 1: booking and preparation (2026-11-01)
+
+Front end only; no REST contract changes. Pure logic in `src/domain/bookingPrep.ts`, screens in `src/ui/plan/PrepScreens.tsx` (routes under `/plan`, linked from Plan), state per person in the H6 memory store (`hold`, `access`, `allergy`, `shares`). Promise tests in `src/h8Promises.test.ts`.
+
+- **S2-02 price-drop watch** (`/plan/price-watch`): a simulated weekly fare history (same every time for a booking), lowest seen, whether re-pricing is allowed through the existing `priceDrop` rule, the saving and three steps; "Ask a person" goes to Contact us.
+- **S2-03 short hold** (`/plan/hold`): 48 hours on the device; the time left is in words and shows on that screen only; lapses in words. Not tied to any cruise-line inventory, and the screen says so.
+- **S2-04 pay-your-share ledger** (`/plan/shares`): even split to the cent, tick who has paid, owed and paid totals. No links, nothing collected.
+- **S2-06 accessibility profile** (`/plan/access`): six flags plus mobility device, captured once; shows what the cabin chooser, dining, excursions and disembarkation will look out for.
+- **S2-08 trip contract** (`/plan/contract`): booking, paid, not paid, rules, dates, who to ask; print or copy.
+- **S3-01 readiness** (`/plan/readiness`): one number per traveller, each item weighted by `1 + days before sailing / 30`, papers counted double and listed first.
+- **S3-13 allergy pre-flag** (`/plan/allergy`): allergies listed once; galley status is simulated (noted, then acknowledged after 12 hours) and labelled so. XI-09 can read `allergy`.
+- **Verified:** `npm run test` (1549 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done in part 1:** S2-10 audit and Home "continue" card; S3-03 weekly companion; S3-06 packing for this ship; S2-07, S2-09 and XT-08 (guaranteed-cabin odds, carbon range); S3-12 and S3-14 (money plan, child trip story); S0-07 paste-a-plan; S0-08 and S0-09. Also: the accessibility profile is shown but the cabin chooser, dining, excursions and disembark screens do not yet read it; readiness uses the booking-wide checklist for everyone and per-guest papers only; the hold is not a Home card (it would spend the nudge budget).
