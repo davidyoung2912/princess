@@ -150,6 +150,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/home/disembark/sweep', titleKey: 'route.sweep', tab: 'home', phase: 28 },
   { path: '/home/disembark/bags', titleKey: 'route.bags', tab: 'home', phase: 28 },
   { path: '/home/disembark/flight', titleKey: 'route.flight', tab: 'home', phase: 28 },
+  { path: '/home/meeting-point', titleKey: 'route.meetingPoint', tab: 'home', phase: 28 },
   { path: '/home/disembark/ride', titleKey: 'route.ride', tab: 'home', phase: 28 },
   { path: '/me/farewell', titleKey: 'route.farewell', tab: 'me', phase: 28 },
   { path: '/me/follow-up', titleKey: 'route.followUp', tab: 'me', phase: 28 },
@@ -206,6 +207,16 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/settings', titleKey: 'route.settings', tab: 'me', phase: 0 },
   { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
+  { path: '/trial-day', titleKey: 'route.trialDay', tab: null, phase: 28, public: true },
   { path: '/at-sea/:token', titleKey: 'route.atSea', tab: null, phase: 22, public: true },
   { path: '/shared/:token', titleKey: 'route.shared', tab: null, phase: 28, public: true },
 ]
+
+/** Whether a path is a public route's own page or below it (a route's parameters, from `/:`, are left off). Everything else waits for sign-in. */
+export const isPublicPath = (pathname: string): boolean =>
+  ROUTES.some((r) => {
+    if (!r.public) return false
+    const cut = r.path.indexOf('/:')
+    const base = cut < 0 ? r.path : r.path.slice(0, cut)
+    return (cut < 0 && pathname === base) || pathname.startsWith(`${base}/`)
+  })

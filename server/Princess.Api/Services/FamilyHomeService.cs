@@ -11,11 +11,13 @@ public sealed record FamilyLinkDto(string Id, string Token, long ExpiresAt);
 public sealed record FamilyPostcardDto(string Kind, string Note, long At);
 
 /// <summary><c>Reason</c> is malformed, signature, unknown, revoked or expired when <c>Ok</c> is false, matching the page's wording. Ship-level facts only: never where the guest is.</summary>
-public sealed record FamilyPublicDto(bool Ok, string? Reason, string GuestFirst, long ExpiresAt, IReadOnlyList<FamilyPostcardDto> Postcards, IReadOnlyList<string> Scenarios, int? DelayedMinutes = null);
+public sealed record FamilyPublicDto(bool Ok, string? Reason, string GuestFirst, long ExpiresAt, IReadOnlyList<FamilyPostcardDto> Postcards, IReadOnlyList<string> Scenarios, int? DelayedMinutes = null, string? Recap = null);
 
 public sealed record NewFamilyLinkRequest(int? Days);
 
 public sealed record FamilyPostcardRequest(string? Kind, string? Note);
+
+public sealed record FamilyRecapRequest(string? Text);
 
 /// <summary>
 /// Signed family-at-home links and the public page behind them (multi-device plan 2, Phase 6). The link is signed here; the row says if it is live. The contacts' names
@@ -52,6 +54,28 @@ public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, 
         await store.AddPostcardAsync(user.Id, body!.Kind!, note, await clock.NowAsync(user, ct), FamilyHomeRules.MaxPostcards, ct);
     }
 
+    /// <summary>Keeps the recap the guest wrote (N6.5). Every live link then shows it; stopping the links stops it. 400 badRecap, 403 childCannotShare.</summary>
+    public async Task SetRecapAsync(UserRecord user, FamilyRecapRequest? body, CancellationToken ct)
+    {
+        if (user.IsSupervised) throw ApiException.Forbidden("childCannotShare");
+        if (!FamilyHomeRules.ValidRecap(body?.Text, out var clean)) throw ApiException.Invalid("badRecap");
+        var now = await clock.NowAsync(user, ct);
+        var json = new JsonObject { ["text"] = clean, ["at"] = Ms(now) }.ToJsonString();
+        var row = await state.GetAsync(false, user.Id, FamilyHomeRules.RecapKey, ct);
+        if (await state.SaveAsync(false, user.Id, FamilyHomeRules.RecapKey, json, row?.Version ?? 0, now, ct) is null) throw ApiException.Conflict("stale");
+    }
+
+    public async Task ClearRecapAsync(UserRecord user, CancellationToken ct) => await state.DeleteAsync(false, user.Id, FamilyHomeRules.RecapKey, ct);
+
+    /// <summary>The recap on the page: the guest's text, checked again on the way out; null when there is none or what is kept is not in the expected shape.</summary>
+    private async Task<string?> RecapOfAsync(long userId, CancellationToken ct)
+    {
+        var row = await state.GetAsync(false, userId, FamilyHomeRules.RecapKey, ct);
+        if (row is null) return null;
+        try { return JsonNode.Parse(row.Json) is JsonObject o && o["text"] is JsonValue v && v.TryGetValue<string>(out var text) && FamilyHomeRules.ValidRecap(text, out var clean) ? clean : null; }
+        catch (System.Text.Json.JsonException) { return null; }
+    }
+
     private static FamilyPublicDto Bad(string reason) => new(false, reason, "", 0, [], []);
 
     /// <summary>What the page behind a link shows. No sign-in: the signature and the row are the check.</summary>
@@ -70,6 +94,6 @@ public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, 
         int? delayed = null;
         try { delayed = FamilyHomeRules.SharedDelayMinutes(hub is null ? null : JsonNode.Parse(hub.Json)); }
         catch (System.Text.Json.JsonException) { }
-        return new FamilyPublicDto(true, null, user.FirstName ?? "", Ms(link.ExpiresAt), cards, scenarios, delayed);
+        return new FamilyPublicDto(true, null, user.FirstName ?? "", Ms(link.ExpiresAt), cards, scenarios, delayed, await RecapOfAsync(user.Id, ct));
     }
 }

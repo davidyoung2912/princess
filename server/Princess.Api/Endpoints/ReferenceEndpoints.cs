@@ -9,8 +9,8 @@ public static class ReferenceEndpoints
 {
     public static void MapReferenceEndpoints(this IEndpointRouteBuilder api)
     {
-        api.MapGet("/rates", (IClock clock) => Results.Ok(RatesRules.TableFor(DateOnly.FromDateTime(clock.UtcNow))))
-            .WithTags("Reference").WithSummary("Today's exchange rates per US dollar (a stub feed, the same for every device). For reading only: the account is charged in US dollars.");
+        api.MapGet("/rates", async (RateService rates, CancellationToken ct) => Results.Ok(await rates.CurrentAsync(ct)))
+            .WithTags("Reference").WithSummary("Exchange rates per US dollar, the same for every device, with the date they are from (`asOf`). The source is chosen by configuration (`Providers:Rates`, a stub by default) and is asked at most every six hours; when it cannot answer, the last table it gave is kept with its own older date. For reading only: the account is charged in US dollars.");
 
         api.MapGet("/reference/access", () => Results.Ok(ReferenceRules.Access()))
             .WithTags("Reference").WithSummary("Excursion difficulty (distance, steps, heat, shade, seats, restrooms, wet footing) by excursion id, and the room types that have accessible staterooms. `version` changes when any of it does.");

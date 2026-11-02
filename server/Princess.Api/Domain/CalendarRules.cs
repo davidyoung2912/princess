@@ -36,7 +36,7 @@ public static class CalendarRules
         return list;
     }
 
-    private static string Esc(string t) => t.Replace("\\", "\\\\").Replace(";", "\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n");
+    private static string Esc(string t) => t.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\r\n", "\\n").Replace("\n", "\\n");
     private static string Utc(DateTime d) => d.ToString("yyyyMMdd'T'HHmmss'Z'");
 
     private static IEnumerable<string> Fold(string line)

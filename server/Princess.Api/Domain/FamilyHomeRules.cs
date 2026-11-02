@@ -18,6 +18,26 @@ public static class FamilyHomeRules
     public const int MaxNote = 140;
     public static readonly string[] PostcardKinds = ["ok", "sea", "port", "late", "love"];
 
+    public const int MaxRecapChars = 800;
+    public const int MaxRecapLines = 12;
+    public const int MaxRecapLine = 200;
+    /// <summary>The state key the recap is kept under: the guest's own document, read only by the family page.</summary>
+    public const string RecapKey = "familyRecap";
+
+    /// <summary>
+    /// The recap a guest chose to share with the people at home (N6.5), cleaned: line breaks kept, other control characters dropped, each line trimmed, empty lines
+    /// dropped. False when nothing is left, or it runs past 12 lines, 200 characters a line or 800 in all (nothing is cut, so the guest is never shown a half-sent text).
+    /// </summary>
+    public static bool ValidRecap(string? text, out string clean)
+    {
+        var lines = (text ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n')
+            .Select(l => new string(l.Where(c => !char.IsControl(c)).ToArray()).Trim())
+            .Where(l => l.Length > 0)
+            .ToList();
+        clean = string.Join('\n', lines);
+        return lines.Count is > 0 and <= MaxRecapLines && lines.All(l => l.Length <= MaxRecapLine) && clean.Length <= MaxRecapChars;
+    }
+
     /// <summary>The key for link signatures: not the token key itself, so a link signature can never be a sign-in token.</summary>
     public static byte[] KeyFrom(string signingKey) => HMACSHA256.HashData(Encoding.UTF8.GetBytes(signingKey), "family-link"u8);
 

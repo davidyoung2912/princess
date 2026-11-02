@@ -6,7 +6,9 @@ import { SAILINGS, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
+import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
+import { RegretCards } from './RegretCards'
 import { FeedWaiting } from '../FeedWaiting'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
@@ -97,6 +99,7 @@ export function CabinChooserScreen() {
             <div><dt>{t('cabins.noise')}</dt><dd>{stars(c.noise)}</dd></div>
           </dl>
           {c.warnings.length > 0 && <ul className="plain-bullets">{c.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
+          <RegretCards cards={cabinRegrets(c)} heading={t('regret.cabin')} headingId={`regret-${c.cabin.number}`} />
           <details>
             <summary>{t('cabins.why')}</summary>
             {(['sleep', 'motion', 'noise'] as const).map((k) => (

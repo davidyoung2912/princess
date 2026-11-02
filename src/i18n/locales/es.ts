@@ -210,6 +210,8 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'route.bags': 'Noche de equipaje',
   'route.flight': 'Planear según mi vuelo',
   'route.ride': 'Compartir un viaje',
+  'route.meetingPoint': 'Tarjeta del punto de encuentro',
+  'route.trialDay': 'Un día en este barco',
   'route.farewell': 'Despedida en tres toques',
   'route.followUp': 'Nota de salud después del viaje',
   'route.askShip': 'Pregunte al barco',

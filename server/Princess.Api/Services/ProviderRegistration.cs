@@ -78,6 +78,22 @@ public static class ProviderRegistration
                 throw new InvalidOperationException($"{Section}:Concierge is '{concierge}', which is not registered. Choose one of: sim, anthropic.");
         }
 
+        // Providers:Rates is sim (the stub table) or http (a Frankfurter-compatible feed, see RateOptions). Off by default; a feed that fails falls back to the last table it gave.
+        services.AddOptions<RateOptions>().BindConfiguration(RateOptions.Section);
+        var rates = (config[$"{Section}:Rates"] ?? Sim).Trim().ToLowerInvariant();
+        switch (rates)
+        {
+            case Sim:
+                services.AddSingleton<IRateFeed, SimRateFeed>();
+                break;
+            case "http":
+                services.AddHttpClient<IRateFeed, HttpRateFeed>();
+                break;
+            default:
+                throw new InvalidOperationException($"{Section}:Rates is '{rates}', which is not registered. Choose one of: sim, http.");
+        }
+        services.AddSingleton<RateService>();
+
         // Providers:ConciergeLimit is database (the default, shared and kept across restarts) or memory (one instance, for tests and trials).
         var limit = (config[$"{Section}:ConciergeLimit"] ?? "database").Trim().ToLowerInvariant();
         switch (limit)

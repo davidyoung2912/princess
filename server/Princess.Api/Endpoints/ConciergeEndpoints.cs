@@ -51,5 +51,9 @@ public static class ConciergeEndpoints
         api.MapPost("/me/day-plan", async (DayPlanRequest body, AutopilotService svc, CancellationToken ct) => Results.Ok(await svc.DayAsync(body, ct)))
             .WithTags("Concierge")
             .WithSummary("Builds one day (1 to 8) of a sailing from the guest's wishes (tour likes, event likes, mobility, children, most to spend on a tour in cents): a tour that fits the ship's day, events and dinner, with why each was chosen. Also answers the included events that could join the day and the ship's own changes today (events moved or cancelled). Nothing is booked or kept. 400 badDayPlan for an unknown wish, day or sailing.");
+
+        api.MapPost("/public/trial-day", async (TrialDayRequest body, AutopilotService svc, CancellationToken ct) => Results.Ok(await svc.TrialDayAsync(body, ct)))
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter).WithTags("Concierge")
+            .WithSummary("A day on this ship for someone who has not signed in. Takes { day (1 to 8), wish } as /me/day-plan does, but no sailing: the server uses the next one to leave. Answers { days[{ day, port, place }], plan } with plan in the /me/day-plan shape. Ship-level data only; nothing is kept and nothing is tied to a person. Rate-limited by address. 400 badDayPlan.");
     }
 }

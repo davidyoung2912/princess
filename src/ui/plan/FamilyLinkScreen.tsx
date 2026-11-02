@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { addContact, addPostcard, adoptServerLink, daysLeft, DEFAULT_LINK_DAYS, flushPostcards, issueLink, isLive, LINK_DAY_CHOICES, linkToken, liveLinkFor, liveLinkIds, normalizeServerLink, MAX_POSTCARD_NOTE, POSTCARD_KINDS, POSTCARD_TEXT, queuedPostcards, removeContact, revokeAll, revokeLink, type ContactProblem, type PostcardKind } from '../../domain/homeLink'
+import { recapProblem, RECAP_MAX_CHARS, addContact, addPostcard, adoptServerLink, daysLeft, DEFAULT_LINK_DAYS, flushPostcards, issueLink, isLive, LINK_DAY_CHOICES, linkToken, liveLinkFor, liveLinkIds, normalizeServerLink, MAX_POSTCARD_NOTE, POSTCARD_KINDS, POSTCARD_TEXT, queuedPostcards, removeContact, revokeAll, revokeLink, type ContactProblem, type PostcardKind } from '../../domain/homeLink'
 import { familyHome } from '../../runtime'
+import { useRecapData } from '../../hooks/useRecapData'
+import { recapText } from '../../domain/recap'
 import { useDemo, useNow } from '../../hooks/useDemo'
 import { newHubId, useHub } from '../../hooks/useHub'
 import { t, type StringKey } from '../../i18n'
@@ -156,7 +158,43 @@ export function FamilyLinkScreen() {
           {[...home.postcards].reverse().map((p) => <li key={p.id}><span>{t(POSTCARD_TEXT[p.kind])}{p.note && <small className="muted"> · {p.note}</small>}</span><span className="muted">{p.sent ? t('home.cards.sent') : t('home.cards.waiting')}</span></li>)}
         </ul>
       </section>
+      {server && <RecapSection child={child} hasLinks={liveCount > 0} />}
       <BackLink to="/plan" label={t('route.plan')} />
     </div>
+  )
+}
+
+/**
+ * Share the cruise with someone at home (N6.5): the recap text the guest already has on the trip memories page, shown on the family page behind their live links.
+ * The guest reads and can change every word first; the family sees exactly that text and nothing the guest did not put in it. No account is needed to read it.
+ */
+function RecapSection({ child, hasLinks }: { child: boolean; hasLinks: boolean }) {
+  const recap = useRecapData()
+  const [text, setText] = useState<string | null>(null)
+  const [state, setState] = useState<'idle' | 'busy' | 'shared' | 'removed' | 'failed'>('idle')
+  const draft = text ?? (recap.data ? recapText(recap.data) : '')
+  const problem = draft.trim() === '' ? null : recapProblem(draft)
+  const run = async (call: () => Promise<void>, done: 'shared' | 'removed') => {
+    setState('busy')
+    try { await call(); setState(done) } catch { setState('failed') }
+  }
+  return (
+    <section aria-labelledby="home-recap-h">
+      <h2 id="home-recap-h">{t('home.recap')}</h2>
+      <p>{t('home.recap.intro')}</p>
+      {!hasLinks && <p className="muted">{t('home.recap.needLink')}</p>}
+      <div className="field">
+        <label htmlFor="home-recap">{t('home.recap.label')}</label>
+        <p className="field__hint">{t('home.recap.hint', { count: RECAP_MAX_CHARS })}</p>
+        <textarea id="home-recap" className="field__input" rows={7} value={draft} disabled={child} aria-invalid={problem ? true : undefined} onChange={(e) => { setText(e.target.value); setState('idle') }} />
+        {problem && <p className="field__error" role="alert">{t(`home.recap.error.${problem}` as StringKey)}</p>}
+      </div>
+      <div className="button-row">
+        <Button disabled={child || state === 'busy' || draft.trim() === '' || !!problem} onClick={() => void run(() => familyHome!.setRecap(draft), 'shared')}>{t('home.recap.share')}</Button>
+        <Button variant="tertiary" disabled={child || state === 'busy'} onClick={() => void run(() => familyHome!.clearRecap(), 'removed')}>{t('home.recap.remove')}</Button>
+      </div>
+      <p role="status">{state === 'shared' ? t('home.recap.shared') : state === 'removed' ? t('home.recap.removed') : ''}</p>
+      {state === 'failed' && <p className="field__error" role="alert">{t('home.error.server')}</p>}
+    </section>
   )
 }

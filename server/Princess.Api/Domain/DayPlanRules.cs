@@ -15,6 +15,14 @@ public sealed record DayPlanDto(int Day, IReadOnlyList<PlanEntryDto> Items, bool
 
 public sealed record DayPlanRequest(string? SailingId, int Day, DayWishDto? Wish);
 
+/// <summary>A day for someone not signed in: no sailing is named (the server chooses), only the day and the wishes.</summary>
+public sealed record TrialDayRequest(int Day, DayWishDto? Wish);
+
+public sealed record TrialDayChoice(int Day, string Port, string Place);
+
+/// <summary>The days to choose from and the plan for the one asked for.</summary>
+public sealed record TrialDayDto(IReadOnlyList<TrialDayChoice> Days, DayPlanDto Plan);
+
 /// <summary>
 /// "Build my day" (PRE-12), ported from <c>src/domain/day.ts</c> and the day parts of <c>src/domain/planChange.ts</c>. Pure: the same wishes always give the same day.
 /// It reads only server data (excursions, the programme, the ship's places, the itinerary).

@@ -55,7 +55,7 @@ const home = (s: string) => `/home/${s}`
 export const HUBS: readonly HubDef[] = [
   { id: 'home.discover', tab: 'home', labelKey: 'hub.home.discover', stage: 'discover', paths: [home('cruise'), home('cruise/cost'), home('sailings'), home('ship'), home('saved'), home('quiz'), home('advisors'), home('cabins'), home('decide'), home('offers'), '/book'] },
   { id: 'home.ask', tab: 'home', labelKey: 'hub.home.ask', stage: 'manage', paths: [home('concierge'), home('ask'), home('briefing'), home('summary'), home('updates')] },
-  { id: 'home.board', tab: 'home', labelKey: 'hub.home.board', stage: 'embark', paths: [home('find-pass'), home('boarding-pass'), home('check-in'), home('check-in/receipt'), home('check-in/terminal'), home('embarkation'), home('embarkation/steps'), home('embarkation/plan'), home('medallion'), home('luggage'), home('clearance')] },
+  { id: 'home.board', tab: 'home', labelKey: 'hub.home.board', stage: 'embark', paths: [home('find-pass'), home('boarding-pass'), home('check-in'), home('check-in/receipt'), home('check-in/terminal'), home('embarkation'), home('embarkation/steps'), home('embarkation/plan'), home('medallion'), home('luggage'), home('clearance'), home('meeting-point')] },
   { id: 'home.change', tab: 'home', labelKey: 'hub.home.change', stage: 'getToShip', paths: [home('disruption'), home('delayed')] },
   { id: 'home.leave', tab: 'home', labelKey: 'hub.home.leave', stage: 'disembark', paths: [home('disembark'), home('disembark/customs'), home('disembark/onward'), home('disembark/final-night'), home('disembark/sweep'), home('disembark/bags'), home('disembark/flight'), home('disembark/ride')] },
 

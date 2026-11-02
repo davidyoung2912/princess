@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Caching.Memory;
 using Princess.Api.Domain;
+using Princess.Api.Services;
 using Xunit;
 
 namespace Princess.Api.Tests;
@@ -137,4 +139,67 @@ public class RouteFeedTests
         Assert.Equal(20 + sky, r.LeaveEarlierMinutes);
         Assert.False(FeedRules.ValidCrowd("packed"));
     }
+
+    [Fact]
+    public void AFeedAnswerKeepsItsOwnDateAndFillsWhatItLacks()
+    {
+        var table = HttpRateFeed.Parse("""{"base":"USD","date":"2026-10-30","rates":{"EUR":0.9,"GBP":0.75,"MXN":18.5}}""")!;
+        Assert.Equal("2026-10-30", table.AsOf);
+        Assert.Equal(0.9, table.PerUsd["EUR"]);
+        Assert.Equal(18.5, table.PerUsd["MXN"]);
+        Assert.Equal(1, table.PerUsd["USD"]);
+        // Not in the answer: the sample value, so the table is always complete.
+        Assert.Equal(2, table.PerUsd["BZD"]);
+        Assert.Equal(24.7, table.PerUsd["HNL"]);
+        Assert.Equal(RatesRules.Sample.Length, table.PerUsd.Count);
+    }
+
+    [Fact]
+    public void ABadRateOrAForeignCodeNeverReachesTheTable()
+    {
+        var table = HttpRateFeed.Parse("""{"date":"2026-10-30","rates":{"EUR":-1,"GBP":0,"JPY":150,"CAD":1.4}}""")!;
+        Assert.Equal(0.92, table.PerUsd["EUR"]);
+        Assert.Equal(0.79, table.PerUsd["GBP"]);
+        Assert.False(table.PerUsd.ContainsKey("JPY"));
+        Assert.Equal(1.4, table.PerUsd["CAD"]);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not json")]
+    [InlineData("[]")]
+    [InlineData("""{"rates":{"EUR":0.9}}""")]
+    [InlineData("""{"date":"yesterday","rates":{"EUR":0.9}}""")]
+    [InlineData("""{"date":"2026-10-30","rates":{}}""")]
+    public void AnAnswerInTheWrongShapeIsNoAnswer(string json) => Assert.Null(HttpRateFeed.Parse(json));
+
+    private sealed class FakeFeed(params RateTableDto?[] answers) : IRateFeed
+    {
+        public int Calls;
+        public Task<RateTableDto?> FetchAsync(DateOnly today, CancellationToken ct) => Task.FromResult(answers[Math.Min(Calls++, answers.Length - 1)]);
+    }
+
+    private sealed class FixedClock(DateTime now) : IClock { public DateTime UtcNow => now; }
+
+    private static RateService Service(IRateFeed feed) => new(feed, new MemoryCache(new MemoryCacheOptions()), new FixedClock(new DateTime(2026, 11, 2, 12, 0, 0, DateTimeKind.Utc)));
+
+    [Fact]
+    public async Task TheFeedIsAskedOnceHoweverManyDevicesAsk()
+    {
+        var feed = new FakeFeed(RatesRules.TableFor(new DateOnly(2026, 11, 2)));
+        var service = Service(feed);
+        for (var i = 0; i < 5; i++) Assert.Equal("2026-11-02", (await service.CurrentAsync(default)).AsOf);
+        Assert.Equal(1, feed.Calls);
+    }
+
+    [Fact]
+    public async Task WithNoAnswerAndNothingKeptTheSampleTableIsServedWithItsOldDate()
+    {
+        var table = await Service(new FakeFeed(null)).CurrentAsync(default);
+        Assert.Equal(RatesRules.SampleDate, table.AsOf);
+        Assert.Equal(24.7, table.PerUsd["HNL"]);
+    }
+
+    [Fact]
+    public void TheSampleTableCarriesTheSameDateAsTheClientsSample() => Assert.Equal("2026-10-01", RatesRules.SampleDate);
 }

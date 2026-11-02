@@ -210,3 +210,16 @@ limit('BOOKING_CREDIT', (v) => { BOOKING_CREDIT = v }, BOOKING_CREDIT)
 limit('REBOOK_GAP_DAYS', (v) => { REBOOK_GAP_DAYS = v }, REBOOK_GAP_DAYS)
 
 registerContent('postcruise', { OPEN_KINDS, SLA_HOURS, AREAS, CREW, TIER_ORDER, TIER_DAYS, LEVEL_CREDIT, DESK, SUSTAINABILITY })
+
+// ---- What the crew see (N6.6) ----
+
+export interface CrewNote { crew: string; note: string; from: string | null }
+
+/**
+ * What each thanked crew member is shown: the guest's own note, and the guest's first name only if they allowed it.
+ * It is built from the feedback alone. A gratuity is never an input here, so it cannot reach this view, and the ratings stay out of it too.
+ */
+export function crewNotes(f: Feedback, firstName: string): CrewNote[] {
+  const note = f.comment.trim()
+  return f.crew.map((crew) => ({ crew, note, from: f.shareName && firstName.trim() ? firstName.trim() : null }))
+}

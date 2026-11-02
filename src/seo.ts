@@ -16,6 +16,7 @@ export const PUBLIC_PAGES: readonly SeoEntry[] = [
   { path: '/home/ports/:id', description: 'seo.port' },
   { path: '/home/ship', description: 'seo.ship' },
   { path: '/home/quiz', description: 'seo.quiz' },
+  { path: '/trial-day', description: 'seo.trialDay' },
 ]
 
 export const seoFor = (pattern: string | undefined): SeoEntry | undefined => PUBLIC_PAGES.find((p) => p.path === pattern)

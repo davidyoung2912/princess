@@ -24,6 +24,9 @@ export const REQUEST_ITEMS: readonly RequestItem[] = [
   { id: 'tv', group: 'maintenance', etaMin: 60, maxQty: 1 },
 ]
 
+/** The asks a guest makes most, one tap each at the top of the requests screen (N6.3); each is an item above, so the same quantity and open-request rules apply. */
+export const QUICK_REQUESTS: readonly string[] = ['towels', 'turndown', 'ice']
+
 export const requestItem = (id: unknown): RequestItem | undefined => REQUEST_ITEMS.find((r) => r.id === id)
 
 export type RequestStage = 'received' | 'onTheWay' | 'done' | 'cancelled'

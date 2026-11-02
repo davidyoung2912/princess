@@ -37,8 +37,24 @@ public static class FamilyHomeEndpoints
             .WithTags("Family at home")
             .WithSummary("Sends a postcard (kind ok, sea, port, late or love, with a note of at most 140 characters) to the page every live link opens. The newest 30 are kept. 400 badPostcard.");
 
+        api.MapPut("/me/family-recap", async (FamilyRecapRequest body, ICurrentUser me, FamilyHomeService svc, CancellationToken ct) =>
+            {
+                await svc.SetRecapAsync(await me.LoadAsync(ct), body, ct);
+                return Results.NoContent();
+            })
+            .WithTags("Family at home")
+            .WithSummary("Keeps a short recap of the cruise (at most 12 lines, 200 characters a line and 800 in all) that every live family-at-home link shows. The guest writes or checks the text first; nothing is added to it. 400 badRecap, 403 childCannotShare.");
+
+        api.MapDelete("/me/family-recap", async (ICurrentUser me, FamilyHomeService svc, CancellationToken ct) =>
+            {
+                await svc.ClearRecapAsync(await me.LoadAsync(ct), ct);
+                return Results.NoContent();
+            })
+            .WithTags("Family at home")
+            .WithSummary("Takes the recap off the family-at-home page.");
+
         api.MapGet("/public/family/{token}", async (string token, FamilyHomeService svc, CancellationToken ct) => Results.Ok(await svc.PublicAsync(token, ct)))
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter).WithTags("Family at home")
-            .WithSummary("What a family-at-home link shows, with no sign-in: the guest's first name, when the link ends, the postcards and the ship-level notices. Ok is false with a reason (signature, unknown, revoked or expired) for a link that does not work. Rate-limited. Never where the guest is.");
+            .WithSummary("What a family-at-home link shows, with no sign-in: the guest's first name, when the link ends, the postcards, the recap if the guest shared one and the ship-level notices. Ok is false with a reason (signature, unknown, revoked or expired) for a link that does not work. Rate-limited. Never where the guest is.");
     }
 }

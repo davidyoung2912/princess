@@ -69,6 +69,9 @@ public class SwaggerCoverageTests : IDisposable
         { "delete", "/api/v1/me/family-links/{id}" },
         { "delete", "/api/v1/me/family-links" },
         { "post", "/api/v1/me/family-postcards" },
+        { "put", "/api/v1/me/family-recap" },
+        { "delete", "/api/v1/me/family-recap" },
+        { "post", "/api/v1/public/trial-day" },
         { "get", "/api/v1/bookings/{number}/port-rows" },
         { "post", "/api/v1/bookings/{number}/port-rows" },
         { "get", "/api/v1/me/context" },
@@ -502,6 +505,17 @@ public class SwaggerCoverageTests : IDisposable
         Assert.False(op.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, "the family page must not ask for a token");
         using var http = _f.CreateClient();
         Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, (await http.GetAsync("/api/v1/public/family/nonsense")).StatusCode);
+    }
+
+    [Fact]
+    public async Task TheTrialDayIsPublicAndSignedOutGuestsCanAskForOne()
+    {
+        var paths = await Paths();
+        var op = paths.GetProperty("/api/v1/public/trial-day").GetProperty("post");
+        Assert.False(op.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, "the trial day must not ask for a token");
+        using var http = _f.CreateClient();
+        var bad = await http.PostAsync("/api/v1/public/trial-day", new StringContent("""{"day":1,"wish":null}""", System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, bad.StatusCode);
     }
 
     /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>

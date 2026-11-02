@@ -4,7 +4,9 @@ import { CRUISE } from '../../domain/cruise'
 import { PORT_GUIDES } from '../../domain/ports'
 import { REFERENCE_SAILING } from '../../domain/sailings'
 import { SHIP } from '../../domain/ship'
+import { itineraryRegrets } from '../../domain/regret'
 import { Card } from '../Card'
+import { RegretCards } from './RegretCards'
 import { LinkButton } from '../Button'
 import { ItineraryList, RouteMap } from './parts'
 
@@ -30,6 +32,9 @@ export function CruiseScreen() {
         <p className="muted">{t('discover.timesNote')}</p>
         <ItineraryList sailing={REFERENCE_SAILING} />
       </section>
+
+      <RegretCards cards={itineraryRegrets(REFERENCE_SAILING)} heading={t('regret.route')} headingId="regret-route" />
+      <p className="muted">{t('regret.note')}</p>
 
       <section aria-labelledby="when-h">
         <h2 id="when-h">{t('discover.whenToGo')}</h2>

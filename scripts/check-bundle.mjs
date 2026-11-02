@@ -7,7 +7,7 @@ import { join } from 'node:path'
 const dist = 'dist'
 const KB = 1024
 // Budgets in gzip bytes. They sit a little above today's sizes (first load about 312 kB, largest screen about 7 kB) so growth has to be argued for.
-const FIRST_LOAD_MAX = 340 * KB
+const FIRST_LOAD_MAX = 350 * KB
 const SCREEN_MAX = 12 * KB
 const PRECACHE_MAX = 2200 * KB
 

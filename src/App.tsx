@@ -5,7 +5,7 @@ import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
 import { Shell } from './ui/Shell'
 import { SignInGate } from './ui/SignInScreen'
-import { ROUTES } from './routes/routes'
+import { ROUTES, isPublicPath } from './routes/routes'
 
 /** Every screen, built from the route table, inside the shell. Separate from the router so tests can render it in memory. */
 export function AppRoutes() {
@@ -39,11 +39,10 @@ export default function App() {
   )
 }
 
-/** A family link opens without an account; everything else waits for sign-in. */
+/** A family link or the trial day opens without an account; everything else waits for sign-in. */
 function PublicOrSignedIn({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
-  const isPublic = ROUTES.some((r) => r.public && pathname.startsWith(r.path.slice(0, r.path.indexOf('/:'))))
-  return isPublic ? <>{children}</> : <SignInGate>{children}</SignInGate>
+  return isPublicPath(pathname) ? <>{children}</> : <SignInGate>{children}</SignInGate>
 }
 
 /** Draws everything again when the language changes, since text is read when a screen is drawn. */

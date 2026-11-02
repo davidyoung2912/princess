@@ -22,6 +22,7 @@ import { conditionsFeed } from '../feeds/route'
 import { skyFeed } from '../feeds/sky'
 import { weekFeed } from '../feeds/week'
 import { dayPlanFeed } from '../feeds/dayPlan'
+import { trialDayFeed } from '../feeds/trialDay'
 import { markAccount, refreshContext, setContext } from '../account/context'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
@@ -82,6 +83,8 @@ export const familyHome = {
   revokeAll: () => http.delete<void>('/me/family-links'),
   postcard: (kind: string, note: string) => http.post<void>('/me/family-postcards', { kind, note }),
   view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
+  setRecap: (text: string) => http.put<void>('/me/family-recap', { text }),
+  clearRecap: () => http.delete<void>('/me/family-recap'),
 }
 
 /** The party's shared view and the read-only links (N4): the organiser's roster, the change log, caregiver and advisor links, and a link's own page (no sign-in). */
@@ -97,6 +100,7 @@ export const partyShare = {
 
 {
   weekFeed.setFetcher((sailingId, prefs) => http.post<unknown>('/me/autopilot/plan', { sailingId, prefs: JSON.parse(prefs) }))
+  trialDayFeed.setFetcher((day, wishes) => http.post<unknown>('/public/trial-day', { day, wish: JSON.parse(wishes) }, { anonymous: true }))
   dayPlanFeed.setFetcher((sailingId, day, wishes) => http.post<unknown>('/me/day-plan', { sailingId, day, wish: JSON.parse(wishes) }))
   skyFeed.setFetcher((date, port) => http.get<unknown>('/feeds/sky', { query: { date, port } }))
   flightFeed.setFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))

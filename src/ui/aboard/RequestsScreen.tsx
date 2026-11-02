@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { REQUEST_ITEMS, type RequestGroup } from '../../domain/services'
+import { Link } from 'react-router'
+import { QUICK_REQUESTS, REQUEST_ITEMS, type RequestGroup } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -24,7 +25,8 @@ export function RequestsScreen() {
   const shipTime = useShipTime()
   const [qty, setQty] = useState<Record<string, number>>({})
   useVisibleInterval(list.retry, 60_000, true)
-  const ask = useAction(async (item: string) => { await api.aboard.requests.create(item, qty[item] ?? 1, ''); list.retry() })
+  const [sentItem, setSentItem] = useState('')
+  const ask = useAction(async (item: string) => { setSentItem(''); await api.aboard.requests.create(item, qty[item] ?? 1, ''); setSentItem(item); list.retry() })
   const cancel = useAction(async (id: string) => { await api.aboard.requests.cancel(id); list.retry() })
   return (
     <div className="page">
@@ -32,6 +34,18 @@ export function RequestsScreen() {
       <p>{t('req.intro')}</p>
       <ChildNote />
       <AboardError error={ask.error ?? cancel.error} />
+      <section aria-labelledby="req-quick">
+        <h2 id="req-quick">{t('req.quick')}</h2>
+        <p className="muted">{t('req.quickHint')}</p>
+        <div className="button-row">
+          {QUICK_REQUESTS.map((id) => <Button key={id} disabled={ask.busy || !!me?.child} onClick={() => void ask.run(id)}>{t(`req.i.${id}` as StringKey)}</Button>)}
+        </div>
+        <p role="status">{sentItem && !ask.error ? t('req.sent', { item: t(`req.i.${sentItem}` as StringKey) }) : ''}</p>
+        <ul className="plain-list">
+          <li><Link to="/ship/dnd">{t('req.dnd')}</Link> <span className="muted">{t('req.dndHint')}</span></li>
+          <li><a href="#req-maintenance">{t('req.fixThis')}</a> <span className="muted">{t('req.fixThisHint')}</span></li>
+        </ul>
+      </section>
       {GROUPS.map((g) => (
         <section key={g} aria-labelledby={`req-${g}`}>
           <h2 id={`req-${g}`}>{t(`req.g.${g}` as StringKey)}</h2>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { FeedbackView } from '../../api/finishTypes'
-import { AREAS, COMMENT_MAX, CREW_MAX, blankFeedback, needsRecovery, type AreaId, type Feedback } from '../../domain/postcruise'
+import { AREAS, COMMENT_MAX, CREW_MAX, blankFeedback, crewNotes, needsRecovery, type AreaId, type Feedback } from '../../domain/postcruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
+import { usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -41,6 +42,23 @@ function Rating({ name, legend, value, onChange, optional }: { name: string; leg
   )
 }
 
+/** Shows the guest exactly what a thanked crew member will read: the note and, if allowed, a first name. There is no tip line to show (N6.6). */
+function CrewPreview({ f }: { f: Feedback }) {
+  const me = usePersona()
+  const notes = crewNotes(f, me?.firstName ?? '')
+  return (
+    <section className="plain-fieldset" aria-labelledby="fbk-preview-h">
+      <h3 id="fbk-preview-h">{t('fbk.crewPreview')}</h3>
+      {notes.length === 0 ? <p className="muted">{t('fbk.crewPreviewNone')}</p> : (
+        <>
+          <p className="field__hint">{notes[0].from ? t('fbk.crewPreviewSigned') : t('fbk.crewPreviewUnsigned')}</p>
+          <ul className="plain-list">{notes.map((n) => <li key={n.crew}><strong>{n.crew}</strong>: {n.note || '—'}{n.from ? ` (${n.from})` : ''}</li>)}</ul>
+        </>
+      )}
+    </section>
+  )
+}
+
 function Form({ v, reload }: { v: FeedbackView; reload: () => void }) {
   const [f, setF] = useState<Feedback>(v.feedback ?? blankFeedback())
   const [more, setMore] = useState(v.feedback ? Object.keys(v.feedback.areas).length > 0 || v.feedback.comment !== '' : false)
@@ -74,6 +92,7 @@ function Form({ v, reload }: { v: FeedbackView; reload: () => void }) {
                 <p className="field__hint">{t('fbk.crewSeen')}</p>
                 {v.crew.map((c) => <label key={c.id} className="choice"><input type="checkbox" checked={f.crew.includes(c.name)} onChange={() => toggleCrew(c.name)} /><span>{c.name}<small>{t(`fbk.role.${c.role}` as StringKey)}{c.name === v.steward ? ` · ${t('fbk.yourSteward')}` : ''}</small></span></label>)}
               </fieldset>
+              <CrewPreview f={f} />
             </>
           )}
           <Card labelledBy="fbk-use-h">

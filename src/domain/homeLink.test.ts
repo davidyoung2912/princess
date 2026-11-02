@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addContact, addPostcard, adoptServerLink, liveLinkIds, normalizePublicFamily, normalizeServerLink, daysLeft, EMPTY_HOME, familyView, flushPostcards, isLive, issueLink, linkToken, liveLinkFor, MAX_CONTACTS, MAX_POSTCARDS, normalizeHome, queuedPostcards, removeContact, revokeAll, revokeLink, tokenOwner, verifyLink, type HomeState } from './homeLink'
+import { recapProblem, RECAP_MAX_CHARS, RECAP_MAX_LINE, RECAP_MAX_LINES, addContact, addPostcard, adoptServerLink, liveLinkIds, normalizePublicFamily, normalizeServerLink, daysLeft, EMPTY_HOME, familyView, flushPostcards, isLive, issueLink, linkToken, liveLinkFor, MAX_CONTACTS, MAX_POSTCARDS, normalizeHome, queuedPostcards, removeContact, revokeAll, revokeLink, tokenOwner, verifyLink, type HomeState } from './homeLink'
 
 const DAY = 86_400_000
 const withPerson = (): HomeState => addContact(EMPTY_HOME, 'Ann', 'ann@example.com', 'c1').state
@@ -102,7 +102,7 @@ describe('what the family sees', () => {
   it('is a fixed list of ship-level fields, with no location, cabin or money', () => {
     const { state, link } = withLink()
     const view = familyView(addPostcard(state, 'ok', '', 1, 'p', true), link, ctx)
-    expect(Object.keys(view).sort()).toEqual(['delayedMinutes', 'expiresAt', 'guestFirst', 'itinerary', 'notices', 'postcards', 'shipAt', 'shipName'])
+    expect(Object.keys(view).sort()).toEqual(['delayedMinutes', 'expiresAt', 'guestFirst', 'itinerary', 'notices', 'postcards', 'recap', 'shipAt', 'shipName'])
     expect(Object.keys(view.postcards[0]).sort()).toEqual(['at', 'id', 'kind', 'note'])
     const text = JSON.stringify(view).toLowerCase()
     for (const word of ['cabin', 'location', 'email', 'secret', 'bill', 'deck']) expect(text.includes(word), word).toBe(false)
@@ -143,11 +143,25 @@ describe('links signed by the server', () => {
   })
   it('turns the public answer into a page or a reason', () => {
     const ok = normalizePublicFamily({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ kind: 'ok', note: 'Hi', at: 1 }, { kind: 'spam', note: '', at: 2 }], scenarios: ['a', 3] })
-    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'], delayedMinutes: null })
+    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'], delayedMinutes: null, recap: null })
     expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 90.4 })).toMatchObject({ delayedMinutes: 90 })
     expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 'soon' })).toMatchObject({ delayedMinutes: null })
+    // The recap the guest shared is read only if it is within the limits the server enforces, and is cleaned the same way.
+    expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', recap: ' Day one \n\n Day two\u0007 ' })).toMatchObject({ recap: 'Day one\nDay two' })
+    expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', recap: 'x'.repeat(RECAP_MAX_CHARS + 1) })).toMatchObject({ recap: null })
+    expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', recap: 7 })).toMatchObject({ recap: null })
     expect(normalizePublicFamily({ ok: false, reason: 'revoked' })).toEqual({ ok: false, reason: 'revoked' })
     expect(normalizePublicFamily({ ok: false, reason: 'whatever' })).toEqual({ ok: false, reason: 'malformed' })
     expect(normalizePublicFamily('x')).toEqual({ ok: false, reason: 'malformed' })
+  })
+
+  it('checks a recap against the same limits as the server and never cuts it', () => {
+    expect(recapProblem('')).toBe('empty')
+    expect(recapProblem(' \n ')).toBe('empty')
+    expect(recapProblem('Seven nights in the sun.')).toBeNull()
+    expect(recapProblem('x'.repeat(RECAP_MAX_LINE + 1))).toBe('longLine')
+    expect(recapProblem(Array.from({ length: RECAP_MAX_LINES + 1 }, () => 'line').join('\n'))).toBe('tooManyLines')
+    expect(recapProblem(Array.from({ length: 6 }, () => 'x'.repeat(150)).join('\n'))).toBe('tooLong')
+    expect(recapProblem(Array.from({ length: 12 }, () => 'x'.repeat(60)).join('\n'))).toBeNull()
   })
 })

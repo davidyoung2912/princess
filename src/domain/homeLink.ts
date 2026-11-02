@@ -12,6 +12,25 @@ export const LINK_DAY_CHOICES = [3, 7, 14] as const
 export const DEFAULT_LINK_DAYS = 7
 export let MAX_POSTCARDS = 30
 export let MAX_POSTCARD_NOTE = 140
+
+/** The recap shown on the family page (N6.5): the limits the server enforces (`FamilyHomeRules.ValidRecap`). */
+export const RECAP_MAX_CHARS = 800
+export const RECAP_MAX_LINES = 12
+export const RECAP_MAX_LINE = 200
+
+/** The recap as the server keeps it: control characters dropped, each line trimmed, empty lines removed. */
+export const cleanRecap = (text: string): string =>
+  text.split(/\r\n|\r|\n/).map((l) => Array.from(l).filter((c) => { const n = c.charCodeAt(0); return n >= 32 && (n < 127 || n > 159) }).join('').trim()).filter((l) => l !== '').join('\n')
+
+/** What is wrong with a recap before it is sent, or null. Nothing is cut: the guest shortens it. */
+export function recapProblem(text: string): 'empty' | 'tooLong' | 'longLine' | 'tooManyLines' | null {
+  const clean = cleanRecap(text)
+  if (clean === '') return 'empty'
+  const lines = clean.split('\n')
+  if (lines.length > RECAP_MAX_LINES) return 'tooManyLines'
+  if (lines.some((l) => l.length > RECAP_MAX_LINE)) return 'longLine'
+  return clean.length > RECAP_MAX_CHARS ? 'tooLong' : null
+}
 const DAY = 86_400_000
 
 export interface FamilyContact { id: string; name: string; email: string }
@@ -136,7 +155,7 @@ export const liveLinkIds = (state: HomeState, now: number, contactId?: string): 
 
 /** What `GET /public/family/{token}` answers: a page, or the reason a link does not work. */
 export type PublicFamily =
-  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[]; /** Minutes the guest is late, when they told their party and share it. */ delayedMinutes: number | null }
+  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[]; /** Minutes the guest is late, when they told their party and share it. */ delayedMinutes: number | null; /** The recap the guest chose to share, or null. */ recap: string | null }
   | { ok: false; reason: LinkProblem }
 
 export function normalizePublicFamily(raw: unknown): PublicFamily {
@@ -148,6 +167,7 @@ export function normalizePublicFamily(raw: unknown): PublicFamily {
     ok: true, guestFirst: str(raw.guestFirst) ? raw.guestFirst.slice(0, 60) : '', expiresAt: typeof raw.expiresAt === 'number' ? raw.expiresAt : 0, postcards: postcards.slice(-MAX_POSTCARDS),
     scenarios: (Array.isArray(raw.scenarios) ? raw.scenarios : []).filter(str).slice(0, 30),
     delayedMinutes: typeof raw.delayedMinutes === 'number' && raw.delayedMinutes > 0 ? Math.min(480, Math.round(raw.delayedMinutes)) : null,
+    recap: str(raw.recap) && recapProblem(raw.recap) === null ? cleanRecap(raw.recap) : null,
   }
 }
 
@@ -186,6 +206,8 @@ export interface FamilyView {
   notices: readonly StringKey[]
   postcards: readonly { id: string; kind: PostcardKind; note: string; at: number }[]
   delayedMinutes: number | null
+  /** The recap the guest shared with the people at home, or null. */
+  recap: string | null
   expiresAt: number
 }
 
@@ -194,7 +216,7 @@ export function familyView(state: HomeState, link: FamilyLink, ctx: FamilyContex
   return {
     guestFirst: ctx.guestFirst, shipName: ctx.shipName, itinerary: ctx.itinerary, shipAt: ctx.shipAt, notices: ctx.notices,
     postcards: state.postcards.filter((p) => p.sent).map((p) => ({ id: p.id, kind: p.kind, note: p.note, at: p.at })),
-    delayedMinutes: ctx.delayedMinutes, expiresAt: link.expiresAt,
+    delayedMinutes: ctx.delayedMinutes, recap: null, expiresAt: link.expiresAt,
   }
 }
 

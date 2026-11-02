@@ -25,6 +25,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/home/disembark/sweep': 'cabin sweep; leave nothing behind; check room',
   '/home/disembark/bags': 'bag night; luggage out; leave bags outside; suitcase tags',
   '/home/disembark/flight': 'flight home; flight time; leave the ship in time',
+  '/home/meeting-point': 'meeting point; drop off; pick up; collect me; where to meet; driver; lift to the port',
   '/home/disembark/ride': 'share a ride; taxi; ride share; cab',
   '/home/cabins': 'choose a cabin; cabin; room types; balcony',
   '/home/decide': 'is this for me; should I go; first cruise doubts',

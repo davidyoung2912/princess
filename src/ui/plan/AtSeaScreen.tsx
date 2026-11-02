@@ -58,7 +58,7 @@ export function AtSeaScreen() {
     if (served) {
       // The server checked the link; it also names the guest, the scenarios that are on and a delay the guest chose to share.
       return served.ok
-        ? { view: { guestFirst: served.guestFirst, ...shipFacts, notices: familyNotices(served.scenarios), postcards: served.postcards, delayedMinutes: served.delayedMinutes, expiresAt: served.expiresAt } }
+        ? { view: { guestFirst: served.guestFirst, ...shipFacts, notices: familyNotices(served.scenarios), postcards: served.postcards, delayedMinutes: served.delayedMinutes, recap: served.recap, expiresAt: served.expiresAt } }
         : { reason: served.reason }
     }
     if (!check || !check.ok || !hub || !guest) return { reason: check && !check.ok ? check.reason : 'malformed' }
@@ -95,6 +95,12 @@ export function AtSeaScreen() {
             <ul>{[...view.postcards].reverse().map((p) => <li key={p.id}>{t(POSTCARD_TEXT[p.kind])}{p.note && ` — ${p.note}`}</li>)}</ul>
           )}
         </section>
+        {view.recap && (
+          <section aria-labelledby="pub-recap-h">
+            <h2 id="pub-recap-h">{t('home.public.recap', { name: view.guestFirst })}</h2>
+            {view.recap.split('\n').map((line) => <p key={line}>{line}</p>)}
+          </section>
+        )}
         <section aria-labelledby="pub-plan-h">
           <h2 id="pub-plan-h">{t('home.public.plan')}</h2>
           <ol>{view.itinerary.map((d) => <li key={d.day}>{formatDate(d.date)}: {d.place}</li>)}</ol>
