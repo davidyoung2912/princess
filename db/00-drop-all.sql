@@ -152,6 +152,8 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Budgets'),
   (N'dbo', N'UpdateAcks'),
   (N'dbo', N'PortRows'),
+  (N'dbo', N'BookingState'),
+  (N'dbo', N'UserState'),
   (N'dbo', N'ServiceRequests'),
   (N'dbo', N'SafetyReports'),
   (N'dbo', N'DrinkLogs'),
