@@ -76,6 +76,7 @@ services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IStateStore, DapperStateStore>();
 services.AddScoped<IFamilyHomeStore, DapperFamilyHomeStore>();
+services.AddScoped<IStaffTicketStore, DapperStaffTicketStore>();
 services.AddScoped<StateService>();
 services.AddScoped<IPortRowStore, DapperPortRowStore>();
 services.AddScoped<PortRowService>();

@@ -773,6 +773,26 @@ CREATE TABLE dbo.FamilyLinks (
 CREATE INDEX IX_FamilyLinks_User ON dbo.FamilyLinks (UserId);
 END
 
+IF OBJECT_ID(N'dbo.StaffTickets', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StaffTickets (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StaffTickets PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_StaffTickets_PublicId DEFAULT NEWID() CONSTRAINT UX_StaffTickets_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Kind VARCHAR(10) NOT NULL,
+  Reason VARCHAR(10) NOT NULL CONSTRAINT DF_StaffTickets_Reason DEFAULT '',
+  RequestedAtMs BIGINT NOT NULL,
+  Position INT NOT NULL,
+  ReadyAtMs BIGINT NOT NULL,
+  Source VARCHAR(10) NOT NULL,
+  CancelledAt DATETIME2(0) NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_StaffTickets_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_StaffTickets_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_StaffTickets_Kind CHECK (Kind IN ('callback','caregiver','kit'))
+);
+CREATE INDEX IX_StaffTickets_User ON dbo.StaffTickets (UserId, RequestedAtMs);
+END
+
 IF OBJECT_ID(N'dbo.FamilyPostcards', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.FamilyPostcards (

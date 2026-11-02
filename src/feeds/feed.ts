@@ -35,7 +35,7 @@ export function createFeed<A extends unknown[], V>(key: (...args: A) => string, 
       const mem = served.get(k)
       if (mem !== undefined) return mem
       if (!cacheKind) return null
-      const copy = cacheGet(store(), cacheKind, k, normalize)
+      const copy = cacheGet(store(), cacheKind, k, normalize, Date.now())
       return copy ? copy.value : null
     },
     async load(...args) {

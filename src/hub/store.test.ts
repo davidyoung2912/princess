@@ -15,7 +15,6 @@ describe('hub storage', () => {
     const state = {
       home: addContact(EMPTY_HOME, 'Ann', 'ann@example.com', 'c1').state,
       delay: reportDelay(EMPTY_DELAY, { reason: 'flight', lateMinutes: 60, note: '', tellParty: false }, 1, 'd'),
-      callback: { id: 'cb', at: 1, position: 2, readyAt: 481_000, reason: 'other' as const, source: 'sim' as const },
       debriefs: addDebrief([], 'illness', 'good', '', 1),
     }
     expect(saveHub('gerald', state, s)).toBe(true)

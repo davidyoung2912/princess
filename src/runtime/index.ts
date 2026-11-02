@@ -3,7 +3,7 @@ import type { Api } from '../api/types'
 import type { ConciergeSender } from '../ai/concierge'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { ownerIdOf } from '../auth/provider'
-import { resetDemo, wipeEverything } from '../data/lifecycle'
+import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, wipeEverything } from '../data/lifecycle'
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
@@ -68,6 +68,12 @@ export const sendConcierge: ConciergeSender = (body) => http.post<unknown>('/me/
 /** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. */
 export const staffRequest = (kind: 'callback' | 'caregiver' | 'kit', reason?: string): Promise<unknown> => http.post<unknown>('/me/staff-requests', { kind, reason })
 
+/** The caller's guest services requests from the last two hours (the server keeps them, so every device shows the same ticket). */
+export const staffTickets = (): Promise<unknown> => http.get<unknown>('/me/staff-requests')
+
+/** Cancels one of those requests. */
+export const cancelStaffTicket = (id: string): Promise<void> => http.delete<void>(`/me/staff-requests/${encodeURIComponent(id)}`)
+
 /** Family-at-home links signed by the server: make, stop, stop all, send a postcard and open a link's page (no sign-in). */
 export const familyHome = {
   issue: (days: number) => http.post<unknown>('/me/family-links', { days }),
@@ -125,7 +131,7 @@ function loadReference(): void {
  */
 function loadTable<T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void): void {
   const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
-  const kept = cacheGet(store(), kind, 'v1', normalize)
+  const kept = cacheGet(store(), kind, 'v1', normalize, Date.now())
   if (kept) apply(kept.value)
   void http.get<unknown>(path, { anonymous: true })
     .then((raw) => {
@@ -144,10 +150,26 @@ loadTable('ports', '/reference/ports', normalizePorts, applyPorts)
 loadTable('packages', '/reference/packages', normalizePackages, applyPackages)
 loadTable('limits', '/reference/limits', normalizeLimits, applyLimits)
 
+/**
+ * The copies on this device belong to one person. When someone else signs in, the earlier person's copies are removed (only changes that have not
+ * reached the server yet are left, see `UNSENT_PREFIXES`), so a shared phone never shows or sends the wrong person's data. The server is the source: a
+ * new device, or a cleared one, pulls.
+ */
+function claimDevice(userId: string | null | undefined): void {
+  const store = local()
+  if (!store || !userId) return
+  try {
+    const before = store.getItem(OWNER_KEY)
+    if (before && before !== userId) clearPersonCopies(store, UNSENT_PREFIXES)
+    if (before !== userId) store.setItem(OWNER_KEY, userId)
+  } catch { /* storage blocked: nothing is kept either */ }
+}
+
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {
   loadReference()
   const session = auth.current()
+  claimDevice(session?.user?.id)
   loadContext()
   setRemote(session ? createHttpRemote(http) : null)
   setPortRowsRemote(session ? createHttpPortRows(http) : null)
@@ -200,6 +222,20 @@ export async function startRuntime(): Promise<void> {
 export async function signOutSaving(): Promise<void> {
   await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
   await auth.signOut()
+  clearOwnCopies()
+}
+
+/**
+ * After sign-out, removes everything this device kept for the person. If a change still has not reached the server (the sync indicator shows it),
+ * their documents stay, so nothing typed is lost; so does the outbox of unsent messages. The next different person to sign in clears what stays.
+ */
+function clearOwnCopies(): void {
+  const store = local()
+  if (!store) return
+  const waiting = sync.status() === 'error' || portRows.status() === 'error'
+  if (!waiting) clearPersonCopies(store, UNSENT_PREFIXES)
+  const stillUnsent = waiting || Array.from({ length: store.length }, (_, i) => store.key(i)).some((k) => !!k && k.startsWith(UNSENT_PREFIXES[0]))
+  if (!stillUnsent) { try { store.removeItem(OWNER_KEY) } catch { /* blocked */ } }
 }
 
 /** "Reset demo": the demo controls go back to first-run and the account's demo data is reset on the server. Display settings and who is signed in are kept. */

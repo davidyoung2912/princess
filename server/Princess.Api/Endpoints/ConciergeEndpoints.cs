@@ -10,14 +10,34 @@ public static class ConciergeEndpoints
 {
     public static void MapConciergeEndpoints(this IEndpointRouteBuilder api)
     {
-        api.MapPost("/me/staff-requests", async (StaffRequestDto body, ICurrentUser me, IUserClock clock, IStaffQueue queue, CancellationToken ct) =>
+        api.MapPost("/me/staff-requests", async (StaffRequestDto body, ICurrentUser me, IUserClock clock, IStaffQueue queue, IStaffTicketStore tickets, CancellationToken ct) =>
             {
                 if (!StaffRules.Valid(body, out var kind, out var reason)) throw ApiException.Invalid("badStaffRequest");
                 var user = await me.LoadAsync(ct);
-                return Results.Ok(await queue.EnqueueAsync(user.PublicId, kind, reason, await clock.NowAsync(user, ct), ct));
+                var ticket = await queue.EnqueueAsync(user.PublicId, kind, reason, await clock.NowAsync(user, ct), ct);
+                await tickets.AddAsync(user.Id, ticket, ct);
+                return Results.Ok(ticket);
             })
             .WithTags("Concierge")
-            .WithSummary("Asks guest services for a call back (reason urgent, changes, health or other), a caregiver visit or a sensory kit, and returns the guest's place in the queue and when to expect the call. 400 badStaffRequest for anything else.");
+            .WithSummary("Asks guest services for a call back (reason urgent, changes, health or other), a caregiver visit or a sensory kit, keeps the ticket, and returns the guest's place in the queue and when to expect the call. 400 badStaffRequest for anything else.");
+
+        api.MapGet("/me/staff-requests", async (ICurrentUser me, IUserClock clock, IStaffTicketStore tickets, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                var now = new DateTimeOffset(DateTime.SpecifyKind(await clock.NowAsync(user, ct), DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+                var list = await tickets.ListAsync(user.Id, now - StaffRules.LifetimeMs, ct);
+                return Results.Ok(list.Select(t => StaffRules.Status(t, now)).ToList());
+            })
+            .WithTags("Concierge")
+            .WithSummary("The caller's guest services requests from the last two hours, newest first, each with its status (waiting, due or lapsed) and the places still ahead.");
+
+        api.MapDelete("/me/staff-requests/{id:guid}", async (Guid id, ICurrentUser me, IUserClock clock, IStaffTicketStore tickets, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                return await tickets.CancelAsync(user.Id, id, await clock.NowAsync(user, ct), ct) ? Results.NoContent() : throw ApiException.NotFound();
+            })
+            .WithTags("Concierge")
+            .WithSummary("Cancels one of the caller's guest services requests. 404 when it is not theirs.");
 
         api.MapPost("/me/concierge", async (ConciergeRequestDto body, ICurrentUser me, ConciergeService svc, CancellationToken ct) =>
                 Results.Ok(await svc.AskAsync(await me.LoadAsync(ct), body, ct)))

@@ -152,6 +152,10 @@ export const normalizeCallback = (raw: unknown): CallbackRequest | null => {
   return { id: r.id, at: r.at as number, position: r.position as number, readyAt: r.readyAt as number, reason: r.reason as CallbackRequest['reason'], source: 'sim' }
 }
 
+/** The server's call-back tickets, newest first (it also lists caregiver and kit requests, which this card does not show). */
+export const normalizeCallbacks = (raw: unknown): CallbackRequest[] =>
+  Array.isArray(raw) ? raw.flatMap((r) => (typeof r === 'object' && r !== null && (r as { kind?: unknown }).kind === 'callback' ? [normalizeCallback(r)] : [])).filter((c): c is CallbackRequest => c !== null) : []
+
 /* ---- Follow-up after a disruption (XD-10) ---- */
 
 export const RATINGS = ['good', 'ok', 'poor'] as const

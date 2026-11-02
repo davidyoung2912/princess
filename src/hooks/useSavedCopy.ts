@@ -32,7 +32,7 @@ export function useSavedCopy<T>(kind: string, key: string, load: () => Promise<T
   }, [fresh, fetchedAt, kind, key])
   if (state.status === 'ready') return { data: state.data, status: 'ready', fromCopy: false, at: fetchedAt, retry: state.retry }
   if (state.status === 'error') {
-    const copy = cacheGet(storage(), kind, key, check)
+    const copy = cacheGet(storage(), kind, key, check, demoNow())
     if (copy) return { data: copy.value, status: 'ready', fromCopy: true, at: copy.savedAt, retry: state.retry }
     return { data: null, status: 'error', fromCopy: false, at: null, retry: state.retry }
   }

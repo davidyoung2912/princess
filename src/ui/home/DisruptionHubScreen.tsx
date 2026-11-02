@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { disruptionById, validOption } from '../../domain/disruption'
 import { formatDate } from '../../domain/cruise'
-import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallback, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
+import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallbacks, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import type { ScenarioId } from '../../domain/scenarios'
-import { api, staffRequest } from '../../runtime'
+import { api, cancelStaffTicket, staffRequest, staffTickets } from '../../runtime'
+import { useAsync } from '../../hooks/useAsync'
 import { useAction } from '../../hooks/useAction'
 import { useDemo, useNow } from '../../hooks/useDemo'
 import { useHub } from '../../hooks/useHub'
@@ -108,20 +109,24 @@ function HubCard({ id, view, onChanged }: { id: ScenarioId; view: { ack: { optio
 
 /** A callback with a place in the line (XD-04). The desk number stays on the page for when there is no signal. */
 function Callback() {
-  const { state, update, me } = useHub()
+  const { me } = useHub()
   const now = useNow()
   const [reason, setReason] = useState<CallbackRequest['reason']>('changes')
-  const c = state.callback
-  const status = c ? callbackStatus(c, now) : null
   const [failed, setFailed] = useState(false)
-  /** The server's place in the staff queue. If the server cannot be reached nothing is pretended: the guest is told and the desk number stays on the page. */
+  const tickets = useAsync(async () => normalizeCallbacks(await staffTickets()), [])
+  const c = tickets.data?.find((x) => callbackStatus(x, now).kind !== 'lapsed') ?? tickets.data?.[0] ?? null
+  const status = c ? callbackStatus(c, now) : null
+  /** The server's place in the staff queue, kept there so every device shows it. If the server cannot be reached nothing is pretended: the guest is told and the desk number stays on the page. */
   const askForCall = async () => {
     setFailed(false)
     try {
-      const callback = normalizeCallback(await staffRequest('callback', reason))
-      if (!callback) { setFailed(true); return }
-      update((s) => ({ ...s, callback }))
+      await staffRequest('callback', reason)
+      tickets.retry()
     } catch { setFailed(true) }
+  }
+  const cancel = async () => {
+    if (!c) return
+    try { await cancelStaffTicket(c.id); tickets.retry() } catch { setFailed(true) }
   }
   return (
     <section aria-labelledby="hub-cb-h">
@@ -133,7 +138,7 @@ function Callback() {
           <>
             <p role="status">{status.kind === 'due' ? t('hub.cb.due') : t('hub.cb.waiting', { position: c.position, minutes: status.minutes })}</p>
             <p className="muted">{t('hub.cb.sim', { hours: CALLBACK_LIFETIME_MS / 3_600_000 })}</p>
-            <Button variant="secondary" onClick={() => update((s) => ({ ...s, callback: null }))}>{t('hub.cb.cancel')}</Button>
+            <Button variant="secondary" onClick={() => void cancel()}>{t('hub.cb.cancel')}</Button>
           </>
         ) : (
           <>

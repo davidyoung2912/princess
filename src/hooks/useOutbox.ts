@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isApiError } from '../api/errors'
-import { due, enqueue, failed, isRetryable, loadOutbox, nextWake, saveOutbox, sent, TimeoutError, withTimeout, type OutboxItem } from '../data/outbox'
+import { due, enqueue, failed, isRetryable, loadOutbox, nextWake, notifyOutbox, saveOutbox, sent, TimeoutError, withTimeout, type OutboxItem } from '../data/outbox'
 import { report } from '../diagnostics/watch'
 import { useLatest } from './useLatest'
 
@@ -32,6 +32,7 @@ export function useOutbox(owner: string, kind: OutboxItem['kind'], deliver: (pay
     list.current = next
     setItems(next)
     saveOutbox(storage(), key, next)
+    notifyOutbox()
   }, [key])
 
   const hold = useCallback((payload: Record<string, string>) => {

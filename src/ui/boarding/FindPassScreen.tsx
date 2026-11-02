@@ -37,7 +37,7 @@ export function FindPassScreen() {
   }
   const error = look.error
   const offline = !!error && error.retryable && error.code !== 'notFound'
-  const copy = offline ? cacheGet(local(), 'found', normalizeBookingNumber(number), asBoardingView) : null
+  const copy = offline ? cacheGet(local(), 'found', normalizeBookingNumber(number), asBoardingView, demoNow()) : null
   const shown = found ?? (copy ? { pass: copy.value, copy: true, at: copy.savedAt } : null)
   return (
     <div className="page">

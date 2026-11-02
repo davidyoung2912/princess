@@ -6,7 +6,7 @@ import { isApiError } from '../api/errors'
  * Each document is one key on the server (`GET/PUT /me/state/{key}`) with a version that goes up on every save. A store keeps working
  * from its own device copy and tells this module when it changed; this module pushes the change (after a short pause, and again later
  * if the device is offline) and pulls newer copies at sign-in, when the tab is shown again and when the connection returns.
- * Framework-free so it is tested in node. With no remote (mock mode) every call does nothing.
+ * Framework-free so it is tested in node. The server is always the source: a new or cleared device pulls, and nothing is imported from a device copy. With no remote every call does nothing.
  */
 export interface RemoteDoc { version: number; data: unknown }
 
@@ -72,6 +72,8 @@ export function createSync(opts: SyncOptions) {
   let status: SyncStatus = 'idle'
   /** Keys whose server copy still has to be deleted (the guest withdrew consent while offline). */
   const removals = new Set<string>()
+  /** Keys held back by the guest's choice (never on, or withdrawn): the next pull sends this device's copy if the server has none. */
+  const importable = new Set<string>()
 
   const stateOf = (key: string): KeyState => {
     let s = states.get(key)
@@ -152,9 +154,10 @@ export function createSync(opts: SyncOptions) {
     s.pulled = true
     if (!doc) {
       s.version = 0
-      // Only a known person's device copy is theirs to send: a null id is shared by every account without a persona.
-      if (localId !== null && !b.isEmpty(b.read(idOf(b)))) { s.dirty = true; await run(key) }
-      else if (localId === null) b.apply(idOf(b), null)
+      // The server is the source: with nothing saved there, this device's copy is not imported. Two exceptions are the guest's own acts: a change made
+      // before this first answer arrived (dirty), and a document kept back until the guest agreed to keep it there.
+      if (s.dirty || (importable.has(key) && !b.isEmpty(b.read(idOf(b))))) { importable.delete(key); s.dirty = true; await run(key) }
+      else b.apply(idOf(b), null)
       return
     }
     s.version = doc.version
@@ -166,7 +169,7 @@ export function createSync(opts: SyncOptions) {
   return {
     register(b: Binding): void { bindings.set(b.key, b) },
 
-    /** Who is signed in (true when that is a different person from before): the server's user id (null when signed out or in mock mode) and the id the stores key their device copy by. */
+    /** Who is signed in (true when that is a different person from before): the server's user id (null when signed out) and the id the stores key their device copy by. */
     setOwner(accountId: string | null, local: string | null): boolean {
       if (accountId === account && local === localId) return false   // a token refresh, not a change of person
       for (const s of states.values()) if (s.timer !== null) clearTimer(s.timer)
@@ -208,7 +211,7 @@ export function createSync(opts: SyncOptions) {
       const one = async (key: string, b: Binding) => {
         try {
           if (removals.has(key)) { await opts.remote()?.remove(key); removals.delete(key); return }
-          if (!allowed(b)) return
+          if (!allowed(b)) { importable.add(key); return }   // held back by the guest's choice: when they turn it on, their copy here goes up
           if (stateOf(key).pulled) { if (stateOf(key).dirty) await run(key); else await pullKey(key, b, acct) }
           else await pullKey(key, b, acct)
         } catch { failed = true }
@@ -223,7 +226,7 @@ export function createSync(opts: SyncOptions) {
 
     /**
      * The guest turned `key` off: nothing more is sent and the server's copy is deleted (retried at the next pull if that fails). Resolves to whether the server's copy is gone now.
-     * Turning it on needs only a `pull()`, which imports this device's copy if the server has none.
+     * Turning it on needs only a `pull()`, which sends this device's copy if the server has none (the only import there is).
      */
     async withdraw(key: string): Promise<boolean> {
       const s = stateOf(key)
@@ -231,6 +234,7 @@ export function createSync(opts: SyncOptions) {
       s.dirty = false; s.pulled = false; s.version = 0
       if (!account) return true
       removals.add(key)
+      importable.add(key)
       const acct = account
       try {
         await opts.remote()?.remove(key)

@@ -172,6 +172,41 @@ public class StaffQueueTests : JourneyWorld
     }
 }
 
+public class StaffTicketRulesTests
+{
+    private static readonly StaffTicketDto T = new(Guid.NewGuid(), "callback", "other", 1_000_000, 4, 1_000_000 + 4 * StaffRules.MinutesPerPlace * 60_000L, "sim");
+
+    [Fact]
+    public void ThePlaceCountsDownThenTheCallIsDueThenLapses()
+    {
+        Assert.Equal((4, "waiting"), (StaffRules.Status(T, T.At).Position, StaffRules.Status(T, T.At).Status));
+        Assert.Equal(2, StaffRules.Status(T, T.At + 2 * StaffRules.MinutesPerPlace * 60_000L).Position);
+        var due = StaffRules.Status(T, T.ReadyAt);
+        Assert.Equal(("due", 0), (due.Status, due.Position));
+        Assert.Equal("lapsed", StaffRules.Status(T, T.At + StaffRules.LifetimeMs).Status);
+    }
+}
+
+public class StaffTicketApiTests : JourneyWorld
+{
+    [Fact]
+    public async Task ARequestIsKeptListedAndCancelledOnlyByItsOwner()
+    {
+        var token = await SignIn(Daniel);
+        var made = await Call(HttpMethod.Post, "/api/v1/me/staff-requests", token, new StaffRequestDto("callback", "health"));
+        var id = made.Json.GetProperty("id").GetString();
+        var list = await Call(HttpMethod.Get, "/api/v1/me/staff-requests", token);
+        Assert.Equal(HttpStatusCode.OK, list.Status);
+        Assert.Equal(1, list.Json.GetArrayLength());
+        Assert.Equal("waiting", list.Json[0].GetProperty("status").GetString());
+        var other = await SignIn(Priya);
+        Assert.Equal(0, (await Call(HttpMethod.Get, "/api/v1/me/staff-requests", other)).Json.GetArrayLength());
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/staff-requests/{id}", other)).Status);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, $"/api/v1/me/staff-requests/{id}", token)).Status);
+        Assert.Equal(0, (await Call(HttpMethod.Get, "/api/v1/me/staff-requests", token)).Json.GetArrayLength());
+    }
+}
+
 public class FamilyHomeTests : JourneyWorld
 {
     private static readonly byte[] Key = FamilyHomeRules.KeyFrom("a-test-signing-key-of-at-least-32-chars!!");

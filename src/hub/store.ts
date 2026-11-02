@@ -1,17 +1,17 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { sync } from '../sync'
-import { normalizeCallback, normalizeDebriefs, type CallbackRequest, type Debrief } from '../domain/disruptionHub'
+import { normalizeDebriefs, type Debrief } from '../domain/disruptionHub'
 import { EMPTY_DELAY, normalizeDelay, type DelayState } from '../domain/delay'
 import { EMPTY_HOME, normalizeHome, type HomeState } from '../domain/homeLink'
 
-/** Everything Phase H2 keeps on this device for one person: the family-at-home page, a delay, a callback request and disruption follow-ups. */
-export interface HubState { home: HomeState; delay: DelayState; callback: CallbackRequest | null; debriefs: Debrief[] }
-export const EMPTY_HUB: HubState = { home: EMPTY_HOME, delay: EMPTY_DELAY, callback: null, debriefs: [] }
+/** Everything Phase H2 keeps on this device for one person: the family-at-home page, a delay and disruption follow-ups. A call-back request is the server's ticket (`GET /me/staff-requests`), not kept here. */
+export interface HubState { home: HomeState; delay: DelayState; debriefs: Debrief[] }
+export const EMPTY_HUB: HubState = { home: EMPTY_HOME, delay: EMPTY_DELAY, debriefs: [] }
 
 export const normalizeHub = (raw: unknown): HubState => {
   if (typeof raw !== 'object' || raw === null) return EMPTY_HUB
   const r = raw as Record<string, unknown>
-  return { home: normalizeHome(r.home), delay: normalizeDelay(r.delay), callback: normalizeCallback(r.callback), debriefs: normalizeDebriefs(r.debriefs) }
+  return { home: normalizeHome(r.home), delay: normalizeDelay(r.delay), debriefs: normalizeDebriefs(r.debriefs) }
 }
 
 export const hubKeyFor = (personaId: string | null): string => `${APP_PREFIX}hub:${personaId ?? ''}`

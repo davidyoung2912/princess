@@ -20,6 +20,37 @@ export function removeAppKeys(storage: KeyValueStorage | null, except: readonly 
   keys.forEach((k) => storage.removeItem(k))
 }
 
+/** Who the copies on this device belong to (the server's user id). A different person signing in finds the earlier person's copies gone. */
+export const OWNER_KEY = 'princess:owner'
+
+/** Kept when a person's copies are cleared: display settings, diagnostics and the reports waiting to go, who the copies belong to, and the shared reference tables. */
+const KEPT_PREFIXES = ['princess:settings', 'princess:diagnostics', 'princess:improve', 'princess:telemetry', 'princess:reloaded', OWNER_KEY] as const
+/** Reference tables are the same for everyone, so they are kept for reading with no signal. */
+const SHARED_CACHE_KINDS = ['catalogue', 'sailings', 'ship', 'program', 'ports', 'packages', 'limits', 'access', 'rates'] as const
+/** The outbox of unsent messages and requests (an empty outbox keeps no key). The other place a change can wait is the sync stores, which `syncStatus()` reports (documents and the port day's rows). */
+export const UNSENT_PREFIXES = ['princess:outbox:'] as const
+
+/** True for a key that holds something belonging to one person. */
+export function isPersonKey(key: string): boolean {
+  if (!key.startsWith(APP_PREFIX)) return false
+  if (KEPT_PREFIXES.some((p) => key === p || key.startsWith(`${p}:`))) return false
+  return !SHARED_CACHE_KINDS.some((k) => key.startsWith(`${APP_PREFIX}cache:${k}:`))
+}
+
+/**
+ * Removes everything this device holds for a person (their documents, saved copies, feed answers, demo controls). `keep` names key prefixes to leave,
+ * used for changes that have not reached the server yet. Display settings, diagnostics and the shared reference tables stay.
+ */
+export function clearPersonCopies(storage: KeyValueStorage | null, keep: readonly string[] = []): void {
+  if (!storage) return
+  const keys: string[] = []
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i)
+    if (k && isPersonKey(k) && !keep.some((p) => k.startsWith(p))) keys.push(k)
+  }
+  keys.forEach((k) => storage.removeItem(k))
+}
+
 /** "Reset demo": the demo controls go back to first-run. */
 export async function resetDemo(local: KeyValueStorage | null): Promise<void> {
   local?.removeItem(DEMO_KEY)

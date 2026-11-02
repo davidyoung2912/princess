@@ -86,5 +86,19 @@ export function saveOutbox(store: Store | null, persona: string, list: readonly 
   }
 }
 
+/** True when any outbox on this device still holds something unsent. An empty outbox keeps no key, so the keys are the answer. */
+export function hasUnsent(store: Pick<Storage, 'length' | 'key'> | null): boolean {
+  try {
+    if (!store) return false
+    for (let i = 0; i < store.length; i++) if (store.key(i)?.startsWith('princess:outbox:')) return true
+  } catch { /* storage blocked */ }
+  return false
+}
+
+const outboxListeners = new Set<() => void>()
+/** Tells the sync indicator that an outbox changed. */
+export const notifyOutbox = (): void => outboxListeners.forEach((l) => l())
+export const subscribeOutbox = (l: () => void): (() => void) => { outboxListeners.add(l); return () => { outboxListeners.delete(l) } }
+
 /** Waits `ms` milliseconds. */
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))

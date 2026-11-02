@@ -69,10 +69,20 @@ describe('pull', () => {
     expect(t.store.values.get('p1')).toEqual({ n: 7 })
   })
 
-  it('sends this device\'s copy once when the server has none (first sign-in)', async () => {
+  it('does not import this device\'s copy when the server has none: the server is the source', async () => {
     const t = setup()
     t.store.values.set('p1', { n: 4 })
     t.sync.setOwner('u1', 'p1')
+    await t.sync.pull()
+    expect(t.server.docs.size).toBe(0)
+    expect(t.store.values.get('p1')).toEqual({ n: 0 })
+  })
+
+  it('still sends a change made before the first answer arrived', async () => {
+    const t = setup()
+    t.sync.setOwner('u1', 'p1')
+    t.store.values.set('p1', { n: 4 })
+    t.sync.changed('k', 'p1')
     await t.sync.pull()
     expect(t.server.docs.get('k')).toEqual({ version: 1, data: { n: 4 } })
   })
@@ -262,6 +272,7 @@ describe('a key that needs the guest\'s agreement', () => {
   it('deletes the server copy and stops sending when it is turned off', async () => {
     const t = gated()
     t.allow(true)
+    t.server.docs.set('m', { version: 1, data: { n: 5 } })
     t.store.values.set('p1', { n: 5 })
     t.sync.setOwner('u1', 'p1')
     await t.sync.pull()
@@ -277,6 +288,7 @@ describe('a key that needs the guest\'s agreement', () => {
   it('retries the deletion at the next pull when it could not be made', async () => {
     const t = gated()
     t.allow(true)
+    t.server.docs.set('m', { version: 1, data: { n: 5 } })
     t.store.values.set('p1', { n: 5 })
     t.sync.setOwner('u1', 'p1')
     await t.sync.pull()
