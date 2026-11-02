@@ -23,14 +23,7 @@ export interface Venue {
   walkIn?: boolean
 }
 
-const AUTHORED_VENUES: readonly Venue[] = [
-  { id: 'eclipse', name: 'Eclipse Dining Room', kind: 'main', deck: 'Deck 7 aft', cuisine: 'Traditional three-course dinner', cover: 0, dress: 'smart', menu: 'Seared sea bass, braised short rib, a vegetarian tasting plate, and a different dessert every night.' },
-  { id: 'crown', name: 'Crown Grill', kind: 'specialty', deck: 'Deck 7 aft', cuisine: 'Steakhouse', cover: 4500, dress: 'smart', menu: 'Aged filet, a shared seafood tower, creamed spinach and a warm chocolate soufflé.' },
-  { id: 'sabatini', name: 'Sabatini’s', kind: 'specialty', deck: 'Deck 8 aft', cuisine: 'Italian trattoria', cover: 4200, dress: 'smart', menu: 'Hand-rolled pasta, veal Milanese, a tiramisu made at the table.' },
-  { id: 'catch', name: 'The Catch by Rudi', kind: 'specialty', deck: 'Deck 7 midship', cuisine: 'Seafood', cover: 4800, dress: 'smart', menu: 'Lobster bisque, grilled catch of the day, and a key lime tart.' },
-  { id: 'love', name: 'Love by Britto', kind: 'specialty', deck: 'Deck 17 aft', cuisine: 'Prix fixe with a wake view', cover: 6500, dress: 'elegant', menu: 'Five small courses, with wine pairings available, served as the sun sets behind the ship.' },
-  { id: 'alfredo', name: 'Alfredo’s Pizzeria', kind: 'casual', deck: 'Deck 9 Piazza', cuisine: 'Neapolitan pizza', cover: 1499, dress: 'casual', menu: 'Margherita, diavola and a pizza of the day, with a dessert to share.', walkIn: true },
-]
+const AUTHORED_VENUES: readonly Venue[] = []
 
 /** The live list (see `EXCURSIONS`): the authored rooms until the server's catalogue arrives (`replaceVenues`), then the server's, replaced in place so every importer sees it. */
 const live: Venue[] = AUTHORED_VENUES.map((v) => ({ ...v }))

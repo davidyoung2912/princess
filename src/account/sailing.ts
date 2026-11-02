@@ -1,10 +1,10 @@
-import { SAILINGS, sailingById, type Sailing } from '../domain/sailings'
+import { REFERENCE_SAILING, SAILINGS, sailingById, type Sailing } from '../domain/sailings'
 import type { AccountContext } from './context'
 
-/** The first sailing that has not left yet (the last one when all have): where a real account with no trip browses from. */
+/** The first sailing that has not left yet (the last one when all have; the placeholder before the table arrives): where a real account with no trip browses from. */
 export function upcomingSailing(now: number): Sailing {
   const today = new Date(now).toISOString().slice(0, 10)
-  return SAILINGS.find((s) => s.departure >= today) ?? SAILINGS[SAILINGS.length - 1]
+  return SAILINGS.find((s) => s.departure >= today) ?? SAILINGS[SAILINGS.length - 1] ?? REFERENCE_SAILING
 }
 
 /**

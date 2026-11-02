@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { applyCatalogue, catalogueVersion, normalizeCatalogue, subscribeCatalogue } from './catalogueServed'
 import { VENUES } from './dining'
+import { seedReference } from '../testing/setup'
 import { EXCURSIONS } from './excursions'
 
 const ex = (over: Record<string, unknown> = {}) => ({ id: 'coz-snorkel', port: 'cozumel', name: 'Reef snorkel', summary: 's', hours: 3.5, price: 8100, activity: 'moderate', wheelchair: false, family: true, interests: ['water'], rating: 4.7, reviews: 10, meeting: 'pier', start: '08:30', capacity: 36, ...over })
@@ -8,7 +9,7 @@ const ve = (over: Record<string, unknown> = {}) => ({ id: 'crown', name: 'Crown 
 const wire = (excursions: unknown[], venues: unknown[]) => ({ version: 'c1', excursions, venues })
 
 describe('the server catalogue', () => {
-  afterEach(() => applyCatalogue(null))
+  afterEach(() => seedReference())
 
   it('replaces the excursions and the dining terms in place, and keeps the rest of a room', () => {
     const before = EXCURSIONS
@@ -22,11 +23,11 @@ describe('the server catalogue', () => {
     expect([crown.deck, crown.cuisine, crown.dress, crown.menu]).toEqual(['Deck 8 aft', 'Steak and more', 'elegant', 'A new menu.'])
   })
 
-  it('goes back to the authored copy', () => {
+  it('keeps what is in use when there is no answer', () => {
     applyCatalogue(normalizeCatalogue(wire([ex()], [ve()])))
     applyCatalogue(null)
-    expect(EXCURSIONS).toHaveLength(12)
-    expect(VENUES.find((v) => v.id === 'crown')!.cover).toBe(4500)
+    expect(EXCURSIONS).toHaveLength(1)
+    expect(VENUES).toHaveLength(1)
   })
 
   it('drops bad entries and ignores an answer with nothing usable', () => {

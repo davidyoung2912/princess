@@ -11,19 +11,10 @@ export interface Sailing {
   reference?: boolean
 }
 
-/** The authored sailings are what a screen shows before the server's table arrives; `replaceSailings` swaps them in place (see `sailingsServed.ts`). */
-export const SAILINGS: readonly Sailing[] = [
-  { id: 'sun-2026-11-08', departure: '2026-11-08' },
-  { id: 'sun-2026-11-22', departure: '2026-11-22' },
-  { id: 'sun-2026-12-06', departure: '2026-12-06' },
-  { id: 'sun-2026-12-27', departure: '2026-12-27', holiday: true },
-  { id: 'sun-2027-01-17', departure: '2027-01-17' },
-  { id: 'sun-2027-02-07', departure: '2027-02-07' },
-  { id: 'sun-2027-02-28', departure: '2027-02-28' },
-  { id: 'sun-2027-03-21', departure: '2027-03-21', reference: true },
-]
+/** The sailings come from the server's table (`replaceSailings`, see `sailingsServed.ts`); nothing is authored here. Replaced in place so earlier imports see the change. */
+export const SAILINGS: readonly Sailing[] = []
 
-export const REFERENCE_SAILING: Sailing = SAILINGS.find((s) => s.reference)!
+export const REFERENCE_SAILING: Sailing = { id: '', departure: '1970-01-01', reference: true }
 // The reference object is kept (and updated in place) when the served table replaces the list, so imports of it stay current.
 
 export const sailingById = (id: unknown): Sailing | undefined => SAILINGS.find((s) => s.id === id)
@@ -39,12 +30,7 @@ export interface Port {
 }
 
 /** Zones are the ones the tz database uses today: America/Cancun covers Cozumel (UTC-5 all year), Belize and Honduras are UTC-6 all year. */
-export const PORTS: Record<Exclude<PortId, 'sea'>, Port> = {
-  fll: { id: 'fll', name: 'Fort Lauderdale (Port Everglades)', zone: 'America/New_York', tender: false },
-  cozumel: { id: 'cozumel', name: 'Cozumel, Mexico', zone: 'America/Cancun', tender: false },
-  belize: { id: 'belize', name: 'Belize City, Belize', zone: 'America/Belize', tender: true },
-  roatan: { id: 'roatan', name: 'Roatán, Honduras', zone: 'America/Tegucigalpa', tender: false },
-}
+export const PORTS: Record<Exclude<PortId, 'sea'>, Port> = {} as Record<Exclude<PortId, 'sea'>, Port>
 
 export interface ItineraryDay {
   /** 1 to 8. */
@@ -65,16 +51,7 @@ export const sailingNights = (s: Sailing): number => Math.max(1, itinerary(s).le
 /** One day of the timeline before it is dated: the same for every sailing. */
 export type ItineraryTemplateDay = Omit<ItineraryDay, 'date'>
 
-let TEMPLATE: readonly ItineraryTemplateDay[] = [
-  { day: 1, port: 'fll', depart: '15:00' },
-  { day: 2, port: 'sea' },
-  { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
-  { day: 4, port: 'belize', arrive: '07:00', allAboard: '16:00', depart: '17:00' },
-  { day: 5, port: 'roatan', arrive: '08:00', allAboard: '16:30', depart: '17:00' },
-  { day: 6, port: 'sea' },
-  { day: 7, port: 'sea' },
-  { day: 8, port: 'fll', arrive: '06:00' },
-]
+let TEMPLATE: readonly ItineraryTemplateDay[] = []
 
 export function itinerary(s: Sailing): ItineraryDay[] {
   return TEMPLATE.map((t) => ({ ...t, date: addDays(s.departure, t.day - 1) }))

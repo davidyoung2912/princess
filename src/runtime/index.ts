@@ -31,6 +31,7 @@ import { applyPorts, normalizePorts } from '../domain/portsServed'
 import { applyPackages, normalizePackages } from '../domain/packagesServed'
 import { applyLimits, normalizeLimits } from '../domain/limitsServed'
 import { applyContent, normalizeContent } from '../domain/contentServed'
+import { markReferenceFailed, markReferenceReady, markReferenceRetry, requireReference } from '../domain/referenceStatus'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
@@ -137,14 +138,14 @@ function loadReference(): void {
  * at once (before anyone signs in), and the server is asked, with the person's token, each time someone is signed in: its answer is applied if its
  * `version` differs and the raw answer is kept for next time. A missing, unreachable or malformed answer leaves what is in use.
  */
-interface Table<T extends { version: string } = { version: string }> { kind: string; path: string; normalize: (raw: unknown) => T | null; apply: (t: T) => void }
-const table = <T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void): Table => ({ kind, path, normalize, apply } as unknown as Table)
+interface Table<T extends { version: string } = { version: string }> { kind: string; path: string; normalize: (raw: unknown) => T | null; apply: (t: T) => void; required: boolean }
+const table = <T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void, required = false): Table => ({ kind, path, normalize, apply, required } as unknown as Table)
 const TABLES: Table[] = [
-  table('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue),
-  table('sailings', '/reference/sailings', normalizeSailings, applySailings),
+  table('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue, true),
+  table('sailings', '/reference/sailings', normalizeSailings, applySailings, true),
   table('ship', '/reference/ship', normalizeShip, applyShip),
   table('program', '/reference/program', normalizeProgram, applyProgram),
-  table('ports', '/reference/ports', normalizePorts, applyPorts),
+  table('ports', '/reference/ports', normalizePorts, applyPorts, true),
   table('packages', '/reference/packages', normalizePackages, applyPackages),
   table('limits', '/reference/limits', normalizeLimits, applyLimits),
   table('content', '/reference/content', normalizeContent, applyContent),
@@ -156,8 +157,14 @@ const inUse = new Map<string, string>()
 function applyKeptTables(): void {
   for (const t of TABLES) {
     const kept = cacheGet(tableStore(), t.kind, 'v1', t.normalize, Date.now())
-    if (kept) { t.apply(kept.value); inUse.set(t.kind, kept.value.version) }
+    if (kept) { t.apply(kept.value); inUse.set(t.kind, kept.value.version); markReferenceReady(t.kind) }
   }
+}
+
+/** Asks again after a failure (the waiting page's button). */
+export function retryReference(): void {
+  markReferenceRetry()
+  loadTables()
 }
 
 function loadTables(): void {
@@ -166,13 +173,15 @@ function loadTables(): void {
     void http.get<unknown>(t.path)
       .then((raw) => {
         const fresh = t.normalize(raw)
-        if (!fresh) return
+        if (!fresh) { markReferenceFailed(t.kind); return }
         if (fresh.version !== inUse.get(t.kind)) { t.apply(fresh); inUse.set(t.kind, fresh.version) }
+        markReferenceReady(t.kind)
         cachePut(tableStore(), t.kind, 'v1', raw, Date.now())
       })
-      .catch(() => {})
+      .catch(() => markReferenceFailed(t.kind))
   }
 }
+requireReference(TABLES.filter((t) => t.required).map((t) => t.kind))
 applyKeptTables()
 
 /**

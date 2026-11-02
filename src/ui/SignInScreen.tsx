@@ -1,7 +1,8 @@
 import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { AuthError } from '../auth/provider'
 import { t } from '../i18n'
-import { auth } from '../runtime'
+import { auth, retryReference } from '../runtime'
+import { referenceState, subscribeReference } from '../domain/referenceStatus'
 import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
 import { Button } from './Button'
 import { Card } from './Card'
@@ -91,6 +92,22 @@ function TestAccounts() {
 export function SignInGate({ children }: { children: ReactNode }) {
   const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
   if (!session) return <SignInScreen />
-  return <>{children}</>
+  return <ReferenceGate>{children}</ReferenceGate>
+}
+
+/** Waits for the sailings, ports and catalogue before the app draws, so no screen reads an empty table. Offline with a kept copy, it goes straight through. */
+function ReferenceGate({ children }: { children: ReactNode }) {
+  const state = useSyncExternalStore(subscribeReference, referenceState, referenceState)
+  if (state === 'ready') return <>{children}</>
+  return (
+    <main className="page" id="main">
+      {state === 'failed' ? (
+        <>
+          <p role="alert">{t('ref.failed')}</p>
+          <Button onClick={retryReference}>{t('ref.retry')}</Button>
+        </>
+      ) : <p role="status">{t('ref.loading')}</p>}
+    </main>
+  )
 }
 

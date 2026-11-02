@@ -33,23 +33,8 @@ export interface ExcursionItem {
   capacity: number
 }
 
-const MEET_PIER = 'Meet on the pier beside the gangway, 10 minutes before the start'
-const MEET_TENDER = 'Meet at the tender landing in town, then follow the guide'
 
-const AUTHORED_EXCURSIONS: readonly ExcursionItem[] = [
-  { id: 'coz-snorkel', port: 'cozumel', name: 'Reef snorkel by boat', summary: 'A short boat ride to Palancar Reef, with gear and a guide in the water.', hours: 3.5, price: 7900, activity: 'moderate', wheelchair: false, family: true, interests: ['water', 'nature'], rating: 4.7, reviews: 1284, meeting: MEET_PIER, start: '08:30', capacity: 36 },
-  { id: 'coz-ruins', port: 'cozumel', name: 'San Gervasio Mayan ruins', summary: 'An air-conditioned coach to the island’s ruins, with a guide on the history.', hours: 4, price: 6900, activity: 'moderate', wheelchair: false, family: true, interests: ['culture'], rating: 4.5, reviews: 902, meeting: MEET_PIER, start: '09:00', capacity: 40 },
-  { id: 'coz-beach', port: 'cozumel', name: 'Beach club day pass', summary: 'A lounger, shade and a lunch credit at a beach club a short taxi ride away.', hours: 6, price: 5900, activity: 'easy', wheelchair: true, family: true, interests: ['relax', 'water'], rating: 4.6, reviews: 2210, meeting: MEET_PIER, start: '09:30', capacity: 60 },
-  { id: 'coz-glass', port: 'cozumel', name: 'Glass-bottom boat and town', summary: 'See the reef from a dry, level boat deck, then an hour in town.', hours: 2.5, price: 4900, activity: 'easy', wheelchair: true, family: true, interests: ['nature', 'relax'], rating: 4.4, reviews: 611, meeting: MEET_PIER, start: '13:00', capacity: 30 },
-  { id: 'bze-altunha', port: 'belize', name: 'Altun Ha Mayan temples', summary: 'A coach inland to the temples, with time to climb the main pyramid.', hours: 4, price: 8500, activity: 'moderate', wheelchair: false, family: true, interests: ['culture'], rating: 4.6, reviews: 1530, meeting: MEET_TENDER, start: '08:30', capacity: 40 },
-  { id: 'bze-cave', port: 'belize', name: 'Cave tubing adventure', summary: 'Float through a jungle cave on an inner tube after a walk through the forest.', hours: 6, price: 12900, activity: 'strenuous', wheelchair: false, family: false, interests: ['adventure', 'nature'], rating: 4.8, reviews: 2045, meeting: MEET_TENDER, start: '08:30', capacity: 24 },
-  { id: 'bze-reef', port: 'belize', name: 'Barrier reef snorkel', summary: 'A boat to the second-largest barrier reef in the world, with gear and a guide.', hours: 4, price: 9900, activity: 'moderate', wheelchair: false, family: true, interests: ['water', 'nature'], rating: 4.7, reviews: 1178, meeting: MEET_TENDER, start: '09:00', capacity: 32 },
-  { id: 'bze-walk', port: 'belize', name: 'Belize City heritage walk', summary: 'A slow guided walk past the swing bridge, the old market and the harbour.', hours: 2.5, price: 4500, activity: 'easy', wheelchair: true, family: true, interests: ['culture', 'relax'], rating: 4.3, reviews: 388, meeting: MEET_TENDER, start: '10:00', capacity: 20 },
-  { id: 'rtb-zip', port: 'roatan', name: 'Zip-line canopy tour', summary: 'Ten zip lines through the rainforest canopy, with a harness fitting first.', hours: 3, price: 8900, activity: 'strenuous', wheelchair: false, family: false, interests: ['adventure', 'nature'], rating: 4.8, reviews: 1710, meeting: MEET_PIER, start: '09:00', capacity: 28 },
-  { id: 'rtb-snorkel', port: 'roatan', name: 'West Bay snorkel', summary: 'Calm, clear water off a white beach, with gear and a guide.', hours: 3.5, price: 7500, activity: 'moderate', wheelchair: false, family: true, interests: ['water'], rating: 4.6, reviews: 996, meeting: MEET_PIER, start: '09:30', capacity: 36 },
-  { id: 'rtb-wildlife', port: 'roatan', name: 'Wildlife and monkey park', summary: 'Sloths, monkeys and tropical birds on flat paths, with a keeper to talk to.', hours: 3, price: 6500, activity: 'easy', wheelchair: true, family: true, interests: ['nature'], rating: 4.5, reviews: 1402, meeting: MEET_PIER, start: '10:00', capacity: 40 },
-  { id: 'rtb-drive', port: 'roatan', name: 'Island drive and beach stop', summary: 'A van around the island with three photo stops and half an hour on the beach.', hours: 3, price: 5500, activity: 'easy', wheelchair: true, family: true, interests: ['relax', 'culture'], rating: 4.2, reviews: 457, meeting: MEET_PIER, start: '12:30', capacity: 24 },
-]
+const AUTHORED_EXCURSIONS: readonly ExcursionItem[] = []
 
 /** The live list: the authored copy until the server's catalogue arrives (`replaceExcursions`), then the server's. Replaced in place so every importer sees it. */
 const live: ExcursionItem[] = [...AUTHORED_EXCURSIONS]

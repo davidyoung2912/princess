@@ -44,10 +44,12 @@ export function AtSeaScreen() {
     applyPageMeta(document, { title: `${t('route.atSea')} · ${t('app.name')}`, description: t('seo.private'), indexable: false, url: `${window.location.origin}/at-sea` })
   }, [])
 
-  const here = portAt(sailing, now)
+  // A family member opens this page without signing in, so the sailings and ports tables may not be loaded: the ship's itinerary and place are left out then.
+  const tablesReady = PORTS.fll !== undefined && itinerary(sailing).length > 0
+  const here = tablesReady ? portAt(sailing, now) : { port: 'sea' as const, day: null }
   const shipFacts = {
     shipName: t('route.sunPrincess'),
-    itinerary: itinerary(sailing).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : d.port === 'fll' ? PORTS.fll.name : PORTS[d.port].name })),
+    itinerary: (tablesReady ? itinerary(sailing) : []).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : d.port === 'fll' ? PORTS.fll.name : PORTS[d.port].name })),
     shipAt: here.port === 'sea' ? null : here.port === 'fll' ? PORTS.fll.name : PORTS[here.port].name,
   }
   /** The page's facts, or why there is no page. */

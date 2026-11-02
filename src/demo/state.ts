@@ -1,5 +1,5 @@
 import { clockAt, DEFAULT_PHONE_ZONE, normalizeClock, normalizePhoneZone, type ClockState } from '../domain/clock'
-import { REFERENCE_SAILING, sailingById, timeForStage } from '../domain/sailings'
+import { itinerary, REFERENCE_SAILING, sailingById, timeForStage } from '../domain/sailings'
 import { SCENARIOS, type ScenarioId } from '../domain/scenarios'
 
 /** How the pretend network behaves: offline switch, delay range, random failure rate, and the seed that makes both replay identically. */
@@ -28,7 +28,8 @@ export const DEFAULT_NETWORK: NetworkSettings = { offline: false, latencyMinMs: 
 export function defaultDemoState(realNow: number): DemoState {
   return {
     sailingId: REFERENCE_SAILING.id,
-    clock: clockAt(timeForStage(REFERENCE_SAILING, 'preCruise'), realNow),
+    // Before the sailings table arrives there is no timeline to place the clock on: it starts at the real time.
+    clock: clockAt(itinerary(REFERENCE_SAILING).length > 0 ? timeForStage(REFERENCE_SAILING, 'preCruise') : realNow, realNow),
     phoneZone: DEFAULT_PHONE_ZONE,
     scenarios: [],
     network: { ...DEFAULT_NETWORK },
