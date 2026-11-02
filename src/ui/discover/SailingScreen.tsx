@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { t } from '../../i18n'
 import { sailingRange } from '../../domain/cruise'
 import { MAX_GUESTS } from '../../domain/priceShapes'
-import { sailingById } from '../../domain/sailings'
+import { sailingById, sailingNights } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
@@ -12,6 +12,7 @@ import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { ItineraryList, PriceBreakdown, PriceState, SaveShare } from './parts'
+import { PriceUnitLine } from '../delights/Delights'
 
 /** One sailing: its dated plan and an all-in price estimate for a room type and party size (DIS-05, DIS-11). */
 export function SailingScreen() {
@@ -59,6 +60,7 @@ export function SailingScreen() {
         <div aria-busy={quote.status === 'loading'}>
           <PriceState state={quote}>{quote.data && <PriceBreakdown quote={quote.data} />}</PriceState>
         </div>
+        {quote.data && <PriceUnitLine total={quote.data.total} guests={guests} nights={sailingNights(sailing)} />}
         <Card info><p>{t('discover.estimateNote')}</p></Card>
         <p><Link to="/home/cruise/cost">{t('cost.link')}</Link> · <Link to="/home/cabins">{t('route.cabins')}</Link> · <Link to="/home/decide">{t('route.decide')}</Link></p>
       </section>

@@ -13,6 +13,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
+import { RideCard } from '../delights/Delights'
 import { ExtraError } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
@@ -26,6 +27,7 @@ export function OnwardScreen() {
       <h1>{t('route.onward')}</h1>
       <p>{t('onw.intro')}</p>
       <Saved copy={copy}>{(v) => <Onward v={v} reload={copy.retry} />}</Saved>
+      <RideCard />
       <BackLink to="/home/disembark" label={t('route.disembark')} />
     </div>
   )

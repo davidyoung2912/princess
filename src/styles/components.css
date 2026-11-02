@@ -116,3 +116,6 @@
 .clocks dd { margin: 0; }
 .clocks__time { font-size: var(--fs-h2, 1.5rem); }
 .clocks__diff { display: block; color: var(--text-muted); }
+
+/* Small delights: a short text to copy and send. */
+.copy-text { margin: 0 0 var(--space-2); padding: var(--space-3); border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 8px); white-space: pre-wrap; overflow-wrap: anywhere; }

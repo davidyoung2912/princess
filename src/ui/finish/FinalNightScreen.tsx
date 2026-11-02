@@ -12,6 +12,7 @@ import { Card } from '../Card'
 import { ExtraError } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
+import { ChargeCard } from '../delights/Delights'
 
 /** The final-night checklist (DEB-07): what to do before the bags go out and before morning, with the time each is due. */
 export function FinalNightScreen() {
@@ -40,6 +41,7 @@ function Night({ v, reload }: { v: NightView; reload: () => void }) {
         </Banner>
       ) : <Banner kind="success" title={t('night.allDone')}><p>{t('night.allDoneBody')}</p></Banner>}
       <ExtraError error={tick.error} />
+      <ChargeCard firstDeadline={next?.dueAt} />
       <Card labelledBy="night-list-h">
         <h2 id="night-list-h" className="card__title">{t('night.list')}</h2>
         <ul className="plain-list">{v.entries.map((e) => <Item key={e.id} e={e} busy={tick.busy} onTick={(done) => void tick.run(e.id, done)} />)}</ul>

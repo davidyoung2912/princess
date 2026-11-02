@@ -20,6 +20,7 @@ import { Card } from '../Card'
 import { Download, Printer } from '../icons'
 import { formatDateTime } from '../account/format'
 import { Load } from '../account/parts'
+import { BookingNumber } from '../delights/Delights'
 
 /** Booking confirmation (BOK-07): the number, what was booked and paid, where the messages went, and the documents to keep. */
 export function ConfirmedScreen() {
@@ -60,7 +61,7 @@ function Confirmation({ b }: { b: BookingView }) {
         : <Banner kind="success" title={t('book.done.title')}><p>{t('book.done.body', { email: b.notified.find((n) => n.via === 'email')?.to ?? '' })}</p></Banner>}
       <Card hero>
         <p className="eyebrow">{t('book.done.number')}</p>
-        <p className="booking-number">{b.number}</p>
+        <BookingNumber number={b.number} />
         <p>{sailingRange(sailing)} · {b.categoryName}</p>
       </Card>
 

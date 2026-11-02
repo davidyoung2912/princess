@@ -4,6 +4,7 @@ import { useFavourites } from '../../hooks/useFavourites'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { SaveShare } from './parts'
+import { ShipTerms } from '../delights/Delights'
 
 const number = new Intl.NumberFormat('en-US')
 
@@ -20,6 +21,8 @@ export function ShipScreen() {
         <h2 id="acc-h">{t('discover.accessibility')}</h2>
         <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
       </Card>
+
+      <ShipTerms />
 
       <dl className="facts">
         <div><dt>{t('discover.ship.class')}</dt><dd>{SHIP.className}</dd></div>

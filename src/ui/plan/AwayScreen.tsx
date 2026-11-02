@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { Field } from '../Field'
 import { Share } from '../icons'
 import { BackLink } from '../onboard/common'
+import { OutOfOfficeCard } from '../delights/Delights'
 
 /** Away-from-home checklist (S3-11): pets, mail, bills, work, medication and a home safety check. Ticks and own items stay on this device; the list can be sent as text. */
 export function AwayScreen() {
@@ -79,6 +80,7 @@ export function AwayScreen() {
           </form>
         )}
       </Card>
+      <OutOfOfficeCard />
       <p className="muted">{t('away.note')}</p>
     </div>
   )

@@ -20,6 +20,7 @@ import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink, } from '../onboard/common'
 import { duration, useShipTime } from '../onboard/shipTime'
+import { ArrivedCard, LastLookCard, WatchCard } from '../delights/Delights'
 
 const STATUS_KIND = { onTrack: 'info', tight: 'warning', atRisk: 'warning' } as const
 
@@ -172,6 +173,9 @@ export function JourneyScreen() {
           <Button type="submit" variant="secondary">{t('journey.bags.addButton')}</Button>
         </form>
       </section>
+      <LastLookCard />
+      <ArrivedCard />
+      <WatchCard />
       <BackLink to="/plan" label={t('route.plan')} />
     </div>
   )

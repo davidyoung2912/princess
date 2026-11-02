@@ -9,6 +9,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { BackLink } from './common'
+import { TippingCard } from '../delights/Delights'
 
 /** Port know-how (S6A-03, S6A-07 to S6A-13): fair prices and scam alerts, safety and local rules, phrases and allergy cards, walks, day passes, family notes and local vendors. Authored concept content (verify before real use). */
 export function PortGuideScreen() {
@@ -30,6 +31,8 @@ export function PortGuideScreen() {
         <legend>{t('guide.port')}</legend>
         {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="guide-port" checked={port === p} onChange={() => setPort(p)} /><span>{PORTS[p].name}</span></label>)}
       </fieldset>
+
+      <TippingCard port={port} />
 
       <Card labelledBy="g-price">
         <h2 id="g-price" className="card__title">{t('guide.price')}</h2>
