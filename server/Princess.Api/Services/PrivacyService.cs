@@ -59,6 +59,7 @@ public sealed class PrivacyService(
         var kinds = PrivacyRules.KindsToDelete(D(b.Departure).AddDays(b.Nights), TripRules.Today(now));
         if (kinds.Count == 0) return false;
         var party = await accounts.GetPartyAsync(b.BookingId, ct);
+        if (party.Count == 0) return false;   // nobody on it yet (an agent booking waiting to be linked): nothing to delete, and no run could be recorded against anyone
         var ids = party.Select(g => g.UserId).ToList();
         var done = (await privacy.ListRetentionRunsAsync(ids, ct)).SelectMany(r => r.Kinds.Split(',')).ToHashSet();
         var fresh = kinds.Where(k => !done.Contains(k)).ToList();

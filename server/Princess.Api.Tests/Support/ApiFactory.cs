@@ -29,7 +29,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryFamilyHomeStore FamilyHome { get; } = new();
     public InMemoryPortRowStore PortRows { get; } = new();
     public InMemoryStaffTicketStore Staff { get; } = new();
-    public FakeClock Clock { get; } = new(DateTime.UtcNow);
+    public FakeClock Clock { get; } = new(DateTime.UtcNow.AddTicks(-(DateTime.UtcNow.Ticks % TimeSpan.TicksPerSecond)));   // whole seconds, so a demo offset (kept in seconds) lands exactly
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
     public ApiFactory()
@@ -54,6 +54,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             ["Auth:LoginAttemptsPerMinute"] = LoginAttemptsPerMinute.ToString(),
             ["Retention:IntervalMinutes"] = "0",
             ["Providers:ConciergeLimit"] = "memory",
+            ["Providers:Concierge"] = "sim",   // never the model, even when a key is set in the machine's environment
         }));
         builder.ConfigureServices(services =>
         {

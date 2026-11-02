@@ -569,7 +569,8 @@ public class SwaggerCoverageTests : IDisposable
         using var http = _f.CreateClient();
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/sailings")).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/help/contacts")).StatusCode);
-        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts")))
+        Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/auth/demo-accounts")).StatusCode);   // lists the seeded demo accounts outside production
+        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts" or "/api/v1/auth/demo-accounts")))
         {
             var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{doc}", "passport").Replace("{consent}", "improve");
             var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));

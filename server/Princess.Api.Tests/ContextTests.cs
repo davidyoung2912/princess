@@ -32,6 +32,7 @@ public class ContextTests : JourneyWorld
         Assert.Equal("sun-2026-12-06", r.Json.GetProperty("sailingId").GetString());
         Assert.Equal("America/Belize", r.Json.GetProperty("phoneZone").GetString());
 
+        Stranger.IsDemo = false;   // SetNow makes everyone a demo user; this one is a real account
         var real = await SignIn(Stranger);
         var s = await Get("/api/v1/me/context", real);
         Assert.Equal(HttpStatusCode.OK, s.Status);

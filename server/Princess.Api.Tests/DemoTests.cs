@@ -69,13 +69,14 @@ public class DemoApiTests : JourneyWorld
         Assert.Equal(0, (await Get("/api/v1/demo/state", token)).Json.GetProperty("savedAt").GetInt64());   // never touched: a new device keeps its own controls
         await Call(HttpMethod.Put, "/api/v1/demo/state", token, new DemoStateDto(0, 60, ["planChange"]));
 
+        // A jump is measured against the server's own clock (real time here), not against the demo "now".
         var at = new DateTimeOffset(now.AddDays(-14)).ToUnixTimeMilliseconds();
         var jumped = await Call(HttpMethod.Post, "/api/v1/demo/jump", token, new DemoJumpDto(at));
         Assert.Equal(HttpStatusCode.OK, jumped.Status);
-        Assert.Equal(-14 * 86_400, jumped.Json.GetProperty("clockOffsetSeconds").GetInt64());
+        Assert.Equal((long)Math.Round((now.AddDays(-14) - F.Clock.UtcNow).TotalSeconds), jumped.Json.GetProperty("clockOffsetSeconds").GetInt64());
         Assert.Equal(60, jumped.Json.GetProperty("clockSpeed").GetInt32());
         Assert.Equal("planChange", jumped.Json.GetProperty("scenarios")[0].GetString());
-        Assert.Equal(new DateTimeOffset(now).ToUnixTimeMilliseconds(), (await Get("/api/v1/demo/state", token)).Json.GetProperty("savedAt").GetInt64());
+        Assert.Equal(DemoRules.StampMs(F.Clock.UtcNow), (await Get("/api/v1/demo/state", token)).Json.GetProperty("savedAt").GetInt64());
 
         var far = new DateTimeOffset(now.AddDays(500)).ToUnixTimeMilliseconds();
         Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Post, "/api/v1/demo/jump", token, new DemoJumpDto(far))).Status);
