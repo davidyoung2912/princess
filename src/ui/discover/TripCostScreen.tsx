@@ -10,12 +10,17 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Field } from '../Field'
+import { budgetNote } from '../../domain/planning'
+import { useMemory } from '../../hooks/useMemory'
+import { Banner } from '../Banner'
 
 const DAY = 86_400_000
 
 /** Whole-trip cost (DIS-12): the cruise, the extras the guest expects to want, and the money spent around it, compared across the fares. */
 export function TripCostScreen() {
   const demoSailing = useSailing()
+  const { state: memory, update: updateMemory } = useMemory()
+  const [budgetText, setBudgetText] = useState('')
   const now = useNow()
   const [sailingId, setSailingId] = useState(demoSailing.id)
   const [category, setCategory] = useState<CategoryId>('balcony')
@@ -109,6 +114,7 @@ export function TripCostScreen() {
           <>
             <Card info>
               <p><strong>{t('cost.cheapest', { fare: fareName(cost.cheapest) })}</strong></p>
+              <BudgetNote total={cost.options.find((o) => o.fare === cost.cheapest)!.total} budget={memory.planning.budget} text={budgetText} setText={setBudgetText} save={(v) => updateMemory((m) => ({ ...m, planning: { ...m.planning, budget: v } }))} />
               <p>{cost.savingVsStandard > 0 ? t('cost.saving', { fare: fareName(cost.cheapest), amount: formatMoney(cost.savingVsStandard) }) : t('cost.noSaving')}</p>
             </Card>
             <table className="cost-table">
@@ -139,6 +145,19 @@ export function TripCostScreen() {
         <p className="muted">{t('cost.footnote')}</p>
         <p><Link to={`/home/sailings/${sailingId}`}>{t('route.sailing')}</Link></p>
       </section>
+    </div>
+  )
+}
+
+/** Notes at 80 and over 100 percent of the guest's own budget for the whole trip (S4-08). Words and a number, never a block. */
+function BudgetNote({ total, budget, text, setText, save }: { total: number; budget: number | null; text: string; setText: (v: string) => void; save: (v: number | null) => void }) {
+  const typed = text.trim() === '' ? undefined : parseMoney(text)
+  const note = budgetNote(total, budget)
+  return (
+    <div>
+      <Field label={t('cost.budget')} inputMode="decimal" value={text !== '' ? text : budget === null ? '' : String(budget / 100)} error={typed === null ? t('cost.invalid') : undefined}
+        onChange={(e) => { setText(e.target.value); const v = e.target.value.trim() === '' ? null : parseMoney(e.target.value); if (v !== undefined && (v === null || v > 0)) save(e.target.value.trim() === '' ? null : v) }} />
+      {note && <Banner kind={note.level === 100 ? 'warning' : 'info'} title={t(note.level === 100 ? 'cost.budget.100' : note.level === 80 ? 'cost.budget.80' : 'cost.budget.ok', { percent: note.percent, over: formatMoney(note.over) })} />}
     </div>
   )
 }

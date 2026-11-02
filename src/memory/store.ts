@@ -1,6 +1,7 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { AWAY_ITEMS, cleanExtra, EXTRAS_MAX, type Extra } from '../domain/awayHome'
 import { EMPTY_ACCESS, EMPTY_ALLERGY, normalizeAccess, normalizeAllergy, normalizeHold, normalizeShares, type AccessProfile, type AllergyFlag, type Hold, type Share } from '../domain/bookingPrep'
+import { EMPTY_PLANNING, normalizePlanning, type PlanningState } from '../domain/planning'
 import { normalizePlanLines, type PlanLine } from '../domain/prepMore'
 import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/medicalCard'
 import { FIT_QUESTIONS, type FitKey } from '../domain/dream'
@@ -33,9 +34,11 @@ export interface MemoryState {
   /** Weekly companion switched off (S3-03), and the plan lines the guest confirmed from a pasted plan (S0-07). */
   companionOff: boolean
   pasted: PlanLine[]
+  /** Slice B of H8, all on this device: polls, dream board, surprises, taste choices, child brief, rhythm, privacy, traditions, cabins. */
+  planning: PlanningState
 }
 
-export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [] }
+export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING }
 
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
 
@@ -68,7 +71,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
     return [{ id: o.id, text: cleanExtra(o.text), done: o.done === true }]
   }).slice(0, EXTRAS_MAX)
   return {
-    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted),
+    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning),
     drinks: typeof r.drinks === 'number' && r.drinks > 0 ? int(r.drinks, 999) : null,
     anniversary: r.anniversary === true,
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),

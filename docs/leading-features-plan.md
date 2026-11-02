@@ -270,3 +270,21 @@ Front end only; no REST contract changes. Logic in `src/domain/prepMore.ts`, scr
 - **Not done:** the day stories follow four styles, not the demo personas; kept pasted lines are shown but not yet merged into the day plan; the money plan is not saved and not tied to the bill; the carbon range uses seven nights, not the booked sailing's length; the Home continue card does not name the step reached.
 
 Slice A is now complete apart from the part 1 gaps (screens that should read the accessibility profile, per-guest checklist).
+
+## 15. H8 slice B: planning and groups on one device (2026-11-01)
+
+Front end only; no REST contract changes. Logic in `src/domain/planning.ts`, screens in `src/ui/plan/PlanningScreens.tsx` (routes under `/plan`), state per person in the H6 memory store under one `planning` field. Promise tests in `src/h8Promises.test.ts`.
+
+- **S4-03 honest difficulty** (`/plan/difficulty`): distance, steps, heat, shade, seats, restrooms and wet footing authored for all twelve excursions (tested), with concerns matched to the accessibility profile from slice A.
+- **S4-04 comparator** (`/plan/compare`): ship against independent, with cost (estimate at 65 percent of the ship price), what happens if late, flexibility and cancelling.
+- **S4-05 and S0-06** (`/plan/group-poll`): a poll (one vote per name, no winner on a tie) and a dream board with hearts, run on one phone and labelled so.
+- **S4-06 surprise mode** (`/plan/surprises`): hidden items; `withoutSurprises` is the filter anything shared must pass, with a preview as the family would see it.
+- **S4-07 and XA-07** (`/plan/taste`): every inference listed with its source, each removable, one switch for all (`tasteInferences`).
+- **S4-08 budget notes**: a budget field on `/home/cruise/cost` with notes at 80 percent and over 100 percent of the cheapest option.
+- **S4-09 child brief** (`/plan/child-brief`): written once, shown with only the fields the right club would see.
+- **S4-10 rhythm** (`/plan/rhythm`): wake time, nap, late meals; one tap writes them into the week settings.
+- **XG-01, XG-02** (`/plan/organiser`): counts from the party store and ledger; privacy defaults all off, medical never shareable.
+- **XG-07** (`/plan/cabins`): cabins and their excursions, what is done together and what only some do.
+- **XG-04** (`/plan/traditions`): checklist that carries over with boxes clear.
+- **S4-02 follow-up:** "Put this week in my plan" on the week planner creates one accepted, undoable change per day through `acceptChange` (`applyWeek`).
+- **Not done:** the assistant does not yet read `tasteInferences` (the store is ready); privacy defaults are stored but no shared screen reads them yet; the cabins' shared day is excursions only; the child brief is not tied to club check-in; shared copies of polls, boards and the organiser view across phones need a server.

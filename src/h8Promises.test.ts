@@ -1,5 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_PREFS } from './domain/autopilot'
+import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
+import { REFERENCE_SAILING } from './domain/sailings'
 import { en } from './i18n/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
@@ -22,7 +25,6 @@ describe('H8 slice A promises', () => {
     expect(en['hold.note']).toMatch(/no countdown anywhere else/)
   })
 })
-
 describe('H8 slice A part 2 promises', () => {
   it('keeps pasted plans, the money plan and the story on the device with no booking call', () => {
     const text = read('src/ui/plan/PrepMoreScreens.tsx') + read('src/domain/prepMore.ts')
@@ -37,5 +39,29 @@ describe('H8 slice A part 2 promises', () => {
     expect(card).toMatch(/companionOff: true/)
     expect(en['carbon.method']).toMatch(/not a measurement/)
     expect(en['guar.sim']).toMatch(/not figures from a real cruise line/)
+  })
+})
+
+describe('H8 slice B promises', () => {
+  it('runs groups on one device and says so, with nothing sent', () => {
+    const text = read('src/ui/plan/PlanningScreens.tsx') + read('src/domain/planning.ts')
+    expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout/)
+    expect(en['poll.single']).toMatch(/one phone only/)
+    expect(en['poll.single']).toMatch(/Nothing is sent/)
+    expect(en['brief.note']).toMatch(/show this screen/i)
+  })
+  it('keeps surprises and medical details out of anything shared', () => {
+    expect(withoutSurprises([{ id: 'a', title: 'Secret cake' }], [{ id: 'z', text: 'secret cake' }])).toEqual([])
+    expect(normalizePlanning({ privacy: { medical: true } }).privacy.medical).toBe(false)
+    expect(SAFEST).toEqual({ plans: false, spending: false, photos: false, medical: false })
+  })
+  it('lets the guest remove every guess or switch them all off', () => {
+    const input = { fit: ['kids' as const], pasted: [], pace: 'packed' as const, rhythm: null }
+    expect(tasteInferences(input, true, [])).toEqual([])
+    expect(tasteInferences(input, false, tasteInferences(input, false, []).map((i) => i.id))).toEqual([])
+  })
+  it('applies a week only through accepted, undoable changes', () => {
+    const r = applyWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace: 'relaxed' }, [], 5)
+    expect(r.changes.every((c) => c.status === 'accepted' && c.undoUntil > 5)).toBe(true)
   })
 })

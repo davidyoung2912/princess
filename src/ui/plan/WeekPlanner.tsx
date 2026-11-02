@@ -6,6 +6,10 @@ import { useSailing } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
 import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
+import { useState } from 'react'
+import { applyWeek } from '../../domain/planning'
+import { useNow } from '../../hooks/useDemo'
+import { Button } from '../Button'
 
 const BUDGETS = [null, 10_000, 15_000, 25_000] as const
 
@@ -16,6 +20,9 @@ export function WeekPlanner() {
   const { prefs } = state
   const week = useMemo(() => optimiseWeek(sailing, prefs), [sailing, prefs])
   const problems = weekProblems(week)
+  const now = useNow()
+  const [applied, setApplied] = useState<number | null>(null)
+  const apply = () => { const r = applyWeek(sailing, prefs, state.changes, now); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
   const set = (change: Partial<typeof prefs>) => update((s) => ({ ...s, prefs: { ...s.prefs, ...change } }))
 
   return (
@@ -49,6 +56,8 @@ export function WeekPlanner() {
           </li>
         ))}
       </ol>
+      <Button onClick={apply}>{t('week.apply')}</Button>
+      {applied !== null && <p role="status">{applied === 0 ? t('week.appliedNone') : t('week.applied', { n: applied })}</p>}
       <p role="status">{t('week.total', { amount: formatMoney(week.totalTours) })}{problems.length > 0 ? ` ${t('week.problems')}` : ''}</p>
     </Card>
   )
