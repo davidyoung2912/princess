@@ -1,6 +1,6 @@
 import type { CheckinView } from '../../api/types'
 import type { GuestStepId } from '../../domain/checkin'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { t } from '../../i18n'
 import { StatusBadge } from '../StatusBadge'
 

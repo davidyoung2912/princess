@@ -6,7 +6,7 @@ import { CONTRACT, HEALTH_QUESTIONS, judgePhoto, measurePhoto, SAMPLE_PHOTOS, ty
 import { WAIT_MINUTES } from '../../domain/boarding'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { dateIn } from '../../domain/timezones'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { demoNow } from '../../demo/store'
 import { useAction } from '../../hooks/useAction'
 import { t, type StringKey } from '../../i18n'

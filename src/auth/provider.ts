@@ -1,4 +1,4 @@
-import type { PersonaId } from '../domain/personas'
+import type { PersonaId } from '../domain/people'
 
 /** The person the server says is signed in (the `/me` shape, trimmed to what screens use). Tokens are never part of a Session. */
 export interface SessionUser {

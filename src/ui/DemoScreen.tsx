@@ -3,6 +3,7 @@ import { CLOCK_SPEEDS, PHONE_ZONES } from '../domain/clock'
 import { SAILINGS, STAGE_IDS, stageAt, type StageId } from '../domain/sailings'
 import { appliesTo, SCENARIOS } from '../domain/scenarios'
 import { dayLabel } from '../domain/timezones'
+import { partyPeople } from '../account/context'
 import { useDemo, useNow, usePersona, useSailing } from '../hooks/useDemo'
 import { t, type StringKey } from '../i18n'
 import { Button } from './Button'
@@ -78,7 +79,7 @@ export function DemoScreen() {
         <p>{t('demo.scenarios.intro')}</p>
         <ul className="plain-list">
           {SCENARIOS.map((s) => {
-            const available = !persona || appliesTo(s, persona.id)
+            const available = !persona || appliesTo(s, partyPeople(persona.id))
             const active = demo.scenarios.includes(s.id)
             return (
               <li key={s.id}>

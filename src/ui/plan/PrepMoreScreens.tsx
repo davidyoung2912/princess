@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { TripView } from '../../api/types'
 import { categoryById } from '../../domain/ship'
-import { usePersona } from '../../hooks/useDemo'
-import { carbonRange, childStory, cleanName, DEFAULT_DAILY, dressNights, guaranteeOdds, KG_PER_GUEST_NIGHT, moneyPlan, OCCASIONS, OUTLETS, parsePlan, PROHIBITED, STARTERS, STORY_DAYS, STYLES, styleFor, type Occasion, type PlanLine, type Style } from '../../domain/prepMore'
+import { carbonRange, childStory, cleanName, DEFAULT_DAILY, dressNights, guaranteeOdds, KG_PER_GUEST_NIGHT, moneyPlan, OCCASIONS, OUTLETS, parsePlan, PROHIBITED, STARTERS, STORY_DAYS, STYLES, DEFAULT_STYLE, type Occasion, type PlanLine, type Style } from '../../domain/prepMore'
 import { formatMoney } from '../../domain/money'
 import { itinerary, PORTS, REFERENCE_SAILING, sailingById, sailingNights, type PortId } from '../../domain/sailings'
 import { useMemory } from '../../hooks/useMemory'
@@ -170,8 +169,7 @@ export function PasteScreen() {
 /** Occasion starter and authored day stories (S0-09, S0-08). */
 export function StarterScreen() {
   const [occasion, setOccasion] = useState<Occasion>('firstCruise')
-  const me = usePersona()
-  const [style, setStyle] = useState<Style>(styleFor(me?.id))
+  const [style, setStyle] = useState<Style>(DEFAULT_STYLE)
   const days = itinerary(REFERENCE_SAILING)
   return (
     <Page title="route.starter" intro="starter.intro">
@@ -187,7 +185,7 @@ export function StarterScreen() {
           <legend id="st-s">{t('starter.style')}</legend>
           {STYLES.map((s) => <label key={s} className="choice"><input type="radio" name="style" checked={style === s} onChange={() => setStyle(s)} /><span>{t(`starter.style.${s}` as StringKey)}</span></label>)}
         </fieldset>
-        {style === styleFor(me?.id) && <p className="muted">{t('starter.forYou')}</p>}
+        {style === DEFAULT_STYLE && <p className="muted">{t('starter.forYou')}</p>}
         {STORY_DAYS.map((d) => <p key={d}><strong>{t('paste.day', { n: d })} · {portName(days[d - 1].port)}.</strong> {t(`dstory.${style}.${d}` as StringKey)}</p>)}
         <p className="muted">{t('starter.note')}</p>
       </Card>

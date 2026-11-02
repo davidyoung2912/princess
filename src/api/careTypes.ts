@@ -1,6 +1,6 @@
 import type { Budget } from '../domain/budget'
 import type { Consents, ConsentId, AccessEntry } from '../domain/privacy'
-import type { PersonaId } from '../domain/personas'
+import type { PersonaId } from '../domain/people'
 import type { QueueStage, WaitlistStage } from '../domain/queue'
 import type { Severity } from '../domain/disruption'
 import type { ScenarioId } from '../domain/scenarios'

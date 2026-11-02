@@ -3,7 +3,7 @@ import type { AddOnOffer, BuyInput, PackagesView, PersonEntitlements, PurchaseVi
 import { formatDate } from '../../domain/cruise'
 import type { PaymentPart } from '../../domain/fares'
 import { ADD_ONS, AVG_DRINK, breakEvenDrinks, DEFAULT_USAGE, drinksWorth, packageWorth, units, type Usage } from '../../domain/packages'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

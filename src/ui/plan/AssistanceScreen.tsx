@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import type { AssistanceView } from '../../api/types'
 import { ASSIST_KINDS, assistKind, type AssistId, type DeadlineState } from '../../domain/assistance'
 import { formatDate } from '../../domain/cruise'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -112,7 +112,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
         {Object.keys(view.needs).length > 0 && (
           <Card info>
             <h3 className="card__title">{t('assist.profile')}</h3>
-            <ul className="plain-bullets">{Object.entries(view.needs).map(([id, needs]) => <li key={id}>{firstName(id as PersonaId)}: {needs.map((n) => t(`profile.needs.${n}` as never)).join(', ')}</li>)}</ul>
+            <ul className="plain-bullets">{Object.entries(view.needs).map(([id, needs]) => <li key={id}>{firstName(id as PersonaId)}: {(needs ?? []).map((n) => t(`profile.needs.${n}` as never)).join(', ')}</li>)}</ul>
             <p><Link to="/me/profile">{t('route.profile')}</Link></p>
           </Card>
         )}

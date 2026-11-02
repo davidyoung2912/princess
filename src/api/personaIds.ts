@@ -1,4 +1,5 @@
-import { isPersonaId, type PersonaId } from '../domain/personas'
+import { isPersonaId } from '../domain/personas'
+import type { PersonaId } from '../domain/people'
 
 /**
  * The twelve demo people have fixed public ids on the server (`Users.PublicId`, the SHA-1 of `princess-persona:user:<slug>`

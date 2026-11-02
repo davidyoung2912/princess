@@ -1,7 +1,7 @@
 import type { Cents } from './money'
 import type { Entitlements } from './entitlements'
 import type { PaymentState } from './trip'
-import type { PersonaId } from './personas'
+import type { PersonaId } from './people'
 import { limit } from './limits'
 
 /** Dining reservations before sailing (PRE-03, DIN-12). Venues follow the ship profile; cover charges and hours are authored. */

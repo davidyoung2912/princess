@@ -9,7 +9,7 @@ import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './d
 import { fixtureWeek } from './domain/weekFixture'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
-import { styleFor, STYLES } from './domain/prepMore'
+import { DEFAULT_STYLE, STYLES } from './domain/prepMore'
 import { en } from './i18n/en'
 
 const read = (f: string): string => readFileSync(f, 'utf8')
@@ -188,14 +188,11 @@ describe('H8 wire-through promises', () => {
     expect(read('src/ui/home/PrepCards.tsx')).toMatch(/continue\.at/)
     expect(en['continue.at']).toMatch(/as far as/)
   })
-  it('kept pasted lines show on their own day, day stories start from the persona, and the kids report reads club check-in', () => {
+  it('kept pasted lines show on their own day, day stories start from a default style, and the kids report reads club check-in', () => {
     expect(read('src/ui/PastedLines.tsx')).toMatch(/l\.day === day/)
     expect(read('src/ui/home/BriefingScreen.tsx') + read('src/ui/plan/AutopilotScreen.tsx')).toMatch(/<PastedLines day=\{day\}/)
     expect(en['paste.todayNote']).toMatch(/not bookings/)
-    expect(styleFor('ethan')).toBe('active')
-    expect(styleFor('maya')).toBe('family')
-    expect(styleFor('nobody')).toBe('relaxed')
-    expect(STYLES).toContain(styleFor('alexander'))
+    expect(STYLES).toContain(DEFAULT_STYLE)
     expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.family\.view\(\)/)
   })
   it('the assistant adds a named excursion to the cart only after a confirm tap, and never guesses', () => {

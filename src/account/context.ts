@@ -1,4 +1,4 @@
-import type { PackageId, Person, Tier } from '../domain/personas'
+import type { PackageId, Person, Tier } from '../domain/people'
 import { partyOf, personaById } from '../domain/personas'
 
 /** A person on the trip, as `GET /me/context` describes them (ids already in the client's form: a persona slug for the twelve demo people, else the guid). */

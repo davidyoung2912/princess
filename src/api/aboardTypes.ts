@@ -2,7 +2,7 @@ import type { Cents } from '../domain/money'
 import type { Selection } from '../domain/catalogue'
 import type { GameState } from '../domain/games'
 import type { Friend, ChatReportReason, GratuityChoice, PartyInput, ReportKind, RequestStage } from '../domain/services'
-import type { PersonaId } from '../domain/personas'
+import type { PersonaId } from '../domain/people'
 import type { PinReset } from '../domain/pinReset'
 
 /** Shapes for the Phase 12 groups: bookings and orders on board, requests, reports, drinks, money, parties, games and the TV. */

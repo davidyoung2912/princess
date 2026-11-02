@@ -1,4 +1,4 @@
-import type { PersonaId } from './personas'
+import type { PersonaId } from './people'
 import type { Cents } from './money'
 import { limit } from './limits'
 import { registerContent } from './content'

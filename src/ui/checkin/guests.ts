@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router'
 import type { CheckinGuestView, CheckinView } from '../../api/types'
 import type { GuestStepId } from '../../domain/checkin'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 
 /** The guest this step page is about: the one in the address, else the first who still has the step to do. */
 export function useChosenGuest(view: CheckinView, step: GuestStepId): [CheckinGuestView, (id: PersonaId) => void] {

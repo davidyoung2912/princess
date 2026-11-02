@@ -1,4 +1,4 @@
-import type { PackageId, Tier } from './personas'
+import type { PackageId, Tier } from './people'
 import type { StageId } from './sailings'
 
 /**

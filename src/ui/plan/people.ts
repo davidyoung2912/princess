@@ -1,4 +1,4 @@
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 
 import { personFirstName } from '../../account/context'
 

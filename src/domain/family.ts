@@ -1,4 +1,4 @@
-import type { PersonaId } from './personas'
+import type { PersonaId } from './people'
 import { placeById } from './deck'
 import { limit } from './limits'
 

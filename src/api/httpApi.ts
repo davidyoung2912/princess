@@ -6,7 +6,7 @@ import type { FeedbackApi } from './aboardTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, WaitsApi } from './careTypes'
 import type { AboardApi } from './aboardTypes'
 import type { Api, Booking, Identity, ProgramView, TripsView } from './types'
-import type { Tier } from '../domain/personas'
+import type { Tier } from '../domain/people'
 
 /** The groups of the `Api` that Phase 13 serves from the REST API (account, trips, payments, documents, notifications, support, privacy, budget). */
 export interface HttpGroups {

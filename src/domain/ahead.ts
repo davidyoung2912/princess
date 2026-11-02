@@ -1,5 +1,5 @@
 import type { Occasion } from './booking'
-import type { PackageId, PersonaId, Tier } from './personas'
+import type { PackageId, PersonaId, Tier } from './people'
 import { fareFor } from './pricing'
 import { type Cents } from './money'
 import { CATEGORIES, type CategoryId } from './ship'

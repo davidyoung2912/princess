@@ -1,6 +1,6 @@
 import type { CaseInput, CaseKind, CaseOutcome, CaseStage, Feedback } from '../domain/postcruise'
 import type { CustomsDeclaration, NightEntry, OnwardCheck, OnwardPlan, ReceiptId, TagGroup, WalkOffId } from '../domain/disembark'
-import type { PersonaId, Tier } from '../domain/personas'
+import type { PersonaId, Tier } from '../domain/people'
 import type { Cents } from '../domain/money'
 import type { CategoryId } from '../domain/ship'
 import type { LoyaltyStatus, ReferralState } from '../domain/postcruise'

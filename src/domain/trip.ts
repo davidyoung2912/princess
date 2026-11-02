@@ -1,4 +1,4 @@
-import type { StateroomKind } from './personas'
+import type { StateroomKind } from './people'
 import { quote } from './pricing'
 import { type Cents } from './money'
 import { sailingById } from './sailings'

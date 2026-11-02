@@ -1,4 +1,4 @@
-import type { StateroomKind } from './personas'
+import type { StateroomKind } from './people'
 import { limit } from './limits'
 import { registerContent } from './content'
 

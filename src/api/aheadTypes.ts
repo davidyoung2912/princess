@@ -2,7 +2,7 @@ import type { Advisor, AdvisorWay, AssistKind, AssistStage, BagStage, ClubRegist
 import type { FixId, FixStage } from '../domain/readiness'
 import type { Cents } from '../domain/money'
 import type { CategoryId } from '../domain/ship'
-import type { PersonaId, Tier } from '../domain/personas'
+import type { PersonaId, Tier } from '../domain/people'
 
 /** Shapes for the Phase 13 groups: before-the-cruise services. */
 export interface AdvisorRequest { id: string; advisorId: string; advisor: string; way: AdvisorWay; question: string; at: number; reply: string | null; callbackBy: number | null }

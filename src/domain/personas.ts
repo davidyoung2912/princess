@@ -1,16 +1,14 @@
 import type { TextSize } from '../design/textSize'
+import type { PackageId, PersonaGroup, Person, StateroomKind, Tier } from './people'
 
-export type Tier = 'none' | 'gold' | 'ruby' | 'platinum' | 'elite'
-export type PackageId = 'none' | 'plus' | 'premier'
-export type StateroomKind = 'interior' | 'oceanview' | 'balcony' | 'accessibleBalcony' | 'miniSuite' | 'familyBalcony' | 'connectingBalcony'
-export type PersonaGroup = 'solo' | 'harper' | 'brennan'
-export type PersonaId =
+export type { PackageId, PersonaGroup, Person, StateroomKind, Tier }
+export type DemoPersonaId =
   | 'gerald' | 'maria' | 'linda' | 'alexander'
   | 'daniel' | 'priya' | 'ethan' | 'maya'
   | 'marcus' | 'elena' | 'lucas' | 'sofia'
 
 export interface Persona {
-  id: PersonaId
+  id: DemoPersonaId
   name: string
   firstName: string
   age: number
@@ -18,7 +16,7 @@ export interface Persona {
   /** What they are to the party: shown in the switcher. */
   role: string
   /** The booker who holds the account the stateroom is under (themselves for solo personas). */
-  booker: PersonaId
+  booker: DemoPersonaId
   tier: Tier
   package: PackageId
   stateroom: StateroomKind
@@ -55,11 +53,11 @@ export const PERSONAS: readonly Persona[] = [
   p({ id: 'sofia', name: 'Sofia Brennan', age: 11, group: 'brennan', role: 'Daughter, 11', booker: 'marcus', tier: 'gold', package: 'none', stateroom: 'familyBalcony', summary: 'Neon Grove' }),
 ]
 
-export const DEFAULT_PERSONA: PersonaId = 'gerald'
+export const DEFAULT_PERSONA: DemoPersonaId = 'gerald'
 
 export const personaById = (id: unknown): Persona | undefined => PERSONAS.find((x) => x.id === id)
 
-export const isPersonaId = (id: unknown): id is PersonaId => !!personaById(id)
+export const isPersonaId = (id: unknown): id is DemoPersonaId => !!personaById(id)
 
 /** Everyone on the same booking (the booker's party), including the booker. */
 export const partyOf = (id: string): Persona[] => {
@@ -72,9 +70,3 @@ export const visibleTo = (id: string): Persona[] => {
   const me = personaById(id)
   return !me || me.group === 'solo' ? [] : PERSONAS.filter((x) => x.group !== 'solo' && x.id !== id)
 }
-
-/**
- * The signed-in person as screens see them: a demo persona, or for any real account the person the server describes (`/me/context`).
- * `id` and `booker` are strings because only the twelve demo people have slugs; everyone else is identified by the server's guid.
- */
-export type Person = Omit<Persona, 'id' | 'booker'> & { id: string; booker: string }

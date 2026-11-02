@@ -1,5 +1,6 @@
 import type { Channel } from '../data/sync'
-import { isPersonaId, type PersonaId } from '../domain/personas'
+import { isPersonaId } from '../domain/personas'
+import type { PersonaId } from '../domain/people'
 import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
 import { AuthError, type AuthMethod, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'

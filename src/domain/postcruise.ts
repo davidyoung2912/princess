@@ -1,5 +1,5 @@
 import type { Cents } from './money'
-import type { PersonaId, Tier } from './personas'
+import type { PersonaId, Tier } from './people'
 import { addDays } from './timezones'
 import { limit } from './limits'
 import { registerContent } from './content'

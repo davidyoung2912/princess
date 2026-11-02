@@ -1,4 +1,5 @@
-import type { PackageId, Persona, Tier } from './personas'
+import type { Persona } from './personas'
+import type { PackageId, Tier } from './people'
 
 /**
  * The entitlement engine (PRE-16): one place that works out what a guest gets from fare, package, Captain's Circle tier

@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
-import { type PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'

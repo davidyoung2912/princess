@@ -5,7 +5,7 @@ import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/type
 import type { PaymentPart } from '../../domain/fares'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { ACTIVITIES, filterExcursions, formatHours, guestPrice, INTERESTS, NO_FILTER, type ExcursionPort, type Filter, type Interest } from '../../domain/excursions'
-import type { PersonaId } from '../../domain/personas'
+import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { PORT_GUIDES } from '../../domain/ports'
 import { api } from '../../runtime'

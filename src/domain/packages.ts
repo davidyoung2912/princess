@@ -2,7 +2,7 @@ import { computeEntitlements } from './entitlements'
 import { FARES } from './fares'
 import { GRATUITY_PER_NIGHT, NIGHTS } from './pricing'
 import { type Cents } from './money'
-import type { PackageId } from './personas'
+import type { PackageId } from './people'
 
 /** Packages and add-ons (PRE-06, PRE-17). Prices are authored concept values, not Princess's. */
 export type AddOnId = 'drinks' | 'wifi' | 'specialtyPass' | 'photo' | 'laundry'
@@ -156,12 +156,6 @@ export interface SeedPurchase {
   guests: string[]
   /** Days before sailing that it was bought. */
   boughtDaysBefore: number
-}
-
-/** Add-ons a few demo people already hold, bought before a price change, so price protection can be seen. */
-export const SEEDED_PURCHASES: Record<string, readonly SeedPurchase[]> = {
-  marcus: [{ item: 'drinks', guests: ['marcus', 'elena'], boughtDaysBefore: 40 }],
-  gerald: [{ item: 'photo', guests: ['gerald'], boughtDaysBefore: 30 }],
 }
 
 /** Replaces the add-on table and the worth-it figures in place (`packagesServed.ts`), so earlier imports see the served values. */

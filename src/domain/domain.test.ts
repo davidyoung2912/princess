@@ -158,9 +158,10 @@ describe('entitlements', () => {
 })
 
 describe('scenarios', () => {
-  it('covers the fifteen scenarios and steers every persona into at least two', () => {
+  it('covers the scenarios and offers a family-only one only where there is a child', () => {
     expect(SCENARIOS).toHaveLength(16)
-    for (const p of PERSONAS) expect(SCENARIOS.filter((s) => appliesTo(s, p.id)).length, p.id).toBeGreaterThanOrEqual(2)
+    expect(SCENARIOS.filter((s) => appliesTo(s, [{ child: false }])).length).toBeGreaterThanOrEqual(10)
+    expect(SCENARIOS.filter((s) => appliesTo(s, [{ child: false }, { child: true }])).length).toBe(SCENARIOS.length)
   })
   it('has unique ids, valid stages and unique fault rule ids', () => {
     expect(new Set(SCENARIOS.map((s) => s.id)).size).toBe(SCENARIOS.length)
