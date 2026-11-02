@@ -5,12 +5,10 @@ import type { CrowdLevel } from './portPilot'
  * so one can replace it. `source` says so wherever it is shown.
  */
 export type CrowdPort = 'cozumel' | 'belize' | 'roatan'
-export const CROWD_SOURCE = 'sim' as const
 
 /** Guests carried by one ship, about. Authored. */
 export const SHIP_GUESTS = 4000
 export interface PortCrowd {
-  source: typeof CROWD_SOURCE
   /** All ships alongside or at anchor, including this one. */
   ships: number
   guests: number

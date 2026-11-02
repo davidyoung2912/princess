@@ -35,9 +35,9 @@ describe('audit gate', () => {
     expect(found).toEqual(KNOWN_PERSONA_IMPORTERS)
   })
 
-  it('has no file beyond the known list naming a simulated source', () => {
+  it('has no file naming a simulated source: the front end does not know whether data is simulated', () => {
     const found = allSource().filter((f) => /'sim'/.test(withoutComments(textOf(f))))
-    expect(found).toEqual(KNOWN_SIM_LITERALS)
+    expect(found).toEqual([])
   })
 
   it('has no screen importing an authored catalogue or simulation module beyond the known list', () => {
@@ -209,22 +209,4 @@ const KNOWN_PERSONA_IMPORTERS: string[] = [
   'src/ui/plan/PlanScreen.tsx',
   'src/ui/plan/common.tsx',
   'src/ui/plan/people.ts',
-]
-/** Files that still carry a `'sim'` source literal in a type or a value; the front end must not know a figure is simulated, so these go when each feed's `source` is dropped. */
-const KNOWN_SIM_LITERALS: string[] = [
-  'src/domain/autopilot.ts',
-  'src/domain/disruptionHub.ts',
-  'src/domain/dream.ts',
-  'src/domain/embark.ts',
-  'src/domain/journey.ts',
-  'src/domain/portCrowd.ts',
-  'src/domain/pulse.ts',
-  'src/domain/sky.ts',
-  'src/domain/storm.ts',
-  'src/feeds/flight.ts',
-  'src/feeds/route.ts',
-  'src/feeds/sailingQuality.ts',
-  'src/feeds/sky.ts',
-  'src/feeds/skyNight.ts',
-  'src/feeds/storm.ts',
 ]

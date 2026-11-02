@@ -10,7 +10,7 @@ export function normalizeConditions(raw: unknown): Conditions | null {
   const r = raw as Record<string, unknown>
   if (!(TRAFFIC as readonly unknown[]).includes(r.traffic) || !(SKY as readonly unknown[]).includes(r.sky)) return null
   const mins = typeof r.leaveEarlierMinutes === 'number' && Number.isFinite(r.leaveEarlierMinutes) ? Math.max(0, Math.round(r.leaveEarlierMinutes)) : 0
-  return { source: 'sim', traffic: r.traffic as Conditions['traffic'], sky: r.sky as Conditions['sky'], leaveEarlierMinutes: mins }
+  return { traffic: r.traffic as Conditions['traffic'], sky: r.sky as Conditions['sky'], leaveEarlierMinutes: mins }
 }
 
 /** Traffic and weather on the way to the port, by departure date and the crowd for the arrival window. */

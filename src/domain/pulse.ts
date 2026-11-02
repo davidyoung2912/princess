@@ -4,7 +4,7 @@ import { timeIn } from './timezones'
 
 /**
  * Ship Pulse (S6-01), the quiet-space finder (S6-04) and standby and shortest line (S6-05).
- * Every level comes from the server (`GET /feeds/pulse` and `/feeds/pulse-day`, simulated there, `source: 'sim'`); this module reads them. Nothing is
+ * Every level comes from the server (`GET /feeds/pulse` and `/feeds/pulse-day`, simulated there); this module reads them. Nothing is
  * ever shown without its age and how sure it is.
  */
 const MIN = 60_000
@@ -62,7 +62,6 @@ export interface Pulse {
   observedAt: number
   ageMinutes: number
   confidence: Confidence
-  source: 'sim'
 }
 
 export const labelFor = (level: number): PulseLabel => (level < 35 ? 'quiet' : level < 65 ? 'moderate' : 'busy')
@@ -76,7 +75,7 @@ export function levelAt(id: PulseId, at: number, env: PulseEnv): number {
 export function pulseAt(id: PulseId, now: number, env: PulseEnv): Pulse {
   const observedAt = Math.floor(now / (PULSE_STEP_MIN * MIN)) * PULSE_STEP_MIN * MIN
   const level = levelAt(id, observedAt, env)
-  return { id, level, label: labelFor(level), observedAt, ageMinutes: Math.max(0, Math.floor((now - observedAt) / MIN)), confidence: pulseVenueById(id)?.confidence ?? 'low', source: 'sim' }
+  return { id, level, label: labelFor(level), observedAt, ageMinutes: Math.max(0, Math.floor((now - observedAt) / MIN)), confidence: pulseVenueById(id)?.confidence ?? 'low' }
 }
 
 export interface GoodTime { at: number; level: number; label: PulseLabel; /** The venue is quiet right now, so go now. */ now: boolean }

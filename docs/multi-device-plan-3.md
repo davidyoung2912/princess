@@ -347,3 +347,7 @@ Built 2026-11-02 as a ratchet, **not** the empty gate the plan described. `src/a
 
 - **Why not empty:** the catalogue modules (`sailings`, `pricing`, `excursions`, `dining`, `ports` and so on) still hold authored first-paint copies (kept deliberately in Phase 3), so 101 screens import them for display and formatting. Emptying that list means deleting those copies and every screen waiting on the served table. The persona table is typed into 44 files (`PersonaId`).
 - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`, `npm run db:seed:check`.
+
+## Follow-up fixes (2026-11-02)
+
+After Phases 6 and 7, in separate commits: `Providers:*` shown in `appsettings.json`; `sweepExpiredCopies` removes expired reference tables and feed answers at start-up; `programmeEffects` trusts the served entry kind (the client `eventById` is gone); every client `'sim'` source (types, constants, feed results, one on-screen "source" word) is removed and the audit gate now requires **none** (the server still sends `source`; the client ignores it). The day screens already waited for the served day (Slice 7), so nothing more was needed there. Still open: `version` on `/reference/access` and `/rates` (a server C# edit, left for the next server phase), the persona table (44 importers), the 101 catalogue-importing screens, the unserved arrays, a provider fall-back wrapper, and the localisation-only "simulated" copy in `en.ts`.

@@ -1,4 +1,4 @@
-import { EMBARK_SOURCE, type EmbarkQueue, type ForecastStep, type QueueWindow, type StepId } from '../domain/embark'
+import { type EmbarkQueue, type ForecastStep, type QueueWindow, type StepId } from '../domain/embark'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
 
 const STEPS: readonly StepId[] = ['terminal', 'security', 'photo', 'gangway']
@@ -22,7 +22,7 @@ export function normalizeEmbarkQueue(raw: unknown): EmbarkQueue | null {
   }
   const recommended = raw.recommended === null ? null : typeof raw.recommended === 'string' && windows.some((w) => w.start === raw.recommended) ? raw.recommended : undefined
   if (recommended === undefined) return null
-  return { windows, recommended, source: EMBARK_SOURCE }
+  return { windows, recommended }
 }
 
 /** The windows a guest can make and what each costs in waiting, by priority, mobility, quiet and earliest time ("" for none). */

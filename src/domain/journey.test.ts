@@ -24,7 +24,7 @@ describe('buildJourney', () => {
     expect(buildJourney(fly({ carryOnOnly: true }), DEP).slack).toBe(245 + 25)
   })
   it('a cancelled flight is a severe delay', () => {
-    expect(buildJourney(fly(), DEP, watchDelay({ source: 'sim', state: 'cancelled', delayMinutes: 0 })).status).toBe('atRisk')
+    expect(buildJourney(fly(), DEP, watchDelay({ state: 'cancelled', delayMinutes: 0 })).status).toBe('atRisk')
   })
   it('staying the night before takes the flight out of the day', () => {
     const j = buildJourney(fly({ hotelNight: true, landing: '23:00' }), DEP)

@@ -29,7 +29,6 @@ export interface SkyNight {
   stars: readonly string[]
   /** Dark enough for stars: the moon is not near full. */
   darkSky: boolean
-  source: 'sim'
 }
 
 /** The best place to watch from, in words. */

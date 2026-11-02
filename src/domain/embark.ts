@@ -4,10 +4,9 @@ import type { Window } from './travel'
 import { fromMinutes, toMinutes, isTime } from './journey'
 
 /**
- * Embarkation planning (S5-01 to S5-06). Queue times come from the server (`GET /feeds/embark-queue`, a simulation, `source: 'sim'`);
+ * Embarkation planning (S5-01 to S5-06). Queue times come from the server (`GET /feeds/embark-queue`);
  * everything else is authored guidance. Nothing here reads a position or books anything.
  */
-export const EMBARK_SOURCE = 'sim' as const
 
 export interface EmbarkNeeds {
   priority: boolean
@@ -28,7 +27,7 @@ export interface ForecastStep { id: StepId; walk: number; queue: number; /** A s
 
 /** An arrival window as the server serves it for this guest's needs: its crowd, the wait through the terminal and the forecast for each step. */
 export interface QueueWindow { start: string; end: string; crowd: Window['crowd']; waitMinutes: number; steps: ForecastStep[]; total: number }
-export interface EmbarkQueue { windows: QueueWindow[]; recommended: string | null; source: typeof EMBARK_SOURCE }
+export interface EmbarkQueue { windows: QueueWindow[]; recommended: string | null }
 
 export interface Swap { waitChange: number; aboardChange: number; sameSlot: boolean }
 

@@ -135,7 +135,7 @@ const MINUTE = 60_000
 /** A callback request is kept for two hours, then lapses and the guest is told. */
 export const CALLBACK_LIFETIME_MS = 120 * MINUTE
 
-export interface CallbackRequest { id: string; at: number; position: number; readyAt: number; reason: 'urgent' | 'changes' | 'health' | 'other'; /** The staff queue's own place; the simulated queue says so. */ source: 'sim' }
+export interface CallbackRequest { id: string; at: number; position: number; readyAt: number; reason: 'urgent' | 'changes' | 'health' | 'other' }
 export type CallbackStatus = { kind: 'waiting'; minutes: number } | { kind: 'due' } | { kind: 'lapsed' }
 
 export function callbackStatus(c: CallbackRequest, now: number): CallbackStatus {
@@ -149,7 +149,7 @@ export const normalizeCallback = (raw: unknown): CallbackRequest | null => {
   const r = raw as Record<string, unknown>
   const reasons = ['urgent', 'changes', 'health', 'other']
   if (typeof r.id !== 'string' || ![r.at, r.position, r.readyAt].every((n) => typeof n === 'number' && Number.isFinite(n)) || !reasons.includes(r.reason as string)) return null
-  return { id: r.id, at: r.at as number, position: r.position as number, readyAt: r.readyAt as number, reason: r.reason as CallbackRequest['reason'], source: 'sim' }
+  return { id: r.id, at: r.at as number, position: r.position as number, readyAt: r.readyAt as number, reason: r.reason as CallbackRequest['reason'] }
 }
 
 /** The server's call-back tickets, newest first (it also lists caregiver and kit requests, which this card does not show). */

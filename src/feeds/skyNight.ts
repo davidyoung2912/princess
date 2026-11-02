@@ -20,7 +20,7 @@ export function normalizeSkyNight(raw: unknown): SkyNight | null {
   return {
     day: raw.day, port: raw.port, sunrise: raw.sunrise, sunset: raw.sunset, sunsetAt: raw.sunsetAt as number,
     moon: { phase: m.phase, name: PHASE_NAMES[m.phase], lit: m.lit }, sunsetSide: raw.sunsetSide, sailAway: sail as string | null,
-    sailAwayAtSunset: raw.sailAwayAtSunset, stars: raw.stars as string[], darkSky: raw.darkSky, source: 'sim',
+    sailAwayAtSunset: raw.sailAwayAtSunset, stars: raw.stars as string[], darkSky: raw.darkSky,
   }
 }
 

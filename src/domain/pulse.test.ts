@@ -27,7 +27,6 @@ describe('ship pulse', () => {
     expect(p.observedAt).toBe(at(12))
     expect(p.observedAt).toBeLessThanOrEqual(at(12, 3))
     expect(['low', 'medium']).toContain(p.confidence)
-    expect(p.source).toBe('sim')
   })
 
   it('reads only what the server gave, and nothing for an unknown venue', () => {

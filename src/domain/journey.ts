@@ -5,7 +5,7 @@ import { addDays } from './timezones'
 
 /**
  * Door to door (S4A-01, 02, 04, 06, 07, 10, 11, 12): one timeline from leaving home or the hotel to the gangway, with the slack on each leg.
- * Times are authored concept values; flight status, weather and traffic are simulated (`source: 'sim'`) so a real feed can replace them.
+ * Times are authored concept values; flight status, weather and traffic are simulated so a real feed can replace them.
  */
 export type TripMode = 'fly' | 'drive' | 'local'
 export const TRIP_MODES: readonly TripMode[] = ['fly', 'drive', 'local']
@@ -142,9 +142,8 @@ export const flyEarlyDate = (departure: string): string => addDays(departure, -1
 
 // ---- Flight watch (S4A-04), simulated ----
 
-export const FLIGHT_SOURCE = 'sim' as const
 export type FlightState = 'onTime' | 'delayed' | 'cancelled'
-export interface FlightStatus { source: typeof FLIGHT_SOURCE; state: FlightState; delayMinutes: number }
+export interface FlightStatus { state: FlightState; delayMinutes: number }
 
 export const validFlightNumber = (v: string): boolean => /^[A-Z]{2}\d{1,4}$/.test(normalizeFlight(v))
 export const normalizeFlight = (v: string): string => v.replace(/\s+/g, '').toUpperCase()
@@ -158,7 +157,7 @@ export const reviseLeave = (s: FlightStatus | null): number => (s && s.state ===
 // ---- Conditions along the route (S4A-12), simulated ----
 
 export type Sky = 'clear' | 'cloudy' | 'rain' | 'storm'
-export interface Conditions { source: typeof FLIGHT_SOURCE; traffic: Traffic; sky: Sky; leaveEarlierMinutes: number }
+export interface Conditions { traffic: Traffic; sky: Sky; leaveEarlierMinutes: number }
 
 export type Crowd = 'quiet' | 'busy' | 'busiest'
 

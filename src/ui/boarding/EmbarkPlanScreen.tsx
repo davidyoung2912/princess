@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { EMBARK } from '../../domain/boarding'
 import {
-  EMBARK_SOURCE, familyProblems, FAMILY_ROLES, firstHours, hourClock, MAX_WELCOME, QUICK_START, setMeetNote, setReady, setRole, sharedWelcome,
+  familyProblems, FAMILY_ROLES, firstHours, hourClock, MAX_WELCOME, QUICK_START, setMeetNote, setReady, setRole, sharedWelcome,
   stewardFor, swapEffect, WELCOME_FIELDS, type EmbarkNeeds, type FamilyRole, type WelcomeField,
 } from '../../domain/embark'
 import { isTime, toggleIn } from '../../domain/journey'
@@ -68,7 +68,7 @@ export function EmbarkPlanScreen() {
             )
           })}
         </fieldset>
-        <p className="muted">{t('embarkPlan.sim', { source: EMBARK_SOURCE })}</p>
+        <p className="muted">{t('embarkPlan.sim')}</p>
         <p><Link to="/plan/getting-there">{t('route.gettingThere')}</Link></p>
       </Card>
 

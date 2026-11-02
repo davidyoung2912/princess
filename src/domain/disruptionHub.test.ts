@@ -41,7 +41,7 @@ describe('disruption hub', () => {
 })
 
 describe('callback queue', () => {
-  const c = { id: 'c1', at: 1_000_000, position: 3, readyAt: 1_000_000 + 12 * 60_000, reason: 'changes' as const, source: 'sim' as const }
+  const c = { id: 'c1', at: 1_000_000, position: 3, readyAt: 1_000_000 + 12 * 60_000, reason: 'changes' as const }
   it('counts down, comes due, then lapses after two hours', () => {
     const s = callbackStatus(c, c.at)
     expect(s.kind).toBe('waiting')

@@ -13,7 +13,7 @@ import type { PortId } from './sailings'
 const MIN = 60_000
 
 /** The sky for a day, as the server reports it: UV and heat, and sometimes an afternoon of rain. */
-export interface SimWeather { uv: number; tempF: number; rainFrom: string | null; rainTo: string | null; source: 'sim' }
+export interface SimWeather { uv: number; tempF: number; rainFrom: string | null; rainTo: string | null }
 
 export type GentleKind = 'rest' | 'water' | 'sun' | 'walk'
 export interface GentleNote { kind: GentleKind; /** "HH:MM". */ at: string; /** The item it relates to. */ about: string }

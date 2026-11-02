@@ -14,7 +14,7 @@ describe('sky feed', () => {
     expect(await skyFeed.load('2027-03-24', 'sea')).toBe(true)
     expect(await skyFeed.load('2027-03-24', 'sea')).toBe(false)
     expect(calls).toBe(1)
-    expect(skyFeed.now('2027-03-24', 'sea')).toEqual({ uv: 11, tempF: 91, rainFrom: '13:00', rainTo: '16:00', source: 'sim' })
+    expect(skyFeed.now('2027-03-24', 'sea')).toEqual({ uv: 11, tempF: 91, rainFrom: '13:00', rainTo: '16:00' })
   })
   it('shows nothing when the server fails or answers badly', async () => {
     skyFeed.setFetcher(async () => { throw new Error('offline') })

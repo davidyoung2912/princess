@@ -10,11 +10,11 @@ describe('route conditions feed', () => {
   })
   it("takes the server's answer once", async () => {
     let calls = 0
-    conditionsFeed.setFetcher(async () => { calls++; return { traffic: 'heavy', sky: 'storm', leaveEarlierMinutes: 45, source: 'sim' } })
+    conditionsFeed.setFetcher(async () => { calls++; return { traffic: 'heavy', sky: 'storm', leaveEarlierMinutes: 45 } })
     expect(await conditionsFeed.load('2027-03-21', 'busiest')).toBe(true)
     expect(await conditionsFeed.load('2027-03-21', 'busiest')).toBe(false)
     expect(calls).toBe(1)
-    expect(conditionsFeed.now('2027-03-21', 'busiest')).toEqual({ source: 'sim', traffic: 'heavy', sky: 'storm', leaveEarlierMinutes: 45 })
+    expect(conditionsFeed.now('2027-03-21', 'busiest')).toEqual({ traffic: 'heavy', sky: 'storm', leaveEarlierMinutes: 45 })
   })
   it('shows nothing on a failure or a bad answer', async () => {
     conditionsFeed.setFetcher(async () => { throw new Error('offline') })

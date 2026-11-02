@@ -11,7 +11,7 @@ export function normalizeSky(raw: unknown): SimWeather | null {
   if (typeof r.uv !== 'number' || typeof r.tempF !== 'number' || !Number.isFinite(r.uv) || !Number.isFinite(r.tempF)) return null
   const rainFrom = hhmm(r.rainFrom)
   const rainTo = hhmm(r.rainTo)
-  return { uv: r.uv, tempF: r.tempF, rainFrom: rainFrom && rainTo ? rainFrom : null, rainTo: rainFrom && rainTo ? rainTo : null, source: 'sim' }
+  return { uv: r.uv, tempF: r.tempF, rainFrom: rainFrom && rainTo ? rainFrom : null, rainTo: rainFrom && rainTo ? rainTo : null }
 }
 
 /** The sky on a date (`YYYY-MM-DD`) at the port the ship is at; the server uses one weather model for this, packing and today's weather. */

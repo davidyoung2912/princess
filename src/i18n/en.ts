@@ -5045,7 +5045,7 @@ export const en = {
   'embarkPlan.wait': 'about {wait} waiting',
   'embarkPlan.later': 'aboard {time} later',
   'embarkPlan.sooner': 'aboard {time} sooner',
-  'embarkPlan.sim': 'Queue times are a guide from how busy each window usually is (source: {source}).',
+  'embarkPlan.sim': 'Queue times are a guide from how busy each window usually is.',
   'embarkPlan.forecast': 'Embarkation forecast',
   'embarkPlan.step.terminal': 'Terminal',
   'embarkPlan.step.security': 'Security',

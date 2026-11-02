@@ -7,7 +7,7 @@ import { applyChanges, type PlanEntry } from './planChange'
 const MIN = 60_000
 const HOUR = 60 * MIN
 const entry = (id: string, start: string, minutes: number, extra: Partial<PlanEntry> = {}): PlanEntry => ({ id, title: id, start, minutes, kind: 'event', outdoor: false, path: '/plan', ...extra })
-const calm: SimWeather = { uv: 3, tempF: 72, rainFrom: null, rainTo: null, source: 'sim' }
+const calm: SimWeather = { uv: 3, tempF: 72, rainFrom: null, rainTo: null }
 
 describe('gentle mode', () => {
   const rows = (list: PlanEntry[]) => applyChanges(list, [])

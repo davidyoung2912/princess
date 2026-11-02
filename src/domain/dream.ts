@@ -6,7 +6,7 @@ import { CATEGORIES, type CategoryId } from './ship'
 
 /**
  * Dream and decide (S0-01 to S0-05, S0-10). Plain, honest words: who this cruise is for and who it is not for, the real fears, a budget-first search,
- * a quality note for each sailing, a decision summary, and an invitation as text. The quality figures are simulations (`source: 'sim'`).
+ * a quality note for each sailing, a decision summary, and an invitation as text.
  */
 
 // ---- S0-01: is this for me? ----
@@ -100,7 +100,7 @@ export function budgetSearch(sailing: Sailing, budget: Cents, guests: number): B
 
 export type Level = 'low' | 'medium' | 'high'
 export interface QualityNote { key: 'crowds' | 'weather' | 'hurricane' | 'school' | 'price'; level: Level; text: string; why: string }
-export interface SailingQuality { sailingId: string; notes: QualityNote[]; source: 'sim' }
+export interface SailingQuality { sailingId: string; notes: QualityNote[] }
 
 
 // ---- S0-10: decision confidence summary ----

@@ -9,7 +9,7 @@ export function normalizeFlightStatus(raw: unknown): FlightStatus | null {
   const r = raw as Record<string, unknown>
   if (!(STATES as readonly unknown[]).includes(r.state)) return null
   const minutes = typeof r.delayMinutes === 'number' && Number.isFinite(r.delayMinutes) ? Math.max(0, Math.round(r.delayMinutes)) : 0
-  return { source: 'sim', state: r.state as FlightState, delayMinutes: r.state === 'delayed' ? minutes : 0 }
+  return { state: r.state as FlightState, delayMinutes: r.state === 'delayed' ? minutes : 0 }
 }
 
 /** A flight's status by normalised flight number and date. */

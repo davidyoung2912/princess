@@ -4,9 +4,9 @@ import type { SkyNight } from './sky'
 import type { PlanRow } from './planChange'
 
 const row = (id: string, start: string, state: PlanRow['state'] = 'planned'): PlanRow => ({ state, entry: { id, title: `Item ${id}`, start, minutes: 60, kind: 'event', outdoor: false, path: '/plan' } })
-const SKY: SkyNight = { day: 3, port: 'cozumel', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: '17:00', sailAwayAtSunset: false, stars: ['Orion'], darkSky: false, source: 'sim' }
+const SKY: SkyNight = { day: 3, port: 'cozumel', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: '17:00', sailAwayAtSunset: false, stars: ['Orion'], darkSky: false }
 const facts = (over: Partial<BriefingFacts> = {}): BriefingFacts => ({
-  nowHhmm: '07:30', plan: [row('a', '09:00'), row('b', '19:00')], weather: { uv: 9, tempF: 84, rainFrom: '14:00', rainTo: '17:00', source: 'sim' },
+  nowHhmm: '07:30', plan: [row('a', '09:00'), row('b', '19:00')], weather: { uv: 9, tempF: 84, rainFrom: '14:00', rainTo: '17:00' },
   sky: SKY, deadlines: [{ label: 'Upload documents', path: '/me/documents' }], allAboard: '16:30', tomorrowFirst: { start: '08:00', title: 'Yoga', path: '/plan' }, ...over,
 })
 

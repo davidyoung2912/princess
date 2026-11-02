@@ -13,7 +13,7 @@ export function normalizeQuality(raw: unknown): SailingQuality | null {
     if (!isRecord(n) || n.key !== KEYS[i] || !oneOf(n.level, LEVELS) || typeof n.text !== 'string' || !n.text || n.text.length > 200 || typeof n.why !== 'string' || n.why.length > 300) return null
     notes.push({ key: KEYS[i], level: n.level, text: n.text, why: n.why })
   }
-  return { sailingId: raw.sailingId, notes, source: 'sim' }
+  return { sailingId: raw.sailingId, notes }
 }
 
 /** The decide notes for a sailing, by sailing id. */

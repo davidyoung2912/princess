@@ -17,7 +17,7 @@ export function normalizeStorm(raw: unknown): StormReading | null {
   const youCan = keys(raw.youCan, YOU_CAN)
   if (!lineMay || !youCan || typeof raw.departure !== 'string' || !DATE.test(raw.departure) || typeof raw.returns !== 'string' || !DATE.test(raw.returns)) return null
   if (typeof raw.inSeason !== 'boolean' || typeof raw.peak !== 'boolean') return null
-  return { source: 'sim', departure: raw.departure, returns: raw.returns, inSeason: raw.inSeason, percent: raw.percent, band: raw.band, phase: raw.phase, lineMay, youCan, peak: raw.peak }
+  return { departure: raw.departure, returns: raw.returns, inSeason: raw.inSeason, percent: raw.percent, band: raw.band, phase: raw.phase, lineMay, youCan, peak: raw.peak }
 }
 
 /** The storm watch for a sailing (by departure date) and the days until it leaves. */

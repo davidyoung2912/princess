@@ -21,7 +21,6 @@ describe('sailing quality feed', () => {
     expect(qualityFeed.now('sun-2027-03-21')).toBeNull()
     qualityFeed.setFetcher(async () => quality)
     expect(await qualityFeed.load('sun-2027-03-21')).toBe(true)
-    expect(qualityFeed.now('sun-2027-03-21')?.source).toBe('sim')
   })
 })
 
