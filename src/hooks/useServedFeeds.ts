@@ -54,6 +54,20 @@ export function usePulseEnv(sailing: Sailing, now: number): { env: PulseEnv; now
   return { env, now: minute }
 }
 
+/** The same feed asked for several argument sets at once (for a side-by-side comparison); each entry is null until its answer is here. */
+export function useFeedList<A extends unknown[], V>(feed: Feed<A, V>, list: readonly A[]): (V | null)[] {
+  const [tick, setTick] = useState(0)
+  const k = JSON.stringify(list)
+  useEffect(() => {
+    let live = true
+    void Promise.all(list.map((args) => feed.load(...args))).then((r) => { if (live && r.some(Boolean)) setTick((n) => n + 1) })
+    return () => { live = false }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [feed, k])
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => list.map((args) => feed.now(...args)), [feed, k, tick])
+}
+
 type WatchTimes = Pick<Watch, 'id' | 'createdAt' | 'slotAt'>
 
 /** When a place opens for each slot watch, from the server: look a watch up with the returned function (null = not here yet, or never). */

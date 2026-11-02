@@ -1,3 +1,4 @@
+using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
@@ -106,6 +107,50 @@ public sealed class SimLostProperty : ILostProperty
 public sealed class SimSlotWatchFeed : ISlotWatchFeed
 {
     public WatchOpeningDto Opening(string watchId, long createdAt, long slotAt) => OnboardFeedRules.WatchOpening(watchId, createdAt, slotAt);
+}
+
+/// <summary>Scores for the staterooms of a room type (sleep, motion, noise, sun), with the reasons. A real deck plan and ship data replace the sample ones and keep the shape.</summary>
+public interface ICabinGuide
+{
+    CabinGuideDto Guide(string sailingId, string category, CabinFilterDto filter, IReadOnlySet<string>? taken);
+}
+
+public sealed class SimCabinGuide : ICabinGuide
+{
+    public CabinGuideDto Guide(string sailingId, string category, CabinFilterDto filter, IReadOnlySet<string>? taken) => CabinGuideRules.Guide(sailingId, category, filter, taken);
+}
+
+/// <summary>Queue times through the terminal for each arrival window, for the embarkation plan.</summary>
+public interface IEmbarkQueue
+{
+    EmbarkQueueDto Queue(bool priority, bool mobility, bool quiet, string? earliest);
+}
+
+public sealed class SimEmbarkQueue : IEmbarkQueue
+{
+    public EmbarkQueueDto Queue(bool priority, bool mobility, bool quiet, string? earliest) => EmbarkQueueRules.Queue(priority, mobility, quiet, earliest);
+}
+
+/// <summary>The dream and decide notes for a sailing: crowds, weather, hurricane season, school holidays and price.</summary>
+public interface ISailingQuality
+{
+    SailingQualityDto Notes(SailingRow sailing, IEnumerable<string> allSailingIds);
+}
+
+/// <summary>How a guest's friend answers a sail-again invitation. A real build would carry an actual reply back; the simulated one makes it up.</summary>
+public interface IFriendReply
+{
+    FriendReplyDto Reply(string name);
+}
+
+public sealed class SimSailingQuality : ISailingQuality
+{
+    public SailingQualityDto Notes(SailingRow sailing, IEnumerable<string> allSailingIds) => SailingQualityRules.For(sailing, allSailingIds);
+}
+
+public sealed class SimFriendReply : IFriendReply
+{
+    public FriendReplyDto Reply(string name) => SailingQualityRules.Reply(name);
 }
 
 /// <summary>The mid-day changes the ship makes to the programme (moved or cancelled events, with a reason). A real operations feed replaces the simulated one.</summary>

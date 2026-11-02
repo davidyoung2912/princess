@@ -1,21 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { asFolioView } from '../../api/guards'
+import { ask } from '../../ai/concierge'
+import type { Citation } from '../../ai/types'
+import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { parseExcursionRequest, parseItemRequest, speechRecognitionOf, type ExcursionRequest, type ItemRequest } from '../../domain/finishMore'
 import { requestItem } from '../../domain/services'
-import { ask, EXAMPLES, type Answer, type Facts } from '../../domain/assistant'
-import { explainCharge } from '../../domain/moneyShield'
 import { acceptChange, addProposal, requestChange, type Change } from '../../domain/planChange'
-import { shipZoneAt } from '../../domain/sailings'
-import { timeIn } from '../../domain/timezones'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing, usePersona } from '../../hooks/useDemo'
-import { useMine } from '../../hooks/useMine'
 import { usePilot } from '../../hooks/usePilot'
 import { programmeFollows } from '../../pilot/programme'
-import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, type StringKey } from '../../i18n'
-import { api } from '../../runtime'
+import { api, sendConcierge } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -24,7 +20,12 @@ import { BackLink } from '../onboard/common'
 import { REFUSED } from '../plan/refused'
 import { useShipTime } from '../onboard/shipTime'
 
+/** What the server's concierge said to one question, with the screens it used. */
+interface Answer { text: string; sources: Citation[] }
 interface Turn { id: number; question: string; answer: Answer }
+
+/** Suggested questions; the concierge answers them from the guest's own plan, checklist and bill. */
+const EXAMPLES: readonly string[] = ['What time is dinner?', 'What is next?', 'What do I still need to do?', 'When must I be back on the ship?', 'Summarise my day']
 
 const CHANGE_WORDS = /\b(move|change|shift|push|skip|drop|cancel|remove|add)\b/i
 
@@ -33,12 +34,11 @@ export function AskScreen() {
   const now = useNow()
   const sailing = useSailing()
   const time = useShipTime()
+  const [busy, setBusy] = useState(false)
   const me = usePersona()
   const day = useCurrentDay()
   const dp = useDayPlan(day)
   const { state: pilot, update } = usePilot()
-  const folio = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
-  const checklist = useMine(() => api.plan.checklist.get())
   const [text, setText] = useState('')
   const [turns, setTurns] = useState<Turn[]>([])
   const [proposal, setProposal] = useState<Change | null>(null)
@@ -55,13 +55,17 @@ export function AskScreen() {
     r.start()
   }
 
-  const facts = (): Facts => ({
-    nowHhmm: timeIn(now, shipZoneAt(sailing, now)),
-    plan: dp.rows,
-    todo: checklist.data ? checklist.data.milestones.flatMap((m) => m.entries).filter((e) => e.state !== 'done' && !e.automatic).map((e) => ({ label: t(`plan.check.item.${e.id}` as never), path: e.to ?? '/plan/checklist' })) : null,
-    charges: folio.data ? folio.data.lines.filter((l) => l.cents > 0).map((l) => { const x = explainCharge(l); return { label: l.description, cents: l.cents, reason: t(`explain.${x.id}` as StringKey, x.params) } }) : null,
-    allAboard: dp.itineraryDay.allAboard ?? null,
-  })
+  /** Asks the server's concierge; it answers from the guest's own plan, checklist and bill, and sends anything needing a person to the right desk. */
+  const askServer = async (q: string) => {
+    setBusy(true)
+    const user = { id: `u-${now}`, role: 'user' as const, text: q, at: now }
+    const turn = await ask(sendConcierge, [user], { sailingId: sailing.id, personaId: me?.id ?? '', now })
+    const answer: Answer = turn.handoff
+      ? { text: t(`ai.handoff.${turn.handoff}` as StringKey, { phone: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER }), sources: [] }
+      : { text: turn.reply.text, sources: turn.reply.citations }
+    setTurns((all) => [{ id: all.length, question: q, answer }, ...all])
+    setBusy(false)
+  }
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -79,11 +83,11 @@ export function AskScreen() {
       const r = requestChange(q, dp.rows, dp.alternatives, now, day)
       if (r.ok) { setProposal(r.change); return }
       setProposal(null)
-      setTurns((all) => [{ id: all.length, question: q, answer: { text: t(r.reason === 'nothing' ? 'ask.cantFind' : 'ask.unclear'), sources: [], known: false } }, ...all])
+      setTurns((all) => [{ id: all.length, question: q, answer: { text: t(r.reason === 'nothing' ? 'ask.cantFind' : 'ask.unclear'), sources: [] } }, ...all])
       return
     }
     setProposal(null)
-    setTurns((all) => [{ id: all.length, question: q, answer: ask(q, facts()) }, ...all])
+    void askServer(q)
   }
 
   const confirm = () => {
@@ -127,12 +131,12 @@ export function AskScreen() {
       <p className="muted">{t('ask.promise')}</p>
       <form onSubmit={submit}>
         <Field label={t('ask.label')} hint={t('ask.hint')} value={text} maxLength={200} onChange={(e) => setText(e.target.value)} />
-        <Button type="submit">{t('ask.send')}</Button>
+        <Button type="submit" disabled={busy}>{t('ask.send')}</Button>
         {Recognition && <Button variant="secondary" onClick={listen}>{t('ask.speak')}</Button>}
       </form>
       {Recognition && <p className="muted">{t('ask.speakNote')}</p>}
       <ul className="plain-list" aria-label={t('ask.examples')}>
-        {EXAMPLES.map((q) => <li key={q}><Button variant="tertiary" onClick={() => setTurns((all) => [{ id: all.length, question: q, answer: ask(q, facts()) }, ...all])}>{q}</Button></li>)}
+        {EXAMPLES.map((q) => <li key={q}><Button variant="tertiary" disabled={busy} onClick={() => void askServer(q)}>{q}</Button></li>)}
       </ul>
 
       {proposal && (

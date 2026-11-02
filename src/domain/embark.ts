@@ -1,10 +1,10 @@
 import type { StringKey } from '../i18n'
-import { EMBARK, WAIT_MINUTES, DELIVERY_HOURS } from './boarding'
-import { arrivalWindows, type Window } from './travel'
+import { EMBARK, DELIVERY_HOURS } from './boarding'
+import type { Window } from './travel'
 import { fromMinutes, toMinutes, isTime } from './journey'
 
 /**
- * Embarkation planning (S5-01 to S5-06). Queue times come from how busy each arrival window usually is (a simulation, `source: 'sim'`);
+ * Embarkation planning (S5-01 to S5-06). Queue times come from the server (`GET /feeds/embark-queue`, a simulation, `source: 'sim'`);
  * everything else is authored guidance. Nothing here reads a position or books anything.
  */
 export const EMBARK_SOURCE = 'sim' as const
@@ -23,48 +23,19 @@ export interface EmbarkNeeds {
 
 export const EMPTY_NEEDS: EmbarkNeeds = { priority: false, mobility: false, quiet: false, travelMinutes: 45, earliest: null }
 
-const CROWD_ORDER: Record<Window['crowd'], number> = { quiet: 0, busy: 1, busiest: 2 }
+export type StepId = 'terminal' | 'security' | 'photo' | 'gangway'
+export interface ForecastStep { id: StepId; walk: number; queue: number; /** A step-free lane is open here. */ accessibleLane: boolean; quietLane: boolean }
 
-/** Extra minutes on every step for a guest who needs more time. */
-export const MOBILITY_EXTRA = 10
-
-/** Wait, in minutes, for a window, adjusted for the guest's needs. */
-export const waitFor = (w: Window, needs: Pick<EmbarkNeeds, 'mobility' | 'quiet'>): number => WAIT_MINUTES[w.crowd] + (needs.mobility ? MOBILITY_EXTRA : 0)
-
-/** Windows the guest can make: not before they can be at the terminal. */
-export function reachableWindows(needs: EmbarkNeeds): Window[] {
-  const earliest = needs.earliest && isTime(needs.earliest) ? toMinutes(needs.earliest) : 0
-  return arrivalWindows(needs.priority).filter((w) => toMinutes(w.start) >= earliest)
-}
-
-/** The quietest reachable window; ties go to the earlier one, so the guest is aboard sooner. A guest who needs low stimulation or more time is steered away from the busiest crowds even if that costs an hour. */
-export function recommendWindow(needs: EmbarkNeeds): Window | null {
-  const options = reachableWindows(needs)
-  if (options.length === 0) return null
-  return [...options].sort((a, b) => CROWD_ORDER[a.crowd] - CROWD_ORDER[b.crowd] || toMinutes(a.start) - toMinutes(b.start))[0]
-}
+/** An arrival window as the server serves it for this guest's needs: its crowd, the wait through the terminal and the forecast for each step. */
+export interface QueueWindow { start: string; end: string; crowd: Window['crowd']; waitMinutes: number; steps: ForecastStep[]; total: number }
+export interface EmbarkQueue { windows: QueueWindow[]; recommended: string | null; source: typeof EMBARK_SOURCE }
 
 export interface Swap { waitChange: number; aboardChange: number; sameSlot: boolean }
 
 /** What choosing another window does: the change in waiting time and in when the guest is aboard (in minutes; positive means later or longer). */
-export function swapEffect(from: Window, to: Window, needs: EmbarkNeeds): Swap {
-  const waitChange = waitFor(to, needs) - waitFor(from, needs)
+export function swapEffect(from: Pick<QueueWindow, 'start' | 'waitMinutes'>, to: Pick<QueueWindow, 'start' | 'waitMinutes'>): Swap {
+  const waitChange = to.waitMinutes - from.waitMinutes
   return { waitChange, aboardChange: toMinutes(to.start) - toMinutes(from.start) + waitChange, sameSlot: from.start === to.start }
-}
-
-export type StepId = 'terminal' | 'security' | 'photo' | 'gangway'
-export interface ForecastStep { id: StepId; walk: number; queue: number; /** A step-free lane is open here. */ accessibleLane: boolean; quietLane: boolean }
-
-/** Expected walk and queue time at each step for a window. Authored shares of the window's wait; the accessible lane is always listed. */
-export function forecast(w: Window, needs: Pick<EmbarkNeeds, 'mobility' | 'quiet' | 'priority'>): { steps: ForecastStep[]; total: number } {
-  const wait = waitFor(w, needs)
-  const share: Record<StepId, number> = { terminal: 0.3, security: 0.4, photo: 0.1, gangway: 0.2 }
-  const walk: Record<StepId, number> = { terminal: 5, security: 3, photo: 2, gangway: 6 }
-  const priorityCut = needs.priority ? 0.5 : 1
-  const steps = (['terminal', 'security', 'photo', 'gangway'] as const).map((id): ForecastStep => ({
-    id, walk: walk[id] + (needs.mobility ? 3 : 0), queue: Math.round(wait * share[id] * priorityCut), accessibleLane: true, quietLane: id === 'security' || id === 'terminal',
-  }))
-  return { steps, total: steps.reduce((n, s) => n + s.walk + s.queue, 0) }
 }
 
 // ---- First three hours (S5-03) ----

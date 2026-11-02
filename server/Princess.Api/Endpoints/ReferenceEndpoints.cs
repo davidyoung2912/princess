@@ -120,6 +120,29 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("When a place opens up for a slot watch, or null when none does before the slot. A simulated feed; the watch only ever ends in a proposal the guest confirms.");
 
+        api.MapGet("/feeds/sailing-quality", async (string sailing, ISailingQuality quality, ITripStore trips, CancellationToken ct) =>
+            {
+                var all = (await trips.ListSailingsAsync(ct)).Where(s => Pricing.HasPrice(s.Id)).ToList();
+                var row = all.FirstOrDefault(s => s.Id == sailing);
+                if (row is null) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(quality.Notes(row, all.Select(s => s.Id)));
+            })
+            .WithTags("Reference").WithSummary("The decide notes for a sailing: crowds, weather, hurricane season, school holidays and price, each low, medium or high with a plain sentence and why. A simulated feed; `source` says so.");
+
+        api.MapGet("/feeds/embark-queue", (bool? priority, bool? mobility, bool? quiet, string? earliest, IEmbarkQueue queue) =>
+            {
+                if (!EmbarkQueueRules.ValidEarliest(earliest)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(queue.Queue(priority ?? false, mobility ?? false, quiet ?? false, earliest));
+            })
+            .WithTags("Reference").WithSummary("The arrival windows a guest can make (not before `earliest`, `HH:mm`), each with its crowd, the wait through the terminal adjusted for mobility, the walk and queue at each of four steps, and the quietest window. A simulated feed; `source` says so.");
+
+        api.MapGet("/feeds/friend-reply", (string name, IFriendReply friends) =>
+            {
+                if (!SailingQualityRules.ValidFriendName(name)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(friends.Reply(name));
+            })
+            .WithTags("Reference").WithSummary("How a friend answers a sail-again invitation (accepted or declined). Asked only after the guest has agreed to invite the contact. A simulated feed.");
+
         api.MapPost("/telemetry", async (TelemetryBatchDto body, ITelemetrySink sink, CancellationToken ct) =>
             {
                 if (!TelemetryRules.Valid(body?.Items)) throw ApiException.Invalid("badTelemetry");

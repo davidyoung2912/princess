@@ -40,6 +40,14 @@ public sealed class DiscoverService(ITripStore trips, IBookingStore bookings, IC
         return Pricing.Categories.Select(c => new RoomOptionDto(c.Id, Pricing.FareFor(sailingId, c.Id)!.Value, Pricing.CapacityOf(c.Id), Pricing.FareIncluded(c.Id))).ToList();
     }
 
+    /// <summary>The cabins already booked on a sailing, after checking the sailing and room type.</summary>
+    public async Task<HashSet<string>> TakenAsync(string sailingId, string? category, CancellationToken ct)
+    {
+        await SailingAsync(sailingId, ct);
+        if (!CabinGuideRules.ValidCategory(category)) throw ApiException.Invalid("category");
+        return await bookings.TakenCabinsAsync(sailingId, ct);
+    }
+
     public async Task<List<CabinInfo>> CabinsAsync(string sailingId, string? category, CancellationToken ct)
     {
         await SailingAsync(sailingId, ct);

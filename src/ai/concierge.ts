@@ -1,5 +1,5 @@
 import { MAX_CONTEXT, MAX_MESSAGE, screen, type Handoff } from './guard'
-import { scriptedReply } from './scripted'
+import { t } from '../i18n'
 import type { ChatMessage, Citation, Context, Reply, Source } from './types'
 
 /** Why a model was not used when it normally would be: the server's codes, or `limit` for the hourly limit. */
@@ -25,7 +25,7 @@ export interface ServerAsk {
   likes?: string[]
 }
 
-/** Sends one turn to `POST /me/concierge`; null in mock mode, where only the built-in helper answers. Set by the runtime. */
+/** Sends one turn to `POST /me/concierge`. Set by the runtime. */
 export type ConciergeSender = (body: ServerAsk) => Promise<unknown>
 
 const HANDOFFS: readonly Handoff[] = ['emergency', 'medical', 'legal', 'person']
@@ -51,24 +51,24 @@ export function normalizeTurn(raw: unknown): Turn | null {
 }
 
 /**
- * One turn. The server decides everything when there is one: a message needing a person never reaches a model, the model answers when it is set up and
- * the hourly limit allows, and the server's scripted concierge answers otherwise. Without a server (mock mode) or when it cannot be reached, the built-in
- * helper answers on this device. `history` ends with the guest's new message.
+ * One turn. The server decides everything: a message needing a person never reaches a model, the model answers when it is set up and the hourly limit
+ * allows, and the server's scripted concierge answers otherwise. The one check kept on the device is the handoff screen, so an emergency message
+ * shows the numbers to call even with no signal. When the server cannot be reached the guest is told so; nothing is answered from this device.
+ * `history` ends with the guest's new message.
  */
-export async function ask(send: ConciergeSender | null, history: readonly ChatMessage[], ctx: Context): Promise<Turn> {
+export async function ask(send: ConciergeSender, history: readonly ChatMessage[], ctx: Context): Promise<Turn> {
   const message = history[history.length - 1]?.text ?? ''
   const handoff = screen(message)
   if (handoff) return { reply: { text: '', citations: [], source: 'handoff' }, handoff, fallback: null }
-  const local = (fallback: Fallback | null): Turn => ({ reply: scriptedReply(message, ctx), handoff: null, fallback })
-  if (!send) return local(null)
+  const unreachable = (fallback: Fallback): Turn => ({ reply: { text: t('ai.unreachable'), citations: [], source: 'scripted' }, handoff: null, fallback })
   try {
     const turn = normalizeTurn(await send({
       history: history.slice(-MAX_CONTEXT).map((m) => ({ role: m.role, text: m.text, at: m.at })),
       mobility: ctx.mobility,
       likes: ctx.likes ? [...ctx.likes] : undefined,
     }))
-    return turn ?? local('bad')
+    return turn ?? unreachable('bad')
   } catch {
-    return local('network')
+    return unreachable('network')
   }
 }

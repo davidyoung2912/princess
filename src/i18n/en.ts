@@ -3046,6 +3046,7 @@ export const en = {
   'ai.sources': 'From:',
   'ai.thinking': 'Looking that up…',
   'ai.notice': 'Using the built-in helper this time',
+  'ai.unreachable': 'The concierge could not be reached just now. Please try again in a moment, or ask Guest Services.',
   'ai.fallback.auth': 'The AI service is not set up.',
   'ai.fallback.rate': 'The AI service is busy.',
   'ai.fallback.network': 'The AI service could not be reached.',

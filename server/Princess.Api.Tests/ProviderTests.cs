@@ -226,6 +226,38 @@ public class OnboardFeedTests
     }
 }
 
+public class EmbarkQueueRulesTests
+{
+    [Fact]
+    public void TheQuietestWindowWinsAndNeedsAddTime()
+    {
+        var plain = EmbarkQueueRules.Queue(false, false, false, null);
+        Assert.DoesNotContain(plain.Windows, w => w.Start == "10:30");
+        Assert.Contains(EmbarkQueueRules.Queue(true, false, false, null).Windows, w => w.Start == "10:30");
+        var quietest = plain.Windows.Single(w => w.Start == plain.Recommended);
+        Assert.Equal(plain.Windows.Min(w => w.WaitMinutes), quietest.WaitMinutes);
+        var slow = EmbarkQueueRules.Queue(false, true, false, null);
+        Assert.Equal(plain.Windows[0].WaitMinutes + EmbarkQueueRules.MobilityExtra, slow.Windows[0].WaitMinutes);
+        Assert.All(slow.Windows, w => Assert.Equal(4, w.Steps.Count));
+        Assert.All(EmbarkQueueRules.Queue(false, false, false, "13:00").Windows, w => Assert.True(string.CompareOrdinal(w.Start, "13:00") >= 0));
+        Assert.True(EmbarkQueueRules.ValidEarliest(null));
+        Assert.False(EmbarkQueueRules.ValidEarliest("soon"));
+    }
+}
+
+public class SailingQualityRulesTests
+{
+    [Fact]
+    public void AFriendsReplyIsStableAndAboutOneInFourDecline()
+    {
+        Assert.Equal(SailingQualityRules.Reply("Sam"), SailingQualityRules.Reply("sam"));
+        var declined = Enumerable.Range(0, 400).Count(i => SailingQualityRules.Reply($"friend{i}").Reply == "declined");
+        Assert.InRange(declined, 60, 140);
+        Assert.False(SailingQualityRules.ValidFriendName(" "));
+        Assert.False(SailingQualityRules.ValidFriendName(new string('a', SailingQualityRules.FriendNameMax + 1)));
+    }
+}
+
 public class OnboardFeedApiTests : JourneyWorld
 {
     private static readonly long Base = DateTimeOffset.Parse("2027-03-23T15:20:00Z").ToUnixTimeMilliseconds();
@@ -234,9 +266,55 @@ public class OnboardFeedApiTests : JourneyWorld
     public async Task TheFeedRoutesRefuseBadQueriesAndAnswerGoodOnes()
     {
         var token = await SignIn(Daniel);
-        foreach (var bad in new[] { "/feeds/pulse?departure=nope&now=1", "/feeds/storm?departure=2027-03-21&days=99999", "/feeds/sky-night?departure=2027-03-21&day=12", "/feeds/loungers?now=3", "/feeds/sightings?day=0", "/feeds/watch-opening?id=a&created=1&slot=2" })
+        foreach (var bad in new[] { "/feeds/pulse?departure=nope&now=1", "/feeds/storm?departure=2027-03-21&days=99999", "/feeds/sky-night?departure=2027-03-21&day=12", "/feeds/loungers?now=3", "/feeds/sightings?day=0", "/feeds/watch-opening?id=a&created=1&slot=2", "/feeds/sailing-quality?sailing=nope", "/feeds/friend-reply?name=", "/feeds/embark-queue?earliest=soon" })
             Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Get, $"/api/v1{bad}", token)).Status);
-        foreach (var good in new[] { $"/feeds/pulse?departure=2027-03-21&now={Base}", "/feeds/storm?departure=2027-03-21&days=9", "/feeds/sky-night?departure=2027-03-21&day=3", $"/feeds/loungers?now={Base}", "/feeds/sightings?day=2", "/feeds/found", $"/feeds/watch-opening?id=w-1&created={Base}&slot={Base + 172_800_000}" })
+        foreach (var good in new[] { $"/feeds/pulse?departure=2027-03-21&now={Base}", "/feeds/storm?departure=2027-03-21&days=9", "/feeds/sky-night?departure=2027-03-21&day=3", $"/feeds/loungers?now={Base}", "/feeds/sightings?day=2", "/feeds/found", "/feeds/friend-reply?name=Sam", "/feeds/embark-queue?priority=true&mobility=true&earliest=11:30", $"/feeds/watch-opening?id=w-1&created={Base}&slot={Base + 172_800_000}" })
             Assert.Equal(HttpStatusCode.OK, (await Call(HttpMethod.Get, $"/api/v1{good}", token)).Status);
+    }
+}
+
+public class CabinGuideRulesTests
+{
+    private static readonly CabinFilterDto None = new(false, false, false, false, true);
+
+    [Fact]
+    public void ScoresAreOneToFiveWithReasonsAndTheBestComeFirst()
+    {
+        var guide = CabinGuideRules.Guide("sun-2027-03-21", "balcony", None, null);
+        Assert.NotEmpty(guide.Cabins);
+        Assert.All(guide.Cabins, c =>
+        {
+            Assert.InRange(c.Sleep, 1, 5);
+            Assert.InRange(c.Motion, 1, 5);
+            Assert.InRange(c.Noise, 1, 5);
+            Assert.NotEmpty(c.Reasons.Sleep);
+            Assert.NotNull(c.Sun);
+        });
+        var totals = guide.Cabins.Select(c => c.Sleep + c.Motion + c.Noise).ToList();
+        Assert.Equal(totals.OrderByDescending(t => t), totals);
+        Assert.Null(CabinGuideRules.Guide("sun-2027-03-21", "interior", None, null).Cabins[0].Sun);
+    }
+
+    [Fact]
+    public void FiltersNarrowTheListAndTakenCabinsAreLeftOutUnlessAsked()
+    {
+        var all = CabinGuideRules.Guide("sun-2027-03-21", "oceanview", None with { AvailableOnly = false }, null).Cabins;
+        var taken = new HashSet<string> { all[0].Cabin.Number };
+        Assert.DoesNotContain(CabinGuideRules.Guide("sun-2027-03-21", "oceanview", None, taken).Cabins, c => c.Cabin.Number == all[0].Cabin.Number);
+        Assert.All(CabinGuideRules.Guide("sun-2027-03-21", "oceanview", None with { ClearView = true }, null).Cabins, c => Assert.False(c.Cabin.Obstructed));
+        Assert.All(CabinGuideRules.Guide("sun-2027-03-21", "balcony", None with { CalmSea = true }, null).Cabins, c => Assert.True(c.Motion >= 4));
+        Assert.False(CabinGuideRules.ValidCategory("penthouse"));
+    }
+
+    [Fact]
+    public void TheSunSummaryCoversEightDaysAndPicksALabel()
+    {
+        foreach (var side in new[] { "port", "starboard" })
+        {
+            var sun = CabinGuideRules.Sun(side);
+            Assert.InRange(sun.Mornings, 0, 8);
+            Assert.InRange(sun.Afternoons, 0, 8);
+            Assert.Contains(sun.Label, new[] { "morning", "afternoon", "both", "shaded" });
+        }
     }
 }

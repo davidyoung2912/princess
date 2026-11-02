@@ -5,13 +5,10 @@ import { REFERENCE_SAILING } from '../domain/sailings'
 import { ask, askProblem, normalizeTurn } from './concierge'
 import { MAX_MESSAGE, screen } from './guard'
 import { applyRemoteThread, clearThread, getThread, KEEP, mergeThreads, normalizeThread, setThread, threadKeyFor } from './history'
-import { scriptedReply } from './scripted'
-import { runTool, TOOLS } from './tools'
 import type { ChatMessage, Context } from './types'
 
 const ctx: Context = { sailingId: REFERENCE_SAILING.id, personaId: 'daniel', now: Date.UTC(2027, 0, 5, 12) }
 const user = (text: string, at = ctx.now): ChatMessage => ({ id: `u${at}`, role: 'user', text, at })
-const json = (r: { content: string }) => JSON.parse(r.content) as Record<string, unknown>
 
 describe('guard', () => {
   it('sends emergencies, medical, legal and person requests to people', () => {
@@ -32,59 +29,6 @@ describe('guard', () => {
   })
 })
 
-describe('tools', () => {
-  it('has a schema for every tool it can run', () => {
-    for (const tool of TOOLS) expect(runTool(tool.name, {}, ctx).content, tool.name).toBeTruthy()
-  })
-  it('lists the sailings with prices and cites them', () => {
-    const r = runTool('list_sailings', { month: '2027-03' }, ctx)
-    expect((json(r).sailings as unknown[]).length).toBe(1)
-    expect(r.citations[0].path).toBe(`/home/sailings/${REFERENCE_SAILING.id}`)
-    expect(runTool('list_sailings', {}, ctx).citations[0].path).toBe('/home/sailings')
-  })
-  it('filters excursions the same way the screen does', () => {
-    const r = json(runTool('search_excursions', { port: 'cozumel', wheelchair: true }, ctx)).excursions as { id: string; wheelchair: boolean; port: string }[]
-    expect(r.length).toBeGreaterThan(0)
-    expect(r.every((x) => x.wheelchair && x.port === 'cozumel')).toBe(true)
-  })
-  it('answers bad input with an error, never a throw', () => {
-    expect(runTool('get_port', { port: 'atlantis' }, ctx).isError).toBe(true)
-    expect(runTool('build_day', { day: 12 }, ctx).isError).toBe(true)
-    expect(runTool('get_itinerary', { sailing_id: 'nope' }, ctx).isError).toBe(true)
-    expect(runTool('book_cruise', {}, ctx).isError).toBe(true)
-  })
-  it('describes the guest’s own party', () => {
-    const trip = json(runTool('my_trip', {}, ctx))
-    expect((trip.party as unknown[]).length).toBe(4)
-    expect(runTool('my_trip', {}, { ...ctx, personaId: 'nobody' }).isError).toBe(true)
-  })
-})
-
-describe('scripted concierge', () => {
-  it('answers about prices from the sailings', () => {
-    const r = scriptedReply('how much does it cost in 2027-03?', ctx)
-    expect(r.source).toBe('scripted')
-    expect(r.text).toContain('2027-03-21')
-    expect(r.citations.length).toBeGreaterThan(0)
-  })
-  it('says it covers one cruise when asked about somewhere else', () => {
-    expect(scriptedReply('plan a 7-night Alaska trip in June for 4', ctx).text).toContain('one cruise')
-  })
-  it('does not book or take payment', () => {
-    const r = scriptedReply('please book it for me', ctx)
-    expect(r.text).toContain('cannot book')
-    expect(r.citations[0].path).toBe('/book')
-  })
-  it('builds a day for a port from the words used', () => {
-    const r = scriptedReply('plan my day in Cozumel, we like snorkel and have a kid', ctx)
-    expect(r.text).toContain('Be back on the ship by')
-    expect(r.citations[0].path).toBe('/plan/day')
-  })
-  it('is honest when it cannot place a question', () => {
-    expect(scriptedReply('xyzzy', ctx).citations).toEqual([])
-  })
-})
-
 describe('ask', () => {
   const served = { text: 'From the model.', citations: [{ label: 'Dining', path: '/plan/dining' }], source: 'claude', handoff: null, fallback: null }
 
@@ -94,11 +38,6 @@ describe('ask', () => {
     const turn = await ask(send, [user('he is unconscious')], ctx)
     expect(turn.handoff).toBe('emergency')
     expect(called).toBe(false)
-  })
-  it('uses the built-in helper in mock mode', async () => {
-    const turn = await ask(null, [user('where can we eat dinner')], ctx)
-    expect(turn.reply.source).toBe('scripted')
-    expect(turn.fallback).toBeNull()
   })
   it('sends the latest messages and the guest’s preferences, and returns the server’s answer', async () => {
     const bodies: unknown[] = []
@@ -112,9 +51,9 @@ describe('ask', () => {
   it('passes on the server’s own fallback and handoff', async () => {
     expect(await ask(async () => ({ text: 'Script.', citations: [], source: 'scripted', handoff: null, fallback: 'limit' }), [user('hi')], ctx)).toMatchObject({ fallback: 'limit', reply: { source: 'scripted' } })
   })
-  it('answers on the device when the server cannot be reached or sends something unreadable', async () => {
-    expect(await ask(async () => { throw new Error('offline') }, [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'network', reply: { source: 'scripted' } })
-    expect(await ask(async () => ({ nonsense: true }), [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'bad', reply: { source: 'scripted' } })
+  it('says so when the server cannot be reached or sends something unreadable, and answers nothing itself', async () => {
+    expect(await ask(async () => { throw new Error('offline') }, [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'network', reply: { citations: [] } })
+    expect(await ask(async () => ({ nonsense: true }), [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'bad' })
   })
   it('reads only the agreed shape', () => {
     expect(normalizeTurn(null)).toBeNull()

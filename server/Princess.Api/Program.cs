@@ -55,6 +55,10 @@ services.AddSingleton<IProgramChanges, SimProgramChanges>();
 services.AddSingleton<IStormOutlook, SimStormOutlook>();
 services.AddSingleton<ILostProperty, SimLostProperty>();
 services.AddSingleton<ISlotWatchFeed, SimSlotWatchFeed>();
+services.AddSingleton<ISailingQuality, SimSailingQuality>();
+services.AddSingleton<IEmbarkQueue, SimEmbarkQueue>();
+services.AddSingleton<ICabinGuide, SimCabinGuide>();
+services.AddSingleton<IFriendReply, SimFriendReply>();
 services.AddSingleton<ITelemetrySink, LoggingTelemetrySink>();
 // The concierge model: a key in user-secrets (Concierge:ApiKey) turns it on; without one the scripted concierge answers.
 services.AddOptions<ConciergeOptions>().BindConfiguration(ConciergeOptions.Section);

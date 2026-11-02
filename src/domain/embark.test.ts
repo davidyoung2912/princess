@@ -1,48 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
-  EMPTY_EMBARK, EMPTY_FAMILY, EMPTY_NEEDS, EMPTY_WELCOME, familyProblems, firstHours, forecast, MOBILITY_EXTRA, normalizeEmbark, reachableWindows, recommendWindow, setReady, setRole, sharedWelcome,
-  stewardFor, swapEffect, waitFor,
+  EMPTY_EMBARK, EMPTY_FAMILY, EMPTY_NEEDS, EMPTY_WELCOME, familyProblems, firstHours, normalizeEmbark, setReady, setRole, sharedWelcome,
+  stewardFor, swapEffect,
 } from './embark'
-import { arrivalWindows } from './travel'
-import { WAIT_MINUTES } from './boarding'
 import { WELCOME_FIELDS } from './embark'
 import { en } from '../i18n/en'
 
-describe('arrival window', () => {
-  it('suggests the quietest window the guest can make, earliest first', () => {
-    expect(recommendWindow(EMPTY_NEEDS)?.start).toBe('11:00')
-    expect(recommendWindow({ ...EMPTY_NEEDS, priority: true })?.start).toBe('10:30')
-  })
-  it('respects the earliest time the guest can be there', () => {
-    expect(recommendWindow({ ...EMPTY_NEEDS, earliest: '11:45' })?.start).toBe('13:00')
-    expect(reachableWindows({ ...EMPTY_NEEDS, earliest: '23:00' })).toEqual([])
-    expect(recommendWindow({ ...EMPTY_NEEDS, earliest: '23:00' })).toBeNull()
-  })
-  it('more time is added to the queue for a guest who needs it', () => {
-    const w = arrivalWindows(false)[0]
-    expect(waitFor(w, { mobility: true, quiet: false })).toBe(WAIT_MINUTES[w.crowd] + MOBILITY_EXTRA)
-  })
-  it('shows the consequence of swapping windows', () => {
-    const [a, , , d] = arrivalWindows(false)
-    const fx = swapEffect(a, d, EMPTY_NEEDS)
-    expect(fx.waitChange).toBe(WAIT_MINUTES.busiest - WAIT_MINUTES.quiet)
-    expect(fx.aboardChange).toBeGreaterThan(0)
-    expect(swapEffect(a, a, EMPTY_NEEDS).sameSlot).toBe(true)
-  })
-})
-
-describe('forecast', () => {
-  const w = arrivalWindows(false)[3]
-  it('lists the four steps with an accessible lane at each', () => {
-    const f = forecast(w, EMPTY_NEEDS)
-    expect(f.steps.map((s) => s.id)).toEqual(['terminal', 'security', 'photo', 'gangway'])
-    expect(f.steps.every((s) => s.accessibleLane)).toBe(true)
-    expect(f.total).toBe(f.steps.reduce((n, s) => n + s.walk + s.queue, 0))
-  })
-  it('priority shortens queues; needing more time lengthens the walk', () => {
-    const base = forecast(w, EMPTY_NEEDS).total
-    expect(forecast(w, { ...EMPTY_NEEDS, priority: true }).total).toBeLessThan(base)
-    expect(forecast(w, { ...EMPTY_NEEDS, mobility: true }).total).toBeGreaterThan(base)
+describe('swapping arrival windows', () => {
+  it('shows the consequence of swapping windows from the server’s waits', () => {
+    const quiet = { start: '11:00', waitMinutes: 10 }
+    const busiest = { start: '12:00', waitMinutes: 40 }
+    const fx = swapEffect(quiet, busiest)
+    expect(fx.waitChange).toBe(30)
+    expect(fx.aboardChange).toBe(90)
+    expect(swapEffect(quiet, quiet).sameSlot).toBe(true)
+    expect(swapEffect(busiest, quiet).aboardChange).toBe(-90)
   })
 })
 

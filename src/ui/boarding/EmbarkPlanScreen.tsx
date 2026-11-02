@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { EMBARK } from '../../domain/boarding'
 import {
-  EMBARK_SOURCE, familyProblems, FAMILY_ROLES, firstHours, forecast, hourClock, MAX_WELCOME, QUICK_START, reachableWindows, recommendWindow, setMeetNote, setReady, setRole, sharedWelcome,
-  stewardFor, swapEffect, waitFor, WELCOME_FIELDS, type EmbarkNeeds, type FamilyRole, type WelcomeField,
+  EMBARK_SOURCE, familyProblems, FAMILY_ROLES, firstHours, hourClock, MAX_WELCOME, QUICK_START, setMeetNote, setReady, setRole, sharedWelcome,
+  stewardFor, swapEffect, WELCOME_FIELDS, type EmbarkNeeds, type FamilyRole, type WelcomeField,
 } from '../../domain/embark'
 import { isTime, toggleIn } from '../../domain/journey'
 
@@ -14,6 +14,9 @@ import { useTrip } from '../../hooks/useTrip'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
+import { embarkFeed } from '../../feeds/embark'
+import { useFeed } from '../../hooks/useServedFeeds'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 import { duration } from '../onboard/shipTime'
@@ -26,8 +29,9 @@ export function EmbarkPlanScreen() {
   const { embark } = state
   const needs = embark.needs
   const setNeeds = (change: Partial<EmbarkNeeds>) => update((s) => ({ ...s, embark: { ...s.embark, needs: { ...s.embark.needs, ...change } } }))
-  const windows = reachableWindows(needs)
-  const best = recommendWindow(needs)
+  const queue = useFeed(embarkFeed, needs.priority, needs.mobility, needs.quiet, needs.earliest ?? '')
+  const windows = queue?.windows ?? []
+  const best = windows.find((w) => w.start === queue?.recommended) ?? null
   const chosen = windows.find((w) => w.start === embark.window) ?? null
   const shown = chosen ?? best
   const people = me ? partyPeople(me.id) : []
@@ -51,15 +55,15 @@ export function EmbarkPlanScreen() {
 
       <Card labelledBy="e-window">
         <h2 id="e-window" className="card__title">{t('embarkPlan.window')}</h2>
-        {best ? <p>{t('embarkPlan.window.best', { time: formatTime(best.start), wait: duration(waitFor(best, needs)) })}</p> : <p>{t('embarkPlan.window.none')}</p>}
+        {!queue ? <FeedWaiting /> : best ? <p>{t('embarkPlan.window.best', { time: formatTime(best.start), wait: duration(best.waitMinutes) })}</p> : <p>{t('embarkPlan.window.none')}</p>}
         <fieldset>
           <legend>{t('embarkPlan.window.choose')}</legend>
           {windows.map((w) => {
-            const fx = shown ? swapEffect(shown, w, needs) : null
+            const fx = shown ? swapEffect(shown, w) : null
             return (
               <label key={w.start} className="choice">
                 <input type="radio" name="embark-window" checked={shown?.start === w.start} onChange={() => update((s) => ({ ...s, embark: { ...s.embark, window: w.start } }))} />
-                <span>{formatTime(w.start)} to {formatTime(w.end)}<small>{t(`travel.crowd.${w.crowd}` as StringKey)} · {t('embarkPlan.wait', { wait: duration(waitFor(w, needs)) })}{fx && !fx.sameSlot ? ` · ${t(fx.aboardChange > 0 ? 'embarkPlan.later' : 'embarkPlan.sooner', { time: duration(Math.abs(fx.aboardChange)) })}` : ''}</small></span>
+                <span>{formatTime(w.start)} to {formatTime(w.end)}<small>{t(`travel.crowd.${w.crowd}` as StringKey)} · {t('embarkPlan.wait', { wait: duration(w.waitMinutes) })}{fx && !fx.sameSlot ? ` · ${t(fx.aboardChange > 0 ? 'embarkPlan.later' : 'embarkPlan.sooner', { time: duration(Math.abs(fx.aboardChange)) })}` : ''}</small></span>
               </label>
             )
           })}
@@ -69,7 +73,7 @@ export function EmbarkPlanScreen() {
       </Card>
 
       {shown && (() => {
-        const f = forecast(shown, needs)
+        const f = shown
         return (
           <section aria-labelledby="e-forecast">
             <h2 id="e-forecast">{t('embarkPlan.forecast')}</h2>

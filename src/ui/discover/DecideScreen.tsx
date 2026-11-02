@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { budgetSearch, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, NOT_FOR, sailingQuality, SUITS, type FitKey } from '../../domain/dream'
+import { budgetSearch, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, NOT_FOR, SUITS, type FitKey } from '../../domain/dream'
 import { FARES, fareOptions, type FareId } from '../../domain/fares'
 import { formatMoney, parseMoney } from '../../domain/pricing'
 import { SAILINGS, sailingById } from '../../domain/sailings'
@@ -10,6 +10,9 @@ import { useMemory } from '../../hooks/useMemory'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
+import { qualityFeed } from '../../feeds/sailingQuality'
+import { useFeed } from '../../hooks/useServedFeeds'
 import { Field, TextArea } from '../Field'
 
 async function send(text: string, title: string): Promise<'shared' | 'copied' | 'failed' | null> {
@@ -37,7 +40,7 @@ export function DecideScreen() {
   const sailing = sailingById(sailingId) ?? demo
   const budget = parseMoney(budgetText)
   const result = budget !== null && budget > 0 ? budgetSearch(sailing, budget, guests) : null
-  const quality = sailingQuality(sailing)
+  const quality = useFeed(qualityFeed, sailing.id)
   const useFare: FareId | null = category && fare && fareOptions(category).includes(fare) ? fare : null
   const summary = decisionSummary({ sailing, category: category || null, fare: useFare, guests, fitsChecked: state.fit.length > 0, budget: budget && budget > 0 ? budget : null })
   const toggleFit = (k: FitKey) => update((s) => ({ ...s, fit: s.fit.includes(k) ? s.fit.filter((x) => x !== k) : [...s.fit, k] }))
@@ -118,7 +121,8 @@ export function DecideScreen() {
       <Card labelledBy="dec-quality">
         <h2 id="dec-quality" className="card__title">{t('decide.quality')}</h2>
         <ul className="plain-list">
-          {quality.notes.map((n) => (
+          {!quality && <li><FeedWaiting /></li>}
+          {quality?.notes.map((n) => (
             <li key={n.key}>
               <strong>{t(`decide.q.${n.key}` as StringKey)}:</strong> {n.text}
               <br /><span className="muted">{n.why}</span>

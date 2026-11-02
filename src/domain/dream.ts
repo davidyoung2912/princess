@@ -1,7 +1,7 @@
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { formatDate } from './cruise'
-import { formatMoney, NIGHTS, quote, type Cents } from './pricing'
-import { itinerary, SAILINGS, type Sailing } from './sailings'
+import { formatMoney, NIGHTS, type Cents } from './pricing'
+import type { Sailing } from './sailings'
 import { CATEGORIES, type CategoryId } from './ship'
 
 /**
@@ -102,41 +102,6 @@ export type Level = 'low' | 'medium' | 'high'
 export interface QualityNote { key: 'crowds' | 'weather' | 'hurricane' | 'school' | 'price'; level: Level; text: string; why: string }
 export interface SailingQuality { sailingId: string; notes: QualityNote[]; source: 'sim' }
 
-const hash = (text: string): number => {
-  let h = 2166136261
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
-  return h >>> 0
-}
-
-const monthOf = (s: Sailing): number => Number(s.departure.slice(5, 7))
-const LEVELS: readonly Level[] = ['low', 'medium', 'high']
-
-export function sailingQuality(s: Sailing): SailingQuality {
-  const m = monthOf(s)
-  const ports = itinerary(s).filter((d) => d.port !== 'sea' && d.port !== 'fll').length
-  // Ships in port the same day: the winter season is the busiest, so it leans higher, and every sailing has its own stable draw.
-  const base = m === 12 || m === 1 || m === 2 || m === 3 ? 1 : 0
-  const crowd = LEVELS[Math.min(2, base + (hash(`crowd|${s.id}`) % 2))]
-  const hurricane: Level = m >= 8 && m <= 10 ? 'high' : m === 6 || m === 7 || m === 11 ? 'medium' : 'low'
-  const school: Level = s.holiday ? 'high' : m === 3 || (m === 11 && Number(s.departure.slice(8, 10)) >= 22) ? 'medium' : 'low'
-  const cheapest = Math.min(...SAILINGS.map((x) => quote(x.id, 'interior', 2)?.total ?? Infinity))
-  const mine = quote(s.id, 'interior', 2)?.total ?? cheapest
-  const premium = mine / cheapest
-  const price: Level = premium > 1.4 ? 'high' : premium > 1.15 ? 'medium' : 'low'
-  const weather: Level = m >= 12 || m <= 4 ? 'low' : 'medium'
-  const say = (k: QualityNote['key'], level: Level, texts: Record<Level, string>, why: string): QualityNote => ({ key: k, level, text: texts[level], why })
-  return {
-    sailingId: s.id,
-    source: 'sim',
-    notes: [
-      say('crowds', crowd, { low: 'Quiet ports: few other ships expected.', medium: 'Some other ships in port on a day or two.', high: `Busy ports: expect other ships in all ${ports} of them.` }, 'Winter is the Caribbean’s busiest season, and every sailing has a different mix of ships.'),
-      say('weather', weather, { low: 'Dry season: mostly sun and little rain.', medium: 'Showers are likely in the afternoons.', high: 'Wet season.' }, 'Based on the month, not a forecast.'),
-      say('hurricane', hurricane, { low: 'Outside hurricane season.', medium: 'Edges of the hurricane season. A route change is possible but unlikely.', high: 'The peak of hurricane season. A change of route is more likely; check the cancellation terms.' }, 'The Atlantic season runs 1 June to 30 November, and peaks in August to October.'),
-      say('school', school, { low: 'Few children on board.', medium: 'More families than usual.', high: 'School holiday: many children, busy pools and clubs.' }, 'Based on school calendars in the US.'),
-      say('price', price, { low: 'Near the lowest fare of the season.', medium: 'A little above the lowest fare.', high: 'Well above the lowest fare, for the holiday or a popular week.' }, 'Compared with the cheapest sailing on offer.'),
-    ],
-  }
-}
 
 // ---- S0-10: decision confidence summary ----
 

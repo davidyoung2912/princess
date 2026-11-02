@@ -47,6 +47,13 @@ public static partial class BookingEndpoints
 
         api.MapGet("/sailings/{id}/cabins", async (string id, string? category, DiscoverService svc, CancellationToken ct) => Results.Ok(await svc.CabinsAsync(id, category, ct)))
             .AllowAnonymous().WithTags("Discover").WithSummary("Sample staterooms of a room type and which are free. Staterooms already booked are not offered.");
+
+        api.MapGet("/sailings/{id}/cabin-guide", async (string id, string? category, bool? quiet, bool? calmSea, bool? accessible, bool? clearView, bool? availableOnly, DiscoverService svc, ICabinGuide guide, CancellationToken ct) =>
+            {
+                var taken = await svc.TakenAsync(id, category, ct);
+                return Results.Ok(guide.Guide(id, category!, new CabinFilterDto(quiet ?? false, calmSea ?? false, accessible ?? false, clearView ?? false, availableOnly ?? true), taken));
+            })
+            .AllowAnonymous().WithTags("Discover").WithSummary("The staterooms of a room type scored 1 to 5 for sleep, motion and noise, each with the plain reasons, the sun side and any cautions, best first. Filters: quiet, calmSea, accessible, clearView and availableOnly (default true). The ship's heading is a simulation; `source` says so. 400 for an unknown sailing or room type.");
     }
 
     private static void MapFunnel(IEndpointRouteBuilder api)

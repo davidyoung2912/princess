@@ -94,7 +94,6 @@ const KNOWN_CATALOGUE_SCREENS: string[] = [
   'src/ui/finish/LoyaltyScreen.tsx',
   'src/ui/finish/OnwardScreen.tsx',
   'src/ui/finish/RebookScreen.tsx',
-  'src/ui/home/AskScreen.tsx',
   'src/ui/home/BriefingScreen.tsx',
   'src/ui/home/DelayedScreen.tsx',
   'src/ui/home/HomeScreen.tsx',

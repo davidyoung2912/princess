@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { formatDate } from '../../domain/cruise'
-import { contactProblem, CONTACT_NAME_MAX, CONTACT_NOTE_MAX, memoryBook, NOTE_MAX, nextTripText, REFLECTION_MAX, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, simulatedReply, TOPIC_LABEL, TOPICS, isTopic, bookText, type Topic } from '../../domain/memoryBook'
+import { contactProblem, CONTACT_NAME_MAX, CONTACT_NOTE_MAX, memoryBook, NOTE_MAX, nextTripText, REFLECTION_MAX, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, TOPIC_LABEL, TOPICS, isTopic, bookText, type Topic } from '../../domain/memoryBook'
 import { categoryById, type CategoryId } from '../../domain/ship'
 import { FARES } from '../../domain/fares'
 import { itinerary } from '../../domain/sailings'
@@ -11,6 +11,7 @@ import { packageHindsight } from '../../domain/wrapped'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useRecapData } from '../../hooks/useRecapData'
+import { friendReplyFeed } from '../../feeds/friend'
 import { t, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -38,6 +39,12 @@ export function MemoryScreen() {
   const { state, me, update } = useMemory()
   const recap = useRecapData()
   const [topic, setTopic] = useState<Topic>('cabin')
+  /** Asks the server how a friend answered; the contact was added with the guest's consent, and nothing changes if no answer comes. */
+  const hear = async (id: string, name: string) => {
+    await friendReplyFeed.load(name)
+    const reply = friendReplyFeed.now(name)
+    if (reply) update((s) => ({ ...s, contacts: s.contacts.map((x) => (x.id === id ? { ...x, reply } : x)) }))
+  }
   const [text, setText] = useState('')
   const [shareIt, setShareIt] = useState(false)
   const [reflectErr, setReflectErr] = useState<string | null>(null)
@@ -140,7 +147,7 @@ export function MemoryScreen() {
                     {state.contacts.map((c) => (
                       <li key={c.id}>
                         <strong>{c.name}</strong>{c.note && ` · ${c.note}`} · {t(`memory.reply.${c.reply}` as StringKey)}
-                        {c.reply === 'waiting' && <Button variant="tertiary" onClick={() => update((s) => ({ ...s, contacts: s.contacts.map((x) => (x.id === c.id ? { ...x, reply: simulatedReply(x.name) } : x)) }))}>{t('memory.simulate')}</Button>}
+                        {c.reply === 'waiting' && <Button variant="tertiary" onClick={() => void hear(c.id, c.name)}>{t('memory.simulate')}</Button>}
                         <Button variant="tertiary" onClick={() => update((s) => ({ ...s, contacts: s.contacts.filter((x) => x.id !== c.id) }))}>{t('memory.remove')}</Button>
                         <Button variant="tertiary" onClick={() => update((s) => ({ ...s, contacts: s.contacts.filter((x) => x.id !== c.id), blocked: [...s.blocked, c.name] }))}>{t('memory.block')}</Button>
                       </li>

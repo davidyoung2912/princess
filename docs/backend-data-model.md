@@ -471,6 +471,10 @@ Port rows (`PortRows`): both routes return `{ rows: [{ kind, key, data, at, dele
 | wildlife the ship is said to have seen on a day (simulated) | `GET /feeds/sightings?day=` | U |
 | the lost-property list (simulated) | `GET /feeds/found` | U |
 | when a place opens for a slot watch (simulated) | `GET /feeds/watch-opening?id=&created=&slot=` | U |
+| the decide notes for a sailing: crowds, weather, hurricane, school, price (simulated) | `GET /feeds/sailing-quality?sailing=` → `{ sailingId, notes[5]: { key, level, text, why }, source }` | U |
+| how a friend answers a sail-again invitation (simulated; asked only after consent) | `GET /feeds/friend-reply?name=` → `{ reply: accepted\|declined, source }` | U |
+| arrival windows, terminal waits and the four-step forecast for a guest's needs (simulated) | `GET /feeds/embark-queue?priority=&mobility=&quiet=&earliest=` → `{ windows[]: { start, end, crowd, waitMinutes, steps[4], total }, recommended, source }` | U |
+| the staterooms of a room type scored for sleep, motion and noise with reasons and sun side | `GET /sailings/{id}/cabin-guide?category=&quiet=&calmSea=&accessible=&clearView=&availableOnly=` → `{ sailingId, category, cabins[]: { cabin, category, sleep, motion, noise, reasons, sun, warnings }, source }` | P |
 | ask guest services for a call back, a caregiver or a sensory kit | `POST /me/staff-requests` | U |
 | make, stop and stop all family-at-home links; send a postcard | `POST /me/family-links` / `DELETE /me/family-links/{id}` / `DELETE /me/family-links` / `POST /me/family-postcards` | U |
 | open a family-at-home link | `GET /public/family/{token}` | P |

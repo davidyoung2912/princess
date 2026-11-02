@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contactProblem, memoryBook, nextTripText, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, simulatedReply, type Contact, type Reflection } from './memoryBook'
+import { contactProblem, memoryBook, nextTripText, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, type Contact, type Reflection } from './memoryBook'
 import { buildRecap } from './recap'
 import { REFERENCE_SAILING as S } from './sailings'
 import { packageHindsight } from './wrapped'
@@ -67,8 +67,7 @@ describe('stay in touch', () => {
     expect(contactProblem('Sam', '', true, [contact('sam', 'waiting')], [])).toBe('duplicate')
     expect(contactProblem('Sam', 'We met at trivia', true, [], [])).toBeNull()
   })
-  it('gives a stable pretend reply and makes a group only from accepted contacts with a drafted trip', () => {
-    expect(simulatedReply('Sam')).toBe(simulatedReply('SAM'))
+  it('makes a group only from accepted contacts with a drafted trip', () => {
     const next = seedNextTrip({ sailing: S, category: 'balcony', fare: 'plus', guests: 2, tourNames: [], favouriteMeal: null, hindsight: null, reflections: [], lastDay: '2027-03-28' })
     const list = [contact('A', 'accepted'), contact('B', 'waiting'), contact('C', 'declined')]
     expect(sailAgainGroup(list, next)).toEqual(['A'])

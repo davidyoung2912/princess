@@ -139,15 +139,6 @@ export function contactProblem(name: string, note: string, consent: boolean, exi
   return null
 }
 
-const hash = (text: string): number => {
-  let h = 2166136261
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
-  return h >>> 0
-}
-
-/** A stable pretend reply (about three in four accept), so the flow can be seen without a server. */
-export const simulatedReply = (name: string): Contact['reply'] => (hash(`reply|${name.toLowerCase()}`) % 4 === 0 ? 'declined' : 'accepted')
-
 /** A "sail again together" group exists only when someone has accepted and a next trip is drafted. Everyone in it is someone the guest chose. */
 export function sailAgainGroup(contacts: readonly Contact[], next: NextTrip | null): string[] {
   if (!next) return []

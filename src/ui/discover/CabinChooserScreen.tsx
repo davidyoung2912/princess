@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { chooseCabins, compareMatrix, MAX_COMPARE, NO_FILTER, notIncluded, type CabinFilter, type CabinScore, type CompareColumn } from '../../domain/cabinScore'
+import { compareMatrix, MAX_COMPARE, NO_FILTER, notIncluded, type CabinFilter, type CabinScore, type CompareColumn } from '../../domain/cabinScore'
 import { capacityOf, FARES, fareOptions, type FareId } from '../../domain/fares'
 import { SAILINGS, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
+import { FeedWaiting } from '../FeedWaiting'
+import { cabinGuideFeed } from '../../feeds/cabinGuide'
+import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
 
 const FILTERS = ['quiet', 'calmSea', 'accessible', 'clearView', 'availableOnly'] as const
 
@@ -27,17 +30,19 @@ export function CabinChooserScreen() {
   const useFare: FareId = options.includes(fare) ? fare : options[0]
   const maxGuests = capacityOf(category)
   const useGuests = Math.min(guests, maxGuests)
-  const cabins = chooseCabins(sailing, category, filter)
+  const guide = useFeed(cabinGuideFeed, sailing.id, category, filter)
+  const cabins = guide ?? []
+  const pickedGuides = useFeedList(cabinGuideFeed, picked.map((p) => [sailing.id, p.category, { ...NO_FILTER, availableOnly: false }] as [string, CategoryId, CabinFilter]))
   const isPicked = (c: CabinScore) => picked.some((p) => p.category === c.category && p.number === c.cabin.number)
   const toggle = (c: CabinScore) => setPicked((list) => (isPicked(c) ? list.filter((p) => !(p.category === c.category && p.number === c.cabin.number)) : list.length >= MAX_COMPARE ? list : [...list, { category: c.category, number: c.cabin.number }]))
 
-  const columns: CompareColumn[] = picked.flatMap((p): CompareColumn[] => {
-    const found = chooseCabins(sailing, p.category, { ...NO_FILTER, availableOnly: false }).find((c) => c.cabin.number === p.number)
+  const columns: CompareColumn[] = picked.flatMap((p, i): CompareColumn[] => {
+    const found = pickedGuides[i]?.find((c) => c.cabin.number === p.number)
     if (!found) return []
     const f = fareOptions(p.category).includes(useFare) ? useFare : fareOptions(p.category)[0]
-    return [{ id: p.number, label: `${categoryById(p.category)?.name ?? ''} ${p.number}`, category: p.category, fare: f, cabin: found.cabin }]
+    return [{ id: p.number, label: `${categoryById(p.category)?.name ?? ''} ${p.number}`, category: p.category, fare: f, score: found }]
   })
-  const rows = columns.length >= 2 ? compareMatrix(sailing, useGuests, columns) : []
+  const rows = columns.length >= 2 ? compareMatrix(sailing.id, useGuests, columns) : []
 
   return (
     <div className="page">
@@ -80,7 +85,8 @@ export function CabinChooserScreen() {
       </Card>
 
       <h2>{t('cabins.found', { count: cabins.length })}</h2>
-      {cabins.length === 0 && <p>{t('cabins.none')}</p>}
+      {!guide && <FeedWaiting />}
+      {guide && cabins.length === 0 && <p>{t('cabins.none')}</p>}
       {cabins.map((c) => (
         <Card key={c.cabin.number}>
           <h3>{t('cabins.cabin', { number: c.cabin.number, deck: c.cabin.deck })}</h3>

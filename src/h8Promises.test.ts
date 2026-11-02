@@ -6,7 +6,6 @@ import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offe
 import { giftsFor, homeNudges, parseExcursionRequest } from './domain/finishMore'
 import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
 import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
-import { scriptedReply } from './ai/scripted'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
 import { styleFor, STYLES } from './domain/prepMore'
@@ -154,11 +153,6 @@ describe('H8 wire-through promises', () => {
     expect(assistantMobility({ ...EMPTY_ACCESS, device: 'scooter' })).toBe('wheelchair')
     expect(assistantMobility({ ...EMPTY_ACCESS, mobility: true })).toBe('easy')
     expect(accessNotes({ ...EMPTY_ACCESS, vision: true }).dining).toContain('readMenu')
-  })
-  it('the assistant shows what taste guesses it used', () => {
-    const base = { sailingId: REFERENCE_SAILING.id, personaId: 'daniel', now: Date.UTC(2027, 0, 5, 12) }
-    const r = scriptedReply('plan my day 2', { ...base, likes: ['You like a relaxed pace'] })
-    expect(r.text).toMatch(/Based on what you told us: you like a relaxed pace/)
   })
   it('the privacy default is on every group screen that shows plans or spending, and is the safest by default', () => {
     expect(SAFEST).toEqual({ plans: false, spending: false, photos: false, medical: false })

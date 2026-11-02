@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { budgetSearch, decisionSummary, decisionText, FEARS, fitNotes, GLOSSARY, inviteText, sailingQuality } from './dream'
-import { REFERENCE_SAILING as S, SAILINGS } from './sailings'
+import { budgetSearch, decisionSummary, decisionText, FEARS, fitNotes, GLOSSARY, inviteText } from './dream'
+import { REFERENCE_SAILING as S } from './sailings'
 
 describe('dream and decide', () => {
   it('names who the cruise does not suit, and says the tender fear plainly', () => {
@@ -21,18 +21,6 @@ describe('dream and decide', () => {
     expect(none.nearMiss.length).toBeGreaterThan(0)
     expect(budgetSearch(S, 1000, 9).cheapest).toBeNull()
     expect(budgetSearch(S, -1, 2).fitting).toEqual([])
-  })
-  it('rates every sailing the same way each time and marks it a simulation', () => {
-    for (const s of SAILINGS) {
-      const q = sailingQuality(s)
-      expect(q).toEqual(sailingQuality(s))
-      expect(q.source).toBe('sim')
-      expect(q.notes.map((n) => n.key)).toEqual(['crowds', 'weather', 'hurricane', 'school', 'price'])
-      expect(q.notes.every((n) => n.why.length > 0)).toBe(true)
-    }
-    const nov = sailingQuality(SAILINGS.find((s) => s.id === 'sun-2026-11-08')!)
-    expect(nov.notes.find((n) => n.key === 'hurricane')!.level).toBe('medium')
-    expect(sailingQuality(SAILINGS.find((s) => s.holiday)!).notes.find((n) => n.key === 'school')!.level).toBe('high')
   })
   it('summarises what is decided, what is left and what could change', () => {
     const empty = decisionSummary({ sailing: null, category: null, fare: null, guests: 2, fitsChecked: false, budget: null })
