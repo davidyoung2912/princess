@@ -35,6 +35,12 @@ const hash = (text: string): number => {
   return h >>> 0
 }
 
+/**
+ * Room types with accessible staterooms (step-free entrance, wider door, roll-in shower; see `SHIP_ACCESSIBILITY`).
+ * The two top suite types have none, so a guest who needs step-free access is told before choosing them.
+ */
+export const hasAccessibleCabins = (category: CategoryId): boolean => category !== 'sanctuaryMiniSuite' && category !== 'signatureSuite'
+
 /** The sample staterooms for a room type, and which are free on a sailing. The same sailing and room type always give the same answer. */
 export function cabinsFor(sailingId: string, category: CategoryId): Cabin[] {
   const decks = DECKS[category]
@@ -44,7 +50,7 @@ export function cabinsFor(sailingId: string, category: CategoryId): Cabin[] {
     const side: Side = i % 2 === 0 ? 'port' : 'starboard'
     const number = `${deck}${String(100 + ((i * 37 + category.length * 11) % 400)).padStart(3, '0')}`
     const obstructed = (category === 'oceanview' || category === 'balcony') && deck <= 9 && position !== 'midship'
-    const accessible = i === 1 && category !== 'sanctuaryMiniSuite' && category !== 'signatureSuite'
+    const accessible = i === 1 && hasAccessibleCabins(category)
     const notes: string[] = []
     if (position === 'midship') notes.push('Near the elevators')
     else notes.push(position === 'forward' ? 'Toward the front of the ship' : 'Toward the back of the ship')

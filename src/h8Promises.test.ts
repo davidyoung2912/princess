@@ -4,7 +4,8 @@ import { DEFAULT_PREFS } from './domain/autopilot'
 import { dndNow, splitHeld } from './domain/aboardMore'
 import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offers'
 import { giftsFor, homeNudges } from './domain/finishMore'
-import { assistantMobility, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
+import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
+import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
 import { scriptedReply } from './ai/scripted'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { REFERENCE_SAILING } from './domain/sailings'
@@ -169,5 +170,14 @@ describe('H8 wire-through promises', () => {
     expect(src).toMatch(/difficultyConcerns\(x, mem\.access\)\.length === 0/)
     expect(src).toMatch(/concerns=\{difficultyConcerns\(o\.item, mem\.access\)\}/)
     expect(en['exc.concerns']).toMatch(/profile/)
+  })
+  it('room types say whether they have accessible staterooms, and the cabin list starts step-free for those who need it', () => {
+    expect(hasAccessibleCabins('balcony')).toBe(true)
+    expect(hasAccessibleCabins('signatureSuite')).toBe(false)
+    expect(needsStepFree(EMPTY_ACCESS)).toBe(false)
+    expect(needsStepFree({ ...EMPTY_ACCESS, device: 'cane' })).toBe(true)
+    expect(cabinsFor('x', 'sanctuaryMiniSuite').some((c) => c.accessible)).toBe(false)
+    expect(cabinsFor('x', 'balcony').some((c) => c.accessible)).toBe(true)
+    expect(read('src/ui/book/RoomStep.tsx')).toMatch(/useState\(stepFreeNeeded\)/)
   })
 })

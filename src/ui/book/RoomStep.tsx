@@ -1,5 +1,8 @@
 import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
+import { needsStepFree } from '../../domain/bookingPrep'
+import { hasAccessibleCabins } from '../../domain/cabins'
+import { useMemory } from '../../hooks/useMemory'
 import { resizePeople } from '../../domain/booking'
 import { formatMoney } from '../../domain/pricing'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
@@ -13,6 +16,8 @@ import { StepSection, type StepProps } from './common'
 
 /** Step 2: room type, how many guests, and a guaranteed room or a chosen one (BOK-03). */
 export function RoomStep({ draft, update, error }: StepProps) {
+  const { state: mem } = useMemory()
+  const stepFreeNeeded = needsStepFree(mem.access)
   const rooms = useAsync(() => api.booking.rooms(draft.sailingId), [draft.sailingId])
   const room = rooms.data?.find((r) => r.id === draft.category)
   const cap = room?.capacity ?? 4
@@ -31,6 +36,7 @@ export function RoomStep({ draft, update, error }: StepProps) {
                   <span>
                     <strong>{c.name}</strong> <span className="muted">{c.code} · {c.size} · {c.view}</span>
                     <small>{c.summary}</small>
+                    {stepFreeNeeded && <small>{hasAccessibleCabins(c.id) ? t('book.room.accessYes') : t('book.room.accessNo')}</small>}
                     <small>{t('book.room.from', { price: formatMoney(r.fare) })}{r.includes ? ` · ${t('book.room.includes')}` : ''}</small>
                   </span>
                 </label>
@@ -50,14 +56,14 @@ export function RoomStep({ draft, update, error }: StepProps) {
         <ChoiceError text={error('guests')} />
       </div>
 
-      {draft.category && <CabinChoice draft={draft} update={update} error={error} />}
+      {draft.category && <CabinChoice draft={draft} update={update} error={error} stepFreeNeeded={stepFreeNeeded} />}
     </StepSection>
   )
 }
 
 /** Guaranteed room (assigned later, at no price difference) or a particular stateroom from a list with where it is and what the view is like. */
-function CabinChoice({ draft, update, error }: Pick<StepProps, 'draft' | 'update' | 'error'>) {
-  const [stepFree, setStepFree] = useState(false)
+function CabinChoice({ draft, update, error, stepFreeNeeded }: Pick<StepProps, 'draft' | 'update' | 'error'> & { stepFreeNeeded: boolean }) {
+  const [stepFree, setStepFree] = useState(stepFreeNeeded)
   const category = draft.category as CategoryId
   const cabins = useAsync(() => (draft.cabinMode === 'pick' ? api.booking.cabins(draft.sailingId, category) : Promise.resolve([])), [draft.sailingId, category, draft.cabinMode])
   const shown = (cabins.data ?? []).filter((c) => !stepFree || c.accessible)

@@ -893,6 +893,8 @@ export const en = {
   'book.cabin.guaranteedBody': 'You get a {room} stateroom. We assign the number before you sail, at no price difference.',
   'book.cabin.pick': 'Choose my stateroom',
   'book.cabin.pickBody': 'Pick a number now, with its deck, position and view.',
+  'book.room.accessYes': 'Has accessible staterooms: step-free entrance, wider door and roll-in shower.',
+  'book.room.accessNo': 'No accessible staterooms in this room type.',
   'book.cabin.stepFree': 'Show only step-free accessible staterooms',
   'book.cabin.none': 'No staterooms match.',
   'book.cabin.deck': 'Deck {deck}',

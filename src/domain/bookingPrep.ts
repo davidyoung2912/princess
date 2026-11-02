@@ -61,6 +61,9 @@ export function assistantMobility(p: AccessProfile): 'any' | 'easy' | 'wheelchai
   return p.mobility || p.device !== 'none' ? 'easy' : 'any'
 }
 
+/** Whether the profile calls for a step-free stateroom (S2-06): any mobility need or device. */
+export const needsStepFree = (p: AccessProfile): boolean => p.mobility || p.device !== 'none'
+
 export const AREAS = ['cabin', 'dining', 'excursions', 'disembark'] as const
 export type Area = (typeof AREAS)[number]
 
