@@ -11,7 +11,9 @@ import { PORT_GUIDES } from '../../domain/ports'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { difficultyConcerns } from '../../domain/planning'
+import { useMemory } from '../../hooks/useMemory'
+import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Chip } from '../Chip'
@@ -41,6 +43,8 @@ export function ExcursionsScreen() {
 
 function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   const [filter, setFilter] = useState<Filter>(NO_FILTER)
+  const { state: mem } = useMemory()
+  const [suits, setSuits] = useState(false)
   const [adding, setAdding] = useState<ExcursionOffer | null>(null)
   const [changing, setChanging] = useState<TourBooking | null>(null)
   const [cancelling, setCancelling] = useState<TourBooking | null>(null)
@@ -49,7 +53,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   const pay = useAction(async (parts: PaymentPart[], challenge: string | undefined) => { const v = await api.plan.excursions.checkout(parts, challenge); reload(); return v })
 
   const offerOf = (id: string) => view.offers.find((o) => o.item.id === id)!
-  const shown = filterExcursions(view.offers.map((o) => o.item), filter).map((x) => offerOf(x.id))
+  const shown = filterExcursions(view.offers.map((o) => o.item), filter).filter((x) => !suits || difficultyConcerns(x, mem.access).length === 0).map((x) => offerOf(x.id))
   const active = view.booked.filter((b) => b.status === 'booked')
   const past = view.booked.filter((b) => b.status === 'cancelled')
   const due = view.cartTotal - view.creditApplied
@@ -156,6 +160,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
           <legend className="visually-hidden">{t('exc.f.interests')}</legend>
           {INTERESTS.map((i) => <Chip key={i} pressed={filter.interests.includes(i)} onToggle={() => toggle(i)}>{t(`exc.interest.${i}` as never)}</Chip>)}
           <Chip pressed={filter.family} onToggle={() => set({ family: !filter.family })}>{t('exc.f.family')}</Chip>
+          <Chip pressed={suits} onToggle={() => setSuits(!suits)}>{t('exc.f.suits')}</Chip>
           <Chip pressed={filter.accessible} onToggle={() => set({ accessible: !filter.accessible })}>{t('exc.f.accessible')}</Chip>
         </fieldset>
         <p className="muted" role="status">{t('exc.count', { count: shown.length })}</p>
@@ -167,7 +172,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
               <h3 id={`port-${p}`}>{PORT_GUIDES[p].short}</h3>
               <p className="muted">{list[0].tender ? t('exc.tender') : t('exc.pier')}</p>
               <ul className="card-grid">
-                {list.map((o) => <Tour key={o.item.id} offer={o} view={view} busy={add.busy} onAdd={() => void pick(o)} />)}
+                {list.map((o) => <Tour key={o.item.id} offer={o} view={view} concerns={difficultyConcerns(o.item, mem.access)} busy={add.busy} onAdd={() => void pick(o)} />)}
               </ul>
             </section>
           )
@@ -194,7 +199,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   )
 }
 
-function Tour({ offer, view, busy, onAdd }: { offer: ExcursionOffer; view: ExcursionsView; busy: boolean; onAdd: () => void }) {
+function Tour({ offer, view, busy, onAdd, concerns }: { offer: ExcursionOffer; view: ExcursionsView; busy: boolean; onAdd: () => void; concerns: string[] }) {
   const x = offer.item
   const inCart = view.cart.some((l) => l.excursionId === x.id)
   const bookedBy = view.booked.filter((b) => b.excursionId === x.id && b.status === 'booked').flatMap((b) => b.guests)
@@ -212,6 +217,12 @@ function Tour({ offer, view, busy, onAdd }: { offer: ExcursionOffer; view: Excur
         <li>{t('exc.rating', { rating: x.rating.toFixed(1), reviews: x.reviews.toLocaleString('en-US') })}</li>
         <li>{x.meeting}</li>
       </ul>
+      {concerns.length > 0 && (
+        <div className="explain">
+          <p><strong>{t('exc.concerns')}</strong></p>
+          <ul className="plain-bullets">{concerns.map((c) => <li key={c}>{t(`diff.concern.${c}` as StringKey)}</li>)}</ul>
+        </div>
+      )}
       <p>
         {soldOut ? <StatusBadge kind="soldOut" label={t('exc.soldOut')} /> : offer.spots <= 8 ? <StatusBadge kind="waitlist" label={t('exc.fewLeft', { count: offer.spots })} /> : <StatusBadge kind="ready" label={t('exc.available')} />}
         {bookedBy.length > 0 && <> <StatusBadge kind="booked" label={t('exc.youBooked', { names: names(bookedBy) })} /></>}

@@ -1237,6 +1237,8 @@ export const en = {
   'exc.f.price': 'Price',
   'exc.f.under': 'Up to {amount}',
   'exc.f.interests': 'Interests',
+  'exc.f.suits': 'Suits my accessibility profile',
+  'exc.concerns': 'Could be hard for you (from your profile)',
   'exc.f.family': 'Good for families',
   'exc.f.accessible': 'Wheelchair accessible',
   'exc.count_one': '{count} excursion shown',
