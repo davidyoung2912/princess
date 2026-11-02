@@ -11,6 +11,7 @@ export interface Sailing {
   reference?: boolean
 }
 
+/** The authored sailings are what a screen shows before the server's table arrives; `replaceSailings` swaps them in place (see `sailingsServed.ts`). */
 export const SAILINGS: readonly Sailing[] = [
   { id: 'sun-2026-11-08', departure: '2026-11-08' },
   { id: 'sun-2026-11-22', departure: '2026-11-22' },
@@ -23,6 +24,7 @@ export const SAILINGS: readonly Sailing[] = [
 ]
 
 export const REFERENCE_SAILING: Sailing = SAILINGS.find((s) => s.reference)!
+// The reference object is kept (and updated in place) when the served table replaces the list, so imports of it stay current.
 
 export const sailingById = (id: unknown): Sailing | undefined => SAILINGS.find((s) => s.id === id)
 
@@ -60,23 +62,39 @@ export interface ItineraryDay {
 /** Nights on a sailing, read from its itinerary (the last day is the morning of arrival, so nights are days minus one). */
 export const sailingNights = (s: Sailing): number => Math.max(1, itinerary(s).length - 1)
 
+/** One day of the timeline before it is dated: the same for every sailing. */
+export type ItineraryTemplateDay = Omit<ItineraryDay, 'date'>
+
+let TEMPLATE: readonly ItineraryTemplateDay[] = [
+  { day: 1, port: 'fll', depart: '15:00' },
+  { day: 2, port: 'sea' },
+  { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
+  { day: 4, port: 'belize', arrive: '07:00', allAboard: '16:00', depart: '17:00' },
+  { day: 5, port: 'roatan', arrive: '08:00', allAboard: '16:30', depart: '17:00' },
+  { day: 6, port: 'sea' },
+  { day: 7, port: 'sea' },
+  { day: 8, port: 'fll', arrive: '06:00' },
+]
+
 export function itinerary(s: Sailing): ItineraryDay[] {
-  const d = (n: number) => addDays(s.departure, n - 1)
-  return [
-    { day: 1, date: d(1), port: 'fll', depart: '15:00' },
-    { day: 2, date: d(2), port: 'sea' },
-    { day: 3, date: d(3), port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
-    { day: 4, date: d(4), port: 'belize', arrive: '07:00', allAboard: '16:00', depart: '17:00' },
-    { day: 5, date: d(5), port: 'roatan', arrive: '08:00', allAboard: '16:30', depart: '17:00' },
-    { day: 6, date: d(6), port: 'sea' },
-    { day: 7, date: d(7), port: 'sea' },
-    { day: 8, date: d(8), port: 'fll', arrive: '06:00' },
-  ]
+  return TEMPLATE.map((t) => ({ ...t, date: addDays(s.departure, t.day - 1) }))
+}
+
+/** What the server's table puts in use (called by `applySailings` only). Sailings and ports are updated in place so earlier imports see the change. */
+export function replaceSailings(next: { sailings: readonly Sailing[]; ports: Record<string, Port>; template: readonly ItineraryTemplateDay[]; homeZone: string; westZone: string }): void {
+  const list = SAILINGS as Sailing[]
+  const merged = next.sailings.map((n) => (n.reference ? Object.assign(REFERENCE_SAILING, { holiday: undefined }, n) : { ...n }))
+  list.splice(0, list.length, ...merged)
+  for (const id of Object.keys(PORTS)) delete (PORTS as Record<string, Port>)[id]
+  Object.assign(PORTS, next.ports)
+  TEMPLATE = next.template
+  SHIP_HOME_ZONE = next.homeZone
+  SHIP_WEST_ZONE = next.westZone
 }
 
 /** Where the ship's own clock stands: Eastern Time from Fort Lauderdale, Belize time through the Belize and Roatán days, Eastern again for the return. */
-export const SHIP_HOME_ZONE = 'America/New_York'
-export const SHIP_WEST_ZONE = 'America/Belize'
+export let SHIP_HOME_ZONE = 'America/New_York'
+export let SHIP_WEST_ZONE = 'America/Belize'
 
 export interface ShipClockChange {
   /** The moment the change happens. */

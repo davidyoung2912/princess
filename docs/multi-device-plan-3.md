@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built (see their records); Phases 3 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 step 1 (sailings) built; the rest of Phase 3 and Phases 4 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -196,3 +196,15 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Tests:** deleted the eleven `src/api/*.test.ts` files that drove the mocks and the discover-API block in `domain/discover.test.ts`; `data.test.ts` keeps the reset/wipe and channel tests. **The assertions were not ported to C#** (the plan asked to list and move the useful ones); the rules they covered live in the server services, and the C# suite is the place to check them when the user next runs it. `guards`, `httpApi` and `bounded` tests stay.
 - **Verified:** `npm run test` (1519 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
 - **Not done (Phase 4 or later):** the device-signed family link branch (`FamilyLinkScreen`, `AtSeaScreen` with `issueLink`/`verifyLink`), the pretend callback queue in `DisruptionHubScreen`, the local feed simulations, `PersonaId` in the API type files and `domain/personas` use in domain code, and the `src/api/personaIds.ts` guid mapping. Stale "mock mode" comments remain in `feeds/*`, `sync/*` and `ai/concierge.ts`.
+
+## Phase 3 record
+
+### Step 1: sailings, ports, itinerary, ship zones (built 2026-11-02)
+
+**Server C# not compiled or run** (project rule); the route is registered in `SwaggerCoverageTests` but no test exercises it.
+
+- **Server:** `GET /reference/sailings` (`ReferenceRules.Sailings`, `ReferenceEndpoints.cs`; data model section 6.9 table) answers `{ version, sailings[{ id, departure, holiday, reference }], ports[{ id, name, zone, tender }], itinerary[{ day, port, arrive, allAboard, depart }], shipHomeZone, shipWestZone }`. Sailings come from `ref.Sailings`; the itinerary and ports from `Itinerary`. `version` is a hash of the content.
+- **Client:** `src/domain/sailingsServed.ts` (`normalizeSailings`, all-or-nothing: one reference sailing, unique ids, eight days in order, every port listed, valid dates and times; `applySailings`) swaps the table into `sailings.ts` in place (`replaceSailings`: `SAILINGS`, `PORTS` and the reference object keep their identity; the itinerary template and the two ship zones are module values). `runtime/index.ts` `loadSailings()` applies the cached answer at once, then the server's, and caches the raw answer (`cacheGet`/`cachePut` kind `sailings`). Screens redraw through the catalogue's change notice (`useCatalogue`).
+- **Verified:** `npm run test` (1533 passed, including `sailingsServed.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
+- **Not done in step 1:** the authored sailings, ports and itinerary in `sailings.ts` still exist as the first-paint fallback (the plan's "cache, not copy" needs a loading state on 65 screens; do it with Phase 7 when the gate closes). The rules over the table (`shipClockChanges` on days 4 and 7, `stageStarts` offsets) stay on the client. The audit gate's `sailings` ratchet is unchanged. A real account's sailing the client table does not know now resolves once the table arrives.
+- **Next:** steps 2 to 8 (ship and deck, programme, port guides, packages, option lists, excursions/dining copies, version/ETag on every reference route), one per phase stop.

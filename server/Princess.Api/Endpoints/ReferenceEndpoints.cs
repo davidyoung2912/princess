@@ -1,3 +1,4 @@
+using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
 
@@ -16,6 +17,9 @@ public static class ReferenceEndpoints
 
         api.MapGet("/reference/catalogue", () => Results.Ok(ReferenceRules.Catalogue()))
             .WithTags("Reference").WithSummary("The authored catalogue the server holds: shore excursions, dining venues and ports (with whether guests tender ashore). The same data the concierge and booking use.");
+
+        api.MapGet("/reference/sailings", async (ITripStore trips, CancellationToken ct) => Results.Ok(ReferenceRules.Sailings(await trips.ListSailingsAsync(ct))))
+            .WithTags("Reference").WithSummary("The sailings, the ports and the eight-day itinerary every sailing runs, and the zones the ship's clocks follow. `version` changes when any of it does.");
 
         api.MapGet("/feeds/sky", (string sailing, int day, string port, IWeatherService weather) =>
             {

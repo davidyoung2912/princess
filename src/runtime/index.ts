@@ -19,6 +19,7 @@ import { forgetSky, setSkyFetcher } from '../feeds/sky'
 import { markAccount, refreshContext, setContext } from '../account/context'
 import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
+import { applySailings, normalizeSailings } from '../domain/sailingsServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
@@ -122,6 +123,22 @@ function loadCatalogue(): void {
     .catch(() => {})
 }
 loadCatalogue()
+
+/** The sailings table (sailings, ports, itinerary, ship zones): public, kept on the device as a cache and refreshed from the server, like the catalogue. */
+function loadSailings(): void {
+  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+  const kept = cacheGet(store(), 'sailings', 'v1', normalizeSailings)
+  if (kept) applySailings(kept.value)
+  void http.get<unknown>('/reference/sailings', { anonymous: true })
+    .then((raw) => {
+      const fresh = normalizeSailings(raw)
+      if (!fresh) return
+      if (fresh.version !== kept?.value.version) applySailings(fresh)
+      cachePut(store(), 'sailings', 'v1', raw, Date.now())
+    })
+    .catch(() => {})
+}
+loadSailings()
 
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {

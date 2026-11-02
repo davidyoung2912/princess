@@ -44,10 +44,15 @@ const listeners = new Set<() => void>()
 export const catalogueVersion = (): number => version
 export const subscribeCatalogue = (f: () => void): (() => void) => { listeners.add(f); return () => { listeners.delete(f) } }
 
+/** Tells the screens that served reference data changed (the sailings table shares the catalogue's notice). */
+export function notifyCatalogue(): void {
+  version++
+  for (const f of [...listeners]) f()
+}
+
 /** Puts the server's catalogue in use (or the authored one back, with `null`) and tells the screens. */
 export function applyCatalogue(c: ServedCatalogue | null): void {
   replaceExcursions(c?.excursions ?? null)
   replaceVenueTerms(c?.venues ?? null)
-  version++
-  for (const f of [...listeners]) f()
+  notifyCatalogue()
 }
