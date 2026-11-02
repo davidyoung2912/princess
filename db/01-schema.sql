@@ -145,7 +145,7 @@ CREATE TABLE ref.Venues (
   CONSTRAINT CK_Venues_Kind CHECK (Kind IN ('main','specialty','casual')),
   CONSTRAINT CK_Venues_DressCode CHECK (DressCode IN ('casual','smart','elegant')),
   CONSTRAINT CK_Venues_Hours CHECK (ISJSON(Hours) = 1),
-  CONSTRAINT CK_Venues_Amounts CHECK (Capacity > 0 AND CoverCents >= 0)
+  CONSTRAINT CK_Venues_Amounts CHECK (Capacity >= 0 AND CoverCents >= 0)
 );
 END
 
@@ -1021,7 +1021,7 @@ CREATE TABLE dbo.PaymentParts (
   CONSTRAINT PK_PaymentParts PRIMARY KEY (PaymentId, Seq),
   CONSTRAINT FK_PaymentParts_Payments FOREIGN KEY (PaymentId) REFERENCES dbo.Payments (Id) ON DELETE CASCADE,
   CONSTRAINT CK_PaymentParts_Method CHECK (Method IN ('card','wallet')),
-  CONSTRAINT CK_PaymentParts_Seq CHECK (Seq BETWEEN 1 AND 2)   -- checkParts: at most two parts,
+  CONSTRAINT CK_PaymentParts_Seq CHECK (Seq BETWEEN 1 AND 2),   -- checkParts: at most two parts
   CONSTRAINT CK_PaymentParts_CardBrand CHECK (CardBrand IS NULL OR CardBrand IN ('visa','mastercard','amex','discover')),
   CONSTRAINT CK_PaymentParts_Cents CHECK (Cents >= 0)
 );
