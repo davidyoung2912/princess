@@ -9,6 +9,11 @@ import { Banner, type BannerKind } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ActionError, Load } from './parts'
+import { splitHeld } from '../../domain/aboardMore'
+import { shipZoneAt } from '../../domain/sailings'
+import { timeIn } from '../../domain/timezones'
+import { useNow, useSailing } from '../../hooks/useDemo'
+import { useMemory } from '../../hooks/useMemory'
 import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
 
@@ -18,26 +23,39 @@ const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', passportProb
 export function NotificationsScreen() {
   const data = useMine(() => api.notifications.list())
   const markRead = useAction((ids: string[]) => api.notifications.markRead(ids))
+  const now = useNow()
+  const sailing = useSailing()
+  const { state: mem } = useMemory()
+  const at = timeIn(now, shipZoneAt(sailing, now))
   return (
     <div className="page">
       <h1>{t('route.notifications')}</h1>
       <Load state={data}>
         {({ notices, prefs }) => {
-          const unread = notices.filter((n) => !n.read)
+          const { shown, held } = splitHeld(notices, mem.aboard.dnd, at)
+          const unread = shown.filter((n) => !n.read)
+          const row = (n: (typeof notices)[number]) => {
+            const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'
+            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0) }
+            return (
+              <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id}` as StringKey, params)} action={<LinkButton to={LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
+                <p className="muted">{t(`notices.cat.${n.category}` as StringKey)}{n.read ? ` · ${t('notices.read')}` : ''}</p>
+              </Banner>
+            )
+          }
           return (
             <>
               <section aria-labelledby="inbox-h">
                 <h2 id="inbox-h">{t('notices.title')}</h2>
                 {notices.length === 0 && <Card info><p>{t('notices.none')}</p></Card>}
-                {notices.map((n) => {
-                  const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'
-                  const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0) }
-                  return (
-                    <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id}` as StringKey, params)} action={<LinkButton to={LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
-                      <p className="muted">{t(`notices.cat.${n.category}` as StringKey)}{n.read ? ` · ${t('notices.read')}` : ''}</p>
-                    </Banner>
-                  )
-                })}
+                {shown.map(row)}
+                {held.length > 0 && (
+                  <details className="explain">
+                    <summary>{t('notices.held', { count: held.length })}</summary>
+                    <p className="muted">{t('notices.heldBody')}</p>
+                    {held.map(row)}
+                  </details>
+                )}
                 {unread.length > 0 && <Button variant="secondary" disabled={markRead.busy} onClick={async () => { await markRead.run(unread.map((n) => n.id)); data.retry() }}>{t('notices.markRead')}</Button>}
                 <ActionError error={markRead.error} />
               </section>

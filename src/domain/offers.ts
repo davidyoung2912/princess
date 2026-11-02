@@ -17,6 +17,8 @@ export interface OfferDef {
   tiers?: readonly Tier[]
   /** A guest who already has a package is not offered one (suppression after purchase). */
   hiddenWithPackage?: boolean
+  /** A party or celebration offer: left out when the guest asked for gentle wording. */
+  celebration?: boolean
 }
 
 /** Authored concept offers, in the order they are shown. */
@@ -25,10 +27,10 @@ export const OFFERS: readonly OfferDef[] = [
   { id: 'upgrade', stages: ['before'], to: '/plan/upgrades' },
   { id: 'excursions', stages: ['before', 'aboard'], to: '/plan/excursions' },
   { id: 'clubs', stages: ['before'], to: '/plan/clubs' },
-  { id: 'drinks', stages: ['aboard'], to: '/ship/drinks', hiddenWithPackage: true },
+  { id: 'drinks', stages: ['aboard'], to: '/ship/drinks', hiddenWithPackage: true, celebration: true },
   { id: 'spa', stages: ['aboard'], to: '/ship/spa' },
   { id: 'wifi', stages: ['aboard'], to: '/ship/wifi' },
-  { id: 'photos', stages: ['aboard'], to: '/ship/photos' },
+  { id: 'photos', stages: ['aboard'], to: '/ship/photos', celebration: true },
   { id: 'rebook', stages: ['after'], to: '/me/rebook', tiers: ['none', 'gold', 'ruby'] },
 ]
 
@@ -55,11 +57,18 @@ export interface OfferContext {
   package: PackageId
   /** Offers the guest dismissed for this trip. */
   dismissed: readonly string[]
+  /** Quiet modes the guest chose: low-stress shows no offers, gentle wording leaves out celebration offers. Normal when absent. */
+  mode?: OfferMode
 }
+
+/** Low-stress mode (S7-06) and gentle wording (XI-10) as they bear on offers. Low-stress wins when both are on. */
+export type OfferMode = 'normal' | 'easy' | 'gentle'
+export const offerModeOf = (f: { easy: boolean; gentle: boolean }): OfferMode => (f.easy ? 'easy' : f.gentle ? 'gentle' : 'normal')
 
 /** What the offers page lists: the offers for this part of the trip, this tier and this package, without the dismissed ones. */
 export function offersFor(c: OfferContext): OfferDef[] {
-  return OFFERS.filter((o) => o.stages.includes(c.stage) && (!o.tiers || o.tiers.includes(c.tier)) && !(o.hiddenWithPackage && c.package !== 'none') && !c.dismissed.includes(o.id))
+  if (c.mode === 'easy') return []
+  return OFFERS.filter((o) => !(c.mode === 'gentle' && o.celebration) && o.stages.includes(c.stage) && (!o.tiers || o.tiers.includes(c.tier)) && !(o.hiddenWithPackage && c.package !== 'none') && !c.dismissed.includes(o.id))
 }
 
 /** The offers dismissed for this trip that would otherwise show, so the page can offer "Show again". */

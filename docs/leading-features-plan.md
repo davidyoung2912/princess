@@ -331,3 +331,13 @@ Front end only; no REST contract changes. Logic added to `src/domain/finishMore.
 - **Audited, already built:** S4-08 (`budgetNote` on `/home/cruise/cost`, built in slice B).
 - **Verified:** `npm run test` (1702 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** XG-06 reunion mode (Could); S8-10 loyalty in plain words (days to next are shown, but what each benefit is worth is not); S8-11 honest referral (no referral screen exists); S8-12 whole-history download (a data export exists under Privacy, but it does not cover the trip history); a text-based emergency channel and interpreter times for XI-07; the storm card is pre-trip only and uses the simulated storm watch; the back-aboard card reads the simulated clock; the voice button does not appear on browsers without speech recognition; do not disturb now holds back Home nudges but still not the notifications screen list.
+
+## 19. H8 wire-through slice: quiet modes read by the screens (2026-11-01)
+
+Front end only; no REST contract changes.
+
+- **Low-stress and gentle wording on offers:** `OfferContext.mode` (`offerModeOf`) in `src/domain/offers.ts`. `offersFor` returns nothing in low-stress mode and leaves out offers flagged `celebration` (drinks, photos) in gentle mode. The offers page (`/home/offers`) uses it and says why in a status line; Home already hid its card in both modes.
+- **Do not disturb on the notifications list:** `splitHeld` in `src/domain/aboardMore.ts`. While a schedule is running, non-critical notices move into a "Held" list on `/me/notifications` (nothing is deleted; critical notices stay in view).
+- **Part 2 (same day):** `AccessAreaNote` (`src/ui/AccessAreaNote.tsx`) shows what the accessibility profile asks of the area on the room step, excursions, dining and disembark screens, and only when the profile asks something. The assistant (`ConciergeScreen`) passes `mobility` (from the profile) and `likes` (the taste profile, minus removed items and the global off switch) in its context; the day plan uses the mobility default unless the question says otherwise and says which guesses it used. Gift ideas leave out celebration gifts in gentle mode.
+- **Verified:** `npm run test` (1705 passed, `npm run lint`, `npx tsc -b`, `npm run build`. Promise tests in `src/h8Promises.test.ts`.
+- **Not done:** the profile is a note on those screens, not a filter of their lists; privacy defaults read by a shared screen; other celebration copy; low-stress on any other upsell surface; held notices are not released as a separate event when the schedule ends (they simply reappear).

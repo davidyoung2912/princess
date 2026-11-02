@@ -157,19 +157,19 @@ export const HABITS = ['drinks', 'wifi', 'dining', 'excursions'] as const
 export const tierForHabits = (habits: readonly string[]): FareId => FARE_IDS[Math.min(habits.length >= 2 ? 2 : habits.length, 2)]
 
 // ---- S4-11: gifts that read the room ----
-export interface Gift { id: string; cents: Cents; occasion: 'birthday' | 'anniversary' | 'any'; alcohol: boolean; contains: string[] }
+export interface Gift { id: string; cents: Cents; occasion: 'birthday' | 'anniversary' | 'any'; celebration?: boolean; alcohol: boolean; contains: string[] }
 export const GIFTS: readonly Gift[] = [
-  { id: 'cake', cents: 3500, occasion: 'birthday', alcohol: false, contains: ['egg', 'milk', 'wheat'] },
+  { id: 'cake', cents: 3500, occasion: 'birthday', celebration: true, alcohol: false, contains: ['egg', 'milk', 'wheat'] },
   { id: 'flowers', cents: 4500, occasion: 'any', alcohol: false, contains: [] },
-  { id: 'champagne', cents: 6500, occasion: 'anniversary', alcohol: true, contains: [] },
+  { id: 'champagne', cents: 6500, occasion: 'anniversary', celebration: true, alcohol: true, contains: [] },
   { id: 'fruit', cents: 3000, occasion: 'any', alcohol: false, contains: [] },
   { id: 'chocolate', cents: 2500, occasion: 'any', alcohol: false, contains: ['milk', 'nuts', 'soy'] },
   { id: 'photo', cents: 2000, occasion: 'any', alcohol: false, contains: [] },
 ]
 /** Only what fits the budget and the dietary notes; never shown on a screen where the guest has a task to finish (it has a screen of its own). */
-export function giftsFor(budget: Cents | null, occasion: 'birthday' | 'anniversary' | 'none', avoid: readonly string[], noAlcohol: boolean): Gift[] {
+export function giftsFor(budget: Cents | null, occasion: 'birthday' | 'anniversary' | 'none', avoid: readonly string[], noAlcohol: boolean, gentle = false): Gift[] {
   const bad = avoid.map((a) => a.toLowerCase())
-  return GIFTS.filter((g) => (g.occasion === 'any' || g.occasion === occasion) && (budget === null || g.cents <= budget) && !(noAlcohol && g.alcohol) && !g.contains.some((c) => bad.some((b) => b.includes(c) || c.includes(b))))
+  return GIFTS.filter((g) => (g.occasion === 'any' || g.occasion === occasion) && (budget === null || g.cents <= budget) && !(noAlcohol && g.alcohol) && !(gentle && g.celebration) && !g.contains.some((c) => bad.some((b) => b.includes(c) || c.includes(b))))
 }
 
 // ---- XI-10 and XI-11: gentle wording and the anxiety toolkit ----

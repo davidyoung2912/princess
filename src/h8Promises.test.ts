@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS } from './domain/autopilot'
-import { dndNow } from './domain/aboardMore'
-import { homeNudges } from './domain/finishMore'
+import { dndNow, splitHeld } from './domain/aboardMore'
+import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offers'
+import { giftsFor, homeNudges } from './domain/finishMore'
+import { assistantMobility, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
+import { scriptedReply } from './ai/scripted'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { REFERENCE_SAILING } from './domain/sailings'
 import { en } from './i18n/en'
@@ -113,5 +116,46 @@ describe('H8 slice D promises', () => {
     expect(ask).toMatch(/onClick=\{\(\) => void confirmItem\(\)\}/)
     expect(ask).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
     expect(en['ask.speakNote']).toMatch(/nothing happens until you confirm/)
+  })
+})
+
+describe('H8 wire-through promises', () => {
+  const ctx: OfferContext = { stage: 'aboard', tier: 'none', package: 'none', dismissed: [] }
+  it('low-stress shows no offers and gentle wording drops celebration offers', () => {
+    expect(offerModeOf({ easy: true, gentle: true })).toBe('easy')
+    expect(offersFor({ ...ctx, mode: 'easy' })).toEqual([])
+    const gentle = offersFor({ ...ctx, mode: 'gentle' })
+    expect(gentle.length).toBeGreaterThan(0)
+    expect(gentle.every((o) => !o.celebration)).toBe(true)
+    expect(offersFor(ctx).length).toBeGreaterThan(gentle.length)
+    expect(OFFERS.some((o) => o.celebration)).toBe(true)
+  })
+  it('do not disturb holds back non-critical notices but loses none and never holds critical ones', () => {
+    const list = [{ id: 'a', from: '22:00', to: '07:00', on: true }]
+    const ns = [{ category: 'critical' }, { category: 'payments' }, { category: 'checkin' }] as const
+    const night = splitHeld(ns, list, '23:00')
+    expect(night.shown.map((n) => n.category)).toEqual(['critical'])
+    expect(night.held).toHaveLength(2)
+    expect(splitHeld(ns, list, '12:00').held).toEqual([])
+    expect(splitHeld(ns, [], '23:00').held).toEqual([])
+  })
+  it('says so on screen', () => {
+    expect(en['notices.heldBody']).toMatch(/not lost/)
+    expect(en['offer.mode.gentle']).toMatch(/celebration/)
+  })
+  it('gentle wording drops celebration gifts', () => {
+    expect(giftsFor(null, 'anniversary', [], false).some((g) => g.id === 'champagne')).toBe(true)
+    expect(giftsFor(null, 'anniversary', [], false, true).some((g) => g.id === 'champagne')).toBe(false)
+  })
+  it('the accessibility profile sets the day planner default and asks something of each area', () => {
+    expect(assistantMobility(EMPTY_ACCESS)).toBe('any')
+    expect(assistantMobility({ ...EMPTY_ACCESS, device: 'scooter' })).toBe('wheelchair')
+    expect(assistantMobility({ ...EMPTY_ACCESS, mobility: true })).toBe('easy')
+    expect(accessNotes({ ...EMPTY_ACCESS, vision: true }).dining).toContain('readMenu')
+  })
+  it('the assistant shows what taste guesses it used', () => {
+    const base = { sailingId: REFERENCE_SAILING.id, personaId: 'daniel', now: Date.UTC(2027, 0, 5, 12) }
+    const r = scriptedReply('plan my day 2', { ...base, likes: ['You like a relaxed pace'] })
+    expect(r.text).toMatch(/Based on what you told us: you like a relaxed pace/)
   })
 })

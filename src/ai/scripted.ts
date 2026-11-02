@@ -31,11 +31,12 @@ export function scriptedReply(message: string, ctx: Context): Reply {
   const dayNo = /\bday (\d)\b/.exec(m)?.[1]
   if (/plan my day|build my day|what should i do|day plan|itinerary for/.test(m) || (dayNo && /plan|do|suggest/.test(m))) {
     const day = Number(dayNo ?? (port ? { cozumel: 3, belize: 4, roatan: 5 }[port] : 2))
-    const { data, citations } = read('build_day', { day, tour_interests: interestsIn(m), event_interests: eventsIn(m), mobility: /wheelchair/.test(m) ? 'wheelchair' : /easy|mobility|walk(ing)? (a lot|far)/.test(m) ? 'easy' : 'any', with_children: /kid|child|toddler|family/.test(m) }, ctx)
+    const { data, citations } = read('build_day', { day, tour_interests: interestsIn(m), event_interests: eventsIn(m), mobility: /wheelchair/.test(m) ? 'wheelchair' : /easy|mobility|walk(ing)? (a lot|far)/.test(m) ? 'easy' : ctx.mobility ?? 'any', with_children: /kid|child|toddler|family/.test(m) }, ctx)
     const items = (data.items as { title: string; starts: string; why: string }[] | undefined) ?? []
     if (items.length === 0) return reply(`I could not find a day to suggest for day ${day}. Try Build my day in the Plan tab.`, citations)
     const back = data.back_on_ship_by ? ` Be back on the ship by ${String(data.back_on_ship_by)}.` : ''
-    return reply(`Here is a day for day ${day}:\n${items.map((i) => `• ${i.starts} ${i.title} (${i.why})`).join('\n')}${back}`, citations)
+    const basis = ctx.likes && ctx.likes.length > 0 ? `\nBased on what you told us: ${ctx.likes.slice(0, 3).join('; ').toLowerCase()}. You can change this under Taste profile.` : ''
+    return reply(`Here is a day for day ${day}:\n${items.map((i) => `• ${i.starts} ${i.title} (${i.why})`).join('\n')}${back}${basis}`, citations)
   }
   if (/alaska|europe|mediterranean|hawaii|pacific|asia|transatlantic/.test(m)) {
     return reply('This app covers one cruise: seven nights in the Western Caribbean on Sun Princess from Fort Lauderdale, so I cannot plan other destinations here. I can show the dates and prices for this one.', runTool('list_sailings', {}, ctx).citations)

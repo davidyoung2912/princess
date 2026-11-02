@@ -24,6 +24,10 @@ export interface Context {
   personaId: string
   /** The demo clock's now. */
   now: number
+  /** From the accessibility profile (S2-06), used when the guest does not say otherwise. */
+  mobility?: 'any' | 'easy' | 'wheelchair'
+  /** From the taste profile (XA-07): only what the guest has not removed or switched off. */
+  likes?: readonly string[]
 }
 
 export interface ToolResult {

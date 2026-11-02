@@ -1,3 +1,4 @@
+import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { DiningView, Reservation } from '../../api/types'
@@ -28,6 +29,7 @@ export function DiningScreen() {
   return (
     <div className="page">
       <h1>{t('route.dining')}</h1>
+      <AccessAreaNote area="dining" />
       <p>{t('dine.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
       <Back to="/plan" label={t('route.plan')} />

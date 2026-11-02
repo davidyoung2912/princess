@@ -73,7 +73,7 @@ export function runTool(name: string, input: Input, ctx: Context): ToolResult {
     case 'build_day': {
       const day = num(input.day)
       if (!own || day === undefined || !Number.isInteger(day) || day < 1 || day > 8) return fail('day must be a whole number from 1 to 8.')
-      const mobility = list<Mobility>([input.mobility], ['any', 'easy', 'wheelchair'])[0] ?? 'any'
+      const mobility = list<Mobility>([input.mobility], ['any', 'easy', 'wheelchair'])[0] ?? ctx.mobility ?? 'any'
       const plan = buildDay(own, day, { ...NO_WISH, tours: list<Interest>(input.tour_interests, INTERESTS), events: list<EventInterest>(input.event_interests, EVENT_INTERESTS), mobility, withKids: input.with_children === true })
       return ok({ day, items: plan.items.map((i) => ({ kind: i.kind, title: i.title, starts: i.start, why: i.why })), back_on_ship_by: plan.backBy }, [{ label: 'Build my day', path: '/plan/day' }])
     }

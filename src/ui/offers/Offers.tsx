@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { marketingPaused, offersQuiet } from '../../domain/finishMore'
 import { useMemory } from '../../hooks/useMemory'
-import { homeOffer, offerReasons, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
+import { homeOffer, offerModeOf, offerReasons, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
 import { stageAt } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
@@ -20,8 +20,9 @@ function useOfferContext(trip: string | null): OfferContext & { stageId: ReturnT
   const sailing = useSailing()
   const now = useNow()
   const { state } = useOffers()
+  const { state: mem } = useMemory()
   const stageId = stageAt(sailing, now)
-  return { stage: offerStageOf(stageId), stageId, tier: me?.tier ?? 'none', package: me?.package ?? 'none', dismissed: trip ? state.dismissed[trip] ?? [] : [] }
+  return { mode: offerModeOf(mem.finish), stage: offerStageOf(stageId), stageId, tier: me?.tier ?? 'none', package: me?.package ?? 'none', dismissed: trip ? state.dismissed[trip] ?? [] : [] }
 }
 
 /** One offer: what it is, where it goes, and "Not for this trip". No timers and no talk of stock. */
@@ -88,7 +89,8 @@ export function OffersScreen() {
       <Load state={trips}>
         {() => !trip ? <p>{t('offer.noTrip')}</p> : (
           <>
-            {shown.length === 0 ? <p>{t('offer.none')}</p> : (
+            {ctx.mode !== 'normal' && <p role="status">{t(`offer.mode.${ctx.mode}` as StringKey)}</p>}
+            {shown.length === 0 ? <p>{ctx.mode === 'easy' ? t('offer.mode.easyNone') : t('offer.none')}</p> : (
               <ul className="card-grid">
                 {shown.map((o) => <li key={o.id}><OfferItem offer={o} trip={trip.number} onDismiss={dismiss} ctx={ctx} /></li>)}
               </ul>

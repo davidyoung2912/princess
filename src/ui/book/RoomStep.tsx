@@ -1,3 +1,4 @@
+import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { resizePeople } from '../../domain/booking'
 import { formatMoney } from '../../domain/pricing'
@@ -17,6 +18,7 @@ export function RoomStep({ draft, update, error }: StepProps) {
   const cap = room?.capacity ?? 4
   return (
     <StepSection title={t('book.room.title')} intro={t('book.room.intro')}>
+      <AccessAreaNote area="cabin" />
       <PriceState state={rooms}>
         {rooms.data && (
           <fieldset>

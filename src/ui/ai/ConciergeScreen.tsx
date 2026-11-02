@@ -4,6 +4,10 @@ import { ask, askProblem, configFrom } from '../../ai/concierge'
 import { clearThread, loadThread, saveThread } from '../../ai/history'
 import { MAX_MESSAGE, type Handoff } from '../../ai/guard'
 import type { ChatMessage, Citation } from '../../ai/types'
+import { assistantMobility } from '../../domain/bookingPrep'
+import { tasteInferences } from '../../domain/planning'
+import { useMemory } from '../../hooks/useMemory'
+import { usePilot } from '../../hooks/usePilot'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { getStore } from '../../runtime'
 import { useDemo, useNow, usePersona } from '../../hooks/useDemo'
@@ -28,6 +32,8 @@ const HANDOFF_LINKS: Record<Handoff, Citation[]> = {
 /** The AI concierge (DIS-09, SUP-03): ask about the cruise, ports, tours, dining and a day plan. It is labelled as AI, answers only from app data, cannot book or pay, and hands emergencies and medical or legal questions to people. */
 export function ConciergeScreen() {
   const me = usePersona()
+  const { state: mem } = useMemory()
+  const { state: pilot } = usePilot()
   const demo = useDemo()
   const now = useNow()
   const [thread, setThread] = useState<{ owner: string; messages: ChatMessage[] } | null>(null)
@@ -59,7 +65,10 @@ export function ConciergeScreen() {
     setMessages(withUser)
     setDraft('')
     setBusy(true)
-    const turn = await ask(config, withUser, messages.filter((m) => m.role === 'user').map((m) => m.at), { sailingId: demo.sailingId, personaId: me.id, now })
+    const turn = await ask(config, withUser, messages.filter((m) => m.role === 'user').map((m) => m.at), {
+      sailingId: demo.sailingId, personaId: me.id, now, mobility: assistantMobility(mem.access),
+      likes: tasteInferences({ fit: mem.fit, pasted: mem.pasted, pace: pilot.prefs.pace, rhythm: mem.planning.rhythm }, mem.planning.tasteOff, mem.planning.tasteRemoved).map((i) => i.text),
+    })
     if (turn.fallback) setNotice(t(`ai.fallback.${turn.fallback}` as StringKey))
     const reply: ChatMessage = turn.handoff
       ? { id: `a-${now}-${withUser.length}`, role: 'assistant', text: t(`ai.handoff.${turn.handoff}` as StringKey, { phone: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER }), at: now, source: 'handoff', citations: HANDOFF_LINKS[turn.handoff].map((c) => ({ label: t(c.label as StringKey), path: c.path })) }

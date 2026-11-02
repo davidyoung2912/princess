@@ -1,3 +1,4 @@
+import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asDisembarkView } from '../../api/guards'
@@ -24,6 +25,7 @@ export function DisembarkScreen() {
   return (
     <div className="page">
       <h1>{t('route.disembark')}</h1>
+      <AccessAreaNote area="disembark" />
       <p>{t('dis.intro')}</p>
       {me?.child && <SupervisedNote booker={personaById(me.booker)?.firstName ?? ''} />}
       <Saved copy={copy}>{(v) => <Disembark v={v} reload={copy.retry} />}</Saved>

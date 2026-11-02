@@ -1,3 +1,4 @@
+import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { SaveButton } from '../ahead/common'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
@@ -31,6 +32,7 @@ export function ExcursionsScreen() {
     <div className="page">
       <h1>{t('route.excursions')}</h1>
       <p>{t('exc.intro')}</p>
+      <AccessAreaNote area="excursions" />
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
       <Back to="/plan" label={t('route.plan')} />
     </div>

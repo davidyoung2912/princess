@@ -55,6 +55,12 @@ export function normalizeAccess(raw: unknown): AccessProfile {
   return out
 }
 
+/** The day-planner's mobility setting that fits the profile; the guest's own words in a question still win. */
+export function assistantMobility(p: AccessProfile): 'any' | 'easy' | 'wheelchair' {
+  if (p.device === 'wheelchair' || p.device === 'scooter') return 'wheelchair'
+  return p.mobility || p.device !== 'none' ? 'easy' : 'any'
+}
+
 export const AREAS = ['cabin', 'dining', 'excursions', 'disembark'] as const
 export type Area = (typeof AREAS)[number]
 

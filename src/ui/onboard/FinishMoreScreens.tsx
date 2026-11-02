@@ -336,10 +336,10 @@ export function FareCheckScreen() {
 
 /** Gifts that read the room (S4-11): only what fits the budget, the occasion and the dietary notes, on a screen of their own. */
 export function GiftsScreen() {
-  const { memory } = useFinish()
+  const { f, memory } = useFinish()
   const [occasion, setOccasion] = useState<'birthday' | 'anniversary' | 'none'>('none')
   const [noAlcohol, setNoAlcohol] = useState(false)
-  const list = giftsFor(memory.budget, occasion, memory.allergy.items, noAlcohol)
+  const list = giftsFor(memory.budget, occasion, memory.allergy.items, noAlcohol, f.gentle)
   return (
     <Page title="route.gifts" intro="gifts.intro" back={PLAN}>
       <Card labelledBy="gf-o"><h2 id="gf-o" className="card__title">{t('gifts.occasion')}</h2>
