@@ -135,30 +135,47 @@ function loadReference(): void {
 
 
 /**
- * A served reference table (sailings, ship, programme, and the rest): public, so the copy kept on this device is applied at once, then the server's
- * answer if its `version` differs, and the raw answer is kept for next time. A missing, unreachable or malformed answer leaves what is in use.
+ * The served reference tables (sailings, ship, programme, and the rest). The server wants a sign-in for them, so the copy kept on this device is applied
+ * at once (before anyone signs in), and the server is asked, with the person's token, each time someone is signed in: its answer is applied if its
+ * `version` differs and the raw answer is kept for next time. A missing, unreachable or malformed answer leaves what is in use.
  */
-function loadTable<T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void): void {
-  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
-  const kept = cacheGet(store(), kind, 'v1', normalize, Date.now())
-  if (kept) apply(kept.value)
-  void http.get<unknown>(path, { anonymous: true })
-    .then((raw) => {
-      const fresh = normalize(raw)
-      if (!fresh) return
-      if (fresh.version !== kept?.value.version) apply(fresh)
-      cachePut(store(), kind, 'v1', raw, Date.now())
-    })
-    .catch(() => {})
+interface Table<T extends { version: string } = { version: string }> { kind: string; path: string; normalize: (raw: unknown) => T | null; apply: (t: T) => void }
+const table = <T extends { version: string }>(kind: string, path: string, normalize: (raw: unknown) => T | null, apply: (t: T) => void): Table => ({ kind, path, normalize, apply } as unknown as Table)
+const TABLES: Table[] = [
+  table('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue),
+  table('sailings', '/reference/sailings', normalizeSailings, applySailings),
+  table('ship', '/reference/ship', normalizeShip, applyShip),
+  table('program', '/reference/program', normalizeProgram, applyProgram),
+  table('ports', '/reference/ports', normalizePorts, applyPorts),
+  table('packages', '/reference/packages', normalizePackages, applyPackages),
+  table('limits', '/reference/limits', normalizeLimits, applyLimits),
+  table('content', '/reference/content', normalizeContent, applyContent),
+]
+const tableStore = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+/** The version of each table in use, so a refetch applies only a change. */
+const inUse = new Map<string, string>()
+
+function applyKeptTables(): void {
+  for (const t of TABLES) {
+    const kept = cacheGet(tableStore(), t.kind, 'v1', t.normalize, Date.now())
+    if (kept) { t.apply(kept.value); inUse.set(t.kind, kept.value.version) }
+  }
 }
-loadTable('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue)
-loadTable('sailings', '/reference/sailings', normalizeSailings, applySailings)
-loadTable('ship', '/reference/ship', normalizeShip, applyShip)
-loadTable('program', '/reference/program', normalizeProgram, applyProgram)
-loadTable('ports', '/reference/ports', normalizePorts, applyPorts)
-loadTable('packages', '/reference/packages', normalizePackages, applyPackages)
-loadTable('limits', '/reference/limits', normalizeLimits, applyLimits)
-loadTable('content', '/reference/content', normalizeContent, applyContent)
+
+function loadTables(): void {
+  if (!auth.current()) return
+  for (const t of TABLES) {
+    void http.get<unknown>(t.path)
+      .then((raw) => {
+        const fresh = t.normalize(raw)
+        if (!fresh) return
+        if (fresh.version !== inUse.get(t.kind)) { t.apply(fresh); inUse.set(t.kind, fresh.version) }
+        cachePut(tableStore(), t.kind, 'v1', raw, Date.now())
+      })
+      .catch(() => {})
+  }
+}
+applyKeptTables()
 
 /**
  * The copies on this device belong to one person. When someone else signs in, the earlier person's copies are removed (only changes that have not
@@ -178,6 +195,7 @@ function claimDevice(userId: string | null | undefined): void {
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {
   loadReference()
+  loadTables()
   const session = auth.current()
   claimDevice(session?.user?.id)
   loadContext()
