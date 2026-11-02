@@ -30,6 +30,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public Dictionary<long, string> Budgets { get; } = [];
     public Dictionary<long, long> ClockOffsets { get; } = [];
     public Dictionary<long, HashSet<string>> Scenarios { get; } = [];
+    public Dictionary<long, int> DemoSpeeds { get; } = [];
     public HashSet<long> TakenEmailOwners { get; } = [];
     private long _next = 1000;
 
@@ -228,4 +229,15 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct) => Task.FromResult(ClockOffsets.GetValueOrDefault(userId));
 
     public Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct) => Task.FromResult(Scenarios.TryGetValue(userId, out var s) ? new HashSet<string>(s) : []);
+
+    public Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(new DemoStateRow(ClockOffsets.GetValueOrDefault(userId), DemoSpeeds.GetValueOrDefault(userId, 1), Scenarios.TryGetValue(userId, out var s) ? [.. s] : []));
+
+    public Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct)
+    {
+        ClockOffsets[userId] = state.ClockOffsetSeconds;
+        DemoSpeeds[userId] = state.ClockSpeed;
+        Scenarios[userId] = [.. state.Scenarios];
+        return Task.CompletedTask;
+    }
 }

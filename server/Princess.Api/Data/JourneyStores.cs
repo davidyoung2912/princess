@@ -74,4 +74,9 @@ public interface IDemoStore
     Task<long> GetClockOffsetSecondsAsync(long userId, CancellationToken ct);
     /// <summary>The scenario ids switched on for a demo user (<c>planChange</c>, <c>belizeTender</c>, <c>portSkipped</c>, <c>chatSlow</c> and so on); empty when there is no row.</summary>
     Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct);
+    /// <summary>The whole row (offset, speed, scenarios); the defaults when there is none.</summary>
+    Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct);
+    Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct);
 }
+
+public sealed record DemoStateRow(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios);

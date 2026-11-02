@@ -176,15 +176,21 @@ export const reviseLeave = (s: FlightStatus | null): number => (s && s.state ===
 export type Sky = 'clear' | 'cloudy' | 'rain' | 'storm'
 export interface Conditions { source: typeof FLIGHT_SOURCE; traffic: Traffic; sky: Sky; leaveEarlierMinutes: number }
 
+export type Crowd = 'quiet' | 'busy' | 'busiest'
+
+/** How busy the guest's arrival window usually is; "busy" when they have not chosen one. */
+export const crowdOfWindow = (windowStart: string | null): Crowd => arrivalWindows(true).find((w) => w.start === windowStart)?.crowd ?? 'busy'
+
 /** Traffic from how busy the guest's window is; the sky from a stable draw for the date. Suggests leaving earlier when either is poor. */
-export function routeConditions(departure: string, windowStart: string | null): Conditions {
-  const window = arrivalWindows(true).find((w) => w.start === windowStart)
-  const traffic = trafficFor(window?.crowd ?? 'busy')
+export function conditionsFor(departure: string, crowd: Crowd): Conditions {
+  const traffic = trafficFor(crowd)
   const d = hash(`sky|${departure}`) % 10
   const sky: Sky = d < 5 ? 'clear' : d < 8 ? 'cloudy' : d < 9 ? 'rain' : 'storm'
   const extra = (traffic === 'heavy' ? 20 : traffic === 'moderate' ? 10 : 0) + (sky === 'storm' ? 25 : sky === 'rain' ? 10 : 0)
   return { source: FLIGHT_SOURCE, traffic, sky, leaveEarlierMinutes: extra }
 }
+
+export const routeConditions = (departure: string, windowStart: string | null): Conditions => conditionsFor(departure, crowdOfWindow(windowStart))
 
 // ---- Hotel handoff (S4A-11) ----
 

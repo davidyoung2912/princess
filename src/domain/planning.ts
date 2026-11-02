@@ -1,3 +1,4 @@
+import { servedAccess } from './accessReference'
 import type { AccessProfile } from './bookingPrep'
 import { clubFor, type ClubId } from './family'
 import { acceptChange, addProposal, basePlan, type Change, type Edit, type PlanEntry } from './planChange'
@@ -36,7 +37,8 @@ export const DIFFICULTY: Record<string, Difficulty> = {
   'rtb-wildlife': D(1, false, 'medium', 'high', true, true, false),
   'rtb-drive': D(0.3, false, 'medium', 'medium', true, false, false),
 }
-export const difficultyOf = (id: string): Difficulty | null => DIFFICULTY[id] ?? null
+/** The server's figure when it has sent one, else the authored copy. */
+export const difficultyOf = (id: string): Difficulty | null => servedAccess()?.difficulty[id] ?? DIFFICULTY[id] ?? null
 
 export type Concern = 'steps' | 'distance' | 'heat' | 'wet' | 'noSeats' | 'noRestrooms' | 'wheelchair' | 'noShade'
 /** What in this excursion could be hard for this person, from the accessibility profile (S2-06). Empty means nothing to flag, not a promise. */

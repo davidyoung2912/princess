@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import {
-  addBag, buildJourney, CARRY_ON_ITEMS, CHECKED_BAGS, DRIVE_STEPS, flightStatus, flyEarlyAdvice, flyEarlyDate, GROUND, hotelHandoff, isTime, markBagPhotographed, minutesToWindow,
-  normalizeFlight, PICKUP_NOTES, removeBag, routeConditions, toggleIn, TRIP_MODES, validFlightNumber, watchDelay, latestComfortableLanding, type JourneyPlan, type TripMode,
+  addBag, buildJourney, CARRY_ON_ITEMS, CHECKED_BAGS, DRIVE_STEPS, flyEarlyAdvice, flyEarlyDate, GROUND, hotelHandoff, isTime, markBagPhotographed, minutesToWindow,
+  normalizeFlight, PICKUP_NOTES, removeBag, toggleIn, TRIP_MODES, validFlightNumber, watchDelay, latestComfortableLanding, type JourneyPlan, type TripMode,
 } from '../../domain/journey'
 import { EMBARK } from '../../domain/boarding'
 import { formatMoney } from '../../domain/pricing'
 import { newTripId, useTrip } from '../../hooks/useTrip'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { useFlightStatus } from '../../hooks/useFlightStatus'
+import { useRouteConditions } from '../../hooks/useRouteConditions'
 import { api } from '../../runtime'
 import { isCarryOn } from '../../domain/boarding'
 import { t, type StringKey } from '../../i18n'
@@ -32,11 +34,12 @@ export function JourneyScreen() {
   const [flight, setFlight] = useState(plan.flightNumber)
   const [bag, setBag] = useState('')
 
-  const status = plan.mode === 'fly' && validFlightNumber(plan.flightNumber) ? flightStatus(plan.flightNumber, plan.hotelNight ? flyEarlyDate(sailing.departure) : sailing.departure) : null
+  const watched = plan.mode === 'fly' && validFlightNumber(plan.flightNumber) ? plan.flightNumber : null
+  const status = useFlightStatus(watched, plan.hotelNight ? flyEarlyDate(sailing.departure) : sailing.departure)
   const delay = watchDelay(status)
   const result = buildJourney(plan, sailing.departure, delay)
   const early = flyEarlyAdvice(plan, sailing.departure, delay)
-  const cond = routeConditions(sailing.departure, plan.windowStart)
+  const cond = useRouteConditions(sailing.departure, plan.windowStart)
   const hotel = hotelHandoff(plan, sailing.departure, cond.leaveEarlierMinutes)
   const toGo = minutesToWindow(now, sailing.departure, plan.windowStart)
 

@@ -1,3 +1,4 @@
+import { servedAccess } from './accessReference'
 import type { CategoryId } from './ship'
 
 /** Staterooms you can pick (BOK-03). The numbers, positions and notes are authored samples, not the real deck plan. */
@@ -39,7 +40,10 @@ const hash = (text: string): number => {
  * Room types with accessible staterooms (step-free entrance, wider door, roll-in shower; see `SHIP_ACCESSIBILITY`).
  * The two top suite types have none, so a guest who needs step-free access is told before choosing them.
  */
-export const hasAccessibleCabins = (category: CategoryId): boolean => category !== 'sanctuaryMiniSuite' && category !== 'signatureSuite'
+export const hasAccessibleCabins = (category: CategoryId): boolean => {
+  const served = servedAccess()
+  return served ? served.accessibleCategories.includes(category) : category !== 'sanctuaryMiniSuite' && category !== 'signatureSuite'
+}
 
 /** The sample staterooms for a room type, and which are free on a sailing. The same sailing and room type always give the same answer. */
 export function cabinsFor(sailingId: string, category: CategoryId): Cabin[] {

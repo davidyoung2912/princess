@@ -7,7 +7,13 @@ import type { AuthProvider } from '../auth/provider'
 import { deleteDatabase, openStore } from '../data/idbStore'
 import { resetDemo, wipeEverything } from '../data/lifecycle'
 import type { DataRecord, DataStore } from '../data/store'
+import { setDemoPublisher } from '../demo/publish'
 import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
+import { forgetFlights, setFlightFetcher } from '../feeds/flight'
+import { forgetConditions, setRouteFetcher } from '../feeds/route'
+import { forgetSky, setSkyFetcher } from '../feeds/sky'
+import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
+import { normalizeRates, type RateTable } from '../domain/rates'
 import { DEFAULT_PERSONA, personaById } from '../domain/personas'
 import { resetSettingsToDefaults, switchSettingsOwner } from '../settings/store'
 import { sync, setRemote } from '../sync'
@@ -58,9 +64,36 @@ const rest = usesRealAuth ? createHttpGroups((auth as ReturnType<typeof createHt
 if (rest) auth.subscribe(rest.reset)
 export const api: Api = rest ? withHttpGroups(mockApi, rest.groups) : mockApi
 
+/** Today's rate table from the server, so every device shows the same one; null in mock mode (the hook then uses the local stub). */
+export const fetchRates: (() => Promise<RateTable>) | null = rest
+  ? async () => normalizeRates(await (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/rates'))
+  : null
+
+if (rest) {
+  const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+  setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
+  setFlightFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
+  auth.subscribe(forgetSky)
+  setRouteFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
+  auth.subscribe(forgetFlights)
+  auth.subscribe(forgetConditions)
+  // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees; real accounts send nothing.
+  setDemoPublisher((payload) => (auth.current()?.user?.isDemo ? http.put('/demo/state', payload) : Promise.resolve()))
+}
+
+/** Fetches the access reference data (excursion difficulty, accessible room types) once a person is signed in; failures leave the authored copies in use. */
+function loadReference(): void {
+  if (!usesRealAuth) return
+  if (!auth.current()) { setServedAccess(null); return }
+  void (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/reference/access')
+    .then((raw) => setServedAccess(normalizeAccessReference(raw)))
+    .catch(() => {})
+}
+
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {
   if (!usesRealAuth) return
+  loadReference()
   const session = auth.current()
   setRemote(session ? createHttpRemote((auth as ReturnType<typeof createHttpAuthProvider>).http) : null)
   if (sync.setOwner(session?.user?.id ?? null, session?.personaId ?? null)) void sync.pull()

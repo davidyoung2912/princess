@@ -424,7 +424,8 @@ Phase 11 built every row above (25 routes). Differences from the table and the m
 - Stored rows written by the persona scripts are read leniently: a customs declaration with `goods` instead of `goodsUsd`, an onward `Mode` the rules do not know (shown, not checked) and feedback with the area scores at the top level.
 
 ### 6.7 Demo endpoints (not in the `Api` interface)
-`GET/PUT /demo/state` (clock offset, speed, scenarios; 404 unless `IsDemo`), `POST /demo/jump {stage}` (sets the clock for every user on the booking), `POST /demo/reset` (re-run persona reset for the caller's booking). Staff/admin or `IsDemo` only.
+`GET/PUT /demo/state` (built): `{ clockOffsetSeconds, clockSpeed, scenarios }`, demo accounts only (`IsDemo`), else `404`. The offset is seconds added to real time and is what `UserClock` uses; speed 0 (stopped on the screens) is stored as 1; an unknown scenario is `400 badScenario`, an offset over a year `400 badOffset`, a speed outside 0 to 3600 `400 badSpeed`. The screens send their controls here whenever they change (REST mode, demo accounts).
+Not built: `POST /demo/jump {stage}` (the screens compute the jump and send the resulting offset) and `POST /demo/reset` (re-run persona reset for the caller's booking). Staff/admin or `IsDemo` only.
 
 ### 6.8 Account state (multi-device; not in the `Api` interface)
 | Route | Verb route | Auth |
@@ -441,6 +442,14 @@ Phase 11 built every row above (25 routes). Differences from the table and the m
 | delete a booking document | `DELETE /bookings/{n}/state/{key}` | BA |
 
 A document is `{ key, version, data, updatedAt }`. `baseVersion` is the version the device last saw (0 for none); if the stored version differs the save is `409` (`stale`) and the device fetches the newer copy and merges. A key outside the whitelist is `400 badKey`, a body that is not a JSON object `400 badData`, and one over the key's size cap `400 tooLarge`.
+
+### 6.9 Reference data and feeds (multi-device Phase 5; not in the `Api` interface)
+| Route | Verb route | Auth |
+| --- | --- | --- |
+| today's exchange rates per US dollar (stub feed, same for every device) | `GET /rates` | U |
+| excursion difficulty by id and the room types with accessible staterooms | `GET /reference/access` | U || the sky for a cruise day (simulated feed) | `GET /feeds/sky?sailing=&day=&port=` | U || status of a flight on a date (simulated feed) | `GET /feeds/flight?number=&date=` | U || traffic and weather on the way to the port (simulated feed) | `GET /feeds/route?departure=&crowd=` | U |
+
+Returns `{ asOf, perUsd }`. Reading only: the account is charged in US dollars. `/reference/access` returns `{ difficulty: { <excursionId>: { km, steps, heat, shade, seats, restrooms, wet } }, accessibleCategories: [<categoryId>] }`. `/feeds/sky` returns `{ uv, tempF, rainFrom, rainTo, source: 'sim' }` (`HH:mm` or null); a missing or out-of-range query is `400 badFeedQuery`. `/feeds/flight` returns `{ state: onTime|delayed|cancelled, delayMinutes, source: 'sim' }`; a number that is not two letters and 1 to 4 digits, or a date that is not `YYYY-MM-DD`, is `400 badFeedQuery`. `/feeds/route` takes the sailing date and the arrival window's crowd (`quiet|busy|busiest`) and returns `{ traffic: light|moderate|heavy, sky: clear|cloudy|rain|storm, leaveEarlierMinutes, source: 'sim' }`.
 
 ## 7. Authorisation rules (one place)
 

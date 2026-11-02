@@ -15,6 +15,12 @@ public static class CabinRules
         ["signatureSuite"] = [16],
     };
 
+    /// <summary>The two top suite types have no accessible staterooms (as <c>hasAccessibleCabins</c> in the client).</summary>
+    public static bool HasAccessibleCabins(string category) => category is not ("sanctuaryMiniSuite" or "signatureSuite");
+
+    /// <summary>The room types that have accessible staterooms, in deck-plan order.</summary>
+    public static IReadOnlyList<string> AccessibleCategories => [.. Decks.Keys.Where(HasAccessibleCabins)];
+
     private static readonly string[] Positions = ["forward", "midship", "aft"];
     private const int PerCategory = 9;
 
@@ -38,7 +44,7 @@ public static class CabinRules
             var side = i % 2 == 0 ? "port" : "starboard";
             var number = $"{deck}{(100 + ((i * 37 + category.Length * 11) % 400)):000}";
             var obstructed = category is "oceanview" or "balcony" && deck <= 9 && position != "midship";
-            var accessible = i == 1 && category is not ("sanctuaryMiniSuite" or "signatureSuite");
+            var accessible = i == 1 && HasAccessibleCabins(category);
             var notes = new List<string>
             {
                 position == "midship" ? "Near the elevators" : position == "forward" ? "Toward the front of the ship" : "Toward the back of the ship",

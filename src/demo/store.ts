@@ -1,6 +1,7 @@
 import { clockAt, clockNow, setClockSpeed, stepClock } from '../domain/clock'
 import { sailingById, stageAt, timeForStage, type StageId } from '../domain/sailings'
 import { channel } from '../runtime/channel'
+import { publishDemo } from './publish'
 import { defaultDemoState, loadDemoState, saveDemoState, type DemoState } from './state'
 
 const local = (): Storage | null => {
@@ -23,6 +24,7 @@ function commit(next: DemoState): void {
   saveDemoState(next, local())
   notify()
   channel.post({ type: 'demo' })
+  publishDemo(next)
 }
 
 /** Another tab changed the controls (the clock, a scenario): pick up its saved state. Call once at start-up. */
@@ -64,4 +66,5 @@ export function resetDemoState(): void {
   current = defaultDemoState(Date.now())
   notify()
   channel.post({ type: 'demo' })
+  publishDemo(current)
 }

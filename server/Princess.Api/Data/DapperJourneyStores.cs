@@ -484,4 +484,25 @@ public sealed class DapperDemoStore(IDbConnectionFactory db) : IDemoStore
         try { return json is null ? [] : [.. System.Text.Json.JsonSerializer.Deserialize<string[]>(json) ?? []]; }
         catch (System.Text.Json.JsonException) { return []; }
     }
+
+    private sealed class DemoRowRaw { public long ClockOffsetSeconds { get; set; } public int ClockSpeed { get; set; } public string? ActiveScenarios { get; set; } }
+
+    public async Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var r = await c.QuerySingleOrDefaultAsync<DemoRowRaw>(Sql.Cmd("SELECT ClockOffsetSeconds, ClockSpeed, ActiveScenarios FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
+        if (r is null) return new DemoStateRow(0, 1, []);
+        try { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, System.Text.Json.JsonSerializer.Deserialize<string[]>(r.ActiveScenarios ?? "[]") ?? []); }
+        catch (System.Text.Json.JsonException) { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, []); }
+    }
+
+    public async Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var scenarios = System.Text.Json.JsonSerializer.Serialize(state.Scenarios);
+        await c.ExecuteAsync(Sql.Cmd("""
+            UPDATE demo.DemoState SET ClockOffsetSeconds = @offset, ClockSpeed = @speed, ActiveScenarios = @scenarios, UpdatedAt = @now WHERE UserId = @userId;
+            IF @@ROWCOUNT = 0 INSERT INTO demo.DemoState (UserId, ClockOffsetSeconds, ClockSpeed, ActiveScenarios, UpdatedAt) VALUES (@userId, @offset, @speed, @scenarios, @now);
+            """, new { userId, offset = state.ClockOffsetSeconds, speed = state.ClockSpeed, scenarios, now }, null, ct));
+    }
 }

@@ -1,6 +1,6 @@
 # Multi-device plan: account data lives on the server
 
-Status: **Plan written 2026-11-01. Phases 1 to 3 built; Phases 4 and 5 open.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
+Status: **Plan written 2026-11-01. Phases 1 to 3 built; Phase 4 partly built; Phase 5 built as far as it usefully goes (slices 1 to 6: rates, access reference, sky feed, flight feed, route conditions, demo state); the rest is parked, see the Phase 5 decision.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
 
 ## Goal and rules
 
@@ -29,7 +29,7 @@ Nothing under `server/`, `db/` or `src/api/` has changed since Phase G6 (`491bc9
 | `hub` | family contacts, links, postcards, delay, callback, debriefs | user | medium | `UserState` `hub`; links need signed server tokens and a public page in Phase 4 | 3 (4) |
 | `port` | port-day presence, plan, plan B, rendezvous, split ledger | **booking** | medium | `BookingState` `port`; ledger becomes real rows in Phase 4 | 3 (4) |
 | `party` | travel-party invites and shared notes | **booking** | medium | `BookingState` `party` | 3 |
-| `rates` | last rate table | shared | none | server rates endpoint (Phase 5) | 5 |
+| `rates` | last rate table | shared | none | `GET /rates` (built, Phase 5 slice 1) | 5 |
 | Concierge history (IndexedDB) | chat thread | user | medium | decision: stays on device (SUP-03), say so on the screen | none |
 | Demo clock and scenarios | offset, speed, scenarios | user (demo only) | none | `/demo/*` routes (documented in data model 6.7, never built) | 5 |
 
@@ -171,3 +171,79 @@ Built 2026-11-01.
   - **Caregiver, callback and sensory-kit requests reaching staff.** The callback queue is a simulation (`source: 'sim'`) and there is no staff side in this repo, so they stay documents.
   - **`/demo/*` routes** (data model 6.7): not started.
   - **Open from earlier phases:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, calm profile and family contacts consent decision, screen copy that says "stays on this device".
+
+## Phase 5 record (slice 1: rates)
+
+Built 2026-11-01. Only this slice of Phase 5 was built.
+
+- **Server (not compiled or run; no `dotnet` commands per the project rules):** `Domain/RatesRules.cs` (the sample rates and a daily drift, with the same hash as the client's `stubRates`, so both sides give the same table), `Endpoints/ReferenceEndpoints.cs` (`GET /rates`, signed-in), registered in `Program.cs`. Tests written, not run: `RatesTests.cs`, and the route is in `SwaggerCoverageTests.Routes`. Data model section 6.9 lists the route.
+- **Client:** `fetchRates` in `src/runtime/index.ts` (null in mock mode). `useRates` uses it for "Update rates" and refreshes an out-of-date table when a rates screen opens; if the server cannot be reached the saved table stays and is called out of date. Mock mode still uses the local stub.
+- **Verified:** `npm run test` (1754 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done (rest of Phase 5):**
+  - **Simulated feeds** (flight status, weather and forecast, traffic, ship pulse and lines, port crowd, storm chance, sky). The server has no `IWeatherService` or `IShipTelemetry` yet (weather is a rules function in `PlanRules`/`AboardRules`); the client simulations in `src/domain/*` are unchanged. Each needs a route, a contract and a client switch.
+  - **`fareHistory`, lounger board, found list, "you said, we did" board, sightings, guaranteed-cabin odds** still client-only.
+  - **Reference columns:** `DIFFICULTY` (needs columns on `ref.Excursions`, schema and seed changes) and `hasAccessibleCabins` (against `CabinRules.cs`), plus port content, ship packing, dress nights and day stories.
+  - **`/demo/*` routes** (data model 6.7; `IDemoStore` exists, no routes).
+
+## Phase 5 record (slice 2: access reference data)
+
+Built 2026-11-01.
+
+- **Server (not compiled or run):** `GET /reference/access` returns the excursion difficulty figures and the room types with accessible staterooms. `Domain/ReferenceRules.cs` holds the twelve difficulty rows (copied from the client `DIFFICULTY`); `CabinRules.HasAccessibleCabins` / `AccessibleCategories` replace the inline test so the stateroom list and the endpoint agree. Tests written, not run (`ReferenceRulesTests` in `RatesTests.cs`); route added to `SwaggerCoverageTests.Routes` and data model 6.9.
+- **Client:** `src/domain/accessReference.ts` keeps the server's copy (`setServedAccess`, `normalizeAccessReference`); `difficultyOf` and `hasAccessibleCabins` use it when present and the authored copies otherwise. `runtime` fetches it at sign-in in REST mode; a failed fetch leaves the authored copies. Tests in `accessReference.test.ts`.
+- **Verified:** `npm run test` (1757 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:**
+  - **Columns on `ref.Excursions`.** The figures sit in server code, not the database; moving them needs schema, seed generator and Dapper changes.
+  - **Late arrival.** Screens already open when the fetch lands keep the authored values until their next render (they match today, so nothing differs).
+  - Still open from slice 1: simulated feeds, fare history and the other client-only boards, port content, ship packing, dress nights, day stories, `/demo/*`.
+
+## Phase 5 record (slice 3: the sky feed)
+
+Built 2026-11-01. The first simulated feed moved behind the server; it is the pattern for the others.
+
+- **Server (not compiled or run):** `GET /feeds/sky?sailing=&day=&port=` returns `{ uv, tempF, rainFrom, rainTo, source: 'sim' }` from `Domain/FeedRules.cs` (the client's `simWeather` ported, same hash, so values match). A missing or out-of-range query is `400 badFeedQuery`. Tests written, not run (`FeedRulesTests` in `RatesTests.cs`); Swagger list and data model 6.9 updated.
+- **Client:** `src/feeds/sky.ts` (fetcher set by the runtime in REST mode, per-day cache cleared on sign-in or out, `skyNow` gives the server value or the local simulation) and `useSky` hook, used by `useDayPlan`. The effect is in `useSky`, not `useDayPlan`, because `h5Promises.test.ts` forbids effects there. Mock mode is unchanged.
+- **Verified:** `npm run test` (1761 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:** the other feeds (flight status, traffic, ship pulse and lines, port crowd, storm chance, sky objects, ship heading) still run on the client. The server also has two older weather stubs (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) that give different figures from this feed; they should be unified when a real provider is chosen. Fare history, boards, port content, `/demo/*` also open.
+
+## Phase 5 record (slice 4: the flight feed)
+
+Built 2026-11-01.
+
+- **Server (not compiled or run):** `GET /feeds/flight?number=&date=` returns `{ state, delayMinutes, source: 'sim' }` from `FeedRules.Flight` (the client's `flightStatus` ported with the same FNV hash). A bad number or date is `400 badFeedQuery`. Tests written, not run (`FlightFeedTests`); Swagger list and data model 6.9 updated.
+- **Client:** `src/feeds/flight.ts` (fetcher set by the runtime in REST mode, cache cleared on sign-in or out) and the `useFlightStatus` hook, used by `JourneyScreen`. Mock mode unchanged; a failed fetch keeps the simulation.
+- **Verified:** `npm run test` (1764 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:** route conditions (traffic and sky on the way to the port, `routeConditions`), ship pulse and lines, port crowd, storm chance, sky objects, ship heading; fare history and the boards; port content; `/demo/*`.
+
+## Phase 5 record (slice 5: route conditions)
+
+Built 2026-11-01.
+
+- **Server (not compiled or run):** `GET /feeds/route?departure=&crowd=` returns `{ traffic, sky, leaveEarlierMinutes, source: 'sim' }` from `FeedRules.Route` (client `conditionsFor` ported). The client sends the arrival window's crowd rather than the window, so the server does not need the window table. Bad date or crowd is `400 badFeedQuery`. Tests written, not run (`RouteFeedTests`); Swagger list and data model 6.9 updated.
+- **Client:** `journey.ts` split `routeConditions` into `crowdOfWindow` and `conditionsFor` (wrapper kept). `src/feeds/route.ts`, `useRouteConditions`, used by `JourneyScreen`; mock mode unchanged.
+- **Verified:** `npm run test` (1767 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:** ship pulse and lines, port crowd, storm chance, sky objects, ship heading; fare history and the boards; port content; `/demo/*`.
+
+## Phase 5 record (slice 6: demo state)
+
+Built 2026-11-01.
+
+- **Server (not compiled or run):** `GET/PUT /demo/state` (`DemoEndpoints`, `DemoService`, `DemoRules`), `IDemoStore.GetStateAsync/SaveStateAsync` (Dapper and in-memory). Demo accounts only; others get 404. Scenario ids mirror `src/domain/scenarios.ts` (`DemoRules.ScenarioIds`, kept in step by hand). Tests written, not run (`DemoTests.cs`); Swagger list and data model 6.7 updated.
+- **Client:** `src/demo/publish.ts` (payload from the clock, fire-and-forget publisher) called from the demo store on each change; the runtime sets the publisher in REST mode and only for `isDemo` sessions. Mock mode unchanged.
+- **Verified:** `npm run test` (1769 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:**
+  - **Server speed.** The server stores the speed but `UserClock` applies the offset only, so a running fast clock drifts on the server between sends; the screens' own clock is exact.
+  - **Server to client.** A new device does not take the saved controls from the server; the device keeps its own.
+  - **`POST /demo/jump` and `/demo/reset`.**
+  - **Scenario ids** are listed in two places; no test ties them together.
+  - Still open: ship pulse and lines, port crowd, storm chance, sky objects, ship heading; fare history and the boards; port content.
+
+## Phase 5 decision: what was left alone, and why
+
+Decided 2026-11-01 after reading the remaining items in the code.
+
+- **Deterministic simulations already agree across devices.** Ship pulse and lines (`pulse.ts`), quiet spaces, port crowd, storm chance, sky objects, ship heading, `fareHistory`, the lounger board, `FOUND`, guaranteed-cabin odds and the like are pure functions of a seed (a booking number, a sailing, a date) and the demo clock. Two devices on the same account and clock get the same answer, so nothing account-critical is stranded on one device. The things a guest *does* with them (lounger hold, lost reports, sightings, price watch choices) are in `memory`, `trip` or `pilot`, which sync.
+- **Why no routes for them yet.** A route would only copy the same function to C# (the pulse tables and the ship's port schedule would be duplicated and have to be kept in step by hand) with no change in what a guest sees. Slices 3 to 5 did that for the sky, flight and route feeds because they are the ones a real provider (weather, flight status, traffic) would replace first; the pattern (`src/feeds/*`, `FeedRules`, a fetcher set by the runtime) is there to copy when a provider is chosen.
+- **Parked until a real source or a product need exists:** the on-board feeds above; port content, ship packing, dress nights and day stories (authored text; the server already serves packing through `PackingView` and ports through `ref.Ports`, so the question is whether the client copies should be removed, which is a content decision); `ref.Excursions` columns for difficulty (a schema and seed change with nothing the guest would notice); `POST /demo/jump` and `/demo/reset`.
+- **Still to do from earlier phases** (unchanged): sign-out flush, accounts with no persona, sync indicator, per-user settings keys, the calm profile and family contacts consent decision, screen copy that says "stays on this device", port ledger rows, plan changes into the day plan, signed family links, budget unification.
+- **Nothing in Phases 4 and 5 has been compiled or run on the server.** Before relying on any of it, run `dotnet build` and the new tests (`State*`, `Rates*`, `Reference*`, `Feed*`, `FlightFeed*`, `RouteFeed*`, `Demo*`) once.
