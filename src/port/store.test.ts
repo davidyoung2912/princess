@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addItem, addParty, EMPTY_SPLIT } from '../domain/ledgerSplit'
+import { EMPTY_BOARD } from '../domain/board'
 import { EMPTY_PORT_PARTY, setPresence } from '../domain/portParty'
 import { EMPTY_PORT, loadPort, normalizePort, portKeyFor, savePort } from './store'
 
@@ -14,7 +15,7 @@ describe('port storage', () => {
     let split = addParty(EMPTY_SPLIT, 'Harper', 4, 'h').state
     split = addParty(split, 'Brennan', 4, 'b').state
     split = addItem(split, { title: 'Taxi', kind: 'taxi', amount: '20', paidBy: 'h', among: ['h', 'b'], mode: 'equal', date: null }, 1, 'i').state
-    const state = { party: setPresence(EMPTY_PORT_PARTY, '2027-03-23', 'daniel', 'back', 1), split }
+    const state = { party: setPresence(EMPTY_PORT_PARTY, '2027-03-23', 'daniel', 'back', 1), split, board: EMPTY_BOARD }
     expect(savePort('daniel', state, s)).toBe(true)
     expect(loadPort('daniel', s)).toEqual(state)
     expect(loadPort('marcus', s)).toEqual(EMPTY_PORT)

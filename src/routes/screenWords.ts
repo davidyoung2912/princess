@@ -83,6 +83,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/plan/child-brief': 'child brief; kids information; child details; child safety plan',
   '/plan/rhythm': 'daily rhythm; routine; early bird; night owl; pace',
   '/plan/organiser': 'organiser; privacy; who can see; group organiser',
+  '/plan/share-links': 'share with mum; link for family; travel advisor; read only link; stop sharing; caregiver',
   '/plan/cabins': 'several cabins; many rooms; cabins together; one day plan',
   '/plan/traditions': 'family traditions; rituals; our way; annual trip',
   '/plan/getting-there': 'getting to the ship; flight; hotel night; leave time',

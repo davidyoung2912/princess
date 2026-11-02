@@ -2219,8 +2219,25 @@ CREATE TABLE dbo.PortRows (
   CONSTRAINT PK_PortRows PRIMARY KEY (BookingId, Kind, RowKey),
   CONSTRAINT FK_PortRows_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT CK_PortRows_Json CHECK (Json IS NULL OR ISJSON(Json) = 1),
-  CONSTRAINT CK_PortRows_Kind CHECK (Kind IN ('presence','plan','planB','setting','meet','meetState','party','item'))
+  CONSTRAINT CK_PortRows_Kind CHECK (Kind IN ('presence','plan','planB','setting','meet','meetState','party','item','poll','vote','idea','heart'))
 );
+END
+
+IF OBJECT_ID(N'dbo.ShareLinks', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ShareLinks (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ShareLinks PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UX_ShareLinks_PublicId UNIQUE,
+  BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  Kind VARCHAR(9) NOT NULL, Label NVARCHAR(40) NOT NULL,
+  TokenHash CHAR(64) NOT NULL CONSTRAINT UX_ShareLinks_TokenHash UNIQUE,
+  ExpiresAt DATETIME2(0) NOT NULL, LastCheckInAt DATETIME2(0) NULL, Note NVARCHAR(200) NOT NULL CONSTRAINT DF_ShareLinks_Note DEFAULT N'',
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ShareLinks_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ShareLinks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ShareLinks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_ShareLinks_Kind CHECK (Kind IN ('caregiver','advisor'))
+);
+CREATE INDEX IX_ShareLinks_BookingId_UserId ON dbo.ShareLinks (BookingId, UserId);
 END
 
 IF OBJECT_ID(N'dbo.UpdateAcks', N'U') IS NULL

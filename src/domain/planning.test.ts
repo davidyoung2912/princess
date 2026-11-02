@@ -4,7 +4,7 @@ import { DEFAULT_PREFS } from './autopilot'
 import { EXCURSIONS, excursionById } from './excursions'
 import { REFERENCE_SAILING } from './sailings'
 import { fixtureWeek } from './weekFixture'
-import { addIdea, addTradition, applyWeek, briefFor, budgetNote, carryOver, castVote, compareExcursion, difficultyConcerns, DIFFICULTY, heartIdea, leader, newPoll, normalizePlanning, rhythmPrefs, sharedDay, tasteInferences, tally, withoutSurprises } from './planning'
+import { addTradition, applyWeek, briefFor, budgetNote, carryOver, compareExcursion, difficultyConcerns, DIFFICULTY, normalizePlanning, rhythmPrefs, sharedDay, tasteInferences, withoutSurprises } from './planning'
 
 describe('planning', () => {
   it('has difficulty for every excursion and flags steps for someone who uses a walker', () => {
@@ -19,23 +19,6 @@ describe('planning', () => {
     expect(c.ship.ifLate).toBe('shipWaits')
     expect(c.independent.ifLate).toBe('shipLeaves')
     expect(c.saving).toBeGreaterThan(0)
-  })
-  it('runs a poll with one vote each and no winner on a tie', () => {
-    let p = newPoll('p', 'Where to eat?', ['Pizza', 'Tacos', 'Pizza'])!
-    expect(p.options).toHaveLength(2)
-    expect(newPoll('p', '', ['a', 'b'])).toBeNull()
-    expect(newPoll('p', 'q', ['only'])).toBeNull()
-    p = castVote(p, 'Ann', 'o1'); p = castVote(p, 'Bo', 'o2')
-    expect(leader(p)).toBeNull()
-    p = castVote(p, 'Bo', 'o1')
-    expect(leader(p)?.label).toBe('Pizza')
-    expect(tally(p).map((x) => x.votes)).toEqual([2, 0])
-    expect(castVote(p, 'Cy', 'nope')).toBe(p)
-  })
-  it('hearts toggle on the dream board', () => {
-    let i = addIdea([], 'a', ' Swim with rays ')
-    i = heartIdea(i, 'a', 'Ann'); i = heartIdea(i, 'a', 'Bo'); i = heartIdea(i, 'a', 'Ann')
-    expect(i[0].hearts).toEqual(['Bo'])
   })
   it('keeps surprises out of anything shared', () => {
     const items = [{ id: 'a', title: 'Spa day' }, { id: 'b', title: 'Cake at dinner' }, { id: 'c', title: 'Show' }]
@@ -87,8 +70,8 @@ describe('planning', () => {
   })
   it('normalises junk to the empty state', () => {
     const s = normalizePlanning({ polls: [{ id: 'x' }], privacy: { medical: true, plans: true }, rhythm: { wake: 'never' } })
-    expect(s.polls).toEqual([])
-    expect(s.privacy).toEqual({ plans: true, spending: false, photos: false, medical: false })
+    expect(s).not.toHaveProperty('polls')
+    expect(s).not.toHaveProperty('privacy')
     expect(s.rhythm).toBeNull()
   })
 })

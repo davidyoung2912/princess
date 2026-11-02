@@ -72,40 +72,6 @@ export function compareExcursion(x: ExcursionItem): Comparison {
   }
 }
 
-// ---- S4-05, S0-06: group poll and dream board on one device ----
-export interface PollOption { id: string; label: string }
-export interface Poll { id: string; question: string; options: PollOption[]; /** Voter name to option id: one vote each. */ votes: Record<string, string> }
-export interface Idea { id: string; text: string; hearts: string[] }
-export const POLLS_MAX = 6, OPTIONS_MAX = 6, VOTERS_MAX = 12, IDEAS_MAX = 20
-
-export function newPoll(id: string, question: string, labels: readonly string[]): Poll | null {
-  const q = clean(question, 80)
-  const opts = [...new Set(labels.map((l) => clean(l, 40)).filter(Boolean))].slice(0, OPTIONS_MAX)
-  if (!q || opts.length < 2) return null
-  return { id, question: q, options: opts.map((label, i) => ({ id: `o${i + 1}`, label })), votes: {} }
-}
-/** One vote per name: voting again changes it. */
-export function castVote(p: Poll, voter: string, optionId: string): Poll {
-  const v = clean(voter, 20)
-  if (!v || !p.options.some((o) => o.id === optionId)) return p
-  if (!(v in p.votes) && Object.keys(p.votes).length >= VOTERS_MAX) return p
-  return { ...p, votes: { ...p.votes, [v]: optionId } }
-}
-export const tally = (p: Poll): { option: PollOption; votes: number }[] => p.options.map((option) => ({ option, votes: Object.values(p.votes).filter((o) => o === option.id).length }))
-/** The winner, or null while nobody has voted or the top is tied. */
-export function leader(p: Poll): PollOption | null {
-  const t = tally(p).sort((a, b) => b.votes - a.votes)
-  return t[0] && t[0].votes > 0 && t[0].votes > (t[1]?.votes ?? 0) ? t[0].option : null
-}
-export const addIdea = (list: readonly Idea[], id: string, text: string): Idea[] => {
-  const x = clean(text, 80)
-  return x && list.length < IDEAS_MAX ? [...list, { id, text: x, hearts: [] }] : [...list]
-}
-export const heartIdea = (list: readonly Idea[], id: string, who: string): Idea[] => {
-  const w = clean(who, 20)
-  return list.map((i) => (i.id !== id || !w ? i : { ...i, hearts: i.hearts.includes(w) ? i.hearts.filter((h) => h !== w) : [...i.hearts, w].slice(0, VOTERS_MAX) }))
-}
-
 // ---- S4-06: surprise mode ----
 export interface Surprise { id: string; text: string }
 export const SURPRISES_MAX = 10
@@ -167,14 +133,6 @@ export function rhythmPrefs(r: Rhythm): Partial<WeekPrefs> {
   return { noEarly: r.wake === 'late' || r.lateMeals, ...(r.nap ? { pace: 'relaxed' as const } : {}) }
 }
 
-// ---- XG-02: privacy defaults ----
-export const PRIVACY_FIELDS = ['plans', 'spending', 'photos', 'medical'] as const
-export type PrivacyField = (typeof PRIVACY_FIELDS)[number]
-export type Privacy = Record<PrivacyField, boolean>
-/** The safest default: nothing is shared with the group until the person ticks it. */
-export const SAFEST: Privacy = { plans: false, spending: false, photos: false, medical: false }
-export const normalizePrivacy = (raw: unknown): Privacy => { const r = rec(raw); return { plans: r.plans === true, spending: r.spending === true, photos: r.photos === true, medical: false } }
-
 // ---- XG-04: family traditions ----
 export interface Tradition { id: string; text: string; done: boolean }
 export const TRADITIONS_MAX = 12
@@ -218,14 +176,14 @@ export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], no
 
 // ---- State kept on the device ----
 export interface PlanningState {
-  polls: Poll[]; ideas: Idea[]; surprises: Surprise[]
+  surprises: Surprise[]
   tasteOff: boolean; tasteRemoved: string[]
-  brief: ChildBrief; rhythm: Rhythm | null; privacy: Privacy
+  brief: ChildBrief; rhythm: Rhythm | null
   traditions: Tradition[]; cabins: CabinPlan[]
   /** The money plan's per-person daily amounts (S3-12), kept so the plan is the same next time. */
   moneyDaily: { sea: Cents; port: Cents } | null
 }
-export const EMPTY_PLANNING: PlanningState = { polls: [], ideas: [], surprises: [], tasteOff: false, tasteRemoved: [], brief: EMPTY_BRIEF, rhythm: null, privacy: SAFEST, traditions: [], cabins: [], moneyDaily: null }
+export const EMPTY_PLANNING: PlanningState = { surprises: [], tasteOff: false, tasteRemoved: [], brief: EMPTY_BRIEF, rhythm: null, traditions: [], cabins: [], moneyDaily: null }
 
 const normalizeDaily = (raw: unknown): { sea: Cents; port: Cents } | null => {
   const m = rec(raw)
@@ -235,23 +193,14 @@ const normalizeDaily = (raw: unknown): { sea: Cents; port: Cents } | null => {
 
 export function normalizePlanning(raw: unknown): PlanningState {
   const r = rec(raw)
-  const polls = arr(r.polls).flatMap((x): Poll[] => {
-    const o = rec(x)
-    const opts = arr(o.options).flatMap((y): PollOption[] => { const p = rec(y); return typeof p.id === 'string' && clean(p.label, 40) ? [{ id: p.id, label: clean(p.label, 40) }] : [] }).slice(0, OPTIONS_MAX)
-    if (typeof o.id !== 'string' || !clean(o.question, 80) || opts.length < 2) return []
-    const votes: Record<string, string> = {}
-    for (const [k, v] of Object.entries(rec(o.votes))) if (typeof v === 'string' && opts.some((p) => p.id === v) && clean(k, 20) && Object.keys(votes).length < VOTERS_MAX) votes[clean(k, 20)] = v
-    return [{ id: o.id, question: clean(o.question, 80), options: opts, votes }]
-  }).slice(0, POLLS_MAX)
-  const ideas = arr(r.ideas).flatMap((x): Idea[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.text, 80) ? [{ id: o.id, text: clean(o.text, 80), hearts: arr(o.hearts).filter((h): h is string => typeof h === 'string').map((h) => clean(h, 20)).slice(0, VOTERS_MAX) }] : [] }).slice(0, IDEAS_MAX)
   const surprises = arr(r.surprises).flatMap((x): Surprise[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.text, 80) ? [{ id: o.id, text: clean(o.text, 80) }] : [] }).slice(0, SURPRISES_MAX)
   const traditions = arr(r.traditions).flatMap((x): Tradition[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.text, 80) ? [{ id: o.id, text: clean(o.text, 80), done: o.done === true }] : [] }).slice(0, TRADITIONS_MAX)
   const cabins = arr(r.cabins).flatMap((x): CabinPlan[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.name, 30) ? [{ id: o.id, name: clean(o.name, 30), tourIds: arr(o.tourIds).filter((i): i is string => typeof i === 'string' && !!excursionById(i)) }] : [] }).slice(0, CABINS_MAX)
   return {
-    polls, ideas, surprises, traditions, cabins,
+    surprises, traditions, cabins,
     moneyDaily: normalizeDaily(r.moneyDaily),
     tasteOff: r.tasteOff === true, tasteRemoved: arr(r.tasteRemoved).filter((i): i is string => typeof i === 'string').map((i) => i.slice(0, 60)).slice(0, 50),
-    brief: normalizeBrief(r.brief), rhythm: normalizeRhythm(r.rhythm), privacy: normalizePrivacy(r.privacy),
+    brief: normalizeBrief(r.brief), rhythm: normalizeRhythm(r.rhythm),
   }
 }
 

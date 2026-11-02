@@ -64,7 +64,7 @@ export const HUBS: readonly HubDef[] = [
   { id: 'plan.travel', tab: 'plan', labelKey: 'hub.plan.travel', stage: 'getToShip', paths: [plan('travel'), plan('getting-there'), plan('weather'), plan('storm'), plan('away'), plan('what-if')] },
   { id: 'plan.pack', tab: 'plan', labelKey: 'hub.plan.pack', stage: 'prebook', paths: [plan('checklist'), plan('packing'), plan('ship-packing'), plan('starter'), plan('phone'), plan('difficulty')] },
   { id: 'plan.week', tab: 'plan', labelKey: 'hub.plan.week', stage: 'sea', paths: [plan('day'), plan('reservations'), plan('excursions'), plan('dining'), plan('autopilot'), plan('rhythm'), plan('surprises'), plan('taste'), plan('organiser'), plan('traditions'), plan('compare')] },
-  { id: 'plan.group', tab: 'plan', labelKey: 'hub.plan.group', stage: 'manage', paths: [plan('party'), plan('family-link'), plan('group-poll'), plan('child-story'), plan('child-brief'), plan('cabins')] },
+  { id: 'plan.group', tab: 'plan', labelKey: 'hub.plan.group', stage: 'manage', paths: [plan('party'), plan('family-link'), plan('group-poll'), plan('share-links'), plan('child-story'), plan('child-brief'), plan('cabins')] },
   { id: 'plan.wish', tab: 'plan', labelKey: 'hub.plan.wish', stage: 'prebook', paths: [plan('ahead'), plan('clubs'), plan('gifts')] },
 
   { id: 'ship.safety', tab: 'ship', labelKey: 'hub.ship.safety', stage: 'embark', paths: [ship('emergency'), ship('muster'), ship('help-now'), ship('report'), ship('health'), ship('seasick'), ship('safe-ashore'), ship('allergy-chain'), ship('lost-found'), ship('access'), ship('dnd')] },

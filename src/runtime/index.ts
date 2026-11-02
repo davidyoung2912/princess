@@ -84,6 +84,17 @@ export const familyHome = {
   view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
 }
 
+/** The party's shared view and the read-only links (N4): the organiser's roster, the change log, caregiver and advisor links, and a link's own page (no sign-in). */
+export const partyShare = {
+  organiser: (booking: string) => http.get<unknown>(`/bookings/${encodeURIComponent(booking)}/organiser`),
+  log: (booking: string) => http.get<unknown>(`/bookings/${encodeURIComponent(booking)}/party-log`),
+  links: (booking: string) => http.get<unknown>(`/bookings/${encodeURIComponent(booking)}/share-links`),
+  makeLink: (booking: string, kind: string, label: string) => http.post<unknown>(`/bookings/${encodeURIComponent(booking)}/share-links`, { kind, label }),
+  endLink: (booking: string, id: string) => http.delete<void>(`/bookings/${encodeURIComponent(booking)}/share-links/${encodeURIComponent(id)}`),
+  checkIn: (booking: string, id: string, note: string) => http.post<unknown>(`/bookings/${encodeURIComponent(booking)}/share-links/${encodeURIComponent(id)}/checkin`, { note }),
+  view: (token: string) => http.get<unknown>(`/public/share/${encodeURIComponent(token)}`, { anonymous: true }),
+}
+
 {
   weekFeed.setFetcher((sailingId, prefs) => http.post<unknown>('/me/autopilot/plan', { sailingId, prefs: JSON.parse(prefs) }))
   dayPlanFeed.setFetcher((sailingId, day, wishes) => http.post<unknown>('/me/day-plan', { sailingId, day, wish: JSON.parse(wishes) }))

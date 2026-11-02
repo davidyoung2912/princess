@@ -94,6 +94,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/plan/child-brief', titleKey: 'route.childBrief', tab: 'plan', phase: 27 },
   { path: '/plan/rhythm', titleKey: 'route.rhythm', tab: 'plan', phase: 27 },
   { path: '/plan/organiser', titleKey: 'route.organiser', tab: 'plan', phase: 27 },
+  { path: '/plan/share-links', titleKey: 'route.shareLinks', tab: 'plan', phase: 28 },
   { path: '/plan/cabins', titleKey: 'route.cabins2', tab: 'plan', phase: 27 },
   { path: '/plan/traditions', titleKey: 'route.traditions', tab: 'plan', phase: 27 },
   { path: '/plan/getting-there', titleKey: 'route.gettingThere', tab: 'plan', phase: 24 },
@@ -205,4 +206,5 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
   { path: '/at-sea/:token', titleKey: 'route.atSea', tab: null, phase: 22, public: true },
+  { path: '/shared/:token', titleKey: 'route.shared', tab: null, phase: 28, public: true },
 ]

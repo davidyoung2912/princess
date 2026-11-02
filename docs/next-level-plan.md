@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. N1 is under way (see the N1 record at the end of its section); nothing else is built.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 to N4 are built (see the record at the end of each section); N5 to N8 are not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 
@@ -183,6 +183,22 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 | N4.7 Opt-in "stay in touch" | Mutual-consent contact exchange within a sailing, block and report, tiny directory | S3-09, S6-11, S8-06; **keep optional**, may be cut if moderation is not available |
 
 **Done when:** two simulated people on one booking see each other's updates; privacy defaults are enforced on the server and tested for every shared view; revoking consent removes access immediately.
+
+**N4 record (2026-11-02):**
+- **What was already shared before N4 (found, not rebuilt):** the port day's presence, "I'm back", the shared plan, meeting places with each person's state, and the split ledger (families, expenses, settled-at) have been saved as booking-wide rows since multi-device plan 2, Phase 6 (`PortRows`, `src/port/rows.ts`). N4.3 (split ledger) and N4.4 (rendezvous, "back aboard") were therefore mostly done; the back-aboard nudge to the party is the N3 notice built from those rows.
+- **N4.1 done:** membership is checked on every route (any guest reads, an adult guest writes, a child is read-only). Each person's four sharing switches (`plans`, `status`, `spending`, `photos`; the medical card has no switch and is never shared) are kept in their own `sharing` document, off by default, saved to the account and read by the server (`PartyRules.Shares`). `GET /bookings/{n}/party-log` is the change log of the shared plan (newest 30 changes to polls, ideas, meeting places, the ledger).
+- **N4.2 done:** the group poll and dream board moved from one person's memory to the booking's rows (new kinds `poll`, `vote`, `idea`, `heart`; a vote is a row of its own per person, so two phones voting at once both count). The "run on one phone" screen is now "everyone votes from their own phone, one vote each". `src/domain/board.ts` holds the logic. The shared port plan already existed (see above).
+- **N4.3 partly done:** the split ledger is shared already. **Not done:** payment links for shares and a server-held pay-your-share ledger (`/plan/shares` is still one person's list in their private notes).
+- **N4.4 already done:** see above. Nothing new was needed.
+- **N4.5 done:** `GET /bookings/{n}/organiser`: the roster, each person's check-in progress and documents on file **only if they share their status** (or it is the person themself, or the booker of a supervised child), and the money for the booker alone. The Organiser screen reads it. **Not done:** per-person payment status (the booking is paid as one).
+- **N4.6 done:** `ShareLinks` table, `/bookings/{n}/share-links` and the public `/public/share/{token}` with the page `/shared/:token`. A caregiver link shows the ship, the dates, days to go, whether check-in is finished and the guest's "I am fine" note; an advisor link (booker only) shows paid or not, check-in progress (only people whose status the booker may see) and the head count. Neither shows a position, a medical detail or an amount. Only a hash of the secret is stored and the address is shown once; ending a link deletes it, so access stops at once. Links last 120 days and a guest may have six. **Not done:** the guest cannot yet pick which facts a caregiver sees (the list is fixed and written on the screen).
+- **N4.7 not built (cut, as the plan allows):** mutual-consent contact exchange needs moderation (block and report review) that does not exist. The existing local contacts screens are unchanged.
+- **Decisions and limits (read these):**
+  - **The sharing switches decide what the organiser view and the share links show.** The poll, board, meeting places and ledger are shared with the whole booking by being used, not by a switch: opening them is the act of sharing, and the screens now say so. The `plans`, `spending` and `photos` switches are saved and visible to the server but no other screen reads them yet.
+  - **No live push between phones.** A phone sees another's vote at the next sync (a few seconds after it sends, and on return to the front). SignalR is still the option if that is too slow.
+  - **The C# was written without a compiler on this machine** (no `dotnet`), so `PartyRulesTests.cs` and the server build have **not been run**. Please run `dotnet build` on `server/`; fixing any error is the first task of the next session. No API-level tests were written for the new routes (the in-memory test stores do not cover `IShareStore`).
+  - The first load is now 339.0 kB gzip of the 340 kB budget; the next phase that adds English text must raise the budget or trim.
+  - Found and fixed on the way: `t('poll.votes', { n })` and the same for hearts and the organiser counts passed `n`, but a plural form is chosen by `count`, so those lines showed their key. They now pass `count`.
 
 ---
 

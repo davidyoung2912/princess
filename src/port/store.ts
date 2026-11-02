@@ -1,15 +1,16 @@
 import { APP_PREFIX } from '../data/lifecycle'
 import { EMPTY_SPLIT, normalizeSplit, type SplitState } from '../domain/ledgerSplit'
 import { EMPTY_PORT_PARTY, normalizePortParty, type PortPartyState } from '../domain/portParty'
+import { EMPTY_BOARD, normalizeBoard, type BoardState } from '../domain/board'
 
 /** Everything Phase H3 keeps on this device for one booking: the port-day party state and the split ledger. Kept under the booker, so everyone on the booking sees the same record here, and (with the real API) saved as rows by `sync/portRows.ts`. */
-export interface PortState { party: PortPartyState; split: SplitState }
-export const EMPTY_PORT: PortState = { party: EMPTY_PORT_PARTY, split: EMPTY_SPLIT }
+export interface PortState { party: PortPartyState; split: SplitState; /** The group poll and dream board (N4.2). */ board: BoardState }
+export const EMPTY_PORT: PortState = { party: EMPTY_PORT_PARTY, split: EMPTY_SPLIT, board: EMPTY_BOARD }
 
 export const normalizePort = (raw: unknown): PortState => {
   if (typeof raw !== 'object' || raw === null) return EMPTY_PORT
   const r = raw as Record<string, unknown>
-  return { party: normalizePortParty(r.party), split: normalizeSplit(r.split) }
+  return { party: normalizePortParty(r.party), split: normalizeSplit(r.split), board: normalizeBoard(r.board) }
 }
 
 export const portKeyFor = (bookerId: string | null): string => `${APP_PREFIX}port:${bookerId ?? ''}`

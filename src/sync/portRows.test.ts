@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '../api/errors'
 import { addItem, addParty, EMPTY_SPLIT, removeItem } from '../domain/ledgerSplit'
+import { EMPTY_BOARD } from '../domain/board'
 import { EMPTY_PORT_PARTY, setPresence } from '../domain/portParty'
 import { layer, type PortRow } from '../port/rows'
 import { EMPTY_PORT, type PortState } from '../port/store'
@@ -45,7 +46,7 @@ const device = (remote: PortRowsRemote | null, clock: { t: number }, start: Port
 const withFamilies = (): PortState => {
   let split = addParty(EMPTY_SPLIT, 'Harper', 4, 'h').state
   split = addParty(split, 'Brennan', 2, 'b').state
-  return { party: EMPTY_PORT_PARTY, split }
+  return { party: EMPTY_PORT_PARTY, split, board: EMPTY_BOARD }
 }
 const taxi = (s: PortState, id: string, at: number): PortState => ({ ...s, split: addItem(s.split, { title: id, kind: 'taxi', amount: '20', paidBy: 'h', among: ['h', 'b'], mode: 'equal', date: null }, at, id).state })
 

@@ -1,5 +1,6 @@
 import { ALERT_CHOICES, EMPTY_PORT_PARTY, MAX_RENDEZVOUS, type MeetState } from '../domain/portParty'
 import { MAX_ITEMS, MAX_PARTIES } from '../domain/ledgerSplit'
+import { IDEAS_MAX, POLLS_MAX } from '../domain/board'
 import { normalizePort, type PortState } from './store'
 
 /**
@@ -7,11 +8,11 @@ import { normalizePort, type PortState } from './store'
  * that each person's "I'm back", each expense and each meeting place is saved on its own, with the time it was changed. A delete is a row that stays
  * (`deleted`), so a device that still has the old copy cannot bring it back. Framework-free; the server keeps the later change of each row.
  */
-export type RowKind = 'presence' | 'plan' | 'planB' | 'setting' | 'meet' | 'meetState' | 'party' | 'item'
+export type RowKind = 'presence' | 'plan' | 'planB' | 'setting' | 'meet' | 'meetState' | 'party' | 'item' | 'poll' | 'vote' | 'idea' | 'heart'
 
 export interface PortRow { kind: RowKind; key: string; data: unknown; /** Milliseconds, from the device that made the change. */ at: number; deleted: boolean }
 
-const KINDS: readonly RowKind[] = ['presence', 'plan', 'planB', 'setting', 'meet', 'meetState', 'party', 'item']
+const KINDS: readonly RowKind[] = ['presence', 'plan', 'planB', 'setting', 'meet', 'meetState', 'party', 'item', 'poll', 'vote', 'idea', 'heart']
 const MAX_KEY = 90
 
 export const rowId = (r: Pick<PortRow, 'kind' | 'key'>): string => `${r.kind}/${r.key}`
@@ -40,6 +41,15 @@ export function valuesOf(state: PortState): Map<string, { kind: RowKind; key: st
   for (const p of state.split.parties) put('party', enc(p.id), { name: p.name, people: p.people })
   for (const i of state.split.items) put('item', enc(i.id), i)
   if (state.split.settledAt !== null) put('setting', 'settledAt', state.split.settledAt)
+  // The group poll and dream board: one row for each poll, idea, vote and heart, so two people acting at once never overwrite each other.
+  for (const p of state.board.polls) {
+    put('poll', enc(p.id), { question: p.question, options: p.options })
+    for (const [who, option] of Object.entries(p.votes)) put('vote', `${enc(p.id)}|${enc(who)}`, option)
+  }
+  for (const i of state.board.ideas) {
+    put('idea', enc(i.id), { text: i.text })
+    for (const who of i.hearts) put('heart', `${enc(i.id)}|${enc(who)}`, true)
+  }
   return out
 }
 
@@ -99,6 +109,10 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
   const meetStates: { id: string; who: string; state: unknown }[] = []
   const parties: { at: number; id: string; data: Record<string, unknown> }[] = []
   const items: { at: number; id: string; data: Record<string, unknown> }[] = []
+  const polls: { at: number; id: string; data: Record<string, unknown> }[] = []
+  const votes: { poll: string; who: string; option: unknown }[] = []
+  const ideas: { at: number; id: string; data: Record<string, unknown> }[] = []
+  const hearts: { idea: string; who: string }[] = []
   for (const r of live) {
     const parts = r.key.split('|')
     if (r.kind === 'presence' && parts.length === 2 && DATE.test(parts[0])) day(parts[0]).presence[dec(parts[1])] = r.data
@@ -110,6 +124,10 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
     else if (r.kind === 'meetState' && parts.length === 2) meetStates.push({ id: dec(parts[0]), who: dec(parts[1]), state: r.data })
     else if (r.kind === 'party' && isObj(r.data)) parties.push({ at: r.at, id: dec(r.key), data: r.data })
     else if (r.kind === 'item' && isObj(r.data)) items.push({ at: r.at, id: dec(r.key), data: r.data })
+    else if (r.kind === 'poll' && isObj(r.data)) polls.push({ at: r.at, id: dec(r.key), data: r.data })
+    else if (r.kind === 'vote' && parts.length === 2) votes.push({ poll: dec(parts[0]), who: dec(parts[1]), option: r.data })
+    else if (r.kind === 'idea' && isObj(r.data)) ideas.push({ at: r.at, id: dec(r.key), data: r.data })
+    else if (r.kind === 'heart' && parts.length === 2) hearts.push({ idea: dec(parts[0]), who: dec(parts[1]) })
   }
   const byAge = <T extends { at: number; id: string }>(list: T[]): T[] => [...list].sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))
   const rendezvous = byAge(meets).slice(-MAX_RENDEZVOUS).map((m) => ({
@@ -122,6 +140,10 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
       parties: byAge(parties).slice(0, MAX_PARTIES).map((p) => ({ ...p.data, id: p.id })),
       items: byAge(items).slice(0, MAX_ITEMS).map((i) => ({ ...i.data, id: i.id })),
       settledAt,
+    },
+    board: {
+      polls: byAge(polls).slice(0, POLLS_MAX).map((p) => ({ ...p.data, id: p.id, votes: Object.fromEntries(votes.filter((v) => v.poll === p.id).map((v) => [v.who, v.option])) })),
+      ideas: byAge(ideas).slice(0, IDEAS_MAX).map((i) => ({ ...i.data, id: i.id, hearts: hearts.filter((h) => h.idea === i.id).map((h) => h.who) })),
     },
   })
 }

@@ -23,6 +23,7 @@ public static class StateRules
         ["concierge"] = 128_000,
         ["calm"] = 16_000,
         ["family"] = 32_000,
+        ["sharing"] = 500,
     };
 
     /// <summary>

@@ -7,7 +7,8 @@ import { giftsFor, homeNudges, parseExcursionRequest } from './domain/finishMore
 import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
 import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
 import { fixtureWeek } from './domain/weekFixture'
-import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
+import { applyWeek, normalizePlanning, tasteInferences, withoutSurprises } from './domain/planning'
+import { NOTHING_SHARED, normalizeSharing } from './domain/partyShare'
 import { itinerary, REFERENCE_SAILING, sailingNights } from './domain/sailings'
 import { DEFAULT_STYLE, STYLES } from './domain/prepMore'
 import { en } from './i18n/en'
@@ -50,17 +51,15 @@ describe('H8 slice A part 2 promises', () => {
 })
 
 describe('H8 slice B promises', () => {
-  it('runs groups on one device and says so, with nothing sent', () => {
+  it('keeps the planning screens free of direct sends and timers', () => {
     const text = read('src/ui/plan/PlanningScreens.tsx') + read('src/domain/planning.ts')
     expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout/)
-    expect(en['poll.single']).toMatch(/one phone only/)
-    expect(en['poll.single']).toMatch(/Nothing is sent/)
     expect(en['brief.note']).toMatch(/show this screen/i)
   })
   it('keeps surprises and medical details out of anything shared', () => {
     expect(withoutSurprises([{ id: 'a', title: 'Secret cake' }], [{ id: 'z', text: 'secret cake' }])).toEqual([])
-    expect(normalizePlanning({ privacy: { medical: true } }).privacy.medical).toBe(false)
-    expect(SAFEST).toEqual({ plans: false, spending: false, photos: false, medical: false })
+    expect(normalizeSharing({ medical: true })).not.toHaveProperty('medical')
+    expect(NOTHING_SHARED).toEqual({ plans: false, status: false, spending: false, photos: false })
   })
   it('lets the guest remove every guess or switch them all off', () => {
     const input = { fit: ['kids' as const], pasted: [], pace: 'packed' as const, rhythm: null }
@@ -156,7 +155,7 @@ describe('H8 wire-through promises', () => {
     expect(accessNotes({ ...EMPTY_ACCESS, vision: true }).dining).toContain('readMenu')
   })
   it('the privacy default is on every group screen that shows plans or spending, and is the safest by default', () => {
-    expect(SAFEST).toEqual({ plans: false, spending: false, photos: false, medical: false })
+    expect(NOTHING_SHARED).toEqual({ plans: false, status: false, spending: false, photos: false })
     for (const f of ['src/ui/party/PartyScreen.tsx', 'src/ui/plan/PrepScreens.tsx']) expect(read(f)).toMatch(/<SharingNote field=/)
     expect(read('src/ui/plan/PlanningScreens.tsx')).toMatch(/<SharingNote field="plans"/)
     expect(read('src/ui/SharingNote.tsx')).not.toMatch(/medical'?\)/)

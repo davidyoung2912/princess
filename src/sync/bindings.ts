@@ -16,6 +16,8 @@ import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
 import { applyRemoteShop, getExtras } from '../shop/store'
+import { applyRemoteSharing, getSharing } from '../sharing/store'
+import { NOTHING_SHARED, normalizeSharing } from '../domain/partyShare'
 import { sync } from './index'
 import type { Binding } from './sync'
 
@@ -130,6 +132,14 @@ const party: Binding = {
   merge: mergeParty,
 }
 
+/** What the guest shares with the rest of their party: four switches, all off by default. The server reads them to decide what other people on the booking may see, so this one is not held back by the private-notes consent. */
+const sharing: Binding = {
+  key: 'sharing',
+  read: (id) => getSharing(id),
+  apply: (id, raw) => applyRemoteSharing(id, raw === null ? NOTHING_SHARED : normalizeSharing(raw)),
+  isEmpty: (raw) => json(raw) === json(NOTHING_SHARED),
+}
+
 /** The concierge conversation. Held back until the guest agrees (Settings: syncPrivate), like private notes: what they asked may say a lot about them. */
 const concierge: Binding = {
   key: 'concierge',
@@ -145,5 +155,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, party]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

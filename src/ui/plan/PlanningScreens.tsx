@@ -1,19 +1,22 @@
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ledgerSummary } from '../../domain/bookingPrep'
 import { EXCURSIONS, excursionById } from '../../domain/excursions'
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { clubById } from '../../domain/family'
 import { formatMoney } from '../../domain/money'
 import { PORTS } from '../../domain/sailings'
-import { addIdea, addTradition, briefFor, carryOver, castVote, compareExcursion, difficultyConcerns, difficultyOf, heartIdea, leader, newPoll, normalizeBrief, PRIVACY_FIELDS, rhythmPrefs, sharedDay, tally, tasteInferences, withoutSurprises, type PlanningState, type Rhythm } from '../../domain/planning'
+import { addTradition, briefFor, carryOver, compareExcursion, difficultyConcerns, difficultyOf, normalizeBrief, rhythmPrefs, sharedDay, tasteInferences, withoutSurprises, type PlanningState, type Rhythm } from '../../domain/planning'
+import { addIdea, castVote, heartIdea, leader, newPoll, rankIdeas, tally, voteOf, type BoardState } from '../../domain/board'
+import { guestStatus, normalizeLog, normalizeOrganiser, SHARING_FACETS } from '../../domain/partyShare'
+import { usePort, newPortId } from '../../hooks/usePort'
+import { useSharing } from '../../hooks/useSharing'
 import { usePilot } from '../../hooks/usePilot'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { useParty } from '../../hooks/useParty'
 import { t, type StringKey } from '../../i18n'
-import { api } from '../../runtime'
+import { api, partyShare } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -102,45 +105,46 @@ export function CompareScreen() {
   )
 }
 
-/** Group poll and dream board (S4-05, S0-06), run on this one phone: the organiser passes it round or types the votes in. */
+/** Group poll and dream board (S4-05, S0-06), shared by the whole booking: everyone votes and hearts from their own phone, one vote each. */
 export function GroupPollScreen() {
-  const { p, set } = usePlanning()
+  const { state, update, me } = usePort()
+  const who = me?.id ?? ''
+  const board = state.board
+  const set = (change: (b: BoardState) => BoardState) => update((s) => ({ ...s, board: change(s.board) }))
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState('')
-  const [voter, setVoter] = useState('')
   const [idea, setIdea] = useState('')
   const [problem, setProblem] = useState(false)
   const create = () => {
-    const poll = newPoll(newMemoryId(), question, options.split(',').map((o) => o.trim()))
+    const poll = newPoll(newPortId(), question, options.split(',').map((o) => o.trim()))
     setProblem(!poll)
-    if (poll) { set((s) => ({ ...s, polls: [...s.polls, poll].slice(-6) })); setQuestion(''); setOptions('') }
+    if (poll) { set((b) => ({ ...b, polls: [...b.polls, poll].slice(-6) })); setQuestion(''); setOptions('') }
   }
   return (
     <Page title="route.groupPoll" intro="poll.intro">
-      <Banner kind="info" title={t('poll.single')} />
+      <Banner kind="info" title={t('poll.shared')} />
       <Card labelledBy="poll-new">
         <h2 id="poll-new" className="card__title">{t('poll.new')}</h2>
         <Field label={t('poll.question')} value={question} maxLength={80} onChange={(e) => setQuestion(e.target.value)} />
         <Field label={t('poll.options')} hint={t('poll.optionsHint')} value={options} maxLength={200} onChange={(e) => setOptions(e.target.value)} error={problem ? t('poll.problem') : undefined} />
         <Button onClick={create}>{t('poll.create')}</Button>
       </Card>
-      {p.polls.length > 0 && <Field label={t('poll.voter')} hint={t('poll.voterHint')} value={voter} maxLength={20} onChange={(e) => setVoter(e.target.value)} />}
-      {p.polls.map((poll) => {
+      {board.polls.map((poll) => {
         const win = leader(poll)
+        const mine = voteOf(poll, who)
         return (
           <Card key={poll.id} labelledBy={`poll-${poll.id}`}>
             <h2 id={`poll-${poll.id}`} className="card__title">{poll.question}</h2>
             <ul className="plain-list">
               {tally(poll).map(({ option, votes }) => (
                 <li key={option.id}>
-                  <Button variant="secondary" disabled={!voter.trim()} onClick={() => set((s) => ({ ...s, polls: s.polls.map((x) => (x.id === poll.id ? castVote(x, voter, option.id) : x)) }))}>{option.label}</Button>{' '}
-                  <span>{t('poll.votes', { n: votes })}</span>
+                  <Button variant={mine?.id === option.id ? 'primary' : 'secondary'} aria-pressed={mine?.id === option.id} disabled={!who} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? castVote(x, who, option.id) : x)) }))}>{option.label}</Button>{' '}
+                  <span>{t('poll.votes', { count: votes })}</span>
                 </li>
               ))}
             </ul>
-            {!voter.trim() && <p className="muted">{t('poll.needName')}</p>}
-            <p role="status">{win ? t('poll.leader', { label: win.label }) : t('poll.noLeader')}</p>
-            <Button variant="tertiary" onClick={() => set((s) => ({ ...s, polls: s.polls.filter((x) => x.id !== poll.id) }))}>{t('poll.remove')}</Button>
+            <p role="status">{mine ? t('poll.yours', { label: mine.label }) : t('poll.notYet')} {win ? t('poll.leader', { label: win.label }) : t('poll.noLeader')}</p>
+            <Button variant="tertiary" onClick={() => set((b) => ({ ...b, polls: b.polls.filter((x) => x.id !== poll.id) }))}>{t('poll.remove')}</Button>
           </Card>
         )
       })}
@@ -148,18 +152,17 @@ export function GroupPollScreen() {
         <h2 id="board-h" className="card__title">{t('board.title')}</h2>
         <p>{t('board.intro')}</p>
         <Field label={t('board.add')} value={idea} maxLength={80} onChange={(e) => setIdea(e.target.value)} />
-        <Button onClick={() => { set((s) => ({ ...s, ideas: addIdea(s.ideas, newMemoryId(), idea) })); setIdea('') }}>{t('board.addButton')}</Button>
+        <Button onClick={() => { set((b) => ({ ...b, ideas: addIdea(b.ideas, newPortId(), idea) })); setIdea('') }}>{t('board.addButton')}</Button>
         <ul className="plain-list">
-          {[...p.ideas].sort((a, b) => b.hearts.length - a.hearts.length).map((i) => (
+          {rankIdeas(board.ideas).map((i) => (
             <li key={i.id}>
-              {i.text} <span className="muted">{t('board.hearts', { n: i.hearts.length })}</span>{' '}
-              <Button variant="tertiary" disabled={!voter.trim()} onClick={() => set((s) => ({ ...s, ideas: heartIdea(s.ideas, i.id, voter) }))}>{t('board.heart')}</Button>
-              <Button variant="tertiary" onClick={() => set((s) => ({ ...s, ideas: s.ideas.filter((x) => x.id !== i.id) }))}>{t('poll.remove')}</Button>
+              {i.text} <span className="muted">{t('board.hearts', { count: i.hearts.length })}</span>{' '}
+              <Button variant="tertiary" disabled={!who} aria-pressed={i.hearts.includes(who)} onClick={() => set((b) => ({ ...b, ideas: heartIdea(b.ideas, i.id, who) }))}>{t('board.heart')}</Button>
+              <Button variant="tertiary" onClick={() => set((b) => ({ ...b, ideas: b.ideas.filter((x) => x.id !== i.id) }))}>{t('poll.remove')}</Button>
             </li>
           ))}
         </ul>
       </Card>
-      <p className="muted">{t('poll.notShared')}</p>
     </Page>
   )
 }
@@ -254,39 +257,77 @@ export function RhythmScreen() {
   )
 }
 
-/** Organiser dashboard and privacy defaults (XG-01, XG-02), from what the booking already holds on this device. */
+/** Organiser dashboard and what each person shares (XG-01, XG-02): the roster and money come from the server, which shows a person's progress only if they chose to share it. */
 export function OrganiserScreen() {
-  const { p, set, memory } = usePlanning()
-  const party = useParty()
   const trips = useMine(() => api.trips.list())
-  const led = ledgerSummary(memory.shares)
+  const { sharing, set } = useSharing()
   return (
     <Page title="route.organiser" intro="org.intro">
       <Load state={trips}>
-        {(v) => (
-          <Card labelledBy="org-h">
-            <h2 id="org-h" className="card__title">{t('org.title')}</h2>
-            <ul className="plain-list">
-              <li>{t('org.guests', { n: v.upcoming[0]?.guests ?? 1 })}</li>
-              <li>{t('org.invited', { n: party.state.invites.length })}</li>
-              <li>{t('org.notes', { n: party.state.notes.length })}</li>
-              <li>{t('org.owed', { owed: formatMoney(led.owed), paid: formatMoney(led.paid) })}</li>
-            </ul>
-            <p><Link to="/plan/party">{t('route.party')}</Link> · <Link to="/plan/shares">{t('route.shares')}</Link> · <Link to="/plan/cabins">{t('route.cabins2')}</Link></p>
-          </Card>
-        )}
+        {(v) => {
+          const number = (v.upcoming.find((x) => x.kind === 'current') ?? v.upcoming[0])?.number
+          return number ? <OrganiserView number={number} /> : <p>{t('org.noBooking')}</p>
+        }}
       </Load>
       <Card labelledBy="org-priv">
         <h2 id="org-priv" className="card__title">{t('org.privacy')}</h2>
         <p>{t('org.privacyIntro')}</p>
-        {PRIVACY_FIELDS.map((f) => (
+        {SHARING_FACETS.map((f) => (
           <label key={f} className="choice">
-            <input type="checkbox" checked={p.privacy[f]} disabled={f === 'medical'} onChange={(e) => set((s) => ({ ...s, privacy: { ...s.privacy, [f]: e.target.checked } }))} />
-            <span>{t(`org.field.${f}` as StringKey)}{f === 'medical' ? ` ${t('org.never')}` : ''}</span>
+            <input type="checkbox" checked={sharing[f]} onChange={(e) => set(f, e.target.checked)} />
+            <span>{t(`org.field.${f}` as StringKey)}</span>
           </label>
         ))}
+        <p className="muted">{t('org.field.medical')} {t('org.never')}</p>
       </Card>
     </Page>
+  )
+}
+
+function OrganiserView({ number }: { number: string }) {
+  const org = useMine(async () => { const o = normalizeOrganiser(await partyShare.organiser(number)); if (!o) throw new Error('organiser'); return o }, [number])
+  const log = useMine(async () => normalizeLog(await partyShare.log(number)), [number])
+  const party = useParty()
+  return (
+    <>
+      <Load state={org}>
+        {(o) => (
+          <Card labelledBy="org-h">
+            <h2 id="org-h" className="card__title">{t('org.title')}</h2>
+            <p>{t('org.sailing', { ship: o.ship, days: o.daysToGo })}</p>
+            <ul className="plain-list">
+              {o.guests.map((g) => {
+                const st = guestStatus(g)
+                return (
+                  <li key={g.id}>
+                    <strong>{g.name}</strong>{g.isYou ? ` ${t('org.you')}` : ''}:{' '}
+                    {st.kind === 'hidden' ? t('org.hidden') : st.kind === 'done' ? t('org.checkinDone') : t('org.checkinSteps', { done: st.done, total: st.total })}
+                    {g.documents !== null && <> · {t('org.documents', { count: g.documents })}</>}
+                  </li>
+                )
+              })}
+            </ul>
+            <p>{t('org.invited', { count: party.state.invites.length })}</p>
+            {o.money ? (
+              <p>{o.money.paidInFull ? t('org.paidInFull') : t('org.owed', { owed: formatMoney(o.money.totalCents - o.money.paidCents), paid: formatMoney(o.money.paidCents) })}</p>
+            ) : (
+              <p className="muted">{t('org.moneyBooker')}</p>
+            )}
+            <p><Link to="/plan/party">{t('route.party')}</Link> · <Link to="/plan/split">{t('route.split')}</Link> · <Link to="/plan/cabins">{t('route.cabins2')}</Link> · <Link to="/plan/share-links">{t('route.shareLinks')}</Link></p>
+          </Card>
+        )}
+      </Load>
+      <Load state={log}>
+        {(entries) => entries.length > 0 && (
+          <Card labelledBy="org-log">
+            <h2 id="org-log" className="card__title">{t('org.log')}</h2>
+            <ul className="plain-list">
+              {entries.map((e, k) => <li key={`${e.kind}-${e.at}-${k}`}>{t(e.deleted ? 'org.log.removed' : 'org.log.added', { what: t(`org.log.kind.${e.kind}` as StringKey), label: e.label })} <span className="muted">{new Date(e.at).toLocaleString()}</span></li>)}
+            </ul>
+          </Card>
+        )}
+      </Load>
+    </>
   )
 }
 
