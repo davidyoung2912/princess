@@ -27,7 +27,8 @@ public class RatesTests
     public void ThePricingTableServesTheSameFaresTheQuotesUse()
     {
         var p = PricingReference.Get();
-        Assert.Equal(Pricing.InteriorFare.Count, p.Interior.Count);
+        Assert.All(p.Interior, kv => Assert.Equal(kv.Value, Pricing.FareFor(kv.Key, "interior")));
+        Assert.All(p.Interior.Keys, id => Assert.True(Pricing.HasPrice(id)));
         Assert.All(p.NextSeason, n => Assert.Equal(Pricing.FareFor(n.Id, "interior"), n.Fare));
         Assert.All(p.NextSeason, n => Assert.Equal(n.Id["sun-".Length..], n.Departure));
         Assert.Equal(Pricing.TaxesAndFees, p.TaxesAndFees);
