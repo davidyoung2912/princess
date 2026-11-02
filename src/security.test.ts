@@ -37,12 +37,12 @@ describe('security guards', () => {
 
   it('keeps the built page locked to its own origin, plus the two hosts it needs', () => {
     const config = readFileSync('vite.config.ts', 'utf8')
-    const csp = config.slice(config.indexOf('const CSP = ['), config.indexOf('].join'))
+    const csp = config.slice(config.indexOf('const cspFor = '), config.indexOf('].join'))
     expect(csp).toContain(`"script-src 'self'"`)
     expect(csp).toContain(`"object-src 'none'"`)
     expect(csp).toContain(`"form-action 'none'"`)
     expect(csp).not.toMatch(/script-src[^"]*unsafe/)
-    const hosts = [...csp.matchAll(/https:\/\/[^\s"';]+/g)].map((m) => m[0]).sort()
+    const hosts = [...csp.matchAll(/https:\/\/[^\s"';`$]+/g)].map((m) => m[0]).sort()
     expect(hosts).toEqual(['https://*.princess.com', 'https://api.anthropic.com'])
   })
 })

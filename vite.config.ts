@@ -8,12 +8,12 @@ import { VitePWA } from 'vite-plugin-pwa'
  * in-process; the only network call is the concierge's, to the Anthropic API (`connect-src`), and only when a key is set. Build-only: the dev
  * server needs inline scripts for hot reload. React sets styles through the DOM, hence 'unsafe-inline' for styles alone.
  */
-const CSP = [
+const cspFor = (apiUrl: string): string => [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.princess.com",
-  "connect-src 'self' https://api.anthropic.com",
+  `connect-src 'self' https://api.anthropic.com${apiOrigin(apiUrl)}`,
   "worker-src 'self'",
   "manifest-src 'self'",
   "object-src 'none'",
@@ -21,11 +21,16 @@ const CSP = [
   "form-action 'none'",
 ].join('; ')
 
-const contentSecurityPolicy = (): Plugin => ({
+/** The API's origin for `connect-src` when `VITE_API_URL` is an absolute address (a relative one such as `/api/v1` is already 'self'). */
+function apiOrigin(apiUrl: string): string {
+  try { return /^https?:\/\//i.test(apiUrl) ? ` ${new URL(apiUrl).origin}` : '' } catch { return '' }
+}
+
+const contentSecurityPolicy = (apiUrl: string): Plugin => ({
   name: 'content-security-policy',
   apply: 'build',
   transformIndexHtml: () => [
-    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP }, injectTo: 'head-prepend' },
+    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: cspFor(apiUrl) }, injectTo: 'head-prepend' },
     { tag: 'meta', attrs: { name: 'referrer', content: 'no-referrer' }, injectTo: 'head-prepend' },
   ],
 })
@@ -35,7 +40,7 @@ export default defineConfig(({ mode }) => ({
   server: { proxy: { '/api': { target: loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182', changeOrigin: true } } },
   plugins: [
     react(),
-    contentSecurityPolicy(),
+    contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? ''),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
