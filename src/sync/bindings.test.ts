@@ -6,6 +6,12 @@ import { getPhone, updatePhone } from '../phone/store'
 import { DEFAULT_TEXT_SIZE } from '../design/textSize'
 import { getSettings, switchSettingsOwner, updateSettings } from '../settings/store'
 import { getExtras } from '../shop/store'
+import { updateHub } from '../hub/store'
+import { updateTrip } from '../journey/store'
+import { updatePilot } from '../pilot/store'
+import { getPort } from '../port/store'
+import { EMPTY_PARTY } from '../domain/party'
+import { getParty, updateParty } from '../party/store'
 import { registerSyncBindings } from './bindings'
 import { setKeepPrivate } from './consent'
 import { setRemote, sync } from './index'
@@ -85,6 +91,52 @@ describe('private notes and health details', () => {
     expect(await setKeepPrivate(false)).toBe(true)
     expect(docs.has('memory')).toBe(false)
     expect(getMemory('gerald').medical.allergies).toEqual(['peanuts'])   // this device keeps its own
+    setRemote(null)
+  })
+})
+
+describe('trip, plan changes, family hub and the booking\'s shared records', () => {
+  it('trip, pilot and hub follow the person; port and party follow the booking, under its booker', async () => {
+    docs.clear()
+    const shared = new Map<string, RemoteDoc>()
+    const sharedRemote: Remote = {
+      ...remote,
+      get: async (key, booking) => (booking ? shared.get(key) ?? null : docs.get(key) ?? null),
+      put: async (key, data, base, booking) => {
+        const table = booking ? shared : docs
+        const cur = table.get(key)?.version ?? 0
+        if (cur !== base) throw new Error('stale')
+        const doc = { version: cur + 1, data }
+        table.set(key, doc)
+        return doc
+      },
+      bookingNumber: async () => 'PC7',
+    }
+    registerSyncBindings()
+    setRemote(sharedRemote)
+    switchSettingsOwner({ id: 'priya', defaultTextSize: DEFAULT_TEXT_SIZE } as never)
+    sync.setOwner('user-p', 'priya')
+    await sync.pull()
+
+    updatePilot('priya', (s) => ({ ...s, gentle: true }))
+    updateTrip('priya', (s) => ({ ...s, embark: { ...s.embark, window: '11:00' } }))
+    updateHub('priya', (s) => ({ ...s, debriefs: s.debriefs }))
+    updateParty('daniel', (s) => ({ ...s, invites: [{ id: 'i1', email: 'gran@example.com', at: 1 }] }))   // the booker's key, as the screens use
+    await sync.flush()
+    expect((docs.get('pilot')!.data as { gentle: boolean }).gentle).toBe(true)
+    expect((docs.get('trip')!.data as { embark: { window: string } }).embark.window).toBe('11:00')
+    expect(docs.has('hub')).toBe(true)
+    expect(shared.get('party')?.data).toEqual({ invites: [{ id: 'i1', email: 'gran@example.com', at: 1 }], notes: [] })
+    expect(docs.has('party')).toBe(false)   // not filed under the person
+
+    // Another adult on the booking, on another device, picks it up.
+    shared.set('port', { version: 1, data: { party: { days: {}, alertBefore: 90, rendezvous: [] }, split: { parties: [], items: [], settledAt: null } } })
+    sync.setOwner('user-x', 'someone')
+    sync.setOwner('user-p', 'priya')
+    updateParty('daniel', () => EMPTY_PARTY)
+    await sync.pull()
+    expect(getParty('daniel').invites).toHaveLength(1)
+    expect(getPort('daniel').party.alertBefore).toBe(90)
     setRemote(null)
   })
 })

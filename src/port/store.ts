@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { EMPTY_SPLIT, normalizeSplit, type SplitState } from '../domain/ledgerSplit'
 import { EMPTY_PORT_PARTY, normalizePortParty, type PortPartyState } from '../domain/portParty'
 
@@ -57,6 +58,14 @@ export function subscribePort(listener: () => void): () => void {
 
 export function updatePort(bookerId: string | null, change: (s: PortState) => PortState): void {
   const next = change(getPort(bookerId))
+  cache.set(portKeyFor(bookerId), next)
+  savePort(bookerId, next)
+  listeners.forEach((l) => l())
+  sync.changed('port', bookerId)
+}
+
+/** Takes the server's copy without telling the sync module it changed. */
+export function applyRemotePort(bookerId: string | null, next: PortState): void {
   cache.set(portKeyFor(bookerId), next)
   savePort(bookerId, next)
   listeners.forEach((l) => l())

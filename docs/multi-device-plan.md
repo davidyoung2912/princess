@@ -1,6 +1,6 @@
 # Multi-device plan: account data lives on the server
 
-Status: **Plan written 2026-11-01. Phases 1 and 2 built; Phases 3 to 5 open.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
+Status: **Plan written 2026-11-01. Phases 1 to 3 built; Phases 4 and 5 open.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
 
 ## Goal and rules
 
@@ -124,3 +124,20 @@ Built 2026-11-01.
   - **Dedicated storage** for the medical card, access profile and allergy (encryption, server-side use) is still Phase 4. Until then they are plain JSON inside `memory`.
   - **Copy on other screens.** Many memory-backed screens still say "stays on this device" (kept so as not to claim more than is true in mock mode, and `h7Promises.test.ts` pins some of it). Only `medical.intro` and the privacy centre mention the account option.
   - **Carried over from Phase 1:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, Swagger coverage list.
+
+## Phase 3 record
+
+Built 2026-11-01.
+
+- **User scope.** `trip`, `pilot` and `hub` sync through `UserState` like the Phase 1 stores (`updateX` calls `sync.changed`, new `applyRemoteX`; bindings in `src/sync/bindings.ts`). No consent switch: the plan puts them at low and medium sensitivity.
+- **Booking scope.** `port` and `party` sync through `BookingState` (`/bookings/{number}/state/{key}`). New in `sync.ts`: `Binding.scope: 'booking'`, `Binding.localFor` (the stores are keyed by the booker, the sync owner is the signed-in persona, so `bookerOf` maps one to the other), optional `scope` argument on `Remote.get/put/remove`, and `Remote.bookingNumber()`. The number is the current trip (same rule as `httpApi.ts`: the `current` trip, else the first upcoming), looked up at each `pull()`; a new number starts those documents afresh, and a person with no trip keeps them on the device.
+- **Two adults at once.** `src/sync/merges.ts`: party keeps every invitation and note from both sides; port keeps the later presence per person, both sides' meeting places, split families and expenses, and this device's plan and settings. A removal made on one side comes back after a clash (the cost of keeping both additions).
+- **Children.** A supervised child can read the booking's documents but the server refuses their writes (`forbidden`); the sync module drops that change without an error and the next pull gives them the adults' copy.
+- **Verified:** `npm run test` (1751 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. No server code or schema changed, so no schema check, and nothing server-side was run.
+- **Not done:**
+  - **Calm profile and family contacts** (inside `pilot` and `hub`) are sensory and contact details sent without the Phase 2 consent switch. Decide whether to put them behind `syncPrivate` or leave as is.
+  - **Port ledger and presence as real rows**, accepted plan changes merged into the day plan, signed family links and the caregiver, callback and sensory-kit requests reaching staff remain Phase 4: today they are documents only other devices of the same booking can read.
+  - **Screen copy** that says "stays on this device" (trip, pilot, hub, port, party screens) is unchanged and `h7Promises.test.ts` still pins some of it.
+  - **Embark ticks duplicate** (`trip.carryOn`/`checked` against `boarding.setCarryOn`/`setBags`) is still open for Phase 4.
+  - **Server booking-state routes** are exercised only by the Phase 1 server tests (not run); nothing here has run against a real server.
+  - **Carried over from Phase 1 and 2:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, Swagger coverage list, privacy export and deletion coverage.

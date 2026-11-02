@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { EMPTY_PARTY, normalizePartyState, type PartyState } from '../domain/party'
 
 /** Party invitations and shared notes stay on this device, one record per booking (kept under the booker, so everyone on the booking sees the same notes here). */
@@ -50,6 +51,14 @@ export function subscribeParty(listener: () => void): () => void {
 
 export function updateParty(bookerId: string | null, change: (s: PartyState) => PartyState): void {
   const next = change(getParty(bookerId))
+  cache.set(partyKeyFor(bookerId), next)
+  saveParty(bookerId, next)
+  listeners.forEach((l) => l())
+  sync.changed('party', bookerId)
+}
+
+/** Takes the server's copy without telling the sync module it changed. */
+export function applyRemoteParty(bookerId: string | null, next: PartyState): void {
   cache.set(partyKeyFor(bookerId), next)
   saveParty(bookerId, next)
   listeners.forEach((l) => l())

@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { normalizeCallback, normalizeDebriefs, type CallbackRequest, type Debrief } from '../domain/disruptionHub'
 import { EMPTY_DELAY, normalizeDelay, type DelayState } from '../domain/delay'
 import { EMPTY_HOME, normalizeHome, type HomeState } from '../domain/homeLink'
@@ -58,6 +59,14 @@ export function subscribeHub(listener: () => void): () => void {
 
 export function updateHub(personaId: string | null, change: (s: HubState) => HubState): void {
   const next = change(getHub(personaId))
+  cache.set(hubKeyFor(personaId), next)
+  saveHub(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('hub', personaId)
+}
+
+/** Takes the server's copy without telling the sync module it changed. */
+export function applyRemoteHub(personaId: string | null, next: HubState): void {
   cache.set(hubKeyFor(personaId), next)
   saveHub(personaId, next)
   listeners.forEach((l) => l())

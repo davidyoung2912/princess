@@ -318,6 +318,134 @@ describe('http remote', () => {
     await remote.remove('memory')
     expect(calls).toEqual(['GET /me/state/settings', 'GET /me/state/none', 'PUT /me/state/settings {"data":{"a":2},"baseVersion":2}', 'DELETE /me/state/memory'])
   })
+
+  it('uses the booking routes for a shared document and finds the current trip', async () => {
+    const calls: string[] = []
+    const http = {
+      get: async <T,>(path: string) => {
+        calls.push(`GET ${path}`)
+        return (path === '/trips' ? { upcoming: [{ kind: 'next', number: 'PC1' }, { kind: 'current', number: 'PC2' }] } : { key: 'port', version: 1, data: {}, updatedAt: 1 }) as T
+      },
+      put: async <T,>(path: string) => { calls.push(`PUT ${path}`); return { key: 'port', version: 2, data: {}, updatedAt: 2 } as T },
+      post: async () => { throw new Error('unused') }, patch: async () => { throw new Error('unused') }, delete: async <T,>(path: string) => { calls.push(`DELETE ${path}`); return undefined as T },
+    }
+    const remote = createHttpRemote(http as never)
+    expect(await remote.bookingNumber!()).toBe('PC2')
+    await remote.get('port', 'PC2')
+    await remote.put('party', {}, 1, 'PC 2')
+    await remote.remove('party', 'PC2')
+    expect(calls).toEqual(['GET /trips', 'GET /bookings/PC2/state/port', 'PUT /bookings/PC%202/state/party', 'DELETE /bookings/PC2/state/party'])
+  })
+
+  it('says a person with no trip has no booking', async () => {
+    const http = { get: async () => { throw new ApiError('notFound') } }
+    expect(await createHttpRemote(http as never).bookingNumber!()).toBeNull()
+  })
+})
+
+describe('documents shared by a booking', () => {
+  /** A server that keeps user and booking documents apart, for one booking. */
+  function twoScopes(number: string | null = 'PC1') {
+    const user = new Map<string, RemoteDoc>()
+    const shared = new Map<string, RemoteDoc>()
+    const log: string[] = []
+    let forbid = false
+    const table = (booking?: string) => (booking === undefined ? user : shared)
+    const remote: Remote = {
+      get: async (key, booking) => { log.push(`get ${booking ?? 'me'} ${key}`); const d = table(booking).get(key); return d ? { ...d } : null },
+      put: async (key, data, base, booking) => {
+        log.push(`put ${booking ?? 'me'} ${key} ${base}`)
+        if (forbid && booking !== undefined) throw new ApiError('forbidden')
+        const cur = table(booking).get(key)?.version ?? 0
+        if (cur !== base) throw new ApiError('conflict', 'stale')
+        const doc = { version: cur + 1, data }
+        table(booking).set(key, doc)
+        return { ...doc }
+      },
+      remove: async () => {},
+      bookingNumber: async () => number,
+    }
+    return { user, shared, log, remote, forbid: () => { forbid = true } }
+  }
+
+  /** A booking store keyed by a booker, read through a persona (the persona 'priya' belongs to the booker 'daniel'). */
+  function bookingStore() {
+    const values = new Map<string | null, unknown>()
+    const binding: Binding = {
+      key: 'party', scope: 'booking', localFor: (id) => (id === 'priya' ? 'daniel' : id),
+      read: (id) => values.get(id) ?? { n: 0 }, apply: (id, raw) => { values.set(id, raw ?? { n: 0 }) },
+      isEmpty: (raw) => JSON.stringify(raw) === '{"n":0}',
+      merge: (remote, local) => ({ n: Math.max((remote as { n: number }).n, (local as { n: number }).n) }),
+    }
+    return { values, binding }
+  }
+
+  it('sends a change to the booking, not the person, under the booker\'s device copy', async () => {
+    const server = twoScopes()
+    const store = bookingStore()
+    const timers = manualTimers()
+    const sync = createSync({ remote: () => server.remote, ...timers })
+    sync.register(store.binding)
+    sync.setOwner('u1', 'priya')
+    await sync.pull()
+    store.values.set('daniel', { n: 4 })
+    sync.changed('party', 'daniel')
+    await timers.fire()
+    expect(server.shared.get('party')?.data).toEqual({ n: 4 })
+    expect(server.user.size).toBe(0)
+    expect(server.log).toContain('put PC1 party 0')
+    sync.changed('party', 'priya')   // a change for some other id is not this booking's
+    expect(timers.count()).toBe(0)
+  })
+
+  it('takes the booking\'s document on a new device, and merges when two adults clash', async () => {
+    const server = twoScopes()
+    server.shared.set('party', { version: 3, data: { n: 7 } })
+    const store = bookingStore()
+    const timers = manualTimers()
+    const sync = createSync({ remote: () => server.remote, ...timers })
+    sync.register(store.binding)
+    sync.setOwner('u1', 'priya')
+    await sync.pull()
+    expect(store.values.get('daniel')).toEqual({ n: 7 })
+
+    store.values.set('daniel', { n: 8 })
+    sync.changed('party', 'daniel')
+    server.shared.set('party', { version: 4, data: { n: 9 } })   // another adult saved first
+    await timers.fire()
+    expect(server.shared.get('party')).toEqual({ version: 5, data: { n: 9 } })
+    expect(store.values.get('daniel')).toEqual({ n: 9 })
+  })
+
+  it('leaves a child\'s edits on the device without an error', async () => {
+    const server = twoScopes()
+    server.forbid()
+    const store = bookingStore()
+    const timers = manualTimers()
+    const sync = createSync({ remote: () => server.remote, ...timers })
+    sync.register(store.binding)
+    sync.setOwner('u1', 'priya')
+    await sync.pull()
+    store.values.set('daniel', { n: 2 })
+    sync.changed('party', 'daniel')
+    await timers.fire()
+    expect(sync.status()).toBe('idle')
+    expect(server.shared.size).toBe(0)
+  })
+
+  it('does nothing for shared documents when the person has no booking', async () => {
+    const server = twoScopes(null)
+    const store = bookingStore()
+    const timers = manualTimers()
+    const sync = createSync({ remote: () => server.remote, ...timers })
+    sync.register(store.binding)
+    sync.setOwner('u1', 'priya')
+    await sync.pull()
+    store.values.set('daniel', { n: 2 })
+    sync.changed('party', 'daniel')
+    await timers.fire()
+    expect(server.log.filter((l) => l.includes('party'))).toEqual([])
+  })
 })
 
 describe('account-level settings', () => {

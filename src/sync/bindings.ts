@@ -1,3 +1,11 @@
+import { EMPTY_HUB, applyRemoteHub, getHub, normalizeHub } from '../hub/store'
+import { EMPTY_TRIP, applyRemoteTrip, getTrip, normalizeTrip } from '../journey/store'
+import { EMPTY_PILOT, applyRemotePilot, getPilot, normalizePilot } from '../pilot/store'
+import { EMPTY_PORT, applyRemotePort, getPort, normalizePort } from '../port/store'
+import { EMPTY_PARTY, normalizePartyState } from '../domain/party'
+import { applyRemoteParty, getParty } from '../party/store'
+import { personaById } from '../domain/personas'
+import { mergeParty, mergePort } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
@@ -52,10 +60,59 @@ const memory: Binding = {
   enabled: () => getSettings().syncPrivate,
 }
 
+/** Door-to-ship plan, packing, bag log and embarkation plan. */
+const trip: Binding = {
+  key: 'trip',
+  read: (id) => getTrip(id),
+  apply: (id, raw) => applyRemoteTrip(id, raw === null ? EMPTY_TRIP : normalizeTrip(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_TRIP),
+}
+
+/** Plan changes and their log, slot watches, week preferences, the calm profile. */
+const pilot: Binding = {
+  key: 'pilot',
+  read: (id) => getPilot(id),
+  apply: (id, raw) => applyRemotePilot(id, raw === null ? EMPTY_PILOT : normalizePilot(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PILOT),
+}
+
+/** Family contacts, delay, callback request and follow-ups. */
+const hub: Binding = {
+  key: 'hub',
+  read: (id) => getHub(id),
+  apply: (id, raw) => applyRemoteHub(id, raw === null ? EMPTY_HUB : normalizeHub(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_HUB),
+}
+
+/** A booking's stores are kept under its booker, so everyone on the booking reads and writes the same copy. */
+const bookerOf = (id: string | null): string | null => (id === null ? null : personaById(id)?.booker ?? id)
+
+/** Port-day presence, plan, meeting places and the split ledger: one document for the whole booking. */
+const port: Binding = {
+  key: 'port',
+  scope: 'booking',
+  localFor: bookerOf,
+  read: (id) => getPort(id),
+  apply: (id, raw) => applyRemotePort(id, raw === null ? EMPTY_PORT : normalizePort(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PORT),
+  merge: mergePort,
+}
+
+/** Travel-party invitations and shared notes: one document for the whole booking. */
+const party: Binding = {
+  key: 'party',
+  scope: 'booking',
+  localFor: bookerOf,
+  read: (id) => getParty(id),
+  apply: (id, raw) => applyRemoteParty(id, raw === null ? EMPTY_PARTY : normalizePartyState(raw)),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PARTY),
+  merge: mergeParty,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, trip, pilot, hub, port, party]) sync.register(b)
 }

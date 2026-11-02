@@ -11,17 +11,23 @@ import { isApiError } from '../api/errors'
 export interface RemoteDoc { version: number; data: unknown }
 
 export interface Remote {
-  /** The saved document, or null when nothing is saved. */
-  get(key: string): Promise<RemoteDoc | null>
+  /** The saved document, or null when nothing is saved. `booking` is the booking number for a document shared by everyone on a booking; absent means the signed-in person's own. */
+  get(key: string, booking?: string): Promise<RemoteDoc | null>
   /** Saves based on the version last seen (0 for none); rejects with an ApiError `conflict` when another device saved first. */
-  put(key: string, data: unknown, baseVersion: number): Promise<RemoteDoc>
+  put(key: string, data: unknown, baseVersion: number, booking?: string): Promise<RemoteDoc>
   /** Deletes the saved document (nothing saved is fine). */
-  remove(key: string): Promise<void>
+  remove(key: string, booking?: string): Promise<void>
+  /** The number of the booking shared documents belong to (the current trip), or null when the person has none. Needed only for `scope: 'booking'` bindings. */
+  bookingNumber?(): Promise<string | null>
 }
 
 /** How one store plugs in. `localId` is whatever the store keys its device copy by (a persona id, or null). */
 export interface Binding {
   key: string
+  /** `'booking'`: one document for everyone on the booking (adults write, everyone reads). Absent: the signed-in person's own. */
+  scope?: 'booking'
+  /** The id the store keys its device copy by, when that is not the signed-in person's (a booking's store is keyed by its booker). */
+  localFor?(localId: string | null): string | null
   /** The value to send, taken from the store. */
   read(localId: string | null): unknown
   /** Puts a server copy into the store (cache, device copy, subscribers) WITHOUT telling this module it changed. `null` means "reset to empty". */
@@ -59,6 +65,8 @@ export function createSync(opts: SyncOptions) {
   const states = new Map<string, KeyState>()
   let account: string | null = null
   let localId: string | null = null
+  /** The booking shared documents belong to; null until looked up, or when the person has none. */
+  let booking: string | null = null
   let status: SyncStatus = 'idle'
   /** Keys whose server copy still has to be deleted (the guest withdrew consent while offline). */
   const removals = new Set<string>()
@@ -70,6 +78,11 @@ export function createSync(opts: SyncOptions) {
   }
   const setStatus = (next: SyncStatus) => { if (status !== next) { status = next; opts.onStatus?.(next) } }
   const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  /** The id a binding's store keys its device copy by. */
+  const idOf = (b: Binding): string | null => (b.localFor ? b.localFor(localId) : localId)
+  /** A booking document cannot be fetched or sent until the booking number is known. */
+  const ready = (b: Binding): boolean => b.scope !== 'booking' || booking !== null
+  const scopeOf = (b: Binding): string | undefined => (b.scope === 'booking' ? booking ?? undefined : undefined)
 
   /** Still the same person on this device after an await. */
   const current = (acct: string | null) => acct !== null && acct === account
@@ -77,24 +90,26 @@ export function createSync(opts: SyncOptions) {
   async function push(key: string, b: Binding, acct: string): Promise<void> {
     const remote = opts.remote()
     const s = stateOf(key)
-    if (!remote || !s.pulled || !allowed(b)) return
+    if (!remote || !s.pulled || !allowed(b) || !ready(b)) return
     for (let tries = 0; tries < MAX_TRIES; tries++) {
       s.dirty = false
-      const sent = b.read(localId)
+      const sent = b.read(idOf(b))
       try {
-        const doc = await remote.put(key, sent, s.version)
+        const doc = await remote.put(key, sent, s.version, scopeOf(b))
         if (!current(acct)) return
         s.version = doc.version
-        if (!same(sent, b.read(localId))) s.dirty = true   // changed while saving: send again
+        if (!same(sent, b.read(idOf(b)))) s.dirty = true   // changed while saving: send again
         return
       } catch (e) {
         if (!current(acct)) return
+        // A child on a booking may read what the adults share but not change it: their edits stay on this device and are not an error.
+        if (b.scope === 'booking' && isApiError(e) && e.code === 'forbidden') { s.dirty = false; return }
         s.dirty = true
         if (!isApiError(e) || e.code !== 'conflict') throw e
-        const latest = await remote.get(key)
+        const latest = await remote.get(key, scopeOf(b))
         if (!current(acct)) return
         s.version = latest?.version ?? 0
-        if (latest && b.merge) b.apply(localId, b.merge(latest.data, b.read(localId)))
+        if (latest && b.merge) b.apply(idOf(b), b.merge(latest.data, b.read(idOf(b))))
       }
     }
     throw new Error('stale')
@@ -109,7 +124,7 @@ export function createSync(opts: SyncOptions) {
     setStatus('syncing')
     s.running = (async () => {
       try {
-        while (s.dirty && s.pulled && allowed(b) && current(acct) && opts.remote()) await push(key, b, acct)
+        while (s.dirty && s.pulled && allowed(b) && ready(b) && current(acct) && opts.remote()) await push(key, b, acct)
         if (current(acct)) setStatus([...states.values()].some((x) => x.dirty) ? 'error' : 'idle')
       } catch {
         setStatus('error')   // stays dirty: the next change, focus or reconnect tries again
@@ -128,21 +143,21 @@ export function createSync(opts: SyncOptions) {
 
   async function pullKey(key: string, b: Binding, acct: string): Promise<void> {
     const remote = opts.remote()
-    if (!remote || !allowed(b)) return
+    if (!remote || !allowed(b) || !ready(b)) return
     const s = stateOf(key)
-    const doc = await remote.get(key)
+    const doc = await remote.get(key, scopeOf(b))
     if (!current(acct)) return
     s.pulled = true
     if (!doc) {
       s.version = 0
       // Only a known person's device copy is theirs to send: a null id is shared by every account without a persona.
-      if (localId !== null && !b.isEmpty(b.read(localId))) { s.dirty = true; await run(key) }
-      else if (localId === null) b.apply(localId, null)
+      if (localId !== null && !b.isEmpty(b.read(idOf(b)))) { s.dirty = true; await run(key) }
+      else if (localId === null) b.apply(idOf(b), null)
       return
     }
     s.version = doc.version
     if (s.dirty) { await run(key); return }   // the guest changed it before the first pull finished: theirs wins
-    if (!same(doc.data, b.read(localId))) b.apply(localId, doc.data)
+    if (!same(doc.data, b.read(idOf(b)))) b.apply(idOf(b), doc.data)
   }
 
   return {
@@ -155,6 +170,7 @@ export function createSync(opts: SyncOptions) {
       states.clear()
       account = accountId
       localId = local
+      booking = null
       setStatus('idle')
       return true
     },
@@ -162,7 +178,7 @@ export function createSync(opts: SyncOptions) {
     /** A store changed `key` for `forLocalId`; send it soon. */
     changed(key: string, forLocalId: string | null): void {
       const b = bindings.get(key)
-      if (!account || forLocalId !== localId || !b || !allowed(b) || !opts.remote()) return
+      if (!account || !b || forLocalId !== idOf(b) || !allowed(b) || !opts.remote()) return
       stateOf(key).dirty = true
       schedule(key)
     },
@@ -173,6 +189,19 @@ export function createSync(opts: SyncOptions) {
       if (!acct || !opts.remote()) return
       setStatus('syncing')
       let failed = false
+      // Shared booking documents need the booking number. A new number (a different current trip) means those documents start afresh.
+      const needsBooking = [...bindings.values()].some((b) => b.scope === 'booking')
+      const lookup = opts.remote()?.bookingNumber
+      if (needsBooking && lookup) {
+        try {
+          const n = await lookup.call(opts.remote())
+          if (!current(acct)) return
+          if (n !== booking) {
+            booking = n
+            for (const [key, b] of bindings) if (b.scope === 'booking') { const st = states.get(key); if (st && st.timer !== null) clearTimer(st.timer); states.delete(key) }
+          }
+        } catch { failed = true }
+      }
       const one = async (key: string, b: Binding) => {
         try {
           if (removals.has(key)) { await opts.remote()?.remove(key); removals.delete(key); return }

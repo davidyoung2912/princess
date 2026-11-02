@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { EMPTY_EMBARK, normalizeEmbark, type EmbarkState } from '../domain/embark'
 import { EMPTY_JOURNEY_STATE, normalizeJourney, type JourneyState } from '../domain/journey'
 
@@ -57,6 +58,14 @@ export function subscribeTrip(listener: () => void): () => void {
 
 export function updateTrip(personaId: string | null, change: (s: TripState) => TripState): void {
   const next = change(getTrip(personaId))
+  cache.set(tripKeyFor(personaId), next)
+  saveTrip(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('trip', personaId)
+}
+
+/** Takes the server's copy without telling the sync module it changed. */
+export function applyRemoteTrip(personaId: string | null, next: TripState): void {
   cache.set(tripKeyFor(personaId), next)
   saveTrip(personaId, next)
   listeners.forEach((l) => l())

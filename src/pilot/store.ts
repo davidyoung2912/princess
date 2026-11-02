@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { sync } from '../sync'
 import { DEFAULT_PREFS, isPace, normalizeWatches, type Watch, type WeekPrefs } from '../domain/autopilot'
 import { EMPTY_CALM, normalizeCalm, type CalmState } from '../domain/calm'
 import { INTERESTS, type Interest } from '../domain/excursions'
@@ -110,6 +111,14 @@ export function subscribePilot(listener: () => void): () => void {
 
 export function updatePilot(personaId: string | null, change: (s: PilotState) => PilotState): void {
   const next = change(getPilot(personaId))
+  cache.set(pilotKeyFor(personaId), next)
+  savePilot(personaId, next)
+  listeners.forEach((l) => l())
+  sync.changed('pilot', personaId)
+}
+
+/** Takes the server's copy without telling the sync module it changed. */
+export function applyRemotePilot(personaId: string | null, next: PilotState): void {
   cache.set(pilotKeyFor(personaId), next)
   savePilot(personaId, next)
   listeners.forEach((l) => l())
