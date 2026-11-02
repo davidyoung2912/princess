@@ -1,0 +1,244 @@
+# Next-level plan: from "feature complete" to best in class
+
+Status: **Plan written 2026-11-02. Nothing in it is built.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+
+## 1. How the audit was done, and how far to trust it
+
+- Read `docs/leading-features-plan.md` (phases H1 to H8 and their "not done" lists), `docs/multi-device-plan-3.md`, `docs/backend-plan.md` and `src/auditGate.test.ts`.
+- Counted routes, stores, server endpoints and providers; grepped `src` for capabilities the journey doc relies on (push, wallet, maps, audio, locales, referral, and so on).
+- Ran `npm run test`: **123 files, 1547 tests, all passing.** I did not run lint, tsc or build, and I did not open any screen (no browser testing, by rule).
+- **`dotnet` is not installed in this environment**, so no server C# could be compiled or run. Several recent commits say "C# not compiled". Treat the server as unverified until you build it.
+- Keyword hits are evidence that something exists, not that it works well. Where a row says "Built" it means specified, tested in the domain, and wired to a screen; it does not mean good on a phone.
+
+## 2. What the audit found
+
+### 2.1 The journey doc's 20-item shortlist
+
+| # | Shortlist item | Status | Evidence / gap |
+| --- | --- | --- | --- |
+| 1 | My Trips, one next action | Built | Base phases; Home continue card (H8) |
+| 2 | Draft-safe booking and check-in | Built | `/book/resume/:id`, outbox, sync status chip |
+| 3 | Boarding-pass failsafes | Built, partly simulated | `FindPassScreen`, printable pass; **Wallet is simulated** (no signed pass) |
+| 4 | Real total price | Built | Fare tables served by `GET /reference/pricing` |
+| 5 | Documents engine | Built | `documents.ts`, `papersCheck.ts`; no passport scan (camera) |
+| 6 | Door-to-ship, "I'm delayed" | Built | `journey.ts`, `delay.ts`, `/feeds/flight` (simulated provider) |
+| 7 | Three clocks, Port Day Pilot | Built | `portPilot.ts`, `ThreeClocks.tsx` |
+| 8 | Schedule integrity | Built | OB-08 base phase |
+| 9 | Offline-first | **Partial** | Caches and a sync chip exist; nothing proves a full offline day works |
+| 10 | Two-tap rule, Get help now | Built, **narrow** | `nav.test.ts` covers the 15 top tasks only; 187 routes |
+| 11 | Money shield | Built | `moneyShield.ts`, confirm-before-charge |
+| 12 | Entitlement engine | Built | `entitlements.ts` |
+| 13 | Atomic changes, resilient orders | Built (confirm depth) | Rules exist; one-file hit for the atomic rule, so re-read before relying on it |
+| 14 | Disruption Hub | Built | `disruptionHub.ts`; hub text still authored in the client |
+| 15 | Cabin chooser | Built, no photos | S1-06 guest photos missing |
+| 16 | Family-at-home, child safety | Built | Server-issued signed links (`FamilyHomeEndpoints.cs`); zones |
+| 17 | Accessibility, non-app parity | Built | WCAG audit test, print views, helper role |
+| 18 | Autopilot, Ship Pulse | Built | Server-fed (`/feeds/pulse`, autopilot service) |
+| 19 | Calm mode, sensory plan | Built | `/me/calm` |
+| 20 | Memory loop | Built, no photos | PDF is the browser's print; no photos in the book |
+
+**Conclusion: the specified features are almost all built.** The next level is not "more features". It is making what exists findable, deliverable, shared between people, verified, and real.
+
+### 2.2 Real gaps, in order of how much they hurt a guest
+
+| # | Gap | Evidence | Journey-doc impact |
+| --- | --- | --- | --- |
+| G1 | **Alerts only show when the app is open.** No web push, no service-worker notifications. The all-aboard escalation, back-aboard nudge, schedule change and disruption notice cannot reach a guest in a pocket | 0 hits for `PushManager` or `requestPermission`; H3 and H8 notes say "shows when the page is open" | Port Day Pilot, schedule integrity, Disruption Hub all lose their teeth |
+| G2 | **Sharing between people is mostly one person's copy.** Polls, dream board, organiser view, split ledger, rendezvous and shared port plan are stored per user or per booking and labelled "run on one phone" | H8 slice B "Not done"; no poll or board endpoint in the server | Groups and family (Split ledger signature) is half a feature |
+| G3 | **Findability.** 187 routes (Plan 52, Ship 46, Home 45, Me 40) on five tabs; only 15 tasks have a depth test. The top review complaint about the Princess app is features buried in menus | `routes.ts`, `nav.test.ts` | Contradicts rule 1 and the two-tap promise for everything outside the top 15 |
+| G4 | **No maps, no audio, one language.** No graphic deck plan or port map (OB-04 is open), phrases and walks are text, only `en.ts`, "take me to my cabin" is a words route | 0 hits for tiles or map libraries; `src/i18n` has one locale | Wayfinding, Port Day Pilot, inclusion, international guests |
+| G5 | **Unverified at the edges.** Server C# not compiled here; only 29 render cases for ~200 screens (first paint shows the loading state, not data); no bundle budget; no proof of an offline day | Notes in `multi-device-plan-3.md`; `render.test.tsx` | Everything above could regress silently |
+| G6 | **All providers are simulated and there is no fallback wrapper.** Weather, flight, route, telemetry, staff queue and concierge are all `"sim"`; a real provider with a timeout would have nothing to fall back to | `appsettings.json`, `multi-device-plan-3.md` Phase 6 | Fine for a demo, a blocker for a real pilot |
+| G7 | **No guest media.** No photo upload, so no real-cabin photos (S1-06), no group album (XG-05), no photos in the memory book or postcards | 3 files touch file inputs; none store images | Cabin chooser and memory loop are text-only |
+| G8 | **A few small journey-doc ideas are untouched.** Trial-day simulator, "what I'd regret" cards, meeting-point card, shareable recap for someone at home, a one-tap cabin-service screen (the requests API exists; the assistant can ask for towels) | Zero hits for "regret"; no dedicated screens | Delight tier, cheap |
+| G9 | **Unfinished loose ends from earlier phases.** XT-09 and S1-09 advisor link, S3-09/S3-10/S6-11/S8-06 moderated social features (blocked on a server), S8-10 benefit values, S8-11 referral, S8-12 full-history download, text-based emergency channel and interpreter times (XI-07), real exchange rates (ACC-07), passport scan | `leading-features-plan.md` §18 "Not done"; `gap-analysis-plan.md` §2 | Small, scattered |
+
+## 3. Principles for the phases
+
+1. **Keep the thin-client rule.** Anything a guest would miss on another device goes to the server (`CLAUDE.md`). New sources go behind a backend interface; the front end must not know whether data is simulated.
+2. **Verify with the npm checks only** (`test`, `lint`, `tsc -b`, `build`, plus `api:check`, `db:check`, `db:seed:check` when the REST surface or schema changes). No browser testing, no full `dotnet test`.
+3. **Server C# cannot be compiled here.** Each phase that changes C# ends with an explicit "please run `dotnet build`" line. If the build fails, fixing it is the first task of the next session.
+4. **One phase per session.** Commit and stop at the end of each phase; start the next only when asked.
+5. **Every phase must make something a guest would notice.** No pure refactors except N1.
+
+## 4. The phases
+
+Named **N1 to N8** to avoid the G, H and numeric phases.
+
+| Phase | Theme | Closes | Size | Needs server C# | Depends on |
+| --- | --- | --- | --- | --- | --- |
+| N1 | Prove what is built | G5 | M | No | none |
+| N2 | Findability | G3 | M | Small (search index) | N1 |
+| N3 | Reach the guest (push and calendar) | G1 | L | Yes | N1 |
+| N4 | Between people | G2, part of G9 | L | Yes | N1, N3 (nudges) |
+| N5 | The way and the word (maps, audio, language) | G4, G9 (XI-07) | L | Small | N2 |
+| N6 | Small delights | G8 | S to M | Small | N2 |
+| N7 | Guest media | G7 | M | Yes | N4 |
+| N8 | Real providers and pilot readiness | G6, G9 | L | Yes | N1, N3 |
+
+Recommended order is N1 to N8 as listed. If you want the strongest guest-visible jump first, do **N3 right after N1**, then N2. If you plan a real pilot sooner, bring N8 forward after N3.
+
+---
+
+### N1. Prove what is built
+
+**Goal:** be able to say, with tests, that the A-tier works with data in it and offline, before building on it.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N1.1 A-tier matrix | Turn §2.1 into `docs/a-tier-matrix.md`: for each A-tier row in the journey doc, the file, the test that proves it, and the "clear-to-use test" sentence | Mark anything without a test |
+| N1.2 Rendered tests with data | Using the test fixtures in `src/testing`, render the screens behind the top 15 tasks and the emotional scenarios (§23.5 of the base doc) with data loaded, not just the loading state; assert the key text and the single next action | Extend `render.test.tsx`; keep node-friendly |
+| N1.3 Offline day | A test that boots the stores from kept copies with the network off and checks the schedule, pass, deck map, menus and reservations still render with their age shown | Uses existing `useSavedCopy` caches |
+| N1.4 Bundle budget | A test or build script that fails if the main chunk or any route chunk grows beyond a set size | Supports PERF-01 without a browser |
+| N1.5 Server build check | Ask you to run `dotnet build` on `server/`; fix whatever breaks | The only slice that waits on you |
+| N1.6 Fix list | Fix defects the above find; record the rest | Time-boxed |
+
+**Done when:** every A-tier row has a test or an explicit "no test" note, the offline test passes, the budget is set, and the server builds.
+
+---
+
+### N2. Findability
+
+**Goal:** a guest can reach any feature in three taps or one search, and Home always shows the one thing to do next, whatever the stage.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N2.1 Stage-aware Home | Home shows a **journey strip** (where you are in the 11 stages) and the single next action across stages (pay, document, leave-by time, all-aboard, bag night). Offers stay below it | Builds on `briefing`, `readiness`, `stageAt` |
+| N2.2 Hubs instead of lists | Group the 52 Plan screens into about eight hubs by stage (Money and contract, Documents and health, Travel day, Pack and prepare, Plan the week, Group, Wish list, Rules and promises). Same for Ship (46) and Me (40). Old paths keep working | Pure routing and layout; no logic moves |
+| N2.3 One search | Extend `searchIndex` to cover every screen and feature by plain words ("allergy", "taxi price", "late", "towel"), with recent items; reachable from every tab | OB-07 |
+| N2.4 Depth budget for all | Replace the 15-task test with a rule: every `ROUTES` entry has a stage, a hub parent and a depth of at most three taps from Home, or the test fails. Add 25 more named tasks (stage-specific) with a two-tap target | Extends `nav.test.ts` |
+| N2.5 Plain labels | Review the hub and button labels against the journey doc's "clear-to-use test" sentences; fix jargon | Strings in `en.ts` |
+
+**Done when:** the new test passes, no route is more than three taps deep, search finds each screen by at least two plain phrases, and the Gerald and Linda tests in the base doc §23.6 still pass for the new hubs.
+
+**Risk:** moving screens can break deep links and bookmarks. Keep the old paths as redirects, and keep the existing `screens.ts` registration test.
+
+---
+
+### N3. Reach the guest
+
+**Goal:** the safety and schedule alerts the app already knows how to compute arrive on the phone, within the guest's own limits.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N3.1 Service worker and permission flow | Custom service worker alongside `vite-plugin-pwa`; a permission request that appears in context ("Allow all-aboard warnings?"), never on first load | iOS only works once the PWA is installed; say so on the screen |
+| N3.2 Server push provider | `IPushSender` interface with a simulation (records, delivers nothing), subscription endpoints, and a queue that applies the **nudge budget, do-not-disturb and calm mode on the server**; critical safety notices bypass them | New C#; `db` table for subscriptions |
+| N3.3 The first five notices | All-aboard escalation (final hour), back-aboard party nudge, schedule change on a bookmarked item, disruption notice, payment due | Reuses `nudges.ts`, `portParty.ts`, `OB-08` rules |
+| N3.4 Subscribable calendar | A signed, revocable `.ics` feed per guest (payments, itinerary, port-day plan) | Replaces the one-off file; S2-05 |
+| N3.5 Wake Lock and badge | Screen Wake Lock on the boarding pass and rendezvous screens; unread badge | LF §20 |
+| N3.6 Delivery log | The guest can see what was sent and held, and why (ties to the trust ledger) | XT-07 |
+
+**Done when:** a notice created by the server reaches the service worker in tests (simulated sender), the budget and quiet rules are enforced server-side and unit tested, and the screen tells the guest honestly what their browser can and cannot do.
+
+**Risks:** push permission is easy to annoy people with; the Wallet pass (real Apple/Google signing) is deliberately **not** in this phase because it needs certificates (a decision for you; see §6).
+
+---
+
+### N4. Between people
+
+**Goal:** a party actually shares a plan across their phones, with consent and privacy defaults enforced by the server.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N4.1 Party-scoped state on the server | Membership checks, per-member visibility using the XG-02 privacy defaults, and a change log; extends the existing booking-scoped state | The one piece everything else needs |
+| N4.2 Poll, dream board, shared port plan | Move from "one phone" to real shared votes and plans; one confirmation each | S4-05, S0-06, S6A-06 |
+| N4.3 Split ledger and pay-your-share | Shared costs visible to all families in the party; settle-up status; payment links for shares (card charging stays simulated behind the existing gateway) | XG-03, S2-04 |
+| N4.4 Rendezvous, ETA and back aboard across phones | Each person's "on my way / here" state is shared; nudges use N3 | S6-12, S4A-08, S6A-05 |
+| N4.5 Organiser dashboard | Real roster, payments, documents and check-in status from the server | XG-01 |
+| N4.6 Caregiver and advisor views | Consent-based, revocable, read-only views (caregiver check-in, advisor progress link); never a live location | S6-15, XI-05, XT-09, S1-09 |
+| N4.7 Opt-in "stay in touch" | Mutual-consent contact exchange within a sailing, block and report, tiny directory | S3-09, S6-11, S8-06; **keep optional**, may be cut if moderation is not available |
+
+**Done when:** two simulated people on one booking see each other's updates; privacy defaults are enforced on the server and tested for every shared view; revoking consent removes access immediately.
+
+---
+
+### N5. The way and the word
+
+**Goal:** guests can find their way, hear it, and read it in their language.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N5.1 Graphic deck plan | Inline SVG deck plans from the ship data already served (`/reference/ship`), with accessible routes, lifts, muster stations, the quiet-space layer and "you are here" when the guest chooses | OB-04 (open since the base plan) |
+| N5.2 Real cabin routing | Build a small graph from the deck data so "take me back to my cabin" gives true step-by-step words (and the line on the map) | Replaces the words-only guess in `calm.ts` |
+| N5.3 Port maps offline | Small bundled static maps for the three port days with walking lines for the self-guided walks; no tile service | Keep each under a size cap (N1.4) |
+| N5.4 Audio | Pre-recorded phrase and walk audio for the three ports where the line supplies it; the existing browser read-aloud as fallback | Needs content from you |
+| N5.5 Locales | Split `en.ts` into per-locale files, add Spanish first (ports are Mexico, Belize, Honduras), a language switch on the first screen, currency and units follow | DIS-18; the largest slice |
+| N5.6 Deaf and hard-of-hearing | Interpreter times and a text-based emergency channel (a text request that reaches the desk, simulated) | XI-07 |
+
+**Done when:** the deck plan passes the accessibility audit (keyboard, labels, contrast), each deck route is covered by a graph test, and the locale test fails if a key is missing in Spanish.
+
+---
+
+### N6. Small delights
+
+**Goal:** the cheap, memorable ideas from journey doc §16 that nobody else has.
+
+| Slice | Idea | Notes |
+| --- | --- | --- |
+| N6.1 | **Trial-day simulator** ("a Tuesday on this ship, for you") on the public side | Uses the day plan feed and the taste profile; no sign-in |
+| N6.2 | **"What I'd regret" cards** on cabins and itineraries | Seeded from the reflections feature and authored content; one line each, with the evidence |
+| N6.3 | **Cabin service in one tap** (towels, turndown, do not disturb, "fix this") with status | Reuses the requests API and the assistant's quantity rules |
+| N6.4 | **Meeting-point card** for drop-off and pick-up | A shareable link with address and a picture-free landmark description |
+| N6.5 | **Share the cruise with someone at home** | A recap link on the family-at-home mechanism, with no account |
+| N6.6 | **Private crew thank-you** | Already partly in `postcruise.ts`; add the "crew see the note, never the tip" display and test |
+| N6.7 | **Currency helper** | Real exchange rates through a provider (ACC-07), offline last-known with age |
+
+**Done when:** each has a plain-language "clear-to-use" test in `render.test.tsx` and passes the dark-pattern and no-shaming tests.
+
+---
+
+### N7. Guest media
+
+**Goal:** real photos where a guest would expect them.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N7.1 Upload pipeline | Server image upload with size and type limits, scanning hook, EXIF stripping, per-guest storage and deletion | New C# and schema; `db:check` |
+| N7.2 Cabin photos and obstruction notes | Guests submit photos for a cabin they stayed in; light moderation queue (simulated); shown on the cabin chooser | S1-06 |
+| N7.3 Memory book with photos | Photos the guest chose go into the book; the PDF is generated on the device | S8-02 |
+| N7.4 Group album | Shared album for a party, each person's privacy choice enforced | XG-05, depends on N4 |
+| N7.5 Postcards with a photo | Add a photo to a family-at-home postcard | S6-24 |
+
+**Risks:** storage cost, moderation and privacy of children's images. Do not show other guests' photos until the moderation answer is settled.
+
+---
+
+### N8. Real providers and pilot readiness
+
+**Goal:** the app could be put in front of a real cruise line without surprises.
+
+| Slice | What | Notes |
+| --- | --- | --- |
+| N8.1 Provider wrapper | Timeouts, retries, circuit breaker and automatic fall-back to the simulation, with the age and "estimate" word kept honest in what the client sees | Closes the gap noted in plan 3 Phase 6 |
+| N8.2 First real providers | One real weather provider and one real flight-status provider behind the existing interfaces, chosen by configuration, off by default | Needs keys from you (user-secrets) |
+| N8.3 Content verification | Walk every authored line tagged "(verify)" in `PortsReference.cs`, `documents.ts`, `safety.ts`, `homeLink.ts` and similar, record a source or remove it; sign-off by the owner | Legal and safety text must not ship unverified |
+| N8.4 Operations | Health checks, structured logs, an error-reporting hook (PERF-07), a retention report, and a runbook | Server-side |
+| N8.5 Full account export | Whole trip history download (S8-12) and the deletion explanation | |
+| N8.6 Quality scorecard | A release checklist built from the journey doc's clear-to-use tests and the nine measures of base doc §23.6; guest-research sessions booked (the five older, neurodivergent and solo cruisers) | Process, not code |
+
+**Done when:** you can switch one provider from `sim` to real by configuration and see it fall back automatically in a test.
+
+---
+
+## 5. What I would not do yet
+
+- **Real Apple/Google Wallet passes.** They need Apple and Google signing certificates and a pass server. The simulated pass plus the printable fallback is acceptable for now.
+- **Live ship systems** (door, Medallion, keyless, real queue feeds). Still out of reach (LF §20).
+- **Voice assistant beyond the current "fills the question box".** The confirm-before-act rule makes deeper voice a design project of its own.
+- **A native app.** The PWA limits (no Live Activities, no lock-screen widgets) are real, but none of the above needs native.
+
+## 6. Decisions I need from you
+
+| # | Question | My recommendation |
+| --- | --- | --- |
+| 1 | Run **N1 first** (verification and tests, no new features)? | Yes. It is the cheapest way to avoid building on sand, and the server build check is overdue |
+| 2 | Is **web push** worth the permission and iOS caveats? | Yes, for safety notices only (all-aboard, back aboard, disruption); keep the rest in-app |
+| 3 | Do you want **moderated social features** (N4.7) kept? | Keep optional; cut first if time is short |
+| 4 | Which **second language** first? | Spanish (the cruise calls at three Spanish-speaking ports) |
+| 5 | Is there a **real provider** you want to wire first (weather, flights)? | Weather: lowest risk, easiest to verify |
+| 6 | Can you supply **content** for audio phrases and port maps, or should the app use browser read-aloud and simple SVG only? | Browser read-aloud and SVG for now; swap in recordings later |
+| 7 | Is a **real pilot** with a line planned? | If yes, bring N8 forward after N3 |
+
+## 7. Suggested first step
+
+Start with **N1**. When you are ready, say "Start N1 of docs/next-level-plan.md". It makes no visible changes, but it tells us how solid the base is, and the result may change the order of the rest.
