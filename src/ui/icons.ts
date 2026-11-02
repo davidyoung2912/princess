@@ -12,6 +12,7 @@ export {
   WifiOff,
   RefreshCw as Sync,
   Info,
+  Search,
   CircleCheck,
   TriangleAlert,
   OctagonAlert,

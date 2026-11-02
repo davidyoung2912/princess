@@ -13,6 +13,8 @@ export interface Hit {
   id: string
   title: string
   detail: string
+  /** Plain phrases that find the hit without being shown. */
+  words?: string
   to: string
 }
 
@@ -38,7 +40,7 @@ const INDEX: readonly Entry[] = [
 export function searchContent(query: string, extra: readonly Hit[] = []): Hit[] {
   const words = flat(query).split(/\s+/).filter(Boolean)
   if (words.length === 0 || flat(query).trim().length < MIN_QUERY) return []
-  const pool: Entry[] = [...INDEX, ...extra.map((h) => entry(h, h.detail, 3))]
+  const pool: Entry[] = [...INDEX, ...extra.map((h) => entry(h, `${h.detail} ${h.words ?? ''}`, 3))]
   return pool
     .filter((e) => words.every((w) => e.haystack.includes(w)))
     .map((e) => ({ e, score: e.weight + (words.every((w) => flat(e.title).includes(w)) ? 10 : 0) + (flat(e.title).startsWith(words[0]) ? 5 : 0) }))

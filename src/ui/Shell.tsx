@@ -4,7 +4,7 @@ import { track } from '../diagnostics/watch'
 import { t } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { applyPageMeta, seoFor } from '../seo'
-import { Chat, Help, Home, Me, Plan, Ship } from './icons'
+import { Chat, Help, Home, Me, Plan, Search, Ship } from './icons'
 import { HelpSheet } from './HelpSheet'
 import { UpdateBanner } from './UpdateBanner'
 
@@ -41,6 +41,10 @@ export function Shell() {
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>{t('shell.skip')}</a>
       <header className="topbar no-print">
         <Link to="/" className="topbar__brand">{t('app.name')}</Link>
+        <Link to="/ship/search" className="topbar__search">
+          <Search aria-hidden="true" />
+          <span>{t('shell.search')}</span>
+        </Link>
         <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
           <Help aria-hidden="true" />
           <span>{t('help.button')}</span>

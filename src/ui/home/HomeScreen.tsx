@@ -11,6 +11,8 @@ import { UpdatesBanner } from '../onboard/Updates'
 import { LinkButton } from '../Button'
 import { CompanionCard, ContinueBookingCard } from './PrepCards'
 import { Card } from '../Card'
+import { HubList } from '../HubList'
+import { JourneyStrip } from '../JourneyStrip'
 import { ConceptNotice } from '../ConceptNotice'
 import { Explore } from '../discover/Landing'
 import { countdown } from '../account/format'
@@ -34,9 +36,11 @@ export function HomeScreen() {
     return (
       <div className="page">
         <h1>{t('route.home')}</h1>
+        <JourneyStrip />
         <NudgeCards aboard />
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
         <HomeOfferCard />
+        <HubList tab="home" />
         <ConceptNotice />
       </div>
     )
@@ -44,6 +48,7 @@ export function HomeScreen() {
   return (
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
+      {trip && <JourneyStrip />}
       <UpdatesBanner />
       <NudgeCards aboard={false} />
       <AfterCruiseCard />
@@ -54,6 +59,7 @@ export function HomeScreen() {
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>
       <p><Link to="/home/concierge">{t('route.concierge')}</Link> · <Link to="/home/ask">{t('route.ask')}</Link> · <Link to="/home/briefing">{t('route.briefing')}</Link> · <Link to="/home/summary">{t('route.summary')}</Link></p>
       <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>
+      <HubList tab="home" />
       <div className="simple-hide"><Explore /></div>
       <ConceptNotice />
     </div>

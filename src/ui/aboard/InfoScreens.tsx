@@ -3,9 +3,11 @@ import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
 import { Link } from 'react-router'
 import { PORTS } from '../../domain/sailings'
-import { MIN_QUERY, searchContent, type Hit } from '../../domain/searchIndex'
+import type { Recent } from '../../domain/recentSearches'
+import { clearRecent, loadRecent, rememberSearch } from '../../settings/recentSearches'
+import { MIN_QUERY, searchContent } from '../../domain/searchIndex'
 import { noonReport } from '../../domain/shipInfo'
-import { ROUTES } from '../../routes/routes'
+import { screenHits } from '../../routes/screenWords'
 import { useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { t, type StringKey } from '../../i18n'
@@ -58,13 +60,14 @@ export function ShipInfoScreen() {
   )
 }
 
-const screenHits = (): Hit[] =>
-  ROUTES.filter((r) => r.tab !== null && !r.path.includes(':') && r.path !== '/kit').map((r) => ({ kind: 'screen', id: r.path, title: t(r.titleKey), detail: '', to: r.path }))
 
 /** Search across all content (OB-07): venues, dishes, shows, services, tours, ports and screens. */
 export function SearchScreen() {
   const [query, setQuery] = useState('')
-  const hits = searchContent(query, screenHits())
+  const [recent, setRecent] = useState<Recent[]>(loadRecent)
+  const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
+  const forget = () => { clearRecent(); setRecent([]) }
+  const hits = searchContent(query, screenHits(t))
   const enough = query.trim().length >= MIN_QUERY
   return (
     <div className="page">
@@ -74,10 +77,17 @@ export function SearchScreen() {
       </form>
       <p role="status" className="muted">{enough ? t('search.count', { count: hits.length }) : ''}</p>
       {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p></Banner>}
+      {!enough && recent.length > 0 && (
+        <section aria-labelledby="recent-h">
+          <h2 id="recent-h">{t('search.recent')}</h2>
+          <ul className="link-list">{recent.map((r) => <li key={r.to}><Link to={r.to}>{r.title}</Link></li>)}</ul>
+          <p><button type="button" className="link-button" onClick={forget}>{t('search.clearRecent')}</button></p>
+        </section>
+      )}
       <ul className="link-list">
         {hits.map((h) => (
           <li key={`${h.kind}-${h.id}`}>
-            <Link to={h.to}>{h.title}</Link> <span className="muted">· {t(`search.kind.${h.kind}` as StringKey)}</span>
+            <Link to={h.to} onClick={() => remember({ to: h.to, title: h.title })}>{h.title}</Link> <span className="muted">· {t(`search.kind.${h.kind}` as StringKey)}</span>
             {h.detail && <small className="muted"> {h.detail}</small>}
           </li>
         ))}

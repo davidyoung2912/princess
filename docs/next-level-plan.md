@@ -122,6 +122,14 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 
 **Done when:** the new test passes, no route is more than three taps deep, search finds each screen by at least two plain phrases, and the Gerald and Linda tests in the base doc §23.6 still pass for the new hubs.
 
+**N2 record (2026-11-02):**
+- **N2.1 done:** `JourneyStrip` (eleven stages, current one marked, one "Next:" link for the stage) at the top of Home, for a booked or aboard guest. The stage comes from `stageAt` through `useJourneyStage`. The action is one fixed screen per stage (`STAGE_ACTION`); the live next step (pay, documents, leave-by, all-aboard, bag night) is still the existing `NextStep`, nudge and on-board cards below it. Not merged into one computed action.
+- **N2.2 done:** `src/routes/hubs.ts` files every screen in one hub of its tab (Home 5, Plan 7, Ship 5, Me 5) and keeps a short "Most used" list per tab. `HubList` shows both on Home, Plan, Ship and Me; the hub for the guest's current stage opens by itself. No path moved, so no redirects were needed.
+- **N2.3 done:** every screen has plain phrases (`screenWords.ts`) and the search index uses them; Search is a link in the top bar, so it is on every tab; the last five screens opened from search are kept on the device (`settings/recentSearches.ts`).
+- **N2.4 done:** `hubProblems()` fails the test if a screen has no hub, is in two hubs, or is more than three taps from launch (tab, open the hub, tap the screen; id screens are one below their list). 25 stage tasks (`FIND_TASKS`) must come up in the first five search results. The 15 top tasks and their two-tap test are unchanged.
+- **N2.5 partly done:** hub labels were written in plain words. A full review of every button label against the journey doc's sentences was not done.
+- **Not done:** the Gerald and Linda tests in the base doc 23.6 were not run for the new hubs (they are manual).
+
 **Risk:** moving screens can break deep links and bookmarks. Keep the old paths as redirects, and keep the existing `screens.ts` registration test.
 
 ---

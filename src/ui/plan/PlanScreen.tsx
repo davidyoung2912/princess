@@ -7,67 +7,11 @@ import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t } from '../../i18n'
 import { Card } from '../Card'
+import { HubList } from '../HubList'
 import { Load } from '../account/parts'
 import { names } from './people'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { Planner } from '../onboard/Planner'
-
-const TOOLS = [
-  { to: '/plan/day', key: 'route.buildDay' },
-  { to: '/plan/reservations', key: 'route.reservations' },
-  { to: '/plan/excursions', key: 'route.excursions' },
-  { to: '/plan/dining', key: 'route.dining' },
-  { to: '/me/packages', key: 'route.packages' },
-  { to: '/plan/checklist', key: 'route.checklist' },
-  { to: '/plan/packing', key: 'route.packing' },
-  { to: '/plan/travel', key: 'route.travel' },
-  { to: '/plan/party', key: 'route.party' },
-  { to: '/plan/phone', key: 'route.phone' },
-  { to: '/plan/family-link', key: 'route.familyLink' },
-  { to: '/plan/split', key: 'route.split' },
-  { to: '/plan/getting-there', key: 'route.gettingThere' },
-  { to: '/plan/autopilot', key: 'route.autopilot' },
-  { to: '/plan/what-if', key: 'route.whatIf' },
-  { to: '/plan/storm', key: 'route.storm' },
-  { to: '/plan/away', key: 'route.away' },
-  { to: '/plan/medical', key: 'route.medical' },
-  { to: '/plan/hold', key: 'route.hold' },
-  { to: '/plan/access', key: 'route.accessProfile' },
-  { to: '/plan/contract', key: 'route.contract' },
-  { to: '/plan/readiness', key: 'route.readiness' },
-  { to: '/plan/allergy', key: 'route.allergy' },
-  { to: '/plan/shares', key: 'route.shares' },
-  { to: '/plan/price-watch', key: 'route.priceWatch' },
-  { to: '/plan/ship-packing', key: 'route.shipPacking' },
-  { to: '/plan/guarantee', key: 'route.guarantee' },
-  { to: '/plan/money-plan', key: 'route.moneyPlan' },
-  { to: '/plan/child-story', key: 'route.childStory' },
-  { to: '/plan/paste', key: 'route.paste' },
-  { to: '/plan/starter', key: 'route.starter' },
-  { to: '/plan/difficulty', key: 'route.difficulty' },
-  { to: '/plan/compare', key: 'route.compare' },
-  { to: '/plan/group-poll', key: 'route.groupPoll' },
-  { to: '/plan/surprises', key: 'route.surprises' },
-  { to: '/plan/taste', key: 'route.taste' },
-  { to: '/plan/child-brief', key: 'route.childBrief' },
-  { to: '/plan/rhythm', key: 'route.rhythm' },
-  { to: '/plan/organiser', key: 'route.organiser' },
-  { to: '/plan/cabins', key: 'route.cabins2' },
-  { to: '/plan/traditions', key: 'route.traditions' },
-  { to: '/plan/fare-check', key: 'route.fareCheck' },
-  { to: '/plan/gifts', key: 'route.gifts' },
-  { to: '/home/cruise/cost', key: 'route.tripCost' },
-  { to: '/home/cabins', key: 'route.cabins' },
-  { to: '/home/decide', key: 'route.decide' },
-  { to: '/plan/assistance', key: 'route.assistance' },
-  { to: '/plan/ahead', key: 'route.ahead' },
-  { to: '/plan/cart', key: 'route.cart' },
-  { to: '/plan/prepay', key: 'route.prepay' },
-  { to: '/plan/clubs', key: 'route.clubs' },
-  { to: '/plan/upgrades', key: 'route.upgrades' },
-  { to: '/plan/weather', key: 'route.weather' },
-  { to: '/plan/health-prep', key: 'route.healthPrep' },
-] as const
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
 export function PlanScreen() {
@@ -91,10 +35,7 @@ export function PlanScreen() {
         )}
       </Load>
 
-      <nav aria-labelledby="tools-h">
-        <h2 id="tools-h">{t('plan.tools')}</h2>
-        <ul className="link-list">{TOOLS.map((x) => <li key={x.to}><Link to={x.to}>{t(x.key)}</Link></li>)}</ul>
-      </nav>
+      <HubList tab="plan" />
 
       <section aria-labelledby="days-h">
         <h2 id="days-h">{t('plan.days')}</h2>

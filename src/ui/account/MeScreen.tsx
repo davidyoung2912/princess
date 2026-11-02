@@ -8,17 +8,11 @@ import { usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { HubList } from '../HubList'
 import { ConceptNotice } from '../ConceptNotice'
 import { countdown, formatMoment } from './format'
 import { Load } from './parts'
 import { NextStep, PaymentBadge } from './tripParts'
-
-const GROUPS: readonly { id: string; titleKey: StringKey; links: readonly { to: string; key: StringKey; badge?: 'unread' }[] }[] = [
-  { id: 'trip', titleKey: 'me.group.trip', links: [{ to: '/me/trips', key: 'route.trips' }, { to: '/me/documents', key: 'route.documents' }, { to: '/me/payments', key: 'route.payments' }, { to: '/me/bill', key: 'route.bill' }, { to: '/me/ledger', key: 'route.ledger' }, { to: '/me/money', key: 'route.money' }, { to: '/me/bill/final', key: 'route.finalBill' }, { to: '/me/packages', key: 'route.packages' }] },
-  { id: 'after', titleKey: 'me.group.after', links: [{ to: '/me/recap', key: 'route.recap' }, { to: '/me/history', key: 'route.history' }, { to: '/me/feedback', key: 'route.feedback' }, { to: '/me/cases', key: 'route.cases' }, { to: '/me/loyalty', key: 'route.loyalty' }, { to: '/me/rebook', key: 'route.rebook' }, { to: '/me/sustainability', key: 'route.sustainability' }, { to: '/me/farewell', key: 'route.farewell' }, { to: '/me/follow-up', key: 'route.followUp' }] },
-  { id: 'account', titleKey: 'me.group.account', links: [{ to: '/me/profile', key: 'route.profile' }, { to: '/me/notifications', key: 'route.notifications', badge: 'unread' }, { to: '/me/helper', key: 'route.helper' }, { to: '/me/privacy', key: 'route.privacy' }, { to: '/me/marketing', key: 'route.marketing' }, { to: '/me/print', key: 'route.print' }, { to: '/me/calm', key: 'route.calm' }, { to: '/me/gentle', key: 'route.gentle' }, { to: '/me/alerts', key: 'route.alerts' }, { to: '/me/anxiety', key: 'route.anxiety' }, { to: '/me/settings', key: 'route.settings' }] },
-  { id: 'help', titleKey: 'me.group.help', links: [{ to: '/me/help', key: 'route.helpCentre' }, { to: '/me/contact', key: 'route.contact' }, { to: '/me/fix-it', key: 'route.fixIt' }, { to: '/me/assist', key: 'route.assist' }, { to: '/me/status', key: 'route.status' }, { to: '/me/report-problem', key: 'route.reportProblem' }] },
-]
 
 /** Me: who you are, your trip at a glance, and everything about the account in one place. */
 export function MeScreen() {
@@ -56,18 +50,7 @@ export function MeScreen() {
         </Load>
       </section>
 
-      {GROUPS.map((g) => (
-        <section key={g.id} aria-labelledby={`${g.id}-h`}>
-          <h2 id={`${g.id}-h`}>{t(g.titleKey)}</h2>
-          <ul className="link-list">
-            {g.links.map((l) => (
-              <li key={l.to}>
-                <Link to={l.to}>{t(l.key)}{l.badge === 'unread' && unread > 0 && <span className="tag tag--alert">{t('me.unread', { count: unread })}</span>}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <HubList tab="me" badges={{ '/me/notifications': unread > 0 ? <span className="tag tag--alert">{t('me.unread', { count: unread })}</span> : null }} />
 
       <section aria-labelledby="hist-h">
         <h2 id="hist-h">{t('me.history')}</h2>

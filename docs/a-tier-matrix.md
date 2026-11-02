@@ -21,7 +21,7 @@ How to read the evidence columns:
 | 7 | Three clocks, Port Day Pilot | `portPilot.test.ts`, `onboard.test.ts` | Route render | Leave-by being the largest element is not checked |
 | 8 | Schedule integrity | `onboard.test.ts`, `aboard.test.ts`, `offlineDay.test.ts` | Route render; **age on every copy now enforced** | Cancelled-stays-struck-through is logic-only |
 | 9 | Offline-first | `offlineCache` cases in `data/deviceCopies.test.ts`, `offlineDay.test.ts` | New source scan | Fixed in N1.3: the plain-English summary showed a kept bill without its age. Still unproved: full offline day in a browser |
-| 10 | Two-tap rule and Get help now | `nav.test.ts` | Route render checks the help button on every route | Only 15 tasks have a depth test; 187 routes exist (N2) |
+| 10 | Two-tap rule and Get help now | `nav.test.ts` | Route render checks the help button on every route | N2: `hubProblems()` checks every route is at most three taps deep; 25 more tasks are found by search |
 | 11 | Money shield | `moneyShield.test.ts`, `darkPatterns.test.ts` | Source-scan | Confirm dialog on screen not rendered |
 | 12 | Entitlement engine | `domain.test.ts`, `prebook.test.ts`, `onboard.test.ts` | `dataScreens.test.tsx` (packages) | "Used vs remaining" not asserted |
 | 13 | Atomic changes, resilient orders | `prebook.test.ts` (dining), `extras.test.ts` (orders) | Route render | The rule lives in the server too; a failed reschedule on screen is untested. Re-read before relying on it |
