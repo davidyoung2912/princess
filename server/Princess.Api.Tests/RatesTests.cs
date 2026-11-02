@@ -195,7 +195,7 @@ public class RouteFeedTests
     [Fact]
     public async Task WithNoAnswerAndNothingKeptTheSampleTableIsServedWithItsOldDate()
     {
-        var table = await Service(new FakeFeed(null)).CurrentAsync(default);
+        var table = await Service(new FakeFeed((RateTableDto?)null)).CurrentAsync(default);
         Assert.Equal(RatesRules.SampleDate, table.AsOf);
         Assert.Equal(24.7, table.PerUsd["HNL"]);
     }
