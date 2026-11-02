@@ -283,4 +283,16 @@ describe('health and children’s data rules (SEC-07, SEC-08)', () => {
     expect(DATA_RULES.some((r) => r.sensitivity === 'health')).toBe(true)
     expect(DATA_RULES.some((r) => r.sensitivity === 'minor')).toBe(true)
   })
+
+  it('moves the room picks with mood tiles, and not at all without them', () => {
+    const base = { ...DEFAULT_QUIZ, budget: 'value' as const, vibe: 'relax' as const, musts: [] }
+    expect(recommend(base, [])).toEqual(recommend(base))
+    const without = recommend(base).picks
+    const slow = recommend(base, ['seaDays']).picks
+    expect(slow.find((p) => p.category === 'balcony')!.score).toBeGreaterThan(without.find((p) => p.category === 'balcony')?.score ?? 0)
+    expect(slow.find((p) => p.category === 'balcony')!.reasons).toContain('mood.slow')
+    const out = recommend(base, ['reef', 'market']).picks
+    expect(out.find((p) => p.category === 'interior')!.reasons).toContain('mood.out')
+    expect(recommend(base, ['reef']).picks.some((p) => p.reasons.includes('mood.slow'))).toBe(false)
+  })
 })

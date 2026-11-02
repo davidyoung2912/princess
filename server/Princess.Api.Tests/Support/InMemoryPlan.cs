@@ -141,11 +141,17 @@ public sealed class InMemoryPlanStore(InMemoryJourney world) : IPlanStore
     public Task<HashSet<string>> GetTicksAsync(long bookingId, string list, CancellationToken ct) =>
         Task.FromResult(Ticks.Where(t => t.Key.Item1 == bookingId && t.Key.Item2 == list && t.Value).Select(t => t.Key.Item3).ToHashSet());
 
-    public Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, CancellationToken ct)
+    public readonly Dictionary<(long, string, string), long> Tickers = [];
+
+    public Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, long? by, CancellationToken ct)
     {
         Ticks[(bookingId, list, itemId)] = done;
+        if (by is { } u) Tickers[(bookingId, list, itemId)] = u;
         return Task.CompletedTask;
     }
+
+    public Task<Dictionary<string, long>> GetTickersAsync(long bookingId, string list, CancellationToken ct) =>
+        Task.FromResult(Tickers.Where(t => t.Key.Item1 == bookingId && t.Key.Item2 == list && Ticks.GetValueOrDefault(t.Key)).ToDictionary(t => t.Key.Item3, t => t.Value));
 
     public Task<TravelRow?> GetTravelAsync(long bookingId, CancellationToken ct) => Task.FromResult(Travel.GetValueOrDefault(bookingId));
 

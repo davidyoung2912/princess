@@ -7,6 +7,7 @@ import { t, type StringKey } from '../../i18n'
 import { Field } from '../Field'
 import { StepSection, type StepProps } from './common'
 import { NameCheck } from '../delights/Delights'
+import { SavedTravellers } from '../delights/PrepareDelights'
 
 const toggle = <T,>(list: readonly T[], item: T, on: boolean): T[] => (on ? [...list.filter((x) => x !== item), item] : list.filter((x) => x !== item))
 
@@ -30,6 +31,7 @@ export function GuestsStep({ draft, update, error, ctx }: StepProps) {
     <StepSection title={t('book.guests.title')} intro={t('book.guests.intro')}>
       <p className="muted">{t('book.guests.scan')}</p>
       {error('people') && <p className="field__error">{error('people')}</p>}
+      <SavedTravellers people={draft.people} onPick={(s) => update((d) => { const at = d.people.findIndex((g) => g.firstName.trim() === '' && g.lastName.trim() === ''); return at < 0 ? d : { ...d, people: d.people.map((g, j) => (j === at ? { ...g, firstName: s.firstName, lastName: s.lastName, dob: s.dob, citizenship: s.citizenship } : g)) } })} />
       {draft.people.map((g, i) => (
         <fieldset key={i}>
           <legend>{i === 0 ? t('book.guests.lead') : t('book.guests.guestN', { n: i + 1 })}</legend>

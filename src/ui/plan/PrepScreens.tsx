@@ -1,3 +1,4 @@
+import { ReadyRing } from '../delights/PrepareDelights'
 import type { PaymentsView } from '../../api/types'
 import { ShareSliders } from '../delights/PlanPolish'
 import { SharingNote } from '../SharingNote'
@@ -151,6 +152,7 @@ export function ReadinessScreen() {
                   return (
                     <Card key={g.id} labelledBy={`rd-${g.id}`}>
                       <h2 id={`rd-${g.id}`} className="card__title">{g.name}</h2>
+                      <ReadyRing percent={r.percent} label={label} />
                       <p><strong>{label}</strong></p>
                       <progress className="meter" max={100} value={r.percent} aria-label={label} />
                       {r.open.length === 0 ? <p>{t('ready.all')}</p> : (

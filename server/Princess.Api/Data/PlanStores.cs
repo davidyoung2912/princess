@@ -117,7 +117,10 @@ public interface IPlanStore
 
     // Checklist and packing
     Task<HashSet<string>> GetTicksAsync(long bookingId, string list, CancellationToken ct);
-    Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, CancellationToken ct);
+    /// <summary><paramref name="by"/> is the guest who ticked it; kept for the packing list so it can say who.</summary>
+    Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, long? by, CancellationToken ct);
+    /// <summary>Who last ticked each ticked item (user id), for items ticked since the list began to record it.</summary>
+    Task<Dictionary<string, long>> GetTickersAsync(long bookingId, string list, CancellationToken ct);
 
     // Travel
     Task<TravelRow?> GetTravelAsync(long bookingId, CancellationToken ct);

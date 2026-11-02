@@ -6,6 +6,7 @@ import { EMPTY_ABOARD, normalizeAboard, type AboardState } from '../domain/aboar
 import { EMPTY_FINISH, normalizeFinish, type FinishState } from '../domain/finishMore'
 import { EMPTY_PLANNING, normalizePlanning, type PlanningState } from '../domain/planning'
 import { EMPTY_POLISH, normalizePolish, type PolishState } from '../domain/planPolish'
+import { EMPTY_PREPARE, normalizePrepare, type PrepareState } from '../domain/prepareDelights'
 import { normalizePlanLines, type PlanLine } from '../domain/prepMore'
 import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/medicalCard'
 import { FIT_QUESTIONS, type FitKey } from '../domain/dream'
@@ -46,9 +47,11 @@ export interface MemoryState {
   finish: FinishState
   /** Small delights DL4, on this device: rest days, notes on bookings, traveller colours and birthdays during the trip. */
   polish: PolishState
+  /** Small delights DL5, on this device and in the memory document: the weekly small thing, home currency, trip nickname, mood tiles, reminder and saved travellers. */
+  prepare: PrepareState
 }
 
-export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH }
+export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH, prepare: EMPTY_PREPARE }
 
 const money = (v: unknown): number | null => (typeof v === 'number' && v > 0 ? Math.min(100_000_000, Math.round(v)) : null)
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
@@ -82,7 +85,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
     return [{ id: o.id, text: cleanExtra(o.text), done: o.done === true }]
   }).slice(0, EXTRAS_MAX)
   return {
-    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish),
+    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish), prepare: normalizePrepare(r.prepare),
     drinks: typeof r.drinks === 'number' && r.drinks > 0 ? int(r.drinks, 999) : null,
     anniversary: r.anniversary === true,
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),
@@ -142,7 +145,18 @@ export const healthOf = (m: MemoryState): HealthPart => ({ medical: m.medical, a
 /** Everything else in the memory document (key `memory`). */
 export const restOf = (m: MemoryState): Omit<MemoryState, keyof HealthPart> => {
   const { medical: _m, access: _a, allergy: _l, ...rest } = m
-  return rest
+  return { ...rest, prepare: { ...rest.prepare, ...NO_OWN_DOCS } }
+}
+
+/** The parts of `prepare` that have their own documents: saved travellers (encrypted, with dates of birth) and the reminder (read by the server to send one note). */
+const NO_OWN_DOCS: Pick<PrepareState, 'travellers' | 'remind'> = { travellers: [], remind: null }
+export const travellersOf = (m: MemoryState): { travellers: PrepareState['travellers'] } => ({ travellers: m.prepare.travellers })
+export const reminderOf = (m: MemoryState): { at?: number; sailingId?: string; email?: boolean } => (m.prepare.remind ? { at: m.prepare.remind.at, sailingId: m.prepare.remind.sailingId, email: m.prepare.remind.email } : {})
+/** A server copy of the memory document with the parts that have their own documents taken out. */
+export const cleanRest = (raw: unknown): unknown => {
+  if (!raw || typeof raw !== 'object') return raw
+  const o = raw as Record<string, unknown>
+  return o.prepare && typeof o.prepare === 'object' ? { ...o, prepare: { ...(o.prepare as object), ...NO_OWN_DOCS } } : raw
 }
 
 export function updateMemory(personaId: string | null, change: (s: MemoryState) => MemoryState): void {
@@ -154,6 +168,8 @@ export function updateMemory(personaId: string | null, change: (s: MemoryState) 
   const before = prev
   if (JSON.stringify(healthOf(before)) !== JSON.stringify(healthOf(next))) sync.changed('health', personaId)
   if (JSON.stringify(restOf(before)) !== JSON.stringify(restOf(next))) sync.changed('memory', personaId)
+  if (JSON.stringify(travellersOf(before)) !== JSON.stringify(travellersOf(next))) sync.changed('travellers', personaId)
+  if (JSON.stringify(reminderOf(before)) !== JSON.stringify(reminderOf(next))) sync.changed('reminder', personaId)
 }
 
 /** Takes the server's copy (null: empty) without telling the sync module it changed. */
@@ -172,5 +188,20 @@ export function applyRemoteHealth(personaId: string | null, raw: unknown): void 
 /** Takes the server's memory document (null: empty) but keeps this device's health details, which have their own document. */
 export function applyRemoteMemoryRest(personaId: string | null, raw: unknown): void {
   const r = normalizeMemory(raw === null ? EMPTY_MEMORY : raw)
-  applyRemoteMemory(personaId, { ...r, ...healthOf(getMemory(personaId)) })
+  const mine = getMemory(personaId)
+  applyRemoteMemory(personaId, { ...r, ...healthOf(mine), prepare: { ...r.prepare, travellers: mine.prepare.travellers, remind: mine.prepare.remind } })
+}
+
+/** Takes the server's saved travellers (null: none) without telling the sync module. */
+export function applyRemoteTravellers(personaId: string | null, raw: unknown): void {
+  const mine = getMemory(personaId)
+  const travellers = normalizePrepare({ travellers: (raw as { travellers?: unknown } | null)?.travellers }).travellers
+  applyRemoteMemory(personaId, { ...mine, prepare: { ...mine.prepare, travellers } })
+}
+
+/** Takes the server's reminder (null or empty: none) without telling the sync module. */
+export function applyRemoteReminder(personaId: string | null, raw: unknown): void {
+  const mine = getMemory(personaId)
+  const remind = normalizePrepare({ remind: raw }).remind
+  applyRemoteMemory(personaId, { ...mine, prepare: { ...mine.prepare, remind } })
 }

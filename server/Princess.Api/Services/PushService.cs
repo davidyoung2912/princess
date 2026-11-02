@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
-    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program)
+    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state)
 {
     public async Task<PushStatusDto> StatusAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
@@ -125,8 +125,9 @@ public sealed class PushService(
     {
         var acked = (await shipboard.ListAcksAsync(actor.Id, ct)).Select(a => a.ScenarioId).ToHashSet();
         var disruptions = DisruptionRules.Active(await scopes.ScenariosAsync(actor, ct)).Where(d => !acked.Contains(d.Id)).ToList();
+        var reminderAt = await ReminderAtAsync(actor.Id, ct);
         if (booking is null || departure is not { } dep)
-            return new(now, "ok", "", null, false, 45, false, [], [], 0, disruptions);
+            return new(now, "ok", "", null, false, 45, false, [], [], 0, disruptions, reminderAt);
 
         var trip = await trips.BuildAsync(booking, current: true, now, ct);
         var port = AboardRules.PortDayAt(dep, now) is { } p ? AboardRules.WithState(p, now) : null;
@@ -134,7 +135,15 @@ public sealed class PushService(
         var notBack = port is not null && rows.Any(r => r.Kind == "presence" && r.Key.StartsWith(port.Date + "|", StringComparison.Ordinal) && Status(r.Json) is not (null or "back"));
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt);
+    }
+
+    /// <summary>When the guest asked to be reminded (ms), from their own <c>reminder</c> document; null when there is none or it is not a number.</summary>
+    private async Task<long?> ReminderAtAsync(long userId, CancellationToken ct)
+    {
+        if (await state.GetAsync(false, userId, "reminder", ct) is not { } row) return null;
+        try { return JsonNode.Parse(row.Json)?["at"] is JsonValue v && v.TryGetValue<long>(out var at) && at > 0 ? at : null; }
+        catch (System.Text.Json.JsonException) { return null; }
     }
 
     private static string? Status(string? json)

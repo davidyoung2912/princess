@@ -672,7 +672,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var c = await LoadAsync(actor, number, true, ct);
         var known = (await ChecklistViewAsync(c, ct)).Entries.Where(e => !e.Automatic).Select(e => e.Id);
         if (id is null || !known.Contains(id)) throw ApiException.Invalid("item");
-        await plan.SetTickAsync(c.Booking.BookingId, "checklist", id, body?.Done ?? true, c.Now, ct);
+        await plan.SetTickAsync(c.Booking.BookingId, "checklist", id, body?.Done ?? true, c.Now, null, ct);
         return await ChecklistViewAsync(c, ct);
     }
 
@@ -691,7 +691,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var c = await LoadAsync(actor, number, false, ct);
         var (items, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days);
+        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days, await TickedByAsync(c, ticked, ct));
     }
 
     public async Task<PackingViewDto> TickPackingAsync(UserRecord actor, string? number, string? id, TickRequest? body, CancellationToken ct)
@@ -699,8 +699,18 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var c = await LoadAsync(actor, number, true, ct);
         var (items, _) = await PackingAsync(c, ct);
         if (id is null || items.All(i => i.Id != id)) throw ApiException.Invalid("item");
-        await plan.SetTickAsync(c.Booking.BookingId, "packing", id, body?.Done ?? true, c.Now, ct);
+        await plan.SetTickAsync(c.Booking.BookingId, "packing", id, body?.Done ?? true, c.Now, actor.Id, ct);
         var (after, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days);
+        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days, await TickedByAsync(c, ticked, ct));
+    }
+
+    /// <summary>The first name of whoever on this booking ticked each ticked item; items ticked before the list recorded it, or by someone no longer on the booking, have none.</summary>
+    private async Task<Dictionary<string, string>> TickedByAsync(Ctx c, HashSet<string> ticked, CancellationToken ct)
+    {
+        var by = await plan.GetTickersAsync(c.Booking.BookingId, "packing", ct);
+        var names = new Dictionary<string, string>();
+        foreach (var (item, user) in by)
+            if (ticked.Contains(item) && c.PersonByUser(user) is { } p) names[item] = PlanRules.FirstName(p.Name);
+        return names;
     }
 }

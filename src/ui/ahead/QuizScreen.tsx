@@ -1,3 +1,5 @@
+import { useMemory } from '../../hooks/useMemory'
+import { MoodTiles } from '../delights/PrepareDelights'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { DEFAULT_QUIZ, QUIZ_BUDGETS, QUIZ_MOBILITY, QUIZ_MUSTS, QUIZ_VIBES, QUIZ_WITH, quizFare, recommend, type QuizAnswers, type QuizMust } from '../../domain/ahead'
@@ -27,7 +29,8 @@ function Choice<T extends string>({ name, legend, values, value, onChange, label
 export function QuizScreen() {
   const [a, setA] = useState<QuizAnswers>(DEFAULT_QUIZ)
   const [shown, setShown] = useState(false)
-  const result = shown ? recommend(a) : null
+  const { state } = useMemory()
+  const result = shown ? recommend(a, state.prepare.moods) : null
   const toggle = (m: QuizMust) => { setShown(false); setA({ ...a, musts: a.musts.includes(m) ? a.musts.filter((x) => x !== m) : [...a.musts, m] }) }
   const set = <K extends keyof QuizAnswers>(key: K) => (value: QuizAnswers[K]) => { setShown(false); setA({ ...a, [key]: value }) }
   return (
@@ -76,6 +79,7 @@ export function QuizScreen() {
           <p><Link to="/book">{t('quiz.book')}</Link> · <Link to="/home/advisors">{t('quiz.advisor')}</Link></p>
         </section>
       )}
+      <MoodTiles />
       <Back to="/" label={t('route.home')} />
     </div>
   )

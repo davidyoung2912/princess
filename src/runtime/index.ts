@@ -32,6 +32,7 @@ import { applyPorts, normalizePorts } from '../domain/portsServed'
 import { applyPackages, normalizePackages } from '../domain/packagesServed'
 import { applyPricing, normalizePricing } from '../domain/pricingServed'
 import { applyLimits, normalizeLimits } from '../domain/limitsServed'
+import { applyEntry, normalizeEntry } from '../domain/prepareDelights'
 import { applyContent, normalizeContent } from '../domain/contentServed'
 import { markReferenceFailed, markReferenceReady, markReferenceRetry, requireReference } from '../domain/referenceStatus'
 import { cacheGet, cachePut } from '../domain/offlineCache'
@@ -176,6 +177,7 @@ const TABLES: Table[] = [
   table('ports', '/reference/ports', normalizePorts, applyPorts, true),
   table('packages', '/reference/packages', normalizePackages, applyPackages),
   table('limits', '/reference/limits', normalizeLimits, applyLimits),
+  table('entry', '/reference/entry', normalizeEntry, applyEntry),
   table('pricing', '/reference/pricing', normalizePricing, applyPricing, true),
   table('content', '/reference/content', normalizeContent, applyContent),
 ]

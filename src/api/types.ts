@@ -466,6 +466,8 @@ export interface ChecklistView {
 export interface PackingView {
   items: PackItem[]
   ticked: string[]
+  /** The first name of the guest who ticked each ticked item, where known. */
+  tickedBy?: Record<string, string>
   weather: Weather
   nights: number
   daysToDeparture: number

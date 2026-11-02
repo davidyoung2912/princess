@@ -9,10 +9,13 @@ import { SHIP } from '../../domain/ship'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
+import { useSailing } from '../../hooks/useDemo'
+import { NicknameCard, RemindCard } from '../delights/PrepareDelights'
 
 /** What the guest has saved, with a way to remove each and a way to start saving. */
 export function SavedScreen() {
   const favourites = useFavourites()
+  const sailing = useSailing()
   const heading = useRef<HTMLHeadingElement>(null)
   const items = favourites.keys.flatMap((key) => {
     const p = parseFavouriteKey(key)
@@ -42,6 +45,8 @@ export function SavedScreen() {
           </li>
         ))}
       </ul>
+      <NicknameCard />
+      <RemindCard sailingId={sailing.id} />
     </div>
   )
 }

@@ -26,6 +26,7 @@ public static class ProviderRegistration
         "FlightStatusProvider" => "Flight",
         "RouteConditionsProvider" => "Route",
         "ShipTelemetry" => "Telemetry",
+        "EmailSender" => "Email",
         _ => name,
     };
 
@@ -50,6 +51,7 @@ public static class ProviderRegistration
         S<ITelemetrySink, LoggingTelemetrySink>(),
         S<IPushSender, SimPushSender>(),
         S<IMediaScanner, SimMediaScanner>(),
+        S<IEmailSender, SimEmailSender>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)

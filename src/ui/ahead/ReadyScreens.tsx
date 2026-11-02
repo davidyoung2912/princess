@@ -1,3 +1,4 @@
+import { HomeMoneyCard, PassportByPortCard } from '../delights/PrepareDelights'
 import { useState } from 'react'
 import { BagTagCards } from '../delights/Exports'
 import { Link } from 'react-router'
@@ -158,6 +159,8 @@ export function ClearanceScreen() {
           </li>
         ))}
       </ul>
+      <PassportByPortCard />
+      <HomeMoneyCard />
       <Banner kind="warning" title={t('clr.check')}><p>{t('clr.checkBody')} <Link to="/plan/travel">{t('route.travel')}</Link></p></Banner>
       <Back to="/" label={t('route.home')} />
     </div>

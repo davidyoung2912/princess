@@ -180,4 +180,25 @@ public class PushRulesTests
         Assert.Equal(64, CalendarRules.Hash(a).Length);
         Assert.NotEqual(CalendarRules.Hash(a), CalendarRules.Hash(b));
     }
+
+    [Fact]
+    public void AReminderSpeaksOnceTheTimeHasPassedAndKeepsToTheGuestsLimits()
+    {
+        var at = new DateTimeOffset(Now.AddHours(-1)).ToUnixTimeMilliseconds();
+        var notices = PushRules.Build(Input() with { ReminderAt = at });
+        var note = Assert.Single(notices);
+        Assert.Equal("reminder", note.Kind);
+        Assert.Equal($"reminder:{at}", note.Key);
+        Assert.False(note.Bypass);
+        Assert.Equal("calm", PushRules.Decide(note, Prefs(), new PushSettings(3, true, []), new TimeOnly(12, 0), 0).Reason);
+        Assert.Equal("budget", PushRules.Decide(note, Prefs(), new PushSettings(0, false, []), new TimeOnly(12, 0), 0).Reason);
+    }
+
+    [Fact]
+    public void AReminderForLaterIsNotBuiltYet()
+    {
+        var later = new DateTimeOffset(Now.AddHours(1)).ToUnixTimeMilliseconds();
+        Assert.Empty(PushRules.Build(Input() with { ReminderAt = later }));
+        Assert.Empty(PushRules.Build(Input()));
+    }
 }

@@ -13,7 +13,7 @@ public sealed record PushDecision(bool Send, string? Reason);
 /// <summary>What the first five notices are built from. Everything here is already known to the server.</summary>
 public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
-    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions);
+    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -28,7 +28,7 @@ public static class PushRules
     public const int MaxLog = 50;
     public const int MaxEndpoint = 450;
 
-    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment"];
+    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder"];
 
     /// <summary>Hours before all-aboard at which the escalation speaks (the last hour only, then the final half hour and ten minutes).</summary>
     public static readonly int[] AllAboardSteps = [60, 30, 10];
@@ -87,6 +87,14 @@ public static class PushRules
             list.Add(new($"payment:{i.Payment}:{i.FinalDue}", "payment", "payments", overdue, overdue ? 92 : 60, "/me/payments",
                 overdue ? "Your payment is overdue" : "Your payment is due soon", $"The final payment date is {i.FinalDue}.",
                 new() { ["date"] = i.FinalDue, ["overdue"] = overdue ? 1 : 0 }));
+        }
+
+        // "Remind me in a week": one plain note once the time the guest chose has passed. It is a suggestion, so it keeps to the budget, quiet hours and calm mode.
+        if (i.ReminderAt is { } at && TripRules.ToMs(i.Now) >= at)
+        {
+            list.Add(new($"reminder:{at}", "reminder", "offers", false, 20, "/home",
+                "A week has passed", "You asked to think things over. Your notes are in the app whenever you are ready.",
+                new() { ["at"] = at }));
         }
 
         return [.. list.OrderByDescending(n => n.Bypass).ThenByDescending(n => n.Priority)];

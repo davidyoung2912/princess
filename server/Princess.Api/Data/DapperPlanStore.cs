@@ -300,15 +300,25 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         return [.. await c.QueryAsync<string>(Sql.Cmd($"SELECT ItemId FROM {TickTable(list)} WHERE BookingId = @bookingId AND Done = 1", new { bookingId }, null, ct))];
     }
 
-    public async Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, CancellationToken ct)
+    public async Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, long? by, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
+        // Only the packing list records who ticked.
+        var who = list == "packing";
         await c.ExecuteAsync(Sql.Cmd($"""
             MERGE {TickTable(list)} AS t
             USING (SELECT @bookingId AS BookingId, @itemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
-            WHEN MATCHED THEN UPDATE SET Done = @done, [At] = @at
-            WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Done, [At]) VALUES (@bookingId, @itemId, @done, @at);
-            """, new { bookingId, itemId, done, at }, null, ct));
+            WHEN MATCHED THEN UPDATE SET Done = @done, [At] = @at{(who ? ", TickedBy = @by" : "")}
+            WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Done, [At]{(who ? ", TickedBy" : "")}) VALUES (@bookingId, @itemId, @done, @at{(who ? ", @by" : "")});
+            """, new { bookingId, itemId, done, at, by }, null, ct));
+    }
+
+    public async Task<Dictionary<string, long>> GetTickersAsync(long bookingId, string list, CancellationToken ct)
+    {
+        if (list != "packing") return [];
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(string ItemId, long TickedBy)>(Sql.Cmd("SELECT ItemId, TickedBy FROM dbo.PackingTicks WHERE BookingId = @bookingId AND Done = 1 AND TickedBy IS NOT NULL", new { bookingId }, null, ct));
+        return rows.ToDictionary(r => r.ItemId, r => r.TickedBy);
     }
 
     // ---- Travel ----

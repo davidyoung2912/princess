@@ -122,4 +122,14 @@ public class StateApiTests : JourneyWorld
         var export = await Get("/api/v1/me/export", phone);
         Assert.Contains("peanuts", export.Json.GetProperty("account").EnumerateArray().First(x => x.GetProperty("key").GetString() == "health").GetProperty("data").ToString());
     }
+
+    [Fact]
+    public void SavedTravellersAreKeptEncryptedAndTheReminderInTheClear()
+    {
+        Assert.Contains("travellers", StateRules.EncryptedKeys);
+        Assert.DoesNotContain("reminder", StateRules.EncryptedKeys);
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "travellers", new JsonObject { ["travellers"] = new JsonArray() }));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "reminder", new JsonObject { ["at"] = 1 }));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "reminder", new JsonArray()));
+    }
 }

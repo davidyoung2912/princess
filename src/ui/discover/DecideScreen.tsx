@@ -16,6 +16,8 @@ import { qualityFeed } from '../../feeds/sailingQuality'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { Field, TextArea } from '../Field'
 import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
+import { EmailRecap, NicknameCard, RemindCard } from '../delights/PrepareDelights'
+import { NOT_INCLUDED, withNickname } from '../../domain/prepareDelights'
 
 async function send(text: string, title: string): Promise<'shared' | 'copied' | 'failed' | null> {
   try {
@@ -46,13 +48,17 @@ export function DecideScreen() {
   const useFare: FareId | null = category && fare && fareOptions(category).includes(fare) ? fare : null
   const summary = decisionSummary({ sailing, category: category || null, fare: useFare, guests, fitsChecked: state.fit.length > 0, budget: budget && budget > 0 ? budget : null })
   const toggleFit = (k: FitKey) => update((s) => ({ ...s, fit: s.fit.includes(k) ? s.fit.filter((x) => x !== k) : [...s.fit, k] }))
-  const invite = inviteText(sailing, me?.firstName ?? '', inviteNote)
+  const nick = state.prepare.nickname
+  const invite = withNickname(nick, inviteText(sailing, me?.firstName ?? '', inviteNote))
+  const recap = withNickname(nick, decisionText(summary))
   const say = async (text: string, title: string) => setShared(await send(text, title))
 
   return (
     <div className="page">
       <h1>{t('route.decide')}</h1>
       <p>{t('decide.intro')}</p>
+
+      <NicknameCard />
 
       <Card labelledBy="dec-fit">
         <h2 id="dec-fit" className="card__title">{t('decide.fit')}</h2>
@@ -159,9 +165,10 @@ export function DecideScreen() {
           </div>
         ))}
         <div className="button-row">
-          <Button variant="secondary" onClick={() => void say(decisionText(summary), t('decide.summary'))}>{t('decide.sendSummary')}</Button>
+          <Button variant="secondary" onClick={() => void say(recap, t('decide.summary'))}>{t('decide.sendSummary')}</Button>
           <ReadAloud text={decisionText(summary)} />
         </div>
+        <EmailRecap subject={withNickname(nick, t('decide.summary'))} body={`${recap}\n\n${t('dl5.mail.notIncluded')}\n${NOT_INCLUDED.map((x) => `- ${x}`).join('\n')}`} />
         <p><Link to="/home/cabins">{t('route.cabins')}</Link> · <Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
       </Card>
 
@@ -174,6 +181,8 @@ export function DecideScreen() {
         <p className="muted">{t('decide.inviteNoLink')}</p>
         {shared && <p role="status">{t(`recap.shared.${shared}` as StringKey)}</p>}
       </Card>
+
+      <RemindCard sailingId={sailing.id} />
     </div>
   )
 }

@@ -1471,6 +1471,7 @@ IF OBJECT_ID(N'dbo.PackingTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PackingTicks (
   BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Done BIT NOT NULL CONSTRAINT DF_PackingTicks_Done DEFAULT 1,
+  TickedBy BIGINT NULL,   -- the guest who last ticked or unticked it, so the list can say who
   [At] DATETIME2(0) NOT NULL CONSTRAINT DF_PackingTicks_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PackingTicks_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PackingTicks PRIMARY KEY (BookingId, ItemId),
@@ -1478,6 +1479,8 @@ CREATE TABLE dbo.PackingTicks (
   CONSTRAINT FK_PackingTicks_PackingItems FOREIGN KEY (ItemId) REFERENCES ref.PackingItems (Id)
 );
 END
+
+IF COL_LENGTH(N'dbo.PackingTicks', N'TickedBy') IS NULL ALTER TABLE dbo.PackingTicks ADD TickedBy BIGINT NULL;
 
 IF OBJECT_ID(N'dbo.PrepTicks', N'U') IS NULL
 BEGIN

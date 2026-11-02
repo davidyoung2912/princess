@@ -11,7 +11,7 @@ import { mergeOffers, mergeParty } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
-import { applyRemoteHealth, applyRemoteMemoryRest, EMPTY_MEMORY, getMemory, healthOf, restOf } from '../memory/store'
+import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, reminderOf, restOf, travellersOf } from '../memory/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
@@ -62,7 +62,25 @@ const memory: Binding = {
   read: (id) => restOf(getMemory(id)),
   apply: (id, raw) => applyRemoteMemoryRest(id, raw),
   isEmpty: (raw) => json(raw) === json(restOf(EMPTY_MEMORY)),
+  clean: cleanRest,
   enabled: () => getSettings().syncPrivate,
+}
+
+/** Saved travellers (names, dates of birth, citizenship): their own document, encrypted on the server, and held back by the same consent switch. */
+const travellers: Binding = {
+  key: 'travellers',
+  read: (id) => travellersOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteTravellers(id, raw),
+  isEmpty: (raw) => (raw as { travellers: unknown[] }).travellers.length === 0,
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** "Remind me in a week": a date and a sailing id, in the clear, so the server can send one note when the time comes. Set only by the guest's own tap. */
+const reminder: Binding = {
+  key: 'reminder',
+  read: (id) => reminderOf(getMemory(id)),
+  apply: (id, raw) => applyRemoteReminder(id, raw),
+  isEmpty: (raw) => json(raw) === '{}',
 }
 
 /** The medical card, access profile and allergy flag: their own document, encrypted on the server, and held back by the same consent switch. */
@@ -155,5 +173,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, travellers, reminder, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

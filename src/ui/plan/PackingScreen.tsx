@@ -40,6 +40,7 @@ export function PackingScreen() {
                 <h2 className="card__title">{t('pack.weather')}</h2>
                 <p>{t('pack.weatherLine', { high: formatTemp(p.weather.highF, settings.units), low: formatTemp(p.weather.lowF, settings.units) })} {p.weather.note}</p>
               </Card>
+              <p className="muted">{t('dl5.pack.shared')}</p>
               <p className="progress-line" role="status">{t('pack.progress', { done: p.ticked.length, total: p.items.length })}</p>
               <progress className="meter" max={p.items.length} value={p.ticked.length} aria-label={t('pack.progress', { done: p.ticked.length, total: p.items.length })} />
               <div className="button-row">
@@ -57,7 +58,7 @@ export function PackingScreen() {
                     {items.map((i) => (
                       <div key={i.id} className="check-row">
                         <input type="checkbox" id={`p-${i.id}`} checked={p.ticked.includes(i.id)} disabled={tick.busy} onChange={() => void tick.run(i.id, !p.ticked.includes(i.id))} />
-                        <div className="check-row__text"><label htmlFor={`p-${i.id}`}><strong>{i.label}</strong></label><small>{i.why}</small></div>
+                        <div className="check-row__text"><label htmlFor={`p-${i.id}`}><strong>{i.label}</strong></label><small>{i.why}</small>{p.tickedBy?.[i.id] && p.ticked.includes(i.id) && <small className="muted">{t('dl5.pack.by', { name: p.tickedBy[i.id] })}</small>}</div>
                       </div>
                     ))}
                   </section>

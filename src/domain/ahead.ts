@@ -55,8 +55,11 @@ const BUDGET_FIT: Record<QuizBudget, readonly CategoryId[]> = {
   treat: ['miniSuite', 'sanctuaryMiniSuite', 'signatureSuite'],
 }
 
-/** A ranked shortlist of room types and a package, with the reasons for each, from five answers. Same answers, same list. */
-export function recommend(a: QuizAnswers): QuizResult {
+/** A ranked shortlist of room types and a package, with the reasons for each, from five answers and any mood tiles picked. Same answers, same list. */
+export function recommend(a: QuizAnswers, moods: readonly string[] = []): QuizResult {
+  // Mood tiles (DL5): wanting slow days points to rooms to enjoy; wanting to be out all day points to spending on the days, not the room.
+  const slow = moods.includes('seaDays') || moods.includes('quietBeach')
+  const out = ['reef', 'wildlife', 'history', 'market'].some((m) => moods.includes(m))
   const adultsOnlyOk = a.with !== 'family' && !a.musts.includes('kids')
   const scored = CATEGORIES.map((c): QuizPick => {
     let score = 0
@@ -73,6 +76,8 @@ export function recommend(a: QuizAnswers): QuizResult {
     if (a.with === 'family' && (c.id === 'balcony' || c.id === 'oceanview')) add(2, 'family')
     if (a.with === 'solo' && (c.id === 'interior' || c.id === 'oceanview')) add(1, 'solo')
     if (a.mobility !== 'none' && c.id === 'balcony') add(2, 'accessible')
+    if (slow && WITH_BALCONY.includes(c.id)) add(2, 'mood.slow')
+    if (out && (c.id === 'interior' || c.id === 'oceanview')) add(1, 'mood.out')
     return { category: c.id, score, reasons }
   })
   const picks = scored.filter((p) => p.score > 0).sort((x, y) => y.score - x.score || CATEGORIES.findIndex((c) => c.id === x.category) - CATEGORIES.findIndex((c) => c.id === y.category)).slice(0, 3)

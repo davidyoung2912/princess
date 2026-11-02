@@ -4,6 +4,11 @@ namespace Princess.Api.Domain;
 
 public sealed record ExcursionDifficulty(double Km, bool Steps, string Heat, string Shade, bool Seats, bool Restrooms, bool Wet);
 
+/// <summary>How long a passport must still be valid beyond the day the ship is in a country, by the guest's citizenship, and whether a guest of another nationality should check for a visa. Authored concept figures: the guest is always sent to the official source.</summary>
+public sealed record EntryRuleDto(string Port, int MonthsUs, int MonthsOther, bool VisaCheckOther);
+
+public sealed record EntryReferenceDto(string Version, IReadOnlyList<EntryRuleDto> Rules);
+
 public sealed record AccessReferenceDto(string Version, Dictionary<string, ExcursionDifficulty> Difficulty, IReadOnlyList<string> AccessibleCategories);
 
 /// <summary>One sailing in the served table. Every sailing runs the same eight-day timeline from its departure date.</summary>
@@ -55,6 +60,21 @@ public static class ReferenceRules
         var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
             string.Join('|', sailings.Select(x => $"{x.Id}:{x.Departure}:{x.Holiday}:{x.Reference}")) + "#" + string.Join('|', template) + "#" + string.Join('|', ports)))).ToLowerInvariant()[..16];
         return new(version, sailings, ports, template, Itinerary.ShipHomeZone, Itinerary.ShipWestZone);
+    }
+
+    public static readonly IReadOnlyList<EntryRuleDto> EntryRules =
+    [
+        new("fll", 0, 0, true),
+        new("cozumel", 0, 0, true),
+        new("belize", 6, 6, true),
+        new("roatan", 6, 6, true),
+    ];
+
+    public static EntryReferenceDto Entry()
+    {
+        var text = System.Text.Json.JsonSerializer.Serialize(EntryRules);
+        var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
+        return new(version, EntryRules);
     }
 
     public static AccessReferenceDto Access()

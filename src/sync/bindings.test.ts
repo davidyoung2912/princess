@@ -105,6 +105,48 @@ describe('private notes and health details', () => {
   })
 })
 
+describe('saved travellers and the reminder', () => {
+  it('travellers wait for consent in their own document, the reminder goes by itself, and the memory document carries neither', async () => {
+    docs.clear()
+    registerSyncBindings()
+    setRemote(remote)
+    switchSettingsOwner({ id: 'gerald', defaultTextSize: DEFAULT_TEXT_SIZE } as never)
+    sync.setOwner('user-9', 'gerald')
+    await sync.pull()
+    await setKeepPrivate(false)
+
+    const person = { id: 'a', firstName: 'Jane', lastName: 'Smith', dob: '1980-02-03', citizenship: 'us' as const }
+    updateMemory('gerald', (m) => ({ ...m, prepare: { ...m.prepare, travellers: [person], remind: { at: 1_700_000_000_000, sailingId: 's1', email: true }, nickname: 'Mum' } }))
+    await sync.flush()
+    expect(docs.has('travellers')).toBe(false)
+    expect(docs.get('reminder')?.data).toEqual({ at: 1_700_000_000_000, sailingId: 's1', email: true })
+
+    await setKeepPrivate(true)
+    expect((docs.get('travellers')!.data as { travellers: unknown[] }).travellers).toEqual([person])
+    const memoryDoc = JSON.stringify(docs.get('memory')!.data)
+    expect(memoryDoc).not.toContain('Smith')
+    expect(memoryDoc).not.toContain('1980-02-03')
+    expect(memoryDoc).toContain('Mum')
+
+    // Clearing the reminder empties the document the server reads.
+    updateMemory('gerald', (m) => ({ ...m, prepare: { ...m.prepare, remind: null } }))
+    await sync.flush()
+    expect(docs.get('reminder')?.data).toEqual({})
+
+    // A second device with nothing gets the travellers back.
+    sync.setOwner('user-x', 'other')
+    sync.setOwner('user-9', 'gerald')
+    applyRemoteMemory('gerald', EMPTY_MEMORY)
+    await sync.pull()
+    expect(getMemory('gerald').prepare.travellers).toEqual([person])
+    expect(getMemory('gerald').prepare.nickname).toBe('Mum')
+
+    expect(await setKeepPrivate(false)).toBe(true)
+    expect(docs.has('travellers')).toBe(false)
+    setRemote(null)
+  })
+})
+
 describe('trip, plan changes, family hub and the booking\'s shared records', () => {
   it('trip, pilot and hub follow the person; port and party follow the booking, under its booker', async () => {
     docs.clear()

@@ -130,6 +130,9 @@ public static class PlanRules
 
     // ---- Packing ----
 
+    /// <summary>The first word of a name, for saying who did something without the surname.</summary>
+    public static string FirstName(string? name) => (name ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+
     public static readonly string[] PackGroups = ["documents", "clothes", "beach", "health", "tech", "kids"];
 
     private static readonly Weather[] MonthWeather =

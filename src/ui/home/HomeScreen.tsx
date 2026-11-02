@@ -1,3 +1,4 @@
+import { HomeReadyCard, NicknameLine, ReminderDueCard, SmallThingCard } from '../delights/PrepareDelights'
 import { Link } from 'react-router'
 import type { TripView } from '../../api/types'
 import { formatDate, sailingRange } from '../../domain/cruise'
@@ -53,7 +54,11 @@ export function HomeScreen() {
       <NudgeCards aboard={false} />
       <AfterCruiseCard />
       <ContinueBookingCard />
+      {trip && <NicknameLine />}
+      <ReminderDueCard />
       {trip && <CompanionCard daysToDeparture={trip.daysToDeparture} />}
+      {trip && <HomeReadyCard />}
+      {trip && <SmallThingCard daysToDeparture={trip.daysToDeparture} />}
       {trip && <Journey trip={trip} />}
       <HomeOfferCard />
       <p><Link to="/home/find-pass">{t('route.findPass')}</Link></p>

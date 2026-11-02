@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL4 are built (sections 5 to 8); DL5 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL5 are built (sections 5 to 9); DL6 to DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -29,7 +29,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | DL2 | Calendar, print and share cards | D2-4, D4-7, D8-6, D4-8, D1-8, D8-4, D8-9, D3-6, D7-5 | DL1 (`delights.ts`) | **Built** (section 6) |
 | DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | **Built** (section 7) |
 | DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | **Built** (section 8) |
-| DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | Planned |
+| DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | **Built** (section 9) |
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | Planned |
 | DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | Planned |
 | DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | Planned |
@@ -175,3 +175,40 @@ Front end only; no REST contract changes. State is the new `polish` part of the 
   - `dotnet` works in this shell with `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` and `~/.dotnet` on the path.
 - **Verified:** `npm run test` (1779 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, and `dotnet build` of the solution (0 warnings, 0 errors). The new server tests (`AutopilotRulesTests`, `CelebrationRulesTests`) compile but were not run, per the rule against `dotnet test`.
 - **Not done:** the ship's side only reads the table (there is no staff screen); the rest block is not stored on the server, only sent with each week request; walks cover the gangway, cabin and dining rooms only because tours are ashore and ship events are not in the plan.
+
+## 9. Phase DL5 in detail: prepare
+
+**Goal:** ten small additions to Home, the readiness, clearance, quiz, decide, saved and guests screens, as pure tested functions (`src/domain/prepareDelights.ts`, 27 tests) with thin cards in `src/ui/delights/PrepareDelights.tsx`. No new routes.
+
+### 9.1 Built (2026-11-02)
+
+Front end only; no REST contract changes. State is the new `prepare` part of the per-person memory store, which travels in the synced `memory` document (a test covers the round trip).
+
+- **D3-1** on the readiness screen: a ring beside each traveller's existing number and bar (`personReadiness`); the percent is written in the ring and in text.
+- **D3-2** on Home: one two-minute task, the oldest one due and not done (ten authored tasks from 26 weeks out). Done ticks it off; "Not for me, stop these" turns it off for good. Silent in calm mode or with a nudge budget of zero.
+- **D3-3** on the clearance screen: type a passport expiry date and see each stop checked (authored rule: Mexico and the home port must not expire during the trip; Belize and Honduras ask for six months). The date is not kept. Nothing says "approved"; the card sends the guest to the official source.
+- **D3-5** on the packing screen: a line saying ticks are kept on the booking. They already were (`dbo` ticks per booking id), so everyone who opens the booking sees the same list; nothing new was built.
+- **D3-8** on the clearance screen: what $100 is worth in the home currency and in pesos, Belize dollars and lempiras, from the served rate table, with its date.
+- **D0-2** on Saved and Decide: a trip nickname, shown on Home and put in front of the decision summary, the invitation and the emailed recap.
+- **D0-4** on the quiz screen: six mood tiles; the three stops are put in order of how many tiles they match, each with the reason in words. Sea days are said to come from the ship.
+- **D0-8** on Saved and Decide: "Remind me in a week" stores a date; Home shows one plain note once the week is up, until the guest taps "Thanks, that is all".
+- **D2-6** on the guests step: save the person being typed (names, date of birth, citizenship) and fill another guest from the saved list. Up to 8; forgettable one by one.
+- **D2-8** on Decide: "Open in my email" builds a `mailto:` link with the summary and what is not in the price, to an optional address. Nothing is sent from the app.
+- Spanish for all `dl5.*` strings; native review still needed.
+- **Verified:** `npm run test` (1806 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Follow-up (same day), the four "not done" items:**
+  - **Ring on Home:** `HomeReadyCard` shows the signed-in traveller's ring, the percent in words and the next open item with its due date, once the checklist and documents have loaded.
+  - **Passport rules served and by nationality:** `GET /reference/entry` returns the months by stop for a U.S. passport and another one, and whether to check for a visa; the client keeps the authored rows until the table arrives (`normalizeEntry`, `applyEntry`, runtime `TABLES`). The card starts from the first traveller's citizenship in Documents and lets the guest change it.
+  - **Saved travellers in their own encrypted document:** new user state key `travellers` (encrypted, written only while "keep my private notes" is on, deleted on withdrawal). The memory document no longer carries them; a copy of the memory document pulled from before is sent back cleaned.
+  - **Reminder pushed by the server:** new user state key `reminder` (`{ at, sailingId }` or `{}`, in the clear so the push service can read it). `PushRules.Build` adds a `reminder` notice once `at` has passed (category offers, so the budget, calm mode and quiet hours hold it back like any suggestion); it is sent once per `at`. It works for a guest with no booking. The Home note stays for a phone without alerts.
+  - **Verified:** `npm run test` (1810 passed), `npm run lint`, `npx tsc -b`, `npm run build`, and `dotnet build` of the solution (0 warnings, 0 errors). The new server tests (`PushRulesTests`, `StateTests`, `EntryReferenceTests`) compile but were not run, per the rule against `dotnet test`.
+- **Second follow-up (same day):**
+  - **Reminder email:** a new provider seam `IEmailSender` (`Providers:Email`, default `sim`: records and delivers nothing). The reminder document gained `email`; the guest ticks "Also send one email" when setting the reminder (or later). `POST /me/push/dispatch` now also calls `ReminderEmailService.SendIfDueAsync`: one email to the account address, once per reminder date (logged in the push delivery log under `reminder:{at}:email`), only if asked for and due. Each email carries a link to `GET /public/reminder/unsubscribe/{token}` (anonymous, rate-limited, HMAC token bound to the user and date under a key derived from the signing key) that switches the email off and answers a small page. The app asks the server to check when the time has come, with no alert permission needed (`useReminderEmail`). Base address for the link: `Public:ApiBaseUrl` (relative when unset).
+  - **Who ticked a packing item:** `dbo.PackingTicks.TickedBy` (added idempotently to existing databases); `PackingViewDto.TickedBy` maps an item to the first name of the guest who ticked it, only for people on the booking; the packing screen shows "Ticked by {name}". Items ticked before this show no name.
+  - **Mood tiles move the room picks:** `recommend(answers, moods)` adds a reason-bearing boost: slow-day moods (sea days, quiet beach) favour balcony and suites, out-and-about moods favour interior and oceanview; each pick says so, and without tiles the result is unchanged.
+  - **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`, `dotnet build` (0 warnings, 0 errors); new server tests (`ReminderRulesTests`, `FirstNameTests`) compile but were not run.
+- **Still not done:**
+  - The email is the simulated sender until a real provider is chosen; there is no bounce handling, and no scheduler (the check runs when the guest's app asks).
+  - The entry table is four authored rows with months and a visa hint, and knows only U.S. or other.
+  - Packing ticks are per booking; there is no shared list across separate bookings.
+  - The summary email (D2-8) is composed by the guest's own mail app; there is no server send.

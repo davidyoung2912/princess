@@ -56,6 +56,7 @@ services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IPushStore, DapperPushStore>();
 services.AddScoped<PushService>();
+services.AddScoped<ReminderEmailService>();
 services.AddScoped<CalendarFeedService>();
 services.AddScoped<IShareStore, DapperShareStore>();
 services.AddScoped<PartyService>();

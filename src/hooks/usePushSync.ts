@@ -5,12 +5,16 @@ import { DISPATCH_EVERY_MS, shouldDispatch } from '../push/push'
 import { startVisibleInterval } from './visibleInterval'
 import { api } from '../runtime'
 import { useSettings } from './useSettings'
+import { useMemory } from './useMemory'
+import { useNow } from './useDemo'
+import { emailCheckDue } from '../domain/prepareDelights'
 
 /**
  * Keeps alerts current while the app is open (N3.3, N3.5): asks the server what to send when the app opens or comes back to the front, shows the unread count on the app icon,
  * opens the screen a tapped alert is about, and passes on this phone's limits when they change. Does nothing unless this phone has allowed alerts.
  */
 export function usePushSync(): void {
+  useReminderEmail()
   const navigate = useNavigate()
   const last = useRef<number | null>(null)
   const [settings] = useSettings()
@@ -41,4 +45,20 @@ export function usePushSync(): void {
   useEffect(() => {
     if (currentSupport() === 'granted') void syncLimits(getWatched())
   }, [settings.nudgesPerDay, settings.calm])
+}
+
+/**
+ * "Remind me in a week" by email: once the time has come, asks the server to check (it sends one email, once, if the guest asked for it). Needs no alert permission.
+ * It asks again only when the reminder changes; the server remembers what it sent.
+ */
+function useReminderEmail(): void {
+  const { state } = useMemory()
+  const now = useNow()
+  const r = state.prepare.remind
+  const due = emailCheckDue(r, now)
+  const at = r?.at ?? 0
+  useEffect(() => {
+    if (!due) return
+    void api.push.dispatch().catch(() => { /* offline: the next visit tries again */ })
+  }, [due, at])
 }
