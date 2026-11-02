@@ -1,6 +1,7 @@
 import { daysBetween } from './trip'
 import { itinerary, PORTS, type ItineraryDay, type PortId, type Sailing } from './sailings'
 import type { Cents } from './pricing'
+import { limit } from './limits'
 
 /** Shore excursions (PRE-01, PRE-02). Names, lengths and prices agree with the Discover port guides (tested); the rest is authored concept data. */
 export type ExcursionPort = Exclude<PortId, 'sea' | 'fll'>
@@ -62,8 +63,8 @@ export function replaceExcursions(next: readonly ExcursionItem[] | null): void {
 export const excursionById = (id: unknown): ExcursionItem | undefined => EXCURSIONS.find((x) => x.id === id)
 
 /** Children under this age pay the child price. */
-export const CHILD_AGE = 12
-export const CHILD_SHARE = 0.7
+export let CHILD_AGE = 12
+export let CHILD_SHARE = 0.7
 /** Anyone under this age may only join with an adult from their party. */
 export const MIN_AGE_UNACCOMPANIED = 18
 
@@ -167,7 +168,7 @@ export function conflictingGuests(booked: readonly BookedTour[], x: ExcursionIte
 }
 
 /** Cancelling a ship tour: free until two days before the port day, then no refund (authored; verify before real use). */
-export const FREE_CANCEL_DAYS = 2
+export let FREE_CANCEL_DAYS = 2
 
 export interface TourRefund { fee: Cents; refund: Cents; free: boolean }
 
@@ -181,3 +182,8 @@ export const daysToTour = (today: string, s: Sailing, x: ExcursionItem): number 
 
 /** The tender-port rule in words, shown on any tour at Belize City. */
 export const needsTender = (x: ExcursionItem): boolean => PORTS[x.port].tender
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('CHILD_AGE', (v) => { CHILD_AGE = v }, CHILD_AGE)
+limit('CHILD_SHARE', (v) => { CHILD_SHARE = v }, CHILD_SHARE)
+limit('FREE_CANCEL_DAYS', (v) => { FREE_CANCEL_DAYS = v }, FREE_CANCEL_DAYS)

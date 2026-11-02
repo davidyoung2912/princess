@@ -1,4 +1,5 @@
 import type { DatedEvent } from './program'
+import { limit } from './limits'
 
 /** Shows and classes with limited seats (ENT-01). Capacity is authored; seats already taken by other guests are worked out the same way every time. */
 export const TICKETED: Readonly<Record<string, { capacity: number }>> = {
@@ -15,7 +16,7 @@ export const TICKETED: Readonly<Record<string, { capacity: number }>> = {
   'port-quiet': { capacity: 12 },
 }
 
-export const MAX_SEATS = 8
+export let MAX_SEATS = 8
 
 export const isTicketed = (eventId: string): boolean => eventId in TICKETED
 
@@ -63,3 +64,6 @@ export function ticketProblem(c: TicketCheck): TicketProblem | null {
 
 /** A seat can be given back up to the start. */
 export const canReturn = (e: Pick<DatedEvent, 'startAt'>, now: number): boolean => now < e.startAt
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_SEATS', (v) => { MAX_SEATS = v }, MAX_SEATS)

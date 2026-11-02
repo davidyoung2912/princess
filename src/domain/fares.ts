@@ -3,6 +3,7 @@ import { NIGHTS, quote, type Cents, type Quote } from './pricing'
 import { categoryById, type CategoryId } from './ship'
 import { DEFAULT_FINAL_PAYMENT_DAYS, DEPOSIT_SHARE } from './trip'
 import { addDays } from './timezones'
+import { limit } from './limits'
 
 /** What a fare includes (BOK-04). Prices are authored concept values; what each includes comes from the entitlement engine, so the two cannot disagree. */
 export type FareId = 'standard' | 'plus' | 'premier'
@@ -71,7 +72,7 @@ export interface Promotion {
   creditCents: Cents
 }
 
-export const EARLY_CREDIT_DAYS = 120
+export let EARLY_CREDIT_DAYS = 120
 
 export function promotionsFor(category: CategoryId, daysToDeparture: number): Promotion[] {
   if (daysToDeparture < EARLY_CREDIT_DAYS) return []
@@ -79,7 +80,7 @@ export function promotionsFor(category: CategoryId, daysToDeparture: number): Pr
 }
 
 /** How long a quoted price is held while someone finishes booking. */
-export const PRICE_LOCK_HOURS = 24
+export let PRICE_LOCK_HOURS = 24
 
 /** A sailing can be booked until the day before it leaves. */
 export const bookable = (daysToDeparture: number): boolean => daysToDeparture >= 1
@@ -106,7 +107,7 @@ export const dueNow = (plan: PayPlan, option: PayOption): Cents => (option === '
 export type PaymentPart = { method: 'card'; cardId: string; cents: Cents } | { method: 'wallet'; cents: Cents }
 
 export type PartsProblem = 'empty' | 'tooMany' | 'amount' | 'sum' | 'duplicate'
-export const MAX_PARTS = 2
+export let MAX_PARTS = 2
 
 /** Whether the parts of a payment make up exactly what is due: one or two methods, each a positive whole-dollar-or-cent amount, no card twice. */
 export function checkParts(parts: readonly PaymentPart[], due: Cents): PartsProblem | null {
@@ -130,3 +131,8 @@ export const scaRequired = (part: PaymentPart): boolean => part.method === 'card
 
 /** Whether a device offers the Payment Request API, which Apple Pay and Google Pay use. */
 export const walletSupported = (win: { PaymentRequest?: unknown } | undefined): boolean => !!win && typeof win.PaymentRequest === 'function'
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('EARLY_CREDIT_DAYS', (v) => { EARLY_CREDIT_DAYS = v }, EARLY_CREDIT_DAYS)
+limit('PRICE_LOCK_HOURS', (v) => { PRICE_LOCK_HOURS = v }, PRICE_LOCK_HOURS)
+limit('MAX_PARTS', (v) => { MAX_PARTS = v }, MAX_PARTS)

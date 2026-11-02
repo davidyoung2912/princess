@@ -4,6 +4,7 @@ import { PERSONAS, personaById, type PersonaId } from './personas'
 import type { CategoryId } from './ship'
 import { categoryOfStateroom } from './trip'
 import { zonedToEpoch } from './timezones'
+import { limit } from './limits'
 
 /** Boarding pass, embarkation day and the offline fallbacks (CHK-04, CHK-05, CHK-12, CHK-14, CHK-15). Times, places and rules are authored concept values (verify before real use). */
 export const HOME_ZONE = 'America/New_York'
@@ -105,7 +106,7 @@ export const departureEpoch = (departure: string, time: string): number => zoned
 
 export type LuggageStatus = 'notDropped' | 'dropped' | 'delivered'
 /** Bags dropped with the porters reach the stateroom within three hours, and not before the staterooms are ready. */
-export const DELIVERY_HOURS = 3
+export let DELIVERY_HOURS = 3
 
 export function luggageStatus(droppedAt: number | null, now: number, readyAt: number): LuggageStatus {
   if (droppedAt === null) return 'notDropped'
@@ -135,3 +136,6 @@ export const AFTERNOON: readonly { id: AfternoonId; time: string }[] = [
 
 /** Who is on the booking, in persona order, with their position on the pass. */
 export const seqOf = (booker: PersonaId, guest: PersonaId): number => PERSONAS.filter((p) => p.booker === booker).findIndex((p) => p.id === guest) + 1
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('DELIVERY_HOURS', (v) => { DELIVERY_HOURS = v }, DELIVERY_HOURS)

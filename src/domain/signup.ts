@@ -1,8 +1,9 @@
 import type { Registration } from '../auth/provider'
+import { limit } from './limits'
 
 /** Sign-up rules (ACT-01), mirrored by the server: an adult account holder, an address that looks like one, a password of 10 or more characters. */
 export const MIN_PASSWORD = 10
-export const MIN_ACCOUNT_AGE = 18
+export let MIN_ACCOUNT_AGE = 18
 
 export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'tooYoung'
 
@@ -35,3 +36,6 @@ export function signupProblems(r: Registration, today: string): SignupProblem[] 
 /** A one-time code is six digits; spaces are ignored so a code pasted as "123 456" works. */
 export const cleanCode = (s: string): string => s.replace(/\s+/g, '')
 export const isCode = (s: string): boolean => /^\d{6}$/.test(cleanCode(s))
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MIN_ACCOUNT_AGE', (v) => { MIN_ACCOUNT_AGE = v }, MIN_ACCOUNT_AGE)

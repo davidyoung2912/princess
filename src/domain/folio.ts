@@ -3,6 +3,7 @@ import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE } from './pricing'
 import type { Entitlements } from './entitlements'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
+import { limit } from './limits'
 
 /** The onboard account, or folio (ACC-01): itemised charges, credits, what a package covered, tips, with a running total. Amounts are authored concept values. */
 export type FolioCategory = 'dining' | 'drinks' | 'internet' | 'spa' | 'shops' | 'photos' | 'laundry' | 'excursions' | 'gratuities' | 'tips' | 'credit'
@@ -70,7 +71,7 @@ const ITEMS: readonly Item[] = [
 ]
 
 /** The bar service charge added to a bar charge. */
-export const BAR_SERVICE_RATE = 0.18
+export let BAR_SERVICE_RATE = 0.18
 
 /** A package covers a drink up to its cap (dollars) and the first Wi-Fi device; beyond the cap the guest pays the difference. */
 function cover(g: FolioGuest, item: Item, used: { wifi: boolean }): { cents: Cents; value?: Cents; coveredBy?: CoveredBy } {
@@ -165,3 +166,6 @@ export function runningTotals(lines: readonly FolioLine[]): Cents[] {
   let sum = 0
   return lines.map((l) => (sum += l.cents))
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('BAR_SERVICE_RATE', (v) => { BAR_SERVICE_RATE = v }, BAR_SERVICE_RATE)

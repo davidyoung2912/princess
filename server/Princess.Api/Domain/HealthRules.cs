@@ -16,6 +16,9 @@ public static class HealthRules
     /// <summary>How long the isolation meal arrangement lasts from the report.</summary>
     public const int IsolationWindowHours = 72;
 
+    /// <summary>How long a guest with stomach symptoms is asked to stay in the cabin once they feel better (guidance shown on the health screens).</summary>
+    public const int IsolateHours = 24;
+
     public const int NoteMax = 300;
 
     private static readonly Dictionary<string, (string Open, string Close)[]> MedicalHours = new()

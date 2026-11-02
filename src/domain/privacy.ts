@@ -1,5 +1,6 @@
 import type { StringKey } from '../i18n'
 import { addDays } from './timezones'
+import { limit } from './limits'
 
 /** What the app keeps, for how long, and what the guest has agreed to (SEC-03, SEC-04, ACT-06). The periods are authored concept values (verify before real use). */
 export interface RetentionRule {
@@ -61,8 +62,12 @@ export function normalizeConsents(raw: unknown): Consents {
 export const consentsFor = (age: number): readonly (typeof CONSENTS)[number][] =>
   CONSENTS.filter((c) => (age < 13 ? c.id === 'parent' || c.id === 'shipPhotos' : !c.childOnly))
 
-export const COPPA_AGE = 13
+export let COPPA_AGE = 13
 
 /** One line of the access log: who or what looked at a sensitive record. */
 export interface AccessEntry { at: number; what: 'passport' | 'photo' | 'health' | 'documents'; action: 'viewed' | 'saved' | 'deleted'; by: string }
-export const MAX_ACCESS = 50
+export let MAX_ACCESS = 50
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('COPPA_AGE', (v) => { COPPA_AGE = v }, COPPA_AGE)
+limit('MAX_ACCESS', (v) => { MAX_ACCESS = v }, MAX_ACCESS)

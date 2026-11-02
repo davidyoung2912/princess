@@ -15,6 +15,7 @@ import { useFeed } from '../../hooks/useServedFeeds'
 import { t } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
+import { FeedWaiting } from '../FeedWaiting'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
 import { wishOf } from '../../domain/autopilot'
@@ -66,14 +67,14 @@ export function BriefingScreen() {
       <PastedLines day={day} />
       <Card labelledBy="brief-h">
         <h2 id="brief-h" className="card__title">{b.title}</h2>
-        {b.lines.length ? (
+        {!dp.ready ? <FeedWaiting /> : b.lines.length ? (
           <ul className="plain-list">
             {b.lines.map((l) => <li key={l.id}>{l.text}{l.path && <> <Link to={l.path}>{t('brief.open')}</Link></>}</li>)}
           </ul>
         ) : <p>{t('brief.empty')}</p>}
         <div className="button-row">
-          {canSpeak ? <Button variant="secondary" onClick={read}>{reading ? t('brief.stop') : t('brief.readAloud')}</Button> : <p className="muted">{t('brief.noVoice')}</p>}
-          <Button variant="tertiary" onClick={() => void copy()}>{t('brief.copy')}</Button>
+          {canSpeak ? <Button variant="secondary" disabled={!dp.ready} onClick={read}>{reading ? t('brief.stop') : t('brief.readAloud')}</Button> : <p className="muted">{t('brief.noVoice')}</p>}
+          <Button variant="tertiary" disabled={!dp.ready} onClick={() => void copy()}>{t('brief.copy')}</Button>
         </div>
         <p role="status">{copied ? t('brief.copied') : ''}</p>
       </Card>

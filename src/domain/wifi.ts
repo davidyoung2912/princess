@@ -14,8 +14,8 @@ export const PLANS: readonly PlanDef[] = [
 
 export const planById = (id: unknown): PlanDef | undefined => PLANS.find((p) => p.id === id)
 
-export const MAX_DEVICES = 6
-export const MAX_DAYS = 8
+export let MAX_DEVICES = 6
+export let MAX_DAYS = 8
 /** The plan a package or tier gives for free. */
 export let INCLUDED_PLAN: WifiPlan = 'surf'
 
@@ -56,3 +56,7 @@ export const upgradeCost = (d: StoredDevice, to: PlanDef, now: number): Cents =>
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('INCLUDED_PLAN', (v) => { INCLUDED_PLAN = v }, INCLUDED_PLAN)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_DEVICES', (v) => { MAX_DEVICES = v }, MAX_DEVICES)
+limit('MAX_DAYS', (v) => { MAX_DAYS = v }, MAX_DAYS)

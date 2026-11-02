@@ -38,6 +38,9 @@ public static class DisembarkRules
 
     public const string SelfAssistFrom = "07:30";
     public const string EarlyFrom = "06:30";
+
+    /// <summary>Cash carried at or above this many US dollars must be declared at customs.</summary>
+    public const int CashLimitUsd = 10_000;
     /// <summary>Walking from the gangway through customs and out to the curb.</summary>
     public const int ClearanceMinutes = 45;
     public const int MaxCarryBags = 2;

@@ -1,5 +1,6 @@
 import type { StringKey } from '../i18n'
 import { isEmail } from './signup'
+import { limit } from './limits'
 
 /**
  * The family-at-home page (S3-08, S6-24, XD-07): a read-only page for named people, reached by a signed link that expires and can be revoked.
@@ -9,8 +10,8 @@ import { isEmail } from './signup'
 export const MAX_CONTACTS = 5
 export const LINK_DAY_CHOICES = [3, 7, 14] as const
 export const DEFAULT_LINK_DAYS = 7
-export const MAX_POSTCARDS = 30
-export const MAX_POSTCARD_NOTE = 140
+export let MAX_POSTCARDS = 30
+export let MAX_POSTCARD_NOTE = 140
 const DAY = 86_400_000
 
 export interface FamilyContact { id: string; name: string; email: string }
@@ -213,3 +214,7 @@ export function normalizeHome(raw: unknown): HomeState {
       ? [{ id: x.id, kind: x.kind as PostcardKind, note: str(x.note) ? x.note.slice(0, MAX_POSTCARD_NOTE) : '', at: x.at, sent: x.sent === true, sentAt: typeof x.sentAt === 'number' ? x.sentAt : null }] : []).slice(-MAX_POSTCARDS)
   return { secret: str(raw.secret) && SAFE.test(raw.secret) ? raw.secret : '', contacts, links, postcards }
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_POSTCARDS', (v) => { MAX_POSTCARDS = v }, MAX_POSTCARDS)
+limit('MAX_POSTCARD_NOTE', (v) => { MAX_POSTCARD_NOTE = v }, MAX_POSTCARD_NOTE)

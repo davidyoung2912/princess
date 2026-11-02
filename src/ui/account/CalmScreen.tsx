@@ -29,8 +29,8 @@ export function CalmScreen() {
   const { calm } = state
   const set = (change: Partial<typeof calm>) => update((s) => ({ ...s, calm: { ...s.calm, ...change } }))
   const { env, now: minute, dayReady } = usePulseEnv(sailing, now, day)
-  const plan = env && dayReady ? sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env) : null
-  const cards = visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
+  const plan = env && dayReady && dp.ready ? sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env) : null
+  const cards = !dp.ready ? null : visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
 
   /** Tells guest services in REST mode (best effort: the request is kept here either way, and a server that cannot be reached changes nothing on screen). */
   const tellStaff = (kind: 'caregiver' | 'kit') => { void staffRequest(kind).catch(() => undefined) }
@@ -80,7 +80,7 @@ export function CalmScreen() {
 
       <Card labelledBy="calm-schedule">
         <h2 id="calm-schedule" className="card__title">{t('calm.schedule')}</h2>
-        {cards.length === 0 ? <p>{t('calm.scheduleEmpty')}</p> : cards.map((c) => (
+        {cards === null ? <FeedWaiting /> : cards.length === 0 ? <p>{t('calm.scheduleEmpty')}</p> : cards.map((c) => (
           <div key={c.id} className={`schedule-card schedule-card--${c.kind}`}>
             <strong>{t(`calm.${c.kind}` as StringKey)}</strong>: {c.start} {c.title}
             {c.changed && <span className="plan-row__note">{c.changed}</span>}

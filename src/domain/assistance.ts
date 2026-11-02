@@ -1,6 +1,7 @@
 import { addDays } from './timezones'
 import { daysBetween } from './trip'
 import type { NeedId } from './account'
+import { limit } from './limits'
 
 /** Special assistance and accessibility requests (MNG-12) with the notice each one needs (the deadline tracker). Notice periods are authored (verify before real use). */
 export type AssistId =
@@ -36,7 +37,7 @@ export const assistKind = (id: unknown): AssistKind | undefined => ASSIST_KINDS.
 
 export type DeadlineState = 'open' | 'soon' | 'late'
 /** "Request now" shows in the two weeks before the cut-off. */
-export const SOON_DAYS = 14
+export let SOON_DAYS = 14
 
 export interface Deadline {
   /** Last day to ask, "YYYY-MM-DD". */
@@ -61,3 +62,6 @@ export function requestStatus(kind: AssistKind, departure: string, madeOn: strin
   if (deadline(kind, departure, madeOn).state === 'late') return 'late'
   return now - at >= CONFIRM_AFTER_MS ? 'confirmed' : 'received'
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('SOON_DAYS', (v) => { SOON_DAYS = v }, SOON_DAYS)

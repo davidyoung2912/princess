@@ -121,10 +121,10 @@ export function friendProblem(f: Friend, existing: readonly Friend[], partySize:
 }
 
 // ---- Money: top-up, PIN, gratuities, currency (ACC-03, ACC-05, ACC-07) ----
-export const TOPUP_MIN = 25
-export const TOPUP_MAX = 1000
-export const TOPUP_TOTAL_MAX = 2000
-export const TOPUP_STEP = 25
+export let TOPUP_MIN = 25
+export let TOPUP_MAX = 1000
+export let TOPUP_TOTAL_MAX = 2000
+export let TOPUP_STEP = 25
 
 export type TopUpProblem = 'badAmount' | 'tooMuch' | 'noCard'
 export function topUpProblem(dollars: unknown, alreadyDollars: number): TopUpProblem | null {
@@ -283,3 +283,9 @@ limit('QUIET_FROM', (v) => { QUIET_FROM = v }, QUIET_FROM)
 limit('MAX_PHOTO_BYTES', (v) => { MAX_PHOTO_BYTES = v }, MAX_PHOTO_BYTES)
 limit('PHOTO_MIN_AGE', (v) => { PHOTO_MIN_AGE = v }, PHOTO_MIN_AGE)
 limit('LAST_MINUTE_LEAD_MIN', (v) => { LAST_MINUTE_LEAD_MIN = v }, LAST_MINUTE_LEAD_MIN)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('TOPUP_MIN', (v) => { TOPUP_MIN = v }, TOPUP_MIN)
+limit('TOPUP_MAX', (v) => { TOPUP_MAX = v }, TOPUP_MAX)
+limit('TOPUP_TOTAL_MAX', (v) => { TOPUP_TOTAL_MAX = v }, TOPUP_TOTAL_MAX)
+limit('TOPUP_STEP', (v) => { TOPUP_STEP = v }, TOPUP_STEP)

@@ -306,3 +306,13 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Plan-change rules stay on the client on purpose:** `applyChanges`, `proposeReflow`, `acceptChange`, `undoChange` and `requestChange` work on the guest's own changes and the rows the server gave, and use no catalogue. They are the guest's decisions, not data the server serves.
 - **Verified:** `npm run test` (1528 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** until the day arrives, `useDayPlan` gives an empty plan with `ready: false`; only Autopilot and Build my day wait on it, the briefing, summary, calm, ask and finish screens still read the empty plan for that moment. `programmeEffects` still checks `eventById` on the client programme table. Hub content, service status and guides still wait on a localisation decision, and `ai/guard.ts` stays by design.
+
+### Slice 7: waiting states on the day screens, more served limits (built 2026-11-02)
+
+**Server C# edit not compiled or run** (project rule): 51 entries added to `LimitsReference`, and two new constants.
+
+- **Day screens wait for the day.** Read aloud, the plain-English summary, Calm (its visual schedule and sensory plan), the briefing (lines, read aloud and copy) and Ask (a change request) now show `FeedWaiting` or the existing loading line until `useDayPlan(...).ready`, instead of reading an empty plan as a free day.
+- **Limits.** 51 more scalars are served by `GET /reference/limits` (115 in all): `TOPUP_*`, `MAX_DEVICES`, `MAX_DAYS`, `MAX_PER_LINE`, `MAX_LINES`, `MAX_PARTY`, `SITTING_MINUTES`, `FREE_CANCEL_DAYS`, the queue and waitlist windows, the fare and trip money rules, booking ages, chat escalation and others. Each had a server constant of the same value, found by script and checked equal, except `ISOLATE_HOURS` (`HealthRules.IsolateHours`) and `CASH_LIMIT_USD` (`DisembarkRules.CashLimitUsd`), which were new constants. `limitsServed.test.ts` now loads every domain module and expects 115 registrations.
+- **Left on the device on purpose:** names that are ambiguous on the server (`MAX_MESSAGE`, `NOTE_MAX`, `DUE_SOON_DAYS`, `ADULT_AGE`, `MAX_GUESTS`, `MAX_ITEMS`), `MAX_LINES` in `briefing.ts` (a display cap, not the order limit), the offline emergency and support numbers, demo codes, feed sources and structural figures (`NIGHTS`, `HOME_ZONE`), and pure interface caps (diagnostics, outbox, titles).
+- **Still not served:** the arrays, records and objects listed in the Phase 3 record (`REQUEST_ITEMS`, `BAR_MENU`, `FAQS`, `LEGAL` and so on).
+- **Verified:** `npm run test` (1528 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.

@@ -1,4 +1,5 @@
 /** Guest Services chat (MSG-02, SUP-08): channel types, visible response times, ticket status, queue position and escalation to a phone call. Crew replies are simulated; times and wording are authored concept values. */
+import { limit } from './limits'
 export type ChannelId = 'guestServices' | 'housekeeping' | 'dining' | 'medical' | 'excursions'
 
 export interface ServiceChannel {
@@ -24,10 +25,10 @@ export const channelById = (id: unknown): ServiceChannel | undefined => CHANNELS
 export const isChannelId = (id: unknown): id is ChannelId => !!channelById(id)
 
 /** When chat runs slowly (the scenario) replies take this many times as long. */
-export const SLOW_FACTOR = 5
+export let SLOW_FACTOR = 5
 
 /** After this many minutes without a reply, the screen offers a phone call instead. */
-export const ESCALATE_AFTER_MINUTES = 15
+export let ESCALATE_AFTER_MINUTES = 15
 
 export const MAX_MESSAGE = 1000
 
@@ -73,3 +74,7 @@ export const crewReply = (channel: ChannelId): string => REPLIES[channel]
 export function cleanMessage(text: unknown): string {
   return typeof text === 'string' ? text.trim().slice(0, MAX_MESSAGE) : ''
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('SLOW_FACTOR', (v) => { SLOW_FACTOR = v }, SLOW_FACTOR)
+limit('ESCALATE_AFTER_MINUTES', (v) => { ESCALATE_AFTER_MINUTES = v }, ESCALATE_AFTER_MINUTES)

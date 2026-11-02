@@ -4,6 +4,7 @@ import { capacityOf, fareIncluded, fareOptions, isFareId, type FareId } from './
 import { LEGAL_IDS, type LegalId } from './policy'
 import { sailingById } from './sailings'
 import { categoryById, CATEGORIES, type CategoryId } from './ship'
+import { limit } from './limits'
 
 /** The booking funnel (BOK-01): the answers a guest gives, saved as a draft, and the rules that say a step is complete. */
 export const STEPS = ['sailing', 'room', 'fare', 'guests', 'dining', 'review', 'pay'] as const
@@ -57,9 +58,9 @@ export interface Draft {
 }
 
 export const MAX_GUESTS = 4
-export const MIN_AGE_MONTHS = 6
-export const ADULT_AGE_IN_ROOM = 21
-export const LEAD_AGE = 18
+export let MIN_AGE_MONTHS = 6
+export let ADULT_AGE_IN_ROOM = 21
+export let LEAD_AGE = 18
 
 export const blankGuest = (): GuestDraft => ({ firstName: '', lastName: '', dob: '', gender: '', citizenship: '', needs: [], dietaryStatus: '', dietary: [], allergyNote: '' })
 export const blankContact = (): LeadContact => ({ email: '', phone: '', street: '', city: '', region: '', postcode: '', country: 'United States' })
@@ -251,3 +252,8 @@ export function fillBlank(draft: Draft, from: { people: readonly GuestDraft[]; c
   for (const f of ['email', 'phone'] as const) if (!contact[f] && from.contact[f]) { contact[f] = from.contact[f]; changed = true }
   return changed ? { ...draft, people, contact } : draft
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MIN_AGE_MONTHS', (v) => { MIN_AGE_MONTHS = v }, MIN_AGE_MONTHS)
+limit('ADULT_AGE_IN_ROOM', (v) => { ADULT_AGE_IN_ROOM = v }, ADULT_AGE_IN_ROOM)
+limit('LEAD_AGE', (v) => { LEAD_AGE = v }, LEAD_AGE)

@@ -1,4 +1,5 @@
 import type { PortId } from './sailings'
+import { limit } from './limits'
 
 /**
  * Getting ready: port clearance guidance (CHK-10), the weather outlook for each port (MNG-09), health and comfort preparation
@@ -149,6 +150,9 @@ export const FIX_FLOWS: readonly FixFlow[] = [
 export const isFixId = (v: unknown): v is FixId => FIX_FLOWS.some((f) => f.id === v)
 
 export type FixStage = 'received' | 'contacted'
-export const FIX_CONTACT_HOURS = 24
+export let FIX_CONTACT_HOURS = 24
 export const fixStage = (askedAt: number, now: number): FixStage => (now - askedAt >= FIX_CONTACT_HOURS * 3_600_000 ? 'contacted' : 'received')
 export const fixReference = (n: number): string => `FX-${String(10_000 + n)}`
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('FIX_CONTACT_HOURS', (v) => { FIX_CONTACT_HOURS = v }, FIX_CONTACT_HOURS)

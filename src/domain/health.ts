@@ -22,7 +22,7 @@ export const isRequestKind = (v: unknown): v is RequestKind => REQUEST_KINDS.inc
 export const isSymptom = (v: unknown): v is Symptom => SYMPTOMS.includes(v as Symptom)
 
 /** Hours a guest stays in the stateroom after the last symptom. */
-export const ISOLATE_HOURS = 24
+export let ISOLATE_HOURS = 24
 /** How long the isolation meal arrangement lasts from the report, if nothing else is said. */
 export let ISOLATION_WINDOW_HOURS = 72
 
@@ -54,3 +54,6 @@ export function reportProblem(guests: readonly string[], symptoms: readonly unkn
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('ISOLATION_WINDOW_HOURS', (v) => { ISOLATION_WINDOW_HOURS = v }, ISOLATION_WINDOW_HOURS)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('ISOLATE_HOURS', (v) => { ISOLATE_HOURS = v }, ISOLATE_HOURS)

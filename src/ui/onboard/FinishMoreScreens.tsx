@@ -14,6 +14,7 @@ import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
+import { FeedWaiting } from '../FeedWaiting'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from './common'
@@ -386,7 +387,7 @@ export function ReadAloudScreen() {
     setReading(true)
     synth.speak(u)
   }
-  const plan = planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty'))
+  const plan = dp.ready ? planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty')) : null
   const walk = PORT_KNOWLEDGE[port].walks[0]
   return (
     <Page title="route.readAloud" intro="read.intro" back={SHIP}>
@@ -394,8 +395,8 @@ export function ReadAloudScreen() {
       <Card labelledBy="rd-r"><h2 id="rd-r" className="card__title">{t('read.speed')}</h2>
         {READ_RATES.map((r) => <label key={r} className="choice"><input type="radio" name="rd-rate" checked={rate === r} onChange={() => setRate(r)} /><span>{t(`read.rate.${String(r).replace('.', '')}` as StringKey)}</span></label>)}</Card>
       <Card labelledBy="rd-p"><h2 id="rd-p" className="card__title">{t('read.plan')}</h2>
-        <p>{plan}</p>
-        {canSpeak && <Button onClick={() => speak(plan)}>{reading ? t('read.stop') : t('read.play')}</Button>}</Card>
+        {plan === null ? <FeedWaiting /> : <p>{plan}</p>}
+        {canSpeak && plan !== null && <Button onClick={() => speak(plan)}>{reading ? t('read.stop') : t('read.play')}</Button>}</Card>
       <Card labelledBy="rd-w"><h2 id="rd-w" className="card__title">{t('read.walk')}</h2>
         {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="rd-port" checked={port === p} onChange={() => setPort(p)} /><span>{PORTS[p].name}</span></label>)}
         {walk && <><p>{walkSpeech(walk)}</p>{canSpeak && <Button onClick={() => speak(walkSpeech(walk))}>{reading ? t('read.stop') : t('read.play')}</Button>}</>}</Card>

@@ -1,4 +1,5 @@
 import type { Cents } from './pricing'
+import { limit } from './limits'
 
 /**
  * What can be booked, ordered or joined on board (ENT-03, SHP-01, SHP-04, SHP-06, ACS-04): spa and fitness, shops and gift cards,
@@ -114,7 +115,7 @@ export const selectionKey = (s: Pick<Selection, 'item' | 'day' | 'time'>): strin
 
 export type SelectionProblem = 'unknown' | 'badDay' | 'badTime' | 'badQty' | 'age' | 'soldOut' | 'notBookable'
 
-export const MAX_QTY = 6
+export let MAX_QTY = 6
 
 export function selectionProblem(s: Selection, age: number, taken = 0): SelectionProblem | null {
   const i = itemById(s.item)
@@ -137,3 +138,6 @@ export const chargeFor = (s: Selection): Cents => (itemById(s.item)?.price ?? 0)
 
 /** Places left for what others have not taken, or null when there is no limit. */
 export const placesLeft = (i: Item, day: number, time: string, mine: number): number | null => (i.limit === null ? null : Math.max(0, i.limit - takenByOthers(i, day, time) - mine))
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_QTY', (v) => { MAX_QTY = v }, MAX_QTY)

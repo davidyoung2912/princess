@@ -106,7 +106,7 @@ export interface CustomsDeclaration { food: boolean; cash: boolean; goodsUsd: nu
 
 /** Duty-free goods each person may bring in, and the cash amount above which a report is needed. */
 export let ALLOWANCE_USD = 800
-export const CASH_LIMIT_USD = 10_000
+export let CASH_LIMIT_USD = 10_000
 export let GOODS_MAX = 100_000
 export let CUSTOMS_NOTE_MAX = 200
 
@@ -267,3 +267,6 @@ limit('ONWARD_NOTE_MAX', (v) => { ONWARD_NOTE_MAX = v }, ONWARD_NOTE_MAX)
 limit('AIRPORT_MINUTES', (v) => { AIRPORT_MINUTES = v }, AIRPORT_MINUTES)
 limit('TIGHT_MINUTES', (v) => { TIGHT_MINUTES = v }, TIGHT_MINUTES)
 limit('DUE_SOON_MINUTES', (v) => { DUE_SOON_MINUTES = v }, DUE_SOON_MINUTES)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('CASH_LIMIT_USD', (v) => { CASH_LIMIT_USD = v }, CASH_LIMIT_USD)

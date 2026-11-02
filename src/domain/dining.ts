@@ -2,6 +2,7 @@ import type { Cents } from './pricing'
 import type { Entitlements } from './entitlements'
 import type { PaymentState } from './trip'
 import type { PersonaId } from './personas'
+import { limit } from './limits'
 
 /** Dining reservations before sailing (PRE-03, DIN-12). Venues follow the ship profile; cover charges and hours are authored. */
 export type VenueKind = 'main' | 'specialty' | 'casual'
@@ -61,7 +62,7 @@ export const DINNER_DAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7]
 export const DINNER_TIMES: readonly string[] = ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30']
 
 /** The most people at one table. */
-export const MAX_PARTY = 8
+export let MAX_PARTY = 8
 
 const hash = (text: string): number => {
   let h = 5381
@@ -114,7 +115,7 @@ export interface ReservedTable { venueId: string; day: number; time: string; gue
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
 /** Dinner takes about two hours. */
-export const SITTING_MINUTES = 120
+export let SITTING_MINUTES = 120
 
 /** Guests who would be at two tables at once on the same night. */
 export function tableClash(existing: readonly ReservedTable[], day: number, time: string, guests: readonly string[], ignoreVenue?: string): string[] {
@@ -132,3 +133,7 @@ export const DRESS_NOTES: Record<DressCode, string> = {
   smart: 'Smart casual: collared shirts or a nice top; no shorts or flip-flops at dinner',
   elegant: 'Elegant evening: a jacket or dress, to match the evening',
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_PARTY', (v) => { MAX_PARTY = v }, MAX_PARTY)
+limit('SITTING_MINUTES', (v) => { SITTING_MINUTES = v }, SITTING_MINUTES)

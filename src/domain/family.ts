@@ -1,5 +1,6 @@
 import type { PersonaId } from './personas'
 import { placeById } from './deck'
+import { limit } from './limits'
 
 /**
  * Finding the family and the children's clubs (SAF-05, ENT-04). A web page cannot tell where anyone is on the ship, so
@@ -89,7 +90,7 @@ export function lastSeen(child: PersonaId, age: number, now: number, club: { clu
 }
 
 /** Not heard from for this long, a parent is told to act. */
-export const OVERDUE_MINUTES = 30
+export let OVERDUE_MINUTES = 30
 
 export type KidStatus = 'inClub' | 'inZone' | 'outOfZone' | 'overdue'
 
@@ -129,3 +130,6 @@ export function normalizeReunion(raw: unknown): ReunionPlan {
 }
 
 export const placeName = (id: string): string => (id === 'cabin' ? 'Stateroom' : (placeById(id)?.name ?? id))
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('OVERDUE_MINUTES', (v) => { OVERDUE_MINUTES = v }, OVERDUE_MINUTES)

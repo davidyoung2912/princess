@@ -91,8 +91,8 @@ export function locationProblem(l: Location): 'badLocation' | null {
 
 export let DELIVERY_FEE: Cents = 200
 export const TIPS: readonly Cents[] = [0, 200, 500]
-export const MAX_PER_LINE = 10
-export const MAX_LINES = 12
+export let MAX_PER_LINE = 10
+export let MAX_LINES = 12
 export let DRINKING_AGE = 21
 /** Alcohol carries the same service charge as at a bar. */
 export let SERVICE_RATE = 0.18
@@ -272,3 +272,7 @@ limit('DELIVERY_FEE', (v) => { DELIVERY_FEE = v }, DELIVERY_FEE)
 limit('DRINKING_AGE', (v) => { DRINKING_AGE = v }, DRINKING_AGE)
 limit('SERVICE_RATE', (v) => { SERVICE_RATE = v }, SERVICE_RATE)
 limit('BREAKFAST_LEAD_MINUTES', (v) => { BREAKFAST_LEAD_MINUTES = v }, BREAKFAST_LEAD_MINUTES)
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('MAX_PER_LINE', (v) => { MAX_PER_LINE = v }, MAX_PER_LINE)
+limit('MAX_LINES', (v) => { MAX_LINES = v }, MAX_LINES)

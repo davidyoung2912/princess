@@ -2,6 +2,7 @@ import { PERSONAS, personaById, type PersonaId, type StateroomKind } from './per
 import { quote, type Cents } from './pricing'
 import { sailingById } from './sailings'
 import type { CategoryId } from './ship'
+import { limit } from './limits'
 
 /** Days between two "YYYY-MM-DD" dates (positive when `to` is later). */
 export function daysBetween(from: string, to: string): number {
@@ -22,14 +23,14 @@ export function bookingNumber(booker: PersonaId): string {
 /** Booking numbers are letters and digits only; people type spaces and lower case. */
 export const normalizeBookingNumber = (text: string): string => text.replace(/[\s-]/g, '').toUpperCase()
 
-export const DEFAULT_FINAL_PAYMENT_DAYS = 90
+export let DEFAULT_FINAL_PAYMENT_DAYS = 90
 /** Guests who booked late pay in full closer to sailing. */
 const LATE_BOOKERS: Partial<Record<PersonaId, number>> = { maria: 10, marcus: 10 }
 /** Late bookers have not paid by default; everyone else has paid by the due date. */
 export const paysLate = (booker: PersonaId): boolean => booker in LATE_BOOKERS
 export const finalPaymentDays = (booker: PersonaId): number => LATE_BOOKERS[booker] ?? DEFAULT_FINAL_PAYMENT_DAYS
 
-export const DEPOSIT_SHARE = 0.2
+export let DEPOSIT_SHARE = 0.2
 
 export interface PaymentPlan {
   total: Cents
@@ -111,3 +112,7 @@ export function nextAction(i: NextActionInput): NextActionId {
   if (i.checkinOpen && !i.checkinDone) return 'checkin'
   return 'allSet'
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('DEFAULT_FINAL_PAYMENT_DAYS', (v) => { DEFAULT_FINAL_PAYMENT_DAYS = v }, DEFAULT_FINAL_PAYMENT_DAYS)
+limit('DEPOSIT_SHARE', (v) => { DEPOSIT_SHARE = v }, DEPOSIT_SHARE)

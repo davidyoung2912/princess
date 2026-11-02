@@ -29,7 +29,7 @@ export function SummaryScreen() {
 
   const title = subject === 'day' ? t('sum.subject.day') : subject === 'bill' ? t('sum.subject.bill') : LEGAL.find((l) => l.id === subject)!.title
   let s: Summary | null = null
-  if (subject === 'day') s = summarisePlan(dp.rows, level)
+  if (subject === 'day') s = dp.ready ? summarisePlan(dp.rows, level) : null
   else if (subject === 'bill') s = folio.data ? summariseBill(folio.data.lines.filter((l) => l.cents > 0).map((l) => { const x = explainCharge(l); return { label: l.description, cents: l.cents, reason: t(`explain.${x.id}` as StringKey, x.params) } }), level) : null
   else { const doc = LEGAL.find((l) => l.id === subject)!; s = summariseNotice(doc.title, '/me/trips', doc.body, level) }
 

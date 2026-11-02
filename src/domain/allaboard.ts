@@ -1,6 +1,7 @@
 import { allAboardEpoch, itinerary, PORTS, shipZoneAt, type PortId, type Sailing } from './sailings'
 import { clockTime } from './syncAge'
 import { zonedToEpoch } from './timezones'
+import { limit } from './limits'
 
 /** The all-aboard countdown, reminders and tender arrangements (POR-02, POR-04, POR-08, POR-11). Times, groups and waits are authored concept values (verify before real use). */
 export const REMINDER_THRESHOLDS: readonly number[] = [120, 60, 30]
@@ -20,7 +21,7 @@ export interface AboardState {
 }
 
 /** The sailing leaves 30 minutes after all-aboard on the authored days (e.g. all aboard 16:30, depart 17:00). */
-export const SAIL_AFTER_MINUTES = 30
+export let SAIL_AFTER_MINUTES = 30
 
 /** Where a guest stands against the all-aboard time: plenty of time, under two hours (soon), under thirty minutes (now), past it but before sailing (late), or the ship has gone. */
 export function aboardState(allAboardAt: number, now: number): AboardState {
@@ -84,9 +85,9 @@ export const TENDER_GROUPS: readonly TenderGroup[] = [
 ]
 
 /** The first call, local port time, after the ship anchors. */
-export const FIRST_CALL = '07:45'
+export let FIRST_CALL = '07:45'
 /** The last tender leaves the landing this long before all-aboard. */
-export const LAST_TENDER_MINUTES = 45
+export let LAST_TENDER_MINUTES = 45
 
 export const isTenderGroup = (id: unknown): id is string => TENDER_GROUPS.some((g) => g.id === id)
 
@@ -136,3 +137,8 @@ export type LateStep = 'call' | 'agent' | 'meet' | 'documents'
 
 /** What to do if the ship is about to leave without you; the same steps whether the tour was booked with the ship or not. */
 export const LATE_STEPS: readonly LateStep[] = ['call', 'agent', 'meet', 'documents']
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('SAIL_AFTER_MINUTES', (v) => { SAIL_AFTER_MINUTES = v }, SAIL_AFTER_MINUTES)
+limit('LAST_TENDER_MINUTES', (v) => { LAST_TENDER_MINUTES = v }, LAST_TENDER_MINUTES)
+limit('FIRST_CALL', (v) => { FIRST_CALL = v }, FIRST_CALL)

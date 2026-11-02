@@ -1,6 +1,7 @@
 import { phoneOk, type EmergencyContact } from './account'
 import { docStatus, type Citizenship } from './documents'
 import { LEGAL } from './policy'
+import { limit } from './limits'
 
 /**
  * Online check-in (CHK-01, CHK-02, CHK-03, CHK-13). Eight steps: six are answered for each guest, two once for the
@@ -19,7 +20,7 @@ export const isStepId = (v: unknown): v is StepId => (STEP_ORDER as readonly unk
 export const isGuestStep = (s: StepId): s is GuestStepId => (GUEST_STEPS as readonly StepId[]).includes(s)
 
 /** Check-in opens three days before sailing and closes at 10:00 on sailing day; after that, the terminal desk takes over (CHK-08). */
-export const OPEN_DAYS_BEFORE = 3
+export let OPEN_DAYS_BEFORE = 3
 export const CLOSE_TIME = '10:00'
 
 export type DocumentKind = 'passport' | 'birthCertificate'
@@ -215,3 +216,6 @@ export function normalizeGuestCheckin(raw: unknown): GuestCheckin {
   }
   return out
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('OPEN_DAYS_BEFORE', (v) => { OPEN_DAYS_BEFORE = v }, OPEN_DAYS_BEFORE)

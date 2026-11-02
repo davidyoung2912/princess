@@ -1,5 +1,6 @@
 import { CATEGORIES, categoryById, type CategoryId } from './ship'
 import { SAILINGS, sailingById } from './sailings'
+import { limit } from './limits'
 
 /** Money is whole cents. */
 export type Cents = number
@@ -36,9 +37,9 @@ export const TAXES_AND_FEES: Cents = 23_600
 export const GRATUITY_PER_NIGHT: Cents = 1650
 export const GRATUITY_PER_NIGHT_SUITE: Cents = 1850
 /** The third and fourth guest in a stateroom pay this share of the fare. */
-export const EXTRA_GUEST_SHARE = 0.75
+export let EXTRA_GUEST_SHARE = 0.75
 /** One guest alone pays this multiple of the per-person fare. */
-export const SOLO_MULTIPLE = 2
+export let SOLO_MULTIPLE = 2
 
 export const MAX_GUESTS = 4
 
@@ -129,3 +130,7 @@ export function parseMoney(text: string): Cents | null {
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null
   return Math.round(Number(clean) * 100)
 }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('EXTRA_GUEST_SHARE', (v) => { EXTRA_GUEST_SHARE = v }, EXTRA_GUEST_SHARE)
+limit('SOLO_MULTIPLE', (v) => { SOLO_MULTIPLE = v }, SOLO_MULTIPLE)

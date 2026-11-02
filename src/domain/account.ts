@@ -1,5 +1,6 @@
 import { PERSONAS, personaById, type PersonaId } from './personas'
 import type { Citizenship } from './documents'
+import { limit } from './limits'
 
 /** Account data (ACT-03, MNG-04): profile, preferences, cards and the helper role. Defaults come from the demo person; saved edits replace them. */
 export type DietaryId = 'vegetarian' | 'vegan' | 'glutenFree' | 'nutAllergy' | 'shellfishAllergy' | 'dairyFree' | 'halal' | 'kosher'
@@ -117,8 +118,8 @@ const distance = (a: string, b: string): number => {
   return row[b.length]
 }
 
-export const NAME_TYPO_LIMIT = 3
-export const NAME_LOCK_DAYS = 14
+export let NAME_TYPO_LIMIT = 3
+export let NAME_LOCK_DAYS = 14
 
 export type NameChange = { allowed: true } | { allowed: false; reason: 'late' | 'large' }
 
@@ -172,3 +173,7 @@ export function normalizeHelper(raw: unknown): Helper | null {
 export const helperMay = (h: Helper | null, permission: PermissionId): boolean => !!h && h.status === 'active' && h.permissions.includes('view') && h.permissions.includes(permission)
 
 export interface HistoryEntry { id: string; at: number; /** Who made the change. */ by: string; what: 'profile' | 'documents' | 'payment' | 'card' | 'helper' | 'trip' | 'notifications' | 'booking' | 'tour' | 'dining' | 'purchase' | 'assistance' | 'travel' | 'checkin'; detail: string }
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('NAME_TYPO_LIMIT', (v) => { NAME_TYPO_LIMIT = v }, NAME_TYPO_LIMIT)
+limit('NAME_LOCK_DAYS', (v) => { NAME_LOCK_DAYS = v }, NAME_LOCK_DAYS)

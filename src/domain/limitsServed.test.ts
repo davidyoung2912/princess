@@ -5,6 +5,9 @@ import { MAX_OPEN_REQUESTS, QUIET_FROM } from './services'
 import { REDOWNLOAD_DAYS } from './photos'
 import { SERVICE_RATE } from './orders'
 
+// Load every domain module, so each one's `limit(...)` registrations run whatever the other tests imported.
+import.meta.glob(['./*.ts', '!./*.test.ts'], { eager: true })
+
 describe('normalizeLimits', () => {
   it('reads numbers and strings', () => {
     expect(normalizeLimits({ version: 'a', values: { MAX_OPEN_REQUESTS: 4, QUIET_FROM: '22:00' } })).toEqual({ version: 'a', values: { MAX_OPEN_REQUESTS: 4, QUIET_FROM: '22:00' } })
@@ -26,7 +29,7 @@ describe('applyLimits', () => {
   afterEach(() => applyLimits({ version: 'back', values: saved }))
 
   it('registers the limits the server serves, so a missing registration is noticed', () => {
-    expect(limitNames().length).toBeGreaterThanOrEqual(64)
+    expect(limitNames().length).toBeGreaterThanOrEqual(115)
     expect(limitNames()).toContain('DELIVERY_FEE')
   })
 

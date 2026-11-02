@@ -1,4 +1,5 @@
 /** The documents engine for closed-loop Caribbean cruises (MNG-05, MNG-11). Rules are authored mock content (verify before real use). */
+import { limit } from './limits'
 export type DocId = 'passport' | 'birthCertificate' | 'photoId' | 'insurance'
 export type Citizenship = 'us' | 'other'
 export type RequirementId = 'proofOfCitizenship' | 'photoId' | 'passport' | 'insurance'
@@ -13,7 +14,7 @@ export const DOCS: Record<DocId, { name: string; hasExpiry: boolean }> = {
 export const DOC_IDS = Object.keys(DOCS) as DocId[]
 
 export const ADULT_AGE = 16
-export const PASSPORT_VALID_MONTHS = 6
+export let PASSPORT_VALID_MONTHS = 6
 
 export interface Requirement {
   id: RequirementId
@@ -120,3 +121,6 @@ export const PORT_ENTRY: readonly { country: string; note: string }[] = [
   { country: 'Belize (Belize City)', note: 'Cruise passengers go ashore by tender. A passport is recommended. Verify before travel.' },
   { country: 'Honduras (Roatán)', note: 'A passport is recommended. Some visitors pay a small port or tourism fee. Verify before travel.' },
 ]
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('PASSPORT_VALID_MONTHS', (v) => { PASSPORT_VALID_MONTHS = v }, PASSPORT_VALID_MONTHS)

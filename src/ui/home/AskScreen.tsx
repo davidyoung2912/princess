@@ -79,6 +79,11 @@ export function AskScreen() {
     const exc = parseExcursionRequest(q)
     if (exc && me && !me.child) { setProposal(null); setExcReq(exc); return }
     setExcReq(null)
+    if (CHANGE_WORDS.test(q) && !dp.ready) {
+      setProposal(null)
+      setTurns((all) => [{ id: all.length, question: q, answer: { text: t('feed.waiting'), sources: [] } }, ...all])
+      return
+    }
     if (CHANGE_WORDS.test(q)) {
       const r = requestChange(q, dp.rows, dp.alternatives, now, day)
       if (r.ok) { setProposal(r.change); return }

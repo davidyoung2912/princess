@@ -1,9 +1,10 @@
 /** Virtual queues for walk-in places and waitlists for full tables (DIN-02). Positions move with the demo clock, so they are the same every time for the same moment. */
-export const QUEUE_STEP_MIN = 6
-export const HOLD_MIN = 10
-export const WAITLIST_OFFER_AFTER_MIN = 180
-export const WAITLIST_OFFER_HOLD_MIN = 120
-export const WAITLIST_MIN_LEAD_MIN = 45
+import { limit } from './limits'
+export let QUEUE_STEP_MIN = 6
+export let HOLD_MIN = 10
+export let WAITLIST_OFFER_AFTER_MIN = 180
+export let WAITLIST_OFFER_HOLD_MIN = 120
+export let WAITLIST_MIN_LEAD_MIN = 45
 
 const MIN = 60_000
 
@@ -43,3 +44,10 @@ export function waitlistState(joinedAt: number, slotAt: number, now: number, sta
 
 /** Whether a guest may still join a waitlist for a slot. */
 export const canJoinWaitlist = (slotAt: number, now: number): boolean => slotAt - now >= WAITLIST_MIN_LEAD_MIN * MIN
+
+// Served limits (`GET /reference/limits`) replace these defaults in place.
+limit('QUEUE_STEP_MIN', (v) => { QUEUE_STEP_MIN = v }, QUEUE_STEP_MIN)
+limit('HOLD_MIN', (v) => { HOLD_MIN = v }, HOLD_MIN)
+limit('WAITLIST_OFFER_AFTER_MIN', (v) => { WAITLIST_OFFER_AFTER_MIN = v }, WAITLIST_OFFER_AFTER_MIN)
+limit('WAITLIST_OFFER_HOLD_MIN', (v) => { WAITLIST_OFFER_HOLD_MIN = v }, WAITLIST_OFFER_HOLD_MIN)
+limit('WAITLIST_MIN_LEAD_MIN', (v) => { WAITLIST_MIN_LEAD_MIN = v }, WAITLIST_MIN_LEAD_MIN)
