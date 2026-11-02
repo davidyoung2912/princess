@@ -117,7 +117,7 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 
 **StaffTickets** — guest services requests R/W (multi-device plan 3, Phase 5). One row per call back, caregiver visit or sensory kit the guest asked for, so a desk can read the queue and every device shows the same ticket. `Id ID` · `PublicId GUID` · `UserId ID FK→Users` (cascade) · `Kind` (`callback|caregiver|kit`) · `Reason` (callbacks: `urgent|changes|health|other`; else empty) · `RequestedAtMs`, `Position`, `ReadyAtMs` (as the queue answered) · `Source` · `CancelledAt DT` · `CreatedAt DT*`.
 
-**FamilyPostcards** — "we're OK" postcards R/W. What a link's public page shows. `Id ID` · `PublicId GUID` · `UserId ID FK→Users` (cascade) · `Kind STR(10)*` (`ok`, `sea`, `port`, `late`, `love`) · `Note STR(140)*` · `SentAt DT*` · `MediaId GUID?` (FK→GuestMedia.PublicId, set null when the picture is deleted) · `CreatedAt DT*`.
+**FamilyPostcards** — "we're OK" postcards R/W. What a link's public page shows. `Id ID` · `PublicId GUID` · `UserId ID FK→Users` (cascade) · `Kind STR(10)*` (`ok`, `sea`, `port`, `late`, `love`) · `Note STR(140)*` · `SentAt DT*` · `MediaId GUID?` (GuestMedia.PublicId, no foreign key: SQL Server refuses a second cascade path from Users; the media store clears it when a picture is deleted) · `CreatedAt DT*`.
 
 *Decision:* one table serves both groups (the two lists are the same key space in the UI).
 

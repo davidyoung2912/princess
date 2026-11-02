@@ -49,6 +49,7 @@ public sealed class DapperMediaStore(IDbConnectionFactory db) : IMediaStore
     public async Task<bool> DeleteAsync(long userId, Guid publicId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.FamilyPostcards SET MediaId = NULL WHERE UserId = @userId AND MediaId = @publicId", new { userId, publicId }, null, ct));
         return await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.GuestMedia WHERE UserId = @userId AND PublicId = @publicId", new { userId, publicId }, null, ct)) > 0;
     }
 }

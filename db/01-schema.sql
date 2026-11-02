@@ -888,10 +888,9 @@ CREATE TABLE dbo.FamilyPostcards (
   Kind VARCHAR(10) NOT NULL,
   Note NVARCHAR(140) NOT NULL CONSTRAINT DF_FamilyPostcards_Note DEFAULT N'',
   SentAt DATETIME2(0) NOT NULL,
-  MediaId UNIQUEIDENTIFIER NULL,   -- the guest's picture on the card (GuestMedia.PublicId); gone when the picture is deleted
+  MediaId UNIQUEIDENTIFIER NULL,   -- the guest's picture on the card (GuestMedia.PublicId); no foreign key (it would be a second cascade path from Users), so DapperMediaStore.DeleteAsync clears it
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyPostcards_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FamilyPostcards_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_FamilyPostcards_Media FOREIGN KEY (MediaId) REFERENCES dbo.GuestMedia (PublicId) ON DELETE SET NULL,
   CONSTRAINT CK_FamilyPostcards_Kind CHECK (Kind IN ('ok','sea','port','late','love'))
 );
 CREATE INDEX IX_FamilyPostcards_UserId_SentAt ON dbo.FamilyPostcards (UserId, SentAt);
