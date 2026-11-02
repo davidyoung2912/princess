@@ -35,9 +35,9 @@ public sealed class InMemoryFamilyHomeStore : IFamilyHomeStore
         return Task.FromResult(n);
     }
 
-    public Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, CancellationToken ct)
+    public Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, Guid? mediaId, CancellationToken ct)
     {
-        Cards.Add((userId, new FamilyPostcardRow(kind, note, sentAt)));
+        Cards.Add((userId, new FamilyPostcardRow(kind, note, sentAt, mediaId)));
         var mine = Cards.Where(c => c.UserId == userId).ToList();
         foreach (var old in mine.Take(Math.Max(0, mine.Count - keep))) Cards.Remove(old);
         return Task.CompletedTask;

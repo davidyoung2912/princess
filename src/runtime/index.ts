@@ -81,10 +81,22 @@ export const familyHome = {
   issue: (days: number) => http.post<unknown>('/me/family-links', { days }),
   revoke: (id: string) => http.delete<void>(`/me/family-links/${encodeURIComponent(id)}`),
   revokeAll: () => http.delete<void>('/me/family-links'),
-  postcard: (kind: string, note: string) => http.post<void>('/me/family-postcards', { kind, note }),
+  postcard: (kind: string, note: string, photoId?: string) => http.post<void>('/me/family-postcards', { kind, note, photoId }),
   view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
+  /** Where a postcard's picture is on the family page: an address an image tag can load, because the link itself is the permission. */
+  photoUrl: (token: string, photoId: string) => `${API_URL}/public/family/${encodeURIComponent(token)}/photos/${encodeURIComponent(photoId)}`,
   setRecap: (text: string) => http.put<void>('/me/family-recap', { text }),
   clearRecap: () => http.delete<void>('/me/family-recap'),
+}
+
+/** The guest's own pictures (N7): send one, list them, fetch one as bytes (with the sign-in token, which an image tag cannot send), delete one, and the pictures of a stateroom type. */
+export const guestMedia = {
+  upload: (file: Blob, meta: { purpose: string; ref: string; kind?: string; caption?: string }) => http.upload<unknown>('/me/media', file, { query: { purpose: meta.purpose, ref: meta.ref, kind: meta.kind ?? '', caption: meta.caption ?? '' } }),
+  mine: (purpose?: string) => http.get<unknown>('/me/media', { query: { purpose } }),
+  usage: () => http.get<unknown>('/me/media/usage'),
+  remove: (id: string) => http.delete<void>(`/me/media/${encodeURIComponent(id)}`),
+  cabin: (category: string) => http.get<unknown>(`/cabin-photos/${encodeURIComponent(category)}`),
+  file: (id: string) => http.blob(`/media/${encodeURIComponent(id)}`),
 }
 
 /** The party's shared view and the read-only links (N4): the organiser's roster, the change log, caregiver and advisor links, and a link's own page (no sign-in). */

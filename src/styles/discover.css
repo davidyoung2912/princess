@@ -73,3 +73,10 @@ textarea.field__input { resize: vertical; }
 .wrapped-card { text-align: center; }
 .wrapped-card__big { font-family: var(--font-display); font-size: var(--fs-headline); font-weight: 700; margin: 0; overflow-wrap: anywhere; }
 .memory-book__page { break-inside: avoid; margin-bottom: var(--space-4); }
+
+/* Guest pictures (N7): kept small on a phone, never wider than their box, and not split across a printed page. */
+.guest-picture { display: block; max-width: 100%; height: auto; border-radius: var(--radius-card); margin-block: var(--space-2); }
+.kept-picture { margin: 0 0 var(--space-3); break-inside: avoid; }
+.kept-picture figcaption, .book-pictures figcaption { margin-top: var(--space-1); }
+.book-pictures { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--space-3); margin-block: var(--space-3); }
+.book-pictures figure { margin: 0; break-inside: avoid; }

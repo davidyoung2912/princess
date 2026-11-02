@@ -27,6 +27,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryFinishStore Finish { get; }
     public InMemoryStateStore State { get; } = new();
     public InMemoryFamilyHomeStore FamilyHome { get; } = new();
+    public InMemoryMediaStore Media { get; } = new();
     public InMemoryPortRowStore PortRows { get; } = new();
     public InMemoryStaffTicketStore Staff { get; } = new();
     public FakeClock Clock { get; } = new(DateTime.UtcNow.AddTicks(-(DateTime.UtcNow.Ticks % TimeSpan.TicksPerSecond)));   // whole seconds, so a demo offset (kept in seconds) lands exactly
@@ -78,6 +79,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IFinishStore>();
             services.RemoveAll<IStateStore>();
             services.RemoveAll<IFamilyHomeStore>();
+            services.RemoveAll<IMediaStore>();
             services.RemoveAll<IPortRowStore>();
             services.RemoveAll<IStaffTicketStore>();
             services.RemoveAll<IClock>();
@@ -101,6 +103,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IFinishStore>(Finish);
             services.AddSingleton<IStateStore>(State);
             services.AddSingleton<IFamilyHomeStore>(FamilyHome);
+            services.AddSingleton<IMediaStore>(Media);
             services.AddSingleton<IPortRowStore>(PortRows);
             services.AddSingleton<IStaffTicketStore>(Staff);
             services.AddSingleton<IClock>(Clock);

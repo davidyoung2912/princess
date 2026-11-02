@@ -153,16 +153,20 @@ export function adoptServerLink(state: HomeState, contactId: string, link: Serve
 export const liveLinkIds = (state: HomeState, now: number, contactId?: string): string[] =>
   state.links.filter((l) => isLive(l, now) && (contactId === undefined || l.contactId === contactId)).map((l) => l.id)
 
+const PHOTO_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+interface PublicFamilyCard { id: string; kind: PostcardKind; note: string; at: number; photo: string | null }
+
 /** What `GET /public/family/{token}` answers: a page, or the reason a link does not work. */
 export type PublicFamily =
-  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[]; /** Minutes the guest is late, when they told their party and share it. */ delayedMinutes: number | null; /** The recap the guest chose to share, or null. */ recap: string | null }
+  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number; /** The id of the picture on the card, when the guest added one. */ photo: string | null }[]; scenarios: string[]; /** Minutes the guest is late, when they told their party and share it. */ delayedMinutes: number | null; /** The recap the guest chose to share, or null. */ recap: string | null }
   | { ok: false; reason: LinkProblem }
 
 export function normalizePublicFamily(raw: unknown): PublicFamily {
   if (!isObj(raw)) return { ok: false, reason: 'malformed' }
   if (raw.ok !== true) return { ok: false, reason: (['signature', 'unknown', 'revoked', 'expired'] as const).find((r) => r === raw.reason) ?? 'malformed' }
-  const postcards = (Array.isArray(raw.postcards) ? raw.postcards : []).flatMap((x, i): { id: string; kind: PostcardKind; note: string; at: number }[] =>
-    isObj(x) && POSTCARD_KINDS.includes(x.kind as PostcardKind) && typeof x.at === 'number' ? [{ id: `${i}`, kind: x.kind as PostcardKind, note: str(x.note) ? x.note.slice(0, MAX_POSTCARD_NOTE) : '', at: x.at }] : [])
+  const postcards = (Array.isArray(raw.postcards) ? raw.postcards : []).flatMap((x, i): PublicFamilyCard[] =>
+    isObj(x) && POSTCARD_KINDS.includes(x.kind as PostcardKind) && typeof x.at === 'number' ? [{ id: `${i}`, kind: x.kind as PostcardKind, note: str(x.note) ? x.note.slice(0, MAX_POSTCARD_NOTE) : '', at: x.at, photo: str(x.photo) && PHOTO_ID.test(x.photo) ? x.photo : null }] : [])
   return {
     ok: true, guestFirst: str(raw.guestFirst) ? raw.guestFirst.slice(0, 60) : '', expiresAt: typeof raw.expiresAt === 'number' ? raw.expiresAt : 0, postcards: postcards.slice(-MAX_POSTCARDS),
     scenarios: (Array.isArray(raw.scenarios) ? raw.scenarios : []).filter(str).slice(0, 30),
@@ -204,7 +208,7 @@ export interface FamilyView {
   itinerary: readonly { day: number; date: string; place: string }[]
   shipAt: string | null
   notices: readonly StringKey[]
-  postcards: readonly { id: string; kind: PostcardKind; note: string; at: number }[]
+  postcards: readonly { id: string; kind: PostcardKind; note: string; at: number; photo?: string | null }[]
   delayedMinutes: number | null
   /** The recap the guest shared with the people at home, or null. */
   recap: string | null

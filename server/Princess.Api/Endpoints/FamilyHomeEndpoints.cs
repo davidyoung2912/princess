@@ -35,7 +35,7 @@ public static class FamilyHomeEndpoints
                 return Results.NoContent();
             })
             .WithTags("Family at home")
-            .WithSummary("Sends a postcard (kind ok, sea, port, late or love, with a note of at most 140 characters) to the page every live link opens. The newest 30 are kept. 400 badPostcard.");
+            .WithSummary("Sends a postcard (kind ok, sea, port, late or love, with a note of at most 140 characters and optionally a photoId from a picture the guest kept for postcards) to the page every live link opens. The newest 30 are kept. 400 badPostcard.");
 
         api.MapPut("/me/family-recap", async (FamilyRecapRequest body, ICurrentUser me, FamilyHomeService svc, CancellationToken ct) =>
             {
@@ -52,6 +52,14 @@ public static class FamilyHomeEndpoints
             })
             .WithTags("Family at home")
             .WithSummary("Takes the recap off the family-at-home page.");
+
+        api.MapGet("/public/family/{token}/photos/{id}", async (string token, string id, FamilyHomeService svc, CancellationToken ct) =>
+            {
+                var (data, type) = await svc.PublicPhotoAsync(token, id, ct);
+                return Results.File(data, type);
+            })
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter).WithTags("Family at home")
+            .WithSummary("The picture on one postcard of the page a live link opens, with no sign-in. 404 when the link does not work or the picture is not on a postcard the page shows. Rate-limited.");
 
         api.MapGet("/public/family/{token}", async (string token, FamilyHomeService svc, CancellationToken ct) => Results.Ok(await svc.PublicAsync(token, ct)))
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter).WithTags("Family at home")

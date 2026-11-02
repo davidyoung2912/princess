@@ -9,6 +9,7 @@ import { t, type StringKey } from '../../i18n'
 import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
 import { RegretCards } from './RegretCards'
+import { CabinPhotos } from './CabinPhotos'
 import { FeedWaiting } from '../FeedWaiting'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
@@ -85,6 +86,8 @@ export function CabinChooserScreen() {
           ))}
         </fieldset>
       </Card>
+
+      <CabinPhotos category={category} />
 
       <h2>{t('cabins.found', { count: cabins.length })}</h2>
       {!guide && <FeedWaiting />}

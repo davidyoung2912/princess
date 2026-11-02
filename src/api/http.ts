@@ -23,6 +23,10 @@ export interface RequestOptions {
   signal?: AbortSignal
   /** Do not attach the bearer token or try to refresh (sign-in and refresh themselves). */
   anonymous?: boolean
+  /** Send these bytes as the body, with this content type, instead of JSON. */
+  raw?: Blob
+  /** Answer with the response body as bytes instead of JSON. */
+  asBlob?: boolean
 }
 
 export interface Http {
@@ -31,6 +35,10 @@ export interface Http {
   put<T>(path: string, body?: unknown, o?: RequestOptions): Promise<T>
   patch<T>(path: string, body?: unknown, o?: RequestOptions): Promise<T>
   delete<T>(path: string, o?: RequestOptions): Promise<T>
+  /** Sends a picture (or other file) as the body, with the blob's own type; the answer is JSON. */
+  upload<T>(path: string, file: Blob, o?: RequestOptions): Promise<T>
+  /** Fetches a file with the bearer token (an `<img>` tag cannot send one). */
+  blob(path: string, o?: RequestOptions): Promise<Blob>
 }
 
 const STATUS_CODES: Record<number, ApiErrorCode> = { 400: 'invalid', 401: 'forbidden', 403: 'forbidden', 404: 'notFound', 409: 'conflict', 422: 'invalid', 402: 'declined' }
@@ -57,8 +65,9 @@ export function createHttp(opts: HttpOptions): Http {
     if (!online()) throw new ApiError('offline')
     const query = o.query ? Object.entries(o.query).filter(([, v]) => v !== undefined).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&') : ''
     const url = `${opts.baseUrl}${path}${query ? `?${query}` : ''}`
-    const headers: Record<string, string> = { accept: 'application/json' }
-    if (o.body !== undefined) headers['content-type'] = 'application/json'
+    const headers: Record<string, string> = { accept: o.asBlob ? '*/*' : 'application/json' }
+    if (o.raw) headers['content-type'] = o.raw.type
+    else if (o.body !== undefined) headers['content-type'] = 'application/json'
     const token = o.anonymous ? null : opts.token()
     if (token) headers.authorization = `Bearer ${token}`
     const timeout = new AbortController()
@@ -66,7 +75,7 @@ export function createHttp(opts: HttpOptions): Http {
     const onAbort = () => timeout.abort()
     o.signal?.addEventListener('abort', onAbort)
     try {
-      return await doFetch(url, { method, headers, body: o.body === undefined ? undefined : JSON.stringify(o.body), signal: timeout.signal })
+      return await doFetch(url, { method, headers, body: o.raw ?? (o.body === undefined ? undefined : JSON.stringify(o.body)), signal: timeout.signal })
     } catch {
       throw new ApiError(o.signal?.aborted ? 'network' : timeout.signal.aborted ? 'timeout' : 'network')
     } finally {
@@ -84,6 +93,7 @@ export function createHttp(opts: HttpOptions): Http {
         throw new ApiError('forbidden', 'signedOut')
       }
     }
+    if (o.asBlob && res.ok) return (await res.blob()) as T
     const text = res.status === 204 ? '' : await res.text().catch(() => '')
     let parsed: unknown = undefined
     if (text) {
@@ -99,5 +109,7 @@ export function createHttp(opts: HttpOptions): Http {
     put: (path, body, o) => request('PUT', path, { ...o, body }),
     patch: (path, body, o) => request('PATCH', path, { ...o, body }),
     delete: (path, o) => request('DELETE', path, o),
+    upload: (path, file, o) => request('POST', path, { ...o, raw: file }),
+    blob: (path, o) => request('GET', path, { ...o, asBlob: true }),
   }
 }

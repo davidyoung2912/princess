@@ -92,7 +92,7 @@ export function AtSeaScreen() {
         <section aria-labelledby="pub-cards-h">
           <h2 id="pub-cards-h">{t('home.public.cards')}</h2>
           {view.postcards.length === 0 ? <p>{t('home.public.noCards')}</p> : (
-            <ul>{[...view.postcards].reverse().map((p) => <li key={p.id}>{t(POSTCARD_TEXT[p.kind])}{p.note && ` — ${p.note}`}</li>)}</ul>
+            <ul>{[...view.postcards].reverse().map((p) => <li key={p.id}>{t(POSTCARD_TEXT[p.kind])}{p.note && ` — ${p.note}`}{p.photo && familyHome && <img className="guest-picture" src={familyHome.photoUrl(token, p.photo)} alt={t('home.public.cardPhoto')} loading="lazy" decoding="async" />}</li>)}</ul>
           )}
         </section>
         {view.recap && (

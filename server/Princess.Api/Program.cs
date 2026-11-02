@@ -67,6 +67,8 @@ services.AddScoped<StateService>();
 services.AddScoped<IPortRowStore, DapperPortRowStore>();
 services.AddScoped<PortRowService>();
 services.AddScoped<FamilyHomeService>();
+services.AddScoped<IMediaStore, DapperMediaStore>();
+services.AddScoped<MediaService>();
 services.AddScoped<DemoService>();
 services.AddScoped<ContextService>();
 services.AddScoped<AutopilotService>();
@@ -201,6 +203,7 @@ v1.MapPartyEndpoints();
 v1.MapReferenceEndpoints();
 v1.MapConciergeEndpoints();
 v1.MapFamilyHomeEndpoints();
+v1.MapMediaEndpoints();
 v1.MapDemoEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.

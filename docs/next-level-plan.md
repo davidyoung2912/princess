@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 and N8 are not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 is built except N7.4; N8 is not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 
@@ -287,6 +287,22 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 | N7.5 Postcards with a photo | Add a photo to a family-at-home postcard | S6-24 |
 
 **Risks:** storage cost, moderation and privacy of children's images. Do not show other guests' photos until the moderation answer is settled.
+
+**N7 record (2026-11-02):**
+- **N7.1 done (server and app):** `POST /me/media` keeps a JPEG or PNG sent as the request body. The server reads the real type from the bytes, refuses more than 2 MB, 8000 pixels a side or 25 million pixels (`MediaRules`), passes it to an `IMediaScanner` (a provider seam, `Providers:MediaScanner`, simulated: it refuses the antivirus test string), strips the EXIF/XMP, comments and other application blocks from a JPEG and every chunk but the drawing ones from a PNG, and keeps it in the new `GuestMedia` table under the guest (40 pictures, 20 MB; deleting the account deletes them by cascade). A supervised child cannot keep pictures. The app shrinks a picture to 1600 pixels on a canvas first (`src/media/shrink.ts`), which also turns it upright; that is a courtesy and the server does not rely on it. `Http` gained `upload` and `blob`, because an image tag cannot send the sign-in token: a picture is fetched with it and shown from an object URL that is let go afterwards.
+- **N7.2 done:** the cabin chooser has a "Pictures of this room type" card. A guest who ticks "I stayed in this type of room" adds a picture of the room, the view, something in the way or noise, with a caption. The server cannot check that they stayed, so the tick is a statement, not proof. A picture is `pending`, and the simulated moderator calls it `approved` after 10 minutes. **Other guests' pictures are not shown unless the server runs with `Media:ShowOthers=true` (default off)**, following the plan's rule; the card's words say a picture is checked first and that other guests' pictures may not be shown yet, and promise only that the guest's own are always shown to them.
+- **N7.3 done:** the memory book takes pictures for the front page and for each day. They are kept on the server for the guest only, shown in the book on the page and printed with it (the PDF is the browser's own print-to-PDF, so it is made on the device). They are **not** in the copied text.
+- **N7.5 done:** a postcard can carry a picture. The guest adds it first (it needs signal, so it cannot wait in the offline queue and the send buttons say so), then sends the postcard with `photoId`. The family page shows it through `GET /public/family/{token}/photos/{id}`, which works only for a live link and only for a picture on a postcard the page shows. `FamilyPostcards.MediaId` is cleared when the picture is deleted.
+- **Not done:** **N7.4 (group album).** It needs each person's privacy choice on every picture and a party-wide list, and it must wait for the moderation answer that this phase deliberately did not settle (children's images in a shared album most of all). The `GuestMedia` table, the cleaning and the scanner are what it would build on.
+- **Limits (read these):**
+  - **Moderation is simulated.** Nothing is ever `rejected` by the simulated moderator, so a real one must replace `MediaRules.EffectiveStatus` before `Media:ShowOthers` is turned on. There is no staff view of the queue.
+  - **JPEGs with metadata after the first scan** (rare multi-scan files) are copied as they are. The usual EXIF block comes before the scan and is removed.
+  - **A picture has no alternative text beyond the caption the guest writes**; without one a screen reader hears "Picture from day N" or the cabin kind. Nothing describes a picture's content.
+  - **The offline book:** pictures need a connection to load; the book prints without them when offline.
+  - The cabin card is not in Spanish (the keys fall back to English).
+  - Pictures live in SQL Server (`VARBINARY(MAX)`); at any scale they belong in blob storage behind `IMediaStore`.
+- **Verified here:** `npx tsc -b`, `npm run lint`, `npm run test` (143 files, 1702 tests), `npm run build`, `npm run bundle:check` (first load 347.3 kB of 350), `npm run api:check` and `npm run db:check`. **Not verified:** none of the C# has been compiled or run (`dotnet` is not installed here).
+- **Please run `dotnet build` on `server/`.** New or changed: `Domain/MediaRules.cs`, `Services/MediaService.cs` (with `IMediaScanner`), `Data/MediaStores.cs`, `Data/DapperMediaStore.cs`, `Endpoints/MediaEndpoints.cs`, `Program.cs`, `Services/ProviderRegistration.cs`, `Data/FamilyHomeStores.cs`, `Data/DapperFamilyHomeStore.cs`, `Services/FamilyHomeService.cs` (new constructor argument `IMediaStore`), `Endpoints/FamilyHomeEndpoints.cs`, and tests `MediaTests.cs`, `Support/InMemoryMedia.cs`, `Support/ApiFactory.cs`, `Support/InMemoryFamilyHome.cs`, `SwaggerCoverageTests.cs`. The database needs the new `GuestMedia` table and `FamilyPostcards.MediaId`; the script creates tables only when absent, so an existing database must be reset (`db/reset-db.ps1`). If the build fails, fixing it is the first task of the next session.
 
 ---
 

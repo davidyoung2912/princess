@@ -18,6 +18,8 @@ import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
 import { BackLink } from '../onboard/common'
 import { Load } from './parts'
+import { BookPagePictures, DayPictureEditor } from './BookPictures'
+import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
@@ -38,6 +40,7 @@ export function MemoryScreen() {
   const now = useNow()
   const { state, me, update } = useMemory()
   const recap = useRecapData()
+  const pictures = useMyMedia('book')
   const [topic, setTopic] = useState<Topic>('cabin')
   /** Asks the server how a friend answered; the contact was added with the guest's consent, and nothing changes if no answer comes. */
   const hear = async (id: string, name: string) => {
@@ -85,8 +88,14 @@ export function MemoryScreen() {
         <h2 id="mem-journal" className="card__title no-print">{t('memory.journal')}</h2>
         <div className="no-print">
           <p>{t('memory.journalBody')}</p>
+          <p className="muted">{t('media.book.note')}</p>
+          {pictures.failed && <p className="muted">{t('media.book.offline')}</p>}
+          <DayPictureEditor day="cover" list={pictures.list} onChange={pictures.reload} />
           {days.map((d) => (
-            <TextArea key={d.day} label={t('memory.dayNote', { day: d.day, date: formatDate(d.date) })} value={state.journal[d.day] ?? ''} maxLength={NOTE_MAX} onChange={(e) => update((s) => ({ ...s, journal: { ...s.journal, [d.day]: e.target.value } }))} />
+            <div key={d.day}>
+              <TextArea label={t('memory.dayNote', { day: d.day, date: formatDate(d.date) })} value={state.journal[d.day] ?? ''} maxLength={NOTE_MAX} onChange={(e) => update((s) => ({ ...s, journal: { ...s.journal, [d.day]: e.target.value } }))} />
+              <DayPictureEditor day={d.day} list={pictures.list} onChange={pictures.reload} />
+            </div>
           ))}
         </div>
       </Card>
@@ -110,6 +119,8 @@ export function MemoryScreen() {
                     <div key={s.id} className="memory-book__page">
                       <h3>{s.heading}</h3>
                       {s.lines.map((l, i) => <p key={`${s.id}-${i}`}>{l}</p>)}
+                      {s.id === 'title' && <BookPagePictures day="cover" list={pictures.list} />}
+                      {s.id.startsWith('day-') && <BookPagePictures day={Number(s.id.slice(4))} list={pictures.list} />}
                     </div>
                   ))}
                 </div>

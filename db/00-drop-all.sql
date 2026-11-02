@@ -71,6 +71,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Favourites'),
   (N'dbo', N'FamilyLinks'),
   (N'dbo', N'FamilyPostcards'),
+  (N'dbo', N'GuestMedia'),
   (N'dbo', N'StaffTickets'),
   (N'dbo', N'ConciergeUses'),
   (N'demo', N'DemoState'),

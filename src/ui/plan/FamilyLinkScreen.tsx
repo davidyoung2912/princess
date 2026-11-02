@@ -10,6 +10,8 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
+import { KeptPicture, PicturePicker } from '../media/Pictures'
+import type { Media } from '../../domain/media'
 
 const newSecret = (): string => Array.from({ length: 4 }, () => Math.random().toString(36).slice(2, 8)).join('')
 
@@ -26,6 +28,7 @@ export function FamilyLinkScreen() {
   const [note, setNote] = useState('')
   const [shown, setShown] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const [photo, setPhoto] = useState<Media | null>(null)
   const home = state.home
   const child = me?.child ?? false
   const offline = demo.network.offline
@@ -74,13 +77,14 @@ export function FamilyLinkScreen() {
     update((s) => ({ ...s, home: removeContact(s.home, contactId) }))
   }
   /** A postcard reaches the page when it is sent (now with signal, or later from the queue). */
-  const pushCards = async (cards: readonly { kind: PostcardKind; note: string }[]) => {
-    if (server) for (const c of cards) await server.postcard(c.kind, c.note).catch(() => setFailed(true))
+  const pushCards = async (cards: readonly { kind: PostcardKind; note: string; photoId?: string }[]) => {
+    if (server) for (const c of cards) await server.postcard(c.kind, c.note, c.photoId).catch(() => setFailed(true))
   }
   const send = (kind: PostcardKind) => {
     update((s) => ({ ...s, home: addPostcard(s.home, kind, note, now, newHubId(), !offline) }))
-    if (!offline) void pushCards([{ kind, note: note.trim() }])
+    if (!offline) void pushCards([{ kind, note: note.trim(), photoId: photo?.id }])
     setNote('')
+    setPhoto(null)
   }
   const flush = () => {
     void pushCards(home.postcards.filter((p) => !p.sent))
@@ -145,9 +149,22 @@ export function FamilyLinkScreen() {
         <h2 id="home-cards-h">{t('home.cards')}</h2>
         <p>{t('home.cards.intro')}</p>
         <Field label={t('home.cards.note')} value={note} maxLength={MAX_POSTCARD_NOTE} onChange={(e) => setNote(e.target.value)} />
+        {!child && (
+          <div>
+            <h3>{t('media.postcard.title')}</h3>
+            {photo ? (
+              <>
+                <KeptPicture media={photo} alt={t('media.postcard.alt')} onDeleted={() => setPhoto(null)} />
+                <p role="status">{t('media.postcard.ready')}</p>
+                <Button variant="tertiary" onClick={() => setPhoto(null)}>{t('media.postcard.clear')}</Button>
+              </>
+            ) : <PicturePicker purpose="postcard" reference="" ready={!offline} blockedWhy={t('media.postcard.needSignal')} onSaved={setPhoto} />}
+          </div>
+        )}
         <div className="button-row" role="group" aria-label={t('home.cards')}>
-          {POSTCARD_KINDS.map((k) => <Button key={k} variant="secondary" disabled={child || home.contacts.length === 0} onClick={() => send(k)}>{t(POSTCARD_TEXT[k])}</Button>)}
+          {POSTCARD_KINDS.map((k) => <Button key={k} variant="secondary" disabled={child || home.contacts.length === 0 || (offline && photo !== null)} onClick={() => send(k)}>{t(POSTCARD_TEXT[k])}</Button>)}
         </div>
+        {offline && photo !== null && <p className="muted">{t('media.postcard.needSignal')}</p>}
         {home.contacts.length === 0 && <p className="muted">{t('home.cards.needPeople')}</p>}
         {queued > 0 && (
           <p role="status">{offline ? t('home.cards.queued', { count: queued }) : t('home.cards.ready', { count: queued })}{' '}

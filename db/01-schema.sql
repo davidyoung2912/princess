@@ -852,6 +852,33 @@ CREATE TABLE dbo.ConciergeUses (
 CREATE INDEX IX_ConciergeUses_UserId_UsedAt ON dbo.ConciergeUses (UserId, UsedAt);
 END
 
+IF OBJECT_ID(N'dbo.GuestMedia', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.GuestMedia (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_GuestMedia PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_GuestMedia_PublicId DEFAULT NEWID() CONSTRAINT UX_GuestMedia_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Purpose VARCHAR(10) NOT NULL,
+  Reference VARCHAR(40) NOT NULL CONSTRAINT DF_GuestMedia_Reference DEFAULT '',
+  Kind VARCHAR(12) NOT NULL CONSTRAINT DF_GuestMedia_Kind DEFAULT '',
+  Caption NVARCHAR(140) NOT NULL CONSTRAINT DF_GuestMedia_Caption DEFAULT N'',
+  ContentType VARCHAR(12) NOT NULL,
+  Width INT NOT NULL,
+  Height INT NOT NULL,
+  ByteCount INT NOT NULL,
+  Status VARCHAR(10) NOT NULL CONSTRAINT DF_GuestMedia_Status DEFAULT 'pending',
+  Data VARBINARY(MAX) NOT NULL,   -- the cleaned picture (no EXIF); blob storage is a later option behind IMediaStore
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_GuestMedia_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_GuestMedia_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_GuestMedia_Purpose CHECK (Purpose IN ('cabin','book','postcard')),
+  CONSTRAINT CK_GuestMedia_ContentType CHECK (ContentType IN ('image/jpeg','image/png')),
+  CONSTRAINT CK_GuestMedia_Status CHECK (Status IN ('pending','approved','rejected')),
+  CONSTRAINT CK_GuestMedia_Size CHECK (Width > 0 AND Height > 0 AND ByteCount > 0)
+);
+CREATE INDEX IX_GuestMedia_UserId_Purpose ON dbo.GuestMedia (UserId, Purpose);
+CREATE INDEX IX_GuestMedia_Purpose_Reference ON dbo.GuestMedia (Purpose, Reference, Status);
+END
+
 IF OBJECT_ID(N'dbo.FamilyPostcards', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.FamilyPostcards (
@@ -861,8 +888,10 @@ CREATE TABLE dbo.FamilyPostcards (
   Kind VARCHAR(10) NOT NULL,
   Note NVARCHAR(140) NOT NULL CONSTRAINT DF_FamilyPostcards_Note DEFAULT N'',
   SentAt DATETIME2(0) NOT NULL,
+  MediaId UNIQUEIDENTIFIER NULL,   -- the guest's picture on the card (GuestMedia.PublicId); gone when the picture is deleted
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyPostcards_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FamilyPostcards_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_FamilyPostcards_Media FOREIGN KEY (MediaId) REFERENCES dbo.GuestMedia (PublicId) ON DELETE SET NULL,
   CONSTRAINT CK_FamilyPostcards_Kind CHECK (Kind IN ('ok','sea','port','late','love'))
 );
 CREATE INDEX IX_FamilyPostcards_UserId_SentAt ON dbo.FamilyPostcards (UserId, SentAt);

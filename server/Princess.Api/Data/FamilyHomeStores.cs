@@ -2,7 +2,7 @@ namespace Princess.Api.Data;
 
 public sealed record FamilyLinkRow(Guid PublicId, long UserId, DateTime ExpiresAt, DateTime? RevokedAt);
 
-public sealed record FamilyPostcardRow(string Kind, string Note, DateTime SentAt);
+public sealed record FamilyPostcardRow(string Kind, string Note, DateTime SentAt, Guid? MediaId = null);
 
 /// <summary>The links a guest has shared with people at home, and the postcards those people see (multi-device plan 2, Phase 6).</summary>
 public interface IFamilyHomeStore
@@ -14,8 +14,8 @@ public interface IFamilyHomeStore
     Task<bool> RevokeAsync(long userId, Guid publicId, DateTime now, CancellationToken ct);
     /// <summary>Stops every live link the person has; returns how many.</summary>
     Task<int> RevokeAllAsync(long userId, DateTime now, CancellationToken ct);
-    /// <summary>Adds a postcard and drops the oldest beyond <paramref name="keep"/>.</summary>
-    Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, CancellationToken ct);
+    /// <summary>Adds a postcard (with the guest's picture, when <paramref name="mediaId"/> is given) and drops the oldest beyond <paramref name="keep"/>.</summary>
+    Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, Guid? mediaId, CancellationToken ct);
     /// <summary>Newest last.</summary>
     Task<List<FamilyPostcardRow>> ListPostcardsAsync(long userId, int max, CancellationToken ct);
 }

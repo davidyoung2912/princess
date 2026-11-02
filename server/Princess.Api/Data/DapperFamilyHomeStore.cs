@@ -38,10 +38,10 @@ public sealed class DapperFamilyHomeStore(IDbConnectionFactory db) : IFamilyHome
         return await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.FamilyLinks SET RevokedAt = @now WHERE UserId = @userId AND RevokedAt IS NULL", new { userId, now }, null, ct));
     }
 
-    public async Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, CancellationToken ct)
+    public async Task AddPostcardAsync(long userId, string kind, string note, DateTime sentAt, int keep, Guid? mediaId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.FamilyPostcards (UserId, Kind, Note, SentAt) VALUES (@userId, @kind, @note, @sentAt)", new { userId, kind, note, sentAt }, null, ct));
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.FamilyPostcards (UserId, Kind, Note, SentAt, MediaId) VALUES (@userId, @kind, @note, @sentAt, @mediaId)", new { userId, kind, note, sentAt, mediaId }, null, ct));
         await c.ExecuteAsync(Sql.Cmd(
             "DELETE FROM dbo.FamilyPostcards WHERE UserId = @userId AND Id NOT IN (SELECT TOP (@keep) Id FROM dbo.FamilyPostcards WHERE UserId = @userId ORDER BY SentAt DESC, Id DESC)", new { userId, keep }, null, ct));
     }
@@ -49,7 +49,7 @@ public sealed class DapperFamilyHomeStore(IDbConnectionFactory db) : IFamilyHome
     public async Task<List<FamilyPostcardRow>> ListPostcardsAsync(long userId, int max, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var rows = (await c.QueryAsync<FamilyPostcardRow>(Sql.Cmd("SELECT TOP (@max) Kind, Note, SentAt FROM dbo.FamilyPostcards WHERE UserId = @userId ORDER BY SentAt DESC, Id DESC", new { userId, max }, null, ct))).ToList();
+        var rows = (await c.QueryAsync<FamilyPostcardRow>(Sql.Cmd("SELECT TOP (@max) Kind, Note, SentAt, MediaId FROM dbo.FamilyPostcards WHERE UserId = @userId ORDER BY SentAt DESC, Id DESC", new { userId, max }, null, ct))).ToList();
         rows.Reverse();
         return rows;
     }

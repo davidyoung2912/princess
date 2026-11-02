@@ -143,7 +143,10 @@ describe('links signed by the server', () => {
   })
   it('turns the public answer into a page or a reason', () => {
     const ok = normalizePublicFamily({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ kind: 'ok', note: 'Hi', at: 1 }, { kind: 'spam', note: '', at: 2 }], scenarios: ['a', 3] })
-    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'], delayedMinutes: null, recap: null })
+    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1, photo: null }], scenarios: ['a'], delayedMinutes: null, recap: null })
+    const id = '0b7a1c52-2f3d-4e0a-9c11-5a1f3b9d7e10'
+    const withPhoto = normalizePublicFamily({ ok: true, guestFirst: 'Dan', postcards: [{ kind: 'sea', note: '', at: 1, photo: id }, { kind: 'sea', note: '', at: 2, photo: '../../x' }, { kind: 'sea', note: '', at: 3, photo: 7 }] })
+    expect(withPhoto.ok && withPhoto.postcards.map((c) => c.photo)).toEqual([id, null, null])
     expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 90.4 })).toMatchObject({ delayedMinutes: 90 })
     expect(normalizePublicFamily({ ok: true, guestFirst: 'Dan', delayedMinutes: 'soon' })).toMatchObject({ delayedMinutes: null })
     // The recap the guest shared is read only if it is within the limits the server enforces, and is cleaned the same way.
