@@ -1,6 +1,6 @@
 # Princess Guest Web App — Industry-Leading Features (Functional Requirements, Companion Document)
 
-Status: **Draft v0.2 — decisions in §22 accepted (2026-11-01). Nothing here is built; Phases H1 (Trust and money), H2 (Disruption Hub and family-at-home) and H3 (Port Day Pilot) are built; H4 is next when you ask for it. See `docs/leading-features-plan.md`.**
+Status: **Draft v0.2 — decisions in §22 accepted (2026-11-01). Phases H1 to H5 are built, H6 is built in part, and H7 (the backlog) is in progress with slices 1 to 5 built. `docs/leading-features-plan.md` is the current record of what is built and what is not done.**
 Date: 2026-11-01
 Companion to: `docs/functional-requirements.md` (the base requirements, 248 IDs) and `docs/gap-analysis-plan.md` (what is built and what is open). Read those first.
 
