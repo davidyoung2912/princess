@@ -20,6 +20,8 @@ import { forgetFares, setFaresFetcher } from '../feeds/fares'
 import { forgetFlights, setFlightFetcher } from '../feeds/flight'
 import { forgetConditions, setRouteFetcher } from '../feeds/route'
 import { forgetSky, setSkyFetcher } from '../feeds/sky'
+import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
+import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
 import { DEFAULT_PERSONA, personaById } from '../domain/personas'
@@ -147,6 +149,26 @@ function loadReference(): void {
     .then((raw) => setServedAccess(normalizeAccessReference(raw)))
     .catch(() => {})
 }
+
+/**
+ * The catalogue (excursions, dining terms) is public: the copy kept on this device is used at once, then the server's answer replaces it and is kept
+ * for next time. Without a server, or when it cannot be reached or read, the authored copy (or the kept one) stays in use.
+ */
+function loadCatalogue(): void {
+  if (!usesRealAuth) return
+  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+  const kept = cacheGet(store(), 'catalogue', 'v1', normalizeCatalogue)
+  if (kept) applyCatalogue(kept.value)
+  void (auth as ReturnType<typeof createHttpAuthProvider>).http.get<unknown>('/reference/catalogue', { anonymous: true })
+    .then((raw) => {
+      const fresh = normalizeCatalogue(raw)
+      if (!fresh) return
+      applyCatalogue(fresh)
+      cachePut(store(), 'catalogue', 'v1', fresh, Date.now())
+    })
+    .catch(() => {})
+}
+if (usesRealAuth) loadCatalogue()
 
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {

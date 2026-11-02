@@ -22,7 +22,7 @@ export interface Venue {
   walkIn?: boolean
 }
 
-export const VENUES: readonly Venue[] = [
+const AUTHORED_VENUES: readonly Venue[] = [
   { id: 'eclipse', name: 'Eclipse Dining Room', kind: 'main', deck: 'Deck 7 aft', cuisine: 'Traditional three-course dinner', cover: 0, dress: 'smart', menu: 'Seared sea bass, braised short rib, a vegetarian tasting plate, and a different dessert every night.' },
   { id: 'crown', name: 'Crown Grill', kind: 'specialty', deck: 'Deck 7 aft', cuisine: 'Steakhouse', cover: 4500, dress: 'smart', menu: 'Aged filet, a shared seafood tower, creamed spinach and a warm chocolate soufflé.' },
   { id: 'sabatini', name: 'Sabatini’s', kind: 'specialty', deck: 'Deck 8 aft', cuisine: 'Italian trattoria', cover: 4200, dress: 'smart', menu: 'Hand-rolled pasta, veal Milanese, a tiramisu made at the table.' },
@@ -30,6 +30,18 @@ export const VENUES: readonly Venue[] = [
   { id: 'love', name: 'Love by Britto', kind: 'specialty', deck: 'Deck 17 aft', cuisine: 'Prix fixe with a wake view', cover: 6500, dress: 'elegant', menu: 'Five small courses, with wine pairings available, served as the sun sets behind the ship.' },
   { id: 'alfredo', name: 'Alfredo’s Pizzeria', kind: 'casual', deck: 'Deck 9 Piazza', cuisine: 'Neapolitan pizza', cover: 1499, dress: 'casual', menu: 'Margherita, diavola and a pizza of the day, with a dessert to share.', walkIn: true },
 ]
+
+/** The live list (see `EXCURSIONS`): the server's name, kind, cover charge and walk-in flag laid over the authored rooms, which keep their deck, cuisine, dress code and menu. */
+const live: Venue[] = AUTHORED_VENUES.map((v) => ({ ...v }))
+export const VENUES: readonly Venue[] = live
+export type VenueTerms = Pick<Venue, 'id' | 'name' | 'kind' | 'cover' | 'walkIn'>
+export function replaceVenueTerms(next: readonly VenueTerms[] | null): void {
+  const byId = new Map((next ?? []).map((v) => [v.id, v]))
+  live.splice(0, live.length, ...AUTHORED_VENUES.map((v) => {
+    const t = byId.get(v.id)
+    return t ? { ...v, name: t.name, kind: t.kind, cover: t.cover, walkIn: t.walkIn || undefined } : { ...v }
+  }))
+}
 
 export const venueById = (id: unknown): Venue | undefined => VENUES.find((v) => v.id === id)
 

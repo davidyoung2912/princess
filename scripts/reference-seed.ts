@@ -13,6 +13,7 @@ import { VENUES } from '../src/domain/dining.ts'
 import { DIRECTORY } from '../src/domain/menus.ts'
 import { MENU } from '../src/domain/orders.ts'
 import { dayOf, EXCURSIONS, endMinutes, guestPrice, minAge } from '../src/domain/excursions.ts'
+import { DIFFICULTY } from '../src/domain/planning.ts'
 import { EVENTS } from '../src/domain/program.ts'
 import { ADD_ONS, unitPrice, upgradesFrom, upgradePrice } from '../src/domain/packages.ts'
 import { computeEntitlements } from '../src/domain/entitlements.ts'
@@ -145,9 +146,11 @@ export function buildTables(): Table[] {
 
   // ---------------------------------------------------------------- 04 excursions
   add('04-excursions', 'ref.Excursions', ['Id'],
-    [t('Id', 'str'), t('PortId', 'str'), t('Name', 'str'), t('Interest', 'str'), t('Activity', 'str'), t('AdultCents', 'int'), t('ChildCents', 'int'), t('MinAge', 'int'), t('DurationMin', 'int'), t('StartLocal', 'time'), t('BackByLocal', 'time'), t('Tender', 'bit'), t('Capacity', 'int'), t('Meeting', 'str'), t('Description', 'str'), t('Tags', 'json'), t('Rating', 'int'), t('Reviews', 'int')],
+    [t('Id', 'str'), t('PortId', 'str'), t('Name', 'str'), t('Interest', 'str'), t('Activity', 'str'), t('AdultCents', 'int'), t('ChildCents', 'int'), t('MinAge', 'int'), t('DurationMin', 'int'), t('StartLocal', 'time'), t('BackByLocal', 'time'), t('Tender', 'bit'), t('Capacity', 'int'), t('Meeting', 'str'), t('Description', 'str'), t('Tags', 'json'), t('Rating', 'int'), t('Reviews', 'int'),
+      t('WalkKm', 'int'), t('Steps', 'bit'), t('Heat', 'str'), t('Shade', 'str'), t('Seats', 'bit'), t('Restrooms', 'bit'), t('Wet', 'bit')],
     EXCURSIONS.map((x) => [x.id, x.port, x.name, x.interests[0], x.activity, x.price, guestPrice(x, 0), minAge(x), Math.round(x.hours * 60), clock(x.start), clock(hhmm(endMinutes(x))), PORTS[x.port].tender, x.capacity, x.meeting, x.summary,
-      [...x.interests, ...(x.family ? ['family'] : []), ...(x.wheelchair ? ['wheelchair'] : [])], Math.round(x.rating * 10), x.reviews]))
+      [...x.interests, ...(x.family ? ['family'] : []), ...(x.wheelchair ? ['wheelchair'] : [])], Math.round(x.rating * 10), x.reviews,
+      DIFFICULTY[x.id]?.km ?? null, DIFFICULTY[x.id]?.steps ?? null, DIFFICULTY[x.id]?.heat ?? null, DIFFICULTY[x.id]?.shade ?? null, DIFFICULTY[x.id]?.seats ?? null, DIFFICULTY[x.id]?.restrooms ?? null, DIFFICULTY[x.id]?.wet ?? null]))
 
   add('04-excursions', 'ref.ExcursionDepartures', ['ExcursionId', 'SailingId', 'Day'],
     [t('ExcursionId', 'str'), t('SailingId', 'str'), t('Day', 'int'), t('SpotsTotal', 'int')],

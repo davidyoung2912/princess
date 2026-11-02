@@ -184,6 +184,7 @@ CREATE TABLE ref.Excursions (
   Capacity INT NOT NULL, Meeting NVARCHAR(200) NOT NULL DEFAULT N'', Description NVARCHAR(1000) NOT NULL DEFAULT N'',
   Tags NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Excursions_Tags DEFAULT N'[]',
   Rating INT NOT NULL DEFAULT 0, Reviews INT NOT NULL DEFAULT 0,   -- Rating in tenths of a star (47 = 4.7)
+  WalkKm DECIMAL(4,1) NULL, Steps BIT NULL, Heat VARCHAR(6) NULL, Shade VARCHAR(6) NULL, Seats BIT NULL, Restrooms BIT NULL, Wet BIT NULL,   -- difficulty on foot (NULL = none authored)
   CONSTRAINT FK_Excursions_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id),
   CONSTRAINT CK_Excursions_Activity CHECK (Activity IN ('easy','moderate','strenuous')),
   CONSTRAINT CK_Excursions_Tags CHECK (ISJSON(Tags) = 1)
@@ -449,6 +450,13 @@ IF COL_LENGTH(N'ref.MenuItems', N'Packaged') IS NULL ALTER TABLE ref.MenuItems A
 IF COL_LENGTH(N'ref.MenuItems', N'OnMenus') IS NULL ALTER TABLE ref.MenuItems ADD OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]';
 IF COL_LENGTH(N'ref.MenuItems', N'SubstituteId') IS NULL ALTER TABLE ref.MenuItems ADD SubstituteId NVARCHAR(40) NULL;
 IF COL_LENGTH(N'ref.Excursions', N'Rating') IS NULL ALTER TABLE ref.Excursions ADD Rating INT NOT NULL CONSTRAINT DF_Excursions_Rating DEFAULT 0;
+IF COL_LENGTH(N'ref.Excursions', N'WalkKm') IS NULL ALTER TABLE ref.Excursions ADD WalkKm DECIMAL(4,1) NULL;   -- how far on foot; the difficulty figures are NULL when none is authored
+IF COL_LENGTH(N'ref.Excursions', N'Steps') IS NULL ALTER TABLE ref.Excursions ADD Steps BIT NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Heat') IS NULL ALTER TABLE ref.Excursions ADD Heat VARCHAR(6) NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Shade') IS NULL ALTER TABLE ref.Excursions ADD Shade VARCHAR(6) NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Seats') IS NULL ALTER TABLE ref.Excursions ADD Seats BIT NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Restrooms') IS NULL ALTER TABLE ref.Excursions ADD Restrooms BIT NULL;
+IF COL_LENGTH(N'ref.Excursions', N'Wet') IS NULL ALTER TABLE ref.Excursions ADD Wet BIT NULL;
 IF COL_LENGTH(N'ref.Excursions', N'Reviews') IS NULL ALTER TABLE ref.Excursions ADD Reviews INT NOT NULL CONSTRAINT DF_Excursions_Reviews DEFAULT 0;
 IF COL_LENGTH(N'ref.Events', N'ExtraCents') IS NULL ALTER TABLE ref.Events ADD ExtraCents BIGINT NOT NULL CONSTRAINT DF_Events_ExtraCents DEFAULT 0;
 IF COL_LENGTH(N'ref.Events', N'AfterAllAboard') IS NULL ALTER TABLE ref.Events ADD AfterAllAboard BIT NOT NULL CONSTRAINT DF_Events_AfterAllAboard DEFAULT 0;

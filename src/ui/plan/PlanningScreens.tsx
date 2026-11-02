@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { ledgerSummary } from '../../domain/bookingPrep'
 import { EXCURSIONS, excursionById } from '../../domain/excursions'
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { clubById } from '../../domain/family'
 import { formatMoney } from '../../domain/pricing'
 import { PORTS } from '../../domain/sailings'
@@ -38,6 +39,7 @@ function usePlanning() {
 
 /** Honest difficulty (S4-03): distance, steps, heat, shade, seats, restrooms and wet footing for each excursion, with what could be hard for this guest's profile. */
 export function DifficultyScreen() {
+  useCatalogue()
   const { memory } = usePlanning()
   return (
     <Page title="route.difficulty" intro="diff.intro">
@@ -73,6 +75,7 @@ export function DifficultyScreen() {
 
 /** Independent against ship excursion (S4-04): cost, risk, flexibility and what happens if you are late. */
 export function CompareScreen() {
+  useCatalogue()
   const [id, setId] = useState(EXCURSIONS[0].id)
   const x = excursionById(id)!
   const c = compareExcursion(x)
@@ -289,6 +292,7 @@ export function OrganiserScreen() {
 
 /** Several cabins, one shared day (XG-07): what the cabins do together and what only some do. */
 export function CabinsScreen() {
+  useCatalogue()
   const { p, set } = usePlanning()
   const [name, setName] = useState('')
   const toggle = (id: string, tour: string) => set((s) => ({ ...s, cabins: s.cabins.map((c) => (c.id === id ? { ...c, tourIds: c.tourIds.includes(tour) ? c.tourIds.filter((x) => x !== tour) : [...c.tourIds, tour] } : c)) }))

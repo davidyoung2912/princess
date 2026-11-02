@@ -35,7 +35,7 @@ export interface ExcursionItem {
 const MEET_PIER = 'Meet on the pier beside the gangway, 10 minutes before the start'
 const MEET_TENDER = 'Meet at the tender landing in town, then follow the guide'
 
-export const EXCURSIONS: readonly ExcursionItem[] = [
+const AUTHORED_EXCURSIONS: readonly ExcursionItem[] = [
   { id: 'coz-snorkel', port: 'cozumel', name: 'Reef snorkel by boat', summary: 'A short boat ride to Palancar Reef, with gear and a guide in the water.', hours: 3.5, price: 7900, activity: 'moderate', wheelchair: false, family: true, interests: ['water', 'nature'], rating: 4.7, reviews: 1284, meeting: MEET_PIER, start: '08:30', capacity: 36 },
   { id: 'coz-ruins', port: 'cozumel', name: 'San Gervasio Mayan ruins', summary: 'An air-conditioned coach to the island’s ruins, with a guide on the history.', hours: 4, price: 6900, activity: 'moderate', wheelchair: false, family: true, interests: ['culture'], rating: 4.5, reviews: 902, meeting: MEET_PIER, start: '09:00', capacity: 40 },
   { id: 'coz-beach', port: 'cozumel', name: 'Beach club day pass', summary: 'A lounger, shade and a lunch credit at a beach club a short taxi ride away.', hours: 6, price: 5900, activity: 'easy', wheelchair: true, family: true, interests: ['relax', 'water'], rating: 4.6, reviews: 2210, meeting: MEET_PIER, start: '09:30', capacity: 60 },
@@ -49,6 +49,15 @@ export const EXCURSIONS: readonly ExcursionItem[] = [
   { id: 'rtb-wildlife', port: 'roatan', name: 'Wildlife and monkey park', summary: 'Sloths, monkeys and tropical birds on flat paths, with a keeper to talk to.', hours: 3, price: 6500, activity: 'easy', wheelchair: true, family: true, interests: ['nature'], rating: 4.5, reviews: 1402, meeting: MEET_PIER, start: '10:00', capacity: 40 },
   { id: 'rtb-drive', port: 'roatan', name: 'Island drive and beach stop', summary: 'A van around the island with three photo stops and half an hour on the beach.', hours: 3, price: 5500, activity: 'easy', wheelchair: true, family: true, interests: ['relax', 'culture'], rating: 4.2, reviews: 457, meeting: MEET_PIER, start: '12:30', capacity: 24 },
 ]
+
+/** The live list: the authored copy until the server's catalogue arrives (`replaceExcursions`), then the server's. Replaced in place so every importer sees it. */
+const live: ExcursionItem[] = [...AUTHORED_EXCURSIONS]
+export const EXCURSIONS: readonly ExcursionItem[] = live
+/** Swaps in the server's excursions; an empty list is ignored. `null` goes back to the authored copy. */
+export function replaceExcursions(next: readonly ExcursionItem[] | null): void {
+  const list = next ?? AUTHORED_EXCURSIONS
+  if (list.length > 0) live.splice(0, live.length, ...list)
+}
 
 export const excursionById = (id: unknown): ExcursionItem | undefined => EXCURSIONS.find((x) => x.id === id)
 

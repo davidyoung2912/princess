@@ -35,7 +35,7 @@ Status: **Plan written 2026-11-01 (audit of the front end and back end). Phase 5
 1. **Backend provider seams.** `IWeatherService`, `IFlightStatusProvider`, `IRouteConditionsProvider`, `ITelemetrySink`, each with a simulated implementation; packing and the on-board day read weather through the seam; `POST /telemetry`; contract tests per provider. (`IShipTelemetry`, `IFareFeed` arrive in Phase 3 with their data, `IConciergeModel` and `IStaffQueue` in Phases 2 and 6.)
 2. **Concierge on the server (built).** `POST /me/concierge`; tools run server-side over `ref.*` and the booking; guard, hourly limit and scripted fallback move; model key in user-secrets behind `IConciergeModel`; thread synced; remove `VITE_ANTHROPIC_API_KEY` and `askClaude` from the client.
 3. **(Built in part: see the Phase 3 record for what remains.) Feeds to the server, client sims removed from the REST path.** Routes and `src/feeds/*` fetchers for pulse and lines, quiet spaces, port crowd, storm, sky objects, heading, disruption hub, fare history, boards, sightings, cabin odds, Autopilot sims, service status. Mock mode keeps the local functions.
-4. **(Built in part: route and parity test only.) Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
+4. **(Built.) Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
 5. **(Built.) Account-state loose ends.** Sign-out flush, user-id keying (and no-persona accounts), sync indicator, outbox sync, demo state from the server plus `/demo/jump` and `/demo/reset`, consent for calm profile and contacts, copy sweep, budget unification, Autopilot changes into the day plan.
 6. **(Built.) Features needing a server.** Signed family links and public page, port ledger rows, `IStaffQueue` for caregiver / callback / kit.
 7. **(Built as a ratchet.) Audit gate.** A test that fails when a UI file imports an authored catalogue or simulation module in REST mode, or uses `localStorage` outside an allowlist.
@@ -76,10 +76,17 @@ Built 2026-11-02, **in part**.
 
 ## Phase 4 record
 
-Built 2026-11-02, **in part**.
+Built 2026-11-02, in two parts.
 
-- **Done:** `GET /reference/catalogue` (excursions, dining venues, ports) from the server's own rules, and `src/domain/catalogueParity.test.ts`, which fails when the client's `EXCURSIONS` or `VENUES` and the server's C# copies differ in any priced or timed field.
-- **Not done:** the client does not yet read its catalogue from the server (59 files import `pricing`, 66 import `sailings`; a cached copy needs those to go through one provider), the server seed is not yet the source the mock fixtures are generated from, and `ref.Excursions` has no difficulty columns (a schema change; the difficulty figures stay in `ReferenceRules`).
+- **First part:** `GET /reference/catalogue` (excursions, dining venues, ports) from the server's own rules, and `src/domain/catalogueParity.test.ts`, which fails when the client's `EXCURSIONS` or `VENUES` and the server's C# copies differ in any priced or timed field.
+- **Second part:**
+  - **The client reads the server's catalogue.** `src/domain/catalogueServed.ts` (`normalizeCatalogue`, `applyCatalogue`) vets the answer (a bad entry is dropped; nothing usable leaves the authored copy in place) and swaps it into `EXCURSIONS` and `VENUES` *in place*, so the 13 files that import them (and the domain code behind pricing, autopilot, the day builder and search) needed no change. For dining, only the server's name, kind, cover charge and walk-in flag are laid over the authored rooms; deck, cuisine, dress code and menu stay authored because the server has no such fields. `useCatalogue` redraws the screens that list the catalogue (difficulty, compare, cabins, trip cost); the others get their data through the API, which prices on the server.
+  - **Cached copy.** In REST mode `loadCatalogue` (runtime) applies the copy kept on the device at once (`cacheGet`, kind `catalogue`), then the server's answer replaces it and is kept (`cachePut`). The route is public, so this runs before sign-in. Offline or unreadable: the kept copy, else the authored one. Mock mode is unchanged.
+  - **Difficulty columns.** `ref.Excursions` gains `WalkKm, Steps, Heat, Shade, Seats, Restrooms, Wet` (nullable; `db/01-schema.sql` in both the table and the add-column section), and the seed generator fills them from `DIFFICULTY` in `planning.ts`. `ReferenceRules.Difficulty` in C# stays what `/reference/access` serves, since the server reads the catalogue from C# and not from these tables.
+  - **Fixtures and the seed.** The seed SQL is already generated *from* the client fixtures (`npm run db:seed:gen`, checked by `db:seed:check`), and the C# copy is tied to them by the parity test, so the three agree by test and not by one generator. Making the C# the single source and generating the TypeScript from it was **not** done: it would reverse the existing generator and the compile check on the C# is still the user's.
+  - Tests: `catalogueServed.test.ts` (swap in place, authored rooms keep their menus, return to authored, bad entries, listeners).
+- **Verified:** `npm run test` (1832 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run db:check`, `npm run db:seed:check`, `npm run api:check`. No server C# changed in this part; no SQL ran.
+- **Not done:** ports are served but the client still takes them from `sailings.ts` (the arrival and all-aboard times differ per sailing and are not in the catalogue answer); the other catalogues (fares, packages, events, shop items) are not served by `/reference/catalogue`.
 
 ## Phase 5 record
 

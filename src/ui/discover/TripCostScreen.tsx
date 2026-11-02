@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { EXCURSIONS } from '../../domain/excursions'
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { formatMoney, MAX_GUESTS, parseMoney } from '../../domain/pricing'
 import { fareName, MAX_DINNERS, tripCost, type CostKey } from '../../domain/tripCost'
 import { sailingById, SAILINGS } from '../../domain/sailings'
@@ -18,6 +19,7 @@ const DAY = 86_400_000
 
 /** Whole-trip cost (DIS-12): the cruise, the extras the guest expects to want, and the money spent around it, compared across the fares. */
 export function TripCostScreen() {
+  useCatalogue()
   const demoSailing = useSailing()
   const { state: memory, update: updateMemory } = useMemory()
   const [budgetText, setBudgetText] = useState('')
