@@ -12,7 +12,8 @@ const files = (dir: string): string[] =>
 
 /** Domain modules that hold an authored catalogue or a simulation a server now serves or will serve. */
 /** (The sailings, ports, excursions and dining stores hold no authored data any more: they fill from the server's tables, so reading them is fine.) */
-const CATALOGUE = ['pricing', 'pulse', 'cabinScore']
+/** (`pulse` is the Pulse screen's own list of which venues it shows and where each links; `cabinScore` is comparison logic. Neither holds reference data: the levels, scores and prices come from the server or from `pricing`/`fares`.) */
+const CATALOGUE = ['pricing']
 const importsCatalogue = (text: string): boolean =>
   CATALOGUE.some((m) => new RegExp(`from '(\\.\\./)+domain/${m}'`).test(text))
 
@@ -53,7 +54,7 @@ describe('audit gate', () => {
 
   it('has no screen importing an authored catalogue or simulation module beyond the known list', () => {
     const found = files('src/ui').filter((f) => importsCatalogue(readFileSync(f, 'utf8'))).map((f) => f.replaceAll('\\', '/')).sort()
-    expect(found).toEqual(KNOWN_CATALOGUE_SCREENS)
+    expect(found).toEqual([])
   })
 
   it('keeps localStorage inside the stores, settings, sync and runtime', () => {
@@ -67,11 +68,6 @@ describe('audit gate', () => {
   })
 })
 
-/** Screens that still read the catalogue straight from the client (Phase 4 moves them to the server's copy). */
-const KNOWN_CATALOGUE_SCREENS: string[] = [
-  'src/ui/discover/CabinChooserScreen.tsx',
-  'src/ui/onboard/PulseScreen.tsx',
-]
 const LOCAL_STORAGE_OK = ['src/ai/', 'src/data/', 'src/design/', 'src/demo/', 'src/hub/', 'src/journey/', 'src/memory/', 'src/offers/', 'src/party/', 'src/phone/', 'src/pilot/', 'src/port/', 'src/runtime/', 'src/settings/', 'src/shop/', 'src/sync/', 'src/auth/', 'src/diagnostics/', 'src/rates/', 'src/feeds/feed.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useSavedCopy.ts']
 /** Screens that keep a small device-only setting themselves (diagnostics switch, a support draft, the pass finder). */
 const KNOWN_LOCAL_STORAGE_OUTSIDE: string[] = ['src/ui/DiagnosticsSettings.tsx', 'src/ui/aboard/SupportScreens.tsx', 'src/ui/boarding/FindPassScreen.tsx']
