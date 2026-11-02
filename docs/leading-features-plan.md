@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 4 built, section 11).**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 5 built, section 11).**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -23,7 +23,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | **Built** (section 8) |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | **Built** (section 9) |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | **Built, in part** (section 10) |
-| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slices 1 to 4 built (section 11) |
+| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slices 1 to 5 built (section 11) |
 
 Order rationale and the option to swap H3 and H5 are in the requirements doc §21.
 
@@ -211,3 +211,14 @@ Built 2026-11-01. Front end only; no REST contract changes.
 - **Verified:** `npm run test` (1510 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `src/h7Promises.test.ts` checks the on-device promise.
 - **Not done:** the optional, consented pre-cruise notice to the ship's medical centre (needs a server and a privacy review); a lock or PIN on the card (it is in local storage like the rest of the memory store); per-traveller cards for a party.
 - **Backlog left:** as in slice 1, minus S3-02, S3-04, S3-05 and S3-11.
+
+### Slice 5 (finishing "Ask your cruise": plain-English summaries, handoff with context)
+
+Built 2026-11-01. Front end only; no REST contract changes (the handoff uses the existing `support.email`).
+
+- **Plain-English summaries (XA-05):** `src/domain/plainSummary.ts`, `/home/summary`. The day, the bill, or one of the four notices (terms, health, minimum age, pregnancy), at three levels: short (main points), plain (everything, a line each) and step by step (numbered, with the reason for each charge). Rules over the original, not a model: nothing is reworded. A notice keeps the original's own sentences (short keeps those with a number or a rule word). The original is always in the card beside it, with a link to its screen. `unsupportedNumbers` checks that a summary has no time, amount or number the original lacks. Read aloud from a button, or copy. "Summarise my day" and "summarise my bill" in Ask your cruise give the plain level, with the source and a link to the page. Made only when asked; nothing sent or saved.
+- **Handoff with context (XA-06):** `src/domain/handoff.ts`, `src/ui/ai/HandoffCard.tsx`. When the concierge hands a guest to a person, the card shows the whole message: the question, the booking facts (name, sailing, number of guests, open checklist items) and the last of the conversation (at most 1000 characters; oldest turns go first). The guest ticks which parts to include, can edit the text, and sends it with a button. A medical handoff leaves the conversation out until the guest ticks it. An emergency makes no message: it shows the number. No card, passport or health data is ever added by the app.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`. Four new cases in `assistantEval.test.ts` and two promise tests in `src/h7Promises.test.ts`.
+- **Signature feature 11 (Ask your cruise, XA-01 to XA-06) is now complete** on the front end.
+- **Not done:** summaries of free text the app does not hold (a long notice from the line is not in the app); a summary reworded by a model (kept rule-based so it cannot invent); the handoff arriving in the chat thread or the crew's own view (the message goes into Contact us as an email request, as before); XA-07 preference memory and XA-10 cost caps and a server-side key proxy (left on the backlog; the proxy needs backend work).
+- **Backlog left:** as in slice 1, minus S3-02, S3-04, S3-05, S3-11, XA-05 and XA-06.

@@ -23,3 +23,9 @@
 .build-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-3); }
 .build-list li { display: flex; gap: var(--space-3); }
 .build-list p { margin: 0 0 var(--space-1); }
+
+/* Plain-English summary beside its original (XA-05): stacked on a phone, side by side from 600px. */
+.summary-pair { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+@media (min-width: 600px) { .summary-pair { grid-template-columns: 1fr 1fr; align-items: start; } }
+.summary-pair ol, .summary-pair ul { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+.handoff-preview { font: inherit; }

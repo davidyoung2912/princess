@@ -1,4 +1,5 @@
 import { minutesOf, type PlanRow } from './planChange'
+import { summariseBill, summarisePlan } from './plainSummary'
 
 /**
  * "Ask your cruise" (XA-01): answers from the guest's own plan, to-do list and bill, with the screen each answer came from.
@@ -28,6 +29,20 @@ const live = (f: Facts) => f.plan.filter((r) => r.state !== 'dropped')
 
 export function ask(question: string, f: Facts): Answer {
   const q = question.toLowerCase()
+
+  if (/\b(summar(y|ise|ize)|plain english|in simple terms)\b/.test(q)) {
+    const more = { label: 'Summaries, with the original', path: '/home/summary' }
+    if (/\b(bill|charges?|folio)\b/.test(q)) {
+      if (f.charges === null) return { text: CANNOT_SEE('your bill'), sources: [{ label: 'Your bill', path: '/me/bill' }], known: false }
+      const s = summariseBill(f.charges, 'plain')
+      return { text: s.lines.join('\n'), sources: [s.source, more], known: true }
+    }
+    if (/\b(day|plan|today|schedule)\b/.test(q)) {
+      const s = summarisePlan(f.plan, 'plain')
+      return { text: s.lines.join('\n'), sources: [s.source, more], known: true }
+    }
+    return { text: 'I can summarise your day or your bill in plain English, with the original beside it. A notice or policy is on the summaries page.', sources: [more], known: true }
+  }
 
   if (/\bdinner\b/.test(q)) {
     const d = live(f).find((r) => r.entry.kind === 'dinner')
@@ -71,4 +86,4 @@ export function ask(question: string, f: Facts): Answer {
 }
 
 /** Suggested questions the assistant can always answer. */
-export const EXAMPLES: readonly string[] = ['What time is dinner?', 'What is next?', 'What do I still need to do?', 'When must I be back on the ship?']
+export const EXAMPLES: readonly string[] = ['What time is dinner?', 'What is next?', 'What do I still need to do?', 'When must I be back on the ship?', 'Summarise my day']

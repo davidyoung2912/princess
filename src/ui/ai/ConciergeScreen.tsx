@@ -5,10 +5,10 @@ import { clearThread, loadThread, saveThread } from '../../ai/history'
 import { MAX_MESSAGE, type Handoff } from '../../ai/guard'
 import type { ChatMessage, Citation } from '../../ai/types'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { api, getStore } from '../../runtime'
-import { useAction } from '../../hooks/useAction'
+import { getStore } from '../../runtime'
 import { useDemo, useNow, usePersona } from '../../hooks/useDemo'
 import { t, type StringKey } from '../../i18n'
+import { HandoffCard } from './HandoffCard'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -25,10 +25,6 @@ const HANDOFF_LINKS: Record<Handoff, Citation[]> = {
   person: [{ label: 'route.chat', path: '/chat' }, { label: 'route.contact', path: '/me/contact' }],
 }
 
-/** A short text of the last messages, sent with a request to Guest Services so the history travels with the guest (SUP-03). */
-const transcript = (messages: readonly ChatMessage[]): string =>
-  messages.slice(-8).map((m) => `${m.role === 'user' ? 'Guest' : 'Concierge'}: ${m.text}`).join('\n').slice(0, 900)
-
 /** The AI concierge (DIS-09, SUP-03): ask about the cruise, ports, tours, dining and a day plan. It is labelled as AI, answers only from app data, cannot book or pay, and hands emergencies and medical or legal questions to people. */
 export function ConciergeScreen() {
   const me = usePersona()
@@ -40,12 +36,10 @@ export function ConciergeScreen() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
-  const [sent, setSent] = useState(false)
   const end = useRef<HTMLDivElement>(null)
   const owner = me?.id ?? ''
   const messages = thread?.owner === owner ? thread.messages : null
   const setMessages = (m: ChatMessage[]) => setThread({ owner, messages: m })
-  const send = useAction((text: string) => api.support.email(text))
 
   useEffect(() => {
     let current = true
@@ -60,7 +54,6 @@ export function ConciergeScreen() {
     if (p || busy || !messages || !me) { setProblem(p ? t(`ai.problem.${p}` as StringKey, { max: MAX_MESSAGE }) : null); return }
     setProblem(null)
     setNotice(null)
-    setSent(false)
     const user: ChatMessage = { id: `u-${now}-${messages.length}`, role: 'user', text: draft.trim(), at: now }
     const withUser = [...messages, user]
     setMessages(withUser)
@@ -113,15 +106,7 @@ export function ConciergeScreen() {
         <div ref={end} />
       </Card>
       {notice && <Banner kind="warning" title={t('ai.notice')}><p>{notice}</p></Banner>}
-      {last?.source === 'handoff' && (
-        <Card labelledBy="ai-hand-h">
-          <h2 id="ai-hand-h" className="card__title">{t('ai.handoffCard')}</h2>
-          <p>{t('ai.handoffBody')}</p>
-          {send.error && <p role="alert" className="field__error">{t('ai.sendFailed')}</p>}
-          {sent && <p role="status">{t('ai.sent')}</p>}
-          <Button variant="secondary" disabled={send.busy || sent} onClick={() => void send.run(transcript(messages ?? [])).then((r) => setSent(!!r))}>{t('ai.sendToServices')}</Button>
-        </Card>
-      )}
+      {last?.source === 'handoff' && messages && <HandoffCard key={last.id} messages={messages} />}
       <form onSubmit={(e) => void submit(e)} noValidate>
         <TextArea label={t('ai.ask')} hint={t('ai.askHint', { max: MAX_MESSAGE })} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} />
         {problem && <p role="alert" className="field__error">{problem}</p>}

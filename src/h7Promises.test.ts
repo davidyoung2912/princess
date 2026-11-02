@@ -57,4 +57,22 @@ describe('Phase H7 promises', () => {
     expect(en['medical.intro']).toMatch(/nothing is sent to the ship or the cruise line/)
     expect(en['medical.foot']).toMatch(/Not checked by a doctor/)
   })
+
+  it('shows every summary beside its original, made by rules, only when asked', () => {
+    const text = read('src/ui/home/SummaryScreen.tsx') + read('src/domain/plainSummary.ts')
+    expect(text).not.toMatch(/api\.(support|messages|service)|fetch\(|Notification|setInterval|setTimeout|useEffect/)
+    expect(read('src/ui/home/SummaryScreen.tsx')).toMatch(/sum\.original/)
+    expect(read('src/ui/home/SummaryScreen.tsx').match(/synth\.speak\(/g)).toHaveLength(1)
+    expect(en['sum.made']).toMatch(/Nothing is reworded or added/)
+    expect(en['sum.intro']).toMatch(/Nothing is sent or saved/)
+  })
+
+  it('sends a handoff only from a button, shows the whole message first, and sends nothing for an emergency', () => {
+    const text = read('src/ui/ai/HandoffCard.tsx')
+    expect(text).not.toMatch(/useEffect|setTimeout|setInterval/)
+    expect(text.match(/send\.run\(/g)).toHaveLength(1)
+    expect(text).toMatch(/handoff\.preview/)
+    expect(en['handoff.body']).toMatch(/Nothing goes until you press the button/)
+    expect(en['handoff.emergency']).toMatch(/Nothing is sent from here/)
+  })
 })

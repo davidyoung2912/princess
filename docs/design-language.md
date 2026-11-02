@@ -712,3 +712,8 @@ See `docs/leading-features-plan.md` section 10. In short: a score is always show
 
 - Health details the guest types stay on the device, are never sent, and can be cleared in one tap; the screen says so beside the card.
 - A printed sheet shows every section, and an empty one says "Nothing listed" rather than leaving a gap.
+
+## H7 slice 5: summaries and handoff
+
+- A summary never stands alone: the original is in the card beside it (stacked on a phone, side by side from 600px), and the summary says it adds nothing.
+- Whatever leaves the device for a person is shown whole first, can be edited or trimmed, and goes only on a button. Health-sensitive parts start unticked; an emergency shows the number and sends nothing.

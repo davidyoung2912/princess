@@ -23,6 +23,8 @@ const GROUNDED: Case[] = [
   { q: 'what do I still need to do?', includes: ['Upload your passport'], known: true, source: '/plan/checklist' },
   { q: 'When must I be back on the ship?', includes: ['16:30'], known: true, source: '/ship/port' },
   { q: 'Why was I charged $18?', includes: ['Gratuities, day 3', 'crew'], known: true, source: '/me/bill' },
+  { q: 'Summarise my day', includes: ['At 10:30: trivia.', 'At 18:30: chops.'], known: true, source: '/home/summary' },
+  { q: 'give me a summary of my bill', includes: ['Gratuities, day 3: $18', 'crew'], known: true, source: '/me/bill' },
   { q: 'what time must I be back aboard', facts: { allAboard: null }, includes: ['not in a port'], known: true },
 ]
 const MUST_NOT_GUESS: Case[] = [

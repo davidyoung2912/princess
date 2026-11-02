@@ -37,6 +37,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/home/decide': screen(() => import('./ui/discover/DecideScreen'), 'DecideScreen'),
   '/me/wrapped': screen(() => import('./ui/account/WrappedScreen'), 'WrappedScreen'),
   '/me/memories': screen(() => import('./ui/account/MemoryScreen'), 'MemoryScreen'),
+  '/home/summary': screen(() => import('./ui/home/SummaryScreen'), 'SummaryScreen'),
   '/home/briefing': screen(() => import('./ui/home/BriefingScreen'), 'BriefingScreen'),
   '/plan/what-if': screen(() => import('./ui/plan/WhatIfScreen'), 'WhatIfScreen'),
   '/plan/storm': screen(() => import('./ui/plan/StormScreen'), 'StormScreen'),
