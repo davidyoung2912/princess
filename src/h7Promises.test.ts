@@ -30,4 +30,24 @@ describe('Phase H7 promises', () => {
     expect(text.match(/synth\.speak\(/g)).toHaveLength(1)
     expect(text).toMatch(/synth\.cancel\(\)/)
   })
+
+  it('compares passport names on the device only: no save, no send, no scan', () => {
+    const text = read('src/ui/account/PapersCheck.tsx') + read('src/domain/papersCheck.ts')
+    expect(text).not.toMatch(/api\.|fetch\(|localStorage|sessionStorage|FileReader|<input[^>]*type="file"/)
+    expect(en['papers.intro']).toMatch(/Nothing is scanned or sent/)
+  })
+
+  it('keeps the storm watch calm, worked out, and without an alert', () => {
+    const text = read('src/ui/plan/StormScreen.tsx') + read('src/domain/storm.ts')
+    expect(text).not.toMatch(/Notification|setInterval|setTimeout|useEffect|role="alert"|kind="danger"/)
+    expect(en['storm.sim']).toMatch(/not a forecast/)
+    expect(en['storm.intro']).toMatch(/not an alert/)
+  })
+
+  it('keeps the away-from-home list on the device: no server call, no reminder, nothing scheduled', () => {
+    const text = read('src/ui/plan/AwayScreen.tsx') + read('src/domain/awayHome.ts')
+    expect(text).not.toMatch(/api\.|fetch\(|Notification|setInterval|setTimeout|useEffect/)
+    expect(en['away.intro']).toMatch(/stays on this device/)
+    expect(en['away.note']).toMatch(/not advice about your home or insurance/)
+  })
 })

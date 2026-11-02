@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (first slice built, section 11).**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 3 built, section 11).**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -23,7 +23,7 @@ Source: `docs/leading-features-requirements.md` (IDs below are from that file; d
 | H4 | Door to door and embark | S4A-01…S4A-12, S5-01…S5-06 | H2 (I'm delayed, ETA sharing) | **Built** (section 8) |
 | H5 | Autopilot, Ship Pulse, inclusion, assistant | S6-01…S6-05, S4-01, S4-02, XI-01…XI-05, XA-01, XA-02 | H1 (nudges), H3 (port plan), H2 | **Built** (section 9) |
 | H6 | Cabin chooser, memory loop, dream | S1-02…S1-08, S8-01…S8-12, S0-01…S0-10 | H3 and H5 for recap inputs | **Built, in part** (section 10) |
-| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slice 1 built (section 11) |
+| H7 | Backlog | Remaining S and C items, sorted after each phase review | | **In progress**, slices 1 to 3 built (section 11) |
 
 Order rationale and the option to swap H3 and H5 are in the requirements doc §21.
 
@@ -182,4 +182,23 @@ Built 2026-11-01. H7 has no fixed list, so the first slice takes four Should ite
 - **Routes:** `/plan/what-if`, `/home/briefing`, `/ship/sky`. Linked from Plan, Home and Ship. `src/h7Promises.test.ts` checks the promises above.
 - **Verified:** `npm run test` (1478 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done in this slice:** the briefing as a Home card or a push (it would count against the nudge budget), a briefing text size set by the guest beyond the app's own setting, the sunset time for the real port, a map of where to stand.
-- **Backlog left (S and C, not yet built):** S2-02 price-drop watch, S2-03 short hold, S2-04 pay-your-share links, S2-06 accessibility-first booking, S2-08 trip contract page, S2-10 draft-safe checkout; S3-01 per-person readiness, S3-02 document sanity checks, S3-03 weekly companion, S3-04 storm watch, S3-05 medical card, S3-06 packing for this ship, S3-11 away-from-home checklist, S3-13 allergy confirmation; S4-03 to S4-09 (honest difficulty, comparator, group poll, surprise mode, taste profile, budget bar, child brief); S6-09 to S6-10, S6-13 to S6-22, S6-25; S6A-08 to S6A-10; XG-01, XG-02, XG-07; XA-05 to XA-07, XA-10. Some may already be covered by the base phases and need a check before building.
+- **Backlog left after slice 1 (see slice 2 below for what was taken):** S2-02 price-drop watch, S2-03 short hold, S2-04 pay-your-share links, S2-06 accessibility-first booking, S2-08 trip contract page, S2-10 draft-safe checkout; S3-01 per-person readiness, S3-02 document sanity checks, S3-03 weekly companion, S3-04 storm watch, S3-05 medical card, S3-06 packing for this ship, S3-11 away-from-home checklist, S3-13 allergy confirmation; S4-03 to S4-09 (honest difficulty, comparator, group poll, surprise mode, taste profile, budget bar, child brief); S6-09 to S6-10, S6-13 to S6-22, S6-25; S6A-08 to S6A-10; XG-01, XG-02, XG-07; XA-05 to XA-07, XA-10. Some may already be covered by the base phases and need a check before building.
+
+### Slice 2 (document sanity checks, storm watch)
+
+Built 2026-11-01. Front end only; no REST contract changes.
+
+- **Document sanity checks (S3-02):** `src/domain/papersCheck.ts`, shown under each guest on `/me/documents`. The guest types the name as printed on the passport and it is compared with the booking (case, accents, hyphens and spacing ignored; middle name, swapped order, one or two letters out, or different). Also: passport expiry against the return date plus six months, the US adult birth certificate and photo ID combination, a certified-copy note, a passport for an overseas guest, and consent letters for a minor travelling with one parent or neither. Each problem links to a fix path. Rules, not scanning; nothing typed is saved or sent.
+- **Storm watch (S3-04):** `src/domain/storm.ts`, `/plan/storm`. An authored typical chance by month for the route, a band in plain words, what the line may do, what the guest can do, and how much attention is sensible at this distance from sailing. `source: 'sim'`; it never says a storm is coming and raises no alert or notice.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` (1495 tests passed; lint, tsc and build clean).
+- **Not done:** S3-01 per-person readiness (needs a decision on how the checklist and documents combine per traveller); the real hurricane feed; a storm notice (it would count against the nudge budget).
+- **Backlog left:** as in slice 1, minus S3-02 and S3-04.
+
+### Slice 3 (away-from-home checklist)
+
+Built 2026-11-01. Front end only; no REST contract changes.
+
+- **Away-from-home checklist (S3-11):** `src/domain/awayHome.ts`, `/plan/away`. Fourteen items in five groups (people and pets, the house, money, work, health), each with a date counted back from sailing and a plain reason; one is marked overdue only while sailing has not started. The guest ticks items and adds up to ten of their own; ticks and own items are kept on the device in the H6 memory store (`away`, `awayExtras`). The list can be sent as text. No reminder, schedule or server call; a note says it is ideas, not advice about the home or insurance.
+- **Verified:** `npm run test` (1503 passed), `npm run lint`, `npx tsc -b`, `npm run build`. `src/h7Promises.test.ts` checks the on-device promise.
+- **Not done:** a shared copy that two people tick (needs a server); a reminder (would count against the nudge budget).
+- **Backlog left:** as in slice 1, minus S3-02, S3-04 and S3-11.

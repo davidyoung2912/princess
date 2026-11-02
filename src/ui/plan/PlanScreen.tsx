@@ -28,6 +28,8 @@ const TOOLS = [
   { to: '/plan/getting-there', key: 'route.gettingThere' },
   { to: '/plan/autopilot', key: 'route.autopilot' },
   { to: '/plan/what-if', key: 'route.whatIf' },
+  { to: '/plan/storm', key: 'route.storm' },
+  { to: '/plan/away', key: 'route.away' },
   { to: '/home/cruise/cost', key: 'route.tripCost' },
   { to: '/home/cabins', key: 'route.cabins' },
   { to: '/home/decide', key: 'route.decide' },

@@ -702,3 +702,8 @@ See `docs/leading-features-plan.md` section 10. In short: a score is always show
 - A calculator never looks like a button that does the thing: "What happens if" shows results in a live region and has no action beyond the calendar download.
 - A simulated reading says it is worked out and can be a few minutes out. Nothing the app has no feed for (planets) is shown at all.
 - A briefing is short (five lines), is made when opened, and every line that links says where it came from.
+
+## H7 slice 2: papers check and storm watch
+
+- Anything the guest types to be compared (a passport name) stays on the device and is not saved; the screen says so.
+- A risk reading is calm and worked out: a band in words, the dates it covers, what the line may do, what you can do. No alert role, no red, no notice.

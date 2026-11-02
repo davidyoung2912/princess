@@ -10,6 +10,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError, Load } from './parts'
+import { PapersCheck } from './PapersCheck'
 
 /** The documents wallet and entry-requirements engine (MNG-05, MNG-11): what each guest needs, what they hold, and what is wrong. */
 export function DocumentsScreen() {
@@ -34,6 +35,7 @@ export function DocumentsScreen() {
                 <ul className="plain-list">{g.results.map((r) => <Requirement key={r.requirement.id} r={r} returnDate={d.returnDate} />)}</ul>
                 <h3>{t('docs.iHave')}</h3>
                 {DOC_IDS.map((doc) => <HeldRow key={`${g.id}-${doc}-${g.held[doc]?.expires ?? ''}`} guest={g} doc={doc} canEdit={d.canEdit && !set.busy} onChange={change} />)}
+                <PapersCheck guest={g} returnDate={d.returnDate} />
               </Card>
             ))}
             <p className="muted">{t('docs.privacy')}</p>

@@ -1,4 +1,5 @@
 import { APP_PREFIX } from '../data/lifecycle'
+import { AWAY_ITEMS, cleanExtra, EXTRAS_MAX, type Extra } from '../domain/awayHome'
 import { FIT_QUESTIONS, type FitKey } from '../domain/dream'
 import { CONTACT_NAME_MAX, CONTACT_NOTE_MAX, CONTACTS_MAX, isTopic, NOTE_MAX, REFLECTION_MAX, REFLECTIONS_MAX, type Contact, type Journal, type Reflection } from '../domain/memoryBook'
 
@@ -16,9 +17,12 @@ export interface MemoryState {
   use: HindsightUse
   fit: FitKey[]
   budget: number | null
+  /** The away-from-home checklist (S3-11): ticked item ids and the guest's own items. */
+  away: string[]
+  awayExtras: Extra[]
 }
 
-export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null }
+export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [] }
 
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
 
@@ -44,8 +48,14 @@ export function normalizeMemory(raw: unknown): MemoryState {
     return [{ id: o.id, name: o.name.slice(0, CONTACT_NAME_MAX), note: typeof o.note === 'string' ? o.note.slice(0, CONTACT_NOTE_MAX) : '', consent: true, reply, at: typeof o.at === 'number' ? o.at : 0 }]
   }).slice(0, CONTACTS_MAX)
   const u = (r.use && typeof r.use === 'object' ? r.use : {}) as Record<string, unknown>
+  const away = (Array.isArray(r.away) ? r.away : []).filter((k): k is string => AWAY_ITEMS.some((i) => i.id === k))
+  const awayExtras = (Array.isArray(r.awayExtras) ? r.awayExtras : []).flatMap((x): Extra[] => {
+    const o = x as Record<string, unknown> | null
+    if (!o || typeof o.id !== 'string' || typeof o.text !== 'string' || cleanExtra(o.text) === '') return []
+    return [{ id: o.id, text: cleanExtra(o.text), done: o.done === true }]
+  }).slice(0, EXTRAS_MAX)
   return {
-    journal, reflections, contacts,
+    journal, reflections, contacts, away, awayExtras,
     drinks: typeof r.drinks === 'number' && r.drinks > 0 ? int(r.drinks, 999) : null,
     anniversary: r.anniversary === true,
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),

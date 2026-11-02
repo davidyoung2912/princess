@@ -30,3 +30,12 @@ describe('memory store', () => {
     expect(m.use.drinks).toBe(999)
   })
 })
+
+describe('away-from-home checklist state (S3-11)', () => {
+  it('keeps only known ticked ids and clean own items, at most ten', () => {
+    const m = normalizeMemory({ away: ['pets', 'nope', 7], awayExtras: [{ id: 'a', text: '  Feed  fish ', done: true }, { id: 'b', text: '   ' }, { text: 'no id' }, ...Array.from({ length: 20 }, (_, i) => ({ id: `n${i}`, text: 'x' }))] })
+    expect(m.away).toEqual(['pets'])
+    expect(m.awayExtras[0]).toEqual({ id: 'a', text: 'Feed fish', done: true })
+    expect(m.awayExtras).toHaveLength(10)
+  })
+})
