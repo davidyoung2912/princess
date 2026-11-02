@@ -109,12 +109,24 @@ export function subscribePilot(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
+/** The sensory / calm profile: kept on the server in its own document (key `calm`), only with the guest's agreement (Settings: syncPrivate). Everything else is key `pilot`. */
+export const calmOf = (s: PilotState): CalmState => s.calm
+/** The pilot document as sent to the server: without the calm profile. */
+export const pilotRestOf = (s: PilotState): PilotState => ({ ...s, calm: EMPTY_CALM })
+
 export function updatePilot(personaId: string | null, change: (s: PilotState) => PilotState): void {
-  const next = change(getPilot(personaId))
+  const prev = getPilot(personaId)
+  const next = change(prev)
   cache.set(pilotKeyFor(personaId), next)
   savePilot(personaId, next)
   listeners.forEach((l) => l())
-  sync.changed('pilot', personaId)
+  if (JSON.stringify(pilotRestOf(prev)) !== JSON.stringify(pilotRestOf(next))) sync.changed('pilot', personaId)
+  if (JSON.stringify(prev.calm) !== JSON.stringify(next.calm)) sync.changed('calm', personaId)
+}
+
+/** Takes the server's calm profile (null: empty) without telling the sync module it changed. */
+export function applyRemoteCalm(personaId: string | null, raw: unknown): void {
+  applyRemotePilot(personaId, { ...getPilot(personaId), calm: raw === null ? EMPTY_CALM : normalizeCalm(raw) })
 }
 
 /** Takes the server's copy without telling the sync module it changed. */

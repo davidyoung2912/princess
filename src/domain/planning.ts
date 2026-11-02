@@ -223,12 +223,12 @@ export function applyWeek(s: Sailing, prefs: WeekPrefs, changes: readonly Change
 export interface PlanningState {
   polls: Poll[]; ideas: Idea[]; surprises: Surprise[]
   tasteOff: boolean; tasteRemoved: string[]
-  budget: Cents | null; brief: ChildBrief; rhythm: Rhythm | null; privacy: Privacy
+  brief: ChildBrief; rhythm: Rhythm | null; privacy: Privacy
   traditions: Tradition[]; cabins: CabinPlan[]
   /** The money plan's per-person daily amounts (S3-12), kept so the plan is the same next time. */
   moneyDaily: { sea: Cents; port: Cents } | null
 }
-export const EMPTY_PLANNING: PlanningState = { polls: [], ideas: [], surprises: [], tasteOff: false, tasteRemoved: [], budget: null, brief: EMPTY_BRIEF, rhythm: null, privacy: SAFEST, traditions: [], cabins: [], moneyDaily: null }
+export const EMPTY_PLANNING: PlanningState = { polls: [], ideas: [], surprises: [], tasteOff: false, tasteRemoved: [], brief: EMPTY_BRIEF, rhythm: null, privacy: SAFEST, traditions: [], cabins: [], moneyDaily: null }
 
 const normalizeDaily = (raw: unknown): { sea: Cents; port: Cents } | null => {
   const m = rec(raw)
@@ -254,7 +254,6 @@ export function normalizePlanning(raw: unknown): PlanningState {
     polls, ideas, surprises, traditions, cabins,
     moneyDaily: normalizeDaily(r.moneyDaily),
     tasteOff: r.tasteOff === true, tasteRemoved: arr(r.tasteRemoved).filter((i): i is string => typeof i === 'string').map((i) => i.slice(0, 60)).slice(0, 50),
-    budget: typeof r.budget === 'number' && r.budget > 0 ? Math.min(100_000_000, Math.round(r.budget)) : null,
     brief: normalizeBrief(r.brief), rhythm: normalizeRhythm(r.rhythm), privacy: normalizePrivacy(r.privacy),
   }
 }

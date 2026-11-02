@@ -6,6 +6,7 @@ import { MAX_MESSAGE, type Handoff } from '../../ai/guard'
 import type { ChatMessage, Citation } from '../../ai/types'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { tasteInferences } from '../../domain/planning'
+import { useOwnerId } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { usePilot } from '../../hooks/usePilot'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
@@ -40,7 +41,7 @@ export function ConciergeScreen() {
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const end = useRef<HTMLDivElement>(null)
-  const owner = me?.id ?? null
+  const owner = useOwnerId()
   const messages = useSyncExternalStore(subscribeThread, () => getThread(owner), () => getThread(owner)).messages
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages?.length])
 

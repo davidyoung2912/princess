@@ -8,6 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { usePersona } from '../../hooks/useDemo'
+import { useMemory } from '../../hooks/useMemory'
 import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -49,7 +50,10 @@ export function BudgetCard({ lines }: { lines: readonly FolioLine[] }) {
 }
 
 function BudgetForm({ data, lines, saved }: { data: BudgetView; lines: readonly FolioLine[]; saved: () => void }) {
-  const [total, setTotal] = useState(dollars(data.budget.total))
+  // One number for the trip's money: until a limit is saved here, the trip budget set in the money plan, the trip cost or the decision pages is the starting point.
+  const planned = useMemory().state.budget
+  const fromPlan = data.budget.total === null && planned !== null && planned > 0
+  const [total, setTotal] = useState(dollars(fromPlan ? planned : data.budget.total))
   const [level, setLevel] = useState<AlertLevel>(data.budget.alertAt)
   const [kids, setKids] = useState<Record<string, string>>(Object.fromEntries(Object.entries(data.budget.kids).map(([id, c]) => [id, dollars(c)])))
   const [bad, setBad] = useState(false)
@@ -81,7 +85,7 @@ function BudgetForm({ data, lines, saved }: { data: BudgetView; lines: readonly 
       )}
       {canEdit ? (
         <form onSubmit={submit} noValidate>
-          <Field label={t('bud.total')} hint={t('bud.total.hint')} inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} error={bad ? t('bud.bad') : undefined} />
+          <Field label={t('bud.total')} hint={fromPlan && total === dollars(planned) ? t('bud.total.fromPlan') : t('bud.total.hint')} inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} error={bad ? t('bud.bad') : undefined} />
           <div className="field">
             <label htmlFor="bud-level">{t('bud.level')}</label>
             <select id="bud-level" className="field__input" value={level} onChange={(e) => setLevel(Number(e.target.value) as AlertLevel)}>

@@ -165,7 +165,7 @@ public class FinishApiTests : JourneyWorld
 
         var saved = (await Put("disembark/customs", token, new { food = true, cash = false, goodsUsd = 3000, note = "  Rum for a friend  " })).Json;
         Assert.Equal("Rum for a friend", saved.GetProperty("declaration").GetProperty("note").GetString());
-        Assert.Equal(["food", "goods"], saved.GetProperty("declare").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal(["food", "goods"], saved.GetProperty("declare").EnumerateArray().Select(x => x.GetString()!).ToArray());
         Assert.Equal(600, saved.GetProperty("overUsd").GetInt32());
         Assert.NotEqual(JsonValueKind.Null, saved.GetProperty("submittedAt").ValueKind);
         Assert.True((await Read("disembark", token)).Json.GetProperty("customsDone").GetBoolean());
@@ -185,7 +185,7 @@ public class FinishApiTests : JourneyWorld
         var view = (await Read("disembark/customs", await DanielToken())).Json;
         Assert.True(view.GetProperty("declaration").GetProperty("cash").GetBoolean());
         Assert.Equal(0, view.GetProperty("declaration").GetProperty("goodsUsd").GetInt32());
-        Assert.Equal(["cash"], view.GetProperty("declare").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal(["cash"], view.GetProperty("declare").EnumerateArray().Select(x => x.GetString()!).ToArray());
     }
 
     // ---- Onward travel ----
@@ -280,12 +280,12 @@ public class FinishApiTests : JourneyWorld
 
         var half = (await Put("disembark/final-bill/tip", token, new { keepPercent = 50 })).Json.GetProperty("tip");
         Assert.Equal((50, 17_325L), (half.GetProperty("keepPercent").GetInt32(), half.GetProperty("credit").GetInt64()));
-        var line = Assert.Single((await FolioLines(token)).Where(l => l.GetProperty("description").GetString()!.StartsWith("Gratuity adjustment")));
+        var line = Assert.Single(await FolioLines(token), l => l.GetProperty("description").GetString()!.StartsWith("Gratuity adjustment"));
         Assert.Equal((-17_325L, "credit", "Gratuity adjustment (keeping 50%)"), (line.GetProperty("cents").GetInt64(), line.GetProperty("category").GetString(), line.GetProperty("description").GetString()));
 
         // changing it again replaces the line, and keeping everything takes it off
         await Put("disembark/final-bill/tip", token, new { keepPercent = 0 });
-        Assert.Equal(-34_650L, Assert.Single((await FolioLines(token)).Where(l => l.GetProperty("description").GetString()!.StartsWith("Gratuity adjustment"))).GetProperty("cents").GetInt64());
+        Assert.Equal(-34_650L, Assert.Single(await FolioLines(token), l => l.GetProperty("description").GetString()!.StartsWith("Gratuity adjustment")).GetProperty("cents").GetInt64());
         await Put("disembark/final-bill/tip", token, new { keepPercent = 100 });
         Assert.DoesNotContain(await FolioLines(token), l => l.GetProperty("description").GetString()!.StartsWith("Gratuity adjustment"));
 
@@ -422,10 +422,10 @@ public class FinishApiTests : JourneyWorld
         Assert.False(during.GetProperty("sailed").GetBoolean());
         Assert.Equal(JsonValueKind.Null, during.GetProperty("photosUntil").ValueKind);
         var past = during.GetProperty("trips").EnumerateArray().ToArray();
-        Assert.Equal(["p1", "p2", "p3"], past.Select(t => t.GetProperty("id").GetString()).ToArray());
+        Assert.Equal(["p1", "p2", "p3"], past.Select(t => t.GetProperty("id").GetString()!).ToArray());
         Assert.Equal(("2024-07-01", 210_000L), (past[0].GetProperty("departure").GetString(), past[0].GetProperty("fareCents").GetInt64()));
         Assert.Equal([("fareReceipt", true), ("folioStatement", false)], past[0].GetProperty("documents").EnumerateArray().Select(d => (d.GetProperty("id").GetString()!, d.GetProperty("ready").GetBoolean())).ToArray());
-        Assert.Equal(["fareReceipt", "taxSummary"], past[1].GetProperty("documents").EnumerateArray().Select(d => d.GetProperty("id").GetString()).ToArray());       // none recorded: the usual two
+        Assert.Equal(["fareReceipt", "taxSummary"], past[1].GetProperty("documents").EnumerateArray().Select(d => d.GetProperty("id").GetString()!).ToArray());       // none recorded: the usual two
         Assert.Empty(past[2].GetProperty("documents").EnumerateArray());
         Assert.True(past[2].GetProperty("cancelled").GetBoolean());
 
@@ -463,7 +463,7 @@ public class FinishApiTests : JourneyWorld
         var f = saved.GetProperty("feedback");
         Assert.Equal((4, "Lovely trip", true), (f.GetProperty("overall").GetInt32(), f.GetProperty("comment").GetString(), f.GetProperty("shareName").GetBoolean()));
         Assert.Equal((5, 3), (f.GetProperty("areas").GetProperty("ship").GetInt32(), f.GetProperty("areas").GetProperty("dining").GetInt32()));
-        Assert.Equal(["Marisol", "Dennis"], f.GetProperty("crew").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal(["Marisol", "Dennis"], f.GetProperty("crew").EnumerateArray().Select(x => x.GetString()!).ToArray());
         Assert.NotEqual(JsonValueKind.Null, saved.GetProperty("submittedAt").ValueKind);
         Assert.Equal(JsonValueKind.Null, saved.GetProperty("recovery").ValueKind);
         Assert.Equal(4, (await Read("post-feedback", await SignIn(Priya))).Json.GetProperty("feedback").GetProperty("overall").GetInt32());
@@ -538,7 +538,7 @@ public class FinishApiTests : JourneyWorld
 
         var referral = after.GetProperty("referral");
         Assert.Equal(("REFDANIEL", 5000L, 5000L), (referral.GetProperty("code").GetString(), referral.GetProperty("credit").GetInt64(), referral.GetProperty("earned").GetInt64()));
-        Assert.Equal(["Ruth", "Frank", "Camille"], referral.GetProperty("friends").EnumerateArray().Select(x => x.GetProperty("name").GetString()).ToArray());
+        Assert.Equal(["Ruth", "Frank", "Camille"], referral.GetProperty("friends").EnumerateArray().Select(x => x.GetProperty("name").GetString()!).ToArray());
         Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/v1/me/loyalty-summary", null)).Status);
     }
 
@@ -592,7 +592,7 @@ public class FinishApiTests : JourneyWorld
         var hold = Assert.Single(view.GetProperty("holds").EnumerateArray());
         Assert.Equal(("2027-11-07", 3, true, 10_000L, false, false), (hold.GetProperty("departure").GetString(), hold.GetProperty("guests").GetInt32(), hold.GetProperty("onboard").GetBoolean(), hold.GetProperty("credit").GetInt64(), hold.GetProperty("expired").GetBoolean(), hold.GetProperty("bookable").GetBoolean()));
         Assert.Equal(hold.GetProperty("placedAt").GetInt64() + 7 * 86_400_000L, hold.GetProperty("expiresAt").GetInt64());
-        var credit = Assert.Single((await FolioLines(token)).Where(l => l.GetProperty("description").GetString() == "Onboard credit for holding a future cruise"));
+        var credit = Assert.Single(await FolioLines(token), l => l.GetProperty("description").GetString() == "Onboard credit for holding a future cruise");
         Assert.Equal((-10_000L, "credit"), (credit.GetProperty("cents").GetInt64(), credit.GetProperty("category").GetString()));
         Assert.Single((await Read("rebook", await SignIn(Priya))).Json.GetProperty("holds").EnumerateArray());
 
@@ -641,7 +641,7 @@ public class FinishApiTests : JourneyWorld
         await Delete($"rebook/holds/{held.GetProperty("holds")[0].GetProperty("id").GetString()}", token);
         var converted = (await Post("rebook/convert-fcc", token)).Json;
         Assert.Equal((0L, 25_000L), (converted.GetProperty("fccLeft").GetInt64(), converted.GetProperty("fccConverted").GetInt64()));
-        var line = Assert.Single((await FolioLines(token)).Where(l => l.GetProperty("description").GetString() == "Future cruise credit changed to onboard credit"));
+        var line = Assert.Single(await FolioLines(token), l => l.GetProperty("description").GetString() == "Future cruise credit changed to onboard credit");
         Assert.Equal(-25_000L, line.GetProperty("cents").GetInt64());
         Is(HttpStatusCode.BadRequest, "noCredit", await Post("rebook/convert-fcc", token));
         Assert.Equal(0, F.Finish.Credits.Single(c => c.Id == 1).Remaining);

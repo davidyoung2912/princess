@@ -4,13 +4,13 @@ import type { Api } from '../api/types'
 import type { ConciergeSender } from '../ai/concierge'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { createMockAuthProvider } from '../auth/mockProvider'
-import type { AuthProvider } from '../auth/provider'
+import { ownerIdOf, type AuthProvider } from '../auth/provider'
 import { deleteDatabase, openStore } from '../data/idbStore'
 import { resetDemo, wipeEverything } from '../data/lifecycle'
 import type { DataRecord, DataStore } from '../data/store'
-import { setDemoPublisher } from '../demo/publish'
+import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
-import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
+import { getDemo, pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
 import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
 import { pulseFeed } from '../feeds/pulse'
 import { skyNightFeed } from '../feeds/skyNight'
@@ -107,8 +107,14 @@ if (rest) {
   auth.subscribe(forgetFares)
   auth.subscribe(forgetFlights)
   auth.subscribe(forgetConditions)
-  // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees; real accounts send nothing.
-  setDemoPublisher((payload) => (auth.current()?.user?.isDemo ? http.put('/demo/state', payload) : Promise.resolve()))
+  // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees, and a new device takes them back; real accounts send nothing.
+  const demoOnly = <T,>(call: () => Promise<T>): Promise<T | undefined> => (auth.current()?.user?.isDemo ? call() : Promise.resolve(undefined))
+  setDemoRemote({
+    save: (payload) => demoOnly(() => http.put('/demo/state', payload)),
+    jump: (at) => demoOnly(() => http.post('/demo/jump', { at })),
+    reset: () => demoOnly(() => http.post('/demo/reset')),
+    load: () => demoOnly(() => http.get<unknown>('/demo/state')).then((r) => r ?? null),
+  })
 }
 
 /** Fetches the access reference data (excursion difficulty, accessible room types) once a person is signed in; failures leave the authored copies in use. */
@@ -126,14 +132,15 @@ function syncAccount(): void {
   loadReference()
   const session = auth.current()
   setRemote(session ? createHttpRemote((auth as ReturnType<typeof createHttpAuthProvider>).http) : null)
-  if (sync.setOwner(session?.user?.id ?? null, session?.personaId ?? null)) void sync.pull()
+  if (sync.setOwner(session?.user?.id ?? null, ownerIdOf(session))) void sync.pull()
+  if (session?.user?.isDemo) void pullDemoFromServer()
 }
 
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
   if (!usesRealAuth || typeof window === 'undefined') return () => {}
-  const onOnline = () => { void sync.pull(); void flushTelemetry() }
-  const onVisible = () => { if (document.visibilityState === 'visible') void sync.pull(); else void flushTelemetry() }
+  const onOnline = () => { void sync.pull(); void pullDemoFromServer(); void flushTelemetry() }
+  const onVisible = () => { if (document.visibilityState === 'visible') { void sync.pull(); void pullDemoFromServer() } else void flushTelemetry() }
   window.addEventListener('online', onOnline)
   document.addEventListener('visibilitychange', onVisible)
   return () => {
@@ -150,17 +157,17 @@ export async function startRuntime(): Promise<void> {
   stopWatchingDevice()
   stopWatchingDevice = watchDeviceReturn()
   auth.subscribe(() => {
-    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null)
+    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
     syncAccount()
   })
   if (usesRealAuth) {
     await auth.restore()
-    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null)
+    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
     syncAccount()
     return
   }
   if (!auth.current()) await auth.signIn({ method: 'demo', personaId: DEFAULT_PERSONA })
-  else switchSettingsOwner(personaById(auth.current()!.personaId) ?? null)
+  else switchSettingsOwner(personaById(auth.current()!.personaId) ?? null, ownerIdOf(auth.current()))
 }
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */

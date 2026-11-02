@@ -1,7 +1,9 @@
 import { applyRemoteThread, EMPTY_THREAD, getThread, mergeThreads, normalizeThread } from '../ai/history'
-import { EMPTY_HUB, applyRemoteHub, getHub, normalizeHub } from '../hub/store'
+import { EMPTY_HOME } from '../domain/homeLink'
+import { EMPTY_HUB, applyRemoteFamily, applyRemoteHub, getHub, hubRestOf, normalizeHub } from '../hub/store'
 import { EMPTY_TRIP, applyRemoteTrip, getTrip, normalizeTrip } from '../journey/store'
-import { EMPTY_PILOT, applyRemotePilot, getPilot, normalizePilot } from '../pilot/store'
+import { EMPTY_CALM } from '../domain/calm'
+import { EMPTY_PILOT, applyRemoteCalm, applyRemotePilot, getPilot, normalizePilot, pilotRestOf } from '../pilot/store'
 import { EMPTY_PORT, applyRemotePort, getPort, normalizePort } from '../port/store'
 import { EMPTY_PARTY, normalizePartyState } from '../domain/party'
 import { applyRemoteParty, getParty } from '../party/store'
@@ -79,20 +81,40 @@ const trip: Binding = {
   isEmpty: (raw) => json(raw) === json(EMPTY_TRIP),
 }
 
-/** Plan changes and their log, slot watches, week preferences, the calm profile. */
+/** Plan changes and their log, slot watches, week preferences. The calm profile is its own document (below). */
 const pilot: Binding = {
   key: 'pilot',
-  read: (id) => getPilot(id),
-  apply: (id, raw) => applyRemotePilot(id, raw === null ? EMPTY_PILOT : normalizePilot(raw)),
+  read: (id) => pilotRestOf(getPilot(id)),
+  apply: (id, raw) => applyRemotePilot(id, { ...(raw === null ? EMPTY_PILOT : normalizePilot(raw)), calm: getPilot(id).calm }),
   isEmpty: (raw) => json(raw) === json(EMPTY_PILOT),
+  clean: (raw) => (raw && typeof raw === 'object' ? { ...(raw as object), calm: EMPTY_CALM } : raw),
 }
 
-/** Family contacts, delay, callback request and follow-ups. */
+/** The sensory / calm profile. Held back until the guest agrees (Settings: syncPrivate): it can describe a person's needs. */
+const calm: Binding = {
+  key: 'calm',
+  read: (id) => getPilot(id).calm,
+  apply: (id, raw) => applyRemoteCalm(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_CALM),
+  enabled: () => getSettings().syncPrivate,
+}
+
+/** Delay, callback request and follow-ups. The family-at-home page is its own document (below). */
 const hub: Binding = {
   key: 'hub',
-  read: (id) => getHub(id),
-  apply: (id, raw) => applyRemoteHub(id, raw === null ? EMPTY_HUB : normalizeHub(raw)),
+  read: (id) => hubRestOf(getHub(id)),
+  apply: (id, raw) => applyRemoteHub(id, { ...(raw === null ? EMPTY_HUB : normalizeHub(raw)), home: getHub(id).home }),
   isEmpty: (raw) => json(raw) === json(EMPTY_HUB),
+  clean: (raw) => (raw && typeof raw === 'object' ? { ...(raw as object), home: EMPTY_HOME } : raw),
+}
+
+/** Family contacts (names and email addresses), their links, postcards and the link secret. Held back until the guest agrees (Settings: syncPrivate). */
+const family: Binding = {
+  key: 'family',
+  read: (id) => getHub(id).home,
+  apply: (id, raw) => applyRemoteFamily(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_HOME),
+  enabled: () => getSettings().syncPrivate,
 }
 
 /** A booking's stores are kept under its booker, so everyone on the booking reads and writes the same copy. */
@@ -135,5 +157,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, hub, port, party]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, concierge, trip, pilot, calm, hub, family, port, party]) sync.register(b)
 }

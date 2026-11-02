@@ -131,7 +131,7 @@ public class AboardApiTests : JourneyWorld
         var list = (await Post("selections", token, hat(3))).Json;
         var pick = Assert.Single(list.EnumerateArray());
         Assert.Equal((3, 8700), (pick.GetProperty("qty").GetInt32(), pick.GetProperty("total").GetInt32()));
-        Assert.Equal(8700, Assert.Single(F.Onboard.Folio.Where(f => f.Row.Description == "3 × Wide-brim sun hat")).Row.Cents);
+        Assert.Equal(8700, Assert.Single(F.Onboard.Folio, f => f.Row.Description == "3 × Wide-brim sun hat").Row.Cents);
     }
 
     // ---- Requests ----
@@ -186,7 +186,7 @@ public class AboardApiTests : JourneyWorld
         Assert.Equal(("SEC-001", "Deck 5 aft", "A wallet was taken", true), (one.GetProperty("reference").GetString(), one.GetProperty("where").GetString(), one.GetProperty("note").GetString(), one.GetProperty("anonymous").GetBoolean()));
         SetNow(SeaDay.AddMinutes(5));
         var both = (await Post("safety-reports", token, new { kind = "overboard", where = "Deck 12 stern", note = "Someone went over the rail", anonymous = true })).Json;
-        Assert.Equal(["SEC-002", "SEC-001"], both.EnumerateArray().Select(r => r.GetProperty("reference").GetString()).ToArray());
+        Assert.Equal(["SEC-002", "SEC-001"], both.EnumerateArray().Select(r => r.GetProperty("reference").GetString()!).ToArray());
         Assert.False(both[0].GetProperty("anonymous").GetBoolean());
     }
 
@@ -378,7 +378,7 @@ public class AboardApiTests : JourneyWorld
         var v = (await Post("parties", token, new { title = " Birthday ", day = 3, time = "20:00", cabins = new[] { "8101", "8102" } })).Json;
         var party = Assert.Single(v.EnumerateArray());
         Assert.Equal(("Birthday", 3, "20:00"), (party.GetProperty("title").GetString(), party.GetProperty("day").GetInt32(), party.GetProperty("time").GetString()));
-        Assert.Equal(["8101", "8102"], party.GetProperty("invited").EnumerateArray().Select(i => i.GetProperty("cabin").GetString()).ToArray());
+        Assert.Equal(["8101", "8102"], party.GetProperty("invited").EnumerateArray().Select(i => i.GetProperty("cabin").GetString()!).ToArray());
         Assert.Equal(ServiceRules.Rsvp("8101", "Birthday"), party.GetProperty("invited")[0].GetProperty("answer").GetString());
         Assert.Empty((await Delete($"parties/{party.GetProperty("id").GetString()}", token)).Json.EnumerateArray());
         Assert.Equal(HttpStatusCode.NotFound, (await Delete($"parties/{Guid.NewGuid()}", token)).Status);
@@ -418,7 +418,7 @@ public class AboardApiTests : JourneyWorld
         Assert.Equal(5, g.GetProperty("friends").GetArrayLength());
         Is(HttpStatusCode.Conflict, "full", await Post($"{table}/friends", token, new { name = "One More", cabin = "8199" }));       // 3 + 5 = 8
         g = (await Delete($"{table}/friends/1", token)).Json;
-        Assert.Equal(["Friend 0", "Friend 2", "Friend 3", "Friend 4"], g.GetProperty("friends").EnumerateArray().Take(4).Select(f => f.GetProperty("name").GetString()).ToArray());
+        Assert.Equal(["Friend 0", "Friend 2", "Friend 3", "Friend 4"], g.GetProperty("friends").EnumerateArray().Take(4).Select(f => f.GetProperty("name").GetString()!).ToArray());
         Assert.Equal(HttpStatusCode.NotFound, (await Delete($"{table}/friends/9", token)).Status);
         Assert.Equal("even", (await Put($"{table}/split", token, new { split = "even" })).Json.GetProperty("split").GetString());
         Assert.Equal("even", (await Read(table, await SignIn(Priya))).Json.GetProperty("split").GetString());
@@ -445,7 +445,7 @@ public class AboardApiTests : JourneyWorld
     {
         var token = await DanielToken();
         Assert.Equal(0, (await Read("games", token)).Json.GetProperty("found").GetArrayLength());
-        Assert.Equal(["h-pool"], (await Put("games/clues/h-pool", token, new { on = true })).Json.GetProperty("found").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal(["h-pool"], (await Put("games/clues/h-pool", token, new { on = true })).Json.GetProperty("found").EnumerateArray().Select(x => x.GetString()!).ToArray());
         Assert.Equal(0, (await Put("games/clues/h-pool", token, new { on = false })).Json.GetProperty("found").GetArrayLength());
         Is(HttpStatusCode.BadRequest, "badClue", await Put("games/clues/h-nowhere", token, new { on = true }));
 
@@ -508,7 +508,7 @@ public class AboardApiTests : JourneyWorld
         SetNow(CozumelMorning);
         v = (await Read("last-minute", token)).Json;
         Assert.Equal("cozumel", v.GetProperty("port").GetString());
-        Assert.Equal(["coz-snorkel", "coz-ruins", "coz-beach", "coz-glass"], v.GetProperty("tours").EnumerateArray().Select(t => t.GetProperty("excursionId").GetString()).ToArray());
+        Assert.Equal(["coz-snorkel", "coz-ruins", "coz-beach", "coz-glass"], v.GetProperty("tours").EnumerateArray().Select(t => t.GetProperty("excursionId").GetString()!).ToArray());
     }
 
     private static JsonElement Tour(JsonElement view, string id) => view.GetProperty("tours").EnumerateArray().First(t => t.GetProperty("excursionId").GetString() == id);
@@ -563,8 +563,8 @@ public class AboardApiTests : JourneyWorld
         var token = await DanielToken();
         Assert.Empty((await Read("ready", token)).Json.EnumerateArray());
         Assert.Equal(["card", "sun"], (await Put("ready/sun", token, new { on = true })).Json.EnumerateArray().Concat((await Put("ready/card", token, new { on = true })).Json.EnumerateArray()).Select(x => x.GetString()!).Distinct().Order().ToArray());
-        Assert.Equal(["card"], (await Put("ready/sun", token, new { on = false })).Json.EnumerateArray().Select(x => x.GetString()).ToArray());
-        Assert.Equal(["card"], (await Read("ready", await SignIn(Priya))).Json.EnumerateArray().Select(x => x.GetString()).ToArray());      // shared with the booking
+        Assert.Equal(["card"], (await Put("ready/sun", token, new { on = false })).Json.EnumerateArray().Select(x => x.GetString()!).ToArray());
+        Assert.Equal(["card"], (await Read("ready", await SignIn(Priya))).Json.EnumerateArray().Select(x => x.GetString()!).ToArray());      // shared with the booking
         Is(HttpStatusCode.BadRequest, "badItem", await Put("ready/lunch", token, new { on = true }));
         SetNow(SeaDay.AddDays(1));
         Assert.Empty((await Read("ready", token)).Json.EnumerateArray());
@@ -592,9 +592,9 @@ public class AboardApiTests : JourneyWorld
         await Say(Priya, "On my way", 2);
         await Say(Stranger, "Anyone here?", 3);
         var seen = (await ChatGet("messages", await SignIn(Paul))).Json;
-        Assert.Equal(["Meet at the pool", "On my way"], seen.EnumerateArray().Select(m => m.GetProperty("text").GetString()).ToArray());
-        Assert.Equal([Daniel.PublicId.ToString(), Priya.PublicId.ToString()], seen.EnumerateArray().Select(m => m.GetProperty("from").GetString()).ToArray());
-        Assert.Equal(["Anyone here?"], (await ChatGet("messages", await SignIn(Stranger))).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()).ToArray());
+        Assert.Equal(["Meet at the pool", "On my way"], seen.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
+        Assert.Equal([Daniel.PublicId.ToString(), Priya.PublicId.ToString()], seen.EnumerateArray().Select(m => m.GetProperty("from").GetString()!).ToArray());
+        Assert.Equal(["Anyone here?"], (await ChatGet("messages", await SignIn(Stranger))).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
         Assert.False(seen[0].TryGetProperty("photo", out _));
         Assert.False(seen[0].TryGetProperty("seenBy", out _));
     }
@@ -629,8 +629,8 @@ public class AboardApiTests : JourneyWorld
         await ChatPost("seen", priya);
         await ChatPost("seen", paul);                                                                      // Paul has them off
         var first = (await ChatGet("messages", daniel)).Json[0];
-        Assert.Equal([Priya.PublicId.ToString()], first.GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()).ToArray());
-        Assert.Equal([Priya.PublicId.ToString()], (await ChatGet("messages", daniel)).Json[0].GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()).ToArray());
+        Assert.Equal([Priya.PublicId.ToString()], first.GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()!).ToArray());
+        Assert.Equal([Priya.PublicId.ToString()], (await ChatGet("messages", daniel)).Json[0].GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()!).ToArray());
         await ChatPut("receipts", daniel, new { on = false });                                             // the sender turns them off: nobody is shown
         Assert.False((await ChatGet("messages", daniel)).Json[0].TryGetProperty("seenBy", out _));
     }
@@ -643,8 +643,8 @@ public class AboardApiTests : JourneyWorld
         await Say(Priya, "Hi Paul", 1);
         var daniel = await DanielToken();
         Assert.Empty((await ChatGet("blocks", daniel)).Json.EnumerateArray());
-        Assert.Equal([Paul.PublicId.ToString()], (await ChatPut($"blocks/{Paul.PublicId}", daniel, new { on = true })).Json.EnumerateArray().Select(x => x.GetString()).ToArray());
-        Assert.Equal(["Hi Paul"], (await ChatGet("messages", daniel)).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()).ToArray());
+        Assert.Equal([Paul.PublicId.ToString()], (await ChatPut($"blocks/{Paul.PublicId}", daniel, new { on = true })).Json.EnumerateArray().Select(x => x.GetString()!).ToArray());
+        Assert.Equal(["Hi Paul"], (await ChatGet("messages", daniel)).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
         Assert.Equal(2, (await ChatGet("messages", await SignIn(Priya))).Json.GetArrayLength());
         Assert.Empty((await ChatPut($"blocks/{Paul.PublicId}", daniel, new { on = false })).Json.EnumerateArray());
         Assert.Equal(2, (await ChatGet("messages", daniel)).Json.GetArrayLength());

@@ -1,6 +1,10 @@
 namespace Princess.Api.Domain;
 
-public sealed record DemoStateDto(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios);
+/// <summary><paramref name="SavedAt"/> is only set on answers: when the offset was set (milliseconds since 1970), 0 when the person has never saved controls. A new device takes saved controls, and follows a fast clock from that moment.</summary>
+public sealed record DemoStateDto(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, long SavedAt = 0);
+
+/// <summary>The jump target as a moment, in milliseconds since 1970 (the same "now" the screens show).</summary>
+public sealed record DemoJumpDto(long At);
 
 /// <summary>Demo controls (data model 6.7). They apply only to users flagged <c>IsDemo</c>; anyone else gets 404.</summary>
 public static class DemoRules
@@ -19,6 +23,24 @@ public static class DemoRules
         if (s.ClockSpeed is < 0 or > MaxSpeed) return "badSpeed";
         if (s.Scenarios is null || s.Scenarios.Any(x => !ScenarioIds.Contains(x))) return "badScenario";
         return null;
+    }
+
+    /// <summary>A save time as milliseconds since 1970, to the whole second (the database keeps seconds, so a save and a later read agree).</summary>
+    public static long StampMs(DateTime utc) => new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeSeconds() * 1000;
+
+    /// <summary>The offset from real time that applies at <paramref name="now"/>: the saved offset, plus what a running fast clock has gained since it was saved.</summary>
+    public static long OffsetAt(DemoStateRow row, DateTime now)
+    {
+        if (row.SavedAt is not { } saved || row.ClockSpeed <= 1) return row.ClockOffsetSeconds;
+        var gained = (long)Math.Floor((now - saved).TotalSeconds * (row.ClockSpeed - 1));
+        return Math.Clamp(row.ClockOffsetSeconds + gained, -MaxOffsetSeconds, MaxOffsetSeconds);
+    }
+
+    /// <summary>The offset that makes "now" read <paramref name="atMs"/> (milliseconds since 1970), or null when that is more than a year away.</summary>
+    public static long? OffsetForMoment(long atMs, DateTime now)
+    {
+        var offset = (long)Math.Round((DateTimeOffset.FromUnixTimeMilliseconds(atMs).UtcDateTime - now).TotalSeconds);
+        return Math.Abs(offset) > MaxOffsetSeconds ? null : offset;
     }
 
     /// <summary>The stored form: a stopped clock (speed 0 on the screens) is kept as 1, since the column cannot hold 0; the offset is what the server uses.</summary>

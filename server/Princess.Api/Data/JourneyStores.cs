@@ -79,4 +79,5 @@ public interface IDemoStore
     Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct);
 }
 
-public sealed record DemoStateRow(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios);
+/// <summary><paramref name="SavedAt"/> is when the offset was set (null when there is no row), so a running fast clock can be followed between saves.</summary>
+public sealed record DemoStateRow(long ClockOffsetSeconds, int ClockSpeed, string[] Scenarios, DateTime? SavedAt = null);

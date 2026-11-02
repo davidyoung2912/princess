@@ -13,6 +13,6 @@ public sealed class UserClock(IClock clock, IDemoStore demo) : IUserClock
     public async Task<DateTime> NowAsync(UserRecord user, CancellationToken ct)
     {
         var now = clock.UtcNow;
-        return user.IsDemo ? now.AddSeconds(await demo.GetClockOffsetSecondsAsync(user.Id, ct)) : now;
+        return user.IsDemo ? now.AddSeconds(DemoRules.OffsetAt(await demo.GetStateAsync(user.Id, ct), now)) : now;
     }
 }

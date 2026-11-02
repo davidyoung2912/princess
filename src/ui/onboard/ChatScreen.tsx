@@ -9,7 +9,7 @@ import type { OutboxItem } from '../../data/outbox'
 import { useAction } from '../../hooks/useAction'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
-import { usePersona } from '../../hooks/useDemo'
+import { useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -45,12 +45,13 @@ export function ChatScreen() {
 
 function Party() {
   const me = usePersona()
+  const ownerId = useOwnerId()
   const shipTime = useShipTime()
   const list = useMine(() => api.messages.list())
   const receipts = useMine(() => api.messages.receipts())
   const [text, setText] = useState('')
   const [blockedVersion, setBlockedVersion] = useState(0)
-  const outbox = useOutbox(me?.id ?? 'none', 'chat', (p) => api.messages.send(p.text), () => list.retry())
+  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => api.messages.send(p.text), () => list.retry())
   const send = useAction(async () => {
     try { await sendWithin(api.messages.send(text)); setText(''); list.retry() }
     catch (e) { if (worthRetrying(e)) { outbox.hold({ text }); setText('') } else throw e }
@@ -152,8 +153,8 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
   const shipTime = useShipTime()
   const [text, setText] = useState('')
   const [phone, setPhone] = useState('')
-  const me = usePersona()
-  const outbox = useOutbox(me?.id ?? 'none', 'service', (p) => api.service.send(p.channel as ChannelId, p.text), reload)
+  const ownerId = useOwnerId()
+  const outbox = useOutbox(ownerId ?? 'none', 'service', (p) => api.service.send(p.channel as ChannelId, p.text), reload)
   const send = useAction(async () => {
     try { await sendWithin(api.service.send(th.channel, text)); setText(''); reload() }
     catch (e) { if (worthRetrying(e)) { outbox.hold({ channel: th.channel, text }); setText('') } else throw e }

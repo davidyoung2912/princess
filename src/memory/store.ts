@@ -47,6 +47,7 @@ export interface MemoryState {
 
 export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH }
 
+const money = (v: unknown): number | null => (typeof v === 'number' && v > 0 ? Math.min(100_000_000, Math.round(v)) : null)
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
 
 export function normalizeMemory(raw: unknown): MemoryState {
@@ -84,7 +85,8 @@ export function normalizeMemory(raw: unknown): MemoryState {
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),
     use: { drinks: int(u.drinks, 999), dinners: int(u.dinners, 20), wifiNights: int(u.wifiNights, 8), paid: int(u.paid, 100_000_000) },
     fit: (Array.isArray(r.fit) ? r.fit : []).filter((k): k is FitKey => FIT_QUESTIONS.some((q) => q.key === k)),
-    budget: typeof r.budget === 'number' && r.budget > 0 ? Math.min(100_000_000, Math.round(r.budget)) : null,
+    // One trip budget: an older copy kept a second one under `planning` (the money plan and the trip-cost note), which is taken when there is no other.
+    budget: money(r.budget) ?? money((r.planning as { budget?: unknown } | null | undefined)?.budget),
   }
 }
 

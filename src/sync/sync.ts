@@ -38,6 +38,8 @@ export interface Binding {
   merge?(remote: unknown, local: unknown): unknown
   /** False while the guest has not agreed to keep this document on the server (health details and private notes): nothing is sent, fetched or kept there. Absent means always on. */
   enabled?(): boolean
+  /** The document with the parts this binding no longer keeps there removed (an older copy on the server may still hold them); a pulled copy that changes is sent back cleaned. */
+  clean?(raw: unknown): unknown
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'error'
@@ -158,6 +160,7 @@ export function createSync(opts: SyncOptions) {
     s.version = doc.version
     if (s.dirty) { await run(key); return }   // the guest changed it before the first pull finished: theirs wins
     if (!same(doc.data, b.read(idOf(b)))) b.apply(idOf(b), doc.data)
+    if (b.clean && !same(b.clean(doc.data), doc.data)) { s.dirty = true; await run(key) }   // sensitive parts an older version left there
   }
 
   return {

@@ -5,7 +5,7 @@ import type { Persona } from '../domain/personas'
 let defaults: Settings = defaultsFor(null)
 let current: Settings = loadSettings(undefined, defaults)
 let key = settingsKeyFor(null)
-/** The id the sync module knows this person's device copy by (their persona id, or null). */
+/** The id the sync module knows this person's device copy by (their persona id or user id, or null). */
 let syncId: string | null = null
 const listeners = new Set<() => void>()
 let darkQuery: MediaQueryList | null = null
@@ -50,9 +50,9 @@ export function applySyncedSettings(raw: unknown): void {
 }
 
 /** Switches to a person's own settings (their saved ones, or their defaults), applies them and tells subscribers. Null is signed out. */
-export function switchSettingsOwner(persona: Pick<Persona, 'id' | 'defaultTextSize'> | null): void {
-  key = settingsKeyFor(persona?.id ?? null)
-  syncId = persona?.id ?? null
+export function switchSettingsOwner(persona: Pick<Persona, 'id' | 'defaultTextSize'> | null, ownerId: string | null = persona?.id ?? null): void {
+  key = settingsKeyFor(ownerId)
+  syncId = ownerId
   defaults = defaultsFor(persona)
   current = loadSettings(undefined, defaults, key)
   applySettings()

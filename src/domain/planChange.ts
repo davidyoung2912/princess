@@ -205,6 +205,36 @@ export function proposeReflow(rows: readonly PlanRow[], cause: Cause, alternativ
   return { ...base, cause: `Tenders are running ${cause.delayMinutes} minutes late`, title: `Start ${nameOf(rows, tours[0].entry.id)} ${cause.delayMinutes} minutes later`, why: 'Getting ashore takes longer, so the tour start moves with it. The all-aboard time does not move.', warning: worst ? `With the delay you may have under 45 minutes to spare before ${cause.allAboard}. You can leave this tour out instead.` : undefined, edits }
 }
 
+/** An event a change puts into, or takes out of, the guest's own plan on the account (the programme they see on every device). */
+export interface ProgrammeEffect { eventId: string; on: boolean }
+
+/**
+ * What an accepted change does to the guest's programme plan, or, with `undo`, what undoing it does. Only programme events count: a tour or dinner is a booking
+ * that the guest changes themselves, a move has no place in the programme (events start when they start), and a line the guest pasted is not an event.
+ */
+export function programmeEffects(c: Change, base: readonly PlanEntry[], undo = false): ProgrammeEffect[] {
+  const isEvent = (id: string): boolean => eventById(id) !== undefined
+  const last = new Map<string, boolean>()
+  for (const e of c.edits) {
+    if (e.op === 'drop' && base.find((x) => x.id === e.id)?.kind === 'event' && isEvent(e.id)) last.set(e.id, false)
+    else if (e.op === 'add' && e.entry.kind === 'event' && isEvent(e.entry.id)) last.set(e.entry.id, true)
+  }
+  return [...last].map(([eventId, on]) => ({ eventId, on: undo ? !on : on }))
+}
+
+/** What moving from `before` to `after` does to the programme: the effects of each change that was newly accepted, or newly undone, by day. */
+export function programmeDiff(before: readonly Change[], after: readonly Change[], baseFor: (day: number) => readonly PlanEntry[]): { day: number; effects: ProgrammeEffect[] }[] {
+  const out = new Map<number, ProgrammeEffect[]>()
+  for (const c of after) {
+    const was = before.find((x) => x.id === c.id)?.status
+    const undo = c.status === 'undone' && was === 'accepted'
+    if (!undo && !(c.status === 'accepted' && was !== 'accepted')) continue
+    const effects = programmeEffects(c, baseFor(c.day), undo)
+    if (effects.length > 0) out.set(c.day, [...(out.get(c.day) ?? []), ...effects])
+  }
+  return [...out].map(([day, effects]) => ({ day, effects }))
+}
+
 export type Decision = { ok: true; changes: Change[] } | { ok: false; reason: 'missing' | 'conflict' | 'closed' }
 
 /** Accepts a proposal. Refused if it is not waiting, or if it would make the day cross itself where it did not before. */

@@ -84,10 +84,9 @@ describe('planning', () => {
     expect(applyWeek(REFERENCE_SAILING, prefs, r.changes, 2_000).applied).toBe(0)
   })
   it('normalises junk to the empty state', () => {
-    const s = normalizePlanning({ polls: [{ id: 'x' }], privacy: { medical: true, plans: true }, budget: -1, rhythm: { wake: 'never' } })
+    const s = normalizePlanning({ polls: [{ id: 'x' }], privacy: { medical: true, plans: true }, rhythm: { wake: 'never' } })
     expect(s.polls).toEqual([])
     expect(s.privacy).toEqual({ plans: true, spending: false, photos: false, medical: false })
-    expect(s.budget).toBeNull()
     expect(s.rhythm).toBeNull()
   })
 })

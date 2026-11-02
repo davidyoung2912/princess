@@ -13,5 +13,9 @@ public static class DemoEndpoints
             .WithSummary("The demo clock offset (seconds to add to real time), speed and active scenarios. 404 unless the account is a demo account.");
         demo.MapPut("/state", async (DemoStateDto body, DemoService svc, CancellationToken ct) => Results.Ok(await svc.SaveAsync(body, ct)))
             .WithSummary("Sets the demo clock offset, speed and scenarios. 400 for an offset over a year, a speed outside 0 to 3600 or an unknown scenario; 404 unless a demo account.");
+        demo.MapPost("/jump", async (DemoJumpDto body, DemoService svc, CancellationToken ct) => Results.Ok(await svc.JumpAsync(body, ct)))
+            .WithSummary("Moves the demo clock so its \"now\" is `at` (milliseconds since 1970), keeping speed and scenarios. 400 badOffset for a moment over a year from real time; 404 unless a demo account.");
+        demo.MapPost("/reset", async (DemoService svc, CancellationToken ct) => Results.Ok(await svc.ResetAsync(ct)))
+            .WithSummary("Back to real time at normal speed with no scenarios. 404 unless a demo account.");
     }
 }

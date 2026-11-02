@@ -4,6 +4,8 @@ import { PORTS } from '../../domain/sailings'
 import { formatMoney } from '../../domain/pricing'
 import { useSailing } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
+import { programmeFollows } from '../../pilot/programme'
+import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { useState } from 'react'
@@ -22,7 +24,7 @@ export function WeekPlanner() {
   const problems = weekProblems(week)
   const now = useNow()
   const [applied, setApplied] = useState<number | null>(null)
-  const apply = () => { const r = applyWeek(sailing, prefs, state.changes, now); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
+  const apply = () => { const r = applyWeek(sailing, prefs, state.changes, now); programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
   const set = (change: Partial<typeof prefs>) => update((s) => ({ ...s, prefs: { ...s.prefs, ...change } }))
 
   return (

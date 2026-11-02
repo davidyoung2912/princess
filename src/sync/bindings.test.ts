@@ -6,9 +6,11 @@ import { getPhone, updatePhone } from '../phone/store'
 import { DEFAULT_TEXT_SIZE } from '../design/textSize'
 import { getSettings, switchSettingsOwner, updateSettings } from '../settings/store'
 import { getExtras } from '../shop/store'
-import { updateHub } from '../hub/store'
+import { EMPTY_CALM } from '../domain/calm'
+import { EMPTY_HOME } from '../domain/homeLink'
+import { EMPTY_HUB, updateHub } from '../hub/store'
 import { updateTrip } from '../journey/store'
-import { updatePilot } from '../pilot/store'
+import { EMPTY_PILOT, getPilot, updatePilot } from '../pilot/store'
 import { getPort } from '../port/store'
 import { EMPTY_PARTY } from '../domain/party'
 import { getParty, updateParty } from '../party/store'
@@ -128,12 +130,13 @@ describe('trip, plan changes, family hub and the booking\'s shared records', () 
 
     updatePilot('priya', (s) => ({ ...s, gentle: true }))
     updateTrip('priya', (s) => ({ ...s, embark: { ...s.embark, window: '11:00' } }))
-    updateHub('priya', (s) => ({ ...s, debriefs: s.debriefs }))
+    updateHub('priya', (s) => ({ ...s, delay: { ...s.delay, shareEta: false } }))
     updateParty('daniel', (s) => ({ ...s, invites: [{ id: 'i1', email: 'gran@example.com', at: 1 }] }))   // the booker's key, as the screens use
     await sync.flush()
     expect((docs.get('pilot')!.data as { gentle: boolean }).gentle).toBe(true)
     expect((docs.get('trip')!.data as { embark: { window: string } }).embark.window).toBe('11:00')
     expect(docs.has('hub')).toBe(true)
+    expect((docs.get('hub')!.data as { delay: { shareEta: boolean } }).delay.shareEta).toBe(false)
     expect(shared.get('party')?.data).toEqual({ invites: [{ id: 'i1', email: 'gran@example.com', at: 1 }], notes: [] })
     expect(docs.has('party')).toBe(false)   // not filed under the person
 
@@ -145,6 +148,42 @@ describe('trip, plan changes, family hub and the booking\'s shared records', () 
     await sync.pull()
     expect(getParty('daniel').invites).toHaveLength(1)
     expect(getPort('daniel').party.alertBefore).toBe(90)
+    setRemote(null)
+  })
+})
+
+describe('calm profile and family contacts', () => {
+  it('stay out of the pilot and hub documents, wait for the guest to agree, and are scrubbed from an older copy', async () => {
+    docs.clear()
+    registerSyncBindings()
+    setRemote(remote)
+    switchSettingsOwner({ id: 'maria', defaultTextSize: DEFAULT_TEXT_SIZE } as never)
+    updateSettings({ syncPrivate: false })
+    // An older version of the app left both inside the plain documents.
+    docs.set('pilot', { version: 1, data: { ...EMPTY_PILOT, gentle: true, calm: { ...EMPTY_CALM, cognitive: true } } })
+    docs.set('hub', { version: 1, data: { ...EMPTY_HUB, home: { ...EMPTY_HOME, secret: 'abc', contacts: [{ id: 'c1', name: 'Gran', email: 'gran@example.com' }] } } })
+    sync.setOwner('user-m', 'maria')
+    await sync.pull()
+    await sync.flush()
+    expect(getPilot('maria').gentle).toBe(true)
+    expect((docs.get('pilot')!.data as { calm: { cognitive: boolean } }).calm.cognitive).toBe(false)
+    expect((docs.get('hub')!.data as { home: { contacts: unknown[] } }).home.contacts).toEqual([])
+
+    updatePilot('maria', (s) => ({ ...s, calm: { ...s.calm, cognitive: true } }))
+    updateHub('maria', (s) => ({ ...s, home: { ...s.home, contacts: [{ id: 'c1', name: 'Gran', email: 'gran@example.com' }] } }))
+    await sync.flush()
+    expect(docs.has('calm')).toBe(false)
+    expect(docs.has('family')).toBe(false)
+
+    await setKeepPrivate(true)
+    expect((docs.get('calm')!.data as { cognitive: boolean }).cognitive).toBe(true)
+    expect((docs.get('family')!.data as { contacts: { email: string }[] }).contacts[0].email).toBe('gran@example.com')
+    expect((docs.get('pilot')!.data as { calm: { cognitive: boolean } }).calm.cognitive).toBe(false)
+
+    expect(await setKeepPrivate(false)).toBe(true)
+    expect(docs.has('calm')).toBe(false)
+    expect(docs.has('family')).toBe(false)
+    expect(getPilot('maria').calm.cognitive).toBe(true)   // this device keeps its own
     setRemote(null)
   })
 })

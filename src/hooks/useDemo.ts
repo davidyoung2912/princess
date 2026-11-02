@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from 'react'
 import { auth } from '../runtime'
+import { ownerIdOf } from '../auth/provider'
 import { demoNow, getDemo, subscribeDemo } from '../demo/store'
 import { sailingById, type Sailing } from '../domain/sailings'
 import { personaById, type Persona } from '../domain/personas'
@@ -27,4 +28,9 @@ export function useNow(): number {
 export function usePersona(): Persona | null {
   const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
   return personaById(session?.personaId) ?? null
+}
+
+/** The id the signed-in person's stores are keyed by: the persona, or the user id for an account that is not a persona. Null when signed out. */
+export function useOwnerId(): string | null {
+  return ownerIdOf(useSyncExternalStore(auth.subscribe, auth.current, auth.current))
 }

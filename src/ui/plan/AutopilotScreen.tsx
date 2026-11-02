@@ -6,6 +6,8 @@ import { acceptChange, addProposal, canUndo, changeLog, declineChange, proposeRe
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
+import { programmeFollows } from '../../pilot/programme'
+import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -42,7 +44,10 @@ export function AutopilotScreen() {
   const shown = visibleRows(dp.rows, now, dp.dayEndAt)
   const notes = state.gentle ? gentleNotes(dp.rows, dp.weather) : []
 
-  const commit = (next: readonly Change[]) => update((s) => ({ ...s, changes: [...s.changes.filter((c) => c.day !== day), ...next] }))
+  const commit = (next: readonly Change[]) => {
+    programmeFollows(api.onboard, dp.sailing, state.prefs, dp.changes, next)
+    update((s) => ({ ...s, changes: [...s.changes.filter((c) => c.day !== day), ...next] }))
+  }
   const propose = (causes: Cause[]) => {
     let next = dp.changes
     let added = 0

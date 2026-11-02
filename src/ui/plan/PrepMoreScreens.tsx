@@ -89,7 +89,7 @@ export function MoneyPlanScreen() {
   const daily = { sea: Number(sea || '0') * 100, port: Number(port || '0') * 100 }
   const plan = moneyPlan(s, trip?.guests ?? 1, daily)
   const keep = (next: { sea: number; port: number }) => update((m) => ({ ...m, planning: { ...m.planning, moneyDaily: next } }))
-  const isBudget = mem.planning.budget === plan.total
+  const isBudget = mem.budget === plan.total
   return (
     <Page title="route.moneyPlan" intro="mplan.intro">
       <Load state={trips}>
@@ -104,7 +104,7 @@ export function MoneyPlanScreen() {
               <h2 id="mp-out" className="card__title">{t('mplan.plan')}</h2>
               <ul className="plain-list">{plan.days.map((d) => <li key={d.day}>{t('mplan.row', { day: d.day, where: portName(d.port), amount: formatMoney(d.budget) })}</li>)}</ul>
               <p role="status"><strong>{t('mplan.total', { total: formatMoney(plan.total), cash: formatMoney(plan.cash), card: formatMoney(plan.card) })}</strong></p>
-              <Button variant="secondary" disabled={isBudget || plan.total <= 0} onClick={() => update((m) => ({ ...m, planning: { ...m.planning, budget: plan.total } }))}>{isBudget ? t('mplan.isBudget') : t('mplan.useBudget')}</Button>
+              <Button variant="secondary" disabled={isBudget || plan.total <= 0} onClick={() => update((m) => ({ ...m, budget: plan.total }))}>{isBudget ? t('mplan.isBudget') : t('mplan.useBudget')}</Button>
               <p className="muted">{t('mplan.budgetNote')} <Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
             </Card>
           </>

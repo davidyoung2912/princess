@@ -12,6 +12,7 @@ import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { usePilot } from '../../hooks/usePilot'
+import { programmeFollows } from '../../pilot/programme'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
@@ -35,7 +36,7 @@ export function AskScreen() {
   const me = usePersona()
   const day = useCurrentDay()
   const dp = useDayPlan(day)
-  const { update } = usePilot()
+  const { state: pilot, update } = usePilot()
   const folio = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
   const checklist = useMine(() => api.plan.checklist.get())
   const [text, setText] = useState('')
@@ -90,6 +91,7 @@ export function AskScreen() {
     const next = addProposal(dp.changes, proposal)
     const r = acceptChange(dp.base, next, proposal.id, now)
     if (r.ok) {
+      programmeFollows(api.onboard, dp.sailing, pilot.prefs, dp.changes, r.changes.filter((c) => c.day === day))
       update((s) => ({ ...s, changes: [...s.changes.filter((c) => c.day !== day), ...r.changes] }))
       setNotice('ask.done')
     } else setNotice(REFUSED[r.reason])

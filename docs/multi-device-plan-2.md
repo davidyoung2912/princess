@@ -1,6 +1,6 @@
 # Multi-device plan 2: nothing but a thin client
 
-Status: **Plan written 2026-11-01 (audit of the front end and back end). All seven phases have a first build (Phases 3 to 6 in part; Phase 7 as a ratchet). The "Not done" lines in each record are the remaining work.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
+Status: **Plan written 2026-11-01 (audit of the front end and back end). Phase 5 is built in full; Phases 3, 4 and 6 are built in part and Phase 7 as a ratchet. The "Not done" lines in each record are the remaining work.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
 
 ## Goal and rules
 
@@ -36,7 +36,7 @@ Status: **Plan written 2026-11-01 (audit of the front end and back end). All sev
 2. **Concierge on the server (built).** `POST /me/concierge`; tools run server-side over `ref.*` and the booking; guard, hourly limit and scripted fallback move; model key in user-secrets behind `IConciergeModel`; thread synced; remove `VITE_ANTHROPIC_API_KEY` and `askClaude` from the client.
 3. **(Built in part: see the Phase 3 record for what remains.) Feeds to the server, client sims removed from the REST path.** Routes and `src/feeds/*` fetchers for pulse and lines, quiet spaces, port crowd, storm, sky objects, heading, disruption hub, fare history, boards, sightings, cabin odds, Autopilot sims, service status. Mock mode keeps the local functions.
 4. **(Built in part: route and parity test only.) Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
-5. **(Built in part: sign-out flush and sync indicator only.) Account-state loose ends.** Sign-out flush, user-id keying (and no-persona accounts), sync indicator, outbox sync, demo state from the server plus `/demo/jump` and `/demo/reset`, consent for calm profile and contacts, copy sweep, budget unification, Autopilot changes into the day plan.
+5. **(Built.) Account-state loose ends.** Sign-out flush, user-id keying (and no-persona accounts), sync indicator, outbox sync, demo state from the server plus `/demo/jump` and `/demo/reset`, consent for calm profile and contacts, copy sweep, budget unification, Autopilot changes into the day plan.
 6. **(Built in part: the staff queue for call backs only.) Features needing a server.** Signed family links and public page, port ledger rows, `IStaffQueue` for caregiver / callback / kit.
 7. **(Built as a ratchet.) Audit gate.** A test that fails when a UI file imports an authored catalogue or simulation module in REST mode, or uses `localStorage` outside an allowlist.
 
@@ -83,10 +83,18 @@ Built 2026-11-02, **in part**.
 
 ## Phase 5 record
 
-Built 2026-11-02, **in part**.
+Built 2026-11-02 (the first half the same day; the rest follows). **Server C# not compiled or run**, as with everything since the 2026-11-01 compile check.
 
-- **Done:** signing out first sends any change still waiting (`signOutSaving` in the runtime; a failed send does not block signing out), and the Me screen shows whether everything is saved to the account, saving, or waiting for a connection (`useSyncStatus`, `sync.*` strings).
-- **Not done:** user-id keying for persona-keyed stores and accounts with no persona, the outbox sync, demo state from the server with `/demo/jump` and `/demo/reset`, consent for the calm profile and family contacts, the "stays on this device" copy sweep, budget unification, and Autopilot changes merged into the day plan.
+- **Sign-out flush and sync indicator:** `signOutSaving`; the Me screen shows saved, saving or waiting (`useSyncStatus`, `sync.*`).
+- **Keying by user id:** `ownerIdOf(session)` is the persona id for a demo persona, else the server user id. Every store hook (`useMemory`, `useTrip`, `useHub`, `usePilot`, `usePort`, `useParty`, `useOffers`, `usePhoneSetup`, `useShopExtras`), the concierge thread, the settings and the sync module use it, so an account that is not one of the twelve gets its own device copy and imports it on first sign-in (before, they all shared the key `…:` and never imported). The chat outbox is keyed the same way.
+- **The outbox is not synced, on purpose.** It holds messages that never reached the server; a second device sending the same queue would duplicate them. It is per account on the device and retries as before.
+- **Demo state:** `POST /demo/jump {at}` (measured on the server's clock) and `POST /demo/reset`; `GET /demo/state` answers `savedAt`; `UserClock` follows a running fast clock from `savedAt` (`DemoRules.OffsetAt`), so the server no longer drifts. A new device takes a demo account's saved clock and scenarios (`pullDemoFromServer` at sign-in, when the tab is shown and when the connection returns), unless the server's copy is the one this device last sent or received, so a clock stopped here stays stopped. Scenario ids are tied by `src/demo/scenarioParity.test.ts`. Tests: `DemoClockTests`, `DemoApiTests` (C#, not run), `publish.test.ts`.
+- **Consent for the calm profile and family contacts:** two new keys, `calm` and `family` (encrypted at rest, accepted only while `syncPrivate` is on, deleted when it is turned off). `pilot` and `hub` no longer carry them; a binding `clean` hook sends an older copy back without them the first time it is pulled. Copy: the privacy centre text lists them.
+- **Copy sweep:** `data.intro`, `priv.intro`, `priv.keep.body`, `party.shared.intro`, `money.checksNote`, `delay.record.why` now say what is saved to the account and when. Strings about things that really are device-only (diagnostics, the wipe, boarding pass on the device) were left.
+- **One trip budget:** `memory.budget` is the trip budget; the second copy under `planning.budget` (money plan, trip-cost note) is gone and an older value is taken when there is no other. The aboard spending limit (`Budgets`, with alert level and child limits) stays a separate thing, a limit to be warned at, but starts from the trip budget when none is saved.
+- **Autopilot changes reach the programme:** when a change is accepted (Autopilot, Ask, "apply my week") or undone, the events it drops or adds are set on the guest's own plan on the account (`programmeFollows` → `togglePlan`), so the programme matches on every device. Tours, dinners and moves are not pushed: a tour or dinner is a booking the guest changes themselves, and an event cannot start at another time. They stay in the suggested-day overlay as before.
+- **Verified:** `npm run test` (1809 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
+- **Not done:** the server does not read `pilot` itself, so server-side views (briefing, concierge tools) do not see overlay-only changes (moves, tour and dinner drops). A stopped demo clock is stored as speed 1 (the column cannot hold 0), so the server does not follow it. The concierge-thread consent copy was already right and was not changed.
 
 ## Phase 6 record
 

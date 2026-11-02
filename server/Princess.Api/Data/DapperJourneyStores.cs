@@ -485,15 +485,15 @@ public sealed class DapperDemoStore(IDbConnectionFactory db) : IDemoStore
         catch (System.Text.Json.JsonException) { return []; }
     }
 
-    private sealed class DemoRowRaw { public long ClockOffsetSeconds { get; set; } public int ClockSpeed { get; set; } public string? ActiveScenarios { get; set; } }
+    private sealed class DemoRowRaw { public long ClockOffsetSeconds { get; set; } public int ClockSpeed { get; set; } public string? ActiveScenarios { get; set; } public DateTime UpdatedAt { get; set; } }
 
     public async Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var r = await c.QuerySingleOrDefaultAsync<DemoRowRaw>(Sql.Cmd("SELECT ClockOffsetSeconds, ClockSpeed, ActiveScenarios FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
+        var r = await c.QuerySingleOrDefaultAsync<DemoRowRaw>(Sql.Cmd("SELECT ClockOffsetSeconds, ClockSpeed, ActiveScenarios, UpdatedAt FROM demo.DemoState WHERE UserId = @userId", new { userId }, null, ct));
         if (r is null) return new DemoStateRow(0, 1, []);
-        try { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, System.Text.Json.JsonSerializer.Deserialize<string[]>(r.ActiveScenarios ?? "[]") ?? []); }
-        catch (System.Text.Json.JsonException) { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, []); }
+        try { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, System.Text.Json.JsonSerializer.Deserialize<string[]>(r.ActiveScenarios ?? "[]") ?? [], DateTime.SpecifyKind(r.UpdatedAt, DateTimeKind.Utc)); }
+        catch (System.Text.Json.JsonException) { return new DemoStateRow(r.ClockOffsetSeconds, r.ClockSpeed, [], DateTime.SpecifyKind(r.UpdatedAt, DateTimeKind.Utc)); }
     }
 
     public async Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct)

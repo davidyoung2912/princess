@@ -23,6 +23,9 @@ export interface Session {
   user?: SessionUser
 }
 
+/** The id the stores key a person's device copy by: their demo persona, or for any other account their server user id (null when signed out). */
+export const ownerIdOf = (session: Pick<Session, 'personaId' | 'user'> | null | undefined): string | null => session?.personaId ?? session?.user?.id ?? null
+
 export type AuthMethod = 'demo' | 'password' | 'code'
 
 /** Ways to sign in. The demo picker is the mock's; `password` takes an email or 10-digit account number (ACT-01). */

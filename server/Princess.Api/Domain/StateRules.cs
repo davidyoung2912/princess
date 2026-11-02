@@ -21,13 +21,16 @@ public static class StateRules
         ["hub"] = 64_000,
         ["health"] = 32_000,
         ["concierge"] = 128_000,
+        ["calm"] = 16_000,
+        ["family"] = 32_000,
     };
 
     /// <summary>
-    /// Keys held encrypted at rest (medical card, access profile, allergy flag). They are saved only while the person's own <c>settings</c>
+    /// Keys held encrypted at rest: the medical card, access profile and allergy flag (<c>health</c>), the sensory / calm profile (<c>calm</c>) and the
+    /// family-at-home contacts, links and secret (<c>family</c>). They are saved only while the person's own <c>settings</c>
     /// document says <c>syncPrivate</c> is on, so withdrawing consent also stops new writes.
     /// </summary>
-    public static readonly IReadOnlySet<string> EncryptedKeys = new HashSet<string> { "health" };
+    public static readonly IReadOnlySet<string> EncryptedKeys = new HashSet<string> { "health", "calm", "family" };
 
     /// <summary>Keys a booking may keep (shared by everyone on it).</summary>
     public static readonly IReadOnlyDictionary<string, int> BookingKeys = new Dictionary<string, int>

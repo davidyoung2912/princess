@@ -57,12 +57,22 @@ export function subscribeHub(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
+/** The family-at-home page (contacts with their email addresses, links, postcards, and the secret that signs links): its own document (key `family`), only with the guest's agreement (Settings: syncPrivate). Everything else is key `hub`. */
+export const hubRestOf = (s: HubState): HubState => ({ ...s, home: EMPTY_HOME })
+
 export function updateHub(personaId: string | null, change: (s: HubState) => HubState): void {
-  const next = change(getHub(personaId))
+  const prev = getHub(personaId)
+  const next = change(prev)
   cache.set(hubKeyFor(personaId), next)
   saveHub(personaId, next)
   listeners.forEach((l) => l())
-  sync.changed('hub', personaId)
+  if (JSON.stringify(hubRestOf(prev)) !== JSON.stringify(hubRestOf(next))) sync.changed('hub', personaId)
+  if (JSON.stringify(prev.home) !== JSON.stringify(next.home)) sync.changed('family', personaId)
+}
+
+/** Takes the server's family-at-home page (null: empty) without telling the sync module it changed. */
+export function applyRemoteFamily(personaId: string | null, raw: unknown): void {
+  applyRemoteHub(personaId, { ...getHub(personaId), home: raw === null ? EMPTY_HOME : normalizeHome(raw) })
 }
 
 /** Takes the server's copy without telling the sync module it changed. */

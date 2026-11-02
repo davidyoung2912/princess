@@ -29,6 +29,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public List<(long BookingId, IReadOnlyCollection<string> Kinds)> Purges { get; } = [];
     public Dictionary<long, string> Budgets { get; } = [];
     public Dictionary<long, long> ClockOffsets { get; } = [];
+    public Dictionary<long, DateTime> DemoSavedAt { get; } = [];
     public Dictionary<long, HashSet<string>> Scenarios { get; } = [];
     public Dictionary<long, int> DemoSpeeds { get; } = [];
     public HashSet<long> TakenEmailOwners { get; } = [];
@@ -231,12 +232,13 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public Task<HashSet<string>> GetScenariosAsync(long userId, CancellationToken ct) => Task.FromResult(Scenarios.TryGetValue(userId, out var s) ? new HashSet<string>(s) : []);
 
     public Task<DemoStateRow> GetStateAsync(long userId, CancellationToken ct) =>
-        Task.FromResult(new DemoStateRow(ClockOffsets.GetValueOrDefault(userId), DemoSpeeds.GetValueOrDefault(userId, 1), Scenarios.TryGetValue(userId, out var s) ? [.. s] : []));
+        Task.FromResult(new DemoStateRow(ClockOffsets.GetValueOrDefault(userId), DemoSpeeds.GetValueOrDefault(userId, 1), Scenarios.TryGetValue(userId, out var s) ? [.. s] : [], DemoSavedAt.TryGetValue(userId, out var at) ? at : null));
 
     public Task SaveStateAsync(long userId, DemoStateRow state, DateTime now, CancellationToken ct)
     {
         ClockOffsets[userId] = state.ClockOffsetSeconds;
         DemoSpeeds[userId] = state.ClockSpeed;
+        DemoSavedAt[userId] = now;
         Scenarios[userId] = [.. state.Scenarios];
         return Task.CompletedTask;
     }

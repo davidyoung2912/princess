@@ -114,7 +114,7 @@ export function TripCostScreen() {
           <>
             <Card info>
               <p><strong>{t('cost.cheapest', { fare: fareName(cost.cheapest) })}</strong></p>
-              <BudgetNote total={cost.options.find((o) => o.fare === cost.cheapest)!.total} budget={memory.planning.budget} text={budgetText} setText={setBudgetText} save={(v) => updateMemory((m) => ({ ...m, planning: { ...m.planning, budget: v } }))} />
+              <BudgetNote total={cost.options.find((o) => o.fare === cost.cheapest)!.total} budget={memory.budget} text={budgetText} setText={setBudgetText} save={(v) => updateMemory((m) => ({ ...m, budget: v }))} />
               <p>{cost.savingVsStandard > 0 ? t('cost.saving', { fare: fareName(cost.cheapest), amount: formatMoney(cost.savingVsStandard) }) : t('cost.noSaving')}</p>
             </Card>
             <table className="cost-table">

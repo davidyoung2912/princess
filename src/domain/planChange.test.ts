@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NO_WISH } from './day'
 import {
-  acceptChange, addProposal, alternativesFor, applyChanges, basePlan, canUndo, changeLog, conflicts, declineChange, parseTime, proposeReflow, requestChange, shipChangesFor, undoChange, visibleRows,
+  acceptChange, addProposal, alternativesFor, applyChanges, basePlan, canUndo, changeLog, conflicts, programmeDiff, programmeEffects, declineChange, parseTime, proposeReflow, requestChange, shipChangesFor, undoChange, visibleRows,
   type Change, type PlanEntry,
 } from './planChange'
 import { REFERENCE_SAILING } from './sailings'
@@ -182,5 +182,29 @@ describe('assistant requests', () => {
     const r = requestChange('move trivia to 6:45 pm', rows, [], NOW, 2)
     if (!r.ok) throw new Error('expected a proposal')
     expect(acceptChange(plan, [r.change], r.change.id, NOW + 1)).toEqual({ ok: false, reason: 'conflict' })
+  })
+})
+
+describe('what a change does to the programme on the account', () => {
+  const base = [entry('bingo', '14:00', 60), entry('jazz', '21:30', 90), entry('tour1', '09:00', 240, { kind: 'tour' }), entry('dinner1', '19:00', 90, { kind: 'dinner' })]
+  const change = (edits: Change['edits'], status: Change['status'] = 'accepted'): Change => ({ id: 'c1', day: 2, source: 'autopilot', cause: '', title: '', why: '', edits, status, proposedAt: NOW, undoUntil: NOW + MIN })
+
+  it('takes a dropped event out and puts an added one in, and leaves tours, dinners, moves and pasted lines alone', () => {
+    const c = change([{ op: 'drop', id: 'bingo' }, { op: 'add', entry: entry('jazz', '21:30', 90) }, { op: 'drop', id: 'tour1' }, { op: 'drop', id: 'dinner1' }, { op: 'move', id: 'jazz', to: '22:00' }, { op: 'add', entry: entry('mine', '10:00', 30, { kind: 'added' }) }])
+    expect(programmeEffects(c, base)).toEqual([{ eventId: 'bingo', on: false }, { eventId: 'jazz', on: true }])
+    expect(programmeEffects(c, base, true)).toEqual([{ eventId: 'bingo', on: true }, { eventId: 'jazz', on: false }])
+  })
+  it('keeps the last word when a change touches an event twice, and ignores ids that are not programme events', () => {
+    expect(programmeEffects(change([{ op: 'drop', id: 'bingo' }, { op: 'add', entry: entry('bingo', '14:00', 60) }]), base)).toEqual([{ eventId: 'bingo', on: true }])
+    expect(programmeEffects(change([{ op: 'add', entry: entry('not-an-event', '10:00', 30) }]), base)).toEqual([])
+  })
+  it('acts only on the step from proposed to accepted, and from accepted to undone', () => {
+    const baseFor = () => base
+    const drop = [{ op: 'drop' as const, id: 'bingo' }]
+    expect(programmeDiff([change(drop, 'proposed')], [change(drop, 'accepted')], baseFor)).toEqual([{ day: 2, effects: [{ eventId: 'bingo', on: false }] }])
+    expect(programmeDiff([change(drop, 'accepted')], [change(drop, 'accepted')], baseFor)).toEqual([])
+    expect(programmeDiff([change(drop, 'accepted')], [change(drop, 'undone')], baseFor)).toEqual([{ day: 2, effects: [{ eventId: 'bingo', on: true }] }])
+    expect(programmeDiff([change(drop, 'proposed')], [change(drop, 'declined')], baseFor)).toEqual([])
+    expect(programmeDiff([], [change(drop, 'accepted')], baseFor)).toHaveLength(1)   // a change made and accepted in one step (the assistant)
   })
 })

@@ -29,6 +29,12 @@ describe('memory store', () => {
     expect(m.fit).toEqual(['tenders'])
     expect(m.use.drinks).toBe(999)
   })
+
+  it('has one trip budget: the older copy kept under planning is taken when there is no other', () => {
+    expect(normalizeMemory({ planning: { budget: 300000 } }).budget).toBe(300000)
+    expect(normalizeMemory({ budget: 200000, planning: { budget: 300000 } }).budget).toBe(200000)
+    expect(normalizeMemory({ planning: { budget: -5 } }).budget).toBeNull()
+  })
 })
 
 describe('away-from-home checklist state (S3-11)', () => {
