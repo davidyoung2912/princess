@@ -17,11 +17,11 @@ public class MediaRulesTests
     {
         var sof = Seg(0xC0, 8, (byte)(height >> 8), (byte)height, (byte)(width >> 8), (byte)width, 1, 1, 0x11, 0);
         var scan = Seg(0xDA, 1, 1, 0, 0, 0x3F, 0).Concat(new byte[] { 0x12, 0x34, 0xFF, 0x00, 0x56 }).ToArray();
-        var parts = new List<byte[]> { [0xFF, 0xD8], Seg(0xE0, (byte)'J', (byte)'F', (byte)'I', (byte)'F', 0) };
+        var parts = new List<byte[]> { new byte[] { 0xFF, 0xD8 }, Seg(0xE0, (byte)'J', (byte)'F', (byte)'I', (byte)'F', 0) };
         if (exif) { parts.Add(Seg(0xE1, "Exif\0\0GPS 36.1N 115.1W"u8.ToArray())); parts.Add(Seg(0xFE, "taken by Ana"u8.ToArray())); }
         parts.Add(sof);
         parts.Add(scan);
-        parts.Add([0xFF, 0xD9]);
+        parts.Add(new byte[] { 0xFF, 0xD9 });
         return [.. parts.SelectMany(p => p)];
     }
 
@@ -30,10 +30,10 @@ public class MediaRulesTests
     public static byte[] Png(int width = 64, int height = 32, bool text = true)
     {
         byte[] ihdr = [(byte)(width >> 24), (byte)(width >> 16), (byte)(width >> 8), (byte)width, (byte)(height >> 24), (byte)(height >> 16), (byte)(height >> 8), (byte)height, 8, 2, 0, 0, 0];
-        var parts = new List<byte[]> { [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], Chunk("IHDR", ihdr) };
+        var parts = new List<byte[]> { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, Chunk("IHDR", ihdr) };
         if (text) { parts.Add(Chunk("eXIf", "GPS 36.1N"u8.ToArray())); parts.Add(Chunk("tEXt", "Author\0Ana"u8.ToArray())); }
         parts.Add(Chunk("IDAT", [1, 2, 3, 4]));
-        parts.Add(Chunk("IEND", []));
+        parts.Add(Chunk("IEND", Array.Empty<byte>()));
         return [.. parts.SelectMany(p => p)];
     }
 
