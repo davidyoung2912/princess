@@ -14,6 +14,9 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/access", () => Results.Ok(ReferenceRules.Access()))
             .WithTags("Reference").WithSummary("Excursion difficulty (distance, steps, heat, shade, seats, restrooms, wet footing) by excursion id, and the room types that have accessible staterooms.");
 
+        api.MapGet("/reference/catalogue", () => Results.Ok(ReferenceRules.Catalogue()))
+            .WithTags("Reference").WithSummary("The authored catalogue the server holds: shore excursions, dining venues and ports (with whether guests tender ashore). The same data the concierge and booking use.");
+
         api.MapGet("/feeds/sky", (string sailing, int day, string port, IWeatherService weather) =>
             {
                 if (string.IsNullOrWhiteSpace(sailing) || sailing.Length > 40 || string.IsNullOrWhiteSpace(port) || port.Length > 40 || day is < 1 or > 60)

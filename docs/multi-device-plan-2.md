@@ -1,6 +1,6 @@
 # Multi-device plan 2: nothing but a thin client
 
-Status: **Plan written 2026-11-01 (audit of the front end and back end). Phases 1 to 3 built (Phase 3 in part); Phases 4 to 7 not started.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
+Status: **Plan written 2026-11-01 (audit of the front end and back end). Phases 1 to 4 built (Phases 3 and 4 in part); Phases 5 to 7 not started.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
 
 ## Goal and rules
 
@@ -35,7 +35,7 @@ Status: **Plan written 2026-11-01 (audit of the front end and back end). Phases 
 1. **Backend provider seams.** `IWeatherService`, `IFlightStatusProvider`, `IRouteConditionsProvider`, `ITelemetrySink`, each with a simulated implementation; packing and the on-board day read weather through the seam; `POST /telemetry`; contract tests per provider. (`IShipTelemetry`, `IFareFeed` arrive in Phase 3 with their data, `IConciergeModel` and `IStaffQueue` in Phases 2 and 6.)
 2. **Concierge on the server (built).** `POST /me/concierge`; tools run server-side over `ref.*` and the booking; guard, hourly limit and scripted fallback move; model key in user-secrets behind `IConciergeModel`; thread synced; remove `VITE_ANTHROPIC_API_KEY` and `askClaude` from the client.
 3. **(Built in part: port crowd and fare history only.) Feeds to the server, client sims removed from the REST path.** Routes and `src/feeds/*` fetchers for pulse and lines, quiet spaces, port crowd, storm, sky objects, heading, disruption hub, fare history, boards, sightings, cabin odds, Autopilot sims, service status. Mock mode keeps the local functions.
-4. **Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
+4. **(Built in part: route and parity test only.) Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
 5. **Account-state loose ends.** Sign-out flush, user-id keying (and no-persona accounts), sync indicator, outbox sync, demo state from the server plus `/demo/jump` and `/demo/reset`, consent for calm profile and contacts, copy sweep, budget unification, Autopilot changes into the day plan.
 6. **Features needing a server.** Signed family links and public page, port ledger rows, `IStaffQueue` for caregiver / callback / kit.
 7. **Audit gate.** A test that fails when a UI file imports an authored catalogue or simulation module in REST mode, or uses `localStorage` outside an allowlist.
@@ -65,3 +65,10 @@ Built 2026-11-02, **in part**.
 
 - **Done:** `IShipTelemetry` (port crowd) and `IFareFeed` (fare history) in `Services/Providers.cs` with simulated implementations ported exactly from the client (`Domain/ShipFeedRules.cs`: same hashes and rounding); `GET /feeds/port-crowd` and `GET /feeds/fares`; client fetchers `src/feeds/portCrowd.ts` and `fares.ts` (local simulation first, the server's figures when they arrive, unreadable answers ignored) behind `usePortCrowd` and `useFareHistory`, used by the port guide, the Port Day Pilot and the price-drop watch. Tests: `ShipFeedTests` (C#, not run) and `src/feeds/served.test.ts`.
 - **Not done (still computed on the device in every mode):** ship pulse, venue lines and quiet spaces (`pulse.ts`: they need a moment-by-moment series, so they want a batch route), storm, sky objects, ship heading, disruption hub, lounger board, found list, "you said, we did" board, sightings, cabin odds, Autopilot sims, memory-book replies and the service-status page. Each follows the same pattern as the two above.
+
+## Phase 4 record
+
+Built 2026-11-02, **in part**.
+
+- **Done:** `GET /reference/catalogue` (excursions, dining venues, ports) from the server's own rules, and `src/domain/catalogueParity.test.ts`, which fails when the client's `EXCURSIONS` or `VENUES` and the server's C# copies differ in any priced or timed field.
+- **Not done:** the client does not yet read its catalogue from the server (59 files import `pricing`, 66 import `sailings`; a cached copy needs those to go through one provider), the server seed is not yet the source the mock fixtures are generated from, and `ref.Excursions` has no difficulty columns (a schema change; the difficulty figures stay in `ReferenceRules`).

@@ -449,6 +449,7 @@ A document is `{ key, version, data, updatedAt }`. `baseVersion` is the version 
 | today's exchange rates per US dollar (stub feed, same for every device) | `GET /rates` | U |
 | excursion difficulty by id and the room types with accessible staterooms | `GET /reference/access` | U || the sky for a cruise day (simulated feed) | `GET /feeds/sky?sailing=&day=&port=` | U || status of a flight on a date (simulated feed) | `GET /feeds/flight?number=&date=` | U || traffic and weather on the way to the port (simulated feed) | `GET /feeds/route?departure=&crowd=` | U |
 | a batch of consented error reports and usage counts (no person or typed text) | `POST /telemetry` | U |
+| the authored catalogue: excursions, dining venues, ports | `GET /reference/catalogue` | U |
 | ships in a port on a date and how busy it will be (simulated) | `GET /feeds/port-crowd?port=&date=` | U |
 | the weekly fare for the same cabin since booking, for the price-drop watch (simulated) | `GET /feeds/fares?number=&total=&booked=&today=` | U |
 | ask the AI concierge (the thread so far and the guest's preferences) | `POST /me/concierge` | U |

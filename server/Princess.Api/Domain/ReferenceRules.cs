@@ -4,6 +4,8 @@ public sealed record ExcursionDifficulty(double Km, bool Steps, string Heat, str
 
 public sealed record AccessReferenceDto(Dictionary<string, ExcursionDifficulty> Difficulty, IReadOnlyList<string> AccessibleCategories);
 
+public sealed record CatalogueReferenceDto(IReadOnlyList<Excursion> Excursions, IReadOnlyList<Venue> Venues, IReadOnlyList<Port> Ports);
+
 /// <summary>
 /// Authored access reference data that the screens used to hold alone (multi-device plan Phase 5): how hard each excursion is on foot,
 /// and which room types have accessible staterooms. The difficulty figures are held here until <c>ref.Excursions</c> gets columns for them.
@@ -25,6 +27,8 @@ public static class ReferenceRules
         ["rtb-wildlife"] = new(1, false, "medium", "high", true, true, false),
         ["rtb-drive"] = new(0.3, false, "medium", "medium", true, false, false),
     };
+
+    public static CatalogueReferenceDto Catalogue() => new(ExcursionRules.Catalogue, DiningRules.Venues, [.. Itinerary.Ports.Values]);
 
     public static AccessReferenceDto Access() => new(new Dictionary<string, ExcursionDifficulty>(Difficulty), CabinRules.AccessibleCategories);
 }
