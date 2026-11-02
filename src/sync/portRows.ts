@@ -2,7 +2,7 @@ import { isApiError } from '../api/errors'
 import { APP_PREFIX } from '../data/lifecycle'
 import { diffState, layer, legacyRows, rowId, stateOfRows, type PortRow } from '../port/rows'
 import { applyRemotePort, getPort, normalizePort, onPortChanged, type PortState } from '../port/store'
-import { personaById } from '../domain/personas'
+import { bookerOfPerson } from '../account/context'
 import type { SyncStatus } from './sync'
 
 /**
@@ -37,8 +37,8 @@ export interface PortRowSyncOptions {
 
 const BATCH = 100
 
-/** The id the port store keys its device copy by: the booker of a demo persona, else the person's own id. */
-export const bookerOf = (id: string | null): string | null => (id === null ? null : personaById(id)?.booker ?? id)
+/** The id the port store keys its device copy by: the booker of the booking the person is on. */
+export const bookerOf = bookerOfPerson
 
 function deviceStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
   try {

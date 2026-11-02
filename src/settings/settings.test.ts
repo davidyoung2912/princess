@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { personaById } from '../domain/personas'
 import { DEFAULT_SETTINGS, SETTINGS_KEY, defaultsFor, loadSettings, normalizeSettings, saveSettings, settingsKeyFor, settingsToAttributes, saveDataRequested } from './settings'
 
 const memory = (initial?: string) => {
@@ -71,15 +70,15 @@ describe('calm mode', () => {
 })
 
 describe('per-person settings', () => {
-  it('starts Gerald on Large text and everyone else on standard, until they choose', () => {
+  it('starts a person on the text size they are given and everyone else on standard, until they choose', () => {
     const m = new Map<string, string>()
     const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) }
-    const gerald = defaultsFor(personaById('gerald')!)
+    const gerald = defaultsFor({ defaultTextSize: 'large' })
     expect(loadSettings(store, gerald, settingsKeyFor('gerald')).textSize).toBe('large')
-    expect(loadSettings(store, defaultsFor(personaById('maria')!), settingsKeyFor('maria')).textSize).toBe('standard')
+    expect(loadSettings(store, defaultsFor({ defaultTextSize: 'standard' }), settingsKeyFor('maria')).textSize).toBe('standard')
     saveSettings({ ...gerald, textSize: 'xlarge' }, store, settingsKeyFor('gerald'))
     expect(loadSettings(store, gerald, settingsKeyFor('gerald')).textSize).toBe('xlarge')
-    expect(loadSettings(store, defaultsFor(personaById('maria')!), settingsKeyFor('maria')).textSize).toBe('standard')
+    expect(loadSettings(store, defaultsFor({ defaultTextSize: 'standard' }), settingsKeyFor('maria')).textSize).toBe('standard')
   })
 })
 

@@ -4,6 +4,7 @@ import { getOfferState, updateOfferState } from '../offers/store'
 import { applyRemoteMemory, EMPTY_MEMORY, getMemory, updateMemory } from '../memory/store'
 import { getPhone, updatePhone } from '../phone/store'
 import { DEFAULT_TEXT_SIZE } from '../design/textSize'
+import { normalizeContext, setContext } from '../account/context'
 import { getSettings, switchSettingsOwner, updateSettings } from '../settings/store'
 import { getExtras } from '../shop/store'
 import { EMPTY_CALM } from '../domain/calm'
@@ -123,6 +124,7 @@ describe('trip, plan changes, family hub and the booking\'s shared records', () 
     }
     registerSyncBindings()
     setRemote(sharedRemote)
+    setContext(normalizeContext({ nowMs: 1, person: { id: 'priya', firstName: 'Priya', booker: 'daniel' }, party: [{ id: 'priya', firstName: 'Priya', booker: 'daniel' }, { id: 'daniel', firstName: 'Daniel', booker: 'daniel' }] }, 0))
     switchSettingsOwner({ id: 'priya', defaultTextSize: DEFAULT_TEXT_SIZE } as never)
     sync.setOwner('user-p', 'priya')
     await sync.pull()

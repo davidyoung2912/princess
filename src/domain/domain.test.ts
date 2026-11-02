@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { clockAt, clockNow, CLOCK_SPEEDS, normalizeClock, setClockSpeed, stepClock } from './clock'
 import { clockView } from './clockView'
 import { balances, computeEntitlements, sourceOf } from './entitlements'
-import { PERSONAS, partyOf, personaById, visibleTo } from './personas'
 import { allAboardEpoch, itinerary, portAt, REFERENCE_SAILING, SAILINGS, shipClockChanges, shipZoneAt, STAGE_IDS, stageAt, stageStarts, timeForStage } from './sailings'
 import { activeFaults, appliesTo, SCENARIOS, targetMatches } from './scenarios'
 import { addDays, dateIn, offsetMinutes, zonedToEpoch } from './timezones'
@@ -107,33 +106,15 @@ describe('demo clock', () => {
   })
 })
 
-describe('personas', () => {
-  it('has the twelve people: four on their own and two families of four', () => {
-    expect(PERSONAS).toHaveLength(12)
-    expect(new Set(PERSONAS.map((p) => p.id)).size).toBe(12)
-    expect(PERSONAS.filter((p) => p.group === 'solo')).toHaveLength(4)
-    expect(PERSONAS.filter((p) => p.group === 'harper')).toHaveLength(4)
-    expect(PERSONAS.filter((p) => p.group === 'brennan')).toHaveLength(4)
-  })
-  it('starts Gerald on Large text and everyone else on standard', () => {
-    expect(personaById('gerald')!.defaultTextSize).toBe('large')
-    expect(PERSONAS.filter((p) => p.id !== 'gerald').every((p) => p.defaultTextSize === 'standard')).toBe(true)
-  })
-  it('marks children as supervised and families as parties under one booker', () => {
-    expect(PERSONAS.filter((p) => p.child).map((p) => p.id).sort()).toEqual(['ethan', 'lucas', 'maya', 'sofia'])
-    expect(partyOf('maya').map((p) => p.id).sort()).toEqual(['daniel', 'ethan', 'maya', 'priya'])
-    expect(partyOf('gerald')).toHaveLength(1)
-  })
-  it('keeps solo personas isolated and families visible only to each other', () => {
-    for (const id of ['gerald', 'maria', 'linda', 'alexander'] as const) expect(visibleTo(id)).toEqual([])
-    expect(visibleTo('daniel').some((p) => p.group === 'solo')).toBe(false)
-    expect(visibleTo('daniel').map((p) => p.id)).toContain('marcus')
-    expect(visibleTo('daniel').map((p) => p.id)).not.toContain('daniel')
-  })
-})
-
 describe('entitlements', () => {
-  const of = (id: Parameters<typeof personaById>[0]) => computeEntitlements(sourceOf(personaById(id)!))
+  const GUESTS = {
+    maria: { tier: 'none', package: 'none', sanctuary: false },
+    gerald: { tier: 'platinum', package: 'none', sanctuary: false },
+    alexander: { tier: 'elite', package: 'premier', sanctuary: true },
+    linda: { tier: 'ruby', package: 'none', sanctuary: false },
+    daniel: { tier: 'ruby', package: 'plus', sanctuary: false },
+  } as const
+  const of = (id: keyof typeof GUESTS) => computeEntitlements(sourceOf(GUESTS[id]))
   it('gives nothing extra to a first-timer with no package', () => {
     expect(of('maria')).toMatchObject({ drinkCapUsd: 0, wifiDevices: 0, specialtyMeals: 0, gratuitiesIncluded: false, diningWindow: 'afterFullPayment' })
   })

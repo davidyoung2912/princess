@@ -5,7 +5,6 @@ import { auth } from '../runtime'
 import { ownerIdOf } from '../auth/provider'
 import { demoNow, getDemo, subscribeDemo } from '../demo/store'
 import type { Sailing } from '../domain/sailings'
-import { personaById } from '../domain/personas'
 import type { Person } from '../domain/people'
 import type { DemoState } from '../demo/state'
 import { useVisibleInterval } from './useVisibleInterval'
@@ -29,12 +28,11 @@ export function useNow(): number {
   return now
 }
 
-/** The signed-in person, or null: a demo persona, or for a real account the person the server describes (`/me/context`). */
+/** The signed-in person, or null: the person the server describes (`/me/context`). */
 export function usePersona(): Person | null {
   const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
-  const persona = personaById(session?.personaId)
-  return useMemo(() => persona ?? (context && session && context.person.id.toLowerCase() === (session.user?.id ?? '').toLowerCase() ? personFrom(context) : null), [persona, context, session])
+  return useMemo(() => (context && session && context.person.id.toLowerCase() === (session.user?.id ?? '').toLowerCase() ? personFrom(context) : null), [context, session])
 }
 
 /** The id the signed-in person's stores are keyed by: the persona, or the user id for an account that is not a persona. Null when signed out. */

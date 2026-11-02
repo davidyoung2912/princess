@@ -4,7 +4,7 @@ import { applyPageMeta } from '../../seo'
 import { familyView, normalizePublicFamily, POSTCARD_TEXT, tokenOwner, verifyLink, type FamilyView, type LinkProblem, type PublicFamily } from '../../domain/homeLink'
 import { delayVisibleToOthers } from '../../domain/delay'
 import { familyNotices } from '../../domain/disruptionHub'
-import { personaById } from '../../domain/personas'
+import { personFirstName } from '../../account/context'
 import { itinerary, portAt, PORTS } from '../../domain/sailings'
 import { formatDate } from '../../domain/cruise'
 import { getHub } from '../../hub/store'
@@ -36,7 +36,8 @@ export function AtSeaScreen() {
   }, [token, asks])
   const hub = owner ? getHub(owner) : null
   const check = owner && hub ? verifyLink(token, owner, hub.home, now) : null
-  const guest = owner ? personaById(owner) : undefined
+  const guestFirst = owner ? personFirstName(owner) : ''
+  const guest = guestFirst ? { firstName: guestFirst } : undefined
 
   // A private page: never indexed, and the link itself is kept out of the page's address metadata.
   useEffect(() => {

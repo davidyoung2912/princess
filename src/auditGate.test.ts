@@ -30,9 +30,14 @@ describe('audit gate', () => {
     expect(readers).toEqual(['src/runtime/index.ts'])
   })
 
-  it('has no file beyond the known list importing the demo persona table or ids', () => {
+  it('has no persona table: nothing imports a list of demo people or translates their ids', () => {
     const found = allSource().filter((f) => /from '(\.\.?\/)+(\w+\/)*(personas|personaIds)'|from '\.\/(personas|personaIds)'/.test(textOf(f)))
-    expect(found).toEqual(KNOWN_PERSONA_IMPORTERS)
+    expect(found).toEqual([])
+  })
+
+  it('names none of the twelve demo people in the client', () => {
+    const found = allSource().filter((f) => /'(gerald|maria|linda|alexander|daniel|priya|ethan|maya|marcus|elena|lucas|sofia)'/.test(withoutComments(textOf(f))))
+    expect(found).toEqual([])
   })
 
   it('has no file naming a simulated source: the front end does not know whether data is simulated', () => {
@@ -128,54 +133,3 @@ const KNOWN_CATALOGUE_SCREENS: string[] = [
 const LOCAL_STORAGE_OK = ['src/ai/', 'src/data/', 'src/design/', 'src/demo/', 'src/hub/', 'src/journey/', 'src/memory/', 'src/offers/', 'src/party/', 'src/phone/', 'src/pilot/', 'src/port/', 'src/runtime/', 'src/settings/', 'src/shop/', 'src/sync/', 'src/auth/', 'src/diagnostics/', 'src/rates/', 'src/feeds/feed.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useSavedCopy.ts']
 /** Screens that keep a small device-only setting themselves (diagnostics switch, a support draft, the pass finder). */
 const KNOWN_LOCAL_STORAGE_OUTSIDE: string[] = ['src/ui/DiagnosticsSettings.tsx', 'src/ui/aboard/SupportScreens.tsx', 'src/ui/boarding/FindPassScreen.tsx']
-
-/**
- * Files that still import the twelve-persona table or its ids. Most use only the `PersonaId` type or a name lookup; the table and the ids belong to the
- * demo accounts and go when the screens take names, roles and parties from the server's person records (a later plan).
- */
-const KNOWN_PERSONA_IMPORTERS: string[] = [
-  'src/account/context.ts',
-  'src/api/aboardTypes.ts',
-  'src/api/aheadTypes.ts',
-  'src/api/careTypes.ts',
-  'src/api/finishTypes.ts',
-  'src/api/httpApi.ts',
-  'src/api/personaIds.ts',
-  'src/api/types.ts',
-  'src/auth/httpProvider.ts',
-  'src/auth/provider.ts',
-  'src/domain/account.ts',
-  'src/domain/ahead.ts',
-  'src/domain/boarding.ts',
-  'src/domain/dining.ts',
-  'src/domain/entitlements.ts',
-  'src/domain/family.ts',
-  'src/domain/offers.ts',
-  'src/domain/orders.ts',
-  'src/domain/packages.ts',
-  'src/domain/photos.ts',
-  'src/domain/postcruise.ts',
-  'src/domain/room.ts',
-  'src/domain/scenarios.ts',
-  'src/domain/trip.ts',
-  'src/hooks/useDemo.ts',
-  'src/runtime/index.ts',
-  'src/settings/store.ts',
-  'src/sync/bindings.ts',
-  'src/sync/portRows.ts',
-  'src/ui/aboard/ChatSafe.tsx',
-  'src/ui/checkin/guests.ts',
-  'src/ui/checkin/parts.tsx',
-  'src/ui/checkin/steps.tsx',
-  'src/ui/extras/HealthScreens.tsx',
-  'src/ui/onboard/SafetyScreens.tsx',
-  'src/ui/onboard/Tickets.tsx',
-  'src/ui/plan/AssistanceScreen.tsx',
-  'src/ui/plan/AtSeaScreen.tsx',
-  'src/ui/plan/DiningScreen.tsx',
-  'src/ui/plan/ExcursionsScreen.tsx',
-  'src/ui/plan/PackagesScreen.tsx',
-  'src/ui/plan/PlanScreen.tsx',
-  'src/ui/plan/common.tsx',
-  'src/ui/plan/people.ts',
-]

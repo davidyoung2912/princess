@@ -23,7 +23,6 @@ import { skyFeed } from '../feeds/sky'
 import { weekFeed } from '../feeds/week'
 import { dayPlanFeed } from '../feeds/dayPlan'
 import { markAccount, refreshContext, setContext } from '../account/context'
-import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
 import { applyShip, normalizeShip } from '../domain/shipServed'
@@ -35,7 +34,6 @@ import { applyContent, normalizeContent } from '../domain/contentServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
-import { personaById } from '../domain/personas'
 import { resetSettingsToDefaults, switchSettingsOwner } from '../settings/store'
 import { sync, setRemote } from '../sync'
 import { registerSyncBindings } from '../sync/bindings'
@@ -214,7 +212,7 @@ function loadContext(): void {
   if (!session) { setContext(null); contextFor = undefined; return }
   const who = session.user?.id
   if (who !== contextFor) { setContext(null); contextFor = who }
-  void refreshContext(async () => fromWire(await http.get<unknown>('/me/context')), () => auth.current()?.user?.id === who)
+  void refreshContext(() => http.get<unknown>('/me/context'), () => auth.current()?.user?.id === who)
 }
 
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
@@ -239,11 +237,11 @@ export async function startRuntime(): Promise<void> {
   stopWatchingDevice()
   stopWatchingDevice = watchDeviceReturn()
   auth.subscribe(() => {
-    switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
+    switchSettingsOwner(null, ownerIdOf(auth.current()))
     syncAccount()
   })
   await auth.restore()
-  switchSettingsOwner(personaById(auth.current()?.personaId) ?? null, ownerIdOf(auth.current()))
+  switchSettingsOwner(null, ownerIdOf(auth.current()))
   syncAccount()
 }
 

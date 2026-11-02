@@ -1,6 +1,6 @@
 import { defaultsFor, loadSettings, pickSynced, saveSettings, settingsKeyFor, settingsToAttributes, SYNCED_FIELDS, withSynced, type Settings, type SyncedSettings } from './settings'
 import { sync } from '../sync'
-import type { Persona } from '../domain/personas'
+import type { Person } from '../domain/people'
 
 let defaults: Settings = defaultsFor(null)
 let current: Settings = loadSettings(undefined, defaults)
@@ -50,7 +50,7 @@ export function applySyncedSettings(raw: unknown): void {
 }
 
 /** Switches to a person's own settings (their saved ones, or their defaults), applies them and tells subscribers. Null is signed out. */
-export function switchSettingsOwner(persona: Pick<Persona, 'id' | 'defaultTextSize'> | null, ownerId: string | null = persona?.id ?? null): void {
+export function switchSettingsOwner(persona: Pick<Person, 'id' | 'defaultTextSize'> | null, ownerId: string | null = persona?.id ?? null): void {
   key = settingsKeyFor(ownerId)
   syncId = ownerId
   defaults = defaultsFor(persona)

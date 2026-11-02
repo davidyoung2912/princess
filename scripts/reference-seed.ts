@@ -31,7 +31,7 @@ import { NIGHT_ITEMS } from '../src/domain/disembark.ts'
 import { buildPackingList } from '../src/domain/packing.ts'
 import { addDays } from '../src/domain/timezones.ts'
 import type { CategoryId } from '../src/domain/ship.ts'
-import type { PackageId, Tier } from '../src/domain/personas.ts'
+import type { PackageId, Tier } from '../src/domain/people.ts'
 
 export type ColType = 'str' | 'int' | 'bit' | 'time' | 'date' | 'datetime' | 'json'
 export type Cell = string | number | boolean | null | unknown[] | Record<string, unknown>

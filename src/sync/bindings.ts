@@ -6,7 +6,7 @@ import { EMPTY_CALM } from '../domain/calm'
 import { EMPTY_PILOT, applyRemoteCalm, applyRemotePilot, getPilot, normalizePilot, pilotRestOf } from '../pilot/store'
 import { EMPTY_PARTY, normalizePartyState } from '../domain/party'
 import { applyRemoteParty, getParty } from '../party/store'
-import { personaById } from '../domain/personas'
+import { bookerOfPerson } from '../account/context'
 import { mergeOffers, mergeParty } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
@@ -117,7 +117,7 @@ const family: Binding = {
 }
 
 /** A booking's stores are kept under its booker, so everyone on the booking reads and writes the same copy. */
-const bookerOf = (id: string | null): string | null => (id === null ? null : personaById(id)?.booker ?? id)
+const bookerOf = bookerOfPerson
 
 /** Travel-party invitations and shared notes: one document for the whole booking. */
 const party: Binding = {

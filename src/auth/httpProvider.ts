@@ -1,6 +1,4 @@
 import type { Channel } from '../data/sync'
-import { isPersonaId } from '../domain/personas'
-import type { PersonaId } from '../domain/people'
 import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
 import { AuthError, type AuthMethod, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
@@ -25,12 +23,6 @@ interface WireUser {
 }
 interface WireSession { accessToken: string; expiresAt: number; refreshToken: string; refreshExpiresAt: number; user: WireUser }
 
-/** The seeded demo accounts have the email `<slug>@demo.princess.example`; the slug is the persona id the mock data layer is keyed by. */
-export function personaForEmail(email: string | null | undefined): PersonaId | null {
-  const m = /^([a-z]+)@demo\.princess\.example$/.exec(email?.toLowerCase() ?? '')
-  return m && isPersonaId(m[1]) ? m[1] : null
-}
-
 /**
  * The real identity provider: email or account number plus password against `/auth/login`. The access token (15 minutes)
  * lives only in memory. The refresh token (30 days, single use) is kept in per-tab session storage, so a reload
@@ -53,7 +45,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     access = w.accessToken
     store(w.refreshToken)
     const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo }
-    current = { personaId: personaForEmail(w.user.email), signedInAt: now(), method, user }
+    current = { signedInAt: now(), method, user }
     return current
   }
   const clear = () => {
@@ -114,7 +106,6 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       },
     },
     async signIn(c: Credentials) {
-      if (c.method === 'demo') throw new AuthError('unsupportedMethod')
       try {
         const session = c.method === 'code'
           ? take(await raw.post<WireSession>('/auth/magic/redeem', { email: c.email.trim(), code: c.code.trim() }, { anonymous: true }), 'code')

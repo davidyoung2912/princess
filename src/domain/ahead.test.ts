@@ -6,7 +6,6 @@ import {
 import { DATA_RULES, dataRuleProblems } from './dataRules'
 import { CLEARANCE, CLIMATE, FIX_FLOWS, PREP, clearanceFor, formatTemp, isHurricaneSeason, outlook, prepDue, toCelsius, uvBand } from './readiness'
 import { itemById } from './catalogue'
-import { PERSONAS } from './personas'
 import { addDays } from './timezones'
 
 const HOUR = 3_600_000
@@ -81,7 +80,7 @@ describe('marketing consent (DIS-16)', () => {
 
 describe('Captain’s Circle and credit at booking (BOK-11, BOK-12)', () => {
   it('makes valid numbers, and catches a typo', () => {
-    for (const p of PERSONAS) expect(loyaltyNumberOk(loyaltyNumberOf(p.id)), p.id).toBe(true)
+    for (const id of ['gerald', 'maria', 'e2b4f0aa-1d2c-4b8e-9a7f-0c3d5e6f7a8b']) expect(loyaltyNumberOk(loyaltyNumberOf(id)), id).toBe(true)
     const n = loyaltyNumberOf('gerald')
     const typo = `${n.slice(0, 4)}${(Number(n[4]) + 1) % 10}${n.slice(5)}`
     expect(loyaltyNumberOk(typo)).toBe(false)

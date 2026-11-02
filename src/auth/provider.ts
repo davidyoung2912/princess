@@ -12,25 +12,20 @@ export interface SessionUser {
   isDemo: boolean
 }
 
-/**
- * A signed-in person. `personaId` is the demo persona this account maps to (the mock data layer is keyed by it until
- * the screens move to the real API in Phases 13 to 18); it is null for an account that is not one of the twelve.
- */
+/** A signed-in person. */
 export interface Session {
-  personaId: PersonaId | null
   signedInAt: number
   method: AuthMethod
   user?: SessionUser
 }
 
-/** The id the stores key a person's device copy by: their demo persona, or for any other account their server user id (null when signed out). */
-export const ownerIdOf = (session: Pick<Session, 'personaId' | 'user'> | null | undefined): string | null => session?.personaId ?? session?.user?.id ?? null
+/** The id the stores key a person's device copy by: their server user id (null when signed out). */
+export const ownerIdOf = (session: Pick<Session, 'user'> | null | undefined): string | null => session?.user?.id ?? null
 
-export type AuthMethod = 'demo' | 'password' | 'code'
+export type AuthMethod = 'password' | 'code'
 
-/** Ways to sign in. `demo` is not accepted by the server provider; `password` takes an email or 10-digit account number (ACT-01). */
+/** Ways to sign in. `password` takes an email or 10-digit account number (ACT-01). */
 export type Credentials =
-  | { method: 'demo'; personaId: string }
   | { method: 'password'; identifier: string; password: string }
   /** The one-time code emailed after `requestCode('magic', email)`. */
   | { method: 'code'; email: string; code: string }

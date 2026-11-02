@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createHttp, errorFor } from '../api/http'
-import { createHttpAuthProvider, personaForEmail, REFRESH_KEY } from './httpProvider'
+import { createHttpAuthProvider, REFRESH_KEY } from './httpProvider'
 
 const memory = () => {
   const m = new Map<string, string>()
@@ -60,15 +60,6 @@ describe('createHttp', () => {
   })
 })
 
-describe('personaForEmail', () => {
-  it('maps only the seeded demo addresses', () => {
-    expect(personaForEmail('Maya@demo.princess.example')).toBe('maya')
-    expect(personaForEmail('mallory@demo.princess.example')).toBeNull()
-    expect(personaForEmail('maya@example.com')).toBeNull()
-    expect(personaForEmail(null)).toBeNull()
-  })
-})
-
 describe('createHttpAuthProvider', () => {
   const make = (handler: (c: Call) => Response, storage = memory()) => {
     const s = server(handler)
@@ -79,7 +70,7 @@ describe('createHttpAuthProvider', () => {
     let n = 0
     auth.subscribe(() => n++)
     const got = await auth.signIn({ method: 'password', identifier: ' maya@demo.princess.example ', password: 'pw' })
-    expect(got).toMatchObject({ personaId: 'maya', method: 'password', signedInAt: 7 })
+    expect(got).toMatchObject({ method: 'password', signedInAt: 7 })
     expect(JSON.stringify(got)).not.toContain('a1')
     expect(auth.accessToken()).toBe('a1')
     expect(storage.m.get(REFRESH_KEY)).toBe('r1')
@@ -87,17 +78,16 @@ describe('createHttpAuthProvider', () => {
     expect(s.calls[0].auth).toBeNull()
     expect(n).toBe(1)
   })
-  it('maps failures to AuthError codes and refuses other methods', async () => {
+  it('maps failures to AuthError codes', async () => {
     await expect(make(() => reply(401, { code: 'badCredentials' })).auth.signIn({ method: 'password', identifier: 'a', password: 'b' })).rejects.toMatchObject({ code: 'badCredentials' })
     await expect(make(() => reply(503)).auth.signIn({ method: 'password', identifier: 'a', password: 'b' })).rejects.toMatchObject({ code: 'unavailable' })
-    await expect(make(() => reply(200)).auth.signIn({ method: 'demo', personaId: 'maya' })).rejects.toMatchObject({ code: 'unsupportedMethod' })
   })
   it('restores from the refresh token after a reload, and drops a refused one', async () => {
     const storage = memory()
     storage.setItem(REFRESH_KEY, 'r1')
     const ok = make(() => reply(200, session(2, 'priya@demo.princess.example')), storage)
     expect(await ok.auth.restore()).toBe(true)
-    expect(ok.auth.current()?.personaId).toBe('priya')
+    expect(ok.auth.current()?.user?.email).toBe('priya@demo.princess.example')
     expect(storage.m.get(REFRESH_KEY)).toBe('r2')
     const bad = make(() => reply(401), memory())
     bad.storage.setItem(REFRESH_KEY, 'stale')
@@ -136,7 +126,6 @@ describe('createHttpAuthProvider', () => {
       expect(s.calls[0]).toMatchObject({ url: '/api/v1/auth/register', auth: null })
       expect(JSON.parse(s.calls[0].body!).email).toBe('new@example.com')
       expect(storage.m.get(REFRESH_KEY)).toBe('r1')
-      expect(auth.current()?.personaId).toBeNull()
     })
     it('maps the named failures', async () => {
       const input = { email: 'a@b.co', password: 'a-long-password', firstName: 'N', lastName: 'G', dob: '1990-01-01' }
@@ -157,7 +146,7 @@ describe('createHttpAuthProvider', () => {
     it('signs in with an emailed code', async () => {
       const { auth, s } = make(() => reply(200, session(1)))
       const got = await auth.signIn({ method: 'code', email: 'maya@demo.princess.example', code: '123456' })
-      expect(got).toMatchObject({ method: 'code', personaId: 'maya' })
+      expect(got).toMatchObject({ method: 'code' })
       expect(s.calls[0].url).toBe('/api/v1/auth/magic/redeem')
       await expect(make(() => reply(400, { title: 'badCode' })).auth.signIn({ method: 'code', email: 'a@b.co', code: '000000' })).rejects.toMatchObject({ code: 'badCode' })
     })

@@ -1,29 +1,9 @@
-import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { PERSONAS } from '../domain/personas'
 import { createHttpGroups } from './httpApi'
 import type { Http } from './http'
-import { fromWire, PERSONA_GUIDS, toWireId } from './personaIds'
 
-const guidOf = (slug: string) => {
-  const h = createHash('sha1').update(`princess-persona:user:${slug}`).digest('hex')
-  return [h.slice(0, 8), h.slice(8, 12), h.slice(12, 16), h.slice(16, 20), h.slice(20, 32)].join('-')
-}
-
-describe('persona ids', () => {
-  it('match the ids the persona seed gives the twelve people', () => {
-    for (const p of PERSONAS) expect(PERSONA_GUIDS[p.id]).toBe(guidOf(p.id))
-  })
-  it('swap guids for slugs in values and keys, and leave other people alone', () => {
-    const other = '11111111-2222-3333-4444-555555555555'
-    const out = fromWire<{ id: string; kids: Record<string, number>; list: string[] }>({
-      id: PERSONA_GUIDS.ethan.toUpperCase(), kids: { [PERSONA_GUIDS.maya]: 5000 }, list: [PERSONA_GUIDS.gerald, other, 'hello'],
-    })
-    expect(out).toEqual({ id: 'ethan', kids: { maya: 5000 }, list: ['gerald', other, 'hello'] })
-    expect(toWireId('maya')).toBe(PERSONA_GUIDS.maya)
-    expect(toWireId(other)).toBe(other)
-  })
-})
+/** Person ids go to the server and come back exactly as the client holds them; nothing is translated. */
+const PERSONA_GUIDS = { maya: 'maya', ethan: 'ethan', gerald: 'gerald' }
 
 function fake(responses: Record<string, unknown>) {
   const calls: { method: string; path: string; body?: unknown }[] = []
@@ -66,7 +46,7 @@ describe('REST account groups', () => {
     expect(calls.filter((c) => c === '/trips')).toHaveLength(3)
   })
 
-  it('sends person ids as guids and receives them as slugs', async () => {
+  it('sends person ids as they are and receives them unchanged', async () => {
     const { http, calls } = fake({
       '/trips': trips,
       [`/users/${PERSONA_GUIDS.ethan}/profile`]: { id: PERSONA_GUIDS.ethan, canEdit: false },
@@ -130,7 +110,7 @@ describe('REST discover and booking groups', () => {
 })
 
 describe('REST plan, waits, shows and ahead groups', () => {
-  it('uses the trip routes with guest ids as guids', async () => {
+  it('uses the trip routes with guest ids as they are', async () => {
     const { http, calls } = fake({
       '/trips': trips,
       '/bookings/PC2/plan': { days: [] },
@@ -176,7 +156,7 @@ describe('REST plan, waits, shows and ahead groups', () => {
 })
 
 describe('REST check-in and boarding groups', () => {
-  it('saves a step by path with guests as guids and uses the embark routes', async () => {
+  it('saves a step by path with guests as they are and uses the embark routes', async () => {
     const { http, calls } = fake({
       '/trips': trips,
       '/bookings/PC2/checkin': {},
@@ -207,7 +187,7 @@ describe('REST check-in and boarding groups', () => {
 })
 
 describe('REST on-board groups', () => {
-  it('plans an event on the day it was last listed, and sends guests as guids', async () => {
+  it('plans an event on the day it was last listed, and sends guests as they are', async () => {
     const { http, calls } = fake({
       '/trips': trips,
       '/bookings/PC2/onboard/program/3': { day: 3, events: [{ id: 'ev1' }], mine: [] },

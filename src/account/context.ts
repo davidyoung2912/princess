@@ -1,7 +1,6 @@
 import type { PackageId, Person, Tier } from '../domain/people'
-import { partyOf, personaById } from '../domain/personas'
 
-/** A person on the trip, as `GET /me/context` describes them (ids already in the client's form: a persona slug for the twelve demo people, else the guid). */
+/** A person on the trip, as `GET /me/context` describes them. */
 export interface ContextPerson { id: string; name: string; firstName: string; age: number | null; child: boolean; booker: string; tier: Tier }
 
 export interface ContextBooking { number: string; sailingId: string; package: PackageId; category: string }
@@ -57,23 +56,23 @@ export function normalizeContext(raw: unknown, deviceNow: number): AccountContex
   return { person, party, booking, sailingId: str(o.sailingId), phoneZone: str(o.phoneZone), isDemo: o.isDemo === true, offsetMs: o.nowMs - deviceNow }
 }
 
-/**
- * A screen's `Person` from the context. A demo persona keeps its authored details (role, stateroom, text size) because the server does not
- * hold them; anyone else gets neutral values for those.
- */
+/** A screen's `Person` from the context. The server does not hold a role, stateroom or text size for a person, so those get neutral values. */
 export function personFrom(c: AccountContext): Person {
   const p = c.person
-  const persona = personaById(p.id)
-  if (persona) return { ...persona, id: p.id, booker: p.booker }
   return {
     id: p.id, name: p.name, firstName: p.firstName, age: p.age ?? 30, group: 'solo', role: '', booker: p.booker, tier: p.tier,
     package: c.booking?.package ?? 'none', stateroom: 'balcony', sanctuary: false, child: p.child, defaultTextSize: 'standard', summary: '',
   }
 }
 
-/** First name of anyone on the trip (the signed-in person's party, then the demo people), else ''. */
+/** First name of anyone on the signed-in person's trip, else ''. */
 export function firstNameIn(c: AccountContext | null, id: string): string {
-  return c?.party.find((x) => x.id === id)?.firstName || (c?.person.id === id ? c.person.firstName : '') || personaById(id)?.firstName || ''
+  return c?.party.find((x) => x.id === id)?.firstName || (c?.person.id === id ? c.person.firstName : '') || ''
+}
+
+/** The booker of someone on the signed-in person's trip, else the person's own id (a booking's stores are kept under its booker). */
+export function bookerIn(c: AccountContext | null, id: string): string {
+  return c?.party.find((x) => x.id === id)?.booker ?? (c?.person.id === id ? c.person.booker : id)
 }
 
 let current: AccountContext | null = null
@@ -103,12 +102,15 @@ export const serverNow = (deviceNow: number = Date.now()): number => deviceNow +
 /** First name of anyone on the signed-in person's trip, or '' when unknown. */
 export const personFirstName = (id: string): string => firstNameIn(current, id)
 
-/** Everyone on the same trip as `id`, including `id`: the server's party for a real account, the demo people for a persona. */
+/** Everyone on the same trip as `id`, including `id`: the server's party. Empty when `id` is not on the signed-in person's trip. */
 export function partyPeople(id: string): Person[] {
   const c = current
   if (c && c.party.length > 0 && (c.person.id === id || c.party.some((p) => p.id === id))) return c.party.map((p) => personFrom({ ...c, person: p }))
-  return partyOf(id).map((p) => ({ ...p }))
+  return []
 }
+
+/** The booker of someone on the signed-in person's trip, else their own id. */
+export const bookerOfPerson = (id: string | null): string | null => (id === null ? null : bookerIn(current, id))
 
 /**
  * Fetches the context and keeps it. `get` returns the server's answer (ids already in the client's form). The offset is measured from the middle of the

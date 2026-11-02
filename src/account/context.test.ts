@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { followsServer, markAccount, normalizeContext, partyPeople, personFirstName, personFrom, refreshContext, serverNow, setContext } from './context'
+import { bookerOfPerson, followsServer, markAccount, normalizeContext, partyPeople, personFirstName, personFrom, refreshContext, serverNow, setContext } from './context'
 import { sailingFor, upcomingSailing } from './sailing'
 
 const wire = (over: Record<string, unknown> = {}) => ({
@@ -48,23 +48,24 @@ describe('the account context', () => {
     expect(followsServer()).toBe(false)
   })
 
-  it('describes a real person to the screens, and keeps a demo person\'s authored details', () => {
+  it('describes a person to the screens with neutral values for what the server does not hold', () => {
     const real = personFrom(normalizeContext(wire(), 0)!)
-    expect(real).toMatchObject({ id: 'u-1', firstName: 'Sam', child: false, package: 'plus', booker: 'u-1' })
-    const demo = personFrom(normalizeContext(wire({ person: { id: 'maya', name: 'Maya Harper', firstName: 'Maya', age: 8, child: true, booker: 'daniel', tier: 'ruby' } }), 0)!)
-    expect(demo.role).toBe('Daughter, 8')
-    expect(demo.booker).toBe('daniel')
+    expect(real).toMatchObject({ id: 'u-1', firstName: 'Sam', child: false, package: 'plus', booker: 'u-1', role: '', stateroom: 'balcony', defaultTextSize: 'standard' })
+    const child = personFrom(normalizeContext(wire({ person: { id: 'u-3', name: 'Maya Harper', firstName: 'Maya', age: 8, child: true, booker: 'u-1', tier: 'ruby' } }), 0)!)
+    expect(child).toMatchObject({ firstName: 'Maya', child: true, age: 8, booker: 'u-1', tier: 'ruby' })
   })
 
-  it('names the people on the trip from the server and falls back to the demo people', () => {
+  it('names the people on the trip from the server and knows their booker', () => {
     setContext(normalizeContext(wire(), 0))
     expect(personFirstName('u-2')).toBe('Kit')
-    expect(personFirstName('daniel')).toBe('Daniel')
     expect(personFirstName('nobody')).toBe('')
     expect(partyPeople('u-1').map((p) => p.firstName)).toEqual(['Sam', 'Kit'])
     expect(partyPeople('u-2').find((p) => p.id === 'u-2')?.child).toBe(true)
+    expect(bookerOfPerson('u-2')).toBe('u-1')
+    expect(bookerOfPerson('stranger')).toBe('stranger')
+    expect(bookerOfPerson(null)).toBeNull()
     setContext(null)
-    expect(partyPeople('daniel').length).toBeGreaterThan(1)
+    expect(partyPeople('u-1')).toEqual([])
   })
 
   it('keeps an answer only while the person is still the one who asked, and ignores a failure', async () => {
