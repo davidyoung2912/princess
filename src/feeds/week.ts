@@ -1,3 +1,4 @@
+import type { RestBlock } from '../domain/planPolish'
 import { isPace, type Week, type WeekDay, type WeekItem, type WeekPrefs } from '../domain/autopilot'
 import { EVENT_INTERESTS } from '../domain/program'
 import { INTERESTS } from '../domain/excursions'
@@ -11,8 +12,9 @@ const MOBILITY = ['any', 'easy', 'wheelchair'] as const
 const HHMM = /^\d{2}:\d{2}$/
 const text = (v: unknown, max: number): v is string => typeof v === 'string' && v.length > 0 && v.length <= max
 
-/** The preferences as the server reads them, in one fixed order, so the same wishes make the same key. */
-export const weekKey = (p: WeekPrefs): string => JSON.stringify({ pace: p.pace, mobility: p.mobility, withKids: p.withKids, tours: [...p.tours].sort(), events: [...p.events].sort(), maxTour: p.maxTour, noEarly: p.noEarly })
+/** The preferences (and the parts of days set aside for rest, when there are any) as the server reads them, in one fixed order, so the same wishes make the same key. */
+export const weekKey = (p: WeekPrefs, rest: readonly RestBlock[] = []): string =>
+  JSON.stringify({ pace: p.pace, mobility: p.mobility, withKids: p.withKids, tours: [...p.tours].sort(), events: [...p.events].sort(), maxTour: p.maxTour, noEarly: p.noEarly, ...(rest.length > 0 ? { rest: [...rest].sort((a, b) => a.day - b.day).map((r) => ({ day: r.day, part: r.part })) } : {}) })
 
 function prefsOf(raw: unknown): WeekPrefs | null {
   if (!isRecord(raw) || !isPace(raw.pace) || !oneOf(raw.mobility, MOBILITY) || typeof raw.withKids !== 'boolean' || typeof raw.noEarly !== 'boolean') return null

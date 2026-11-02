@@ -12,6 +12,16 @@ import type { PlanEntry } from './plan'
 const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '')
 const rec = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {})
 
+/** A celebration as the server keeps it for the booking: only the month and day, and when the ship was told. */
+export interface ToldCelebration { id: string; label: string; /** "MM-DD". */ date: string; surprise: boolean; toldAt: number }
+export interface CelebrationsView { items: ToldCelebration[]; canEdit: boolean }
+
+/** Whether what the ship was told is exactly these occasions (by id, label, month and day, and surprise). */
+export function sameCelebrations(occasions: readonly Pick<Occasion, 'id' | 'label' | 'date' | 'surprise'>[], told: readonly ToldCelebration[]): boolean {
+  if (occasions.length !== told.length) return false
+  return occasions.every((o) => told.some((x) => x.id === o.id && x.label === o.label.replace(/\s+/g, ' ').trim() && x.date === o.date.slice(-5) && x.surprise === o.surprise))
+}
+
 export const NOTE_MAX = 120
 export const NOTES_MAX = 60
 export const OCCASIONS_MAX = 12

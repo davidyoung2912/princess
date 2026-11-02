@@ -24,7 +24,7 @@ export function WeekPlanner() {
   const memory = useMemory()
   const sailing = useSailing()
   const { prefs } = state
-  const week = useWeek(sailing.id, prefs)
+  const week = useWeek(sailing.id, prefs, memory.state.polish.rest)
   const now = useNow()
   const [applied, setApplied] = useState<number | null>(null)
   const apply = () => { if (!week) return; const r = applyWeek(sailing, week, state.changes, now, memory.state.polish.rest); void programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }

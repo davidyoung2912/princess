@@ -2483,6 +2483,22 @@ CREATE TABLE dbo.DisembarkBags (
 );
 END
 
+IF OBJECT_ID(N'dbo.Celebrations', N'U') IS NULL
+BEGIN
+-- Birthdays and anniversaries the guests told the ship about for a booking. Only the month and day are kept, never a year or a birth date.
+CREATE TABLE dbo.Celebrations (
+  BookingId BIGINT NOT NULL, ClientId NVARCHAR(40) NOT NULL,
+  Label NVARCHAR(40) NOT NULL, [Month] TINYINT NOT NULL, [Day] TINYINT NOT NULL, Surprise BIT NOT NULL CONSTRAINT DF_Celebrations_Surprise DEFAULT 0,
+  ToldAt DATETIME2(0) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Celebrations_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Celebrations_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_Celebrations PRIMARY KEY (BookingId, ClientId),
+  CONSTRAINT FK_Celebrations_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_Celebrations_Month CHECK ([Month] BETWEEN 1 AND 12),
+  CONSTRAINT CK_Celebrations_Day CHECK ([Day] BETWEEN 1 AND 31)
+);
+END
+
 IF OBJECT_ID(N'dbo.Customs', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Customs (

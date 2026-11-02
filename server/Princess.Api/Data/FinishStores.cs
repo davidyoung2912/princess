@@ -9,6 +9,16 @@ public sealed class ChoiceRow
     public Dictionary<long, int> Bags { get; set; } = [];
 }
 
+public sealed class CelebrationRow
+{
+    public string ClientId { get; set; } = "";
+    public string Label { get; set; } = "";
+    /// <summary>"MM-DD".</summary>
+    public string MonthDay { get; set; } = "";
+    public bool Surprise { get; set; }
+    public DateTime ToldAt { get; set; }
+}
+
 public sealed class CustomsRow
 {
     /// <summary>The declaration as JSON (<c>food</c>, <c>cash</c>, <c>goodsUsd</c>, <c>note</c>); a hand-written row may hold less.</summary>
@@ -106,6 +116,10 @@ public interface IFinishStore
     Task<ChoiceRow?> GetChoiceAsync(long bookingId, CancellationToken ct);
     Task SaveChoiceAsync(long bookingId, string option, bool tagsOn, IReadOnlyDictionary<long, int> bags, DateTime at, CancellationToken ct);
     Task SetTagsOnAsync(long bookingId, bool on, CancellationToken ct);
+
+    Task<List<CelebrationRow>> ListCelebrationsAsync(long bookingId, CancellationToken ct);
+    /// <summary>Replaces the booking's celebrations with these.</summary>
+    Task SaveCelebrationsAsync(long bookingId, IReadOnlyList<CelebrationRow> rows, CancellationToken ct);
 
     Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct);
     Task SaveCustomsAsync(long bookingId, string json, DateTime at, CancellationToken ct);

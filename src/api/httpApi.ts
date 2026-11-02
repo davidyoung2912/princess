@@ -370,6 +370,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     },
     plan: {
       overview: () => inBooking('/plan'),
+      celebrations: {
+        get: () => inBooking('/celebrations'),
+        save: (items) => inTrip('put', '/celebrations', { items: items.map((i) => ({ id: i.id, label: i.label, date: i.date, surprise: i.surprise })) }),
+      },
       excursions: {
         list: () => inBooking('/excursions'),
         addToCart: (id, guests) => inTrip('put', `/excursions/cart/${seg(id)}`, { guests: guests }),

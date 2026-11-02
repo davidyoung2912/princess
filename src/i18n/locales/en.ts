@@ -6982,7 +6982,7 @@ export const en = {
   'dl4.occ.dateHint': 'Only the month and day are used.',
   'dl4.occ.surpriseLabel': 'Keep it a surprise',
   'dl4.occ.add': 'Add',
-  'dl4.occ.note': 'Kept on this device. The note is copied, never sent for you.',
+  'dl4.occ.note': 'Your dates are kept on your devices. The ship is told only when you press the button, and the copied note is always yours to send.',
   'dl4.sliders.title': 'Split it unevenly',
   'dl4.sliders.body': 'Drag one person’s share and the others change to keep the total the same.',
   'dl4.sliders.label': '{name}: {amount} ({percent}%)',
@@ -7002,6 +7002,12 @@ export const en = {
   'dl4.sun.on': '{place}, {side}',
   'dl4.sun.side.port': 'port side',
   'dl4.sun.side.starboard': 'starboard side',
+  'dl4.occ.told': 'The ship has been told.',
+  'dl4.occ.notTold': 'The ship has not been told about the ones during your trip yet.',
+  'dl4.occ.tell': 'Tell the ship',
+  'dl4.occ.update': 'Update the ship',
+  'dl4.occ.tellFailed': 'We could not reach the ship just now. Nothing was lost; try again in a moment.',
+  'dl4.occ.tellNote': 'Only the label, the month and day, and whether it is a surprise are sent, and only for dates during your trip.',
 } as const
 
 export type StringKey = Exclude<keyof typeof en, `${string}_one` | `${string}_other`> | PluralBase<keyof typeof en>

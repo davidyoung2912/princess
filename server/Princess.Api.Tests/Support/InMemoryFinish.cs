@@ -10,6 +10,7 @@ public sealed class InMemoryFinishStore(InMemoryShipboardStore shipboard) : IFin
 
     public Dictionary<long, ChoiceRow> Choices { get; } = [];
     public Dictionary<long, CustomsRow> Customs { get; } = [];
+    public Dictionary<long, List<CelebrationRow>> Celebrations { get; } = [];
     public Dictionary<long, OnwardRow> Onward { get; } = [];
     public Dictionary<(long BookingId, string Item), bool> Ticks { get; } = [];
     public Dictionary<long, FinalBillRow> Bills { get; } = [];
@@ -34,6 +35,14 @@ public sealed class InMemoryFinishStore(InMemoryShipboardStore shipboard) : IFin
     public Task SetTagsOnAsync(long bookingId, bool on, CancellationToken ct)
     {
         if (Choices.TryGetValue(bookingId, out var c)) c.TagsOn = on;
+        return Task.CompletedTask;
+    }
+
+    public Task<List<CelebrationRow>> ListCelebrationsAsync(long bookingId, CancellationToken ct) => Task.FromResult(Celebrations.GetValueOrDefault(bookingId)?.ToList() ?? []);
+
+    public Task SaveCelebrationsAsync(long bookingId, IReadOnlyList<CelebrationRow> rows, CancellationToken ct)
+    {
+        Celebrations[bookingId] = rows.ToList();
         return Task.CompletedTask;
     }
 

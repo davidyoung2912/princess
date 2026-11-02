@@ -4,6 +4,9 @@ import { formatMoney } from '../../domain/money'
 import type { PlanDay, PlanEntry } from '../../domain/plan'
 import { NOTE_MAX, dayWalks, occasionNote, occasionsAtSea, OCCASIONS_MAX, REST_PARTS, reslice, setNote, setRest, TRAVELLER_COLOURS, watchSpot, type RestPart } from '../../domain/planPolish'
 import { itinerary } from '../../domain/sailings'
+import { api } from '../../runtime'
+import { useMine } from '../../hooks/useMine'
+import { sameCelebrations } from '../../domain/planPolish'
 import { SHIP } from '../../domain/ship'
 import { skyNightFeed } from '../../feeds/skyNight'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
@@ -126,6 +129,16 @@ export function OccasionsCard() {
   const [surprise, setSurprise] = useState(false)
   const days = itinerary(sailing)
   const hits = occasionsAtSea(state.polish.occasions, days.map((d) => d.date))
+  const told = useMine(() => api.plan.celebrations.get())
+  const [telling, setTelling] = useState(false)
+  const [tellProblem, setTellProblem] = useState(false)
+  const toTell = hits.map((h) => h.occasion)
+  const view = told.data
+  const inSync = view ? sameCelebrations(toTell, view.items) : false
+  const tell = async () => {
+    setTelling(true); setTellProblem(false)
+    try { await api.plan.celebrations.save(toTell); told.retry() } catch { setTellProblem(true) } finally { setTelling(false) }
+  }
   const set = (occasions: typeof state.polish.occasions) => update((s) => ({ ...s, polish: { ...s.polish, occasions } }))
   const add = () => {
     if (!label.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(date) || state.polish.occasions.length >= OCCASIONS_MAX) return
@@ -142,6 +155,14 @@ export function OccasionsCard() {
           <CopyText text={occasionNote(occasion, SHIP.name)} label={t('dl4.occ.copy')} />
         </div>
       ))}
+      {view?.canEdit && (toTell.length > 0 || view.items.length > 0) && (
+        <div>
+          <p role="status">{inSync ? t('dl4.occ.told') : t('dl4.occ.notTold')}</p>
+          {!inSync && <Button variant="secondary" disabled={telling} onClick={() => void tell()}>{view.items.length > 0 ? t('dl4.occ.update') : t('dl4.occ.tell')}</Button>}
+          {tellProblem && <p className="field__error" role="alert">{t('dl4.occ.tellFailed')}</p>}
+          <p className="muted">{t('dl4.occ.tellNote')}</p>
+        </div>
+      )}
       {state.polish.occasions.length > 0 && (
         <ul className="plain-list">
           {state.polish.occasions.map((o) => (

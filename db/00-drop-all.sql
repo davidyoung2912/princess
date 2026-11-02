@@ -175,6 +175,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Feedback'),
   (N'dbo', N'DisembarkChoices'),
   (N'dbo', N'DisembarkBags'),
+  (N'dbo', N'Celebrations'),
   (N'dbo', N'Customs'),
   (N'dbo', N'OnwardPlans'),
   (N'dbo', N'FinalBill'),

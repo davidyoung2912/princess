@@ -97,3 +97,10 @@ public sealed record RebookViewDto(
 public sealed record HoldRequest(string? DepartureId);
 
 public sealed record SlotRequest(long At);
+
+/// <summary>A birthday or anniversary during the trip. <c>Date</c> is "YYYY-MM-DD" or "MM-DD"; only the month and day are kept.</summary>
+public sealed record CelebrationInput(string? Id, string? Label, string? Date, bool Surprise);
+public sealed record CelebrationsRequest(List<CelebrationInput>? Items);
+/// <summary><c>Date</c> is "MM-DD". <c>ToldAt</c> (milliseconds since 1970) is when the ship was told about this one.</summary>
+public sealed record CelebrationDto(string Id, string Label, string Date, bool Surprise, long ToldAt);
+public sealed record CelebrationsViewDto(List<CelebrationDto> Items, bool CanEdit);

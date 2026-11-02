@@ -105,6 +105,7 @@ services.AddScoped<ReadyService>();
 services.AddScoped<ChatService>();
 services.AddScoped<DisembarkService>();
 services.AddScoped<CaseService>();
+services.AddScoped<CelebrationService>();
 services.AddScoped<PostService>();
 services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.Section);
 services.AddHostedService<RetentionPurgeService>();

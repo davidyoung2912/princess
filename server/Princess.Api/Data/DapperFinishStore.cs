@@ -38,6 +38,26 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.DisembarkChoices SET TagsOn = @on, UpdatedAt = SYSUTCDATETIME() WHERE BookingId = @bookingId", new { bookingId, on }, null, ct));
     }
 
+    public async Task<List<CelebrationRow>> ListCelebrationsAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<CelebrationRow>(Sql.Cmd(
+            "SELECT ClientId, Label, RIGHT('0' + CAST([Month] AS varchar(2)), 2) + '-' + RIGHT('0' + CAST([Day] AS varchar(2)), 2) AS MonthDay, Surprise, ToldAt FROM dbo.Celebrations WHERE BookingId = @bookingId ORDER BY CreatedAt, ClientId",
+            new { bookingId }, null, ct))).ToList();
+    }
+
+    public async Task SaveCelebrationsAsync(long bookingId, IReadOnlyList<CelebrationRow> rows, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.Celebrations WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
+        foreach (var r in rows)
+            await c.ExecuteAsync(Sql.Cmd(
+                "INSERT INTO dbo.Celebrations (BookingId, ClientId, Label, [Month], [Day], Surprise, ToldAt) VALUES (@bookingId, @ClientId, @Label, @month, @day, @Surprise, @ToldAt)",
+                new { bookingId, r.ClientId, r.Label, month = int.Parse(r.MonthDay[..2]), day = int.Parse(r.MonthDay[3..]), r.Surprise, r.ToldAt }, tx, ct));
+        await tx.CommitAsync(ct);
+    }
+
     public async Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

@@ -37,6 +37,12 @@ public static class FinishEndpoints
         d.MapPost("/final-bill/email", async (string number, ICurrentUser me, DisembarkService svc, CancellationToken ct) => Results.Ok(await svc.EmailReceiptAsync(await me.LoadAsync(ct), number, ct)))
             .WithSummary("Emails the receipts to the caller. 400 noEmail; 403 for a child account; 409 closed before the final evening.");
 
+        var cel = b.MapGroup("/celebrations").WithTags("Celebrations");
+        cel.MapGet("", async (string number, ICurrentUser me, CelebrationService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), number, ct)))
+            .WithSummary("The birthdays and anniversaries the booking has told the ship about, each as { id, label, date (MM-DD), surprise, toldAt }, and whether the caller can change them.");
+        cel.MapPut("", async (string number, CelebrationsRequest body, ICurrentUser me, CelebrationService svc, CancellationToken ct) => Results.Ok(await svc.SaveAsync(await me.LoadAsync(ct), number, body, ct)))
+            .WithSummary("Replaces the list (at most 12) and tells the ship about every new or changed entry. Only the month and day are kept. 400 badCelebrations, tooManyCelebrations, badLabel or badDate; 403 for a child account; 409 notConfirmed.");
+
         var cs = b.MapGroup("/cases").WithTags("Cases");
         cs.MapGet("", async (string number, ICurrentUser me, CaseService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), number, ct)))
             .WithSummary("The booking's lost-item, bill, claim, complaint and recovery cases, newest first, each with its stage worked out from the clock.");

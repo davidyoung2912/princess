@@ -25,6 +25,7 @@ import type { PackItem, Weather } from '../domain/packing'
 import type { TravelPlan, Window as ArrivalWindow } from '../domain/travel'
 import type { AssistId, Deadline, RequestStatus } from '../domain/assistance'
 import type { PlanDay } from '../domain/plan'
+import type { CelebrationsView, Occasion as PlanOccasion } from '../domain/planPolish'
 import type { EmergencyContact } from '../domain/account'
 import type { CheckinProgress, DocumentKind, GuestCheckin, GuestProgress, PhotoMetrics, StepId } from '../domain/checkin'
 import type { AfternoonId, CarryOnId, CompanionId, LuggageStatus, Terminal, Traffic } from '../domain/boarding'
@@ -533,6 +534,8 @@ export interface PlanApi {
     claimDrop(purchaseId: string): Promise<PackagesView>
     cancel(purchaseId: string): Promise<PackagesView>
   }
+  /** Birthdays and anniversaries during the trip; saving tells the ship (month and day only). Rejects `invalid` (badCelebrations, tooManyCelebrations, badLabel, badDate), `forbidden` for a child, `conflict` notConfirmed. */
+  celebrations: { get(): Promise<CelebrationsView>; save(items: readonly Pick<PlanOccasion, 'id' | 'label' | 'date' | 'surprise'>[]): Promise<CelebrationsView> }
   checklist: { get(): Promise<ChecklistView>; tick(id: string, done: boolean): Promise<ChecklistView> }
   packing: { get(): Promise<PackingView>; tick(id: string, done: boolean): Promise<PackingView> }
   travel: { get(): Promise<TravelView>; save(plan: TravelPlan): Promise<TravelView> }

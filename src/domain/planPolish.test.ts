@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { colourFor, dayWalks, EMPTY_POLISH, inRest, normalizePolish, occasionNote, occasionsAtSea, placeForEntry, reslice, setNote, setRest, TRAVELLER_COLOURS, watchSpot } from './planPolish'
+import { colourFor, dayWalks, EMPTY_POLISH, inRest, normalizePolish, occasionNote, occasionsAtSea, sameCelebrations, placeForEntry, reslice, setNote, setRest, TRAVELLER_COLOURS, watchSpot } from './planPolish'
 
 describe('rest block (D4-1)', () => {
   it('sets, changes and clears one block per day, in day order', () => {
@@ -87,6 +87,19 @@ describe('occasions at sea (D2-5)', () => {
   it('says surprise in the note only when asked', () => {
     expect(occasionNote(o, 'Sun Princess')).toMatch(/surprise/)
     expect(occasionNote({ ...o, surprise: false }, 'Sun Princess')).not.toMatch(/surprise/)
+  })
+})
+
+describe('telling the ship (D2-5)', () => {
+  const o = { id: '1', label: 'Maya’s  birthday', date: '2015-03-22', surprise: true }
+  const told = { id: '1', label: 'Maya’s birthday', date: '03-22', surprise: true, toldAt: 5 }
+  it('is up to date when the ship has exactly these, ignoring the year and extra spaces', () => { expect(sameCelebrations([o], [told])).toBe(true) })
+  it('is not when anything differs or is missing or extra', () => {
+    expect(sameCelebrations([o], [{ ...told, surprise: false }])).toBe(false)
+    expect(sameCelebrations([o], [{ ...told, date: '03-23' }])).toBe(false)
+    expect(sameCelebrations([o], [])).toBe(false)
+    expect(sameCelebrations([], [told])).toBe(false)
+    expect(sameCelebrations([], [])).toBe(true)
   })
 })
 

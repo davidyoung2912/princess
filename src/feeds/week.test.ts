@@ -26,6 +26,9 @@ describe('week feed', () => {
   it('keys the same wishes the same way, whatever order they were picked in', () => {
     expect(weekKey({ ...DEFAULT_PREFS, tours: ['water', 'culture'] })).toBe(weekKey({ ...DEFAULT_PREFS, tours: ['culture', 'water'] }))
     expect(weekKey({ ...DEFAULT_PREFS, noEarly: true })).not.toBe(weekKey(DEFAULT_PREFS))
+    expect(weekKey(DEFAULT_PREFS, [])).toBe(weekKey(DEFAULT_PREFS))
+    expect(weekKey(DEFAULT_PREFS, [{ day: 3, part: 'evening' }])).not.toBe(weekKey(DEFAULT_PREFS))
+    expect(JSON.parse(weekKey(DEFAULT_PREFS, [{ day: 5, part: 'all' }, { day: 3, part: 'evening' }])).rest).toEqual([{ day: 3, part: 'evening' }, { day: 5, part: 'all' }])
   })
 
   it('asks the server once per sailing and wishes', async () => {

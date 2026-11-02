@@ -78,4 +78,27 @@ public class AutopilotRulesTests
         Assert.False(AutopilotRules.Valid(new WeekPrefsDto("balanced", "any", false, ["diving"], [], null, false)));
         Assert.False(AutopilotRules.Valid(null));
     }
+
+    [Fact]
+    public void ARestBlockKeepsItsPartOfTheDayFree()
+    {
+        var rest = new List<RestBlockDto> { new(3, "afternoon"), new(4, "all"), new(5, "evening") };
+        var week = AutopilotRules.OptimiseWeek(Departure, Prefs("packed") with { Rest = rest });
+        Assert.All(week.Days.Where(d => d.Day == 3).SelectMany(d => d.Items), i => Assert.False(Minutes(i.Start) is >= 12 * 60 and < 18 * 60, i.Title));
+        Assert.Empty(week.Days.Single(d => d.Day == 4).Items);
+        Assert.All(week.Days.Where(d => d.Day == 5).SelectMany(d => d.Items), i => Assert.True(Minutes(i.Start) < 18 * 60, i.Title));
+        var plain = AutopilotRules.OptimiseWeek(Departure, Prefs("packed"));
+        Assert.Equal(plain.Days.Single(d => d.Day == 1).Items.Count, week.Days.Single(d => d.Day == 1).Items.Count);
+    }
+
+    [Fact]
+    public void RestBlocksMustBeKnownPartsOnCruiseDaysOncePerDay()
+    {
+        Assert.True(AutopilotRules.Valid(Prefs()));
+        Assert.True(AutopilotRules.Valid(Prefs() with { Rest = [new(2, "morning")] }));
+        Assert.False(AutopilotRules.Valid(Prefs() with { Rest = [new(0, "all")] }));
+        Assert.False(AutopilotRules.Valid(Prefs() with { Rest = [new(9, "all")] }));
+        Assert.False(AutopilotRules.Valid(Prefs() with { Rest = [new(2, "night")] }));
+        Assert.False(AutopilotRules.Valid(Prefs() with { Rest = [new(2, "all"), new(2, "morning")] }));
+    }
 }
