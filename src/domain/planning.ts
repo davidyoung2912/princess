@@ -154,10 +154,12 @@ export function sharedDay(cabins: readonly CabinPlan[]): { together: string[]; a
 
 // ---- S4-02 follow-up: apply a week in one tap through the change rule ----
 /** Turns the week the server built into one accepted change per day that differs from the current plan. Each stays undoable and shows in the log. */
-export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], now: number): { changes: Change[]; applied: number } {
+/** `skipDays` are days the guest set aside for rest: nothing is added to or dropped from them (D4-1). */
+export function applyWeek(s: Sailing, week: Week, changes: readonly Change[], now: number, skipDays: readonly number[] = []): { changes: Change[]; applied: number } {
   let next = [...changes]
   let applied = 0
   for (const d of itinerary(s)) {
+    if (skipDays.includes(d.day)) continue
     const { base, target, items } = week.days[d.day - 1]
     const keep = new Set(items.map((i) => i.id))
     const edits: Edit[] = [

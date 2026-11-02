@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL3 are built (sections 5 to 7); DL4 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL4 are built (sections 5 to 8); DL5 to DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -28,7 +28,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | **DL1** | Words, texts and small checks (pure, no storage) | D1-1, D1-3, D2-1, D2-2, D2-3, D3-7, D4A-3, D4A-4, D4A-7, D6A-5, D7-3, D7-7 | none | **Built** (section 5) |
 | DL2 | Calendar, print and share cards | D2-4, D4-7, D8-6, D4-8, D1-8, D8-4, D8-9, D3-6, D7-5 | DL1 (`delights.ts`) | **Built** (section 6) |
 | DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | **Built** (section 7) |
-| DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | Planned |
+| DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | **Built** (section 8) |
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | Planned |
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | Planned |
 | DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | Planned |
@@ -145,3 +145,23 @@ Front end only; no REST contract changes.
 - Spanish for all `dl3.*` strings; native review still needed.
 - **Verified:** `npm run test` (1756 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** sun uses a simple east and west rule from the heading, with no time of year or latitude; walk times assume the cabin sits in the middle of its section; the cabin's deck and section come from the served cabin guide, not from a real deck plan; the land-holiday range is one authored figure for all destinations; read-aloud is on the decision summary only, not on the "is this for me" card; the last comparison keeps only picks, sailing, party and fare, and is not shared between devices.
+
+## 8. Phase DL4 in detail: plan polish
+
+**Goal:** seven small additions to the Plan screen and the pay-your-share ledger, as pure tested functions (`src/domain/planPolish.ts`, 15 tests) with thin cards in `src/ui/delights/PlanPolish.tsx`.
+
+### 8.1 Built (2026-11-02)
+
+Front end only; no REST contract changes. State is the new `polish` part of the per-person memory store (rest days, notes, colours, occasions).
+
+- **D4-1** on each day card: set the day aside for rest. The day shows a rest line, stops offering tour and dinner gaps, and "Build my week" (`applyWeek`, new `skipDays` argument) leaves it alone.
+- **D4-2** on each day card: the walk from the gangway (tours, sail-away, all-aboard) to a booked dining room, in minutes, decks and whether a lift is needed, reusing `walkMinutes` and the deck graph.
+- **D4-4** on each day card: sunrise and sunset from the served sky feed, with a step-free place to watch each.
+- **D4-5** on each booking: a private note (120 characters).
+- **D4-6** on the plan: a dot beside each traveller's name, auto-assigned or chosen; the name and colour name are always in text.
+- **D2-5** on the Plan screen: birthdays and anniversaries; ones that fall on a trip day say so and offer a copyable note for the ship, with a surprise option. Month and day only.
+- **D2-7** on the share ledger: a slider per person that moves the others to keep the total; shares marked paid are locked.
+- Spanish for all `dl4.*` strings; native review still needed.
+- **Verified:** `npm run test` (1771 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** notes, colours, rest days and occasions are on this device, not the server (the doc says notes should follow the guest between devices); the rest block is a whole day, not a time slot, and the server's optimiser is not told about it (only the apply step skips it); walks are only gangway to dining room because other bookings are not on the ship; the ship is not told about an occasion, the note is copied; the best sunrise and sunset places are two fixed spots, not chosen by the sun's side.
+

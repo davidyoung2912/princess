@@ -12,6 +12,7 @@ import { Card } from '../Card'
 import { useState } from 'react'
 import { applyWeek } from '../../domain/planning'
 import { useNow } from '../../hooks/useDemo'
+import { useMemory } from '../../hooks/useMemory'
 import { Button } from '../Button'
 
 const BUDGETS = [null, 10_000, 15_000, 25_000] as const
@@ -19,12 +20,13 @@ const BUDGETS = [null, 10_000, 15_000, 25_000] as const
 /** Build my week (S4-01): one tap gives a conflict-free week from the pace, mobility, budget and what the guest likes, with the reason for each choice. */
 export function WeekPlanner() {
   const { state, update } = usePilot()
+  const memory = useMemory()
   const sailing = useSailing()
   const { prefs } = state
   const week = useWeek(sailing.id, prefs)
   const now = useNow()
   const [applied, setApplied] = useState<number | null>(null)
-  const apply = () => { if (!week) return; const r = applyWeek(sailing, week, state.changes, now); void programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
+  const apply = () => { if (!week) return; const r = applyWeek(sailing, week, state.changes, now, memory.state.polish.rest); void programmeFollows(api.onboard, sailing, prefs, state.changes, r.changes); update((x) => ({ ...x, changes: r.changes })); setApplied(r.applied) }
   const set = (change: Partial<typeof prefs>) => update((s) => ({ ...s, prefs: { ...s.prefs, ...change } }))
 
   return (
@@ -47,6 +49,7 @@ export function WeekPlanner() {
       <label className="choice"><input type="checkbox" checked={prefs.noEarly} onChange={(e) => set({ noEarly: e.target.checked })} /><span>{t('week.noEarly')}</span></label>
 
       {!week && <FeedWaiting />}
+      {memory.state.polish.rest.length > 0 && <p className="muted">{t('dl4.rest.weekNote', { days: memory.state.polish.rest.join(', ') })}</p>}
       {week && <ol className="plain-list">
         {week.days.map((d) => (
           <li key={d.day}>

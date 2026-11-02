@@ -30,3 +30,7 @@
 .check-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }
 .check-row__text { flex: 1 1 14rem; }
 .check-row small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
+.guest-dot { white-space: nowrap; }
+.guest-dot__swatch { display: inline-block; width: 0.75em; height: 0.75em; border-radius: 50%; margin-inline-end: 0.35em; border: 1px solid currentColor; }
+.entry-note__text { margin: var(--space-1) 0 0; font-style: italic; }
+.day-polish { margin-bottom: var(--space-2); }

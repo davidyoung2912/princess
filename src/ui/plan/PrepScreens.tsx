@@ -1,4 +1,5 @@
 import type { PaymentsView } from '../../api/types'
+import { ShareSliders } from '../delights/PlanPolish'
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -228,6 +229,7 @@ export function ShareLedgerScreen() {
                 ))}
               </ul>
             )}
+            <ShareSliders total={v.trip.plan.total} />
             <p role="status">{t('shares.sum', { paid: formatMoney(sum.paid), owed: formatMoney(sum.owed) })}</p>
           </Card>
         )}
