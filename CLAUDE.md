@@ -13,8 +13,8 @@ A new React web site, designed for both mobile phone and desktop use (mobile-fir
 ## Backend
 
 - C# REST API in `server/` (ASP.NET Core 9, Dapper, JWT) over SQL Server scripts in `db/`; see `README.md`, `server/README.md` and `docs/backend-plan.md`.
-- The front end talks to it through `src/api/httpApi.ts` when `VITE_API_URL` is set; otherwise the in-browser mock API (`src/api/mock.ts` and friends) and demo picker are used. Both must keep working.
-- Intentionally mocked in every mode: AI concierge, ship telemetry and weather, card charging.
+- The front end is a thin client: it talks to the server through `src/api/httpApi.ts` and keeps no data store of its own, so a guest can move between devices without losing anything. Only per-device display settings, the session token, diagnostics and caches stay local. There is no requirement to keep the in-browser mock API (`src/api/mock.ts` and friends) or mock-mode (no `VITE_API_URL`) working; anything the backend can serve should be removed from the front end, not mocked there.
+- External sources and services (AI concierge, ship telemetry, weather, flights, traffic, card charging) are mocked by the backend behind interfaces, so a real provider can replace a mock with no front-end change. The front end must not know whether data is simulated.
 - Secrets (connection string, signing key) go in user-secrets or environment variables, never git.
 
 ## Working rules (apply to every code request)

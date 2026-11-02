@@ -1,0 +1,166 @@
+# Multi-device plan 3: a client with nothing of its own
+
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Nothing built yet.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+
+## Goal and rules
+
+1. **The front end holds no data a guest would miss on another device.** What stays local: display settings (theme, contrast, text size, reduce motion, data-light), the session token, diagnostics, and caches of server answers.
+2. **Every data source and every external service is behind the backend**, behind an interface, so a real provider replaces a simulated one with no front-end change. The front end does not know whether data is simulated.
+3. **There is one mode.** The in-browser mock API, mock auth and demo picker are removed; the front end always talks to the server. `CLAUDE.md` was changed on 2026-11-02 to say so.
+4. Verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` (plus `api:check`, `db:check`, `db:seed:check` when the REST surface or schema changes). No browser testing, no `dotnet test`. Stop after each phase. Commit only when asked.
+
+## Decisions (2026-11-02)
+
+1. **Mock mode is dropped.** `VITE_API_URL` becomes required (default `/api/v1` through the Vite proxy). The server must be running for `npm run dev`.
+2. **Server tests replace the mock tests.** The `src/api/*.test.ts` files that exercise the mocks go with them; the C# suite covers the same rules (the user runs it; the project rule is no `dotnet test` here).
+3. **Rules over served data may stay on the client** (formatting, sorting, "what is next"). What goes is authored data and anything simulated.
+
+## Audit findings
+
+Verified in the code on 2026-11-02. Most are things plans 1 and 2 did not list.
+
+### A. Identity, time and sailing are device state (most serious)
+
+- `useSailing()` returns `sailingById(demo.sailingId)`, where `demo.sailingId` is device-local (`src/demo/state.ts`; the server's `/demo/state` carries only clock and scenarios). 45 files use it. A real account's trip never picks the sailing; two devices can show two sailings.
+- `demoNow()` is the client's "now" for **every** account, real ones included. First run is `timeForStage(REFERENCE_SAILING, 'preCruise')` (two weeks before departure), running at real speed from that device's first run. The server uses the real clock for non-demo users (`UserClock`). So a real account's phone and desktop disagree with each other and with the server about the date. 57 files use `useNow()`.
+- `usePersona()` maps the session to one of twelve client-held personas (63 files). A real account is not a persona, so it returns null and screens fall back (`personaById(me.booker)?.firstName ?? ''`, `firstName(id)` returns the raw id, chat names). Names, children, bookers and party members must come from the server.
+- `PERSONAS` is imported by the sign-in and demo screens; the demo account list is client data.
+
+### B. The in-browser backend still exists
+
+`src/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts` + `idbStore.ts` (IndexedDB), `data/sync.ts`, the demo network/latency simulation, and `withHttpGroups(mockApi, …)` all remain. In REST mode every `Api` group is overridden, so the mocks are dead weight there, but they are the second source of truth for rules (for example `arrivalWindows` is used by `planMock`, `checkinMock` and `boarding.ts`).
+
+### C. Authored catalogue compiled into the client
+
+The audit gate lists 98 screens, but 33 of them import only `formatMoney` from `pricing` (formatting, fine). The real ones are 65 screens importing `sailings` (60: `PORTS`, `itinerary`, `sailingById`, `SAILINGS`, `shipZoneAt`, `stageAt`), `excursions`, `dining`, `ports`, `portCrowd`, `pulse`, `cabinScore`. The gate does not look at other authored modules at all; 88 screens import one of these:
+
+| Module | What it holds | Server today |
+| --- | --- | --- |
+| `sailings.ts` | sailings, itinerary, ports, stages, ship time zones | `/sailings*`, `Itinerary.Ports` (catalogue serves ports but the client ignores them) |
+| `ship.ts`, `cabins.ts`, `deck.ts` | ship facts, categories, deck places, elevators, muster stations | categories via `/rooms`; no deck or ship routes |
+| `program.ts` | events, scripted `PLAN_CHANGES` (a simulated disruption feed) | `ProgramRules.cs` has a copy; `/program/{day}` |
+| `portContent.ts`, `ports.ts` | port guides, phrases, fair prices, walks, day passes | none |
+| `packages.ts` | add-on prices and unit rules | priced server-side; client copy used for display and break-even |
+| `excursions.ts`, `dining.ts` | catalogue | served and swapped in place (plan 2, Phase 4) |
+| `services.ts`, `ahead.ts`, `postcruise.ts`, `finishMore.ts`, `disembark.ts`, `embark.ts`, `help.ts`, `policy.ts`, `games.ts`, `tv.ts`, `wifi.ts`, `laundry.ts`, `photos.ts`, `health.ts`, `safety.ts`, `room.ts`, `orders.ts`, `menus.ts` | mixed: option lists, limits, times, authored text. Needs a per-file read to split limits and options the server enforces (serve them) from interface copy (keep) | partly enforced in `*Rules.cs`, not served |
+
+### D. Simulations still computed on the client
+
+- **Arrival-window queue times and welcome forecast** (`embark.ts`, `EMBARK_SOURCE = 'sim'`).
+- **Sailing quality notes** (`dream.ts`, `source: 'sim'`), used by the Decide screen.
+- **Cabin heading and sun side** (`cabinScore.ts`, `HEADINGS`) and cabin scoring/compare (`chooseCabins`, `compareMatrix`).
+- **Disruption hub** content and its callback queue fallback (`disruptionHub.ts`).
+- **Service status** (`systemStatus` from demo scenarios, `SupportScreens`).
+- **Memory-book friend replies** (`simulatedReply`).
+- **Scripted plan changes** (`PLAN_CHANGES`) and the Autopilot week optimiser (`optimiseWeek`) over client catalogues.
+- **`AskScreen` uses `domain/assistant.ts` `ask()`**, a second, local, rule-based answerer next to the server concierge.
+- **Sky, storm, pulse, loungers, sightings, found, fares, flight, route, port crowd** are served, but each feed still computes locally first and then replaces the figure (local-first, server-second). The guest can see a value change a moment later, and the client keeps a full copy of every simulation.
+
+### E. Device stores that are the only copy (or leak)
+
+- **Sign-out leaves private data behind.** `signOut()` clears tokens only. The device copies of `memory`, `health`, `calm`, `family` and `concierge` (medical card, allergies, contacts, chat) stay in `localStorage` for the next person on a shared device. They were consent-gated for the server, but the device copy has no such gate.
+- **Per-persona keys.** Stores are keyed by `ownerIdOf(session)`; with mock mode gone the persona branch and the first-sign-in import logic in `sync.ts` go too.
+- **Chat outbox** (`princess:outbox:*`) and **port-row queue** hold unsent changes on one device (by design, so a second device cannot duplicate them). Keep, but document, and show them in the sync indicator.
+- **Demo clock, scenarios, sailing, phone zone, network** (`princess:demo`) are per device; only clock and scenarios reach the server, and only for demo accounts.
+- **Offline `found` pass cache** (`FindPassScreen`) keeps a looked-up pass by booking number and last name. Fine as a cache; add an expiry and clear it at sign-out.
+- **Server staff tickets** are not stored (`SimStaffQueue` logs and returns a ticket); the guest's copy lives in the `hub` document. A real desk could not see or answer it.
+
+### F. Server
+
+- **Providers are hard-wired** in `Program.cs` (`AddSingleton<IWeatherService, SimWeatherService>` and so on). Swapping one is a code change, not configuration.
+- **Two older weather stubs** (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) still back `SimWeatherService.Climate/Today`, apart from `FeedRules` for `/feeds/sky`. Packing, the day brief and the sky can disagree.
+- **`ConciergeLimiter` is in memory**, so the hourly limit is per server instance and resets on restart.
+- **Hashes, difficulty rows, rates and scenario ids are copied by hand** between TypeScript and C# and tied by tests. Once the client drops its copies this risk goes away.
+- **Nothing written since the 2026-11-01 compile check has been built.** The user runs `dotnet build server/Princess.sln` before any phase below relies on it.
+
+## Phases
+
+### Phase 1: One source for who, when and which trip
+
+Server:
+- `GET /me/context` (or extend `/auth/me`): the person (names, role, child, booker), the party with first names, the current booking and sailing id, the stage, and server `now` (ms) with `serverTimeOffset` guidance. Non-demo users get the real clock; demo users get their offset (existing `UserClock`).
+- Demo state gains `sailingId` and `phoneZone` (so a demo user's sailing follows them between devices). `PUT /demo/state` takes them.
+- Child/booker names come from the server for every account.
+
+Client:
+- A `useContext()` hook (`src/hooks/useAccountContext.ts`) replaces `usePersona`, `useSailing`, `useNow`'s source and `personaById(...).firstName` in 63/45/57 files. `useNow()` reads `Date.now() + serverOffset` (offset taken from the server's time, refreshed on pull and when the tab is shown).
+- `src/demo/*` shrinks to the demo controls for demo accounts only (jump, speed, scenarios, sailing); real accounts never see or use a simulated clock.
+- `personas.ts` is cut to what the sign-in screen needs, then served (Phase 2).
+
+Done when: a real account, on two devices opened minutes apart, shows the same date, sailing, names and stage.
+
+### Phase 2: Remove the in-browser backend
+
+- Delete `src/api/*Mock.ts`, `mock.ts`, `auth/mockProvider.ts`, `data/store.ts`, `idbStore.ts`, `data/sync.ts` (the cross-tab channel stays only if the session needs it), the network/latency simulation and `withHttpGroups`; `api` is the HTTP groups directly. `Api` types and `guards.ts` stay.
+- `VITE_API_URL` required; `usesRealAuth` and every `if (!rest)` branch go; the Vite proxy default is documented in the README.
+- The demo picker becomes a **server** list: `GET /auth/demo-accounts` (demo environment only) and the sign-in screen signs in with it. `PERSONAS` leaves the client.
+- Move the useful `src/api/*.test.ts` assertions to the C# suite where they are not already there (list them first; delete the rest). Keep `guards` and `httpApi.test.ts`.
+- `wipeAll`/`resetDemoData` lose the IndexedDB parts.
+
+Done when: `src/api` has `http.ts`, `httpApi.ts`, `types.ts`, `guards.ts`, `errors.ts` and the type files only, and nothing imports `idbStore`.
+
+### Phase 3: Authored data comes from the server
+
+Order by how many screens use it:
+1. **Sailings, itinerary, ports, stages and ship zones** → `GET /reference/sailings` (list, itinerary days, port arrival/all-aboard times, tender flag, zone). `sailingById`, `itinerary`, `PORTS`, `stageAt`, `shipZoneAt` read a served table with the same cached-copy pattern as the catalogue (`useSavedCopy`, kept in `localStorage` as a cache). This also removes the 33-to-65 screen ratchet entries for `sailings`.
+2. **Ship, categories, deck places, elevators, muster stations** → `/reference/ship`.
+3. **Programme events** → use `/program/{day}` as the only source; delete `EVENTS` and `PLAN_CHANGES` from the client (the server's `ProgramRules.PlanChanges` becomes the simulated disruption feed behind `IProgramChanges`, so a real operations feed replaces it).
+4. **Port guides and port content** → `/reference/ports/{id}/guide`.
+5. **Packages/add-ons** → `/reference/packages` (prices stay server-computed; the break-even screen reads served bases).
+6. **Option lists and limits** in `services`, `ahead`, `postcruise`, `finishMore`, `disembark`, `embark`, `policy`, `help`, `games`, `tv`, `wifi`, `laundry`, `photos`, `health`, `safety`, `room`, `orders`, `menus`: read each file; serve what the server enforces (limits, ETAs, tag groups, SLAs), keep interface copy in i18n.
+7. `excursions`/`dining`: remove the authored copies. The client reads only the served catalogue; dining deck, cuisine, dress code and menu move to the server (the open gap from plan 2, Phase 4).
+8. Cache, not copy: `localStorage` keeps the last served tables for offline reading, versioned by an `ETag`/`version` field on every reference route so a stale cache is refreshed.
+
+Parity tests (`catalogueParity.test.ts` and hand-kept hashes) are deleted as each copy goes.
+
+### Phase 4: Simulations move behind the server, and the client stops simulating first
+
+- New providers with simulated implementations and routes: `IEmbarkQueue` (arrival-window queues and welcome forecast), `ISailingQuality` (dream/Decide notes), `ICabinGuide` (heading, sun side, scoring and compare, so `chooseCabins` and `compareMatrix` run on the server), `IServiceStatus` (health of the services, no longer a function of demo scenarios on the client), `IFriendReply` (memory-book replies, only after the consent decision on contacts), `IDisruptionContent` (hub and guides).
+- `src/feeds/feed.ts` changes from "local figure first, server second" to **server only**, with the cached last answer (and "loading" otherwise). The client copies of `pulse`, `portCrowd`, `sky`, `storm`, `fares`, `flight`, `route`, `onboard` simulation functions are deleted, along with the client side of every hash. The fixed-seed formulas stay in C#.
+- `AskScreen`'s local `ask()` and `domain/assistant.ts` go; the screen uses the server concierge (`/me/concierge`) with its scripted fallback. `ai/scripted.ts`, `ai/tools.ts` and `ai/guard.ts` on the client go with it (the guard already runs on the server).
+- Unify weather: `IWeatherService.Climate` and `Today` both call the `FeedRules` model so packing, the brief and `/feeds/sky` agree; then one real provider replaces all of them.
+- Autopilot's week optimiser and scripted openings: decide whether `optimiseWeek` moves to `POST /me/autopilot/plan` (recommended; it reads catalogues, programme, dining and the guest's plan, all server data, and its accepted changes already reach the programme).
+
+### Phase 5: Device copies and sign-out
+
+- Sign-out (and "switch account") clears every `princess:*` device copy that belongs to the person, after the flush. Display settings and diagnostics stay.
+- With one mode, remove the persona-keyed code path and the first-sign-in import in `sync.ts`: the server is always the source; a new device pulls.
+- Give the `found` pass cache and every `cachePut` kind a maximum age.
+- Persist staff tickets: `StaffTickets` table behind `IStaffQueue` so a desk reads them; the hub shows the server's ticket (status, position) instead of a copy in the `hub` document.
+- Document the outbox and port-row queue as the only unsent-change stores; both show in the sync indicator.
+
+### Phase 6: Server hardening for swappable providers
+
+- Provider selection by configuration: `Providers:Weather`, `Providers:Flight`, `Providers:Route`, `Providers:Telemetry`, `Providers:StaffQueue`, `Providers:Concierge` (default `sim`), resolved in one `AddProviders(config)` method. A contract test per interface runs against every registered implementation.
+- `ConciergeLimiter` to the database (or a distributed cache), so limits survive restarts and instances.
+- Real-provider notes in `server/README.md`: what each interface must return, timeouts, fallbacks to the simulated answer, and that nothing changes in the client.
+- Compile check: the user runs `dotnet build server/Princess.sln` before Phase 1 starts and after each server phase (the project rule keeps `dotnet test` out of our hands).
+
+### Phase 7: The audit gate becomes strict
+
+- `src/auditGate.test.ts` lists go to empty: no UI file imports an authored-data or simulation module; no file outside the sync stores, settings and cache helpers touches `localStorage`; no import of `idbStore`, `*Mock` or `personas` outside tests; no `source: 'sim'` literal in `src`.
+- Add a test that every string in `src` that names a persona id is gone, and that `VITE_API_URL` is read in exactly one place.
+
+## Order and size
+
+| Phase | Risk | Size | Notes |
+| --- | --- | --- | --- |
+| 1 Who, when, which trip | high | large | touches ~100 files by hook swap; do first, everything else assumes it |
+| 2 Remove mock backend | medium | large | mostly deletion; test migration is the work |
+| 3 Authored data | medium | very large | one reference route per step; stop after each |
+| 4 Simulations | medium | large | each is a copy of the pattern in plan 2 |
+| 5 Device copies, sign-out, tickets | low | medium | needs a small schema addition |
+| 6 Hardening | low | medium | |
+| 7 Strict gate | low | small | ratchet closes |
+
+## Assumptions made (2026-11-02, user said "make necessary assumptions")
+
+- Demo accounts are available when `Demo:Enabled` is set (default on in development, off otherwise).
+- A first load with no network shows cached reference tables and the last-synced documents only. That is acceptable.
+- `optimiseWeek` and the cabin chooser move to server routes (Phase 4).
+- A real account's "now" is the real time plus the offset between this device's clock and the server's; a demo account's "now" is the server's demo clock.
+- A real account's sailing is its current trip (the `current` trip, else the first upcoming), as `httpApi.ts` already chooses. A demo account's sailing is the one saved in its demo state.
+
+## Not decided
+
+Nothing open; the three earlier questions are settled by the assumptions above.
