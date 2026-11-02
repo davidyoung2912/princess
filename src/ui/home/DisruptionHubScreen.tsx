@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { disruptionById, validOption } from '../../domain/disruption'
 import { formatDate } from '../../domain/cruise'
-import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, requestCallback, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
+import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallback, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, requestCallback, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import type { ScenarioId } from '../../domain/scenarios'
-import { api } from '../../runtime'
+import { api, staffRequest } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useDemo, useNow } from '../../hooks/useDemo'
 import { newHubId, useHub } from '../../hooks/useHub'
@@ -114,6 +114,14 @@ function Callback() {
   const c = state.callback
   const status = c ? callbackStatus(c, now) : null
   const seed = me?.id.length ?? 1
+  /** The server's place in the staff queue when there is one; the on-device pretend queue otherwise, or when the server cannot be reached. */
+  const askForCall = async () => {
+    let callback = requestCallback(now, reason, seed, newHubId())
+    if (staffRequest) {
+      try { callback = normalizeCallback(await staffRequest('callback', reason)) ?? callback } catch { /* the pretend queue answers */ }
+    }
+    update((s) => ({ ...s, callback }))
+  }
   return (
     <section aria-labelledby="hub-cb-h">
       <h2 id="hub-cb-h">{t('hub.cb.title')}</h2>
@@ -135,7 +143,7 @@ function Callback() {
                 <label key={r} className="choice"><input type="radio" name="cb-reason" checked={reason === r} onChange={() => setReason(r)} /><span>{t(`hub.cb.reason.${r}` as StringKey)}</span></label>
               ))}
             </fieldset>
-            <Button disabled={!!me?.child} onClick={() => update((s) => ({ ...s, callback: requestCallback(now, reason, seed, newHubId()) }))}>{t('hub.cb.ask')}</Button>
+            <Button disabled={!!me?.child} onClick={() => void askForCall()}>{t('hub.cb.ask')}</Button>
           </>
         )}
       </Card>

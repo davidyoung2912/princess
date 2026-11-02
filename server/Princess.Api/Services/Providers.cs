@@ -43,6 +43,12 @@ public interface IFareFeed
     IReadOnlyList<FarePointDto> History(string bookingNumber, long bookedTotal, string bookedOn, string today);
 }
 
+/// <summary>The guest services desk's queue for calls back, caregiver visits and sensory kits. The simulated one answers at once with a place in a pretend queue; a real one hands the request to staff.</summary>
+public interface IStaffQueue
+{
+    Task<StaffTicketDto> EnqueueAsync(Guid person, string kind, string reason, DateTime now, CancellationToken ct);
+}
+
 /// <summary>Where consented error reports and usage counts go. A batch carries no person, booking or typed text.</summary>
 public interface ITelemetrySink
 {
@@ -64,6 +70,18 @@ public sealed class SimShipTelemetry : IShipTelemetry
 public sealed class SimFareFeed : IFareFeed
 {
     public IReadOnlyList<FarePointDto> History(string bookingNumber, long bookedTotal, string bookedOn, string today) => ShipFeedRules.FareHistory(bookingNumber, bookedTotal, bookedOn, today);
+}
+
+public sealed class SimStaffQueue(ILogger<SimStaffQueue> log) : IStaffQueue
+{
+    public Task<StaffTicketDto> EnqueueAsync(Guid person, string kind, string reason, DateTime now, CancellationToken ct)
+    {
+        var at = new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+        var position = 1 + (int)(CabinRules.Hash($"{at / 300_000}|{person}") % 6);
+        var ticket = new StaffTicketDto(Guid.NewGuid(), kind, reason, at, position, at + position * StaffRules.MinutesPerPlace * 60_000L, FeedRules.Sim);
+        log.LogInformation("Staff request {Kind} queued at place {Position}", kind, position);
+        return Task.FromResult(ticket);
+    }
 }
 
 public sealed class SimFlightStatusProvider : IFlightStatusProvider

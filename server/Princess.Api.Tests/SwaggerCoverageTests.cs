@@ -41,6 +41,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/feeds/fares" },
         { "post", "/api/v1/telemetry" },
         { "post", "/api/v1/me/concierge" },
+        { "post", "/api/v1/me/staff-requests" },
         { "get", "/api/v1/demo/state" },
         { "put", "/api/v1/demo/state" },
         { "delete", "/api/v1/me/state" },

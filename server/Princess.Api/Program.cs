@@ -48,6 +48,7 @@ services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
 services.AddSingleton<IWeatherService, SimWeatherService>();
 services.AddSingleton<IFlightStatusProvider, SimFlightStatusProvider>();
 services.AddSingleton<IRouteConditionsProvider, SimRouteConditionsProvider>();
+services.AddSingleton<IStaffQueue, SimStaffQueue>();
 services.AddSingleton<IShipTelemetry, SimShipTelemetry>();
 services.AddSingleton<IFareFeed, SimFareFeed>();
 services.AddSingleton<ITelemetrySink, LoggingTelemetrySink>();

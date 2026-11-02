@@ -141,3 +141,32 @@ public class ConciergeApiTests : JourneyWorld
         Assert.Equal(HttpStatusCode.Unauthorized, signedOut.Status);
     }
 }
+
+public class StaffQueueTests : JourneyWorld
+{
+    [Fact]
+    public void OnlyKnownRequestsAreAccepted()
+    {
+        Assert.True(StaffRules.Valid(new("callback", "health"), out var k, out var r));
+        Assert.Equal(("callback", "health"), (k, r));
+        Assert.True(StaffRules.Valid(new("callback", null), out _, out var other));
+        Assert.Equal("other", other);
+        Assert.True(StaffRules.Valid(new("kit", null), out _, out _));
+        Assert.False(StaffRules.Valid(new("kit", "x"), out _, out _));
+        Assert.False(StaffRules.Valid(new("callback", "gossip"), out _, out _));
+        Assert.False(StaffRules.Valid(new("pizza", null), out _, out _));
+        Assert.False(StaffRules.Valid(null, out _, out _));
+    }
+
+    [Fact]
+    public async Task ARequestGetsAPlaceInTheQueueAndABadOneIsRefused()
+    {
+        var token = await SignIn(Daniel);
+        var ok = await Call(HttpMethod.Post, "/api/v1/me/staff-requests", token, new StaffRequestDto("callback", "urgent"));
+        Assert.Equal(HttpStatusCode.OK, ok.Status);
+        Assert.InRange(ok.Json.GetProperty("position").GetInt32(), 1, 6);
+        Assert.True(ok.Json.GetProperty("readyAt").GetInt64() > ok.Json.GetProperty("at").GetInt64());
+        var bad = await Call(HttpMethod.Post, "/api/v1/me/staff-requests", token, new StaffRequestDto("pizza", null));
+        Assert.Equal("badStaffRequest", bad.ProblemTitle);
+    }
+}

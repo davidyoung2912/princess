@@ -76,6 +76,11 @@ export const fetchRates: (() => Promise<RateTable>) | null = rest
 /** The concierge is answered by the server (model key, tools, guard and hourly limit stay there); null in mock mode, where the built-in helper answers on the device. */
 export const sendConcierge: ConciergeSender | null = rest ? (body) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/concierge', body) : null
 
+/** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. Null in mock mode (the on-device pretend queue is used). */
+export const staffRequest: ((kind: 'callback' | 'caregiver' | 'kit', reason?: string) => Promise<unknown>) | null = rest
+  ? (kind, reason) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/staff-requests', { kind, reason })
+  : null
+
 if (rest) {
   const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
   setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
