@@ -12,6 +12,7 @@ import { Load } from '../account/parts'
 import { names } from './people'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { Planner } from '../onboard/Planner'
+import { DayCalendarButton, PlanExports } from '../delights/Exports'
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
 export function PlanScreen() {
@@ -43,7 +44,8 @@ export function PlanScreen() {
           {(p) => (
             <>
               <p className="muted">{countBooked(p.days) === 0 ? t('plan.nothingYet') : t('plan.booked', { count: countBooked(p.days) })}</p>
-              <ol className="day-list">{p.days.map((d) => <DayCard key={d.day} day={d} />)}</ol>
+              <ol className="day-list">{p.days.map((d) => <DayCard key={d.day} day={d} days={p.days} />)}</ol>
+              <PlanExports days={p.days} />
             </>
           )}
         </Load>
@@ -52,7 +54,7 @@ export function PlanScreen() {
   )
 }
 
-function DayCard({ day }: { day: PlanDay }) {
+function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
   const id = `day-${day.day}`
   return (
     <li>
@@ -62,6 +64,7 @@ function DayCard({ day }: { day: PlanDay }) {
         {day.entries.length > 0 && <ul className="day-card__entries">{day.entries.map((e) => <Entry key={`${e.kind}-${e.id ?? e.time}`} entry={e} />)}</ul>}
         {day.gaps.includes('tour') && <p className="day-card__gap">{t('plan.gap.tour')} <Link to="/plan/excursions">{t('plan.gap.tourGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
         {day.gaps.includes('dinner') && <p className="day-card__gap">{t('plan.gap.dinner')} <Link to="/plan/dining">{t('plan.gap.dinnerGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}
+        <DayCalendarButton day={day.day} days={days} />
       </Card>
     </li>
   )

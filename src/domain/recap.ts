@@ -28,6 +28,8 @@ export interface Recap {
   photos: number
   tourNames: string[]
   dinnerCount: number
+  /** Every restaurant dined at, in the order of the first sitting, once each. */
+  dinnerVenues: string[]
   /** The restaurant dined at most, with the count, or null when none was reserved. */
   favouriteMeal: { name: string; times: number } | null
 }
@@ -51,6 +53,7 @@ export function buildRecap(i: RecapInput): Recap {
     nauticalMiles: SUSTAINABILITY.nauticalMiles,
     photos: i.photos,
     tourNames: i.tours.map((id) => excursionById(id)?.name).filter((n): n is string => !!n),
+    dinnerVenues: [...new Set(i.dinners)].map((id) => venueById(id)?.name).filter((n): n is string => !!n),
     dinnerCount: [...counts.values()].reduce((a, b) => a + b, 0),
     favouriteMeal: top ? { name: venueById(top[0])!.name, times: top[1] } : null,
   }

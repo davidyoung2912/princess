@@ -285,7 +285,7 @@ public sealed class AheadService(ScopeLoader scopes, IAheadStore store, IBooking
         var guests = c.Party.Select(p => new TagGuestDto(p.Id, p.Name, AheadRules.PassName(p.First, p.Last), cabin, deck)).ToList();
         var days = (int)Math.Ceiling((DepartureAt(c) - c.Now).TotalDays);
         return new TagsViewDto(
-            t?.Way, guests, t is { Way: "order" } ? Ms(t.OrderedAt) : null, days, Ms(t?.HandedOverAt),
+            c.Booking.Number, t?.Way, guests, t is { Way: "order" } ? Ms(t.OrderedAt) : null, days, Ms(t?.HandedOverAt),
             t is null ? "none" : AheadRules.BagStage(t.HandedOverAt is { } h ? Utc(h) : null, c.Now), !c.Actor.IsSupervised);
     }
 

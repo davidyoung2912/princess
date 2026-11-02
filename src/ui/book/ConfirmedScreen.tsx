@@ -21,6 +21,7 @@ import { Download, Printer } from '../icons'
 import { formatDateTime } from '../account/format'
 import { Load } from '../account/parts'
 import { BookingNumber } from '../delights/Delights'
+import { JourneyCalendarButton } from '../delights/Exports'
 
 /** Booking confirmation (BOK-07): the number, what was booked and paid, where the messages went, and the documents to keep. */
 export function ConfirmedScreen() {
@@ -100,6 +101,7 @@ function Confirmation({ b }: { b: BookingView }) {
           <div className="button-row">
             <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('book.done.print')}</Button>
             <a className="btn btn--secondary" href={calendarLink(b)} download={`sun-princess-${b.number}.ics`}><Download aria-hidden="true" /> {t('book.done.calendar')}</a>
+            <JourneyCalendarButton number={b.number} sailing={sailing} finalDue={b.finalDue} balance={b.balance} />
           </div>
           <Card info><p>{t('book.done.wallet', { date: formatDate(dateIn(sailingStart(b), 'America/New_York')) })}</p></Card>
         </section>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { compareMatrix, MAX_COMPARE, NO_FILTER, notIncluded, type CabinFilter, type CabinScore, type CompareColumn } from '../../domain/cabinScore'
 import { capacityOf, FARES, fareOptions, type FareId } from '../../domain/fares'
 import { SAILINGS, sailingById } from '../../domain/sailings'
@@ -11,6 +11,8 @@ import { Card } from '../Card'
 import { RegretCards } from './RegretCards'
 import { CabinPhotos } from './CabinPhotos'
 import { FeedWaiting } from '../FeedWaiting'
+import { ShareCard } from '../delights/Exports'
+import { compareQuery, comparisonCard, parseCompareQuery } from '../../domain/export'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
 
@@ -21,12 +23,15 @@ const stars = (n: number): string => `${n} / 5`
 /** The cabin chooser (S1-02 to S1-05, S1-07, S1-08): a score for sleep, motion and noise with the reasons, the sun side, a comparison of up to three, and what the fare leaves out. */
 export function CabinChooserScreen() {
   const demo = useSailing()
-  const [sailingId, setSailingId] = useState(demo.id)
+  const [params] = useSearchParams()
+  // A shared comparison link opens with the same sailing, party, fare and picks; anything that does not match the guide is ignored.
+  const [shared] = useState(() => parseCompareQuery(params.toString()))
+  const [sailingId, setSailingId] = useState(shared.sailingId && sailingById(shared.sailingId) ? shared.sailingId : demo.id)
   const [category, setCategory] = useState<CategoryId>('balcony')
-  const [guests, setGuests] = useState(2)
-  const [fare, setFare] = useState<FareId>('standard')
+  const [guests, setGuests] = useState(shared.guests ?? 2)
+  const [fare, setFare] = useState<FareId>(shared.fare && shared.fare in FARES ? (shared.fare as FareId) : 'standard')
   const [filter, setFilter] = useState<CabinFilter>(NO_FILTER)
-  const [picked, setPicked] = useState<{ category: CategoryId; number: string }[]>([])
+  const [picked, setPicked] = useState<{ category: CategoryId; number: string }[]>(() => (shared.picks ?? []).filter((p) => categoryById(p.category)).map((p) => ({ category: p.category as CategoryId, number: p.number })))
 
   const sailing = sailingById(sailingId) ?? demo
   const options = fareOptions(category)
@@ -134,6 +139,7 @@ export function CabinChooserScreen() {
           </div>
         )}
         <p className="muted">{t('cabins.priceNote')}</p>
+        {rows.length > 0 && <ShareCard link={`${window.location.origin}/home/cabins?${compareQuery({ sailingId, guests: useGuests, fare: useFare, picks: picked })}`} card={comparisonCard({ columns: columns.map((c) => c.label), rows: rows.map((r) => ({ label: t(`cabins.row.${r.key}` as StringKey), values: r.values })), note: t('cabins.priceNote') })} />}
       </Card>
 
       <Card labelledBy="cabins-not">

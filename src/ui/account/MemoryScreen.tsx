@@ -21,6 +21,7 @@ import { Load } from './parts'
 import { BookPagePictures, DayPictureEditor } from './BookPictures'
 import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
+import { Keepsakes } from '../delights/Exports'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
 
@@ -131,6 +132,8 @@ export function MemoryScreen() {
                 <p className="muted no-print">{t('memory.bookNote')}</p>
                 {status && <p role="status" className="no-print">{t(`recap.shared.${status}` as StringKey)}</p>}
               </Card>
+
+              <Keepsakes names={me ? partyPeople(me.id).map((p) => p.firstName) : []} ports={r.ports} seaDays={r.seaDays} nauticalMiles={r.nauticalMiles} dinners={r.dinnerVenues} tours={r.tourNames} />
 
               <Card labelledBy="mem-next">
                 <h2 id="mem-next" className="card__title no-print">{t('memory.next')}</h2>

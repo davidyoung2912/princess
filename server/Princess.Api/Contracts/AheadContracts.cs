@@ -68,7 +68,7 @@ public sealed record MedallionViewDto(
 
 public sealed record TagGuestDto(Guid Id, string Name, string Printed, string Cabin, int Deck);
 
-public sealed record TagsViewDto(string? Way, List<TagGuestDto> Guests, long? OrderedAt, int DaysToDeparture, long? HandedOverAt, string Stage, bool CanEdit);
+public sealed record TagsViewDto(string Number, string? Way, List<TagGuestDto> Guests, long? OrderedAt, int DaysToDeparture, long? HandedOverAt, string Stage, bool CanEdit);
 
 public sealed record ChooseTagRequest(string? Way);
 

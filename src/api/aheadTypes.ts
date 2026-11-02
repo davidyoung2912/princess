@@ -66,6 +66,8 @@ export interface MedallionApi {
 
 export interface TagGuest { id: PersonaId; name: string; printed: string; cabin: string; deck: number }
 export interface TagsView {
+  /** The booking number the tags are for. */
+  number: string
   way: TagWay | null
   guests: TagGuest[]
   orderedAt: number | null

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BagTagCards } from '../delights/Exports'
 import { Link } from 'react-router'
 import { BAG_STAGES, TAGS_PER_GUEST, TAG_ORDER_DAYS, TAG_WAYS } from '../../domain/ahead'
 import { formatDate, formatDayMonth } from '../../domain/cruise'
@@ -106,7 +107,7 @@ export function LuggageScreen() {
                     </li>
                   ))}
                 </ul>
-                {v.way === 'print' && <Button variant="secondary" onClick={() => window.print()}>{t('tag.print')}</Button>}
+                {v.way === 'print' && <BagTagCards guests={v.guests} number={v.number} />}
                 {v.way === 'order' && v.orderedAt !== null && <p role="status"><StatusBadge kind="booked" label={t('tag.ordered')} /></p>}
                 <h2>{t('tag.track')}</h2>
                 <p className="muted">{t('tag.trackNote')}</p>

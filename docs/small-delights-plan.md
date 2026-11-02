@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phase DL1 is built (section 5); DL2 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 and DL2 are built (sections 5 and 6); DL3 to DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -26,7 +26,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | Phase | Name | Delights | Depends on | Status |
 | --- | --- | --- | --- | --- |
 | **DL1** | Words, texts and small checks (pure, no storage) | D1-1, D1-3, D2-1, D2-2, D2-3, D3-7, D4A-3, D4A-4, D4A-7, D6A-5, D7-3, D7-7 | none | **Built** (section 5) |
-| DL2 | Calendar, print and share cards | D2-4, D4-7, D8-6, D4-8, D1-8, D8-4, D8-9, D3-6, D7-5 | DL1 (`delights.ts`) | Planned |
+| DL2 | Calendar, print and share cards | D2-4, D4-7, D8-6, D4-8, D1-8, D8-4, D8-9, D3-6, D7-5 | DL1 (`delights.ts`) | **Built** (section 6) |
 | DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | Planned |
 | DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | Planned |
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | Planned |
@@ -103,3 +103,26 @@ Front end only; no REST contract changes. Logic in `src/domain/delights.ts` (19 
 - **D4A-3, D4A-4, D4A-7** on getting there: last look at the door (not saved), an "I have arrived" message, and whether the device clock differs from ship time. **D7-7** on onward travel: a message for whoever is picking you up. **D7-3** on the final night: a charge-up reminder, earlier when a bag deadline comes first.
 - **Verified:** `npm run test` (1721 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
 - **Not done:** the arrived and ride messages name Terminal 2 and do not read a moved terminal from the booking; the tipping norms cover only the three guide ports; D1-3 uses the quote's estimate, not a booked price; the messages are copied, never sent; the new screen text has no Spanish.
+
+## 6. Phase DL2 in detail: calendar, print and share cards
+
+**Goal:** the export helpers that DL4, DL8 and DL9 reuse, as plain tested TypeScript (`src/domain/export.ts`) with thin screens.
+
+### 6.1 Built (2026-11-02)
+
+Front end only; no REST contract changes. `calendar.ts` now also writes timed events (clock time with no zone) and tentative holds. Cards share one model (`Card`) and one layout (`cardLayout`) for paper and the saved PNG; `src/ui/delights/Cards.tsx` renders them, with print, save-as-image and copy-the-words buttons. 11 tests in `export.test.ts`.
+
+- **D2-4** on the booking confirmation: one file with the sailing, check-in opens and closes, final payment (only when a balance is left) and sail-away.
+- **D4-7** on the Plan screen: the whole week, or one day from its card, to a calendar; days with nothing booked add nothing.
+- **D4-8** on the Plan screen: a poster of the week (print, image, or copy).
+- **D3-6** on the luggage screen when the guest prints: a tag card per guest with a large-print option; no document detail.
+- **D1-8** on the cabin chooser: the side-by-side as a card.
+- **D8-4, D8-9, D7-5, D8-6** on Trip memories: best-moment card (one line, optional photo read in the browser only), certificate, itinerary keepsake, and a tentative same-week-next-year hold that says nothing is booked.
+- **Follow-up fixes (same day):**
+  - Calendar times are now written in UTC from the port's zone (the ship's zone on sea days, the home zone for check-in), so they land at the right moment in any time zone. Only all-day entries stay floating.
+  - The keepsake lists every restaurant dined at (the recap gained `dinnerVenues`).
+  - Bag tags carry the booking number: `TagsViewDto` and `TagsView` gained `number` (server change read-checked only; `dotnet` is not installed in this shell, so the server was not built here).
+  - The comparison card has a link (`/home/cabins?s=&g=&f=&c=`) that opens the same sailing, party, fare and picks. `parseCompareQuery` drops anything that is not a plain token, and the screen ignores ids the guide does not know. It holds no names.
+  - Spanish for all 108 `dl.*` strings (DL1 and DL2); native review still needed.
+- **Verified:** `npm run test` (1736 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:** the text baked into calendar files and card layouts (event titles, "Sail-away", "Tables:") is English only; the image is a plain layout with no ship artwork.
