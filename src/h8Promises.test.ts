@@ -158,4 +158,10 @@ describe('H8 wire-through promises', () => {
     const r = scriptedReply('plan my day 2', { ...base, likes: ['You like a relaxed pace'] })
     expect(r.text).toMatch(/Based on what you told us: you like a relaxed pace/)
   })
+  it('the privacy default is on every group screen that shows plans or spending, and is the safest by default', () => {
+    expect(SAFEST).toEqual({ plans: false, spending: false, photos: false, medical: false })
+    for (const f of ['src/ui/party/PartyScreen.tsx', 'src/ui/plan/PrepScreens.tsx']) expect(read(f)).toMatch(/<SharingNote field=/)
+    expect(read('src/ui/plan/PlanningScreens.tsx')).toMatch(/<SharingNote field="plans"/)
+    expect(read('src/ui/SharingNote.tsx')).not.toMatch(/medical'?\)/)
+  })
 })

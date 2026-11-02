@@ -9,6 +9,8 @@ import { sailingById } from '../../domain/sailings'
 import { SHIP } from '../../domain/ship'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
+import { offersQuiet } from '../../domain/finishMore'
+import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
 import { isApiError } from '../../api/errors'
@@ -48,6 +50,7 @@ function calendarLink(b: BookingView): string {
 }
 
 function Confirmation({ b }: { b: BookingView }) {
+  const { state: mem } = useMemory()
   const sailing = sailingById(b.sailingId)!
   const cancelled = b.status === 'cancelled'
   return (
@@ -108,7 +111,7 @@ function Confirmation({ b }: { b: BookingView }) {
         </ul>
       </section>
 
-      {b.occasion !== 'none' && <p>{t('book.done.gifts')} <Link to="/plan/ahead">{t('route.ahead')}</Link></p>}
+      {b.occasion !== 'none' && !offersQuiet(mem.finish) && <p>{t('book.done.gifts')} <Link to="/plan/ahead">{t('route.ahead')}</Link></p>}
       <p><Link to={`/me/trips/${b.number}`}>{t('book.done.manage')}</Link> · <Link to="/me/trips">{t('route.trips')}</Link></p>
     </>
   )

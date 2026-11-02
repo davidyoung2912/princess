@@ -1,3 +1,4 @@
+import { SharingNote } from '../SharingNote'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { MAX_NOTE_LENGTH, partyCheckin } from '../../domain/party'
@@ -40,6 +41,7 @@ export function PartyScreen() {
     <div className="page">
       <h1>{t('route.party')}</h1>
       <p>{t('party.shared.intro')}</p>
+      <SharingNote field="plans" />
       {child && <p className="muted">{t('party.child')}</p>}
 
       <section aria-labelledby="party-check-h">

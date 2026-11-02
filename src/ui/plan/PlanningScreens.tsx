@@ -1,3 +1,4 @@
+import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ledgerSummary } from '../../domain/bookingPrep'
@@ -294,6 +295,7 @@ export function CabinsScreen() {
   const day = sharedDay(p.cabins)
   return (
     <Page title="route.cabins2" intro="cab.intro">
+      <SharingNote field="plans" />
       <Field label={t('cab.name')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
       <Button disabled={!name.trim()} onClick={() => { set((s) => ({ ...s, cabins: [...s.cabins, { id: newMemoryId(), name: name.trim(), tourIds: [] }].slice(0, 6) })); setName('') }}>{t('cab.add')}</Button>
       {p.cabins.map((c) => (

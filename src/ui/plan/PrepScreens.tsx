@@ -1,3 +1,4 @@
+import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ACCESS_FLAGS, accessNotes, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, fareHistory, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
@@ -200,6 +201,7 @@ export function ShareLedgerScreen() {
   const sum = ledgerSummary(state.shares)
   return (
     <Page title="route.shares" intro="shares.intro">
+      <SharingNote field="spending" />
       <Load state={view}>
         {(v) => (
           <Card labelledBy="sh-t">
