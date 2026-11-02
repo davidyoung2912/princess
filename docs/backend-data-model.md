@@ -459,7 +459,7 @@ Port rows (`PortRows`): both routes return `{ rows: [{ kind, key, data, at, dele
 | Route | Verb route | Auth |
 | --- | --- | --- |
 | today's exchange rates per US dollar (stub feed, same for every device) | `GET /rates` | U |
-| excursion difficulty by id and the room types with accessible staterooms | `GET /reference/access` | U || the sailings, ports, the shared eight-day itinerary and ship clock zones | `GET /reference/sailings` | U || the sky for a cruise day (simulated feed) | `GET /feeds/sky?sailing=&day=&port=` | U || status of a flight on a date (simulated feed) | `GET /feeds/flight?number=&date=` | U || traffic and weather on the way to the port (simulated feed) | `GET /feeds/route?departure=&crowd=` | U |
+| excursion difficulty by id and the room types with accessible staterooms | `GET /reference/access` | U || the sailings, ports, the shared eight-day itinerary and ship clock zones | `GET /reference/sailings` | U || the ship, stateroom categories, deck plan, elevator banks and muster stations | `GET /reference/ship` | U || the sky for a cruise day (simulated feed) | `GET /feeds/sky?sailing=&day=&port=` | U || status of a flight on a date (simulated feed) | `GET /feeds/flight?number=&date=` | U || traffic and weather on the way to the port (simulated feed) | `GET /feeds/route?departure=&crowd=` | U |
 | a batch of consented error reports and usage counts (no person or typed text) | `POST /telemetry` | U |
 | the authored catalogue: excursions, dining venues, ports | `GET /reference/catalogue` | U |
 | ships in a port on a date and how busy it will be (simulated) | `GET /feeds/port-crowd?port=&date=` | U |

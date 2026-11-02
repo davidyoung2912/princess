@@ -1,5 +1,11 @@
 /** Sun Princess, the one supported ship (ship profile §1–§9). Facts are from the profile; category codes and prices are authored concept data. */
-export const SHIP = {
+export interface ShipFacts {
+  id: string; name: string; className: string; entered: number; tonnage: number; length: string; guests: number; crew: number
+  staterooms: number; accessibleStaterooms: number; connectingStaterooms: number; decks: number; sanctuaryStaterooms: number; intro: string
+}
+
+/** The authored values show until the server's reference arrives; `replaceShip` swaps every table below in place (see `shipServed.ts`). */
+export const SHIP: ShipFacts = {
   id: 'sun-princess',
   name: 'Sun Princess',
   className: 'Sphere class',
@@ -14,7 +20,7 @@ export const SHIP = {
   decks: 17,
   sanctuaryStaterooms: 215,
   intro: 'Princess’s newest ship, built around the Piazza, a three-level gathering place under a glass Sphere, and the Dome, a glass-roofed pool by day and a theatre by night.',
-} as const
+}
 
 export const SHIP_HIGHLIGHTS: readonly { title: string; body: string }[] = [
   { title: 'The Piazza', body: 'Three levels of cafés, bars and live music under the Sphere, with game shows and roaming performers.' },
@@ -68,3 +74,21 @@ export const OTHER_SHIPS: readonly { name: string; note: string; guests: number;
   { name: 'Sky Princess', note: 'Grand class, known for the SeaWalk over the side of the ship.', guests: 3660, entered: 2019 },
   { name: 'Enchanted Princess', note: 'Royal class, with a larger spa and plenty of casual dining.', guests: 3660, entered: 2020 },
 ]
+
+export interface ShipContent {
+  ship: ShipFacts
+  highlights: readonly { title: string; body: string }[]
+  categories: readonly StateroomCategory[]
+  accessibility: readonly string[]
+  otherShips: readonly { name: string; note: string; guests: number; entered: number }[]
+}
+
+/** Replaces the ship content in place, so every earlier import sees the served values. */
+export function replaceShip(next: ShipContent): void {
+  Object.assign(SHIP, next.ship)
+  const swap = <T,>(list: readonly T[], to: readonly T[]) => { (list as T[]).splice(0, list.length, ...to) }
+  swap(SHIP_HIGHLIGHTS, next.highlights)
+  swap(CATEGORIES, next.categories)
+  swap(SHIP_ACCESSIBILITY, next.accessibility)
+  swap(OTHER_SHIPS, next.otherShips)
+}

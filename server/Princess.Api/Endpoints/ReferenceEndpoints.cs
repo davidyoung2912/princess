@@ -21,6 +21,9 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/sailings", async (ITripStore trips, CancellationToken ct) => Results.Ok(ReferenceRules.Sailings(await trips.ListSailingsAsync(ct))))
             .WithTags("Reference").WithSummary("The sailings, the ports and the eight-day itinerary every sailing runs, and the zones the ship's clocks follow. `version` changes when any of it does.");
 
+        api.MapGet("/reference/ship", () => Results.Ok(ShipReference.Get()))
+            .WithTags("Reference").WithSummary("The ship (facts, highlights, accessibility notes), its stateroom categories, the deck plan, the six elevator banks and the muster stations. `version` changes when any of it does.");
+
         api.MapGet("/feeds/sky", (string sailing, int day, string port, IWeatherService weather) =>
             {
                 if (string.IsNullOrWhiteSpace(sailing) || sailing.Length > 40 || string.IsNullOrWhiteSpace(port) || port.Length > 40 || day is < 1 or > 60)

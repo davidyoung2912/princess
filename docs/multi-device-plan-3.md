@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 step 1 (sailings) built; the rest of Phase 3 and Phases 4 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 steps 1 (sailings) and 2 (ship) built; the rest of Phase 3 and Phases 4 to 7 not started.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -208,3 +208,12 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Verified:** `npm run test` (1533 passed, including `sailingsServed.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
 - **Not done in step 1:** the authored sailings, ports and itinerary in `sailings.ts` still exist as the first-paint fallback (the plan's "cache, not copy" needs a loading state on 65 screens; do it with Phase 7 when the gate closes). The rules over the table (`shipClockChanges` on days 4 and 7, `stageStarts` offsets) stay on the client. The audit gate's `sailings` ratchet is unchanged. A real account's sailing the client table does not know now resolves once the table arrives.
 - **Next:** steps 2 to 8 (ship and deck, programme, port guides, packages, option lists, excursions/dining copies, version/ETag on every reference route), one per phase stop.
+
+### Step 2: ship, categories, deck places, elevators, muster stations (built 2026-11-02)
+
+**Server C# not compiled or run** (project rule); the route is registered in `SwaggerCoverageTests`, no test exercises it.
+
+- **Server:** `GET /reference/ship` (`Domain/ShipReference.cs`, data model section 6.9 table) answers `{ version, ship, highlights, categories, accessibility, otherShips, places, elevators, muster }`. The content was moved from `ship.ts` and `deck.ts` by script into one embedded JSON block in `ShipReference.cs` (parsed once into DTOs); `version` is a hash of it. There is no database table for places or elevators yet, so it is authored in C# like `ReferenceRules.Difficulty`.
+- **Client:** `src/domain/shipServed.ts` (`normalizeShip`, all-or-nothing: valid sections, kinds and letters, unique place ids, muster stations at listed places; `applyShip`) swaps the values into `ship.ts` (`SHIP`, `SHIP_HIGHLIGHTS`, `CATEGORIES`, `SHIP_ACCESSIBILITY`, `OTHER_SHIPS`) and `deck.ts` (`PLACES`, `DECKS`, `ELEVATORS`, `MUSTER_STATIONS`) in place. `SHIP` lost `as const` (it is now a `ShipFacts`). `runtime/index.ts` `loadShip()` applies the cached answer, then the server's, and caches the raw answer.
+- **Verified:** `npm run test` (1545 passed, including `shipServed.test.ts`), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:check`.
+- **Not done:** the authored copies stay as the first-paint fallback (same reason as step 1). Category prices still come from the server's quote; the `ratio` here is display only. `cabins.ts` (sample staterooms) is not in this step: the server already serves cabins through `/sailings/{id}/cabins`, so the client generator goes with the Phase 4 cabin guide.

@@ -58,7 +58,8 @@ export const PLACES: readonly Place[] = [
 
 export const placeById = (id: unknown): Place | undefined => PLACES.find((p) => p.id === id)
 
-export const DECKS: readonly number[] = [...new Set(PLACES.map((p) => p.deck))].sort((a, b) => a - b)
+const deckNumbers = (): number[] => [...new Set(PLACES.map((p) => p.deck))].sort((a, b) => a - b)
+export const DECKS: readonly number[] = deckNumbers()
 
 export const placesOnDeck = (deck: number): Place[] => PLACES.filter((p) => p.deck === deck)
 
@@ -102,4 +103,13 @@ export function searchPlaces(query: string, list: readonly Place[] = PLACES): Pl
     const hay = norm(`${p.name} ${p.kind} deck ${p.deck} ${p.section}`)
     return words.every((w) => hay.includes(w))
   })
+}
+
+/** Replaces the deck plan, elevator banks and muster stations in place (`shipServed.ts`), so earlier imports see the served values. */
+export function replaceDeck(next: { places: readonly Place[]; elevators: readonly ElevatorBank[]; muster: readonly MusterStation[] }): void {
+  ;(PLACES as Place[]).splice(0, PLACES.length, ...next.places)
+  ;(DECKS as number[]).splice(0, DECKS.length, ...deckNumbers())
+  ;(ELEVATORS as ElevatorBank[]).splice(0, ELEVATORS.length, ...next.elevators)
+  for (const k of Object.keys(MUSTER_STATIONS)) delete (MUSTER_STATIONS as Record<string, MusterStation>)[k]
+  for (const m of next.muster) (MUSTER_STATIONS as Record<string, MusterStation>)[m.letter] = m
 }

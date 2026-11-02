@@ -20,6 +20,7 @@ import { markAccount, refreshContext, setContext } from '../account/context'
 import { fromWire } from '../api/personaIds'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
+import { applyShip, normalizeShip } from '../domain/shipServed'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { normalizeAccessReference, setServedAccess } from '../domain/accessReference'
 import { normalizeRates, type RateTable } from '../domain/rates'
@@ -139,6 +140,22 @@ function loadSailings(): void {
     .catch(() => {})
 }
 loadSailings()
+
+/** The ship reference (facts, categories, deck plan, elevators, muster stations): public, cached on the device and refreshed from the server. */
+function loadShip(): void {
+  const store = (): Storage | null => { try { return typeof localStorage === 'undefined' ? null : localStorage } catch { return null } }
+  const kept = cacheGet(store(), 'ship', 'v1', normalizeShip)
+  if (kept) applyShip(kept.value)
+  void http.get<unknown>('/reference/ship', { anonymous: true })
+    .then((raw) => {
+      const fresh = normalizeShip(raw)
+      if (!fresh) return
+      if (fresh.version !== kept?.value.version) applyShip(fresh)
+      cachePut(store(), 'ship', 'v1', raw, Date.now())
+    })
+    .catch(() => {})
+}
+loadShip()
 
 /** Points the sync module at the signed-in person (or at nobody) and fetches their account state. Does nothing without the real API. */
 function syncAccount(): void {
