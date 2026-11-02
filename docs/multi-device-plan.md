@@ -141,3 +141,14 @@ Built 2026-11-01.
   - **Embark ticks duplicate** (`trip.carryOn`/`checked` against `boarding.setCarryOn`/`setBags`) is still open for Phase 4.
   - **Server booking-state routes** are exercised only by the Phase 1 server tests (not run); nothing here has run against a real server.
   - **Carried over from Phase 1 and 2:** sign-out flush, accounts with no persona, sync indicator, per-user settings keys, Swagger coverage list, privacy export and deletion coverage.
+
+## Phase 4 record (slice: privacy export and delete)
+
+Built 2026-11-01. Only this slice of Phase 4 was built; the other items in "Dedicated tables and routes" are still open.
+
+- **Server (not compiled or run; no `dotnet` commands per the project rules):** `GET /me/export` (the person's own documents, plus the documents of each booking they are a guest on or have linked) and `DELETE /me/state` (removes every document of their own). `IStateStore.DeleteAllAsync`, `StateService.ExportAsync/DeleteAllAsync`, DTOs `StateExportDto`/`BookingStateExportDto`, in-memory store and a test in `StateTests.cs` (written, not run). Data model section 6.8 lists both routes.
+- **Not done:**
+  - **Booking documents are not deleted** by "delete my data" (other guests share them) and the retention purge does not remove them. A retention kind for `BookingState` would change the rules mirrored in `src/domain/privacy.ts` and `dataRules.ts`, so it needs a decision first.
+  - **No client screen** calls export or delete yet, and there is still no account-deletion route; export covers account state only, not the rest of the person's records.
+  - **Swagger coverage list** now includes the two new routes (the eight older state routes are still covered only by `ApiSurfaceTests`).
+  - **Remaining Phase 4 items:** dedicated medical/access/allergy storage, one budget, quiet hours, marketing cap, embark ticks, port ledger rows, plan changes into the day plan, signed family links, caregiver/callback/kit requests, `/demo/*`.

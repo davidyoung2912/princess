@@ -112,3 +112,6 @@ public sealed record StateDto(string Key, int Version, JsonNode? Data, long Upda
 public sealed record StateSummaryDto(string Key, int Version, long UpdatedAt);
 /// <summary><c>BaseVersion</c> is the version the caller last saw (0 for none); a different current version is a 409.</summary>
 public sealed record SaveStateRequest(JsonNode? Data, int BaseVersion);
+/// <summary>Everything kept as account state: the person's own documents and, per booking they are on, the booking's.</summary>
+public sealed record StateExportDto(long ExportedAt, List<StateDto> Account, List<BookingStateExportDto> Bookings);
+public sealed record BookingStateExportDto(string Number, List<StateDto> Documents);

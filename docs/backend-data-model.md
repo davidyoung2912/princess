@@ -433,6 +433,8 @@ Phase 11 built every row above (25 routes). Differences from the table and the m
 | one document (JSON `null` when none) | `GET /me/state/{key}` | U |
 | save a document | `PUT /me/state/{key}` body `{ data, baseVersion }` | U |
 | delete a document | `DELETE /me/state/{key}` | U |
+| delete all of a person's documents (privacy) | `DELETE /me/state` | U |
+| export account state (own documents and each booking's) | `GET /me/export` | U |
 | list a booking's documents | `GET /bookings/{n}/state` | B |
 | one booking document | `GET /bookings/{n}/state/{key}` | B |
 | save a booking document | `PUT /bookings/{n}/state/{key}` | BA |

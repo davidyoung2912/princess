@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// Account state for every device (docs/multi-device-plan.md): small documents per person (<c>/me/state</c>) and per booking (<c>/bookings/{n}/state</c>).
 /// A save carries the version the device last saw; if another device saved since, it is a 409 and the device fetches the newer copy and merges.
 /// </summary>
-public sealed class StateService(IStateStore store, AccessService access, IUserClock clock)
+public sealed class StateService(IStateStore store, ITripStore trips, AccessService access, IUserClock clock)
 {
     private static StateDto Dto(StateRow r) => new(r.Key, r.Version, JsonNode.Parse(r.Json), TripRules.ToMs(r.UpdatedAt));
 
@@ -53,4 +53,21 @@ public sealed class StateService(IStateStore store, AccessService access, IUserC
         var owner = await OwnerAsync(actor, booking, number, true, ct);
         await store.DeleteAsync(booking, owner, key, ct);
     }
+
+    /// <summary>Privacy export: every document held for the person, and for each booking they are a guest on or have linked.</summary>
+    public async Task<StateExportDto> ExportAsync(UserRecord actor, CancellationToken ct)
+    {
+        var now = await clock.NowAsync(actor, ct);
+        var account = (await store.ListAsync(false, actor.Id, ct)).Select(Dto).ToList();
+        var bookings = new List<BookingStateExportDto>();
+        foreach (var b in await trips.ListForUserAsync(actor.Id, ct))
+        {
+            var docs = (await store.ListAsync(true, b.BookingId, ct)).Select(Dto).ToList();
+            if (docs.Count > 0) bookings.Add(new BookingStateExportDto(b.Number, docs));
+        }
+        return new StateExportDto(TripRules.ToMs(now), account, bookings);
+    }
+
+    /// <summary>"Delete my data": removes every document of the person's own. Booking documents are shared with the other guests and are left to the booking.</summary>
+    public async Task DeleteAllAsync(UserRecord actor, CancellationToken ct) => await store.DeleteAllAsync(false, actor.Id, ct);
 }

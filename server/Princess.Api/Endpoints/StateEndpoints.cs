@@ -26,6 +26,16 @@ public static class StateEndpoints
             })
             .WithSummary("Deletes a document.");
 
+        mine.MapDelete("", async (ICurrentUser me, StateService svc, CancellationToken ct) =>
+            {
+                await svc.DeleteAllAsync(await me.LoadAsync(ct), ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Deletes every document you have saved (privacy: delete my data). Booking documents shared with other guests are not touched.");
+        api.MapGet("/me/export", async (ICurrentUser me, StateService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ExportAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("State").WithSummary("Privacy export of account state: your documents and the documents of each booking you are on.");
+
         var booking = api.MapGroup("/bookings/{number}/state").WithTags("State");
         booking.MapGet("", async (string number, ICurrentUser me, StateService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), true, number, ct)))

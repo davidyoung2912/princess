@@ -9,4 +9,6 @@ public interface IStateStore
     Task<StateRow?> GetAsync(bool booking, long ownerId, string key, CancellationToken ct);
     Task<StateRow?> SaveAsync(bool booking, long ownerId, string key, string json, int baseVersion, DateTime now, CancellationToken ct);
     Task DeleteAsync(bool booking, long ownerId, string key, CancellationToken ct);
+    /// <summary>Every document of the owner; returns how many were removed.</summary>
+    Task<int> DeleteAllAsync(bool booking, long ownerId, CancellationToken ct);
 }

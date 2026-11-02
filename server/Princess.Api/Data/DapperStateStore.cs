@@ -50,4 +50,11 @@ public sealed class DapperStateStore(IDbConnectionFactory db) : IStateStore
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd($"DELETE FROM {t} WHERE {o} = @ownerId AND [Key] = @key", new { ownerId, key }, null, ct));
     }
+
+    public async Task<int> DeleteAllAsync(bool booking, long ownerId, CancellationToken ct)
+    {
+        var (t, o) = Where(booking);
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd($"DELETE FROM {t} WHERE {o} = @ownerId", new { ownerId }, null, ct));
+    }
 }

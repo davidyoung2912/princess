@@ -83,4 +83,23 @@ public class StateApiTests : JourneyWorld
     }
 
     private Task<string> MayaToken_() => Task.FromResult(MayaToken());
+
+    [Fact]
+    public async Task ExportListsOwnDocumentsAndDeleteAllRemovesThemWithoutTouchingOthers()
+    {
+        var phone = await SignIn(Daniel);
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", phone, Doc("calm", 0));
+        await Call(HttpMethod.Put, "/api/v1/me/state/offers", phone, Doc("a", 0));
+        var priya = await SignIn(Priya);
+        await Call(HttpMethod.Put, "/api/v1/me/state/settings", priya, Doc("x", 0));
+
+        var export = await Get("/api/v1/me/export", phone);
+        Assert.Equal(HttpStatusCode.OK, export.Status);
+        Assert.Equal(["offers", "settings"], export.Json.GetProperty("account").EnumerateArray().Select(x => x.GetProperty("key").GetString()));
+
+        var gone = await Call(HttpMethod.Delete, "/api/v1/me/state", phone);
+        Assert.Equal(HttpStatusCode.NoContent, gone.Status);
+        Assert.Equal(0, (await Get("/api/v1/me/export", phone)).Json.GetProperty("account").GetArrayLength());
+        Assert.Equal(1, (await Get("/api/v1/me/export", priya)).Json.GetProperty("account").GetArrayLength());
+    }
 }

@@ -27,4 +27,7 @@ public sealed class InMemoryStateStore : IStateStore
         Rows.Remove((booking, ownerId, key));
         return Task.CompletedTask;
     }
+
+    public Task<int> DeleteAllAsync(bool booking, long ownerId, CancellationToken ct) =>
+        Task.FromResult(Rows.Keys.Where(k => k.Booking == booking && k.Owner == ownerId).ToList().Count(k => Rows.Remove(k)));
 }
