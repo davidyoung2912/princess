@@ -1,5 +1,5 @@
 import { CURRENCIES, currencyByCode } from './services'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 
 /**
  * Exchange rates (ACC-07). A rate table has a date. The source here is a stub: it moves the authored sample rates a little each day so the

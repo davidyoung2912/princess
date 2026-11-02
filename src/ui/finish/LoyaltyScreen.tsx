@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { LoyaltyView } from '../../api/finishTypes'
 import { TIER_DAYS } from '../../domain/postcruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'

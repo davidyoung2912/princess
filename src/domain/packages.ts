@@ -1,6 +1,7 @@
 import { computeEntitlements } from './entitlements'
 import { FARES } from './fares'
-import { GRATUITY_PER_NIGHT, NIGHTS, type Cents } from './pricing'
+import { GRATUITY_PER_NIGHT, NIGHTS } from './pricing'
+import { type Cents } from './money'
 import type { PackageId } from './personas'
 
 /** Packages and add-ons (PRE-06, PRE-17). Prices are authored concept values, not Princess's. */

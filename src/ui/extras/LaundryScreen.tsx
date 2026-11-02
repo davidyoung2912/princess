@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { LaundryRequest, LaundryView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { LAUNDRY_NOTE_MAX, SERVICES, serviceById, type LaundryService } from '../../domain/laundry'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

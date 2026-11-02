@@ -1,6 +1,7 @@
 import type { Occasion } from './booking'
 import type { PackageId, PersonaId, Tier } from './personas'
-import { fareFor, type Cents } from './pricing'
+import { fareFor } from './pricing'
+import { type Cents } from './money'
 import { CATEGORIES, type CategoryId } from './ship'
 import { limit } from './limits'
 import { registerContent } from './content'

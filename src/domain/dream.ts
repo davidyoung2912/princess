@@ -1,6 +1,7 @@
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { formatDate } from './cruise'
-import { formatMoney, NIGHTS, type Cents } from './pricing'
+import { NIGHTS } from './pricing'
+import { formatMoney, type Cents } from './money'
 import type { Sailing } from './sailings'
 import { CATEGORIES, type CategoryId } from './ship'
 

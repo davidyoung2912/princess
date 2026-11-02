@@ -1,6 +1,6 @@
 import { buildIcsCalendar } from './calendar'
 import { cancelTerms, changeCheck, CANCEL_ROWS, FREE_CANCEL_HOURS, type CancelTier, type ChangeCheck } from './policy'
-import { formatMoney, type Cents } from './pricing'
+import { formatMoney, type Cents } from './money'
 import { addDays } from './timezones'
 import { daysBetween, type PaymentPlan } from './trip'
 

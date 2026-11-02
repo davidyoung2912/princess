@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { bookWatch, newWatch, stopWatch, watchState, WATCH_KINDS, type Watch, type WatchKind, type WatchProblem } from '../../domain/autopilot'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { useNow } from '../../hooks/useDemo'
 import { useOpenings } from '../../hooks/useServedFeeds'
 import { newPilotId, usePilot } from '../../hooks/usePilot'

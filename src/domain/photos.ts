@@ -1,5 +1,5 @@
 import type { PersonaId } from './personas'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { limit } from './limits'
 import { registerContent } from './content'
 

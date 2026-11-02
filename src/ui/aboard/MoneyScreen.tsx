@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { CURRENCIES, CASH_DESK_MIN, GRATUITY_REASON_MIN, TOPUP_MAX, TOPUP_MIN, TOPUP_TOTAL_MAX } from '../../domain/services'
 import { inCurrencyAt, rateAgeDays, ratesStale } from '../../domain/rates'
 import { PIN_DESK_MIN } from '../../domain/pinReset'

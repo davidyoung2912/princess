@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import type { FolioLine } from './folio'
 
 /**

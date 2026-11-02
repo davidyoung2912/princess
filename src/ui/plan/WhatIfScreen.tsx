@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { TripView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { addDays, dateIn } from '../../domain/timezones'
 import { daysBetween } from '../../domain/trip'
 import { cancelOn, cancelSteps, freeWindowNote, ifMissed, moveCheck, oneCannotGo, paymentCalendar, paymentSchedule, priceDrop, type WhatIfBooking } from '../../domain/whatIf'

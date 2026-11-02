@@ -1,5 +1,5 @@
 import { AVG_COVER, AVG_DRINK, SERVICE_CHARGE } from './packages'
-import { formatMoney, type Cents } from './pricing'
+import { formatMoney, type Cents } from './money'
 import type { Recap } from './recap'
 import { itinerary, PORTS, type Sailing } from './sailings'
 import { formatDate } from './cruise'

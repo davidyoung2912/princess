@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, NIGHTS } from './pricing'
 import type { ScenarioId } from './scenarios'
 import { limit } from './limits'

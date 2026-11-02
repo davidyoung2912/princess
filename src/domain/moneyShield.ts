@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { BAR_SERVICE_RATE, type FolioLine } from './folio'
 import { spentBy } from './budget'
 

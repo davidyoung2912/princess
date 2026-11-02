@@ -1,5 +1,5 @@
 import { MEMBER_PERCENT } from '../../domain/ahead'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import type { QuoteView } from '../../api/types'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'

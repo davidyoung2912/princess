@@ -5,7 +5,7 @@ import {
   normalizeFlight, PICKUP_NOTES, removeBag, toggleIn, TRIP_MODES, validFlightNumber, watchDelay, latestComfortableLanding, type JourneyPlan, type TripMode,
 } from '../../domain/journey'
 import { EMBARK } from '../../domain/boarding'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { newTripId, useTrip } from '../../hooks/useTrip'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useFlightStatus } from '../../hooks/useFlightStatus'

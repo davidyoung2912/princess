@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { categoryById } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import type { OrderGuest, OrderMenuView, OrderView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { placeName } from '../../domain/family'
 import { useConfirmCharge } from '../ConfirmCharge'
 import {

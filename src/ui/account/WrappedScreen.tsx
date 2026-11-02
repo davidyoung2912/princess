@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { formatMoney, parseMoney } from '../../domain/pricing'
+import { parseMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { ADD_ONS } from '../../domain/packages'
 import { formatDate } from '../../domain/cruise'
 import { anniversaryOn, buildWrapped, cardText, expenseCsv, packageHindsight, type ExpenseRow } from '../../domain/wrapped'

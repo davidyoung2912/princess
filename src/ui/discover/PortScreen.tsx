@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { t, type StringKey } from '../../i18n'
 import { portGuideById } from '../../domain/ports'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { PORTS, REFERENCE_SAILING, itinerary } from '../../domain/sailings'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Banner } from '../Banner'

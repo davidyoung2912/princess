@@ -6,7 +6,7 @@ import type { FolioView } from '../../api/types'
 import { TIP_KEEP, tipCredit } from '../../domain/disembark'
 import { CASE_TEXT_MAX } from '../../domain/postcruise'
 import { folioTotals } from '../../domain/folio'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { BRAND_NAMES, CARD_BRANDS, validateCard, type Card as SavedCard, type CardBrand, type CardProblem } from '../../domain/account'
 import { formatDate } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

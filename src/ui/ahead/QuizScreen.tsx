@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { DEFAULT_QUIZ, QUIZ_BUDGETS, QUIZ_MOBILITY, QUIZ_MUSTS, QUIZ_VIBES, QUIZ_WITH, quizFare, recommend, type QuizAnswers, type QuizMust } from '../../domain/ahead'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { categoryById } from '../../domain/ship'
 import { REFERENCE_SAILING } from '../../domain/sailings'
 import { t, type StringKey } from '../../i18n'

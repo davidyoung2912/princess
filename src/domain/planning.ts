@@ -7,7 +7,7 @@ import { FIT_QUESTIONS, type FitKey } from './dream'
 import { excursionById, type ExcursionItem } from './excursions'
 import { itinerary, type Sailing } from './sailings'
 import type { PlanLine } from './prepMore'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 
 /**
  * H8 slice B: planning and groups on one device (S4-03 to S4-10, S0-06, XG-01, XG-02, XG-04, XG-07, S4-02 follow-up).

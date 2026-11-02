@@ -1,6 +1,6 @@
 import { elegantNights } from './packing'
 import { itinerary, PORTS, type PortId, type Sailing } from './sailings'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 
 /**
  * H8 slice A, part 2: weekly companion (S3-03), packing for this ship (S3-06), guaranteed-cabin odds (S2-07),

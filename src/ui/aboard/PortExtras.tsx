@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatTime } from '../../domain/cruise'
 import { excursionById } from '../../domain/excursions'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { PORT_CONTACTS, readyFor, readyText } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

@@ -2,8 +2,8 @@ import { CATEGORIES, categoryById, type CategoryId } from './ship'
 import { SAILINGS, sailingById } from './sailings'
 import { limit } from './limits'
 
-/** Money is whole cents. */
-export type Cents = number
+import { formatMoney, type Cents } from './money'
+export { formatMoney, type Cents }
 
 /** Interior fare per person for two sharing, by sailing. The lowest is the advertised "from" price (ship profile §11.1). */
 const INTERIOR_FARE: Record<string, Cents> = {
@@ -118,11 +118,6 @@ export const hasPrice = (sailingId: string): boolean => !!sailingById(sailingId)
 
 export const ALL_CATEGORY_IDS: readonly CategoryId[] = CATEGORIES.map((c) => c.id)
 
-/** "$1,539" for whole dollars, "$115.50" otherwise. */
-export function formatMoney(cents: Cents): string {
-  const whole = cents % 100 === 0
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(cents / 100)
-}
 
 /** Dollars typed by a person ("1,250", "99.5", "$40") as whole cents, or null when it is not an amount. */
 export function parseMoney(text: string): Cents | null {

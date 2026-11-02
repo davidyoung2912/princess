@@ -3,7 +3,7 @@ import type { DayWish, Mobility } from './day'
 import type { Interest } from './excursions'
 import type { EventInterest } from './program'
 import { hhmmOf, minutesOf, type PlanEntry, type PlanRow } from './planChange'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import type { PortId } from './sailings'
 
 /**

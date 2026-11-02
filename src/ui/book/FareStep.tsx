@@ -1,5 +1,5 @@
 import { fareIncludes, FARES } from '../../domain/fares'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { t } from '../../i18n'

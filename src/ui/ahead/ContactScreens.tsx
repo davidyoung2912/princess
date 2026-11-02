@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ADVISORS, ADVISOR_LANGUAGES, ADVISOR_SPECIALITIES, ASSIST_KINDS, CONSENT_REGIONS, advisorsFor, doubleOptInFor, type AdvisorWay, type AssistKind, type MarketingChannel } from '../../domain/ahead'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'

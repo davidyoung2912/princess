@@ -1,7 +1,7 @@
 import type { Contains } from './menus'
 import type { FolioLine } from './folio'
 import type { PersonaId } from './personas'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'

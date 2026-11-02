@@ -1,4 +1,4 @@
-import type { Cents } from '../domain/pricing'
+import type { Cents } from '../domain/money'
 import type { Selection } from '../domain/catalogue'
 import type { GameState } from '../domain/games'
 import type { Friend, ChatReportReason, GratuityChoice, PartyInput, ReportKind, RequestStage } from '../domain/services'

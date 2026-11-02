@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import type { Entitlements } from './entitlements'
 import type { PaymentState } from './trip'
 import type { PersonaId } from './personas'

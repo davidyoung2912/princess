@@ -5,7 +5,7 @@ import { asFolioView } from '../../api/guards'
 import type { FolioView } from '../../api/types'
 import { filterFolio, FOLIO_CATEGORIES, NO_FOLIO_FILTER, runningTotals, folioTotals, type FolioCategory, type FolioFilter } from '../../domain/folio'
 import { formatDayMonth } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 
 import { itinerary } from '../../domain/sailings'
 import { api } from '../../runtime'

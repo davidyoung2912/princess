@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { ALERT_AFTER, ALERT_WINDOW_MIN, BAR_MENU, DAILY_PACKAGE_DRINKS, STOP_AFTER, drinkById } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

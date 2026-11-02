@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { Reservation } from '../../api/types'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { MAX_TABLE, splitEvenly } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

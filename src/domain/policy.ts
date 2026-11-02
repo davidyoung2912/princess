@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { DEFAULT_FINAL_PAYMENT_DAYS } from './trip'
 import { limit } from './limits'
 import { registerContent } from './content'

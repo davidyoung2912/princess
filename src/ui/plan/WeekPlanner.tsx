@@ -1,6 +1,6 @@
 import { PACES, type Pace } from '../../domain/autopilot'
 import { PORTS } from '../../domain/sailings'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { useSailing } from '../../hooks/useDemo'
 import { useWeek } from '../../hooks/useWeek'
 import { FeedWaiting } from '../FeedWaiting'

@@ -6,7 +6,7 @@ import { DINNER_DAYS, DRESS_NOTES, mealCharge, reservable, SEATINGS, venueById, 
 import { formatDate, formatTime } from '../../domain/cruise'
 import { itinerary, PORTS } from '../../domain/sailings'
 import type { PersonaId } from '../../domain/personas'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { addDays } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

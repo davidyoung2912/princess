@@ -1,6 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { needsConfirm } from '../domain/moneyShield'
-import { formatMoney, type Cents } from '../domain/pricing'
+import { formatMoney, type Cents } from '../domain/money'
 import { useSettings } from '../hooks/useSettings'
 import { t } from '../i18n'
 import { Button } from './Button'

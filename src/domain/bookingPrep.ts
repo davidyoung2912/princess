@@ -1,4 +1,4 @@
-import { formatMoney, type Cents } from './pricing'
+import { formatMoney, type Cents } from './money'
 import type { ChecklistEntry } from './checklist'
 import { priceDrop, type PriceDrop, type WhatIfBooking } from './whatIf'
 

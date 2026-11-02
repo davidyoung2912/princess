@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import type { FolioLine } from './folio'
 
 /** A spending budget for the cruise (ACC-02): one for the booking, an optional limit for each child, and when to warn. Alerts only: nothing is ever refused at a till. */

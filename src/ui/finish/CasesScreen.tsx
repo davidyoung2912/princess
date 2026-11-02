@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CaseView, CasesView } from '../../api/finishTypes'
 import { CASE_PLACE_MAX, CASE_TEXT_MAX, CLAIM_MAX, type CaseKind } from '../../domain/postcruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'

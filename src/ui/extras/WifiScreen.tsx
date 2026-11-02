@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { WifiDeviceView, WifiView } from '../../api/types'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { MAX_DAYS, PLANS, planById, type WifiPlan } from '../../domain/wifi'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

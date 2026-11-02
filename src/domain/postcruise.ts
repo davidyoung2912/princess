@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { personaById, type PersonaId, type Tier } from './personas'
 import { addDays } from './timezones'
 import { limit } from './limits'

@@ -1,6 +1,6 @@
 import { daysBetween } from './trip'
 import { itinerary, PORTS, type ItineraryDay, type PortId, type Sailing } from './sailings'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { limit } from './limits'
 
 /** Shore excursions (PRE-01, PRE-02). Names, lengths and prices agree with the Discover port guides (tested); the rest is authored concept data. */

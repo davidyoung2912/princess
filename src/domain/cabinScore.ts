@@ -1,7 +1,7 @@
 import type { Cabin } from './cabins'
 import { computeEntitlements } from './entitlements'
 import { bookingQuote, FARES, type FareId } from './fares'
-import { formatMoney } from './pricing'
+import { formatMoney } from './money'
 import { categoryById, type CategoryId } from './ship'
 
 /**

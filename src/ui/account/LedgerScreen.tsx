@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
 import { formatDayMonth } from '../../domain/cruise'
 
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { buildLedger, groupByDay, ledgerNet, type PaymentRecord } from '../../domain/trustLedger'
 import { api } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'

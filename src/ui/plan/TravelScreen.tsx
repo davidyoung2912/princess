@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { TravelView } from '../../api/types'
 import { formatTime } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { HOTELS, MODES, PORT_FACTS, TRANSPORT, type ModeId, type TravelPlan } from '../../domain/travel'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'

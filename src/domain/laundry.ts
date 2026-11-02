@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 import { registerContent } from './content'

@@ -2,7 +2,8 @@ import { computeEntitlements } from './entitlements'
 import { excursionById } from './excursions'
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { addOnPrice } from './packages'
-import { MAX_GUESTS, NIGHTS, type Cents } from './pricing'
+import { MAX_GUESTS, NIGHTS } from './pricing'
+import { type Cents } from './money'
 import type { CategoryId } from './ship'
 
 /** The whole-trip cost calculator (DIS-12): the cruise, what the guest means to add, and what they spend getting there, for each fare. */

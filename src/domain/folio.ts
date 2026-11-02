@@ -1,4 +1,4 @@
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE } from './pricing'
 import type { Entitlements } from './entitlements'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'

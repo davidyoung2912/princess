@@ -1,6 +1,6 @@
 import type { DietaryId } from './account'
 import { VENUES, venueById } from './dining'
-import type { Cents } from './pricing'
+import type { Cents } from './money'
 import { registerContent } from './content'
 
 /** The venue directory with hours, price and menus tagged for allergens and diets (DIN-01, DIN-03). Dishes and hours are authored concept values. */

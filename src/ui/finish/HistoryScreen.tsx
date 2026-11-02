@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import type { HistoryTrip, HistoryView } from '../../api/finishTypes'
 import { formatDate } from '../../domain/cruise'
-import { formatMoney } from '../../domain/pricing'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'

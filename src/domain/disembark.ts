@@ -1,4 +1,5 @@
-import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, type Cents } from './pricing'
+import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE } from './pricing'
+import { type Cents } from './money'
 import { itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'

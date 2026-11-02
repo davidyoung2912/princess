@@ -1,5 +1,6 @@
 import { computeEntitlements } from './entitlements'
-import { NIGHTS, quote, type Cents, type Quote } from './pricing'
+import { NIGHTS, quote, type Quote } from './pricing'
+import { type Cents } from './money'
 import { categoryById, type CategoryId } from './ship'
 import { DEFAULT_FINAL_PAYMENT_DAYS, DEPOSIT_SHARE } from './trip'
 import { addDays } from './timezones'

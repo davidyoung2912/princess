@@ -1,5 +1,6 @@
 import { PERSONAS, personaById, type PersonaId, type StateroomKind } from './personas'
-import { quote, type Cents } from './pricing'
+import { quote } from './pricing'
+import { type Cents } from './money'
 import { sailingById } from './sailings'
 import type { CategoryId } from './ship'
 import { limit } from './limits'

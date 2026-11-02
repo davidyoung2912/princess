@@ -1,6 +1,6 @@
 import type { Advisor, AdvisorWay, AssistKind, AssistStage, BagStage, ClubRegistration, ConsentRegion, ConsentState, MarketingChannel, MedallionStatus, TagWay, UpgradeOffer } from '../domain/ahead'
 import type { FixId, FixStage } from '../domain/readiness'
-import type { Cents } from '../domain/pricing'
+import type { Cents } from '../domain/money'
 import type { CategoryId } from '../domain/ship'
 import type { PersonaId, Tier } from '../domain/personas'
 
