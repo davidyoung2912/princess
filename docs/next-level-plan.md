@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 is built except N7.4; N8 is not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 is built except N7.4; N8 is started (N8.1 and N8.2 weather built, see its record).** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 
@@ -320,6 +320,15 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 | N8.6 Quality scorecard | A release checklist built from the journey doc's clear-to-use tests and the nine measures of base doc §23.6; guest-research sessions booked (the five older, neurodivergent and solo cruisers) | Process, not code |
 
 **Done when:** you can switch one provider from `sim` to real by configuration and see it fall back automatically in a test.
+
+**N8 record (2026-11-02):**
+- **N8.1 done:** `ProviderGuard` (`Services/ProviderGuard.cs`) wraps a real provider: a call that throws or has no answer uses the simulation for that call; after 3 failures in a row the circuit opens for 2 minutes and the network is not touched; the next call is a trial. One guard per provider. The timeout belongs to the provider's HttpClient (4 s for weather).
+- **N8.2 weather done, flights not:** `Providers:Weather` = `openmeteo` (default stays `sim`) gives a real forecast for the sky (UV, high, afternoon rain) at Fort Lauderdale, Cozumel, Belize and Roatan, for today and the next 15 days. Sea days, later dates, failures and an open circuit give the simulated sky. `source` is `forecast` or `sim`; the app does not read it for logic. Climate and today's weather on board stay simulated. Open-Meteo is free without a key for non-commercial use; a pilot needs their paid plan (`OpenMeteo:BaseUrl`, `OpenMeteo:ApiKey` in user-secrets). **A flight-status provider needs a keyed service you choose; not started.** `Providers:Rates` = `http` was already built and can be switched on now.
+- **N8.3 prepared, not signed off:** `docs/content-verification.md` lists every "(verify)" line with a Source and Status column for the owner to fill; nothing is checked yet.
+- **N8.4 partly done:** `GET /health/providers` shows each real provider as `ok`, `degraded` or `fallback`; `docs/runbook.md` covers checks, providers, logs, retention, export and deletion. **Not built:** the error-reporting hook (PERF-07), structured JSON logs, a retention report.
+- **N8.5 partly done:** `/me/export` now also carries `trips` (number, sailing, ship, departure, nights, room type). It still holds only what the account's documents and bookings hold; orders, bookings detail and other server tables are not in it, and there is no download button in the app. The deletion explanation is in the runbook, not yet on a screen.
+- **Not done:** flight-status provider (needs your choice of service), N8.6 scorecard (process).
+- **Tests added:** `ProviderGuardTests.cs` (circuit, parse, fall-back, no call for sea or far dates, configuration switch). **Not compiled or run** (`dotnet` is not installed here); please run `dotnet build` on `server/`. Front end untouched.
 
 ---
 

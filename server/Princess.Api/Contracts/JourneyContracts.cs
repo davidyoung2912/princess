@@ -113,7 +113,9 @@ public sealed record StateSummaryDto(string Key, int Version, long UpdatedAt);
 /// <summary><c>BaseVersion</c> is the version the caller last saw (0 for none); a different current version is a 409.</summary>
 public sealed record SaveStateRequest(JsonNode? Data, int BaseVersion);
 /// <summary>Everything kept as account state: the person's own documents and, per booking they are on, the booking's.</summary>
-public sealed record StateExportDto(long ExportedAt, List<StateDto> Account, List<BookingStateExportDto> Bookings);
+public sealed record StateExportDto(long ExportedAt, List<StateDto> Account, List<BookingStateExportDto> Bookings, List<ExportTripDto> Trips);
+/// <summary>One booking in the whole-history download: what the guest sailed (or will sail) on.</summary>
+public sealed record ExportTripDto(string Number, string Sailing, string Ship, string Departure, int Nights, string Category);
 public sealed record BookingStateExportDto(string Number, List<StateDto> Documents);
 
 /// <summary>A person on the trip. <c>Booker</c> is the person who holds the booking (themselves for an adult booker).</summary>

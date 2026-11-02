@@ -80,20 +80,22 @@ public sealed class StateService(IStateStore store, ITripStore trips, AccessServ
         await store.DeleteAsync(booking, owner, key, ct);
     }
 
-    /// <summary>Privacy export: every document held for the person, and for each booking they are a guest on or have linked.</summary>
+    /// <summary>Privacy export (S8-12, the whole history): every trip they are on, every document held for the person, and for each booking they are a guest on or have linked.</summary>
     public async Task<StateExportDto> ExportAsync(UserRecord actor, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);
         var account = (await store.ListAsync(false, actor.Id, ct)).Select(Dto).ToList();
         var bookings = new List<BookingStateExportDto>();
+        var history = new List<ExportTripDto>();
         foreach (var b in await trips.ListForUserAsync(actor.Id, ct))
         {
+            history.Add(new ExportTripDto(b.Number, b.SailingTitle, b.ShipName, b.Departure.ToString("yyyy-MM-dd"), b.Nights, b.CategoryName));
             var docs = (await store.ListAsync(true, b.BookingId, ct)).Select(Dto).ToList();
             var (rows, count) = await portRows.ExportAsync(b.BookingId, ct);
             if (count > 0) docs.Add(new StateDto("port-rows", count, rows, TripRules.ToMs(now)));
             if (docs.Count > 0) bookings.Add(new BookingStateExportDto(b.Number, docs));
         }
-        return new StateExportDto(TripRules.ToMs(now), account, bookings);
+        return new StateExportDto(TripRules.ToMs(now), account, bookings, history);
     }
 
     /// <summary>"Delete my data": removes every document of the person's own. Booking documents are shared with the other guests and are left to the booking.</summary>

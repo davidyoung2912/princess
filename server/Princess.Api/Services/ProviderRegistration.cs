@@ -54,11 +54,20 @@ public static class ProviderRegistration
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)
     {
+        services.AddSingleton<ProviderHealth>();
         foreach (var seam in Catalogue)
         {
             var name = (config[$"{Section}:{seam.Key}"] ?? Sim).Trim().ToLowerInvariant();
+            // Providers:Weather is sim or openmeteo (a real forecast for the sky, falling back to the simulation). Off by default.
+            if (seam.Key == "Weather" && name == "openmeteo")
+            {
+                services.AddHttpClient();
+                services.AddOptions<OpenMeteoOptions>().BindConfiguration(OpenMeteoOptions.Section);
+                services.AddSingleton<IWeatherService, OpenMeteoWeatherService>();
+                continue;
+            }
             if (!seam.Implementations.TryGetValue(name, out var impl))
-                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}.");
+                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}{(seam.Key == "Weather" ? ", openmeteo" : "")}.");
             services.AddSingleton(seam.Contract, impl);
         }
 

@@ -97,6 +97,7 @@ public class StateApiTests : JourneyWorld
         var export = await Get("/api/v1/me/export", phone);
         Assert.Equal(HttpStatusCode.OK, export.Status);
         Assert.Equal(["offers", "settings"], export.Json.GetProperty("account").EnumerateArray().Select(x => x.GetProperty("key").GetString()));
+        Assert.Equal(JsonValueKind.Array, export.Json.GetProperty("trips").ValueKind);
 
         var gone = await Call(HttpMethod.Delete, "/api/v1/me/state", phone);
         Assert.Equal(HttpStatusCode.NoContent, gone.Status);
