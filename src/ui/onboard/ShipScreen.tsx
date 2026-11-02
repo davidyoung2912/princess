@@ -69,6 +69,21 @@ export function ShipScreen() {
           <li><Link to="/home/disembark">{t('route.disembark')}</Link></li>
           <li><Link to="/me/cases">{t('route.cases')}</Link></li>
         </ul>
+        <h2 id="ship-more-h">{t('ship.more')}</h2>
+        <ul className="link-list" aria-labelledby="ship-more-h">
+          <li><Link to="/ship/seasick">{t('route.seasick')}</Link></li>
+          <li><Link to="/ship/loungers">{t('route.loungers')}</Link></li>
+          <li><Link to="/ship/kids-report">{t('route.kidsReport')}</Link></li>
+          <li><Link to="/ship/teen">{t('route.teen')}</Link></li>
+          <li><Link to="/ship/ok-tap">{t('route.okTap')}</Link></li>
+          <li><Link to="/ship/solo">{t('route.solo')}</Link></li>
+          <li><Link to="/ship/dnd">{t('route.dnd')}</Link></li>
+          <li><Link to="/ship/you-said">{t('route.youSaid')}</Link></li>
+          <li><Link to="/ship/dining-prefs">{t('route.diningPrefs')}</Link></li>
+          <li><Link to="/ship/steps">{t('route.steps')}</Link></li>
+          <li><Link to="/ship/lost-found">{t('route.lostFound')}</Link></li>
+          <li><Link to="/ship/sightings">{t('route.sightings')}</Link></li>
+        </ul>
       </nav>
     </div>
   )

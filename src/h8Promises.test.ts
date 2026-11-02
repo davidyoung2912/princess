@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS } from './domain/autopilot'
+import { dndNow } from './domain/aboardMore'
 import { applyWeek, normalizePlanning, SAFEST, tasteInferences, withoutSurprises } from './domain/planning'
 import { REFERENCE_SAILING } from './domain/sailings'
 import { en } from './i18n/en'
@@ -63,5 +64,26 @@ describe('H8 slice B promises', () => {
   it('applies a week only through accepted, undoable changes', () => {
     const r = applyWeek(REFERENCE_SAILING, { ...DEFAULT_PREFS, pace: 'relaxed' }, [], 5)
     expect(r.changes.every((c) => c.status === 'accepted' && c.undoUntil > 5)).toBe(true)
+  })
+})
+
+describe('H8 slice C promises', () => {
+  it('sends nothing: reminders and checks live on the screen, with no timers or network', () => {
+    const text = read('src/ui/onboard/AboardMoreScreens.tsx') + read('src/domain/aboardMore.ts')
+    expect(text).not.toMatch(/\.(book|cancel|payBalance|email|callback|save)\(|fetch\(|Notification|setInterval|setTimeout|sendBeacon/)
+    expect(en['ok.nothingSent']).toMatch(/Nothing is sent to anyone/)
+    expect(en['solo.nothingSent']).toMatch(/Nothing is sent to anyone/)
+    expect(en['teen.nothingSent']).toMatch(/Nothing is sent to anyone/)
+  })
+  it('labels simulated boards and lists as simulated', () => {
+    expect(en['lounge.sim']).toMatch(/simulated/i)
+    expect(en['kreport.sim']).toMatch(/simulated/i)
+    expect(en['lost.sim']).toMatch(/example/i)
+    expect(en['sight.sim']).toMatch(/simulated/i)
+  })
+  it('keeps critical notices through do not disturb and puts the report behind parent consent', () => {
+    expect(dndNow([{ id: 'a', from: '00:00', to: '23:59', on: true }], '12:00', 'critical')).toBe(false)
+    expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/!a\.kidsConsent \? <Nothing/)
+    expect(en['dnd.critical']).toMatch(/always come through/)
   })
 })

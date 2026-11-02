@@ -14,6 +14,7 @@ import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
+import { CabinWordsCard } from '../onboard/AboardMoreScreens'
 
 /** Calm and inclusion (XI-01 to XI-05): calm mode, a sensory profile and plan, the social story and a now-next-later schedule, a sensory kit request, and cognitive and caregiver support. */
 export function CalmScreen() {
@@ -46,6 +47,8 @@ export function CalmScreen() {
           <p>{t('calm.cabinBody')} <Link to="/ship/help-now">{t('calm.cabinHelp')}</Link></p>
         </Banner>
       )}
+
+      <CabinWordsCard />
 
       <Card labelledBy="calm-mode">
         <h2 id="calm-mode" className="card__title">{t('calm.mode')}</h2>

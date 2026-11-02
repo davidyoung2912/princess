@@ -1,5 +1,9 @@
 import { Link } from 'react-router'
+import { dndNow } from '../../domain/aboardMore'
 import { companionWeek } from '../../domain/prepMore'
+import { shipZoneAt } from '../../domain/sailings'
+import { timeIn } from '../../domain/timezones'
+import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { useSettings } from '../../hooks/useSettings'
@@ -13,7 +17,10 @@ export function CompanionCard({ daysToDeparture }: { daysToDeparture: number }) 
   const { state, update } = useMemory()
   const [settings] = useSettings()
   const week = companionWeek(daysToDeparture)
-  if (week === null || state.companionOff || settings.nudgesPerDay === 0 || settings.calm) return null
+  const sailing = useSailing()
+  const now = useNow()
+  const quiet = dndNow(state.aboard.dnd, timeIn(now, shipZoneAt(sailing, now)), 'offers')
+  if (week === null || quiet || state.companionOff || settings.nudgesPerDay === 0 || settings.calm) return null
   return (
     <Card labelledBy="comp-h">
       <h2 id="comp-h" className="card__title">{t('weekly.title', { n: week })}</h2>

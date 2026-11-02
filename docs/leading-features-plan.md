@@ -288,3 +288,18 @@ Front end only; no REST contract changes. Logic in `src/domain/planning.ts`, scr
 - **XG-04** (`/plan/traditions`): checklist that carries over with boxes clear.
 - **S4-02 follow-up:** "Put this week in my plan" on the week planner creates one accepted, undoable change per day through `acceptChange` (`applyWeek`).
 - **Not done:** the assistant does not yet read `tasteInferences` (the store is ready); privacy defaults are stored but no shared screen reads them yet; the cabins' shared day is excursions only; the child brief is not tied to club check-in; shared copies of polls, boards and the organiser view across phones need a server.
+
+## 16. H8 slice C: on board (2026-11-01)
+
+Front end only; no REST contract changes. Logic in `src/domain/aboardMore.ts`, screens in `src/ui/onboard/AboardMoreScreens.tsx` (routes under `/ship`, linked from the Ship tab under "More on board"), state per person in the H6 memory store under one `aboard` field. Promise tests in `src/h8Promises.test.ts`. Reminder features say plainly on the screen that nothing is sent to anyone.
+
+- **S6-09 seasickness first aid** (`/ship/seasick`): calmest places (midship, deck 8 or lower, step-free), what helps, when to see the doctor, a one-tap request whose reply is simulated after 30 minutes.
+- **S6-10 lounger fair use** (`/ship/loungers`): a simulated board of eight; your hold is real on the device (40 minutes, "due back in X min", lapses), report one left too long.
+- **S6-13 kids' report** (`/ship/kids-report`): simulated club summary from the child brief's age, shown only after the parent ticks consent.
+- **S6-14, S6-15, S6-17** (`/ship/teen`, `/ship/ok-tap`, `/ship/solo`): teen agreement signed by both, an "I'm OK" tap with a due time, a solo timer with due and overdue states. On-screen only.
+- **S6-16 audit:** `calm.ts` only linked to the deck map. Added a words-only route (lift bank, deck, side, number) as a card on `/me/calm` from a cabin number the guest types.
+- **S6-18 do not disturb** (`/ship/dnd`): up to four schedules over midnight; the weekly companion obeys them; critical notices are never held (`dndNow`).
+- **S6-19, S6-20, S6-21, S6-25** (`/ship/you-said`, `/ship/dining-prefs`, `/ship/steps`, `/ship/lost-found`): authored board, favourites and table preferences, typed steps with deck laps and goal days (no leaderboard), local lost report matched against an authored handed-in list.
+- **S6-08 sightings** (`/ship/sightings`): the guest's log plus an authored, simulated "told about today".
+- **Verified:** `npm run test` (1645 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** only the weekly companion obeys do not disturb (other Home nudges and the notification screen do not read it yet); the cabin number is typed, not read from the booking; the kids' report uses the child brief's age and name, not the club check-in; the lounger board, kids' report, found list and sightings are simulated; steps are typed, not read from a phone sensor; nothing here reaches another device, a crew member or a caregiver.
