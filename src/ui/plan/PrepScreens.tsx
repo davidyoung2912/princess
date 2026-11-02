@@ -1,7 +1,9 @@
+import type { PaymentsView } from '../../api/types'
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, fareHistory, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
+import { useFareHistory } from '../../hooks/useServedFeeds'
+import { ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/pricing'
 import { dateIn } from '../../domain/timezones'
@@ -243,32 +245,35 @@ export function PriceWatchScreen() {
     <Page title="route.priceWatch" intro="pwatch.intro">
       <Banner kind="info" title={t('pwatch.sim')} />
       <Load state={view}>
-        {(v) => {
-          const b: WhatIfBooking = { plan: v.trip.plan, guests: v.trip.guests, today, departure: v.trip.departure, balancePaid: v.trip.payment === 'paid', finalDays: daysBetween(v.trip.plan.finalDue, v.trip.departure) }
-          const history = fareHistory(b, v.trip.number)
-          const w = priceWatch(b, history)
-          if (!w) return <p>{t('pwatch.none')}</p>
-          return (
-            <Card labelledBy="pw-t">
-              <h2 id="pw-t" className="card__title">{t('pwatch.title')}</h2>
-              <dl className="facts">
-                <div><dt>{t('pwatch.booked')}</dt><dd>{formatMoney(v.trip.plan.total)}</dd></div>
-                <div><dt>{t('pwatch.now')}</dt><dd>{formatMoney(w.latest.total)}</dd></div>
-                <div><dt>{t('pwatch.lowest')}</dt><dd>{formatMoney(w.lowest.total)} · {formatDate(w.lowest.date)}</dd></div>
-              </dl>
-              <div role="status">
-                {w.drop.ok ? (
-                  <>
-                    <p>{t('pwatch.ok', { amount: formatMoney(w.drop.saving), date: formatDate(v.trip.plan.finalDue) })}</p>
-                    <ol>{w.steps.map((s) => <li key={s}>{t(`pwatch.step.${s}` as StringKey)}</li>)}</ol>
-                    <Link to="/me/contact">{t('pwatch.ask')}</Link>
-                  </>
-                ) : <p>{t(w.drop.reason === 'notLower' ? 'pwatch.notLower' : 'pwatch.afterFinal')}</p>}
-              </div>
-            </Card>
-          )
-        }}
+        {(v) => <PriceWatchBody v={v} today={today} />}
       </Load>
     </Page>
   )
+}
+
+/** The price-drop card; its own component so the fare history hook runs once per render. */
+function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
+      const b: WhatIfBooking = { plan: v.trip.plan, guests: v.trip.guests, today, departure: v.trip.departure, balancePaid: v.trip.payment === 'paid', finalDays: daysBetween(v.trip.plan.finalDue, v.trip.departure) }
+      const history = useFareHistory(b, v.trip.number)
+      const w = priceWatch(b, history)
+      if (!w) return <p>{t('pwatch.none')}</p>
+      return (
+        <Card labelledBy="pw-t">
+          <h2 id="pw-t" className="card__title">{t('pwatch.title')}</h2>
+          <dl className="facts">
+            <div><dt>{t('pwatch.booked')}</dt><dd>{formatMoney(v.trip.plan.total)}</dd></div>
+            <div><dt>{t('pwatch.now')}</dt><dd>{formatMoney(w.latest.total)}</dd></div>
+            <div><dt>{t('pwatch.lowest')}</dt><dd>{formatMoney(w.lowest.total)} · {formatDate(w.lowest.date)}</dd></div>
+          </dl>
+          <div role="status">
+            {w.drop.ok ? (
+              <>
+                <p>{t('pwatch.ok', { amount: formatMoney(w.drop.saving), date: formatDate(v.trip.plan.finalDue) })}</p>
+                <ol>{w.steps.map((s) => <li key={s}>{t(`pwatch.step.${s}` as StringKey)}</li>)}</ol>
+                <Link to="/me/contact">{t('pwatch.ask')}</Link>
+              </>
+            ) : <p>{t(w.drop.reason === 'notLower' ? 'pwatch.notLower' : 'pwatch.afterFinal')}</p>}
+          </div>
+        </Card>
+      )
 }

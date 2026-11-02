@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { portDayAt } from '../../domain/allaboard'
-import { crowdFor } from '../../domain/portCrowd'
+import { usePortCrowd } from '../../hooks/useServedFeeds'
 import { GUIDE_PORTS, PORT_KNOWLEDGE, perPerson, type GuidePort } from '../../domain/portContent'
 import { PORTS } from '../../domain/sailings'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -18,7 +18,8 @@ export function PortGuideScreen() {
   const [port, setPort] = useState<GuidePort>(next && GUIDE_PORTS.includes(next) ? next : 'cozumel')
   const k = PORT_KNOWLEDGE[port]
   const day = portDayAt(sailing, now)
-  const crowd = day && day.port === port ? crowdFor(port, day.date) : null
+  const served = usePortCrowd(port, day?.date ?? '')
+  const crowd = day && day.port === port ? served : null
 
   return (
     <div className="page">

@@ -11,6 +11,8 @@ import type { DataRecord, DataStore } from '../data/store'
 import { setDemoPublisher } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { getDemo, resetDemoState, watchOtherTabs } from '../demo/store'
+import { forgetCrowd, setCrowdFetcher } from '../feeds/portCrowd'
+import { forgetFares, setFaresFetcher } from '../feeds/fares'
 import { forgetFlights, setFlightFetcher } from '../feeds/flight'
 import { forgetConditions, setRouteFetcher } from '../feeds/route'
 import { forgetSky, setSkyFetcher } from '../feeds/sky'
@@ -82,6 +84,10 @@ if (rest) {
   // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
   setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))
   setRouteFetcher((departure, crowd) => http.get<unknown>('/feeds/route', { query: { departure, crowd } }))
+  setCrowdFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
+  setFaresFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
+  auth.subscribe(forgetCrowd)
+  auth.subscribe(forgetFares)
   auth.subscribe(forgetFlights)
   auth.subscribe(forgetConditions)
   // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees; real accounts send nothing.

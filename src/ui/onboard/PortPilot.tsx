@@ -3,7 +3,8 @@ import { Link } from 'react-router'
 import type { PortDayView } from '../../api/types'
 import { partyOf } from '../../domain/personas'
 import { PORT_GUIDES } from '../../domain/ports'
-import { crowdFor, hourlyCrowd, quietestWindow } from '../../domain/portCrowd'
+import { usePortCrowd } from '../../hooks/useServedFeeds'
+import { hourlyCrowd, quietestWindow } from '../../domain/portCrowd'
 import { agreePlan, clearPlan, dayOf, planAgreed, proposePlan, setPlanB } from '../../domain/portParty'
 import { ACCESSIBLE_TENDER_STEPS, BUFFER_CHOICES, DEFAULT_BUFFER, latestStart, PLAN_B, PLAN_B_TRIGGERS, planPortDay, pilotStepLabel, recommendedPlanB, type PlanBTrigger } from '../../domain/portPilot'
 import { PORTS } from '../../domain/sailings'
@@ -23,7 +24,7 @@ export function PortPilot({ v }: { v: PortDayView }) {
   const { state, update, me } = usePort()
   const port = v.day.port
   const excursions = PORT_GUIDES[port].excursions
-  const crowd = crowdFor(port, v.day.date)
+  const crowd = usePortCrowd(port, v.day.date)
   const day = dayOf(state.party, v.day.date)
   const [outing, setOuting] = useState<string>(day.plan?.outing ?? 'free')
   const [travel, setTravel] = useState<number>(day.plan?.travelMinutes ?? 20)

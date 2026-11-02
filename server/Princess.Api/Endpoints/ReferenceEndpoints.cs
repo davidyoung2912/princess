@@ -39,6 +39,20 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("Traffic and weather on the way to the port for a sailing date and arrival-window crowd, with how much earlier to leave. A simulated feed; `source` says so.");
 
+        api.MapGet("/feeds/port-crowd", (string port, string date, IShipTelemetry ship) =>
+            {
+                if (!ShipFeedRules.ValidPort(port) || !ShipFeedRules.ValidDate(date)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(ship.PortCrowd(port, date));
+            })
+            .WithTags("Reference").WithSummary("How many ships are in a port on a date and how busy it will be (quiet, moderate or busy). A simulated feed, the same for every device; `source` says so.");
+
+        api.MapGet("/feeds/fares", (string number, long total, string booked, string today, IFareFeed fares) =>
+            {
+                if (!ShipFeedRules.ValidFareQuery(number, total, booked, today)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(fares.History(number, total, booked, today));
+            })
+            .WithTags("Reference").WithSummary("The weekly fare for the same cabin since booking (for the price-drop watch), as `[{ date, total }]` in cents, at most 26 points. A simulated feed, the same for every device.");
+
         api.MapPost("/telemetry", async (TelemetryBatchDto body, ITelemetrySink sink, CancellationToken ct) =>
             {
                 if (!TelemetryRules.Valid(body?.Items)) throw ApiException.Invalid("badTelemetry");

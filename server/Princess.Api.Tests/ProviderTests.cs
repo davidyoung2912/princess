@@ -66,3 +66,39 @@ public class TelemetryApiTests : JourneyWorld
         Assert.Equal(HttpStatusCode.BadRequest, bad.Status);
     }
 }
+
+public class ShipFeedTests
+{
+    [Fact]
+    public void PortCrowdIsStableShapedAndFollowsTheClientFormula()
+    {
+        IShipTelemetry ship = new SimShipTelemetry();
+        var c = ship.PortCrowd("cozumel", "2027-03-23");
+        Assert.Equal(c, ship.PortCrowd("cozumel", "2027-03-23"));
+        Assert.Equal("sim", c.Source);
+        Assert.InRange(c.Ships, 1, 5);
+        Assert.Equal(c.Ships * ShipFeedRules.ShipGuests, c.Guests);
+        Assert.Equal(c.Level == "busy", c.StayAboardNote);
+        Assert.Contains(c.Level, new[] { "quiet", "moderate", "busy" });
+        foreach (var p in new[] { "cozumel", "belize", "roatan" }) Assert.InRange(ship.PortCrowd(p, "2027-03-24").Ships, 1, p == "belize" ? 3 : p == "roatan" ? 4 : 5);
+        Assert.True(ShipFeedRules.ValidPort("belize"));
+        Assert.False(ShipFeedRules.ValidPort("mars"));
+        Assert.False(ShipFeedRules.ValidDate("2027-13-40"));
+    }
+
+    [Fact]
+    public void FareHistoryStartsAtTheBookedFareIsWeeklyCappedAndStable()
+    {
+        IFareFeed fares = new SimFareFeed();
+        var h = fares.History("A1B2C3", 480_000, "2027-01-04", "2027-03-01");
+        Assert.Equal(new FarePointDto("2027-01-04", 480_000), h[0]);
+        Assert.Equal(9, h.Count);
+        Assert.Equal("2027-01-11", h[1].Date);
+        Assert.All(h, p => Assert.True(p.Total >= 336_000 && p.Total % 100 == 0));
+        Assert.Equal(h, fares.History("A1B2C3", 480_000, "2027-01-04", "2027-03-01"));
+        Assert.Equal(26, fares.History("A1B2C3", 480_000, "2025-01-01", "2027-03-01").Count);
+        Assert.True(ShipFeedRules.ValidFareQuery("A1B2C3", 1, "2027-01-01", "2027-01-01"));
+        Assert.False(ShipFeedRules.ValidFareQuery("A1 2", 1, "2027-01-01", "2027-01-01"));
+        Assert.False(ShipFeedRules.ValidFareQuery("A1", 1, "2027-02-01", "2027-01-01"));
+    }
+}

@@ -31,6 +31,18 @@ public interface IRouteConditionsProvider
     RouteConditionsDto Conditions(string departure, string crowd);
 }
 
+/// <summary>Live conditions around the ship and its ports. Today only how crowded a port is on a date.</summary>
+public interface IShipTelemetry
+{
+    PortCrowdDto PortCrowd(string port, string date);
+}
+
+/// <summary>The fare the guest's cabin has been selling at since they booked, for the price-drop watch.</summary>
+public interface IFareFeed
+{
+    IReadOnlyList<FarePointDto> History(string bookingNumber, long bookedTotal, string bookedOn, string today);
+}
+
 /// <summary>Where consented error reports and usage counts go. A batch carries no person, booking or typed text.</summary>
 public interface ITelemetrySink
 {
@@ -42,6 +54,16 @@ public sealed class SimWeatherService : IWeatherService
     public SkyDto Sky(string sailingId, int day, string port) => FeedRules.Sky(sailingId, day, port);
     public Weather Climate(DateOnly date) => PlanRules.WeatherFor(date);
     public WeatherToday Today(DateOnly date, bool rough) => AboardRules.WeatherOn(date, rough);
+}
+
+public sealed class SimShipTelemetry : IShipTelemetry
+{
+    public PortCrowdDto PortCrowd(string port, string date) => ShipFeedRules.PortCrowd(port, date);
+}
+
+public sealed class SimFareFeed : IFareFeed
+{
+    public IReadOnlyList<FarePointDto> History(string bookingNumber, long bookedTotal, string bookedOn, string today) => ShipFeedRules.FareHistory(bookingNumber, bookedTotal, bookedOn, today);
 }
 
 public sealed class SimFlightStatusProvider : IFlightStatusProvider

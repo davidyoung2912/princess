@@ -48,6 +48,8 @@ services.AddSingleton<IPaymentGateway, MockPaymentGateway>();
 services.AddSingleton<IWeatherService, SimWeatherService>();
 services.AddSingleton<IFlightStatusProvider, SimFlightStatusProvider>();
 services.AddSingleton<IRouteConditionsProvider, SimRouteConditionsProvider>();
+services.AddSingleton<IShipTelemetry, SimShipTelemetry>();
+services.AddSingleton<IFareFeed, SimFareFeed>();
 services.AddSingleton<ITelemetrySink, LoggingTelemetrySink>();
 // The concierge model: a key in user-secrets (Concierge:ApiKey) turns it on; without one the scripted concierge answers.
 services.AddOptions<ConciergeOptions>().BindConfiguration(ConciergeOptions.Section);
