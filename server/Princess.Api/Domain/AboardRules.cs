@@ -113,7 +113,7 @@ public static class AboardRules
     public static WeatherToday WeatherOn(DateOnly date, bool rough)
     {
         var w = PlanRules.WeatherFor(date);
-        var summary = w.Rain == "high" ? "Showers likely, warm between them" : w.Rain == "some" ? "Sunny with a passing shower or two" : "Mostly sunny";
+        var summary = FeedRules.RainOn(date).Rain ? "Showers likely, warm between them" : w.Rain == "low" ? "Mostly sunny" : "Sunny with the chance of a shower";
         return new WeatherToday(summary, w.HighF, w.LowF, rough ? "A rougher sea is expected. The ship may tender where it planned to dock." : Seas[CabinRules.Hash(date.ToString("yyyy-MM-dd")) % Seas.Length]);
     }
 

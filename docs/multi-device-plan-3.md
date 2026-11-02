@@ -68,7 +68,7 @@ The audit gate lists 98 screens, but 33 of them import only `formatMoney` from `
 ### F. Server
 
 - **Providers are hard-wired** in `Program.cs` (`AddSingleton<IWeatherService, SimWeatherService>` and so on). Swapping one is a code change, not configuration.
-- **Two older weather stubs** (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) still back `SimWeatherService.Climate/Today`, apart from `FeedRules` for `/feeds/sky`. Packing, the day brief and the sky can disagree.
+- **(Done in Phase 4 slice 4.) Two older weather stubs** (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) still back `SimWeatherService.Climate/Today`, apart from `FeedRules` for `/feeds/sky`. Packing, the day brief and the sky can disagree.
 - **`ConciergeLimiter` is in memory**, so the hourly limit is per server instance and resets on restart.
 - **Hashes, difficulty rows, rates and scenario ids are copied by hand** between TypeScript and C# and tied by tests. Once the client drops its copies this risk goes away.
 - **Nothing written since the 2026-11-01 compile check has been built.** The user runs `dotnet build server/Princess.sln` before any phase below relies on it.
@@ -276,3 +276,13 @@ Built 2026-11-02. **Server C# not compiled or run** (project rule); the new rout
 - **Callback:** `queueEstimate` and `requestCallback` are removed from `domain/disruptionHub.ts`; the hub asks `POST /me/staff-requests` and, if it fails, says so with the guest services number instead of pretending.
 - **Verified:** `npm run test` (1531 passed), `npm run lint`, `npx tsc -b`. C# is written but not compiled here; run its tests at the next compile check.
 - **Still not done:** weather unification (`IWeatherService.Climate`/`Today`/`Sky` through one model; the sky route needs a date); `POST /me/autopilot/plan` (needs `buildDay`/`basePlan` with programme events ported to C#, shared with plan changes and the day screens); hub content, service status and guides (i18n-keyed text). `ai/guard.ts` stays on the client on purpose, for the offline emergency screen.
+
+### Slice 4: one weather model (built 2026-11-02)
+
+**Server C# not compiled or run** (project rule); tests written, not run.
+
+- **One model.** The month's climate (`PlanRules.WeatherFor`) is the base. `FeedRules.RainOn(date)` draws whether the afternoon rains from the month's odds (low 1 in 8, some 1 in 4, high 1 in 2) and the hour; `FeedRules.Sky(date, port)` takes UV from the port, the temperature from the month's high (0 to 2 °F under) and the rain from `RainOn`; `AboardRules.WeatherOn` says "Showers likely" exactly when `RainOn` does. So packing advice, today's weather and `/feeds/sky` agree. Today's high and low and the sea line are unchanged; for 2027-03-22 the draw is dry, so the existing "Mostly sunny" test still holds (checked by hand).
+- **Route change.** `GET /feeds/sky` now takes `date=YYYY-MM-DD&port=` (was `sailing`, `day`, `port`), so the sky has a date. `IWeatherService.Sky(DateOnly, string)`. Client: `skyFeed` and `useSky` take `(date, port)`; `useDayPlan` passes the itinerary day's date.
+- **Tests:** `FeedRulesTests` rewritten, plus `TheSkyTodaysWeatherAndThePackingAdviceAgree` (a year of dates), `ProviderTests` updated.
+- **Verified:** `npm run test` (1531 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Remaining Phase 4:** see below.

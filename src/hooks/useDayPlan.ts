@@ -33,8 +33,8 @@ export function useDayPlan(day: number): DayPlanView {
   const sailing = useSailing()
   const { state } = usePilot()
   const { prefs, changes: all } = state
-  const port = itinerary(sailing)[day - 1].port
-  const weather = useSky(sailing.id, day, port)
+  const { port, date } = itinerary(sailing)[day - 1]
+  const weather = useSky(date, port)
   return useMemo(() => {
     const d = itinerary(sailing)[day - 1]
     const base = basePlan(sailing, day, wishOf(prefs))

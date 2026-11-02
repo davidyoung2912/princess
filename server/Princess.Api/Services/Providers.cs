@@ -10,8 +10,8 @@ namespace Princess.Api.Services;
 /// </summary>
 public interface IWeatherService
 {
-    /// <summary>The sky for a cruise day: UV, temperature and any afternoon rain.</summary>
-    SkyDto Sky(string sailingId, int day, string port);
+    /// <summary>The sky on a date at a port: UV, temperature and any afternoon rain. Agrees with <see cref="Climate"/> and <see cref="Today"/>.</summary>
+    SkyDto Sky(DateOnly date, string port);
 
     /// <summary>The usual weather for the time of year, used for packing advice.</summary>
     Weather Climate(DateOnly date);
@@ -81,7 +81,7 @@ public interface ITelemetrySink
 
 public sealed class SimWeatherService : IWeatherService
 {
-    public SkyDto Sky(string sailingId, int day, string port) => FeedRules.Sky(sailingId, day, port);
+    public SkyDto Sky(DateOnly date, string port) => FeedRules.Sky(date, port);
     public Weather Climate(DateOnly date) => PlanRules.WeatherFor(date);
     public WeatherToday Today(DateOnly date, bool rough) => AboardRules.WeatherOn(date, rough);
 }

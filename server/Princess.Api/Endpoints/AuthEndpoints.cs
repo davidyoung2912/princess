@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
 

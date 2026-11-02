@@ -76,7 +76,7 @@ export const familyHome = {
 }
 
 {
-  skyFeed.setFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))
+  skyFeed.setFetcher((date, port) => http.get<unknown>('/feeds/sky', { query: { date, port } }))
   flightFeed.setFetcher((number, date) => http.get<unknown>('/feeds/flight', { query: { number, date } }))
   // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
   setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))

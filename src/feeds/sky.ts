@@ -14,5 +14,5 @@ export function normalizeSky(raw: unknown): SimWeather | null {
   return { uv: r.uv, tempF: r.tempF, rainFrom: rainFrom && rainTo ? rainFrom : null, rainTo: rainFrom && rainTo ? rainTo : null, source: 'sim' }
 }
 
-/** A day's sky for a sailing, a cruise day and the port the ship is at. */
-export const skyFeed = createFeed<[sailingId: string, day: number, port: PortId], SimWeather>((s, d) => `${s}|${d}`, normalizeSky, 'sky')
+/** The sky on a date (`YYYY-MM-DD`) at the port the ship is at; the server uses one weather model for this, packing and today's weather. */
+export const skyFeed = createFeed<[date: string, port: PortId], SimWeather>((d, p) => `${d}|${p}`, normalizeSky, 'sky')

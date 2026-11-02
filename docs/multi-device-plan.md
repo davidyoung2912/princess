@@ -201,7 +201,7 @@ Built 2026-11-01.
 
 Built 2026-11-01. The first simulated feed moved behind the server; it is the pattern for the others.
 
-- **Server (not compiled or run):** `GET /feeds/sky?sailing=&day=&port=` returns `{ uv, tempF, rainFrom, rainTo, source: 'sim' }` from `Domain/FeedRules.cs` (the client's `simWeather` ported, same hash, so values match). A missing or out-of-range query is `400 badFeedQuery`. Tests written, not run (`FeedRulesTests` in `RatesTests.cs`); Swagger list and data model 6.9 updated.
+- **Server (not compiled or run):** `GET /feeds/sky?date=&port=` returns `{ uv, tempF, rainFrom, rainTo, source: 'sim' }` from `Domain/FeedRules.cs` (the client's `simWeather` ported, same hash, so values match). A missing or out-of-range query is `400 badFeedQuery`. Tests written, not run (`FeedRulesTests` in `RatesTests.cs`); Swagger list and data model 6.9 updated.
 - **Client:** `src/feeds/sky.ts` (fetcher set by the runtime in REST mode, per-day cache cleared on sign-in or out, `skyNow` gives the server value or the local simulation) and `useSky` hook, used by `useDayPlan`. The effect is in `useSky`, not `useDayPlan`, because `h5Promises.test.ts` forbids effects there. Mock mode is unchanged.
 - **Verified:** `npm run test` (1761 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
 - **Not done:** the other feeds (flight status, traffic, ship pulse and lines, port crowd, storm chance, sky objects, ship heading) still run on the client. The server also has two older weather stubs (`PlanRules.WeatherFor`, `AboardRules.WeatherOn`) that give different figures from this feed; they should be unified when a real provider is chosen. Fare history, boards, port content, `/demo/*` also open.

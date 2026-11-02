@@ -48,17 +48,34 @@ public class FeedRulesTests
     [Fact]
     public void TheSkyIsTheSameEveryTimeAndSaysItIsSimulated()
     {
-        var a = FeedRules.Sky("S1", 3, "cozumel");
-        Assert.Equal(a, FeedRules.Sky("S1", 3, "cozumel"));
+        var day = new DateOnly(2027, 3, 21);
+        var a = FeedRules.Sky(day, "cozumel");
+        Assert.Equal(a, FeedRules.Sky(day, "cozumel"));
         Assert.Equal("sim", a.Source);
-        Assert.InRange(a.TempF, 80, 88);
+        var usual = PlanRules.WeatherFor(day);
+        Assert.InRange(a.TempF, usual.HighF - 2, usual.HighF);
         Assert.Equal(a.RainFrom is null, a.RainTo is null);
     }
 
     [Fact]
     public void SeaDaysHaveALowerUvThanPortDays()
     {
-        Assert.Equal(FeedRules.Sky("S1", 4, "cozumel").Uv - 2, FeedRules.Sky("S1", 4, "sea").Uv);
+        var day = new DateOnly(2027, 3, 25);
+        Assert.Equal(FeedRules.Sky(day, "cozumel").Uv - 2, FeedRules.Sky(day, "sea").Uv);
+    }
+
+    [Fact]
+    public void TheSkyTodaysWeatherAndThePackingAdviceAgree()
+    {
+        for (var d = new DateOnly(2027, 1, 1); d.Year == 2027; d = d.AddDays(1))
+        {
+            var sky = FeedRules.Sky(d, "cozumel");
+            var today = AboardRules.WeatherOn(d, false);
+            var usual = PlanRules.WeatherFor(d);
+            Assert.Equal(usual.HighF, today.HighF);
+            Assert.Equal(sky.RainFrom is not null, today.Summary.StartsWith("Showers"));
+            Assert.True(sky.TempF <= usual.HighF && sky.TempF >= usual.LowF);
+        }
     }
 }
 

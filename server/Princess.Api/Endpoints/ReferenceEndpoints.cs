@@ -36,13 +36,13 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/limits", () => Results.Ok(LimitsReference.Get()))
             .WithTags("Reference").WithSummary("The limits, windows, fees and rates the server enforces (request caps, text lengths, notice periods, credits), by the client's constant names. Each value is the rule's own constant. `version` changes when any value does.");
 
-        api.MapGet("/feeds/sky", (string sailing, int day, string port, IWeatherService weather) =>
+        api.MapGet("/feeds/sky", (string date, string port, IWeatherService weather) =>
             {
-                if (string.IsNullOrWhiteSpace(sailing) || sailing.Length > 40 || string.IsNullOrWhiteSpace(port) || port.Length > 40 || day is < 1 or > 60)
+                if (!DateOnly.TryParseExact(date ?? "", "yyyy-MM-dd", out var on) || string.IsNullOrWhiteSpace(port) || port.Length > 40)
                     throw ApiException.Invalid("badFeedQuery");
-                return Results.Ok(weather.Sky(sailing, day, port));
+                return Results.Ok(weather.Sky(on, port));
             })
-            .WithTags("Reference").WithSummary("The sky for a cruise day (UV, temperature, any afternoon rain). A simulated feed, the same for every device; `source` says so.");
+            .WithTags("Reference").WithSummary("The sky on a date at a port (UV, temperature, any afternoon rain), from the same model as the packing advice and today's weather. A simulated feed, the same for every device; `source` says so.");
 
         api.MapGet("/feeds/flight", (string number, string date, IFlightStatusProvider flights) =>
             {

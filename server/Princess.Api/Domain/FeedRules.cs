@@ -14,13 +14,27 @@ public static class FeedRules
 {
     public const string Sim = "sim";
 
-    /// <summary>The sky for a cruise day: UV and heat from the port, and sometimes an afternoon of rain. As <c>simWeather</c> in the client.</summary>
-    public static SkyDto Sky(string sailingId, int day, string port)
+    /// <summary>
+    /// Whether the afternoon rains on a date, and the hour it starts. The month's climate sets the odds (low, some, high), a stable draw
+    /// for the date decides, so the sky, today's weather and the packing advice all tell the same story.
+    /// </summary>
+    public static (bool Rain, int StartHour) RainOn(DateOnly date)
     {
-        var h = RatesRules.Hash($"{sailingId}|{day}");
-        var rain = h % 4 == 0;
-        var start = 12 + (int)(h % 4);
-        return new SkyDto((port == "sea" ? 7 : 9) + (int)(h % 3), 80 + (int)(h % 9), rain ? $"{start:00}:00" : null, rain ? $"{start + 3:00}:00" : null, Sim);
+        var h = RatesRules.Hash($"rain|{date:yyyy-MM-dd}");
+        var odds = PlanRules.WeatherFor(date).Rain switch { "high" => 2u, "some" => 4u, _ => 8u };
+        return (h % odds == 0, 12 + (int)(h / 8 % 4));
+    }
+
+    /// <summary>
+    /// The sky on a date at a port: UV, a temperature a little under the month's usual high, and the afternoon rain from <see cref="RainOn"/>.
+    /// Sea days have a lower UV than port days.
+    /// </summary>
+    public static SkyDto Sky(DateOnly date, string port)
+    {
+        var w = PlanRules.WeatherFor(date);
+        var h = RatesRules.Hash($"sky|{date:yyyy-MM-dd}");
+        var (rain, start) = RainOn(date);
+        return new SkyDto((port == "sea" ? 7 : 9) + (int)(h % 3), w.HighF - (int)(h / 3 % 3), rain ? $"{start:00}:00" : null, rain ? $"{start + 3:00}:00" : null, Sim);
     }
 
     /// <summary>A flight number as the client normalises it: spaces removed, upper case.</summary>

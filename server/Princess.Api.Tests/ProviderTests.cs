@@ -12,9 +12,9 @@ public class ProviderTests
     public void TheSimulatedWeatherServiceKeepsTheContractAndIsStable()
     {
         IWeatherService w = new SimWeatherService();
-        var sky = w.Sky("S1", 3, "cozumel");
+        var sky = w.Sky(new DateOnly(2027, 3, 21), "cozumel");
         Assert.Equal("sim", sky.Source);
-        Assert.Equal(sky, w.Sky("S1", 3, "cozumel"));
+        Assert.Equal(sky, w.Sky(new DateOnly(2027, 3, 21), "cozumel"));
         var climate = w.Climate(new DateOnly(2027, 3, 21));
         Assert.True(climate.HighF > climate.LowF);
         Assert.Contains(climate.Rain, new[] { "low", "some", "high" });
