@@ -1,5 +1,6 @@
-import { Suspense, type ReactNode } from 'react'
+import { Fragment, Suspense, useSyncExternalStore, type ReactNode } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
+import { getLocale, subscribeLocale } from './i18n'
 import { SCREENS } from './screens'
 import { NotFound } from './ui/NotFound'
 import { Shell } from './ui/Shell'
@@ -29,9 +30,11 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <PublicOrSignedIn>
-        <AppRoutes />
-      </PublicOrSignedIn>
+      <LanguageKey>
+        <PublicOrSignedIn>
+          <AppRoutes />
+        </PublicOrSignedIn>
+      </LanguageKey>
     </BrowserRouter>
   )
 }
@@ -41,4 +44,10 @@ function PublicOrSignedIn({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   const isPublic = ROUTES.some((r) => r.public && pathname.startsWith(r.path.slice(0, r.path.indexOf('/:'))))
   return isPublic ? <>{children}</> : <SignInGate>{children}</SignInGate>
+}
+
+/** Draws everything again when the language changes, since text is read when a screen is drawn. */
+function LanguageKey({ children }: { children: ReactNode }) {
+  const locale = useSyncExternalStore(subscribeLocale, getLocale, getLocale)
+  return <Fragment key={locale}>{children}</Fragment>
 }

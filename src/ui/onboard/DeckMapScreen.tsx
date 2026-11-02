@@ -1,24 +1,28 @@
 import { useState } from 'react'
-import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
+import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placeById, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { BackLink } from './common'
+import { DeckPlan } from './DeckPlan'
 import { RouteFinder } from './RouteFinder'
 
 const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
 
 /**
  * The deck plan (OB-04): search, then each deck as a table of forward, midship and aft, with elevators, muster stations and step-free marks.
- * Text first, so it works with a screen reader, at the largest text size and offline; there is no location, so no "you are here".
+ * The graphic plan (N5.1) sits above the table; both come from the same data. There is no location sensor: "you are here" is shown only when the guest says where they are.
  */
 export function DeckMapScreen() {
   const [query, setQuery] = useState('')
   const [deck, setDeck] = useState(7)
   const [stepFree, setStepFree] = useState(false)
+  const [quiet, setQuiet] = useState(false)
+  const [hereId, setHereId] = useState('')
+  const here = placeById(hereId) ?? null
   const found = searchPlaces(query).filter((p) => !stepFree || p.stepFree)
-  const here = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
+  const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
   return (
     <div className="page">
       <h1>{t('route.deckMap')}</h1>
@@ -31,7 +35,18 @@ export function DeckMapScreen() {
         <p className="field__hint">{t('map.searchHint')}</p>
         <input id="map-search" type="search" className="field__input" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
-      <div className="chip-row"><Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('map.stepFree')}</Chip></div>
+      <div className="chip-row">
+        <Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('map.stepFree')}</Chip>
+        <Chip pressed={quiet} onToggle={() => setQuiet(!quiet)}>{t('plan2.quietLayer')}</Chip>
+      </div>
+      <div className="field">
+        <label htmlFor="map-here">{t('plan2.hereLabel')}</label>
+        <p className="field__hint">{t('plan2.hereHint')}</p>
+        <select id="map-here" className="field__input" value={hereId} onChange={(e) => { setHereId(e.target.value); const p = placeById(e.target.value); if (p) setDeck(p.deck) }}>
+          <option value="">{t('plan2.hereNone')}</option>
+          {DECKS.slice().reverse().map((d) => <optgroup key={d} label={t('map.deck', { deck: d })}>{placesOnDeck(d).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>)}
+        </select>
+      </div>
 
       {query.trim() !== '' && (
         <section aria-labelledby="found-h">
@@ -46,6 +61,7 @@ export function DeckMapScreen() {
         <div className="chip-row" role="group" aria-label={t('map.pickDeck')}>
           {DECKS.map((d) => <Chip key={d} pressed={d === deck} onToggle={() => setDeck(d)}>{t('map.deckShort', { deck: d })}</Chip>)}
         </div>
+        <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} />
         <div className="table-wrap">
           <table className="deck-table">
             <caption>{t('map.deck', { deck })}</caption>
@@ -54,8 +70,8 @@ export function DeckMapScreen() {
               <tr>
                 {SECTIONS.map((s) => (
                   <td key={s}>
-                    {here.filter((p) => p.section === s).length === 0 ? <span className="muted">{t('map.empty')}</span> : (
-                      <ul className="plain-bullets">{here.filter((p) => p.section === s).map((p) => <li key={p.id}>{p.name}{!p.stepFree && ` (${t('onb.notStepFree')})`}{p.note ? <small className="muted"><br />{p.note}</small> : null}</li>)}</ul>
+                    {onDeck.filter((p) => p.section === s).length === 0 ? <span className="muted">{t('map.empty')}</span> : (
+                      <ul className="plain-bullets">{onDeck.filter((p) => p.section === s).map((p) => <li key={p.id}>{p.name}{!p.stepFree && ` (${t('onb.notStepFree')})`}{p.note ? <small className="muted"><br />{p.note}</small> : null}</li>)}</ul>
                     )}
                   </td>
                 ))}

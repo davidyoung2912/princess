@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { LOCALES, getLocale, registerLocale, setLocale, t } from '.'
+import { LOCALES, getLocale, loadLocale, registerLocale, setLocale, t } from '.'
 import { en } from './en'
+import { es } from './es'
+import { isLanguage } from './languages'
 
 const sourceFiles = (): string[] => {
   const files: string[] = []
@@ -46,9 +48,10 @@ describe('t', () => {
     expect(getLocale()).toBe('en')
   })
 
-  it('offers only languages with a catalog, English first', () => {
+  it('offers English first, and every offered language can be loaded and switched to', async () => {
     expect(LOCALES[0].code).toBe('en')
     for (const { code } of LOCALES) {
+      expect(await loadLocale(code)).toBe(true)
       setLocale(code)
       expect(getLocale()).toBe(code)
     }
@@ -86,5 +89,46 @@ describe('catalog', () => {
     for (const p of prefixes) expect([...defined].some((k) => k.startsWith(p)), `no key starts with ${p}`).toBe(true)
     const unused = [...defined].filter((k) => !used.has(k) && !named.has(k) && !prefixes.some((p) => k.startsWith(p)))
     expect(unused, 'catalog keys never used in the source').toEqual([])
+  })
+})
+
+/** The groups of text a Spanish reader needs before anything else: the shell, tabs, every page title, the deck map and route finder, and the display settings. */
+const SPANISH_REQUIRED = /^(app|common|error|shell|tab|route|lang|settings|map|rt|plan2)\./
+
+describe('Spanish', () => {
+  afterEach(() => setLocale('en'))
+  const keys = Object.keys(en) as (keyof typeof en)[]
+
+  it('covers every required key, so a new English key in those groups fails until it is translated', () => {
+    const missing = keys.filter((k) => (SPANISH_REQUIRED.test(k) || k === 'onb.notStepFree') && !es[k])
+    expect(missing).toEqual([])
+  })
+
+  it('has no key English does not have, no empty text, and the same {values} as English', () => {
+    const values = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join()
+    for (const [k, v] of Object.entries(es)) {
+      expect(k in en, `${k} is not an English key`).toBe(true)
+      expect(v.length, k).toBeGreaterThan(0)
+      expect(values(v), k).toBe(values(en[k as keyof typeof en]))
+    }
+  })
+
+  it('is offered by name in itself, and loads on request', async () => {
+    expect(LOCALES.map((l) => l.code)).toEqual(['en', 'es'])
+    expect(isLanguage('es')).toBe(true)
+    expect(isLanguage('fr')).toBe(false)
+    expect(await loadLocale('es')).toBe(true)
+    setLocale('es')
+    expect(t('tab.home')).toBe('Inicio')
+    expect(t('map.found', { count: 1 })).toBe('1 lugar encontrado')
+    expect(t('map.found', { count: 3 })).toBe('3 lugares encontrados')
+    expect(t('error.title')).toBe('Algo salió mal')
+  })
+
+  it('falls back to English for text not yet translated', async () => {
+    await loadLocale('es')
+    setLocale('es')
+    expect(t('poll.votes' as never, { count: 2 })).toBe(en['poll.votes_other' as keyof typeof en]?.replace('{count}', '2') ?? 'poll.votes')
+    expect(await loadLocale('zz')).toBe(false)
   })
 })

@@ -2,6 +2,7 @@ import { isConsentRegion, type ConsentRegion } from '../domain/ahead'
 import { isUnits, type Units } from '../domain/readiness'
 import { DEFAULT_CHARGE_CHECK, isChargeCheck, type ChargeCheck } from '../domain/moneyShield'
 import { DEFAULT_NUDGES, isNudgeBudget, type NudgeBudget } from '../domain/nudges'
+import { isLanguage } from '../i18n/languages'
 import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../design/textSize'
 
 /** How the guest chose the colour theme; "auto" follows the device. */
@@ -9,6 +10,8 @@ export type ThemeChoice = 'light' | 'dark' | 'auto'
 export type ContrastChoice = 'standard' | 'high'
 
 export interface Settings {
+  /** The language of the app's text (N5.5). Chosen per device; parts not yet translated show in English. */
+  language: string
   textSize: TextSize
   theme: ThemeChoice
   contrast: ContrastChoice
@@ -34,7 +37,7 @@ export interface Settings {
   syncPrivate: boolean
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -62,6 +65,7 @@ type WriteStore = Pick<Storage, 'setItem'>
 export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SETTINGS): Settings {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
   return {
+    language: isLanguage(o.language) ? o.language : defaults.language,
     textSize: isTextSize(o.textSize) ? o.textSize : defaults.textSize,
     theme: o.theme === 'light' || o.theme === 'dark' || o.theme === 'auto' ? o.theme : defaults.theme,
     contrast: o.contrast === 'high' || o.contrast === 'standard' ? o.contrast : defaults.contrast,

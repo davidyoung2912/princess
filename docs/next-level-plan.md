@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. N1 to N4 are built (see the record at the end of each section); N5 to N8 are not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is partly built (see the record at the end of each section); N6 to N8 are not.** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 
@@ -216,6 +216,18 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 | N5.6 Deaf and hard-of-hearing | Interpreter times and a text-based emergency channel (a text request that reaches the desk, simulated) | XI-07 |
 
 **Done when:** the deck plan passes the accessibility audit (keyboard, labels, contrast), each deck route is covered by a graph test, and the locale test fails if a key is missing in Spanish.
+
+
+**N5 record (2026-11-02):**
+- **N5.1 done:** `DeckPlan` draws a schematic SVG of each deck (bow at the left, port above) from the same places, lift banks and muster stations as the text lists (`src/domain/deckPlan.ts` holds the geometry). It is one labelled image (`role="img"`, title and description), with a numbered key under it carrying every fact, a sideways-scroll region reachable by keyboard, and marks that never rely on colour (muster letters, a ring for quiet spaces, a dashed outline for steps). "You are here" appears only if the guest picks a nearby place; nothing is sensed or sent. The quiet-space layer uses an authored list (`QUIET_PLACE_IDS`).
+- **N5.2 done:** `src/domain/deckGraph.ts` builds a graph (a hall per section per deck, a lift node per bank per deck, a shaft per bank) and finds the shortest way with Dijkstra. `routeBetween` now puts that way into words and returns the waypoints, so the same way is drawn as a line on each deck it crosses. Either end may be the guest's cabin (`cabin:8123`); the route finder offers "My cabin" and a "Take me back to my cabin" button. Tests cover a way between every pair of listed places.
+- **N5.5 partly done:** the app has a language setting (`settings.language`, per device, not synced) with a switch on the sign-in screen and in display settings. Spanish (`src/i18n/es.ts`) is a separate download, loaded only when chosen, so first load is unchanged. It covers the shell, tabs, every page title, the deck map and route finder, and the display settings; a test fails if a key in those groups is missing in Spanish or its `{values}` differ from English. Other screens fall back to English and the switch says so.
+- **Not done:** N5.3 (port maps: needs real, checked geography and walking lines; I did not draw maps I cannot verify), N5.4 (audio: needs recordings from the line), N5.6 (a text emergency channel is a safety feature and needs server work and careful wording, so it is better done on its own), the split of `en.ts` into per-locale files (not needed to ship Spanish this way), and "currency and units follow" the language (units and currency are still chosen separately).
+- **Limits (read these):**
+  - **Cabin position is a guess.** The deck is read from the cabin number, and the section from the last three digits (under 200 forward, under 350 midship, otherwise aft). The real number-to-position table must replace `cabinPlace` before real use.
+  - **`<html lang>` follows the chosen language, but screens still in English are not marked `lang="en"`.** That is a WCAG 3.1.2 gap until Spanish covers all screens.
+  - The Spanish was written without a native review. Have a Spanish speaker check it, especially nautical words (proa, popa, camarote, cubierta).
+  - No server change in this phase, so no `dotnet build` is needed.
 
 ---
 

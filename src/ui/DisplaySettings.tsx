@@ -4,6 +4,7 @@ import { TEXT_SIZES } from '../design/textSize'
 import { CONSENT_REGIONS } from '../domain/ahead'
 import { UNITS } from '../domain/readiness'
 import { useSettings } from '../hooks/useSettings'
+import { LanguageSwitch } from './LanguageSwitch'
 import type { ContrastChoice, ThemeChoice } from '../settings/settings'
 
 const THEMES: readonly ThemeChoice[] = ['auto', 'light', 'dark']
@@ -15,6 +16,7 @@ export function DisplaySettings() {
   return (
     <section aria-labelledby="display-settings-h">
       <h2 id="display-settings-h">{t('settings.title')}</h2>
+      <LanguageSwitch />
       <fieldset>
         <legend>{t('settings.textSize')}</legend>
         {TEXT_SIZES.map((size) => (

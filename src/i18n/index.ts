@@ -1,4 +1,5 @@
 import { en, type StringKey } from './en'
+import { LANGUAGES } from './languages'
 
 type Raw = keyof typeof en
 
@@ -14,11 +15,31 @@ export function registerLocale(code: string, catalog: Catalog) {
   catalogs[code] = { ...catalogs[code], ...catalog }
 }
 
-/** The languages the settings offer, each named in itself (US English only for now; see requirements §22). */
-export const LOCALES: readonly { code: string; name: string }[] = [{ code: 'en', name: 'English' }]
+/** The languages the settings offer, each named in itself. A language is usable once `loadLocale` has brought its text in. */
+export const LOCALES: readonly { code: string; name: string }[] = LANGUAGES
+
+const listeners = new Set<() => void>()
+export function subscribeLocale(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
 
 export function setLocale(code: string) {
-  locale = catalogs[code] ? code : 'en'
+  const next = catalogs[code] ? code : 'en'
+  if (next === locale) return
+  locale = next
+  listeners.forEach((l) => l())
+}
+
+/** Brings a language's text in (a separate download, only when chosen) and registers it; English needs nothing. A failed download leaves English in use. */
+export async function loadLocale(code: string): Promise<boolean> {
+  if (catalogs[code]) return true
+  try {
+    if (code === 'es') registerLocale('es', (await import('./es')).es)
+    return !!catalogs[code]
+  } catch {
+    return false
+  }
 }
 
 export const getLocale = () => locale

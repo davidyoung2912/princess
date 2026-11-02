@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import { auth, retryReference } from '../runtime'
 import { referenceState, subscribeReference } from '../domain/referenceStatus'
 import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
+import { LanguageSwitch } from './LanguageSwitch'
 import { Button } from './Button'
 import { Card } from './Card'
 import { ConceptNotice } from './ConceptNotice'
@@ -47,6 +48,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   const problems = [missing.id, missing.pw, error].filter((x): x is string => !!x)
   return (
     <main className="page signin" id="main">
+      <LanguageSwitch />
       <h1>{t('signin.title')}</h1>
       <p>{t('signin.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={problems} />

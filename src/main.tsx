@@ -12,7 +12,7 @@ import { watchProblems } from './diagnostics/watch'
 import { ErrorBoundary } from './ErrorBoundary'
 import { startRuntime } from './runtime'
 import { markUpdateReady } from './runtime/update'
-import { applySettings, watchDeviceTheme } from './settings/store'
+import { applyLanguage, applySettings, watchDeviceTheme } from './settings/store'
 
 watchProblems()
 applySettings()
@@ -34,7 +34,7 @@ const fontsReady = Promise.race([
   new Promise((done) => setTimeout(done, 1500)),
 ]).catch(() => {})
 
-void Promise.all([fontsReady, startRuntime().catch(() => {})]).then(() => {
+void Promise.all([fontsReady, startRuntime().catch(() => {}), applyLanguage().catch(() => {})]).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ErrorBoundary>

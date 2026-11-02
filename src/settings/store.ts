@@ -1,4 +1,5 @@
 import { defaultsFor, loadSettings, pickSynced, saveSettings, settingsKeyFor, settingsToAttributes, SYNCED_FIELDS, withSynced, type Settings, type SyncedSettings } from './settings'
+import { getLocale, loadLocale, setLocale } from '../i18n'
 import { sync } from '../sync'
 import type { Person } from '../domain/people'
 
@@ -26,12 +27,20 @@ export function applySettings(root: HTMLElement = document.documentElement): voi
   if (meta) meta.setAttribute('content', root.getAttribute('data-theme') === 'dark' ? '#020215' : '#003595')
 }
 
+/** Loads and switches to the chosen language, and marks `<html lang>` so screen readers pronounce the text correctly. English stays if the download fails. */
+export async function applyLanguage(root: HTMLElement = document.documentElement): Promise<void> {
+  const want = current.language
+  if (want !== getLocale() && await loadLocale(want) && current.language === want) setLocale(want)
+  root.setAttribute('lang', getLocale())
+}
+
 /** Changes some settings, saves them, applies them and tells subscribers. */
 export function updateSettings(patch: Partial<Settings>): void {
   current = { ...current, ...patch }
   saveSettings(current, undefined, key)
   applySettings()
   listeners.forEach((l) => l())
+  if ('language' in patch) void applyLanguage()
   if (SYNCED_FIELDS.some((f) => f in patch)) sync.changed('settings', syncId)
 }
 
@@ -57,6 +66,7 @@ export function switchSettingsOwner(persona: Pick<Person, 'id' | 'defaultTextSiz
   current = loadSettings(undefined, defaults, key)
   applySettings()
   listeners.forEach((l) => l())
+  void applyLanguage()
 }
 
 /** Puts the current person's settings back to what they started with (used by "Wipe everything"). */
