@@ -53,9 +53,9 @@ public sealed class FamilyHomeService(IFamilyHomeStore store, IUserStore users, 
         if (!FamilyHomeRules.ValidPostcard(body?.Kind, body?.Note, out var note)) throw ApiException.Invalid("badPostcard");
         // A picture on the card must be one of the guest's own postcard pictures; the family sees it through their link and nowhere else.
         Guid? photo = null;
-        if (!string.IsNullOrEmpty(body.PhotoId))
+        if (!string.IsNullOrEmpty(body?.PhotoId))
         {
-            if (!Guid.TryParse(body.PhotoId, out var id) || await media.FindAsync(id, ct) is not { } row || row.UserId != user.Id || row.Purpose != "postcard") throw ApiException.Invalid("badPostcard");
+            if (!Guid.TryParse(body!.PhotoId, out var id) || await media.FindAsync(id, ct) is not { } row || row.UserId != user.Id || row.Purpose != "postcard") throw ApiException.Invalid("badPostcard");
             photo = id;
         }
         await store.AddPostcardAsync(user.Id, body!.Kind!, note, await clock.NowAsync(user, ct), FamilyHomeRules.MaxPostcards, photo, ct);
