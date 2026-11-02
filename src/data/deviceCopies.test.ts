@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cacheGet, cachePut, maxAgeFor } from '../domain/offlineCache'
 import { normalizeCallbacks } from '../domain/disruptionHub'
-import { clearPersonCopies, isPersonKey, OWNER_KEY, UNSENT_PREFIXES, type KeyValueStorage } from './lifecycle'
+import { clearPersonCopies, sweepExpiredCopies, isPersonKey, OWNER_KEY, UNSENT_PREFIXES, type KeyValueStorage } from './lifecycle'
 import { hasUnsent } from './outbox'
 
 class Fake implements KeyValueStorage {
@@ -61,5 +61,23 @@ describe('served call-back tickets', () => {
     const base = { id: 'a', at: 1, position: 2, readyAt: 9, reason: 'other', status: 'waiting', source: 'sim' }
     expect(normalizeCallbacks([{ ...base, kind: 'callback' }, { ...base, id: 'b', kind: 'kit' }, 'x', null]).map((c) => c.id)).toEqual(['a'])
     expect(normalizeCallbacks({})).toEqual([])
+  })
+})
+
+describe('sweeping expired reference copies', () => {
+  it('removes old tables and feed answers and leaves fresh ones and other kinds', () => {
+    const s = new Fake()
+    const day = 86_400_000
+    const now = 100 * day
+    cachePut(s, 'ports', 'v1', {}, now - 31 * day)
+    cachePut(s, 'ports', 'v2', {}, now - 5 * day)
+    cachePut(s, 'feed-sky', 'x', {}, now - 2 * day)
+    cachePut(s, 'feed-sky', 'y', {}, now - 1000)
+    cachePut(s, 'muster', 'u1', {}, now - 90 * day)
+    s.items.set('princess:cache:limits:bad', 'not json')
+    s.items.set('other:x', '1')
+    sweepExpiredCopies(s, now)
+    expect([...s.items.keys()].sort()).toEqual(['other:x', 'princess:cache:feed-sky:y', 'princess:cache:muster:u1', 'princess:cache:ports:v2'])
+    expect(() => sweepExpiredCopies(null, now)).not.toThrow()
   })
 })

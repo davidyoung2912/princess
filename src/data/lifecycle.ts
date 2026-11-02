@@ -1,4 +1,5 @@
 import { DEMO_KEY } from '../demo/state'
+import { CACHE_PREFIX, maxAgeFor } from '../domain/offlineCache'
 
 /** The part of Storage these functions need; localStorage, sessionStorage and test fakes all fit. */
 export interface KeyValueStorage {
@@ -60,4 +61,26 @@ export async function resetDemo(local: KeyValueStorage | null): Promise<void> {
 export function wipeEverything(opts: { local: KeyValueStorage | null; session: KeyValueStorage | null }): void {
   removeAppKeys(opts.local)
   removeAppKeys(opts.session)
+}
+
+/**
+ * Removes shared reference tables and feed answers saved longer ago than their kind's maximum age. They are refused on read anyway; this stops them
+ * filling the phone. Only these kinds are swept, because they are saved by the real clock (`Date.now()`); saved screens use the demo clock.
+ */
+export function sweepExpiredCopies(storage: (KeyValueStorage & Pick<Storage, 'getItem'>) | null, now: number): void {
+  if (!storage) return
+  const stale: string[] = []
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i)
+    if (!k?.startsWith(CACHE_PREFIX)) continue
+    const kind = k.slice(CACHE_PREFIX.length).split(':')[0]
+    if (!(SHARED_CACHE_KINDS as readonly string[]).includes(kind) && !kind.startsWith('feed-')) continue
+    try {
+      const savedAt = (JSON.parse(storage.getItem(k) ?? 'null') as { savedAt?: unknown } | null)?.savedAt
+      if (typeof savedAt !== 'number' || now - savedAt > maxAgeFor(kind)) stale.push(k)
+    } catch {
+      stale.push(k)
+    }
+  }
+  stale.forEach((k) => storage.removeItem(k))
 }

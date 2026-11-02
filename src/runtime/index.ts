@@ -3,7 +3,7 @@ import type { Api } from '../api/types'
 import type { ConciergeSender } from '../ai/concierge'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { ownerIdOf } from '../auth/provider'
-import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, wipeEverything } from '../data/lifecycle'
+import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, sweepExpiredCopies, wipeEverything } from '../data/lifecycle'
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
@@ -205,6 +205,7 @@ let stopWatchingDevice: () => void = () => {}
 
 /** Start-up: sign in as the last person (or Gerald, the primary persona), use their settings, and listen to other tabs. Call once before first render. */
 export async function startRuntime(): Promise<void> {
+  sweepExpiredCopies(local(), Date.now())
   watchOtherTabs()
   registerSyncBindings()
   stopWatchingDevice()
