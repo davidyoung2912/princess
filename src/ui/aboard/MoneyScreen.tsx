@@ -4,6 +4,8 @@ import { formatMoney } from '../../domain/pricing'
 import { CURRENCIES, CASH_DESK_MIN, GRATUITY_REASON_MIN, TOPUP_MAX, TOPUP_MIN, TOPUP_TOTAL_MAX } from '../../domain/services'
 import { inCurrencyAt, rateAgeDays, ratesStale } from '../../domain/rates'
 import { PIN_DESK_MIN } from '../../domain/pinReset'
+import { CHARGE_CHECKS } from '../../domain/moneyShield'
+import { useSettings } from '../../hooks/useSettings'
 import { useRates } from '../../hooks/useRates'
 import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
@@ -34,6 +36,7 @@ export function MoneyScreen() {
         {(v) => (
           <>
             <Currency v={v} reload={view.retry} />
+            <ChargeChecks />
             {v.canEdit && (
               <>
                 <TopUps v={v} reload={view.retry} />
@@ -56,6 +59,25 @@ export function InCurrency({ cents }: { cents: number }) {
   const { table } = useRates()
   if (!view.data || view.data.currency === 'USD') return null
   return <p className="muted">{t('money.about', { amount: inCurrencyAt(cents, view.data.currency, table), code: view.data.currency })}</p>
+}
+
+/** When to be asked before an optional charge (XT-03), and the promise that nothing renews by itself (XT-06). */
+function ChargeChecks() {
+  const [settings, update] = useSettings()
+  return (
+    <section aria-labelledby="chk-h">
+      <h2 id="chk-h">{t('money.checks')}</h2>
+      <p>{t('money.checksBody')}</p>
+      <div className="field">
+        <label htmlFor="chk">{t('money.checksLabel')}</label>
+        <select id="chk" className="field__input" value={settings.chargeCheck} onChange={(e) => update({ chargeCheck: e.target.value as typeof settings.chargeCheck })}>
+          {CHARGE_CHECKS.map((c) => <option key={c} value={c}>{t(`money.check.${c}` as StringKey)}</option>)}
+        </select>
+      </div>
+      <p className="muted">{t('money.checksNote')}</p>
+      <Card info><p><strong>{t('money.noRenew')}</strong> {t('money.noRenewBody')}</p></Card>
+    </section>
+  )
 }
 
 function Currency({ v, reload }: { v: MoneyView; reload: () => void }) {
@@ -163,6 +185,7 @@ export function Gratuities({ v, reload }: { v: MoneyView; reload: () => void }) 
   return (
     <section aria-labelledby="grat-h">
       <h2 id="grat-h">{t('money.grat')}</h2>
+      <p className="muted">{t('money.gratPrivate')}</p>
       {g.due === 0 ? <p>{t('money.gratIncluded')}</p> : (
         <>
           <p>{t('money.gratBody', { amount: formatMoney(g.due) })}</p>

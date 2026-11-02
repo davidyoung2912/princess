@@ -23,6 +23,7 @@ import { ExtraError } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { Human } from './common'
+import { ExplainLine } from '../onboard/MoneyShieldCards'
 
 /** The final bill and receipts (DEB-03): what is owed and to which card, the gratuity deadline, a way to query a charge, and receipts to print or email. */
 export function FinalBillScreen() {
@@ -84,6 +85,14 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
           </form>
         </Card>
       )}
+
+      <section aria-labelledby="fb-explain-h">
+        <h2 id="fb-explain-h">{t('fb.explain')}</h2>
+        <p>{t('fb.explainBody')}</p>
+        <ul className="plain-list">
+          {charges.map((l) => <li key={l.id}><span>{l.description}<ExplainLine line={l} questionTo="/me/bill/final" /></span><span className="num">{formatMoney(l.cents)}</span></li>)}
+        </ul>
+      </section>
 
       <section aria-labelledby="fb-query-h">
         <h2 id="fb-query-h">{t('fb.query')}</h2>

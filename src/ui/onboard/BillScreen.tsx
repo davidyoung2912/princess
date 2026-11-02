@@ -17,6 +17,7 @@ import { Chip } from '../Chip'
 import { SupervisedNote } from '../account/parts'
 import { BackLink, Saved } from './common'
 import { BudgetAlert, BudgetCard } from './BudgetCard'
+import { ExplainLine, FeeLedgerCard, SpendCoachCard } from './MoneyShieldCards'
 
 /** The onboard account, or folio (ACC-01): every charge, credit and package saving, with a running total, search and filters. Kept on the phone so it opens without signal. */
 export function BillScreen() {
@@ -57,6 +58,9 @@ function Folio({ f }: { f: FolioView }) {
 
       <BudgetAlert lines={f.lines} />
       <BudgetCard lines={f.lines} />
+      <SpendCoachCard lines={f.lines} throughDay={f.throughDay} />
+      <FeeLedgerCard lines={f.lines} />
+      <p><Link to="/me/ledger">{t('route.ledger')}</Link></p>
 
       <section aria-labelledby="lines-h">
         <h2 id="lines-h">{t('bill.lines')}</h2>
@@ -89,7 +93,7 @@ function Folio({ f }: { f: FolioView }) {
                 {shown.map((l) => (
                   <tr key={l.id}>
                     <td>{formatDayMonth(days[l.day - 1].date)}</td>
-                    <td>{l.description}{l.coveredBy && <small className="muted"><br />{t('bill.coveredBy', { by: t(`bill.by.${l.coveredBy}` as StringKey), value: formatMoney(l.value ?? 0) })}</small>}</td>
+                    <td>{l.description}{l.coveredBy && <small className="muted"><br />{t('bill.coveredBy', { by: t(`bill.by.${l.coveredBy}` as StringKey), value: formatMoney(l.value ?? 0) })}</small>}<ExplainLine line={l} questionTo="/me/bill/final" /></td>
                     <td>{name(l.guest)}</td>
                     <td className="num">{l.cents < 0 ? t('bill.credit', { amount: formatMoney(-l.cents) }) : formatMoney(l.cents)}</td>
                     <td className="num">{formatMoney(running[f.lines.indexOf(l)] ?? 0)}</td>

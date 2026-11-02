@@ -1,3 +1,4 @@
+import { useConfirmCharge } from '../ConfirmCharge'
 import { useState } from 'react'
 import { asPhotosView } from '../../api/guards'
 import type { PhotoQuote, PhotoReceipt, PhotosView } from '../../api/types'
@@ -105,6 +106,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
 }
 
 function Options({ picked, done }: { picked: string[]; done: () => void }) {
+  const sure = useConfirmCharge()
   const [quote, setQuote] = useState<PhotoQuote | null>(null)
   const [option, setOption] = useState<OptionId>('each')
   const [bought, setBought] = useState<PhotoReceipt | null>(null)
@@ -132,7 +134,8 @@ function Options({ picked, done }: { picked: string[]; done: () => void }) {
                 <span>{t(`pho.opt.${o.id}` as StringKey)}: <strong>{formatMoney(o.total)}</strong>{o.id === q.cheapest && <small>{t('pho.cheapest')}</small>}<small>{t(`pho.optHelp.${o.id}` as StringKey)}</small></span>
               </label>
             ))}
-            <Button disabled={buy.busy} onClick={() => void buy.run()}>{buy.busy ? t('account.saving') : t('pho.buy', { amount: formatMoney(q.options.find((o) => o.id === option)!.total) })}</Button>
+            <Button disabled={buy.busy} onClick={() => sure.ask(q.options.find((o) => o.id === option)!.total, t('pho.confirmWhat'), () => void buy.run())}>{buy.busy ? t('account.saving') : t('pho.buy', { amount: formatMoney(q.options.find((o) => o.id === option)!.total) })}</Button>
+            {sure.dialog}
           </fieldset>
         )
       )}

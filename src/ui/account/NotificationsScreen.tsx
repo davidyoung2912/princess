@@ -9,6 +9,8 @@ import { Banner, type BannerKind } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ActionError, Load } from './parts'
+import { NUDGE_CHOICES } from '../../domain/nudges'
+import { useSettings } from '../../hooks/useSettings'
 
 const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', checkinOpens: '/me/trips' } as const
 
@@ -40,6 +42,7 @@ export function NotificationsScreen() {
                 <ActionError error={markRead.error} />
               </section>
               <Prefs prefs={prefs} onSaved={data.retry} />
+              <Nudges />
             </>
           )
         }}
@@ -83,6 +86,24 @@ function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => vo
       <ActionError error={save.error} />
       <Button disabled={save.busy} onClick={async () => { if (await save.run(draft)) { setSaved(true); onSaved() } }}>{save.busy ? t('account.saving') : t('account.save')}</Button>
       <p role="status" className="muted">{saved ? t('notices.saved') : ''}</p>
+    </section>
+  )
+}
+
+/** How many unprompted suggestions a day, including none (XA-03). Safety and booking notices are not suggestions and always arrive. */
+function Nudges() {
+  const [settings, update] = useSettings()
+  return (
+    <section aria-labelledby="nudge-h">
+      <h2 id="nudge-h">{t('nudges.title')}</h2>
+      <p>{t('nudges.body')}</p>
+      <div className="field">
+        <label htmlFor="nudge-n">{t('nudges.label')}</label>
+        <select id="nudge-n" className="field__input" value={settings.nudgesPerDay} onChange={(e) => update({ nudgesPerDay: Number(e.target.value) as typeof settings.nudgesPerDay })}>
+          {NUDGE_CHOICES.map((n) => <option key={n} value={n}>{n === 0 ? t('nudges.none') : t('nudges.count', { count: n })}</option>)}
+        </select>
+      </div>
+      <p className="muted">{t('nudges.exempt')}</p>
     </section>
   )
 }

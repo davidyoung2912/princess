@@ -32,6 +32,16 @@ export const OFFERS: readonly OfferDef[] = [
   { id: 'rebook', stages: ['after'], to: '/me/rebook', tiers: ['none', 'gold', 'ruby'] },
 ]
 
+/** Why an offer is shown (XT-05): only the facts the app used, as `offer.why.<id>` keys, so nothing is hidden. */
+export type OfferReason = 'before' | 'aboard' | 'after' | 'tier' | 'noPackage'
+
+export function offerReasons(o: OfferDef, c: Pick<OfferContext, 'stage' | 'package'>): OfferReason[] {
+  const reasons: OfferReason[] = [c.stage]
+  if (o.tiers) reasons.push('tier')
+  if (o.hiddenWithPackage && c.package === 'none') reasons.push('noPackage')
+  return reasons
+}
+
 /** Which part of the trip a stage belongs to. */
 export function offerStageOf(stage: StageId): OfferStage {
   if (stage === 'booked' || stage === 'preCruise' || stage === 'checkIn') return 'before'

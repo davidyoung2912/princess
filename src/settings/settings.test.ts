@@ -9,7 +9,7 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true, units: 'metric', region: 'uk' }
+    const s = { textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0 }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
@@ -50,7 +50,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true, units: 'metric', region: 'uk' }, false)).toEqual({
+    expect(settingsToAttributes({ textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, captions: false, dataLight: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0 }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-captions': 'off', 'data-light': 'on',
     })
   })
@@ -83,5 +83,18 @@ describe('save-data signal (NET-04)', () => {
     const store = { getItem: () => JSON.stringify({ dataLight: false }) }
     expect(loadSettings(store, defaultsFor(null, true)).dataLight).toBe(false)
     expect(loadSettings({ getItem: () => null }, defaultsFor(null, true)).dataLight).toBe(true)
+  })
+})
+
+describe('charge check and suggestions settings (XT-03, XA-03)', () => {
+  it('start at "more than $50" and three suggestions a day', () => {
+    expect(DEFAULT_SETTINGS.chargeCheck).toBe('over50')
+    expect(DEFAULT_SETTINGS.nudgesPerDay).toBe(3)
+  })
+
+  it('keep a valid choice and fall back on anything else', () => {
+    expect(normalizeSettings({ chargeCheck: 'always', nudgesPerDay: 0 })).toMatchObject({ chargeCheck: 'always', nudgesPerDay: 0 })
+    expect(normalizeSettings({ chargeCheck: 'sometimes', nudgesPerDay: 7 })).toMatchObject({ chargeCheck: 'over50', nudgesPerDay: 3 })
+    expect(normalizeSettings({ chargeCheck: 5, nudgesPerDay: '1' })).toMatchObject({ chargeCheck: 'over50', nudgesPerDay: 3 })
   })
 })

@@ -1,5 +1,7 @@
 import { isConsentRegion, type ConsentRegion } from '../domain/ahead'
 import { isUnits, type Units } from '../domain/readiness'
+import { DEFAULT_CHARGE_CHECK, isChargeCheck, type ChargeCheck } from '../domain/moneyShield'
+import { DEFAULT_NUDGES, isNudgeBudget, type NudgeBudget } from '../domain/nudges'
 import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../design/textSize'
 
 /** How the guest chose the colour theme; "auto" follows the device. */
@@ -22,9 +24,13 @@ export interface Settings {
   units: Units
   /** Where the guest lives, for the rules that depend on it, such as marketing consent (ACT-08). */
   region: ConsentRegion
+  /** When to ask before an optional charge (XT-03). */
+  chargeCheck: ChargeCheck
+  /** How many unprompted suggestions a day, including none (XA-03). */
+  nudgesPerDay: NudgeBudget
 }
 
-export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false, units: 'imperial', region: 'us' }
+export const DEFAULT_SETTINGS: Settings = { textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -61,6 +67,8 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
     units: isUnits(o.units) ? o.units : defaults.units,
     region: isConsentRegion(o.region) ? o.region : defaults.region,
+    chargeCheck: isChargeCheck(o.chargeCheck) ? o.chargeCheck : defaults.chargeCheck,
+    nudgesPerDay: isNudgeBudget(o.nudgesPerDay) ? o.nudgesPerDay : defaults.nudgesPerDay,
   }
 }
 

@@ -667,3 +667,8 @@ See `docs/gap-analysis-plan.md` section 7. In short: loads retry twice with back
 ## 24. Phase G5: money and shop
 
 See `docs/gap-analysis-plan.md` section 10. In short: a forgotten PIN can be reset after the desk has checked ID (`pinReset.ts`, mock only), exchange rates are a dated table with an update button and an out-of-date note (`rates.ts`, stub source), ordered shop goods can go to the cabin, and gift cards can be given by email or to a cabin with a message (`shopExtras.ts`). Delivery and gift choices stay on this device. Not tried in a browser, by the project rule.
+
+
+## 25. Phase H1: trust and money
+
+See `docs/leading-features-plan.md` section 3. In short: every charge on the bill has a plain "What is this?" and a way to question it (`explainCharge`), a "Where the money goes" card splits gratuities, bar service, cover charges and purchases, and a spend coach shows pace against the budget without blame. Optional charges (Wi-Fi, orders, photos) ask first above an amount the guest sets on the Money screen (`useConfirmCharge`, default over $50, kept on the device). A phone-setup list (`/plan/phone`) and a Wi-Fi data coach guard against roaming bills. The trust ledger (`/me/ledger`) lists payments and account lines together. Offers say why they are shown. A "suggestions a day" setting (0, 1, 3 or 5) can silence the Home offer card; safety and booking notices are exempt. `src/darkPatterns.test.ts` fails on pressure wording, confirm-shaming, pre-ticked boxes and renewal wording across every string and screen.

@@ -5,6 +5,7 @@ import type { OrderGuest, OrderMenuView, OrderView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/pricing'
 import { placeName } from '../../domain/family'
+import { useConfirmCharge } from '../ConfirmCharge'
 import {
   DELIVERY_ZONES, DRINKING_AGE, MAX_PER_LINE, MENU_GROUPS, TIPS, itemById, locationProblem, menuFor, priceOrder,
   type Choice, type Location, type MenuItem, type OrderKind, type OrderLine,
@@ -69,6 +70,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
   const location: Location = where === 'cabin' ? { kind: 'cabin' } : where === 'zone' ? { kind: 'zone', placeId: zone } : { kind: 'other', text }
   const deliverAt = at ? Number(at) : undefined
   const priced = useMemo(() => priceOrder(lines, { kind, location, tip, guests: menu.guests, free: menu.isolating }), [lines, kind, where, zone, text, tip, menu.guests, menu.isolating]) // oxlint-disable-line react-hooks/exhaustive-deps -- `location` is built from these
+  const sure = useConfirmCharge()
   const place = useAction(async () => {
     const o = await api.orders.place({ kind, lines, location, tip, ...(kind === 'breakfast' ? { deliverAt } : {}) })
     setLines([])
@@ -179,7 +181,8 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
         </dl>
         <p className="muted">{t('ord.charged')}</p>
         <ExtraError error={place.error} />
-        <Button block disabled={place.busy || !!why} onClick={() => void place.run()}>{place.busy ? t('account.saving') : t('ord.place')}</Button>
+        <Button block disabled={place.busy || !!why} onClick={() => sure.ask(priced.total, t('ord.confirmWhat'), () => void place.run())}>{place.busy ? t('account.saving') : t('ord.place')}</Button>
+        {sure.dialog}
         {why && <p className="muted">{why}</p>}
         {done && <Banner kind="success" title={t('ord.placed')}><p>{t('ord.placedBody')}</p></Banner>}
       </Card>

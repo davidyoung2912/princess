@@ -1,10 +1,11 @@
 import { Link } from 'react-router'
-import { homeOffer, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
+import { homeOffer, offerReasons, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
 import { stageAt } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useOffers } from '../../hooks/useOffers'
+import { useSettings } from '../../hooks/useSettings'
 import { t, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -22,12 +23,17 @@ function useOfferContext(trip: string | null): OfferContext & { stageId: ReturnT
 }
 
 /** One offer: what it is, where it goes, and "Not for this trip". No timers and no talk of stock. */
-function OfferItem({ offer, trip, onDismiss }: { offer: OfferDef; trip: string; onDismiss: (trip: string, id: OfferDef['id']) => void }) {
+function OfferItem({ offer, trip, onDismiss, ctx }: { offer: OfferDef; trip: string; onDismiss: (trip: string, id: OfferDef['id']) => void; ctx: OfferContext }) {
   const id = `offer-${offer.id}-h`
   return (
     <Card labelledBy={id}>
       <h3 id={id} className="card__title">{t(`offer.${offer.id}.title` as StringKey)}</h3>
       <p>{t(`offer.${offer.id}.body` as StringKey)}</p>
+      <details className="explain">
+        <summary>{t('offer.whyOpen')}<span className="visually-hidden"> {t(`offer.${offer.id}.title` as StringKey)}</span></summary>
+        <ul className="plain-bullets">{offerReasons(offer, ctx).map((r) => <li key={r}>{t(`offer.why.${r}` as StringKey)}</li>)}</ul>
+        <p className="muted">{t('offer.whyNothingElse')}</p>
+      </details>
       <div className="button-row">
         <LinkButton to={offer.to} variant="secondary">{t('offer.see')}</LinkButton>
         <Button variant="secondary" onClick={() => onDismiss(trip, offer.id)}>{t('offer.dismiss')}</Button>
@@ -42,13 +48,14 @@ export function HomeOfferCard() {
   const trip = trips.data ? trips.data.upcoming.find((x) => x.kind === 'current') ?? trips.data.upcoming[0] ?? null : null
   const ctx = useOfferContext(trip?.number ?? null)
   const { dismiss } = useOffers()
-  if (!trip) return null
+  const [settings] = useSettings()
+  if (!trip || settings.nudgesPerDay === 0) return null
   const offer = homeOffer({ ...ctx, taskWaiting: trip.next !== 'allSet' })
   if (!offer) return null
   return (
     <section aria-labelledby="home-offer-h">
       <h2 id="home-offer-h" className="muted">{t('offer.homeHeading')}</h2>
-      <OfferItem offer={offer} trip={trip.number} onDismiss={dismiss} />
+      <OfferItem offer={offer} trip={trip.number} onDismiss={dismiss} ctx={ctx} />
       <p><Link to="/home/offers">{t('offer.allLink')}</Link></p>
     </section>
   )
@@ -71,7 +78,7 @@ export function OffersScreen() {
           <>
             {shown.length === 0 ? <p>{t('offer.none')}</p> : (
               <ul className="card-grid">
-                {shown.map((o) => <li key={o.id}><OfferItem offer={o} trip={trip.number} onDismiss={dismiss} /></li>)}
+                {shown.map((o) => <li key={o.id}><OfferItem offer={o} trip={trip.number} onDismiss={dismiss} ctx={ctx} /></li>)}
               </ul>
             )}
             {aside.length > 0 && (

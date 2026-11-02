@@ -3,7 +3,7 @@ import { en } from '../i18n/en'
 import { STAGE_IDS } from './sailings'
 import {
   EMPTY_OFFER_STATE, MARKETING_WEEKLY_CAP, OFFERS, countsAgainstCap, dismissOffer, dismissedFor, homeOffer, isOfferFree, marketingLeft, normalizeOfferState,
-  offerStageOf, offersFor, restoreOffer, sendMarketing, type OfferContext,
+  offerReasons, offerStageOf, offersFor, restoreOffer, sendMarketing, type OfferContext,
 } from './offers'
 
 const before: OfferContext = { stage: 'before', tier: 'none', package: 'none', dismissed: [] }
@@ -101,5 +101,20 @@ describe('offer state and the weekly cap (NOT-04)', () => {
   it('counts only marketing against the cap', () => {
     expect(countsAgainstCap('offers')).toBe(true)
     for (const c of ['critical', 'payments', 'documents', 'checkin'] as const) expect(countsAgainstCap(c)).toBe(false)
+  })
+})
+
+describe('why am I seeing this (XT-05)', () => {
+  it('lists only the facts used', () => {
+    const upgrade = OFFERS.find((o) => o.id === 'upgrade')!
+    expect(offerReasons(upgrade, { stage: 'before', package: 'none' })).toEqual(['before'])
+    const pkg = OFFERS.find((o) => o.id === 'package')!
+    expect(offerReasons(pkg, { stage: 'before', package: 'none' })).toEqual(['before', 'noPackage'])
+    const rebook = OFFERS.find((o) => o.id === 'rebook')!
+    expect(offerReasons(rebook, { stage: 'after', package: 'plus' })).toEqual(['after', 'tier'])
+  })
+
+  it('has words for every reason', () => {
+    for (const r of ['before', 'aboard', 'after', 'tier', 'noPackage']) expect((en as Record<string, string>)[`offer.why.${r}`], r).toBeTruthy()
   })
 })

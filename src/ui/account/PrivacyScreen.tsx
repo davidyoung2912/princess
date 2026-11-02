@@ -52,6 +52,11 @@ export function PrivacyScreen() {
             {view.data.deleted.length > 0 && <p role="status">{t('priv.deleted', { count: view.data.deleted.length })}</p>}
           </Card>
 
+          <Card labelledBy="priv-tips-h">
+            <h2 id="priv-tips-h" className="card__title">{t('priv.tips.title')}</h2>
+            <p>{t('priv.tips.body')}</p>
+          </Card>
+
           <Card labelledBy="priv-region-h">
             <h2 id="priv-region-h" className="card__title">{t('priv.region.title', { region: t(`settings.region.${settings.region}` as StringKey) })}</h2>
             <p>{t(`priv.region.law.${settings.region}` as StringKey)}</p>
