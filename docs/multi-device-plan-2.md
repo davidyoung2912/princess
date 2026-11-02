@@ -37,7 +37,7 @@ Status: **Plan written 2026-11-01 (audit of the front end and back end). Phase 5
 3. **(Built in part: see the Phase 3 record for what remains.) Feeds to the server, client sims removed from the REST path.** Routes and `src/feeds/*` fetchers for pulse and lines, quiet spaces, port crowd, storm, sky objects, heading, disruption hub, fare history, boards, sightings, cabin odds, Autopilot sims, service status. Mock mode keeps the local functions.
 4. **(Built in part: route and parity test only.) Reference data from the server.** `GET /reference/*` for the catalogue; cached copy; seed becomes the source and mock fixtures are generated from it; parity tests; difficulty columns on `ref.Excursions`.
 5. **(Built.) Account-state loose ends.** Sign-out flush, user-id keying (and no-persona accounts), sync indicator, outbox sync, demo state from the server plus `/demo/jump` and `/demo/reset`, consent for calm profile and contacts, copy sweep, budget unification, Autopilot changes into the day plan.
-6. **(Built in part: the staff queue for call backs only.) Features needing a server.** Signed family links and public page, port ledger rows, `IStaffQueue` for caregiver / callback / kit.
+6. **(Built in part: staff queue, signed family links and public page; port ledger rows not done.) Features needing a server.** Signed family links and public page, port ledger rows, `IStaffQueue` for caregiver / callback / kit.
 7. **(Built as a ratchet.) Audit gate.** A test that fails when a UI file imports an authored catalogue or simulation module in REST mode, or uses `localStorage` outside an allowlist.
 
 ## Phase 1 record
@@ -98,10 +98,15 @@ Built 2026-11-02 (the first half the same day; the rest follows). **Server C# no
 
 ## Phase 6 record
 
-Built 2026-11-02, **in part**.
+Built 2026-11-02, **in part**. **Server C# not compiled or run**, as with everything since the 2026-11-01 compile check.
 
-- **Done:** `IStaffQueue` (simulated `SimStaffQueue`) and `POST /me/staff-requests` for `callback`, `caregiver` and `kit`; the disruption hub's call-back button asks the server in REST mode (`staffRequest` in the runtime) and keeps the on-device pretend queue in mock mode or when the server cannot be reached. Tests: `StaffQueueTests` (C#, not run).
-- **Not done:** the caregiver and sensory-kit screens do not call the route yet (they have no request screen to wire), signed family-home links with a public page, and the port ledger and presence as rows.
+- **Staff queue:** `IStaffQueue` (simulated `SimStaffQueue`) and `POST /me/staff-requests` for `callback`, `caregiver` and `kit`. The disruption hub's call-back button, the sensory-kit request and the caregiver link on the calm screen all tell the server in REST mode (the kit and caregiver are best effort: the request is kept on the account either way). The hub keeps the on-device pretend queue in mock mode or when the server cannot be reached. Tests: `StaffQueueTests` (C#, not run).
+- **Signed family-home links and a public page:** `POST /me/family-links` (3, 7 or 14 days), `DELETE /me/family-links/{id}` and `DELETE /me/family-links`, `POST /me/family-postcards`, and `GET /public/family/{token}` (no sign-in, rate-limited by address). The token is `owner.link.expiresMs.signature`, an HMAC-SHA256 with a key derived from the token signing key (so it can never be a sign-in token); the new `FamilyLinks` row says whether it is live, so a stop takes effect at once, and `FamilyPostcards` holds what the page shows (newest 30). The contacts' names and addresses stay in the encrypted `family` document: the server never sees them. In REST mode `FamilyLinkScreen` changes nothing on screen unless the server agreed and says so when it did not; `AtSeaScreen` asks the server and shows the reason (signature, unknown, revoked, expired). Mock mode keeps the device-signed links. Tests: `FamilyHomeTests` (C#, not run), the route in `SwaggerCoverageTests`, `homeLink.test.ts`, `render.test.tsx`.
+- **Not done, and why:**
+  - **Port ledger and presence as rows.** Today `port` is one booking document merged by `mergePort`, which unions expenses and families, so a deleted expense or a removed family comes back from the other device. Rows (per-person presence, per-expense ledger lines with deletes) fix that, but they need new tables, routes, a rewrite of `port/store.ts` and `usePort` to read and write rows, and a one-time import of the existing document. That is its own piece of work, not a slice of this one.
+  - The public page does not show a delay: whether a delay is shared lives in the guest's `hub` document, which the server does not read.
+  - Turning `syncPrivate` off deletes the `family` document but does not yet stop the server-side links; "stop all links" on the screen does.
+  - Signing a link needs a signed-in session; a guest offline cannot make a new link (they can still stop none).
 
 ## Phase 7 record
 

@@ -65,6 +65,8 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'RetentionRuns'),
   (N'dbo', N'SupportTickets'),
   (N'dbo', N'Favourites'),
+  (N'dbo', N'FamilyLinks'),
+  (N'dbo', N'FamilyPostcards'),
   (N'demo', N'DemoState'),
   (N'dbo', N'Bookings'),
   (N'dbo', N'BookingGuests'),

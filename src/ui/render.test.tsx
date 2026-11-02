@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { AppRoutes } from '../App'
 import { FAQS } from '../domain/help'
 import { t } from '../i18n'
+import { API_URL } from '../runtime'
 import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
 import { SCREENS } from '../screens'
@@ -40,7 +41,8 @@ describe('every screen renders inside the shell', () => {
     for (const path of ['/at-sea/:token', '/at-sea/nope', '/at-sea/gerald.a.b.c']) {
       const html = decode(render(path))
       expect(html).toContain(t('route.atSea'))
-      expect(html).toContain(t('home.public.bad.malformed'))
+      // With a server, a link of the right shape is asked about there (the page says it is loading); anything else is refused at once.
+      expect(html).toContain(API_URL && path.endsWith('.a.b.c') ? t('shell.loading') : t('home.public.bad.malformed'))
       expect(html).not.toContain('class="tabs')
       expect(html).not.toContain(t('app.conceptNotice'))
     }

@@ -70,7 +70,9 @@ services.AddScoped<TripService>();
 services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IStateStore, DapperStateStore>();
+services.AddScoped<IFamilyHomeStore, DapperFamilyHomeStore>();
 services.AddScoped<StateService>();
+services.AddScoped<FamilyHomeService>();
 services.AddScoped<DemoService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
@@ -198,6 +200,7 @@ v1.MapFinishEndpoints();
 v1.MapStateEndpoints();
 v1.MapReferenceEndpoints();
 v1.MapConciergeEndpoints();
+v1.MapFamilyHomeEndpoints();
 v1.MapDemoEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.

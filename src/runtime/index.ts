@@ -85,6 +85,26 @@ export const staffRequest: ((kind: 'callback' | 'caregiver' | 'kit', reason?: st
   ? (kind, reason) => (auth as ReturnType<typeof createHttpAuthProvider>).http.post<unknown>('/me/staff-requests', { kind, reason })
   : null
 
+/** Family-at-home links signed by the server (null in mock mode, where the device signs them): make, stop, stop all, send a postcard and open a link's page (no sign-in). */
+export const familyHome: {
+  issue: (days: number) => Promise<unknown>
+  revoke: (id: string) => Promise<void>
+  revokeAll: () => Promise<void>
+  postcard: (kind: string, note: string) => Promise<void>
+  view: (token: string) => Promise<unknown>
+} | null = rest
+  ? (() => {
+      const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
+      return {
+        issue: (days: number) => http.post<unknown>('/me/family-links', { days }),
+        revoke: (id: string) => http.delete<void>(`/me/family-links/${encodeURIComponent(id)}`),
+        revokeAll: () => http.delete<void>('/me/family-links'),
+        postcard: (kind: string, note: string) => http.post<void>('/me/family-postcards', { kind, note }),
+        view: (token: string) => http.get<unknown>(`/public/family/${encodeURIComponent(token)}`, { anonymous: true }),
+      }
+    })()
+  : null
+
 if (rest) {
   const http = (auth as ReturnType<typeof createHttpAuthProvider>).http
   setSkyFetcher((sailing, day, port) => http.get<unknown>('/feeds/sky', { query: { sailing, day, port } }))

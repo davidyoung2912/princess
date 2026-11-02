@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { addCaregiver, CAREGIVER_NEVER, CAREGIVER_SEES, kitStatus, KIT_ITEMS, PROFILE_KEYS, requestKit, sensoryPlan, STORY, visualSchedule, type Authority, type KitItem, type SensoryProfile } from '../../domain/calm'
 import { shipZoneAt } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
+import { staffRequest } from '../../runtime'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
@@ -30,6 +31,8 @@ export function CalmScreen() {
   const plan = sensoryPlan(calm.profile, dp.rows, dp.dayStartAt, minute, env)
   const cards = visualSchedule(dp.rows, timeIn(now, shipZoneAt(sailing, now)))
 
+  /** Tells guest services in REST mode (best effort: the request is kept here either way, and a server that cannot be reached changes nothing on screen). */
+  const tellStaff = (kind: 'caregiver' | 'kit') => { if (staffRequest) void staffRequest(kind).catch(() => undefined) }
   const [items, setItems] = useState<KitItem[]>([])
   const [kitMsg, setKitMsg] = useState(false)
   const [name, setName] = useState('')
@@ -107,7 +110,7 @@ export function CalmScreen() {
         ) : (
           <>
             {KIT_ITEMS.map((i) => <label key={i} className="choice"><input type="checkbox" checked={items.includes(i)} onChange={(e) => setItems(e.target.checked ? [...items, i] : items.filter((x) => x !== i))} /><span>{t(`calm.kit.item.${i}` as StringKey)}</span></label>)}
-            <Button onClick={() => { const r = requestKit(items, now); if (r) { set({ kit: r }); setKitMsg(false) } else setKitMsg(true) }}>{t('calm.kit.request')}</Button>
+            <Button onClick={() => { const r = requestKit(items, now); if (r) { set({ kit: r }); setKitMsg(false); tellStaff('kit') } else setKitMsg(true) }}>{t('calm.kit.request')}</Button>
             {kitMsg && <p className="field__error" role="alert">{t('calm.kit.none')}</p>}
           </>
         )}
@@ -135,7 +138,7 @@ export function CalmScreen() {
             </select>
             <label className="choice"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>{t('calm.caregiver.consent')}</span></label>
             {problem === 'consent' && <p className="field__error" role="alert">{t('calm.err.consent')}</p>}
-            <Button onClick={() => { const r = addCaregiver(name, authority, consent, now); if (r.ok) { set({ caregiver: r.caregiver }); setProblem(null); setName(''); setConsent(false) } else setProblem(r.problem) }}>{t('calm.caregiver.add')}</Button>
+            <Button onClick={() => { const r = addCaregiver(name, authority, consent, now); if (r.ok) { set({ caregiver: r.caregiver }); tellStaff('caregiver'); setProblem(null); setName(''); setConsent(false) } else setProblem(r.problem) }}>{t('calm.caregiver.add')}</Button>
           </>
         )}
       </Card>

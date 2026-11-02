@@ -49,6 +49,10 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/telemetry" },
         { "post", "/api/v1/me/concierge" },
         { "post", "/api/v1/me/staff-requests" },
+        { "post", "/api/v1/me/family-links" },
+        { "delete", "/api/v1/me/family-links/{id}" },
+        { "delete", "/api/v1/me/family-links" },
+        { "post", "/api/v1/me/family-postcards" },
         { "get", "/api/v1/demo/state" },
         { "put", "/api/v1/demo/state" },
         { "delete", "/api/v1/me/state" },
@@ -467,6 +471,17 @@ public class SwaggerCoverageTests : IDisposable
         Assert.False(op.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, "the pass lookup must not ask for a token");
         using var http = _f.CreateClient();
         Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, (await http.GetAsync("/api/v1/pass/lookup?number=PC243902&lastName=Harper")).StatusCode);
+    }
+
+    [Fact]
+    public async Task TheFamilyPageIsTheOnePublicFamilyRoute()
+    {
+        var paths = await Paths();
+        var op = paths.GetProperty("/api/v1/public/family/{token}").GetProperty("get");
+        Assert.False(string.IsNullOrWhiteSpace(op.GetProperty("summary").GetString()));
+        Assert.False(op.TryGetProperty("security", out var security) && security.GetArrayLength() > 0, "the family page must not ask for a token");
+        using var http = _f.CreateClient();
+        Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, (await http.GetAsync("/api/v1/public/family/nonsense")).StatusCode);
     }
 
     /// <summary>Phase 7 (data model 6.2); the first five are public.</summary>

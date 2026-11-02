@@ -751,6 +751,36 @@ CREATE TABLE dbo.UserState (
 );
 END
 
+IF OBJECT_ID(N'dbo.FamilyLinks', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.FamilyLinks (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_FamilyLinks PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_FamilyLinks_PublicId DEFAULT NEWID() CONSTRAINT UX_FamilyLinks_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  ExpiresAt DATETIME2(0) NOT NULL,
+  RevokedAt DATETIME2(0) NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyLinks_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_FamilyLinks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_FamilyLinks_User ON dbo.FamilyLinks (UserId);
+END
+
+IF OBJECT_ID(N'dbo.FamilyPostcards', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.FamilyPostcards (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_FamilyPostcards PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_FamilyPostcards_PublicId DEFAULT NEWID() CONSTRAINT UX_FamilyPostcards_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Kind VARCHAR(10) NOT NULL,
+  Note NVARCHAR(140) NOT NULL CONSTRAINT DF_FamilyPostcards_Note DEFAULT N'',
+  SentAt DATETIME2(0) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FamilyPostcards_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_FamilyPostcards_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_FamilyPostcards_Kind CHECK (Kind IN ('ok','sea','port','late','love'))
+);
+CREATE INDEX IX_FamilyPostcards_User ON dbo.FamilyPostcards (UserId, SentAt);
+END
+
 IF OBJECT_ID(N'demo.DemoState', N'U') IS NULL
 BEGIN
 CREATE TABLE demo.DemoState (

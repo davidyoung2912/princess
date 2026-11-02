@@ -4704,6 +4704,7 @@ export const en = {
   'home.person.add': 'Add person',
   'home.person.remove': 'Remove person',
   'home.error.name': 'Enter a name.',
+  'home.error.server': 'That could not be done just now, and nothing has changed. Check your connection and try again.',
   'home.error.email': 'Enter a valid email address.',
   'home.error.duplicate': 'That person is already on the list.',
   'home.error.tooMany': 'You can add up to 5 people.',

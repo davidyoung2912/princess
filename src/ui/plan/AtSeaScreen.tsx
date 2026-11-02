@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { applyPageMeta } from '../../seo'
-import { familyView, POSTCARD_TEXT, tokenOwner, verifyLink } from '../../domain/homeLink'
+import { familyView, normalizePublicFamily, POSTCARD_TEXT, tokenOwner, verifyLink, type FamilyView, type LinkProblem, type PublicFamily } from '../../domain/homeLink'
 import { delayVisibleToOthers } from '../../domain/delay'
 import { familyNotices } from '../../domain/disruptionHub'
 import { personaById } from '../../domain/personas'
@@ -9,7 +9,11 @@ import { itinerary, portAt, PORTS } from '../../domain/sailings'
 import { formatDate } from '../../domain/cruise'
 import { getHub } from '../../hub/store'
 import { useDemo, useNow, useSailing } from '../../hooks/useDemo'
+import { familyHome } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
+
+/** Four dot-separated parts of safe characters: anything else cannot be a link, so it is not sent to the server. */
+const TOKEN_SHAPE = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+){3}$/
 
 /**
  * The page a family member opens from a link (S3-08, XD-07): ship-level facts only, no sign-in, no tabs. In this concept the link is checked
@@ -21,6 +25,15 @@ export function AtSeaScreen() {
   const sailing = useSailing()
   const demo = useDemo()
   const owner = tokenOwner(token)
+  // With a server the link is checked there (signature, revoked, expired); without one it is checked against this device.
+  const asks = familyHome !== null && TOKEN_SHAPE.test(token)
+  const [served, setServed] = useState<PublicFamily | 'loading' | null>(asks ? 'loading' : null)
+  useEffect(() => {
+    if (!familyHome || !asks) return
+    let live = true
+    familyHome.view(token).then((raw) => { if (live) setServed(normalizePublicFamily(raw)) }, () => { if (live) setServed({ ok: false, reason: 'malformed' }) })
+    return () => { live = false }
+  }, [token, asks])
   const hub = owner ? getHub(owner) : null
   const check = owner && hub ? verifyLink(token, owner, hub.home, now) : null
   const guest = owner ? personaById(owner) : undefined
@@ -30,21 +43,34 @@ export function AtSeaScreen() {
     applyPageMeta(document, { title: `${t('route.atSea')} · ${t('app.name')}`, description: t('seo.private'), indexable: false, url: `${window.location.origin}/at-sea` })
   }, [])
 
-  const body = (() => {
-    if (!check || !check.ok || !hub || !guest) {
-      const reason = check && !check.ok ? check.reason : 'malformed'
-      return <p role="status">{t(`home.public.bad.${reason}` as StringKey)}</p>
+  const here = portAt(sailing, now)
+  const shipFacts = {
+    shipName: t('route.sunPrincess'),
+    itinerary: itinerary(sailing).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : d.port === 'fll' ? PORTS.fll.name : PORTS[d.port].name })),
+    shipAt: here.port === 'sea' ? null : here.port === 'fll' ? PORTS.fll.name : PORTS[here.port].name,
+  }
+  /** The page's facts, or why there is no page. */
+  const found: { view: FamilyView } | { reason: LinkProblem } | 'loading' = (() => {
+    if (served === 'loading') return 'loading'
+    if (served) {
+      // The server checked the link; it also names the guest and the scenarios that are on. A delay stays on the guest's own devices.
+      return served.ok
+        ? { view: { guestFirst: served.guestFirst, ...shipFacts, notices: familyNotices(served.scenarios), postcards: served.postcards, delayedMinutes: null, expiresAt: served.expiresAt } }
+        : { reason: served.reason }
     }
-    const here = portAt(sailing, now)
-    const view = familyView(hub.home, check.link, {
-      guestFirst: guest.firstName,
-      shipName: t('route.sunPrincess'),
-      itinerary: itinerary(sailing).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : d.port === 'fll' ? PORTS.fll.name : PORTS[d.port].name })),
-      shipAt: here.port === 'sea' ? null : here.port === 'fll' ? PORTS.fll.name : PORTS[here.port].name,
-      notices: familyNotices(demo.scenarios),
-      delayedMinutes: delayVisibleToOthers(hub.delay) && hub.delay.current ? hub.delay.current.lateMinutes : null,
-      now,
-    })
+    if (!check || !check.ok || !hub || !guest) return { reason: check && !check.ok ? check.reason : 'malformed' }
+    return {
+      view: familyView(hub.home, check.link, {
+        guestFirst: guest.firstName, ...shipFacts, notices: familyNotices(demo.scenarios),
+        delayedMinutes: delayVisibleToOthers(hub.delay) && hub.delay.current ? hub.delay.current.lateMinutes : null, now,
+      }),
+    }
+  })()
+
+  const body = (() => {
+    if (found === 'loading') return <p role="status">{t('shell.loading')}</p>
+    if ('reason' in found) return <p role="status">{t(`home.public.bad.${found.reason}` as StringKey)}</p>
+    const view = found.view
     return (
       <>
         <p>{t('home.public.intro', { name: view.guestFirst, ship: view.shipName })}</p>

@@ -1,3 +1,5 @@
+using Princess.Api.Data;
+
 namespace Princess.Api.Domain;
 
 /// <summary><paramref name="SavedAt"/> is only set on answers: when the offset was set (milliseconds since 1970), 0 when the person has never saved controls. A new device takes saved controls, and follows a fast clock from that moment.</summary>

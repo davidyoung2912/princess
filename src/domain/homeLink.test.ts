@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addContact, addPostcard, daysLeft, EMPTY_HOME, familyView, flushPostcards, isLive, issueLink, linkToken, liveLinkFor, MAX_CONTACTS, MAX_POSTCARDS, normalizeHome, queuedPostcards, removeContact, revokeAll, revokeLink, tokenOwner, verifyLink, type HomeState } from './homeLink'
+import { addContact, addPostcard, adoptServerLink, liveLinkIds, normalizePublicFamily, normalizeServerLink, daysLeft, EMPTY_HOME, familyView, flushPostcards, isLive, issueLink, linkToken, liveLinkFor, MAX_CONTACTS, MAX_POSTCARDS, normalizeHome, queuedPostcards, removeContact, revokeAll, revokeLink, tokenOwner, verifyLink, type HomeState } from './homeLink'
 
 const DAY = 86_400_000
 const withPerson = (): HomeState => addContact(EMPTY_HOME, 'Ann', 'ann@example.com', 'c1').state
@@ -121,5 +121,31 @@ describe('saved state', () => {
     expect(normalizeHome(null)).toEqual(EMPTY_HOME)
     const bad = normalizeHome({ secret: 'a.b', contacts: [{ id: 'a b', name: 'x', email: 'a@b.co' }, { id: 'ok', name: '', email: 'a@b.co' }, { id: 'e', name: 'E', email: 'nope' }], links: [{ id: 'l' }], postcards: [{ id: 'p', kind: 'bogus', at: 1 }] })
     expect(bad).toEqual(EMPTY_HOME)
+  })
+})
+
+describe('links signed by the server', () => {
+  const state = addContact(EMPTY_HOME, 'Ann', 'ann@example.com', 'c1').state
+  it('reads the answer and refuses a malformed one', () => {
+    expect(normalizeServerLink({ id: 'abc123', token: 'a.b.c.d', expiresAt: 5 })).toEqual({ id: 'abc123', token: 'a.b.c.d', expiresAt: 5 })
+    expect(normalizeServerLink({ id: 'bad id!', token: 'x', expiresAt: 5 })).toBeNull()
+    expect(normalizeServerLink({ id: 'a', token: '', expiresAt: 5 })).toBeNull()
+    expect(normalizeServerLink(null)).toBeNull()
+  })
+  it('keeps one live link per person and says which one it replaced', () => {
+    const first = adoptServerLink(state, 'c1', { id: 'l1', token: 't', expiresAt: 10_000 }, 1000)
+    expect(first.replaced).toEqual([])
+    const second = adoptServerLink(first.state, 'c1', { id: 'l2', token: 't', expiresAt: 20_000 }, 2000)
+    expect(second.replaced).toEqual(['l1'])
+    expect(liveLinkIds(second.state, 3000)).toEqual(['l2'])
+    expect(liveLinkIds(second.state, 3000, 'nobody')).toEqual([])
+    expect(adoptServerLink(state, 'ghost', { id: 'l3', token: 't', expiresAt: 1 }, 0).state).toBe(state)
+  })
+  it('turns the public answer into a page or a reason', () => {
+    const ok = normalizePublicFamily({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ kind: 'ok', note: 'Hi', at: 1 }, { kind: 'spam', note: '', at: 2 }], scenarios: ['a', 3] })
+    expect(ok).toEqual({ ok: true, guestFirst: 'Dan', expiresAt: 9, postcards: [{ id: '0', kind: 'ok', note: 'Hi', at: 1 }], scenarios: ['a'] })
+    expect(normalizePublicFamily({ ok: false, reason: 'revoked' })).toEqual({ ok: false, reason: 'revoked' })
+    expect(normalizePublicFamily({ ok: false, reason: 'whatever' })).toEqual({ ok: false, reason: 'malformed' })
+    expect(normalizePublicFamily('x')).toEqual({ ok: false, reason: 'malformed' })
   })
 })

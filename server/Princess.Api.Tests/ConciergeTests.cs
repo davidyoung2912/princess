@@ -170,3 +170,73 @@ public class StaffQueueTests : JourneyWorld
         Assert.Equal("badStaffRequest", bad.ProblemTitle);
     }
 }
+
+public class FamilyHomeTests : JourneyWorld
+{
+    private static readonly byte[] Key = FamilyHomeRules.KeyFrom("a-test-signing-key-of-at-least-32-chars!!");
+
+    [Fact]
+    public void ATokenReadsBackAndAnAlteredOneDoesNot()
+    {
+        var owner = Guid.NewGuid();
+        var link = Guid.NewGuid();
+        var token = FamilyHomeRules.Token(Key, owner, link, 1_800_000_000_000);
+        Assert.True(FamilyHomeRules.TryRead(Key, token, out var o, out var l, out var exp));
+        Assert.Equal((owner, link, 1_800_000_000_000), (o, l, exp));
+        Assert.False(FamilyHomeRules.TryRead(Key, token[..^1] + (token[^1] == 'a' ? 'b' : 'a'), out _, out _, out _));
+        Assert.False(FamilyHomeRules.TryRead(Key, token.Replace("1800000000000", "1900000000000"), out _, out _, out _));
+        Assert.False(FamilyHomeRules.TryRead(FamilyHomeRules.KeyFrom("another-signing-key-of-at-least-32-chars"), token, out _, out _, out _));
+        foreach (var junk in new[] { "", "a.b.c", "x.y.z.w", null }) Assert.False(FamilyHomeRules.TryRead(Key, junk, out _, out _, out _));
+    }
+
+    [Fact]
+    public void LengthsAndKindsAreChecked()
+    {
+        Assert.Equal(7, FamilyHomeRules.DaysOrDefault(null));
+        Assert.Equal(7, FamilyHomeRules.DaysOrDefault(5));
+        Assert.Equal(14, FamilyHomeRules.DaysOrDefault(14));
+        Assert.True(FamilyHomeRules.ValidPostcard("ok", new string('x', 200), out var note));
+        Assert.Equal(140, note.Length);
+        Assert.False(FamilyHomeRules.ValidPostcard("spam", null, out _));
+    }
+
+    [Fact]
+    public async Task ALinkOpensThePageUntilItIsStoppedOrEnds()
+    {
+        var token = await SignIn(Daniel);
+        var made = await Call(HttpMethod.Post, "/api/v1/me/family-links", token, new NewFamilyLinkRequest(3));
+        Assert.Equal(HttpStatusCode.OK, made.Status);
+        var link = made.Json.GetProperty("token").GetString()!;
+        var id = made.Json.GetProperty("id").GetString()!;
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Post, "/api/v1/me/family-postcards", token, new FamilyPostcardRequest("ok", "All well"))).Status);
+        Assert.Equal("badPostcard", (await Call(HttpMethod.Post, "/api/v1/me/family-postcards", token, new FamilyPostcardRequest("spam", null))).ProblemTitle);
+
+        var page = await Call(HttpMethod.Get, $"/api/v1/public/family/{link}");
+        Assert.True(page.Json.GetProperty("ok").GetBoolean());
+        Assert.Equal("Daniel", page.Json.GetProperty("guestFirst").GetString());
+        Assert.Equal("All well", page.Json.GetProperty("postcards")[0].GetProperty("note").GetString());
+
+        Assert.Equal("signature", (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}x")).Json.GetProperty("reason").GetString());
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, $"/api/v1/me/family-links/{id}", token)).Status);
+        Assert.Equal("revoked", (await Call(HttpMethod.Get, $"/api/v1/public/family/{link}")).Json.GetProperty("reason").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/family-links/{Guid.NewGuid():N}", token)).Status);
+
+        var second = (await Call(HttpMethod.Post, "/api/v1/me/family-links", token, new NewFamilyLinkRequest(3))).Json.GetProperty("token").GetString()!;
+        F.Clock.UtcNow = F.Clock.UtcNow.AddDays(4);
+        Assert.Equal("expired", (await Call(HttpMethod.Get, $"/api/v1/public/family/{second}")).Json.GetProperty("reason").GetString());
+    }
+
+    [Fact]
+    public async Task OnlyTheOwnerCanStopALinkAndAChildCannotShare()
+    {
+        var made = await Call(HttpMethod.Post, "/api/v1/me/family-links", await SignIn(Daniel));
+        var id = made.Json.GetProperty("id").GetString()!;
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/family-links/{id}", await SignIn(Stranger))).Status);
+        Assert.True((await Call(HttpMethod.Get, $"/api/v1/public/family/{made.Json.GetProperty("token").GetString()}")).Json.GetProperty("ok").GetBoolean());
+        Assert.Equal(HttpStatusCode.Forbidden, (await Call(HttpMethod.Post, "/api/v1/me/family-links", MayaToken())).Status);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Call(HttpMethod.Post, "/api/v1/me/family-links")).Status);
+        await Call(HttpMethod.Delete, "/api/v1/me/family-links", await SignIn(Daniel));
+        Assert.Equal("revoked", (await Call(HttpMethod.Get, $"/api/v1/public/family/{made.Json.GetProperty("token").GetString()}")).Json.GetProperty("reason").GetString());
+    }
+}

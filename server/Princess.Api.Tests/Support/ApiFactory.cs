@@ -26,6 +26,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryChatStore Chat { get; }
     public InMemoryFinishStore Finish { get; }
     public InMemoryStateStore State { get; } = new();
+    public InMemoryFamilyHomeStore FamilyHome { get; } = new();
     public FakeClock Clock { get; } = new(DateTime.UtcNow);
     public int LoginAttemptsPerMinute { get; init; } = 1000;
 
@@ -72,6 +73,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IChatStore>();
             services.RemoveAll<IFinishStore>();
             services.RemoveAll<IStateStore>();
+            services.RemoveAll<IFamilyHomeStore>();
             services.RemoveAll<IClock>();
             services.AddSingleton<IUserStore>(Users);
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
@@ -92,6 +94,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IChatStore>(Chat);
             services.AddSingleton<IFinishStore>(Finish);
             services.AddSingleton<IStateStore>(State);
+            services.AddSingleton<IFamilyHomeStore>(FamilyHome);
             services.AddSingleton<IClock>(Clock);
         });
     }

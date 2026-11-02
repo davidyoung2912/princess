@@ -111,6 +111,44 @@ export const isLive = (link: FamilyLink, now: number): boolean => !link.revoked 
 /** The live link for a person, if any. */
 export const liveLinkFor = (state: HomeState, contactId: string, now: number): FamilyLink | undefined => state.links.find((l) => l.contactId === contactId && isLive(l, now))
 
+/* ---- Links the server signed (REST mode) ---- */
+
+/** A link as the server answers `POST /me/family-links`: its id, the token to share (shown once) and when it ends. */
+export interface ServerLink { id: string; token: string; expiresAt: number }
+
+export function normalizeServerLink(raw: unknown): ServerLink | null {
+  if (!isObj(raw) || !str(raw.id) || !SAFE.test(raw.id) || !str(raw.token) || !raw.token || typeof raw.expiresAt !== 'number') return null
+  return { id: raw.id, token: raw.token, expiresAt: raw.expiresAt }
+}
+
+/** Records a link the server made for a person (one live link per person, as with a link made here) without a secret: the server holds the signing key. */
+export function adoptServerLink(state: HomeState, contactId: string, link: ServerLink, now: number): { state: HomeState; replaced: string[] } {
+  if (!state.contacts.some((c) => c.id === contactId)) return { state, replaced: [] }
+  const replaced = state.links.filter((l) => l.contactId === contactId && isLive(l, now)).map((l) => l.id)
+  const links = state.links.map((l) => (replaced.includes(l.id) ? { ...l, revoked: true } : l))
+  return { state: { ...state, links: [...links, { id: link.id, contactId, issuedAt: now, expiresAt: link.expiresAt, revoked: false }] }, replaced }
+}
+
+/** The links still live on a person, so removing them can stop each one on the server. */
+export const liveLinkIds = (state: HomeState, now: number, contactId?: string): string[] =>
+  state.links.filter((l) => isLive(l, now) && (contactId === undefined || l.contactId === contactId)).map((l) => l.id)
+
+/** What `GET /public/family/{token}` answers: a page, or the reason a link does not work. */
+export type PublicFamily =
+  | { ok: true; guestFirst: string; expiresAt: number; postcards: { id: string; kind: PostcardKind; note: string; at: number }[]; scenarios: string[] }
+  | { ok: false; reason: LinkProblem }
+
+export function normalizePublicFamily(raw: unknown): PublicFamily {
+  if (!isObj(raw)) return { ok: false, reason: 'malformed' }
+  if (raw.ok !== true) return { ok: false, reason: (['signature', 'unknown', 'revoked', 'expired'] as const).find((r) => r === raw.reason) ?? 'malformed' }
+  const postcards = (Array.isArray(raw.postcards) ? raw.postcards : []).flatMap((x, i): { id: string; kind: PostcardKind; note: string; at: number }[] =>
+    isObj(x) && POSTCARD_KINDS.includes(x.kind as PostcardKind) && typeof x.at === 'number' ? [{ id: `${i}`, kind: x.kind as PostcardKind, note: str(x.note) ? x.note.slice(0, MAX_POSTCARD_NOTE) : '', at: x.at }] : [])
+  return {
+    ok: true, guestFirst: str(raw.guestFirst) ? raw.guestFirst.slice(0, 60) : '', expiresAt: typeof raw.expiresAt === 'number' ? raw.expiresAt : 0, postcards: postcards.slice(-MAX_POSTCARDS),
+    scenarios: (Array.isArray(raw.scenarios) ? raw.scenarios : []).filter(str).slice(0, 30),
+  }
+}
+
 /* ---- Postcards ---- */
 
 export function addPostcard(state: HomeState, kind: PostcardKind, note: string, at: number, id: string, online: boolean): HomeState {
