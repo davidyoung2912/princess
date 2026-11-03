@@ -400,7 +400,7 @@ public sealed class DapperInboxStore(IDbConnectionFactory db) : IInboxStore
         (await c.QueryAsync<string>(Sql.Cmd("SELECT ItemKey FROM dbo.Favourites WHERE UserId = @userId ORDER BY Position, ItemKey", new { userId }, tx, ct))).ToList();
 }
 
-public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
+public sealed class DapperPrivacyStore(IDbConnectionFactory db, IHttpContextAccessor http) : IPrivacyStore
 {
     public async Task<List<ConsentRow>> ListConsentsAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)
     {
