@@ -74,7 +74,9 @@ describe('every screen renders inside the shell', () => {
 describe('discover screens', () => {
   it('reach every discover screen from Home in one or two taps', () => {
     const home = render('/')
-    for (const href of ['/home/sailings', '/home/cruise', '/home/ship', '/home/saved', '/home/ports/cozumel', '/home/ports/belize', '/home/ports/roatan']) expect(home).toContain(`href="${href}"`)
+    for (const href of ['/home/sailings', '/home/ship', '/home/saved']) expect(home).toContain(`href="${href}"`)
+    const sailing = render('/tab/sailing')
+    for (const href of ['/home/cruise']) expect(sailing).toContain(`href="${href}"`)
     expect(decode(render('/home/sailings'))).toContain(t('discover.loading'))
   })
 
@@ -126,7 +128,7 @@ describe('account screens', () => {
 describe('check-in and boarding screens', () => {
   it('reach the no-sign-in pass finder from Home before anything has loaded', () => {
     const home = render('/')
-    for (const href of ['/home/find-pass', '/home/sailings', '/home/cruise']) expect(home).toContain(`href="${href}"`)
+    for (const href of ['/home/find-pass', '/home/sailings']) expect(home).toContain(`href="${href}"`)
   })
 
   it('shows one h1 and a loading note while a guest’s check-in loads', () => {

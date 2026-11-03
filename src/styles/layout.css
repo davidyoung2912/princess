@@ -115,3 +115,11 @@
 .testbar__main { font-weight: 700; }
 .testbar__sub { font-size: var(--fs-small, 0.875rem); }
 .testbar__dialog { display: grid; gap: var(--space-3); }
+
+.stage-steps { padding-inline-start: var(--space-5); }
+.stage-steps li { padding-bottom: var(--space-2); }
+.stage-steps a { min-height: var(--target-min); font-weight: 600; }
+.stage-steps__done a { text-decoration: line-through; }
+.stage-tiles { list-style: none; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.stage-tile { border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 0.5rem); padding: var(--space-3); }
+.stage-tile a { display: block; min-height: var(--target-min); font-weight: 600; }

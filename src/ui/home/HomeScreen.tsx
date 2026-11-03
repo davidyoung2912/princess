@@ -27,6 +27,9 @@ import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
+import { StageHome } from './StageHome'
+import { TILE_STAGES } from '../../routes/stageHome'
+import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { countdowns } from '../../domain/countdowns'
 import { useNow } from '../../hooks/useDemo'
@@ -40,6 +43,8 @@ export function HomeScreen() {
   const trips = useMine(() => api.trips.list())
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
   const today = useOnboardToday()
+  const { stage } = useJourneyPosition()
+  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><NewTabsNote /><UpdatesBanner /><StageHome /></div>
   if (settings.essentials && !today.data?.aboard) return <EssentialsHome />
   if (today.data?.aboard) {
     return (
