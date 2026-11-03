@@ -5,6 +5,7 @@ import { capacityOf, FARES, fareOptions, type FareId } from '../../domain/fares'
 import { SAILINGS, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
+import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { t, th, type StringKey } from '../../i18n'
 import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
@@ -29,6 +30,7 @@ export function CabinChooserScreen() {
   // A shared comparison link opens with the same sailing, party, fare and picks; anything that does not match the guide is ignored.
   const [shared] = useState(() => parseCompareQuery(params.toString()))
   const [sailingId, setSailingId] = useState(shared.sailingId && sailingById(shared.sailingId) ? shared.sailingId : demo.id)
+  useJourneyEvent('cabinView', sailingId)
   const [category, setCategory] = useState<CategoryId>('balcony')
   const [guests, setGuests] = useState(shared.guests ?? 2)
   const [fare, setFare] = useState<FareId>(shared.fare && shared.fare in FARES ? (shared.fare as FareId) : 'standard')

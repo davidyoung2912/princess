@@ -12,6 +12,7 @@ import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { ItineraryList, PriceBreakdown, PriceState, SaveShare } from './parts'
+import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { PriceUnitLine } from '../delights/Delights'
 import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDelights'
 
@@ -19,6 +20,7 @@ import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDe
 export function SailingScreen() {
   const { id } = useParams()
   const sailing = sailingById(id)
+  useJourneyEvent('lookCloser', sailing?.id)
   const favourites = useFavourites()
   const [category, setCategory] = useState<CategoryId>('balcony')
   const [guests, setGuests] = useState(2)

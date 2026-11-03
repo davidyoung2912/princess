@@ -93,7 +93,7 @@ describe('catalog', () => {
 })
 
 /** The groups of text a Spanish reader needs before anything else: the shell, tabs, every page title, the deck map and route finder, and the display settings. */
-const SPANISH_REQUIRED = /^(app|common|error|shell|tab|route|lang|settings|map|rt|plan2|txt)\./
+const SPANISH_REQUIRED = /^(app|common|error|shell|tab|tabname|tabsub|tabs|stage|screen|route|lang|settings|map|rt|plan2|txt)\./
 
 describe('Spanish', () => {
   afterEach(() => setLocale('en'))

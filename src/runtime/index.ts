@@ -261,6 +261,26 @@ export function loadContext(): void {
   void refreshContext(() => http.get<unknown>('/me/context'), () => auth.current()?.user?.id === who)
 }
 
+/** What a guest can do that moves their journey stage (`POST /me/journey/events`). */
+export type JourneyEventKind = 'lookCloser' | 'priceView' | 'cabinView' | 'sharedAccepted' | 'planImported' | 'atTerminal'
+
+const sentEvents = new Set<string>()
+
+/**
+ * Tells the server the guest did something that moves their stage, then asks for the stage again. Sent at most once per kind and sailing in a session,
+ * only while signed in, and never throws: a refused or lost event just means the stage waits for the next one.
+ */
+export async function recordJourney(kind: JourneyEventKind, sailingId: string | null | undefined): Promise<void> {
+  if (!sailingId || !auth.current()) return
+  const key = `${auth.current()?.user?.id}:${kind}:${sailingId}`
+  if (sentEvents.has(key)) return
+  sentEvents.add(key)
+  try {
+    await http.post('/me/journey/events', { kind, sailingId })
+    loadContext()
+  } catch { sentEvents.delete(key) }
+}
+
 /** Account state is fetched again when the tab is shown or the connection returns, so a change made on another device appears. Returns the stop function. */
 function watchDeviceReturn(): () => void {
   if (typeof window === 'undefined') return () => {}

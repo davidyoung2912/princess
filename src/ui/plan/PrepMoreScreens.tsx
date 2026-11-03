@@ -8,7 +8,8 @@ import { itinerary, PORTS, REFERENCE_SAILING, sailingById, sailingNights, type P
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { t, th, type StringKey } from '../../i18n'
-import { api } from '../../runtime'
+import { api, recordJourney } from '../../runtime'
+import { useSailing } from '../../hooks/useDemo'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -131,6 +132,7 @@ export function ChildStoryScreen() {
 /** Paste a plan (S0-07): lines are read into a draft; only the ones the guest ticks are kept, on this device. */
 export function PasteScreen() {
   const { state, update } = useMemory()
+  const sailingId = useSailing().id
   const [text, setText] = useState('')
   const [draft, setDraft] = useState<PlanLine[]>([])
   const [keep, setKeep] = useState<Set<number>>(new Set())
@@ -150,7 +152,7 @@ export function PasteScreen() {
           <ul className="plain-list">{draft.map((l, i) => (
             <li key={`${l.day}-${l.text}`}><label className="choice"><input type="checkbox" checked={keep.has(i)} onChange={(e) => setKeep((k) => { const n = new Set(k); if (e.target.checked) n.add(i); else n.delete(i); return n })} /><span>{l.day ? t('paste.day', { n: l.day }) + ' ' : ''}{l.text}</span></label></li>
           ))}</ul>
-          <Button onClick={() => { update((m) => ({ ...m, pasted: draft.filter((_, i) => keep.has(i)) })); setDraft([]); setText('') }}>{t('paste.keep')}</Button>
+          <Button onClick={() => { update((m) => ({ ...m, pasted: draft.filter((_, i) => keep.has(i)) })); if (keep.size > 0) void recordJourney('planImported', sailingId); setDraft([]); setText('') }}>{t('paste.keep')}</Button>
         </Card>
       )}
       {state.pasted.length > 0 && (
