@@ -18,6 +18,7 @@ import { ExtraError, NotAboard } from './common'
 import { useConfirmCharge } from '../ConfirmCharge'
 import { wifiAdvice } from '../../domain/phoneSetup'
 import { useNow } from '../../hooks/useDemo'
+import { WifiQrCard } from '../delights/EmbarkDelights'
 
 /** Ship Wi-Fi (NET-02): devices, a usage meter, upgrades and sign-in help. The app itself needs no paid plan (NET-01). */
 export function WifiScreen() {
@@ -27,6 +28,7 @@ export function WifiScreen() {
       <h1>{t('route.wifi')}</h1>
       <Banner kind="success" title={t('wifi.free')}><p>{t('wifi.freeBody')}</p></Banner>
       <Banner kind="info" title={t('phone.guard')}><p>{t('phone.guardBody')} <Link to="/plan/phone">{t('route.phone')}</Link></p></Banner>
+      <WifiQrCard />
       <Load state={view}>{(v) => <Wifi v={v} reload={view.retry} />}</Load>
       <section aria-labelledby="wifi-help-h">
         <h2 id="wifi-help-h">{t('wifi.help')}</h2>

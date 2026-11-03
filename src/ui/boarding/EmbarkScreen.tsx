@@ -20,6 +20,7 @@ import { LoadError } from '../discover/parts'
 import { ActionError, SupervisedNote } from '../account/parts'
 
 import { personFirstName } from '../../account/context'
+import { BagWindowLine, CabinReadyCard, LandmarksCard, SailAwayCard } from '../delights/EmbarkDelights'
 
 const time = (epoch: number) => formatTime(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(epoch))
 
@@ -54,6 +55,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
   })
   const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(EMBARK.mapQuery)}`
   const nurse = view.nurseCheck
+  const mine = boarding.passes.find((p) => p.id === me?.id) ?? boarding.passes[0]
   return (
     <>
       {!view.canEdit && me && <SupervisedNote booker={personFirstName(me.booker)} />}
@@ -86,12 +88,16 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
         <Link to="/plan/travel">{t('route.travel')}</Link>
       </section>
 
+      <CabinReadyCard cabin={mine?.cabin ?? ''} ready={view.stateroomReady} />
+      {mine && view.stateroomReady && <LandmarksCard cabin={mine.cabin} muster={mine.muster} />}
+
       <section aria-labelledby="bags-h">
         <h2 id="bags-h">{t('embark.bags')}</h2>
         <p>{t('embark.bagsBody')}</p>
         <p role="status"><StatusBadge kind={view.luggage.status === 'delivered' ? 'booked' : view.luggage.status === 'dropped' ? 'ready' : 'waitlist'} label={t(`embark.bags.${view.luggage.status}` as StringKey)} /></p>
         {view.canEdit && !offline && (view.luggage.status === 'notDropped' ? <Button variant="secondary" disabled={bags.busy} onClick={() => void bags.run(true)}>{t('embark.bags.drop')}</Button> : view.luggage.status === 'dropped' ? <Button variant="tertiary" disabled={bags.busy} onClick={() => void bags.run(false)}>{t('embark.bags.undo')}</Button> : null)}
         <ActionError error={bags.error} />
+        <BagWindowLine delivered={view.luggage.status === 'delivered'} />
         <p className="muted">{t('embark.stateroom', { time: time(view.stateroomReadyAt) })} {view.stateroomReady && <strong>{t('embark.stateroomReady')}</strong>}</p>
       </section>
 
@@ -116,6 +122,8 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
         ))}
         <ActionError error={carry.error} />
       </section>
+
+      <SailAwayCard />
 
       <section aria-labelledby="pm-h">
         <h2 id="pm-h">{t('embark.afternoon')}</h2>

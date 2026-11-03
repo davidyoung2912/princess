@@ -79,6 +79,13 @@ export function DisplaySettings() {
           <small>{t('settings.dataLightHint')}</small>
         </span>
       </label>
+      <label className="choice">
+        <input type="checkbox" checked={settings.essentials} onChange={(e) => update({ essentials: e.target.checked })} />
+        <span>
+          {t('settings.essentials')}
+          <small>{t('settings.essentialsHint')}</small>
+        </span>
+      </label>
       <fieldset>
         <legend>{t('settings.units')}</legend>
         {UNITS.map((units) => (

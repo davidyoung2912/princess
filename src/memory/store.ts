@@ -6,6 +6,7 @@ import { EMPTY_ABOARD, normalizeAboard, type AboardState } from '../domain/aboar
 import { EMPTY_FINISH, normalizeFinish, type FinishState } from '../domain/finishMore'
 import { EMPTY_PLANNING, normalizePlanning, type PlanningState } from '../domain/planning'
 import { EMPTY_POLISH, normalizePolish, type PolishState } from '../domain/planPolish'
+import { EMPTY_EMBARK, normalizeEmbark, type EmbarkState } from '../domain/embarkDelights'
 import { EMPTY_PREPARE, normalizePrepare, type PrepareState } from '../domain/prepareDelights'
 import { normalizePlanLines, type PlanLine } from '../domain/prepMore'
 import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/medicalCard'
@@ -49,9 +50,11 @@ export interface MemoryState {
   polish: PolishState
   /** Small delights DL5, on this device and in the memory document: the weekly small thing, home currency, trip nickname, mood tiles, reminder and saved travellers. */
   prepare: PrepareState
+  /** Small delights DL6, on this device and in the memory document: ticket stubs kept from boarding passes. */
+  embark: EmbarkState
 }
 
-export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH, prepare: EMPTY_PREPARE }
+export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH, prepare: EMPTY_PREPARE, embark: EMPTY_EMBARK }
 
 const money = (v: unknown): number | null => (typeof v === 'number' && v > 0 ? Math.min(100_000_000, Math.round(v)) : null)
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
@@ -85,7 +88,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
     return [{ id: o.id, text: cleanExtra(o.text), done: o.done === true }]
   }).slice(0, EXTRAS_MAX)
   return {
-    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish), prepare: normalizePrepare(r.prepare),
+    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish), prepare: normalizePrepare(r.prepare), embark: normalizeEmbark(r.embark),
     drinks: typeof r.drinks === 'number' && r.drinks > 0 ? int(r.drinks, 999) : null,
     anniversary: r.anniversary === true,
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),

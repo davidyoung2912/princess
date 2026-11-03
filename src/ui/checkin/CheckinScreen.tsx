@@ -20,6 +20,7 @@ import { usePersona } from '../../hooks/useDemo'
 import { CheckinError } from './CheckinError'
 import { ArrivalStep, ConfirmStep, ContractStep, DocumentStep, EmergencyStep, HealthStep, PaymentStep, PhotoStep } from './steps'
 import { personFirstName } from '../../account/context'
+import { TicketProgress } from '../delights/EmbarkDelights'
 
 const REVIEW = 'review'
 const stepLabel = (step: StepId | typeof REVIEW) => t(`checkin.step.${step}` as StringKey)
@@ -67,6 +68,8 @@ function Overview({ view }: { view: CheckinView }) {
         </Banner>
       )}
       <Gate view={view}>
+        <TicketProgress lines={steps.map((s) => ({ id: s.id, label: s.label, state: s.state }))} done={progress.done} total={progress.total} />
+
         <Card labelledBy="progress-h">
           <h2 id="progress-h" className="card__title">{t('checkin.progress')}</h2>
           <p className="progress-line" role="status">{t('checkin.progressLine', { done: progress.done, total: progress.total })}</p>

@@ -1,3 +1,5 @@
+import { EssentialsHome } from '../delights/EmbarkDelights'
+import { useSettings } from '../../hooks/useSettings'
 import { HomeReadyCard, NicknameLine, ReminderDueCard, SmallThingCard } from '../delights/PrepareDelights'
 import { Link } from 'react-router'
 import type { TripView } from '../../api/types'
@@ -30,9 +32,11 @@ const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.fi
 
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {
+  const [settings] = useSettings()
   const trips = useMine(() => api.trips.list())
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
   const today = useOnboardToday()
+  if (settings.essentials && !today.data?.aboard) return <EssentialsHome />
   if (today.data?.aboard) {
     return (
       <div className="page">

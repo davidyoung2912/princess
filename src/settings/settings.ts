@@ -25,6 +25,8 @@ export interface Settings {
   captions: boolean
   /** Save data: nothing loads until asked for, no animation, and refreshes come less often (NET-04). */
   dataLight: boolean
+  /** Essentials only (DL6): Home shows the boarding pass, the leave-by time and the phone number, and nothing else moves, to save battery on a travel day. Per device. */
+  essentials: boolean
   /** Temperatures and lengths in this system (ACT-08). */
   units: Units
   /** The guest picked the units themselves, so a change of language no longer moves them. */
@@ -45,7 +47,7 @@ export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metr
 /** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
 export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -82,6 +84,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     calm: typeof o.calm === 'boolean' ? o.calm : defaults.calm,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
+    essentials: typeof o.essentials === 'boolean' ? o.essentials : defaults.essentials,
     units: isUnits(o.units) ? o.units : defaults.units,
     unitsChosen: typeof o.unitsChosen === 'boolean' ? o.unitsChosen : defaults.unitsChosen,
     region: isConsentRegion(o.region) ? o.region : defaults.region,
@@ -133,7 +136,7 @@ export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record
   return {
     'data-theme': s.theme === 'auto' ? (deviceIsDark ? 'dark' : 'light') : s.theme,
     'data-contrast': s.contrast,
-    'data-motion': s.reduceMotion || s.calm ? 'reduced' : 'full',
+    'data-motion': s.reduceMotion || s.calm || s.essentials ? 'reduced' : 'full',
     'data-text-size': s.textSize,
     'data-simple': s.simple ? 'on' : 'off',
     'data-calm': s.calm ? 'on' : 'off',

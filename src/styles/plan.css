@@ -41,3 +41,23 @@
 .ready-ring__fill { fill: none; stroke: var(--success); stroke-width: 8; stroke-linecap: round; }
 .ready-ring__text { fill: currentColor; font-size: 24px; font-weight: 700; }
 .ready-ring-row { display: flex; align-items: center; gap: var(--space-3); }
+
+/* DL6: travel day. Colour is never the only cue: each light also has a shape and a word. */
+.traffic { border: 3px solid currentColor; border-radius: var(--radius-3, 0.75rem); padding: var(--space-3); margin-block: var(--space-3); }
+.traffic--green { border-color: var(--success); }
+.traffic--amber { border-color: var(--warning, #8a5a00); }
+.traffic--red { border-color: var(--danger, #b00020); }
+.traffic__word { margin: 0; }
+.traffic__time { font-size: 2.5rem; font-weight: 700; line-height: 1.1; margin: var(--space-2) 0 0; }
+.driver-card { border: 3px solid currentColor; border-radius: var(--radius-3, 0.75rem); padding: var(--space-3); font-size: 1.75rem; line-height: 1.25; }
+.driver-card__big { font-size: 2.25rem; font-weight: 700; }
+.ticket { border: 2px dashed currentColor; border-radius: var(--radius-3, 0.75rem); padding: var(--space-3); margin-block: var(--space-3); }
+.ticket--full { border-style: solid; border-color: var(--success); }
+.ticket__head { margin-top: 0; }
+.ticket__lines { list-style: none; padding: 0; margin: 0; }
+.ticket__line { display: flex; gap: var(--space-2); padding-block: 0.25rem; }
+.ticket__line--todo { opacity: 0.75; }
+.ticket__line--current { font-weight: 700; }
+.qr--small { width: 12rem; height: 12rem; }
+.stubs { list-style: none; padding: 0; }
+.stub { border-bottom: 1px dashed currentColor; padding-block: var(--space-2); }

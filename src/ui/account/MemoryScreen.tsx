@@ -22,6 +22,7 @@ import { BookPagePictures, DayPictureEditor } from './BookPictures'
 import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
 import { Keepsakes } from '../delights/Exports'
+import { StubsCard } from '../delights/EmbarkDelights'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
 
@@ -85,6 +86,7 @@ export function MemoryScreen() {
       <h1>{t('route.memories')}</h1>
       <p>{t('memory.intro')}</p>
 
+      <StubsCard />
       <Card labelledBy="mem-journal" >
         <h2 id="mem-journal" className="card__title no-print">{t('memory.journal')}</h2>
         <div className="no-print">

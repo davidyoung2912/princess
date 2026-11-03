@@ -19,6 +19,7 @@ import { SyncChip } from '../SyncChip'
 import { LoadError } from '../discover/parts'
 import { ActionError } from '../account/parts'
 import { FailsafeCard, PassFace } from './parts'
+import { KeepStub } from '../delights/EmbarkDelights'
 
 /** The boarding pass (CHK-04, CHK-14): large, high-contrast, kept on the phone, with a bright full-screen view, wallet, print, and a plan for a dead phone. */
 export function PassScreen() {
@@ -65,6 +66,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
       {pass.checkinDone && signedIn && (
         <section className="no-print" aria-labelledby="keep-h">
           <h2 id="keep-h">{t('pass.keep')}</h2>
+          <KeepStub pass={pass} />
           <div className="button-row">
             {pass.inWallet ? <p role="status"><strong>{t('pass.inWallet')}</strong> {t('pass.inWalletBody')}</p> : <Button onClick={() => void wallet.run()} disabled={wallet.busy || offline}>{t('pass.addWallet')}</Button>}
             <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('pass.print')}</Button>

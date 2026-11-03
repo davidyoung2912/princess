@@ -21,6 +21,8 @@ import { Field } from '../Field'
 import { BackLink, } from '../onboard/common'
 import { duration, useShipTime } from '../onboard/shipTime'
 import { ArrivedCard, LastLookCard, WatchCard } from '../delights/Delights'
+import { DriverCardView, ShipLengths, TrafficLightCard } from '../delights/EmbarkDelights'
+import { TERMINALS } from '../../domain/boarding'
 
 const STATUS_KIND = { onTrack: 'info', tight: 'warning', atRisk: 'warning' } as const
 
@@ -71,6 +73,8 @@ export function JourneyScreen() {
         {plan.windowStart ? <p className="muted">{t('journey.window', { time: plan.windowStart })}</p> : <p className="muted">{t('journey.window.none')} <Link to="/home/embarkation/plan">{t('route.embarkPlan')}</Link></p>}
       </Card>
 
+      <TrafficLightCard status={result.status} at={result.leaveBy !== null ? result.leaveBy - earlier * 60_000 : result.atTerminal} kind={result.leaveBy !== null ? 'leave' : 'terminal'} time={time} />
+
       <Banner kind={STATUS_KIND[result.status]} title={t(`journey.status.${result.status}` as StringKey)}>
         <p role="status">{t('journey.slack', { time: time(result.atTerminal), slack: duration(Math.max(0, result.slack)) })}</p>
         {result.slack < 0 && <p>{t('journey.late')}</p>}
@@ -85,6 +89,7 @@ export function JourneyScreen() {
           ))}
         </ol>
         {result.leaveBy !== null && <p>{t('journey.leaveBy', { time: time(result.leaveBy - earlier * 60_000) })}</p>}
+        <ShipLengths plan={plan} leaveByMs={result.leaveBy !== null ? result.leaveBy - earlier * 60_000 : null} />
         {toGo > 0 && toGo < 24 * 60 && <p className="calm-hide">{t('journey.countdown', { time: duration(toGo) })}</p>}
       </section>
 
@@ -173,6 +178,7 @@ export function JourneyScreen() {
           <Button type="submit" variant="secondary">{t('journey.bags.addButton')}</Button>
         </form>
       </section>
+      <DriverCardView terminal={TERMINALS.usual} />
       <LastLookCard />
       <ArrivedCard />
       <WatchCard />

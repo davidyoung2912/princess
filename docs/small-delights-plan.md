@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL5 are built (sections 5 to 9); DL6 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL6 are built (sections 5 to 10); DL7 to DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -30,7 +30,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | DL3 | Discover and cabin helpers | D1-2, D1-4, D1-5, D1-6, D1-7, D0-3, D0-6, D0-1, D0-7 | none | **Built** (section 7) |
 | DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | **Built** (section 8) |
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | **Built** (section 9) |
-| DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | Planned |
+| DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | **Built** (section 10) |
 | DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | Planned |
 | DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | Planned |
 | DL9 | Memory and return | D8-1, D8-2, D8-3, D8-5, D8-7 | DL8 (stamps, pins, numbers) | Planned |
@@ -212,3 +212,33 @@ Front end only; no REST contract changes. State is the new `prepare` part of the
   - The entry table is four authored rows with months and a visa hint, and knows only U.S. or other.
   - Packing ticks are per booking; there is no shared list across separate bookings.
   - The summary email (D2-8) is composed by the guest's own mail app; there is no server send.
+
+## 10. Phase DL6 in detail: travel day and embark
+
+**Goal:** twelve small additions to the getting-there, check-in, embarkation, Wi-Fi, pass and memory screens, as pure tested functions (`src/domain/embarkDelights.ts`, 15 tests) with thin cards in `src/ui/delights/EmbarkDelights.tsx`. No new routes.
+
+### 10.1 Built (2026-11-02)
+
+Front end only; no REST contract changes. Ticket stubs are the new `embark` part of the per-person memory store (it travels in the synced `memory` document); "Essentials only" is a per-device display setting.
+
+- **D4A-1** on getting there: a green, amber or red card (shape and word as well as colour) with the leave-by time in the largest type, or the time to be at the terminal when there is no road leg.
+- **D4A-2** on getting there: a big-text card for a driver, in English or Spanish, with the terminal and address. The card text stays in the chosen language whatever the app language is.
+- **D4A-8** on getting there: when driving, "N ship-lengths to go (M miles)", counting down from the leave-by time (45 mph assumed; ship length from the ship facts).
+- **D4A-6** in display settings: "Essentials only". Before boarding, Home shows the boarding pass, the leave-by time and the Guest Services number, and motion is reduced.
+- **D5-1** on the check-in overview: a ticket-shaped list that fills in line by line, with the state also in text for a screen reader.
+- **D5-2** the face-photo step already shows the four tips before the camera; the document step takes typed details and has no camera, so nothing was added.
+- **D5-3** on the embarkation screen: when the stateroom is ready, its number, deck and a route in words (lift bank in the cabin's section, and which side), with a copy button.
+- **D5-4** on the embarkation screen: up to three places on the way from the cabin to the guest's muster station, ending with the station.
+- **D5-5** on the embarkation screen: "Bags usually reach cabins between 1:00 pm and 5:00 pm", with its source, until bags are delivered.
+- **D5-6** on the embarkation screen: the Promenade on deck 9 and the time to be there (twenty minutes before sailing).
+- **D5-7** on the Wi-Fi screen: a QR to join the guest network (open, so no password) and the airplane-mode and roaming steps.
+- **D5-8** on the boarding pass: "Keep a ticket stub in my memories" (asked for, never automatic); stubs show first in Trip memories and can be removed.
+- Spanish for all `dl6.*` strings; native review still needed.
+- **Verified:** `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:**
+  - D5-3 is shown in the app when the stateroom is ready; the "cabin ready" notification (a push notice) and a server-side route are not built.
+  - The bag window (D5-5) is one authored window for the ship, not read from the ship.
+  - The route to the cabin names the lift bank and side by a rule on the cabin number, not from a real deck plan; the three landmarks are the first named rooms on the decks the route crosses.
+  - The Wi-Fi network name is authored and the QR only joins the network; the sign-in page still asks for the stateroom number and last name.
+  - The driver card has English and Spanish only, and the address is Port Everglades; no card for the ports of call.
+  - The mileage behind the ship-lengths is minutes at an assumed speed, not a map distance.
