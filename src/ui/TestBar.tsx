@@ -38,7 +38,7 @@ function TestBarBody() {
     <div className="testbar no-print" role="group" aria-label={t('testbar.label')}>
       <button type="button" className="testbar__item" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabel(now, position.zone)}`}>
         <span className="testbar__main">{dayLabel(now, position.zone)}</span>
-        <span className="testbar__sub">{dayText(stage, position.day)}</span>
+        <span className="testbar__sub" title={position.stageReason ?? undefined}>{dayText(stage, position.day)}</span>
       </button>
       <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
         <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>

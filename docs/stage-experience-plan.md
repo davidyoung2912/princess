@@ -1,6 +1,6 @@
 # One app, eleven stages: the staged-experience plan
 
-Status: **v3, approved by the product owner (2026-11-03). No code has been changed.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
+Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server) is built; P2 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
 
 It builds on `docs/customer-journey-priorities.md` (what matters at each stage) and replaces the earlier "reorder but hide nothing" approach in `docs/stage-menus-matrix.md`.
 
@@ -698,7 +698,14 @@ Verification for every phase is `npm run test`, `npm run lint`, `npx tsc -b` and
 - **Chat is not a tab for now.** Party chat and Guest Services sit inside Group, Plan, Board or People. Pulling Chat out onto its own tab is a likely later change, so the registry (P2) should make moving `C01` to a tab a data change, not a code change.
 - **Titles, subtexts and tab placements** in sections 6 and 8 are approved as drafted.
 
-**No decisions are open.** The next step is P1 when you ask for it.
+**No decisions are open.** The next step is P2 when you ask for it.
+
+**P1 as built (2026-11-03).**
+- `server/Princess.Api/Domain/StageRules.cs` is the engine: pure, unit tested (`StageRulesTests`). `ContextService` feeds it saved sailings (favourite keys `sailing:<id>`), the draft, recent `JourneyEvents`, bookings and payments, and `GET /me/context` now returns `stage`, `focusSailingId` and `stageReason`.
+- Events are in `dbo.JourneyEvents`. `POST /booking/quote` records `priceView`; `POST /me/journey/events` accepts `lookCloser`, `priceView`, `cabinView`, `sharedAccepted`, `planImported` and `atTerminal`. An intent keeps a sailing in focus for 24 hours (the length of a quote lock). The screens that send `lookCloser`, `cabinView`, `sharedAccepted` and `planImported` arrive with P5; until then Dream moves to Discover on a save or a priced quote.
+- The testing date still drives everything: events carry the demo clock's "now", and a demo account's chosen sailing is used for the dates. The app asks for the context again every minute while visible, after a demo-clock change reaches the server, and after saving or removing a sailing. The test bar shows the reason as a tooltip.
+- Not built because the app has no such feature yet: the 48-hour cabin hold (Book via a hold), "boarding pass scanned" and "scanned off" (staff-side scans), and "confirmed aboard". The clock covers them. Agent bookings count as a confirmed trip for the stage, though `booking` in the context still excludes them.
+- The trip a finished guest is in (stage Remember) is kept for 10 days after the last day; `booking` in the context is not, so Remember screens that need the booking are P8's to settle.
 
 **Risks:**
 - **Reclassifying 191 screens** is the biggest piece of work. The generated check proves coverage, not whether each placement is right; I need your read of sections 6 and 8.

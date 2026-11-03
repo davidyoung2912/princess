@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api } from '../runtime'
+import { api, loadContext } from '../runtime'
 import { channel } from '../runtime/channel'
 import { usePersona } from './useDemo'
 
@@ -42,6 +42,7 @@ export function useFavourites(): Favourites {
     try {
       const keys = await api.discover.toggleFavourite(key)
       setLoaded({ owner, keys, failed: false })
+      loadContext()   // saving or removing a sailing can change the guest's stage
     } catch {
       setLoaded((l) => ({ owner, keys: l && l.owner === owner ? l.keys : [], failed: true }))
     }

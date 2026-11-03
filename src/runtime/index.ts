@@ -7,6 +7,8 @@ import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, sweepExpiredC
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
+import { onDemoSent } from '../demo/publish'
+import { startVisibleInterval } from '../hooks/visibleInterval'
 import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
 import { pulseDayFeed, pulseFeed } from '../feeds/pulse'
 import { skyNightFeed } from '../feeds/skyNight'
@@ -250,7 +252,7 @@ function syncAccount(): void {
 
 /** Who is signed in, their trip, the sailing and the server's time (`GET /me/context`); cleared at sign-out. Nothing about it is kept on the device. */
 let contextFor: string | undefined
-function loadContext(): void {
+export function loadContext(): void {
   const session = auth.current()
   markAccount(session ? (session.user?.isDemo ?? null) : null)
   if (!session) { setContext(null); contextFor = undefined; return }
@@ -264,13 +266,20 @@ function watchDeviceReturn(): () => void {
   if (typeof window === 'undefined') return () => {}
   const onOnline = () => { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer(); void flushTelemetry() }
   const onVisible = () => { if (document.visibilityState === 'visible') { loadContext(); void sync.pull(); void portRows.pull(); void pullDemoFromServer() } else void flushTelemetry() }
+  // The stage is worked out by the server from the clock and what the guest has done, so it is asked for again as time passes and after a testing-date change.
+  const stopTicking = startVisibleInterval(loadContext, CONTEXT_REFRESH_MS)
+  onDemoSent(loadContext)
   window.addEventListener('online', onOnline)
   document.addEventListener('visibilitychange', onVisible)
   return () => {
+    stopTicking()
+    onDemoSent(null)
     window.removeEventListener('online', onOnline)
     document.removeEventListener('visibilitychange', onVisible)
   }
 }
+/** How often a visible app asks the server which stage the guest is in. */
+const CONTEXT_REFRESH_MS = 60_000
 let stopWatchingDevice: () => void = () => {}
 
 /** Start-up: sign in as the last person (or Gerald, the primary persona), use their settings, and listen to other tabs. Call once before first render. */

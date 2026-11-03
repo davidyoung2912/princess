@@ -181,3 +181,10 @@ public sealed class SailingRow
 
     public SailingRow Copy() => (SailingRow)MemberwiseClone();
 }
+
+public sealed class JourneyEventRow
+{
+    public string Kind { get; set; } = "";
+    public string? SailingId { get; set; }
+    public DateTime At { get; set; }
+}

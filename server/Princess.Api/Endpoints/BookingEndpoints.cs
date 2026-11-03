@@ -61,8 +61,13 @@ public static partial class BookingEndpoints
         api.MapPost("/booking/fares", async (Draft draft, BookingService svc, CancellationToken ct) => Results.Ok(await svc.FaresAsync(draft, ct)))
             .WithTags("Booking").WithSummary("The fares a room type can be booked with, priced for the draft's party.");
 
-        api.MapPost("/booking/quote", async (Draft draft, ICurrentUser me, BookingService svc, CancellationToken ct) =>
-                Results.Ok(await svc.QuoteAsync(await me.LoadAsync(ct), draft, ct)))
+        api.MapPost("/booking/quote", async (Draft draft, ICurrentUser me, BookingService svc, JourneyEventService events, CancellationToken ct) =>
+            {
+                var actor = await me.LoadAsync(ct);
+                var quote = await svc.QuoteAsync(actor, draft, ct);
+                await events.NotePriceViewAsync(actor, draft.SailingId, ct);   // pricing a sailing is a deliberate step: the stage engine reads it
+                return Results.Ok(quote);
+            })
             .WithTags("Booking").WithSummary("The price held for 24 hours, the payment plan and the Captain's Circle discount and credit. Send `total` back as `expectedTotal` when booking.");
 
         api.MapGet("/me/booking-prefill", async (ICurrentUser me, BookingService svc, CancellationToken ct) => Results.Ok(await svc.PrefillAsync(await me.LoadAsync(ct), ct)))

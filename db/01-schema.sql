@@ -831,6 +831,22 @@ CREATE TABLE dbo.Favourites (
 );
 END
 
+IF OBJECT_ID(N'dbo.JourneyEvents', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.JourneyEvents (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_JourneyEvents PRIMARY KEY,
+  UserId BIGINT NOT NULL,
+  Kind VARCHAR(20) NOT NULL,                    -- what the guest did: lookCloser, priceView, cabinView, sharedAccepted, planImported, atTerminal
+  SailingId NVARCHAR(40) NULL,
+  [At] DATETIME2(0) NOT NULL,                   -- the guest's "now" (the demo clock for a demo account), so the stage and the clock agree
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_JourneyEvents_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_JourneyEvents_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_JourneyEvents_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
+  CONSTRAINT CK_JourneyEvents_Kind CHECK (Kind IN ('lookCloser','priceView','cabinView','sharedAccepted','planImported','atTerminal'))
+);
+CREATE INDEX IX_JourneyEvents_UserId_At ON dbo.JourneyEvents (UserId, [At] DESC);   -- the stage engine reads a person's latest events
+END
+
 IF OBJECT_ID(N'dbo.UserState', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.UserState (

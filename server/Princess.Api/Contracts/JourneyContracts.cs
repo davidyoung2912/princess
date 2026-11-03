@@ -125,6 +125,9 @@ public sealed record ContextBookingDto(string Number, string SailingId, string P
 
 /// <summary>
 /// Everything a device needs to know about who and when: the signed-in person, the people on their current trip, the trip, the sailing the app is on
-/// (a demo account's chosen one), the phone zone a demo account chose, and the server's "now" in milliseconds since 1970.
+/// (a demo account's chosen one), the phone zone a demo account chose, and the server's "now" in milliseconds since 1970. <c>Stage</c> is the journey stage
+/// (docs/stage-experience-plan.md section 3), <c>FocusSailingId</c> the sailing it is about (null in dream) and <c>StageReason</c> the event that put the guest there.
 /// </summary>
-public sealed record ContextDto(PersonDto Person, List<PersonDto> Party, ContextBookingDto? Booking, string? SailingId, string? PhoneZone, long NowMs, bool IsDemo);
+public sealed record ContextDto(PersonDto Person, List<PersonDto> Party, ContextBookingDto? Booking, string? SailingId, string? PhoneZone, long NowMs, bool IsDemo, string Stage, string? FocusSailingId, string StageReason);
+
+public sealed record JourneyEventRequest(string? Kind, string? SailingId);

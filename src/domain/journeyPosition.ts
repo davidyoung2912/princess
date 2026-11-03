@@ -13,6 +13,10 @@ export type ClockKind = 'ship' | 'local'
 
 export interface JourneyPosition {
   stage: JourneyStage
+  /** The event the server says put the guest in this stage; null when the stage came from the clock alone (no server answer yet). */
+  stageReason: string | null
+  /** The sailing the stage is about; null while dreaming or before the server answers. */
+  focusSailingId: string | null
   /** The finer stage along the sailing; null before there is a booking. */
   sailingStage: StageId | null
   day: DayOfStage | null
@@ -26,6 +30,8 @@ export interface JourneyPosition {
 
 export interface PositionInput {
   hasBooking: boolean
+  /** The stage the server derived. It wins over the local guess whenever it is present. */
+  server?: { stage: JourneyStage | null; reason: string | null; focusSailingId: string | null } | null
   sailing: Sailing
   now: number
   phoneZone: string
@@ -39,10 +45,16 @@ export const daysBetween = (from: string, to: string): number => Math.round((Dat
  * booking; with one, the stage is the sailing's stage at that time. The day says how far into it they are, so a screen can pick the day's
  * menus, shows and countdowns from the same date the tester sets.
  */
-export function journeyPosition({ hasBooking, sailing, now, phoneZone }: PositionInput): JourneyPosition {
+export function journeyPosition({ hasBooking, server, sailing, now, phoneZone }: PositionInput): JourneyPosition {
+  const from = journeyPositionByClock({ hasBooking, sailing, now, phoneZone })
+  if (!server?.stage) return from
+  return { ...from, stage: server.stage, stageReason: server.reason, focusSailingId: server.focusSailingId }
+}
+
+function journeyPositionByClock({ hasBooking, sailing, now, phoneZone }: PositionInput): JourneyPosition {
   const days = itinerary(sailing)
   if (!hasBooking || days.length === 0) {
-    return { stage: 'discover', sailingStage: null, day: null, onBoard: false, clock: 'local', zone: phoneZone, date: dateIn(now, phoneZone) }
+    return { stage: 'discover', stageReason: null, focusSailingId: null, sailingStage: null, day: null, onBoard: false, clock: 'local', zone: phoneZone, date: dateIn(now, phoneZone) }
   }
   const sailingStage = stageAt(sailing, now)
   const starts = stageStarts(sailing)
@@ -63,5 +75,5 @@ export function journeyPosition({ hasBooking, sailing, now, phoneZone }: Positio
   } else {
     day = { kind: 'daysSinceReturn', days: Math.max(0, daysBetween(addDays(lastDay.date, 0), date)) }
   }
-  return { stage: JOURNEY_OF_STAGE[sailingStage], sailingStage, day, onBoard, clock: onBoard ? 'ship' : 'local', zone, date }
+  return { stage: JOURNEY_OF_STAGE[sailingStage], stageReason: null, focusSailingId: null, sailingStage, day, onBoard, clock: onBoard ? 'ship' : 'local', zone, date }
 }

@@ -1,4 +1,5 @@
 using System.Net;
+using Princess.Api.Contracts;
 using Princess.Api.Domain;
 using Princess.Api.Tests.Support;
 using Xunit;
@@ -44,4 +45,36 @@ public class ContextTests : JourneyWorld
     [Fact]
     public async Task TheContextNeedsASignIn() =>
         Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/v1/me/context", null)).Status);
+
+    [Fact]
+    public async Task TheContextSaysWhichStageTheGuestIsInAndWhy()
+    {
+        SetNow(new DateTime(2027, 3, 5, 17, 0, 0, DateTimeKind.Utc));
+        var token = await SignIn(Daniel);
+        var booked = await Get("/api/v1/me/context", token);
+        Assert.Equal("manage", booked.Json.GetProperty("stage").GetString());
+        Assert.Equal("bookingConfirmed", booked.Json.GetProperty("stageReason").GetString());
+
+        Stranger.IsDemo = false;
+        var real = await SignIn(Stranger);
+        Assert.Equal("manage", (await Get("/api/v1/me/context", real)).Json.GetProperty("stage").GetString());   // 16 days out and not paid in full
+    }
+
+    [Fact]
+    public async Task APersonWithNoTripIsDreamingUntilTheyPriceASailing()
+    {
+        SetNow(new DateTime(2027, 1, 5, 17, 0, 0, DateTimeKind.Utc));
+        F.Journey.Sailings.Add(new Princess.Api.Data.SailingRow { Id = "sun-2027-03-21", Departure = new DateTime(2027, 3, 21), Nights = 7 });
+        var token = await SignIn(Paul);
+        var dream = await Get("/api/v1/me/context", token);
+        Assert.Equal("dream", dream.Json.GetProperty("stage").GetString());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, dream.Json.GetProperty("focusSailingId").ValueKind);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Post, "/api/v1/me/journey/events", token, new JourneyEventRequest("browse", "sun-2027-03-21"))).Status);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Post, "/api/v1/me/journey/events", token, new JourneyEventRequest("lookCloser", "sun-2027-03-21"))).Status);
+        var discover = await Get("/api/v1/me/context", token);
+        Assert.Equal("discover", discover.Json.GetProperty("stage").GetString());
+        Assert.Equal("sun-2027-03-21", discover.Json.GetProperty("focusSailingId").GetString());
+        Assert.Equal("lookCloser", discover.Json.GetProperty("stageReason").GetString());
+    }
 }

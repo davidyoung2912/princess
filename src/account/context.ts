@@ -1,4 +1,5 @@
 import type { PackageId, Person, Tier } from '../domain/people'
+import { JOURNEY_STAGES, type JourneyStage } from '../routes/hubs'
 
 /** A person on the trip, as `GET /me/context` describes them. */
 export interface ContextPerson { id: string; name: string; firstName: string; age: number | null; child: boolean; booker: string; tier: Tier }
@@ -15,6 +16,12 @@ export interface AccountContext {
   /** A demo account's pretend phone zone (null for everyone else). */
   phoneZone: string | null
   isDemo: boolean
+  /** The journey stage the server worked out from what the guest has done and where the sailing is in time (stage-experience-plan.md section 3); null from an older server. */
+  stage: JourneyStage | null
+  /** The sailing the stage is about: null while dreaming. */
+  focusSailingId: string | null
+  /** The one event that put the guest in this stage, as a stable code ("sailingSaved", "paidInFull"...). */
+  stageReason: string | null
   /** Server time minus this device's time when the answer arrived (ms): add it to `Date.now()` to get the server's now. */
   offsetMs: number
 }
@@ -53,7 +60,8 @@ export function normalizeContext(raw: unknown, deviceNow: number): AccountContex
   const booking: ContextBooking | null = b && str(b.number) && str(b.sailingId)
     ? { number: str(b.number)!, sailingId: str(b.sailingId)!, package: PACKAGES.find((p) => p === b.package) ?? 'none', category: str(b.category) ?? '' }
     : null
-  return { person, party, booking, sailingId: str(o.sailingId), phoneZone: str(o.phoneZone), isDemo: o.isDemo === true, offsetMs: o.nowMs - deviceNow }
+  return { person, party, booking, sailingId: str(o.sailingId), phoneZone: str(o.phoneZone), isDemo: o.isDemo === true,
+    stage: JOURNEY_STAGES.find((x) => x === o.stage) ?? null, focusSailingId: str(o.focusSailingId), stageReason: str(o.stageReason), offsetMs: o.nowMs - deviceNow }
 }
 
 /** A screen's `Person` from the context. The server does not hold a role, stateroom or text size for a person, so those get neutral values. */

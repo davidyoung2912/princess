@@ -61,12 +61,16 @@ let listener: ((a: DemoAnswer) => void) | null = null
 /** Told of every answer the server gives to this device's own changes, so the store can tell them from another device's. */
 export const onDemoAnswer = (fn: ((a: DemoAnswer) => void) | null): void => { listener = fn }
 
+let afterSend: (() => void) | null = null
+/** Called after each of this device's changes has reached the server (or failed), so what the server works out from them (the stage) can be asked for again. */
+export const onDemoSent = (fn: (() => void) | null): void => { afterSend = fn }
+
 /** Calls go one after another, so a reset followed by a jump arrive in that order. */
 let queue: Promise<unknown> = Promise.resolve()
 function send(call: (r: DemoRemote) => Promise<unknown>): void {
   if (!remote) return
   const r = remote
-  queue = queue.then(() => call(r)).then((raw) => { const a = normalizeAnswer(raw); if (a) listener?.(a) }, () => {})
+  queue = queue.then(() => call(r)).then((raw) => { const a = normalizeAnswer(raw); if (a) listener?.(a) }, () => {}).then(() => afterSend?.())
 }
 
 /** Fire and forget: the controls work on this device whether or not the server hears them. */

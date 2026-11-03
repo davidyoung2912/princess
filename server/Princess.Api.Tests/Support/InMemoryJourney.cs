@@ -189,6 +189,17 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         return Task.FromResult(list.ToList());
     }
 
+    public List<(long UserId, JourneyEventRow Row)> JourneyEvents { get; } = [];
+
+    public Task AddJourneyEventAsync(long userId, string kind, string? sailingId, DateTime at, CancellationToken ct)
+    {
+        JourneyEvents.Add((userId, new JourneyEventRow { Kind = kind, SailingId = sailingId, At = at }));
+        return Task.CompletedTask;
+    }
+
+    public Task<List<JourneyEventRow>> ListJourneyEventsAsync(long userId, int max, CancellationToken ct) =>
+        Task.FromResult(JourneyEvents.Where(e => e.UserId == userId).Select(e => e.Row).OrderByDescending(r => r.At).Take(max).ToList());
+
     // ---- IPrivacyStore ----
     public Task<List<ConsentRow>> ListConsentsAsync(IReadOnlyCollection<long> userIds, CancellationToken ct) => Task.FromResult(Consents.Where(c => userIds.Contains(c.UserId)).ToList());
 

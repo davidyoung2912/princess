@@ -75,6 +75,7 @@ services.AddScoped<IMediaStore, DapperMediaStore>();
 services.AddScoped<MediaService>();
 services.AddScoped<DemoService>();
 services.AddScoped<ContextService>();
+services.AddScoped<JourneyEventService>();
 services.AddScoped<AutopilotService>();
 services.AddScoped<ConciergeService>();
 services.AddScoped<PrivacyService>();

@@ -32,6 +32,18 @@ describe('the account context', () => {
     expect(c.person.tier).toBe('none')
   })
 
+  it('reads the stage the server derived, and ignores one it does not know', () => {
+    const c = normalizeContext(wire({ stage: 'prebook', focusSailingId: 'sun-2026-11-22', stageReason: 'paidInFull' }), 0)!
+    expect(c.stage).toBe('prebook')
+    expect(c.focusSailingId).toBe('sun-2026-11-22')
+    expect(c.stageReason).toBe('paidInFull')
+    const odd = normalizeContext(wire({ stage: 'nonsense', focusSailingId: '', stageReason: 3 }), 0)!
+    expect(odd.stage).toBeNull()
+    expect(odd.focusSailingId).toBeNull()
+    expect(odd.stageReason).toBeNull()
+    expect(normalizeContext(wire(), 0)!.stage).toBeNull()
+  })
+
   it('gives a real account a server clock, and a demo account none', () => {
     setContext(normalizeContext(wire(), 1_000_000))
     expect(followsServer()).toBe(true)

@@ -90,7 +90,14 @@ public static class AuthEndpoints
             .WithSummary("The signed-in person (the supervised child, on a view-as token).");
 
         meGroup.MapGet("/context", async (ContextService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(ct)))
-            .WithSummary("Who is signed in, the people on their current trip, the trip and sailing the app is on, and the server's time (moved by the demo clock for a demo account). A device keeps none of this itself.");
+            .WithSummary("Who is signed in, the people on their current trip, the trip and sailing the app is on, the server's time (moved by the demo clock for a demo account) and the journey `stage` with the `focusSailingId` it is about and the `stageReason` that put the guest there. The stage is worked out on every read. A device keeps none of this itself.");
+
+        meGroup.MapPost("/journey/events", async (JourneyEventRequest body, ICurrentUser me, JourneyEventService svc, CancellationToken ct) =>
+            {
+                await svc.RecordAsync(await me.LoadAsync(ct), body.Kind, body.SailingId, ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Records something the guest did that moves the stage: `lookCloser`, `priceView`, `cabinView`, `sharedAccepted`, `planImported` (each opens the Discover stage for that sailing for 24 hours) or `atTerminal` (moves a checked-in guest to Embark). 400 for an unknown kind or sailing; 403 for a child account.");
 
         meGroup.MapPost("/view-as/{userId:guid}", async (Guid userId, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
             {

@@ -50,6 +50,10 @@ public interface IInboxStore
     Task<List<string>> ListFavouritesAsync(long userId, CancellationToken ct);
     /// <summary>Adds the key at the end, or removes it if present; returns the list as it now stands.</summary>
     Task<List<string>> ToggleFavouriteAsync(long userId, string key, CancellationToken ct);
+    /// <summary>Records something the guest did that the stage engine reads (<c>dbo.JourneyEvents</c>). <paramref name="at"/> is the guest's own "now".</summary>
+    Task AddJourneyEventAsync(long userId, string kind, string? sailingId, DateTime at, CancellationToken ct);
+    /// <summary>The guest's latest events, newest first.</summary>
+    Task<List<JourneyEventRow>> ListJourneyEventsAsync(long userId, int max, CancellationToken ct);
 }
 
 public interface IPrivacyStore

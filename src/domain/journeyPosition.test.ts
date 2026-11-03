@@ -81,4 +81,21 @@ describe('daysBetween', () => {
     expect(daysBetween('2027-03-09', '2027-03-21')).toBe(12)
     expect(daysBetween('2027-03-21', '2027-03-21')).toBe(0)
   })
+
+  it('takes the stage the server derived over the clock, and keeps the day and clock from the sailing', () => {
+    const server = { stage: 'dream' as const, reason: 'noSailing', focusSailingId: null }
+    const p = journeyPosition({ hasBooking: false, server, sailing: REFERENCE_SAILING, now: at('2027-03-10', '12:00'), phoneZone: PHONE })
+    expect(p.stage).toBe('dream')
+    expect(p.stageReason).toBe('noSailing')
+    const booked = journeyPosition({ hasBooking: true, server: { stage: 'prebook', reason: 'paidInFull', focusSailingId: REFERENCE_SAILING.id }, sailing: REFERENCE_SAILING, now: at('2027-03-10', '12:00'), phoneZone: PHONE })
+    expect(booked.stage).toBe('prebook')
+    expect(booked.focusSailingId).toBe(REFERENCE_SAILING.id)
+    expect(booked.day).toEqual({ kind: 'daysToDeparture', days: 11 })
+  })
+
+  it('falls back to the clock when the server gives no stage', () => {
+    const p = journeyPosition({ hasBooking: false, server: { stage: null, reason: null, focusSailingId: null }, sailing: REFERENCE_SAILING, now: at('2027-03-10', '12:00'), phoneZone: PHONE })
+    expect(p.stage).toBe('discover')
+    expect(p.stageReason).toBeNull()
+  })
 })

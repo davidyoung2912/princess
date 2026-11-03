@@ -396,6 +396,18 @@ public sealed class DapperInboxStore(IDbConnectionFactory db) : IInboxStore
         return list;
     }
 
+    public async Task AddJourneyEventAsync(long userId, string kind, string? sailingId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.JourneyEvents (UserId, Kind, SailingId, [At]) VALUES (@userId, @kind, @sailingId, @at)", new { userId, kind, sailingId, at }, null, ct));
+    }
+
+    public async Task<List<JourneyEventRow>> ListJourneyEventsAsync(long userId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<JourneyEventRow>(Sql.Cmd("SELECT TOP (@max) Kind, SailingId, [At] FROM dbo.JourneyEvents WHERE UserId = @userId ORDER BY [At] DESC, Id DESC", new { userId, max }, null, ct))).ToList();
+    }
+
     private static async Task<List<string>> Favourites(DbConnection c, long userId, DbTransaction? tx, CancellationToken ct) =>
         (await c.QueryAsync<string>(Sql.Cmd("SELECT ItemKey FROM dbo.Favourites WHERE UserId = @userId ORDER BY Position, ItemKey", new { userId }, tx, ct))).ToList();
 }
