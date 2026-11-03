@@ -312,16 +312,23 @@ Pins, the kept day card and the last look are the new `ports` part of the per-pe
 Postcards, kept trips and wanted places are the new `remember` part of the per-person memory store (it travels in the synced `memory` document).
 
 - **D8-1** postcard to a future self: written on the memories screen (up to five, 400 characters each). It shows on Home, once, when a later trip is 60 days away or closer; "Put it away" marks it read. It never arrives on the sailing it was written on.
-- **D8-2** where I have sailed: on the memories screen, a rough sketch and a list of ports with visit counts and totals. A finished trip is added by a button ("Keep this trip in my record"), so nothing is saved without the guest choosing it. The list carries the facts; the sketch is hidden from screen readers.
+- **D8-2** where I have sailed: see 13.2 (it now reads the server's trip history).
 - **D8-3** favourites ranked: hearted dishes (by restaurant), liked drinks and pinned spots (by port), counted from the guest's own DL7 and DL8 records. Nothing is rated for them. Pins and the last look are now read by the memory screen.
-- **D8-5** lifetime days and different ports in plain words on the loyalty screen.
-- **D8-7** places I want next: a short list (8, 40 characters), edited on both the memories screen and Stage 0 (Decide). Private; nothing is searched or booked from it.
+- **D8-5** lifetime nights and different ports in plain words on the loyalty screen (see 13.2).
+- **D8-7** places I want next: a short list (8, 40 characters), edited on both the memories screen and Stage 0 (Decide). Private; nothing is searched or booked from it. See 13.2 for the matching.
 - Spanish for all `dl9.*` strings; native review still needed.
 - **Verified:** `npm run test` (1876 passed), `npm run lint`, `npx tsc -b`, `npm run build`. No `Api` change, so `api:check` was not needed.
-- **Not done:**
-  - Delivery is on the device and the synced memory document; there is no server-scheduled delivery of the postcard, and no email or push.
-  - The sailed record holds only trips kept in this app. Earlier cruises (or ones from the server's history) are not read in, because the history view carries no ports (D8-2 and D8-5 were marked "+API").
-  - The loyalty line uses the loyalty days from the server plus the ports from the local record, so the two can disagree for a guest who has not kept every trip.
-  - The wanted places are free text; they do not yet re-rank sailings or itineraries in Stage 0.
-  - The map is a rough authored sketch of the four ports of this itinerary, not a real map.
-  - The C# was not touched.
+- **Not done:** see 13.2, which closes the gaps listed when this phase was first built.
+
+### 13.2 Follow-ups (2026-11-02)
+
+- **Postcard delivered by the server.** New user state key `postcards` (`{ items: [{ id, sailingId }] }`, in the clear, 2,000 characters, written only while "keep my private notes on all my devices" is on, like the memory document it mirrors). It holds the unread postcards' ids and sailings and none of the guest's words. `PostcardRules` (Parse, Due) picks the ones written on an earlier sailing when the booked trip is 0 to 60 days away; `PushRules.Build` adds one `reminder`-kind notice, key `postcard:{id}`, "A postcard from you". It is a suggestion (offers category), so the budget, calm mode and quiet hours hold it back, and it is sent once per postcard. Reading a postcard removes it from the document.
+- **The sailed record is the server's trip history.** `GET .../history` now gives every trip a `ports` list (`code`, `name`, `lat`, `lon`). Past trips read the new table `dbo.PastTripPorts` (schema, drop script, and the persona seed, regenerated with `npm run db:persona:gen`); this cruise gives each port of call once from `Itinerary` (which gained coordinates). The "keep this trip" button and the local `voyages` list are gone, so every past cruise and every device is in the record. Cancelled trips are left out.
+- **Lifetime line.** The loyalty screen now shows nights and different ports from that same record, so the two numbers agree. The server's loyalty-day count above it is a different measure (it sets the level) and is labelled as such.
+- **Wanted places matched in Stage 0.** `wantMatches` matches a wanted place against the places a sailing calls at (a place name, or a word of one such as the country; accents and case ignored). The sailings list puts sailings that call at more of them first (all eight use one route today, so the order is the date order), each card says "On your list: ..." or that none are on the route, and the Decide screen says the same for its chosen sailing.
+- **A real map.** The map is drawn from the ports' real coordinates over Natural Earth 110m land (public domain, via the `world-atlas` package, converted once into `src/domain/landPath.ts` and loaded only when a map is shown), framed around the ports (`mapView`). The list under it stays the accessible record.
+- **Verified:** `npm run test` (1884 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`, `npm run db:persona:check`, and `dotnet build` of the API and its test project (0 warnings, 0 errors). **The C# tests were not run** (no `dotnet test`, by the project rule): run `PostcardRulesTests` and `FinishApiTests` before relying on this. The schema script needs running on the database for `PastTripPorts`, and the persona seed re-running for its rows.
+- **Still not done:**
+  - Land is 110m detail, so small islands are missing and coasts are coarse at this zoom.
+  - The past-trip ports are authored sample data per trip title; a real booking system would supply them.
+  - Matching is by name only; the wanted places do not suggest cruises to other regions, because the catalogue has one route.

@@ -413,7 +413,7 @@ public class FinishApiTests : JourneyWorld
     [Fact]
     public async Task TheHistoryListsThePastTripsAndAddsThisCruiseOnceTheShipHasTiedUp()
     {
-        F.Finish.Trips.Add((Daniel.Id, new HistoryTripRow { Id = "p1", Title = "Alaska", Ship = "Majestic", Departure = new DateTime(2024, 7, 1), Nights = 7, FareCents = 210_000, Docs = [("fareReceipt", true), ("folioStatement", false)] }));
+        F.Finish.Trips.Add((Daniel.Id, new HistoryTripRow { Id = "p1", Title = "Alaska", Ship = "Majestic", Departure = new DateTime(2024, 7, 1), Nights = 7, FareCents = 210_000, Docs = [("fareReceipt", true), ("folioStatement", false)], Ports = [("juneau", "Juneau, Alaska", 58.3019, -134.4197)] }));
         F.Finish.Trips.Add((Daniel.Id, new HistoryTripRow { Id = "p2", Title = "Mexico", Ship = "Regal", Departure = new DateTime(2023, 2, 1), Nights = 5 }));
         F.Finish.Trips.Add((Daniel.Id, new HistoryTripRow { Id = "p3", Title = "Bahamas", Ship = "Regal", Departure = new DateTime(2022, 2, 1), Nights = 3, Cancelled = true }));
         var token = await DanielToken();
@@ -426,6 +426,8 @@ public class FinishApiTests : JourneyWorld
         Assert.Equal(("2024-07-01", 210_000L), (past[0].GetProperty("departure").GetString(), past[0].GetProperty("fareCents").GetInt64()));
         Assert.Equal([("fareReceipt", true), ("folioStatement", false)], past[0].GetProperty("documents").EnumerateArray().Select(d => (d.GetProperty("id").GetString()!, d.GetProperty("ready").GetBoolean())).ToArray());
         Assert.Equal(["fareReceipt", "taxSummary"], past[1].GetProperty("documents").EnumerateArray().Select(d => d.GetProperty("id").GetString()!).ToArray());       // none recorded: the usual two
+        Assert.Equal([("juneau", "Juneau, Alaska")], past[0].GetProperty("ports").EnumerateArray().Select(x => (x.GetProperty("code").GetString()!, x.GetProperty("name").GetString()!)).ToArray());
+        Assert.Equal(0, past[1].GetProperty("ports").GetArrayLength());
         Assert.Empty(past[2].GetProperty("documents").EnumerateArray());
         Assert.True(past[2].GetProperty("cancelled").GetBoolean());
 
@@ -436,6 +438,8 @@ public class FinishApiTests : JourneyWorld
         Assert.Equal(4, trips.Length);
         Assert.Equal((true, "2027-03-21", 7, 1_226_300L), (trips[0].GetProperty("current").GetBoolean(), trips[0].GetProperty("departure").GetString(), trips[0].GetProperty("nights").GetInt32(), trips[0].GetProperty("fareCents").GetInt64()));
         Assert.Equal(4, trips[0].GetProperty("documents").GetArrayLength());
+        Assert.Equal(["cozumel", "belize", "roatan"], trips[0].GetProperty("ports").EnumerateArray().Select(x => x.GetProperty("code").GetString()!).ToArray());     // this cruise: each port of call once, in order, with where it is
+        Assert.InRange(trips[0].GetProperty("ports")[0].GetProperty("lat").GetDouble(), 20.0, 21.0);
         Assert.True(after.GetProperty("photosUntil").GetInt64() > new DateTimeOffset(Utc(28, 12)).ToUnixTimeMilliseconds());
         Assert.Equal(1, (await Read("history", await SignIn(Priya))).Json.GetProperty("trips").GetArrayLength());      // the past trips are Daniel's own
     }

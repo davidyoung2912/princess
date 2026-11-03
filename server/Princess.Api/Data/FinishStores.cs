@@ -99,6 +99,8 @@ public sealed class HistoryTripRow
     public bool Cancelled { get; set; }
     public long? FareCents { get; set; }
     public List<(string Doc, bool Ready)> Docs { get; set; } = [];
+    /// <summary>The ports of call in order, with where each is.</summary>
+    public List<(string Code, string Name, double Lat, double Lon)> Ports { get; set; } = [];
 }
 
 public sealed class LoyaltyRecordRow

@@ -26,13 +26,17 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
         var past = (await store.ListHistoryTripsAsync(actor.Id, ct)).Select(p =>
         {
             List<(string Doc, bool Ready)> docs = p.Cancelled ? [] : p.Docs.Count > 0 ? p.Docs : [("fareReceipt", true), ("taxSummary", true)];
-            return new HistoryTripDto(p.Id, p.Title, p.Ship, Iso(p.Departure), p.Nights, false, p.Cancelled, p.FareCents, [.. docs.Select(d => new HistoryDocDto(d.Doc, d.Ready))]);
+            return new HistoryTripDto(p.Id, p.Title, p.Ship, Iso(p.Departure), p.Nights, false, p.Cancelled, p.FareCents, [.. docs.Select(d => new HistoryDocDto(d.Doc, d.Ready))], [.. p.Ports.Select(x => new PortPlaceDto(x.Code, x.Name, x.Lat, x.Lon))]);
         });
         List<HistoryTripDto> current = sailed
-            ? [new($"current-{c.Booking.SailingId}", c.Booking.SailingTitle, c.Booking.ShipName, Iso(c.Departure), c.Booking.Nights, true, false, c.Booking.TotalCents, [.. AllDocs.Select(d => new HistoryDocDto(d, true))])]
+            ? [new($"current-{c.Booking.SailingId}", c.Booking.SailingTitle, c.Booking.ShipName, Iso(c.Departure), c.Booking.Nights, true, false, c.Booking.TotalCents, [.. AllDocs.Select(d => new HistoryDocDto(d, true))], CallPorts(c.Departure))]
             : [];
         return new HistoryViewDto([.. current, .. past], sailed ? Ms(FinishStages.EndOfDaysAfter(c, PhotoRules.RedownloadDays)) : null, sailed);
     }
+
+    /// <summary>The ports of call of this cruise, each once, in order, with where each is.</summary>
+    private static List<PortPlaceDto> CallPorts(DateOnly departure) =>
+        [.. Itinerary.Days(departure).Select(d => d.Port).Where(p => p is not ("sea" or "fll")).Distinct().Select(id => Itinerary.Ports[id]).Select(p => new PortPlaceDto(p.Id, p.Name, p.Lat, p.Lon))];
 
     // ---- Feedback (POS-02, POS-11, POS-14) ----
 

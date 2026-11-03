@@ -1,6 +1,6 @@
 namespace Princess.Api.Domain;
 
-public sealed record Port(string Id, string Name, string Zone, bool Tender);
+public sealed record Port(string Id, string Name, string Zone, bool Tender, double Lat, double Lon);
 
 /// <summary>One day of the sailing. Times are local to the port on a port day (and the ship's clock otherwise).</summary>
 public sealed record ItineraryDay(int Day, DateOnly Date, string Port, TimeOnly? Arrive, TimeOnly? AllAboard, TimeOnly? Depart);
@@ -13,10 +13,10 @@ public static class Itinerary
 
     public static readonly IReadOnlyDictionary<string, Port> Ports = new Dictionary<string, Port>
     {
-        ["fll"] = new("fll", "Fort Lauderdale (Port Everglades)", "America/New_York", false),
-        ["cozumel"] = new("cozumel", "Cozumel, Mexico", "America/Cancun", false),
-        ["belize"] = new("belize", "Belize City, Belize", "America/Belize", true),
-        ["roatan"] = new("roatan", "Roatán, Honduras", "America/Tegucigalpa", false),
+        ["fll"] = new("fll", "Fort Lauderdale (Port Everglades)", "America/New_York", false, 26.0925, -80.117),
+        ["cozumel"] = new("cozumel", "Cozumel, Mexico", "America/Cancun", false, 20.423, -86.9223),
+        ["belize"] = new("belize", "Belize City, Belize", "America/Belize", true, 17.4995, -88.1976),
+        ["roatan"] = new("roatan", "Roatán, Honduras", "America/Tegucigalpa", false, 16.3194, -86.53),
     };
 
     private static TimeOnly T(string hhmm) => TimeOnly.ParseExact(hhmm, "HH:mm");

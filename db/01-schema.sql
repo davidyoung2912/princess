@@ -1174,6 +1174,18 @@ CREATE TABLE dbo.PastTripDocs (
 );
 END
 
+IF OBJECT_ID(N'dbo.PastTripPorts', N'U') IS NULL
+BEGIN
+-- The ports of call of a past cruise, in order, with where each is (degrees), for the guest's "where I have sailed" map.
+CREATE TABLE dbo.PastTripPorts (
+  PastTripId NVARCHAR(40) NOT NULL, Seq INT NOT NULL, Code NVARCHAR(40) NOT NULL, Name NVARCHAR(80) NOT NULL,
+  Lat DECIMAL(7,4) NOT NULL, Lon DECIMAL(8,4) NOT NULL,
+  CONSTRAINT PK_PastTripPorts PRIMARY KEY (PastTripId, Seq),
+  CONSTRAINT FK_PastTripPorts_PastTrips FOREIGN KEY (PastTripId) REFERENCES dbo.PastTrips (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_PastTripPorts_Lat CHECK (Lat BETWEEN -90 AND 90), CONSTRAINT CK_PastTripPorts_Lon CHECK (Lon BETWEEN -180 AND 180)
+);
+END
+
 IF OBJECT_ID(N'dbo.Loyalty', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Loyalty (

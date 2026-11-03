@@ -61,7 +61,10 @@ public sealed record OpenCaseRequest(string? Kind, string? Summary, string? Plac
 
 public sealed record HistoryDocDto(string Id, bool Ready);
 
-public sealed record HistoryTripDto(string Id, string Title, string Ship, string Departure, int Nights, bool Current, bool Cancelled, long? FareCents, List<HistoryDocDto> Documents);
+/// <summary>A port of call and where it is, in degrees, for the sailed map.</summary>
+public sealed record PortPlaceDto(string Code, string Name, double Lat, double Lon);
+
+public sealed record HistoryTripDto(string Id, string Title, string Ship, string Departure, int Nights, bool Current, bool Cancelled, long? FareCents, List<HistoryDocDto> Documents, List<PortPlaceDto> Ports);
 
 public sealed record HistoryViewDto(List<HistoryTripDto> Trips, long? PhotosUntil, bool Sailed);
 

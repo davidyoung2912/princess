@@ -105,7 +105,10 @@ export interface DisembarkApi {
 
 export interface HistoryDoc { id: 'fareReceipt' | 'folioStatement' | 'gratuityStatement' | 'taxSummary'; /** Whether it is ready to open. */ ready: boolean }
 
-export interface HistoryTrip { id: string; title: string; ship: string; departure: string; nights: number; current: boolean; cancelled: boolean; fareCents: Cents | null; documents: HistoryDoc[] }
+/** A port of call and where it is, in degrees. */
+export interface PortPlace { code: string; name: string; lat: number; lon: number }
+
+export interface HistoryTrip { ports: PortPlace[]; id: string; title: string; ship: string; departure: string; nights: number; current: boolean; cancelled: boolean; fareCents: Cents | null; documents: HistoryDoc[] }
 
 export interface HistoryView { trips: HistoryTrip[]; photosUntil: number | null; sailed: boolean }
 

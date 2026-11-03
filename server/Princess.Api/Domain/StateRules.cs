@@ -26,6 +26,7 @@ public static class StateRules
         ["sharing"] = 500,
         ["travellers"] = 16_000,
         ["reminder"] = 500,
+        ["postcards"] = 2_000,
     };
 
     /// <summary>

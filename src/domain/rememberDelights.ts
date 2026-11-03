@@ -1,10 +1,10 @@
 import { isCallPort, type CallPort, type Pin } from './portDelights'
-import { itinerary, sailingNights, type Sailing } from './sailings'
+import { itinerary, PORTS, type Sailing } from './sailings'
 import type { DiaryEntry, Favourite } from './seaDelights'
 
 /**
  * Small delights, phase DL9 (docs/small-delights.md): memory and return. A postcard to a future self, where I have sailed, favourites ranked from the
- * guest's own notes, lifetime nights in plain words and ports I want next. All of it is the guest's own, kept on this device and in the memory document.
+ * guest's own notes, lifetime nights in plain words and ports I want next. All of it is the guest's own, kept on this device and in the memory document (the record of cruises comes from the trip history on the server).
  * Nothing here books, holds or sells anything.
  */
 
@@ -37,41 +37,54 @@ export const removePostcard = (list: readonly Postcard[], id: string): Postcard[
 
 // ---------------------------------------------------------------- D8-2: where I have sailed
 
-export interface Voyage { sailingId: string; departure: string; nights: number; ports: CallPort[] }
+/** A port of call and where it is, in degrees. The server says; the app draws. */
+export interface PortPlace { code: string; name: string; lat: number; lon: number }
+/** A cruise on the guest's record. It comes from the trip history the server keeps, so every device and every past cruise is in it. */
+export interface SailedTrip { id: string; departure: string; nights: number; ports: PortPlace[] }
 
-export function voyageOf(s: Sailing): Voyage {
-  const ports = [...new Set(itinerary(s).flatMap((d) => (isCallPort(d.port) ? [d.port] : [])))]
-  return { sailingId: s.id, departure: s.departure, nights: sailingNights(s), ports }
+const validPlace = (p: unknown): p is PortPlace => {
+  const o = rec(p)
+  return typeof o.code === 'string' && typeof o.name === 'string' && typeof o.lat === 'number' && typeof o.lon === 'number' && Math.abs(o.lat) <= 90 && Math.abs(o.lon) <= 180
 }
 
-/** Whether the ship has finished the sailing by `today` (a ship date), so the trip is ready to keep in the record. */
-export const voyageDone = (s: Sailing, today: string): boolean => {
-  const days = itinerary(s)
-  return today >= days[days.length - 1].date
+/** The trips that were sailed: cancelled ones are left out, and so is anything with no usable port. Oldest first. */
+export function sailedTrips(trips: readonly { id: string; departure: string; nights: number; cancelled: boolean; ports?: readonly unknown[] }[]): SailedTrip[] {
+  return trips
+    .filter((t) => !t.cancelled)
+    .map((t) => ({ id: t.id, departure: t.departure, nights: t.nights, ports: arr(t.ports).filter(validPlace) }))
+    .sort((a, b) => a.departure.localeCompare(b.departure))
 }
 
-export function keepVoyage(list: readonly Voyage[], v: Voyage): Voyage[] {
-  return v.sailingId && !list.some((x) => x.sailingId === v.sailingId) ? [...list, v].sort((a, b) => a.departure.localeCompare(b.departure)) : [...list]
-}
-export const VOYAGES_MAX = 60
-
-export interface SailedSummary { trips: number; nights: number; ports: { port: CallPort; visits: number }[] }
-export function sailedSummary(voyages: readonly Voyage[]): SailedSummary {
-  const counts = new Map<CallPort, number>()
-  for (const v of voyages) for (const p of v.ports) counts.set(p, (counts.get(p) ?? 0) + 1)
-  return {
-    trips: voyages.length,
-    nights: voyages.reduce((n, v) => n + v.nights, 0),
-    ports: [...counts].map(([port, visits]) => ({ port, visits })).sort((a, b) => b.visits - a.visits || a.port.localeCompare(b.port)),
+export interface SailedSummary { trips: number; nights: number; ports: { place: PortPlace; visits: number }[] }
+export function sailedSummary(trips: readonly SailedTrip[]): SailedSummary {
+  const seen = new Map<string, { place: PortPlace; visits: number }>()
+  for (const t of trips) for (const p of new Map(t.ports.map((x) => [x.code, x])).values()) {
+    const e = seen.get(p.code)
+    if (e) e.visits += 1
+    else seen.set(p.code, { place: p, visits: 1 })
   }
+  return { trips: trips.length, nights: trips.reduce((n, t) => n + t.nights, 0), ports: [...seen.values()].sort((a, b) => b.visits - a.visits || a.place.name.localeCompare(b.place.name)) }
 }
 
-/** Where each port sits on a 100 by 60 sketch of the western Caribbean (authored, approximate). */
-export const MAP_SPOTS: Record<CallPort | 'fll', { x: number; y: number }> = {
-  fll: { x: 80, y: 6 },
-  cozumel: { x: 31, y: 33 },
-  belize: { x: 10, y: 47 },
-  roatan: { x: 34, y: 53 },
+export interface MapPin { code: string; name: string; x: number; y: number; visits: number }
+export interface MapView { /** SVG viewBox over the 360 by 180 world (x = longitude + 180, y = 90 - latitude). */ viewBox: string; /** Width of the view in degrees; sizes the pins and labels. */ span: number; pins: MapPin[] }
+export const MAP_MIN_SPAN = 24
+
+/** Frames the world around the ports with some room, never tighter than `MAP_MIN_SPAN` degrees across and never beyond the world. */
+export function mapView(ports: readonly { place: PortPlace; visits: number }[]): MapView {
+  const pins = ports.map(({ place, visits }) => ({ code: place.code, name: place.name, x: place.lon + 180, y: 90 - place.lat, visits }))
+  if (pins.length === 0) return { viewBox: '0 0 360 180', span: 360, pins }
+  const xs = pins.map((p) => p.x)
+  const ys = pins.map((p) => p.y)
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+  // Room for the labels: widen by half again, and keep the 2 to 1 shape of the world.
+  const span = Math.min(360, Math.max(MAP_MIN_SPAN, (Math.max(...xs) - Math.min(...xs)) * 1.5, (Math.max(...ys) - Math.min(...ys)) * 3))
+  const h = span / 2
+  const x = Math.max(0, Math.min(360 - span, cx - span / 2))
+  const y = Math.max(0, Math.min(180 - h, cy - h / 2))
+  const r = (n: number) => Math.round(n * 100) / 100
+  return { viewBox: `${r(x)} ${r(y)} ${r(span)} ${r(h)}`, span: r(span), pins }
 }
 
 // ---------------------------------------------------------------- D8-3: favourites ranked
@@ -97,9 +110,9 @@ export function rankedFavourites(i: { favourites: readonly Favourite[]; diary: r
 
 // ---------------------------------------------------------------- D8-5: nights at sea
 
-export interface Lifetime { days: number; ports: number }
-/** Lifetime cruise days from the loyalty record and the different ports from the guest's own record (this trip included once it is kept). */
-export const lifetime = (loyaltyDays: number, voyages: readonly Voyage[]): Lifetime => ({ days: Math.max(0, Math.round(loyaltyDays)), ports: sailedSummary(voyages).ports.length })
+export interface Lifetime { nights: number; ports: number }
+/** Lifetime nights and different ports across the cruises on the guest's record. */
+export const lifetime = (trips: readonly SailedTrip[]): Lifetime => { const s = sailedSummary(trips); return { nights: s.nights, ports: s.ports.length } }
 
 // ---------------------------------------------------------------- D8-7: ports I want next
 
@@ -112,10 +125,35 @@ export function addWant(list: readonly string[], text: string): string[] {
 }
 export const removeWant = (list: readonly string[], text: string): string[] => list.filter((x) => x !== text)
 
+const fold = (v: string): string => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const SKIP_WORDS = new Set(['city', 'port', 'fort', 'the', 'and', 'island', 'bay', 'san', 'santa', 'new'])
+
+/** The places a sailing calls at: each port of call once, in the order of the cruise, as the guest reads them ("Cozumel, Mexico"). */
+export function callPlaces(s: Sailing): string[] {
+  return [...new Set(itinerary(s).flatMap((d) => (isCallPort(d.port) ? [PORTS[d.port].name] : [])))]
+}
+
+/** Which of the places a guest wants are on a route: a want matches when it is inside a place name ("cozumel") or when it names a word of one ("a week in Mexico"). Accents and case do not matter. */
+export function wantMatches(wants: readonly string[], places: readonly string[]): { want: string; place: string }[] {
+  const out: { want: string; place: string }[] = []
+  for (const want of wants) {
+    const w = fold(want).trim()
+    if (w.length < 3) continue
+    const words = w.split(/[^a-z0-9]+/).filter((x) => x.length >= 4 && !SKIP_WORDS.has(x))
+    const place = places.find((p) => {
+      const f = fold(p)
+      const tokens = f.split(/[^a-z0-9]+/).filter((x) => x.length >= 4 && !SKIP_WORDS.has(x))
+      return f.includes(w) || tokens.some((tk) => words.includes(tk))
+    })
+    if (place) out.push({ want, place })
+  }
+  return out
+}
+
 // ---------------------------------------------------------------- state
 
-export interface RememberState { postcards: Postcard[]; voyages: Voyage[]; wants: string[] }
-export const EMPTY_REMEMBER: RememberState = { postcards: [], voyages: [], wants: [] }
+export interface RememberState { postcards: Postcard[]; wants: string[] }
+export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [] }
 
 export function normalizeRemember(raw: unknown): RememberState {
   const r = rec(raw)
@@ -125,12 +163,6 @@ export function normalizeRemember(raw: unknown): RememberState {
     const next = addPostcard(acc, { id: o.id, text: o.text, at: num(o.at), sailingId: typeof o.sailingId === 'string' ? o.sailingId : '', read: false })
     return next.map((p) => (p.id === o.id && o.read === true ? { ...p, read: true } : p))
   }, [])
-  const voyages = arr(r.voyages).reduce<Voyage[]>((acc, x) => {
-    const o = rec(x)
-    if (typeof o.sailingId !== 'string' || typeof o.departure !== 'string' || acc.length >= VOYAGES_MAX) return acc
-    const ports = [...new Set(arr(o.ports).filter(isCallPort))]
-    return keepVoyage(acc, { sailingId: o.sailingId.slice(0, 40), departure: o.departure.slice(0, 10), nights: Math.max(0, Math.min(60, Math.round(num(o.nights)))), ports })
-  }, [])
   const wants = arr(r.wants).reduce<string[]>((acc, x) => (typeof x === 'string' ? addWant(acc, x) : acc), [])
-  return { postcards, voyages, wants }
+  return { postcards, wants }
 }

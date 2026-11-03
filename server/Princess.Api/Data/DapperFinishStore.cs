@@ -226,6 +226,8 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         var ids = trips.Select(t => t.Id).ToArray();
         var docs = (await c.QueryAsync<(string PastTripId, string Doc, bool Ready)>(Sql.Cmd("SELECT PastTripId, Doc, Ready FROM dbo.PastTripDocs WHERE PastTripId IN @ids ORDER BY PastTripId", new { ids }, null, ct))).ToList();
         foreach (var t in trips) t.Docs = [.. docs.Where(d => d.PastTripId == t.Id).Select(d => (d.Doc, d.Ready))];
+        var ports = (await c.QueryAsync<(string PastTripId, string Code, string Name, double Lat, double Lon)>(Sql.Cmd("SELECT PastTripId, Code, Name, CAST(Lat AS FLOAT) AS Lat, CAST(Lon AS FLOAT) AS Lon FROM dbo.PastTripPorts WHERE PastTripId IN @ids ORDER BY PastTripId, Seq", new { ids }, null, ct))).ToList();
+        foreach (var t in trips) t.Ports = [.. ports.Where(p => p.PastTripId == t.Id).Select(p => (p.Code, p.Name, p.Lat, p.Lon))];
         return trips;
     }
 

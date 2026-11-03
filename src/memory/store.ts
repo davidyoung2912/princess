@@ -163,6 +163,8 @@ export const restOf = (m: MemoryState): Omit<MemoryState, keyof HealthPart> => {
 /** The parts of `prepare` that have their own documents: saved travellers (encrypted, with dates of birth) and the reminder (read by the server to send one note). */
 const NO_OWN_DOCS: Pick<PrepareState, 'travellers' | 'remind'> = { travellers: [], remind: null }
 export const travellersOf = (m: MemoryState): { travellers: PrepareState['travellers'] } => ({ travellers: m.prepare.travellers })
+/** The unread postcards' ids and sailings, without their words: what the server reads to say one is waiting. */
+export const postcardsOf = (m: MemoryState): { items: { id: string; sailingId: string }[] } => ({ items: m.remember.postcards.filter((p) => !p.read).map((p) => ({ id: p.id, sailingId: p.sailingId })) })
 export const reminderOf = (m: MemoryState): { at?: number; sailingId?: string; email?: boolean } => (m.prepare.remind ? { at: m.prepare.remind.at, sailingId: m.prepare.remind.sailingId, email: m.prepare.remind.email } : {})
 /** A server copy of the memory document with the parts that have their own documents taken out. */
 export const cleanRest = (raw: unknown): unknown => {
@@ -181,6 +183,7 @@ export function updateMemory(personaId: string | null, change: (s: MemoryState) 
   if (JSON.stringify(healthOf(before)) !== JSON.stringify(healthOf(next))) sync.changed('health', personaId)
   if (JSON.stringify(restOf(before)) !== JSON.stringify(restOf(next))) sync.changed('memory', personaId)
   if (JSON.stringify(travellersOf(before)) !== JSON.stringify(travellersOf(next))) sync.changed('travellers', personaId)
+  if (JSON.stringify(postcardsOf(before)) !== JSON.stringify(postcardsOf(next))) sync.changed('postcards', personaId)
   if (JSON.stringify(reminderOf(before)) !== JSON.stringify(reminderOf(next))) sync.changed('reminder', personaId)
 }
 

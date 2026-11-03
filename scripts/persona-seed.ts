@@ -273,6 +273,17 @@ function usersFile(): string {
     }
     for (const [slug, list] of Object.entries(pastBy)) list.forEach(([title, ship, dep, nights], n) => trips.push([`past-${slug}-${n + 1}`, U(slug), title, ship, dt(dep), nights, false, 150_000 * nights]))
     insert('dbo.PastTrips', ['Id', 'UserId', 'Title', 'Ship', 'Departure', 'Nights', 'Cancelled', 'FareCents'], trips)
+    // Where each past cruise called (name, latitude, longitude), by trip title: the guest's sailed map reads these.
+    const calls: Record<string, [string, string, number, number][]> = {
+      'Alaska Inside Passage': [['juneau', 'Juneau, Alaska', 58.3019, -134.4197], ['skagway', 'Skagway, Alaska', 59.4583, -135.3139], ['ketchikan', 'Ketchikan, Alaska', 55.3422, -131.6461]],
+      'Panama Canal': [['colon', 'Colon, Panama', 9.3547, -79.9], ['cartagena', 'Cartagena, Colombia', 10.391, -75.4794], ['puntarenas', 'Puntarenas, Costa Rica', 9.9763, -84.8338]],
+      'Eastern Caribbean': [['st-thomas', 'St. Thomas, US Virgin Islands', 18.3358, -64.9307], ['st-maarten', 'St. Maarten', 18.0237, -63.0458], ['grand-turk', 'Grand Turk', 21.4675, -71.1389]],
+      'Mexican Riviera': [['cabo', 'Cabo San Lucas, Mexico', 22.8905, -109.9167], ['mazatlan', 'Mazatlan, Mexico', 23.2494, -106.4111], ['puerto-vallarta', 'Puerto Vallarta, Mexico', 20.6534, -105.2253]],
+      Mediterranean: [['naples', 'Naples, Italy', 40.8518, 14.2681], ['santorini', 'Santorini, Greece', 36.3932, 25.4615], ['athens', 'Athens (Piraeus), Greece', 37.942, 23.647]],
+      Hawaii: [['honolulu', 'Honolulu, Hawaii', 21.3069, -157.8583], ['lahaina', 'Maui (Lahaina), Hawaii', 20.8783, -156.6825], ['hilo', 'Hilo, Hawaii', 19.7297, -155.09], ['kona', 'Kona, Hawaii', 19.64, -155.9969]],
+      Bahamas: [['nassau', 'Nassau, Bahamas', 25.0443, -77.3504], ['princess-cays', 'Princess Cays, Bahamas', 24.7667, -76.3167]],
+    }
+    insert('dbo.PastTripPorts', ['PastTripId', 'Seq', 'Code', 'Name', 'Lat', 'Lon'], Object.entries(pastBy).flatMap(([slug, list]) => list.flatMap(([title], n) => (calls[title] ?? []).map(([code, name, lat, lon], i) => [`past-${slug}-${n + 1}`, i + 1, code, name, lat, lon] as V[]))))
     insert('dbo.PastTripDocs', ['PastTripId', 'Doc', 'Ready'], trips.flatMap((t) => [[t[0], 'fareReceipt', true], [t[0], 'folioStatement', true]] as V[][]))
     insert('dbo.FutureCruiseCredits', ['PublicId', 'UserId', 'OriginalCents', 'RemainingCents', 'ExpiresOn', 'Source'], [
       [pub('fcc:theo'), U('theo'), 150_000, 150_000, dt('2027-11-30'), 'Cancelled cruise 2025'], [pub('fcc:grace'), U('grace'), 40_000, 40_000, dt('2028-03-31'), 'Service recovery']])

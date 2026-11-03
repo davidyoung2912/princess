@@ -129,14 +129,19 @@ public sealed class PushService(
         if (booking is null || departure is not { } dep)
             return new(now, "ok", "", null, false, 45, false, [], [], 0, disruptions, reminderAt);
 
+        var postcards = PostcardRules.Due(await PostcardRefsAsync(actor.Id, ct), booking.SailingId, dep.DayNumber - TripRules.Today(now).DayNumber);
         var trip = await trips.BuildAsync(booking, current: true, now, ct);
         var port = AboardRules.PortDayAt(dep, now) is { } p ? AboardRules.WithState(p, now) : null;
         var rows = port is null ? [] : (await portRows.ListAsync(booking.BookingId, ct)).Where(r => !r.Deleted).ToList();
         var notBack = port is not null && rows.Any(r => r.Kind == "presence" && r.Key.StartsWith(port.Date + "|", StringComparison.Ordinal) && Status(r.Json) is not (null or "back"));
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards);
     }
+
+    /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>
+    private async Task<IReadOnlyList<PostcardRef>> PostcardRefsAsync(long userId, CancellationToken ct) =>
+        await state.GetAsync(false, userId, "postcards", ct) is { } row ? PostcardRules.Parse(row.Json) : [];
 
     /// <summary>When the guest asked to be reminded (ms), from their own <c>reminder</c> document; null when there is none or it is not a number.</summary>
     private async Task<long?> ReminderAtAsync(long userId, CancellationToken ct)

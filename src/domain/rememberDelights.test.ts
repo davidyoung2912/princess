@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { SAILINGS, itinerary } from './sailings'
+import { SAILINGS } from './sailings'
 import {
-  addPostcard, addWant, EMPTY_REMEMBER, keepVoyage, lifetime, markPostcardRead, normalizeRemember, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, voyageDone, voyageOf, WANTS_MAX,
+  addPostcard, addWant, callPlaces, EMPTY_REMEMBER, lifetime, MAP_MIN_SPAN, mapView, markPostcardRead, normalizeRemember, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, sailedTrips, wantMatches, WANTS_MAX,
 } from './rememberDelights'
 
 const sailing = SAILINGS[0]
@@ -28,25 +28,61 @@ describe('postcards', () => {
   })
 })
 
+const place = (code: string, lat: number, lon: number) => ({ code, name: code, lat, lon })
+const trip = (id: string, departure: string, nights: number, ports: ReturnType<typeof place>[], cancelled = false) => ({ id, departure, nights, cancelled, ports })
+
 describe('where I have sailed', () => {
-  it('lists each port once for a trip', () => {
-    const v = voyageOf(sailing)
-    expect(v.ports).toEqual(['cozumel', 'belize', 'roatan'])
-    expect(v.nights).toBe(itinerary(sailing).length - 1)
+  const trips = sailedTrips([
+    trip('b', '2024-06-09', 7, [place('juneau', 58.3, -134.4), place('skagway', 59.5, -135.3)]),
+    trip('a', '2023-01-14', 10, [place('colon', 9.35, -79.9), place('juneau', 58.3, -134.4)]),
+    trip('c', '2022-01-01', 5, [place('x', 1, 1)], true),
+  ])
+  it('drops cancelled trips and sorts oldest first', () => expect(trips.map((t) => t.id)).toEqual(['a', 'b']))
+  it('ignores a port with no usable place', () => {
+    const t = sailedTrips([{ id: 'q', departure: '2020-01-01', nights: 3, cancelled: false, ports: [{ code: 'a', name: 'A', lat: 120, lon: 0 }, place('ok', 1, 1), 'junk'] }])
+    expect(t[0].ports).toHaveLength(1)
+    expect(sailedTrips([{ id: 'z', departure: '2020-01-01', nights: 1, cancelled: false }])[0].ports).toEqual([])
   })
-  it('is done on the last day, not before', () => {
-    const days = itinerary(sailing)
-    expect(voyageDone(sailing, days[days.length - 2].date)).toBe(false)
-    expect(voyageDone(sailing, days[days.length - 1].date)).toBe(true)
+  it('counts trips, nights and visits, most visited first', () => {
+    const s = sailedSummary(trips)
+    expect(s).toMatchObject({ trips: 2, nights: 17 })
+    expect(s.ports[0]).toMatchObject({ visits: 2, place: { code: 'juneau' } })
+    expect(s.ports).toHaveLength(3)
   })
-  it('keeps a trip once and counts visits', () => {
-    const v = voyageOf(sailing)
-    const l = keepVoyage(keepVoyage([], v), v)
-    expect(l).toHaveLength(1)
-    const two = keepVoyage(l, { ...v, sailingId: 'z', departure: '2030-01-01', ports: ['cozumel'] })
-    const s = sailedSummary(two)
-    expect(s.trips).toBe(2)
-    expect(s.ports[0]).toEqual({ port: 'cozumel', visits: 2 })
+  it('counts a port once for a trip that calls twice', () => {
+    expect(sailedSummary(sailedTrips([trip('a', '2020-01-01', 7, [place('p', 1, 1), place('p', 1, 1)])])).ports[0].visits).toBe(1)
+  })
+})
+
+describe('mapView', () => {
+  it('shows the world with no ports', () => expect(mapView([]).viewBox).toBe('0 0 360 180'))
+  it('puts east at the right and north at the top', () => {
+    const v = mapView([{ place: place('a', 20, -87), visits: 1 }])
+    expect(v.pins[0]).toMatchObject({ x: 93, y: 70 })
+  })
+  it('never frames tighter than the minimum or beyond the world', () => {
+    const near = mapView([{ place: place('a', 20, -87), visits: 1 }, { place: place('b', 20.1, -87.1), visits: 1 }])
+    expect(near.span).toBe(MAP_MIN_SPAN)
+    const far = mapView([{ place: place('a', 58, -134), visits: 1 }, { place: place('b', -30, 150), visits: 1 }])
+    const [x, y, w, h] = far.viewBox.split(' ').map(Number)
+    expect(w).toBe(360)
+    expect([x, y, h]).toEqual([0, 0, 180])
+  })
+  it('keeps the frame inside the world at the edges', () => {
+    const [x, y, w, h] = mapView([{ place: place('a', 85, 179), visits: 1 }]).viewBox.split(' ').map(Number)
+    expect(x + w).toBeLessThanOrEqual(360)
+    expect(y).toBeGreaterThanOrEqual(0)
+    expect(y + h).toBeLessThanOrEqual(180)
+  })
+})
+
+describe('wantMatches', () => {
+  const places = ['Cozumel, Mexico', 'Belize City, Belize', 'Roatán, Honduras']
+  it('matches by place or country, ignoring case and accents', () => {
+    expect(wantMatches(['roatan', 'MEXICO', 'a week in Honduras'], places).map((m) => m.place)).toEqual(['Roatán, Honduras', 'Cozumel, Mexico', 'Roatán, Honduras'])
+  })
+  it('does not match on small or common words, or on a different place', () => {
+    expect(wantMatches(['New York City', 'Santorini', 'be', ''], places)).toEqual([])
   })
 })
 
@@ -64,7 +100,8 @@ describe('ranked favourites', () => {
 })
 
 describe('lifetime and wants', () => {
-  it('counts different ports across kept trips', () => expect(lifetime(14.4, [voyageOf(sailing)])).toEqual({ days: 14, ports: 3 }))
+  it('counts nights and different ports across the record', () => expect(lifetime(sailedTrips([trip('a', '2020-01-01', 7, [place('p', 1, 1)]), trip('b', '2021-01-01', 4, [place('p', 1, 1), place('q', 2, 2)])]))).toEqual({ nights: 11, ports: 2 }))
+  it('reads the places a sailing calls at, once each', () => expect(callPlaces(sailing)).toHaveLength(3))
   it('keeps a short list without repeats', () => {
     let l = addWant([], '  Santorini ')
     expect(addWant(l, 'santorini')).toEqual(['Santorini'])
@@ -80,10 +117,10 @@ describe('normalizeRemember', () => {
     expect(normalizeRemember(null)).toEqual(EMPTY_REMEMBER)
     expect(normalizeRemember({ postcards: 3, voyages: 'x', wants: [1, {}] })).toEqual(EMPTY_REMEMBER)
   })
-  it('keeps good values and drops bad ports', () => {
-    const n = normalizeRemember({ postcards: [{ ...card('1'), read: true }], voyages: [{ sailingId: 's', departure: '2027-03-21', nights: 7, ports: ['cozumel', 'mars', 'cozumel'] }], wants: ['Lisbon'] })
+  it('keeps good values and drops the old kept-trips list', () => {
+    const n = normalizeRemember({ postcards: [{ ...card('1'), read: true }], voyages: [{ sailingId: 's' }], wants: ['Lisbon'] })
     expect(n.postcards[0].read).toBe(true)
-    expect(n.voyages[0].ports).toEqual(['cozumel'])
+    expect(n).not.toHaveProperty('voyages')
     expect(n.wants).toEqual(['Lisbon'])
   })
 })

@@ -375,6 +375,40 @@ INSERT INTO dbo.PastTrips ([Id], [UserId], [Title], [Ship], [Departure], [Nights
   (N'past-theo-1', @u_theo, N'Alaska Inside Passage', N'Discovery Princess', CAST('2025-07-06' AS DATE), 7, 0, 1050000),
   (N'past-theo-2', @u_theo, N'Hawaii', N'Star Princess', CAST('2024-01-14' AS DATE), 14, 0, 2100000);
 
+-- dbo.PastTripPorts: 31 rows
+INSERT INTO dbo.PastTripPorts ([PastTripId], [Seq], [Code], [Name], [Lat], [Lon]) VALUES
+  (N'past-gerald-1', 1, N'juneau', N'Juneau, Alaska', 58.3019, -134.4197),
+  (N'past-gerald-1', 2, N'skagway', N'Skagway, Alaska', 59.4583, -135.3139),
+  (N'past-gerald-1', 3, N'ketchikan', N'Ketchikan, Alaska', 55.3422, -131.6461),
+  (N'past-gerald-2', 1, N'colon', N'Colon, Panama', 9.3547, -79.9),
+  (N'past-gerald-2', 2, N'cartagena', N'Cartagena, Colombia', 10.391, -75.4794),
+  (N'past-gerald-2', 3, N'puntarenas', N'Puntarenas, Costa Rica', 9.9763, -84.8338),
+  (N'past-gerald-3', 1, N'st-thomas', N'St. Thomas, US Virgin Islands', 18.3358, -64.9307),
+  (N'past-gerald-3', 2, N'st-maarten', N'St. Maarten', 18.0237, -63.0458),
+  (N'past-gerald-3', 3, N'grand-turk', N'Grand Turk', 21.4675, -71.1389),
+  (N'past-linda-1', 1, N'cabo', N'Cabo San Lucas, Mexico', 22.8905, -109.9167),
+  (N'past-linda-1', 2, N'mazatlan', N'Mazatlan, Mexico', 23.2494, -106.4111),
+  (N'past-linda-1', 3, N'puerto-vallarta', N'Puerto Vallarta, Mexico', 20.6534, -105.2253),
+  (N'past-alexander-1', 1, N'naples', N'Naples, Italy', 40.8518, 14.2681),
+  (N'past-alexander-1', 2, N'santorini', N'Santorini, Greece', 36.3932, 25.4615),
+  (N'past-alexander-1', 3, N'athens', N'Athens (Piraeus), Greece', 37.942, 23.647),
+  (N'past-alexander-2', 1, N'honolulu', N'Honolulu, Hawaii', 21.3069, -157.8583),
+  (N'past-alexander-2', 2, N'lahaina', N'Maui (Lahaina), Hawaii', 20.8783, -156.6825),
+  (N'past-alexander-2', 3, N'hilo', N'Hilo, Hawaii', 19.7297, -155.09),
+  (N'past-alexander-2', 4, N'kona', N'Kona, Hawaii', 19.64, -155.9969),
+  (N'past-daniel-1', 1, N'nassau', N'Nassau, Bahamas', 25.0443, -77.3504),
+  (N'past-daniel-1', 2, N'princess-cays', N'Princess Cays, Bahamas', 24.7667, -76.3167),
+  (N'past-rosa-1', 1, N'cabo', N'Cabo San Lucas, Mexico', 22.8905, -109.9167),
+  (N'past-rosa-1', 2, N'mazatlan', N'Mazatlan, Mexico', 23.2494, -106.4111),
+  (N'past-rosa-1', 3, N'puerto-vallarta', N'Puerto Vallarta, Mexico', 20.6534, -105.2253),
+  (N'past-theo-1', 1, N'juneau', N'Juneau, Alaska', 58.3019, -134.4197),
+  (N'past-theo-1', 2, N'skagway', N'Skagway, Alaska', 59.4583, -135.3139),
+  (N'past-theo-1', 3, N'ketchikan', N'Ketchikan, Alaska', 55.3422, -131.6461),
+  (N'past-theo-2', 1, N'honolulu', N'Honolulu, Hawaii', 21.3069, -157.8583),
+  (N'past-theo-2', 2, N'lahaina', N'Maui (Lahaina), Hawaii', 20.8783, -156.6825),
+  (N'past-theo-2', 3, N'hilo', N'Hilo, Hawaii', 19.7297, -155.09),
+  (N'past-theo-2', 4, N'kona', N'Kona, Hawaii', 19.64, -155.9969);
+
 -- dbo.PastTripDocs: 20 rows
 INSERT INTO dbo.PastTripDocs ([PastTripId], [Doc], [Ready]) VALUES
   (N'past-gerald-1', N'fareReceipt', 1),

@@ -15,7 +15,7 @@ import { FeedWaiting } from '../FeedWaiting'
 import { qualityFeed } from '../../feeds/sailingQuality'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { Field, TextArea } from '../Field'
-import { WantNext } from '../delights/RememberDelights'
+import { WantMatchLine, WantNext } from '../delights/RememberDelights'
 import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
 import { EmailRecap, NicknameCard, RemindCard } from '../delights/PrepareDelights'
 import { NOT_INCLUDED, withNickname } from '../../domain/prepareDelights'
@@ -98,6 +98,7 @@ export function DecideScreen() {
             {SAILINGS.map((s) => <option key={s.id} value={s.id}>{s.departure}</option>)}
           </select>
         </div>
+        <WantMatchLine sailing={sailing} />
         <div className="field">
           <label htmlFor="dec-guests">{t('cost.guests')}</label>
           <select id="dec-guests" value={guests} onChange={(e) => setGuests(Number(e.target.value))}>

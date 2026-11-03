@@ -11,7 +11,7 @@ import { mergeOffers, mergeParty } from './merges'
 import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
-import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, reminderOf, restOf, travellersOf } from '../memory/store'
+import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, postcardsOf, reminderOf, restOf, travellersOf } from '../memory/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
@@ -81,6 +81,15 @@ const reminder: Binding = {
   read: (id) => reminderOf(getMemory(id)),
   apply: (id, raw) => applyRemoteReminder(id, raw),
   isEmpty: (raw) => json(raw) === '{}',
+}
+
+/** The unread postcards' ids (never their words), so the server can say one is waiting. It follows the memory document, so it waits for the same consent; the words come back with that document. */
+const postcards: Binding = {
+  key: 'postcards',
+  read: (id) => postcardsOf(getMemory(id)),
+  apply: () => {},
+  isEmpty: (raw) => (raw as { items: unknown[] }).items.length === 0,
+  enabled: () => getSettings().syncPrivate,
 }
 
 /** The medical card, access profile and allergy flag: their own document, encrypted on the server, and held back by the same consent switch. */
@@ -173,5 +182,5 @@ let registered = false
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, travellers, reminder, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

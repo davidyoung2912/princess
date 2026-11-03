@@ -89,6 +89,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'ResumeLinks'),
   (N'dbo', N'PastTrips'),
   (N'dbo', N'PastTripDocs'),
+  (N'dbo', N'PastTripPorts'),
   (N'dbo', N'Loyalty'),
   (N'dbo', N'FutureCruiseCredits'),
   (N'dbo', N'Referrals'),

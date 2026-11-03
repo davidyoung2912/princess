@@ -78,5 +78,6 @@
 .dl9-postcard { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 2px dashed currentColor; border-radius: 0.5rem; }
 .dl9-postcard blockquote { margin: 0 0 0.5rem; white-space: pre-wrap; }
 .dl9-map { width: 100%; max-width: 28rem; height: auto; border: 1px solid currentColor; border-radius: 0.5rem; }
-.dl9-map circle { fill: currentColor; }
-.dl9-map text { fill: currentColor; font-size: 3.5px; }
+.dl9-map__land { fill: currentColor; fill-opacity: 0.15; stroke: currentColor; stroke-opacity: 0.5; stroke-width: 0.5; }
+.dl9-map__pin { fill: currentColor; stroke: Canvas; stroke-width: 0.5; }
+.dl9-map text { fill: currentColor; paint-order: stroke; stroke: Canvas; stroke-width: 0.6px; }

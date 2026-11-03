@@ -9,12 +9,18 @@ import { useFavourites } from '../../hooks/useFavourites'
 import { Card } from '../Card'
 import { Button, LinkButton } from '../Button'
 import { Bookmark, BookmarkCheck } from '../icons'
+import { WantMatchLine } from '../delights/RememberDelights'
+import { callPlaces, wantMatches } from '../../domain/rememberDelights'
+import { useMemory } from '../../hooks/useMemory'
 import { FromPriceBlock, PriceState } from './parts'
 
 /** The sailing dates with "from" prices (DIS-04 cut down to one cruise, DIS-11). */
 export function SailingsScreen() {
   const offers = useAsync(() => api.discover.offers(), [])
   const favourites = useFavourites()
+  const { state } = useMemory()
+  // Sailings that call at more of the guest's wanted places come first; with equal matches the dates keep their order.
+  const ordered = [...SAILINGS].sort((a, b) => wantMatches(state.remember.wants, callPlaces(b)).length - wantMatches(state.remember.wants, callPlaces(a)).length)
   const lowest = offers.data ? Math.min(...offers.data.map((o) => o.from.fare)) : null
   return (
     <div className="page">
@@ -22,7 +28,7 @@ export function SailingsScreen() {
       <p>{t('discover.sailingsIntro')}</p>
       <PriceState state={offers}>
         <ul className="card-grid">
-          {SAILINGS.map((s) => {
+          {ordered.map((s) => {
             const offer = offers.data?.find((o) => o.id === s.id)
             const key = favouriteKey('sailing', s.id)
             const saved = favourites.has(key)
@@ -35,6 +41,7 @@ export function SailingsScreen() {
                     {s.holiday && <span className="tag">{t('discover.holiday')}</span>}
                     {offer && lowest !== null && offer.from.fare === lowest && <span className="tag tag--good">{t('discover.lowest')}</span>}
                   </p>
+                  <WantMatchLine sailing={s} />
                   {offer && <FromPriceBlock price={offer.from} />}
                   <LinkButton to={`/book?sailing=${s.id}`} variant="secondary">{t('discover.bookDate')}<span className="visually-hidden"> {sailingRange(s)}</span></LinkButton>
                   <Button variant="tertiary" aria-pressed={saved} disabled={!favourites.ready} onClick={() => void favourites.toggle(key)}>
