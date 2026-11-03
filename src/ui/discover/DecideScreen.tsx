@@ -15,6 +15,7 @@ import { FeedWaiting } from '../FeedWaiting'
 import { qualityFeed } from '../../feeds/sailingQuality'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { Field, TextArea } from '../Field'
+import { WantNext } from '../delights/RememberDelights'
 import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
 import { EmailRecap, NicknameCard, RemindCard } from '../delights/PrepareDelights'
 import { NOT_INCLUDED, withNickname } from '../../domain/prepareDelights'
@@ -59,6 +60,7 @@ export function DecideScreen() {
       <p>{t('decide.intro')}</p>
 
       <NicknameCard />
+      <WantNext />
 
       <Card labelledBy="dec-fit">
         <h2 id="dec-fit" className="card__title">{t('decide.fit')}</h2>

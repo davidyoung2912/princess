@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL8 are built (sections 5 to 12); DL9 is planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL9 are built (sections 5 to 13).**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -33,7 +33,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | **Built** (section 10) |
 | DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | **Built** (section 11) |
 | DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | **Built** (section 12) |
-| DL9 | Memory and return | D8-1, D8-2, D8-3, D8-5, D8-7 | DL8 (stamps, pins, numbers) | Planned |
+| DL9 | Memory and return | D8-1, D8-2, D8-3, D8-5, D8-7 | DL8 (stamps, pins, numbers) | **Built** (section 13) |
 
 Order rationale: DL1 builds the shared module and proves the wiring cheaply. DL2 adds the export helpers that DL4, DL8 and DL9 reuse. DL3 to DL7 follow the guest's journey and are independent of each other, so they can be reordered. DL9 comes last because it consumes what DL8 collects (port stamps, pinned spots, trip numbers).
 
@@ -302,3 +302,26 @@ Pins, the kept day card and the last look are the new `ports` part of the per-pe
   - Take-me-back words, the breakfast hour and the pier names are authored, not served; the server should serve them per port (D6A-2 was marked "S (+API)").
   - The UV prompt reuses the simulated sky feed, so it is only as real as that feed.
   - Credit left is the account balance in credit, not a separate onboard-credit ledger.
+
+## 13. Phase DL9 in detail: memory and return
+
+**Goal:** the last five delights as pure tested functions (`src/domain/rememberDelights.ts`, 14 tests) with thin cards in `src/ui/delights/RememberDelights.tsx`. No new routes and no REST changes.
+
+### 13.1 Built (2026-11-02)
+
+Postcards, kept trips and wanted places are the new `remember` part of the per-person memory store (it travels in the synced `memory` document).
+
+- **D8-1** postcard to a future self: written on the memories screen (up to five, 400 characters each). It shows on Home, once, when a later trip is 60 days away or closer; "Put it away" marks it read. It never arrives on the sailing it was written on.
+- **D8-2** where I have sailed: on the memories screen, a rough sketch and a list of ports with visit counts and totals. A finished trip is added by a button ("Keep this trip in my record"), so nothing is saved without the guest choosing it. The list carries the facts; the sketch is hidden from screen readers.
+- **D8-3** favourites ranked: hearted dishes (by restaurant), liked drinks and pinned spots (by port), counted from the guest's own DL7 and DL8 records. Nothing is rated for them. Pins and the last look are now read by the memory screen.
+- **D8-5** lifetime days and different ports in plain words on the loyalty screen.
+- **D8-7** places I want next: a short list (8, 40 characters), edited on both the memories screen and Stage 0 (Decide). Private; nothing is searched or booked from it.
+- Spanish for all `dl9.*` strings; native review still needed.
+- **Verified:** `npm run test` (1876 passed), `npm run lint`, `npx tsc -b`, `npm run build`. No `Api` change, so `api:check` was not needed.
+- **Not done:**
+  - Delivery is on the device and the synced memory document; there is no server-scheduled delivery of the postcard, and no email or push.
+  - The sailed record holds only trips kept in this app. Earlier cruises (or ones from the server's history) are not read in, because the history view carries no ports (D8-2 and D8-5 were marked "+API").
+  - The loyalty line uses the loyalty days from the server plus the ports from the local record, so the two can disagree for a guest who has not kept every trip.
+  - The wanted places are free text; they do not yet re-rank sailings or itineraries in Stage 0.
+  - The map is a rough authored sketch of the four ports of this itinerary, not a real map.
+  - The C# was not touched.

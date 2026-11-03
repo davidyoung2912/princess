@@ -23,6 +23,7 @@ import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
 import { Keepsakes } from '../delights/Exports'
 import { StubsCard } from '../delights/EmbarkDelights'
+import { FavouritesRanked, PostcardWriter, SailedMap, WantNext } from '../delights/RememberDelights'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
 
@@ -87,6 +88,8 @@ export function MemoryScreen() {
       <p>{t('memory.intro')}</p>
 
       <StubsCard />
+      <SailedMap />
+      <FavouritesRanked />
       <Card labelledBy="mem-journal" >
         <h2 id="mem-journal" className="card__title no-print">{t('memory.journal')}</h2>
         <div className="no-print">
@@ -136,6 +139,9 @@ export function MemoryScreen() {
               </Card>
 
               <Keepsakes names={me ? partyPeople(me.id).map((p) => p.firstName) : []} ports={r.ports} seaDays={r.seaDays} nauticalMiles={r.nauticalMiles} dinners={r.dinnerVenues} tours={r.tourNames} />
+
+              <PostcardWriter />
+              <WantNext />
 
               <Card labelledBy="mem-next">
                 <h2 id="mem-next" className="card__title no-print">{t('memory.next')}</h2>

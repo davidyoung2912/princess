@@ -8,6 +8,7 @@ import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { LifetimeLine } from '../delights/RememberDelights'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 
@@ -42,6 +43,7 @@ function Loyalty({ v }: { v: LoyaltyView }) {
         <h2 id="loy-level-h" className="card__title">{t('loy.level')}</h2>
         <p className="dis__group">{s.after === 'none' ? t('me.noTier') : t('me.tier', { tier: t(`me.tier.${s.after}` as StringKey) })}</p>
         <p>{t('loy.days', { before: s.daysBefore, after: s.daysAfter })}</p>
+        <LifetimeLine days={s.daysAfter} />
         {!v.counted && <p className="muted">{t('loy.afterSail')}</p>}
         {s.next ? (
           <>

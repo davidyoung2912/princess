@@ -1,5 +1,6 @@
 import { EssentialsHome } from '../delights/EmbarkDelights'
 import { useSettings } from '../../hooks/useSettings'
+import { PostcardArrives } from '../delights/RememberDelights'
 import { HomeReadyCard, NicknameLine, ReminderDueCard, SmallThingCard } from '../delights/PrepareDelights'
 import { Link } from 'react-router'
 import type { TripView } from '../../api/types'
@@ -61,6 +62,7 @@ export function HomeScreen() {
       {trip && <NicknameLine />}
       <ReminderDueCard />
       {trip && <CompanionCard daysToDeparture={trip.daysToDeparture} />}
+      {trip && <PostcardArrives sailingId={trip.sailingId} daysToDeparture={trip.daysToDeparture} />}
       {trip && <HomeReadyCard />}
       {trip && <SmallThingCard daysToDeparture={trip.daysToDeparture} />}
       {trip && <Journey trip={trip} />}
