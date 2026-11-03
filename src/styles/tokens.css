@@ -29,6 +29,7 @@
 
   /* Shape: pill buttons, 8px cards and fields, a large top-left corner for hero cards. */
   --radius-pill: 100px;
+  --radius-button: 12px;
   --radius-card: 8px;
   --radius-hero: 48px 8px 8px 8px;
   --border-width: 1px;
