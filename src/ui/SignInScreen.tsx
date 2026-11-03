@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type
 import { useNavigate } from 'react-router'
 import logo from '../assets/princess.png'
 import { AuthError } from '../auth/provider'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { auth, retryReference } from '../runtime'
 import { referenceState, subscribeReference } from '../domain/referenceStatus'
 import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
@@ -50,7 +50,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   return (
     <main className="page signin" id="main">
       <img className="signin__logo" src={logo} alt="Princess Voyages" width="1024" height="1024" />
-      <h1>{t('signin.title')}</h1>
+      <h1>{th('signin.title')}</h1>
       <p>{t('signin.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={problems} />
       <Card>
@@ -82,7 +82,7 @@ function TestAccounts() {
   if (accounts.length === 0) return null
   return (
     <Card>
-      <h2>{t('signin.test.title')}</h2>
+      <h2>{th('signin.test.title')}</h2>
       <p>{t('signin.test.body')}</p>
       <ul>
         {accounts.map((a) => <li key={a.email}>{a.name}: <code>{a.email}</code></li>)}

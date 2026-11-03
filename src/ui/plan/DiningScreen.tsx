@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -28,7 +28,7 @@ export function DiningScreen() {
   const view = useMine(() => api.plan.dining.view())
   return (
     <div className="page">
-      <h1>{t('route.dining')}</h1>
+      <h1>{th('route.dining')}</h1>
       <AccessAreaNote area="dining" />
       <p>{t('dine.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
@@ -50,12 +50,12 @@ function Body({ view, reload }: { view: DiningView; reload: () => void }) {
         </Banner>
       )}
       <Card labelledBy="main-h">
-        <h2 id="main-h" className="card__title">{t('dine.main')}</h2>
+        <h2 id="main-h" className="card__title">{th('dine.main')}</h2>
         {view.seating ? <p>{t('dine.fixed', { time: formatTime(SEATINGS[view.plan as 'early' | 'late']) })}</p> : <p>{t('dine.anytime')}</p>}
       </Card>
 
       <section aria-labelledby="res-h">
-        <h2 id="res-h">{t('dine.mine')}</h2>
+        <h2 id="res-h">{th('dine.mine')}</h2>
         <PlanError error={cancel.error} />
         {view.reservations.length === 0 ? <p className="muted">{t('dine.none')}</p> : (
           <ul className="card-grid">{view.reservations.map((r) => <ReservationCard key={r.id} r={r} canCancel={view.canBook} busy={cancel.busy} onCancel={() => void cancel.run(r.id)} />)}</ul>
@@ -114,7 +114,7 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
 
   return (
     <section aria-labelledby="new-h">
-      <h2 id="new-h">{t('dine.new')}</h2>
+      <h2 id="new-h">{th('dine.new')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); void submit() }}>
         <fieldset>
           <legend>{t('dine.where')}</legend>

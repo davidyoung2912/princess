@@ -13,7 +13,7 @@ import { foundFeed, loungerFeed, sightingsFeed } from '../../feeds/onboard'
 import { api } from '../../runtime'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { normalizeBrief } from '../../domain/planning'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -24,7 +24,7 @@ import { BackLink } from '../onboard/common'
 const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/ship" label={t('route.ship')} />
-    <h1>{t(title)}</h1>
+    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -46,15 +46,15 @@ export function SeasickScreen() {
   const status = seasickStatus(a.seasick, now)
   return (
     <Page title="route.seasick" intro="sick.intro">
-      <Card labelledBy="sick-where"><h2 id="sick-where" className="card__title">{t('sick.where')}</h2>
+      <Card labelledBy="sick-where"><h2 id="sick-where" className="card__title">{th('sick.where')}</h2>
         <ul className="plain-list">{calmestPlaces().map((p) => <li key={p.id}>{p.name}, {t('quiet.deck', { deck: p.deck })}</li>)}</ul>
         <p className="muted">{t('sick.whereNote')}</p></Card>
-      <Card labelledBy="sick-helps"><h2 id="sick-helps" className="card__title">{t('sick.helps')}</h2>
+      <Card labelledBy="sick-helps"><h2 id="sick-helps" className="card__title">{th('sick.helps')}</h2>
         <ul>{SEASICK_HELPS.map((k) => <li key={k}>{t(`sick.help.${k}` as StringKey)}</li>)}</ul></Card>
-      <Card labelledBy="sick-doc"><h2 id="sick-doc" className="card__title">{t('sick.doctor')}</h2>
+      <Card labelledBy="sick-doc"><h2 id="sick-doc" className="card__title">{th('sick.doctor')}</h2>
         <ul>{SEASICK_DOCTOR.map((k) => <li key={k}>{t(`sick.doc.${k}` as StringKey)}</li>)}</ul>
         <LinkButton to="/ship/health" variant="secondary">{t('sick.medical')}</LinkButton></Card>
-      <Card labelledBy="sick-ask"><h2 id="sick-ask" className="card__title">{t('sick.ask')}</h2>
+      <Card labelledBy="sick-ask"><h2 id="sick-ask" className="card__title">{th('sick.ask')}</h2>
         {status === 'none' ? <Button onClick={() => set((x) => ({ ...x, seasick: now }))}>{t('sick.askButton')}</Button> : <p role="status">{t(`sick.status.${status}` as StringKey)}</p>}
         {status !== 'none' && <Button variant="tertiary" onClick={() => set((x) => ({ ...x, seasick: null }))}>{t('sick.cancel')}</Button>}
         <p className="muted">{t('sick.simulated')}</p></Card>
@@ -76,7 +76,7 @@ export function LoungersScreen() {
         {board.map((r) => (
           <li key={r.id}>
             <Card labelledBy={`l-${r.id}`}>
-              <h2 id={`l-${r.id}`} className="card__title">{t('lounge.n', { n: r.id })}</h2>
+              <h2 id={`l-${r.id}`} className="card__title">{th('lounge.n', { n: r.id })}</h2>
               <p>{t(`lounge.state.${r.state}` as StringKey, { min: r.returnsIn ?? 0 })}</p>
               {r.state === 'free' && <Button onClick={() => set((x) => ({ ...x, lounger: takeLounger(board, x.lounger, r.id, now) }))}>{t('lounge.take', { min: HOLD_MINUTES })}</Button>}
               {r.state === 'mine' && <Button variant="secondary" onClick={() => set((x) => ({ ...x, lounger: null }))}>{t('lounge.release')}</Button>}
@@ -104,7 +104,7 @@ export function KidsReportScreen() {
     <Page title="route.kidsReport" intro="kreport.intro">
       <label className="choice"><input type="checkbox" checked={a.kidsConsent} onChange={(e) => set((x) => ({ ...x, kidsConsent: e.target.checked }))} /><span>{t('kreport.consent')}</span></label>
       {kids.length === 0 ? <p>{t('kreport.needBrief')} <Link to="/plan/child-brief">{t('route.childBrief')}</Link></p> : !a.kidsConsent ? <Nothing k="kreport.waiting" /> : kids.map((k) => (
-        <Card key={k.key} labelledBy={`kr-${k.key}`}><h2 id={`kr-${k.key}`} className="card__title">{t('kreport.title', { club: clubById(k.clubId)?.name ?? k.clubId, day })}</h2>
+        <Card key={k.key} labelledBy={`kr-${k.key}`}><h2 id={`kr-${k.key}`} className="card__title">{th('kreport.title', { club: clubById(k.clubId)?.name ?? k.clubId, day })}</h2>
           {fromClub.length > 0 && <p className="muted">{k.here ? t('kreport.here', { name: k.name }) : t('kreport.notHere', { name: k.name })}</p>}
           {kidsReport(k.name, k.clubId, day).map((l) => <p key={l}>{l}</p>)}
           <p className="muted">{t('kreport.sim')}</p></Card>
@@ -203,7 +203,7 @@ export function DndScreen() {
 export function YouSaidScreen() {
   return (
     <Page title="route.youSaid" intro="said.intro">
-      <ul className="card-grid">{YOU_SAID.map((k) => <li key={k}><Card labelledBy={`s-${k}`}><h2 id={`s-${k}`} className="card__title">{t(`said.${k}.said` as StringKey)}</h2><p>{t(`said.${k}.did` as StringKey)}</p></Card></li>)}</ul>
+      <ul className="card-grid">{YOU_SAID.map((k) => <li key={k}><Card labelledBy={`s-${k}`}><h2 id={`s-${k}`} className="card__title">{th(`said.${k}.said` as StringKey)}</h2><p>{t(`said.${k}.did` as StringKey)}</p></Card></li>)}</ul>
       <p className="muted">{t('said.sim')}</p>
     </Page>
   )
@@ -216,9 +216,9 @@ export function DiningPrefsScreen() {
   const table = (n: Partial<typeof d.table>) => set((x) => ({ ...x, dining: { ...x.dining, table: { ...x.dining.table, ...n } } }))
   return (
     <Page title="route.diningPrefs" intro="dpref.intro">
-      <Card labelledBy="dp-fav"><h2 id="dp-fav" className="card__title">{t('dpref.fav')}</h2>
+      <Card labelledBy="dp-fav"><h2 id="dp-fav" className="card__title">{th('dpref.fav')}</h2>
         {diningPlaces().map((p) => <label key={p.id} className="choice"><input type="checkbox" checked={d.favourites.includes(p.id)} onChange={(e) => set((x) => ({ ...x, dining: { ...x.dining, favourites: e.target.checked ? [...x.dining.favourites, p.id] : x.dining.favourites.filter((f) => f !== p.id) } }))} /><span>{p.name}</span></label>)}</Card>
-      <Card labelledBy="dp-table"><h2 id="dp-table" className="card__title">{t('dpref.table')}</h2>
+      <Card labelledBy="dp-table"><h2 id="dp-table" className="card__title">{th('dpref.table')}</h2>
         <label htmlFor="dp-size">{t('dpref.size')}</label>
         <select id="dp-size" className="field__input" value={d.table.size} onChange={(e) => table({ size: e.target.value as typeof d.table.size })}>{(['any', '2', '4', '6'] as const).map((s) => <option key={s} value={s}>{t(`dpref.size.${s}` as StringKey)}</option>)}</select>
         <label htmlFor="dp-time">{t('dpref.time')}</label>
@@ -240,7 +240,7 @@ export function StepsScreen() {
     <Page title="route.steps" intro="steps.intro">
       <Field label={t('steps.today', { day })} inputMode="numeric" value={text} onChange={(e) => setText(e.target.value.replace(/\D/g, '').slice(0, 6))} />
       <Button onClick={() => set((x) => ({ ...x, steps: { ...x.steps, [String(day)]: Math.min(100_000, Number(text || '0')) } }))}>{t('steps.save')}</Button>
-      <Card labelledBy="steps-h"><h2 id="steps-h" className="card__title">{t('steps.progress')}</h2>
+      <Card labelledBy="steps-h"><h2 id="steps-h" className="card__title">{th('steps.progress')}</h2>
         <p>{t('steps.total', { n: c.total.toLocaleString('en-US') })}</p>
         <p>{t('steps.laps', { n: c.laps, steps: LAP_STEPS })}</p>
         <p>{t('steps.days', { n: c.daysMet, goal: STEP_GOAL.toLocaleString('en-US') })}</p>
@@ -275,7 +275,7 @@ export function LostFoundScreen() {
           </Card>
         )
       })}
-      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{t('lost.found')}</h2>{!found && <FeedWaiting />}<ul>{(found ?? []).map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
+      <Card labelledBy="found-h"><h2 id="found-h" className="card__title">{th('lost.found')}</h2>{!found && <FeedWaiting />}<ul>{(found ?? []).map((f) => <li key={f.id}>{f.what}, {placeById(f.at)?.name}</li>)}</ul><p className="muted">{t('lost.sim')}</p></Card>
       <p><Link to="/me/cases">{t('route.cases')}</Link></p>
     </Page>
   )
@@ -289,7 +289,7 @@ export function SightingsScreen() {
   const [pick, setPick] = useState<string>(SPECIES[0])
   return (
     <Page title="route.sightings" intro="sight.intro">
-      <Card labelledBy="sight-today"><h2 id="sight-today" className="card__title">{t('sight.today')}</h2>
+      <Card labelledBy="sight-today"><h2 id="sight-today" className="card__title">{th('sight.today')}</h2>
         <p>{seen ? seen.map((s) => t(`sight.${s}` as StringKey)).join(', ') : t('feed.waiting')}</p><p className="muted">{t('sight.sim')}</p></Card>
       <label htmlFor="sight-pick">{t('sight.saw')}</label>
       <select id="sight-pick" className="field__input" value={pick} onChange={(e) => setPick(e.target.value)}>{SPECIES.map((s) => <option key={s} value={s}>{t(`sight.${s}` as StringKey)}</option>)}</select>
@@ -312,7 +312,7 @@ export function CabinWordsCard() {
   const words = cabin ? cabinWords(cabin) : null
   return (
     <Card labelledBy="cw-h">
-      <h2 id="cw-h" className="card__title">{t('cw.title')}</h2>
+      <h2 id="cw-h" className="card__title">{th('cw.title')}</h2>
       <Field label={t('cw.number')} inputMode="numeric" value={text} maxLength={6} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))} error={a.cabin && !cabin ? t('cw.unknown') : undefined} />
       {fromBooking && !a.cabin && <p>{t('cw.fromBooking', { number: fromBooking })}</p>}
       <Button variant="secondary" onClick={() => set((x) => ({ ...x, cabin: text.trim() }))}>{t('cw.show')}</Button>

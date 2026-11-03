@@ -4,7 +4,7 @@ import { formatDate } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { Back, PlanError } from './common'
@@ -15,7 +15,7 @@ export function ChecklistScreen() {
   const tick = useAction(async (id: string, done: boolean) => { await api.plan.checklist.tick(id, done); list.retry() })
   return (
     <div className="page">
-      <h1>{t('route.checklist')}</h1>
+      <h1>{th('route.checklist')}</h1>
       <p>{t('check.intro')}</p>
       <Load state={list}>
         {(c) => (
@@ -25,7 +25,7 @@ export function ChecklistScreen() {
             <PlanError error={tick.error} />
             {c.milestones.map((m) => (
               <section key={m.daysBefore} className="milestone" aria-labelledby={`m-${m.daysBefore}`}>
-                <h2 id={`m-${m.daysBefore}`}>{t('check.milestone', { count: m.daysBefore })} <span className="muted">· {formatDate(m.due)}</span></h2>
+                <h2 id={`m-${m.daysBefore}`}>{th('check.milestone', { count: m.daysBefore })} <span className="muted">· {formatDate(m.due)}</span></h2>
                 {m.entries.map((e) => <Row key={e.id} entry={e} busy={tick.busy} onTick={(done) => void tick.run(e.id, done)} />)}
               </section>
             ))}

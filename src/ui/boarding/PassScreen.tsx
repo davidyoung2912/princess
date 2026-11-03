@@ -9,7 +9,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -29,7 +29,7 @@ export function PassScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{t('route.boardingPass')}</h1>
+      <h1>{th('route.boardingPass')}</h1>
       {pass.data ? (
         <>
           {pass.at !== null && <SyncChip updated={new Date(pass.at)} now={new Date(now)} state={pass.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}
@@ -65,7 +65,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
 
       {pass.checkinDone && signedIn && (
         <section className="no-print" aria-labelledby="keep-h">
-          <h2 id="keep-h">{t('pass.keep')}</h2>
+          <h2 id="keep-h">{th('pass.keep')}</h2>
           <KeepStub pass={pass} />
           <div className="button-row">
             {pass.inWallet ? <p role="status"><strong>{t('pass.inWallet')}</strong> {t('pass.inWalletBody')}</p> : <Button onClick={() => void wallet.run()} disabled={wallet.busy || offline}>{t('pass.addWallet')}</Button>}

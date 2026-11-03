@@ -5,7 +5,7 @@ import { MAX_TABLE, splitEvenly } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -22,7 +22,7 @@ export function GroupTable({ r, canEdit }: { r: Reservation; canEdit: boolean })
   const split = useAction(async (mode: 'mine' | 'even') => { await api.aboard.groups.setSplit(r.id, mode); table.retry() })
   return (
     <section aria-labelledby="group-h">
-      <h2 id="group-h">{t('group.title')}</h2>
+      <h2 id="group-h">{th('group.title')}</h2>
       <p>{t('group.intro', { max: MAX_TABLE })}</p>
       <Load state={table}>
         {(g) => {
@@ -46,7 +46,7 @@ export function GroupTable({ r, canEdit }: { r: Reservation; canEdit: boolean })
                 </form>
               )}
               <Card>
-                <h3 className="card__title">{t('group.split')}</h3>
+                <h3 className="card__title">{th('group.split')}</h3>
                 {r.charge === 0 ? <p>{t('group.nothing')}</p> : (
                   <>
                     <div className="chip-row" role="group" aria-label={t('group.split')}>

@@ -10,7 +10,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { useRecapData } from '../../hooks/useRecapData'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -64,12 +64,12 @@ export function WrappedScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.wrapped')}</h1>
+      <h1>{th('route.wrapped')}</h1>
       <p>{t('wrapped.intro')}</p>
 
       {memory && (
         <Card info labelledBy="wrapped-ann">
-          <h2 id="wrapped-ann" className="card__title">{t('wrapped.annTitle')}</h2>
+          <h2 id="wrapped-ann" className="card__title">{th('wrapped.annTitle')}</h2>
           <p>{memory.text}</p>
         </Card>
       )}
@@ -97,7 +97,7 @@ export function WrappedScreen() {
       </Load>
 
       <Card labelledBy="wrapped-drinks">
-        <h2 id="wrapped-drinks" className="card__title">{t('wrapped.drinks')}</h2>
+        <h2 id="wrapped-drinks" className="card__title">{th('wrapped.drinks')}</h2>
         <p>{t('wrapped.drinksBody')}</p>
         <Field label={t('wrapped.drinksCount')} inputMode="numeric" value={drinksText} onChange={(e) => setDrinksText(e.target.value)} />
         <div className="actions">
@@ -107,7 +107,7 @@ export function WrappedScreen() {
       </Card>
 
       <Card labelledBy="wrapped-hind">
-        <h2 id="wrapped-hind" className="card__title">{t('wrapped.hindsight')}</h2>
+        <h2 id="wrapped-hind" className="card__title">{th('wrapped.hindsight')}</h2>
         <p>{t('wrapped.hindsightBody')}</p>
         <Field label={t('wrapped.paid')} inputMode="decimal" value={paidText} onChange={(e) => { setPaidText(e.target.value); const c = parseMoney(e.target.value); update((m) => ({ ...m, use: { ...m.use, paid: c ?? 0 } })) }} error={paidText.trim() !== '' && paid === null ? t('wrapped.paidBad') : undefined} />
         <Field label={t('wrapped.useDrinks')} inputMode="numeric" value={state.use.drinks ? String(state.use.drinks) : ''} onChange={(e) => setUse('drinks', e.target.value)} />
@@ -118,12 +118,12 @@ export function WrappedScreen() {
       </Card>
 
       <Card labelledBy="wrapped-ann-set">
-        <h2 id="wrapped-ann-set" className="card__title">{t('wrapped.annSetting')}</h2>
+        <h2 id="wrapped-ann-set" className="card__title">{th('wrapped.annSetting')}</h2>
         <label className="choice"><input type="checkbox" checked={state.anniversary} onChange={(e) => update((s) => ({ ...s, anniversary: e.target.checked }))} /><span>{t('wrapped.annOn')}<small>{t('wrapped.annHint', { date: formatDate(sailing.departure) })}</small></span></label>
       </Card>
 
       <Card labelledBy="wrapped-exp">
-        <h2 id="wrapped-exp" className="card__title">{t('wrapped.expenses')}</h2>
+        <h2 id="wrapped-exp" className="card__title">{th('wrapped.expenses')}</h2>
         <p>{t('wrapped.expensesBody')}</p>
         <Load state={folio}>
           {(f) => (

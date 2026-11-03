@@ -5,7 +5,7 @@ import { formatDate } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
@@ -20,7 +20,7 @@ export function DocumentsScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.documents')}</h1>
+      <h1>{th('route.documents')}</h1>
       <p>{t('docs.intro')}</p>
       <Load state={docs}>
         {(d) => (
@@ -33,14 +33,14 @@ export function DocumentsScreen() {
                 <p className="muted">{t('docs.guestLine', { age: g.age, citizenship: t(`profile.citizenship.${g.citizenship}` as StringKey) })}</p>
                 {g.blocking === 0 ? <StatusBadge kind="booked" label={t('docs.allReady')} /> : <StatusBadge kind="changed" label={t('docs.needs', { count: g.blocking })} />}
                 <ul className="plain-list">{g.results.map((r) => <Requirement key={r.requirement.id} r={r} returnDate={d.returnDate} />)}</ul>
-                <h3>{t('docs.iHave')}</h3>
+                <h3>{th('docs.iHave')}</h3>
                 {DOC_IDS.map((doc) => <HeldRow key={`${g.id}-${doc}-${g.held[doc]?.expires ?? ''}`} guest={g} doc={doc} canEdit={d.canEdit && !set.busy} onChange={change} />)}
                 <PapersCheck guest={g} returnDate={d.returnDate} />
               </Card>
             ))}
             <p className="muted">{t('docs.privacy')}</p>
             <section aria-labelledby="entry-h">
-              <h2 id="entry-h">{t('docs.entry')}</h2>
+              <h2 id="entry-h">{th('docs.entry')}</h2>
               <ul className="plain-list">{PORT_ENTRY.map((p) => <li key={p.country}><span><strong>{p.country}</strong><br />{p.note}</span></li>)}</ul>
             </section>
           </>

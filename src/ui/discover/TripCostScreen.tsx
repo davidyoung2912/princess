@@ -10,7 +10,7 @@ import { sailingById, SAILINGS } from '../../domain/sailings'
 import { CATEGORIES, type CategoryId } from '../../domain/ship'
 import { zonedToEpoch } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { budgetNote } from '../../domain/planning'
@@ -49,7 +49,7 @@ export function TripCostScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.tripCost')}</h1>
+      <h1>{th('route.tripCost')}</h1>
       <p>{t('cost.intro')}</p>
 
       <Card>
@@ -81,7 +81,7 @@ export function TripCostScreen() {
       </Card>
 
       <section aria-labelledby="cost-wants-h">
-        <h2 id="cost-wants-h">{t('cost.wants')}</h2>
+        <h2 id="cost-wants-h">{th('cost.wants')}</h2>
         <div className="field">
           <label><input type="checkbox" checked={drinks} onChange={(e) => setDrinks(e.target.checked)} /> {t('cost.drinks')}</label>
         </div>
@@ -105,7 +105,7 @@ export function TripCostScreen() {
       </section>
 
       <section aria-labelledby="cost-out-h">
-        <h2 id="cost-out-h">{t('cost.outside')}</h2>
+        <h2 id="cost-out-h">{th('cost.outside')}</h2>
         <p className="muted">{t('cost.outside.hint')}</p>
         {(['flights', 'hotel', 'other'] as const).map((k) => (
           <Field key={k} label={t(`cost.${k}` as StringKey)} inputMode="numeric" value={text[k]} onChange={(e) => setText({ ...text, [k]: e.target.value })} error={bad(k) ? t('cost.bad') : undefined} />
@@ -113,7 +113,7 @@ export function TripCostScreen() {
       </section>
 
       <section aria-labelledby="cost-cmp-h" aria-live="polite">
-        <h2 id="cost-cmp-h">{t('cost.compare')}</h2>
+        <h2 id="cost-cmp-h">{th('cost.compare')}</h2>
         {!cost ? <p role="status">{t('cost.notFound')}</p> : (
           <>
             <Card info>

@@ -10,7 +10,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -32,7 +32,7 @@ export function Planner({ today }: { today: OnboardToday }) {
   const copy = useSavedCopy('program', `${me?.id ?? 'none'}:${day}`, () => api.onboard.program(day), asProgramView, [me?.id, day])
   return (
     <section aria-labelledby="planner-h">
-      <h2 id="planner-h">{t('onb.planner')}</h2>
+      <h2 id="planner-h">{th('onb.planner')}</h2>
       <div className="field">
         <label htmlFor="planner-day">{t('onb.planner.day')}</label>
         <select id="planner-day" className="field__input" value={day} onChange={(e) => setDay(Number(e.target.value))}>
@@ -83,7 +83,7 @@ function Day({ view, filter, setFilter, mineOnly, setMineOnly, sort, setSort, re
 
       {(nn.now.length > 0 || nn.next.length > 0) && (
         <Card labelledBy="now-next-h">
-          <h3 id="now-next-h" className="card__title">{t('onb.nowNext')}</h3>
+          <h3 id="now-next-h" className="card__title">{th('onb.nowNext')}</h3>
           <ul className="plain-bullets">
             {nn.now.map((e) => <li key={e.id}><strong>{t('onb.happening')}</strong> {e.title}, {place(e)}</li>)}
             {nn.next.map((e) => <li key={e.id}><strong>{t('onb.nextUp')}</strong> <Time at={e.startAt} /> {e.title}, {place(e)}</li>)}

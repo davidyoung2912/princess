@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
@@ -46,7 +46,7 @@ export function ContactScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.contact')}</h1>
+      <h1>{th('route.contact')}</h1>
       <p>{t('contact.intro')}</p>
       <p><Link to="/home/concierge">{t('contact.tryConcierge')}</Link></p>
       <ul className="card-grid">
@@ -54,7 +54,7 @@ export function ContactScreen() {
           const s = contactStatus(o, hour)
           return (
             <li key={o.id} className="card">
-              <h2 className="card__title">{t(`contact.${o.id}` as StringKey)}</h2>
+              <h2 className="card__title">{th(`contact.${o.id}` as StringKey)}</h2>
               <p><StatusBadge kind={s.open ? 'booked' : 'cancelled'} label={s.open ? t('contact.open') : t('contact.closed')} /></p>
               <p className="muted">{o.hours ? t('contact.hours', { from: o.hours[0], to: o.hours[1] }) : t('contact.always')}{s.open && s.waitMinutes !== null && o.id !== 'callback' ? ` · ${t('contact.wait', { count: s.waitMinutes })}` : ''}{o.id === 'email' ? ` · ${t('contact.emailReply')}` : ''}</p>
               {o.id === 'chat' && <LinkButton to="/chat" variant="secondary">{t('contact.startChat')}</LinkButton>}
@@ -65,7 +65,7 @@ export function ContactScreen() {
       </ul>
 
       <section aria-labelledby="cb-h">
-        <h2 id="cb-h">{t('contact.callback')}</h2>
+        <h2 id="cb-h">{th('contact.callback')}</h2>
         <form onSubmit={(e) => void askCallback(e)} noValidate>
           <Field label={t('contact.phoneField')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneProblem ? t('contact.phoneProblem') : undefined} />
           <ActionError error={callback.error} />
@@ -74,7 +74,7 @@ export function ContactScreen() {
       </section>
 
       <section aria-labelledby="em-h">
-        <h2 id="em-h">{t('contact.email')}</h2>
+        <h2 id="em-h">{th('contact.email')}</h2>
         <form onSubmit={(e) => void sendEmail(e)} noValidate>
           <TextArea label={t('contact.messageField')} hint={t('contact.messageHint', { address: SUPPORT_EMAIL })} value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} />
           {messageProblem && <p role="alert" className="field__error">{t('contact.messageProblem')}</p>}
@@ -85,7 +85,7 @@ export function ContactScreen() {
       <p role="status">{sent ? t(`contact.sent.${sent}` as StringKey) : ''}</p>
 
       <section aria-labelledby="tk-h">
-        <h2 id="tk-h">{t('contact.tickets')}</h2>
+        <h2 id="tk-h">{th('contact.tickets')}</h2>
         <Load state={tickets}>
           {(list) => list.length === 0 ? <Card info><p>{t('contact.noTickets')}</p></Card> : (
             <ul className="plain-list">

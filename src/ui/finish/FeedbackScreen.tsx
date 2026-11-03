@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -23,7 +23,7 @@ export function FeedbackScreen() {
   const sailed = useSailed()
   return (
     <div className="page">
-      <h1>{t('route.feedback')}</h1>
+      <h1>{th('route.feedback')}</h1>
       <p>{t('fbk.intro')}</p>
       <NotYetOff open={sailed} />
       <Load state={view}>{(v) => <Form key={v.submittedAt ?? 0} v={v} reload={view.retry} />}</Load>
@@ -48,7 +48,7 @@ function CrewPreview({ f }: { f: Feedback }) {
   const notes = crewNotes(f, me?.firstName ?? '')
   return (
     <section className="plain-fieldset" aria-labelledby="fbk-preview-h">
-      <h3 id="fbk-preview-h">{t('fbk.crewPreview')}</h3>
+      <h3 id="fbk-preview-h">{th('fbk.crewPreview')}</h3>
       {notes.length === 0 ? <p className="muted">{t('fbk.crewPreviewNone')}</p> : (
         <>
           <p className="field__hint">{notes[0].from ? t('fbk.crewPreviewSigned') : t('fbk.crewPreviewUnsigned')}</p>
@@ -96,7 +96,7 @@ function Form({ v, reload }: { v: FeedbackView; reload: () => void }) {
             </>
           )}
           <Card labelledBy="fbk-use-h">
-            <h2 id="fbk-use-h" className="card__title">{t('fbk.use')}</h2>
+            <h2 id="fbk-use-h" className="card__title">{th('fbk.use')}</h2>
             <p>{t('fbk.useBody')}</p>
             <label className="choice"><input type="checkbox" checked={f.shareName} onChange={(e) => set({ shareName: e.target.checked })} /><span>{t('fbk.shareName')}</span></label>
             <label className="choice"><input type="checkbox" checked={f.allowContact} onChange={(e) => set({ allowContact: e.target.checked })} /><span>{t('fbk.allowContact')}</span></label>

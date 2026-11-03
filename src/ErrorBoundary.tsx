@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { report } from './diagnostics/watch'
-import { t } from './i18n'
+import { t, th } from './i18n'
 
 interface Props {
   children: ReactNode
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children
     return (
       <main className="page" role="alert">
-        <h1>{t('error.title')}</h1>
+        <h1>{th('error.title')}</h1>
         <p>{staleFiles(error) ? t('error.stale') : t('error.body')}</p>
         <p>{t('error.help')}</p>
         <p>

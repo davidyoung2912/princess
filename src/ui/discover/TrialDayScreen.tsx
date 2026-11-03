@@ -6,7 +6,7 @@ import { EVENT_INTERESTS, type EventInterest } from '../../domain/program'
 import { wishKey } from '../../feeds/dayPlan'
 import { hasTours, trialDayFeed } from '../../feeds/trialDay'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { applyPageMeta } from '../../seo'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -34,10 +34,10 @@ export function TrialDayScreen() {
     <>
       <a className="skip-link" href="#main">{t('shell.skip')}</a>
       <main id="main" className="page" tabIndex={-1}>
-        <h1>{t('route.trialDay')}</h1>
+        <h1>{th('route.trialDay')}</h1>
         <p>{t('trial.intro')}</p>
         <Card labelledBy="trial-pick-h">
-          <h2 id="trial-pick-h" className="card__title">{t('day.pick')}</h2>
+          <h2 id="trial-pick-h" className="card__title">{th('day.pick')}</h2>
           <div className="field">
             <label htmlFor="trial-day">{t('day.which')}</label>
             <select id="trial-day" className="field__input" value={day} onChange={(e) => setDay(Number(e.target.value))}>
@@ -62,7 +62,7 @@ export function TrialDayScreen() {
         </Card>
 
         <Card hero labelledBy="trial-plan-h">
-          <h2 id="trial-plan-h" className="card__title">{choice ? t('trial.yours', { day, place: choice.place }) : t('day.yours', { day })}</h2>
+          <h2 id="trial-plan-h" className="card__title">{choice ? th('trial.yours', { day, place: choice.place }) : th('day.yours', { day })}</h2>
           {!plan && <FeedWaiting />}
           {plan?.empty && <p role="status">{t('day.empty')}</p>}
           <ol className="build-list">

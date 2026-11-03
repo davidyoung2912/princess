@@ -5,7 +5,7 @@ import { capacityOf, FARES, fareOptions, type FareId } from '../../domain/fares'
 import { SAILINGS, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
 import { RegretCards } from './RegretCards'
@@ -76,14 +76,14 @@ export function CabinChooserScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.cabins')}</h1>
+      <h1>{th('route.cabins')}</h1>
       <p>{t('cabins.intro')}</p>
       <p className="muted">{t('cabins.sample')}</p>
 
       {left && picked.length === 0 && <LeftOffCard picks={left.picks ?? []} onOpen={reopen} onForget={() => { saveLastComparison(''); setLeft(null) }} />}
 
       <Card labelledBy="cabins-pick">
-        <h2 id="cabins-pick" className="card__title">{t('cabins.choose')}</h2>
+        <h2 id="cabins-pick" className="card__title">{th('cabins.choose')}</h2>
         <div className="field">
           <label htmlFor="cabins-sailing">{t('cost.sailing')}</label>
           <select id="cabins-sailing" value={sailing.id} onChange={(e) => setSailingId(e.target.value)}>
@@ -118,12 +118,12 @@ export function CabinChooserScreen() {
 
       <CabinPhotos category={category} />
 
-      <h2>{t('cabins.found', { count: cabins.length })}</h2>
+      <h2>{th('cabins.found', { count: cabins.length })}</h2>
       {!guide && <FeedWaiting />}
       {guide && cabins.length === 0 && <p>{t('cabins.none')}</p>}
       {cabins.map((c) => (
         <Card key={c.cabin.number}>
-          <h3>{t('cabins.cabin', { number: c.cabin.number, deck: c.cabin.deck })}</h3>
+          <h3>{th('cabins.cabin', { number: c.cabin.number, deck: c.cabin.deck })}</h3>
           <p className="muted">{t(`cabins.pos.${c.cabin.position}` as StringKey)} · {t(`cabins.side.${c.cabin.side}` as StringKey)}</p>
           <dl className="recap-stats">
             <div><dt>{t('cabins.sleep')}</dt><dd>{stars(c.sleep)}</dd></div>
@@ -151,7 +151,7 @@ export function CabinChooserScreen() {
       ))}
 
       <Card labelledBy="cabins-compare">
-        <h2 id="cabins-compare" className="card__title">{t('cabins.matrix')}</h2>
+        <h2 id="cabins-compare" className="card__title">{th('cabins.matrix')}</h2>
         {rows.length === 0 ? <p>{t('cabins.matrixEmpty')}</p> : (
           <div className="table-scroll">
             <table className="compare-table">
@@ -168,7 +168,7 @@ export function CabinChooserScreen() {
       </Card>
 
       <Card labelledBy="cabins-not">
-        <h2 id="cabins-not" className="card__title">{t('cabins.notIncluded', { fare: FARES[useFare].name })}</h2>
+        <h2 id="cabins-not" className="card__title">{th('cabins.notIncluded', { fare: FARES[useFare].name })}</h2>
         <ul className="plain-bullets">{notIncluded(useFare).map((x) => <li key={x}>{x}</li>)}</ul>
         <p><Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
       </Card>

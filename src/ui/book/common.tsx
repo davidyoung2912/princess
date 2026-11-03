@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { StepContext, Draft } from '../../domain/booking'
+import { headingCase } from '../../i18n'
 
 export interface StepProps {
   draft: Draft
@@ -13,7 +14,7 @@ export interface StepProps {
 export function StepSection({ title, intro, children }: { title: string; intro?: string; children: ReactNode }) {
   return (
     <section aria-labelledby="step-h">
-      <h2 id="step-h" tabIndex={-1}>{title}</h2>
+      <h2 id="step-h" tabIndex={-1}>{headingCase(title)}</h2>
       {intro && <p>{intro}</p>}
       {children}
     </section>

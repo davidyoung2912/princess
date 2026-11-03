@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useShipTime } from '../onboard/shipTime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -21,7 +21,7 @@ export function DrinksScreen() {
   const undo = useAction(async (id: string) => { await api.aboard.drinks.undo(id); view.retry() })
   return (
     <div className="page">
-      <h1>{t('route.drinks')}</h1>
+      <h1>{th('route.drinks')}</h1>
       <p>{t('drk.intro')}</p>
       <Load state={view}>
         {(v) => (
@@ -29,7 +29,7 @@ export function DrinksScreen() {
             {v.summary.alert === 'stop' && <Banner kind="danger" title={t('drk.stop')}><p>{t('drk.stopBody', { count: STOP_AFTER, hours: ALERT_WINDOW_MIN / 60 })}</p></Banner>}
             {v.summary.alert === 'slow' && <Banner kind="warning" title={t('drk.slow')}><p>{t('drk.slowBody', { count: ALERT_AFTER, hours: ALERT_WINDOW_MIN / 60 })}</p></Banner>}
             <Card labelledBy="drk-sum">
-              <h2 id="drk-sum" className="card__title">{t('drk.today')}</h2>
+              <h2 id="drk-sum" className="card__title">{th('drk.today')}</h2>
               <dl className="facts">
                 <div><dt>{t('drk.had')}</dt><dd>{v.summary.today}</dd></div>
                 <div><dt>{t('drk.package')}</dt><dd>{v.capUsd > 0 ? t('drk.cap', { cap: v.capUsd, left: v.summary.left ?? 0, max: DAILY_PACKAGE_DRINKS }) : t('drk.noPackage')}</dd></div>
@@ -46,7 +46,7 @@ export function DrinksScreen() {
                 return (
                   <li key={d.id}>
                     <Card>
-                      <h3 className="card__title">{t(`drk.d.${d.id}` as StringKey)}</h3>
+                      <h3 className="card__title">{th(`drk.d.${d.id}` as StringKey)}</h3>
                       <p className="muted">{formatMoney(d.cents)}{d.alcohol ? ` · ${t('drk.alcohol')}` : ''}{covered ? ` · ${t('drk.covered')}` : ''}</p>
                       {blocked ? <p className="muted">{t('drk.age')}</p> : <Button variant="secondary" disabled={log.busy} onClick={() => void log.run(d.id)}>{t('drk.add')}</Button>}
                     </Card>
@@ -54,7 +54,7 @@ export function DrinksScreen() {
                 )
               })}
             </ul>
-            <h2>{t('drk.log')}</h2>
+            <h2>{th('drk.log')}</h2>
             {v.logs.length === 0 ? <p className="muted">{t('drk.none')}</p> : (
               <ul className="plain-bullets">
                 {v.logs.map((l) => (

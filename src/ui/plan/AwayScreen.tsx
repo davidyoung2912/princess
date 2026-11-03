@@ -4,7 +4,7 @@ import { formatDate } from '../../domain/cruise'
 import { dateIn } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -42,7 +42,7 @@ export function AwayScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{t('route.away')}</h1>
+      <h1>{th('route.away')}</h1>
       <p>{t('away.intro', { date: formatDate(sailing.departure) })}</p>
       <p className="progress-line" role="status">{t('away.progress', { done, total })}</p>
       <progress className="meter" max={total} value={done} aria-label={t('away.progress', { done, total })} />
@@ -52,7 +52,7 @@ export function AwayScreen() {
       <p className="muted" role="status">{note}</p>
       {AWAY_GROUPS.map((g) => (
         <section key={g} aria-labelledby={`aw-${g}`}>
-          <h2 id={`aw-${g}`}>{t(`away.group.${g}` as StringKey)}</h2>
+          <h2 id={`aw-${g}`}>{th(`away.group.${g}` as StringKey)}</h2>
           {entries.filter((e) => e.group === g).map((e) => (
             <div key={e.id} className="check-row">
               <input type="checkbox" id={`aw-i-${e.id}`} checked={e.done} onChange={() => tick(e.id)} />
@@ -65,7 +65,7 @@ export function AwayScreen() {
         </section>
       ))}
       <Card labelledBy="aw-own">
-        <h2 id="aw-own" className="card__title">{t('away.own')}</h2>
+        <h2 id="aw-own" className="card__title">{th('away.own')}</h2>
         {state.awayExtras.map((x) => (
           <div key={x.id} className="check-row">
             <input type="checkbox" id={`aw-x-${x.id}`} checked={x.done} onChange={() => update((s) => ({ ...s, awayExtras: s.awayExtras.map((y) => (y.id === x.id ? { ...y, done: !y.done } : y)) }))} />

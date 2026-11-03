@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -26,7 +26,7 @@ export function DisembarkScreen() {
   const copy = useSavedCopy('disembark', me?.booker ?? 'none', () => api.disembark.view(), asDisembarkView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.disembark')}</h1>
+      <h1>{th('route.disembark')}</h1>
       <AccessAreaNote area="disembark" />
       <p>{t('dis.intro')}</p>
       {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
@@ -51,7 +51,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
       {v.needsHelp && <Banner kind="info" title={t('dis.help')} action={<Link to="/plan/assistance">{t('route.assistance')}</Link>}><p>{t('dis.helpBody')}</p></Banner>}
 
       <Card hero labelledBy="dis-times-h">
-        <h2 id="dis-times-h" className="card__title">{t('dis.times')}</h2>
+        <h2 id="dis-times-h" className="card__title">{th('dis.times')}</h2>
         <dl className="plain-dl">
           <div><dt>{t('dis.arrive')}</dt><dd>{shipTime(v.times.arrivalAt)}</dd></div>
           <div><dt>{t('dis.vacate')}</dt><dd>{shipTime(v.times.vacateAt)}</dd></div>
@@ -64,13 +64,13 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
 
       {chosen && (
         <Card labelledBy="dis-mine-h">
-          <h2 id="dis-mine-h" className="card__title">{t('dis.mine')}</h2>
+          <h2 id="dis-mine-h" className="card__title">{th('dis.mine')}</h2>
           <p role="status"><strong>{t(`dis.opt.${chosen}` as StringKey)}</strong></p>
           {chosen === 'tagged' ? (
             <>
               <p className="dis__group">{t('dis.group', { color: t(`dis.color.${v.group.color}` as StringKey), number: v.group.number, time: shipTime(v.offAt.tagged) })}</p>
               <p>{t('dis.taggedBody', { time: shipTime(v.times.bagsOutAt) })}</p>
-              <h3>{t('dis.tags')}</h3>
+              <h3>{th('dis.tags')}</h3>
               <ul className="plain-bullets">{v.guests.filter((g) => g.label).map((g) => <li key={g.id}><strong>{g.label}</strong> ({t('dis.bagCount', { count: g.bags })})</li>)}</ul>
               <label className="choice"><input type="checkbox" checked={v.tagsOn} disabled={tags.busy || !v.canChoose} onChange={(e) => void tags.run(e.target.checked)} /><span>{t('dis.tagsOn')}</span></label>
               <ExtraError error={tags.error} />
@@ -83,7 +83,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
 
       {v.canChoose && !v.closed && (
         <form onSubmit={(e) => { e.preventDefault(); void choose.run() }}>
-          <h2>{chosen ? t('dis.change') : t('dis.choose')}</h2>
+          <h2>{chosen ? th('dis.change') : th('dis.choose')}</h2>
           <fieldset>
             <legend>{t('dis.how')}</legend>
             {WALKOFF_IDS.map((o) => (
@@ -111,7 +111,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
       )}
 
       <section aria-labelledby="dis-morning-h">
-        <h2 id="dis-morning-h">{t('dis.morning')}</h2>
+        <h2 id="dis-morning-h">{th('dis.morning')}</h2>
         <ol className="plain-bullets">{(['pack', 'breakfast', 'vacate', 'wait', 'leave', 'customs', 'bags'] as const).map((k) => <li key={k}>{t(`dis.step.${k}` as StringKey)}</li>)}</ol>
       </section>
 
@@ -121,7 +121,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
       <TripNumbersCard />
 
       <nav aria-labelledby="dis-links-h">
-        <h2 id="dis-links-h">{t('dis.more')}</h2>
+        <h2 id="dis-links-h">{th('dis.more')}</h2>
         <ul className="link-list">
           <li><Link to="/home/disembark/final-night">{t('route.finalNight')}{!v.customsDone && <span className="tag tag--alert">{t('dis.todo')}</span>}</Link></li>
           <li><Link to="/home/disembark/customs">{t('route.customs')}{v.customsDone && <span className="tag tag--good">{t('dis.done')}</span>}</Link></li>

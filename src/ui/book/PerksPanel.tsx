@@ -3,7 +3,7 @@ import { formatMoney } from '../../domain/money'
 import type { QuoteView } from '../../api/types'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Field } from '../Field'
 import type { StepProps } from './common'
@@ -15,7 +15,7 @@ export function PerksPanel({ draft, update, quote }: Pick<StepProps, 'draft' | '
   const typed = draft.loyaltyNumber.length > 0
   return (
     <section aria-labelledby="perks-h">
-      <h3 id="perks-h">{t('book.perks.title')}</h3>
+      <h3 id="perks-h">{th('book.perks.title')}</h3>
       <p>{t('book.perks.intro')}</p>
       <Field
         label={t('book.perks.number')}

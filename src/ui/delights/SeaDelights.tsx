@@ -15,7 +15,7 @@ import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
 import { allowLocalReminders, remindIn } from '../../push/browser'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
@@ -64,7 +64,7 @@ export function FavouritesTonight({ venues = DIRECTORY }: { venues?: readonly Di
   if (hits.length === 0) return null
   return (
     <Card labelledBy="dl7-fav-h">
-      <h2 id="dl7-fav-h" className="card__title">{t('dl7.fav.tonight')}</h2>
+      <h2 id="dl7-fav-h" className="card__title">{th('dl7.fav.tonight')}</h2>
       <ul className="plain-bullets">{hits.map((h) => <li key={`${h.venue.id}:${h.dish}`}><strong>{h.dish}</strong> · <Link to={`/ship/venues/${h.venue.id}`}>{h.venue.name}</Link></li>)}</ul>
       <p className="muted">{t('dl7.fav.note')}</p>
     </Card>
@@ -86,11 +86,11 @@ export function DrinkDiary() {
   }
   return (
     <Card labelledBy="dl7-diary-h">
-      <h2 id="dl7-diary-h" className="card__title">{t('dl7.diary.title')}</h2>
+      <h2 id="dl7-diary-h" className="card__title">{th('dl7.diary.title')}</h2>
       <p>{t('dl7.diary.body')}</p>
       {again.length > 0 && (
         <div>
-          <h3>{t('dl7.diary.again')}</h3>
+          <h3>{th('dl7.diary.again')}</h3>
           <ul className="plain-bullets">{again.map((e) => <li key={e.id}>{e.name}{e.note ? ` · ${e.note}` : ''}</li>)}</ul>
         </div>
       )}
@@ -139,7 +139,7 @@ export function ParkMySpot() {
   const set = (next: typeof spot) => update((s) => ({ ...s, sea: { ...s.sea, spot: next } }))
   return (
     <Card labelledBy="dl7-spot-h">
-      <h2 id="dl7-spot-h" className="card__title">{t('dl7.spot.title')}</h2>
+      <h2 id="dl7-spot-h" className="card__title">{th('dl7.spot.title')}</h2>
       {spot && place ? (
         <>
           <p role="status"><strong>{t('dl7.spot.where', { place: place.name, deck: place.deck })}</strong>{spot.note ? ` · ${spot.note}` : ''}</p>
@@ -197,7 +197,7 @@ export function SayThanks({ team }: { team?: string }) {
   const mine = view ? view.items.filter((x) => x.mine && (!team || x.team === team)) : []
   return (
     <Card labelledBy="dl7-thanks-h">
-      <h2 id="dl7-thanks-h" className="card__title">{t('dl7.thanks.title')}</h2>
+      <h2 id="dl7-thanks-h" className="card__title">{th('dl7.thanks.title')}</h2>
       <p>{t('dl7.thanks.body')}</p>
       {!team && (
         <div className="field">
@@ -239,7 +239,7 @@ export function CelebrationDay({ date }: { date: string }) {
   }
   return (
     <Card hero labelledBy="dl7-cel-h">
-      <h2 id="dl7-cel-h" className="card__title">{t('dl7.cel.title', { label: occasion.label })}</h2>
+      <h2 id="dl7-cel-h" className="card__title">{th('dl7.cel.title', { label: occasion.label })}</h2>
       <p>{t('dl7.cel.body', { date: formatDate(date), ship: SHIP.name })}</p>
       {list.length > 0 && <ul className="plain-bullets">{list.map((w) => <li key={w.id}><strong>{w.mine ? t('dl7.cel.you') : w.author}:</strong> {w.text}</li>)}</ul>}
       {view?.canAdd && (

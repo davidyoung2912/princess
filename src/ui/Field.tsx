@@ -1,5 +1,6 @@
 import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { CircleAlert } from './icons'
+import { headingCase } from '../i18n'
 
 interface FieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string
@@ -39,7 +40,7 @@ export function ErrorSummary({ title, errors }: ErrorSummaryProps) {
   if (errors.length === 0) return null
   return (
     <div className="error-summary" role="alert">
-      <h2>{title}</h2>
+      <h2>{headingCase(title)}</h2>
       <ul>{errors.map((e) => <li key={e}>{e}</li>)}</ul>
     </div>
   )

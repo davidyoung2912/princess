@@ -6,7 +6,7 @@ import { useAction } from '../../hooks/useAction'
 import { useDemo } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useShipTime } from '../onboard/shipTime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -23,13 +23,13 @@ export function StatusScreen() {
   const issues = rows.filter((r) => r.issue)
   return (
     <div className="page">
-      <h1>{t('route.status')}</h1>
+      <h1>{th('route.status')}</h1>
       {issues.length === 0 ? <Banner kind="success" title={t('stat.allOk')}><p>{t('stat.allOkBody')}</p></Banner> : <Banner kind="warning" title={t('stat.some', { count: issues.length })}><p>{t('stat.someBody')}</p></Banner>}
       <ul className="card-grid">
         {rows.map((r) => (
           <li key={r.id}>
             <Card>
-              <h2 className="card__title">{t(`stat.s.${r.id}` as StringKey)}</h2>
+              <h2 className="card__title">{th(`stat.s.${r.id}` as StringKey)}</h2>
               <p><StatusBadge kind={r.health === 'ok' ? 'booked' : r.health === 'slow' ? 'waitlist' : 'changed'} label={t(`stat.h.${r.health}` as StringKey)} /></p>
               {r.issue && <p>{t(`stat.issue.${r.id}` as StringKey)}</p>}
             </Card>
@@ -73,7 +73,7 @@ export function ReportProblemScreen() {
   }
   return (
     <div className="page">
-      <h1>{t('route.reportProblem')}</h1>
+      <h1>{th('route.reportProblem')}</h1>
       <p>{t('bug.intro')}</p>
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void send.run() }}>
         <fieldset className="plain-fieldset">
@@ -97,7 +97,7 @@ export function ReportProblemScreen() {
         <AboardError error={send.error} />
         <Button type="submit" disabled={send.busy || text.trim().length < 5}>{t('bug.send')}</Button>
       </form>
-      <h2>{t('bug.sent')}</h2>
+      <h2>{th('bug.sent')}</h2>
       <Load state={list}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('bug.none')}</p> : (
           <ul className="plain-bullets">

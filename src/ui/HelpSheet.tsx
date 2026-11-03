@@ -1,5 +1,5 @@
 import { GUEST_SERVICES_NUMBER } from '../domain/contacts'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { Dialog } from './Dialog'
 import { LinkButton } from './Button'
 import { Phone, Siren } from './icons'
@@ -15,13 +15,13 @@ export function HelpSheet({ onClose }: { onClose: () => void }) {
       <p>{t('help.intro')}</p>
       <div className="stack">
         <section className="card card--info" aria-labelledby="help-call-h">
-          <h3 id="help-call-h"><Phone aria-hidden="true" /> {t('help.call')}</h3>
+          <h3 id="help-call-h"><Phone aria-hidden="true" /> {th('help.call')}</h3>
           <p>{t('help.callNumber', { number: GUEST_SERVICES_NUMBER })}</p>
           <a className="btn btn--primary btn--block" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
         </section>
         <LinkButton to="/chat" variant="secondary" block onClick={onClose}>{t('help.chat')}</LinkButton>
         <section className="card" aria-labelledby="help-emergency-h">
-          <h3 id="help-emergency-h"><Siren aria-hidden="true" /> {t('help.emergency')}</h3>
+          <h3 id="help-emergency-h"><Siren aria-hidden="true" /> {th('help.emergency')}</h3>
           <p>{t('help.emergencyText')}</p>
           <p className="muted">{t('help.medical')}</p>
           <LinkButton to="/ship/emergency" variant="secondary" block onClick={onClose}>{t('help.card')}</LinkButton>

@@ -5,7 +5,7 @@ import { appliesTo, SCENARIOS } from '../domain/scenarios'
 import { dayLabel } from '../domain/timezones'
 import { partyPeople } from '../account/context'
 import { useDemo, useNow, usePersona, useSailing } from '../hooks/useDemo'
-import { t, type StringKey } from '../i18n'
+import { t, th, type StringKey } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
 import { ThreeClocks } from './ThreeClocks'
@@ -23,17 +23,17 @@ export function DemoScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.demo')}</h1>
+      <h1>{th('route.demo')}</h1>
       <p>{t('demo.intro')}</p>
 
       <Card labelledBy="demo-persona-h">
-        <h2 id="demo-persona-h">{t('demo.persona.title')}</h2>
+        <h2 id="demo-persona-h">{th('demo.persona.title')}</h2>
         {persona && <p aria-live="polite">{t('demo.persona.current', { name: persona.name })}</p>}
         <p><small>{t('demo.persona.note')}</small></p>
       </Card>
 
       <Card labelledBy="demo-clock-h">
-        <h2 id="demo-clock-h">{t('demo.clock.title')}</h2>
+        <h2 id="demo-clock-h">{th('demo.clock.title')}</h2>
         <ThreeClocks sailing={sailing} at={now} phoneZone={demo.phoneZone} />
         <p>{t('demo.clock.now', { stage: t(`stage.${stage}` as StringKey) })}</p>
         <div className="field">
@@ -75,7 +75,7 @@ export function DemoScreen() {
       </Card>
 
       <Card labelledBy="demo-scenarios-h">
-        <h2 id="demo-scenarios-h">{t('demo.scenarios.title')}</h2>
+        <h2 id="demo-scenarios-h">{th('demo.scenarios.title')}</h2>
         <p>{t('demo.scenarios.intro')}</p>
         <ul className="plain-list">
           {SCENARIOS.map((s) => {

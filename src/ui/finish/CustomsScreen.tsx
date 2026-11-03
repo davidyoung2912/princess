@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -22,7 +22,7 @@ export function CustomsScreen() {
   const copy = useSavedCopy('customs', me?.booker ?? 'none', () => api.disembark.customs(), asCustomsView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.customs')}</h1>
+      <h1>{th('route.customs')}</h1>
       <p>{t('cus.intro')}</p>
       <Saved copy={copy}>{(v) => <Customs v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/home/disembark" label={t('route.disembark')} />
@@ -43,16 +43,16 @@ function Customs({ v, reload }: { v: CustomsView; reload: () => void }) {
     <>
       <NotAboard open={v.canEdit || v.declaration !== null} />
       <Card labelledBy="cus-carry-h">
-        <h2 id="cus-carry-h" className="card__title">{t('cus.carry')}</h2>
+        <h2 id="cus-carry-h" className="card__title">{th('cus.carry')}</h2>
         <ul className="plain-bullets">{CUSTOMS_CARRY.map((k) => <li key={k}>{t(`cus.carry.${k}` as StringKey)}</li>)}</ul>
       </Card>
       <Card labelledBy="cus-declare-h">
-        <h2 id="cus-declare-h" className="card__title">{t('cus.declare')}</h2>
+        <h2 id="cus-declare-h" className="card__title">{th('cus.declare')}</h2>
         <ul className="plain-bullets">{CUSTOMS_DECLARE.map((k) => <li key={k}>{t(`cus.declare.${k}` as StringKey, { allowance: ALLOWANCE_USD, cash: CASH_LIMIT_USD })}</li>)}</ul>
       </Card>
 
       <form onSubmit={(e) => { e.preventDefault(); if (!bad) void save.run() }}>
-        <h2>{t('cus.form')}</h2>
+        <h2>{th('cus.form')}</h2>
         <p className="muted">{t('cus.oneForm', { count: v.people })}</p>
         <fieldset disabled={!v.canEdit}>
           <legend>{t('cus.questions')}</legend>

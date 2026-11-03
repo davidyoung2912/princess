@@ -9,7 +9,7 @@ import { TOP_TASKS } from '../../routes/nav'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { useDemo, useSailing } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Printer } from '../icons'
 import { names } from '../plan/people'
@@ -30,7 +30,7 @@ export function PrintScreen() {
   const [large, setLarge] = useState(false)
   return (
     <div className="page page--print">
-      <h1 className="no-print">{t('route.print')}</h1>
+      <h1 className="no-print">{th('route.print')}</h1>
       <div className="no-print">
         <p>{t('prt.intro')}</p>
         <fieldset>
@@ -77,7 +77,7 @@ function PlanSheet({ day, changes }: { day: number; changes: boolean }) {
   const events = eventsOn(s, day, changes)
   return (
     <>
-      <h2>{t('prt.plan.title', { day, date: formatDate(date.date), place: date.port === 'sea' ? t('onb.atSea') : PORTS[date.port].name })}</h2>
+      <h2>{th('prt.plan.title', { day, date: formatDate(date.date), place: date.port === 'sea' ? th('onb.atSea') : PORTS[date.port].name })}</h2>
       {date.allAboard && <p><strong>{t('prt.allAboard', { time: formatTime(date.allAboard) })}</strong></p>}
       <table className="print-table">
         <thead><tr><th scope="col">{t('prt.time')}</th><th scope="col">{t('prt.what')}</th><th scope="col">{t('prt.where')}</th></tr></thead>
@@ -99,7 +99,7 @@ function ItinerarySheet() {
   const s = useSailing()
   return (
     <>
-      <h2>{t('prt.itin.title')}</h2>
+      <h2>{th('prt.itin.title')}</h2>
       <table className="print-table">
         <thead><tr><th scope="col">{t('prt.day')}</th><th scope="col">{t('prt.date')}</th><th scope="col">{t('prt.port')}</th><th scope="col">{t('prt.times')}</th></tr></thead>
         <tbody>
@@ -123,7 +123,7 @@ function TicketsSheet() {
   const booked = tours.data.booked.filter((b) => b.status === 'booked')
   return (
     <>
-      <h2>{t('prt.tickets.title')}</h2>
+      <h2>{th('prt.tickets.title')}</h2>
       {booked.length === 0 ? <p>{t('res.noTours')}</p> : booked.map((b) => {
         const offer = tours.data!.offers.find((o) => o.item.id === b.excursionId)
         if (!offer) return null
@@ -145,7 +145,7 @@ function TicketsSheet() {
 function HelpSheet() {
   return (
     <>
-      <h2>{t('prt.help.title')}</h2>
+      <h2>{th('prt.help.title')}</h2>
       <p>{t('prt.help.intro')}</p>
       <dl className="print-dl">
         {TOP_TASKS.map((task) => <div key={task.id}><dt>{t(task.labelKey)}</dt><dd>{t(ALTERNATIVES[task.id])}</dd></div>)}

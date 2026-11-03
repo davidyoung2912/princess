@@ -10,7 +10,7 @@ import { useNow, usePersona } from '../../hooks/useDemo'
 import { useTrip } from '../../hooks/useTrip'
 import { setIn } from '../../domain/journey'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -31,7 +31,7 @@ export function EmbarkScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{t('route.embarkation')}</h1>
+      <h1>{th('route.embarkation')}</h1>
       {embark.data ? (
         <>
           {embark.at !== null && <SyncChip updated={new Date(embark.at)} now={new Date(now)} state={embark.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}
@@ -64,7 +64,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
 
       <Card hero labelledBy="arrive-h">
         <p className="eyebrow">{t('embark.arrival')}</p>
-        {boarding.arrival ? <h2 id="arrive-h" className="booking-number">{formatTime(boarding.arrival.start)} – {formatTime(boarding.arrival.end)}</h2> : <h2 id="arrive-h">{t('embark.noWindow')}</h2>}
+        {boarding.arrival ? <h2 id="arrive-h" className="booking-number">{formatTime(boarding.arrival.start)} – {formatTime(boarding.arrival.end)}</h2> : <h2 id="arrive-h">{th('embark.noWindow')}</h2>}
         <p>{boarding.arrival ? t('embark.waitGuide', { minutes: WAIT_MINUTES[boarding.arrival.crowd] }) : <Link to="/home/check-in/arrival">{t('embark.chooseWindow')}</Link>}</p>
         <p className="muted">{t('embark.timesNote', { opens: time(view.opensAt), closes: time(view.gangwayClosesAt) })}</p>
         <div className="button-row">
@@ -77,7 +77,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       {!boarding.checkinDone && <Banner kind="warning" title={t('pass.notReady')} action={<LinkButton to="/home/check-in" variant="secondary">{t('route.checkin')}</LinkButton>}><p>{t('pass.notReadyBody')} <Link to="/home/check-in/terminal">{t('route.terminalCheckin')}</Link></p></Banner>}
 
       <section aria-labelledby="where-h">
-        <h2 id="where-h">{t('embark.where')}</h2>
+        <h2 id="where-h">{th('embark.where')}</h2>
         <dl className="summary">
           <div className="summary__row"><dt>{t('pass.terminalLabel')}</dt><dd>{boarding.terminal.name}</dd></div>
           <div className="summary__row"><dt>{t('travel.fact.address')}</dt><dd>{PORT_FACTS.address}</dd></div>
@@ -92,7 +92,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       {mine && view.stateroomReady && <LandmarksCard cabin={mine.cabin} muster={mine.muster} />}
 
       <section aria-labelledby="bags-h">
-        <h2 id="bags-h">{t('embark.bags')}</h2>
+        <h2 id="bags-h">{th('embark.bags')}</h2>
         <p>{t('embark.bagsBody')}</p>
         <p role="status"><StatusBadge kind={view.luggage.status === 'delivered' ? 'booked' : view.luggage.status === 'dropped' ? 'ready' : 'waitlist'} label={t(`embark.bags.${view.luggage.status}` as StringKey)} /></p>
         {view.canEdit && !offline && (view.luggage.status === 'notDropped' ? <Button variant="secondary" disabled={bags.busy} onClick={() => void bags.run(true)}>{t('embark.bags.drop')}</Button> : view.luggage.status === 'dropped' ? <Button variant="tertiary" disabled={bags.busy} onClick={() => void bags.run(false)}>{t('embark.bags.undo')}</Button> : null)}
@@ -102,7 +102,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       </section>
 
       <section aria-labelledby="docs-h">
-        <h2 id="docs-h">{t('embark.docs')}</h2>
+        <h2 id="docs-h">{th('embark.docs')}</h2>
         <ul className="plain-list">
           {view.documents.map((d) => (
             <li key={d.id}><span>{d.name}</span>{d.ready ? <StatusBadge kind="booked" label={t('embark.docs.ready')} /> : <span><StatusBadge kind="changed" label={t('embark.docs.missing')} /> <Link to="/me/documents">{t('route.documents')}</Link></span>}</li>
@@ -112,7 +112,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       </section>
 
       <section aria-labelledby="carry-h">
-        <h2 id="carry-h">{t('embark.carry')}</h2>
+        <h2 id="carry-h">{th('embark.carry')}</h2>
         <p>{t('embark.carryBody')}</p>
         {view.carryOn.map((c) => (
           <label key={c.id} className="choice">
@@ -126,7 +126,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
       <SailAwayCard />
 
       <section aria-labelledby="pm-h">
-        <h2 id="pm-h">{t('embark.afternoon')}</h2>
+        <h2 id="pm-h">{th('embark.afternoon')}</h2>
         <ol className="day-card__entries">
           {view.afternoon.map((a) => <li key={a.id}><span className="day-card__time">{time(a.at)}</span><span>{t(`embark.afternoon.${a.id}` as StringKey)}</span></li>)}
         </ol>

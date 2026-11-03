@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { AppRoutes } from '../App'
 import { FAQS } from '../domain/help'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { API_URL } from '../runtime'
 import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
@@ -30,7 +30,7 @@ describe('every screen renders inside the shell', () => {
     it(`${path}`, () => {
       const html = decode(render(path))
       expect(html).toContain(`<h1`)
-      expect(html).toContain(t(route.titleKey))
+      expect(html).toContain(th(route.titleKey))
       expect(html).toContain('class="tabs')
       expect(html).toContain(`>${t('help.button')}<`)
       expect(html).toContain('id="main"')
@@ -40,7 +40,7 @@ describe('every screen renders inside the shell', () => {
   it('shows a family link outside the shell: no tabs, no sign-in, an explained refusal', () => {
     for (const path of ['/at-sea/:token', '/at-sea/nope', '/at-sea/gerald.a.b.c']) {
       const html = decode(render(path))
-      expect(html).toContain(t('route.atSea'))
+      expect(html).toContain(th('route.atSea'))
       // With a server, a link of the right shape is asked about there (the page says it is loading); anything else is refused at once.
       expect(html).toContain(API_URL && path.endsWith('.a.b.c') ? t('shell.loading') : t('home.public.bad.malformed'))
       expect(html).not.toContain('class="tabs')
@@ -49,7 +49,7 @@ describe('every screen renders inside the shell', () => {
 
   it('shows a way back from an unknown address', () => {
     const html = decode(render('/nowhere'))
-    expect(html).toContain(t('shell.notFound.title'))
+    expect(html).toContain(th('shell.notFound.title'))
     expect(html).toContain(t('shell.notFound.home'))
   })
 
@@ -89,7 +89,7 @@ describe('discover screens', () => {
   it('puts the tender warning and access note on the Belize page before the rest', () => {
     const html = decode(render('/home/ports/belize'))
     expect(html).toContain(t('discover.tender'))
-    expect(html.indexOf(t('discover.gettingAshore'))).toBeLessThan(html.indexOf(t('discover.thingsToDo')))
+    expect(html.indexOf(th('discover.gettingAshore'))).toBeLessThan(html.indexOf(th('discover.thingsToDo')))
   })
 })
 
@@ -134,8 +134,8 @@ describe('check-in and boarding screens', () => {
   })
 
   it('names the step on a step address and the overview on an unknown one', () => {
-    expect(decode(render('/home/check-in/photo'))).toContain(`<h1>${t('checkin.step.photo')}</h1>`)
-    expect(decode(render('/home/check-in/nonsense'))).toContain(`<h1>${t('route.checkin')}</h1>`)
+    expect(decode(render('/home/check-in/photo'))).toContain(`<h1>${th('checkin.step.photo')}</h1>`)
+    expect(decode(render('/home/check-in/nonsense'))).toContain(`<h1>${th('route.checkin')}</h1>`)
   })
 
   it('needs no sign-in to find a pass, and asks only for the booking number and a last name', () => {
@@ -148,7 +148,7 @@ describe('check-in and boarding screens', () => {
     const html = decode(render('/home/check-in/terminal'))
     expect(html).toContain(t('terminal.reassure'))
     expect(html).toContain('href="/home/check-in"')
-    expect(html).toContain(t('terminal.blue'))
+    expect(html).toContain(th('terminal.blue'))
   })
 })
 
@@ -175,8 +175,8 @@ describe('onboard screens', () => {
     const html = decode(render('/ship/emergency'))
     expect(html).toContain(t('emerg.dial'))
     for (const n of ['555-0111', '555-0112', '555-0100']) expect(html).toContain(`href="tel:${n}"`)
-    expect(html).toContain(t('emerg.contacts'))
-    expect(html).toContain(t('help.urgent.title'))
+    expect(html).toContain(th('emerg.contacts'))
+    expect(html).toContain(th('help.urgent.title'))
     expect(html).toContain(t('help.urgent.child'))
   })
 
@@ -209,7 +209,7 @@ describe('onboard screens', () => {
     const html = decode(render('/ship/muster'))
     for (const name of ['English', 'Español', 'Français', 'Deutsch', '中文']) expect(html).toContain(name)
     expect(html).toContain('lang="en"')
-    expect(html).toContain(t('muster.alt'))
+    expect(html).toContain(th('muster.alt'))
   })
 
   it('offers party chat first with Guest Services one press away, and always shows the phone number', () => {

@@ -26,7 +26,7 @@ describe('who needs to sign in (N6.1)', () => {
 describe('clear-to-use sentences (N6)', () => {
   it('trial day: a visitor can pick a day and a mood and is told nothing is kept or booked, with no account needed', () => {
     const html = page('/trial-day')
-    expect(html).toContain('A day on this ship')
+    expect(html).toContain('A Day on This Ship')
     expect(html).toContain('You do not need an account')
     expect(html).toContain('not saved')
     expect(html).toContain('nothing is booked')
@@ -36,7 +36,7 @@ describe('clear-to-use sentences (N6)', () => {
 
   it('meeting-point card: it starts as a drop-off card with the address and a landmark in words', () => {
     const html = page('/home/meeting-point')
-    expect(html).toContain('Meeting-point card')
+    expect(html).toContain('Meeting-Point Card')
     expect(html).toContain('Drop-off at the cruise terminal')
     expect(html).toContain('1850 Eller Drive')
     expect(html).toContain('Copy the card')

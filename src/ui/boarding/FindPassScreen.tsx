@@ -7,7 +7,7 @@ import { normalizeBookingNumber } from '../../domain/trip'
 import { demoNow } from '../../demo/store'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
@@ -41,7 +41,7 @@ export function FindPassScreen() {
   const shown = found ?? (copy ? { pass: copy.value, copy: true, at: copy.savedAt } : null)
   return (
     <div className="page">
-      <h1>{t('route.findPass')}</h1>
+      <h1>{th('route.findPass')}</h1>
       <p>{t('find.intro')}</p>
       <form onSubmit={(e) => void submit(e)} noValidate>
         <Field label={t('find.number')} hint={t('find.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
@@ -53,7 +53,7 @@ export function FindPassScreen() {
       </form>
       {shown && (
         <section aria-labelledby="found-h">
-          <h2 id="found-h">{t('find.found')}</h2>
+          <h2 id="found-h">{th('find.found')}</h2>
           {shown.copy && <Banner kind="offline" title={t('pass.offline')}><p>{t('pass.offlineBody')}</p></Banner>}
           <PassBody pass={shown.pass} offline={shown.copy} reload={() => undefined} signedIn={false} />
         </section>

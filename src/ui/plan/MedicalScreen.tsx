@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { addMedicalLine, MEDICAL_LINE_MAX, MEDICAL_LINES_MAX, MEDICAL_SECTIONS, medicalIsEmpty, medicalText, removeMedicalLine, EMPTY_MEDICAL, type MedicalSection } from '../../domain/medicalCard'
 import { useMemory } from '../../hooks/useMemory'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -30,7 +30,7 @@ export function MedicalScreen() {
   return (
     <div className="page page--print">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{t('route.medical')}</h1>
+      <h1>{th('route.medical')}</h1>
       <p className="no-print">{t('medical.intro')}</p>
       <div className="button-row no-print">
         <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('medical.print')}</Button>
@@ -39,7 +39,7 @@ export function MedicalScreen() {
       </div>
       <p className="muted no-print" role="status">{note}</p>
       <div className="print-sheet">
-        <h2>{me?.name ?? t('route.medical')}</h2>
+        <h2>{me?.name ?? th('route.medical')}</h2>
         {MEDICAL_SECTIONS.map((s) => (
           <section key={s} aria-labelledby={`med-${s}`}>
             <h3 id={`med-${s}`}>{heading(s)}</h3>

@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSailed } from '../../hooks/useStage'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -27,7 +27,7 @@ export function RecapScreen() {
   const [shared, setShared] = useState<'shared' | 'copied' | 'failed' | null>(null)
   return (
     <div className="page">
-      <h1>{t('route.recap')}</h1>
+      <h1>{th('route.recap')}</h1>
       <p>{t('recap.intro')}</p>
       {!sailed && <Banner kind="info" title={t('recap.early.title')}><p>{t('recap.early.body')}</p></Banner>}
       <Load state={data}>
@@ -49,7 +49,7 @@ export function RecapScreen() {
                 <RouteMap />
               </Card>
               <Card labelledBy="recap-nums-h">
-                <h2 id="recap-nums-h" className="card__title">{t('recap.numbers')}</h2>
+                <h2 id="recap-nums-h" className="card__title">{th('recap.numbers')}</h2>
                 <dl className="recap-stats">
                   <div><dt>{t('recap.ports')}</dt><dd>{recap.ports.length}</dd></div>
                   <div><dt>{t('recap.seaDays')}</dt><dd>{recap.seaDays}</dd></div>
@@ -59,13 +59,13 @@ export function RecapScreen() {
                 </dl>
               </Card>
               <Card labelledBy="recap-tours-h">
-                <h2 id="recap-tours-h" className="card__title">{t('recap.ashore')}</h2>
+                <h2 id="recap-tours-h" className="card__title">{th('recap.ashore')}</h2>
                 {recap.tourNames.length === 0 ? <p>{t('recap.noTours')}</p> : <ul className="plain-bullets">{recap.tourNames.map((n) => <li key={n}>{n}</li>)}</ul>}
                 <p>{recap.favouriteMeal ? t('recap.favourite', { name: recap.favouriteMeal.name, count: recap.favouriteMeal.times }) : t('recap.noMeal')}</p>
                 <p className="muted">{t('recap.ports.list', { ports: recap.ports.join(', ') })}</p>
               </Card>
               <Card labelledBy="recap-share-h">
-                <h2 id="recap-share-h" className="card__title">{t('recap.share')}</h2>
+                <h2 id="recap-share-h" className="card__title">{th('recap.share')}</h2>
                 <pre className="recap-text">{recapText(recap)}</pre>
                 <Button onClick={() => void share()}>{t('recap.shareButton')}</Button>
                 {shared && <p role="status">{t(`recap.shared.${shared}`)}</p>}

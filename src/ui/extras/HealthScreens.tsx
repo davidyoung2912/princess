@@ -12,7 +12,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -27,7 +27,7 @@ export function HealthScreen() {
   const copy = useSavedCopy('health', me?.id ?? 'none', () => api.health.view(), asHealthView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.health')}</h1>
+      <h1>{th('route.health')}</h1>
       <p>{t('hlth.intro')}</p>
       <LinkButton to="/ship/help-now" variant="danger" block>{t('hlth.needNow')}</LinkButton>
       <Saved copy={copy}>{(v) => <Health v={v} reload={copy.retry} offline={copy.fromCopy} canAct={!me?.child} />}</Saved>
@@ -42,7 +42,7 @@ function Health({ v, reload, offline, canAct }: { v: HealthView; reload: () => v
       {v.notice && <Banner kind="warning" title={t('hlth.notice')}><p>{t('hlth.noticeBody')}</p></Banner>}
       <Hours v={v} />
       <Card labelledBy="fee-h">
-        <h2 id="fee-h" className="card__title">{t('hlth.fees')}</h2>
+        <h2 id="fee-h" className="card__title">{th('hlth.fees')}</h2>
         <ul className="plain-bullets">
           <li>{t('hlth.feeVisit', { amount: formatMoney(VISIT_FEE.visit) })}</li>
           <li>{t('hlth.feeAfter', { amount: formatMoney(VISIT_FEE.afterHours) })}</li>
@@ -61,7 +61,7 @@ function Health({ v, reload, offline, canAct }: { v: HealthView; reload: () => v
 function Hours({ v }: { v: HealthView }) {
   return (
     <Card hero labelledBy="hours-h">
-      <h2 id="hours-h" className="card__title">{t('hlth.hours')}</h2>
+      <h2 id="hours-h" className="card__title">{th('hlth.hours')}</h2>
       <p className="muted">{t(v.day === 'sea' ? 'hlth.seaDay' : 'hlth.portDay')}</p>
       <p role="status"><strong>{v.open ? t('hlth.openNow') : v.nextOpen ? t('hlth.closedUntil', { time: formatTime(v.nextOpen) }) : t('hlth.closedToday')}</strong></p>
       <ul className="plain-bullets">{MEDICAL_HOURS[v.day].map(([a, b]) => <li key={a}>{formatTime(a)} {t('hlth.to')} {formatTime(b)}</li>)}</ul>
@@ -94,7 +94,7 @@ function Report({ v, reload }: { v: HealthView; reload: () => void }) {
   const gastro = symptoms.some((s) => GASTRO.includes(s))
   return (
     <section aria-labelledby="rep-h">
-      <h2 id="rep-h">{t('hlth.report')}</h2>
+      <h2 id="rep-h">{th('hlth.report')}</h2>
       <p>{t('hlth.reportBody')}</p>
       <form onSubmit={(e) => { e.preventDefault(); setSent(false); void send.run() }}>
         <fieldset className="plain-fieldset">
@@ -129,7 +129,7 @@ function Request({ reload }: { reload: () => void }) {
   const send = useAction(async () => { await api.health.request(kind, note); setNote(''); setSent(true); reload() })
   return (
     <section aria-labelledby="req-h">
-      <h2 id="req-h">{t('hlth.request')}</h2>
+      <h2 id="req-h">{th('hlth.request')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); setSent(false); void send.run() }}>
         <div className="field">
           <label htmlFor="req-kind">{t('hlth.kind')}</label>
@@ -153,7 +153,7 @@ function Records({ v }: { v: HealthView }) {
   if (v.reports.length === 0 && v.requests.length === 0) return null
   return (
     <section aria-labelledby="rec-h">
-      <h2 id="rec-h">{t('hlth.records')}</h2>
+      <h2 id="rec-h">{th('hlth.records')}</h2>
       <p className="muted">{t('hlth.recordsNote')}</p>
       <ul className="plain-bullets">
         {v.reports.map((r) => <li key={r.id}>{shipTime(r.at)}: {t('hlth.recReport', { symptoms: r.symptoms.map((s) => t(`hlth.sym.${s}` as StringKey)).join(', '), count: r.guests.length })}</li>)}
@@ -173,12 +173,12 @@ export function HelpNowScreen() {
   const card = copy.data
   return (
     <div className="page help-now">
-      <h1>{t('route.helpNow')}</h1>
+      <h1>{th('route.helpNow')}</h1>
       <a className="btn btn--danger btn--block help-now__call" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {t('help.callMedical', { number: MEDICAL_NUMBER })}</a>
       <a className="btn btn--danger btn--block help-now__call" href={`tel:${EMERGENCY_NUMBER}`}><Siren aria-hidden="true" /> {t('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>
 
       <Card hero labelledBy="say-now-h">
-        <h2 id="say-now-h" className="card__title">{t('help.say')}</h2>
+        <h2 id="say-now-h" className="card__title">{th('help.say')}</h2>
         {card ? (
           <>
             <p className="help-now__big">{card.script}</p>
@@ -196,7 +196,7 @@ export function HelpNowScreen() {
       </fieldset>
       {need && (
         <Card labelledBy="steps-h">
-          <h2 id="steps-h" className="card__title">{t('help.then')}</h2>
+          <h2 id="steps-h" className="card__title">{th('help.then')}</h2>
           <ol className="help-now__steps">
             {(need === 'heart' ? (['sayHeart', 'unlock', 'someone', 'still'] as const) : (['sayFall', 'unlock', 'someone', 'still'] as const)).map((k) => <li key={k}>{t(`help.step.${k}` as StringKey)}</li>)}
           </ol>

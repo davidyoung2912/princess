@@ -8,7 +8,7 @@ import { SAILINGS, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
@@ -56,17 +56,17 @@ export function DecideScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.decide')}</h1>
+      <h1>{th('route.decide')}</h1>
       <p>{t('decide.intro')}</p>
 
       <NicknameCard />
       <WantNext />
 
       <Card labelledBy="dec-fit">
-        <h2 id="dec-fit" className="card__title">{t('decide.fit')}</h2>
-        <h3>{t('decide.suits')}</h3>
+        <h2 id="dec-fit" className="card__title">{th('decide.fit')}</h2>
+        <h3>{th('decide.suits')}</h3>
         <ul className="plain-bullets">{SUITS.map((x) => <li key={x}>{x}</li>)}</ul>
-        <h3>{t('decide.notFor')}</h3>
+        <h3>{th('decide.notFor')}</h3>
         <ul className="plain-bullets">{NOT_FOR.map((x) => <li key={x}>{x}</li>)}</ul>
         <fieldset className="field">
           <legend>{t('decide.fitAsk')}</legend>
@@ -78,19 +78,19 @@ export function DecideScreen() {
       </Card>
 
       <Card labelledBy="dec-fears">
-        <h2 id="dec-fears" className="card__title">{t('decide.fears')}</h2>
+        <h2 id="dec-fears" className="card__title">{th('decide.fears')}</h2>
         {FEARS.map((f) => (
           <details key={f.id}>
             <summary>{f.question}</summary>
             <p>{f.answer}</p>
           </details>
         ))}
-        <h3>{t('decide.glossary')}</h3>
+        <h3>{th('decide.glossary')}</h3>
         <dl>{GLOSSARY.map((g) => <div key={g.term}><dt><strong>{g.term}</strong></dt><dd>{g.meaning}</dd></div>)}</dl>
       </Card>
 
       <Card labelledBy="dec-budget">
-        <h2 id="dec-budget" className="card__title">{t('decide.budget')}</h2>
+        <h2 id="dec-budget" className="card__title">{th('decide.budget')}</h2>
         <p>{t('decide.budgetBody')}</p>
         <div className="field">
           <label htmlFor="dec-sailing">{t('cost.sailing')}</label>
@@ -120,7 +120,7 @@ export function DecideScreen() {
             )}
             {result.nearMiss.length > 0 && result.fitting.length === 0 && (
               <>
-                <h3>{t('decide.nearMiss')}</h3>
+                <h3>{th('decide.nearMiss')}</h3>
                 <ul className="plain-list">{result.nearMiss.map((o) => <li key={`${o.category}-${o.fare}`}>{categoryById(o.category)?.name} · {FARES[o.fare].name} · {formatMoney(o.total)} ({t('decide.over', { amount: formatMoney(-o.left) })})</li>)}</ul>
               </>
             )}
@@ -132,7 +132,7 @@ export function DecideScreen() {
       <GutCheckFlip initial={sailing.id} />
 
       <Card labelledBy="dec-quality">
-        <h2 id="dec-quality" className="card__title">{t('decide.quality')}</h2>
+        <h2 id="dec-quality" className="card__title">{th('decide.quality')}</h2>
         <ul className="plain-list">
           {!quality && <li><FeedWaiting /></li>}
           {quality?.notes.map((n) => (
@@ -146,7 +146,7 @@ export function DecideScreen() {
       </Card>
 
       <Card labelledBy="dec-summary">
-        <h2 id="dec-summary" className="card__title">{t('decide.summary')}</h2>
+        <h2 id="dec-summary" className="card__title">{th('decide.summary')}</h2>
         <div className="field">
           <label htmlFor="dec-room">{t('cost.room')}</label>
           <select id="dec-room" value={category} onChange={(e) => setCategory(e.target.value as CategoryId | '')}>
@@ -163,7 +163,7 @@ export function DecideScreen() {
         </div>
         {([['decided', summary.decided], ['left', summary.left], ['mightChange', summary.mightChange]] as const).map(([k, list]) => (
           <div key={k}>
-            <h3>{t(`decide.s.${k}` as StringKey)}</h3>
+            <h3>{th(`decide.s.${k}` as StringKey)}</h3>
             <ul className="plain-bullets">{list.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
         ))}
@@ -176,7 +176,7 @@ export function DecideScreen() {
       </Card>
 
       <Card labelledBy="dec-invite">
-        <h2 id="dec-invite" className="card__title">{t('decide.invite')}</h2>
+        <h2 id="dec-invite" className="card__title">{th('decide.invite')}</h2>
         <p>{t('decide.inviteBody')}</p>
         <TextArea label={t('decide.inviteNote')} value={inviteNote} maxLength={200} onChange={(e) => setInviteNote(e.target.value)} />
         <pre className="recap-text">{invite}</pre>

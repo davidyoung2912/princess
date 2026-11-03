@@ -7,7 +7,7 @@ import type { DatedEvent } from '../../domain/program'
 import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { StatusBadge } from '../StatusBadge'
@@ -71,7 +71,7 @@ export function MyTickets({ tickets }: { tickets: readonly TicketView[] }) {
   if (tickets.length === 0) return null
   return (
     <section aria-labelledby="tickets-h">
-      <h3 id="tickets-h">{t('tix.mine')}</h3>
+      <h3 id="tickets-h">{th('tix.mine')}</h3>
       <ul className="plain-bullets">
         {tickets.map((x) => (
           <li key={x.id}><strong>{t('plan.day', { n: x.day })}, {shipTime(x.startAt)}</strong> {x.title}: {x.guests.map((g) => g.name.split(' ')[0]).join(', ')}{x.status === 'cancelled' ? ` (${t('onb.cancelled')})` : x.status === 'moved' ? ` (${t('onb.moved', { time: shipTime(x.startAt) })})` : ''}</li>

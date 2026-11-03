@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -47,7 +47,7 @@ export function TextHelpScreen() {
   }
   return (
     <div className="page">
-      <h1>{t('route.textHelp')}</h1>
+      <h1>{th('route.textHelp')}</h1>
       <Banner kind="warning" title={t('txt.urgentTitle')}>
         <p>{t('txt.urgentBody')}</p>
         <a className="btn btn--danger btn--block" href={`tel:${EMERGENCY_NUMBER}`}><Phone aria-hidden="true" /> {t('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>
@@ -56,7 +56,7 @@ export function TextHelpScreen() {
 
       {me?.child ? <p className="muted">{t('plan.readOnly.body')}</p> : (
         <Card labelledBy="txt-h">
-          <h2 id="txt-h" className="card__title">{t('txt.title')}</h2>
+          <h2 id="txt-h" className="card__title">{th('txt.title')}</h2>
           <p>{t('txt.intro', { time: duration(RESPONSE_MINUTES.textHelp) })}</p>
           <form onSubmit={(e) => { e.preventDefault(); submit() }} noValidate>
             <div className="field">
@@ -79,7 +79,7 @@ export function TextHelpScreen() {
           </form>
           {mine.length > 0 && (
             <>
-              <h3>{t('txt.history')}</h3>
+              <h3>{th('txt.history')}</h3>
               <ul className="plain-bullets">{mine.map((r) => <li key={r.id}>{shipTime(r.at)}: {r.note}</li>)}</ul>
             </>
           )}
@@ -87,7 +87,7 @@ export function TextHelpScreen() {
       )}
 
       <section aria-labelledby="txt-sign-h">
-        <h2 id="txt-sign-h">{t('txt.interpreters')}</h2>
+        <h2 id="txt-sign-h">{th('txt.interpreters')}</h2>
         <p>{t('txt.interpretersBody')}</p>
         <ul className="plain-bullets">
           {signed.map((i) => <li key={i.id}>{t('txt.signedAt', { title: i.title, days: i.days.join(', '), time: i.times.join(', ') })}</li>)}

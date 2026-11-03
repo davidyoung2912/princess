@@ -11,7 +11,7 @@ import { formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { useTrip } from '../../hooks/useTrip'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
@@ -42,11 +42,11 @@ export function EmbarkPlanScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.embarkPlan')}</h1>
+      <h1>{th('route.embarkPlan')}</h1>
       <p>{t('embarkPlan.intro')}</p>
 
       <Card labelledBy="e-needs">
-        <h2 id="e-needs" className="card__title">{t('embarkPlan.needs')}</h2>
+        <h2 id="e-needs" className="card__title">{th('embarkPlan.needs')}</h2>
         <label className="choice"><input type="checkbox" checked={needs.priority} onChange={(e) => setNeeds({ priority: e.target.checked })} /><span>{t('embarkPlan.priority')}</span></label>
         <label className="choice"><input type="checkbox" checked={needs.mobility} onChange={(e) => setNeeds({ mobility: e.target.checked })} /><span>{t('embarkPlan.mobility')}</span></label>
         <label className="choice"><input type="checkbox" checked={needs.quiet} onChange={(e) => setNeeds({ quiet: e.target.checked })} /><span>{t('embarkPlan.quiet')}<small>{t('embarkPlan.quiet.why')}</small></span></label>
@@ -54,7 +54,7 @@ export function EmbarkPlanScreen() {
       </Card>
 
       <Card labelledBy="e-window">
-        <h2 id="e-window" className="card__title">{t('embarkPlan.window')}</h2>
+        <h2 id="e-window" className="card__title">{th('embarkPlan.window')}</h2>
         {!queue ? <FeedWaiting /> : best ? <p>{t('embarkPlan.window.best', { time: formatTime(best.start), wait: duration(best.waitMinutes) })}</p> : <p>{t('embarkPlan.window.none')}</p>}
         <fieldset>
           <legend>{t('embarkPlan.window.choose')}</legend>
@@ -76,7 +76,7 @@ export function EmbarkPlanScreen() {
         const f = shown
         return (
           <section aria-labelledby="e-forecast">
-            <h2 id="e-forecast">{t('embarkPlan.forecast')}</h2>
+            <h2 id="e-forecast">{th('embarkPlan.forecast')}</h2>
             <ol>
               {f.steps.map((s) => (
                 <li key={s.id}>
@@ -94,19 +94,19 @@ export function EmbarkPlanScreen() {
       })()}
 
       <section aria-labelledby="e-hours">
-        <h2 id="e-hours">{t('embarkPlan.hours')}</h2>
+        <h2 id="e-hours">{th('embarkPlan.hours')}</h2>
         <Field label={t('embarkPlan.boarded')} type="time" value={embark.boardedAt} onChange={(e) => isTime(e.target.value) && update((s) => ({ ...s, embark: { ...s.embark, boardedAt: e.target.value } }))} />
         <p>{t(hours.cabinReady ? 'embarkPlan.cabinReady' : 'embarkPlan.cabinNotReady', { time: formatTime(EMBARK.staterooms) })}</p>
         <ol>{hours.items.map((i) => <li key={i.id}>{formatTime(hourClock(i.at))}: {t(`embarkPlan.hour.${i.id}` as StringKey)}</li>)}</ol>
       </section>
 
       <Card labelledBy="e-quick">
-        <h2 id="e-quick" className="card__title">{t('quick.title')}</h2>
+        <h2 id="e-quick" className="card__title">{th('quick.title')}</h2>
         <ol>{QUICK_START.map((k) => <li key={k}>{t(k, { steward: stewardFor(me?.booker ?? '') })}</li>)}</ol>
       </Card>
 
       <section aria-labelledby="e-family">
-        <h2 id="e-family">{t('embarkPlan.family')}</h2>
+        <h2 id="e-family">{th('embarkPlan.family')}</h2>
         {status.data && <p>{t(`embarkPlan.checkin.${status.data.state}` as StringKey)}</p>}
         <ul>
           {people.map((p) => (
@@ -124,7 +124,7 @@ export function EmbarkPlanScreen() {
       </section>
 
       <Card labelledBy="e-welcome">
-        <h2 id="e-welcome" className="card__title">{t('welcome.title')}</h2>
+        <h2 id="e-welcome" className="card__title">{th('welcome.title')}</h2>
         <p>{t('welcome.intro')}</p>
         {WELCOME_FIELDS.map((f: WelcomeField) => (
           <div key={f}>

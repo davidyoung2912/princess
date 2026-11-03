@@ -1,5 +1,5 @@
 import { itemsIn } from '../../domain/catalogue'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Back, ItemList, MyPicks } from './common'
 import { Parties } from './Parties'
@@ -8,12 +8,12 @@ import { Parties } from './Parties'
 export function SpaScreen() {
   return (
     <div className="page">
-      <h1>{t('route.spa')}</h1>
+      <h1>{th('route.spa')}</h1>
       <p>{t('spa.intro')}</p>
       <MyPicks groups={['spa', 'fitness']} />
-      <h2>{t('spa.treatments')}</h2>
+      <h2>{th('spa.treatments')}</h2>
       <ItemList items={itemsIn('spa')} />
-      <h2>{t('spa.fitness')}</h2>
+      <h2>{th('spa.fitness')}</h2>
       <ItemList items={itemsIn('fitness')} />
       <Banner kind="info" title={t('spa.products')}><p>{t('spa.productsBody')}</p></Banner>
       <Back to="/ship" label={t('route.ship')} />
@@ -25,15 +25,15 @@ export function SpaScreen() {
 export function ShopsScreen() {
   return (
     <div className="page">
-      <h1>{t('route.shops')}</h1>
+      <h1>{th('route.shops')}</h1>
       <p>{t('shops.intro')}</p>
       <MyPicks groups={['shop', 'special']} />
-      <h2>{t('shops.goods')}</h2>
+      <h2>{th('shops.goods')}</h2>
       <ItemList items={itemsIn('shop').filter((i) => !i.id.startsWith('gift-'))} />
-      <h2>{t('shops.gifts')}</h2>
+      <h2>{th('shops.gifts')}</h2>
       <p>{t('shops.giftsBody')}</p>
       <ItemList items={itemsIn('shop').filter((i) => i.id.startsWith('gift-'))} />
-      <h2>{t('shops.specials')}</h2>
+      <h2>{th('shops.specials')}</h2>
       <ItemList items={itemsIn('special')} />
       <Back to="/ship" label={t('route.ship')} />
     </div>
@@ -44,7 +44,7 @@ export function ShopsScreen() {
 export function CommunityScreen() {
   return (
     <div className="page">
-      <h1>{t('route.community')}</h1>
+      <h1>{th('route.community')}</h1>
       <p>{t('comm.intro')}</p>
       <MyPicks groups={['faith']} />
       <ItemList items={itemsIn('faith')} />
@@ -58,7 +58,7 @@ export function CommunityScreen() {
 export function AccessScreen() {
   return (
     <div className="page">
-      <h1>{t('route.access')}</h1>
+      <h1>{th('route.access')}</h1>
       <p>{t('acc.intro')}</p>
       <MyPicks groups={['access']} />
       <ItemList items={itemsIn('access')} />

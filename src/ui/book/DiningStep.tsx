@@ -1,6 +1,6 @@
 import { DIETARY, type DietaryId } from '../../domain/account'
 import { DINING_CHOICES, OCCASIONS, type GuestDraft, type Occasion } from '../../domain/booking'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { TextArea } from '../Field'
 import { ChoiceError } from './ChoiceError'
 import { StepSection, type StepProps } from './common'
@@ -31,7 +31,7 @@ export function DiningStep({ draft, update, error }: StepProps) {
         </select>
       </div>
 
-      <h3>{t('book.diet.title')}</h3>
+      <h3>{th('book.diet.title')}</h3>
       <p>{t('book.diet.intro')}</p>
       {draft.people.map((g, i) => {
         const name = g.firstName.trim() || t('book.guests.guestN', { n: i + 1 })

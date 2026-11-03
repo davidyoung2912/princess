@@ -91,7 +91,7 @@ describe('what we sent you (N3.6)', () => {
 
   it('shows each alert, and for a held one the reason, and for a safety one why it ignored the limits', async () => {
     await open({ '/me/push': { ...STATUS, unread: 1, log } })
-    await within(main()).findByText('What we sent you')
+    await within(main()).findByText('What We Sent You')
     expect(await within(main()).findByText('All aboard reminder')).toBeTruthy()
     expect(within(main()).getByText(/A safety alert, so it ignores quiet hours/)).toBeTruthy()
     expect(within(main()).getByText(/It arrived during your quiet hours/)).toBeTruthy()

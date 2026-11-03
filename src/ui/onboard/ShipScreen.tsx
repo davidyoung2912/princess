@@ -2,7 +2,7 @@ import { asMusterView } from '../../api/guards'
 import { api } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { HubList } from '../HubList'
@@ -21,11 +21,11 @@ export function ShipScreen() {
   const aboard = today.data?.aboard ?? false
   return (
     <div className="page">
-      <h1>{t('route.ship')}</h1>
+      <h1>{th('route.ship')}</h1>
       <p>{t('ship.intro')}</p>
 
       <Card hero labelledBy="safe-h">
-        <h2 id="safe-h" className="card__title"><Siren aria-hidden="true" /> {t('ship.safety')}</h2>
+        <h2 id="safe-h" className="card__title"><Siren aria-hidden="true" /> {th('ship.safety')}</h2>
         <div className="button-row">
           <LinkButton to="/ship/emergency">{t('route.emergency')}</LinkButton>
           <LinkButton to="/ship/muster" variant="secondary">{t('route.muster')}</LinkButton>

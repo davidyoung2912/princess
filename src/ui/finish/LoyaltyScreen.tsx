@@ -4,7 +4,7 @@ import { TIER_DAYS } from '../../domain/postcruise'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -17,7 +17,7 @@ export function LoyaltyScreen() {
   const view = useMine(() => api.post.loyalty(), [])
   return (
     <div className="page">
-      <h1>{t('route.loyalty')}</h1>
+      <h1>{th('route.loyalty')}</h1>
       <p>{t('loy.intro')}</p>
       <Load state={view}>{(v) => <Loyalty v={v} />}</Load>
       <BackLink to="/me" label={t('route.me')} />
@@ -40,7 +40,7 @@ function Loyalty({ v }: { v: LoyaltyView }) {
     <>
       {s.promoted && <Banner kind="success" title={t('loy.promoted', { tier: t(`me.tier.${s.after}` as StringKey) })}><p>{t('loy.promotedBody')}</p></Banner>}
       <Card hero labelledBy="loy-level-h">
-        <h2 id="loy-level-h" className="card__title">{t('loy.level')}</h2>
+        <h2 id="loy-level-h" className="card__title">{th('loy.level')}</h2>
         <p className="dis__group">{s.after === 'none' ? t('me.noTier') : t('me.tier', { tier: t(`me.tier.${s.after}` as StringKey) })}</p>
         <p>{t('loy.days', { before: s.daysBefore, after: s.daysAfter })}</p>
         <LifetimeLine />
@@ -54,7 +54,7 @@ function Loyalty({ v }: { v: LoyaltyView }) {
       </Card>
 
       <Card labelledBy="loy-perks-h">
-        <h2 id="loy-perks-h" className="card__title">{t('loy.perks')}</h2>
+        <h2 id="loy-perks-h" className="card__title">{th('loy.perks')}</h2>
         {v.perks.length === 0 && v.wifiDevices === 0 ? <p>{t('loy.noPerks')}</p> : (
           <ul className="plain-bullets">
             {v.wifiDevices > 0 && <li>{t('loy.wifi', { count: v.wifiDevices })}</li>}
@@ -65,7 +65,7 @@ function Loyalty({ v }: { v: LoyaltyView }) {
       </Card>
 
       <Card labelledBy="loy-ref-h">
-        <h2 id="loy-ref-h" className="card__title">{t('loy.referral')}</h2>
+        <h2 id="loy-ref-h" className="card__title">{th('loy.referral')}</h2>
         <p>{t('loy.referralBody', { amount: formatMoney(v.referral.credit) })}</p>
         <p className="dis__group">{v.referral.code}</p>
         <Button variant="secondary" onClick={() => void share()}>{t('loy.share')}</Button>

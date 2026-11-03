@@ -5,7 +5,7 @@ import { useRecapData } from '../../hooks/useRecapData'
 import { recapText } from '../../domain/recap'
 import { useDemo, useNow } from '../../hooks/useDemo'
 import { newHubId, useHub } from '../../hooks/useHub'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -93,18 +93,18 @@ export function FamilyLinkScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.familyLink')}</h1>
+      <h1>{th('route.familyLink')}</h1>
       <p>{t('home.intro')}</p>
       <Card info>
-        <h2 className="card__title">{t('home.sees')}</h2>
+        <h2 className="card__title">{th('home.sees')}</h2>
         <ul>{(['home.sees1', 'home.sees2', 'home.sees3', 'home.sees4'] as const).map((k) => <li key={k}>{t(k)}</li>)}</ul>
-        <h2 className="card__title">{t('home.neverSees')}</h2>
+        <h2 className="card__title">{th('home.neverSees')}</h2>
         <p>{t('home.neverSees.body')}</p>
         <p className="muted">{t('home.sim')}</p>
       </Card>
 
       <section aria-labelledby="home-people-h">
-        <h2 id="home-people-h">{t('home.people')}</h2>
+        <h2 id="home-people-h">{th('home.people')}</h2>
         {home.contacts.length === 0 && <p>{t('home.people.none')}</p>}
         {home.contacts.length > 0 && (
           <fieldset>
@@ -146,12 +146,12 @@ export function FamilyLinkScreen() {
       </section>
 
       <section aria-labelledby="home-cards-h">
-        <h2 id="home-cards-h">{t('home.cards')}</h2>
+        <h2 id="home-cards-h">{th('home.cards')}</h2>
         <p>{t('home.cards.intro')}</p>
         <Field label={t('home.cards.note')} value={note} maxLength={MAX_POSTCARD_NOTE} onChange={(e) => setNote(e.target.value)} />
         {!child && (
           <div>
-            <h3>{t('media.postcard.title')}</h3>
+            <h3>{th('media.postcard.title')}</h3>
             {photo ? (
               <>
                 <KeptPicture media={photo} alt={t('media.postcard.alt')} onDeleted={() => setPhoto(null)} />
@@ -197,7 +197,7 @@ function RecapSection({ child, hasLinks }: { child: boolean; hasLinks: boolean }
   }
   return (
     <section aria-labelledby="home-recap-h">
-      <h2 id="home-recap-h">{t('home.recap')}</h2>
+      <h2 id="home-recap-h">{th('home.recap')}</h2>
       <p>{t('home.recap.intro')}</p>
       {!hasLinks && <p className="muted">{t('home.recap.needLink')}</p>}
       <div className="field">

@@ -7,7 +7,7 @@ import { daysBetween } from '../../domain/trip'
 import { cancelOn, cancelSteps, freeWindowNote, ifMissed, moveCheck, oneCannotGo, paymentCalendar, paymentSchedule, priceDrop, type WhatIfBooking } from '../../domain/whatIf'
 import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -39,7 +39,7 @@ export function WhatIfScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{t('route.whatIf')}</h1>
+      <h1>{th('route.whatIf')}</h1>
       <p>{t('whatif.intro')}</p>
       <Banner kind="info" title={t('whatif.concept')} />
       <Load state={view}>{(v) => <Body trip={v.trip} today={today} now={now} />}</Load>
@@ -75,7 +75,7 @@ function Body({ trip, today, now }: { trip: TripView; today: string; now: number
       </Card>
 
       <Card labelledBy="wi-steps">
-        <h2 id="wi-steps" className="card__title">{t('whatif.steps')}</h2>
+        <h2 id="wi-steps" className="card__title">{th('whatif.steps')}</h2>
         <ul className="plain-list">
           {cancelSteps(b).map((s) => <li key={s.tier}>{t('whatif.stepRow', { date: formatDate(s.from), fee: formatMoney(s.fee), refund: formatMoney(s.refund) })}</li>)}
         </ul>
@@ -83,7 +83,7 @@ function Body({ trip, today, now }: { trip: TripView; today: string; now: number
       </Card>
 
       <Card labelledBy="wi-sched">
-        <h2 id="wi-sched" className="card__title">{t('sched.title')}</h2>
+        <h2 id="wi-sched" className="card__title">{th('sched.title')}</h2>
         <ul className="plain-list">
           {sched.map((i) => <li key={i.id}>{t('sched.row', { what: t(SCHED_WHAT[i.id]), amount: formatMoney(i.amount), date: formatDate(i.due) })} <strong>{t(SCHED_STATE[i.state])}</strong></li>)}
         </ul>

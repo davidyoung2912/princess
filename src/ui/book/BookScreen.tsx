@@ -7,7 +7,7 @@ import { api } from '../../runtime'
 import { useDraft } from '../../hooks/useDraft'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ErrorSummary } from '../Field'
@@ -32,7 +32,7 @@ export function BookScreen() {
   const stored = useMine(async () => ({ draft: await api.booking.draft() }))
   return (
     <div className="page">
-      <h1>{t('route.book')}</h1>
+      <h1>{th('route.book')}</h1>
       {stored.status === 'ready' && stored.data ? (
         <Funnel key={`${persona?.id}-${epoch}-${stored.data.draft?.id ?? 'new'}`} stored={stored.data.draft} onRestart={() => { setEpoch((e) => e + 1); stored.retry() }} />
       ) : (

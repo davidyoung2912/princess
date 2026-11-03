@@ -60,7 +60,7 @@ describe('top task: my bill', () => {
   it('shows the total, each charge and what the package covered, with a way to ask what a charge is', async () => {
     await open('/me/bill')
     await seen('$163.50')
-    expect(within(main()).getByText('Amount on your account')).toBeTruthy()
+    expect(within(main()).getByText('Amount on Your Account')).toBeTruthy()
     expect(within(main()).getAllByText(/Massage/).length).toBeGreaterThan(0)
     expect(within(main()).getByText('Paid for by your packages')).toBeTruthy()
     expect(within(main()).getAllByText(/What is this\?/i).length).toBeGreaterThan(0)
@@ -97,7 +97,7 @@ describe('top task: today’s events', () => {
   it('shows what is on now and next, from the ship’s programme', async () => {
     await open('/plan')
     await seen(/Team trivia/)
-    expect(within(main()).getByText('On now and next up')).toBeTruthy()
+    expect(within(main()).getByText('On Now and Next Up')).toBeTruthy()
     expect(within(main()).getAllByText(/Broadway at sea/).length).toBeGreaterThan(0)
   })
 })
@@ -152,7 +152,7 @@ describe('top task: order food', () => {
 describe('top tasks: deck map, text size', () => {
   it('lets the guest pick a start and an end for directions in words', async () => {
     await open('/ship/map')
-    await seen('Find the way')
+    await seen('Find the Way')
     expect(within(main()).getAllByRole('combobox').length).toBeGreaterThanOrEqual(2)
   })
 

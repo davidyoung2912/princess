@@ -14,7 +14,7 @@ import type { WhatIfBooking } from '../../domain/whatIf'
 import { useNow } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -28,7 +28,7 @@ import { BackLink } from '../onboard/common'
 const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
   <div className="page page--print">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{t(title)}</h1>
+    <h1>{th(title)}</h1>
     <p className="no-print">{t(intro)}</p>
     {children}
   </div>
@@ -43,7 +43,7 @@ export function HoldScreen() {
   return (
     <Page title="route.hold" intro="hold.intro">
       <Card labelledBy="hold-t">
-        <h2 id="hold-t" className="card__title">{t('hold.title')}</h2>
+        <h2 id="hold-t" className="card__title">{th('hold.title')}</h2>
         {h.state === 'active' && <p role="status">{t('hold.active', { what: state.hold?.label ?? '', left: leftInWords(h.msLeft) })}</p>}
         {h.state === 'lapsed' && <p role="status">{t('hold.lapsed', { what: state.hold?.label ?? '' })}</p>}
         {h.state !== 'active' && (
@@ -86,10 +86,10 @@ export function AccessScreen() {
         </fieldset>
       </Card>
       <Card labelledBy="acc-r">
-        <h2 id="acc-r" className="card__title">{t('access.reads')}</h2>
+        <h2 id="acc-r" className="card__title">{th('access.reads')}</h2>
         {AREAS.map((a) => (
           <section key={a} aria-labelledby={`acc-${a}`}>
-            <h3 id={`acc-${a}`}>{t(`access.area.${a}` as StringKey)}</h3>
+            <h3 id={`acc-${a}`}>{th(`access.area.${a}` as StringKey)}</h3>
             {notes[a].length === 0 ? <p className="muted">{t('access.nothing')}</p> : <ul>{notes[a].map((n) => <li key={n}>{t(`access.note.${n}` as StringKey)}</li>)}</ul>}
           </section>
         ))}
@@ -187,7 +187,7 @@ export function AllergyScreen() {
   return (
     <Page title="route.allergy" intro="allergy.intro">
       <Card labelledBy="al-t">
-        <h2 id="al-t" className="card__title">{t('allergy.title')}</h2>
+        <h2 id="al-t" className="card__title">{th('allergy.title')}</h2>
         {a.items.length === 0 ? <p>{t('allergy.none')}</p> : (
           <ul>{a.items.map((i) => <li key={i}>{i} <Button variant="tertiary" onClick={() => update((m) => { const items = m.allergy.items.filter((x) => x !== i); return { ...m, allergy: { items, at: items.length ? now : null } } })}>{t('allergy.remove')}<span className="visually-hidden"> {i}</span></Button></li>)}</ul>
         )}
@@ -216,7 +216,7 @@ export function ShareLedgerScreen() {
       <Load state={view}>
         {(v) => (
           <Card labelledBy="sh-t">
-            <h2 id="sh-t" className="card__title">{t('shares.title', { total: formatMoney(v.trip.plan.total) })}</h2>
+            <h2 id="sh-t" className="card__title">{th('shares.title', { total: formatMoney(v.trip.plan.total) })}</h2>
             <form onSubmit={(e) => { e.preventDefault(); const n = name.replace(/\s+/g, ' ').trim(); if (n) { const names = [...state.shares.map((s) => s.name), n]; const parts = splitEven(v.trip.plan.total, names); update((m) => ({ ...m, shares: parts.map((p, i) => ({ id: m.shares[i]?.id ?? newMemoryId(), name: p.name, amount: p.amount, paid: m.shares[i]?.paid ?? false })) })); setName('') } }}>
               <Field label={t('shares.add')} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
               <Button type="submit" variant="secondary" disabled={name.trim() === '' || state.shares.length >= 12}>{t('shares.addButton')}</Button>
@@ -265,7 +265,7 @@ function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
       if (!w) return <p>{t('pwatch.none')}</p>
       return (
         <Card labelledBy="pw-t">
-          <h2 id="pw-t" className="card__title">{t('pwatch.title')}</h2>
+          <h2 id="pw-t" className="card__title">{th('pwatch.title')}</h2>
           <dl className="facts">
             <div><dt>{t('pwatch.booked')}</dt><dd>{formatMoney(v.trip.plan.total)}</dd></div>
             <div><dt>{t('pwatch.now')}</dt><dd>{formatMoney(w.latest.total)}</dd></div>

@@ -7,7 +7,7 @@ import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -24,7 +24,7 @@ export function AssistanceScreen() {
   const view = useMine(() => api.plan.assistance.get())
   return (
     <div className="page">
-      <h1>{t('route.assistance')}</h1>
+      <h1>{th('route.assistance')}</h1>
       <p>{t('assist.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
       <Back to="/plan" label={t('route.plan')} />
@@ -50,7 +50,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
     <>
       <ReadOnly canDo={view.canRequest} />
       <section aria-labelledby="track-h">
-        <h2 id="track-h">{t('assist.tracker')}</h2>
+        <h2 id="track-h">{th('assist.tracker')}</h2>
         <p className="muted">{t('assist.trackerHint')}</p>
         <ul className="plain-list">
           {ASSIST_KINDS.map((k) => {
@@ -67,7 +67,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
       </section>
 
       <section aria-labelledby="req-h">
-        <h2 id="req-h">{t('assist.new')}</h2>
+        <h2 id="req-h">{th('assist.new')}</h2>
         <form onSubmit={(e) => { e.preventDefault(); void submit() }}>
           <div className="field">
             <label htmlFor="as-kind">{t('assist.what')}</label>
@@ -93,13 +93,13 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
       </section>
 
       <section aria-labelledby="mine-h">
-        <h2 id="mine-h">{t('assist.mine')}</h2>
+        <h2 id="mine-h">{th('assist.mine')}</h2>
         <PlanError error={withdraw.error} />
         {view.requests.length === 0 ? <p className="muted">{t('assist.none')}</p> : (
           <ul className="card-grid">
             {view.requests.map((r) => (
               <li key={r.id} className="card">
-                <h3 className="card__title">{t(`assist.kind.${r.kind}` as never)}</h3>
+                <h3 className="card__title">{th(`assist.kind.${r.kind}` as never)}</h3>
                 <p>{firstName(r.guest)}</p>
                 {r.note && <p className="muted">{r.note}</p>}
                 <p>{r.status === 'confirmed' ? <StatusBadge kind="booked" label={t('assist.status.confirmed')} /> : r.status === 'late' ? <StatusBadge kind="changed" label={t('assist.status.late')} /> : <StatusBadge kind="waitlist" label={t('assist.status.received')} />}</p>
@@ -111,7 +111,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
         )}
         {Object.keys(view.needs).length > 0 && (
           <Card info>
-            <h3 className="card__title">{t('assist.profile')}</h3>
+            <h3 className="card__title">{th('assist.profile')}</h3>
             <ul className="plain-bullets">{Object.entries(view.needs).map(([id, needs]) => <li key={id}>{firstName(id as PersonaId)}: {(needs ?? []).map((n) => t(`profile.needs.${n}` as never)).join(', ')}</li>)}</ul>
             <p><Link to="/me/profile">{t('route.profile')}</Link></p>
           </Card>

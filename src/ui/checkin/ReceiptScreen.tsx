@@ -4,7 +4,7 @@ import { asReceiptView } from '../../api/guards'
 import { api } from '../../runtime'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -26,7 +26,7 @@ export function ReceiptScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{t('route.receipt')}</h1>
+      <h1>{th('route.receipt')}</h1>
       <p>{t('receipt.intro')}</p>
       {receipt.data ? (
         <>
@@ -41,7 +41,7 @@ export function ReceiptScreen() {
             </Card>
           ))}
           <Card>
-            <h2 className="card__title">{t('receipt.booking')}</h2>
+            <h2 className="card__title">{th('receipt.booking')}</h2>
             <Items items={receipt.data.booking} />
           </Card>
           <p className="muted">{t('receipt.safe')}</p>

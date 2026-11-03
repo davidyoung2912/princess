@@ -10,7 +10,7 @@ import { ACCESSIBLE_TENDER_STEPS, BUFFER_CHOICES, DEFAULT_BUFFER, latestStart, P
 import { PORTS } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { usePort } from '../../hooks/usePort'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -56,7 +56,7 @@ export function PortPilot({ v }: { v: PortDayView }) {
   return (
     <>
       <Card hero labelledBy="pilot-h">
-        <h2 id="pilot-h" className="card__title">{t('pilot.title', { port: PORTS[port].name })}</h2>
+        <h2 id="pilot-h" className="card__title">{th('pilot.title', { port: PORTS[port].name })}</h2>
         <p className="muted">{t('pilot.intro')}</p>
         <fieldset>
           <legend>{t('pilot.outing')}</legend>
@@ -79,13 +79,13 @@ export function PortPilot({ v }: { v: PortDayView }) {
           ? <p role="status">{t('pilot.fits', { minutes: duration(plan.minutesThere) })}{start !== null ? ` ${t('pilot.latestStart', { time: both(start) })}` : ''}</p>
           : <Banner kind="warning" title={t('pilot.tooLong')}><p>{t('pilot.tooLongBody', { short: duration(plan.shortBy), name: choice.name })}</p></Banner>)}
         {!choice && (plan.minutesThere > 0 ? <p role="status">{t('pilot.timeThere', { minutes: duration(plan.minutesThere) })}</p> : <Banner kind="warning" title={t('pilot.noTime')}><p>{t('pilot.noTimeBody')}</p></Banner>)}
-        <h3>{t('pilot.steps')}</h3>
+        <h3>{th('pilot.steps')}</h3>
         <ol className="plain-bullets">{plan.steps.map((s) => <li key={s.id}>{t(pilotStepLabel(s.id), { time: both(s.at) })}</li>)}</ol>
         <p className="muted">{t('pilot.threeClocks')}</p>
       </Card>
 
       <Card labelledBy="crowd-h">
-        <h2 id="crowd-h" className="card__title">{t('crowd.title')}</h2>
+        <h2 id="crowd-h" className="card__title">{th('crowd.title')}</h2>
         {!crowd && <FeedWaiting />}
         {crowd && <>
           <p>{t('crowd.ships', { count: crowd.ships })} <span className="muted">{t(`crowd.level.${crowd.level}` as StringKey)}</span></p>
@@ -96,7 +96,7 @@ export function PortPilot({ v }: { v: PortDayView }) {
       </Card>
 
       <Card labelledBy="planb-h">
-        <h2 id="planb-h" className="card__title">{t('planb.title')}</h2>
+        <h2 id="planb-h" className="card__title">{th('planb.title')}</h2>
         <p className="muted">{t('planb.intro')}</p>
         {recommended && <p role="status">{t('planb.suggested', { name: t(`planb.t.${recommended}` as StringKey) })}</p>}
         <fieldset>
@@ -116,20 +116,20 @@ export function PortPilot({ v }: { v: PortDayView }) {
 
       {v.day.tender && (
         <Card labelledBy="tenderday-h">
-          <h2 id="tenderday-h" className="card__title">{t('tenderday.title')}</h2>
+          <h2 id="tenderday-h" className="card__title">{th('tenderday.title')}</h2>
           <dl className="plain-dl">
             <div><dt>{t('tenderday.ticket')}</dt><dd>{v.tender ? v.tender.group.name : t('tenderday.noTicket')}</dd></div>
             <div><dt>{t('tenderday.wait')}</dt><dd>{v.tender ? (v.tender.waitMinutes > 0 ? duration(v.tender.waitMinutes) : t('tenderday.noWait')) : '-'}</dd></div>
             <div><dt>{t('tenderday.last')}</dt><dd>{both(plan.lastTenderAt!)}</dd></div>
             <div><dt>{t('tenderday.switch')}</dt><dd>{t('tenderday.switchBody')}</dd></div>
           </dl>
-          <h3>{t('tenderday.accessible')}</h3>
+          <h3>{th('tenderday.accessible')}</h3>
           <ol className="plain-bullets">{ACCESSIBLE_TENDER_STEPS.map((k) => <li key={k}>{t(k)}</li>)}</ol>
         </Card>
       )}
 
       <Card labelledBy="share-h">
-        <h2 id="share-h" className="card__title">{t('share.title')}</h2>
+        <h2 id="share-h" className="card__title">{th('share.title')}</h2>
         <p className="muted">{t('share.intro')}</p>
         {day.plan ? (
           <>

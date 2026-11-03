@@ -5,7 +5,7 @@ import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -19,13 +19,13 @@ export function HelperScreen() {
   const helper = useMine(() => api.account.helper())
   return (
     <div className="page">
-      <h1>{t('route.helper')}</h1>
+      <h1>{th('route.helper')}</h1>
       <p>{t('helper.intro')}</p>
       <Load state={helper}>
         {(h) => <HelperBody key={h?.status ?? 'none'} helper={h} refresh={helper.retry} />}
       </Load>
       <Card info labelledBy="alt-h">
-        <h2 id="alt-h">{t('helper.alt.title')}</h2>
+        <h2 id="alt-h">{th('helper.alt.title')}</h2>
         <p>{t('helper.alt.body', { number: GUEST_SERVICES_NUMBER })}</p>
         <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
       </Card>
@@ -80,7 +80,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
       )}
       {!active && (
         <section aria-labelledby="form-h">
-          <h2 id="form-h">{requested ? t('helper.decide') : t('helper.add')}</h2>
+          <h2 id="form-h">{requested ? th('helper.decide') : th('helper.add')}</h2>
           <Field label={t('helper.name')} value={name} onChange={(e) => setName(e.target.value)} readOnly={requested} error={needName ? t('helper.needName') : undefined} autoComplete="off" />
           <Field label={t('helper.relationship')} value={relationship} onChange={(e) => setRelationship(e.target.value)} readOnly={requested} autoComplete="off" />
           <Permissions value={permissions} onChange={setPermissions} />

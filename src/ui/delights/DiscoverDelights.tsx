@@ -6,7 +6,7 @@ import { cabinNeighbours, cabinWalks, canFlip, costPerDay, dayOn, dayStrip, flip
 import { formatMoney } from '../../domain/money'
 import { PORT_COORDS } from '../../domain/ports'
 import { itinerary, PORTS, SAILINGS, sailingNights, type Sailing } from '../../domain/sailings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 
@@ -18,7 +18,7 @@ export function DayStrip({ sailing }: { sailing: Sailing }) {
   const sum = stripSummary(strip)
   return (
     <section aria-labelledby="dl3-strip-h">
-      <h2 id="dl3-strip-h">{t('dl3.strip.title')}</h2>
+      <h2 id="dl3-strip-h">{th('dl3.strip.title')}</h2>
       <p>{t('dl3.strip.summary', { count: sum.sea, ports: sum.ports, tender: sum.tender })}</p>
       <ol className="day-strip">
         {strip.map((s) => (
@@ -42,7 +42,7 @@ export function OnThatDate({ sailing }: { sailing: Sailing }) {
   const times = d ? [d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ') : ''
   return (
     <section aria-labelledby="dl3-date-h">
-      <h2 id="dl3-date-h">{t('dl3.date.title')}</h2>
+      <h2 id="dl3-date-h">{th('dl3.date.title')}</h2>
       <div className="field">
         <label htmlFor="dl3-date">{t('dl3.date.label')}</label>
         <select id="dl3-date" value={date} onChange={(e) => setDate(e.target.value)}>
@@ -64,7 +64,7 @@ export function LandHolidayCompare({ sailing, total, guests }: { sailing: Sailin
   if (!c) return null
   return (
     <Card info labelledBy="dl3-land-h">
-      <h3 id="dl3-land-h" className="card__title">{t('dl3.land.title')}</h3>
+      <h3 id="dl3-land-h" className="card__title">{th('dl3.land.title')}</h3>
       <p>{t('dl3.land.cruise', { amount: formatMoney(c.perDay), days: nights + 1 })}</p>
       <p>{t('dl3.land.range', { low: formatMoney(LAND_HOLIDAY_PER_DAY.low), high: formatMoney(LAND_HOLIDAY_PER_DAY.high) })} {t(`dl3.land.${c.position}` as StringKey)}</p>
       <details><summary>{t('dl3.land.how')}</summary><p>{t('dl3.land.method')}</p></details>
@@ -110,7 +110,7 @@ export function LeftOffCard({ picks, onOpen, onForget }: { picks: readonly { num
   const decks = l.decks.length ? t('dl3.left.deck', { count: l.decks.length, decks: l.decks.join(', ') }) : t('dl3.left.noDeck')
   return (
     <Card info labelledBy="dl3-left-h">
-      <h2 id="dl3-left-h" className="card__title">{t('dl3.left.title')}</h2>
+      <h2 id="dl3-left-h" className="card__title">{th('dl3.left.title')}</h2>
       <p>{t('dl3.left.body', { count: l.count, decks })}</p>
       <div className="button-row">
         <Button onClick={onOpen}>{t('dl3.left.open')}</Button>
@@ -131,7 +131,7 @@ export function GutCheckFlip({ initial }: { initial: string }) {
   const reset = () => { setResult(null); setHoped(null) }
   return (
     <Card labelledBy="dl3-flip-h">
-      <h2 id="dl3-flip-h" className="card__title">{t('dl3.flip.title')}</h2>
+      <h2 id="dl3-flip-h" className="card__title">{th('dl3.flip.title')}</h2>
       <p>{t('dl3.flip.intro')}</p>
       {([['a', a, setA], ['b', b, setB]] as const).map(([k, v, set]) => (
         <div className="field" key={k}>

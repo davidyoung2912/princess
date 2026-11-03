@@ -5,7 +5,7 @@ import { stageAt } from '../../domain/sailings'
 import { newHubId, useHub } from '../../hooks/useHub'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useParty } from '../../hooks/useParty'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -36,21 +36,21 @@ export function DelayedScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.delayed')}</h1>
+      <h1>{th('route.delayed')}</h1>
       <p>{t('delay.intro')}</p>
       <Banner kind="info" title={t('delay.call', { number: GUEST_SERVICES_NUMBER })}><p>{t('delay.callBody')}</p></Banner>
       {current ? (
         <Card labelledBy="delay-now">
-          <h2 id="delay-now" className="card__title">{t('delay.open')}</h2>
+          <h2 id="delay-now" className="card__title">{th('delay.open')}</h2>
           <p role="status">{t('delay.told', { who: current.told.map((w) => t(`delay.who.${w}` as StringKey)).join(', '), minutes: current.lateMinutes })}</p>
           {planned !== null && shareEta && <p>{t('delay.eta', { time: shipTime(expectedArrival(planned, current)) })}</p>}
-          <h3>{t('delay.steps')}</h3>
+          <h3>{th('delay.steps')}</h3>
           <ol>{delayNextSteps(stage).map((k) => <li key={k}>{t(k)}</li>)}</ol>
           <Button onClick={() => update((s) => ({ ...s, delay: resolveDelay(s.delay, now) }))}>{t('delay.arrived')}</Button>
         </Card>
       ) : (
         <Card labelledBy="delay-new">
-          <h2 id="delay-new" className="card__title">{t('delay.new')}</h2>
+          <h2 id="delay-new" className="card__title">{th('delay.new')}</h2>
           <fieldset>
             <legend>{t('delay.reason')}</legend>
             {DELAY_REASONS.map((r) => <label key={r} className="choice"><input type="radio" name="delay-reason" checked={reason === r} onChange={() => setReason(r)} /><span>{t(`delay.reason.${r}` as StringKey)}</span></label>)}
@@ -68,7 +68,7 @@ export function DelayedScreen() {
       <label className="choice"><input type="checkbox" checked={shareEta} onChange={(e) => update((s) => ({ ...s, delay: setShareEta(s.delay, e.target.checked) }))} /><span>{t('delay.share')}<small>{t('delay.share.why')}</small></span></label>
       {history.length > 0 || current ? (
         <section aria-labelledby="delay-rec">
-          <h2 id="delay-rec">{t('delay.record')}</h2>
+          <h2 id="delay-rec">{th('delay.record')}</h2>
           <p className="muted">{t('delay.record.why')}</p>
           {[...(current ? [current] : []), ...history].map((r) => (
             <Card key={r.id}>

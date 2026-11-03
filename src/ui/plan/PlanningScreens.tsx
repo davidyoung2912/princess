@@ -15,7 +15,7 @@ import { usePilot } from '../../hooks/usePilot'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { useParty } from '../../hooks/useParty'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api, partyShare } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -27,7 +27,7 @@ import { BackLink } from '../onboard/common'
 const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{t(title)}</h1>
+    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -124,7 +124,7 @@ export function GroupPollScreen() {
     <Page title="route.groupPoll" intro="poll.intro">
       <Banner kind="info" title={t('poll.shared')} />
       <Card labelledBy="poll-new">
-        <h2 id="poll-new" className="card__title">{t('poll.new')}</h2>
+        <h2 id="poll-new" className="card__title">{th('poll.new')}</h2>
         <Field label={t('poll.question')} value={question} maxLength={80} onChange={(e) => setQuestion(e.target.value)} />
         <Field label={t('poll.options')} hint={t('poll.optionsHint')} value={options} maxLength={200} onChange={(e) => setOptions(e.target.value)} error={problem ? t('poll.problem') : undefined} />
         <Button onClick={create}>{t('poll.create')}</Button>
@@ -149,7 +149,7 @@ export function GroupPollScreen() {
         )
       })}
       <Card labelledBy="board-h">
-        <h2 id="board-h" className="card__title">{t('board.title')}</h2>
+        <h2 id="board-h" className="card__title">{th('board.title')}</h2>
         <p>{t('board.intro')}</p>
         <Field label={t('board.add')} value={idea} maxLength={80} onChange={(e) => setIdea(e.target.value)} />
         <Button onClick={() => { set((b) => ({ ...b, ideas: addIdea(b.ideas, newPortId(), idea) })); setIdea('') }}>{t('board.addButton')}</Button>
@@ -179,7 +179,7 @@ export function SurprisesScreen() {
       <Button disabled={!text.trim()} onClick={() => { set((s) => ({ ...s, surprises: [...s.surprises, { id: newMemoryId(), text: text.trim() }].slice(0, 10) })); setText('') }}>{t('surp.addButton')}</Button>
       <ul className="plain-list">{p.surprises.map((s) => <li key={s.id}>{s.text} <Button variant="tertiary" onClick={() => set((x) => ({ ...x, surprises: x.surprises.filter((y) => y.id !== s.id) }))}>{t('poll.remove')}</Button></li>)}</ul>
       <Card labelledBy="surp-view">
-        <h2 id="surp-view" className="card__title">{t('surp.view')}</h2>
+        <h2 id="surp-view" className="card__title">{th('surp.view')}</h2>
         <label className="choice"><input type="checkbox" checked={pretend} onChange={(e) => setPretend(e.target.checked)} /><span>{t('surp.asGuest')}</span></label>
         <ul className="plain-list">{(pretend ? withoutSurprises(demo, p.surprises) : demo).map((i) => <li key={i.id}>{i.title}</li>)}</ul>
       </Card>
@@ -227,7 +227,7 @@ export function ChildBriefScreen() {
       </div>
       {field('allergies', 120)}{field('comfort', 120)}{field('bedtime', 20)}{field('needs', 160)}
       <Card labelledBy="brief-view">
-        <h2 id="brief-view" className="card__title">{view ? t('brief.club', { club: clubById(view.club)?.name ?? view.club }) : t('brief.noClub')}</h2>
+        <h2 id="brief-view" className="card__title">{view ? th('brief.club', { club: clubById(view.club)?.name ?? view.club }) : th('brief.noClub')}</h2>
         {view && <ul className="plain-list">{view.fields.map((f) => <li key={f.field}><strong>{t(`brief.${f.field}` as StringKey)}:</strong> {f.value}</li>)}</ul>}
         <p className="muted">{t('brief.note')}</p>
       </Card>
@@ -270,7 +270,7 @@ export function OrganiserScreen() {
         }}
       </Load>
       <Card labelledBy="org-priv">
-        <h2 id="org-priv" className="card__title">{t('org.privacy')}</h2>
+        <h2 id="org-priv" className="card__title">{th('org.privacy')}</h2>
         <p>{t('org.privacyIntro')}</p>
         {SHARING_FACETS.map((f) => (
           <label key={f} className="choice">
@@ -293,7 +293,7 @@ function OrganiserView({ number }: { number: string }) {
       <Load state={org}>
         {(o) => (
           <Card labelledBy="org-h">
-            <h2 id="org-h" className="card__title">{t('org.title')}</h2>
+            <h2 id="org-h" className="card__title">{th('org.title')}</h2>
             <p>{t('org.sailing', { ship: o.ship, days: o.daysToGo })}</p>
             <ul className="plain-list">
               {o.guests.map((g) => {
@@ -320,7 +320,7 @@ function OrganiserView({ number }: { number: string }) {
       <Load state={log}>
         {(entries) => entries.length > 0 && (
           <Card labelledBy="org-log">
-            <h2 id="org-log" className="card__title">{t('org.log')}</h2>
+            <h2 id="org-log" className="card__title">{th('org.log')}</h2>
             <ul className="plain-list">
               {entries.map((e, k) => <li key={`${e.kind}-${e.at}-${k}`}>{t(e.deleted ? 'org.log.removed' : 'org.log.added', { what: t(`org.log.kind.${e.kind}` as StringKey), label: e.label })} <span className="muted">{new Date(e.at).toLocaleString()}</span></li>)}
             </ul>
@@ -354,7 +354,7 @@ export function CabinsScreen() {
       ))}
       {p.cabins.length > 1 && (
         <Card labelledBy="cab-day">
-          <h2 id="cab-day" className="card__title">{t('cab.shared')}</h2>
+          <h2 id="cab-day" className="card__title">{th('cab.shared')}</h2>
           <p>{day.together.length > 0 ? day.together.join(', ') : t('cab.nothing')}</p>
           <ul className="plain-list">{day.apart.filter((a) => a.titles.length > 0).map((a) => <li key={a.id}>{t('cab.only', { cabin: a.cabin, what: a.titles.join(', ') })}</li>)}</ul>
         </Card>

@@ -4,7 +4,7 @@ import { formatMoney } from '../../domain/money'
 import { useNow } from '../../hooks/useDemo'
 import { useOpenings } from '../../hooks/useServedFeeds'
 import { newPilotId, usePilot } from '../../hooks/usePilot'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { useConfirmCharge } from '../ConfirmCharge'
@@ -45,7 +45,7 @@ export function SlotWatch() {
 
   return (
     <Card labelledBy="sw-h">
-      <h2 id="sw-h" className="card__title">{t('watch.title')}</h2>
+      <h2 id="sw-h" className="card__title">{th('watch.title')}</h2>
       <p>{t('watch.intro')}</p>
       <p className="muted">{t('watch.promise')}</p>
       <label htmlFor="sw-kind">{t('watch.kind')}</label>

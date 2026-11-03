@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Link } from 'react-router'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { sailingRange } from '../../domain/cruise'
 import { favouritePath, parseFavouriteKey } from '../../domain/favourites'
 import { portGuideById } from '../../domain/ports'
@@ -25,7 +25,7 @@ export function SavedScreen() {
   })
   return (
     <div className="page">
-      <h1 ref={heading} tabIndex={-1}>{t('route.saved')}</h1>
+      <h1 ref={heading} tabIndex={-1}>{th('route.saved')}</h1>
       {!favourites.ready && <p role="status" className="muted">{t('discover.loading')}</p>}
       {favourites.failed && <p role="alert">{t('discover.saveFailed')}</p>}
       {favourites.ready && items.length === 0 && (

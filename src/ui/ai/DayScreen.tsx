@@ -11,7 +11,7 @@ import { EVENT_INTERESTS, type EventInterest } from '../../domain/program'
 import { itinerary } from '../../domain/sailings'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
@@ -34,10 +34,10 @@ export function DayScreen() {
   useEffect(() => { setWatched(followed.split(' ').filter(Boolean)) }, [followed])
   return (
     <div className="page">
-      <h1>{t('route.buildDay')}</h1>
+      <h1>{th('route.buildDay')}</h1>
       <p>{t('day.intro')}</p>
       <Card labelledBy="day-pick-h">
-        <h2 id="day-pick-h" className="card__title">{t('day.pick')}</h2>
+        <h2 id="day-pick-h" className="card__title">{th('day.pick')}</h2>
         <div className="field">
           <label htmlFor="day-select">{t('day.which')}</label>
           <select id="day-select" className="field__input" value={day} onChange={(e) => setDay(Number(e.target.value))}>
@@ -61,7 +61,7 @@ export function DayScreen() {
         <label className="choice"><input type="checkbox" checked={wish.withKids} onChange={(e) => setWish({ ...wish, withKids: e.target.checked })} /><span>{t('day.kids')}</span></label>
       </Card>
       <Card hero labelledBy="day-plan-h">
-        <h2 id="day-plan-h" className="card__title">{t('day.yours', { day })}</h2>
+        <h2 id="day-plan-h" className="card__title">{th('day.yours', { day })}</h2>
         {!plan && <FeedWaiting />}
         {plan?.empty && <p role="status">{t('day.empty')}</p>}
         <ol className="build-list">

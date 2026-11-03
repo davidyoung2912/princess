@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Dialog } from '../Dialog'
@@ -21,7 +21,7 @@ export function ManageBooking({ number, onChanged }: { number: string; onChanged
   const [dialog, setDialog] = useState<'change' | 'cancel' | null>(null)
   return (
     <section aria-labelledby="manage-h">
-      <h2 id="manage-h">{t('book.manage.title')}</h2>
+      <h2 id="manage-h">{th('book.manage.title')}</h2>
       <Load state={booking}>
         {(b) => (
           <>

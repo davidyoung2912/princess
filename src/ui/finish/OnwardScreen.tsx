@@ -9,7 +9,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
@@ -24,7 +24,7 @@ export function OnwardScreen() {
   const copy = useSavedCopy('onward', me?.booker ?? 'none', () => api.disembark.onward(), asOnwardView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.onward')}</h1>
+      <h1>{th('route.onward')}</h1>
       <p>{t('onw.intro')}</p>
       <Saved copy={copy}>{(v) => <Onward v={v} reload={copy.retry} />}</Saved>
       <RideCard />
@@ -66,7 +66,7 @@ function Onward({ v, reload }: { v: OnwardView; reload: () => void }) {
 
       {check && (
         <section aria-labelledby="onw-check-h">
-          <h2 id="onw-check-h">{t('onw.check')}</h2>
+          <h2 id="onw-check-h">{th('onw.check')}</h2>
           {check.status === 'noFlight' ? <p>{t('onw.noFlight', { time: formatTime(check.earliestFlight) })}</p> : (
             <Banner kind={check.status === 'ok' ? 'success' : check.status === 'tight' ? 'warning' : 'danger'} title={t(`onw.status.${check.status}` as StringKey, { minutes: Math.abs(check.spare ?? 0) })}>
               <p>{t(`onw.statusBody.${check.status}` as StringKey, { leave: check.leaveBy !== null ? shipTime(check.leaveBy) : '', earliest: formatTime(check.earliestFlight) })}</p>
@@ -78,7 +78,7 @@ function Onward({ v, reload }: { v: OnwardView; reload: () => void }) {
       )}
 
       <section aria-labelledby="onw-pick-h">
-        <h2 id="onw-pick-h">{t('onw.pickup')}</h2>
+        <h2 id="onw-pick-h">{th('onw.pickup')}</h2>
         <p>{t(`onw.pickupBody.${mode}` as StringKey)}</p>
       </section>
     </>

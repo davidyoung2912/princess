@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CABIN_KINDS, cabinPhotos, isCabinKind, type CabinKind } from '../../domain/media'
 import { categoryById, type CategoryId } from '../../domain/ship'
 import { useCabinMedia } from '../../hooks/useMedia'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Field } from '../Field'
 import { KeptPicture, PicturePicker } from '../media/Pictures'
@@ -20,7 +20,7 @@ export function CabinPhotos({ category }: { category: CategoryId }) {
   const shown = cabinPhotos(list, category)
   return (
     <Card labelledBy="cabin-photos">
-      <h2 id="cabin-photos" className="card__title">{`${t('media.cabin.title')}: ${room}`}</h2>
+      <h2 id="cabin-photos" className="card__title">{`${th('media.cabin.title')}: ${room}`}</h2>
       <p>{t('media.cabin.intro')}</p>
       {failed && <p className="muted">{t('media.unavailable')}</p>}
       {shown.length === 0 && !failed && <p>{t('media.cabin.none')}</p>}

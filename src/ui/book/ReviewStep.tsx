@@ -8,7 +8,7 @@ import { sailingById } from '../../domain/sailings'
 import { categoryById } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { PriceBreakdown, PriceState } from '../discover/parts'
 import { formatDateTime } from '../account/format'
@@ -44,7 +44,7 @@ export function ReviewStep({ draft, update, error }: StepProps) {
       <PerksPanel draft={draft} update={update} quote={quote.data} />
 
       <section aria-labelledby="price-h">
-        <h3 id="price-h">{t('book.review.price')}</h3>
+        <h3 id="price-h">{th('book.review.price')}</h3>
         <PriceState state={quote}>
           {quote.data && (
             <>
@@ -65,13 +65,13 @@ export function ReviewStep({ draft, update, error }: StepProps) {
       </section>
 
       <section aria-labelledby="cancel-h">
-        <h3 id="cancel-h">{t('book.review.cancel')}</h3>
+        <h3 id="cancel-h">{th('book.review.cancel')}</h3>
         <CancellationTable />
         <p className="muted">{t('book.cancel.change')}</p>
       </section>
 
       <section aria-labelledby="legal-h">
-        <h3 id="legal-h">{t('book.legal.title')}</h3>
+        <h3 id="legal-h">{th('book.legal.title')}</h3>
         <p>{t('book.legal.intro')}</p>
         {LEGAL.map((doc) => (
           <fieldset key={doc.id}>

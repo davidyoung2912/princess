@@ -7,7 +7,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -23,7 +23,7 @@ export function RebookScreen() {
   const view = useMine(() => api.post.rebook(), [])
   return (
     <div className="page">
-      <h1>{t('route.rebook')}</h1>
+      <h1>{th('route.rebook')}</h1>
       <p>{t('reb.intro')}</p>
       <Load state={view}>{(v) => <Rebook v={v} reload={view.retry} />}</Load>
       <BackLink to="/me" label={t('route.me')} />
@@ -45,13 +45,13 @@ function Rebook({ v, reload }: { v: RebookView; reload: () => void }) {
 
       {v.holds.length > 0 && (
         <section aria-labelledby="reb-holds-h">
-          <h2 id="reb-holds-h">{t('reb.holds')}</h2>
+          <h2 id="reb-holds-h">{th('reb.holds')}</h2>
           <ul className="order-list">{v.holds.map((h) => <Hold key={h.id} h={h} busy={release.busy} onRelease={() => void release.run(h.id)} />)}</ul>
         </section>
       )}
 
       <section aria-labelledby="reb-dates-h">
-        <h2 id="reb-dates-h">{t('reb.dates')}</h2>
+        <h2 id="reb-dates-h">{th('reb.dates')}</h2>
         <p className="muted">{t('reb.for', { room: t(`reb.room.${v.category}` as StringKey), count: v.guests })}</p>
         {v.options.length === 0 ? <p>{t('reb.noDates')}</p> : (
           <ul className="order-list">{v.options.map((o) => <Option key={o.id} o={o} held={heldDates.has(o.departure)} canHold={v.canHold} busy={hold.busy} onHold={() => void hold.run(o.id)} />)}</ul>
@@ -61,7 +61,7 @@ function Rebook({ v, reload }: { v: RebookView; reload: () => void }) {
       </section>
 
       <Card labelledBy="reb-fcc-h">
-        <h2 id="reb-fcc-h" className="card__title">{t('reb.fcc')}</h2>
+        <h2 id="reb-fcc-h" className="card__title">{th('reb.fcc')}</h2>
         {v.fccLeft === 0 && v.fccConverted === 0 ? <p>{t('reb.fccNone')}</p> : (
           <>
             <p>{t('reb.fccLeft', { amount: formatMoney(v.fccLeft) })}</p>
@@ -110,7 +110,7 @@ function Desk({ v, reload }: { v: RebookView; reload: () => void }) {
   const cancel = useAction(async () => { await api.post.cancelSlot(); reload() })
   return (
     <Card labelledBy="reb-desk-h">
-      <h2 id="reb-desk-h" className="card__title">{t('reb.desk')}</h2>
+      <h2 id="reb-desk-h" className="card__title">{th('reb.desk')}</h2>
       <p>{t('reb.deskBody', { place: DESK.place })}</p>
       {v.appointment && (
         <>

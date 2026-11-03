@@ -4,7 +4,7 @@ import { aboardState, LATE_STEPS, REMINDER_THRESHOLDS, reminderTimes } from '../
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { PORTS } from '../../domain/sailings'
 import { useDemo, useNow, useSailing } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { ThreeClocks } from '../ThreeClocks'
@@ -22,7 +22,7 @@ export function PortCard({ view, compact }: { view: PortDayView['day']; compact?
   const reminders = reminderTimes(view.allAboardAt)
   return (
     <Card hero labelledBy="aboard-h">
-      <h2 id="aboard-h" className="card__title">{t('onb.aboard.title', { port: port.name })}</h2>
+      <h2 id="aboard-h" className="card__title">{th('onb.aboard.title', { port: port.name })}</h2>
       <p className="aboard__deadline">
         <strong>{t('onb.aboard.at', { time: view.allAboardShip })}</strong> <span>{t('onb.aboard.shipTime')}</span>
       </p>
@@ -42,7 +42,7 @@ export function PortCard({ view, compact }: { view: PortDayView['day']; compact?
         <>
           <p className="muted">{t('onb.aboard.reminders', { list: REMINDER_THRESHOLDS.map((m) => t('onb.aboard.before', { count: m })).join(', ') })}</p>
           <ul className="plain-bullets">{reminders.map((r) => <li key={r.minutes}>{t('onb.aboard.reminderAt', { count: r.minutes, time: shipTime(r.at) })}</li>)}</ul>
-          <h3>{t('onb.late.title')}</h3>
+          <h3>{th('onb.late.title')}</h3>
           <ol className="plain-bullets">{LATE_STEPS.map((s) => <li key={s}>{t(`onb.late.${s}` as StringKey, { number: GUEST_SERVICES_NUMBER })}</li>)}</ol>
         </>
       )}

@@ -7,7 +7,7 @@ import { formatMoney } from '../../domain/money'
 import { itinerary, PORTS, REFERENCE_SAILING, sailingById, sailingNights, type PortId } from '../../domain/sailings'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -19,7 +19,7 @@ import { BackLink } from '../onboard/common'
 const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{t(title)}</h1>
+    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -32,10 +32,10 @@ export function ShipPackingScreen() {
   const nights = 7
   return (
     <Page title="route.shipPacking" intro="shipPack.intro">
-      <Card labelledBy="sp-no"><h2 id="sp-no" className="card__title">{t('shipPack.no')}</h2><ul>{PROHIBITED.map((k) => <li key={k}>{t(`shipPack.no.${k}` as StringKey)}</li>)}</ul></Card>
-      <Card labelledBy="sp-out"><h2 id="sp-out" className="card__title">{t('shipPack.outlets')}</h2><ul>{OUTLETS.map((k) => <li key={k}>{t(`shipPack.out.${k}` as StringKey)}</li>)}</ul></Card>
+      <Card labelledBy="sp-no"><h2 id="sp-no" className="card__title">{th('shipPack.no')}</h2><ul>{PROHIBITED.map((k) => <li key={k}>{t(`shipPack.no.${k}` as StringKey)}</li>)}</ul></Card>
+      <Card labelledBy="sp-out"><h2 id="sp-out" className="card__title">{th('shipPack.outlets')}</h2><ul>{OUTLETS.map((k) => <li key={k}>{t(`shipPack.out.${k}` as StringKey)}</li>)}</ul></Card>
       <Card labelledBy="sp-dress">
-        <h2 id="sp-dress" className="card__title">{t('shipPack.dress')}</h2>
+        <h2 id="sp-dress" className="card__title">{th('shipPack.dress')}</h2>
         <p>{t('shipPack.dressDays', { days: dressNights(nights).map((d) => t('shipPack.day', { n: d })).join(', ') })}</p>
         <p className="muted">{t('shipPack.dressOther')}</p>
       </Card>
@@ -69,7 +69,7 @@ export function CarbonCard() {
   const r = carbonRange(nights, trip?.guests ?? 1)
   return (
     <Card labelledBy="sus-co2-h">
-      <h2 id="sus-co2-h" className="card__title">{t('carbon.title')}</h2>
+      <h2 id="sus-co2-h" className="card__title">{th('carbon.title')}</h2>
       <p>{t('carbon.range', { low: r.lowKg.toLocaleString('en-US'), high: r.highKg.toLocaleString('en-US'), guests: trip?.guests ?? 1, nights })}</p>
       <p className="muted">{t('carbon.method', { low: KG_PER_GUEST_NIGHT.low, high: KG_PER_GUEST_NIGHT.high })}</p>
     </Card>
@@ -95,12 +95,12 @@ export function MoneyPlanScreen() {
         {() => (
           <>
             <Card labelledBy="mp-in">
-              <h2 id="mp-in" className="card__title">{t('mplan.perPerson')}</h2>
+              <h2 id="mp-in" className="card__title">{th('mplan.perPerson')}</h2>
               <Field label={t('mplan.seaDay')} inputMode="numeric" value={sea} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setSea(v); keep({ ...daily, sea: Number(v || '0') * 100 }) }} />
               <Field label={t('mplan.portDay')} inputMode="numeric" value={port} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setPort(v); keep({ ...daily, port: Number(v || '0') * 100 }) }} />
             </Card>
             <Card labelledBy="mp-out">
-              <h2 id="mp-out" className="card__title">{t('mplan.plan')}</h2>
+              <h2 id="mp-out" className="card__title">{th('mplan.plan')}</h2>
               <ul className="plain-list">{plan.days.map((d) => <li key={d.day}>{t('mplan.row', { day: d.day, where: portName(d.port), amount: formatMoney(d.budget) })}</li>)}</ul>
               <p role="status"><strong>{t('mplan.total', { total: formatMoney(plan.total), cash: formatMoney(plan.cash), card: formatMoney(plan.card) })}</strong></p>
               <Button variant="secondary" disabled={isBudget || plan.total <= 0} onClick={() => update((m) => ({ ...m, budget: plan.total }))}>{isBudget ? t('mplan.isBudget') : t('mplan.useBudget')}</Button>
@@ -123,7 +123,7 @@ export function ChildStoryScreen() {
   return (
     <Page title="route.childStory" intro="kstory.intro">
       <Field label={t('kstory.name')} value={name} maxLength={20} onChange={(e) => setName(cleanName(e.target.value))} />
-      <Card labelledBy="cs-t"><h2 id="cs-t" className="card__title">{t('kstory.title')}</h2>{lines.map((l) => <p key={l}>{l}</p>)}</Card>
+      <Card labelledBy="cs-t"><h2 id="cs-t" className="card__title">{th('kstory.title')}</h2>{lines.map((l) => <p key={l}>{l}</p>)}</Card>
       <Button variant="secondary" onClick={() => window.print()}>{t('kstory.print')}</Button>
     </Page>
   )
@@ -139,14 +139,14 @@ export function PasteScreen() {
   return (
     <Page title="route.paste" intro="paste.intro">
       <Card labelledBy="pa-t">
-        <h2 id="pa-t" className="card__title">{t('paste.title')}</h2>
+        <h2 id="pa-t" className="card__title">{th('paste.title')}</h2>
         <label htmlFor="paste-box">{t('paste.label')}</label>
         <textarea id="paste-box" className="field__input" rows={6} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} />
         <Button variant="secondary" disabled={text.trim() === ''} onClick={read}>{t('paste.read')}</Button>
       </Card>
       {draft.length > 0 && (
         <Card labelledBy="pa-d">
-          <h2 id="pa-d" className="card__title">{t('paste.draft')}</h2>
+          <h2 id="pa-d" className="card__title">{th('paste.draft')}</h2>
           <p>{t('paste.confirm')}</p>
           <ul className="plain-list">{draft.map((l, i) => (
             <li key={`${l.day}-${l.text}`}><label className="choice"><input type="checkbox" checked={keep.has(i)} onChange={(e) => setKeep((k) => { const n = new Set(k); if (e.target.checked) n.add(i); else n.delete(i); return n })} /><span>{l.day ? t('paste.day', { n: l.day }) + ' ' : ''}{l.text}</span></label></li>
@@ -156,7 +156,7 @@ export function PasteScreen() {
       )}
       {state.pasted.length > 0 && (
         <Card labelledBy="pa-k">
-          <h2 id="pa-k" className="card__title">{t('paste.kept')}</h2>
+          <h2 id="pa-k" className="card__title">{th('paste.kept')}</h2>
           <ul>{state.pasted.map((l) => <li key={`${l.day}-${l.text}`}>{l.day ? t('paste.day', { n: l.day }) + ' ' : ''}{l.text}</li>)}</ul>
           <Button variant="tertiary" onClick={() => update((m) => ({ ...m, pasted: [] }))}>{t('paste.clear')}</Button>
         </Card>

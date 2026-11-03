@@ -7,7 +7,7 @@ import { useMine } from '../../hooks/useMine'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSailing } from '../../hooks/useDemo'
 import { shipZoneAt } from '../../domain/sailings'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -27,7 +27,7 @@ export function TvScreen() {
   const locked = !!me?.child
   return (
     <div className="page">
-      <h1>{t('route.tv')}</h1>
+      <h1>{th('route.tv')}</h1>
       <p>{t('tv.intro')}</p>
       <ChildNote />
       <AboardError error={set.error} />
@@ -35,7 +35,7 @@ export function TvScreen() {
         {(s) => (
           <>
             <Card labelledBy="remote-h">
-              <h2 id="remote-h" className="card__title">{t('tv.remote')}</h2>
+              <h2 id="remote-h" className="card__title">{th('tv.remote')}</h2>
               <p role="status">{s.on ? t('tv.nowOn', { n: s.channel, name: channelByNumber(s.channel)?.name ?? '', show: s.vod ? VOD.find((v) => v.id === s.vod)?.name ?? '' : onNow(channelByNumber(s.channel)!, hour) }) : t('tv.off')}{s.muted ? ` · ${t('tv.muted')}` : s.on ? ` · ${t('tv.volume', { volume: s.volume })}` : ''}</p>
               <div className="button-row">
                 <Button variant={s.on ? 'secondary' : 'primary'} disabled={set.busy || locked} onClick={() => void set.run({ on: !s.on })}>{s.on ? t('tv.powerOff') : t('tv.powerOn')}</Button>
@@ -51,7 +51,7 @@ export function TvScreen() {
             </Card>
 
             <section aria-labelledby="guide-h">
-              <h2 id="guide-h">{t('tv.guide')}</h2>
+              <h2 id="guide-h">{th('tv.guide')}</h2>
               <table className="tv-guide">
                 <thead><tr><th scope="col">{t('tv.channel')}</th><th scope="col">{t('tv.onNow')}</th><th scope="col"><span className="visually-hidden">{t('tv.watch')}</span></th></tr></thead>
                 <tbody>
@@ -67,7 +67,7 @@ export function TvScreen() {
             </section>
 
             <section aria-labelledby="vod-h">
-              <h2 id="vod-h">{t('tv.vod')}</h2>
+              <h2 id="vod-h">{th('tv.vod')}</h2>
               <ul className="card-grid">
                 {VOD.map((v) => (
                   <li key={v.id}>
@@ -82,7 +82,7 @@ export function TvScreen() {
             </section>
 
             <section aria-labelledby="cast-h">
-              <h2 id="cast-h">{t('tv.cast')}</h2>
+              <h2 id="cast-h">{th('tv.cast')}</h2>
               {s.casting ? (
                 <Banner kind="success" title={t('tv.casting', { device: s.casting })} action={<Button variant="secondary" disabled={set.busy || locked} onClick={() => void set.run({ casting: null })}>{t('tv.stopCast')}</Button>}>
                   <p>{t('tv.castingBody')}</p>

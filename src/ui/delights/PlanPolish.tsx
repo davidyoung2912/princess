@@ -12,7 +12,7 @@ import { skyNightFeed } from '../../feeds/skyNight'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSailing } from '../../hooks/useDemo'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
@@ -103,7 +103,7 @@ export function TravellerColours({ days }: { days: readonly PlanDay[] }) {
   if (ids.length < 2) return null
   return (
     <Card labelledBy="plan-col-h">
-      <h2 id="plan-col-h" className="card__title">{t('dl4.colour.title')}</h2>
+      <h2 id="plan-col-h" className="card__title">{th('dl4.colour.title')}</h2>
       <p>{t('dl4.colour.body')}</p>
       {ids.map((id) => {
         const c = colour(id)
@@ -147,7 +147,7 @@ export function OccasionsCard() {
   }
   return (
     <Card labelledBy="plan-occ-h">
-      <h2 id="plan-occ-h" className="card__title">{t('dl4.occ.title')}</h2>
+      <h2 id="plan-occ-h" className="card__title">{th('dl4.occ.title')}</h2>
       <p>{t('dl4.occ.body')}</p>
       {hits.map(({ occasion, day }) => (
         <div key={occasion.id}>

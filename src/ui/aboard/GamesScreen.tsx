@@ -4,7 +4,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -23,7 +23,7 @@ export function GamesScreen() {
   const called = calledNumbers(1 + (Math.floor(now / 86_400_000) % 7), Math.floor((now % 3_600_000) / 60_000))
   return (
     <div className="page">
-      <h1>{t('route.games')}</h1>
+      <h1>{th('route.games')}</h1>
       <p>{t('game.intro')}</p>
       <AboardError error={find.error ?? answer.error ?? mark.error} />
       <Load state={game}>
@@ -33,14 +33,14 @@ export function GamesScreen() {
           return (
             <>
               <Card labelledBy="ach-h">
-                <h2 id="ach-h" className="card__title">{t('game.badges')}</h2>
+                <h2 id="ach-h" className="card__title">{th('game.badges')}</h2>
                 <ul className="plain-bullets">
                   {ACHIEVEMENTS.map((a) => <li key={a}>{earned.includes(a) ? '✓ ' : '○ '}<strong>{t(`game.a.${a}` as StringKey)}</strong> <span className="muted">{t(`game.a.${a}.how` as StringKey)}</span></li>)}
                 </ul>
               </Card>
 
               <section aria-labelledby="hunt-h">
-                <h2 id="hunt-h">{t('game.hunt')}</h2>
+                <h2 id="hunt-h">{th('game.hunt')}</h2>
                 <p>{t('game.huntBody', { found: g.found.length, total: HUNT.length })}</p>
                 <ul className="card-grid">
                   {HUNT.map((c) => (
@@ -56,7 +56,7 @@ export function GamesScreen() {
               </section>
 
               <section aria-labelledby="trivia-h">
-                <h2 id="trivia-h">{t('game.trivia')}</h2>
+                <h2 id="trivia-h">{th('game.trivia')}</h2>
                 <p role="status">{t('game.score', { right: score.right, answered: score.answered, total: TRIVIA.length })}</p>
                 {TRIVIA.map((q) => {
                   const chosen = g.answers[q.id]
@@ -76,7 +76,7 @@ export function GamesScreen() {
               </section>
 
               <section aria-labelledby="bingo-h">
-                <h2 id="bingo-h">{t('game.bingo')}</h2>
+                <h2 id="bingo-h">{th('game.bingo')}</h2>
                 <p>{t('game.bingoBody', { lines: bingoLines(card, g.marked) })}</p>
                 {bingoLines(card, g.marked) > 0 && <Banner kind="success" title={t('game.bingoWon')}><p>{t('game.bingoWonBody')}</p></Banner>}
                 <table className="bingo" aria-label={t('game.bingoCard')}>

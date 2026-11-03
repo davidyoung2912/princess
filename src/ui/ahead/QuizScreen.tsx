@@ -6,7 +6,7 @@ import { DEFAULT_QUIZ, QUIZ_BUDGETS, QUIZ_MOBILITY, QUIZ_MUSTS, QUIZ_VIBES, QUIZ
 import { formatMoney } from '../../domain/money'
 import { categoryById } from '../../domain/ship'
 import { REFERENCE_SAILING } from '../../domain/sailings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Back } from './common'
@@ -35,7 +35,7 @@ export function QuizScreen() {
   const set = <K extends keyof QuizAnswers>(key: K) => (value: QuizAnswers[K]) => { setShown(false); setA({ ...a, [key]: value }) }
   return (
     <div className="page">
-      <h1>{t('route.quiz')}</h1>
+      <h1>{th('route.quiz')}</h1>
       <p>{t('quiz.intro')}</p>
       <form onSubmit={(e) => { e.preventDefault(); setShown(true) }}>
         <Choice name="vibe" legend={t('quiz.vibe')} values={QUIZ_VIBES} value={a.vibe} onChange={set('vibe')} label={(v) => t(`quiz.vibe.${v}` as StringKey)} />
@@ -55,7 +55,7 @@ export function QuizScreen() {
       </form>
       {result && (
         <section aria-labelledby="quiz-result-h" aria-live="polite">
-          <h2 id="quiz-result-h">{t('quiz.result')}</h2>
+          <h2 id="quiz-result-h">{th('quiz.result')}</h2>
           {result.picks.length === 0 ? <p>{t('quiz.none')}</p> : (
             <ol className="card-grid">
               {result.picks.map((p, i) => {

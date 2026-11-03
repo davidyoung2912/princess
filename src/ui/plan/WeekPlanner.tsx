@@ -7,7 +7,7 @@ import { FeedWaiting } from '../FeedWaiting'
 import { usePilot } from '../../hooks/usePilot'
 import { programmeFollows } from '../../pilot/programme'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { useState } from 'react'
 import { applyWeek } from '../../domain/planning'
@@ -32,7 +32,7 @@ export function WeekPlanner() {
 
   return (
     <Card labelledBy="wk-h">
-      <h2 id="wk-h" className="card__title">{t('week.title')}</h2>
+      <h2 id="wk-h" className="card__title">{th('week.title')}</h2>
       <p>{t('week.intro')}</p>
       <fieldset>
         <legend>{t('week.pace')}</legend>

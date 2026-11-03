@@ -95,7 +95,7 @@ describe('share links (N4.6)', () => {
   it('says what the people with a link see and never see before anything is made', async () => {
     await open('/plan/share-links')
     const m = within(main())
-    await m.findByText('What they never see')
+    await m.findByText('What They Never See')
     expect(m.getByText(/Where you are, your medical card/)).toBeTruthy()
   })
 
@@ -112,7 +112,7 @@ describe('share links (N4.6)', () => {
     const field = await m.findByLabelText('The link address')
     expect((field as HTMLInputElement).value).toContain(`/shared/${TOKEN}`)
     await m.findByText('Mum')
-    expect(m.getByText('Your links')).toBeTruthy()
+    expect(m.getByText('Your Links')).toBeTruthy()
   })
 
   it('ends a link on request', async () => {

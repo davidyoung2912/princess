@@ -10,7 +10,7 @@ import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { useNow, useSailing, usePersona } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
 import { programmeFollows } from '../../pilot/programme'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api, sendConcierge } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -131,7 +131,7 @@ export function AskScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.ask')}</h1>
+      <h1>{th('route.ask')}</h1>
       <p>{t('ask.intro')}</p>
       <p className="muted">{t('ask.promise')}</p>
       <form onSubmit={submit}>
@@ -146,7 +146,7 @@ export function AskScreen() {
 
       {proposal && (
         <Card labelledBy="ask-prop">
-          <h2 id="ask-prop" className="card__title">{t('ask.preview')}</h2>
+          <h2 id="ask-prop" className="card__title">{th('ask.preview')}</h2>
           <p><strong>{proposal.title}</strong></p>
           <p>{proposal.why}</p>
           <p className="muted">{t('ask.undoFor', { time: time(proposal.undoUntil) })}</p>
@@ -158,7 +158,7 @@ export function AskScreen() {
       )}
       {itemReq && (
         <Card labelledBy="ask-item">
-          <h2 id="ask-item" className="card__title">{t('ask.itemPreview')}</h2>
+          <h2 id="ask-item" className="card__title">{th('ask.itemPreview')}</h2>
           <p><strong>{t('ask.itemWhat', { qty: itemReq.qty, item: t(`req.i.${itemReq.id}` as StringKey) })}</strong></p>
           <p>{t('req.usually', { minutes: requestItem(itemReq.id)!.etaMin })}</p>
           <p className="muted">{t('ask.itemUndo')}</p>
@@ -170,7 +170,7 @@ export function AskScreen() {
       )}
       {excReq && (
         <Card labelledBy="ask-exc">
-          <h2 id="ask-exc" className="card__title">{t('ask.excPreview')}</h2>
+          <h2 id="ask-exc" className="card__title">{th('ask.excPreview')}</h2>
           <p><strong>{t('ask.excWhat', { name: excReq.name })}</strong></p>
           <p className="muted">{t('ask.excNote')}</p>
           <div className="button-row">

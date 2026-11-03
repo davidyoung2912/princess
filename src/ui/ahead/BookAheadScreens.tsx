@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -36,7 +36,7 @@ function Shows() {
   const shows = (program.data?.events ?? []).filter((e) => isTicketed(e.id))
   return (
     <section aria-labelledby="ahead-shows-h">
-      <h2 id="ahead-shows-h">{t('ahead.shows')}</h2>
+      <h2 id="ahead-shows-h">{th('ahead.shows')}</h2>
       <p>{t('ahead.showsBody')}</p>
       <div className="field">
         <label htmlFor="ahead-day">{t('ahead.day')}</label>
@@ -69,19 +69,19 @@ export function BookAheadScreen() {
   const suggested = GIFTS_FOR[occasion].map((id) => itemById(id)).filter((i) => !!i)
   return (
     <div className="page">
-      <h1>{t('route.ahead')}</h1>
+      <h1>{th('route.ahead')}</h1>
       <p>{t('ahead.intro')}</p>
       <p><Link to="/plan/cart">{t('route.cart')}</Link> · <Link to="/plan/prepay">{t('route.prepay')}</Link> · <Link to="/plan/clubs">{t('route.clubs')}</Link> · <Link to="/plan/upgrades">{t('route.upgrades')}</Link></p>
       <ChildNote />
       <Shows />
       <section aria-labelledby="ahead-spa-h">
-        <h2 id="ahead-spa-h">{t('ahead.spa')}</h2>
+        <h2 id="ahead-spa-h">{th('ahead.spa')}</h2>
         <p>{t('ahead.spaBody')}</p>
         <MyPicks groups={['spa', 'fitness']} />
         <ItemList items={[...itemsIn('spa'), ...itemsIn('fitness')]} />
       </section>
       <section aria-labelledby="ahead-gifts-h">
-        <h2 id="ahead-gifts-h">{t('ahead.gifts')}</h2>
+        <h2 id="ahead-gifts-h">{th('ahead.gifts')}</h2>
         <p>{t('ahead.giftsBody')}</p>
         <div className="field">
           <label htmlFor="ahead-occ">{t('ahead.occasion')}</label>
@@ -117,11 +117,11 @@ export function CartScreen() {
   const dropPick = useAction(async (id: string) => { await api.aboard.selections.remove(id); picks.retry() })
   return (
     <div className="page">
-      <h1>{t('route.cart')}</h1>
+      <h1>{th('route.cart')}</h1>
       <p>{t('cart.intro')}</p>
       <AheadError error={remove.error ?? dropPick.error} />
       <section aria-labelledby="cart-now-h">
-        <h2 id="cart-now-h">{t('cart.inBasket')}</h2>
+        <h2 id="cart-now-h">{th('cart.inBasket')}</h2>
         <Load state={exc}>
           {(v) => v.cart.length === 0 ? <p className="muted">{t('cart.noTours')}</p> : (
             <>
@@ -147,7 +147,7 @@ export function CartScreen() {
         </Load>
       </section>
       <section aria-labelledby="cart-saved-h">
-        <h2 id="cart-saved-h">{t('cart.savedTitle')}</h2>
+        <h2 id="cart-saved-h">{th('cart.savedTitle')}</h2>
         <Load state={saved}>
           {(keys) => keys.length === 0 ? <p className="muted">{t('cart.noSaved')}</p> : (
             <ul className="card-grid">
@@ -179,7 +179,7 @@ export function PrepayScreen() {
   const view = useMine(() => api.aboard.money.view())
   return (
     <div className="page">
-      <h1>{t('route.prepay')}</h1>
+      <h1>{th('route.prepay')}</h1>
       <p>{t('prepay.intro')}</p>
       <ChildNote />
       <Load state={view}>

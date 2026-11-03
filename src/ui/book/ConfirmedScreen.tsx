@@ -12,7 +12,7 @@ import { api } from '../../runtime'
 import { offersQuiet } from '../../domain/finishMore'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { isApiError } from '../../api/errors'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
@@ -30,14 +30,14 @@ export function ConfirmedScreen() {
   if (booking.status === 'error' && isApiError(booking.error) && booking.error.code === 'notFound' && !booking.data) {
     return (
       <div className="page">
-        <h1>{t('route.bookConfirmed')}</h1>
+        <h1>{th('route.bookConfirmed')}</h1>
         <Banner kind="warning" title={t('trip.notFound')} action={<LinkButton to="/me/trips" variant="secondary">{t('route.trips')}</LinkButton>}><p>{t('trip.notFoundBody')}</p></Banner>
       </div>
     )
   }
   return (
     <div className="page">
-      <h1>{t('route.bookConfirmed')}</h1>
+      <h1>{th('route.bookConfirmed')}</h1>
       <Load state={booking}>{(b) => <Confirmation b={b} />}</Load>
     </div>
   )
@@ -67,7 +67,7 @@ function Confirmation({ b }: { b: BookingView }) {
       </Card>
 
       <section aria-labelledby="sum-h">
-        <h2 id="sum-h">{t('book.done.summary')}</h2>
+        <h2 id="sum-h">{th('book.done.summary')}</h2>
         <dl className="summary">
           <div className="summary__row"><dt>{t('book.review.sailing')}</dt><dd>{formatDate(b.departure)} {t('book.done.to')} {formatDate(b.returnDate)}</dd></div>
           <div className="summary__row"><dt>{t('book.review.room')}</dt><dd>{b.categoryName}, {b.cabin ? t('book.cabin.number', { number: b.cabin }) : t('book.done.assigned')}</dd></div>
@@ -78,7 +78,7 @@ function Confirmation({ b }: { b: BookingView }) {
       </section>
 
       <section aria-labelledby="money-h">
-        <h2 id="money-h">{t('book.done.money')}</h2>
+        <h2 id="money-h">{th('book.done.money')}</h2>
         <p>{t('trip.total', { total: formatMoney(b.total) })} · {t('book.done.paidSoFar', { paid: formatMoney(b.paid) })}</p>
         {!cancelled && (b.balance > 0
           ? <Banner kind="info" title={t('book.done.balance', { balance: formatMoney(b.balance), date: formatDate(b.finalDue) })} action={<LinkButton to={`/book/pay/${b.number}`} variant="secondary">{t('trip.next.payDue.go')}</LinkButton>} />
@@ -95,7 +95,7 @@ function Confirmation({ b }: { b: BookingView }) {
 
       {!cancelled && (
         <section aria-labelledby="docs-h">
-          <h2 id="docs-h">{t('book.done.docs')}</h2>
+          <h2 id="docs-h">{th('book.done.docs')}</h2>
           <p>{t('book.done.sent')}</p>
           <ul className="plain-bullets">{b.notified.map((n) => <li key={n.via}>{t(`book.done.via.${n.via}` as StringKey, { to: n.to })}</li>)}</ul>
           <div className="button-row">
@@ -108,7 +108,7 @@ function Confirmation({ b }: { b: BookingView }) {
       )}
 
       <section aria-labelledby="acc-h">
-        <h2 id="acc-h">{t('book.done.accepted')}</h2>
+        <h2 id="acc-h">{th('book.done.accepted')}</h2>
         <ul className="plain-bullets">
           {b.accepted.map((a) => <li key={a.id}>{legalById(a.id)?.title} · {t('book.done.version', { version: a.version })} · {formatDateTime(a.at)}</li>)}
         </ul>

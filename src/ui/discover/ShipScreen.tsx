@@ -1,4 +1,4 @@
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { CATEGORIES, OTHER_SHIPS, SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Card } from '../Card'
@@ -18,7 +18,7 @@ export function ShipScreen() {
       <SaveShare kind="ship" id={SHIP.id} name={SHIP.name} favourites={favourites} />
 
       <Card info labelledBy="acc-h">
-        <h2 id="acc-h">{t('discover.accessibility')}</h2>
+        <h2 id="acc-h">{th('discover.accessibility')}</h2>
         <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
       </Card>
 
@@ -34,14 +34,14 @@ export function ShipScreen() {
       </dl>
 
       <section aria-labelledby="hl-h">
-        <h2 id="hl-h">{t('discover.onboard')}</h2>
+        <h2 id="hl-h">{th('discover.onboard')}</h2>
         <ul className="card-grid">
           {SHIP_HIGHLIGHTS.map((h) => <li key={h.title} className="card"><h3>{h.title}</h3><p>{h.body}</p></li>)}
         </ul>
       </section>
 
       <section aria-labelledby="rooms-h">
-        <h2 id="rooms-h">{t('discover.rooms')}</h2>
+        <h2 id="rooms-h">{th('discover.rooms')}</h2>
         <ul className="card-grid">
           {CATEGORIES.map((c) => (
             <li key={c.id} className="card">
@@ -55,7 +55,7 @@ export function ShipScreen() {
       </section>
 
       <section aria-labelledby="others-h">
-        <h2 id="others-h">{t('discover.otherShips')}</h2>
+        <h2 id="others-h">{th('discover.otherShips')}</h2>
         <p className="muted">{t('discover.otherShipsNote')}</p>
         <ul className="plain-list">
           {OTHER_SHIPS.map((s) => <li key={s.name}><span><strong>{s.name}</strong> · {s.entered} · {t('discover.guestsCount', { n: number.format(s.guests) })}</span><span className="muted">{s.note}</span></li>)}

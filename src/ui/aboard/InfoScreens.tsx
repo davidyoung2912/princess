@@ -17,7 +17,7 @@ import { coordinates, positionLine } from '../onboard/navigationText'
 import { screenHits } from '../../routes/screenWords'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -32,25 +32,25 @@ export function ShipInfoScreen() {
   const p = useFeed(positionFeed, sailing.departure, Math.floor(useNow() / 60_000) * 60_000)
   return (
     <div className="page">
-      <h1>{t('route.shipInfo')}</h1>
+      <h1>{th('route.shipInfo')}</h1>
       <Saved copy={today}>
         {(v) => {
           if (!v.aboard || v.day === null) return <Banner kind="info" title={t('info.notYet')}><p>{t('info.notYetBody')}</p></Banner>
           return (
             <>
               <Card hero labelledBy="capt-h">
-                <h2 id="capt-h" className="card__title">{t('info.captain')}</h2>
+                <h2 id="capt-h" className="card__title">{th('info.captain')}</h2>
                 <blockquote>{captainAnnouncement(v.day)}</blockquote>
                 <p className="muted">{t('info.captainNote')}</p>
               </Card>
               {v.weather && (
                 <Card labelledBy="wx-h">
-                  <h2 id="wx-h" className="card__title">{t('info.weather')}</h2>
+                  <h2 id="wx-h" className="card__title">{th('info.weather')}</h2>
                   <p>{t('onb.weather', { summary: v.weather.summary, high: formatTemp(v.weather.highF, settings.units), low: formatTemp(v.weather.lowF, settings.units) })} {v.weather.sea}</p>
                 </Card>
               )}
               <Card labelledBy="glance-h">
-                <h2 id="glance-h" className="card__title">{t('info.glance')}</h2>
+                <h2 id="glance-h" className="card__title">{th('info.glance')}</h2>
                 {p ? <GlanceBody p={p} units={settings.units} /> : <FeedWaiting />}
                 <p><Link to="/ship/where">{t('route.where')}</Link> · <Link to="/ship/sea">{t('route.sea')}</Link> · <Link to="/ship/along">{t('route.along')}</Link></p>
               </Card>
@@ -90,7 +90,7 @@ export function SearchScreen() {
   const enough = query.trim().length >= MIN_QUERY
   return (
     <div className="page">
-      <h1>{t('route.search')}</h1>
+      <h1>{th('route.search')}</h1>
       <form role="search" onSubmit={(e) => e.preventDefault()}>
         <Field label={t('search.label')} hint={t('search.hint')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" enterKeyHint="search" />
       </form>
@@ -98,7 +98,7 @@ export function SearchScreen() {
       {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p></Banner>}
       {!enough && recent.length > 0 && (
         <section aria-labelledby="recent-h">
-          <h2 id="recent-h">{t('search.recent')}</h2>
+          <h2 id="recent-h">{th('search.recent')}</h2>
           <ul className="link-list">{recent.map((r) => <li key={r.to}><Link to={r.to}>{r.title}</Link></li>)}</ul>
           <p><button type="button" className="link-button" onClick={forget}>{t('search.clearRecent')}</button></p>
         </section>

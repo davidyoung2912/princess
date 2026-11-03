@@ -10,7 +10,7 @@ import { accessWithNeeds } from '../../domain/bookingPrep'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -32,7 +32,7 @@ export function ProfileScreen() {
   if (id === null) {
     return (
       <div className="page">
-        <h1>{t('route.profile')}</h1>
+        <h1>{th('route.profile')}</h1>
         <Banner kind="warning" title={t('profile.notFound')} action={<LinkButton to="/me/profile" variant="secondary">{t('route.profile')}</LinkButton>} />
       </div>
     )
@@ -41,7 +41,7 @@ export function ProfileScreen() {
   const person = partyPeople(me?.id ?? '').find((x) => x.id === id)
   return (
     <div className="page">
-      <h1>{isSelf ? t('route.profile') : t('profile.titleFor', { name: person?.name ?? '' })}</h1>
+      <h1>{isSelf ? th('route.profile') : th('profile.titleFor', { name: person?.name ?? '' })}</h1>
       {!isSelf && <p><Link to="/me/profile">{t('profile.backToMine')}</Link></p>}
       <Load state={view}>
         {(v) => (
@@ -55,7 +55,7 @@ export function ProfileScreen() {
       <Load state={party}>
         {(list) => list.length > 1 && (
           <section aria-labelledby="party-h">
-            <h2 id="party-h">{t('profile.party')}</h2>
+            <h2 id="party-h">{th('profile.party')}</h2>
             <p className="muted">{t('profile.partyIntro')}</p>
             <ul className="plain-list">
               {list.map((p) => (
@@ -106,7 +106,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
             <p>{t('profile.name.body')}</p>
           </Banner>
         )}
-        <h2>{t('profile.details')}</h2>
+        <h2>{th('profile.details')}</h2>
         <Field label={t('profile.field.firstName')} value={p.firstName} onChange={(e) => set({ firstName: e.target.value })} error={err('firstName')} autoComplete="given-name" />
         <Field label={t('profile.field.lastName')} value={p.lastName} onChange={(e) => set({ lastName: e.target.value })} error={err('lastName')} hint={t('profile.nameHint')} autoComplete="family-name" />
         <Field label={t('profile.field.dob')} type="date" value={p.dob} onChange={(e) => set({ dob: e.target.value })} error={err('dob')} autoComplete="bday" />
@@ -120,7 +120,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
           <p className="field__hint">{t('profile.citizenshipHint')}</p>
         </fieldset>
 
-        <h2>{t('profile.preferences')}</h2>
+        <h2>{th('profile.preferences')}</h2>
         <fieldset>
           <legend>{t('profile.dietary')}</legend>
           {DIETARY.map((d: DietaryId) => <label key={d} className="choice"><input type="checkbox" checked={p.dietary.includes(d)} onChange={() => set({ dietary: toggle(p.dietary, d) })} /><span>{t(`profile.dietary.${d}` as StringKey)}</span></label>)}
@@ -138,7 +138,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
         </div>
         <TextArea label={t('profile.requests')} hint={t('profile.requestsHint')} value={p.specialRequests} maxLength={500} onChange={(e) => set({ specialRequests: e.target.value })} />
 
-        <h2>{t('profile.emergency')}</h2>
+        <h2>{th('profile.emergency')}</h2>
         <p className="muted">{t('profile.emergencyHint')}</p>
         <Field label={t('profile.field.emergencyName')} value={p.emergency.name} onChange={(e) => set({ emergency: { ...p.emergency, name: e.target.value } })} error={err('emergencyName')} />
         <Field label={t('profile.field.emergencyPhone')} type="tel" value={p.emergency.phone} onChange={(e) => set({ emergency: { ...p.emergency, phone: e.target.value } })} error={err('emergencyPhone')} />

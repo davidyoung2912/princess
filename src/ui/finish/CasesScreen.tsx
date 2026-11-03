@@ -5,7 +5,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -23,7 +23,7 @@ export function CasesScreen() {
   const view = useMine(() => api.cases.list(), [])
   return (
     <div className="page">
-      <h1>{t('route.cases')}</h1>
+      <h1>{th('route.cases')}</h1>
       <p>{t('case.intro')}</p>
       <Load state={view}>{(v) => <Cases v={v} reload={view.retry} />}</Load>
       <Human />
@@ -51,7 +51,7 @@ function Cases({ v, reload }: { v: CasesView; reload: () => void }) {
       {!v.canOpen && <Banner kind="info" title={t('case.closed')}><p>{t('case.closedBody')}</p></Banner>}
       {v.canOpen && (
         <Card hero labelledBy="case-new-h">
-          <h2 id="case-new-h" className="card__title">{t('case.new')}</h2>
+          <h2 id="case-new-h" className="card__title">{th('case.new')}</h2>
           <form onSubmit={(e) => { e.preventDefault(); if (!bad) void open.run() }}>
             <div className="field">
               <label htmlFor="case-kind">{t('case.kind')}</label>
@@ -72,7 +72,7 @@ function Cases({ v, reload }: { v: CasesView; reload: () => void }) {
         </Card>
       )}
       <section aria-labelledby="case-mine-h">
-        <h2 id="case-mine-h">{t('case.mine')}</h2>
+        <h2 id="case-mine-h">{th('case.mine')}</h2>
         {v.cases.length === 0 ? <p className="muted">{t('case.none')}</p> : <ul className="case-list">{v.cases.map((c) => <Case key={c.id} c={c} reload={reload} />)}</ul>}
       </section>
     </>
@@ -83,7 +83,7 @@ function Case({ c, reload }: { c: CaseView; reload: () => void }) {
   const withdraw = useAction(async () => { await api.cases.withdraw(c.id); reload() })
   return (
     <li className="case">
-      <h3 className="case__title">{t(`case.kind.${c.kind}` as StringKey)} · {c.number}</h3>
+      <h3 className="case__title">{th(`case.kind.${c.kind}` as StringKey)} · {c.number}</h3>
       <p role="status"><strong>{t(`case.stage.${c.stage}` as StringKey)}</strong>{c.stage !== 'resolved' && c.stage !== 'withdrawn' && <> · {t('case.due', { time: formatDateTime(c.dueAt) })}</>}</p>
       <p>{c.summary}</p>
       {c.place && <p className="muted">{t('case.lastSeen', { place: c.place })}</p>}

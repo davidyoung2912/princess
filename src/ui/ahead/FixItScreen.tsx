@@ -4,7 +4,7 @@ import { FIX_FLOWS, type FixFlow } from '../../domain/readiness'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { TextArea } from '../Field'
@@ -54,11 +54,11 @@ export function FixItScreen() {
   const cases = useMine(() => api.ahead.fix.list())
   return (
     <div className="page">
-      <h1>{t('route.fixIt')}</h1>
+      <h1>{th('route.fixIt')}</h1>
       <p>{t('fix.intro')}</p>
       <ChildNote />
       <ul className="card-grid">{FIX_FLOWS.map((f) => <li key={f.id}><Flow flow={f} reload={cases.retry} /></li>)}</ul>
-      <h2>{t('fix.yours')}</h2>
+      <h2>{th('fix.yours')}</h2>
       <Load state={cases}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('fix.none')}</p> : (
           <ul className="card-grid">

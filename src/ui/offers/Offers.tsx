@@ -8,7 +8,7 @@ import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useOffers } from '../../hooks/useOffers'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
@@ -30,7 +30,7 @@ function OfferItem({ offer, trip, onDismiss, ctx }: { offer: OfferDef; trip: str
   const id = `offer-${offer.id}-h`
   return (
     <Card labelledBy={id}>
-      <h3 id={id} className="card__title">{t(`offer.${offer.id}.title` as StringKey)}</h3>
+      <h3 id={id} className="card__title">{th(`offer.${offer.id}.title` as StringKey)}</h3>
       <p>{t(`offer.${offer.id}.body` as StringKey)}</p>
       <details className="explain">
         <summary>{t('offer.whyOpen')}<span className="visually-hidden"> {t(`offer.${offer.id}.title` as StringKey)}</span></summary>
@@ -58,7 +58,7 @@ export function HomeOfferCard() {
   if (cases.data && marketingPaused(cases.data.cases)) {
     return (
       <section aria-labelledby="home-offer-h">
-        <h2 id="home-offer-h" className="muted">{t('offer.paused')}</h2>
+        <h2 id="home-offer-h" className="muted">{th('offer.paused')}</h2>
         <p>{t('offer.pausedBody')} <Link to="/me/contact">{t('route.contact')}</Link></p>
       </section>
     )
@@ -67,7 +67,7 @@ export function HomeOfferCard() {
   if (!offer) return null
   return (
     <section aria-labelledby="home-offer-h">
-      <h2 id="home-offer-h" className="muted">{t('offer.homeHeading')}</h2>
+      <h2 id="home-offer-h" className="muted">{th('offer.homeHeading')}</h2>
       <OfferItem offer={offer} trip={trip.number} onDismiss={dismiss} ctx={ctx} />
       <p><Link to="/home/offers">{t('offer.allLink')}</Link></p>
     </section>
@@ -84,7 +84,7 @@ export function OffersScreen() {
   const aside = dismissedFor(ctx)
   return (
     <div className="page">
-      <h1>{t('route.offers')}</h1>
+      <h1>{th('route.offers')}</h1>
       <p>{t('offer.intro')}</p>
       <Load state={trips}>
         {() => !trip ? <p>{t('offer.noTrip')}</p> : (
@@ -97,7 +97,7 @@ export function OffersScreen() {
             )}
             {aside.length > 0 && (
               <section aria-labelledby="offer-aside-h">
-                <h2 id="offer-aside-h">{t('offer.aside')}</h2>
+                <h2 id="offer-aside-h">{th('offer.aside')}</h2>
                 <ul className="link-list">
                   {aside.map((o) => (
                     <li key={o.id}>{t(`offer.${o.id}.title` as StringKey)} <Button variant="secondary" onClick={() => restore(trip.number, o.id)}>{t('offer.restore')}</Button></li>

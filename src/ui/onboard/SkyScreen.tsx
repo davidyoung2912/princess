@@ -5,7 +5,7 @@ import { skyNightFeed } from '../../feeds/skyNight'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useSailing } from '../../hooks/useDemo'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
@@ -21,7 +21,7 @@ export function SkyScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{t('route.sky')}</h1>
+      <h1>{th('route.sky')}</h1>
       <p>{t('sky.intro')}</p>
       <Banner kind="info" title={t('sky.sim')} />
       <div className="field">
@@ -42,9 +42,9 @@ export function SkyScreen() {
         {n.sailAway && <p>{t(n.sailAwayAtSunset ? 'sky.sailAway' : 'sky.sailAwayPlain', { time: n.sailAway })}</p>}
       </Card>
       <Card labelledBy="sky-where">
-        <h2 id="sky-where" className="card__title">{t('sky.where')}</h2>
+        <h2 id="sky-where" className="card__title">{th('sky.where')}</h2>
         <p>{bestSpot(n)}</p>
-        <h3>{t('sky.stars')}</h3>
+        <h3>{th('sky.stars')}</h3>
         <ul className="plain-list">{n.stars.map((s) => <li key={s}>{s}</li>)}</ul>
       </Card>
       </>}

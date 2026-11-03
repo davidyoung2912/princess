@@ -3,7 +3,7 @@ import { addItem, addParty, balances, FAMILY_PROBLEM_KEY, ITEM_PROBLEM_KEY, form
 
 import { newPortId, usePort } from '../../hooks/usePort'
 import { useNow } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -56,12 +56,12 @@ export function SplitScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.split')}</h1>
+      <h1>{th('route.split')}</h1>
       <p>{t('split.intro')}</p>
       <Banner kind="info" title={t('split.noMoney')}><p>{t('split.noMoneyBody')}</p></Banner>
 
       <Card labelledBy="split-fam">
-        <h2 id="split-fam" className="card__title">{t('split.families')}</h2>
+        <h2 id="split-fam" className="card__title">{th('split.families')}</h2>
         <ul className="plain-bullets">{parties.map((p) => (
           <li key={p.id}>{t('split.family', { name: p.name, people: p.people })}{' '}
             {split.parties.some((x) => x.id === p.id) && <Button variant="tertiary" onClick={() => commit(removeParty(working, p.id))}>{t('split.removeFamily', { name: p.name })}</Button>}
@@ -77,7 +77,7 @@ export function SplitScreen() {
       </Card>
 
       <Card labelledBy="split-add">
-        <h2 id="split-add" className="card__title">{t('split.add')}</h2>
+        <h2 id="split-add" className="card__title">{th('split.add')}</h2>
         {parties.length < 2 ? <p>{t('split.needTwo')}</p> : (
           <form onSubmit={(e) => { e.preventDefault(); addShared() }}>
             <Field label={t('split.what')} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
@@ -104,7 +104,7 @@ export function SplitScreen() {
       </Card>
 
       <section aria-labelledby="split-list">
-        <h2 id="split-list">{t('split.items')}</h2>
+        <h2 id="split-list">{th('split.items')}</h2>
         {split.items.length === 0 ? <p>{t('split.noItems')}</p> : (
           <ul className="card-grid">
             {split.items.map((x) => (
@@ -120,12 +120,12 @@ export function SplitScreen() {
       </section>
 
       <Card labelledBy="split-settle">
-        <h2 id="split-settle" className="card__title">{t('split.settle')}</h2>
+        <h2 id="split-settle" className="card__title">{th('split.settle')}</h2>
         <p className="muted">{t('split.total', { amount: formatCents(totalShared(working)) })}</p>
         <ul className="plain-bullets">{parties.map((p) => <li key={p.id}>{bal[p.id] === 0 ? t('split.even', { name: p.name }) : bal[p.id] > 0 ? t('split.owed', { name: p.name, amount: formatCents(bal[p.id]) }) : t('split.owes', { name: p.name, amount: formatCents(-bal[p.id]) })}</li>)}</ul>
         {transfers.length === 0 ? <p role="status">{t('split.allEven')}</p> : (
           <>
-            <h3>{t('split.pay')}</h3>
+            <h3>{th('split.pay')}</h3>
             <ol className="plain-bullets">{transfers.map((x) => <li key={`${x.from}-${x.to}`}>{t('split.transfer', { from: names[x.from] ?? '', to: names[x.to] ?? '', amount: formatCents(x.cents) })}</li>)}</ol>
             <p className="muted">{t('split.outside')}</p>
           </>

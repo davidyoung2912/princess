@@ -6,7 +6,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 
 /** "What is this?" under a charge: a plain reason, and a way to question it (XT-02, S7-05). */
@@ -27,7 +27,7 @@ export function FeeLedgerCard({ lines }: { lines: readonly FolioLine[] }) {
   if (total === 0) return null
   return (
     <Card labelledBy="fees-h">
-      <h2 id="fees-h" className="card__title">{t('fees.title')}</h2>
+      <h2 id="fees-h" className="card__title">{th('fees.title')}</h2>
       <dl className="plain-dl">
         {rows.filter((r) => r.cents > 0).map((r) => <div key={r.id}><dt>{t(`fees.${r.id}` as StringKey)}</dt><dd>{formatMoney(r.cents)} · {r.percent}%</dd></div>)}
       </dl>
@@ -45,7 +45,7 @@ export function SpendCoachCard({ lines, throughDay }: { lines: readonly FolioLin
   const limit = me ? drinkLimitPerDay(computeEntitlements(sourceOf(me)).drinkCapUsd) : null
   return (
     <Card labelledBy="coach-h">
-      <h2 id="coach-h" className="card__title">{t('coach.title')}</h2>
+      <h2 id="coach-h" className="card__title">{th('coach.title')}</h2>
       {c.pace === 'notYet' ? <p>{t('coach.notYet')}</p> : (
         <>
           <p role="status">{t(`coach.pace.${c.pace}` as StringKey, { perDay: formatMoney(c.perDay), forecast: formatMoney(c.forecast), limit: formatMoney(c.limit ?? 0) })}</p>

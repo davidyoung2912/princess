@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { t, type StringKey } from '../i18n'
+import { t, th, type StringKey } from '../i18n'
 import { Banner } from './Banner'
 import { Button, LinkButton } from './Button'
 import { Card } from './Card'
@@ -44,18 +44,18 @@ export function Kit() {
 
   return (
     <div className="page">
-      <h1>{t('route.kit')}</h1>
+      <h1>{th('route.kit')}</h1>
       <p>{t('kit.intro')}</p>
 
-      <section aria-labelledby="kit-type"><h2 id="kit-type">{t('kit.type')}</h2>
+      <section aria-labelledby="kit-type"><h2 id="kit-type">{th('kit.type')}</h2>
         <Card hero labelledBy="kit-type-sample">
-          <h3 id="kit-type-sample">{t('kit.type.sample')}</h3>
+          <h3 id="kit-type-sample">{th('kit.type.sample')}</h3>
           <p>{t('kit.type.body')}</p>
           <p>{t('kit.type.numbers')}</p>
         </Card>
       </section>
 
-      <section aria-labelledby="kit-colour"><h2 id="kit-colour">{t('kit.colour')}</h2>
+      <section aria-labelledby="kit-colour"><h2 id="kit-colour">{th('kit.colour')}</h2>
         <ul className="swatches">
           <li className="swatch swatch--primary">{t('kit.colour.primary')}</li>
           <li className="swatch swatch--warm">{t('kit.colour.surfaceWarm')}</li>
@@ -67,7 +67,7 @@ export function Kit() {
         </ul>
       </section>
 
-      <section aria-labelledby="kit-buttons"><h2 id="kit-buttons">{t('kit.buttons')}</h2>
+      <section aria-labelledby="kit-buttons"><h2 id="kit-buttons">{th('kit.buttons')}</h2>
         <div className="stack">
           <Button>{t('kit.button.primary')}</Button>
           <Button variant="secondary">{t('kit.button.secondary')}</Button>
@@ -79,7 +79,7 @@ export function Kit() {
         </div>
       </section>
 
-      <section aria-labelledby="kit-banners"><h2 id="kit-banners">{t('kit.banners')}</h2>
+      <section aria-labelledby="kit-banners"><h2 id="kit-banners">{th('kit.banners')}</h2>
         <div className="stack">
           <Banner kind="info" title={t('kit.banner.info')} />
           <Banner kind="success" title={t('kit.banner.success')} />
@@ -89,16 +89,16 @@ export function Kit() {
         </div>
       </section>
 
-      <section aria-labelledby="kit-sync"><h2 id="kit-sync">{t('kit.sync')}</h2>
+      <section aria-labelledby="kit-sync"><h2 id="kit-sync">{th('kit.sync')}</h2>
         <SyncChip updated={SAMPLE_UPDATED} now={SAMPLE_NOW} state="live" timeZone="America/New_York" />
         <SyncChip updated={SAMPLE_UPDATED} now={SAMPLE_NOW} state="offline" timeZone="America/New_York" />
       </section>
 
-      <section aria-labelledby="kit-badges"><h2 id="kit-badges">{t('kit.badges')}</h2>
+      <section aria-labelledby="kit-badges"><h2 id="kit-badges">{th('kit.badges')}</h2>
         <p className="row">{BADGES.map((kind) => <StatusBadge key={kind} kind={kind} label={t(`kit.badge.${kind}` as StringKey)} />)}</p>
       </section>
 
-      <section aria-labelledby="kit-chips"><h2 id="kit-chips">{t('kit.chips')}</h2>
+      <section aria-labelledby="kit-chips"><h2 id="kit-chips">{th('kit.chips')}</h2>
         <p className="row">
           <Chip pressed={kids} onToggle={() => setKids(!kids)}>{t('kit.chip.kids')}</Chip>
           <Chip pressed={accessible} onToggle={() => setAccessible(!accessible)}>{t('kit.chip.accessible')}</Chip>
@@ -106,7 +106,7 @@ export function Kit() {
         </p>
       </section>
 
-      <section aria-labelledby="kit-form"><h2 id="kit-form">{t('kit.form')}</h2>
+      <section aria-labelledby="kit-form"><h2 id="kit-form">{th('kit.form')}</h2>
         <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }} noValidate>
           <ErrorSummary title={t('kit.form.summary')} errors={error ? [error] : []} />
           <Field label={t('kit.form.label')} hint={t('kit.form.hint')} error={error} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -115,21 +115,21 @@ export function Kit() {
         </form>
       </section>
 
-      <section aria-labelledby="kit-stepper"><h2 id="kit-stepper">{t('kit.stepper')}</h2>
+      <section aria-labelledby="kit-stepper"><h2 id="kit-stepper">{th('kit.stepper')}</h2>
         <Stepper steps={steps} label={t('kit.stepper.label')} />
       </section>
 
-      <section aria-labelledby="kit-timeline"><h2 id="kit-timeline">{t('kit.timeline')}</h2>
+      <section aria-labelledby="kit-timeline"><h2 id="kit-timeline">{th('kit.timeline')}</h2>
         <Timeline items={items} label={t('kit.timeline.label')} nowIndex={1} />
       </section>
 
-      <section aria-labelledby="kit-cards"><h2 id="kit-cards">{t('kit.cards')}</h2>
+      <section aria-labelledby="kit-cards"><h2 id="kit-cards">{th('kit.cards')}</h2>
         <Card><p>{t('kit.card.plain')}</p></Card>
         <Card hero><p>{t('kit.card.hero')}</p></Card>
         <Card info><p>{t('kit.card.info')}</p></Card>
       </section>
 
-      <section aria-labelledby="kit-dialog"><h2 id="kit-dialog">{t('kit.dialog')}</h2>
+      <section aria-labelledby="kit-dialog"><h2 id="kit-dialog">{th('kit.dialog')}</h2>
         <Button variant="secondary" onClick={() => setOpen(true)}>{t('kit.dialog.open')}</Button>
         {open && <Dialog title={t('kit.dialog.title')} onClose={() => setOpen(false)}><p>{t('kit.dialog.body')}</p></Dialog>}
       </section>

@@ -1,5 +1,6 @@
 import { en, type StringKey } from './locales/en'
 import { LANGUAGES } from './languages'
+import { titleCase } from './titleCase'
 
 type Raw = keyof typeof en
 
@@ -56,3 +57,9 @@ export function t(key: StringKey, params: Params = {}): string {
   }
   return fill(text ?? pick(key) ?? key, params)
 }
+
+/** The text for a key as a heading: Title Case in English, unchanged in other languages. */
+export const th = (key: StringKey, params: Params = {}): string => titleCase(t(key, params), locale)
+
+/** Already-translated heading text in Title Case (English only). */
+export const headingCase = (text: string): string => titleCase(text, locale)

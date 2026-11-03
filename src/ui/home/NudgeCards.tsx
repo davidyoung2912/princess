@@ -10,7 +10,7 @@ import { useMemory } from '../../hooks/useMemory'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { usePilot } from '../../hooks/usePilot'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 
 /**
@@ -39,7 +39,7 @@ export function NudgeCards({ aboard }: { aboard: boolean }) {
     <section aria-label={t('nudge.label')}>
       {list.map((n) => (
         <Card key={n.id} labelledBy={`nudge-${n.id}`}>
-          <h2 id={`nudge-${n.id}`} className="card__title">{t(`nudge.${n.id}.title` as StringKey, n.params)}</h2>
+          <h2 id={`nudge-${n.id}`} className="card__title">{th(`nudge.${n.id}.title` as StringKey, n.params)}</h2>
           <p><Link to={n.path}>{t(`nudge.${n.id}.link` as StringKey)}</Link></p>
         </Card>
       ))}

@@ -14,7 +14,7 @@ import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { dateIn } from '../../domain/timezones'
 import { useNow, usePersona } from '../../hooks/useDemo'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
@@ -40,12 +40,12 @@ export function PrivacyScreen() {
   const rules = regionRules(settings.region)
   return (
     <div className="page">
-      <h1>{t('route.privacy')}</h1>
+      <h1>{th('route.privacy')}</h1>
       <p>{t('priv.intro')}</p>
       {!view.data ? (view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : (
         <>
           <Card labelledBy="priv-keep-h">
-            <h2 id="priv-keep-h" className="card__title">{t('priv.keep')}</h2>
+            <h2 id="priv-keep-h" className="card__title">{th('priv.keep')}</h2>
             <p className="muted">{t('priv.cruiseEnds', { date: formatDate(view.data.cruiseEnds) })}</p>
             <ul className="plain-bullets">
               {RETENTION.map((r) => {
@@ -57,12 +57,12 @@ export function PrivacyScreen() {
           </Card>
 
           <Card labelledBy="priv-tips-h">
-            <h2 id="priv-tips-h" className="card__title">{t('priv.tips.title')}</h2>
+            <h2 id="priv-tips-h" className="card__title">{th('priv.tips.title')}</h2>
             <p>{t('priv.tips.body')}</p>
           </Card>
 
           <Card labelledBy="priv-region-h">
-            <h2 id="priv-region-h" className="card__title">{t('priv.region.title', { region: t(`settings.region.${settings.region}` as StringKey) })}</h2>
+            <h2 id="priv-region-h" className="card__title">{th('priv.region.title', { region: th(`settings.region.${settings.region}` as StringKey) })}</h2>
             <p>{t(`priv.region.law.${settings.region}` as StringKey)}</p>
             <ul className="plain-bullets">
               {rules.rights.map((r) => <li key={r}>{t(`priv.right.${r}` as StringKey)}</li>)}
@@ -71,7 +71,7 @@ export function PrivacyScreen() {
           </Card>
 
           <Card labelledBy="priv-keep-private-h">
-            <h2 id="priv-keep-private-h" className="card__title">{t('priv.keep.title')}</h2>
+            <h2 id="priv-keep-private-h" className="card__title">{th('priv.keep.title')}</h2>
             <p>{t('priv.keep.body')}</p>
             <p>{t('priv.keep.who')}</p>
             <label className="choice"><input type="checkbox" checked={settings.syncPrivate} disabled={keep.busy} onChange={(e) => void keep.run(e.target.checked).then((done) => setKeepPending(done === false))} /><span>{t('priv.keep.label')}<small>{t('priv.keep.off')}</small></span></label>
@@ -79,18 +79,18 @@ export function PrivacyScreen() {
           </Card>
 
           <section aria-labelledby="priv-consent-h">
-            <h2 id="priv-consent-h">{t('priv.consents')}</h2>
+            <h2 id="priv-consent-h">{th('priv.consents')}</h2>
             <ActionError error={set.error} forbidden="priv.err.forbidden" />
             {view.data.people.map((p) => <Person key={p.id} p={p} busy={set.busy} onChange={(c, on) => void set.run(p.id, c, on)} region={settings.region} />)}
           </section>
 
           <Card labelledBy="priv-storage-h">
-            <h2 id="priv-storage-h" className="card__title">{t('priv.storage')}</h2>
+            <h2 id="priv-storage-h" className="card__title">{th('priv.storage')}</h2>
             <p>{t('priv.storageBody')}</p>
           </Card>
 
           <section aria-labelledby="priv-rules-h">
-            <h2 id="priv-rules-h">{t('priv.rules')}</h2>
+            <h2 id="priv-rules-h">{th('priv.rules')}</h2>
             <p>{t('priv.rulesBody')}</p>
             <ul className="card-grid">
               {DATA_RULES.map((r) => (
@@ -110,7 +110,7 @@ export function PrivacyScreen() {
           </section>
 
           <section aria-labelledby="priv-access-h">
-            <h2 id="priv-access-h">{t('priv.access')}</h2>
+            <h2 id="priv-access-h">{th('priv.access')}</h2>
             <p>{t('priv.accessBody')}</p>
             {view.data.access.length === 0 ? <p className="muted">{t('priv.accessNone')}</p> : (
               <ul className="plain-bullets">
@@ -120,7 +120,7 @@ export function PrivacyScreen() {
           </section>
 
           <Card labelledBy="priv-delete-h">
-            <h2 id="priv-delete-h" className="card__title">{t('priv.delete')}</h2>
+            <h2 id="priv-delete-h" className="card__title">{th('priv.delete')}</h2>
             <p>{t('priv.deleteBody')}</p>
             <p>{t('priv.deleteExplain')}</p>
             <ActionError error={exporting.error} />

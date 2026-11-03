@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { difficultyConcerns } from '../../domain/planning'
 import { useMemory } from '../../hooks/useMemory'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Chip } from '../Chip'
@@ -32,7 +32,7 @@ export function ExcursionsScreen() {
   const view = useMine(() => api.plan.excursions.list())
   return (
     <div className="page">
-      <h1>{t('route.excursions')}</h1>
+      <h1>{th('route.excursions')}</h1>
       <p>{t('exc.intro')}</p>
       <AccessAreaNote area="excursions" />
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
@@ -73,7 +73,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
 
       {view.cart.length > 0 && (
         <section aria-labelledby="cart-h">
-          <h2 id="cart-h">{t('exc.cart')}</h2>
+          <h2 id="cart-h">{th('exc.cart')}</h2>
           <ul className="plain-list">
             {view.cart.map((l) => {
               const o = offerOf(l.excursionId)
@@ -97,7 +97,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
       )}
 
       <section aria-labelledby="mine-h">
-        <h2 id="mine-h">{t('exc.booked')}</h2>
+        <h2 id="mine-h">{th('exc.booked')}</h2>
         {active.length === 0 ? <p className="muted">{t('exc.none')}</p> : (
           <ul className="card-grid">
             {active.map((b) => {
@@ -125,14 +125,14 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
         )}
         {past.length > 0 && (
           <>
-            <h3>{t('exc.cancelled')}</h3>
+            <h3>{th('exc.cancelled')}</h3>
             <ul className="plain-list">{past.map((b) => <li key={b.id}><span>{offerOf(b.excursionId).item.name}</span><span className="muted">{b.cancel.fee > 0 ? t('exc.feeKept', { fee: formatMoney(b.cancel.fee) }) : t('exc.refunded', { amount: formatMoney(b.cancel.refund) })}</span></li>)}</ul>
           </>
         )}
       </section>
 
       <section aria-labelledby="cat-h">
-        <h2 id="cat-h">{t('exc.catalogue')}</h2>
+        <h2 id="cat-h">{th('exc.catalogue')}</h2>
         <div className="filters">
           <div className="field">
             <label htmlFor="f-port">{t('exc.f.port')}</label>

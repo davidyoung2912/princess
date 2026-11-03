@@ -11,7 +11,7 @@ import { useAction } from '../../hooks/useAction'
 import { useDemo, useNow } from '../../hooks/useDemo'
 import { useHub } from '../../hooks/useHub'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -29,7 +29,7 @@ export function DisruptionHubScreen() {
   const updates = useMine(() => api.updates.list())
   return (
     <div className="page">
-      <h1>{t('route.disruption')}</h1>
+      <h1>{th('route.disruption')}</h1>
       <p>{t('hub.intro')}</p>
       {demo.network.offline && (
         <Banner kind="offline" title={t('hub.outage.title')}>
@@ -68,22 +68,22 @@ function HubCard({ id, view, onChanged }: { id: ScenarioId; view: { ack: { optio
   const chosen = def.options.find((o) => o.id === view.ack?.option)
   return (
     <Card labelledBy={`hub-${def.id}`}>
-      <h2 id={`hub-${def.id}`} className="card__title">{t(def.title)}</h2>
+      <h2 id={`hub-${def.id}`} className="card__title">{th(def.title)}</h2>
       <p><StatusBadge kind={def.severity === 'info' ? 'ready' : 'changed'} label={t(`disrupt.sev.${def.severity}` as StringKey)} /></p>
-      <h3>{t('hub.meaning')}</h3>
+      <h3>{th('hub.meaning')}</h3>
       <p>{t(hub.meaning)}</p>
-      <h3>{t('hub.done')}</h3>
+      <h3>{th('hub.done')}</h3>
       <ul>{hub.done.map((k) => <li key={k}>{t(k)}</li>)}</ul>
       {hub.knockOns.length > 0 && (
         <>
-          <h3>{t('hub.knock')}</h3>
+          <h3>{th('hub.knock')}</h3>
           <p className="muted">{t('hub.knock.summary', { refunded: counts.refunded, moved: counts.moved, cancelled: counts.cancelled, kept: counts.kept })}</p>
           <ul className="plain-list">
             {hub.knockOns.map((k) => <li key={k.id}><span>{t(k.item)}<small className="muted"> · {t(k.detail)}</small></span><StatusBadge kind={k.outcome === 'kept' ? 'ready' : 'changed'} label={t(`hub.outcome.${k.outcome}` as StringKey)} /></li>)}
           </ul>
         </>
       )}
-      <h3>{t('hub.comp')}</h3>
+      <h3>{th('hub.comp')}</h3>
       {hub.compensation ? (
         <ul>
           <li><strong>{t('hub.comp.given')}</strong> {t(hub.compensation.given)}</li>
@@ -91,10 +91,10 @@ function HubCard({ id, view, onChanged }: { id: ScenarioId; view: { ack: { optio
           <li><strong>{t('hub.comp.todo')}</strong> {t(hub.compensation.todo)}</li>
         </ul>
       ) : <p>{t('hub.comp.none')}</p>}
-      <h3>{t('hub.next')}</h3>
+      <h3>{th('hub.next')}</h3>
       <p>{t(hub.next)}</p>
       {def.link && <p><Link to={def.link}>{t('disrupt.see')}</Link></p>}
-      <h3>{t('hub.choose')}</h3>
+      <h3>{th('hub.choose')}</h3>
       <ActionError error={ack.error} />
       {view.ack ? (
         <p role="status">{t('disrupt.recorded', { choice: chosen ? t(chosen.label) : '', time: shipTime(view.ack.at), date: formatDate(new Date(view.ack.at).toISOString().slice(0, 10)) })}</p>
@@ -130,7 +130,7 @@ function Callback() {
   }
   return (
     <section aria-labelledby="hub-cb-h">
-      <h2 id="hub-cb-h">{t('hub.cb.title')}</h2>
+      <h2 id="hub-cb-h">{th('hub.cb.title')}</h2>
       <Card>
         <p>{t('hub.cb.intro')}</p>
         <p><strong>{t('hub.cb.number', { number: GUEST_SERVICES_NUMBER })}</strong></p>
@@ -169,10 +169,10 @@ function Debriefs({ ended }: { ended: string[] }) {
   const rate = (id: (typeof waiting)[number], rating: Rating) => { update((s) => ({ ...s, debriefs: addDebrief(s.debriefs, id, rating, note, now) })); setNote('') }
   return (
     <section aria-labelledby="hub-db-h">
-      <h2 id="hub-db-h">{t('hub.debrief.title')}</h2>
+      <h2 id="hub-db-h">{th('hub.debrief.title')}</h2>
       {waiting.map((id) => (
         <Card key={id} labelledBy={`db-${id}`}>
-          <h3 id={`db-${id}`}>{t(disruptionById(id)!.title)}</h3>
+          <h3 id={`db-${id}`}>{th(disruptionById(id)!.title)}</h3>
           <p>{t('hub.debrief.ask')}</p>
           <TextArea label={t('hub.debrief.note')} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />
           <div className="button-row" role="group" aria-label={t('hub.debrief.ask')}>
@@ -192,10 +192,10 @@ function Guides() {
   const scenarios = useDemo().scenarios
   return (
     <section aria-labelledby="hub-guides-h">
-      <h2 id="hub-guides-h">{t('hub.guides')}</h2>
+      <h2 id="hub-guides-h">{th('hub.guides')}</h2>
       {orderedGuides(scenarios).map((g) => (
         <Card key={g.id} labelledBy={`g-${g.id}`}>
-          <h3 id={`g-${g.id}`} className="card__title">{t(g.title)}</h3>
+          <h3 id={`g-${g.id}`} className="card__title">{th(g.title)}</h3>
           <ol>{g.steps.map((k) => <li key={k}>{t(k)}</li>)}</ol>
           {g.link && <p><Link to={g.link}>{t('hub.guide.open')}</Link></p>}
         </Card>
@@ -207,7 +207,7 @@ function Guides() {
 function Contacts() {
   return (
     <section aria-labelledby="hub-human-h">
-      <h2 id="hub-human-h">{t('hub.human')}</h2>
+      <h2 id="hub-human-h">{th('hub.human')}</h2>
       <p>{t('hub.human.body', { desk: GUEST_SERVICES_NUMBER, emergency: EMERGENCY_NUMBER })}</p>
       <p><Link to="/home/delayed">{t('route.delayed')}</Link> · <Link to="/plan/family-link">{t('route.familyLink')}</Link> · <Link to="/me/contact">{t('route.contact')}</Link> · <Link to="/home/updates">{t('route.updates')}</Link></p>
     </section>

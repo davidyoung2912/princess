@@ -22,7 +22,7 @@ describe('clear-to-use sentences (N7)', () => {
 
   it('cabin pictures: states that a picture is checked first, that yours are always yours, and that the guest must say they stayed', () => {
     const html = render(<CabinPhotos category="balcony" />)
-    expect(html).toContain('Pictures of this room type: Deluxe Balcony')
+    expect(html).toContain('Pictures of This Room Type: Deluxe Balcony')
     expect(html).toContain('A picture is checked before anyone else can see it')
     expect(html).toContain('may not show other guests’ pictures yet')
     expect(html).toContain('delete them whenever you like')

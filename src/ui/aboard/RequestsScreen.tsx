@@ -6,7 +6,7 @@ import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
 import { useShipTime } from '../onboard/shipTime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
@@ -30,12 +30,12 @@ export function RequestsScreen() {
   const cancel = useAction(async (id: string) => { await api.aboard.requests.cancel(id); list.retry() })
   return (
     <div className="page">
-      <h1>{t('route.requests')}</h1>
+      <h1>{th('route.requests')}</h1>
       <p>{t('req.intro')}</p>
       <ChildNote />
       <AboardError error={ask.error ?? cancel.error} />
       <section aria-labelledby="req-quick">
-        <h2 id="req-quick">{t('req.quick')}</h2>
+        <h2 id="req-quick">{th('req.quick')}</h2>
         <p className="muted">{t('req.quickHint')}</p>
         <div className="button-row">
           {QUICK_REQUESTS.map((id) => <Button key={id} disabled={ask.busy || !!me?.child} onClick={() => void ask.run(id)}>{t(`req.i.${id}` as StringKey)}</Button>)}
@@ -48,12 +48,12 @@ export function RequestsScreen() {
       </section>
       {GROUPS.map((g) => (
         <section key={g} aria-labelledby={`req-${g}`}>
-          <h2 id={`req-${g}`}>{t(`req.g.${g}` as StringKey)}</h2>
+          <h2 id={`req-${g}`}>{th(`req.g.${g}` as StringKey)}</h2>
           <ul className="card-grid">
             {REQUEST_ITEMS.filter((i) => i.group === g).map((i) => (
               <li key={i.id}>
                 <Card>
-                  <h3 className="card__title">{t(`req.i.${i.id}` as StringKey)}</h3>
+                  <h3 className="card__title">{th(`req.i.${i.id}` as StringKey)}</h3>
                   <p className="muted">{t('req.usually', { minutes: i.etaMin })}</p>
                   {i.maxQty > 1 && (
                     <div className="field">
@@ -70,14 +70,14 @@ export function RequestsScreen() {
           </ul>
         </section>
       ))}
-      <h2>{t('req.yours')}</h2>
+      <h2>{th('req.yours')}</h2>
       <Load state={list}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('req.none')}</p> : (
           <ul className="card-grid">
             {rows.map((r) => (
               <li key={r.id}>
                 <Card>
-                  <h3 className="card__title">{r.qty > 1 ? `${r.qty} × ` : ''}{t(`req.i.${r.item}` as StringKey)}</h3>
+                  <h3 className="card__title">{r.qty > 1 ? `${r.qty} × ` : ''}{th(`req.i.${r.item}` as StringKey)}</h3>
                   <p><StatusBadge kind={r.stage === 'done' ? 'booked' : r.stage === 'cancelled' ? 'cancelled' : r.stage === 'onTheWay' ? 'ready' : 'waitlist'} label={t(`req.s.${r.stage}` as StringKey)} /></p>
                   <p className="muted">{r.stage === 'done' || r.stage === 'cancelled' ? t('req.asked', { time: shipTime(r.placedAt) }) : t('req.eta', { time: shipTime(Math.max(r.etaAt, now)) })}</p>
                   {r.canCancel && <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run(r.id)}>{t('req.cancel')}</Button>}

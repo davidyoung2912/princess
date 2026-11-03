@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placeById, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
@@ -29,7 +29,7 @@ export function DeckMapScreen() {
   const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
   return (
     <div className="page">
-      <h1>{t('route.deckMap')}</h1>
+      <h1>{th('route.deckMap')}</h1>
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />
@@ -55,14 +55,14 @@ export function DeckMapScreen() {
 
       {query.trim() !== '' && (
         <section aria-labelledby="found-h">
-          <h2 id="found-h">{t('map.results')}</h2>
+          <h2 id="found-h">{th('map.results')}</h2>
           <p role="status">{t('map.found', { count: found.length })}</p>
           <ul className="plain-bullets">{found.map((p) => <li key={p.id}><PlaceLine p={p} /></li>)}</ul>
         </section>
       )}
 
       <section aria-labelledby="deck-h">
-        <h2 id="deck-h">{t('map.deck', { deck })}</h2>
+        <h2 id="deck-h">{th('map.deck', { deck })}</h2>
         <div className="chip-row" role="group" aria-label={t('map.pickDeck')}>
           {DECKS.map((d) => <Chip key={d} pressed={d === deck} onToggle={() => setDeck(d)}>{t('map.deckShort', { deck: d })}</Chip>)}
         </div>
@@ -90,9 +90,9 @@ export function DeckMapScreen() {
       </section>
 
       <Card labelledBy="legend-h">
-        <h2 id="legend-h" className="card__title">{t('map.legend')}</h2>
+        <h2 id="legend-h" className="card__title">{th('map.legend')}</h2>
         <p>{t('map.legendLifts')}</p>
-        <h3>{t('map.muster')}</h3>
+        <h3>{th('map.muster')}</h3>
         <ul className="plain-bullets">{Object.values(MUSTER_STATIONS).map((m) => <li key={m.letter}><strong>{t('map.station', { letter: m.letter })}</strong>: {m.name}, {t('map.deckShort', { deck: m.deck })}</li>)}</ul>
         <p className="muted">{t('map.accessibleNote')}</p>
       </Card>

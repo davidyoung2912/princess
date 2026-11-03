@@ -4,7 +4,7 @@ import type { GuestDocumentsView } from '../../api/types'
 import { isWithParents, papersCheck, WITH_PARENTS, type WithParents } from '../../domain/papersCheck'
 import { formatDate } from '../../domain/cruise'
 import { passportValidUntil } from '../../domain/documents'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Field } from '../Field'
 import { StatusBadge } from '../StatusBadge'
 
@@ -16,7 +16,7 @@ export function PapersCheck({ guest, returnDate }: { guest: GuestDocumentsView; 
   const id = `pc-${guest.id}`
   return (
     <section aria-labelledby={`${id}-h`}>
-      <h3 id={`${id}-h`}>{t('papers.title')}</h3>
+      <h3 id={`${id}-h`}>{th('papers.title')}</h3>
       <p className="muted">{t('papers.intro')}</p>
       <Field label={t('papers.passportName', { name: guest.name })} hint={t('papers.passportHint')} value={passportName} autoComplete="off" onChange={(e) => setPassportName(e.target.value)} />
       {guest.age < 18 && (

@@ -5,7 +5,7 @@ import { useMine } from '../../hooks/useMine'
 import { setBadge } from '../../push/browser'
 import { feedUrl, webcalUrl, type PushLogEntry } from '../../push/push'
 import { API_URL, api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -58,7 +58,7 @@ export function DeliveryLog() {
   useEffect(() => { if (unread > 0) void api.push.markRead().then((s) => setBadge(s.unread)).catch(() => undefined) }, [unread])
   return (
     <section aria-labelledby="pushlog-h">
-      <h2 id="pushlog-h">{t('push.log.title')}</h2>
+      <h2 id="pushlog-h">{th('push.log.title')}</h2>
       <p>{t('push.log.intro')}</p>
       <Load state={log}>
         {(s) => (s.log.length === 0
@@ -79,7 +79,7 @@ export function CalendarFeed() {
   const url = path ? feedUrl(API_URL, window.location.origin, path) : null
   return (
     <section aria-labelledby="cal-h">
-      <h2 id="cal-h">{t('cal.title')}</h2>
+      <h2 id="cal-h">{th('cal.title')}</h2>
       <p>{t('cal.intro')}</p>
       <Load state={feed}>
         {(f) => (

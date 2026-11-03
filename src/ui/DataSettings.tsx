@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { t, type StringKey } from '../i18n'
+import { t, th, type StringKey } from '../i18n'
 import { resetDemoData, wipeAll } from '../runtime'
 import { Banner } from './Banner'
 import { Button } from './Button'
@@ -24,7 +24,7 @@ export function DataSettings() {
 
   return (
     <Card labelledBy="data-h">
-      <h2 id="data-h">{t('data.title')}</h2>
+      <h2 id="data-h">{th('data.title')}</h2>
       <p>{t('data.intro')}</p>
       {message && <Banner kind={message.kind} title={message.text} />}
       <div className="stack">

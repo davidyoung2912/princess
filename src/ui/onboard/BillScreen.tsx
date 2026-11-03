@@ -11,7 +11,7 @@ import { itinerary } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { SupervisedNote } from '../account/parts'
@@ -26,7 +26,7 @@ export function BillScreen() {
   const copy = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.bill')}</h1>
+      <h1>{th('route.bill')}</h1>
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : <Saved copy={copy}>{(f) => <Folio f={f} />}</Saved>}
       <BackLink to="/me" label={t('route.me')} />
     </div>
@@ -45,7 +45,7 @@ function Folio({ f }: { f: FolioView }) {
   return (
     <>
       <Card hero labelledBy="total-h">
-        <h2 id="total-h" className="card__title">{t('bill.total')}</h2>
+        <h2 id="total-h" className="card__title">{th('bill.total')}</h2>
         <p className="bill__big">{total.balance < 0 ? t('bill.credit', { amount: formatMoney(-total.balance) }) : formatMoney(total.balance)}</p>
         <dl className="plain-dl">
           <div><dt>{t('bill.charges')}</dt><dd>{formatMoney(total.charges)}</dd></div>
@@ -64,7 +64,7 @@ function Folio({ f }: { f: FolioView }) {
       <p><Link to="/me/ledger">{t('route.ledger')}</Link></p>
 
       <section aria-labelledby="lines-h">
-        <h2 id="lines-h">{t('bill.lines')}</h2>
+        <h2 id="lines-h">{th('bill.lines')}</h2>
         <div className="field">
           <label htmlFor="bill-q">{t('bill.search')}</label>
           <input id="bill-q" type="search" className="field__input" value={filter.query} onChange={(e) => set({ query: e.target.value })} />

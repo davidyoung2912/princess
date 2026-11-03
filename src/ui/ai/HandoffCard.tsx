@@ -7,7 +7,7 @@ import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, type HandoffParts 
 import { useAction } from '../../hooks/useAction'
 import { useSailing, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -32,7 +32,7 @@ export function HandoffCard({ messages }: { messages: readonly ChatMessage[] }) 
   if (!hasMessage(topic)) {
     return (
       <Card labelledBy="ai-hand-h">
-        <h2 id="ai-hand-h" className="card__title">{t('ai.handoffCard')}</h2>
+        <h2 id="ai-hand-h" className="card__title">{th('ai.handoffCard')}</h2>
         <p>{t('handoff.emergency', { emergency: EMERGENCY_NUMBER })}</p>
       </Card>
     )
@@ -43,7 +43,7 @@ export function HandoffCard({ messages }: { messages: readonly ChatMessage[] }) 
   const toggle = (k: keyof HandoffParts) => { setParts((p) => ({ ...p, [k]: !p[k] })); setEdited(null) }
   return (
     <Card labelledBy="ai-hand-h">
-      <h2 id="ai-hand-h" className="card__title">{t('ai.handoffCard')}</h2>
+      <h2 id="ai-hand-h" className="card__title">{th('ai.handoffCard')}</h2>
       <p>{t('handoff.body')}</p>
       <fieldset className="plain-fieldset">
         <legend>{t('handoff.include')}</legend>

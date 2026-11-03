@@ -25,7 +25,7 @@ describe('text help (N5.6)', () => {
     const html = renderToString(<MemoryRouter initialEntries={['/ship/text-help']}><AppRoutes /></MemoryRouter>)
     expect(html).toContain('is not an alarm')
     expect(html.indexOf('tel:')).toBeLessThan(html.indexOf('<form'))
-    expect(html).toContain('Interpreter times')
+    expect(html).toContain('Interpreter Times')
     expect(html).toContain('Stage show with sign-language interpreter')
   })
 })

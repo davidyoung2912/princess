@@ -3,7 +3,7 @@ import { PHONE_STEPS, roamingMoment } from '../../domain/phoneSetup'
 import { stageAt } from '../../domain/sailings'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePhoneSetup } from '../../hooks/usePhoneSetup'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
@@ -14,11 +14,11 @@ export function PhoneScreen() {
   const moment = roamingMoment(stageAt(useSailing(), useNow()))
   return (
     <div className="page">
-      <h1>{t('route.phone')}</h1>
+      <h1>{th('route.phone')}</h1>
       <p>{t('phone.intro')}</p>
       {moment !== 'none' && <Banner kind="warning" title={t(`phone.moment.${moment}` as StringKey)}><p>{t(`phone.moment.${moment}.body` as StringKey)}</p></Banner>}
       <Card labelledBy="phone-steps-h">
-        <h2 id="phone-steps-h" className="card__title">{t('phone.steps')}</h2>
+        <h2 id="phone-steps-h" className="card__title">{th('phone.steps')}</h2>
         <p role="status" className="muted">{t('phone.progress', { done: done.length, total: PHONE_STEPS.length })}</p>
         <ul className="plain-list">
           {PHONE_STEPS.map((s) => (

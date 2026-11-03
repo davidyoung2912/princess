@@ -4,7 +4,7 @@ import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
@@ -17,7 +17,7 @@ export function HistoryScreen() {
   const view = useMine(() => api.post.history(), [])
   return (
     <div className="page">
-      <h1>{t('route.history')}</h1>
+      <h1>{th('route.history')}</h1>
       <p>{t('hist.intro')}</p>
       <Load state={view}>{(v) => <History v={v} />}</Load>
       <BackLink to="/me" label={t('route.me')} />
@@ -51,7 +51,7 @@ function Trip({ trip }: { trip: HistoryTrip }) {
       {trip.fareCents !== null && <p>{t('hist.fare', { amount: formatMoney(trip.fareCents) })}</p>}
       {trip.documents.length > 0 && (
         <>
-          <h3>{t('hist.docs')}</h3>
+          <h3>{th('hist.docs')}</h3>
           <ul className="plain-bullets">{trip.documents.map((d) => <li key={d.id}>{t(`hist.doc.${d.id}` as StringKey)}</li>)}</ul>
           <p>{trip.current ? <Link to="/me/bill/final">{t('route.finalBill')}</Link> : <Link to="/me/contact">{t('hist.ask')}</Link>}</p>
         </>

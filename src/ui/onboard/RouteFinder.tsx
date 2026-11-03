@@ -5,7 +5,7 @@ import { cabinPlace, locate } from '../../domain/deckGraph'
 import { decksOf, lineOnDeck } from '../../domain/deckPlan'
 import { routeBetween, type RouteStep } from '../../domain/route'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Card } from '../Card'
 import { Button } from '../Button'
@@ -44,7 +44,7 @@ export function RouteFinder() {
   const route = result && result.ok ? { a: locate(from)!, b: locate(to)! } : null
   return (
     <Card labelledBy="route-h">
-      <h2 id="route-h" className="card__title">{t('rt.title')}</h2>
+      <h2 id="route-h" className="card__title">{th('rt.title')}</h2>
       <p>{t('rt.intro')}</p>
       <div className="field">
         <label htmlFor="rt-from">{t('rt.from')}</label>
@@ -59,7 +59,7 @@ export function RouteFinder() {
       <div role="status" aria-live="polite">
         {result === null ? <p className="muted">{t('rt.pick')}</p> : result.ok ? (
           <>
-            <h3>{t('rt.how', { minutes: result.minutes })}</h3>
+            <h3>{th('rt.how', { minutes: result.minutes })}</h3>
             <ol>{result.steps.map((s, i) => <li key={i}>{stepText(s)}</li>)}</ol>
             {!result.stepFree && <p className="muted">{t('rt.hasSteps')}</p>}
             {route && decksOf(result.way, route.a, route.b).map((d) => <DeckPlan key={d} deck={d} line={lineOnDeck(result.way, route.a, route.b, d)} />)}

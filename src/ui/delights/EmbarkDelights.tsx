@@ -14,7 +14,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSettings } from '../../hooks/useSettings'
 import { useTrip } from '../../hooks/useTrip'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
@@ -28,7 +28,7 @@ export function TrafficLightCard({ status, at, kind, time }: { status: 'onTrack'
   const light = lightFor(status)
   return (
     <section className={`traffic traffic--${light}`} aria-labelledby="dl6-light-h">
-      <h2 id="dl6-light-h" className="traffic__word"><span aria-hidden="true">{LIGHT_SHAPE[light]}</span> {t(`dl6.light.${light}` as StringKey)}</h2>
+      <h2 id="dl6-light-h" className="traffic__word"><span aria-hidden="true">{LIGHT_SHAPE[light]}</span> {th(`dl6.light.${light}` as StringKey)}</h2>
       <p className="traffic__time" role="status">{t(kind === 'leave' ? 'dl6.light.leaveBy' : 'dl6.light.atTerminal', { time: time(at) })}</p>
     </section>
   )
@@ -40,7 +40,7 @@ export function DriverCardView({ terminal }: { terminal: string }) {
   const card = driverCard(lang, { terminal, address: PORT_FACTS.address })
   return (
     <Card labelledBy="dl6-driver-h">
-      <h2 id="dl6-driver-h" className="card__title">{t('dl6.driver.title')}</h2>
+      <h2 id="dl6-driver-h" className="card__title">{th('dl6.driver.title')}</h2>
       <p>{t('dl6.driver.body')}</p>
       <fieldset>
         <legend>{t('dl6.driver.lang')}</legend>
@@ -72,19 +72,19 @@ export function EssentialsHome() {
   const result = buildJourney(plan, sailing.departure, 0)
   return (
     <div className="page">
-      <h1>{t('dl6.essentials.title')}</h1>
+      <h1>{th('dl6.essentials.title')}</h1>
       <p>{t('dl6.essentials.body')}</p>
       <Card hero labelledBy="dl6-ess-pass">
-        <h2 id="dl6-ess-pass" className="card__title">{t('route.boardingPass')}</h2>
+        <h2 id="dl6-ess-pass" className="card__title">{th('route.boardingPass')}</h2>
         <LinkButton to="/home/boarding-pass" block>{t('home.showPass')}</LinkButton>
       </Card>
       <Card labelledBy="dl6-ess-time">
-        <h2 id="dl6-ess-time" className="card__title">{t('dl6.essentials.leave')}</h2>
+        <h2 id="dl6-ess-time" className="card__title">{th('dl6.essentials.leave')}</h2>
         <p className="traffic__time">{time(result.leaveBy ?? result.atTerminal)}</p>
         <p className="muted">{result.leaveBy === null ? t('dl6.light.atTerminal', { time: time(result.atTerminal) }) : t('dl6.essentials.leaveNote')}</p>
       </Card>
       <Card labelledBy="dl6-ess-phone">
-        <h2 id="dl6-ess-phone" className="card__title">{t('dl6.essentials.phone')}</h2>
+        <h2 id="dl6-ess-phone" className="card__title">{th('dl6.essentials.phone')}</h2>
         <p className="traffic__time"><a href={`tel:${GUEST_SERVICES_NUMBER.replace(/[^\d+]/g, '')}`}>{GUEST_SERVICES_NUMBER}</a></p>
       </Card>
       <Button variant="secondary" onClick={() => update({ essentials: false })}>{t('dl6.essentials.off')}</Button>
@@ -97,7 +97,7 @@ export function TicketProgress({ lines, done, total }: { lines: { id: string; la
   const full = done >= total && total > 0
   return (
     <section className={`ticket${full ? ' ticket--full' : ''}`} aria-labelledby="dl6-ticket-h">
-      <h2 id="dl6-ticket-h" className="ticket__head">{full ? t('dl6.ticket.full') : t('dl6.ticket.title')}</h2>
+      <h2 id="dl6-ticket-h" className="ticket__head">{full ? th('dl6.ticket.full') : th('dl6.ticket.title')}</h2>
       <ol className="ticket__lines">
         {lines.map((l) => (
           <li key={l.id} className={`ticket__line ticket__line--${l.state}`}>
@@ -121,7 +121,7 @@ export function CabinReadyCard({ cabin, ready }: { cabin: string; ready: boolean
   })
   return (
     <Card hero labelledBy="dl6-cabin-h">
-      <h2 id="dl6-cabin-h" className="card__title">{t('dl6.cabin.ready', { cabin: r.cabin })}</h2>
+      <h2 id="dl6-cabin-h" className="card__title">{th('dl6.cabin.ready', { cabin: r.cabin })}</h2>
       <p className="traffic__time">{t('dl6.cabin.deck', { deck: r.deck })}</p>
       <p>{text}</p>
       <CopyText text={text} />
@@ -136,7 +136,7 @@ export function LandmarksCard({ cabin, muster }: { cabin: string; muster: string
   if (l.length === 0) return null
   return (
     <Card labelledBy="dl6-land-h">
-      <h2 id="dl6-land-h" className="card__title">{t('dl6.land.title', { muster })}</h2>
+      <h2 id="dl6-land-h" className="card__title">{th('dl6.land.title', { muster })}</h2>
       <p>{t('dl6.land.body')}</p>
       <ol>{l.map((x) => <li key={x.id}>{t('dl6.land.item', { name: x.name, deck: x.deck })}</li>)}</ol>
       <p className="muted"><Link to="/ship/muster">{t('route.muster')}</Link></p>
@@ -158,7 +158,7 @@ export function SailAwayCard() {
   if (!s) return null
   return (
     <Card labelledBy="dl6-sail-h">
-      <h2 id="dl6-sail-h" className="card__title">{t('dl6.sail.title')}</h2>
+      <h2 id="dl6-sail-h" className="card__title">{th('dl6.sail.title')}</h2>
       <p>{t('dl6.sail.body', { name: s.name, deck: s.deck, time: s.beThere, departs: s.departs })}</p>
       <p className="muted">{t('dl6.sail.note')}</p>
     </Card>
@@ -169,10 +169,10 @@ export function SailAwayCard() {
 export function WifiQrCard() {
   return (
     <Card labelledBy="dl6-wifiqr-h">
-      <h2 id="dl6-wifiqr-h" className="card__title">{t('dl6.wifi.title')}</h2>
+      <h2 id="dl6-wifiqr-h" className="card__title">{th('dl6.wifi.title')}</h2>
       <p>{t('dl6.wifi.body', { network: WIFI_NETWORK })}</p>
       <QrCode text={wifiQrText()} label={t('dl6.wifi.qr', { network: WIFI_NETWORK })} className="qr--small" />
-      <h3>{t('dl6.wifi.steps')}</h3>
+      <h3>{th('dl6.wifi.steps')}</h3>
       <ol className="plain-bullets">{(['airplane', 'roaming', 'join', 'portal'] as const).map((k) => <li key={k}>{t(`dl6.wifi.step.${k}` as StringKey)}</li>)}</ol>
     </Card>
   )
@@ -201,7 +201,7 @@ export function StubsCard() {
   if (state.embark.stubs.length === 0) return null
   return (
     <Card labelledBy="dl6-stubs-h">
-      <h2 id="dl6-stubs-h" className="card__title">{t('dl6.stub.title')}</h2>
+      <h2 id="dl6-stubs-h" className="card__title">{th('dl6.stub.title')}</h2>
       <ul className="stubs">
         {state.embark.stubs.map((s) => (
           <li key={s.id} className="stub">

@@ -3,7 +3,7 @@
  * All sizes are rem so the text-size setting scales the whole interface.
  */
 :root {
-  --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
   --font-body: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 
   /* Type scale (at the Standard 18px root). */

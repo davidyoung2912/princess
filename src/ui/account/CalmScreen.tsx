@@ -9,7 +9,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
 import { usePulseEnv } from '../../hooks/useServedFeeds'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -43,7 +43,7 @@ export function CalmScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.calm')}</h1>
+      <h1>{th('route.calm')}</h1>
       <p>{t('calm.intro')}</p>
 
       {calm.cognitive && (
@@ -55,17 +55,17 @@ export function CalmScreen() {
       <CabinWordsCard />
 
       <Card labelledBy="calm-mode">
-        <h2 id="calm-mode" className="card__title">{t('calm.mode')}</h2>
+        <h2 id="calm-mode" className="card__title">{th('calm.mode')}</h2>
         <label className="choice"><input type="checkbox" checked={settings.calm} onChange={(e) => setSettings({ calm: e.target.checked })} /><span>{t('settings.calm')}<small>{t('settings.calmHint')}</small></span></label>
         <label className="choice"><input type="checkbox" checked={calm.cognitive} onChange={(e) => set({ cognitive: e.target.checked })} /><span>{t('calm.cognitive')}<small>{t('calm.cognitiveHint')}</small></span></label>
       </Card>
 
       <Card labelledBy="calm-profile">
-        <h2 id="calm-profile" className="card__title">{t('calm.profile')}</h2>
+        <h2 id="calm-profile" className="card__title">{th('calm.profile')}</h2>
         {PROFILE_KEYS.map((k) => (
           <label key={k} className="choice"><input type="checkbox" checked={calm.profile[k] === 'low'} onChange={(e) => set({ profile: { ...calm.profile, [k]: e.target.checked ? 'low' : 'any' } as SensoryProfile })} /><span>{t(`calm.profile.${k}` as StringKey)}</span></label>
         ))}
-        <h3>{t('calm.plan')}</h3>
+        <h3>{th('calm.plan')}</h3>
         {!plan && <FeedWaiting />}
         {plan && (<>
         {plan.warnings.length === 0 ? <p className="muted">{t('calm.noWarnings')}</p> : (
@@ -79,7 +79,7 @@ export function CalmScreen() {
       </Card>
 
       <Card labelledBy="calm-schedule">
-        <h2 id="calm-schedule" className="card__title">{t('calm.schedule')}</h2>
+        <h2 id="calm-schedule" className="card__title">{th('calm.schedule')}</h2>
         {cards === null ? <FeedWaiting /> : cards.length === 0 ? <p>{t('calm.scheduleEmpty')}</p> : cards.map((c) => (
           <div key={c.id} className={`schedule-card schedule-card--${c.kind}`}>
             <strong>{t(`calm.${c.kind}` as StringKey)}</strong>: {c.start} {c.title}
@@ -90,7 +90,7 @@ export function CalmScreen() {
       </Card>
 
       <Card labelledBy="calm-story">
-        <h2 id="calm-story" className="card__title">{t('calm.story')}</h2>
+        <h2 id="calm-story" className="card__title">{th('calm.story')}</h2>
         <p>{t('calm.storyIntro')}</p>
         <ol className="plain-list">
           {STORY.map((s) => (
@@ -107,7 +107,7 @@ export function CalmScreen() {
       </Card>
 
       <Card labelledBy="calm-kit">
-        <h2 id="calm-kit" className="card__title">{t('calm.kit')}</h2>
+        <h2 id="calm-kit" className="card__title">{th('calm.kit')}</h2>
         <p>{t('calm.kitBody')}</p>
         {calm.kit ? (
           <p role="status">{t(`calm.kit.${kitStatus(calm.kit, now)}` as StringKey, { items: calm.kit.items.map((i) => t(`calm.kit.item.${i}` as StringKey)).join(', ') })}</p>
@@ -122,7 +122,7 @@ export function CalmScreen() {
       </Card>
 
       <Card labelledBy="calm-care">
-        <h2 id="calm-care" className="card__title">{t('calm.caregiver')}</h2>
+        <h2 id="calm-care" className="card__title">{th('calm.caregiver')}</h2>
         <p>{t('calm.caregiverBody')}</p>
         <p><strong>{t('calm.sees')}</strong> {CAREGIVER_SEES.join(', ')}.</p>
         <p><strong>{t('calm.neverSees')}</strong> {CAREGIVER_NEVER.join(', ')}.</p>

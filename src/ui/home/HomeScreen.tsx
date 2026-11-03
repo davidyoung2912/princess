@@ -9,7 +9,7 @@ import { sailingById } from '../../domain/sailings'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { UpdatesBanner } from '../onboard/Updates'
 import { LinkButton } from '../Button'
@@ -43,7 +43,7 @@ export function HomeScreen() {
   if (today.data?.aboard) {
     return (
       <div className="page">
-        <h1>{t('route.home')}</h1>
+        <h1>{th('route.home')}</h1>
         <StageLanding />
         <JourneyStrip />
         <NudgeCards aboard />
@@ -55,7 +55,7 @@ export function HomeScreen() {
   }
   return (
     <div className="page">
-      <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
+      <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : th('route.home')}</h1>
       <StageLanding />
       {trip && <JourneyStrip />}
       <UpdatesBanner />
@@ -86,7 +86,7 @@ function Journey({ trip }: { trip: TripView }) {
   const counts = countdowns(trip, useNow())
   return (
     <section aria-labelledby="next-h">
-      <h2 id="next-h">{t('home.next')}</h2>
+      <h2 id="next-h">{th('home.next')}</h2>
       <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
       {counts.length > 0 && (
         <ul className="muted calm-hide" aria-label={t('count.label')}>
@@ -95,7 +95,7 @@ function Journey({ trip }: { trip: TripView }) {
       )}
       {done ? (
         <Card hero labelledBy="pass-h">
-          <h3 id="pass-h" className="card__title">{t('home.passReady')}</h3>
+          <h3 id="pass-h" className="card__title">{th('home.passReady')}</h3>
           <p>{t('home.passReadyBody')}</p>
           <div className="button-row">
             <LinkButton to="/home/boarding-pass">{t('home.showPass')}</LinkButton>

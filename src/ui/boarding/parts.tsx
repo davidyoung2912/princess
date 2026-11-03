@@ -1,5 +1,5 @@
 import type { BoardingView, GuestPass } from '../../api/types'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { QrCode } from '../checkin/QrCode'
 
@@ -27,7 +27,7 @@ export function FailsafeCard({ number }: { number: string }) {
   const steps = ['saved', 'print', 'number', 'desk', 'key'] as const
   return (
     <Card labelledBy="failsafe-h">
-      <h2 id="failsafe-h" className="card__title">{t('pass.failsafe')}</h2>
+      <h2 id="failsafe-h" className="card__title">{th('pass.failsafe')}</h2>
       <ul className="plain-bullets">{steps.map((k) => <li key={k}>{t(`pass.failsafe.${k}` as StringKey, { number })}</li>)}</ul>
       <p className="no-print"><a href={`tel:${number}`}>{t('pass.failsafe.call', { number })}</a></p>
     </Card>

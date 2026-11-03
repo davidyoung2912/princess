@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -19,7 +19,7 @@ export function RoomScreen() {
   const copy = useSavedCopy('room', me?.booker ?? 'none', () => api.room.view(), asRoomView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.room')}</h1>
+      <h1>{th('route.room')}</h1>
       <Saved copy={copy}>{(r) => <Room r={r} reload={copy.retry} offline={copy.fromCopy} />}</Saved>
       <BackLink to="/ship" label={t('route.ship')} />
     </div>
@@ -34,7 +34,7 @@ function Room({ r, reload, offline }: { r: RoomView; reload: () => void; offline
   return (
     <>
       <Card hero labelledBy="card-h">
-        <h2 id="card-h" className="card__title">{t('room.card', { cabin: r.number })}</h2>
+        <h2 id="card-h" className="card__title">{th('room.card', { cabin: r.number })}</h2>
         <dl className="plain-dl">
           <div><dt>{t('room.deck')}</dt><dd>{t('map.deckShort', { deck: r.deck })}</dd></div>
           <div><dt>{t('room.steward')}</dt><dd>{r.steward}</dd></div>
@@ -52,7 +52,7 @@ function Room({ r, reload, offline }: { r: RoomView; reload: () => void; offline
       {locked && !offline && <Banner kind="info" title={t('plan.readOnly.title')}><p>{t('plan.readOnly.body')}</p></Banner>}
 
       <section aria-labelledby="hk-h">
-        <h2 id="hk-h">{t('room.housekeeping')}</h2>
+        <h2 id="hk-h">{th('room.housekeeping')}</h2>
         {r.checkDue && <Banner kind="warning" title={t('room.checkDue')}><p>{t('room.checkDueBody')}</p></Banner>}
         <fieldset className="plain-fieldset" disabled={locked}>
           <legend>{t('room.mode')}</legend>
@@ -75,7 +75,7 @@ function Room({ r, reload, offline }: { r: RoomView; reload: () => void; offline
       </section>
 
       <section aria-labelledby="ctl-h">
-        <h2 id="ctl-h">{t('room.controls')}</h2>
+        <h2 id="ctl-h">{th('room.controls')}</h2>
         <p className="muted">{t('room.controlsNote')}</p>
         <div className="field">
           <label htmlFor="room-lights">{t('room.lights')}</label>

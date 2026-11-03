@@ -4,7 +4,7 @@ import { nextNightItem } from '../../domain/disembark'
 import { api } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Saved } from '../onboard/common'
@@ -22,7 +22,7 @@ function DisembarkNext() {
   const shipTime = useShipTime()
   return (
     <Card hero labelledBy="home-dis-h">
-      <h2 id="home-dis-h" className="card__title">{t('route.disembark')}</h2>
+      <h2 id="home-dis-h" className="card__title">{th('route.disembark')}</h2>
       <Saved copy={night}>
         {(v) => {
           const next = nextNightItem(v.entries)
@@ -43,7 +43,7 @@ export function AfterCruiseCard() {
   if (!sailed) return null
   return (
     <Card hero labelledBy="home-after-h">
-      <h2 id="home-after-h" className="card__title">{t('home.after')}</h2>
+      <h2 id="home-after-h" className="card__title">{th('home.after')}</h2>
       <p>{t('home.afterBody')}</p>
       <ul className="link-list">
         <li><Link to="/me/feedback">{t('route.feedback')}</Link></li>

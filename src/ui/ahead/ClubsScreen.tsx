@@ -3,7 +3,7 @@ import { CLUBS, MAX_PICKUPS, blankRegistration, clubProblem, type ClubRegistrati
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -27,7 +27,7 @@ function Registration({ child, canEdit, reload }: { child: ClubChild; canEdit: b
   const problem = clubProblem(reg, child.age)
   return (
     <Card>
-      <h3 className="card__title">{child.name} · {t('club.age', { age: child.age })}</h3>
+      <h3 className="card__title">{child.name} · {th('club.age', { age: child.age })}</h3>
       {!club ? <p>{t('club.noClub')}</p> : (
         <>
           <p>{t('club.goes', { club: club.name, deck: club.deck })}</p>
@@ -87,7 +87,7 @@ export function ClubsScreen() {
   const view = useMine(() => api.ahead.clubs.view())
   return (
     <div className="page">
-      <h1>{t('route.clubs')}</h1>
+      <h1>{th('route.clubs')}</h1>
       <p>{t('club.intro')}</p>
       <ChildNote />
       <Banner kind="info" title={t('club.privacy')}><p>{t('club.privacyBody')}</p></Banner>

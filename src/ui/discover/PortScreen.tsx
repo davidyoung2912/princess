@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { portGuideById } from '../../domain/ports'
 import { formatMoney } from '../../domain/money'
 import { PORTS, REFERENCE_SAILING, itinerary } from '../../domain/sailings'
@@ -18,7 +18,7 @@ export function PortScreen() {
   if (!guide) {
     return (
       <div className="page">
-        <h1>{t('route.port')}</h1>
+        <h1>{th('route.port')}</h1>
         <Banner kind="warning" title={t('discover.notFound.port')} action={<LinkButton to="/home/cruise" variant="secondary">{t('discover.seePlan')}</LinkButton>}>
           <p>{t('discover.notFound.body')}</p>
         </Banner>
@@ -36,7 +36,7 @@ export function PortScreen() {
 
       <section aria-labelledby="access-h">
         <Card info labelledBy="access-h">
-          <h2 id="access-h">{t('discover.gettingAshore')}</h2>
+          <h2 id="access-h">{th('discover.gettingAshore')}</h2>
           <p>{guide.access}</p>
         </Card>
       </section>
@@ -45,13 +45,13 @@ export function PortScreen() {
       <p><strong>{t('discover.bestTime')}</strong> {guide.bestTime}</p>
 
       <section aria-labelledby="do-h">
-        <h2 id="do-h">{t('discover.thingsToDo')}</h2>
+        <h2 id="do-h">{th('discover.thingsToDo')}</h2>
         <ul>{guide.doThis.map((x) => <li key={x}>{x}</li>)}</ul>
       </section>
 
       {guide.excursions.length > 0 && (
         <section aria-labelledby="exc-h">
-          <h2 id="exc-h">{t('discover.excursions')}</h2>
+          <h2 id="exc-h">{th('discover.excursions')}</h2>
           <p className="muted">{t('discover.excursionsNote')}</p>
           <ul className="card-grid">
             {guide.excursions.map((e) => (

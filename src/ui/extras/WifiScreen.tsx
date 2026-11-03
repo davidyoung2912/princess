@@ -6,7 +6,7 @@ import { MAX_DAYS, PLANS, planById, type WifiPlan } from '../../domain/wifi'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -25,13 +25,13 @@ export function WifiScreen() {
   const view = useMine(() => api.wifi.view(), [])
   return (
     <div className="page">
-      <h1>{t('route.wifi')}</h1>
+      <h1>{th('route.wifi')}</h1>
       <Banner kind="success" title={t('wifi.free')}><p>{t('wifi.freeBody')}</p></Banner>
       <Banner kind="info" title={t('phone.guard')}><p>{t('phone.guardBody')} <Link to="/plan/phone">{t('route.phone')}</Link></p></Banner>
       <WifiQrCard />
       <Load state={view}>{(v) => <Wifi v={v} reload={view.retry} />}</Load>
       <section aria-labelledby="wifi-help-h">
-        <h2 id="wifi-help-h">{t('wifi.help')}</h2>
+        <h2 id="wifi-help-h">{th('wifi.help')}</h2>
         <ol className="plain-bullets">{(['network', 'forget', 'portal', 'device', 'desk'] as const).map((k) => <li key={k}>{t(`wifi.step.${k}` as StringKey)}</li>)}</ol>
       </section>
       <BackLink to="/ship" label={t('route.ship')} />
@@ -54,7 +54,7 @@ function Wifi({ v, reload }: { v: WifiView; reload: () => void }) {
       {v.devices.length === 0 ? <p className="muted">{t('wifi.noDevices')}</p> : <ul className="order-list">{v.devices.map((d) => <Device key={d.id} d={d} canBuy={v.canBuy} reload={reload} />)}</ul>}
       {v.canBuy && (
         <Card labelledBy="wifi-add-h">
-          <h2 id="wifi-add-h" className="card__title">{t('wifi.add')}</h2>
+          <h2 id="wifi-add-h" className="card__title">{th('wifi.add')}</h2>
           <form onSubmit={(e) => { e.preventDefault(); sure.ask(cost, t('wifi.confirmWhat'), () => void add.run()) }}>
             <Field label={t('wifi.deviceName')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
             <div className="field">

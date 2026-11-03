@@ -12,7 +12,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useRecapData } from '../../hooks/useRecapData'
 import { friendReplyFeed } from '../../feeds/friend'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
@@ -84,14 +84,14 @@ export function MemoryScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.memories')}</h1>
+      <h1>{th('route.memories')}</h1>
       <p>{t('memory.intro')}</p>
 
       <StubsCard />
       <SailedMap />
       <FavouritesRanked />
       <Card labelledBy="mem-journal" >
-        <h2 id="mem-journal" className="card__title no-print">{t('memory.journal')}</h2>
+        <h2 id="mem-journal" className="card__title no-print">{th('memory.journal')}</h2>
         <div className="no-print">
           <p>{t('memory.journalBody')}</p>
           <p className="muted">{t('media.book.note')}</p>
@@ -117,7 +117,7 @@ export function MemoryScreen() {
           return (
             <>
               <Card labelledBy="mem-book">
-                <h2 id="mem-book" className="card__title">{t('memory.book')}</h2>
+                <h2 id="mem-book" className="card__title">{th('memory.book')}</h2>
                 <p className="no-print">{t('memory.bookBody')}</p>
                 <label className="choice no-print"><input type="checkbox" checked={includeChange} onChange={(e) => setIncludeChange(e.target.checked)} /><span>{t('memory.bookChange')}</span></label>
                 <div className="memory-book">
@@ -144,7 +144,7 @@ export function MemoryScreen() {
               <WantNext />
 
               <Card labelledBy="mem-next">
-                <h2 id="mem-next" className="card__title no-print">{t('memory.next')}</h2>
+                <h2 id="mem-next" className="card__title no-print">{th('memory.next')}</h2>
                 <div className="no-print">
                   {next ? (
                     <>
@@ -162,7 +162,7 @@ export function MemoryScreen() {
               </Card>
 
               <Card labelledBy="mem-contacts">
-                <h2 id="mem-contacts" className="card__title no-print">{t('memory.contacts')}</h2>
+                <h2 id="mem-contacts" className="card__title no-print">{th('memory.contacts')}</h2>
                 <div className="no-print">
                   <p>{t('memory.contactsBody')}</p>
                   <ul className="plain-list">
@@ -191,7 +191,7 @@ export function MemoryScreen() {
       </Load>
 
       <Card labelledBy="mem-change">
-        <h2 id="mem-change" className="card__title no-print">{t('memory.change')}</h2>
+        <h2 id="mem-change" className="card__title no-print">{th('memory.change')}</h2>
         <div className="no-print">
           <p>{t('memory.changeBody')}</p>
           <ul className="plain-list">

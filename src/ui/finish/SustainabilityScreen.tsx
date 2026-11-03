@@ -1,5 +1,5 @@
 import { SUSTAINABILITY } from '../../domain/postcruise'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { CarbonCard } from '../plan/PrepMoreScreens'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
@@ -8,20 +8,20 @@ import { BackLink } from '../onboard/common'
 export function SustainabilityScreen() {
   return (
     <div className="page">
-      <h1>{t('route.sustainability')}</h1>
+      <h1>{th('route.sustainability')}</h1>
       <p>{t('sus.intro')}</p>
       <Card labelledBy="sus-trip-h">
-        <h2 id="sus-trip-h" className="card__title">{t('sus.trip')}</h2>
+        <h2 id="sus-trip-h" className="card__title">{th('sus.trip')}</h2>
         <p>{t('sus.miles', { miles: SUSTAINABILITY.nauticalMiles.toLocaleString('en-US') })}</p>
         <p>{t(`sus.fuel.${SUSTAINABILITY.fuel}` as StringKey)}</p>
       </Card>
       <CarbonCard />
       <Card labelledBy="sus-ship-h">
-        <h2 id="sus-ship-h" className="card__title">{t('sus.ship')}</h2>
+        <h2 id="sus-ship-h" className="card__title">{th('sus.ship')}</h2>
         <ul className="plain-bullets">{SUSTAINABILITY.programmes.map((p) => <li key={p}>{t(`sus.prog.${p}` as StringKey)}</li>)}</ul>
       </Card>
       <Card labelledBy="sus-you-h">
-        <h2 id="sus-you-h" className="card__title">{t('sus.you')}</h2>
+        <h2 id="sus-you-h" className="card__title">{th('sus.you')}</h2>
         <ul className="plain-bullets">{SUSTAINABILITY.tips.map((p) => <li key={p}>{t(`sus.tip.${p}` as StringKey)}</li>)}</ul>
       </Card>
       <p className="muted">{t('sus.verify')}</p>

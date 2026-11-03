@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MEET_KINDS, MEET_NOTE_MAX, MEET_PHONE_MAX, isMeetKind, meetCard, meetProblem, meetText, type MeetInput } from '../../domain/meetingPoint'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -25,11 +25,11 @@ export function MeetingPointScreen() {
   }
   return (
     <div className="page">
-      <h1>{t('mp.title')}</h1>
+      <h1>{th('mp.title')}</h1>
       <p>{t('mp.intro')}</p>
 
       <Card labelledBy="meet-form-h">
-        <h2 id="meet-form-h" className="card__title">{t('mp.kind')}</h2>
+        <h2 id="meet-form-h" className="card__title">{th('mp.kind')}</h2>
         <fieldset className="plain-fieldset">
           <legend className="visually-hidden">{t('mp.kind')}</legend>
           {MEET_KINDS.map((k) => (
@@ -47,7 +47,7 @@ export function MeetingPointScreen() {
 
       {card && (
         <Card labelledBy="meet-card-h">
-          <h2 id="meet-card-h" className="card__title">{t('mp.card')}</h2>
+          <h2 id="meet-card-h" className="card__title">{th('mp.card')}</h2>
           <article className="print-sheet" aria-label={card.heading}>
             <h3>{card.heading}</h3>
             <ul className="plain-list">{card.lines.map((l) => <li key={l}>{l}</li>)}</ul>

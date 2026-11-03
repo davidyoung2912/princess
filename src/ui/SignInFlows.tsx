@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { AuthError, type AccountActions, type CodePurpose } from '../auth/provider'
 import { cleanCode, isCode, isEmail, signupProblems, type SignupProblem } from '../domain/signup'
-import { t, type StringKey } from '../i18n'
+import { t, th, headingCase, type StringKey } from '../i18n'
 import { auth } from '../runtime'
 import { Button } from './Button'
 import { Card } from './Card'
@@ -44,7 +44,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
   const summary = [...problems.map(msg), error].filter(Boolean)
   return (
     <>
-      <h1>{t('signin.signup.title')}</h1>
+      <h1>{th('signin.signup.title')}</h1>
       <p>{t('signin.signup.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={summary} />
       <Card>
@@ -100,7 +100,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
   if (done) {
     return (
       <>
-        <h1>{t('signin.code.title.forgot')}</h1>
+        <h1>{th('signin.code.title.forgot')}</h1>
         <p role="status">{t('signin.code.done')}</p>
         <Button block onClick={onBack}>{t('signin.mode.back')}</Button>
       </>
@@ -109,7 +109,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
   const title = t(purpose === 'reset' ? 'signin.code.title.forgot' : 'signin.code.title.magic')
   return (
     <>
-      <h1>{title}</h1>
+      <h1>{headingCase(title)}</h1>
       <p>{t('signin.code.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={errors} />
       <Card>

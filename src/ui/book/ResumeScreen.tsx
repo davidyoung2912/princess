@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { LoadError } from '../discover/parts'
@@ -16,7 +16,7 @@ export function ResumeScreen() {
   useEffect(() => { if (match) navigate('/book', { replace: true }) }, [match, navigate])
   return (
     <div className="page">
-      <h1>{t('route.bookResume')}</h1>
+      <h1>{th('route.bookResume')}</h1>
       {stored.status === 'error' && !stored.data ? <LoadError retry={stored.retry} /> : null}
       {stored.status === 'loading' || match ? <p role="status" className="muted">{t('book.resume.opening')}</p> : null}
       {stored.status === 'ready' && !match && (

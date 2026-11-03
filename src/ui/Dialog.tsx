@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
-import { t } from '../i18n'
+import { t, headingCase } from '../i18n'
 import { useDialog } from '../hooks/useDialog'
 
 interface DialogProps {
@@ -23,7 +23,7 @@ export function Dialog({ title, onClose, children }: DialogProps) {
     <div className="dialog-backdrop">
       <div ref={ref} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="dialog__head">
-          <h2 id={titleId}>{title}</h2>
+          <h2 id={titleId}>{headingCase(title)}</h2>
           <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <X aria-hidden="true" />
           </button>

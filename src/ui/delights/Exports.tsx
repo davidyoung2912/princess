@@ -7,7 +7,7 @@ import { formatMoney } from '../../domain/money'
 import { itinerary, sailingNights, type Sailing } from '../../domain/sailings'
 import { SHIP } from '../../domain/ship'
 import { useNow, useSailing } from '../../hooks/useDemo'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
 import { Field } from '../Field'
@@ -32,7 +32,7 @@ export function PlanExports({ days }: { days: readonly PlanDay[] }) {
   const hasAny = days.some((d) => d.entries.length > 0)
   return (
     <Card labelledBy="plan-exp-h">
-      <h2 id="plan-exp-h" className="card__title">{t('dl.plan.title')}</h2>
+      <h2 id="plan-exp-h" className="card__title">{th('dl.plan.title')}</h2>
       <p>{t('dl.plan.body')}</p>
       <div className="button-row">
         <CalendarButton name="week.ics" label={t('dl.plan.week')} make={() => planCalendar(days, 'week', 1, sailing, CRUISE.homePort, now)} />
@@ -59,7 +59,7 @@ export function BagTagCards({ guests, number }: { guests: readonly { printed: st
   const [large, setLarge] = useState(false)
   return (
     <section aria-labelledby="dl-tag-h">
-      <h2 id="dl-tag-h">{t('dl.tag.title')}</h2>
+      <h2 id="dl-tag-h">{th('dl.tag.title')}</h2>
       <label className="choice no-print"><input type="checkbox" checked={large} onChange={(e) => setLarge(e.target.checked)} /><span>{t('dl.tag.large')}</span></label>
       {guests.map((g) => <PrintCard key={g.printed + g.cabin} label={t('dl.tag.label', { name: g.printed })} card={bagTagCard({ ...g, number, sailing, shipName: SHIP.name, home: CRUISE.homePort, large })} />)}
       <p className="muted no-print">{t('dl.tag.note')}</p>
@@ -72,7 +72,7 @@ export function ShareCard({ card, link }: { card: CardData; link: string }) {
   return (
     <>
       <PrintCard label={t('dl.compare.label')} card={card} />
-      <h3 className="no-print">{t('dl.compare.link')}</h3>
+      <h3 className="no-print">{th('dl.compare.link')}</h3>
       <p className="muted no-print">{t('dl.compare.linkBody')}</p>
       <div className="no-print"><CopyText text={link} label={t('dl.compare.linkCopy')} /></div>
     </>
@@ -91,8 +91,8 @@ export function Keepsakes({ names, ports, seaDays, nauticalMiles, dinners, tours
   const certificate = certificateCard({ name: who, nights: sailingNights(sailing), ports, seaDays, nauticalMiles, shipName: SHIP.name, dates })
   return (
     <Card labelledBy="dl-keep-h">
-      <h2 id="dl-keep-h" className="card__title no-print">{t('dl.keep.title')}</h2>
-      <h3 className="no-print">{t('dl.moment.title')}</h3>
+      <h2 id="dl-keep-h" className="card__title no-print">{th('dl.keep.title')}</h2>
+      <h3 className="no-print">{th('dl.moment.title')}</h3>
       <div className="no-print">
         <Field label={t('dl.moment.line')} hint={t('dl.moment.hint', { max: MOMENT_MAX })} value={line} maxLength={MOMENT_MAX} onChange={(e) => setLine(e.target.value)} />
         <label htmlFor="dl-moment-photo">{t('dl.moment.photo')}</label>
@@ -101,11 +101,11 @@ export function Keepsakes({ names, ports, seaDays, nauticalMiles, dinners, tours
         <p className="muted">{t('dl.moment.private')}</p>
       </div>
       {line.trim() && <PrintCard label={t('dl.moment.label')} photo={photo} card={momentCard(line, who, dates)} />}
-      <h3 className="no-print">{t('dl.cert.title')}</h3>
+      <h3 className="no-print">{th('dl.cert.title')}</h3>
       <PrintCard label={t('dl.cert.title')} card={certificate} />
-      <h3 className="no-print">{t('dl.keepsake.title')}</h3>
+      <h3 className="no-print">{th('dl.keepsake.title')}</h3>
       <PrintCard label={t('dl.keepsake.title')} card={keepsakeCard({ title: t('dl.keepsake.heading', { who }), sailing, dinners, tours, shipName: SHIP.name })} />
-      <h3 className="no-print">{t('dl.hold.title')}</h3>
+      <h3 className="no-print">{th('dl.hold.title')}</h3>
       <p className="no-print">{t('dl.hold.body', { date: formatDate(sameWeekNextYear(sailing.departure)) })}</p>
       <div className="button-row no-print"><CalendarButton name="next-year-hold.ics" label={t('dl.hold.button')} make={() => nextYearHold(sailing, sailingNights(sailing), SHIP.name, now)} /></div>
     </Card>

@@ -4,7 +4,7 @@ import { linkState, normalizeSharedView, normalizeShareLink, normalizeShareLinks
 import { useAction } from '../../hooks/useAction'
 import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { api, partyShare } from '../../runtime'
 import { applyPageMeta } from '../../seo'
 import { Banner } from '../Banner'
@@ -23,12 +23,12 @@ export function ShareLinksScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{t('route.shareLinks')}</h1>
+      <h1>{th('route.shareLinks')}</h1>
       <p>{t('links.intro')}</p>
       <Card info>
-        <h2 className="card__title">{t('links.sees')}</h2>
+        <h2 className="card__title">{th('links.sees')}</h2>
         <p>{t('links.seesBody')}</p>
-        <h2 className="card__title">{t('links.never')}</h2>
+        <h2 className="card__title">{th('links.never')}</h2>
         <p>{t('links.neverBody')}</p>
       </Card>
       <Load state={trips}>
@@ -63,7 +63,7 @@ function Links({ number }: { number: string }) {
   return (
     <>
       <Card labelledBy="links-new">
-        <h2 id="links-new" className="card__title">{t('links.new')}</h2>
+        <h2 id="links-new" className="card__title">{th('links.new')}</h2>
         <fieldset>
           <legend>{t('links.kind')}</legend>
           {(['caregiver', 'advisor'] as const).map((k) => (
@@ -84,7 +84,7 @@ function Links({ number }: { number: string }) {
       <Load state={list}>
         {(links) => (
           <section aria-labelledby="links-live">
-            <h2 id="links-live">{t('links.yours')}</h2>
+            <h2 id="links-live">{th('links.yours')}</h2>
             {links.length === 0 && <p>{t('links.none')}</p>}
             <ul className="plain-list">
               {links.map((l) => (
@@ -129,7 +129,7 @@ export function SharedScreen() {
     <>
       <a className="skip-link" href="#main">{t('shell.skip')}</a>
       <main id="main" className="page" tabIndex={-1} aria-labelledby="shared-h">
-        <h1 id="shared-h">{t('route.shared')}</h1>
+        <h1 id="shared-h">{th('route.shared')}</h1>
         {view === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
         {view === 'ended' && <Banner kind="info" title={t('shared.ended')}><p>{t('shared.endedBody')}</p></Banner>}
         {typeof view === 'object' && <Shared v={view} />}
@@ -149,14 +149,14 @@ function Shared({ v }: { v: SharedView }) {
       </Card>
       {v.kind === 'caregiver' ? (
         <Card labelledBy="shared-fine">
-          <h2 id="shared-fine" className="card__title">{t('shared.fine')}</h2>
+          <h2 id="shared-fine" className="card__title">{th('shared.fine')}</h2>
           <p>{v.lastCheckInAt ? t('shared.lastFine', { date: day(v.lastCheckInAt) }) : t('shared.noFine', { name: v.guestFirstName })}</p>
           {v.note && <p>“{v.note}”</p>}
           {v.checkinDone !== null && <p>{v.checkinDone ? t('shared.checkinDone') : t('shared.checkinNot')}</p>}
         </Card>
       ) : (
         <Card labelledBy="shared-progress">
-          <h2 id="shared-progress" className="card__title">{t('shared.progress')}</h2>
+          <h2 id="shared-progress" className="card__title">{th('shared.progress')}</h2>
           {v.paidInFull !== null && <p>{v.paidInFull ? t('shared.paid') : t('shared.notPaid')}</p>}
           {v.progress && v.progress.total > 0 && <p>{t('shared.checkinSteps', { done: v.progress.done, total: v.progress.total })}</p>}
           {v.guests !== null && <p>{t('shared.guests', { count: v.guests })}</p>}

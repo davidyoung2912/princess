@@ -8,7 +8,7 @@ import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { shipZoneAt } from '../../domain/sailings'
 import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -56,7 +56,7 @@ export function SummaryScreen() {
   return (
     <div className="page">
       <BackLink to="/home/ask" label={t('route.ask')} />
-      <h1>{t('route.summary')}</h1>
+      <h1>{th('route.summary')}</h1>
       <p>{t('sum.intro')}</p>
       <div className="button-row" role="group" aria-label={t('sum.what')}>
         {(['day', 'bill', ...LEGAL.map((l) => l.id)] as Subject[]).map((k) => (
@@ -71,7 +71,7 @@ export function SummaryScreen() {
       {s === null ? <p role="status" className="muted">{t(folio.status === 'error' ? 'sum.cannotSee' : 'account.loading')}</p> : (
         <div className="summary-pair">
           <Card labelledBy="sum-h">
-            <h2 id="sum-h" className="card__title">{t('sum.summary')}</h2>
+            <h2 id="sum-h" className="card__title">{th('sum.summary')}</h2>
             <p className="muted">{t('sum.made')}</p>
             {numbered ? <ol>{s.lines.map((l) => <li key={l}>{l}</li>)}</ol> : <ul>{s.lines.map((l) => <li key={l}>{l}</li>)}</ul>}
             <div className="button-row">
@@ -81,7 +81,7 @@ export function SummaryScreen() {
             <p role="status">{note}</p>
           </Card>
           <Card labelledBy="sum-o">
-            <h2 id="sum-o" className="card__title">{t('sum.original')}</h2>
+            <h2 id="sum-o" className="card__title">{th('sum.original')}</h2>
             <ul>{s.original.map((l) => <li key={l}>{l}</li>)}</ul>
             <p><Link to={s.source.path}>{t('sum.openOriginal', { name: s.source.label })}</Link></p>
           </Card>

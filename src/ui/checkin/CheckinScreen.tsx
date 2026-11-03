@@ -7,7 +7,7 @@ import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, headingCase, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -33,7 +33,7 @@ export function CheckinScreen() {
   const step: StepId | typeof REVIEW | null = isStepId(id) ? id : id === REVIEW ? REVIEW : null
   return (
     <div className="page">
-      <h1>{step ? stepLabel(step) : t('route.checkin')}</h1>
+      <h1>{step ? headingCase(stepLabel(step)) : th('route.checkin')}</h1>
       <Load state={view}>{(v) => (step ? <StepPage view={v} step={step} reload={view.retry} /> : <Overview view={v} />)}</Load>
     </div>
   )
@@ -71,7 +71,7 @@ function Overview({ view }: { view: CheckinView }) {
         <TicketProgress lines={steps.map((s) => ({ id: s.id, label: s.label, state: s.state }))} done={progress.done} total={progress.total} />
 
         <Card labelledBy="progress-h">
-          <h2 id="progress-h" className="card__title">{t('checkin.progress')}</h2>
+          <h2 id="progress-h" className="card__title">{th('checkin.progress')}</h2>
           <p className="progress-line" role="status">{t('checkin.progressLine', { done: progress.done, total: progress.total })}</p>
           <progress className="meter" max={progress.total} value={progress.done} aria-label={t('checkin.progressLine', { done: progress.done, total: progress.total })} />
           {!done && progress.next && (
@@ -83,7 +83,7 @@ function Overview({ view }: { view: CheckinView }) {
         </Card>
 
         <section aria-labelledby="steps-h">
-          <h2 id="steps-h">{t('checkin.steps')}</h2>
+          <h2 id="steps-h">{th('checkin.steps')}</h2>
           <Stepper steps={steps} label={t('checkin.steps')} />
           <ul className="link-list">
             {STEP_ORDER.map((s) => <li key={s}><Link to={stepPath(s)}>{stepLabel(s)}</Link></li>)}
@@ -91,7 +91,7 @@ function Overview({ view }: { view: CheckinView }) {
         </section>
 
         <section aria-labelledby="left-h">
-          <h2 id="left-h">{t('checkin.whatsLeft')}</h2>
+          <h2 id="left-h">{th('checkin.whatsLeft')}</h2>
           <ul className="card-grid">
             {view.guests.map((g) => (
               <li key={g.id} className="card">
@@ -112,7 +112,7 @@ function Overview({ view }: { view: CheckinView }) {
       </Gate>
 
       <Card info>
-        <h2 className="card__title">{t('checkin.anyDevice')}</h2>
+        <h2 className="card__title">{th('checkin.anyDevice')}</h2>
         <p>{t('checkin.anyDeviceBody')}</p>
         <p><Link to="/home/check-in/receipt">{t('route.receipt')}</Link> · <Link to="/home/check-in/terminal">{t('route.terminalCheckin')}</Link></p>
       </Card>

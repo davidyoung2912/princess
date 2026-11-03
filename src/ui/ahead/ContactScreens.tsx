@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -28,7 +28,7 @@ export function AdvisorsScreen() {
   const shown = advisorsFor({ speciality: speciality as never, language })
   return (
     <div className="page">
-      <h1>{t('route.advisors')}</h1>
+      <h1>{th('route.advisors')}</h1>
       <p>{t('adv.intro')}</p>
       <ChildNote />
       <div className="ab-controls">
@@ -79,7 +79,7 @@ export function AdvisorsScreen() {
         <AheadError error={ask.error} />
         <Button type="submit" disabled={ask.busy}>{way === 'chat' ? t('adv.send') : t('adv.callMe')}</Button>
       </form>
-      <h2>{t('adv.yours')}</h2>
+      <h2>{th('adv.yours')}</h2>
       <Load state={list}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('adv.noneYet')}</p> : (
           <ul className="card-grid">
@@ -116,7 +116,7 @@ function Channel({ channel, reload, region }: { channel: MarketingChannel; reloa
         const c = v.choices.find((x) => x.channel === channel)!
         return (
           <Card>
-            <h3 className="card__title">{t(`mkt.channel.${channel}` as StringKey)}</h3>
+            <h3 className="card__title">{th(`mkt.channel.${channel}` as StringKey)}</h3>
             {c.state === 'confirmed' && (
               <>
                 <p><StatusBadge kind="booked" label={t('mkt.on', { contact: c.contact })} /></p>
@@ -156,7 +156,7 @@ export function MarketingScreen() {
   const double = doubleOptInFor(settings.region)
   return (
     <div className="page">
-      <h1>{t('route.marketing')}</h1>
+      <h1>{th('route.marketing')}</h1>
       <p>{t('mkt.intro')}</p>
       <ChildNote />
       <Banner kind="info" title={t(`settings.region.${settings.region}` as StringKey)}>
@@ -182,7 +182,7 @@ export function AssistScreen() {
   const choose = useAction(async (id: string, choice: 'refund' | 'credit') => { await api.ahead.assist.choose(id, choice); list.retry() })
   return (
     <div className="page">
-      <h1>{t('route.assist')}</h1>
+      <h1>{th('route.assist')}</h1>
       <p>{t('asst.intro')}</p>
       <ChildNote />
       <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>
@@ -201,7 +201,7 @@ export function AssistScreen() {
         <Button type="submit" disabled={ask.busy}>{t('asst.send')}</Button>
       </form>
       <p className="muted">{t('asst.helper')}</p>
-      <h2>{t('asst.yours')}</h2>
+      <h2>{th('asst.yours')}</h2>
       <AheadError error={choose.error} />
       <Load state={list}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('asst.none')}</p> : (
@@ -209,7 +209,7 @@ export function AssistScreen() {
             {rows.map((r) => (
               <li key={r.id}>
                 <Card>
-                  <h3 className="card__title">{t(`asst.kind.${r.kind}` as StringKey)} · {r.reference}</h3>
+                  <h3 className="card__title">{th(`asst.kind.${r.kind}` as StringKey)} · {r.reference}</h3>
                   <p><StatusBadge kind={r.stage === 'decided' ? 'booked' : 'waitlist'} label={t(`asst.stage.${r.stage}` as StringKey)} /></p>
                   <p className="muted">{formatDateTime(r.at)} · {r.phone}</p>
                   {r.terms && (

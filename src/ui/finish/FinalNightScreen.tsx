@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { ExtraError } from '../extras/common'
@@ -20,7 +20,7 @@ export function FinalNightScreen() {
   const copy = useSavedCopy('night', me?.booker ?? 'none', () => api.disembark.night(), asNightView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.finalNight')}</h1>
+      <h1>{th('route.finalNight')}</h1>
       <p>{t('night.intro')}</p>
       <Saved copy={copy}>{(v) => <Night v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/home/disembark" label={t('route.disembark')} />
@@ -43,7 +43,7 @@ function Night({ v, reload }: { v: NightView; reload: () => void }) {
       <ExtraError error={tick.error} />
       <ChargeCard firstDeadline={next?.dueAt} />
       <Card labelledBy="night-list-h">
-        <h2 id="night-list-h" className="card__title">{t('night.list')}</h2>
+        <h2 id="night-list-h" className="card__title">{th('night.list')}</h2>
         <ul className="plain-list">{v.entries.map((e) => <Item key={e.id} e={e} busy={tick.busy} onTick={(done) => void tick.run(e.id, done)} />)}</ul>
       </Card>
     </>

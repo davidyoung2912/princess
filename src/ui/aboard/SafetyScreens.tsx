@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useShipTime } from '../onboard/shipTime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -32,7 +32,7 @@ export function ReportScreen() {
   const submit = (e: FormEvent) => { e.preventDefault(); void send.run() }
   return (
     <div className="page">
-      <h1>{t('route.report')}</h1>
+      <h1>{th('route.report')}</h1>
       <Banner kind="danger" title={t('rep.callFirst', { number: EMERGENCY_NUMBER })}>
         <p>{t('rep.callFirstBody')} <a href={`tel:${EMERGENCY_NUMBER}`}>{EMERGENCY_NUMBER}</a></p>
       </Banner>
@@ -58,14 +58,14 @@ export function ReportScreen() {
         <AboardError error={send.error} />
         <Button type="submit" disabled={send.busy || !where.trim() || !note.trim()}>{urgent ? t('rep.sendUrgent') : t('rep.send')}</Button>
       </form>
-      <h2>{t('rep.sent')}</h2>
+      <h2>{th('rep.sent')}</h2>
       <Load state={list}>
         {(rows) => rows.length === 0 ? <p className="muted">{t('rep.none')}</p> : (
           <ul className="card-grid">
             {rows.map((r) => (
               <li key={r.id}>
                 <Card>
-                  <h3 className="card__title">{t(`rep.k.${r.kind}` as StringKey)}</h3>
+                  <h3 className="card__title">{th(`rep.k.${r.kind}` as StringKey)}</h3>
                   <p className="muted">{t('rep.ref', { ref: r.reference })} · {shipTime(r.at)}{r.anonymous ? ` · ${t('rep.wasAnonymous')}` : ''}</p>
                   <p>{r.where}</p>
                 </Card>

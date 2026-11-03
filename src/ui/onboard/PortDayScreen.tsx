@@ -8,7 +8,7 @@ import { clockTime } from '../../domain/syncAge'
 import { api } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -28,7 +28,7 @@ export function PortDayScreen() {
   const copy = useSavedCopy('portDay', me?.booker ?? 'none', async () => ({ view: await api.onboard.portDay() }), asPortDayCopy, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.portDay')}</h1>
+      <h1>{th('route.portDay')}</h1>
       <PushSwitch question={t('push.allAboard.question')} />
       <Saved copy={copy}>
         {(c) => (c.view ? <Body v={c.view} /> : (
@@ -73,7 +73,7 @@ function Tender({ v, tender }: { v: PortDayView; tender: TenderInfo }) {
   const group = TENDER_GROUPS.find((g) => g.id === tender.group.id) ?? tender.group
   return (
     <Card labelledBy="tender-h">
-      <h2 id="tender-h" className="card__title">{t('tender.title')}</h2>
+      <h2 id="tender-h" className="card__title">{th('tender.title')}</h2>
       {tender.mayTender && !v.day.tender && <Banner kind="warning" title={t('tender.mayTender')}><p>{t('tender.mayTenderBody')}</p></Banner>}
       {tender.delayMinutes > 0 && <Banner kind="warning" title={t('tender.delayed', { time: duration(tender.delayMinutes) })}><p>{t('tender.delayedBody')}</p></Banner>}
       <dl className="plain-dl">
@@ -91,7 +91,7 @@ function Tender({ v, tender }: { v: PortDayView; tender: TenderInfo }) {
 function Tours({ tours, port }: { tours: TourToday[]; port: string }) {
   return (
     <section aria-labelledby="tours-h">
-      <h2 id="tours-h">{t('port.tours')}</h2>
+      <h2 id="tours-h">{th('port.tours')}</h2>
       {tours.length === 0 ? <p>{t('port.noTours', { port: PORTS[port as keyof typeof PORTS]?.name ?? port })} <Link to="/plan/excursions">{t('route.excursions')}</Link></p> : (
         <ul className="card-grid">
           {tours.map((x) => (

@@ -8,7 +8,7 @@ import { useNow } from '../../hooks/useDemo'
 import { usePilot } from '../../hooks/usePilot'
 import { programmeFollows } from '../../pilot/programme'
 import { api } from '../../runtime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -73,13 +73,13 @@ export function AutopilotScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.autopilot')}</h1>
+      <h1>{th('route.autopilot')}</h1>
       <p>{t('autopilot.intro')}</p>
       <p className="muted">{t('autopilot.promise')}</p>
 
       <PastedLines day={day} />
       <Card labelledBy="ap-day">
-        <h2 id="ap-day" className="card__title">{t('autopilot.day')}</h2>
+        <h2 id="ap-day" className="card__title">{th('autopilot.day')}</h2>
         <label htmlFor="ap-pick">{t('autopilot.pick')}</label>
         <select id="ap-pick" className="field__input" value={day} onChange={(e) => { setDay(Number(e.target.value)); setMessage(null) }}>
           {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('autopilot.dayOption', { n })}{n === today ? ` · ${t('autopilot.today')}` : ''}</option>)}
@@ -104,7 +104,7 @@ export function AutopilotScreen() {
       </Card>
 
       <Card labelledBy="ap-check">
-        <h2 id="ap-check" className="card__title">{t('autopilot.check')}</h2>
+        <h2 id="ap-check" className="card__title">{th('autopilot.check')}</h2>
         <p>{t('autopilot.checkBody')}</p>
         <div className="button-row">
           <Button onClick={check} disabled={!dp.ready}>{t('autopilot.checkNow')}</Button>
@@ -121,7 +121,7 @@ export function AutopilotScreen() {
 
       {waiting.length > 0 && (
         <section aria-labelledby="ap-wait">
-          <h2 id="ap-wait">{t('autopilot.waiting')}</h2>
+          <h2 id="ap-wait">{th('autopilot.waiting')}</h2>
           {waiting.map((c) => (
             <Card key={c.id}>
               <h3 className="card__title">{c.title}</h3>
@@ -140,7 +140,7 @@ export function AutopilotScreen() {
       )}
 
       <section aria-labelledby="ap-log">
-        <h2 id="ap-log">{t('autopilot.log')}</h2>
+        <h2 id="ap-log">{th('autopilot.log')}</h2>
         {log.length === 0 ? <p className="muted">{t('autopilot.logEmpty')}</p> : (
           <ul className="plain-list">
             {log.map((c) => (

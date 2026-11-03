@@ -8,7 +8,7 @@ import { zonedToEpoch } from '../../domain/timezones'
 import { useWakeLock } from '../../hooks/useWakeLock'
 import { useNow } from '../../hooks/useDemo'
 import { newPortId, usePort } from '../../hooks/usePort'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -50,7 +50,7 @@ export function PortParty({ v }: { v: PortDayView }) {
   return (
     <>
       <Card labelledBy="back-h">
-        <h2 id="back-h" className="card__title">{t('back.title')}</h2>
+        <h2 id="back-h" className="card__title">{th('back.title')}</h2>
         <p className="muted">{t('back.intro')}</p>
         {check.due && (
           <Banner kind={check.gangway ? 'danger' : 'warning'} title={t('back.nudge', { time: duration(check.minutesLeft) })}>
@@ -83,7 +83,7 @@ export function PortParty({ v }: { v: PortDayView }) {
       </Card>
 
       <Card labelledBy="meet-h">
-        <h2 id="meet-h" className="card__title">{t('meet.title')}</h2>
+        <h2 id="meet-h" className="card__title">{th('meet.title')}</h2>
         <p className="muted">{t('meet.intro')}</p>
         {state.party.rendezvous.length === 0 && <p>{t('meet.none')}</p>}
         {state.party.rendezvous.map((r) => {
@@ -91,7 +91,7 @@ export function PortParty({ v }: { v: PortDayView }) {
           const adult = !!me && !me.child
           return (
             <div key={r.id} className="card">
-              <h3 className="card__title">{t('meet.at', { place: r.place, time: shipTime(r.at) })}</h3>
+              <h3 className="card__title">{th('meet.at', { place: r.place, time: shipTime(r.at) })}</h3>
               <ul className="plain-bullets">{Object.keys(r.members).map((id) => <li key={id}>{name(id)}: {t(`meet.s.${r.members[id]}` as StringKey)}</li>)}</ul>
               <p className="muted">{t('meet.fallback', { place: r.fallback, minutes: r.fallbackAfter })}</p>
               {view.useFallback && <Banner kind="warning" title={t('meet.useFallback', { place: r.fallback })}><p>{t('meet.useFallbackBody')}</p></Banner>}
@@ -109,7 +109,7 @@ export function PortParty({ v }: { v: PortDayView }) {
         })}
         {me && !me.child && (
           <form onSubmit={(e) => { e.preventDefault(); addMeet() }}>
-            <h3>{t('meet.new')}</h3>
+            <h3>{th('meet.new')}</h3>
             <Field label={t('meet.place')} value={place} maxLength={80} onChange={(e) => setPlace(e.target.value)} />
             <Field label={t('meet.time', { zone: PORTS[v.day.port].name })} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             <Field label={t('meet.fallbackLabel')} hint={t('meet.fallbackHint')} value={fallback} maxLength={80} onChange={(e) => setFallback(e.target.value)} />

@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { t, type StringKey } from '../i18n'
+import { t, th, type StringKey } from '../i18n'
 import { TEXT_SIZES } from '../design/textSize'
 import { CONSENT_REGIONS } from '../domain/ahead'
 import { UNITS } from '../domain/readiness'
@@ -15,7 +15,7 @@ export function DisplaySettings() {
   const [settings, update] = useSettings()
   return (
     <section aria-labelledby="display-settings-h">
-      <h2 id="display-settings-h">{t('settings.title')}</h2>
+      <h2 id="display-settings-h">{th('settings.title')}</h2>
       <LanguageSwitch />
       <fieldset>
         <legend>{t('settings.textSize')}</legend>

@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { useNow, usePersona } from '../../hooks/useDemo'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -33,7 +33,7 @@ export function QueueControl({ venueId }: { venueId: string }) {
   const open = waits.data.open.includes(venueId)
   return (
     <section aria-labelledby="queue-h">
-      <h2 id="queue-h">{t('que.title')}</h2>
+      <h2 id="queue-h">{th('que.title')}</h2>
       <p>{t('que.intro')}</p>
       {mine && mine.stage === 'waiting' && (
         <Banner kind="info" title={t('que.position', { position: mine.position })}><p>{t('que.wait', { minutes: mine.waitMinutes, time: shipTime(mine.readyAt) })}</p></Banner>
@@ -64,7 +64,7 @@ export function WaitsList() {
   if (queues.length === 0 && waiting.length === 0 && booked.length === 0) return null
   return (
     <section aria-labelledby="waits-h">
-      <h2 id="waits-h">{t('wait.title')}</h2>
+      <h2 id="waits-h">{th('wait.title')}</h2>
       {booked.map((b) => <p key={b.id} role="status"><StatusBadge kind="booked" label={t('wait.autoDone', { venue: directoryVenue(b.venueId)?.name ?? '', day: b.day, time: formatTime(b.time) })} /></p>)}
       <ActionError error={accept.error ?? leaveQueue.error ?? leaveList.error} />
       <ul className="card-grid">

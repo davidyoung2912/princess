@@ -11,7 +11,7 @@ import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -30,7 +30,7 @@ export function ChatScreen() {
   const [mode, setMode] = useState<Mode>('party')
   return (
     <div className="page">
-      <h1>{t('route.chat')}</h1>
+      <h1>{heading('route.chat')}</h1>
       <p>{t('chat.free')}</p>
       <div className="chip-row" role="group" aria-label={t('chat.who')}>
         <Chip pressed={mode === 'party'} onToggle={() => setMode('party')}>{t('chat.party')}</Chip>
@@ -69,7 +69,7 @@ function Party() {
   const name = (m: Message) => (m.from === me?.id ? t('chat.you') : (personFirstName(m.from) || m.from))
   return (
     <section aria-labelledby="party-h">
-      <h2 id="party-h">{t('chat.party')}</h2>
+      <h2 id="party-h">{heading('chat.party')}</h2>
       <p className="muted">{t('chat.partyBody')}</p>
       <Load state={list}>
         {(messages) => (
@@ -130,7 +130,7 @@ function Service() {
   const minutes = channels.data?.find((x) => x.id === channel)?.minutes ?? c.minutes
   return (
     <section aria-labelledby="svc-h">
-      <h2 id="svc-h">{t('chat.service')}</h2>
+      <h2 id="svc-h">{heading('chat.service')}</h2>
       {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
       <fieldset className="plain-fieldset">
         <legend>{t('chat.topic')}</legend>
@@ -145,7 +145,7 @@ function Service() {
         })}
       </fieldset>
       {c.urgentNote && <Banner kind="warning" title={t('chat.medicalUrgent')}><p>{t('chat.medicalUrgentBody')}</p></Banner>}
-      <Load state={thread}>{(th) => <Thread th={th} minutes={minutes} reload={thread.retry} canWrite={!me?.child} />}</Load>
+      <Load state={thread}>{(thr) => <Thread th={thr} minutes={minutes} reload={thread.retry} canWrite={!me?.child} />}</Load>
     </section>
   )
 }
@@ -192,7 +192,7 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
           </form>
           {(st?.canEscalate || th.slow) && st?.status !== 'escalated' && (
             <Card info>
-              <h3 className="card__title">{t('chat.callMe')}</h3>
+              <h3 className="card__title">{heading('chat.callMe')}</h3>
               <p>{t('chat.callMeBody', { minutes: ESCALATE_AFTER_MINUTES })}</p>
               <form onSubmit={(e) => { e.preventDefault(); void call.run() }}>
                 <Field label={t('chat.phone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={call.error?.code === 'invalid' ? t('chat.phoneBad') : undefined} />

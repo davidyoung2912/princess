@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -22,7 +22,7 @@ export function CompanionScreen() {
   const current = view?.current ?? null
   return (
     <div className="page">
-      <h1>{t('route.companion')}</h1>
+      <h1>{th('route.companion')}</h1>
       <p>{t('companion.intro')}</p>
       {!view ? (embark.status === 'error' ? <LoadError retry={embark.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : (
         <>
@@ -32,7 +32,7 @@ export function CompanionScreen() {
           ) : (
             <Card labelledBy="now-h">
               <p className="eyebrow">{t('companion.now', { n: COMPANION.indexOf(current) + 1, total: COMPANION.length })}</p>
-              <h2 id="now-h">{t(`companion.${current}` as StringKey)}</h2>
+              <h2 id="now-h">{th(`companion.${current}` as StringKey)}</h2>
               <p>{t(`companion.${current}.body` as StringKey)}</p>
               {current === 'photo' && <p><Link to="/home/boarding-pass">{t('route.boardingPass')}</Link></p>}
               {current === 'terminal' && <p><Link to="/home/embarkation">{t('route.embarkation')}</Link></p>}
@@ -41,7 +41,7 @@ export function CompanionScreen() {
             </Card>
           )}
           <section aria-labelledby="all-h">
-            <h2 id="all-h">{t('companion.all')}</h2>
+            <h2 id="all-h">{th('companion.all')}</h2>
             <ol className="plain-list">
               {view.companion.map((c) => (
                 <li key={c.id}>

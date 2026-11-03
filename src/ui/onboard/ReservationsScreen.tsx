@@ -15,7 +15,7 @@ import { useAsync } from '../../hooks/useAsync'
 import { useSailing, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -34,10 +34,10 @@ export function ReservationsScreen() {
   const s = useSailing()
   return (
     <div className="page">
-      <h1>{t('route.reservations')}</h1>
+      <h1>{th('route.reservations')}</h1>
       <p>{t('res.intro')}</p>
       <section aria-labelledby="res-dinners-h">
-        <h2 id="res-dinners-h">{t('res.dinners')}</h2>
+        <h2 id="res-dinners-h">{th('res.dinners')}</h2>
         <Saved copy={dining}>
           {(v) => (
             <>
@@ -50,7 +50,7 @@ export function ReservationsScreen() {
       </section>
       <WaitsList />
       <section aria-labelledby="res-tours-h">
-        <h2 id="res-tours-h">{t('res.tours')}</h2>
+        <h2 id="res-tours-h">{th('res.tours')}</h2>
         <Load state={tours}>
           {(v) => {
             const booked = v.booked.filter((b) => b.status === 'booked')
@@ -105,7 +105,7 @@ export function ReservationScreen() {
   const dining = useSavedCopy('dining', me?.booker ?? 'none', () => api.plan.dining.view(), asDiningView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.reservation')}</h1>
+      <h1>{th('route.reservation')}</h1>
       <Saved copy={dining}>
         {(v) => {
           const r = v.reservations.find((x) => x.id === id)
@@ -158,7 +158,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
       {canEdit && (
         <>
           <section aria-labelledby="move-h">
-            <h2 id="move-h">{t('res.change')}</h2>
+            <h2 id="move-h">{th('res.change')}</h2>
             <p className="muted">{t('res.changeHold')}</p>
             <form onSubmit={(e) => { e.preventDefault(); void move.run() }}>
               <div className="field">
@@ -193,7 +193,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
           </section>
 
           <section aria-labelledby="late-h">
-            <h2 id="late-h">{t('res.late')}</h2>
+            <h2 id="late-h">{th('res.late')}</h2>
             <p>{t('res.lateBody')}</p>
             <div className="field">
               <label htmlFor="res-late">{t('res.lateMinutes')}</label>
@@ -206,7 +206,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
           </section>
 
           <section aria-labelledby="cancel-h">
-            <h2 id="cancel-h">{t('res.cancel')}</h2>
+            <h2 id="cancel-h">{th('res.cancel')}</h2>
             <PlanError error={cancel.error} />
             {confirmCancel ? (
               <Banner kind="warning" title={t('res.cancelSure')} action={<div className="button-row"><Button variant="danger" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('res.cancelYes')}</Button><Button variant="tertiary" onClick={() => setConfirmCancel(false)}>{t('res.cancelNo')}</Button></div>}>
@@ -218,7 +218,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
       )}
 
       <section aria-labelledby="trail-h">
-        <h2 id="trail-h">{t('res.trail')}</h2>
+        <h2 id="trail-h">{th('res.trail')}</h2>
         <Load state={history}>
           {(h) => {
             const rows = h.filter((x: HistoryEntry) => x.what === 'dining').slice(0, 8)

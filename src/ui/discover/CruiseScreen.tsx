@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { t } from '../../i18n'
+import { t, th, headingCase } from '../../i18n'
 import { CRUISE } from '../../domain/cruise'
 import { PORT_GUIDES } from '../../domain/ports'
 import { REFERENCE_SAILING } from '../../domain/sailings'
@@ -14,7 +14,7 @@ import { ItineraryList, RouteMap } from './parts'
 export function CruiseScreen() {
   return (
     <div className="page">
-      <h1>{CRUISE.name}</h1>
+      <h1>{headingCase(CRUISE.name)}</h1>
       <p>{CRUISE.intro}</p>
       <dl className="facts">
         <div><dt>{t('discover.fact.ship')}</dt><dd><Link to="/home/ship">{SHIP.name}</Link></dd></div>
@@ -23,12 +23,12 @@ export function CruiseScreen() {
       </dl>
 
       <section aria-labelledby="route-h">
-        <h2 id="route-h">{t('discover.route')}</h2>
+        <h2 id="route-h">{th('discover.route')}</h2>
         <RouteMap />
       </section>
 
       <section aria-labelledby="days-h">
-        <h2 id="days-h">{t('discover.dayByDay')}</h2>
+        <h2 id="days-h">{th('discover.dayByDay')}</h2>
         <p className="muted">{t('discover.timesNote')}</p>
         <ItineraryList sailing={REFERENCE_SAILING} />
       </section>
@@ -37,7 +37,7 @@ export function CruiseScreen() {
       <p className="muted">{t('regret.note')}</p>
 
       <section aria-labelledby="when-h">
-        <h2 id="when-h">{t('discover.whenToGo')}</h2>
+        <h2 id="when-h">{th('discover.whenToGo')}</h2>
         <Card info><p>{CRUISE.bestTime}</p></Card>
         <ul className="plain-list">
           {Object.values(PORT_GUIDES).filter((g) => g.id !== 'fll').map((g) => (

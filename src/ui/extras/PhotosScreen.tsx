@@ -11,7 +11,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -25,7 +25,7 @@ export function PhotosScreen() {
   const copy = useSavedCopy('photos', me?.booker ?? 'none', () => api.photos.list(), asPhotosView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.photos')}</h1>
+      <h1>{th('route.photos')}</h1>
       <p>{t('pho.intro')}</p>
       <Saved copy={copy}>{(v) => <Photos v={v} reload={copy.retry} offline={copy.fromCopy} canBuy={!me?.child} />}</Saved>
       <BackLink to="/ship" label={t('route.ship')} />
@@ -48,13 +48,13 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
       {v.includedLeft > 0 && <Banner kind="success" title={t('pho.included', { count: v.includedLeft })}><p>{t('pho.includedBody')}</p></Banner>}
 
       <Card labelledBy="sched-h">
-        <h2 id="sched-h" className="card__title">{t('pho.schedule')}</h2>
+        <h2 id="sched-h" className="card__title">{th('pho.schedule')}</h2>
         <ul className="plain-bullets">{v.schedule.map((p, i) => <li key={i}>{t('plan.day', { n: p.day })}, {formatTime(p.time)}: {p.what} ({placeName(p.placeId)})</li>)}</ul>
       </Card>
 
       {v.photos.length === 0 ? <p>{t('pho.none')}</p> : (
         <section aria-labelledby="browse-h">
-          <h2 id="browse-h">{t('pho.browse')}</h2>
+          <h2 id="browse-h">{th('pho.browse')}</h2>
           <div className="field">
             <label htmlFor="pho-day">{t('pho.day')}</label>
             <select id="pho-day" className="field__input" value={filter.day ?? ''} onChange={(e) => set({ day: e.target.value ? Number(e.target.value) : null })}>
@@ -116,7 +116,7 @@ function Options({ picked, done }: { picked: string[]; done: () => void }) {
   const q = quote
   return (
     <Card hero labelledBy="opt-h">
-      <h2 id="opt-h" className="card__title">{t('pho.yourChoice', { count: picked.length })}</h2>
+      <h2 id="opt-h" className="card__title">{th('pho.yourChoice', { count: picked.length })}</h2>
       <Button variant="secondary" disabled={load.busy} onClick={() => void load.run()} key={ids}>{t('pho.price')}</Button>
       <ExtraError error={load.error} />
       {q && (
@@ -149,7 +149,7 @@ function Receipts({ receipts, reload, offline }: { receipts: PhotoReceipt[]; rel
   if (receipts.length === 0) return null
   return (
     <section aria-labelledby="rcpt-h">
-      <h2 id="rcpt-h">{t('pho.receipts')}</h2>
+      <h2 id="rcpt-h">{th('pho.receipts')}</h2>
       <ul className="order-list">{receipts.map((r) => <Receipt key={r.id} r={r} reload={reload} offline={offline} />)}</ul>
     </section>
   )
@@ -182,7 +182,7 @@ function Receipt({ r, reload, offline }: { r: PhotoReceipt; reload: () => void; 
   })
   return (
     <li className="order">
-      <h3 className="order__title">{t(`pho.rcpt.${r.option}` as StringKey, { count: total })}</h3>
+      <h3 className="order__title">{th(`pho.rcpt.${r.option}` as StringKey, { count: total })}</h3>
       <p>{r.paid === 0 ? t('x.free') : formatMoney(r.paid)} · {t('pho.until', { date: new Date(r.until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }) })}</p>
       <p role="status"><strong>{done ? t('pho.savedAll', { count: total }) : t('pho.saved', { saved, total })}</strong></p>
       <progress className="photo__progress" max={total} value={saved} aria-label={t('pho.progress')} />

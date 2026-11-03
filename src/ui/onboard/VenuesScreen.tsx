@@ -9,7 +9,7 @@ import { api } from '../../runtime'
 import { useNow, useSailing, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { portAt, shipZoneAt } from '../../domain/sailings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -41,7 +41,7 @@ export function VenuesScreen() {
   const list = DIRECTORY.filter((v) => (!openNow || openAt(v, day, time)) && (!included || v.price !== 'specialty'))
   return (
     <div className="page">
-      <h1>{t('route.venues')}</h1>
+      <h1>{th('route.venues')}</h1>
       <p>{t('ven.intro')}</p>
       <div className="chip-row">
         <Chip pressed={openNow} onToggle={() => setOpenNow(!openNow)}>{t('ven.openNow')}</Chip>
@@ -77,7 +77,7 @@ export function VenueScreen() {
   const [filtered, setFiltered] = useState(true)
   return (
     <div className="page">
-      <h1>{t('route.venue')}</h1>
+      <h1>{th('route.venue')}</h1>
       {!v ? (
         <Banner kind="info" title={t('ven.gone')} action={<LinkButton to="/ship/venues" variant="secondary">{t('route.venues')}</LinkButton>}><p>{t('ven.goneBody')}</p></Banner>
       ) : (
@@ -94,7 +94,7 @@ export function VenueScreen() {
           </Card>
           {!reservableVenue(v) && v.id !== 'soleil' && <QueueControl venueId={v.id} />}
           <section aria-labelledby="hours-h">
-            <h2 id="hours-h">{t('ven.hours')}</h2>
+            <h2 id="hours-h">{th('ven.hours')}</h2>
             <dl className="plain-dl">
               {(['sea', 'port'] as const).map((d) => <div key={d}><dt>{t(`ven.hours.${d}` as StringKey)}</dt><dd>{hoursText(v.hours[d], formatTime) || t('ven.allDay')}</dd></div>)}
             </dl>
@@ -113,7 +113,7 @@ function Menu({ v, diets, filtered, setFiltered }: { v: DirectoryVenue; diets: D
   const asks = diets.filter((d) => NEEDS_ASKING.includes(d))
   return (
     <section aria-labelledby="menu-h">
-      <h2 id="menu-h">{t('ven.menu')}</h2>
+      <h2 id="menu-h">{th('ven.menu')}</h2>
       {diets.length > 0 && (
         <>
           <p>{t('ven.diets', { list: diets.map((d) => t(`profile.dietary.${d}` as StringKey)).join(', ') })}</p>

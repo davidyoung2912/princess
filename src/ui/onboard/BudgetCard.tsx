@@ -9,7 +9,7 @@ import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { usePersona } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -78,7 +78,7 @@ function BudgetForm({ data, lines, saved }: { data: BudgetView; lines: readonly 
 
   return (
     <Card labelledBy="bud-h">
-      <h2 id="bud-h" className="card__title">{t('bud.title')}</h2>
+      <h2 id="bud-h" className="card__title">{th('bud.title')}</h2>
       <p>{t('bud.intro')}</p>
       {r.total.limit !== null && (
         <p role="status"><strong>{t('bud.status', { spent: formatMoney(r.total.spent), limit: formatMoney(r.total.limit), left: formatMoney(r.total.left) })}</strong> {t(`bud.state.${r.total.state}` as 'bud.state.ok')}</p>

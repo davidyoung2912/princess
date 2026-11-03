@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { applyFilter, describeEvent, groupByActivityDay, isProblem, nextCursor, type ActivityEvent, type ActivityFilter } from '../../domain/activityLog'
 import { formatDayMonth } from '../../domain/cruise'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -45,7 +45,7 @@ function Report() {
   const days = groupByActivityDay(shown, (at) => new Date(at).toISOString().slice(0, 10))
   return (
     <div className="page">
-      <h1>{t('route.activity')}</h1>
+      <h1>{th('route.activity')}</h1>
       <p>{t('activity.intro')}</p>
       <div className="field">
         <label htmlFor="activity-filter">{t('activity.filter.label')}</label>

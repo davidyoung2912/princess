@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { CRUISE } from '../../domain/cruise'
 import { PORT_GUIDES } from '../../domain/ports'
 import { SHIP } from '../../domain/ship'
@@ -28,7 +28,7 @@ export function Explore() {
       </Card>
 
       <section aria-labelledby="ports-h">
-        <h2 id="ports-h">{t('discover.whereYouGo')}</h2>
+        <h2 id="ports-h">{th('discover.whereYouGo')}</h2>
         <ul className="card-grid">
           {Object.values(PORT_GUIDES).filter((g) => g.id !== 'fll').map((g) => (
             <li key={g.id} className="card">
@@ -40,7 +40,7 @@ export function Explore() {
       </section>
 
       <section aria-labelledby="ship-h">
-        <h2 id="ship-h">{t('discover.yourShip')}</h2>
+        <h2 id="ship-h">{th('discover.yourShip')}</h2>
         <Card>
           <h3><Link to="/home/ship">{SHIP.name}</Link></h3>
           <p>{SHIP.intro}</p>

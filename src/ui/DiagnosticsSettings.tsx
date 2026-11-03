@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { clearLog, logToText, readLog } from '../diagnostics/log'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
 
@@ -24,7 +24,7 @@ export function DiagnosticsSettings() {
 
   return (
     <Card labelledBy="diag-h">
-      <h2 id="diag-h">{t('diag.title')}</h2>
+      <h2 id="diag-h">{th('diag.title')}</h2>
       <p>{t('diag.intro')}</p>
       {entries.length === 0 ? (
         <p>{t('diag.none')}</p>

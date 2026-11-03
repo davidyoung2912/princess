@@ -4,7 +4,7 @@ import { formatDate } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner, type BannerKind } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -30,7 +30,7 @@ export function NotificationsScreen() {
   const at = timeIn(now, shipZoneAt(sailing, now))
   return (
     <div className="page">
-      <h1>{t('route.notifications')}</h1>
+      <h1>{th('route.notifications')}</h1>
       <Load state={data}>
         {({ notices, prefs }) => {
           const { shown, held } = splitHeld(notices, withQuietHours(mem.aboard.dnd, prefs.quiet), at)
@@ -47,7 +47,7 @@ export function NotificationsScreen() {
           return (
             <>
               <section aria-labelledby="inbox-h">
-                <h2 id="inbox-h">{t('notices.title')}</h2>
+                <h2 id="inbox-h">{th('notices.title')}</h2>
                 {notices.length === 0 && <Card info><p>{t('notices.none')}</p></Card>}
                 {shown.map(row)}
                 {held.length > 0 && (
@@ -81,7 +81,7 @@ function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => vo
   const quiet = (patch: Partial<NotificationPrefs['quiet']>) => { setSaved(false); setDraft({ ...draft, quiet: { ...draft.quiet, ...patch } }) }
   return (
     <section aria-labelledby="prefs-h">
-      <h2 id="prefs-h">{t('notices.prefs')}</h2>
+      <h2 id="prefs-h">{th('notices.prefs')}</h2>
       <p>{t('notices.prefsIntro')}</p>
       {CATEGORIES.map((c) => (
         <fieldset key={c}>
@@ -117,7 +117,7 @@ function Nudges() {
   const [settings, update] = useSettings()
   return (
     <section aria-labelledby="nudge-h">
-      <h2 id="nudge-h">{t('nudges.title')}</h2>
+      <h2 id="nudge-h">{th('nudges.title')}</h2>
       <p>{t('nudges.body')}</p>
       <div className="field">
         <label htmlFor="nudge-n">{t('nudges.label')}</label>

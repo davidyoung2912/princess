@@ -16,7 +16,7 @@ import { useRates } from '../../hooks/useRates'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -46,7 +46,7 @@ export function HomeReadyCard() {
   const next = r.open[0]
   return (
     <Card labelledBy="dl5-home-ring-h">
-      <h2 id="dl5-home-ring-h" className="card__title">{t('dl5.homeRing.title')}</h2>
+      <h2 id="dl5-home-ring-h" className="card__title">{th('dl5.homeRing.title')}</h2>
       <div className="ready-ring-row">
         <ReadyRing percent={r.percent} label={label} />
         <div>
@@ -67,7 +67,7 @@ export function SmallThingCard({ daysToDeparture }: { daysToDeparture: number })
   if (!thing || settings.nudgesPerDay === 0 || settings.calm) return null
   return (
     <Card labelledBy="dl5-small-h">
-      <h2 id="dl5-small-h" className="card__title">{t('dl5.small.title')}</h2>
+      <h2 id="dl5-small-h" className="card__title">{th('dl5.small.title')}</h2>
       <p>{t(`dl5.small.${thing.id}` as StringKey)}</p>
       <p className="muted">{t('dl5.small.minutes')}</p>
       <div className="button-row">
@@ -91,7 +91,7 @@ export function PassportByPortCard() {
   const worst = checks ? worstEntry(checks) : null
   return (
     <Card labelledBy="dl5-pass-h">
-      <h2 id="dl5-pass-h" className="card__title">{t('dl5.pass.title')}</h2>
+      <h2 id="dl5-pass-h" className="card__title">{th('dl5.pass.title')}</h2>
       <p>{t('dl5.pass.body', { date: formatDate(passportValidUntil(sailing.departure)) })}</p>
       <fieldset>
         <legend>{t('clr.who')}</legend>
@@ -126,7 +126,7 @@ export function HomeMoneyCard() {
   const h = homeRates(table, state.prepare.homeCurrency)
   return (
     <Card labelledBy="dl5-money-h">
-      <h2 id="dl5-money-h" className="card__title">{t('dl5.money.title')}</h2>
+      <h2 id="dl5-money-h" className="card__title">{th('dl5.money.title')}</h2>
       <div className="field">
         <label htmlFor="dl5-home-cur">{t('dl5.money.field')}</label>
         <select id="dl5-home-cur" className="field__input" value={state.prepare.homeCurrency} onChange={(e) => { if (isHomeCurrency(e.target.value)) update((s) => ({ ...s, prepare: { ...s.prepare, homeCurrency: e.target.value } })) }}>
@@ -147,7 +147,7 @@ export function NicknameCard() {
   const save = () => update((s) => ({ ...s, prepare: { ...s.prepare, nickname: cleanNickname(text) } }))
   return (
     <Card labelledBy="dl5-nick-h">
-      <h2 id="dl5-nick-h" className="card__title">{t('dl5.nick.title')}</h2>
+      <h2 id="dl5-nick-h" className="card__title">{th('dl5.nick.title')}</h2>
       <Field label={t('dl5.nick.field')} hint={t('dl5.nick.hint')} value={text} maxLength={NICKNAME_MAX} onChange={(e) => setText(e.target.value)} onBlur={save} />
       <div className="button-row">
         <Button variant="secondary" onClick={save}>{t('dl5.nick.save')}</Button>
@@ -171,7 +171,7 @@ export function MoodTiles() {
   const ranked = rankPorts(picked)
   return (
     <Card labelledBy="dl5-mood-h">
-      <h2 id="dl5-mood-h" className="card__title">{t('dl5.mood.title')}</h2>
+      <h2 id="dl5-mood-h" className="card__title">{th('dl5.mood.title')}</h2>
       <p>{t('dl5.mood.body')}</p>
       <fieldset className="plain-fieldset">
         <legend>{t('dl5.mood.legend')}</legend>
@@ -179,7 +179,7 @@ export function MoodTiles() {
           <label key={m} className="choice"><input type="checkbox" checked={picked.includes(m)} onChange={() => toggle(m)} /><span>{t(`dl5.mood.${m}` as StringKey)}</span></label>
         ))}
       </fieldset>
-      <h3>{t('dl5.mood.order')}</h3>
+      <h3>{th('dl5.mood.order')}</h3>
       <ol className="plain-list" aria-live="polite">
         {ranked.map((r) => (
           <li key={r.port}>
@@ -205,7 +205,7 @@ export function RemindCard({ sailingId }: { sailingId: string }) {
   const [email, setEmail] = useState(false)
   return (
     <Card labelledBy="dl5-remind-h">
-      <h2 id="dl5-remind-h" className="card__title">{t('dl5.remind.title')}</h2>
+      <h2 id="dl5-remind-h" className="card__title">{th('dl5.remind.title')}</h2>
       {st === 'none' ? (
         <>
           <p>{t('dl5.remind.body')}</p>
@@ -233,7 +233,7 @@ export function ReminderDueCard() {
   const sailing = sailingById(r.sailingId)
   return (
     <Card labelledBy="dl5-due-h">
-      <h2 id="dl5-due-h" className="card__title">{t('dl5.due.title')}</h2>
+      <h2 id="dl5-due-h" className="card__title">{th('dl5.due.title')}</h2>
       <p>{sailing ? t('dl5.due.body', { date: formatDate(sailing.departure) }) : t('dl5.due.bodyPlain')}</p>
       <div className="button-row">
         <Link to="/home/decide">{t('route.decide')}</Link>
@@ -253,7 +253,7 @@ export function SavedTravellers({ people, onPick }: { people: readonly GuestDraf
   if (list.length === 0 && savable.length === 0) return null
   return (
     <section aria-labelledby="dl5-trav-h" className="saved-travellers">
-      <h3 id="dl5-trav-h">{t('dl5.trav.title')}</h3>
+      <h3 id="dl5-trav-h">{th('dl5.trav.title')}</h3>
       {offer.length > 0 && (
         <ul className="plain-list">
           {offer.map((s) => (

@@ -8,7 +8,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -29,7 +29,7 @@ export function PackagesScreen() {
   const view = useMine(() => api.plan.packages.view())
   return (
     <div className="page">
-      <h1>{t('route.packages')}</h1>
+      <h1>{th('route.packages')}</h1>
       <p>{t('pk.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
     </div>
@@ -47,12 +47,12 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
     <>
       <ReadOnly canDo={view.canBuy} />
       <section aria-labelledby="incl-h">
-        <h2 id="incl-h">{t('pk.included')}</h2>
+        <h2 id="incl-h">{th('pk.included')}</h2>
         <p className="muted">{t('pk.includedHint')}</p>
         <ul className="card-grid">{view.people.map((p) => <Included key={p.id} p={p} />)}</ul>
         {view.credit.total > 0 && (
           <Card info>
-            <h3 className="card__title">{t('pk.credit')}</h3>
+            <h3 className="card__title">{th('pk.credit')}</h3>
             <p>{t('pk.creditLine', { remaining: formatMoney(view.credit.remaining), total: formatMoney(view.credit.total) })}</p>
             <progress className="meter" max={view.credit.total} value={view.credit.used} aria-label={t('pk.creditUsed', { used: formatMoney(view.credit.used), total: formatMoney(view.credit.total) })} />
           </Card>
@@ -61,7 +61,7 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
 
       {view.upgrades.length > 0 && (
         <section aria-labelledby="up-h">
-          <h2 id="up-h">{t('pk.upgrades')}</h2>
+          <h2 id="up-h">{th('pk.upgrades')}</h2>
           <p className="muted">{t('pk.upgradesHint')}</p>
           <ul className="card-grid">
             {view.upgrades.map((u) => (
@@ -82,7 +82,7 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
       )}
 
       <section aria-labelledby="add-h">
-        <h2 id="add-h">{t('pk.addons')}</h2>
+        <h2 id="add-h">{th('pk.addons')}</h2>
         <ul className="card-grid">
           {view.addOns.map((a) => (
             <li key={a.id} className="card">
@@ -99,7 +99,7 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
       <Worth view={view} />
 
       <section aria-labelledby="own-h">
-        <h2 id="own-h">{t('pk.mine')}</h2>
+        <h2 id="own-h">{th('pk.mine')}</h2>
         <PlanError error={claim.error ?? cancel.error} />
         {active.length === 0 ? <p className="muted">{t('pk.none')}</p> : (
           <ul className="card-grid">
@@ -206,7 +206,7 @@ function Worth({ view }: { view: PackagesView }) {
   const first = view.upgrades[0]
   return (
     <section aria-labelledby="worth-h">
-      <h2 id="worth-h">{t('pk.worth')}</h2>
+      <h2 id="worth-h">{th('pk.worth')}</h2>
       <p>{t('pk.worthIntro')}</p>
       <div className="calc-grid">
         <Field label={t('pk.w.drinks')} type="number" inputMode="decimal" min={0} max={20} value={use.drinksPerDay} onChange={(e) => setUse({ ...use, drinksPerDay: num(e.target.value, 20) })} />

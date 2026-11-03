@@ -4,7 +4,7 @@ import { categoryById } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -48,7 +48,7 @@ export function UpgradesScreen() {
   const withdraw = useAction(async (id: string) => { await api.ahead.upgrades.withdraw(id); view.retry() })
   return (
     <div className="page">
-      <h1>{t('route.upgrades')}</h1>
+      <h1>{th('route.upgrades')}</h1>
       <p>{t('upg.intro')}</p>
       <ChildNote />
       <Load state={view}>
@@ -63,7 +63,7 @@ export function UpgradesScreen() {
             )}
             <p className="muted">{t('upg.how', { time: formatDateTime(v.decidedAt) })}</p>
             <AheadError error={withdraw.error} />
-            <h2>{t('upg.yours')}</h2>
+            <h2>{th('upg.yours')}</h2>
             {v.bids.length === 0 ? <p className="muted">{t('upg.noBids')}</p> : (
               <ul className="card-grid">
                 {v.bids.map((b) => (

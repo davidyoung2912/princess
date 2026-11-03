@@ -12,7 +12,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { usePilot } from '../../hooks/usePilot'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { api } from '../../runtime'
 import { Button } from '../Button'
 import { FeedWaiting } from '../FeedWaiting'
@@ -59,7 +59,7 @@ export function BriefingScreen() {
   return (
     <div className="page">
       <BackLink to="/" label={t('route.home')} />
-      <h1>{t('route.briefing')}</h1>
+      <h1>{th('route.briefing')}</h1>
       <p>{t('brief.intro')}</p>
       <div className="button-row" role="group" aria-label={t('route.briefing')}>
         {(['morning', 'evening'] as const).map((k) => <Button key={k} variant={kind === k ? 'primary' : 'secondary'} aria-pressed={kind === k} onClick={() => { setKind(k); setCopied(false) }}>{t(k === 'morning' ? 'brief.morning' : 'brief.evening')}</Button>)}

@@ -12,7 +12,7 @@ import { usePilot } from '../../hooks/usePilot'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { sendConcierge } from '../../runtime'
 import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { HandoffCard } from './HandoffCard'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -79,10 +79,10 @@ export function ConciergeScreen() {
   const lastReply = [...messages].reverse().find((m) => m.role === 'assistant' && m.source !== 'handoff')
   return (
     <div className="page">
-      <h1>{t('route.concierge')}</h1>
+      <h1>{th('route.concierge')}</h1>
       <Banner kind="info" title={t('ai.label.title')}><p>{t('ai.label.body')}</p><p className="muted">{lastReply?.source === 'claude' ? t('ai.mode.claude') : t('ai.mode.scripted')}</p></Banner>
       <Card labelledBy="ai-log-h">
-        <h2 id="ai-log-h" className="card__title">{t('ai.conversation')}</h2>
+        <h2 id="ai-log-h" className="card__title">{th('ai.conversation')}</h2>
         {messages.length === 0 ? (
           <div>
             <p>{t('ai.empty')}</p>

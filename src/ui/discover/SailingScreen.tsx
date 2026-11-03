@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { sailingRange } from '../../domain/cruise'
 import { MAX_GUESTS } from '../../domain/priceShapes'
 import { sailingById, sailingNights } from '../../domain/sailings'
@@ -27,7 +27,7 @@ export function SailingScreen() {
   if (!sailing) {
     return (
       <div className="page">
-        <h1>{t('route.sailing')}</h1>
+        <h1>{th('route.sailing')}</h1>
         <Banner kind="warning" title={t('discover.notFound.sailing')} action={<LinkButton to="/home/sailings" variant="secondary">{t('discover.seeDates')}</LinkButton>}>
           <p>{t('discover.notFound.body')}</p>
         </Banner>
@@ -43,7 +43,7 @@ export function SailingScreen() {
       <SaveShare kind="sailing" id={sailing.id} name={range} favourites={favourites} />
 
       <section aria-labelledby="price-h">
-        <h2 id="price-h">{t('discover.estimate')}</h2>
+        <h2 id="price-h">{th('discover.estimate')}</h2>
         <p>{t('discover.estimateIntro')}</p>
         <div className="field">
           <label htmlFor="room">{t('discover.roomType')}</label>
@@ -70,7 +70,7 @@ export function SailingScreen() {
       <DayStrip sailing={sailing} />
 
       <section aria-labelledby="plan-h">
-        <h2 id="plan-h">{t('discover.dayByDay')}</h2>
+        <h2 id="plan-h">{th('discover.dayByDay')}</h2>
         <ItineraryList sailing={sailing} dated />
       </section>
       <OnThatDate sailing={sailing} />

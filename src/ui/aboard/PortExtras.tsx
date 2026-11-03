@@ -7,7 +7,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -25,7 +25,7 @@ export function LastMinute() {
   const book = useAction(async (id: string) => { await api.aboard.lastMinute.book(id, who); view.retry() })
   return (
     <section aria-labelledby="lm-h">
-      <h2 id="lm-h">{t('lm.title')}</h2>
+      <h2 id="lm-h">{th('lm.title')}</h2>
       <Load state={view}>
         {(v) => {
           if (v.port === null) return <p className="muted">{t('lm.none')}</p>
@@ -74,7 +74,7 @@ export function ContactsAshore({ port }: { port: Contactable }) {
   const c = PORT_CONTACTS[port]
   return (
     <Card labelledBy="ashore-h">
-      <h2 id="ashore-h" className="card__title">{t('ashore.title')}</h2>
+      <h2 id="ashore-h" className="card__title">{th('ashore.title')}</h2>
       <dl className="plain-dl">
         <div><dt>{t('ashore.emergency')}</dt><dd>{c.emergency}</dd></div>
         <div><dt>{t('ashore.agent')}</dt><dd>{c.agent}</dd></div>
@@ -102,7 +102,7 @@ export function Readiness({ tender }: { tender: boolean }) {
   }
   return (
     <Card labelledBy="ready-h">
-      <h2 id="ready-h" className="card__title">{t('ready.title')}</h2>
+      <h2 id="ready-h" className="card__title">{th('ready.title')}</h2>
       <Load state={ticked}>
         {(ids) => (
           <>

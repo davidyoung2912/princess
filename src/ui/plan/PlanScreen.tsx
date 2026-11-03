@@ -4,7 +4,7 @@ import { countBooked } from '../../domain/plan'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Card } from '../Card'
 import { HubList } from '../HubList'
 import { Load } from '../account/parts'
@@ -23,13 +23,13 @@ export function PlanScreen() {
   const aboard = today.data?.aboard ? today.data : null
   return (
     <div className="page">
-      <h1>{t('route.plan')}</h1>
+      <h1>{th('route.plan')}</h1>
       {aboard ? <Planner today={aboard} /> : <p>{t('plan.intro')}</p>}
 
       <Load state={list}>
         {(c) => (
           <Card labelledBy="check-h">
-            <h2 id="check-h" className="card__title">{t('route.checklist')}</h2>
+            <h2 id="check-h" className="card__title">{th('route.checklist')}</h2>
             <p className="progress-line">{t('plan.check.progress', { done: c.progress.done, total: c.progress.total })}</p>
             <progress className="meter" max={c.progress.total} value={c.progress.done} aria-label={t('plan.check.progress', { done: c.progress.done, total: c.progress.total })} />
             {c.next ? <p>{t('plan.check.next', { item: t(`plan.check.item.${c.next.id}` as never) })} <Link to="/plan/checklist">{t('plan.check.open')}</Link></p> : <p>{t('plan.check.allDone')}</p>}
@@ -42,7 +42,7 @@ export function PlanScreen() {
       <HubList tab="plan" />
 
       <section aria-labelledby="days-h">
-        <h2 id="days-h">{t('plan.days')}</h2>
+        <h2 id="days-h">{th('plan.days')}</h2>
         <Load state={plan}>
           {(p) => (
             <>
@@ -65,7 +65,7 @@ function DayCard({ day, days }: { day: PlanDay; days: readonly PlanDay[] }) {
   return (
     <li>
       <Card labelledBy={id}>
-        <h3 id={id} className="card__title">{t('plan.day', { n: day.day })} · {formatDate(day.date)}</h3>
+        <h3 id={id} className="card__title">{th('plan.day', { n: day.day })} · {formatDate(day.date)}</h3>
         <p className="muted">{day.place || t('plan.atSea')}</p>
         {day.entries.length > 0 && <ul className="day-card__entries">{day.entries.map((e) => <Entry key={`${e.kind}-${e.id ?? e.time}`} entry={e} colour={colour} />)}</ul>}
         {!rest && day.gaps.includes('tour') && <p className="day-card__gap">{t('plan.gap.tour')} <Link to="/plan/excursions">{t('plan.gap.tourGo')}<span className="visually-hidden"> {t('plan.day', { n: day.day })}</span></Link></p>}

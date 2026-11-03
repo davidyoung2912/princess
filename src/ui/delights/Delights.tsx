@@ -10,7 +10,7 @@ import { TERMINALS } from '../../domain/boarding'
 import { addDays, timeIn } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { formatMoney } from '../../domain/money'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { CopyText } from '../CopyText'
@@ -53,7 +53,7 @@ export function ShipTerms() {
   if (f.pitches === 0) return null
   return (
     <Card info labelledBy="dl-ship-h">
-      <h2 id="dl-ship-h" className="card__title">{t('dl.ship.title')}</h2>
+      <h2 id="dl-ship-h" className="card__title">{th('dl.ship.title')}</h2>
       <p>{t('dl.ship.length', { count: f.pitches, town: new Intl.NumberFormat('en-US').format(f.town) })}</p>
     </Card>
   )
@@ -78,7 +78,7 @@ export function TippingCard({ port }: { port: string }) {
   if (!n) return null
   return (
     <Card labelledBy="dl-tip-h">
-      <h2 id="dl-tip-h" className="card__title">{t('dl.tip.title', { country: n.country })}</h2>
+      <h2 id="dl-tip-h" className="card__title">{th('dl.tip.title', { country: n.country })}</h2>
       <ul>
         <li>{t(`dl.tip.included.${n.serviceIncluded}` as StringKey)}</li>
         <li>{t('dl.tip.restaurant', { percent: n.restaurantPercent })}</li>
@@ -99,7 +99,7 @@ export function OutOfOfficeCard() {
   const templates = { friendly: t('dl.ooo.text.friendly'), formal: t('dl.ooo.text.formal'), brief: t('dl.ooo.text.brief') }
   return (
     <Card labelledBy="dl-ooo-h">
-      <h2 id="dl-ooo-h" className="card__title">{t('dl.ooo.title')}</h2>
+      <h2 id="dl-ooo-h" className="card__title">{th('dl.ooo.title')}</h2>
       <p>{t('dl.ooo.intro')}</p>
       <Field label={t('dl.ooo.name')} value={name} maxLength={60} autoComplete="name" onChange={(e) => setName(e.target.value)} />
       <fieldset>
@@ -117,7 +117,7 @@ export function LastLookCard() {
   const { left, ready } = lastLookLeft(ticked)
   return (
     <Card labelledBy="dl-look-h">
-      <h2 id="dl-look-h" className="card__title">{t('dl.look.title')}</h2>
+      <h2 id="dl-look-h" className="card__title">{th('dl.look.title')}</h2>
       <p>{t('dl.look.intro')}</p>
       {LAST_LOOK_ITEMS.map((i) => (
         <label key={i} className="choice"><input type="checkbox" checked={ticked.includes(i)} onChange={(e) => setTicked((s) => (e.target.checked ? [...s, i] : s.filter((x) => x !== i)))} /><span>{t(`dl.look.item.${i}` as StringKey)}</span></label>
@@ -131,7 +131,7 @@ export function LastLookCard() {
 export function ArrivedCard() {
   return (
     <Card labelledBy="dl-arr-h">
-      <h2 id="dl-arr-h" className="card__title">{t('dl.arrived.title')}</h2>
+      <h2 id="dl-arr-h" className="card__title">{th('dl.arrived.title')}</h2>
       <CopyText text={t('dl.arrived.text', { terminal: TERMINALS.usual })} />
     </Card>
   )
@@ -143,7 +143,7 @@ export function RideCard() {
   const [time, setTime] = useState('09:30')
   return (
     <Card labelledBy="dl-ride-h">
-      <h2 id="dl-ride-h" className="card__title">{t('dl.ride.title')}</h2>
+      <h2 id="dl-ride-h" className="card__title">{th('dl.ride.title')}</h2>
       <Field label={t('dl.ride.place')} value={place} maxLength={80} onChange={(e) => setPlace(e.target.value)} />
       <Field label={t('dl.ride.time')} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
       <CopyText text={t('dl.ride.text', { place: place.trim() || t('dl.ride.defaultPlace'), terminal: TERMINALS.usual, time })} />
@@ -161,7 +161,7 @@ export function WatchCard() {
   const words = Number.isInteger(hours) ? t('dl.watch.hours', { count: hours }) : t('dl.watch.half', { hours: Math.floor(hours) })
   return (
     <Card info labelledBy="dl-watch-h">
-      <h2 id="dl-watch-h" className="card__title">{t('dl.watch.title')}</h2>
+      <h2 id="dl-watch-h" className="card__title">{th('dl.watch.title')}</h2>
       <p>{gap.same ? t('dl.watch.same') : t(gap.minutes > 0 ? 'dl.watch.ahead' : 'dl.watch.behind', { hours: words })}</p>
     </Card>
   )
@@ -173,7 +173,7 @@ export function ChargeCard({ firstDeadline }: { firstDeadline?: number }) {
   const deadline = firstDeadline === undefined ? undefined : timeIn(firstDeadline, shipZoneAt(sailing, firstDeadline))
   return (
     <Card info labelledBy="dl-chg-h">
-      <h2 id="dl-chg-h" className="card__title">{t('dl.charge.title')}</h2>
+      <h2 id="dl-chg-h" className="card__title">{th('dl.charge.title')}</h2>
       <p>{t('dl.charge.body', { time: chargeReminderTime(deadline) })}</p>
     </Card>
   )

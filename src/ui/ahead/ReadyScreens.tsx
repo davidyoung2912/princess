@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -29,14 +29,14 @@ export function MedallionScreen() {
   const lost = useAction(async () => { await api.ahead.medallion.lost(); view.retry() })
   return (
     <div className="page">
-      <h1>{t('route.medallion')}</h1>
+      <h1>{th('route.medallion')}</h1>
       <p>{t('med.intro')}</p>
       <ChildNote />
       <Load state={view}>
         {(v) => (
           <>
             <Card hero labelledBy="med-h">
-              <h2 id="med-h" className="card__title">{t(`med.stage.${v.stage}` as StringKey)}</h2>
+              <h2 id="med-h" className="card__title">{th(`med.stage.${v.stage}` as StringKey)}</h2>
               <p>{t(`med.stageBody.${v.stage}` as StringKey)}</p>
               {v.stage !== 'collect' && <p className="muted">{t('med.tracking', { number: v.trackingNumber })}</p>}
               <ol className="plain-bullets">
@@ -50,7 +50,7 @@ export function MedallionScreen() {
               <Banner kind="success" title={t('med.active')}><p>{t('med.activeBody')}</p></Banner>
             ) : (
               <Card>
-                <h2 className="card__title">{t('med.activate')}</h2>
+                <h2 className="card__title">{th('med.activate')}</h2>
                 <p>{v.canActivate ? t('med.activateBody') : t('med.activateWait')}</p>
                 <Button disabled={!v.canActivate || activate.busy || !v.canEdit} onClick={() => void activate.run()}>{t('med.activateButton')}</Button>
               </Card>
@@ -58,7 +58,7 @@ export function MedallionScreen() {
             <AheadError error={activate.error ?? lost.error} />
             {v.lostAt === null && (
               <Card>
-                <h2 className="card__title">{t('med.lost')}</h2>
+                <h2 className="card__title">{th('med.lost')}</h2>
                 <p>{t('med.lostHelp')}</p>
                 <Button variant="secondary" disabled={lost.busy || !v.canEdit} onClick={() => void lost.run()}>{t('med.lostButton')}</Button>
               </Card>
@@ -78,7 +78,7 @@ export function LuggageScreen() {
   const handed = useAction(async (on: boolean) => { await api.ahead.tags.handedOver(on); view.retry() })
   return (
     <div className="page">
-      <h1>{t('route.luggage')}</h1>
+      <h1>{th('route.luggage')}</h1>
       <p>{t('tag.intro', { count: TAGS_PER_GUEST })}</p>
       <ChildNote />
       <AheadError error={choose.error ?? handed.error} />
@@ -96,7 +96,7 @@ export function LuggageScreen() {
             </fieldset>
             {v.way && (
               <section aria-labelledby="tag-list-h">
-                <h2 id="tag-list-h">{t('tag.yours')}</h2>
+                <h2 id="tag-list-h">{th('tag.yours')}</h2>
                 <ul className="card-grid">
                   {v.guests.map((g) => (
                     <li key={g.id}>
@@ -110,7 +110,7 @@ export function LuggageScreen() {
                 </ul>
                 {v.way === 'print' && <BagTagCards guests={v.guests} number={v.number} />}
                 {v.way === 'order' && v.orderedAt !== null && <p role="status"><StatusBadge kind="booked" label={t('tag.ordered')} /></p>}
-                <h2>{t('tag.track')}</h2>
+                <h2>{th('tag.track')}</h2>
                 <p className="muted">{t('tag.trackNote')}</p>
                 <ol className="plain-bullets" aria-label={t('tag.track')}>
                   {BAG_STAGES.map((s) => <li key={s}>{v.stage === s ? <strong>{t(`tag.stage.${s}` as StringKey)} ({t('tag.now')})</strong> : t(`tag.stage.${s}` as StringKey)}</li>)}
@@ -133,7 +133,7 @@ export function ClearanceScreen() {
   const [who, setWho] = useState<ClearanceCitizenship>('us')
   return (
     <div className="page">
-      <h1>{t('route.clearance')}</h1>
+      <h1>{th('route.clearance')}</h1>
       <p>{t('clr.intro')}</p>
       <fieldset>
         <legend>{t('clr.who')}</legend>
@@ -149,11 +149,11 @@ export function ClearanceScreen() {
           <li key={c.port}>
             <Card>
               <h2 className="card__title">{PORTS[c.port].name}: {c.country}</h2>
-              <h3>{t('clr.carry')}</h3>
+              <h3>{th('clr.carry')}</h3>
               <p>{c.documents[who]}</p>
-              <h3>{t('clr.forms')}</h3>
+              <h3>{th('clr.forms')}</h3>
               <ul className="plain-bullets">{c.forms.map((f) => <li key={f}>{f}</li>)}</ul>
-              <h3>{t('clr.notes')}</h3>
+              <h3>{th('clr.notes')}</h3>
               <ul className="plain-bullets">{c.notes.map((f) => <li key={f}>{f}</li>)}</ul>
             </Card>
           </li>
@@ -174,7 +174,7 @@ export function WeatherScreen() {
   const days = itinerary(s)
   return (
     <div className="page">
-      <h1>{t('route.weather')}</h1>
+      <h1>{th('route.weather')}</h1>
       <p>{t('wx.intro')}</p>
       <ul className="card-grid">
         {days.map((day) => {
@@ -183,7 +183,7 @@ export function WeatherScreen() {
           return (
             <li key={day.day}>
               <Card>
-                <h2 className="card__title">{t('plan.day', { n: day.day })}: {day.port === 'sea' ? t('plan.atSea') : PORTS[day.port].name}</h2>
+                <h2 className="card__title">{th('plan.day', { n: day.day })}: {day.port === 'sea' ? th('plan.atSea') : PORTS[day.port].name}</h2>
                 <p className="muted">{formatDate(day.date)}{day.port === 'sea' ? ` · ${t('wx.seaNote')}` : ''}</p>
                 <dl className="facts">
                   <div><dt>{t('wx.high')}</dt><dd>{formatTemp(o.highF, settings.units)}</dd></div>
@@ -216,7 +216,7 @@ export function HealthPrepScreen() {
   const today = dateIn(now, 'America/New_York')
   return (
     <div className="page">
-      <h1>{t('route.healthPrep')}</h1>
+      <h1>{th('route.healthPrep')}</h1>
       <p>{t('prep.intro')}</p>
       <AheadError error={tick.error} />
       <Load state={done}>
@@ -232,7 +232,7 @@ export function HealthPrepScreen() {
               )}
               {GROUPS.map((g) => (
                 <section key={g} aria-labelledby={`prep-${g}`}>
-                  <h2 id={`prep-${g}`}>{t(`prep.g.${g}` as StringKey)}</h2>
+                  <h2 id={`prep-${g}`}>{th(`prep.g.${g}` as StringKey)}</h2>
                   <ul className="plain-bullets">
                     {PREP.filter((p) => p.group === g).map((p) => (
                       <li key={p.id}>

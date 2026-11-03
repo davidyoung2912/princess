@@ -5,7 +5,7 @@ import { MAX_NOTE_LENGTH, partyCheckin } from '../../domain/party'
 import { api } from '../../runtime'
 import { useParty } from '../../hooks/useParty'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
@@ -39,13 +39,13 @@ export function PartyScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.party')}</h1>
+      <h1>{th('route.party')}</h1>
       <p>{t('party.shared.intro')}</p>
       <SharingNote field="plans" />
       {child && <p className="muted">{t('party.child')}</p>}
 
       <section aria-labelledby="party-check-h">
-        <h2 id="party-check-h">{t('party.checkin')}</h2>
+        <h2 id="party-check-h">{th('party.checkin')}</h2>
         <Load state={checkin}>
           {(view) => {
             const c = partyCheckin(view.guests)
@@ -61,7 +61,7 @@ export function PartyScreen() {
       </section>
 
       <section aria-labelledby="party-inv-h">
-        <h2 id="party-inv-h">{t('party.invites')}</h2>
+        <h2 id="party-inv-h">{th('party.invites')}</h2>
         {!child && (
           <form onSubmit={addInvite} noValidate>
             <Field label={t('party.invite.email')} hint={t('party.invites.hint')} type="email" autoComplete="off" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} error={emailError || undefined} />
@@ -81,7 +81,7 @@ export function PartyScreen() {
       </section>
 
       <section aria-labelledby="party-notes-h">
-        <h2 id="party-notes-h">{t('party.notes')}</h2>
+        <h2 id="party-notes-h">{th('party.notes')}</h2>
         {!child && (
           <form onSubmit={addNote} noValidate>
             <TextArea label={t('party.note.label')} value={text} maxLength={MAX_NOTE_LENGTH} onChange={(e) => setText(e.target.value)} />

@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import type { ReactNode } from 'react'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { hubsForStage, quickForStage } from '../routes/stageMenus'
 import { routeForPath } from '../routes/nav'
 import type { TabId } from '../routes/routes'
@@ -19,12 +19,12 @@ export function HubList({ tab, badges = {} }: { tab: TabId; badges?: Record<stri
     <>
       {quick.length > 0 && (
         <nav aria-labelledby={`${tab}-quick-h`}>
-          <h2 id={`${tab}-quick-h`}>{t('hub.quick')}</h2>
+          <h2 id={`${tab}-quick-h`}>{th('hub.quick')}</h2>
           <ul className="link-list">{quick.map(link)}</ul>
         </nav>
       )}
       <nav aria-labelledby={`${tab}-hubs-h`}>
-        <h2 id={`${tab}-hubs-h`}>{t('hub.all')}</h2>
+        <h2 id={`${tab}-hubs-h`}>{th('hub.all')}</h2>
         {hubsForStage(tab, stage).map(({ hub, lead }) => (
           <details key={hub.id} className="hub" open={lead || undefined}>
             <summary>{t(hub.labelKey)}</summary>

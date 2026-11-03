@@ -5,7 +5,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { usePersona } from '../../hooks/useDemo'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -31,7 +31,7 @@ export function Parties() {
   const submit = (e: FormEvent) => { e.preventDefault(); void create.run() }
   return (
     <section aria-labelledby="party-h">
-      <h2 id="party-h">{t('party.title')}</h2>
+      <h2 id="party-h">{th('party.title')}</h2>
       <p>{t('party.intro', { max: MAX_PARTY_CABINS, time: formatTime(QUIET_FROM) })}</p>
       <Load state={list}>
         {(parties) => (

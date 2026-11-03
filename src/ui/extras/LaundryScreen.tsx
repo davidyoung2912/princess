@@ -6,7 +6,7 @@ import { LAUNDRY_NOTE_MAX, SERVICES, serviceById, type LaundryService } from '..
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -20,7 +20,7 @@ export function LaundryScreen() {
   const view = useMine(() => api.laundry.view(), [])
   return (
     <div className="page">
-      <h1>{t('route.laundry')}</h1>
+      <h1>{th('route.laundry')}</h1>
       <p>{t('lau.intro')}</p>
       <Load state={view}>{(v) => <Laundry v={v} reload={view.retry} />}</Load>
       <BackLink to="/ship" label={t('route.ship')} />
@@ -43,7 +43,7 @@ function Laundry({ v, reload }: { v: LaundryView; reload: () => void }) {
       {v.freeBagLeft && <Banner kind="success" title={t('lau.freeBag')}><p>{t('lau.freeBagBody')}</p></Banner>}
       {v.canRequest && (
         <Card hero labelledBy="lau-new-h">
-          <h2 id="lau-new-h" className="card__title">{t('lau.new')}</h2>
+          <h2 id="lau-new-h" className="card__title">{th('lau.new')}</h2>
           <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
             <div className="field">
               <label htmlFor="lau-svc">{t('lau.service')}</label>
@@ -77,7 +77,7 @@ function Laundry({ v, reload }: { v: LaundryView; reload: () => void }) {
         </Card>
       )}
       <section aria-labelledby="lau-mine-h">
-        <h2 id="lau-mine-h">{t('lau.mine')}</h2>
+        <h2 id="lau-mine-h">{th('lau.mine')}</h2>
         {v.requests.length === 0 ? <p className="muted">{t('lau.none')}</p> : <ul className="order-list">{v.requests.map((r) => <Request key={r.id} r={r} reload={reload} />)}</ul>}
       </section>
     </>
@@ -89,7 +89,7 @@ function Request({ r, reload }: { r: LaundryRequest; reload: () => void }) {
   const cancel = useAction(async () => { await api.laundry.cancel(r.id); reload() })
   return (
     <li className="order">
-      <h3 className="order__title">{r.qty} × {t(`lau.svc.${r.service}` as StringKey)}</h3>
+      <h3 className="order__title">{r.qty} × {th(`lau.svc.${r.service}` as StringKey)}</h3>
       <p role="status"><strong>{t(`lau.stage.${r.stage}` as StringKey)}</strong></p>
       <p>{t('lau.pickupAt', { time: shipTime(r.pickupAt) })} · {t('lau.returnBy', { time: shipTime(r.returnAt) })}</p>
       <p>{r.total === 0 ? t('x.free') : formatMoney(r.total)}{r.free > 0 && <> · {t('lau.freeApplied', { amount: formatMoney(r.free) })}</>}</p>

@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
 import { usePersona } from '../../hooks/useDemo'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -42,7 +42,7 @@ export function UpdatesScreen() {
   const ack = useAction(async (id: UpdateView['id'], option: string) => { await api.updates.acknowledge(id, option); updates.retry() })
   return (
     <div className="page">
-      <h1>{t('route.updates')}</h1>
+      <h1>{th('route.updates')}</h1>
       <p>{t('disrupt.intro')}</p>
       {!updates.data ? (updates.status === 'error' ? <LoadError retry={updates.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : updates.data.length === 0 ? <p>{t('disrupt.none')}</p> : (
         <>
@@ -62,7 +62,7 @@ function Update({ u, canAck, busy, onAck }: { u: UpdateView; canAck: boolean; bu
   const chosen = def.options.find((o) => o.id === done?.option)
   return (
     <Card labelledBy={`up-${u.id}`}>
-      <h2 id={`up-${u.id}`} className="card__title">{t(def.title)}</h2>
+      <h2 id={`up-${u.id}`} className="card__title">{th(def.title)}</h2>
       <p>
         <StatusBadge kind={u.severity === 'info' ? 'ready' : 'changed'} label={t(`disrupt.sev.${u.severity}` as 'disrupt.sev.info')} />{' '}
         {!u.active && <StatusBadge kind="cancelled" label={t('disrupt.ended')} />}

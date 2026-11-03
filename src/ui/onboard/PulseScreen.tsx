@@ -5,7 +5,7 @@ import { goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, q
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { usePulseEnv } from '../../hooks/useServedFeeds'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
@@ -19,7 +19,7 @@ export function PulseScreen() {
   if (!env) {
     return (
       <div className="page">
-        <h1>{t('route.pulse')}</h1>
+        <h1>{th('route.pulse')}</h1>
         <FeedWaiting />
         <BackLink to="/ship" label={t('route.ship')} />
       </div>
@@ -35,12 +35,12 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
 
   return (
     <div className="page">
-      <h1>{t('route.pulse')}</h1>
+      <h1>{th('route.pulse')}</h1>
       <p>{t('pulse.intro')}</p>
       <Banner kind="info" title={t('pulse.honest')}><p>{t('pulse.honestBody')}</p></Banner>
 
       <Card labelledBy="pulse-h">
-        <h2 id="pulse-h" className="card__title">{t('pulse.venues')}</h2>
+        <h2 id="pulse-h" className="card__title">{th('pulse.venues')}</h2>
         <ul className="plain-list">
           {PULSE_VENUES.map((v) => {
             const p = pulseAt(v.id, now, env)
@@ -57,7 +57,7 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
       </Card>
 
       <Card labelledBy="lines-h">
-        <h2 id="lines-h" className="card__title">{t('lines.title')}</h2>
+        <h2 id="lines-h" className="card__title">{th('lines.title')}</h2>
         <ul className="plain-list">
           {LINES.map((l) => {
             const r = lineReading(l.kind, now, env)
@@ -73,7 +73,7 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
       </Card>
 
       <Card labelledBy="quiet-h">
-        <h2 id="quiet-h" className="card__title">{t('quiet.title')}</h2>
+        <h2 id="quiet-h" className="card__title">{th('quiet.title')}</h2>
         <fieldset>
           <legend>{t('quiet.filter')}</legend>
           {(['stepFree', 'shade', 'seating'] as const).map((k) => (

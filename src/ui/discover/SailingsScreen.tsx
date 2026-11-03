@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { sailingRange } from '../../domain/cruise'
 import { favouriteKey } from '../../domain/favourites'
 import { SAILINGS } from '../../domain/sailings'
@@ -24,7 +24,7 @@ export function SailingsScreen() {
   const lowest = offers.data ? Math.min(...offers.data.map((o) => o.from.fare)) : null
   return (
     <div className="page">
-      <h1>{t('route.sailings')}</h1>
+      <h1>{th('route.sailings')}</h1>
       <p>{t('discover.sailingsIntro')}</p>
       <PriceState state={offers}>
         <ul className="card-grid">

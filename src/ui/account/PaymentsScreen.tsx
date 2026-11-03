@@ -6,7 +6,7 @@ import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -33,7 +33,7 @@ export function PaymentsScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.payments')}</h1>
+      <h1>{th('route.payments')}</h1>
       <Load state={view}>
         {(v) => {
           const { trip } = v
@@ -47,7 +47,7 @@ export function PaymentsScreen() {
             <>
               {!v.canPay && me && <SupervisedNote booker={personFirstName(me.booker)} />}
               <Card labelledBy="summary-h">
-                <h2 id="summary-h">{t('pay.summary')}</h2>
+                <h2 id="summary-h">{th('pay.summary')}</h2>
                 <dl className="facts">
                   <div><dt>{t('pay.total')}</dt><dd>{formatMoney(trip.plan.total)}</dd></div>
                   <div><dt>{t('pay.deposit')}</dt><dd>{formatMoney(trip.plan.deposit)}</dd></div>
@@ -61,7 +61,7 @@ export function PaymentsScreen() {
 
               {owing && v.canPay && (
                 <section aria-labelledby="pay-h">
-                  <h2 id="pay-h">{t('pay.payBalance')}</h2>
+                  <h2 id="pay-h">{th('pay.payBalance')}</h2>
                   {trip.payment === 'overdue' && <Banner kind="danger" title={t('pay.overdue', { date: formatDate(trip.plan.finalDue) })}><p>{t('pay.overdueBody')}</p></Banner>}
                   {chosen ? (
                     <>
@@ -86,7 +86,7 @@ export function PaymentsScreen() {
               )}
 
               <section aria-labelledby="rec-h">
-                <h2 id="rec-h">{t('pay.receipts')}</h2>
+                <h2 id="rec-h">{th('pay.receipts')}</h2>
                 <ul className="plain-list">
                   {v.receipts.map((r) => (
                     <li key={r.id}>
@@ -97,7 +97,7 @@ export function PaymentsScreen() {
               </section>
 
               <section aria-labelledby="cards-h">
-                <h2 id="cards-h">{t('pay.cards')}</h2>
+                <h2 id="cards-h">{th('pay.cards')}</h2>
                 <ActionError error={remove.error} />
                 {v.cards.length === 0 && <p className="muted">{t('pay.noCards')}</p>}
                 <ul className="plain-list">
@@ -141,7 +141,7 @@ function AddCard({ today, onAdded }: { today: string; onAdded: () => void }) {
   }
   return (
     <form onSubmit={(e) => void submit(e)} noValidate aria-labelledby="add-card-h">
-      <h3 id="add-card-h">{t('pay.addCard')}</h3>
+      <h3 id="add-card-h">{th('pay.addCard')}</h3>
       <div className="field">
         <label htmlFor="brand">{t('pay.brand')}</label>
         <select id="brand" value={brand} onChange={(e) => setBrand(e.target.value as CardBrand)}>{CARD_BRANDS.map((b) => <option key={b} value={b}>{BRAND_NAMES[b]}</option>)}</select>

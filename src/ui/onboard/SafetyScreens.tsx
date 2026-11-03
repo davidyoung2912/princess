@@ -10,7 +10,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -27,7 +27,7 @@ export function MusterScreen() {
   const copy = useSavedCopy('muster', me?.booker ?? 'none', () => api.onboard.muster(), asMusterView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.muster')}</h1>
+      <h1>{th('route.muster')}</h1>
       <p>{t('muster.intro')}</p>
       <Saved copy={copy}>{(m) => <Station m={m} reload={copy.retry} />}</Saved>
       <Briefing />
@@ -53,7 +53,7 @@ function Station({ m, reload }: { m: MusterView; reload: () => void }) {
       </Card>
 
       <section aria-labelledby="checkin-h">
-        <h2 id="checkin-h">{t('muster.checkin')}</h2>
+        <h2 id="checkin-h">{th('muster.checkin')}</h2>
         {m.done ? <Banner kind="success" title={t('muster.allDone')} /> : <p>{t('muster.checkinBody')}</p>}
         <ul className="plain-bullets">
           {m.guests.map((g) => (
@@ -83,7 +83,7 @@ function Briefing() {
   const chosen = DRILL_LANGUAGES.find((l) => l.code === lang) ?? DRILL_LANGUAGES[0]
   return (
     <section aria-labelledby="brief-h">
-      <h2 id="brief-h">{t('muster.briefing')}</h2>
+      <h2 id="brief-h">{th('muster.briefing')}</h2>
       <p>{t('muster.briefingBody')}</p>
       <ol className="plain-bullets">{DRILL_STEPS.map((s) => <li key={s}>{t(`muster.step.${s}` as StringKey)}</li>)}</ol>
       <div className="chip-row" role="group" aria-label={t('muster.language')}>
@@ -100,7 +100,7 @@ function Briefing() {
 function Alternatives() {
   return (
     <section aria-labelledby="alt-h">
-      <h2 id="alt-h">{t('muster.alt')}</h2>
+      <h2 id="alt-h">{th('muster.alt')}</h2>
       <ul className="plain-bullets">{DRILL_ALTERNATIVES.map((a) => <li key={a}>{t(`muster.alt.${a}` as StringKey)}</li>)}</ul>
       <p><Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </section>
@@ -114,9 +114,9 @@ export function EmergencyScreen() {
   const card = copy.data
   return (
     <div className="page">
-      <h1>{t('route.emergency')}</h1>
+      <h1>{th('route.emergency')}</h1>
       <Card hero labelledBy="help-now-h">
-        <h2 id="help-now-h" className="card__title"><Siren aria-hidden="true" /> {t('emerg.now')}</h2>
+        <h2 id="help-now-h" className="card__title"><Siren aria-hidden="true" /> {th('emerg.now')}</h2>
         <p className="emerg__big">{t('emerg.dial')}</p>
         <a className="btn btn--danger btn--block emerg__call" href={`tel:${EMERGENCY_NUMBER}`}><Phone aria-hidden="true" /> {t('emerg.call', { number: EMERGENCY_NUMBER })}</a>
         <p>{t('emerg.medical')}</p>
@@ -125,7 +125,7 @@ export function EmergencyScreen() {
       {card ? (
         <>
           <Card labelledBy="say-h">
-            <h2 id="say-h" className="card__title">{t('emerg.say')}</h2>
+            <h2 id="say-h" className="card__title">{th('emerg.say')}</h2>
             <p className="emerg__big">{card.script}</p>
             <dl className="plain-dl emerg__facts">
               <div><dt>{t('emerg.stateroom')}</dt><dd>{card.stateroom}, {t('map.deckShort', { deck: card.deck })}</dd></div>
@@ -139,7 +139,7 @@ export function EmergencyScreen() {
       ) : <p role="status" className="muted">{t('account.loading')}</p>}
 
       <section aria-labelledby="who-h">
-        <h2 id="who-h">{t('emerg.contacts')}</h2>
+        <h2 id="who-h">{th('emerg.contacts')}</h2>
         <ul className="plain-bullets">
           {EMERGENCY_CONTACTS.map((c) => <li key={c.label}><strong>{t(`emerg.contact.${c.label}` as StringKey)}</strong>: <a href={`tel:${c.number}`}>{c.number}</a><br /><span className="muted">{c.note}</span></li>)}
         </ul>
@@ -148,7 +148,7 @@ export function EmergencyScreen() {
       <UrgentIssues headingId="emerg-urgent-h" />
 
       <section aria-labelledby="med-h">
-        <h2 id="med-h">{t('emerg.hours')}</h2>
+        <h2 id="med-h">{th('emerg.hours')}</h2>
         <dl className="plain-dl">
           {(['sea', 'port'] as const).map((d) => <div key={d}><dt>{t(`ven.hours.${d}` as StringKey)}</dt><dd>{MEDICAL_HOURS[d].map(([a, b]) => `${formatTime(a)} to ${formatTime(b)}`).join(', ')}</dd></div>)}
         </dl>

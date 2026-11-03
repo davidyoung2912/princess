@@ -12,7 +12,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useShipTime } from '../onboard/shipTime'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -29,7 +29,7 @@ export function MoneyScreen() {
   const view = useMine(() => api.aboard.money.view())
   return (
     <div className="page">
-      <h1>{t('route.money')}</h1>
+      <h1>{th('route.money')}</h1>
       <p>{t('money.intro')}</p>
       <ChildNote />
       <Load state={view}>
@@ -66,7 +66,7 @@ function ChargeChecks() {
   const [settings, update] = useSettings()
   return (
     <section aria-labelledby="chk-h">
-      <h2 id="chk-h">{t('money.checks')}</h2>
+      <h2 id="chk-h">{th('money.checks')}</h2>
       <p>{t('money.checksBody')}</p>
       <div className="field">
         <label htmlFor="chk">{t('money.checksLabel')}</label>
@@ -87,7 +87,7 @@ function Currency({ v, reload }: { v: MoneyView; reload: () => void }) {
   const stale = ratesStale(table, now)
   return (
     <section aria-labelledby="cur-h">
-      <h2 id="cur-h">{t('money.currency')}</h2>
+      <h2 id="cur-h">{th('money.currency')}</h2>
       <div className="field">
         <label htmlFor="cur">{t('money.showIn')}</label>
         <select id="cur" className="field__input" value={v.currency} onChange={(e) => void set.run(e.target.value)}>
@@ -114,7 +114,7 @@ export function TopUps({ v, reload }: { v: MoneyView; reload: () => void }) {
   const go = useAction(async () => { await api.aboard.money.topUp(dollars, source); reload() })
   return (
     <section aria-labelledby="top-h">
-      <h2 id="top-h">{t('money.topUp')}</h2>
+      <h2 id="top-h">{th('money.topUp')}</h2>
       <p>{t('money.topUpBody', { max: TOPUP_TOTAL_MAX })}</p>
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void go.run() }}>
         <div className="field">
@@ -155,7 +155,7 @@ function Pin({ v, reload }: { v: MoneyView; reload: () => void }) {
   const forgot = useAction(async () => { await api.aboard.money.forgotPin(); reload() })
   return (
     <section aria-labelledby="pin-h">
-      <h2 id="pin-h">{t('money.pin')}</h2>
+      <h2 id="pin-h">{th('money.pin')}</h2>
       <p>{v.pinSet ? t('money.pinSet') : t('money.pinNone')}</p>
       {reset && (
         <Banner kind={reset.stage === 'ready' ? 'success' : 'info'} title={t(`money.reset.${reset.stage}` as StringKey)}>
@@ -184,7 +184,7 @@ export function Gratuities({ v, reload }: { v: MoneyView; reload: () => void }) 
   const remove = useAction(async () => { await api.aboard.money.gratuity('removal', reason); setAsking(false); reload() })
   return (
     <section aria-labelledby="grat-h">
-      <h2 id="grat-h">{t('money.grat')}</h2>
+      <h2 id="grat-h">{th('money.grat')}</h2>
       <p className="muted">{t('money.gratPrivate')}</p>
       {g.due === 0 ? <p>{t('money.gratIncluded')}</p> : (
         <>

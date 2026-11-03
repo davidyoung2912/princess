@@ -1,5 +1,5 @@
 import { useMemory } from '../hooks/useMemory'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { Card } from './Card'
 
 /**
@@ -12,7 +12,7 @@ export function PastedLines({ day }: { day: number }) {
   if (mine.length === 0) return null
   return (
     <Card labelledBy={`pasted-${day}`}>
-      <h2 id={`pasted-${day}`} className="card__title">{t('paste.today')}</h2>
+      <h2 id={`pasted-${day}`} className="card__title">{th('paste.today')}</h2>
       <ul className="plain-bullets">{mine.map((l) => <li key={l.text}>{l.text}</li>)}</ul>
       <p className="muted">{t('paste.todayNote')}</p>
     </Card>

@@ -1,5 +1,5 @@
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { STAGE_ACTION } from '../../routes/hubs'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -14,7 +14,7 @@ export function StageLanding() {
   return (
     <Card hero labelledBy="landing-h">
       <p className="muted">{t('land.label')}{where && <> · {where}</>}</p>
-      <h2 id="landing-h" className="card__title">{t(`land.title.${stage}` as StringKey)}</h2>
+      <h2 id="landing-h" className="card__title">{th(`land.title.${stage}` as StringKey)}</h2>
       <p>{t(`land.body.${stage}` as StringKey)}</p>
       <div className="button-row"><LinkButton to={STAGE_ACTION[stage]}>{t(`land.go.${stage}` as StringKey)}</LinkButton></div>
     </Card>

@@ -9,7 +9,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -24,7 +24,7 @@ export function FamilyScreen() {
   const copy = useSavedCopy('family', me?.booker ?? 'none', () => api.family.view(), asFamilyView, [me?.id])
   return (
     <div className="page">
-      <h1>{t('route.family')}</h1>
+      <h1>{th('route.family')}</h1>
       <p>{t('fam.intro')}</p>
       <Banner kind="info" title={t('fam.honest')}><p>{t('fam.honestBody')}</p></Banner>
       <Saved copy={copy}>{(v) => <Family v={v} reload={copy.retry} offline={copy.fromCopy} />}</Saved>
@@ -48,7 +48,7 @@ function Log({ v }: { v: FamilyView }) {
   const shipTime = useShipTime()
   return (
     <section aria-labelledby="fam-log-h">
-      <h2 id="fam-log-h">{t('fam.log')}</h2>
+      <h2 id="fam-log-h">{th('fam.log')}</h2>
       <ul className="plain-bullets">{v.log.map((l) => <li key={l.id}>{shipTime(l.at)}: {l.text}</li>)}</ul>
     </section>
   )
@@ -72,7 +72,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
   const id = `kid-${k.id}`
   return (
     <Card hero labelledBy={`${id}-h`}>
-      <h2 id={`${id}-h`} className="card__title">{k.name} <small className="muted">({t('plan.age', { age: k.age })})</small></h2>
+      <h2 id={`${id}-h`} className="card__title">{k.name} <small className="muted">({th('plan.age', { age: k.age })})</small></h2>
       <p className={`kid__status kid__status--${k.status}`} role="status"><strong>{t(`fam.status.${k.status}` as StringKey)}</strong></p>
       <p>{k.status === 'inClub' ? t('fam.inClub', { place, time: shipTime(k.seen.at) }) : t('fam.lastSeen', { place, ago: duration(minutes) })} <span className="muted">({t(`fam.source.${k.seen.source}` as StringKey)})</span></p>
       {k.status === 'overdue' && (
@@ -87,7 +87,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
       )}
       {k.status === 'outOfZone' && <Banner kind="warning" title={t('fam.outOfZone', { place })}><p>{t('fam.outOfZoneBody')}</p></Banner>}
 
-      <h3>{t('fam.club')}</h3>
+      <h3>{th('fam.club')}</h3>
       {k.club === null ? <p>{k.age < 3 ? t('fam.tooYoung') : t('fam.noClub')}</p> : (
         <>
           <p>{t('fam.clubHours', { name: k.club.name, opens: formatTime(k.club.opens), closes: formatTime(k.club.closes) })} {k.club.open ? t('fam.open') : t('fam.closed')}</p>
@@ -130,7 +130,7 @@ function Reunion({ plan, reload, locked }: { plan: ReunionPlan; reload: () => vo
   const save = useAction(async () => { await api.family.setReunion({ placeId, backupId, note }); reload() })
   return (
     <section aria-labelledby="reunion-h">
-      <h2 id="reunion-h">{t('fam.reunion')}</h2>
+      <h2 id="reunion-h">{th('fam.reunion')}</h2>
       <p>{t('fam.reunionBody')}</p>
       {locked ? (
         <p><strong>{t('fam.meetAt', { place: placeName(plan.placeId) })}</strong> {t('fam.backup', { place: placeName(plan.backupId) })}{plan.note && ` ${plan.note}`}</p>

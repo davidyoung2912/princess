@@ -15,7 +15,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -34,7 +34,7 @@ export function OrderScreen() {
   useVisibleInterval(orders.retry, 10_000)
   return (
     <div className="page">
-      <h1>{t('route.order')}</h1>
+      <h1>{th('route.order')}</h1>
       <p>{t('ord.intro')}</p>
       <Load state={menu}>
         {(m) => (
@@ -47,7 +47,7 @@ export function OrderScreen() {
         )}
       </Load>
       <section aria-labelledby="mine-h">
-        <h2 id="mine-h">{t('ord.mine')}</h2>
+        <h2 id="mine-h">{th('ord.mine')}</h2>
         <Load state={orders}>{(list) => (list.length === 0 ? <p className="muted">{t('ord.none')}</p> : <ul className="order-list">{list.map((o) => <OrderCard key={o.id} o={o} guests={menu.data?.guests ?? []} reload={orders.retry} />)}</ul>)}</Load>
       </section>
       <p className="muted">{t('ord.tipPolicy')}</p>
@@ -106,7 +106,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
 
       {MENU_GROUPS.filter((g) => menuFor(kind).some((m) => m.group === g)).map((g) => (
         <section key={g} aria-labelledby={`grp-${g}`}>
-          <h2 id={`grp-${g}`}>{t(`ord.group.${g}` as StringKey)}</h2>
+          <h2 id={`grp-${g}`}>{th(`ord.group.${g}` as StringKey)}</h2>
           <ul className="dish-list">
             {menuFor(kind).filter((m) => m.group === g).map((m) => <Dish key={m.id} item={m} out={menu.outOfStock.includes(m.id)} guest={guestOf(guest)} onAdd={(l) => { setLines([...lines, { ...l, guest }]); setDone(null) }} />)}
           </ul>
@@ -114,7 +114,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
       ))}
 
       <Card hero labelledBy="cart-h">
-        <h2 id="cart-h" className="card__title">{t('ord.yours')}</h2>
+        <h2 id="cart-h" className="card__title">{th('ord.yours')}</h2>
         {lines.length === 0 ? <p>{t('ord.empty')}</p> : (
           <ul className="plain-bullets">
             {priced.lines.map((l, i) => (
@@ -247,7 +247,7 @@ function OrderCard({ o, guests, reload }: { o: OrderView; guests: OrderGuest[]; 
   const open = o.stage !== 'delivered' && o.stage !== 'cancelled'
   return (
     <li className="order">
-      <h3 className="order__title">{t(`ord.kind.${o.kind}` as StringKey)}, {shipTime(o.placedAt)}</h3>
+      <h3 className="order__title">{th(`ord.kind.${o.kind}` as StringKey)}, {shipTime(o.placedAt)}</h3>
       <p className={`order__stage order__stage--${o.stage}`} role="status"><strong>{t(`ord.stage.${o.stage}` as StringKey)}</strong>{o.etaAt !== null && open && <> · {t('ord.eta', { time: shipTime(o.etaAt) })}</>}</p>
       <ol className="order__steps" aria-label={t('ord.steps')}>
         {(['received', 'preparing', 'onTheWay', 'delivered'] as const).map((s) => <li key={s} aria-current={o.stage === s ? 'step' : undefined} className={o.stage === s ? 'is-current' : ''}>{t(`ord.step.${s}` as StringKey)}</li>)}

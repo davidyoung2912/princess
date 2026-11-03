@@ -10,7 +10,7 @@ import { PORTS } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -35,7 +35,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
   return (
     <>
       <Card hero labelledBy="now-h">
-        <h2 id="now-h" className="card__title">{t('onb.today', { day: today.day ?? 0, date: formatDate(today.date) })}</h2>
+        <h2 id="now-h" className="card__title">{th('onb.today', { day: today.day ?? 0, date: formatDate(today.date) })}</h2>
         <p className="onb__place"><strong>{place}</strong></p>
         {today.weather && <p>{t('onb.weather', { summary: today.weather.summary, high: formatTemp(today.weather.highF, settings.units), low: formatTemp(today.weather.lowF, settings.units) })} {today.weather.sea}</p>}
         {today.sailAwayAt && <p>{t('onb.sailAway', { time: shipTime(today.sailAwayAt) })}</p>}
@@ -68,7 +68,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
           const mineNext = next.filter((e) => p.mine.includes(e.id))
           return (
             <Card labelledBy="next-events-h">
-              <h2 id="next-events-h" className="card__title">{t('onb.next.title')}</h2>
+              <h2 id="next-events-h" className="card__title">{th('onb.next.title')}</h2>
               {p.changed && <Banner kind="warning" title={t('onb.changed')}><p><Link to="/plan">{t('onb.changed.see')}</Link></p></Banner>}
               {onNow.length === 0 && next.length === 0 ? <p className="muted">{t('onb.next.none')}</p> : (
                 <ul className="plain-bullets">
@@ -87,7 +87,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
           const upcoming = v.reservations.filter((r) => r.day === (today.day ?? 0))
           return (
             <Card labelledBy="tonight-h">
-              <h2 id="tonight-h" className="card__title">{t('onb.tonight')}</h2>
+              <h2 id="tonight-h" className="card__title">{th('onb.tonight')}</h2>
               {upcoming.length === 0 ? <p>{v.seating ? t('onb.tonight.fixed', { time: formatTime(v.seating) }) : t('onb.tonight.none')}</p> : (
                 <ul className="plain-bullets">{upcoming.map((r) => <li key={r.id}><Link to={`/plan/reservations/${r.id}`}>{venueById(r.venueId)?.name ?? r.venueId}, {r.time}</Link></li>)}</ul>
               )}
@@ -100,7 +100,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
       <FavouritesTonight />
 
       <nav aria-labelledby="onb-links-h">
-        <h2 id="onb-links-h">{t('onb.quick')}</h2>
+        <h2 id="onb-links-h">{th('onb.quick')}</h2>
         <ul className="link-list">
           <li><Link to="/home/boarding-pass">{t('route.boardingPass')}</Link></li>
           <li><Link to="/ship/emergency">{t('route.emergency')}</Link></li>

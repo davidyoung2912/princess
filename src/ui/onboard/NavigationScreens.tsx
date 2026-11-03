@@ -10,7 +10,7 @@ import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { compassWord, coordinates, portName, positionLine } from './navigationText'
 
 const MINUTE = 60_000
@@ -47,7 +47,7 @@ function TimeCard({ clock }: { clock: ShipClock }) {
   const change = clock.nextChange
   return (
     <Card labelledBy="nav-time">
-      <h2 id="nav-time" className="card__title">{t('nav.time.title')}</h2>
+      <h2 id="nav-time" className="card__title">{th('nav.time.title')}</h2>
       <dl className="facts">
         <div><dt>{t('nav.time.ship', { zone: t(`nav.zone.${clock.shipZone}` as StringKey) })}</dt><dd>{clock.shipTime}</dd></div>
         <div><dt>{t('nav.time.local', { port: portName(clock.localPlace) })}</dt><dd>{clock.localTime}</dd></div>
@@ -70,7 +70,7 @@ export function WhereScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{t('route.where')}</h1>
+      <h1>{th('route.where')}</h1>
       <p>{t('nav.where.intro')}</p>
       {!p && <FeedWaiting />}
       {p && <WhereBody p={p} units={settings.units} />}
@@ -98,7 +98,7 @@ function WhereBody({ p, units }: { p: ShipPosition; units: 'imperial' | 'metric'
       </Card>
       {next && (
         <Card labelledBy="nav-dist">
-          <h2 id="nav-dist" className="card__title">{t('nav.remaining', { port: portName(next) })}</h2>
+          <h2 id="nav-dist" className="card__title">{th('nav.remaining', { port: portName(next) })}</h2>
           <progress className="meter" max={100} value={p.legPercent} aria-label={t('nav.progress', { port: portName(next), percent: p.legPercent })} />
           <dl className="facts">
             {!p.inPort && <div><dt>{t('nav.sailed', { port: portName(p.lastPort) })}</dt><dd>{t('nav.distance', { nm: sailed.nm, other: sailed.other })}</dd></div>}
@@ -124,19 +124,19 @@ export function SeaScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{t('route.sea')}</h1>
+      <h1>{th('route.sea')}</h1>
       <p>{t('nav.sea.intro')}</p>
       {!s && <FeedWaiting />}
       {s && (
         <>
           <Card hero labelledBy="nav-depth">
-            <h2 id="nav-depth" className="card__title">{t('nav.depth.title')}</h2>
+            <h2 id="nav-depth" className="card__title">{th('nav.depth.title')}</h2>
             <p className="nav-big">{depthText(s.depthM, units)}</p>
             <progress className="meter nav-gauge" max={100} value={depthGauge(s.depthM)} aria-label={t('nav.depth.gauge', { depth: depthText(s.depthM, units) })} />
             <p>{t(`nav.depth.${s.depthClass}` as StringKey)}</p>
           </Card>
           <Card labelledBy="nav-surface">
-            <h2 id="nav-surface" className="card__title">{t('nav.surface.title')}</h2>
+            <h2 id="nav-surface" className="card__title">{th('nav.surface.title')}</h2>
             <dl className="facts">
               <div><dt>{t('nav.water')}</dt><dd>{waterTempText(s.waterTempC, units)}</dd></div>
               <div><dt>{t('nav.wind')}</dt><dd>{t('nav.wind.value', { force: s.beaufort, name: t(`nav.bf.${s.beaufort}` as StringKey), knots: s.windKnots, from: compassWord(s.windFrom) })}</dd></div>
@@ -149,7 +149,7 @@ export function SeaScreen() {
       )}
       {sky && (
         <Card labelledBy="nav-light">
-          <h2 id="nav-light" className="card__title">{t('nav.light.title')}</h2>
+          <h2 id="nav-light" className="card__title">{th('nav.light.title')}</h2>
           <dl className="facts">
             <div><dt>{t('nav.light.first')}</dt><dd>{sky.firstLight}</dd></div>
             <div><dt>{t('sky.sunrise')}</dt><dd>{sky.sunrise}</dd></div>
@@ -190,7 +190,7 @@ export function AlongScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{t('route.along')}</h1>
+      <h1>{th('route.along')}</h1>
       <p>{t('nav.along.intro')}</p>
       {!a && <FeedWaiting />}
       {a && (
@@ -198,21 +198,21 @@ export function AlongScreen() {
           <Card hero labelledBy="nav-zone">
             <h2 id="nav-zone" className="card__title">{a.zone.name}</h2>
             <p>{a.zone.habitat}</p>
-            <h3>{t('nav.lookout')}</h3>
+            <h3>{th('nav.lookout')}</h3>
             <ul className="plain-list">{a.zone.wildlife.map((w) => <li key={w}>{t(`sight.${w}` as StringKey)}</li>)}</ul>
             <p><Link to="/ship/sightings">{t('route.sightings')}</Link></p>
           </Card>
           <section aria-labelledby="nav-passing">
-            <h2 id="nav-passing">{t('nav.passing')}</h2>
+            <h2 id="nav-passing">{th('nav.passing')}</h2>
             {a.passing.length === 0 ? <p className="muted">{t('nav.passing.none')}</p> : <LandmarkList id="nav-passing" items={a.passing} />}
           </section>
           <section aria-labelledby="nav-ahead">
-            <h2 id="nav-ahead">{t('nav.ahead')}</h2>
+            <h2 id="nav-ahead">{th('nav.ahead')}</h2>
             {a.ahead.length === 0 ? <p className="muted">{t('nav.ahead.none')}</p> : <LandmarkList id="nav-ahead" items={a.ahead} />}
           </section>
           {a.behind.length > 0 && (
             <section aria-labelledby="nav-behind">
-              <h2 id="nav-behind">{t('nav.behind')}</h2>
+              <h2 id="nav-behind">{th('nav.behind')}</h2>
               <LandmarkList id="nav-behind" items={a.behind} />
             </section>
           )}

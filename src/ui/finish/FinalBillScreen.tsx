@@ -13,7 +13,7 @@ import { useAction } from '../../hooks/useAction'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -33,7 +33,7 @@ export function FinalBillScreen() {
   const bill = useMine(() => api.disembark.finalBill(), [])
   return (
     <div className="page">
-      <h1>{t('route.finalBill')}</h1>
+      <h1>{th('route.finalBill')}</h1>
       <p>{t('fb.intro')}</p>
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : (
         <Saved copy={folio}>{(f) => <Load state={bill}>{(b) => <FinalBill f={f} b={b} reload={() => { bill.retry(); folio.retry() }} />}</Load>}</Saved>
@@ -61,7 +61,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
   return (
     <>
       <Card hero labelledBy="fb-owe-h">
-        <h2 id="fb-owe-h" className="card__title">{t('fb.owe')}</h2>
+        <h2 id="fb-owe-h" className="card__title">{th('fb.owe')}</h2>
         <p className="bill__big">{total.balance < 0 ? t('bill.credit', { amount: formatMoney(-total.balance) }) : formatMoney(total.balance)}</p>
         {b.card ? <p>{t('fb.charged', { card: b.card })}</p> : <Banner kind="warning" title={t('fb.noCard')} action={<Link to="/me/payments">{t('route.payments')}</Link>}><p>{t('fb.noCardBody')}</p></Banner>}
         <p className="muted">{b.settled ? t('fb.settled') : t('fb.notSettled')}</p>
@@ -69,7 +69,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
 
       {b.tip.charged > 0 && (
         <Card labelledBy="fb-tip-h">
-          <h2 id="fb-tip-h" className="card__title">{t('fb.tip')}</h2>
+          <h2 id="fb-tip-h" className="card__title">{th('fb.tip')}</h2>
           <p>{t('fb.tipBody', { amount: formatMoney(b.tip.charged), time: shipTime(b.tip.by) })}</p>
           <form onSubmit={(e) => { e.preventDefault(); void adjust.run() }}>
             <fieldset disabled={!b.tip.canAdjust}>
@@ -88,7 +88,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
       )}
 
       <section aria-labelledby="fb-explain-h">
-        <h2 id="fb-explain-h">{t('fb.explain')}</h2>
+        <h2 id="fb-explain-h">{th('fb.explain')}</h2>
         <p>{t('fb.explainBody')}</p>
         <ul className="plain-list">
           {charges.map((l) => <li key={l.id}><span>{l.description}<ExplainLine line={l} questionTo="/me/bill/final" /></span><span className="num">{formatMoney(l.cents)}</span></li>)}
@@ -96,7 +96,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
       </section>
 
       <section aria-labelledby="fb-query-h">
-        <h2 id="fb-query-h">{t('fb.query')}</h2>
+        <h2 id="fb-query-h">{th('fb.query')}</h2>
         <p>{t('fb.queryBody')}</p>
         {b.queries.length > 0 && (
           <ul className="plain-list">{b.queries.map((q) => <li key={q.id}><span>{f.lines.find((l) => l.id === q.lineId)?.description ?? q.lineId} · {formatMoney(q.cents)}</span><span>{q.number} · {t(`case.stage.${q.stage}` as StringKey)}</span></li>)}</ul>
@@ -117,7 +117,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
       </section>
 
       <section aria-labelledby="fb-rec-h">
-        <h2 id="fb-rec-h">{t('fb.receipts')}</h2>
+        <h2 id="fb-rec-h">{th('fb.receipts')}</h2>
         <ul className="plain-list">{b.receipts.map((r) => <li key={r.id}><span>{t(`fb.receipt.${r.id}` as StringKey)}</span><span className="muted">{r.available ? t('fb.ready') : t('fb.later')}</span></li>)}</ul>
         <div className="button-row">
           <Button variant="secondary" onClick={() => window.print()}>{t('fb.print')}</Button>

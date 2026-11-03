@@ -5,7 +5,7 @@ import { SAILINGS } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -38,16 +38,16 @@ export function TripsScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.trips')}</h1>
+      <h1>{th('route.trips')}</h1>
       <Load state={trips}>
         {(data) => (
           <>
             <section aria-labelledby="up-h">
-              <h2 id="up-h">{t('trips.upcoming')}</h2>
+              <h2 id="up-h">{th('trips.upcoming')}</h2>
               {data.upcoming.length === 0 ? <Card info><p>{t('trips.noneUpcoming')}</p></Card> : <ul className="card-grid">{data.upcoming.map((x) => <TripCard key={x.number} trip={x} />)}</ul>}
             </section>
             <section aria-labelledby="past-h">
-              <h2 id="past-h">{t('trips.past')}</h2>
+              <h2 id="past-h">{th('trips.past')}</h2>
               {data.past.length === 0 ? <p className="muted">{t('trips.nonePast')}</p> : (
                 <ul className="plain-list">
                   {data.past.map((p) => <li key={p.id}><span>{p.title} <span className="muted">· {p.ship} · {formatDate(p.departure)} · {t('trips.nights', { count: p.nights })}{p.cancelled ? ` · ${t('trips.cancelled')}` : ''}</span></span></li>)}
@@ -59,7 +59,7 @@ export function TripsScreen() {
       </Load>
 
       <section aria-labelledby="link-h">
-        <h2 id="link-h">{t('trips.link.title')}</h2>
+        <h2 id="link-h">{th('trips.link.title')}</h2>
         <p>{t('trips.link.intro')}</p>
         <form onSubmit={(e) => void submit(e)} noValidate>
           <ErrorSummary title={t('trips.link.fix')} errors={problems} />

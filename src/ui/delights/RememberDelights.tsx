@@ -10,7 +10,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
@@ -30,7 +30,7 @@ export function PostcardWriter() {
   }
   return (
     <Card labelledBy="dl9-card-h">
-      <h2 id="dl9-card-h" className="card__title no-print">{t('dl9.card.title')}</h2>
+      <h2 id="dl9-card-h" className="card__title no-print">{th('dl9.card.title')}</h2>
       <div className="no-print">
         <p>{t('dl9.card.body')}</p>
         <TextArea label={t('dl9.card.label')} value={text} maxLength={POSTCARD_MAX} onChange={(e) => setText(e.target.value)} />
@@ -58,7 +58,7 @@ export function PostcardArrives({ sailingId, daysToDeparture }: { sailingId: str
   if (due.length === 0) return null
   return (
     <Card labelledBy="dl9-arrive-h">
-      <h2 id="dl9-arrive-h" className="card__title">{t('dl9.arrive.title')}</h2>
+      <h2 id="dl9-arrive-h" className="card__title">{th('dl9.arrive.title')}</h2>
       {due.map((p) => (
         <figure key={p.id} className="dl9-postcard">
           <blockquote>{p.text}</blockquote>
@@ -90,7 +90,7 @@ export function SailedMap() {
   const unit = view.span / 100
   return (
     <Card labelledBy="dl9-map-h">
-      <h2 id="dl9-map-h" className="card__title">{t('dl9.map.title')}</h2>
+      <h2 id="dl9-map-h" className="card__title">{th('dl9.map.title')}</h2>
       {history.status === 'loading' && <p role="status">{t('dl9.map.loading')}</p>}
       {history.status === 'error' && <p role="status">{t('dl9.map.failed')}</p>}
       {history.status === 'ready' && s.trips === 0 && <p>{t('dl9.map.none')}</p>}
@@ -119,7 +119,7 @@ export function FavouritesRanked() {
   })
   return (
     <Card labelledBy="dl9-fav-h">
-      <h2 id="dl9-fav-h" className="card__title">{t('dl9.fav.title')}</h2>
+      <h2 id="dl9-fav-h" className="card__title">{th('dl9.fav.title')}</h2>
       {ranked.length === 0 ? <p>{t('dl9.fav.none')}</p> : (
         <ol className="plain-list">
           {ranked.map((r) => <li key={`${r.kind}-${r.id}`}><span>{r.label}</span><span className="muted">{t(`dl9.fav.${r.kind}` as StringKey, { count: r.score })}</span></li>)}
@@ -162,7 +162,7 @@ export function WantNext() {
   }
   return (
     <Card labelledBy="dl9-want-h">
-      <h2 id="dl9-want-h" className="card__title">{t('dl9.want.title')}</h2>
+      <h2 id="dl9-want-h" className="card__title">{th('dl9.want.title')}</h2>
       <p>{t('dl9.want.body')}</p>
       <Field label={t('dl9.want.label')} value={text} maxLength={WANT_LEN} disabled={list.length >= WANTS_MAX} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
       <Button variant="secondary" onClick={add} disabled={text.trim() === '' || list.length >= WANTS_MAX}>{t('dl9.want.add')}</Button>

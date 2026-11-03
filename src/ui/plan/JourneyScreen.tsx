@@ -12,7 +12,7 @@ import { useFlightStatus } from '../../hooks/useFlightStatus'
 import { useRouteConditions } from '../../hooks/useRouteConditions'
 import { api } from '../../runtime'
 import { isCarryOn } from '../../domain/boarding'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -51,11 +51,11 @@ export function JourneyScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.gettingThere')}</h1>
+      <h1>{th('route.gettingThere')}</h1>
       <p>{t('journey.intro')}</p>
 
       <Card labelledBy="j-plan">
-        <h2 id="j-plan" className="card__title">{t('journey.plan')}</h2>
+        <h2 id="j-plan" className="card__title">{th('journey.plan')}</h2>
         <fieldset>
           <legend>{t('journey.mode')}</legend>
           {TRIP_MODES.map((m: TripMode) => <label key={m} className="choice"><input type="radio" name="trip-mode" checked={plan.mode === m} onChange={() => set({ mode: m })} /><span>{t(`journey.mode.${m}` as StringKey)}</span></label>)}
@@ -82,7 +82,7 @@ export function JourneyScreen() {
       </Banner>
 
       <section aria-labelledby="j-line">
-        <h2 id="j-line">{t('journey.timeline')}</h2>
+        <h2 id="j-line">{th('journey.timeline')}</h2>
         <ol>
           {result.legs.map((l) => (
             <li key={l.id}>{time(l.start)}: {t(l.label)}{l.minutes > 0 ? ` (${duration(l.minutes)})` : ''}</li>
@@ -95,7 +95,7 @@ export function JourneyScreen() {
 
       {plan.mode === 'fly' && (
         <Card labelledBy="j-watch">
-          <h2 id="j-watch" className="card__title">{t('journey.watch')}</h2>
+          <h2 id="j-watch" className="card__title">{th('journey.watch')}</h2>
           {status ? (
             <>
               <p role="status">{t(`journey.watch.${status.state}` as StringKey, { minutes: status.delayMinutes })}</p>
@@ -108,7 +108,7 @@ export function JourneyScreen() {
 
       {early.recommend && (
         <Card labelledBy="j-early">
-          <h2 id="j-early" className="card__title">{t('journey.early')}</h2>
+          <h2 id="j-early" className="card__title">{th('journey.early')}</h2>
           <p>{t(`journey.early.${early.reason}` as StringKey, { landing: latestComfortableLanding(plan) })}</p>
           <p>{t('journey.early.cost', { hotel: formatMoney(early.hotelCostCents), missed: formatMoney(early.missedCostCents) })}</p>
           <p className="muted">{t('journey.early.verify')}</p>
@@ -117,7 +117,7 @@ export function JourneyScreen() {
       )}
 
       <Card labelledBy="j-cond">
-        <h2 id="j-cond" className="card__title">{t('journey.cond')}</h2>
+        <h2 id="j-cond" className="card__title">{th('journey.cond')}</h2>
         {cond ? <>
           <p>{t('journey.cond.line', { traffic: t(`journey.traffic.${cond.traffic}` as StringKey), sky: t(`journey.sky.${cond.sky}` as StringKey) })}</p>
           {cond.leaveEarlierMinutes > 0 ? <p>{t('journey.cond.earlier', { minutes: cond.leaveEarlierMinutes })}</p> : <p>{t('journey.cond.fine')}</p>}
@@ -127,7 +127,7 @@ export function JourneyScreen() {
 
       {plan.hotelNight && (
         <Card labelledBy="j-hotel">
-          <h2 id="j-hotel" className="card__title">{t('journey.hotel')}</h2>
+          <h2 id="j-hotel" className="card__title">{th('journey.hotel')}</h2>
           <p>{t('journey.hotel.leave', { time: time(hotel.leaveHotel), checkout: time(hotel.checkoutBy) })}</p>
           <ul><li>{t('journey.hotel.late')}</li><li>{t('journey.hotel.hold')}</li></ul>
         </Card>
@@ -135,22 +135,22 @@ export function JourneyScreen() {
 
       {plan.mode === 'drive' ? (
         <Card labelledBy="j-drive">
-          <h2 id="j-drive" className="card__title">{t('journey.drive')}</h2>
+          <h2 id="j-drive" className="card__title">{th('journey.drive')}</h2>
           <ol>{DRIVE_STEPS.map((k) => <li key={k}>{t(k, { address: EMBARK.address })}</li>)}</ol>
           <p className="muted">{t('journey.verify')}</p>
         </Card>
       ) : (
         <Card labelledBy="j-ground">
-          <h2 id="j-ground" className="card__title">{t('journey.ground')}</h2>
+          <h2 id="j-ground" className="card__title">{th('journey.ground')}</h2>
           <ul>{GROUND.map((g) => <li key={g.id}>{t(`journey.ground.${g.id}` as StringKey)}: {g.cost}{g.stepFree ? ` · ${t('journey.ground.stepFree')}` : ''}</li>)}</ul>
-          <h3>{t('journey.pickup')}</h3>
+          <h3>{th('journey.pickup')}</h3>
           <ul>{PICKUP_NOTES.map((k) => <li key={k}>{t(k)}</li>)}</ul>
           <p className="muted">{t('journey.verify')}</p>
         </Card>
       )}
 
       <section aria-labelledby="j-pack">
-        <h2 id="j-pack">{t('journey.pack')}</h2>
+        <h2 id="j-pack">{th('journey.pack')}</h2>
         <p>{t('journey.pack.why')}</p>
         <fieldset>
           <legend>{t('journey.pack.carry')}</legend>
@@ -163,7 +163,7 @@ export function JourneyScreen() {
       </section>
 
       <section aria-labelledby="j-bags">
-        <h2 id="j-bags">{t('journey.bags')}</h2>
+        <h2 id="j-bags">{th('journey.bags')}</h2>
         <p>{t('journey.bags.why')}</p>
         <ul>
           {journey.bags.map((b) => (

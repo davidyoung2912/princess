@@ -5,7 +5,7 @@ import { PACK_GROUPS, packingText } from '../../domain/packing'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Printer, Share } from '../icons'
@@ -21,7 +21,7 @@ export function PackingScreen() {
 
   return (
     <div className="page">
-      <h1>{t('route.packing')}</h1>
+      <h1>{th('route.packing')}</h1>
       <p>{t('pack.intro')}</p>
       <Load state={list}>
         {(p) => {
@@ -37,7 +37,7 @@ export function PackingScreen() {
           return (
             <>
               <Card info>
-                <h2 className="card__title">{t('pack.weather')}</h2>
+                <h2 className="card__title">{th('pack.weather')}</h2>
                 <p>{t('pack.weatherLine', { high: formatTemp(p.weather.highF, settings.units), low: formatTemp(p.weather.lowF, settings.units) })} {p.weather.note}</p>
               </Card>
               <p className="muted">{t('dl5.pack.shared')}</p>
@@ -54,7 +54,7 @@ export function PackingScreen() {
                 if (items.length === 0) return null
                 return (
                   <section key={g} aria-labelledby={`pg-${g}`}>
-                    <h2 id={`pg-${g}`}>{t(`pack.group.${g}` as never)}</h2>
+                    <h2 id={`pg-${g}`}>{th(`pack.group.${g}` as never)}</h2>
                     {items.map((i) => (
                       <div key={i.id} className="check-row">
                         <input type="checkbox" id={`p-${i.id}`} checked={p.ticked.includes(i.id)} disabled={tick.busy} onChange={() => void tick.run(i.id, !p.ticked.includes(i.id))} />
