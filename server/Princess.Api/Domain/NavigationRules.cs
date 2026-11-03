@@ -3,13 +3,13 @@ using System.Globalization;
 namespace Princess.Api.Domain;
 
 /// <summary>A change of the ship's clock: the moment, the hours it moves (negative is back) and the cruise day of the morning it happens.</summary>
-public sealed record ClockChangeDto(long At, int Hours, int Day);
+public sealed record ShipClockChangeDto(long At, int Hours, int Day);
 
 /// <summary>When the ship reaches a port: the moment, the ship's clock then and the cruise day.</summary>
 public sealed record ArrivalDto(long At, string ShipTime, int Day);
 
 /// <summary>Ship time against the local time of the port the ship is in or heading for. Offsets are minutes from UTC; <c>DifferenceMinutes</c> is local minus ship.</summary>
-public sealed record ShipClockDto(string ShipTime, int ShipOffsetMinutes, string ShipZone, string LocalPlace, string LocalTime, int LocalOffsetMinutes, int DifferenceMinutes, ClockChangeDto? NextChange);
+public sealed record ShipClockDto(string ShipTime, int ShipOffsetMinutes, string ShipZone, string LocalPlace, string LocalTime, int LocalOffsetMinutes, int DifferenceMinutes, ShipClockChangeDto? NextChange);
 
 /// <summary>Where the ship is and how it is moving. <c>InPort</c> is the port id while alongside, else null; <c>NextPort</c> is null once the last port is reached.</summary>
 public sealed record ShipPositionDto(
@@ -228,7 +228,7 @@ public static class NavigationRules
         var change = Itinerary.ShipClockChanges(departure).FirstOrDefault(c => c.At > utc);
         return new ShipClockDto(
             Hhmm(utc, shipOffset), shipOffset, shipZone == Itinerary.ShipHomeZone ? "eastern" : "belize", localPort, Hhmm(utc, localOffset), localOffset, localOffset - shipOffset,
-            change is null ? null : new ClockChangeDto(Ms(change.At), change.Hours, ShipWall(departure, change.At.AddMilliseconds(-1)).Day));
+            change is null ? null : new ShipClockChangeDto(Ms(change.At), change.Hours, ShipWall(departure, change.At.AddMilliseconds(-1)).Day));
     }
 
     // ---------- the sea ----------
