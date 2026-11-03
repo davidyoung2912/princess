@@ -7,13 +7,13 @@ const fakeStore = () => {
 }
 
 describe('telemetry', () => {
-  it('collects nothing without consent', () => {
+  it('counts nothing without consent, but still queues problems', () => {
     const s = fakeStore()
     const t = createTelemetry(s, () => false)
-    t.error('error', new Error('boom'))
     t.event('install')
     expect(s.data.has(TELEMETRY_KEY)).toBe(false)
-    expect(t.queued()).toEqual([])
+    t.error('error', new Error('boom'))
+    expect(t.queued().map((i) => i.type)).toEqual(['error'])
   })
   it('scrubs error text and keeps no stack', () => {
     const s = fakeStore()
@@ -37,6 +37,8 @@ describe('telemetry', () => {
     t.event('install')
     on = false
     expect(t.queued()).toEqual([])
+    t.error('screen', 'still reported')
+    expect(t.queued().map((i) => i.type)).toEqual(['error'])
     t.clear()
     expect(s.data.has(TELEMETRY_KEY)).toBe(false)
   })
@@ -79,9 +81,24 @@ describe('telemetry flush', () => {
     expect(await on.flush(async () => { throw new Error('offline') })).toBe(0)
     expect(on.queued()).toHaveLength(1)
     const off = createTelemetry(fake(), () => false, at)
+    off.event('install')
     let called = false
     expect(await off.flush(async () => { called = true })).toBe(0)
     expect(called).toBe(false)
+  })
+
+  it('sends problems without consent, and keeps usage counts that were queued before consent was withdrawn', async () => {
+    const store = fake()
+    let on = true
+    const t = createTelemetry(store, () => on, at)
+    t.event('install')
+    t.error('error', new Error('boom'))
+    on = false
+    const sent: { type: string }[][] = []
+    expect(await t.flush(async (items) => { sent.push(items) })).toBe(1)
+    expect(sent[0].map((i) => i.type)).toEqual(['error'])
+    on = true
+    expect(t.queued().map((i) => i.type)).toEqual(['event'])
   })
 
   it('keeps items queued while the send was in flight', async () => {

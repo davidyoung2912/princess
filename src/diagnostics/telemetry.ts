@@ -1,9 +1,9 @@
 import { scrub, type DiagnosticKind } from './log'
 
 /**
- * PERF-07 and CNT-03: error reports and usage counts that leave the log only with the guest's "Help improve the app" consent.
- * What can be sent is fixed here: an error kind with a scrubbed message, and a named event with no person, booking or typed text.
- * The sink is a stub today (an on-device queue); a real endpoint replaces it without changing what is collected.
+ * PERF-07 and CNT-03: what the app reports to the server. Problems the app hit (an error kind with a scrubbed message) are always queued, so the team
+ * can see and fix them and the audit trail shows them; usage counts (a named event with no person, booking or typed text) leave only with the guest's
+ * "Help improve the app" consent. What can be sent is fixed here, and a message never carries an address, e-mail, long number or stack.
  */
 export const TELEMETRY_KEY = 'princess:telemetry'
 export const MAX_QUEUE = 100
@@ -29,7 +29,7 @@ export interface Telemetry {
   error(kind: DiagnosticKind, message: unknown): void
   event(name: EventName, screen?: string): void
   queued(): TelemetryItem[]
-  /** Sends what is queued (only with consent) and forgets exactly what was accepted; a failed send keeps the queue. Returns how many were sent. */
+  /** Sends what is queued (errors always, usage counts only with consent) and forgets exactly what was accepted; a failed send keeps the queue. Returns how many were sent. */
   flush(send: (items: TelemetryItem[]) => Promise<unknown>): Promise<number>
   /** Forgets everything queued. Called when consent is withdrawn. */
   clear(): void
@@ -43,7 +43,7 @@ export function createTelemetry(store: Store | null, consent: () => boolean, now
     } catch { return [] }
   }
   const push = (item: TelemetryItem) => {
-    if (!store || !consent()) return
+    if (!store || (item.type === 'event' && !consent())) return
     try { store.setItem(TELEMETRY_KEY, JSON.stringify([...read(), item].slice(-MAX_QUEUE))) } catch { /* full or blocked: reporting must never cause a problem */ }
   }
   return {
@@ -56,14 +56,15 @@ export function createTelemetry(store: Store | null, consent: () => boolean, now
       const safe = screen ? screenName(screen) : undefined
       push({ type: 'event', name, ...(safe ? { screen: safe } : {}), at: now().toISOString() })
     },
-    queued: () => (consent() ? read() : []),
+    queued: () => (consent() ? read() : read().filter((i) => i.type === 'error')),
     async flush(send) {
-      if (!consent()) return 0
-      const items = read()
+      const items = consent() ? read() : read().filter((i) => i.type === 'error')
       if (items.length === 0) return 0
       try { await send(items) } catch { return 0 }
-      // Items queued while the send was in flight stay.
-      try { store?.setItem(TELEMETRY_KEY, JSON.stringify(read().slice(items.length))) } catch { /* blocked storage */ }
+      // Items queued while the send was in flight stay, and so do usage counts that were not sent for want of consent.
+      const sent = items.map((i) => JSON.stringify(i))
+      const unsent = (i: TelemetryItem) => { const at = sent.indexOf(JSON.stringify(i)); if (at < 0) return true; sent.splice(at, 1); return false }
+      try { store?.setItem(TELEMETRY_KEY, JSON.stringify(read().filter(unsent))) } catch { /* blocked storage */ }
       return items.length
     },
     clear() { try { store?.removeItem(TELEMETRY_KEY) } catch { /* nothing to clear */ } },

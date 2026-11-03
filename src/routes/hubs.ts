@@ -76,7 +76,7 @@ export const HUBS: readonly HubDef[] = [
   { id: 'me.money', tab: 'me', labelKey: 'hub.me.money', stage: 'manage', paths: [me('trips'), me('bill'), me('ledger'), me('money'), me('bill/final'), me('payments'), me('packages'), me('loyalty')] },
   { id: 'me.docs', tab: 'me', labelKey: 'hub.me.docs', stage: 'manage', paths: [me('profile'), me('documents'), me('helper')] },
   { id: 'me.after', tab: 'me', labelKey: 'hub.me.after', stage: 'remember', paths: [me('recap'), me('history'), me('feedback'), me('farewell'), me('follow-up'), me('rebook'), me('sustainability'), me('wrapped'), me('memories')] },
-  { id: 'me.rules', tab: 'me', labelKey: 'hub.me.rules', stage: 'manage', paths: [me('privacy'), me('marketing'), me('print'), me('notifications'), me('alerts'), me('calm'), me('gentle'), me('anxiety'), me('settings')] },
+  { id: 'me.rules', tab: 'me', labelKey: 'hub.me.rules', stage: 'manage', paths: [me('privacy'), me('marketing'), me('print'), me('notifications'), me('alerts'), me('calm'), me('gentle'), me('anxiety'), me('settings'), me('activity')] },
   { id: 'me.help', tab: 'me', labelKey: 'hub.me.help', stage: 'manage', paths: [me('help'), me('contact'), me('cases'), me('fix-it'), me('assist'), me('status'), me('report-problem'), me('demo')] },
 ]
 

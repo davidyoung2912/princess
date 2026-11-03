@@ -66,6 +66,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'ShareLinks'),
   (N'dbo', N'ConsentChoices'),
   (N'dbo', N'AccessLog'),
+  (N'dbo', N'AuditEvents'),
   (N'dbo', N'RetentionRuns'),
   (N'dbo', N'SupportTickets'),
   (N'dbo', N'Favourites'),

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Princess.Api.Audit;
 using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
@@ -28,6 +29,8 @@ services.AddSingleton<ITokenService, TokenService>();
 services.AddScoped<IUserStore, DapperUserStore>();
 services.AddScoped<IRefreshTokenStore, DapperRefreshTokenStore>();
 services.AddScoped<IAccessStore, DapperAccessStore>();
+services.AddScoped<IAuditStore, DapperAuditStore>();
+services.AddScoped<IAuditLog, AuditLog>();
 services.AddScoped<ISignInStore, DapperSignInStore>();
 services.AddScoped<IMessageSender, StubMessageSender>();
 services.AddScoped<IAuthService, AuthService>();
@@ -183,6 +186,8 @@ if (app.Configuration.GetValue("Swagger:Enabled", true))
 }
 app.UseCors();
 app.UseAuthentication();
+// After authentication (so the actor is known) and before the rate limiter and authorization (so refusals are seen).
+app.UseMiddleware<AuditMiddleware>();
 app.UseRateLimiter();
 app.UseAuthorization();
 
@@ -208,6 +213,7 @@ v1.MapConciergeEndpoints();
 v1.MapFamilyHomeEndpoints();
 v1.MapMediaEndpoints();
 v1.MapDemoEndpoints();
+v1.MapAuditEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>

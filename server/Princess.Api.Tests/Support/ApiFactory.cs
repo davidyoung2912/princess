@@ -15,6 +15,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryRefreshTokenStore RefreshTokens { get; } = new();
     public InMemorySignInStore SignIn { get; }
     public InMemoryAccessStore Access { get; } = new();
+    public InMemoryAuditStore Audit { get; } = new();
     public InMemoryJourney Journey { get; } = new();
     public InMemoryBookingStore Bookings { get; }
     public InMemoryPlanStore Plan { get; }
@@ -63,6 +64,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IRefreshTokenStore>();
             services.RemoveAll<ISignInStore>();
             services.RemoveAll<IAccessStore>();
+            services.RemoveAll<Princess.Api.Audit.IAuditStore>();
             services.RemoveAll<IAccountStore>();
             services.RemoveAll<ITripStore>();
             services.RemoveAll<IInboxStore>();
@@ -87,6 +89,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IRefreshTokenStore>(RefreshTokens);
             services.AddSingleton<ISignInStore>(SignIn);
             services.AddSingleton<IAccessStore>(Access);
+            services.AddSingleton<Princess.Api.Audit.IAuditStore>(Audit);
             services.AddSingleton<IAccountStore>(Journey);
             services.AddSingleton<ITripStore>(Journey);
             services.AddSingleton<IInboxStore>(Journey);

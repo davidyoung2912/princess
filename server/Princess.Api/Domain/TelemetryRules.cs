@@ -15,6 +15,13 @@ public static class TelemetryRules
     public static readonly string[] Events = ["screen", "install", "offlineUse", "dataLight"];
     private static readonly Regex Screen = new("^[a-z0-9][a-z0-9/-]{0,39}$", RegexOptions.Compiled);
 
+    private static readonly Regex Links = new(@"https?://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex Emails = new(@"[\w.+-]+@[\w-]+\.[\w.-]+", RegexOptions.Compiled);
+    private static readonly Regex Numbers = new(@"\d[\d\s-]{5,}\d", RegexOptions.Compiled);
+
+    /// <summary>The same scrub the app applies (addresses, e-mail and long digit runs out), repeated here because a client message is never trusted to have been scrubbed.</summary>
+    public static string Scrub(string text) => Numbers.Replace(Emails.Replace(Links.Replace(text, "[link]"), "[email]"), "[number]").Trim();
+
     public static bool Valid(IReadOnlyList<TelemetryItemDto>? items) =>
         items is { Count: > 0 and <= MaxItems } && items.All(ValidItem);
 

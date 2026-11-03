@@ -11,7 +11,7 @@ internal static class Sql
         new(sql, args, tx, cancellationToken: ct);
 }
 
-public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users) : IAccountStore
+public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users, IHttpContextAccessor http) : IAccountStore
 {
     private sealed class DocRow
     {
@@ -143,9 +143,21 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users)
     public async Task AddHistoryAsync(long userId, long byUserId, string what, string detail, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd(
-            "INSERT INTO dbo.HistoryEntries (UserId, ByUserId, What, Detail, [At]) VALUES (@userId, @byUserId, @what, @detail, @now)",
-            new { userId, byUserId, what, detail, now }, null, ct));
+        await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.HistoryEntries (UserId, ByUserId, What, Detail, [At]) VALUES (@userId, @byUserId, @what, @detail, @now);
+            -- The same change goes into the audit trail with who, whom, where from and the request it belongs to.
+            INSERT INTO dbo.AuditEvents (Category, Action, Outcome, ActorPublicId, ActorRole, SubjectPublicId, Detail, CorrelationId, Ip, UserAgent, [At])
+            SELECT 'domain', N'history.' + @what, 'success', a.PublicId, a.Role, s.PublicId, @auditDetail, @correlation, @ip, @agent, SYSUTCDATETIME()
+            FROM dbo.Users a, dbo.Users s WHERE a.Id = @byUserId AND s.Id = @userId;
+            """,
+            new
+            {
+                userId, byUserId, what, detail, now,
+                auditDetail = System.Text.Json.JsonSerializer.Serialize(new { change = detail }),
+                correlation = http.HttpContext is { } h ? Audit.AuditContext.Correlation(h) : null,
+                ip = http.HttpContext?.Connection.RemoteIpAddress?.ToString(),
+                agent = Audit.AuditLog.Cut(http.HttpContext?.Request.Headers.UserAgent.ToString(), 200),
+            }, null, ct));
     }
 
     public async Task SetDocumentAsync(long userId, string doc, DateTime? expires, DateTime now, CancellationToken ct)
@@ -416,7 +428,23 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db) : IPrivacyStore
     public async Task AddAccessAsync(long userId, string actor, string purpose, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.AccessLog (UserId, Actor, Purpose, [At]) VALUES (@userId, @actor, @purpose, @now)", new { userId, actor, purpose, now }, null, ct));
+        var ctx = http.HttpContext;
+        var actorId = Guid.TryParse(ctx?.User.FindFirst(Auth.Claims.Actor)?.Value ?? ctx?.User.FindFirst(Auth.Claims.Subject)?.Value, out var g) ? g : (Guid?)null;
+        await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.AccessLog (UserId, Actor, Purpose, [At]) VALUES (@userId, @actor, @purpose, @now);
+            -- Reading or deleting someone's documents is also an audit event: who looked at whose data, and why.
+            INSERT INTO dbo.AuditEvents (Category, Action, Outcome, ActorPublicId, ActorRole, SubjectPublicId, Detail, CorrelationId, Ip, UserAgent, [At])
+            SELECT 'domain', N'access.' + @purpose, 'success', @actorId, ISNULL((SELECT Role FROM dbo.Users WHERE PublicId = @actorId), 'system'), s.PublicId, @auditDetail, @correlation, @ip, @agent, SYSUTCDATETIME()
+            FROM dbo.Users s WHERE s.Id = @userId;
+            """,
+            new
+            {
+                userId, actor, purpose, now, actorId,
+                auditDetail = System.Text.Json.JsonSerializer.Serialize(new { by = actor }),
+                correlation = ctx is null ? null : Audit.AuditContext.Correlation(ctx),
+                ip = ctx?.Connection.RemoteIpAddress?.ToString(),
+                agent = Audit.AuditLog.Cut(ctx?.Request.Headers.UserAgent.ToString(), 200),
+            }, null, ct));
     }
 
     public async Task<List<RetentionRow>> ListRetentionRunsAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)

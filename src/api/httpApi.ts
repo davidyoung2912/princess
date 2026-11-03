@@ -62,6 +62,12 @@ interface WireCore { personaId: string; bookerId: string; sailingId: string; par
 
 const seg = encodeURIComponent
 
+/** The query string of an activity page: older than an id, at most this many. */
+const activityQuery = (q?: { before?: number; max?: number }): string => {
+  const parts = [q?.max ? `max=${q.max}` : '', q?.before ? `before=${q.before}` : ''].filter(Boolean)
+  return parts.length ? `?${parts.join('&')}` : ''
+}
+
 /**
  * The REST implementation of the account area. Journey routes are `/bookings/{number}/...`; the screens do not know the
  * number, so it is the signed-in person's current trip, found once from `GET /trips` (data model D3). Call `reset()` when
@@ -288,6 +294,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       saveHelper: (input) => send('put', '/me/helper', input),
       revokeHelper: () => send('delete', '/me/helper'),
       history: () => get('/me/history'),
+      activity: (q) => get(`/me/audit${activityQuery(q)}`),
     },
     trips: {
       list: () => get('/trips'),

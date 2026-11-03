@@ -100,6 +100,8 @@ Check: `active` ⇒ `Permissions` contains `view`. Unique filtered (`GuestUserId
 **ConsentChoices** — privacy R/W (`setConsent`).
 `UserId ID* FK→Users` · `ConsentId STR(30)*` · `On BIT*` · `ChangedByUserId ID* FK→Users` · `At TS*` · PK (`UserId, ConsentId`). Consent ids from `privacy.ts`.
 
+**AuditEvents** — the audit trail (`docs/audit-trail.md`): append-only, no foreign keys, actor and subject by `PublicId`. See the file for columns and what is recorded.
+
 **AccessLog** — privacy R. `Id BIGINT IDENTITY PK` · `UserId ID* FK→Users` (whose data) · `Actor STR(80)*` · `Purpose STR(120)*` · `At TS*`. Index `IX_AccessLog_UserId_At`.
 
 **RetentionRuns** — privacy R. `Id ID PK` · `UserId ID* FK→Users` · `RuleName STR(30)*` · `Kinds STR(200)*` · `At TS*`.
@@ -301,6 +303,8 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `account.saveProfile` | `PUT /users/{id}/profile` | the person, their booker (a child), the booking's booker, or a helper with `profile`; rules: name change (`conflict` late or large), `forbidden` for child |
 | `account.helper` / `saveHelper` / `revokeHelper` | `GET/PUT/DELETE /me/helper` (GET returns JSON `null` when there is none) | U |
 | `account.history` | `GET /me/history` | U |
+| `account.activity` | `GET /me/audit` (own audit trail, newest first; `max`, `before`) | U |
+| (administrators) | `GET /audit` (search the whole trail; 403 unless role `admin`) | A |
 | `trips.list` | `GET /trips` | U |
 | `trips.get` | `GET /trips/{n}` | B |
 | `trips.link` | `POST /trips/link` {number,lastName,departure} | U (rate-limited) |

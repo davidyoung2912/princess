@@ -161,6 +161,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/me/help': 'help centre; faq; how do I; questions; guides',
   '/me/contact': 'contact us; phone number; email; call; speak to someone',
   '/me/bill': 'my bill; charges; onboard account; folio; what I spent',
+  '/me/activity': 'my activity; audit log; who did what; sign-in history; what changed on my account; failed attempts',
   '/me/ledger': 'everything paid; ledger; all charges; payments history',
   '/me/bill/final': 'final bill; receipts; invoice; receipt for work',
   '/me/cases': 'lost items; claims; complaints; refund request; problem case',

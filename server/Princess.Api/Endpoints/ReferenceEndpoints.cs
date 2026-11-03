@@ -1,3 +1,4 @@
+using Princess.Api.Audit;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
@@ -180,12 +181,20 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("How a friend answers a sail-again invitation (accepted or declined). Asked only after the guest has agreed to invite the contact. A simulated feed.");
 
-        api.MapPost("/telemetry", async (TelemetryBatchDto body, ITelemetrySink sink, CancellationToken ct) =>
+        api.MapPost("/telemetry", async (TelemetryBatchDto body, ITelemetrySink sink, IAuditLog audit, CancellationToken ct) =>
             {
                 if (!TelemetryRules.Valid(body?.Items)) throw ApiException.Invalid("badTelemetry");
                 await sink.AcceptAsync(body!.Items!, ct);
+                // Every problem the app reports from a device goes into the audit trail, against the signed-in person, as a client error.
+                foreach (var item in body.Items!.Where(i => i.Type == "error"))
+                    await audit.RecordAsync(new AuditEntry
+                    {
+                        Category = AuditCategory.Error, Action = $"client.{item.Kind}", Outcome = AuditOutcome.Error, ErrorCode = "client",
+                        ErrorType = item.Kind, ErrorMessage = AuditLog.Cut(TelemetryRules.Scrub(item.Message ?? ""), 400),
+                        Detail = AuditContext.Json(new { source = "app", reportedAt = item.At }),
+                    }, CancellationToken.None);
                 return Results.NoContent();
             })
-            .WithTags("Reference").WithSummary("Sends a batch of consented error reports and usage counts (1 to 100 items, known kinds and event names only; no person or typed text). 400 badTelemetry for anything else.");
+            .WithTags("Reference").WithSummary("Sends a batch of error reports (always sent; each is also written to the audit trail as a client error) and usage counts (only with the guest's consent) (1 to 100 items, known kinds and event names only; no person or typed text). 400 badTelemetry for anything else.");
     }
 }

@@ -6,6 +6,7 @@ import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/people
 import type { PortId } from '../domain/sailings'
 import type { FromPrice, Quote } from '../domain/pricing'
 import type { CategoryId } from '../domain/ship'
+import type { ActivityEvent } from '../domain/activityLog'
 import type { Card, CardBrand, Helper, HistoryEntry, PermissionId, Profile } from '../domain/account'
 import type { Citizenship, DocId, Held, ReqResult } from '../domain/documents'
 import type { Notice, NotificationPrefs } from '../domain/notifications'
@@ -728,6 +729,8 @@ export interface Api {
     saveHelper(input: { name: string; relationship: string; permissions: PermissionId[]; status: 'active' | 'requested' }): Promise<Helper>
     revokeHelper(): Promise<Helper>
     history(): Promise<HistoryEntry[]>
+    /** The signed-in person's own audit trail, newest first. Page back with `before` (the oldest id seen). */
+    activity(query?: { before?: number; max?: number }): Promise<ActivityEvent[]>
   }
   trips: {
     list(): Promise<TripsView>

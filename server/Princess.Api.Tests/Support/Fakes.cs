@@ -142,3 +142,33 @@ public static class TestHashes
         return $"pbkdf2${iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
     }
 }
+
+public sealed class InMemoryAuditStore : Princess.Api.Audit.IAuditStore
+{
+    private readonly object gate = new();
+    private long next = 1;
+    public List<Princess.Api.Audit.AuditEntry> Rows { get; } = [];
+    /// <summary>Makes every write throw, to prove a failing audit store never fails the guest's request.</summary>
+    public bool FailWrites { get; set; }
+
+    public Task AppendAsync(Princess.Api.Audit.AuditEntry entry, CancellationToken ct)
+    {
+        if (FailWrites) throw new InvalidOperationException("audit store down");
+        lock (gate) { entry.Id = next++; Rows.Add(entry); }
+        return Task.CompletedTask;
+    }
+
+    public Task<List<Princess.Api.Audit.AuditEntry>> QueryAsync(Princess.Api.Audit.AuditQuery q, CancellationToken ct)
+    {
+        lock (gate)
+        {
+            return Task.FromResult(Rows
+                .Where(r => (q.Person is null || r.ActorPublicId == q.Person || r.SubjectPublicId == q.Person)
+                    && (q.Actor is null || r.ActorPublicId == q.Actor) && (q.Subject is null || r.SubjectPublicId == q.Subject)
+                    && (q.ActionPrefix is null || r.Action.StartsWith(q.ActionPrefix, StringComparison.Ordinal))
+                    && (q.Category is null || r.Category == q.Category) && (q.Outcome is null || r.Outcome == q.Outcome)
+                    && (q.From is null || r.At >= q.From) && (q.To is null || r.At < q.To) && (q.BeforeId is null || r.Id < q.BeforeId))
+                .OrderByDescending(r => r.At).ThenByDescending(r => r.Id).Take(Math.Clamp(q.Max, 1, 500)).ToList());
+        }
+    }
+}

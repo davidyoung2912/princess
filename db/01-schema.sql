@@ -752,6 +752,45 @@ CREATE TABLE dbo.AccessLog (
 CREATE INDEX IX_AccessLog_UserId_At ON dbo.AccessLog (UserId, [At] DESC);
 END
 
+-- The audit trail: who did what, when, from where, and how it ended. Append-only, and deliberately no foreign keys, so a row outlives
+-- the account or booking it describes. Actor and subject are the users' PublicIds. Bodies are never stored (passwords, card numbers).
+IF OBJECT_ID(N'dbo.AuditEvents', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.AuditEvents (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AuditEvents PRIMARY KEY,
+  EventId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AuditEvents_EventId DEFAULT NEWID() CONSTRAINT UX_AuditEvents_EventId UNIQUE,
+  [At] DATETIME2(3) NOT NULL CONSTRAINT DF_AuditEvents_At DEFAULT SYSUTCDATETIME(),   -- real time, never the demo clock
+  Category VARCHAR(10) NOT NULL,                -- auth | request | domain | error | system
+  Action NVARCHAR(120) NOT NULL,                -- 'auth.login', 'POST /api/v1/bookings/{number}/cancel', 'history.dining'
+  Outcome VARCHAR(8) NOT NULL,                  -- success | failure | denied | error
+  ActorPublicId UNIQUEIDENTIFIER NULL,          -- who did it (the booker on a view-as token); null when nobody was signed in
+  ActorRole VARCHAR(10) NOT NULL CONSTRAINT DF_AuditEvents_ActorRole DEFAULT 'anonymous',   -- anonymous | guest | staff | admin | system
+  SubjectPublicId UNIQUEIDENTIFIER NULL,        -- whose account or data it was done to or for
+  Target NVARCHAR(200) NULL,                    -- the thing acted on: route values, booking number
+  HttpMethod VARCHAR(7) NULL, Route NVARCHAR(200) NULL, StatusCode SMALLINT NULL, DurationMs INT NULL,
+  ErrorCode VARCHAR(20) NULL,                   -- the API error code (invalid, forbidden, conflict, server ...)
+  ErrorType NVARCHAR(120) NULL, ErrorMessage NVARCHAR(400) NULL, ErrorDetail NVARCHAR(2000) NULL,   -- an unhandled exception: type, message, top of the stack
+  Detail NVARCHAR(1000) NULL,                   -- JSON: reason, counts, what changed (no secrets)
+  CorrelationId VARCHAR(64) NULL,               -- the request's trace id; also in the problem-details body and X-Request-Id
+  Ip VARCHAR(45) NULL, UserAgent NVARCHAR(200) NULL,
+  CONSTRAINT CK_AuditEvents_Category CHECK (Category IN ('auth','request','domain','error','system')),
+  CONSTRAINT CK_AuditEvents_Outcome CHECK (Outcome IN ('success','failure','denied','error'))
+);
+CREATE INDEX IX_AuditEvents_At ON dbo.AuditEvents ([At] DESC);
+CREATE INDEX IX_AuditEvents_Actor_At ON dbo.AuditEvents (ActorPublicId, [At] DESC) WHERE ActorPublicId IS NOT NULL;
+CREATE INDEX IX_AuditEvents_Subject_At ON dbo.AuditEvents (SubjectPublicId, [At] DESC) WHERE SubjectPublicId IS NOT NULL;
+CREATE INDEX IX_AuditEvents_Action_At ON dbo.AuditEvents (Action, [At] DESC);
+CREATE INDEX IX_AuditEvents_Outcome_At ON dbo.AuditEvents (Outcome, [At] DESC) WHERE Outcome <> 'success';
+CREATE INDEX IX_AuditEvents_Correlation ON dbo.AuditEvents (CorrelationId) WHERE CorrelationId IS NOT NULL;
+END
+
+-- Append-only: nothing edits or deletes an audit row. (An approved archive job can disable this trigger for its run.)
+IF OBJECT_ID(N'dbo.TR_AuditEvents_AppendOnly', N'TR') IS NULL
+EXEC(N'CREATE TRIGGER dbo.TR_AuditEvents_AppendOnly ON dbo.AuditEvents INSTEAD OF UPDATE, DELETE AS
+BEGIN
+  THROW 51000, N''dbo.AuditEvents is append-only.'', 1;
+END');
+
 IF OBJECT_ID(N'dbo.RetentionRuns', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.RetentionRuns (

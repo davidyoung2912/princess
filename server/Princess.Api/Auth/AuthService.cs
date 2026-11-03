@@ -2,6 +2,7 @@ using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
+using Princess.Api.Audit;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
@@ -30,7 +31,8 @@ public sealed class AuthService(
     ISignInStore signIn,
     IMessageSender sender,
     IOptions<JwtOptions> jwt,
-    IOptions<AuthOptions> auth) : IAuthService
+    IOptions<AuthOptions> auth,
+    IAuditLog audit) : IAuthService
 {
     // Verified against when no real hash applies, so an unknown account costs the same time as a wrong password.
     private static readonly string DummyHash = new Pbkdf2PasswordHasher().Hash("not-a-real-password");
@@ -48,15 +50,28 @@ public sealed class AuthService(
         var user = await users.FindByIdentifierAsync(identifier, ct);
         var verified = hasher.Verify(request.Password, user?.PasswordHash ?? DummyHash);
         // Every failure looks the same from outside: unknown account, no password (supervised child), locked, wrong password.
-        if (user is null || user.PasswordHash is null) throw BadCredentials();
-        if (user.LockedUntil is { } until && until > now) throw BadCredentials();
+        // The response is the same for every failure; the audit row says which it was.
+        if (user is null || user.PasswordHash is null)
+        {
+            await Audit("auth.login", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAccount" : "noPassword", attempt = AuditContext.Fingerprint(identifier) }, ct);
+            throw BadCredentials();
+        }
+        if (user.LockedUntil is { } until && until > now)
+        {
+            await Audit("auth.login", AuditOutcome.Denied, user, new { reason = "locked" }, ct);
+            throw BadCredentials();
+        }
         if (!verified)
         {
             await users.RecordLoginFailureAsync(user.Id, auth.Value.MaxFailedLogins, TimeSpan.FromMinutes(auth.Value.LockoutMinutes), now, ct);
+            var locks = user.FailedLogins + 1 >= auth.Value.MaxFailedLogins;
+            await Audit("auth.login", AuditOutcome.Failure, user, new { reason = "wrongPassword", failedLogins = user.FailedLogins + 1, lockedNow = locks }, ct);
+            if (locks) await Audit("auth.lockout", AuditOutcome.Denied, user, new { minutes = auth.Value.LockoutMinutes }, ct);
             throw BadCredentials();
         }
 
         await users.RecordLoginSuccessAsync(user.Id, now, ct);
+        await Audit("auth.login", AuditOutcome.Success, user, new { previousLogin = user.LastLoginAt }, ct);
         var familyId = Random.Shared.NextInt64(1, long.MaxValue);
         return await IssueAsync(user, familyId, refreshTokenId: null, userAgent, ip, ct);
     }
@@ -71,9 +86,14 @@ public sealed class AuthService(
         if (record.UsedAt is not null || record.RevokedAt is not null)
         {
             await refreshTokens.RevokeFamilyAsync(record.UserId, record.FamilyId, now, ct);
+            await AuditById("auth.refresh.reuse", AuditOutcome.Denied, record.UserId, new { reason = "spentTokenReturned", sessionEnded = true }, ct);
             throw BadRefreshToken();
         }
-        if (record.ExpiresAt <= now) throw BadRefreshToken();
+        if (record.ExpiresAt <= now)
+        {
+            await AuditById("auth.refresh", AuditOutcome.Failure, record.UserId, new { reason = "expired" }, ct);
+            throw BadRefreshToken();
+        }
 
         var user = await users.FindByIdAsync(record.UserId, ct) ?? throw BadRefreshToken();
         return await IssueAsync(user, record.FamilyId, record.Id, userAgent, ip, ct);
@@ -86,6 +106,7 @@ public sealed class AuthService(
         // Someone else's token is ignored, not revoked: signing out must not be a way to end another person's session.
         if (record is null || record.UserId != user.Id) return;
         await refreshTokens.RevokeFamilyAsync(record.UserId, record.FamilyId, clock.UtcNow, ct);
+        await Audit("auth.logout", AuditOutcome.Success, user, null, ct);
     }
 
     public async Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct)
@@ -94,6 +115,7 @@ public sealed class AuthService(
         // Not your child: the same notFound as a child that does not exist.
         if (child is null || !child.IsSupervised || child.BookerUserId != booker.Id) throw ApiException.NotFound();
         var token = tokens.CreateViewAsToken(child, booker.PublicId);
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.viewAs", Outcome = AuditOutcome.Success, ActorPublicId = booker.PublicId, ActorRole = booker.Role, SubjectPublicId = child.PublicId }, ct);
         return new ViewAsResponse(token.Token, Ms(token.ExpiresAt), Me(child));
     }
 
@@ -115,8 +137,9 @@ public sealed class AuthService(
             throw ApiException.Invalid("tooYoung");
 
         var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob), clock.UtcNow, ct)
-            ?? throw ApiException.Conflict("emailTaken");
+            ?? await EmailTakenAsync(email, ct);
         var user = await users.FindByIdAsync(id, ct) ?? throw ApiException.Invalid();
+        await Audit("auth.register", AuditOutcome.Success, user, null, ct);
         return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
     }
 
@@ -126,7 +149,11 @@ public sealed class AuthService(
         if (email is null) throw ApiException.Invalid();
         var user = await users.FindByIdentifierAsync(email, ct);
         // No answer differs for an unknown address, a child account or an account with no password.
-        if (user is null || user.IsSupervised || user.PasswordHash is null || user.Email is null) return;
+        if (user is null || user.IsSupervised || user.PasswordHash is null || user.Email is null)
+        {
+            await Audit($"auth.{purpose}.request", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAddress" : "notEligible", attempt = AuditContext.Fingerprint(email) }, ct);
+            return;
+        }
 
         var now = clock.UtcNow;
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
@@ -134,6 +161,7 @@ public sealed class AuthService(
         var subject = purpose == Reset ? "Your Princess password reset code" : "Your Princess sign-in code";
         var body = $"Your code is {code}. It works once and lasts {CodeMinutes} minutes. If you did not ask for it, ignore this message; nothing has changed.";
         await sender.SendAsync(new OutboxMessage(user.Id, "email", "critical", user.Email, subject, body), ct);
+        await Audit($"auth.{purpose}.request", AuditOutcome.Success, user, null, ct);
     }
 
     public async Task ResetPasswordAsync(ResetRequest request, CancellationToken ct)
@@ -141,12 +169,14 @@ public sealed class AuthService(
         if (!ValidPassword(request.NewPassword)) throw ApiException.Invalid();
         var user = await RedeemAsync(Reset, request.Email, request.Code, ct);
         await signIn.SetPasswordAsync(user.Id, hasher.Hash(request.NewPassword!), clock.UtcNow, ct);
+        await Audit("auth.password.reset", AuditOutcome.Success, user, new { sessionsEnded = true }, ct);
     }
 
     public async Task<SessionResponse> RedeemMagicAsync(MagicRedeemRequest request, string? userAgent, string? ip, CancellationToken ct)
     {
         var user = await RedeemAsync(Magic, request.Email, request.Code, ct);
         await users.RecordLoginSuccessAsync(user.Id, clock.UtcNow, ct);
+        await Audit("auth.login", AuditOutcome.Success, user, new { method = "magicCode", previousLogin = user.LastLoginAt }, ct);
         return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
     }
 
@@ -157,13 +187,22 @@ public sealed class AuthService(
         if (email is null || code is null || code.Length != 6 || !code.All(char.IsAsciiDigit)) throw ApiException.Invalid("badCode");
         var user = await users.FindByIdentifierAsync(email, ct);
         var challenge = user is null ? null : await signIn.FindOpenChallengeAsync(user.Id, purpose, clock.UtcNow, ct);
-        if (user is null || challenge is null || challenge.Attempts >= MaxCodeAttempts) throw ApiException.Invalid("badCode");
+        if (user is null || challenge is null || challenge.Attempts >= MaxCodeAttempts)
+        {
+            await Audit($"auth.{purpose}.redeem", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAddress" : challenge is null ? "noOpenCode" : "tooManyTries", attempt = AuditContext.Fingerprint(email) }, ct);
+            throw ApiException.Invalid("badCode");
+        }
         if (!CryptographicOperations.FixedTimeEquals(challenge.CodeHash, CodeHash(purpose, user.Id, code)))
         {
             await signIn.AddChallengeAttemptAsync(challenge.Id, ct);
+            await Audit($"auth.{purpose}.redeem", AuditOutcome.Failure, user, new { reason = "wrongCode", attempts = challenge.Attempts + 1 }, ct);
             throw ApiException.Invalid("badCode");
         }
-        if (!await signIn.UseChallengeAsync(challenge.Id, clock.UtcNow, ct)) throw ApiException.Invalid("badCode");
+        if (!await signIn.UseChallengeAsync(challenge.Id, clock.UtcNow, ct))
+        {
+            await Audit($"auth.{purpose}.redeem", AuditOutcome.Failure, user, new { reason = "alreadyUsed" }, ct);
+            throw ApiException.Invalid("badCode");
+        }
         return user;
     }
 
@@ -209,6 +248,24 @@ public sealed class AuthService(
         u.BookerPublicId, u.TextSize, u.Locale, u.Currency);
 
     public static long Ms(DateTime utc) => new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
+
+    /// <summary>One authentication event about <paramref name="user"/> (null when the account is unknown). The actor is the person signing in, who is not yet on a token.</summary>
+    private Task Audit(string action, string outcome, UserRecord? user, object? detail, CancellationToken ct) =>
+        audit.RecordAsync(new AuditEntry
+        {
+            Category = AuditCategory.Auth, Action = action, Outcome = outcome,
+            ActorPublicId = user?.PublicId, ActorRole = user?.Role ?? "anonymous", SubjectPublicId = user?.PublicId,
+            Detail = detail is null ? null : AuditContext.Json(detail),
+        }, ct);
+
+    private async Task AuditById(string action, string outcome, long userId, object? detail, CancellationToken ct) =>
+        await Audit(action, outcome, await users.FindByIdAsync(userId, ct), detail, ct);
+
+    private async Task<long> EmailTakenAsync(string email, CancellationToken ct)
+    {
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Failure, Detail = AuditContext.Json(new { reason = "emailTaken", attempt = AuditContext.Fingerprint(email) }) }, ct);
+        throw ApiException.Conflict("emailTaken");
+    }
 
     private static string? Trim(string? s, int max) => s is null ? null : s.Length <= max ? s : s[..max];
 }

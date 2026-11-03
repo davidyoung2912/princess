@@ -1,7 +1,7 @@
 import { record, type DiagnosticKind } from './log'
 import { createTelemetry, type EventName, type TelemetryItem } from './telemetry'
 
-/** Device flag for the "Help improve the app" consent, set from the privacy centre. Off until the guest turns it on. */
+/** Device flag for the "Help improve the app" consent (usage counts only; problems are always reported), set from the privacy centre. Off until the guest turns it on. */
 export const IMPROVE_KEY = 'princess:improve'
 
 /** A page load slower than this is worth a line in the log (milliseconds to the load event). */
@@ -15,7 +15,7 @@ const improveOn = (): boolean => {
   try { return local()?.getItem(IMPROVE_KEY) === '1' } catch { return false }
 }
 
-/** Consent-gated reports and counts (PERF-07, CNT-03). Nothing is queued while the flag is off. */
+/** Problem reports (always) and usage counts (only while the consent flag is on) (PERF-07, CNT-03). */
 export const telemetry = createTelemetry(local(), improveOn)
 
 let sender: ((items: TelemetryItem[]) => Promise<unknown>) | null = null
@@ -37,10 +37,11 @@ export function setImproveConsent(on: boolean): void {
 /** Counts a named event, only if the guest agreed. */
 export const track = (name: EventName, screen?: string): void => telemetry.event(name, screen)
 
-/** Notes a problem in the on-device log, and queues it for the team if the guest agreed. */
+/** Notes a problem in the on-device log and sends it to the server (scrubbed: no stack, address, e-mail or typed text); it waits in a queue while offline or signed out. */
 export const report = (kind: DiagnosticKind, message: unknown): void => {
   record(local(), kind, message)
   telemetry.error(kind, message)
+  void flushTelemetry()
 }
 
 /** Starts listening for uncaught errors, unhandled promise failures and a slow first load. Call once at start-up. */

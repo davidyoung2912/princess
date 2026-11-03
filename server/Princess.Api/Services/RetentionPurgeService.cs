@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Princess.Api.Audit;
 
 namespace Princess.Api.Services;
 
@@ -26,13 +27,35 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
             {
                 await using var scope = scopes.CreateAsyncScope();
                 var n = await scope.ServiceProvider.GetRequiredService<PrivacyService>().PurgeAllDueAsync(stoppingToken);
-                if (n > 0) log.LogInformation("Retention purge ran for {Count} booking(s)", n);
+                if (n > 0)
+                {
+                    log.LogInformation("Retention purge ran for {Count} booking(s)", n);
+                    await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.purge", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { bookings = n }) }, stoppingToken);
+                }
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 log.LogWarning(e, "Retention purge failed; it will try again at the next interval");
+                await RecordFailureAsync(e);
             }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+
+    private async Task RecordFailureAsync(Exception e)
+    {
+        try
+        {
+            await using var scope = scopes.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry
+            {
+                Category = AuditCategory.Error, Action = "retention.purge", Outcome = AuditOutcome.Error, ActorRole = "system",
+                ErrorCode = "server", ErrorType = e.GetType().FullName, ErrorMessage = AuditLog.Cut(e.Message, 400), ErrorDetail = AuditLog.Cut(e.StackTrace, 2000),
+            });
+        }
+        catch (Exception inner)
+        {
+            log.LogError(inner, "Could not audit the retention purge failure");
+        }
     }
 }
