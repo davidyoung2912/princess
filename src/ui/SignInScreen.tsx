@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
+import logo from '../assets/princess.png'
 import { AuthError } from '../auth/provider'
 import { t } from '../i18n'
 import { auth, retryReference } from '../runtime'
@@ -8,7 +9,6 @@ import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
 import { LanguageSwitch } from './LanguageSwitch'
 import { Button } from './Button'
 import { Card } from './Card'
-import { ConceptNotice } from './ConceptNotice'
 import { ErrorSummary, Field } from './Field'
 import { CodeFlow, SignUpForm } from './SignInFlows'
 
@@ -17,8 +17,8 @@ type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 /** The sign-in page: email or 10-digit account number plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')
-  if (mode === 'signup') return <main className="page signin" id="main"><SignUpForm onBack={() => setMode('signin')} /><ConceptNotice /></main>
-  if (mode === 'forgot' || mode === 'magic') return <main className="page signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /><ConceptNotice /></main>
+  if (mode === 'signup') return <main className="page signin" id="main"><SignUpForm onBack={() => setMode('signin')} /></main>
+  if (mode === 'forgot' || mode === 'magic') return <main className="page signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
   return <PasswordSignIn go={setMode} />
 }
 
@@ -49,7 +49,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   const problems = [missing.id, missing.pw, error].filter((x): x is string => !!x)
   return (
     <main className="page signin" id="main">
-      <LanguageSwitch />
+      <img className="signin__logo" src={logo} alt="Princess Voyages" width="1024" height="1024" />
       <h1>{t('signin.title')}</h1>
       <p>{t('signin.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={problems} />
@@ -60,13 +60,13 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
           <Button type="submit" block disabled={busy}>{busy ? t('signin.busy') : t('signin.submit')}</Button>
         </form>
       </Card>
+      <LanguageSwitch />
       <ul className="plain-list">
         <li><Button variant="secondary" onClick={() => go('forgot')}>{t('signin.mode.forgot')}</Button></li>
         <li><Button variant="secondary" onClick={() => go('magic')}>{t('signin.mode.magic')}</Button></li>
         <li><Button variant="secondary" onClick={() => go('signup')}>{t('signin.mode.signup')}</Button></li>
       </ul>
       {!import.meta.env.PROD && <TestAccounts />}
-      <ConceptNotice />
     </main>
   )
 }

@@ -66,13 +66,6 @@ img, svg { max-width: 100%; }
     calc(env(safe-area-inset-left) + var(--gutter));
 }
 
-.concept-notice {
-  margin: var(--space-6) 0 0;
-  padding-top: var(--space-4);
-  border-top: var(--border-width) solid var(--border);
-  color: var(--text-muted);
-  font-size: var(--fs-caption);
-}
 
 .card {
   background: var(--surface-warm);
@@ -101,3 +94,10 @@ legend { font-weight: 600; padding: 0 var(--space-2); }
 .swatch--warning { border-left: 0.5rem solid var(--warning); color: var(--warning); }
 .swatch--danger { border-left: 0.5rem solid var(--danger); color: var(--danger); }
 .swatch--gold { border-bottom: 0.5rem solid var(--gold); color: var(--gold-text); }
+
+.signin__logo {
+  display: block;
+  width: min(60vw, 14rem);
+  height: auto;
+  margin: var(--space-4) auto var(--space-2);
+}

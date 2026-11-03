@@ -18,16 +18,6 @@ watchProblems()
 applySettings()
 watchDeviceTheme()
 
-/** Fade out and remove the first-load splash (drawn in index.html) once the app has painted. */
-function dismissBoot() {
-  const boot = document.getElementById('boot')
-  if (!boot) return
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    boot.classList.add('done')
-    setTimeout(() => boot.remove(), 400)
-  }))
-}
-
 // Wait briefly for the text fonts so headings do not visibly resize when they arrive.
 const fontsReady = Promise.race([
   Promise.all([document.fonts.load('600 1em Lora'), document.fonts.load('400 1em Figtree'), document.fonts.load('700 1em Figtree')]),
@@ -42,7 +32,6 @@ void Promise.all([fontsReady, startRuntime().catch(() => {}), applyLanguage().ca
       </ErrorBoundary>
     </StrictMode>,
   )
-  dismissBoot()
 })
 
 // Download new versions quietly and let the guest choose when to switch (PERF-02).

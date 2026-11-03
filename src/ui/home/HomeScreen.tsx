@@ -17,7 +17,6 @@ import { CompanionCard, ContinueBookingCard } from './PrepCards'
 import { Card } from '../Card'
 import { HubList } from '../HubList'
 import { JourneyStrip } from '../JourneyStrip'
-import { ConceptNotice } from '../ConceptNotice'
 import { Explore } from '../discover/Landing'
 import { countdown } from '../account/format'
 import { NextStep } from '../account/tripParts'
@@ -51,7 +50,6 @@ export function HomeScreen() {
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
         <HomeOfferCard />
         <HubList tab="home" />
-        <ConceptNotice />
       </div>
     )
   }
@@ -77,7 +75,6 @@ export function HomeScreen() {
       <p><Link to="/home/quiz">{t('route.quiz')}</Link> · <Link to="/home/advisors">{t('route.advisors')}</Link></p>
       <HubList tab="home" />
       <div className="simple-hide"><Explore /></div>
-      <ConceptNotice />
     </div>
   )
 }

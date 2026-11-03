@@ -11,15 +11,13 @@ export interface RouteDef {
   tab: TabId | null
   /** The build phase that replaces the placeholder with the real screen (requirements §21). */
   phase: number
-  /** Shows the "unofficial concept" notice (Home and Me, per the design language). */
-  notice?: boolean
   /** Opened by someone without an account (a family link): no sign-in, no shell, no tab. */
   public?: boolean
 }
 
 /** Every screen. The router is built from this table, and the navigation model is tested against it. */
 export const ROUTES: readonly RouteDef[] = [
-  { path: '/', titleKey: 'route.home', tab: 'home', phase: 5, notice: true },
+  { path: '/', titleKey: 'route.home', tab: 'home', phase: 5 },
   { path: '/home/boarding-pass', titleKey: 'route.boardingPass', tab: 'home', phase: 5 },
   { path: '/home/find-pass', titleKey: 'route.findPass', tab: 'home', phase: 5 },
   { path: '/home/check-in', titleKey: 'route.checkin', tab: 'home', phase: 5 },
@@ -174,7 +172,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/book/confirmed/:id', titleKey: 'route.bookConfirmed', tab: 'home', phase: 3 },
   { path: '/book/resume/:id', titleKey: 'route.bookResume', tab: 'home', phase: 3 },
   { path: '/book/pay/:id', titleKey: 'route.bookPay', tab: 'home', phase: 3 },
-  { path: '/me', titleKey: 'route.me', tab: 'me', phase: 2, notice: true },
+  { path: '/me', titleKey: 'route.me', tab: 'me', phase: 2 },
   { path: '/me/trips', titleKey: 'route.trips', tab: 'me', phase: 2 },
   { path: '/me/trips/:id', titleKey: 'route.trip', tab: 'me', phase: 2 },
   { path: '/me/profile', titleKey: 'route.profile', tab: 'me', phase: 2 },

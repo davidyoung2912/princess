@@ -9,7 +9,6 @@ import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { HubList } from '../HubList'
-import { ConceptNotice } from '../ConceptNotice'
 import { countdown, formatMoment } from './format'
 import { Load } from './parts'
 import { NextStep, PaymentBadge } from './tripParts'
@@ -63,7 +62,6 @@ export function MeScreen() {
           )}
         </Load>
       </section>
-      <ConceptNotice />
     </div>
   )
 }

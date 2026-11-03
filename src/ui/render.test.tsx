@@ -44,7 +44,6 @@ describe('every screen renders inside the shell', () => {
       // With a server, a link of the right shape is asked about there (the page says it is loading); anything else is refused at once.
       expect(html).toContain(API_URL && path.endsWith('.a.b.c') ? t('shell.loading') : t('home.public.bad.malformed'))
       expect(html).not.toContain('class="tabs')
-      expect(html).not.toContain(t('app.conceptNotice'))
     }
   })
 
@@ -60,13 +59,6 @@ describe('every screen renders inside the shell', () => {
       expect(html.match(/aria-current="page"/g) ?? []).toHaveLength(1)
       for (const other of TABS) expect(html).toContain(t(other.labelKey))
       expect(tabForPath(tab.path)).toBe(tab.id)
-    }
-  })
-
-  it('shows the concept notice on Home and Me only', () => {
-    for (const route of ROUTES) {
-      const html = decode(render(route.path.replace(':id', 'sample')))
-      expect(html.includes(t('app.conceptNotice')), route.path).toBe(!!route.notice)
     }
   })
 
@@ -105,7 +97,6 @@ describe('account screens', () => {
   it('reach every account screen from Me in one tap', () => {
     const me = render('/me')
     for (const href of ['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/packages', '/me/settings']) expect(me).toContain(`href="${href}"`)
-    expect(decode(me)).toContain(t('app.conceptNotice'))
   })
 
   it('lists every help centre answer and a way to reach a person', () => {

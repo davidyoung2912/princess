@@ -46,9 +46,9 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
       manifest: {
-        name: 'Princess guest app (unofficial concept)',
+        name: 'Princess Voyages',
         short_name: 'Princess',
-        description: 'An unofficial concept for a Princess Cruises guest app. Not affiliated with Princess Cruises.',
+        description: 'A guest app for planning and managing your cruise.',
         display: 'standalone',
         background_color: '#003595',
         theme_color: '#003595',

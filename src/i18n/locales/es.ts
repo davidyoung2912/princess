@@ -7,7 +7,6 @@ import type { en } from './en'
  */
 export const es: Partial<Record<keyof typeof en, string>> = {
   'app.name': 'Princess',
-  'app.conceptNotice': 'Concepto no oficial. Sin relación con Princess Cruises.',
   'common.close': 'Cerrar',
   'common.yes': 'Sí',
   'common.no': 'No',

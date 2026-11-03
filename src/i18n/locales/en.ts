@@ -4,7 +4,6 @@
  */
 export const en = {
   'app.name': 'Princess',
-  'app.conceptNotice': 'Unofficial concept. Not affiliated with Princess Cruises.',
 
   'common.close': 'Close',
 
@@ -3508,7 +3507,7 @@ export const en = {
   'prt.largeHint': 'Bigger letters and more space on the page.',
   'prt.print': 'Print or save as PDF',
   'prt.pass': 'Your boarding pass prints from its own screen:',
-  'prt.foot': 'From a concept app, not an official document. Times are ship time.',
+  'prt.foot': 'Times are ship time.',
   'prt.plan.title': 'Day {day}, {date}: {place}',
   'prt.allAboard': 'All aboard {time}',
   'prt.time': 'Time',
@@ -4440,7 +4439,7 @@ export const en = {
   'priv.rules.minimal': 'What we ask for',
   'priv.rules.control': 'What you can do',
 
-  'seo.home': 'Plan a seven-night Western Caribbean cruise on Sun Princess from Fort Lauderdale, check in, and manage your trip. An unofficial concept.',
+  'seo.home': 'Plan a seven-night Western Caribbean cruise on Sun Princess from Fort Lauderdale, check in, and manage your trip.',
   'seo.cruise': 'Seven nights from Fort Lauderdale to Cozumel, Belize City and Roatán on Sun Princess. See the route, the ports and what is included.',
   'seo.sailings': 'Choose a sailing date for the seven-night Western Caribbean cruise on Sun Princess, with prices from the lowest fare.',
   'seo.sailing': 'See the dates, ports and room prices for this Sun Princess sailing from Fort Lauderdale.',
