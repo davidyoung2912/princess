@@ -11,6 +11,8 @@ interface Props {
   quiet?: boolean
   /** The place the guest says they are at ("you are here"); shown only on its deck. */
   here?: Place | null
+  /** The place where the guest parked a lounger or table (DL7); shown only on its deck, with a square mark and a word. */
+  pin?: Place | null
   /** A route to draw on this deck. */
   line?: Point[]
 }
@@ -20,7 +22,7 @@ interface Props {
  * The picture is for sighted use; every fact on it is also in the numbered key under it and in the deck table, and the plan itself is
  * described as one image. Marks never rely on colour alone: a muster station has a letter, a quiet space a ring and a step a dashed outline.
  */
-export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, line = [] }: Props) {
+export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [] }: Props) {
   const id = useId()
   const placed = placePlaces(deck)
   const lifts = placeLifts()
@@ -54,6 +56,10 @@ export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, l
           {here && here.deck === deck && (() => {
             const spot = placed.find((p) => p.place.id === here.id)?.at ?? { x: 320, y: 100 }
             return <g><circle cx={spot.x} cy={spot.y} r={20} className="deck-plan__here" /><text x={spot.x} y={spot.y + 34} textAnchor="middle" className="deck-plan__here-text">{t('plan2.you')}</text></g>
+          })()}
+          {pin && pin.deck === deck && (() => {
+            const spot = placed.find((p) => p.place.id === pin.id)?.at ?? { x: 320, y: 100 }
+            return <g><rect x={spot.x - 18} y={spot.y - 18} width={36} height={36} rx={4} className="deck-plan__pin" /><text x={spot.x} y={spot.y + 34} textAnchor="middle" className="deck-plan__here-text">{t('dl7.spot.pin')}</text></g>
           })()}
         </svg>
       </div>

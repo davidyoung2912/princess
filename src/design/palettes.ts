@@ -1,6 +1,6 @@
 import type { Palette } from './contrast.ts'
 
-export type ThemeName = 'light' | 'dark'
+export type ThemeName = 'light' | 'dark' | 'night'
 export type ContrastName = 'standard' | 'high'
 
 /** Reads the `--token: value;` declarations out of every rule in a stylesheet, keyed by selector. */
@@ -27,5 +27,5 @@ export function resolvePalette(css: string, theme: ThemeName, contrast: Contrast
   return { ...base, ...high }
 }
 
-export const THEME_NAMES: readonly ThemeName[] = ['light', 'dark']
+export const THEME_NAMES: readonly ThemeName[] = ['light', 'dark', 'night']
 export const CONTRAST_NAMES: readonly ContrastName[] = ['standard', 'high']

@@ -104,3 +104,13 @@ public sealed record CelebrationsRequest(List<CelebrationInput>? Items);
 /// <summary><c>Date</c> is "MM-DD". <c>ToldAt</c> (milliseconds since 1970) is when the ship was told about this one.</summary>
 public sealed record CelebrationDto(string Id, string Label, string Date, bool Surprise, long ToldAt);
 public sealed record CelebrationsViewDto(List<CelebrationDto> Items, bool CanEdit);
+
+/// <summary>A thank-you for a team (small delights D6-7). No rating and no tip.</summary>
+public sealed record ThanksRequest(string? Team, string? Text);
+public sealed record ThanksDto(Guid Id, string Team, string Text, long At, bool Mine);
+public sealed record ThanksViewDto(List<ThanksDto> Items, bool CanAdd);
+
+/// <summary>A message added to a celebration (small delights D6-8). <c>Author</c> is a first name.</summary>
+public sealed record WishRequest(string? Text);
+public sealed record WishDto(Guid Id, string CelebrationId, string Author, string Text, long At, bool Mine);
+public sealed record WishesViewDto(List<WishDto> Items, bool CanAdd);

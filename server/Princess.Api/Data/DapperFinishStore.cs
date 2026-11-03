@@ -58,6 +58,30 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await tx.CommitAsync(ct);
     }
 
+    public async Task<List<ThanksRow>> ListThanksAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ThanksRow>(Sql.Cmd("SELECT Id, UserId, Team, Body, CreatedAt FROM dbo.Thanks WHERE BookingId = @bookingId ORDER BY CreatedAt, Id", new { bookingId }, null, ct))).ToList();
+    }
+
+    public async Task AddThanksAsync(long bookingId, ThanksRow row, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.Thanks (Id, BookingId, UserId, Team, Body, CreatedAt) VALUES (@Id, @bookingId, @UserId, @Team, @Body, @CreatedAt)", new { row.Id, bookingId, row.UserId, row.Team, row.Body, row.CreatedAt }, null, ct));
+    }
+
+    public async Task<List<WishRow>> ListWishesAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<WishRow>(Sql.Cmd("SELECT Id, UserId, CelebrationClientId, Author, Body, CreatedAt FROM dbo.CelebrationWishes WHERE BookingId = @bookingId ORDER BY CreatedAt, Id", new { bookingId }, null, ct))).ToList();
+    }
+
+    public async Task AddWishAsync(long bookingId, WishRow row, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.CelebrationWishes (Id, BookingId, CelebrationClientId, UserId, Author, Body, CreatedAt) VALUES (@Id, @bookingId, @CelebrationClientId, @UserId, @Author, @Body, @CreatedAt)", new { row.Id, bookingId, row.CelebrationClientId, row.UserId, row.Author, row.Body, row.CreatedAt }, null, ct));
+    }
+
     public async Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

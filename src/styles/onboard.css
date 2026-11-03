@@ -73,3 +73,4 @@
 .deck-plan__here { fill: none; stroke: var(--attention); stroke-width: 3; }
 .deck-plan__here-text { fill: var(--text); font-size: 12px; font-weight: 700; }
 .deck-plan__key { margin: var(--space-2) 0; padding-left: var(--space-5); columns: 2 14rem; }
+.deck-plan__pin { fill: none; stroke: var(--primary); stroke-width: 3; stroke-dasharray: 6 3; }

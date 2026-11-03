@@ -43,6 +43,17 @@ public static class FinishEndpoints
         cel.MapPut("", async (string number, CelebrationsRequest body, ICurrentUser me, CelebrationService svc, CancellationToken ct) => Results.Ok(await svc.SaveAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Replaces the list (at most 12) and tells the ship about every new or changed entry. Only the month and day are kept. 400 badCelebrations, tooManyCelebrations, badLabel or badDate; 403 for a child account; 409 notConfirmed.");
 
+        cel.MapGet("/wishes", async (string number, ICurrentUser me, SeaService svc, CancellationToken ct) => Results.Ok(await svc.WishesAsync(await me.LoadAsync(ct), number, ct)))
+            .WithSummary("The messages everyone on the booking has added to the celebrations, each as { id, celebrationId, author (first name), text, at, mine }, and whether the caller can add one.");
+        cel.MapPost("/{id}/wishes", async (string number, string id, WishRequest body, ICurrentUser me, SeaService svc, CancellationToken ct) => Results.Ok(await svc.AddWishAsync(await me.LoadAsync(ct), number, id, body, ct)))
+            .WithSummary("Adds a message (at most 240 characters, six per person per celebration) to one of the booking's celebrations. 400 badText; 404 for an unknown celebration; 409 notConfirmed or tooMany; any adult or supervised guest on the booking may add.");
+
+        var thx = b.MapGroup("/thanks").WithTags("Thanks");
+        thx.MapGet("", async (string number, ICurrentUser me, SeaService svc, CancellationToken ct) => Results.Ok(await svc.ThanksAsync(await me.LoadAsync(ct), number, ct)))
+            .WithSummary("The thank-yous the booking has left for teams on board, newest last, and whether the caller can add one.");
+        thx.MapPost("", async (string number, ThanksRequest body, ICurrentUser me, SeaService svc, CancellationToken ct) => Results.Ok(await svc.AddThanksAsync(await me.LoadAsync(ct), number, body, ct)))
+            .WithSummary("Leaves a thank-you for a team (at most 300 characters, 30 per booking). No rating and no tip. 400 badTeam or badText; 403 for a child account; 409 notConfirmed or tooMany.");
+
         var cs = b.MapGroup("/cases").WithTags("Cases");
         cs.MapGet("", async (string number, ICurrentUser me, CaseService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), number, ct)))
             .WithSummary("The booking's lost-item, bill, claim, complaint and recovery cases, newest first, each with its stage worked out from the clock.");

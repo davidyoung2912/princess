@@ -346,6 +346,8 @@ Built routes sit under `/bookings/{number}`, so `GET /plan` is `GET /bookings/{n
 | --- | --- | --- |
 | `plan.overview` | `GET /plan` | B |
 | `plan.celebrations.get/save` | `GET/PUT /celebrations` | B / BA |
+| `plan.wishes.get/add` | `GET /celebrations/wishes`, `POST /celebrations/{id}/wishes` | B / B (a supervised child may add) |
+| `plan.thanks.get/add` | `GET/POST /thanks` | B / BA |
 | `plan.excursions.list/addToCart/removeFromCart/checkout/changeGuests/cancel` | `GET /excursions`, `PUT/DELETE /excursions/cart/{id}`, `POST /excursions/checkout`, `PUT/DELETE /excursions/bookings/{id}` | B read, BA write |
 | `plan.dining.view/slots/reserve/cancel/move/late` | `GET /dining`, `GET /dining/slots?venue=&day=`, `POST /dining/reservations`, `DELETE /dining/reservations/{id}`, `POST …/{id}/move`, `POST …/{id}/late` | B read, BA write |
 | `plan.packages.view/buy/claimDrop/cancel` | `GET /packages`, `POST /packages/purchases`, `POST …/{id}/claim-drop`, `DELETE …/{id}` | B / BA |

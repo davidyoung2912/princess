@@ -6,7 +6,7 @@ import { isLanguage } from '../i18n/languages'
 import { DEFAULT_TEXT_SIZE, isTextSize, type TextSize } from '../design/textSize'
 
 /** How the guest chose the colour theme; "auto" follows the device. */
-export type ThemeChoice = 'light' | 'dark' | 'auto'
+export type ThemeChoice = 'light' | 'dark' | 'night' | 'auto'
 export type ContrastChoice = 'standard' | 'high'
 
 export interface Settings {
@@ -77,7 +77,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
   return {
     language: isLanguage(o.language) ? o.language : defaults.language,
     textSize: isTextSize(o.textSize) ? o.textSize : defaults.textSize,
-    theme: o.theme === 'light' || o.theme === 'dark' || o.theme === 'auto' ? o.theme : defaults.theme,
+    theme: o.theme === 'light' || o.theme === 'dark' || o.theme === 'night' || o.theme === 'auto' ? o.theme : defaults.theme,
     contrast: o.contrast === 'high' || o.contrast === 'standard' ? o.contrast : defaults.contrast,
     reduceMotion: typeof o.reduceMotion === 'boolean' ? o.reduceMotion : defaults.reduceMotion,
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,

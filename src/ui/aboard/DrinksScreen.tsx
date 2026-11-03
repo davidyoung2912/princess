@@ -11,6 +11,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
 import { AboardError, Back } from './common'
+import { DrinkDiary } from '../delights/SeaDelights'
 
 /** The bar menu and a drinks tracker (DIN-06): what you have had today, what the package covers, and a nudge to slow down. */
 export function DrinksScreen() {
@@ -64,6 +65,7 @@ export function DrinksScreen() {
           </>
         )}
       </Load>
+      <DrinkDiary />
       <Back to="/ship" label={t('route.ship')} />
     </div>
   )

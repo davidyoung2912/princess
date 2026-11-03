@@ -20,6 +20,7 @@ import { PortCard } from './PortCard'
 import { DisembarkCard } from '../finish/HomeCards'
 import { HomeBudgetAlert } from './BudgetCard'
 import { UpdatesBanner } from './Updates'
+import { CelebrationDay, DressBadge, FavouritesTonight } from '../delights/SeaDelights'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
 export function OnboardHome({ today }: { today: OnboardToday }) {
@@ -40,6 +41,8 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
         {today.sailAwayAt && <p>{t('onb.sailAway', { time: shipTime(today.sailAwayAt) })}</p>}
       </Card>
 
+      {today.day !== null && <DressBadge day={today.day} />}
+      <CelebrationDay date={today.date} />
       <UpdatesBanner />
       <HomeBudgetAlert />
 
@@ -93,6 +96,8 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
           )
         }}
       </Saved>
+
+      <FavouritesTonight />
 
       <nav aria-labelledby="onb-links-h">
         <h2 id="onb-links-h">{t('onb.quick')}</h2>

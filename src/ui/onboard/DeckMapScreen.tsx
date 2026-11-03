@@ -7,6 +7,8 @@ import { Chip } from '../Chip'
 import { BackLink } from './common'
 import { DeckPlan } from './DeckPlan'
 import { RouteFinder } from './RouteFinder'
+import { ParkMySpot } from '../delights/SeaDelights'
+import { useMemory } from '../../hooks/useMemory'
 
 const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
 
@@ -21,6 +23,8 @@ export function DeckMapScreen() {
   const [quiet, setQuiet] = useState(false)
   const [hereId, setHereId] = useState('')
   const here = placeById(hereId) ?? null
+  const parked = useMemory().state.sea.spot
+  const pin = (parked && placeById(parked.placeId)) || null
   const found = searchPlaces(query).filter((p) => !stepFree || p.stepFree)
   const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
   return (
@@ -29,6 +33,7 @@ export function DeckMapScreen() {
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />
+      <ParkMySpot />
 
       <div className="field">
         <label htmlFor="map-search">{t('map.search')}</label>
@@ -61,7 +66,7 @@ export function DeckMapScreen() {
         <div className="chip-row" role="group" aria-label={t('map.pickDeck')}>
           {DECKS.map((d) => <Chip key={d} pressed={d === deck} onToggle={() => setDeck(d)}>{t('map.deckShort', { deck: d })}</Chip>)}
         </div>
-        <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} />
+        <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} />
         <div className="table-wrap">
           <table className="deck-table">
             <caption>{t('map.deck', { deck })}</caption>

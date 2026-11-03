@@ -26,6 +26,7 @@ import type { TravelPlan, Window as ArrivalWindow } from '../domain/travel'
 import type { AssistId, Deadline, RequestStatus } from '../domain/assistance'
 import type { PlanDay } from '../domain/plan'
 import type { CelebrationsView, Occasion as PlanOccasion } from '../domain/planPolish'
+import type { ThanksView, WishesView } from '../domain/seaDelights'
 import type { EmergencyContact } from '../domain/account'
 import type { CheckinProgress, DocumentKind, GuestCheckin, GuestProgress, PhotoMetrics, StepId } from '../domain/checkin'
 import type { AfternoonId, CarryOnId, CompanionId, LuggageStatus, Terminal, Traffic } from '../domain/boarding'
@@ -537,6 +538,10 @@ export interface PlanApi {
     cancel(purchaseId: string): Promise<PackagesView>
   }
   /** Birthdays and anniversaries during the trip; saving tells the ship (month and day only). Rejects `invalid` (badCelebrations, tooManyCelebrations, badLabel, badDate), `forbidden` for a child, `conflict` notConfirmed. */
+  /** Thank-yous left for teams on board (no rating, no tip). Rejects `invalid` (badTeam, badText), `forbidden` for a child, `conflict` notConfirmed or tooMany. */
+  thanks: { get(): Promise<ThanksView>; add(team: string, text: string): Promise<ThanksView> }
+  /** Messages added to the booking's celebrations by anyone on it. Rejects `invalid` badText, `notFound`, `conflict` notConfirmed or tooMany. */
+  wishes: { get(): Promise<WishesView>; add(celebrationId: string, text: string): Promise<WishesView> }
   celebrations: { get(): Promise<CelebrationsView>; save(items: readonly Pick<PlanOccasion, 'id' | 'label' | 'date' | 'surprise'>[]): Promise<CelebrationsView> }
   checklist: { get(): Promise<ChecklistView>; tick(id: string, done: boolean): Promise<ChecklistView> }
   packing: { get(): Promise<PackingView>; tick(id: string, done: boolean): Promise<PackingView> }

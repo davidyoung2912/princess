@@ -61,3 +61,8 @@
 .qr--small { width: 12rem; height: 12rem; }
 .stubs { list-style: none; padding: 0; }
 .stub { border-bottom: 1px dashed currentColor; padding-block: var(--space-2); }
+
+/* DL7: sea days */
+.dress-badge { display: inline-block; margin: 0 0 var(--space-3, 0.75rem); padding: 0.25rem 0.75rem; border: 2px solid var(--border-strong); border-radius: 999px; font-weight: 600; background: var(--surface-warm); }
+.dress-badge--elegant { border-style: double; border-width: 4px; }
+.dress-badge--casual { border-style: dashed; }

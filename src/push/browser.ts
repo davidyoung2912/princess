@@ -85,3 +85,23 @@ export function setWatched(ids: readonly string[]): void {
 }
 
 export const getWatched = (): readonly string[] => watched
+
+/** Asks to show a reminder when a parked spot is due (DL7). Only from a tap; resolves to whether the browser agreed. */
+export async function allowLocalReminders(): Promise<boolean> {
+  if (typeof Notification === 'undefined') return false
+  try { return (Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()) === 'granted' } catch { return false }
+}
+
+/**
+ * Shows `title` after `ms`, through the service worker so it appears with the app in the background. This is a timer in the page, not a push from the
+ * server: if the browser closes the page the reminder is lost. Returns a function that cancels it.
+ */
+export function remindIn(ms: number, title: string, body: string): () => void {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return () => undefined
+  const id = setTimeout(() => {
+    void (async () => {
+      try { (await registration())?.showNotification(title, { body, tag: 'spot' }) } catch { /* nothing to show it with */ }
+    })()
+  }, Math.max(0, ms))
+  return () => clearTimeout(id)
+}

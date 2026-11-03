@@ -7,7 +7,7 @@ import { useSettings } from '../hooks/useSettings'
 import { LanguageSwitch } from './LanguageSwitch'
 import type { ContrastChoice, ThemeChoice } from '../settings/settings'
 
-const THEMES: readonly ThemeChoice[] = ['auto', 'light', 'dark']
+const THEMES: readonly ThemeChoice[] = ['auto', 'light', 'dark', 'night']
 const CONTRASTS: readonly ContrastChoice[] = ['standard', 'high']
 
 /** Text size, colour theme, contrast and reduce-motion controls; applied at once and saved on the device. */

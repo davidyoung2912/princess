@@ -370,6 +370,14 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     },
     plan: {
       overview: () => inBooking('/plan'),
+      thanks: {
+        get: () => inBooking('/thanks'),
+        add: (team, text) => inTrip('post', '/thanks', { team, text }),
+      },
+      wishes: {
+        get: () => inBooking('/celebrations/wishes'),
+        add: (celebrationId, text) => inTrip('post', `/celebrations/${seg(celebrationId)}/wishes`, { text }),
+      },
       celebrations: {
         get: () => inBooking('/celebrations'),
         save: (items) => inTrip('put', '/celebrations', { items: items.map((i) => ({ id: i.id, label: i.label, date: i.date, surprise: i.surprise })) }),

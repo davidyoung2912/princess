@@ -101,3 +101,33 @@
   --attention: #ff8fbb;
   --focus: #b4c9ff;
 }
+
+/*
+ * Night (DL7, D6-9): a red-tinted, low-glare palette for a dark cabin or the deck after dark. Red light keeps night vision and does not wake a
+ * cabin-mate. Text is held to the 7:1 bar so it also serves the high-contrast setting.
+ */
+:root[data-theme='night'] {
+  color-scheme: dark;
+  --text: #ff9d8f;
+  --text-muted: #e8847a;
+  --bg: #0b0000;
+  --surface-warm: #1a0505;
+  --surface-info: #210808;
+  --border: #5a1a1a;
+  --border-strong: #b0524a;
+  --primary: #ff8a7a;
+  --primary-dark: #ffb3a8;
+  --on-primary: #0b0000;
+  --link: #ff8a7a;
+  --brand-tint: #3a0c0c;
+  --gold: #d98a5a;
+  --gold-text: #f0a878;
+  --success: #f2a07a;
+  --warning: #ffb070;
+  --danger: #ff8080;
+  --attention: #ff6a5a;
+  --on-attention: #0b0000;
+  --focus: #ffb3a8;
+  --focus-inner: #0b0000;
+  --scrim: rgba(0, 0, 0, 0.88);
+}

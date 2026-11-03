@@ -24,7 +24,7 @@ export function applySettings(root: HTMLElement = document.documentElement): voi
   for (const [name, value] of Object.entries(settingsToAttributes(current, dark))) root.setAttribute(name, value)
   const meta = document.querySelector('meta[name="theme-color"]')
   // The browser chrome follows the page: Princess Blue in light themes, the dark page colour in dark ones.
-  if (meta) meta.setAttribute('content', root.getAttribute('data-theme') === 'dark' ? '#020215' : '#003595')
+  if (meta) meta.setAttribute('content', { dark: '#020215', night: '#0b0000' }[root.getAttribute('data-theme') ?? ''] ?? '#003595')
 }
 
 /** Loads and switches to the chosen language, and marks `<html lang>` so screen readers pronounce the text correctly. English stays if the download fails. */

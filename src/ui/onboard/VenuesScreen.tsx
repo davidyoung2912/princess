@@ -16,6 +16,7 @@ import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { QueueControl } from './Waits'
 import { BackLink } from './common'
+import { FavouriteButton, FavouritesTonight, SayThanks } from '../delights/SeaDelights'
 
 /** The diets of everyone on the signed-in booking who has told us about one, so the menus can hide what does not suit. */
 function usePartyDiets(): { diets: DietaryId[]; ready: boolean } {
@@ -46,6 +47,7 @@ export function VenuesScreen() {
         <Chip pressed={openNow} onToggle={() => setOpenNow(!openNow)}>{t('ven.openNow')}</Chip>
         <Chip pressed={included} onToggle={() => setIncluded(!included)}>{t('ven.included')}</Chip>
       </div>
+      <FavouritesTonight />
       <p role="status" className="muted">{t('ven.count', { count: list.length })}</p>
       <ul className="card-grid">
         {list.map((v) => (
@@ -56,6 +58,7 @@ export function VenuesScreen() {
           </li>
         ))}
       </ul>
+      <SayThanks />
       <BackLink to="/ship" label={t('route.ship')} />
     </div>
   )
@@ -97,6 +100,7 @@ export function VenueScreen() {
             </dl>
           </section>
           <Menu v={v} diets={diets} filtered={filtered} setFiltered={setFiltered} />
+          <SayThanks team={v.name} />
         </>
       )}
       <BackLink to="/ship/venues" label={t('route.venues')} />
@@ -125,6 +129,7 @@ function Menu({ v, diets, filtered, setFiltered }: { v: DirectoryVenue; diets: D
               <br />
               <span className="muted">{d.contains.length === 0 ? t('ven.containsNone') : t('ven.contains', { list: d.contains.map((c) => t(`ven.c.${c}` as StringKey)).join(', ') })}</span>
               {diets.some((x) => !dishSuits(d, x)) && <span className="tag">{t('ven.notForYou')}</span>}
+              <FavouriteButton venueId={v.id} dish={d.name} />
             </li>
           ))}
         </ul>

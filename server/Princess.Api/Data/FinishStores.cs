@@ -19,6 +19,25 @@ public sealed class CelebrationRow
     public DateTime ToldAt { get; set; }
 }
 
+public sealed class ThanksRow
+{
+    public Guid Id { get; set; }
+    public long UserId { get; set; }
+    public string Team { get; set; } = "";
+    public string Body { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
+public sealed class WishRow
+{
+    public Guid Id { get; set; }
+    public long UserId { get; set; }
+    public string CelebrationClientId { get; set; } = "";
+    public string Author { get; set; } = "";
+    public string Body { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+}
+
 public sealed class CustomsRow
 {
     /// <summary>The declaration as JSON (<c>food</c>, <c>cash</c>, <c>goodsUsd</c>, <c>note</c>); a hand-written row may hold less.</summary>
@@ -120,6 +139,12 @@ public interface IFinishStore
     Task<List<CelebrationRow>> ListCelebrationsAsync(long bookingId, CancellationToken ct);
     /// <summary>Replaces the booking's celebrations with these.</summary>
     Task SaveCelebrationsAsync(long bookingId, IReadOnlyList<CelebrationRow> rows, CancellationToken ct);
+
+    Task<List<ThanksRow>> ListThanksAsync(long bookingId, CancellationToken ct);
+    Task AddThanksAsync(long bookingId, ThanksRow row, CancellationToken ct);
+
+    Task<List<WishRow>> ListWishesAsync(long bookingId, CancellationToken ct);
+    Task AddWishAsync(long bookingId, WishRow row, CancellationToken ct);
 
     Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct);
     Task SaveCustomsAsync(long bookingId, string json, DateTime at, CancellationToken ct);

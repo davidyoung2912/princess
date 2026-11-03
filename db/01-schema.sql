@@ -2502,6 +2502,36 @@ CREATE TABLE dbo.Celebrations (
 );
 END
 
+IF OBJECT_ID(N'dbo.Thanks', N'U') IS NULL
+BEGIN
+-- A thank-you a guest left for a team on a booking (small delights D6-7). No rating and no tip; Team is the venue or crew team named.
+CREATE TABLE dbo.Thanks (
+  Id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Thanks_Id DEFAULT NEWID(),
+  BookingId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  Team NVARCHAR(40) NOT NULL, Body NVARCHAR(300) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Thanks_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_Thanks PRIMARY KEY (Id),
+  CONSTRAINT FK_Thanks_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_Thanks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_Thanks_Booking ON dbo.Thanks (BookingId, CreatedAt);
+END
+
+IF OBJECT_ID(N'dbo.CelebrationWishes', N'U') IS NULL
+BEGIN
+-- A message added to a celebration by someone on the booking (small delights D6-8). Author is the first name of whoever wrote it.
+CREATE TABLE dbo.CelebrationWishes (
+  Id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_CelebrationWishes_Id DEFAULT NEWID(),
+  BookingId BIGINT NOT NULL, CelebrationClientId NVARCHAR(40) NOT NULL, UserId BIGINT NOT NULL,
+  Author NVARCHAR(60) NOT NULL, Body NVARCHAR(240) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_CelebrationWishes_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_CelebrationWishes PRIMARY KEY (Id),
+  CONSTRAINT FK_CelebrationWishes_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_CelebrationWishes_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_CelebrationWishes_Booking ON dbo.CelebrationWishes (BookingId, CelebrationClientId, CreatedAt);
+END
+
 IF OBJECT_ID(N'dbo.Customs', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Customs (

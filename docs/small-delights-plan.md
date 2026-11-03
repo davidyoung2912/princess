@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL6 are built (sections 5 to 10); DL7 to DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL7 are built (sections 5 to 11); DL8 and DL9 are planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -31,7 +31,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | DL4 | Plan polish | D4-1, D4-2, D4-4, D4-5, D4-6, D2-5, D2-7 | DL2 (calendar) | **Built** (section 8) |
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | **Built** (section 9) |
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | **Built** (section 10) |
-| DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | Planned |
+| DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | **Built** (section 11) |
 | DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | Planned |
 | DL9 | Memory and return | D8-1, D8-2, D8-3, D8-5, D8-7 | DL8 (stamps, pins, numbers) | Planned |
 
@@ -242,3 +242,35 @@ Front end only; no REST contract changes. Ticket stubs are the new `embark` part
   - The Wi-Fi network name is authored and the QR only joins the network; the sign-in page still asks for the stateroom number and last name.
   - The driver card has English and Spanish only, and the address is Port Everglades; no card for the ports of call.
   - The mileage behind the ship-lengths is minutes at an assumed speed, not a map distance.
+
+## 11. Phase DL7 in detail: sea days
+
+**Goal:** the sea-day delights as pure tested functions (`src/domain/seaDelights.ts`, 14 tests) with thin cards in `src/ui/delights/SeaDelights.tsx`. No new routes.
+
+### 11.1 Built (2026-11-02)
+
+Front end only; no REST contract changes. Favourites, diary, parked spot, kept thank-yous and celebration messages are the new `sea` part of the per-person memory store (it travels in the synced `memory` document). "Night" is a new colour theme choice, per device.
+
+- **D6-2** on Home while aboard: "Tonight: elegant evening / smart casual / casual" as a badge with a mark and a word. Elegant follows the packing rule (nights 2 and 7 of a seven-night cruise); the first and last evenings are casual.
+- **D6-4** on each venue's menu: a "Heart this dish" toggle button. Hearted dishes show on Home and the venues list when their room is open for dinner today.
+- **D6-5** on the deck plan screen: park a lounger or table at a pool deck, bar, dining room or show lounge, with a note and a 30 to 90 minute timer; the pin shows on the plan (dashed square and the words "My spot"), and the card says when it is due back.
+- **D6-7** on the venue screen and the venues list: words to thank a team (and a person if named). No rating, no tip. Copy it, and optionally keep a copy in memories.
+- **D6-8** on Home on the day of a birthday or anniversary the guest entered in Plan: a card with the guest's own private messages (up to six).
+- **D6-9** in display settings: "Night (red, low glare)". All colours are in `themes.css`, checked by the contrast test in standard and high contrast (text at 7:1 or better); the browser bar colour follows.
+- **D6-10** on the drinks screen: a private diary (liked, fine, not again) with an "Order again" list of liked drinks.
+- Spanish for all `dl7.*` strings; native review still needed.
+- **Verified:** `npm run test` (1844 passed), `npm run lint`, `npx tsc -b`, `npm run build`.
+- **Not done:** see 11.2, which closes most of what was left here.
+
+### 11.2 Follow-ups (2026-11-02)
+
+- **D6-7 sent to the ship:** `POST /bookings/{n}/thanks` and `GET /thanks` (table `Thanks`, `SeaService`, `SeaRules`). An adult guest on a confirmed booking sends; 30 per booking. No rating, no tip, no reply.
+- **D6-8 cabin-mates:** `GET /celebrations/wishes` and `POST /celebrations/{id}/wishes` (table `CelebrationWishes`). Anyone on the booking, including a supervised child, adds up to six messages per celebration, shown with a first name. The local-only `wishes` in the memory part is no longer used by the screen.
+- **D6-4 tonight's menu:** `onTonight` rotates the dishes of the dining rooms and specialty restaurants by cruise day (about two nights in three); counters and cafés stay fixed. This is an authored concept rotation, not the ship's menu, so the card says to check the menu on the night.
+- **D6-5 reminder:** after a tap that grants notification permission, a timer in the page shows a notification through the service worker when the spot is due. It is not a server push, so it is lost if the browser closes the page.
+- **D6-10 cruise day:** now the ship's date (`shipZoneAt`), not the UTC date.
+- **Verified:** `npm run test` (1847 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`. **The C# was not compiled or tested** (no `dotnet` run, by the project rule): run `dotnet build` in `server/` and `SeaRulesTests` before relying on it. The new tables are in `db/01-schema.sql` and need the schema script run on the database.
+- **Still not done:**
+  - A surprise celebration's messages are visible to everyone on the booking, including the person it is for; the card tells guests to keep surprises out.
+  - No server-scheduled push for the spot timer, and no "you said, we did" loop for thank-yous.
+  - The rotation is client-side authored; a real menu feed would replace `onTonight`.

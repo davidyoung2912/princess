@@ -46,6 +46,27 @@ public sealed class InMemoryFinishStore(InMemoryShipboardStore shipboard) : IFin
         return Task.CompletedTask;
     }
 
+    public Dictionary<long, List<ThanksRow>> ThanksRows { get; } = [];
+    public Dictionary<long, List<WishRow>> WishRows { get; } = [];
+
+    public Task<List<ThanksRow>> ListThanksAsync(long bookingId, CancellationToken ct) => Task.FromResult(ThanksRows.GetValueOrDefault(bookingId)?.ToList() ?? []);
+
+    public Task AddThanksAsync(long bookingId, ThanksRow row, CancellationToken ct)
+    {
+        if (!ThanksRows.TryGetValue(bookingId, out var list)) ThanksRows[bookingId] = list = [];
+        list.Add(row);
+        return Task.CompletedTask;
+    }
+
+    public Task<List<WishRow>> ListWishesAsync(long bookingId, CancellationToken ct) => Task.FromResult(WishRows.GetValueOrDefault(bookingId)?.ToList() ?? []);
+
+    public Task AddWishAsync(long bookingId, WishRow row, CancellationToken ct)
+    {
+        if (!WishRows.TryGetValue(bookingId, out var list)) WishRows[bookingId] = list = [];
+        list.Add(row);
+        return Task.CompletedTask;
+    }
+
     public Task<CustomsRow?> GetCustomsAsync(long bookingId, CancellationToken ct) => Task.FromResult(Customs.GetValueOrDefault(bookingId));
 
     public Task SaveCustomsAsync(long bookingId, string json, DateTime at, CancellationToken ct)
