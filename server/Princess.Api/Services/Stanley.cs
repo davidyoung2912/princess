@@ -36,7 +36,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         }
         catch (ConciergeModelException e)
         {
-            log.LogWarning("Stanley model failed: {Code}", e.Code);
+            log.LogWarning("Stanley model failed: {Code} ({Reason})", e.Code, e.Message);
             return Unavailable(e.Code);
         }
     }
