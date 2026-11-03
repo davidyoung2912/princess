@@ -15,6 +15,9 @@ import { CodeFlow, SignUpForm } from './SignInFlows'
 type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 
 /** The sign-in page: email or 10-digit account number plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
+// TEMPORARY, development builds only: pre-fill the "dream" test account so testing is one click.
+const DEV_LOGIN = import.meta.env.PROD ? '' : 'dream'
+
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')
   if (mode === 'signup') return <main className="page signin" id="main"><SignUpForm onBack={() => setMode('signin')} /></main>
@@ -23,8 +26,8 @@ export function SignInScreen() {
 }
 
 function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
-  const [identifier, setIdentifier] = useState('')
-  const [password, setPassword] = useState('')
+  const [identifier, setIdentifier] = useState(DEV_LOGIN)
+  const [password, setPassword] = useState(DEV_LOGIN)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [missing, setMissing] = useState<{ id?: string; pw?: string }>({})

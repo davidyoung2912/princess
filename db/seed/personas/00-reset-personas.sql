@@ -8,7 +8,7 @@ SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 
 DECLARE @seed TABLE (Id BIGINT NOT NULL PRIMARY KEY);
-INSERT INTO @seed SELECT Id FROM dbo.Users WHERE Slug IN (N'gerald', N'maria', N'linda', N'alexander', N'daniel', N'priya', N'ethan', N'maya', N'marcus', N'elena', N'lucas', N'sofia', N'nina', N'rosa', N'hannah', N'theo', N'owen', N'priscilla', N'victor', N'edith', N'dev', N'jordan', N'casey', N'sam', N'taylor', N'ruth', N'paul', N'mei', N'colin', N'bea', N'frank', N'grace', N'harold', N'cora');
+INSERT INTO @seed SELECT Id FROM dbo.Users WHERE Slug IN (N'gerald', N'maria', N'linda', N'alexander', N'daniel', N'priya', N'ethan', N'maya', N'marcus', N'elena', N'lucas', N'sofia', N'nina', N'rosa', N'hannah', N'theo', N'owen', N'priscilla', N'victor', N'edith', N'dev', N'jordan', N'casey', N'sam', N'taylor', N'ruth', N'paul', N'mei', N'colin', N'bea', N'frank', N'grace', N'harold', N'cora', N'dream');
 
 -- Bookings first: payments, tours, check-in, folio, cases and the rest cascade from them.
 DELETE FROM dbo.Bookings WHERE BookerUserId IN (SELECT Id FROM @seed);

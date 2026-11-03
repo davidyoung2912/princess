@@ -129,3 +129,21 @@ input:not([type='checkbox'], [type='radio'], [type='range']), select { max-width
 textarea { max-width: min(100%, 32rem); }
 /* Sign-in and onboarding pages are a single narrow column. */
 .page.signin { max-width: 34rem; }
+
+/* Button rollovers: a soft glow and a small lift; pressing settles back down. Off for reduced motion. */
+.btn, .topbar__help, .topbar__search, .chip {
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.btn:not(:disabled, [aria-disabled='true'], .btn--tertiary):hover, .topbar__help:hover, .topbar__search:hover, .chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+}
+.btn--danger:not(:disabled):hover { box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--danger) 50%, transparent), 0 0 14px color-mix(in srgb, var(--danger) 30%, transparent); }
+.btn:not(:disabled, [aria-disabled='true']):active, .topbar__help:active, .chip:active { transform: translateY(0) scale(0.98); box-shadow: none; }
+.icon-btn { transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
+.icon-btn:hover { transform: scale(1.08); }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .topbar__help, .topbar__search, .chip, .icon-btn { transition: none; }
+  .btn:hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .icon-btn:hover, .btn:active, .chip:active { transform: none; }
+}
+:root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .chip, .icon-btn):is(:hover, :active) { transform: none; }
