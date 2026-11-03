@@ -15,6 +15,12 @@ public sealed class Scope
     public DateOnly Today { get; init; }
     public DateOnly Departure { get; init; }
     public int Days { get; init; }
+    /// <summary>The length of the booked sailing in nights (from the sailing row; seven when it is not found).</summary>
+    public int Nights { get; init; } = Pricing.Nights;
+    /// <summary>The last day of the cruise: the departure date plus the nights.</summary>
+    public DateOnly LastDay => Departure.AddDays(Nights);
+    /// <summary>The booked sailing's days, ports and ship clock.</summary>
+    public Timeline Timeline { get; init; } = null!;
     public List<ScopePerson> Party { get; init; } = [];
 
     public ScopePerson? PersonByUser(long userId) => Party.FirstOrDefault(p => p.UserId == userId);
@@ -49,8 +55,9 @@ public sealed class ScopeLoader(AccessService access, ITripStore trips, IAccount
         var now = await clock.NowAsync(actor, ct);
         var departure = D(booking.Departure);
         var today = TripRules.Today(now);
+        var nights = (await trips.ListSailingsAsync(ct)).FirstOrDefault(s => s.Id == booking.SailingId)?.Nights ?? Pricing.Nights;
         var party = (await accounts.GetPartyAsync(m.BookingId, ct))
             .Select(g => new ScopePerson(g.PublicId, g.UserId, AccountService.FullName(g), AccountRules.AgeOn(D(g.Dob), departure), g.IsSupervised, g.Tier, g.FirstName, g.LastName, g.BookerUserId)).ToList();
-        return new Scope { Actor = actor, Booking = booking, Now = now, Today = today, Departure = departure, Days = TripRules.DaysBetween(today, departure), Party = party };
+        return new Scope { Actor = actor, Booking = booking, Now = now, Today = today, Departure = departure, Days = TripRules.DaysBetween(today, departure), Nights = nights, Timeline = TimelineBook.For(booking.SailingId, departure), Party = party };
     }
 }

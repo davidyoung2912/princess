@@ -9,20 +9,20 @@ namespace Princess.Api.Services;
 /// <summary>When the stages that Phase 11 cares about begin (<c>stageStarts</c> in <c>src/domain/sailings.ts</c>).</summary>
 internal static class FinishStages
 {
-    public static DateTime EmbarkationAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), Itinerary.ShipHomeZone);
+    public static DateTime EmbarkationAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), c.Timeline.HomeZone);
 
     /// <summary>The last evening, 08:00 ship time: the final bill opens.</summary>
     public static DateTime FarewellAt(Scope c)
     {
-        var date = Itinerary.Days(c.Departure)[6].Date;
-        return Itinerary.LocalToUtc(date, new TimeOnly(8, 0), Itinerary.ShipZoneOnDate(c.Departure, date));
+        var date = c.Timeline.Days[^2].Date;
+        return Itinerary.LocalToUtc(date, new TimeOnly(8, 0), c.Timeline.ShipZoneOnDate(date));
     }
 
     /// <summary>The ship has tied up: the stages <c>disembark</c> and <c>postCruise</c>.</summary>
-    public static bool Sailed(Scope c) => c.Confirmed && c.Now >= DisembarkRules.Times(c.Departure).ArrivalAt;
+    public static bool Sailed(Scope c) => c.Confirmed && c.Now >= DisembarkRules.Times(c.Timeline).ArrivalAt;
 
     /// <summary>Photos can be downloaded, and feedback changed, until the end of this many days after the last morning.</summary>
-    public static DateTime EndOfDaysAfter(Scope c, int days) => Itinerary.LocalToUtc(Itinerary.Days(c.Departure)[7].Date.AddDays(days), new TimeOnly(23, 59), Itinerary.ShipHomeZone);
+    public static DateTime EndOfDaysAfter(Scope c, int days) => Itinerary.LocalToUtc(c.Timeline.Days[^1].Date.AddDays(days), new TimeOnly(23, 59), c.Timeline.FinalZone);
 }
 
 /// <summary>
@@ -45,13 +45,13 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
     }
 
     private static Dictionary<string, long> OffTimes(Scope c, TagGroup g) =>
-        DisembarkRules.WalkOffIds.ToDictionary(o => o, o => Ms(DisembarkRules.OffAt(c.Departure, o, g)));
+        DisembarkRules.WalkOffIds.ToDictionary(o => o, o => Ms(DisembarkRules.OffAt(c.Timeline, o, g)));
 
     // ---- The choice (DEB-01, DEB-02) ----
 
     private async Task<DisembarkViewDto> ViewAsync(UserRecord actor, Scope c, CancellationToken ct)
     {
-        var times = DisembarkRules.Times(c.Departure);
+        var times = DisembarkRules.Times(c.Timeline);
         var choice = await store.GetChoiceAsync(c.Booking.BookingId, ct);
         var (group, priority) = await GroupAsync(actor, c, ct);
         var needs = (await accounts.GetProfileAsync(c.Booking.BookerUserId, ct))?.Needs ?? [];
@@ -76,7 +76,7 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         Shipboard.RequireAboard(c);
-        if (c.Now >= DisembarkRules.Times(c.Departure).BagsOutAt) throw ApiException.Conflict("deadline");
+        if (c.Now >= DisembarkRules.Times(c.Timeline).BagsOutAt) throw ApiException.Conflict("deadline");
         if (body?.Option is null || !DisembarkRules.WalkOffIds.Contains(body.Option)) throw ApiException.Invalid("badOption");
         var given = body.Bags ?? [];
         if (given.Keys.Any(id => c.PersonById(id) is null)) throw ApiException.Invalid("badBags");
@@ -141,10 +141,10 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
         var stored = await store.GetOnwardAsync(c.Booking.BookingId, ct);
         var choice = await store.GetChoiceAsync(c.Booking.BookingId, ct);
         var (group, _) = await GroupAsync(actor, c, ct);
-        var offFrom = DisembarkRules.OffAt(c.Departure, ShortOption(choice?.Option), group);
+        var offFrom = DisembarkRules.OffAt(c.Timeline, ShortOption(choice?.Option), group);
         var plan = stored is null ? null : new OnwardPlan(stored.Mode, stored.FlightAt, stored.Flight, stored.Note);
         return new OnwardViewDto(
-            plan is null ? null : new OnwardPlanDto(plan.Mode, plan.FlightAt, plan.Flight, plan.Note), plan is not null && DisembarkRules.OnwardMode(plan.Mode) is not null ? DisembarkRules.CheckOnward(c.Departure, plan, offFrom) : null,
+            plan is null ? null : new OnwardPlanDto(plan.Mode, plan.FlightAt, plan.Flight, plan.Note), plan is not null && DisembarkRules.OnwardMode(plan.Mode) is not null ? DisembarkRules.CheckOnward(c.Timeline, plan, offFrom) : null,
             Ms(offFrom), c.Party.Count, !c.Actor.IsSupervised);
     }
 
@@ -167,7 +167,7 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
         var choice = await store.GetChoiceAsync(c.Booking.BookingId, ct);
         var customs = await store.GetCustomsAsync(c.Booking.BookingId, ct) is not null;
         var ticks = await store.ListNightTicksAsync(c.Booking.BookingId, ct);
-        return new NightViewDto(DisembarkRules.NightEntries(c.Departure, c.Now, choice?.Option, customs, choice?.TagsOn ?? false, ticks), choice?.Option);
+        return new NightViewDto(DisembarkRules.NightEntries(c.Timeline, c.Now, choice?.Option, customs, choice?.TagsOn ?? false, ticks), choice?.Option);
     }
 
     public async Task<NightViewDto> NightAsync(UserRecord actor, string? number, CancellationToken ct) =>
@@ -187,10 +187,10 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
 
     private async Task<FinalBillViewDto> BillViewAsync(UserRecord actor, Scope c, CancellationToken ct)
     {
-        var times = DisembarkRules.Times(c.Departure);
+        var times = DisembarkRules.Times(c.Timeline);
         var ent = await plan.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
-        var charged = DisembarkRules.GratuityCharged(c.Party.Select(p => new GratuityGuest(suite, ent.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)));
+        var charged = DisembarkRules.GratuityCharged(c.Party.Select(p => new GratuityGuest(suite, ent.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)), c.Nights);
         var bill = await store.GetFinalBillAsync(c.Booking.BookingId, ct);
         var keep = bill?.TipKeepPercent ?? 100;
         var cards = await trips.ListCardsAsync(c.Booking.BookerUserId, ct);
@@ -214,10 +214,10 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         Shipboard.RequireAboard(c);
         if (body is null || !DisembarkRules.TipKeep.Contains(body.KeepPercent)) throw ApiException.Invalid("badTip");
-        if (c.Now >= DisembarkRules.Times(c.Departure).TipBy) throw ApiException.Conflict("deadline");
+        if (c.Now >= DisembarkRules.Times(c.Timeline).TipBy) throw ApiException.Conflict("deadline");
         var ent = await plan.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
-        var credit = DisembarkRules.TipCredit(DisembarkRules.GratuityCharged(c.Party.Select(p => new GratuityGuest(suite, ent.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded))), body.KeepPercent);
+        var credit = DisembarkRules.TipCredit(DisembarkRules.GratuityCharged(c.Party.Select(p => new GratuityGuest(suite, ent.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)), c.Nights), body.KeepPercent);
         FolioWrite[] folio = credit > 0 ? [new(c.Booking.BookerUserId, 7, "credit", $"Gratuity adjustment (keeping {body.KeepPercent}%)", -credit, null, c.Now)] : [];
         await store.SaveTipAsync(c.Booking.BookingId, body.KeepPercent, folio, ct);
         return await BillViewAsync(actor, c, ct);

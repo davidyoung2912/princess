@@ -19,8 +19,8 @@ public sealed class SelectionService(ScopeLoader scopes, IAboardStore store)
     private static bool Started(Scope c, CatalogueItem item, int day, string time)
     {
         if (day == 0) return false;
-        var date = Itinerary.Days(c.Departure)[day - 1].Date;
-        var start = Itinerary.LocalToUtc(date, TimeOnly.Parse(time.Length == 0 ? "23:59" : time), Itinerary.ShipZoneOnDate(c.Departure, date));
+        var date = c.Timeline.Days[day - 1].Date;
+        var start = Itinerary.LocalToUtc(date, TimeOnly.Parse(time.Length == 0 ? "23:59" : time), c.Timeline.ShipZoneOnDate(date));
         return item.Mode != "order" && c.Now >= start;
     }
 

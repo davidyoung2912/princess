@@ -12,9 +12,9 @@ namespace Princess.Api.Services;
 public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, PlanService plan)
 {
     private static long Until(Scope c) =>
-        Shipboard.Ms(Itinerary.LocalToUtc(Itinerary.Days(c.Departure)[7].Date.AddDays(PhotoRules.RedownloadDays), new TimeOnly(23, 59), Itinerary.ShipHomeZone));
+        Shipboard.Ms(Itinerary.LocalToUtc(c.Timeline.Days[^1].Date.AddDays(PhotoRules.RedownloadDays), new TimeOnly(23, 59), c.Timeline.FinalZone));
 
-    private static int ThroughDay(Scope c) => Shipboard.IsAboard(c) ? Math.Clamp(FolioRules.CruiseDay(c.Departure, c.Now), 0, 8) : 0;
+    private static int ThroughDay(Scope c) => Shipboard.IsAboard(c) ? Math.Clamp(FolioRules.CruiseDay(c.Timeline, c.Now), 0, 8) : 0;
 
     private static List<Photo> AllPhotos(Scope c) => PhotoRules.PhotosFor([.. c.Party.Select(p => p.Id)], ThroughDay(c));
 

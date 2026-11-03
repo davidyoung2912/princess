@@ -59,21 +59,22 @@ public static class StageRules
 
     private static StageResult AfterBooking(DateTime now, StageTrip t, IReadOnlyList<JourneyIntent> intents)
     {
-        var days = Itinerary.Days(t.Departure);
+        var timeline = TimelineBook.For(t.SailingId, t.Departure);
+        var days = timeline.Days;
         var lastDate = days[^1].Date;
         StageResult R(string stage, string reason) => new(stage, t.SailingId, reason);
 
-        if (now >= Itinerary.LocalToUtc(lastDate, LastNoon, Itinerary.ShipHomeZone)) return R(Remember, "tripEnded");
-        if (now >= Itinerary.LocalToUtc(lastDate, FinalMorning, Itinerary.ShipHomeZone)) return R(Disembark, "finalMorning");
-        if (now >= Itinerary.LocalToUtc(t.Departure, days[0].Depart!.Value, Itinerary.ShipHomeZone))
+        if (now >= Itinerary.LocalToUtc(lastDate, LastNoon, timeline.FinalZone)) return R(Remember, "tripEnded");
+        if (now >= Itinerary.LocalToUtc(lastDate, FinalMorning, timeline.FinalZone)) return R(Disembark, "finalMorning");
+        if (now >= Itinerary.LocalToUtc(t.Departure, days[0].Depart!.Value, timeline.HomeZone))
         {
             // Sea or port by the itinerary day, which starts at 08:00 ship time.
-            var (date, time) = Itinerary.LocalAt(now, Itinerary.ShipZoneAt(t.Departure, now));
+            var (date, time) = Itinerary.LocalAt(now, timeline.ShipZoneAt(now));
             if (time < DayStarts) date = date.AddDays(-1);
             var day = days.FirstOrDefault(d => d.Date == date);
-            return day is null || day.Port is "sea" or "fll" ? R(Sea, "seaDay") : R(Port, "portDay");
+            return day is null || !timeline.IsCall(day) ? R(Sea, "seaDay") : R(Port, "portDay");
         }
-        if (now >= Itinerary.LocalToUtc(t.Departure, Boarding, Itinerary.ShipHomeZone)) return R(Embark, "boardingBegan");
+        if (now >= Itinerary.LocalToUtc(t.Departure, Boarding, timeline.HomeZone)) return R(Embark, "boardingBegan");
 
         var checkinOpens = TripRules.CheckinOpensAt(t.Departure);
         if (now >= checkinOpens && intents.Any(e => e.Kind == AtTerminal && e.SailingId == t.SailingId)) return R(Embark, "atTerminal");

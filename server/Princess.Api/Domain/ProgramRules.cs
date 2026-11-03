@@ -79,13 +79,13 @@ public static class ProgramRules
     ];
 
     /// <summary>The events on a day of the cruise, in time order, with any mid-day changes applied when <paramref name="changes"/> is on. A port-day event is listed only once the ship is back aboard.</summary>
-    public static List<DatedEvent> On(DateOnly departure, int day, bool changes, IReadOnlyList<PlanChange>? feed = null)
+    public static List<DatedEvent> On(Timeline timeline, int day, bool changes, IReadOnlyList<PlanChange>? feed = null)
     {
         feed ??= PlanChanges;
         if (day is < 1 or > 8) return [];
-        var date = departure.AddDays(day - 1);
-        var zone = Itinerary.ShipZoneOnDate(departure, date);
-        var aboard = Itinerary.AllAboardAt(departure, day);
+        var date = timeline.Departure.AddDays(day - 1);
+        var zone = timeline.ShipZoneOnDate(date);
+        var aboard = timeline.AllAboardAt(day);
         var list = new List<DatedEvent>();
         foreach (var e in Events.Where(e => e.Days.Contains(day)))
         {

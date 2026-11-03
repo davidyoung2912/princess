@@ -43,7 +43,7 @@ public static class ExcursionRules
     /// <summary>Tours that need real fitness or sure footing have a minimum age.</summary>
     public static int MinAge(Excursion x) => x.Activity == "strenuous" ? 12 : 0;
 
-    public static bool NeedsTender(Excursion x) => Itinerary.Ports[x.Port].Tender;
+    public static bool NeedsTender(Excursion x) => Itinerary.PortById(x.Port).Tender;
 
     /// <summary>The same 32-bit hash the screens use (djb2 over UTF-16 units), so a sailing's grid is the same on both sides.</summary>
     public static uint Hash(string text)
@@ -61,13 +61,13 @@ public static class ExcursionRules
         return Math.Max(0, x.Capacity - taken - bookedHere);
     }
 
-    public static ItineraryDay DayOf(DateOnly departure, Excursion x) => Itinerary.Days(departure).First(d => d.Port == x.Port);
+    public static ItineraryDay DayOf(Timeline timeline, Excursion x) => timeline.Days.First(d => d.Port == x.Port);
 
     private static int Minutes(TimeOnly t) => t.Hour * 60 + t.Minute;
     private static int Minutes(string hhmm) => Minutes(TimeOnly.ParseExact(hhmm, "HH:mm"));
 
     /// <summary>Minutes a guest needs to get ashore and to the meeting point, and to get back and aboard: longer at a tender port.</summary>
-    public static (int Out, int Back) LandingBuffer(string port) => Itinerary.Ports[port].Tender ? (75, 90) : (30, 45);
+    public static (int Out, int Back) LandingBuffer(string port) => Itinerary.PortById(port).Tender ? (75, 90) : (30, 45);
 
     public static int EndMinutes(Excursion x) => Minutes(x.Start) + (int)Pricing.JsRound(x.Hours * 60);
 
@@ -105,5 +105,5 @@ public static class ExcursionRules
 
     public static TourRefund Refund(long paid, int daysToTour) => daysToTour >= FreeCancelDays ? new(0, paid, true) : new(paid, 0, false);
 
-    public static int DaysToTour(DateOnly today, DateOnly departure, Excursion x) => DayOf(departure, x).Date.DayNumber - today.DayNumber;
+    public static int DaysToTour(DateOnly today, Timeline timeline, Excursion x) => DayOf(timeline, x).Date.DayNumber - today.DayNumber;
 }

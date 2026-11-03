@@ -79,9 +79,9 @@ public static class DiningRules
     }
 
     /// <summary>Whether a dinner's start has already gone by. The time is on the ship's clock for that night.</summary>
-    public static bool DinnerPast(DateOnly departure, int day, string time, DateTime nowUtc)
+    public static bool DinnerPast(Timeline timeline, int day, string time, DateTime nowUtc)
     {
-        var date = departure.AddDays(day - 1);
-        return Itinerary.LocalToUtc(date, TimeOnly.ParseExact(time, "HH:mm"), Itinerary.ShipZoneOnDate(departure, date)) <= nowUtc;
+        var date = timeline.Departure.AddDays(day - 1);
+        return Itinerary.LocalToUtc(date, TimeOnly.ParseExact(time, "HH:mm"), timeline.ShipZoneOnDate(date)) <= nowUtc;
     }
 }

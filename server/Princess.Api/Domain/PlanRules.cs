@@ -196,19 +196,19 @@ public static class PlanRules
     public sealed record PlanEntry(string Kind, string Time, string Name, string? Id, List<Guid> Guests);
     public sealed record PlanDay(int Day, string Date, string Port, string Place, List<PlanEntry> Entries, List<string> Gaps);
 
-    public static List<PlanDay> BuildPlan(DateOnly departure, IEnumerable<(string Id, string ExcursionId, List<Guid> Guests)> tours, IEnumerable<(string Id, string VenueId, int Day, string Time, List<Guid> Guests)> tables) =>
-        Itinerary.Days(departure).Select(d =>
+    public static List<PlanDay> BuildPlan(Timeline timeline, IEnumerable<(string Id, string ExcursionId, List<Guid> Guests)> tours, IEnumerable<(string Id, string VenueId, int Day, string Time, List<Guid> Guests)> tables) =>
+        timeline.Days.Select(d =>
         {
             var entries = new List<PlanEntry>();
-            if (d.Depart is { } dep && d.Port == "fll") entries.Add(new("sail", dep.ToString("HH:mm"), "", null, []));
+            if (d.Depart is { } dep && d.Day == 1) entries.Add(new("sail", dep.ToString("HH:mm"), "", null, []));
             if (d.AllAboard is { } aa) entries.Add(new("allAboard", aa.ToString("HH:mm"), "", null, []));
             foreach (var t in tours)
-                if (ExcursionRules.ById(t.ExcursionId) is { } x && ExcursionRules.DayOf(departure, x).Day == d.Day) entries.Add(new("tour", x.Start, x.Name, t.Id, t.Guests));
+                if (ExcursionRules.ById(t.ExcursionId) is { } x && ExcursionRules.DayOf(timeline, x).Day == d.Day) entries.Add(new("tour", x.Start, x.Name, t.Id, t.Guests));
             foreach (var r in tables.Where(r => r.Day == d.Day)) entries.Add(new("dinner", r.Time, DiningRules.VenueById(r.VenueId)?.Name ?? r.VenueId, r.Id, r.Guests));
             entries = entries.OrderBy(e => e.Time, StringComparer.Ordinal).ToList();
             var gaps = new List<string>();
-            if (d.Port is not ("sea" or "fll") && !entries.Any(e => e.Kind == "tour")) gaps.Add("tour");
+            if (timeline.IsCall(d) && !entries.Any(e => e.Kind == "tour")) gaps.Add("tour");
             if (d.Day <= 7 && !entries.Any(e => e.Kind == "dinner")) gaps.Add("dinner");
-            return new PlanDay(d.Day, Iso(d.Date), d.Port, d.Port == "sea" ? "" : Itinerary.Ports[d.Port].Name, entries, gaps);
+            return new PlanDay(d.Day, Iso(d.Date), d.Port, d.Port == "sea" ? "" : Itinerary.PortById(d.Port).Name, entries, gaps);
         }).ToList();
 }

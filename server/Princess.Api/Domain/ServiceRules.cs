@@ -136,8 +136,8 @@ public static partial class ServiceRules
     }
 
     /// <summary>Gratuities due for the whole cruise for the guests who pay them (a package includes them for others).</summary>
-    public static long GratuityDue(IEnumerable<(bool Suite, bool Included)> guests) =>
-        guests.Sum(g => g.Included ? 0 : (g.Suite ? Pricing.GratuityPerNightSuite : Pricing.GratuityPerNight) * Pricing.Nights);
+    public static long GratuityDue(IEnumerable<(bool Suite, bool Included)> guests, int nights = Pricing.Nights) =>
+        guests.Sum(g => g.Included ? 0 : (g.Suite ? Pricing.GratuityPerNightSuite : Pricing.GratuityPerNight) * nights);
 
     public static readonly IReadOnlyList<Currency> Currencies =
     [

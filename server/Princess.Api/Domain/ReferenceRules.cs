@@ -18,7 +18,7 @@ public sealed record SailingRefDto(string Id, string Departure, bool Holiday, bo
 public sealed record ItineraryRefDto(int Day, string Port, string? Arrive, string? AllAboard, string? Depart);
 
 /// <summary>The sailings, the ports they call at, the shared itinerary and the zones the ship's clocks follow (multi-device plan 3, Phase 3). <c>Version</c> changes when the content does.</summary>
-public sealed record SailingsReferenceDto(string Version, IReadOnlyList<SailingRefDto> Sailings, IReadOnlyList<Port> Ports, IReadOnlyList<ItineraryRefDto> Itinerary, string ShipHomeZone, string ShipWestZone);
+public sealed record SailingsReferenceDto(string Version, IReadOnlyList<SailingRefDto> Sailings, IReadOnlyList<Port> Ports, IReadOnlyList<ItineraryRefDto> Itinerary, string ShipHomeZone, string ShipWestZone, IReadOnlyList<CatalogueSailingDto>? Entries = null);
 
 public sealed record CatalogueReferenceDto(string Version, IReadOnlyList<Excursion> Excursions, IReadOnlyList<Venue> Venues, IReadOnlyList<Port> Ports);
 

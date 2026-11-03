@@ -52,15 +52,15 @@ public static class FolioRules
     }
 
     /// <summary>Every generated charge up to <paramref name="throughDay"/> (1 to 8), in time order. Days that have not started have no charges.</summary>
-    public static List<FolioLine> Build(string sailingId, DateOnly departure, int throughDay, IReadOnlyList<FolioGuest> guests, IReadOnlyList<DiningCharge> dining, bool welcomeCredit)
+    public static List<FolioLine> Build(string sailingId, Timeline timeline, int throughDay, IReadOnlyList<FolioGuest> guests, IReadOnlyList<DiningCharge> dining, bool welcomeCredit)
     {
-        var days = Itinerary.Days(departure);
+        var days = timeline.Days;
         var lines = new List<FolioLine>();
         var last = Math.Min(throughDay, days.Count - 1);
         DateTime At(int day, int hour, int minute = 0)
         {
             var date = days[day - 1].Date;
-            return Itinerary.LocalToUtc(date, new TimeOnly(hour, minute), Itinerary.ShipZoneOnDate(departure, date));
+            return Itinerary.LocalToUtc(date, new TimeOnly(hour, minute), timeline.ShipZoneOnDate(date));
         }
         var used = new Dictionary<Guid, Used>();
 
@@ -102,7 +102,7 @@ public static class FolioRules
         {
             if (t.Day > last || t.Charge <= 0) continue;
             var date = days[t.Day - 1].Date;
-            var dinnerAt = TripRules.ToMs(Itinerary.LocalToUtc(date, TimeOnly.ParseExact(t.Time, "HH:mm"), Itinerary.ShipZoneOnDate(departure, date)));
+            var dinnerAt = TripRules.ToMs(Itinerary.LocalToUtc(date, TimeOnly.ParseExact(t.Time, "HH:mm"), timeline.ShipZoneOnDate(date)));
             var paying = t.Guests.Where(x => !t.Covered.Contains(x)).ToList();
             var each = paying.Count > 0 ? Pricing.JsRound((double)t.Charge / paying.Count) : 0;
             for (var i = 0; i < paying.Count; i++)
@@ -126,12 +126,12 @@ public static class FolioRules
     }
 
     /// <summary>The cruise day (1 to 8) for a moment in ship time; 0 before the first day and 9 after the last.</summary>
-    public static int CruiseDay(DateOnly departure, DateTime now)
+    public static int CruiseDay(Timeline timeline, DateTime now)
     {
-        var days = Itinerary.Days(departure);
-        var (date, _) = Itinerary.LocalAt(now, Itinerary.ShipZoneAt(departure, now));
+        var days = timeline.Days;
+        var (date, _) = Itinerary.LocalAt(now, timeline.ShipZoneAt(now));
         if (date < days[0].Date) return 0;
-        if (date > days[7].Date) return 9;
+        if (date > days[^1].Date) return days.Count + 1;
         return days.FirstOrDefault(d => d.Date == date)?.Day ?? 0;
     }
 }

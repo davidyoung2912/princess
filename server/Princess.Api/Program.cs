@@ -37,6 +37,7 @@ services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<AccessService>();
 services.AddScoped<IAccountStore, DapperAccountStore>();
 services.AddScoped<ITripStore, DapperTripStore>();
+services.AddScoped<ICatalogueStore, DapperCatalogueStore>();
 services.AddScoped<IInboxStore, DapperInboxStore>();
 services.AddScoped<IPrivacyStore, DapperPrivacyStore>();
 services.AddScoped<IDemoStore, DapperDemoStore>();

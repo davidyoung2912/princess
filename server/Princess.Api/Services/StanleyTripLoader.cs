@@ -26,6 +26,6 @@ public sealed class StanleyTripLoader(ITripStore trips, IAccountStore accounts, 
         var meals = (await plan.ListTablesAsync(booking.BookingId, ct)).Select(x => new StanleyItem(x.Day, DiningRules.VenueById(x.VenueId)?.Name ?? "Dinner", x.Time)).ToList();
         var packages = (await plan.ListPurchasesAsync(booking.BookingId, ct)).Where(x => x.Status == "active")
             .Select(x => PackageRules.NameOf(x.ItemId)).OfType<string>().Distinct().ToList();
-        return new StanleyTrip(today, DateOnly.FromDateTime(booking.Departure), booking.Nights, booking.ShipName, booking.CategoryName, booking.Dining, ages, tours, meals, packages);
+        return new StanleyTrip(today, DateOnly.FromDateTime(booking.Departure), booking.Nights, booking.ShipName, booking.CategoryName, booking.Dining, ages, tours, meals, packages, booking.SailingId);
     }
 }

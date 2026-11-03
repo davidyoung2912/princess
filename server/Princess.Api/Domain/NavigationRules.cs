@@ -99,10 +99,10 @@ public static class NavigationRules
         }
     }
 
-    private static Wp P(string port, int depth) => new(Itinerary.Ports[port].Lat, Itinerary.Ports[port].Lon, depth);
+    private static Wp P(string port, int depth) => new(Itinerary.PortById(port).Lat, Itinerary.PortById(port).Lon, depth);
 
     // Four legs, in sailing order. Depths are in metres and rounded: shelf and reef water is shallow, the Yucatan Channel and the Bartlett Trough are deep.
-    private static readonly Track[] Tracks =
+    private static readonly Track[] Authored =
     [
         new Track
         {
@@ -128,20 +128,38 @@ public static class NavigationRules
         }.Measure(),
     ];
 
-    public static int VoyageNmTotal => (int)Math.Round(Tracks.Sum(t => t.Total));
+    /// <summary>The length of the authored Western A route in nautical miles.</summary>
+    public static int VoyageNmTotal => (int)Math.Round(Authored.Sum(t => t.Total));
+
+    /// <summary>The track of every leg of a route. The four authored legs are used where the route follows them; any other leg is a straight line between the two ports, deep in the middle.</summary>
+    private static Track[] TracksFor(List<Stop> stops) => Routes.GetOrAdd(string.Join('>', stops.Select(s => s.Port)), _ =>
+        [.. stops.Zip(stops.Skip(1), (a, b) => Authored.FirstOrDefault(t => t.From == a.Port && t.To == b.Port) ?? Generated(a.Port, b.Port))]);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Track[]> Routes = new();
+
+    private static Track Generated(string from, string to)
+    {
+        var a = Itinerary.PortById(from);
+        var b = Itinerary.PortById(to);
+        return new Track { From = from, To = to, Points = [new(a.Lat, a.Lon, 20), new((a.Lat + b.Lat) / 2, (a.Lon + b.Lon) / 2, 1500), new(b.Lat, b.Lon, 20)] }.Measure();
+    }
 
     // ---------- the timetable ----------
 
     private sealed record Stop(string Port, DateTime? Arrive, DateTime? Depart);
 
-    private static List<Stop> Stops(DateOnly departure)
+    private static List<Stop> Stops(Timeline timeline)
     {
         var list = new List<Stop>();
-        foreach (var d in Itinerary.Days(departure))
+        foreach (var d in timeline.Days)
         {
             if (d.Port == "sea") continue;
-            var zone = Itinerary.Ports[d.Port].Zone;
-            list.Add(new Stop(d.Port, d.Arrive is { } a ? Itinerary.LocalToUtc(d.Date, a, zone) : null, d.Depart is { } p ? Itinerary.LocalToUtc(d.Date, p, zone) : null));
+            var zone = Itinerary.PortById(d.Port).Zone;
+            var arrive = d.Arrive is { } a ? Itinerary.LocalToUtc(d.Date, a, zone) : (DateTime?)null;
+            var depart = d.Depart is { } p ? Itinerary.LocalToUtc(d.Date, p, zone) : (DateTime?)null;
+            // An overnight stay is one stop: it arrives on the first day and leaves on the last.
+            if (list.Count > 0 && list[^1].Port == d.Port) list[^1] = list[^1] with { Depart = depart };
+            else list.Add(new Stop(d.Port, arrive, depart));
         }
         return list;
     }
@@ -149,7 +167,7 @@ public static class NavigationRules
     /// <summary>Where in the timetable a moment falls: the leg, whether the ship is under way on it, how far along (0 to 1), and the stop index while alongside.</summary>
     private sealed record Place(int Leg, bool Underway, double Fraction, int StopIndex, bool Ended);
 
-    private static Place Locate(List<Stop> stops, DateTime utc)
+    private static Place Locate(List<Stop> stops, int legs, DateTime utc)
     {
         for (var i = 0; i < stops.Count; i++)
         {
@@ -160,32 +178,33 @@ public static class NavigationRules
                 var f = (utc - from).TotalSeconds / (s.Arrive.Value - from).TotalSeconds;
                 return new Place(i - 1, true, Math.Clamp(f, 0, 1), -1, false);
             }
-            if (s.Depart is null) return new Place(Tracks.Length - 1, false, 1, i, true);
+            if (s.Depart is null) return new Place(legs - 1, false, 1, i, true);
             if (utc < s.Depart.Value) return new Place(i, false, 0, i, false);
         }
-        return new Place(Tracks.Length - 1, false, 1, stops.Count - 1, true);
+        return new Place(legs - 1, false, 1, stops.Count - 1, true);
     }
 
     private static DateTime Utc(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
 
     private static long Ms(DateTime utc) => new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
 
-    private sealed record Situation(Place Place, Fix Fix, double Along, Track Track, List<Stop> Stops);
+    private sealed record Situation(Place Place, Fix Fix, double Along, Track Track, List<Stop> Stops, Track[] Tracks);
 
-    private static Situation Resolve(DateOnly departure, long ms)
+    private static Situation Resolve(Timeline timeline, long ms)
     {
-        var stops = Stops(departure);
-        var place = Locate(stops, Utc(ms));
-        var track = Tracks[place.Leg];
+        var stops = Stops(timeline);
+        var tracks = TracksFor(stops);
+        var place = Locate(stops, tracks.Length, Utc(ms));
+        var track = tracks[place.Leg];
         var along = place.Underway ? place.Fraction * track.Total : place.Ended ? track.Total : 0;
-        return new Situation(place, track.At(along), along, track, stops);
+        return new Situation(place, track.At(along), along, track, stops, tracks);
     }
 
     // ---------- position ----------
 
-    public static ShipPositionDto Position(DateOnly departure, long ms)
+    public static ShipPositionDto Position(Timeline timeline, long ms)
     {
-        var n = Resolve(departure, ms);
+        var n = Resolve(timeline, ms);
         var utc = Utc(ms);
         var p = n.Place;
         var hours = (n.Stops[p.Leg + 1].Arrive!.Value - n.Stops[p.Leg].Depart!.Value).TotalHours;
@@ -195,40 +214,40 @@ public static class NavigationRules
         var next = p.Ended ? null : n.Track.To;
         var sailed = p.Underway ? (int)Math.Round(n.Along) : 0;
         var remaining = p.Ended ? 0 : (int)Math.Round(n.Track.Total - (p.Underway ? n.Along : 0));
-        var done = Tracks.Take(p.Leg).Sum(t => t.Total) + (p.Underway ? n.Along : p.Ended ? n.Track.Total : 0);
-        var day = Itinerary.PortAt(departure, utc).Day;
+        var done = n.Tracks.Take(p.Leg).Sum(t => t.Total) + (p.Underway ? n.Along : p.Ended ? n.Track.Total : 0);
+        var day = timeline.PortAt(utc).Day;
         var local = inPort ?? n.Track.To;
         ArrivalDto? arrival = null;
         if (!p.Ended)
         {
             var due = n.Stops[p.Leg + 1].Arrive!.Value;
-            var (time, arrivalDay) = ShipWall(departure, due);
+            var (time, arrivalDay) = ShipWall(timeline, due);
             arrival = new ArrivalDto(Ms(due), time, arrivalDay);
         }
         return new ShipPositionDto(
             ms, day, Math.Round(n.Fix.Lat, 4), Math.Round(n.Fix.Lon, 4), speed, (int)Math.Round(n.Fix.Heading) % 360, Compass(n.Fix.Heading), inPort, last, next,
-            sailed, remaining, p.Underway ? (int)Math.Round(p.Fraction * 100) : 0, (int)Math.Round(done), VoyageNmTotal, arrival, Clock(departure, utc, local), FeedRules.Sim);
+            sailed, remaining, p.Underway ? (int)Math.Round(p.Fraction * 100) : 0, (int)Math.Round(done), (int)Math.Round(n.Tracks.Sum(t => t.Total)), arrival, Clock(timeline, utc, local), FeedRules.Sim);
     }
 
     /// <summary>The ship's wall clock (HH:mm) and cruise day at a moment.</summary>
-    private static (string Time, int Day) ShipWall(DateOnly departure, DateTime utc)
+    private static (string Time, int Day) ShipWall(Timeline timeline, DateTime utc)
     {
-        var (date, time) = Itinerary.LocalAt(utc, Itinerary.ShipZoneAt(departure, utc));
-        return (time.ToString("HH:mm", CultureInfo.InvariantCulture), date.DayNumber - departure.DayNumber + 1);
+        var (date, time) = Itinerary.LocalAt(utc, timeline.ShipZoneAt(utc));
+        return (time.ToString("HH:mm", CultureInfo.InvariantCulture), date.DayNumber - timeline.Departure.DayNumber + 1);
     }
 
-    private static ShipClockDto Clock(DateOnly departure, DateTime utc, string localPort)
+    private static ShipClockDto Clock(Timeline timeline, DateTime utc, string localPort)
     {
-        var shipZone = Itinerary.ShipZoneAt(departure, utc);
+        var shipZone = timeline.ShipZoneAt(utc);
         var shipTz = TimeZoneInfo.FindSystemTimeZoneById(shipZone);
-        var localTz = TimeZoneInfo.FindSystemTimeZoneById(Itinerary.Ports[localPort].Zone);
+        var localTz = TimeZoneInfo.FindSystemTimeZoneById(Itinerary.PortById(localPort).Zone);
         var shipOffset = (int)shipTz.GetUtcOffset(utc).TotalMinutes;
         var localOffset = (int)localTz.GetUtcOffset(utc).TotalMinutes;
         string Hhmm(DateTime u, int off) => u.AddMinutes(off).ToString("HH:mm", CultureInfo.InvariantCulture);
-        var change = Itinerary.ShipClockChanges(departure).FirstOrDefault(c => c.At > utc);
+        var change = timeline.ClockChanges().FirstOrDefault(c => c.At > utc);
         return new ShipClockDto(
-            Hhmm(utc, shipOffset), shipOffset, shipZone == Itinerary.ShipHomeZone ? "eastern" : "belize", localPort, Hhmm(utc, localOffset), localOffset, localOffset - shipOffset,
-            change is null ? null : new ShipClockChangeDto(Ms(change.At), change.Hours, ShipWall(departure, change.At.AddMilliseconds(-1)).Day));
+            Hhmm(utc, shipOffset), shipOffset, shipZone == timeline.HomeZone ? "eastern" : "belize", localPort, Hhmm(utc, localOffset), localOffset, localOffset - shipOffset,
+            change is null ? null : new ShipClockChangeDto(Ms(change.At), change.Hours, ShipWall(timeline, change.At.AddMilliseconds(-1)).Day));
     }
 
     // ---------- the sea ----------
@@ -263,9 +282,9 @@ public static class NavigationRules
 
     public static string DepthClassOf(int metres) => metres < 200 ? "shelf" : metres < 2000 ? "slope" : metres < 4000 ? "deep" : "trench";
 
-    public static SeaConditionsDto Sea(DateOnly departure, long ms)
+    public static SeaConditionsDto Sea(Timeline timeline, long ms)
     {
-        var n = Resolve(departure, ms);
+        var n = Resolve(timeline, ms);
         var utc = Utc(ms);
         var wind = WindAt(ms);
         var wave = Math.Round(0.02 * Math.Pow(wind, 1.5), 1);
@@ -307,12 +326,15 @@ public static class NavigationRules
 
     private sealed record Pass(int Leg, Poi Poi, double AlongNm, double ClosestNm, string Side);
 
-    private static readonly Lazy<List<Pass>> Passes = new(() =>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<Pass>> PassCache = new();
+
+    /// <summary>The landmarks each leg passes within reach. A route far from every authored landmark has none.</summary>
+    private static List<Pass> PassesFor(Track[] tracks) => PassCache.GetOrAdd(string.Join('>', tracks.Select(t => t.From + ':' + t.To)), _ =>
     {
         var list = new List<Pass>();
-        for (var leg = 0; leg < Tracks.Length; leg++)
+        for (var leg = 0; leg < tracks.Length; leg++)
         {
-            var track = Tracks[leg];
+            var track = tracks[leg];
             foreach (var poi in Pois)
             {
                 var best = double.MaxValue;
@@ -360,16 +382,16 @@ public static class NavigationRules
         return new SeaZoneDto(best.Id, best.Name, best.Habitat, best.Wildlife);
     }
 
-    public static AlongTheWayDto Along(DateOnly departure, long ms)
+    public static AlongTheWayDto Along(Timeline timeline, long ms)
     {
-        var n = Resolve(departure, ms);
-        var all = Passes.Value
+        var n = Resolve(timeline, ms);
+        var all = PassesFor(n.Tracks)
             .Select(p =>
             {
                 var from = n.Stops[p.Leg].Depart!.Value;
                 var hours = (n.Stops[p.Leg + 1].Arrive!.Value - from).TotalHours;
-                var passes = from.AddHours(hours * p.AlongNm / Tracks[p.Leg].Total);
-                var (time, day) = ShipWall(departure, passes);
+                var passes = from.AddHours(hours * p.AlongNm / n.Tracks[p.Leg].Total);
+                var (time, day) = ShipWall(timeline, passes);
                 var poi = p.Poi;
                 return new LandmarkDto(
                     poi.Id, poi.Name, poi.Kind, poi.Blurb, poi.Lat, poi.Lon, (int)Math.Round(p.ClosestNm), p.Side, Ms(passes), time, day,

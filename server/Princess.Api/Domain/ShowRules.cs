@@ -56,12 +56,12 @@ public static class ShowRules
     public static int SeatsLeft(string eventId, int day, int heldOnSailing) => Math.Max(0, Defs.First(d => d.Id == eventId).Capacity - TakenByOthers(eventId, day) - heldOnSailing);
 
     /// <summary>The ticketed events on a day, in time order. A port-day event is listed only once the ship is back aboard.</summary>
-    public static List<ShowEvent> On(DateOnly departure, int day)
+    public static List<ShowEvent> On(Timeline timeline, int day)
     {
         if (day is < 1 or > 8) return [];
-        var date = departure.AddDays(day - 1);
-        var zone = Itinerary.ShipZoneOnDate(departure, date);
-        var aboard = Itinerary.AllAboardAt(departure, day);
+        var date = timeline.Departure.AddDays(day - 1);
+        var zone = timeline.ShipZoneOnDate(date);
+        var aboard = timeline.AllAboardAt(day);
         var list = new List<ShowEvent>();
         foreach (var d in Defs.Where(d => d.Days.Contains(day)))
         {
@@ -72,7 +72,7 @@ public static class ShowRules
         return [.. list.OrderBy(e => e.StartAt).ThenBy(e => e.Title, StringComparer.Ordinal)];
     }
 
-    public static ShowEvent? Find(DateOnly departure, string eventId, int day) => On(departure, day).FirstOrDefault(e => e.Id == eventId);
+    public static ShowEvent? Find(Timeline timeline, string eventId, int day) => On(timeline, day).FirstOrDefault(e => e.Id == eventId);
 
     /// <summary>The first reason a seat cannot be reserved, or null. <paramref name="holders"/> are people who already hold a seat for this event and day.</summary>
     public static string? Problem(ShowEvent e, DateTime now, IReadOnlyCollection<(Guid Id, int Age)> guests, IReadOnlyCollection<Guid> holders)

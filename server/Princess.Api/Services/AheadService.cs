@@ -25,16 +25,16 @@ public sealed class AheadService(ScopeLoader scopes, IAheadStore store, IBooking
         if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
     }
 
-    private static DateTime DepartureAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(12, 0), Itinerary.ShipHomeZone);
+    private static DateTime DepartureAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(12, 0), c.Timeline.HomeZone);
 
-    private static DateTime EmbarkAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), Itinerary.ShipHomeZone);
+    private static DateTime EmbarkAt(Scope c) => Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), c.Timeline.HomeZone);
 
     /// <summary>When the embarkation stage ends and the first sea day begins.</summary>
-    private static DateTime SeaDayAt(Scope c) => Itinerary.LocalToUtc(c.Departure.AddDays(1), new TimeOnly(8, 0), Itinerary.ShipHomeZone);
+    private static DateTime SeaDayAt(Scope c) => Itinerary.LocalToUtc(c.Departure.AddDays(1), new TimeOnly(8, 0), c.Timeline.HomeZone);
 
     private static bool BeforeSailing(Scope c) => c.Now < EmbarkAt(c);
 
-    private static DateTime TripOverAt(Scope c) => Itinerary.LocalToUtc(c.Departure.AddDays(7), new TimeOnly(6, 0), Itinerary.ShipHomeZone);
+    private static DateTime TripOverAt(Scope c) => Itinerary.LocalToUtc(c.LastDay, new TimeOnly(6, 0), c.Timeline.FinalZone);
 
     // ---- Travel advisors (DIS-15) ----
 

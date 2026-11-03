@@ -36,19 +36,19 @@ public interface IRouteConditionsProvider
 public interface IShipTelemetry
 {
     PortCrowdDto PortCrowd(string port, string date);
-    PulseDto Pulse(DateOnly departure, long now);
-    PulseDayDto PulseDay(DateOnly departure, int day);
+    PulseDto Pulse(Timeline timeline, long now);
+    PulseDayDto PulseDay(Timeline timeline, int day);
     LoungersDto Loungers(long now);
     SightingsDto Sightings(int day);
-    SkyNightDto SkyNight(string departure, int day);
+    SkyNightDto SkyNight(string departure, int day, string? sailing = null);
 }
 
 /// <summary>Where the ship is, how it is moving, the sea around it and what it is passing. The simulated one follows an authored track; a real one reads the bridge.</summary>
 public interface IShipNavigation
 {
-    ShipPositionDto Position(DateOnly departure, long now);
-    SeaConditionsDto Sea(DateOnly departure, long now);
-    AlongTheWayDto Along(DateOnly departure, long now);
+    ShipPositionDto Position(Timeline timeline, long now);
+    SeaConditionsDto Sea(Timeline timeline, long now);
+    AlongTheWayDto Along(Timeline timeline, long now);
 }
 
 /// <summary>How likely a named storm is to touch a sailing's route, for the storm watch. Not a forecast.</summary>
@@ -97,18 +97,18 @@ public sealed class SimWeatherService : IWeatherService
 public sealed class SimShipTelemetry : IShipTelemetry
 {
     public PortCrowdDto PortCrowd(string port, string date) => ShipFeedRules.PortCrowd(port, date);
-    public PulseDto Pulse(DateOnly departure, long now) => OnboardFeedRules.Pulse(departure, now);
-    public PulseDayDto PulseDay(DateOnly departure, int day) => OnboardFeedRules.PulseDay(departure, day);
+    public PulseDto Pulse(Timeline timeline, long now) => OnboardFeedRules.Pulse(timeline, now);
+    public PulseDayDto PulseDay(Timeline timeline, int day) => OnboardFeedRules.PulseDay(timeline, day);
     public LoungersDto Loungers(long now) => OnboardFeedRules.LoungerBoard(now);
     public SightingsDto Sightings(int day) => OnboardFeedRules.Sightings(day);
-    public SkyNightDto SkyNight(string departure, int day) => OnboardFeedRules.SkyNight(departure, day);
+    public SkyNightDto SkyNight(string departure, int day, string? sailing = null) => OnboardFeedRules.SkyNight(departure, day, sailing);
 }
 
 public sealed class SimShipNavigation : IShipNavigation
 {
-    public ShipPositionDto Position(DateOnly departure, long now) => NavigationRules.Position(departure, now);
-    public SeaConditionsDto Sea(DateOnly departure, long now) => NavigationRules.Sea(departure, now);
-    public AlongTheWayDto Along(DateOnly departure, long now) => NavigationRules.Along(departure, now);
+    public ShipPositionDto Position(Timeline timeline, long now) => NavigationRules.Position(timeline, now);
+    public SeaConditionsDto Sea(Timeline timeline, long now) => NavigationRules.Sea(timeline, now);
+    public AlongTheWayDto Along(Timeline timeline, long now) => NavigationRules.Along(timeline, now);
 }
 
 public sealed class SimStormOutlook : IStormOutlook

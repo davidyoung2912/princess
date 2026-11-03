@@ -29,14 +29,14 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
             return new HistoryTripDto(p.Id, p.Title, p.Ship, Iso(p.Departure), p.Nights, false, p.Cancelled, p.FareCents, [.. docs.Select(d => new HistoryDocDto(d.Doc, d.Ready))], [.. p.Ports.Select(x => new PortPlaceDto(x.Code, x.Name, x.Lat, x.Lon))]);
         });
         List<HistoryTripDto> current = sailed
-            ? [new($"current-{c.Booking.SailingId}", c.Booking.SailingTitle, c.Booking.ShipName, Iso(c.Departure), c.Booking.Nights, true, false, c.Booking.TotalCents, [.. AllDocs.Select(d => new HistoryDocDto(d, true))], CallPorts(c.Departure))]
+            ? [new($"current-{c.Booking.SailingId}", c.Booking.SailingTitle, c.Booking.ShipName, Iso(c.Departure), c.Booking.Nights, true, false, c.Booking.TotalCents, [.. AllDocs.Select(d => new HistoryDocDto(d, true))], CallPorts(c.Timeline))]
             : [];
         return new HistoryViewDto([.. current, .. past], sailed ? Ms(FinishStages.EndOfDaysAfter(c, PhotoRules.RedownloadDays)) : null, sailed);
     }
 
     /// <summary>The ports of call of this cruise, each once, in order, with where each is.</summary>
-    private static List<PortPlaceDto> CallPorts(DateOnly departure) =>
-        [.. Itinerary.Days(departure).Select(d => d.Port).Where(p => p is not ("sea" or "fll")).Distinct().Select(id => Itinerary.Ports[id]).Select(p => new PortPlaceDto(p.Id, p.Name, p.Lat, p.Lon))];
+    private static List<PortPlaceDto> CallPorts(Timeline timeline) =>
+        [.. timeline.Days.Where(timeline.IsCall).Select(d => d.Port).Distinct().Select(id => Itinerary.PortById(id)).Select(p => new PortPlaceDto(p.Id, p.Name, p.Lat, p.Lon))];
 
     // ---- Feedback (POS-02, POS-11, POS-14) ----
 
@@ -86,7 +86,7 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
         var row = await store.GetLoyaltyAsync(actor.Id, ct);
         var current = (await trips.ListForUserAsync(actor.Id, ct)).Where(b => b.Status == "confirmed" && Itinerary.LocalToUtc(DateOnly.FromDateTime(b.Departure), new TimeOnly(11, 0), Itinerary.ShipHomeZone) <= now)
             .OrderByDescending(b => b.Departure).FirstOrDefault();
-        var counted = current is not null && now >= DisembarkRules.Times(DateOnly.FromDateTime(current.Departure)).ArrivalAt;
+        var counted = current is not null && now >= DisembarkRules.Times(TimelineBook.For(current.SailingId, DateOnly.FromDateTime(current.Departure))).ArrivalAt;
         var status = PostCruiseRules.Loyalty(actor.Tier, row?.DaysCounted ?? PostCruiseRules.TierDays(actor.Tier), current?.Nights ?? Pricing.Nights, counted);
         var perks = EntitlementRules.Compute(status.After, "none", false);
         var friends = (row?.Referrals ?? []).Select(r => new ReferralFriendDto(r.Name, r.State)).ToList();
@@ -108,7 +108,7 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
     {
         var onboard = Onboard(c);
         var guests = Guests(c);
-        var from = PostCruiseRules.EarliestRebook(Itinerary.Days(c.Departure)[7].Date);
+        var from = PostCruiseRules.EarliestRebook(c.Timeline.Days[^1].Date);
         var credit = onboard ? PostCruiseRules.BookingCredit + PostCruiseRules.LevelCredit(c.Actor.Tier) : 0;
         return [.. (await trips.ListSailingsAsync(ct)).Where(s => DateOnly.FromDateTime(s.Departure) >= from).OrderBy(s => s.Departure).SelectMany(s =>
             Pricing.Quote(s.Id, c.Booking.CategoryId, guests) is { } q ? [new Option(s.Id, DateOnly.FromDateTime(s.Departure), Bookable(s, c), q.Total, PostCruiseRules.HoldDeposit(q.Total, guests, onboard), credit)] : Array.Empty<Option>())];
@@ -117,14 +117,14 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
     /// <summary>Desk slots from now on: at least an hour away, not full (a slot this booking holds counts as free), the first twelve. Times are ship wall-clock, as seeded.</summary>
     private async Task<List<(long At, int Day, DateTime Local)>> DeskSlotsAsync(Scope c, CancellationToken ct)
     {
-        var days = Itinerary.Days(c.Departure);
+        var days = c.Timeline.Days;
         var all = new List<(long At, int Day, DateTime Local)>();
         foreach (var n in PostCruiseRules.DeskDays)
         {
             var date = days[n - 1].Date;
             foreach (var time in PostCruiseRules.DeskTimes())
             {
-                var utc = Itinerary.LocalToUtc(date, time, Itinerary.ShipZoneOnDate(c.Departure, date));
+                var utc = Itinerary.LocalToUtc(date, time, c.Timeline.ShipZoneOnDate(date));
                 if (utc - c.Now >= TimeSpan.FromHours(1)) all.Add((Ms(utc), n, date.ToDateTime(time)));
             }
         }
@@ -153,7 +153,7 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
         if (local is { } l)
         {
             var date = DateOnly.FromDateTime(l);
-            var at = Itinerary.LocalToUtc(date, TimeOnly.FromDateTime(l), Itinerary.ShipZoneOnDate(c.Departure, date));
+            var at = Itinerary.LocalToUtc(date, TimeOnly.FromDateTime(l), c.Timeline.ShipZoneOnDate(date));
             if (at.AddMinutes(30) > c.Now) appointment = new AppointmentDto(Ms(at));
         }
         var onboard = Onboard(c);

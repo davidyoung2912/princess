@@ -37,7 +37,7 @@ public sealed class CalendarFeedService(IPushStore store, IUserStore users, Trip
         var now = await clock.NowAsync(user, ct);
         var entries = new List<CalendarEntry>();
         if (await trips.CurrentAsync(user, now, ct) is { } b)
-            entries = CalendarRules.Entries(b.Number, DateOnly.FromDateTime(b.Departure), DateOnly.FromDateTime(b.FinalDueDate), b.PaidCents >= b.TotalCents);
+            entries = CalendarRules.Entries(b.Number, TimelineBook.For(b.SailingId, DateOnly.FromDateTime(b.Departure)), DateOnly.FromDateTime(b.FinalDueDate), b.PaidCents >= b.TotalCents);
         return CalendarRules.Build(entries, wall.UtcNow);
     }
 }

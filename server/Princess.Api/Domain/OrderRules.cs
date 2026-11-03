@@ -194,13 +194,13 @@ public static class OrderRules
     public const int BreakfastLeadMinutes = 120;
 
     /// <summary>The next few mornings that still have a delivery time with enough notice, in ship time.</summary>
-    public static List<Morning> BreakfastMornings(DateOnly departure, DateTime now, int count = 3)
+    public static List<Morning> BreakfastMornings(Timeline timeline, DateTime now, int count = 3)
     {
         var nowMs = TripRules.ToMs(now);
         var result = new List<Morning>();
-        foreach (var d in Itinerary.Days(departure))
+        foreach (var d in timeline.Days)
         {
-            var zone = Itinerary.ShipZoneOnDate(departure, d.Date);
+            var zone = timeline.ShipZoneOnDate(d.Date);
             var slots = BreakfastSlots
                 .Select(t => new BreakfastSlot(t, TripRules.ToMs(Itinerary.LocalToUtc(d.Date, TimeOnly.ParseExact(t, "HH:mm"), zone))))
                 .Where(s => s.At - nowMs >= BreakfastLeadMinutes * Min).ToList();

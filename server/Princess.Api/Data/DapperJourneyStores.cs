@@ -300,7 +300,17 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
     public Task<List<SailingRow>> ListSailingsAsync(CancellationToken ct) => sailings.GetOrLoadAsync(async () =>
     {
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
+        var rows = (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
+        var fares = await c.QueryAsync<(string SailingId, string CategoryId, long PerNightCents)>(Sql.Cmd("SELECT SailingId, CategoryId, PerNightCents FROM ref.SailingFares", null, null, ct));
+        FareBook.Set(rows.Select(r => (r.Id, r.Nights, r.BookingOpen)), fares);   // price and length live in data: Pricing reads them from here
+        var dayRows = await c.QueryAsync<(string SailingId, int Day, DateTime Date, string PortId, TimeSpan? Arrive, TimeSpan? Depart, TimeSpan? AllAboard, int? Hours, TimeSpan? At)>(Sql.Cmd(
+            "SELECT SailingId, [Day], [Date], PortId, ArriveLocal AS Arrive, DepartLocal AS Depart, AllAboardLocal AS AllAboard, ClockChangeHours AS Hours, ClockChangeAtLocal AS [At] FROM ref.ItineraryDays", null, null, ct));
+        var portRows = await c.QueryAsync<(string Id, string Name, string TimeZone, bool Tender, decimal? Lat, decimal? Lon)>(Sql.Cmd("SELECT Id, Name, TimeZone, Tender, Lat, Lon FROM ref.Ports", null, null, ct));
+        static TimeOnly? T(TimeSpan? t) => t is { } v ? TimeOnly.FromTimeSpan(v) : null;
+        TimelineBook.Set(rows.Select(r => (r.Id, DateOnly.FromDateTime(r.Departure))),
+            dayRows.Select(d => (d.SailingId, new ItineraryDay(d.Day, DateOnly.FromDateTime(d.Date), d.PortId, T(d.Arrive), T(d.AllAboard), T(d.Depart), d.Hours, T(d.At)))),
+            portRows.Select(p => new Port(p.Id, p.Name, p.TimeZone, p.Tender, (double)(p.Lat ?? 0), (double)(p.Lon ?? 0))));
+        return rows;
     });
 
     public async Task<List<PastTripRow>> ListPastTripsAsync(long userId, CancellationToken ct)

@@ -26,7 +26,8 @@ public static class SailingQualityRules
     {
         var departure = DateOnly.FromDateTime(sailing.Departure);
         var m = departure.Month;
-        var ports = Itinerary.Days(departure).Count(d => d.Port != "sea" && d.Port != "fll");
+        var timeline = TimelineBook.For(sailing.Id, departure);
+        var ports = timeline.Days.Count(timeline.IsCall);
         // Ships in port the same day: the winter season is the busiest, so it leans higher, and every sailing has its own stable draw.
         var baseLevel = m is 12 or 1 or 2 or 3 ? 1 : 0;
         var crowd = Levels[Math.Min(2, baseLevel + (int)(CabinRules.Hash($"crowd|{sailing.Id}") % 2))];

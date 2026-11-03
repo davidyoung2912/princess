@@ -25,6 +25,9 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         public DateOnly Today;
         public DateOnly Departure;
         public int Days;
+        public int Nights = Pricing.Nights;
+        public DateOnly LastDay => Departure.AddDays(Nights);
+        public Timeline Timeline = null!;
         public List<Person> Party = [];
         public bool Sanctuary;
 
@@ -50,7 +53,8 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
             .Select(g => new Person(g.PublicId, g.UserId, AccountService.FullName(g), AccountRules.AgeOn(D(g.Dob), departure), g.IsSupervised, g.Tier)).ToList();
         return new Ctx
         {
-            Actor = actor, Booking = booking, Now = now, Today = today, Departure = departure, Days = TripRules.DaysBetween(today, departure), Party = party,
+            Actor = actor, Booking = booking, Now = now, Today = today, Departure = departure, Days = TripRules.DaysBetween(today, departure), Nights = (await trips.ListSailingsAsync(ct)).FirstOrDefault(s => s.Id == booking.SailingId)?.Nights ?? Pricing.Nights, Party = party,
+            Timeline = TimelineBook.For(booking.SailingId, departure),
             Sanctuary = Pricing.FareIncluded(booking.CategoryId) is not null,
         };
     }
@@ -64,7 +68,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     /// <summary>Dining stays open on board, until the last night has passed.</summary>
     private static void RequireDiningOpen(Ctx c)
     {
-        if (c.Today > c.Departure.AddDays(Pricing.Nights) || c.Booking.Status != "confirmed") throw ApiException.Conflict("closed");
+        if (c.Today > c.LastDay || c.Booking.Status != "confirmed") throw ApiException.Conflict("closed");
     }
 
     private static List<Person> GuestsIn(Ctx c, IReadOnlyCollection<Guid>? raw)
@@ -88,7 +92,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
             var (from, to) = ItemOf(r);
             var nowUnit = r.Kind == "addOn"
                 ? PackageRules.AddOnPrice(PackageRules.AddOn(r.ItemId)!, c.Days)
-                : PackageRules.UpgradePrice(new PackageUpgrade(from!, to, PackageRules.UpgradeBase(from!, to), PackageRules.UpgradeRiseDays, PackageRules.UpgradeRiseShare), c.Days);
+                : PackageRules.UpgradePrice(new PackageUpgrade(from!, to, PackageRules.UpgradeBase(from!, to, c.Nights), PackageRules.UpgradeRiseDays, PackageRules.UpgradeRiseShare), c.Days);
             var p = PackageRules.PriceState(r.UnitCents, nowUnit);
             var view = new PurchaseViewDto(
                 r.PublicId, r.Kind, to, c.Ids(r.GuestIds), r.UnitCents, r.Units, r.UnitCents * r.Units, TripRules.ToMs(r.At), r.Methods, r.Status,
@@ -133,7 +137,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var c = await LoadAsync(actor, number, false, ct);
         var tours = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => (t.PublicId.ToString(), t.ExcursionId, c.Ids(t.GuestIds)));
         var tables = (await plan.ListTablesAsync(c.Booking.BookingId, ct)).Select(t => (t.PublicId.ToString(), t.VenueId, t.Day, t.Time, c.Ids(t.GuestIds)));
-        return new PlanOverviewDto(PlanRules.BuildPlan(c.Departure, tours, tables), c.Days, PlanRules.Iso(c.Departure));
+        return new PlanOverviewDto(PlanRules.BuildPlan(c.Timeline, tours, tables), c.Days, PlanRules.Iso(c.Departure));
     }
 
     // ---- Excursions ----
@@ -164,7 +168,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         {
             var x = ExcursionRules.ById(t.ExcursionId)!;
             var cancel = t.Status == "booked"
-                ? ExcursionRules.Refund(t.TotalCents, ExcursionRules.DaysToTour(c.Today, c.Departure, x))
+                ? ExcursionRules.Refund(t.TotalCents, ExcursionRules.DaysToTour(c.Today, c.Timeline, x))
                 : new TourRefund(t.FeeCents ?? 0, t.RefundCents ?? 0, (t.FeeCents ?? 0) == 0);
             return new TourBookingDto(t.PublicId, x.Id, c.Ids(t.GuestIds), t.TotalCents, t.CreditCents, t.Methods, TripRules.ToMs(t.At), t.Status, cancel);
         }).OrderBy(t => t.At).ToList();
@@ -172,10 +176,10 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var offers = new List<ExcursionOfferDto>();
         foreach (var x in ExcursionRules.Catalogue)
         {
-            var day = ExcursionRules.DayOf(c.Departure, x);
+            var day = ExcursionRules.DayOf(c.Timeline, x);
             var here = await plan.CountTourGuestsAsync(c.Booking.SailingId, x.Id, null, ct);
             offers.Add(new ExcursionOfferDto(x, PlanRules.Iso(day.Date), day.Day, ExcursionRules.SpotsLeft(x, c.Booking.SailingId, here), ExcursionRules.TimingProblem(x, day),
-                ExcursionRules.BackBy(x, day), ExcursionRules.DaysToTour(c.Today, c.Departure, x), ExcursionRules.NeedsTender(x)));
+                ExcursionRules.BackBy(x, day), ExcursionRules.DaysToTour(c.Today, c.Timeline, x), ExcursionRules.NeedsTender(x)));
         }
         return new ExcursionsViewDto(offers, booked, cartLines, cartTotal, credit.Remaining, Math.Min(credit.Remaining, cartTotal), [.. c.Members], !c.Actor.IsSupervised && c.Days >= 1 && c.Booking.Status == "confirmed", c.Days);
     }
@@ -186,8 +190,8 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     /// <summary>Checks one tour for a set of guests against what is booked or in the cart. Throws a conflict that names the problem.</summary>
     private async Task CheckTourAsync(Ctx c, Excursion x, List<Person> guests, IEnumerable<BookedTour> others, long? ignoreTourId, CancellationToken ct)
     {
-        var day = ExcursionRules.DayOf(c.Departure, x);
-        if (ExcursionRules.DaysToTour(c.Today, c.Departure, x) < 0 || c.Days < 1) throw ApiException.Conflict("closed");
+        var day = ExcursionRules.DayOf(c.Timeline, x);
+        if (ExcursionRules.DaysToTour(c.Today, c.Timeline, x) < 0 || c.Days < 1) throw ApiException.Conflict("closed");
         if (guests.Any(g => g.Age < ExcursionRules.MinAge(x)) || !guests.Any(g => g.Age >= ExcursionRules.AdultAge)) throw ApiException.Conflict("age");
         if (ExcursionRules.TimingProblem(x, day) is not null) throw ApiException.Conflict("timing");
         var here = await plan.CountTourGuestsAsync(c.Booking.SailingId, x.Id, ignoreTourId, ct);
@@ -256,7 +260,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
             var useCredit = Math.Min(left, l.Total);
             left -= useCredit;
             var x = ExcursionRules.ById(l.ExcursionId)!;
-            newTours.Add(new NewTour(x.Id, ExcursionRules.DayOf(c.Departure, x).Day, [.. l.Guests.Select(g => g.UserId)], l.Total, useCredit));
+            newTours.Add(new NewTour(x.Id, ExcursionRules.DayOf(c.Timeline, x).Day, [.. l.Guests.Select(g => g.UserId)], l.Total, useCredit));
         }
         await plan.BookToursAsync(c.Booking.BookingId, newTours, payment, c.Now, ct);
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "tour", string.Join(", ", priced.Select(l => ExcursionRules.ById(l.ExcursionId)!.Name)), c.Now, ct);
@@ -271,7 +275,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var removedGuests = t.GuestIds.Select(c.PersonByUser).OfType<Person>().Where(g => !keep.Contains(g)).ToList();
         var removed = PriceFor(c, x, removedGuests);
-        var rule = ExcursionRules.Refund(removed, ExcursionRules.DaysToTour(c.Today, c.Departure, x));
+        var rule = ExcursionRules.Refund(removed, ExcursionRules.DaysToTour(c.Today, c.Timeline, x));
         var cash = Math.Min(Math.Max(0, t.TotalCents - t.CreditCents), rule.Refund);
         var creditBack = rule.Refund - cash;
         var cancelled = keep.Count == 0;
@@ -326,7 +330,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var dining = c.Booking.Dining;
         return new DiningViewDto(
             DiningRules.Window(EntitlementsFor(c, Booker(c), ps).DiningWindow, trip.Payment, trip.Plan.FinalDue), dining, DiningRules.Seating(dining), reservations, [.. c.Members], meals,
-            !c.Actor.IsSupervised && c.Booking.Status == "confirmed" && c.Today <= c.Departure.AddDays(Pricing.Nights), c.Days);
+            !c.Actor.IsSupervised && c.Booking.Status == "confirmed" && c.Today <= c.LastDay, c.Days);
     }
 
     public async Task<DiningViewDto> DiningAsync(UserRecord actor, string? number, CancellationToken ct) =>
@@ -365,7 +369,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var view = await DiningViewAsync(c, ct);
         if (!view.Window.Open) throw ApiException.Conflict("notOpen");
         if (v.Kind == "main" && view.Plan != "anytime") throw ApiException.Conflict("fixedSeating");
-        if (DiningRules.DinnerPast(c.Departure, body.Day, body.Time, c.Now)) throw ApiException.Conflict("closed");
+        if (DiningRules.DinnerPast(c.Timeline, body.Day, body.Time, c.Now)) throw ApiException.Conflict("closed");
 
         var existing = await plan.ListTablesAsync(c.Booking.BookingId, ct);
         var grid = DiningRules.SlotsFor(v.Id, c.Booking.SailingId, body.Day).First(s => s.Time == body.Time);
@@ -405,7 +409,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var v = DiningRules.VenueById(old.VenueId)!;
         if (to is null || !DiningRules.DinnerDays.Contains(to.Day) || to.Time is null || !DiningRules.DinnerTimes.Contains(to.Time)) throw ApiException.Invalid("slot");
         if (to.Day == old.Day && to.Time == old.Time) throw ApiException.Conflict("unchanged");
-        if (DiningRules.DinnerPast(c.Departure, old.Day, old.Time, c.Now) || DiningRules.DinnerPast(c.Departure, to.Day, to.Time, c.Now)) throw ApiException.Conflict("closed");
+        if (DiningRules.DinnerPast(c.Timeline, old.Day, old.Time, c.Now) || DiningRules.DinnerPast(c.Timeline, to.Day, to.Time, c.Now)) throw ApiException.Conflict("closed");
         var existing = await plan.ListTablesAsync(c.Booking.BookingId, ct);
         var grid = DiningRules.SlotsFor(v.Id, c.Booking.SailingId, to.Day).First(s => s.Time == to.Time);
         if (grid.Tables - await plan.CountTablesAsync(c.Booking.SailingId, v.Id, to.Day, to.Time, old.Id, ct) <= 0) throw ApiException.Conflict("full");
@@ -479,7 +483,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
             if (who.Any(g => g.Age < a.MinAge)) throw ApiException.Invalid("age");
             if (who.Any(g => active.Any(p => p.Row.Kind == "addOn" && p.Row.ItemId == a.Id && p.Row.GuestIds.Contains(g.UserId)))) throw ApiException.Conflict("held");
             var unit = PackageRules.AddOnPrice(a, c.Days);
-            var n = PackageRules.Units(a.Unit, who.Count);
+            var n = PackageRules.Units(a.Unit, who.Count, c.Nights);
             purchase = new NewPurchase("addOn", a.Id, [.. who.Select(g => g.UserId)], n, unit, unit * n, c.Now);
             label = "purchase";
             what = a.Id;
@@ -682,7 +686,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         foreach (var g in c.Party) foreach (var n in (await accounts.GetProfileAsync(g.UserId, ct))?.Needs ?? []) needs.Add(n);
         foreach (var r in await RequestsAsync(c, ct)) if (PlanRules.AssistKindOf(r.Kind)?.Need is { } n) needs.Add(n);
         var tours = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => t.ExcursionId);
-        var items = PlanRules.BuildPackingList(c.Departure, Pricing.Nights, tours, [.. c.Party.Select(g => g.Age)], needs, true, PlanRules.ElegantNights(Pricing.Nights), weather.Climate(c.Departure));
+        var items = PlanRules.BuildPackingList(c.Departure, c.Nights, tours, [.. c.Party.Select(g => g.Age)], needs, true, PlanRules.ElegantNights(c.Nights), weather.Climate(c.Departure));
         var known = items.Select(i => i.Id).ToHashSet();
         return (items, [.. (await plan.GetTicksAsync(c.Booking.BookingId, "packing", ct)).Where(known.Contains)]);
     }
@@ -691,7 +695,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var c = await LoadAsync(actor, number, false, ct);
         var (items, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days, await TickedByAsync(c, ticked, ct));
+        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), c.Nights, c.Days, await TickedByAsync(c, ticked, ct));
     }
 
     public async Task<PackingViewDto> TickPackingAsync(UserRecord actor, string? number, string? id, TickRequest? body, CancellationToken ct)
@@ -701,7 +705,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         if (id is null || items.All(i => i.Id != id)) throw ApiException.Invalid("item");
         await plan.SetTickAsync(c.Booking.BookingId, "packing", id, body?.Done ?? true, c.Now, actor.Id, ct);
         var (after, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), Pricing.Nights, c.Days, await TickedByAsync(c, ticked, ct));
+        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), c.Nights, c.Days, await TickedByAsync(c, ticked, ct));
     }
 
     /// <summary>The first name of whoever on this booking ticked each ticked item; items ticked before the list recorded it, or by someone no longer on the booking, have none.</summary>

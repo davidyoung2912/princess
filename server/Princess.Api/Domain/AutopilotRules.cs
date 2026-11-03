@@ -66,15 +66,15 @@ public static class AutopilotRules
     };
 
     /// <summary>One conflict-free plan for the whole week. A relaxed week keeps tours easy and leaves some port days free.</summary>
-    public static WeekDto OptimiseWeek(DateOnly departure, WeekPrefsDto prefs)
+    public static WeekDto OptimiseWeek(Timeline timeline, WeekPrefsDto prefs)
     {
         var days = new List<WeekDayDto>();
-        foreach (var d in Itinerary.Days(departure))
+        foreach (var d in timeline.Days)
         {
             var mobility = prefs.Pace == "relaxed" && prefs.Mobility == "any" ? "easy" : prefs.Mobility;
-            var plan = DayPlanRules.Build(departure, d.Day, Wish(prefs, mobility)).Items;
-            var basePlan = DayPlanRules.Build(departure, d.Day, Wish(prefs, prefs.Mobility)).Items;
-            var port = d.Port is not ("sea" or "fll");
+            var plan = DayPlanRules.Build(timeline, d.Day, Wish(prefs, mobility)).Items;
+            var basePlan = DayPlanRules.Build(timeline, d.Day, Wish(prefs, prefs.Mobility)).Items;
+            var port = timeline.IsCall(d);
             var limit = EventsPerDay(prefs.Pace, port);
             var events = 0;
             var items = new List<WeekItemDto>();

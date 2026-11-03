@@ -112,19 +112,20 @@ public static class ConciergeRules
                 var id = Text(input, "sailing_id") ?? ctx.SailingId;
                 var departure = ctx.Sailings.FirstOrDefault(s => s.Id == id) is { } row ? DateOnly.FromDateTime(row.Departure) : id == ctx.SailingId ? ctx.Departure : null;
                 if (id is null || departure is not { } dep) return Fail("Unknown sailing id.");
-                var days = Itinerary.Days(dep).Select(d => new
+                var timeline = TimelineBook.For(id, dep);
+                var days = timeline.Days.Select(d => new
                 {
-                    day = d.Day, date = d.Date.ToString("yyyy-MM-dd"), place = Itinerary.Ports.TryGetValue(d.Port, out var p) ? p.Name : "At sea",
-                    arrives = d.Arrive is null ? null : Hhmm(d.Arrive), all_aboard = d.AllAboard is null ? null : Hhmm(d.AllAboard), tender = Itinerary.Ports.TryGetValue(d.Port, out var q) && q.Tender,
+                    day = d.Day, date = d.Date.ToString("yyyy-MM-dd"), place = (Itinerary.PortOf(d.Port) is { } p) ? p.Name : "At sea",
+                    arrives = d.Arrive is null ? null : Hhmm(d.Arrive), all_aboard = d.AllAboard is null ? null : Hhmm(d.AllAboard), tender = (Itinerary.PortOf(d.Port) is { } q) && q.Tender,
                 });
                 return Ok(new { departs = dep.ToString("yyyy-MM-dd"), days }, new CitationDto($"Itinerary, {dep:yyyy-MM-dd}", $"/home/sailings/{id}"));
             }
             case "get_port":
             {
                 var id = Text(input, "port");
-                if (id is null || !Itinerary.Ports.TryGetValue(id, out var port)) return Fail("Unknown port.");
+                if (id is null || !(Itinerary.PortOf(id) is { } port)) return Fail("Unknown port.");
                 var tours = ExcursionRules.Catalogue.Where(x => x.Port == id).Select(x => new { id = x.Id, name = x.Name, hours = x.Hours, usd_per_adult = Usd(x.Price) });
-                var stop = ctx.Departure is { } dep ? Itinerary.Days(dep).FirstOrDefault(d => d.Port == id && d.Arrive is not null) : null;
+                var stop = ctx.Departure is { } dep ? TimelineBook.For(ctx.SailingId, dep).Days.FirstOrDefault(d => d.Port == id && d.Arrive is not null) : null;
                 return Ok(new { name = port.Name, tender = port.Tender, arrives = stop is null ? null : Hhmm(stop.Arrive), all_aboard = stop is null ? null : Hhmm(stop.AllAboard), excursions = tours }, new CitationDto(port.Name, $"/home/ports/{id}"));
             }
             case "search_excursions":
@@ -161,7 +162,8 @@ public static class ConciergeRules
     private static ToolOutcome BuildDay(JsonObject input, ConciergeContext ctx)
     {
         if (ctx.Departure is not { } dep || input["day"] is not JsonValue dv || !dv.TryGetValue<int>(out var n) || n is < 1 or > 8) return Fail("day must be a whole number from 1 to 8.");
-        var day = Itinerary.Days(dep).First(d => d.Day == n);
+        var timeline = TimelineBook.For(ctx.SailingId, dep);
+        var day = timeline.Days.First(d => d.Day == n);
         var wanted = Strings(input, "tour_interests", Interests);
         var mobility = Text(input, "mobility") is "easy" or "wheelchair" ? Text(input, "mobility")! : ctx.Mobility;
         var kids = Flag(input, "with_children");

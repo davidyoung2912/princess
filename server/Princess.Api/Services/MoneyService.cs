@@ -21,7 +21,7 @@ public sealed class MoneyService(ScopeLoader scopes, IAboardStore store, ITripSt
     {
         var entitlements = await plan.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
-        var due = ServiceRules.GratuityDue(c.Party.Select(p => (suite, entitlements.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)));
+        var due = ServiceRules.GratuityDue(c.Party.Select(p => (suite, entitlements.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)), c.Nights);
         var account = await store.GetAccountAsync(c.Booking.BookingId, ct);
         var aboard = Shipboard.IsAboard(c);
         var canChange = due > 0 && account.GratuityChoice == "standard" && Shipboard.BeforeOrAboard(c) && (!aboard || Shipboard.DayAt(c, c.Now) < 7);

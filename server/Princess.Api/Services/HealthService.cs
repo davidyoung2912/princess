@@ -14,7 +14,7 @@ public sealed class HealthService(ScopeLoader scopes, IShipboardStore store)
     private async Task<HealthViewDto> ViewAsync(Scope c, CancellationToken ct)
     {
         var aboard = Shipboard.IsAboard(c);
-        var day = aboard && Itinerary.PortAt(c.Departure, c.Now).Port != "sea" ? "port" : "sea";
+        var day = aboard && c.Timeline.PortAt(c.Now).Port != "sea" ? "port" : "sea";
         var time = Shipboard.ShipTime(c);
         var scenarios = await scopes.ScenariosAsync(c.Actor, ct);
         var all = await store.ListHealthReportsAsync(c.Booking.BookingId, ct);

@@ -10,12 +10,12 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgramChanges programChanges, IClock clock)
 {
-    private async Task<DateOnly> DepartureAsync(string? sailingId, string problem, CancellationToken ct)
+    private async Task<Timeline> DepartureAsync(string? sailingId, string problem, CancellationToken ct)
     {
         await me.LoadAsync(ct);
         if (string.IsNullOrWhiteSpace(sailingId)) throw ApiException.Invalid(problem);
         var sailing = (await trips.ListSailingsAsync(ct)).FirstOrDefault(s => s.Id == sailingId) ?? throw ApiException.Invalid(problem);
-        return DateOnly.FromDateTime(sailing.Departure);
+        return TimelineBook.For(sailing.Id, DateOnly.FromDateTime(sailing.Departure));
     }
 
     public async Task<WeekDto> PlanAsync(AutopilotPlanRequest? body, CancellationToken ct)
@@ -43,7 +43,8 @@ public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgram
         var today = clock.UtcNow;
         var sailing = sailings.FirstOrDefault(s => s.Departure >= today.Date) ?? sailings.LastOrDefault() ?? throw ApiException.Invalid("badDayPlan");
         var departure = DateOnly.FromDateTime(sailing.Departure);
-        var days = Itinerary.Days(departure).Select(d => new TrialDayChoice(d.Day, d.Port, d.Port == "sea" ? "At sea" : Itinerary.Ports[d.Port].Name)).ToList();
-        return new TrialDayDto(days, DayPlanRules.Plan(departure, body.Day, body.Wish!, programChanges.Current()));
+        var timeline = TimelineBook.For(sailing.Id, departure);
+        var days = timeline.Days.Select(d => new TrialDayChoice(d.Day, d.Port, d.Port == "sea" ? "At sea" : Itinerary.PortById(d.Port).Name)).ToList();
+        return new TrialDayDto(days, DayPlanRules.Plan(timeline, body.Day, body.Wish!, programChanges.Current()));
     }
 }

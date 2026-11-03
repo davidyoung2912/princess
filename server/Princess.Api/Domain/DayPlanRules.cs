@@ -47,10 +47,10 @@ public static class DayPlanRules
 
     private static int Minutes(string hhmm) => int.Parse(hhmm[..2], CultureInfo.InvariantCulture) * 60 + int.Parse(hhmm[3..5], CultureInfo.InvariantCulture);
 
-    private static Excursion? BestTour(DateOnly departure, int day, DayWishDto w)
+    private static Excursion? BestTour(Timeline timeline, int day, DayWishDto w)
     {
-        var d = Itinerary.Days(departure)[day - 1];
-        if (d.Port is "sea" or "fll") return null;
+        var d = timeline.Days[day - 1];
+        if (!timeline.IsCall(d)) return null;
         var level = Array.IndexOf(Activities, w.Mobility == "any" ? "strenuous" : "easy");
         return ExcursionRules.Catalogue
             .Where(x => x.Port == d.Port
@@ -67,11 +67,11 @@ public static class DayPlanRules
     private static string[] Ages(bool withKids) => withKids ? ["all", "kids", "teens"] : ["all", "adults"];
 
     /// <summary>Up to <paramref name="limit"/> events that suit the wishes, are still on, and do not crowd each other.</summary>
-    private static List<DatedEvent> PickEvents(DateOnly departure, int day, DayWishDto w, int limit)
+    private static List<DatedEvent> PickEvents(Timeline timeline, int day, DayWishDto w, int limit)
     {
         var ages = Ages(w.WithKids);
         var places = ShipReference.Get().Places.ToDictionary(p => p.Id);
-        var open = ProgramRules.On(departure, day, false)
+        var open = ProgramRules.On(timeline, day, false)
             .Where(e => e.Status == "on" && ages.Contains(e.Age))
             .Where(e => w.Mobility == "any" || (places.TryGetValue(e.PlaceId, out var p) && p.StepFree))
             .Where(e => w.Events.Count == 0 || w.Events.Contains(e.Interest));
@@ -92,15 +92,15 @@ public static class DayPlanRules
     private static PlanEntryDto FromEvent(DatedEvent e, string why) => new(e.Id, e.Title, e.Start, e.Minutes, "event", e.PlaceId, OutdoorPlaces.Contains(e.PlaceId), "/plan", why);
 
     /// <summary>The day as entries: a tour that fits the ship's day, up to three events on a sea day or one on a port day, and dinner on the first seven days. In time order.</summary>
-    public static (List<PlanEntryDto> Items, string? BackBy) Build(DateOnly departure, int day, DayWishDto w)
+    public static (List<PlanEntryDto> Items, string? BackBy) Build(Timeline timeline, int day, DayWishDto w)
     {
-        var d = Itinerary.Days(departure)[day - 1];
+        var d = timeline.Days[day - 1];
         var items = new List<PlanEntryDto>();
-        var tour = BestTour(departure, day, w);
+        var tour = BestTour(timeline, day, w);
         if (tour is not null)
             items.Add(new(tour.Id, tour.Name, tour.Start, (int)Pricing.JsRound(tour.Hours * 60), "tour", null, true, "/plan/excursions",
                 tour.Interests.Any(w.Tours.Contains) ? "matches what you like" : "the best rated that fits the ship’s day"));
-        foreach (var e in PickEvents(departure, day, w, d.Port == "sea" ? 3 : 1))
+        foreach (var e in PickEvents(timeline, day, w, d.Port == "sea" ? 3 : 1))
             items.Add(FromEvent(e, e.Extra > 0 ? $"extra cost {Money(e.Extra)} each" : "included in your fare"));
         if (day <= 7)
             items.Add(new("eclipse", "Dinner in the Eclipse Dining Room", DinnerStart, DinnerMinutes, "dinner", null, false, "/plan/dining", w.Mobility == "any" ? "main dining room, included" : "main dining room, level access"));
@@ -108,10 +108,10 @@ public static class DayPlanRules
     }
 
     /// <summary>The day plus what is around it: other included events that could join it, and the ship's own changes today.</summary>
-    public static DayPlanDto Plan(DateOnly departure, int day, DayWishDto w, IReadOnlyList<PlanChange> shipFeed)
+    public static DayPlanDto Plan(Timeline timeline, int day, DayWishDto w, IReadOnlyList<PlanChange> shipFeed)
     {
-        var (items, backBy) = Build(departure, day, w);
-        var today = ProgramRules.On(departure, day, true, shipFeed);
+        var (items, backBy) = Build(timeline, day, w);
+        var today = ProgramRules.On(timeline, day, true, shipFeed);
         var ages = Ages(w.WithKids);
         var alternatives = today.Where(e => e.Status == "on" && ages.Contains(e.Age) && e.Extra == 0).Select(e => FromEvent(e, "included in your fare")).ToList();
         var changes = today.Where(e => e.Status is "moved" or "cancelled").Select(e => new ShipChangeDto(e.Id, e.Status, e.Status == "moved" ? e.Start : null, e.Reason)).ToList();

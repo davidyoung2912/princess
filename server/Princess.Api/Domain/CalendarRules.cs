@@ -20,17 +20,17 @@ public static class CalendarRules
 
     private static string Base64Url(byte[] b) => Convert.ToBase64String(b).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-    public static List<CalendarEntry> Entries(string number, DateOnly departure, DateOnly? finalDue, bool paid)
+    public static List<CalendarEntry> Entries(string number, Timeline timeline, DateOnly? finalDue, bool paid)
     {
         var list = new List<CalendarEntry>();
         if (finalDue is { } due && !paid)
             list.Add(new($"payment-{number}", "Princess: final payment due", "Pay the balance in the app before this date.", "", due, null, null, null));
-        foreach (var d in Itinerary.Days(departure))
+        foreach (var d in timeline.Days)
         {
-            var place = d.Port == "sea" ? "" : Itinerary.Ports[d.Port].Name;
+            var place = d.Port == "sea" ? "" : Itinerary.PortById(d.Port).Name;
             var title = d.Port == "sea" ? $"Day {d.Day}: at sea" : $"Day {d.Day}: {place}";
             list.Add(new($"day-{number}-{d.Day}", title, d.Port == "sea" ? "A day at sea." : $"Ship day {d.Day}.", d.Port == "sea" ? "" : place, d.Date, null, null, null));
-            if (Itinerary.AllAboardAt(departure, d.Day) is { } allAboard)
+            if (timeline.AllAboardAt(d.Day) is { } allAboard)
                 list.Add(new($"allaboard-{number}-{d.Day}", $"All aboard: {place}", "Be back on the ship by this time. The ship leaves 30 minutes later.", place, null, allAboard, 30, 60));
         }
         return list;

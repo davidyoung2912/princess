@@ -65,13 +65,13 @@ public static class PackageRules
 
     public static long AddOnPrice(AddOnInfo a, int daysToDeparture) => UnitPrice(a.Base, a.ChangeAtDays, a.ChangeShare, daysToDeparture);
 
-    public static int Units(string unit, int guests) => unit == "room" ? 1 : unit == "person" ? guests : guests * Pricing.Nights;
+    public static int Units(string unit, int guests, int nights = Pricing.Nights) => unit == "room" ? 1 : unit == "person" ? guests : guests * nights;
 
     /// <summary>What moving up to Plus or Premier costs per guest: the package price less the gratuities the fare already includes.</summary>
-    public static long UpgradeBase(string from, string to)
+    public static long UpgradeBase(string from, string to, int nights = Pricing.Nights)
     {
         var have = from == "none" ? Pricing.GratuityPerNight : Pricing.Fare(from)!.PerNight;
-        return Math.Max(0, (Pricing.Fare(to)!.PerNight - have) * Pricing.Nights);
+        return Math.Max(0, (Pricing.Fare(to)!.PerNight - have) * nights);
     }
 
     public static List<PackageUpgrade> UpgradesFrom(string from)

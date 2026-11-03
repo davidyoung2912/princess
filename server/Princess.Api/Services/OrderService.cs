@@ -75,7 +75,7 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
         return new OrderMenuDto(
             open, scenarios.Contains("orderStock") ? [.. OrderRules.OutAtMenu] : [],
             [.. c.Party.Select(p => new OrderGuestDto(p.Id, p.Name, p.Age, guests.First(g => g.Id == p.Id).DrinkCapUsd))],
-            room.Number, room.Deck, open ? OrderRules.BreakfastMornings(c.Departure, c.Now) : [], HealthRules.Isolating(await ReportTimesAsync(c, ct), c.Now), open && !actor.IsSupervised && c.Confirmed);
+            room.Number, room.Deck, open ? OrderRules.BreakfastMornings(c.Timeline, c.Now) : [], HealthRules.Isolating(await ReportTimesAsync(c, ct), c.Now), open && !actor.IsSupervised && c.Confirmed);
     }
 
     public async Task<List<OrderDto>> ListAsync(UserRecord actor, string? number, CancellationToken ct)
@@ -99,7 +99,7 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
         var problem = OrderRules.OrderProblem(kind, lines, body.Location, body.Tip, body.DeliverAt, guests, stock ? OrderRules.OutAtMenu : []);
         if (problem == "unavailable") throw ApiException.Conflict("unavailable");
         if (problem is not null) throw ApiException.Invalid(problem);
-        if (kind == "breakfast" && !OrderRules.BreakfastMornings(c.Departure, c.Now, 8).Any(m => m.Slots.Any(s => s.At == body.DeliverAt))) throw ApiException.Invalid("noTime");
+        if (kind == "breakfast" && !OrderRules.BreakfastMornings(c.Timeline, c.Now, 8).Any(m => m.Slots.Any(s => s.At == body.DeliverAt))) throw ApiException.Invalid("noTime");
 
         var location = Store(body.Location!);
         var order = new OrderRow

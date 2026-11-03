@@ -20,9 +20,37 @@ Companion to `docs/catalogue-plan.md`. This is the contract the later X0 phases 
 
 Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<nights>`. Ports: lower-case slugs. Patterns: `<region>-<name>`.
 
-## Endpoint contract (built in X0c)
+## Endpoint contract (read endpoints built in X0c; see "Left for X0d onward")
 
 `GET /reference/catalogue/{ships,regions,ports,patterns}`, `GET /reference/catalogue/ships/{id}`, extended `GET /reference/sailings` (filters `ship`, `region`, `from`, `to`, `nightsMin`, `nightsMax`, `port`), `GET /reference/sailings/{id}/itinerary`. Feeds take `sailing` (an id) instead of `departure`. Full table in `catalogue-plan.md` section 6.
+
+### What X0c built
+
+- `ICatalogueStore` (`Data/CatalogueStore.cs`) reads the catalogue tables once and holds them ten minutes; `Domain/ShipCatalogueRules.cs` shapes them (pure, tested in `ShipCatalogueRulesTests`, compiled only).
+- The five `/reference/catalogue/*` reads, `GET /reference/sailings/{id}/itinerary`, and `entries` plus the seven filters on `GET /reference/sailings`. `entries[].fromCents` is the cheapest fare times the nights, per person, before taxes. The older fields of `/reference/sailings` are unchanged.
+- The `/feeds/*` that took `departure` (route, pulse, pulse-day, storm, sky-night, ship-position, sea-conditions, along-the-way) also take `sailing`, which wins when both are given; an unknown sailing is `badFeedQuery`.
+
+### Price and length from data (X0c, second half)
+
+- `Domain/FareBook.cs` holds each sailing's nights, booking state and per-night fares, set from `ref.Sailings` and `ref.SailingFares` whenever the sailings are loaded. `Pricing.NightsOf(sailing)` and `Pricing.FareFor` use it for any sailing not in the older code tables (fare = per-night cents times the nights); `HasPrice` is true for an open sailing that has an interior fare. Quotes, gratuities, the package line and the from-price follow the sailing's nights.
+- `Scope.Nights` and `LastDay` (and the same on the plan context) come from the booking's sailing row. Dining and plan "closed" checks, aboard windows, trip-over time, gratuities due and charged, package units and upgrade cost use them instead of a fixed seven. Rules keep a default of 7 for callers with no sailing.
+- Tests: `NightsPricingTests` (3, 6, 14 and 31 nights, an older sailing, a closed sailing). Compiled only.
+- The 12 older Sun Princess sailings keep the code fare tables, because their whole-dollar room-type prices do not divide into whole per-night cents. X0h reconciles them and removes the tables. Catalogue sailings stay closed (`BookingOpen = 0`) until a person opens them in data.
+
+### Itinerary from the day rows (X0c, last part)
+
+- `Domain/Timeline.cs`: a `Timeline` is one sailing's days plus everything worked out from them (`PortAt`, `AtSea`, `Aboard`, `AllAboardAt`, `ShipZoneAt`, `ShipZoneOnDate`, `ClockChanges`, `IsCall`, `LastDay`, `HomeZone`, `FinalZone`). `TimelineBook` holds the day rows and ports of every sailing, set whenever the sailings load (like `FareBook`), and `TimelineBook.For(sailingId, departure)` returns the sailing's timeline, or the older Western A route when the sailing has no rows.
+- The ship's clock follows the day rows' `ClockChangeHours` (at 02:00 unless the row says otherwise). The new zone is the home zone or a port zone on the route with the matching offset on that date, otherwise a fixed `Etc/GMT` zone.
+- Rules and services that used `Itinerary.Days(departure)` and friends now take a `Timeline` (a `Scope` and the plan context carry one). `Itinerary` keeps the old departure-only API as `Timeline.Legacy(departure)`, and `DateOnly` converts to a `Timeline` implicitly, so callers with only a date (tests) still get the old route. Ports come from `Itinerary.PortOf` (catalogue first, then the four older ports).
+- First and last days are the embarkation and disembarkation days (replacing the `"fll"` checks); the disembarkation, photo, post-cruise and folio rules count from the last day rather than day 8.
+- The ship-position, sea-conditions and along-the-way feeds use the authored tracks where a leg follows one, and a straight line between the ports otherwise (landmarks only where they lie within reach). The pulse, sky-night, position, sea and along feeds take the sailing's timeline; the route, storm and the other feeds still work from the date.
+- Tests: `TimelineTests` (the day-row timeline matches the built-in route on three dates including daylight-saving weeks; a four-night Mediterranean sailing; a clock change between zones; no rows). Compiled only.
+
+### Left for X0d onward (not done in X0c)
+
+- Day numbers are still capped at 8 in request checks (`Day is < 1 or > 8`), the packing, laundry and plan screens assume a week, and `PhotoService` clamps the cruise day to 8. Planning for 3 to 40 days is X0f.
+- Authored content is still the Western A route's: excursions (Cozumel, Belize, Roatan), port crowd comfort figures, photo spots, concierge port list, the along-the-way landmarks, the storm outlook, and the weather coordinates. Port content for the rest is X0g.
+- The `departure` feed parameter, `/reference/ship` and `/reference/ports` stay until X0h. The `"eastern"` and `"belize"` labels on the ship clock mean "home zone" and "other zone" for a sailing that is not Western A.
 
 ## Migration notes
 

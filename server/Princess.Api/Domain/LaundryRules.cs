@@ -33,16 +33,16 @@ public static class LaundryRules
     }
 
     /// <summary>The next pick-up windows with an hour's notice, whose return is in time for the last morning.</summary>
-    public static List<PickupOption> PickupOptions(DateOnly departure, DateTime now, LaundryKind service, int count = 6)
+    public static List<PickupOption> PickupOptions(Timeline timeline, DateTime now, LaundryKind service, int count = 6)
     {
-        var days = Itinerary.Days(departure);
+        var days = timeline.Days;
         var last = days[^1];
-        var lastMorning = TripRules.ToMs(Itinerary.LocalToUtc(last.Date, new TimeOnly(7, 0), Itinerary.ShipZoneOnDate(departure, last.Date)));
+        var lastMorning = TripRules.ToMs(Itinerary.LocalToUtc(last.Date, new TimeOnly(7, 0), timeline.ShipZoneOnDate(last.Date)));
         var nowMs = TripRules.ToMs(now);
         var result = new List<PickupOption>();
         foreach (var d in days)
         {
-            var zone = Itinerary.ShipZoneOnDate(departure, d.Date);
+            var zone = timeline.ShipZoneOnDate(d.Date);
             foreach (var time in Windows)
             {
                 var at = TripRules.ToMs(Itinerary.LocalToUtc(d.Date, TimeOnly.ParseExact(time, "HH:mm"), zone));

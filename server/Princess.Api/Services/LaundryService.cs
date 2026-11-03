@@ -26,7 +26,7 @@ public sealed class LaundryService(ScopeLoader scopes, IShipboardStore store, Pl
         var open = Shipboard.IsAboard(c);
         var freeUsed = rows.Any(r => r.FreeCents > 0 && r.Stage != "cancelled");
         return new LaundryViewDto(
-            requests, LaundryRules.Services.ToDictionary(s => s.Id, s => open ? LaundryRules.PickupOptions(c.Departure, c.Now, s) : []),
+            requests, LaundryRules.Services.ToDictionary(s => s.Id, s => open ? LaundryRules.PickupOptions(c.Timeline, c.Now, s) : []),
             await PerkAsync(c, ct) && !freeUsed, open && !c.Actor.IsSupervised);
     }
 
@@ -41,7 +41,7 @@ public sealed class LaundryService(ScopeLoader scopes, IShipboardStore store, Pl
         if (body!.Qty < 1 || body.Qty > svc.MaxQty) throw ApiException.Invalid("badQuantity");
         var note = (body.Note ?? "").Trim();
         if ((body.Note ?? "").Length > LaundryRules.NoteMax) throw ApiException.Invalid("badNote");
-        if (!LaundryRules.PickupOptions(c.Departure, c.Now, svc, 100).Any(p => p.At == body.PickupAt)) throw ApiException.Invalid("badPickup");
+        if (!LaundryRules.PickupOptions(c.Timeline, c.Now, svc, 100).Any(p => p.At == body.PickupAt)) throw ApiException.Invalid("badPickup");
         var rows = await store.ListLaundryAsync(c.Booking.BookingId, ct);
         var price = LaundryRules.Price(svc, body.Qty, await PerkAsync(c, ct) && !rows.Any(r => r.FreeCents > 0 && r.Stage != "cancelled"));
         var pickup = Shipboard.FromMs(body.PickupAt);

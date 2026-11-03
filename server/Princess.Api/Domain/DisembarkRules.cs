@@ -59,21 +59,22 @@ public static class DisembarkRules
     /// <summary>The tag group for a booking: Gold 1 for priority disembarkation, otherwise a steady pick from the others.</summary>
     public static TagGroup GroupFor(string booking, bool priority) => priority ? TagGroups[0] : TagGroups[1 + (int)(Hash(booking) % (uint)(TagGroups.Count - 1))];
 
-    public static DisembarkTimes Times(DateOnly departure)
+    public static DisembarkTimes Times(Timeline timeline)
     {
-        var days = Itinerary.Days(departure);
-        var last = days[7];
-        var eve = days[6];
-        DateTime Evening(string time) => Itinerary.LocalToUtc(eve.Date, T(time), Itinerary.ShipZoneOnDate(departure, eve.Date));
+        var days = timeline.Days;
+        var last = days[^1];
+        var eve = days[^2];
+        var portZone = Itinerary.ZoneOf(last.Port);
+        DateTime Evening(string time) => Itinerary.LocalToUtc(eve.Date, T(time), timeline.ShipZoneOnDate(eve.Date));
         return new DisembarkTimes(
-            Itinerary.LocalToUtc(last.Date, last.Arrive ?? T("06:00"), PortZone), Evening("22:00"), Evening("20:00"), Itinerary.LocalToUtc(last.Date, T("08:30"), PortZone), last.Date);
+            Itinerary.LocalToUtc(last.Date, last.Arrive ?? T("06:00"), portZone), Evening("22:00"), Evening("20:00"), Itinerary.LocalToUtc(last.Date, T("08:30"), portZone), last.Date);
     }
 
-    private static DateTime OnLastMorning(DateOnly departure, string time) => Itinerary.LocalToUtc(Itinerary.Days(departure)[7].Date, T(time), PortZone);
+    private static DateTime OnLastMorning(Timeline timeline, string time) => Itinerary.LocalToUtc(timeline.Days[^1].Date, T(time), Itinerary.ZoneOf(timeline.Days[^1].Port));
 
     /// <summary>When a guest can leave the ship with a choice. Tagged guests go when their group is called.</summary>
-    public static DateTime OffAt(DateOnly departure, string option, TagGroup group) =>
-        OnLastMorning(departure, option == "tagged" ? group.Time : option == "selfAssist" ? SelfAssistFrom : EarlyFrom);
+    public static DateTime OffAt(Timeline timeline, string option, TagGroup group) =>
+        OnLastMorning(timeline, option == "tagged" ? group.Time : option == "selfAssist" ? SelfAssistFrom : EarlyFrom);
 
     /// <summary>What is wrong with a choice, as a short code the screen explains, or null. <paramref name="bags"/> has an entry for every guest.</summary>
     public static string? ChoiceProblem(string? option, IReadOnlyDictionary<Guid, int> bags)
@@ -141,11 +142,11 @@ public static class DisembarkRules
     }
 
     /// <summary>Whether a flight can be made from when the guest leaves the ship: off the ship, through customs, the ride, then three hours before the flight.</summary>
-    public static OnwardCheck CheckOnward(DateOnly departure, OnwardPlan plan, DateTime offFrom)
+    public static OnwardCheck CheckOnward(Timeline timeline, OnwardPlan plan, DateTime offFrom)
     {
         var mode = OnwardMode(plan.Mode)!;
         var ready = offFrom.AddMinutes(ClearanceMinutes + mode.Minutes);
-        var baseline = OnLastMorning(departure, "00:00");
+        var baseline = OnLastMorning(timeline, "00:00");
         var earliestMin = (int)Math.Ceiling((ready - baseline).TotalMinutes / 15) * 15 + AirportMinutes;
         var earliest = earliestMin >= 24 * 60 ? "23:59" : $"{earliestMin / 60:00}:{earliestMin % 60:00}";
         if (plan.FlightAt.Length == 0) return new OnwardCheck("noFlight", null, null, earliest);
@@ -174,13 +175,14 @@ public static class DisembarkRules
 
     public const int DueSoonMinutes = 120;
 
-    public static List<NightEntry> NightEntries(DateOnly departure, DateTime now, string? option, bool customsDone, bool tagsOn, IReadOnlySet<string> ticked)
+    public static List<NightEntry> NightEntries(Timeline timeline, DateTime now, string? option, bool customsDone, bool tagsOn, IReadOnlySet<string> ticked)
     {
-        var days = Itinerary.Days(departure);
+        var days = timeline.Days;
         return [.. NightItems.Where(i => !i.TaggedOnly || option is null || option == "tagged").Select(item =>
         {
-            var date = days[item.Day - 1].Date;
-            var dueAt = Itinerary.LocalToUtc(date, T(item.Time), item.Day == 8 ? PortZone : Itinerary.ShipZoneOnDate(departure, date));
+            // The items are written against the eight-day week; they count back from the last day, so a longer sailing keeps them at its end.
+            var date = days[item.Day - 1 + (days.Count - 8)].Date;
+            var dueAt = Itinerary.LocalToUtc(date, T(item.Time), item.Day == 8 ? Itinerary.ZoneOf(days[^1].Port) : timeline.ShipZoneOnDate(date));
             var automatic = item.Auto switch { "option" => option is not null, "customs" => customsDone, "tags" => tagsOn, _ => false };
             var state = automatic || ticked.Contains(item.Id) ? "done" : now > dueAt ? "overdue" : dueAt - now <= TimeSpan.FromMinutes(DueSoonMinutes) ? "dueSoon" : "upcoming";
             return new NightEntry(item.Id, item.Day, item.Time, item.Auto, item.To, item.TaggedOnly, TripRules.ToMs(dueAt), state, automatic);
@@ -193,8 +195,8 @@ public static class DisembarkRules
     public static readonly int[] TipKeep = [100, 75, 50, 0];
 
     /// <summary>What the daily gratuity comes to for a booking, for the seven nights; nothing for a guest whose package includes it.</summary>
-    public static long GratuityCharged(IEnumerable<GratuityGuest> guests) =>
-        guests.Sum(g => g.Included ? 0 : (g.Suite ? Pricing.GratuityPerNightSuite : Pricing.GratuityPerNight) * Pricing.Nights);
+    public static long GratuityCharged(IEnumerable<GratuityGuest> guests, int nights = Pricing.Nights) =>
+        guests.Sum(g => g.Included ? 0 : (g.Suite ? Pricing.GratuityPerNightSuite : Pricing.GratuityPerNight) * nights);
 
     /// <summary>The credit for keeping only part of the gratuity.</summary>
     public static long TipCredit(long charged, int keepPercent) => Pricing.JsRound((double)charged * (100 - keepPercent) / 100);

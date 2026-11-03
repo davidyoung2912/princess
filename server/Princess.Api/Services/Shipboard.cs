@@ -11,11 +11,11 @@ internal static class Shipboard
 
     public static DateTime FromMs(long ms) => DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime;
 
-    public static bool IsAboard(Scope c) => Itinerary.Aboard(c.Departure, c.Now);
+    public static bool IsAboard(Scope c) => c.Timeline.Aboard(c.Now);
 
     /// <summary>Before sailing day's 11:00 boarding opens, or aboard: when things can be booked or bought ahead of time or on the ship.</summary>
     public static bool BeforeOrAboard(Scope c) =>
-        c.Confirmed && (IsAboard(c) || c.Now < Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), Itinerary.ShipHomeZone));
+        c.Confirmed && (IsAboard(c) || c.Now < Itinerary.LocalToUtc(c.Departure, new TimeOnly(11, 0), c.Timeline.HomeZone));
 
     public static void RequireOpen(Scope c)
     {
@@ -32,10 +32,10 @@ internal static class Shipboard
     }
 
     /// <summary>The cruise day, 1 to 8, that a moment falls on.</summary>
-    public static int DayAt(Scope c, DateTime at) => Math.Clamp(FolioRules.CruiseDay(c.Departure, at), 1, 8);
+    public static int DayAt(Scope c, DateTime at) => Math.Clamp(FolioRules.CruiseDay(c.Timeline, at), 1, 8);
 
     /// <summary>Ship time as "HH:mm".</summary>
-    public static string ShipTime(Scope c) => Itinerary.LocalAt(c.Now, Itinerary.ShipZoneAt(c.Departure, c.Now)).Time.ToString("HH:mm");
+    public static string ShipTime(Scope c) => Itinerary.LocalAt(c.Now, c.Timeline.ShipZoneAt(c.Now)).Time.ToString("HH:mm");
 
     public static async Task<bool> NeedsStepFreeAsync(IAccountStore accounts, Scope c, CancellationToken ct) =>
         (await accounts.GetProfileAsync(c.Booking.BookerUserId, ct))?.Needs.Contains("mobility") == true;

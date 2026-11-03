@@ -67,52 +67,52 @@ public static class OnboardFeedRules
     private static readonly Dictionary<string, int> AshoreDrop = new() { ["pool"] = 40, ["buffet"] = 35, ["dining"] = 25, ["theatre"] = 15, ["spa"] = 30, ["service"] = -10, ["deck"] = 20 };
 
     /// <summary>The ship's hour of the day as a fraction (<c>envFor(...).hour</c>).</summary>
-    private static double HourAt(DateOnly departure, DateTime utc)
+    private static double HourAt(Timeline timeline, DateTime utc)
     {
-        var (_, time) = Itinerary.LocalAt(utc, Itinerary.ShipZoneAt(departure, utc));
+        var (_, time) = Itinerary.LocalAt(utc, timeline.ShipZoneAt(utc));
         return time.Hour + time.Minute / 60.0;
     }
 
     /// <summary>Whether guests are ashore (<c>envFor(...).ashore</c>): in a posted port between 09:00 and 16:00 ship time.</summary>
-    private static bool AshoreAt(DateOnly departure, DateTime utc)
+    private static bool AshoreAt(Timeline timeline, DateTime utc)
     {
-        var (port, _) = Itinerary.PortAt(departure, utc);
-        var (_, time) = Itinerary.LocalAt(utc, Itinerary.ShipZoneAt(departure, utc));
+        var (port, _) = timeline.PortAt(utc);
+        var (_, time) = Itinerary.LocalAt(utc, timeline.ShipZoneAt(utc));
         return port is "cozumel" or "belize" or "roatan" && time.Hour >= 9 && time.Hour < 16;
     }
 
     /// <summary>The level (0 to 100) of a venue at a moment (<c>levelAt</c>).</summary>
-    public static int PulseLevel(string id, long atMs, DateOnly departure)
+    public static int PulseLevel(string id, long atMs, Timeline timeline)
     {
         var kind = PulseVenues.First(v => v.Id == id).Kind;
         var utc = Utc(atMs);
-        var hour = HourAt(departure, utc);
+        var hour = HourAt(timeline, utc);
         var floor = Math.Floor(hour);
         var table = Shape[kind];
         var lo = (int)floor % 24;
         var next = table[(lo + 1) % 24];
         var shape = table[lo] + (next - table[lo]) * (hour - floor);
         var wobble = (int)(ExcursionRules.Hash($"{id}|{(long)Math.Floor(atMs / (double)(15 * Min))}") % 21) - 10;
-        var drop = AshoreAt(departure, utc) ? AshoreDrop[kind] : 0;
+        var drop = AshoreAt(timeline, utc) ? AshoreDrop[kind] : 0;
         return (int)Math.Max(0, Math.Min(100, Pricing.JsRound(shape + wobble - drop)));
     }
 
     public static bool ValidPulseDay(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= 8;
 
-    public static PulseDayDto PulseDay(DateOnly departure, int day)
+    public static PulseDayDto PulseDay(Timeline timeline, int day)
     {
-        var date = departure.AddDays(day - 1);
-        var startAt = new DateTimeOffset(Itinerary.LocalToUtc(date, new TimeOnly(0, 0), Itinerary.ShipZoneOnDate(departure, date)), TimeSpan.Zero).ToUnixTimeMilliseconds();
-        var venues = PulseVenues.ToDictionary(v => v.Id, v => Enumerable.Range(0, 48).Select(i => PulseLevel(v.Id, startAt + i * 30 * Min, departure)).ToArray());
+        var date = timeline.Departure.AddDays(day - 1);
+        var startAt = new DateTimeOffset(Itinerary.LocalToUtc(date, new TimeOnly(0, 0), timeline.ShipZoneOnDate(date)), TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var venues = PulseVenues.ToDictionary(v => v.Id, v => Enumerable.Range(0, 48).Select(i => PulseLevel(v.Id, startAt + i * 30 * Min, timeline)).ToArray());
         return new PulseDayDto(day, startAt, venues, FeedRules.Sim);
     }
 
-    public static PulseDto Pulse(DateOnly departure, long now)
+    public static PulseDto Pulse(Timeline timeline, long now)
     {
         var observedAt = (long)Math.Floor(now / (double)(5 * Min)) * 5 * Min;
         var venues = new Dictionary<string, PulseVenueDto>();
         foreach (var (id, _) in PulseVenues)
-            venues[id] = new PulseVenueDto(PulseLevel(id, observedAt, departure), Enumerable.Range(0, 9).Select(i => PulseLevel(id, now + i * 30 * Min, departure)).ToArray());
+            venues[id] = new PulseVenueDto(PulseLevel(id, observedAt, timeline), Enumerable.Range(0, 9).Select(i => PulseLevel(id, now + i * 30 * Min, timeline)).ToArray());
         return new PulseDto(now, observedAt, venues, FeedRules.Sim);
     }
 
@@ -201,19 +201,20 @@ public static class OnboardFeedRules
 
     public static bool ValidSkyQuery(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= 8;
 
-    public static SkyNightDto SkyNight(string departure, int day)
+    public static SkyNightDto SkyNight(string departure, int day, string? sailing = null)
     {
         var dep = DateOnly.ParseExact(departure, "yyyy-MM-dd");
-        var d = Itinerary.Days(dep)[day - 1];
+        var timeline = TimelineBook.For(sailing, dep);
+        var d = timeline.Days[day - 1];
         var (lat, lon) = Positions[day];
-        var zone = Itinerary.ShipZoneOnDate(dep, d.Date);
+        var zone = timeline.ShipZoneOnDate(d.Date);
         var date = d.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var (sunrise, sunset) = SunTimes(date, lat, lon);
         var (civilDawn, civilDusk) = SunTimes(date, lat, lon, -6);
         var (_, nauticalDusk) = SunTimes(date, lat, lon, -12);
         var moon = MoonAt(sunset);
         string Clock(long ms) => Itinerary.LocalAt(Utc(ms), zone).Time.ToString("HH:mm", CultureInfo.InvariantCulture);
-        long? sailAt = d.Depart is { } dp ? new DateTimeOffset(Itinerary.LocalToUtc(d.Date, dp, d.Port is "sea" or "fll" ? zone : Itinerary.Ports[d.Port].Zone), TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
+        long? sailAt = d.Depart is { } dp ? new DateTimeOffset(Itinerary.LocalToUtc(d.Date, dp, !timeline.IsCall(d) ? zone : Itinerary.PortById(d.Port).Zone), TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
         return new SkyNightDto(
             day, d.Port, Clock(sunrise), Clock(sunset), sunset, new MoonDto(moon.Phase, moon.Name, moon.Lit), AfternoonSide(Headings[day]),
             d.Depart?.ToString("HH:mm", CultureInfo.InvariantCulture), sailAt is { } s && s <= sunset + 45 * Min && s >= sunset - 90 * Min, Season[d.Date.Month - 1], moon.Lit < 70, Clock(civilDawn), Clock(civilDusk), Clock(nauticalDusk), FeedRules.Sim);

@@ -87,7 +87,10 @@ public static class Pricing
 
     public static FareInfo? Fare(string? id) => Fares.FirstOrDefault(f => f.Id == id);
 
-    public static bool HasPrice(string sailingId) => InteriorFare.ContainsKey(sailingId);
+    public static bool HasPrice(string sailingId) => InteriorFare.ContainsKey(sailingId) || FareBook.Offered(sailingId);
+
+    /// <summary>The nights of a sailing: its length in data, or seven when the sailing is not known.</summary>
+    public static int NightsOf(string sailingId) => FareBook.Nights(sailingId) ?? Nights;
 
     /// <summary>JavaScript's <c>Math.round</c> (halves go up), so the ported sums match the screens to the cent.</summary>
     public static long JsRound(double n) => (long)Math.Floor(n + 0.5);
@@ -97,7 +100,10 @@ public static class Pricing
     public static long? FareFor(string sailingId, string category)
     {
         var cat = Category(category);
-        return !(InteriorFare.TryGetValue(sailingId, out var baseFare) || NextSeasonFare.TryGetValue(sailingId, out baseFare)) || cat is null ? null : RoundToDollar(baseFare * cat.Ratio);
+        if (cat is null) return null;
+        if (InteriorFare.TryGetValue(sailingId, out var baseFare) || NextSeasonFare.TryGetValue(sailingId, out baseFare)) return RoundToDollar(baseFare * cat.Ratio);
+        // Anything else is priced from ref.SailingFares: the per-night fare for the category times the sailing's nights.
+        return FareBook.PerNight(sailingId, category) is { } perNight ? perNight * NightsOf(sailingId) : null;
     }
 
     /// <summary>The Sanctuary Mini-Suite and Signature Suite include the Premier package in their fare.</summary>
@@ -124,7 +130,7 @@ public static class Pricing
             lines.Add(new("fare", paying, fare.Value * paying));
             if (guests > 2) lines.Add(new("extraFare", guests - 2, JsRound(fare.Value * ExtraGuestShare) * (guests - 2)));
         }
-        var gratuities = (cat.Suite ? GratuityPerNightSuite : GratuityPerNight) * Nights * guests;
+        var gratuities = (cat.Suite ? GratuityPerNightSuite : GratuityPerNight) * NightsOf(sailingId) * guests;
         lines.Add(new("taxes", guests, TaxesAndFees * guests));
         lines.Add(new("gratuities", guests, gratuities));
         var total = lines.Sum(l => l.Cents);
@@ -139,7 +145,7 @@ public static class Pricing
         if (fare == "standard") return baseQuote with { Fare = fare };
         var included = FareIncluded(category) is not null;
         var lines = baseQuote.Lines.Where(l => l.Key != "gratuities").ToList();
-        lines.Add(new("package", guests, included ? 0 : Fare(fare)!.PerNight * Nights * guests));
+        lines.Add(new("package", guests, included ? 0 : Fare(fare)!.PerNight * NightsOf(sailingId) * guests));
         var total = lines.Sum(l => l.Cents);
         return baseQuote with { Fare = fare, Lines = lines, Total = total, PerPerson = JsRound((double)total / guests), Gratuities = 0 };
     }
@@ -148,7 +154,7 @@ public static class Pricing
     {
         var q = Quote(sailingId, "interior", 2);
         var fare = FareFor(sailingId, "interior");
-        return q is null || fare is null ? null : new FromPrice(fare.Value, TaxesAndFees, GratuityPerNight * Nights, q.PerPerson);
+        return q is null || fare is null ? null : new FromPrice(fare.Value, TaxesAndFees, GratuityPerNight * NightsOf(sailingId), q.PerPerson);
     }
 
     public static List<Promotion> PromotionsFor(string category, int daysToDeparture) =>

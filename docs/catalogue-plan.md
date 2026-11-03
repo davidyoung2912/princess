@@ -1,6 +1,6 @@
 # Phase X0: the three-ship catalogue
 
-Status: **Plan written 2026-11-03. X0a (contract and guard rails) and X0b (server data model and seed) are built; X0c onwards are not.** Follows the project's rules (`CLAUDE.md`): phases, each ending in a commit and a stop; verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` (plus `api:check`, `db:check`, `db:seed:check` when the REST surface or schema changes); never run a full `dotnet test`; secrets stay out of git.
+Status: **Plan written 2026-11-03. X0a (contract and guard rails), X0b (server data model and seed) and X0c (catalogue endpoints, extended sailings, `sailing` feed parameter, price, length and itinerary from data) are built; X0d onwards are not (see `catalogue-data-model.md` for what X0c leaves for later).** Follows the project's rules (`CLAUDE.md`): phases, each ending in a commit and a stop; verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` (plus `api:check`, `db:check`, `db:seed:check` when the REST surface or schema changes); never run a full `dotnet test`; secrets stay out of git.
 
 Inputs: `docs/catalogue-2027-research.md` (ship facts, sample 2027 sailings and ports, the leg pattern) and `docs/experience-extension-ideas.md` sections 12, 15 and 16.
 

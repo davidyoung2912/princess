@@ -24,17 +24,17 @@ public sealed class OnboardService(
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         var scenarios = await ScenariosAsync(actor, ct);
-        var aboard = Itinerary.Aboard(c.Departure, c.Now);
-        var zone = Itinerary.ShipZoneAt(c.Departure, c.Now);
-        var day = FolioRules.CruiseDay(c.Departure, c.Now);
+        var aboard = c.Timeline.Aboard(c.Now);
+        var zone = c.Timeline.ShipZoneAt(c.Now);
+        var day = FolioRules.CruiseDay(c.Timeline, c.Now);
         var (date, _) = Itinerary.LocalAt(c.Now, zone);
-        var portDay = aboard ? AboardRules.PortDayAt(c.Departure, c.Now) : null;
+        var portDay = aboard ? AboardRules.PortDayAt(c.Timeline, c.Now) : null;
         var done = await store.ListMusterAsync(c.Booking.BookingId, ct);
         var all = c.Party.All(p => done.ContainsKey(p.UserId));
-        var sail = Itinerary.LocalToUtc(c.Departure, Itinerary.Days(c.Departure)[0].Depart!.Value, Itinerary.ShipHomeZone);
-        var change = Itinerary.ShipClockChanges(c.Departure).FirstOrDefault(x => x.At > c.Now && x.At - c.Now < TimeSpan.FromHours(24));
+        var sail = Itinerary.LocalToUtc(c.Departure, c.Timeline.Days[0].Depart!.Value, c.Timeline.HomeZone);
+        var change = c.Timeline.ClockChanges().FirstOrDefault(x => x.At > c.Now && x.At - c.Now < TimeSpan.FromHours(24));
         return new OnboardTodayDto(
-            aboard, day is >= 1 and <= 8 ? day : null, Iso(date), Itinerary.PortAt(c.Departure, c.Now).Port, zone,
+            aboard, day is >= 1 and <= 8 ? day : null, Iso(date), c.Timeline.PortAt(c.Now).Port, zone,
             aboard ? weather.Today(date, scenarios.Contains("belizeTender")) : null,
             portDay is null ? null : AboardRules.WithState(portDay, c.Now),
             new MusterBriefDto(aboard && !all, all, Ms(AboardRules.DrillAt(c.Departure))),
@@ -44,7 +44,7 @@ public sealed class OnboardService(
     public async Task<PortTodayDto> PortTodayAsync(UserRecord actor, string? number, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
-        var (port, day) = Itinerary.PortAt(c.Departure, c.Now);
+        var (port, day) = c.Timeline.PortAt(c.Now);
         return new PortTodayDto(port, day);
     }
 
@@ -55,8 +55,8 @@ public sealed class OnboardService(
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         if (day is < 1 or > 8) throw ApiException.Invalid("day");
         var changes = (await ScenariosAsync(actor, ct)).Contains("planChange");
-        var events = ProgramRules.On(c.Departure, day, changes, programChanges.Current());
-        var x = Itinerary.Days(c.Departure)[day - 1];
+        var events = ProgramRules.On(c.Timeline, day, changes, programChanges.Current());
+        var x = c.Timeline.Days[day - 1];
         var mine = (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == day).Select(r => r.EventId).ToHashSet();
         return new ProgramViewDto(day, Iso(x.Date), x.Port, events, [.. events.Select(e => e.Id).Where(mine.Contains)], events.Any(e => e.Status != "on"), !actor.IsSupervised);
     }
@@ -76,10 +76,10 @@ public sealed class OnboardService(
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         var scenarios = await ScenariosAsync(actor, ct);
-        var day = AboardRules.PortDayAt(c.Departure, c.Now);
+        var day = AboardRules.PortDayAt(c.Timeline, c.Now);
         if (day is null) return null;
         var withState = AboardRules.WithState(day, c.Now);
-        var days = Itinerary.Days(c.Departure);
+        var days = c.Timeline.Days;
 
         var tours = new List<TourTodayDto>();
         foreach (var t in (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked"))
@@ -161,7 +161,7 @@ public sealed class OnboardService(
     public async Task<FolioViewDto> FolioAsync(UserRecord actor, string? number, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
-        var day = FolioRules.CruiseDay(c.Departure, c.Now);
+        var day = FolioRules.CruiseDay(c.Timeline, c.Now);
         var throughDay = day >= 9 ? 8 : Math.Max(0, day);
         var entitlements = await planService.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
@@ -169,7 +169,7 @@ public sealed class OnboardService(
         var dining = (await plan.ListTablesAsync(c.Booking.BookingId, ct)).Select(t => new DiningCharge(
             t.PublicId.ToString(), t.Day, t.Time, DiningRules.VenueById(t.VenueId)?.Name ?? t.VenueId, c.Ids(t.GuestIds), t.ChargeCents, c.Ids(t.CoveredIds))).ToList();
         var welcome = guests.Count > 0 && guests[0].Entitlements.Perks.Contains("welcomeGift");
-        var generated = throughDay == 0 ? [] : FolioRules.Build(c.Booking.SailingId, c.Departure, throughDay, guests, dining, welcome);
+        var generated = throughDay == 0 ? [] : FolioRules.Build(c.Booking.SailingId, c.Timeline, throughDay, guests, dining, welcome);
         var booker = c.PersonByUser(c.Booking.BookerUserId)?.Id ?? c.Party.FirstOrDefault()?.Id ?? Guid.Empty;
         var stored = (await store.ListFolioAsync(c.Booking.BookingId, ct)).Select(r => new FolioLine(
             r.PublicId.ToString(), r.Day, Ms(r.At), r.Category, r.Description, r.UserId is { } u ? c.PersonByUser(u)?.Id ?? booker : booker, r.Cents, null, r.CoveredBy));

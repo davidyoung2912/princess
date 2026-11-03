@@ -131,7 +131,7 @@ public sealed class PushService(
 
         var postcards = PostcardRules.Due(await PostcardRefsAsync(actor.Id, ct), booking.SailingId, dep.DayNumber - TripRules.Today(now).DayNumber);
         var trip = await trips.BuildAsync(booking, current: true, now, ct);
-        var port = AboardRules.PortDayAt(dep, now) is { } p ? AboardRules.WithState(p, now) : null;
+        var port = AboardRules.PortDayAt(TimelineBook.For(booking.SailingId, dep), now) is { } p ? AboardRules.WithState(p, now) : null;
         var rows = port is null ? [] : (await portRows.ListAsync(booking.BookingId, ct)).Where(r => !r.Deleted).ToList();
         var notBack = port is not null && rows.Any(r => r.Kind == "presence" && r.Key.StartsWith(port.Date + "|", StringComparison.Ordinal) && Status(r.Json) is not (null or "back"));
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;

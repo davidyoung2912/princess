@@ -52,17 +52,17 @@ public static class AboardRules
     }
 
     /// <summary>The port day a moment falls in, or the nearest one still to come, or null when none is left.</summary>
-    public static PortDay? PortDayAt(DateOnly departure, DateTime now)
+    public static PortDay? PortDayAt(Timeline timeline, DateTime now)
     {
-        foreach (var x in Itinerary.Days(departure).Where(d => d.Port is not ("sea" or "fll")))
+        foreach (var x in timeline.Days.Where(timeline.IsCall))
         {
-            var zone = Itinerary.Ports[x.Port].Zone;
+            var zone = Itinerary.PortById(x.Port).Zone;
             if (now > Itinerary.LocalToUtc(x.Date, x.Depart!.Value, zone)) continue;
-            var allAboard = Itinerary.AllAboardAt(departure, x.Day)!.Value;
-            var shipZone = Itinerary.ShipZoneAt(departure, allAboard);
+            var allAboard = timeline.AllAboardAt(x.Day)!.Value;
+            var shipZone = timeline.ShipZoneAt(allAboard);
             return new PortDay(
                 x.Day, x.Port, x.Date.ToString("yyyy-MM-dd"), ClockTime(allAboard, shipZone), ClockTime(allAboard, zone), Ms(allAboard), Ms(Itinerary.LocalToUtc(x.Date, x.Arrive!.Value, zone)),
-                Ms(Itinerary.LocalToUtc(x.Date, x.Depart.Value, zone)), shipZone, zone, Itinerary.Ports[x.Port].Tender);
+                Ms(Itinerary.LocalToUtc(x.Date, x.Depart.Value, zone)), shipZone, zone, Itinerary.PortById(x.Port).Tender);
         }
         return null;
     }

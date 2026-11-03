@@ -14,9 +14,9 @@ public sealed class LastMinuteService(ScopeLoader scopes, IAboardStore store, IP
     private static (string Port, int Day, DateOnly Date)? InPort(Scope c)
     {
         if (!Shipboard.IsAboard(c)) return null;
-        var (port, day) = Itinerary.PortAt(c.Departure, c.Now);
-        if (day is not { } d || port is "sea" or "fll") return null;
-        return (port, d, Itinerary.Days(c.Departure)[d - 1].Date);
+        var (port, day) = c.Timeline.PortAt(c.Now);
+        if (day is not { } d || !c.Timeline.IsCall(c.Timeline.Days[d - 1])) return null;
+        return (port, d, c.Timeline.Days[d - 1].Date);
     }
 
     private async Task<LastMinuteViewDto> ViewAsync(Scope c, CancellationToken ct)
@@ -24,7 +24,7 @@ public sealed class LastMinuteService(ScopeLoader scopes, IAboardStore store, IP
         var guests = c.Party.Select(p => new LastMinuteGuestDto(p.Id, p.Name, p.Age)).ToList();
         if (InPort(c) is not { } here) return new LastMinuteViewDto(null, [], guests);
         var mine = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => t.ExcursionId).ToHashSet();
-        var zone = Itinerary.Ports[here.Port].Zone;
+        var zone = Itinerary.PortById(here.Port).Zone;
         var tours = new List<LastMinuteTourDto>();
         foreach (var x in ExcursionRules.Catalogue.Where(x => x.Port == here.Port))
         {
