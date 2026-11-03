@@ -4,11 +4,13 @@ import { Card } from './Card'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
+import { TipsSettings } from './TipsSettings'
 
 export function SettingsScreen() {
   return (
     <div className="page">
       <DisplaySettings />
+      <TipsSettings />
       <DataSettings />
       <DiagnosticsSettings />
       <Card labelledBy="activity-h">

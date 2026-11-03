@@ -9,6 +9,7 @@ import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { sendStanley } from '../../runtime'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
 
 /** Stanley's own wording for a reply; only an answer carries text from the server. */
@@ -33,7 +34,7 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const end = useRef<HTMLDivElement>(null)
+  const end = useRef<HTMLLIElement>(null)
   const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy, reveal?.i])
   const cooldown = cooldownSeconds(messages, now)
@@ -65,38 +66,36 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Dialog title={t('stanley.title')} onClose={onClose}>
-      <div className="stanley__head">
-        <img src={stanley} alt="" width="192" height="192" />
-        <p className="muted">{t('stanley.subtext')}</p>
-      </div>
-      <p className="muted">{t('stanley.label')}</p>
-      {messages.length === 0 ? (
-        <div>
-          <p>{t('stanley.empty')}</p>
-          <ul className="plain-bullets">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button></li>)}</ul>
-        </div>
-      ) : (
-        <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
-          {messages.map((m) => (
-            <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
-              <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
-              <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>
-              {m.kind === 'handoff' && <p className="ai-msg__cites"><Link to="/chat" onClick={onClose}>{t('route.chat')}</Link></p>}
-            </li>
-          ))}
-        </ol>
-      )}
-      {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
-      <div ref={end} />
-      <form onSubmit={(e) => void submit(e)} noValidate>
-        <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} />
-        {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
-        {problem && <p role="alert" className="field__error">{problem}</p>}
-        <div className="button-row">
+    <Dialog title={t('stanley.title')} onClose={onClose} header={(titleId) => (
+      <DialogHeader titleId={titleId} title={t('stanley.title')} subtext={t('stanley.label')} onClose={onClose}
+        image={<img className="stanley__avatar" src={stanley} alt="" width="192" height="192" />} />
+    )}>
+      <div className="stanley">
+        {messages.length === 0 ? (
+          <div className="stanley__empty">
+            <p>{t('stanley.empty')}</p>
+            <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button></li>)}</ul>
+          </div>
+        ) : (
+          <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
+            {messages.map((m) => (
+              <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
+                <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
+                <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>
+                {m.kind === 'handoff' && <p className="ai-msg__cites"><Link to="/chat" onClick={onClose}>{t('route.chat')}</Link></p>}
+              </li>
+            ))}
+            <li ref={end} aria-hidden="true" />
+          </ol>
+        )}
+        {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
+        <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
+          <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>
-        </div>
-      </form>
+        </form>
+        {cooldown > 0 && <p role="status" className="muted stanley__note">{t('stanley.cooldown', { seconds: cooldown })}</p>}
+        {problem && <p role="alert" className="field__error stanley__note">{problem}</p>}
+      </div>
     </Dialog>
   )
 }

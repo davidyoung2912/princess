@@ -1,8 +1,9 @@
 import { GUEST_SERVICES_NUMBER } from '../domain/contacts'
 import { t, th } from '../i18n'
 import { Dialog } from './Dialog'
+import { DialogHeader } from './DialogHeader'
 import { LinkButton } from './Button'
-import { Phone, Siren } from './icons'
+import { Help, Phone, Siren } from './icons'
 import { UrgentIssues } from './onboard/UrgentIssues'
 
 /**
@@ -11,8 +12,7 @@ import { UrgentIssues } from './onboard/UrgentIssues'
  */
 export function HelpSheet({ onClose }: { onClose: () => void }) {
   return (
-    <Dialog title={t('help.title')} onClose={onClose}>
-      <p>{t('help.intro')}</p>
+    <Dialog title={t('help.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('help.title')} subtext={t('help.intro')} icon={Help} onClose={onClose} />}>
       <div className="stack">
         <section className="card card--info" aria-labelledby="help-call-h">
           <h3 id="help-call-h"><Phone aria-hidden="true" /> {th('help.call')}</h3>

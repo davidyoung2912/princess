@@ -53,6 +53,8 @@ public static class PackageRules
         return new(version, list, AvgDrink, ServiceCharge, AvgCover, CancelUntilDays);
     }
 
+    public static string? NameOf(string? id) => id is not null && Copy.TryGetValue(id, out var c) ? c.Name : null;
+
     public static AddOnInfo? AddOn(string? id) => AddOns.FirstOrDefault(a => a.Id == id);
 
     private static long WholeDollars(double cents) => Pricing.JsRound(cents / 100) * 100;

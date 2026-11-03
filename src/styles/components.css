@@ -22,11 +22,13 @@
 /* Dialog and bottom sheet */
 .dialog-backdrop { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; justify-content: center; background: var(--scrim); }
 .dialog {
-  width: 100%; max-height: 92dvh; overflow-y: auto;
+  width: 100%; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden;
   padding: var(--space-4) var(--gutter) calc(env(safe-area-inset-bottom) + var(--space-5));
   background: var(--bg); color: var(--text);
   border-radius: 24px 24px 0 0; box-shadow: var(--shadow-sheet); outline: none;
 }
+.dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.dialog > :is(.dialog__head, .dialog-header) { flex: none; }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .dialog__head h2 { margin: 0; }
 @media (min-width: 600px) {
@@ -206,3 +208,16 @@ textarea { max-width: min(100%, 32rem); }
     box-shadow: 0 14px 28px -6px color-mix(in srgb, var(--sec) 55%, transparent), 0 4px 10px color-mix(in srgb, var(--sec) 28%, transparent);
   }
 }
+
+/* Traveller tip under the page header: yellow, with a lightbulb. The text keeps the normal text colour for contrast. */
+.page--tip { padding-block: var(--space-3) 0; }
+.tip { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--warning-tint); color: var(--text); border-left: 0.5rem solid var(--warning); border-radius: var(--radius-card); }
+.tip__icon { width: 1.75rem; height: 1.75rem; color: var(--warning); }
+.tip__text { margin: 0; }
+.tip__got { white-space: nowrap; }
+@media (max-width: 30rem) { .tip { grid-template-columns: auto 1fr; } .tip__got { grid-column: 1 / -1; justify-self: start; } }
+.settings-tips { margin-bottom: var(--space-5); }
+/* Got It! is as small as the Back button on the header card. */
+.btn.tip__got { min-height: 2rem; padding: 0 var(--space-3); font-size: 0.75em; font-weight: 600; border-width: 2px; background: var(--bg); color: var(--text); border-color: var(--border-strong); }
+.btn.tip__got:hover { background: var(--sky-tint); }
+.tip__count { color: var(--text-muted); white-space: nowrap; }

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
@@ -6,13 +7,13 @@ namespace Princess.Api.Services;
 /// <summary>
 /// Stanley, the cruise chat helper (docs/stanley-plan.md, S2). One turn, in this order, all on the server: the word filter (no model), the safety screen
 /// (emergency, medical, legal and "talk to a person" never reach a model), the hourly limit, a cheap topic prescan, then the answer. With no model set up a
-/// scripted reply answers cruising messages. Stanley has no tools and no account access. Message text is never logged.
+/// scripted reply answers cruising messages. Stanley has no tools; his only account knowledge is the PII-free trip facts the server builds (<see cref="StanleyTrip"/>). Message text is never logged.
 /// </summary>
-public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, ILogger<StanleyService> log)
+public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, ILogger<StanleyService> log)
 {
     public const string NoTools = "[]";
 
-    public async Task<StanleyReplyDto> AskAsync(long userId, StanleyRequestDto request, CancellationToken ct)
+    public async Task<StanleyReplyDto> AskAsync(UserRecord user, StanleyRequestDto request, CancellationToken ct)
     {
         var turns = StanleyRules.Usable(request.History) ?? throw ApiException.Invalid("badStanley");
         if (ProfanityFilter.IsBlocked(turns.Message)) return new StanleyReplyDto("blocked", "", null, "", null);
@@ -20,16 +21,16 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
 
         if (!model.Available)
             return StanleyRules.LooksOnTopic(turns.Message)
-                ? new StanleyReplyDto("answer", StanleyRules.ScriptedAnswer, null, "scripted", null)
+                ? new StanleyReplyDto("answer", StanleyRules.ScriptedAnswerFor(turns.Message, await trips.LoadAsync(user, ct)), null, "scripted", null)
                 : new StanleyReplyDto("offtopic", "", null, "", null);
 
-        if (!await limiter.TryTakeAsync(userId, clock.UtcNow, ConciergeRules.HourlyLimit, ct)) return Unavailable("limit");
+        if (!await limiter.TryTakeAsync(user.Id, clock.UtcNow, ConciergeRules.HourlyLimit, ct)) return Unavailable("limit");
         try
         {
             var topic = await model.CompleteAsync(StanleyRules.TopicSystem, NoTools, ToTurns(StanleyRules.TopicMessages(turns)), ct);
             if (!StanleyRules.ReadTopic(TextOf(topic))) return new StanleyReplyDto("offtopic", "", null, "", null);
 
-            var answer = TextOf(await model.CompleteAsync(StanleyRules.AnswerSystem, NoTools, ToTurns(turns.Messages), ct));
+            var answer = TextOf(await model.CompleteAsync(StanleyRules.AnswerSystemFor(await trips.LoadAsync(user, ct)), NoTools, ToTurns(turns.Messages), ct));
             if (answer.Length == 0) throw new ConciergeModelException("bad", "An empty answer.");
             return new StanleyReplyDto("answer", answer, null, "claude", null);
         }

@@ -8,6 +8,8 @@ interface DialogProps {
   title: string
   onClose: () => void
   children: ReactNode
+  /** A header of the screen's own in place of the title row and X (it must label the dialog with the id given and offer its own Close button). */
+  header?: (titleId: string) => ReactNode
 }
 
 /**
@@ -16,18 +18,20 @@ interface DialogProps {
  * It always has a Close button, so closing never depends on a drag gesture (WCAG 2.5.7). Tapping outside does not
  * close it: a stray tap should not throw away what someone was doing.
  */
-export function Dialog({ title, onClose, children }: DialogProps) {
+export function Dialog({ title, onClose, children, header }: DialogProps) {
   const ref = useDialog<HTMLDivElement>(onClose)
   const titleId = useId()
   return createPortal(
     <div className="dialog-backdrop">
       <div ref={ref} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <div className="dialog__head">
-          <h2 id={titleId}>{headingCase(title)}</h2>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
-            <X aria-hidden="true" />
-          </button>
-        </div>
+        {header ? header(titleId) : (
+          <div className="dialog__head">
+            <h2 id={titleId}>{headingCase(title)}</h2>
+            <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
+              <X aria-hidden="true" />
+            </button>
+          </div>
+        )}
         <div className="dialog__body">{children}</div>
       </div>
     </div>,

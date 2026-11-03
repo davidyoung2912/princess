@@ -6,13 +6,19 @@ import type { en } from './en'
  * which lists the groups that must be complete). Written for a Latin American reader (Mexico, Belize, Honduras); have a native speaker review it.
  */
 export const es: Partial<Record<keyof typeof en, string>> = {
+  'tip.label': 'Consejo para viajeros',
+  'tip.gotIt': '¡Entendido!',
+  'tip.count': '({n} de {total})',
+  'settings.tips.title': 'Consejos para viajeros',
+  'settings.tips.intro': 'Cada página muestra un consejo breve la primera vez que la abres. Restablece para verlos todos de nuevo.',
+  'settings.tips.reset': 'Restablecer consejos',
+  'settings.tips.done': 'Consejos restablecidos. Volverás a verlos.',
   'app.name': 'Princess',
   'common.close': 'Cerrar',
   'stanley.button': 'Pregunta a Stanley',
   'stanley.title': 'Stanley',
-  'stanley.subtext': 'Tu amable ayudante de chat para el crucero',
-  'stanley.label': 'Stanley es un asistente de IA. Puede equivocarse. Responde preguntas sobre cruceros, este barco y sus puertos, y no puede ver ni cambiar tu reserva.',
-  'stanley.empty': 'Pregúntame lo que quieras sobre cruceros, los puertos o la vida a bordo. Por ejemplo:',
+  'stanley.label': 'Stanley es un asistente de IA para cruceros y puede equivocarse.',
+  'stanley.empty': 'Pregunta sobre cruceros, los puertos o la vida a bordo, por ejemplo:',
   'stanley.try.1': '¿Qué debo llevar en la maleta para el Caribe?',
   'stanley.try.2': '¿Es bueno Cozumel para hacer snorkel?',
   'stanley.try.3': '¿Qué es un puerto con lanchas de enlace?',

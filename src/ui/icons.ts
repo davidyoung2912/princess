@@ -13,6 +13,8 @@ export {
   WifiOff,
   RefreshCw as Sync,
   Info,
+  Lightbulb,
+  X,
   Search,
   CircleCheck,
   TriangleAlert,

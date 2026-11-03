@@ -12,6 +12,8 @@ import { EMPTY_OFFER_STATE, normalizeOfferState } from '../domain/offers'
 import { normalizeDone } from '../domain/phoneSetup'
 import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
 import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, postcardsOf, reminderOf, restOf, travellersOf } from '../memory/store'
+import { mergeRecent, EMPTY_RECENT } from '../routes/recent'
+import { applyRemoteRecent, getRecent } from '../recent/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
@@ -177,10 +179,19 @@ const concierge: Binding = {
   enabled: () => getSettings().syncPrivate,
 }
 
+/** The last three screens visited, so Home can offer to pick up where the guest left off. App paths and times only. */
+const recent: Binding = {
+  key: 'recent',
+  read: (id) => getRecent(id),
+  apply: (id, raw) => applyRemoteRecent(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_RECENT),
+  merge: mergeRecent,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, recent, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

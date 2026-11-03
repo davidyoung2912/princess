@@ -42,7 +42,7 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 
 ## Decisions (defaults, change if wrong)
 
-1. Stanley answers general cruise questions, including this ship and its ports. He does not see the guest's booking or account. Account actions stay with the existing concierge.
+1. Stanley answers general cruise questions, including this ship and its ports, and (from S5) questions about the guest's own trip using PII-free facts. He never sees names, documents, contact or payment data, or the booking number. Account actions stay with the existing concierge.
 2. The conversation lives in memory only: closing the dialog keeps the session, a refresh clears it.
 3. Replies appear all at once with a typing indicator in S3; real streaming is S4.
 4. The word list is English and Spanish.
@@ -74,3 +74,10 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 - **Cooldown** (`cooldownSeconds` in `src/ai/stanley.ts`, tested): after 3 blocked replies in a row the box pauses for 30 seconds, with a countdown message (`stanley.cooldown`). A good answer ends the run. It is derived from the in-memory thread, so closing the dialog does not skip it. It is a courtesy only; the server's word filter and hourly limit remain the authority.
 - **Streamed look** (`revealSteps`, tested): an answer appears three words at a time; with reduced motion it appears at once. This is done on the device from the full reply. **True server streaming (SSE) was not built**: the server could not be compiled here (no `dotnet`), and a streaming endpoint would also have to run the word filter, prescan and limit before the first byte. It can replace `revealSteps` later with no change to the reply shape.
 - **Audit**: the model key stays on the server; blocked, off-topic, handed-off and failed exchanges are never resent; the matched word is never shown or logged; the dialog uses the shared focus-trapped `Dialog`, status regions and reduced-motion handling. Server tests for S1 and S2 are still unrun by hand (`dotnet test --filter Stanley`).
+
+## S5 as built: trip facts without personal data
+
+- `StanleyTripLoader` (`Services/`) reads the signed-in guest's current or next confirmed trip and reduces it to a `StanleyTrip` record (`Domain/StanleyFacts.cs`): sailing dates, ship, cabin category, dinner arrangement, party size and **ages only**, dinners and tours booked (venue or tour name, day, time) and package names. The ports and times come from the fixed itinerary. There is no field for names, booking or cabin number, documents, contact or payment data, so they cannot reach a model or a reply.
+- The server builds the facts for each question and appends them to the answer instructions (`StanleyRules.AnswerSystemFor`); the browser sends nothing extra, so a guest cannot alter them. The topic prescan never sees them.
+- With no model, `StanleyFacts.Scripted` answers from the same facts (a port's arrival and all-aboard times and the tour booked that day, booked tours, dinners, packages, the sailing date or countdown, the stateroom), and falls back to the topic answers when the question is about something else or the guest has no trip.
+- The answer rules no longer open with an introduction ("I am Stanley"). Tests: `StanleyTests.cs` (not run here; no `dotnet`).

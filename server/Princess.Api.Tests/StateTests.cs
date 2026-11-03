@@ -21,6 +21,40 @@ public class StateRulesTests
     }
 }
 
+public class RecentStateRulesTests
+{
+    private static JsonObject Doc(params string[] paths) => new() { ["items"] = new JsonArray([.. paths.Select(p => (JsonNode)new JsonObject { ["path"] = p, ["at"] = 1762128000000 })]) };
+
+    [Fact]
+    public void UpToThreeAppAddressesAreAccepted()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "recent", Doc()));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "recent", Doc("/book/resume/abc", "/plan/dining", "/home/sailings/sun-1?x=1#top")));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", Doc("/a", "/b", "/c", "/d")));
+    }
+
+    [Theory]
+    [InlineData("https://evil.example/x")]
+    [InlineData("//evil.example/x")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/ok:colon")]
+    [InlineData("plan/dining")]
+    [InlineData("/back\\slash")]
+    [InlineData("")]
+    public void AddressesThatCouldLeaveTheAppAreRefused(string path) =>
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", Doc(path)));
+
+    [Fact]
+    public void ABadShapeIsRefused()
+    {
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", new JsonObject()));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", new JsonObject { ["items"] = new JsonArray(JsonValue.Create("/a")) }));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "recent", new JsonObject { ["items"] = new JsonArray(new JsonObject { ["path"] = "/a" }) }));
+        var big = Doc("/a"); big["note"] = new string('x', 2_000);
+        Assert.Equal("tooLarge", StateRules.Problem(StateRules.UserKeys, "recent", big));
+    }
+}
+
 public class StateApiTests : JourneyWorld
 {
     private static SaveStateRequest Doc(string field, int baseVersion) => new(new JsonObject { [field] = true }, baseVersion);

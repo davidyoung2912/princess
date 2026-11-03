@@ -10,6 +10,7 @@ import { usePushSync } from '../hooks/usePushSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
 import { recordVisit } from '../routes/trail'
+import { useRecentVisit } from '../hooks/useRecentVisit'
 import { screenForPath, type TabColour } from '../routes/screens'
 import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
@@ -19,6 +20,8 @@ import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
 import { StanleyDialog } from './ai/StanleyDialog'
 import { PageHeader } from './PageHeader'
+import { TipCard } from './TipCard'
+import { tipIdFor } from '../settings/tips'
 import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
@@ -58,6 +61,9 @@ export function Shell() {
   const title = landingWords ? landingWords.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
 
   useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
+
+  const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
+  useRecentVisit(personId, pathname, navigationType, stale)
 
   useEffect(() => {
     const seo = seoFor(route?.path)
@@ -128,6 +134,7 @@ export function Shell() {
       <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} back />}
+        {route && !route.public && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>

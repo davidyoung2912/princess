@@ -27,7 +27,36 @@ public static class StateRules
         ["travellers"] = 16_000,
         ["reminder"] = 500,
         ["postcards"] = 2_000,
+        ["recent"] = 2_000,
     };
+
+    /// <summary>The most screens <c>recent</c> keeps, and the longest address it accepts.</summary>
+    public const int RecentMaxItems = 3, RecentMaxPath = 200;
+
+    /// <summary>
+    /// Whether an address is one of the app's own: one leading slash, no scheme, no second slash at the start, no backslash or control character.
+    /// A stored address is later used as a link, so it must never lead outside the app.
+    /// </summary>
+    public static bool IsAppPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path) || path.Length > RecentMaxPath || path[0] != '/' || path.Length > 1 && path[1] == '/') return false;
+        if (path.Any(c => c == '\\' || char.IsControl(c))) return false;
+        var end = path.IndexOfAny(['?', '#']);
+        return !(end < 0 ? path : path[..end]).Contains(':');
+    }
+
+    /// <summary>The problem for a <c>recent</c> document: <c>{ items: [ { path, at } ] }</c> with at most three app addresses.</summary>
+    private static string? RecentProblem(JsonObject data)
+    {
+        if (data["items"] is not JsonArray items || items.Count > RecentMaxItems) return "badData";
+        foreach (var node in items)
+        {
+            if (node is not JsonObject item) return "badData";
+            if (item["path"] is not JsonValue p || !p.TryGetValue<string>(out var path) || !IsAppPath(path)) return "badData";
+            if (item["at"] is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
+        }
+        return null;
+    }
 
     /// <summary>
     /// Keys held encrypted at rest: the medical card, access profile and allergy flag (<c>health</c>), the sensory / calm profile (<c>calm</c>) and the
@@ -47,7 +76,8 @@ public static class StateRules
     public static string? Problem(IReadOnlyDictionary<string, int> keys, string? key, JsonNode? data)
     {
         if (key is null || !keys.TryGetValue(key, out var max)) return "badKey";
-        if (data is not JsonObject) return "badData";
-        return data.ToJsonString().Length > max ? "tooLarge" : null;
+        if (data is not JsonObject obj) return "badData";
+        if (data.ToJsonString().Length > max) return "tooLarge";
+        return key == "recent" ? RecentProblem(obj) : null;
     }
 }
