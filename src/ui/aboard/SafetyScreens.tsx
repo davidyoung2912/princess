@@ -32,7 +32,6 @@ export function ReportScreen() {
   const submit = (e: FormEvent) => { e.preventDefault(); void send.run() }
   return (
     <div className="page">
-      <h1>{th('route.report')}</h1>
       <Banner kind="danger" title={t('rep.callFirst', { number: EMERGENCY_NUMBER })}>
         <p>{t('rep.callFirstBody')} <a href={`tel:${EMERGENCY_NUMBER}`}>{EMERGENCY_NUMBER}</a></p>
       </Banner>

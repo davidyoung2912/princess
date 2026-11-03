@@ -32,7 +32,6 @@ export function ExcursionsScreen() {
   const view = useMine(() => api.plan.excursions.list())
   return (
     <div className="page">
-      <h1>{th('route.excursions')}</h1>
       <p>{t('exc.intro')}</p>
       <AccessAreaNote area="excursions" />
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>

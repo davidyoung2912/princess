@@ -26,7 +26,6 @@ export function BillScreen() {
   const copy = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.bill')}</h1>
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : <Saved copy={copy}>{(f) => <Folio f={f} />}</Saved>}
       <BackLink to="/me" label={t('route.me')} />
     </div>

@@ -40,7 +40,6 @@ export function PrivacyScreen() {
   const rules = regionRules(settings.region)
   return (
     <div className="page">
-      <h1>{th('route.privacy')}</h1>
       <p>{t('priv.intro')}</p>
       {!view.data ? (view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : (
         <>

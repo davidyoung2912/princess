@@ -19,7 +19,6 @@ export function StormScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{th('route.storm')}</h1>
       <p>{t('storm.intro')}</p>
       <Banner kind="info" title={t('storm.sim')} />
       {!r && <FeedWaiting />}

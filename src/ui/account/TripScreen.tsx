@@ -22,14 +22,13 @@ export function TripScreen() {
   if (trip.status === 'error' && isApiError(trip.error) && trip.error.code === 'notFound' && !trip.data) {
     return (
       <div className="page">
-        <h1>{th('route.trip')}</h1>
         <Banner kind="warning" title={t('trip.notFound')} action={<LinkButton to="/me/trips" variant="secondary">{t('route.trips')}</LinkButton>}><p>{t('trip.notFoundBody')}</p></Banner>
       </div>
     )
   }
   return (
     <div className="page">
-      <h1>{trip.data ? sailingRange(sailingById(trip.data.sailingId)!) : th('route.trip')}</h1>
+      {trip.data && <h2>{sailingRange(sailingById(trip.data.sailingId)!)}</h2>}
       <Load state={trip}>
         {(x) => (
           <>

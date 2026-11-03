@@ -23,7 +23,6 @@ export function FeedbackScreen() {
   const sailed = useSailed()
   return (
     <div className="page">
-      <h1>{th('route.feedback')}</h1>
       <p>{t('fbk.intro')}</p>
       <NotYetOff open={sailed} />
       <Load state={view}>{(v) => <Form key={v.submittedAt ?? 0} v={v} reload={view.retry} />}</Load>

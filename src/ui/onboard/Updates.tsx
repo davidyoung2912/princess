@@ -42,7 +42,6 @@ export function UpdatesScreen() {
   const ack = useAction(async (id: UpdateView['id'], option: string) => { await api.updates.acknowledge(id, option); updates.retry() })
   return (
     <div className="page">
-      <h1>{th('route.updates')}</h1>
       <p>{t('disrupt.intro')}</p>
       {!updates.data ? (updates.status === 'error' ? <LoadError retry={updates.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : updates.data.length === 0 ? <p>{t('disrupt.none')}</p> : (
         <>

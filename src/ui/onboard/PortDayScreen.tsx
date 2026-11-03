@@ -28,7 +28,6 @@ export function PortDayScreen() {
   const copy = useSavedCopy('portDay', me?.booker ?? 'none', async () => ({ view: await api.onboard.portDay() }), asPortDayCopy, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.portDay')}</h1>
       <PushSwitch question={t('push.allAboard.question')} />
       <Saved copy={copy}>
         {(c) => (c.view ? <Body v={c.view} /> : (

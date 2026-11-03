@@ -51,6 +51,10 @@
   --header-pink-end: #b5004a;
   --header-gold-start: #5c4318;
   --header-gold-end: #7a5a24;
+  --plum: #5b2a86;
+  --plum-tint: #efe7f7;
+  --header-plum-start: #3b1760;
+  --header-plum-end: #5b2a86;
 }
 
 :root[data-theme='dark'] {
@@ -96,6 +100,10 @@
   --header-pink-end: #7a2457;
   --header-gold-start: #2e230c;
   --header-gold-end: #5e4716;
+  --plum: #d3b4f2;
+  --plum-tint: #25143a;
+  --header-plum-start: #240f3a;
+  --header-plum-end: #4a2575;
 }
 
 /* High contrast: pure surfaces, strong borders, no tints. Applies on top of light or dark. */
@@ -137,6 +145,10 @@
   --header-pink-end: #00205a;
   --header-gold-start: #00205a;
   --header-gold-end: #00205a;
+  --plum: #4a1d73;
+  --plum-tint: #ffffff;
+  --header-plum-start: #00205a;
+  --header-plum-end: #00205a;
 }
 
 :root[data-theme='dark'][data-contrast='high'] {
@@ -177,6 +189,10 @@
   --header-pink-end: #000000;
   --header-gold-start: #000000;
   --header-gold-end: #000000;
+  --plum: #e0c8f7;
+  --plum-tint: #000000;
+  --header-plum-start: #000000;
+  --header-plum-end: #000000;
 }
 
 /*
@@ -226,4 +242,8 @@
   --header-pink-end: #4a1010;
   --header-gold-start: #1a0505;
   --header-gold-end: #4a1010;
+  --plum: #f0a878;
+  --plum-tint: #260c08;
+  --header-plum-start: #1a0505;
+  --header-plum-end: #4a1010;
 }

@@ -29,7 +29,6 @@ export function MedallionScreen() {
   const lost = useAction(async () => { await api.ahead.medallion.lost(); view.retry() })
   return (
     <div className="page">
-      <h1>{th('route.medallion')}</h1>
       <p>{t('med.intro')}</p>
       <ChildNote />
       <Load state={view}>
@@ -78,7 +77,6 @@ export function LuggageScreen() {
   const handed = useAction(async (on: boolean) => { await api.ahead.tags.handedOver(on); view.retry() })
   return (
     <div className="page">
-      <h1>{th('route.luggage')}</h1>
       <p>{t('tag.intro', { count: TAGS_PER_GUEST })}</p>
       <ChildNote />
       <AheadError error={choose.error ?? handed.error} />
@@ -133,7 +131,6 @@ export function ClearanceScreen() {
   const [who, setWho] = useState<ClearanceCitizenship>('us')
   return (
     <div className="page">
-      <h1>{th('route.clearance')}</h1>
       <p>{t('clr.intro')}</p>
       <fieldset>
         <legend>{t('clr.who')}</legend>
@@ -174,7 +171,6 @@ export function WeatherScreen() {
   const days = itinerary(s)
   return (
     <div className="page">
-      <h1>{th('route.weather')}</h1>
       <p>{t('wx.intro')}</p>
       <ul className="card-grid">
         {days.map((day) => {
@@ -216,7 +212,6 @@ export function HealthPrepScreen() {
   const today = dateIn(now, 'America/New_York')
   return (
     <div className="page">
-      <h1>{th('route.healthPrep')}</h1>
       <p>{t('prep.intro')}</p>
       <AheadError error={tick.error} />
       <Load state={done}>

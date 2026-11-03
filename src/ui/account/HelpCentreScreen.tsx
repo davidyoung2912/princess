@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { searchFaqs } from '../../domain/help'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { t, th } from '../../i18n'
+import { t } from '../../i18n'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { Field } from '../Field'
@@ -13,7 +13,6 @@ export function HelpCentreScreen() {
   const results = searchFaqs(query)
   return (
     <div className="page">
-      <h1>{th('route.helpCentre')}</h1>
       <Field label={t('faq.search')} hint={t('faq.searchHint')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
       <p role="status" className="muted">{query.trim() ? t('faq.count', { count: results.length }) : ''}</p>
       {results.length === 0 ? (

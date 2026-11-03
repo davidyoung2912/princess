@@ -24,7 +24,6 @@ export function PortGuideScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.portGuide')}</h1>
       <p>{t('guide.intro')}</p>
       <Banner kind="info" title={t('guide.verify')}><p>{t('guide.verifyBody')}</p></Banner>
       <fieldset>

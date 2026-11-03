@@ -19,7 +19,6 @@ export function PulseScreen() {
   if (!env) {
     return (
       <div className="page">
-        <h1>{th('route.pulse')}</h1>
         <FeedWaiting />
         <BackLink to="/ship" label={t('route.ship')} />
       </div>
@@ -35,7 +34,6 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
 
   return (
     <div className="page">
-      <h1>{th('route.pulse')}</h1>
       <p>{t('pulse.intro')}</p>
       <Banner kind="info" title={t('pulse.honest')}><p>{t('pulse.honestBody')}</p></Banner>
 

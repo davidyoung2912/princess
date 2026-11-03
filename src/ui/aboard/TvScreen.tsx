@@ -27,7 +27,6 @@ export function TvScreen() {
   const locked = !!me?.child
   return (
     <div className="page">
-      <h1>{th('route.tv')}</h1>
       <p>{t('tv.intro')}</p>
       <ChildNote />
       <AboardError error={set.error} />

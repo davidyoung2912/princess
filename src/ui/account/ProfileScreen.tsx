@@ -32,7 +32,6 @@ export function ProfileScreen() {
   if (id === null) {
     return (
       <div className="page">
-        <h1>{th('route.profile')}</h1>
         <Banner kind="warning" title={t('profile.notFound')} action={<LinkButton to="/me/profile" variant="secondary">{t('route.profile')}</LinkButton>} />
       </div>
     )
@@ -41,7 +40,7 @@ export function ProfileScreen() {
   const person = partyPeople(me?.id ?? '').find((x) => x.id === id)
   return (
     <div className="page">
-      <h1>{isSelf ? th('route.profile') : th('profile.titleFor', { name: person?.name ?? '' })}</h1>
+      {!isSelf && <h2>{th('profile.titleFor', { name: person?.name ?? '' })}</h2>}
       {!isSelf && <p><Link to="/me/profile">{t('profile.backToMine')}</Link></p>}
       <Load state={view}>
         {(v) => (

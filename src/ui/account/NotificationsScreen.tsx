@@ -30,7 +30,6 @@ export function NotificationsScreen() {
   const at = timeIn(now, shipZoneAt(sailing, now))
   return (
     <div className="page">
-      <h1>{th('route.notifications')}</h1>
       <Load state={data}>
         {({ notices, prefs }) => {
           const { shown, held } = splitHeld(notices, withQuietHours(mem.aboard.dnd, prefs.quiet), at)

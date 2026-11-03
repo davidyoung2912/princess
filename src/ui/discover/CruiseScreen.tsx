@@ -14,7 +14,7 @@ import { ItineraryList, RouteMap } from './parts'
 export function CruiseScreen() {
   return (
     <div className="page">
-      <h1>{headingCase(CRUISE.name)}</h1>
+      <h2>{headingCase(CRUISE.name)}</h2>
       <p>{CRUISE.intro}</p>
       <dl className="facts">
         <div><dt>{t('discover.fact.ship')}</dt><dd><Link to="/home/ship">{SHIP.name}</Link></dd></div>

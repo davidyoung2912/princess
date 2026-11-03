@@ -56,7 +56,6 @@ export function DecideScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.decide')}</h1>
       <p>{t('decide.intro')}</p>
 
       <NicknameCard />

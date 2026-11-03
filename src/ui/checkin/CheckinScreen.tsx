@@ -33,7 +33,7 @@ export function CheckinScreen() {
   const step: StepId | typeof REVIEW | null = isStepId(id) ? id : id === REVIEW ? REVIEW : null
   return (
     <div className="page">
-      <h1>{step ? headingCase(stepLabel(step)) : th('route.checkin')}</h1>
+      {step && <h2>{headingCase(stepLabel(step))}</h2>}
       <Load state={view}>{(v) => (step ? <StepPage view={v} step={step} reload={view.retry} /> : <Overview view={v} />)}</Load>
     </div>
   )

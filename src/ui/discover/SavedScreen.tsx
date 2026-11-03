@@ -25,7 +25,7 @@ export function SavedScreen() {
   })
   return (
     <div className="page">
-      <h1 ref={heading} tabIndex={-1}>{th('route.saved')}</h1>
+      <h2 ref={heading} tabIndex={-1}>{th('route.saved')}</h2>
       {!favourites.ready && <p role="status" className="muted">{t('discover.loading')}</p>}
       {favourites.failed && <p role="alert">{t('discover.saveFailed')}</p>}
       {favourites.ready && items.length === 0 && (

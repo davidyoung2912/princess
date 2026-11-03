@@ -24,7 +24,6 @@ export function OnwardScreen() {
   const copy = useSavedCopy('onward', me?.booker ?? 'none', () => api.disembark.onward(), asOnwardView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.onward')}</h1>
       <p>{t('onw.intro')}</p>
       <Saved copy={copy}>{(v) => <Onward v={v} reload={copy.retry} />}</Saved>
       <RideCard />

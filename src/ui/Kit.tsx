@@ -44,7 +44,6 @@ export function Kit() {
 
   return (
     <div className="page">
-      <h1>{th('route.kit')}</h1>
       <p>{t('kit.intro')}</p>
 
       <section aria-labelledby="kit-type"><h2 id="kit-type">{th('kit.type')}</h2>

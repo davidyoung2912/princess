@@ -23,7 +23,6 @@ export function GamesScreen() {
   const called = calledNumbers(1 + (Math.floor(now / 86_400_000) % 7), Math.floor((now % 3_600_000) / 60_000))
   return (
     <div className="page">
-      <h1>{th('route.games')}</h1>
       <p>{t('game.intro')}</p>
       <AboardError error={find.error ?? answer.error ?? mark.error} />
       <Load state={game}>

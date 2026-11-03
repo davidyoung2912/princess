@@ -8,7 +8,6 @@ import { DisplaySettings } from './DisplaySettings'
 export function SettingsScreen() {
   return (
     <div className="page">
-      <h1>{th('route.settings')}</h1>
       <DisplaySettings />
       <DataSettings />
       <DiagnosticsSettings />

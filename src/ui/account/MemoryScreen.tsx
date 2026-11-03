@@ -84,7 +84,6 @@ export function MemoryScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.memories')}</h1>
       <p>{t('memory.intro')}</p>
 
       <StubsCard />

@@ -23,7 +23,6 @@ export function ShareLinksScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{th('route.shareLinks')}</h1>
       <p>{t('links.intro')}</p>
       <Card info>
         <h2 className="card__title">{th('links.sees')}</h2>

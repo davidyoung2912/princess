@@ -31,7 +31,6 @@ export function EmbarkScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{th('route.embarkation')}</h1>
       {embark.data ? (
         <>
           {embark.at !== null && <SyncChip updated={new Date(embark.at)} now={new Date(now)} state={embark.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}

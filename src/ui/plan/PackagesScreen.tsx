@@ -29,7 +29,6 @@ export function PackagesScreen() {
   const view = useMine(() => api.plan.packages.view())
   return (
     <div className="page">
-      <h1>{th('route.packages')}</h1>
       <p>{t('pk.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
     </div>

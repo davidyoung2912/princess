@@ -34,7 +34,6 @@ export function DayScreen() {
   useEffect(() => { setWatched(followed.split(' ').filter(Boolean)) }, [followed])
   return (
     <div className="page">
-      <h1>{th('route.buildDay')}</h1>
       <p>{t('day.intro')}</p>
       <Card labelledBy="day-pick-h">
         <h2 id="day-pick-h" className="card__title">{th('day.pick')}</h2>

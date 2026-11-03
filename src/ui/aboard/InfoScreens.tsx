@@ -32,7 +32,6 @@ export function ShipInfoScreen() {
   const p = useFeed(positionFeed, sailing.departure, Math.floor(useNow() / 60_000) * 60_000)
   return (
     <div className="page">
-      <h1>{th('route.shipInfo')}</h1>
       <Saved copy={today}>
         {(v) => {
           if (!v.aboard || v.day === null) return <Banner kind="info" title={t('info.notYet')}><p>{t('info.notYetBody')}</p></Banner>
@@ -90,7 +89,6 @@ export function SearchScreen() {
   const enough = query.trim().length >= MIN_QUERY
   return (
     <div className="page">
-      <h1>{th('route.search')}</h1>
       <form role="search" onSubmit={(e) => e.preventDefault()}>
         <Field label={t('search.label')} hint={t('search.hint')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" enterKeyHint="search" />
       </form>

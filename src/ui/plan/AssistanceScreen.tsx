@@ -24,7 +24,6 @@ export function AssistanceScreen() {
   const view = useMine(() => api.plan.assistance.get())
   return (
     <div className="page">
-      <h1>{th('route.assistance')}</h1>
       <p>{t('assist.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
       <Back to="/plan" label={t('route.plan')} />

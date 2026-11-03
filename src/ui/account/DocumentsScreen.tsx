@@ -20,7 +20,6 @@ export function DocumentsScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.documents')}</h1>
       <p>{t('docs.intro')}</p>
       <Load state={docs}>
         {(d) => (

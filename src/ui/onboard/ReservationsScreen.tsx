@@ -34,7 +34,6 @@ export function ReservationsScreen() {
   const s = useSailing()
   return (
     <div className="page">
-      <h1>{th('route.reservations')}</h1>
       <p>{t('res.intro')}</p>
       <section aria-labelledby="res-dinners-h">
         <h2 id="res-dinners-h">{th('res.dinners')}</h2>
@@ -105,7 +104,6 @@ export function ReservationScreen() {
   const dining = useSavedCopy('dining', me?.booker ?? 'none', () => api.plan.dining.view(), asDiningView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.reservation')}</h1>
       <Saved copy={dining}>
         {(v) => {
           const r = v.reservations.find((x) => x.id === id)

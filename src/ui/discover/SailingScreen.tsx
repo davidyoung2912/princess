@@ -27,7 +27,6 @@ export function SailingScreen() {
   if (!sailing) {
     return (
       <div className="page">
-        <h1>{th('route.sailing')}</h1>
         <Banner kind="warning" title={t('discover.notFound.sailing')} action={<LinkButton to="/home/sailings" variant="secondary">{t('discover.seeDates')}</LinkButton>}>
           <p>{t('discover.notFound.body')}</p>
         </Banner>
@@ -37,7 +36,7 @@ export function SailingScreen() {
   const range = sailingRange(sailing)
   return (
     <div className="page">
-      <h1>{range}</h1>
+      <h2>{range}</h2>
       {sailing.holiday && <p><span className="tag">{t('discover.holiday')}</span></p>}
       <div className="button-row"><LinkButton to={`/book?sailing=${sailing.id}`}>{t('discover.book')}</LinkButton></div>
       <SaveShare kind="sailing" id={sailing.id} name={range} favourites={favourites} />

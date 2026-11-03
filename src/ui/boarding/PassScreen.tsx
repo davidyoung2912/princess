@@ -29,7 +29,6 @@ export function PassScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{th('route.boardingPass')}</h1>
       {pass.data ? (
         <>
           {pass.at !== null && <SyncChip updated={new Date(pass.at)} now={new Date(now)} state={pass.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}

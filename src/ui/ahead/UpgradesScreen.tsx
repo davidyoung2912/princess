@@ -48,7 +48,6 @@ export function UpgradesScreen() {
   const withdraw = useAction(async (id: string) => { await api.ahead.upgrades.withdraw(id); view.retry() })
   return (
     <div className="page">
-      <h1>{th('route.upgrades')}</h1>
       <p>{t('upg.intro')}</p>
       <ChildNote />
       <Load state={view}>

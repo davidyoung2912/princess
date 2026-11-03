@@ -11,7 +11,6 @@ const STEPS = ['arrive', 'desk', 'photo', 'lane', 'board'] as const
 export function TerminalScreen() {
   return (
     <div className="page">
-      <h1>{th('route.terminalCheckin')}</h1>
       <p>{t('terminal.intro')}</p>
       <Banner kind="success" title={t('terminal.reassure')}><p>{t('terminal.reassureBody')}</p></Banner>
 

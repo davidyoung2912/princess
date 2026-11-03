@@ -27,7 +27,6 @@ export function HealthScreen() {
   const copy = useSavedCopy('health', me?.id ?? 'none', () => api.health.view(), asHealthView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.health')}</h1>
       <p>{t('hlth.intro')}</p>
       <LinkButton to="/ship/help-now" variant="danger" block>{t('hlth.needNow')}</LinkButton>
       <Saved copy={copy}>{(v) => <Health v={v} reload={copy.retry} offline={copy.fromCopy} canAct={!me?.child} />}</Saved>
@@ -173,7 +172,6 @@ export function HelpNowScreen() {
   const card = copy.data
   return (
     <div className="page help-now">
-      <h1>{th('route.helpNow')}</h1>
       <a className="btn btn--danger btn--block help-now__call" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {th('help.callMedical', { number: MEDICAL_NUMBER })}</a>
       <a className="btn btn--danger btn--block help-now__call" href={`tel:${EMERGENCY_NUMBER}`}><Siren aria-hidden="true" /> {th('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>
 

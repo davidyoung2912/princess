@@ -43,7 +43,6 @@ export function CalmScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.calm')}</h1>
       <p>{t('calm.intro')}</p>
 
       {calm.cognitive && (

@@ -79,7 +79,6 @@ export function ConciergeScreen() {
   const lastReply = [...messages].reverse().find((m) => m.role === 'assistant' && m.source !== 'handoff')
   return (
     <div className="page">
-      <h1>{th('route.concierge')}</h1>
       <Banner kind="info" title={t('ai.label.title')}><p>{t('ai.label.body')}</p><p className="muted">{lastReply?.source === 'claude' ? t('ai.mode.claude') : t('ai.mode.scripted')}</p></Banner>
       <Card labelledBy="ai-log-h">
         <h2 id="ai-log-h" className="card__title">{th('ai.conversation')}</h2>

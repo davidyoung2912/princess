@@ -39,7 +39,6 @@ export function WhatIfScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{th('route.whatIf')}</h1>
       <p>{t('whatif.intro')}</p>
       <Banner kind="info" title={t('whatif.concept')} />
       <Load state={view}>{(v) => <Body trip={v.trip} today={today} now={now} />}</Load>

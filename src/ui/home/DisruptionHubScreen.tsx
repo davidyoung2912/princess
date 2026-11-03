@@ -29,7 +29,6 @@ export function DisruptionHubScreen() {
   const updates = useMine(() => api.updates.list())
   return (
     <div className="page">
-      <h1>{th('route.disruption')}</h1>
       <p>{t('hub.intro')}</p>
       {demo.network.offline && (
         <Banner kind="offline" title={t('hub.outage.title')}>

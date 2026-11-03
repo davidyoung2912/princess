@@ -73,7 +73,6 @@ export function AutopilotScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.autopilot')}</h1>
       <p>{t('autopilot.intro')}</p>
       <p className="muted">{t('autopilot.promise')}</p>
 

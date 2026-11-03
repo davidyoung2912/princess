@@ -17,7 +17,6 @@ export function HistoryScreen() {
   const view = useMine(() => api.post.history(), [])
   return (
     <div className="page">
-      <h1>{th('route.history')}</h1>
       <p>{t('hist.intro')}</p>
       <Load state={view}>{(v) => <History v={v} />}</Load>
       <BackLink to="/me" label={t('route.me')} />

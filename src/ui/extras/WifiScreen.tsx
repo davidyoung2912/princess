@@ -25,7 +25,6 @@ export function WifiScreen() {
   const view = useMine(() => api.wifi.view(), [])
   return (
     <div className="page">
-      <h1>{th('route.wifi')}</h1>
       <Banner kind="success" title={t('wifi.free')}><p>{t('wifi.freeBody')}</p></Banner>
       <Banner kind="info" title={t('phone.guard')}><p>{t('phone.guardBody')} <Link to="/plan/phone">{t('route.phone')}</Link></p></Banner>
       <WifiQrCard />

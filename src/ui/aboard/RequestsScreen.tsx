@@ -30,7 +30,6 @@ export function RequestsScreen() {
   const cancel = useAction(async (id: string) => { await api.aboard.requests.cancel(id); list.retry() })
   return (
     <div className="page">
-      <h1>{th('route.requests')}</h1>
       <p>{t('req.intro')}</p>
       <ChildNote />
       <AboardError error={ask.error ?? cancel.error} />

@@ -28,7 +28,6 @@ export function AdvisorsScreen() {
   const shown = advisorsFor({ speciality: speciality as never, language })
   return (
     <div className="page">
-      <h1>{th('route.advisors')}</h1>
       <p>{t('adv.intro')}</p>
       <ChildNote />
       <div className="ab-controls">
@@ -156,7 +155,6 @@ export function MarketingScreen() {
   const double = doubleOptInFor(settings.region)
   return (
     <div className="page">
-      <h1>{th('route.marketing')}</h1>
       <p>{t('mkt.intro')}</p>
       <ChildNote />
       <Banner kind="info" title={t(`settings.region.${settings.region}` as StringKey)}>
@@ -182,7 +180,6 @@ export function AssistScreen() {
   const choose = useAction(async (id: string, choice: 'refund' | 'credit') => { await api.ahead.assist.choose(id, choice); list.retry() })
   return (
     <div className="page">
-      <h1>{th('route.assist')}</h1>
       <p>{t('asst.intro')}</p>
       <ChildNote />
       <form onSubmit={(e) => { e.preventDefault(); void ask.run() }}>

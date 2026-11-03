@@ -18,7 +18,6 @@ export function PortScreen() {
   if (!guide) {
     return (
       <div className="page">
-        <h1>{th('route.port')}</h1>
         <Banner kind="warning" title={t('discover.notFound.port')} action={<LinkButton to="/home/cruise" variant="secondary">{t('discover.seePlan')}</LinkButton>}>
           <p>{t('discover.notFound.body')}</p>
         </Banner>
@@ -30,7 +29,7 @@ export function PortScreen() {
   const tender = guide.landing === 'tender'
   return (
     <div className="page">
-      <h1>{name}</h1>
+      <h2>{name}</h2>
       <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{day && <> <span className="muted">{t('discover.visitedDay', { day: day.day })}</span></>}</p>
       <SaveShare kind="port" id={guide.id} name={name} favourites={favourites} />
 

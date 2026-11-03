@@ -24,7 +24,6 @@ export function FamilyScreen() {
   const copy = useSavedCopy('family', me?.booker ?? 'none', () => api.family.view(), asFamilyView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.family')}</h1>
       <p>{t('fam.intro')}</p>
       <Banner kind="info" title={t('fam.honest')}><p>{t('fam.honestBody')}</p></Banner>
       <Saved copy={copy}>{(v) => <Family v={v} reload={copy.retry} offline={copy.fromCopy} />}</Saved>

@@ -27,7 +27,6 @@ export function RecapScreen() {
   const [shared, setShared] = useState<'shared' | 'copied' | 'failed' | null>(null)
   return (
     <div className="page">
-      <h1>{th('route.recap')}</h1>
       <p>{t('recap.intro')}</p>
       {!sailed && <Banner kind="info" title={t('recap.early.title')}><p>{t('recap.early.body')}</p></Banner>}
       <Load state={data}>

@@ -39,7 +39,6 @@ export function PartyScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.party')}</h1>
       <p>{t('party.shared.intro')}</p>
       <SharingNote field="plans" />
       {child && <p className="muted">{t('party.child')}</p>}

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { en as raw } from '../i18n/locales/en'
+
+const en: Record<string, string> = raw
 import { JOURNEY_STAGES } from './hubs'
 import { ROUTES } from './routes'
-import { SCREEN_BY_ID, SCREEN_LIST, SETTINGS_AND_HELP, STAGE_TABS, TAB_FRONT_PATHS, placementIn, primaryTab, screenForPath, screensOfStage, stageUses } from './screens'
+import { areaFor, coloursFor, SCREEN_BY_ID, SCREEN_LIST, SETTINGS_AND_HELP, STAGE_TABS, TAB_FRONT_PATHS, placementIn, primaryTab, screenForPath, screensOfStage, stageUses } from './screens'
 
 describe('screen registry (P2)', () => {
   it('has an entry for every route except the tab front pages, and no entry for an unknown route', () => {
@@ -14,12 +17,12 @@ describe('screen registry (P2)', () => {
 
   it('has unique ids, paths and titles, each with a title and a subtext', () => {
     for (const key of ['id', 'path', 'title'] as const) {
-      const values = SCREEN_LIST.map((s) => s[key])
+      const values = SCREEN_LIST.map((s) => (key === 'title' ? en[s.titleKey] : s[key]))
       expect(values.filter((v, i) => values.indexOf(v) !== i), key).toEqual([])
     }
     for (const s of SCREEN_LIST) {
-      expect(s.title.trim(), s.id).not.toBe('')
-      expect(s.subtext.trim().length, s.id).toBeGreaterThan(20)
+      expect(en[s.titleKey].trim(), s.id).not.toBe('')
+      expect(en[s.subtextKey].trim().length, s.id).toBeGreaterThan(20)
       expect(s.id[0], s.id).toBe(s.family)
     }
   })
@@ -112,5 +115,28 @@ describe('screen registry (P2)', () => {
     expect(primaryTab('H21', 'dream')).toBeNull()
     expect(screenForPath('/home/ship')?.id).toBe('H10')
     expect(screenForPath('/plan')).toBeUndefined()
+  })
+})
+
+describe('screen colour (P3)', () => {
+  it('is plum for settings and help whatever the guest opened it from', () => {
+    expect(areaFor('M33', 'sea', 'teal', 'teal', 'blue')).toBe('plum')
+  })
+
+  it('follows the tab the screen was opened from, but only if the stage lists it there', () => {
+    const colours = coloursFor('P37', 'prebook')
+    expect(colours.length).toBeGreaterThan(0)
+    expect(areaFor('P37', 'prebook', colours[0], null, 'blue')).toBe(colours[0])
+    expect(areaFor('P37', 'prebook', 'plum', null, 'blue')).toBe(primaryTab('P37', 'prebook')!.colour)
+  })
+
+  it('keeps the colour of the area just left when the stage lists the screen under it, then falls back to the primary tab', () => {
+    const [first, second] = coloursFor('P37', 'prebook').length > 1 ? coloursFor('P37', 'prebook') : [undefined, undefined]
+    if (first && second) expect(areaFor('P37', 'prebook', undefined, second, 'blue')).toBe(second)
+    expect(areaFor('P37', 'prebook', undefined, null, 'blue')).toBe(primaryTab('P37', 'prebook')!.colour)
+  })
+
+  it('uses the old tab colour for a screen the stage does not use', () => {
+    expect(areaFor('S01', 'dream', undefined, null, 'pink')).toBe('pink')
   })
 })

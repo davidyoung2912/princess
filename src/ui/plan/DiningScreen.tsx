@@ -28,7 +28,6 @@ export function DiningScreen() {
   const view = useMine(() => api.plan.dining.view())
   return (
     <div className="page">
-      <h1>{th('route.dining')}</h1>
       <AccessAreaNote area="dining" />
       <p>{t('dine.intro')}</p>
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>

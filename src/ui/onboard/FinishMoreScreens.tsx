@@ -21,10 +21,9 @@ import { BackLink } from './common'
 import { useShipTime } from './shipTime'
 
 type Back = { to: string; label: StringKey }
-const Page = ({ title, intro, back, children }: { title: StringKey; intro: StringKey; back: Back; children: React.ReactNode }) => (
+const Page = ({ intro, back, children }: { intro: StringKey; back: Back; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to={back.to} label={t(back.label)} />
-    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -46,7 +45,7 @@ const Human = () => <p className="muted">{t('fin.human')} <LinkButton to="/me/co
 export function SweepScreen() {
   const { f, set } = useFinish()
   return (
-    <Page title="route.sweep" intro="sweep.intro" back={DIS}>
+    <Page intro="sweep.intro" back={DIS}>
       <Card labelledBy="sweep-h"><h2 id="sweep-h" className="card__title">{th('sweep.list')}</h2>
         <ul className="plain-list">
           {SWEEP_ITEMS.map((k) => (
@@ -69,7 +68,7 @@ export function BagsScreen() {
   const times = disembarkTimes(sailing)
   const n = bagNight(times.bagsOutAt, now, f.bags)
   return (
-    <Page title="route.bags" intro="bags.intro" back={DIS}>
+    <Page intro="bags.intro" back={DIS}>
       <Card labelledBy="bags-h"><h2 id="bags-h" className="card__title">{th('bags.deadline', { time: time(times.bagsOutAt) })}</h2>
         <p role="status">{n.state === 'open' ? t('bags.open', { min: n.minutesLeft }) : t(`bags.${n.state}` as StringKey)}</p>
         <div className="button-row">
@@ -94,7 +93,7 @@ export function FlightScreen() {
   const first = advice.options.find((o) => o.option === advice.best)!
   const leave = flightAt ? easyLeaveBy(first.offFrom, f.easy) : null
   return (
-    <Page title="route.flight" intro="flight.intro" back={DIS}>
+    <Page intro="flight.intro" back={DIS}>
       <Card labelledBy="fl-set"><h2 id="fl-set" className="card__title">{th('flight.set')}</h2>
         <Field label={t('flight.time')} hint={t('flight.timeHint')} type="time" value={flightAt} onChange={(e) => setFlightAt(e.target.value)} />
         <fieldset><legend>{t('flight.mode')}</legend>
@@ -135,7 +134,7 @@ export function RideScreen() {
   }
   const sum = f.ride ? ledgerSummary(f.ride.shares) : null
   return (
-    <Page title="route.ride" intro="ride.intro" back={DIS}>
+    <Page intro="ride.intro" back={DIS}>
       {!f.ride ? (
         <form onSubmit={submit}>
           <Field label={t('ride.meet')} hint={t('ride.meetHint')} value={meet} maxLength={60} onChange={(e) => setMeet(e.target.value)} />
@@ -164,7 +163,7 @@ export function FarewellScreen() {
   const { f, set } = useFinish()
   const fw = f.farewell
   return (
-    <Page title="route.farewell" intro="farewell.intro" back={ME}>
+    <Page intro="farewell.intro" back={ME}>
       <Card labelledBy="fw-m"><h2 id="fw-m" className="card__title">{th('farewell.moment')}</h2>
         <div className="button-row" role="group" aria-labelledby="fw-m">
           {FAREWELL_MOMENTS.map((k) => <Button key={k} variant={fw.moment === k ? 'primary' : 'secondary'} aria-pressed={fw.moment === k} onClick={() => set((x) => ({ ...x, farewell: { ...x.farewell, moment: k } }))}>{t(`farewell.m.${k}` as StringKey)}</Button>)}
@@ -189,7 +188,7 @@ export function FollowUpScreen() {
   const sailing = useSailing()
   const leftAt = disembarkTimes(sailing).arrivalAt
   return (
-    <Page title="route.followUp" intro="follow.intro" back={ME}>
+    <Page intro="follow.intro" back={ME}>
       <Card labelledBy="fu-c"><h2 id="fu-c" className="card__title">{th('follow.consent')}</h2>
         <label className="choice"><input type="checkbox" checked={f.follow.consent} onChange={(e) => set((x) => ({ ...x, follow: { ...x.follow, consent: e.target.checked } }))} /><span>{t('follow.agree')}</span></label>
         <p className="muted">{t('follow.nothingSent')}</p></Card>
@@ -224,7 +223,7 @@ export function AskShipScreen() {
   const fact = asked === null ? null : askShip(asked)
   const submit = (e: FormEvent) => { e.preventDefault(); if (q.trim()) setAsked(q) }
   return (
-    <Page title="route.askShip" intro="askShip.intro" back={SHIP}>
+    <Page intro="askShip.intro" back={SHIP}>
       <form onSubmit={submit}>
         <Field label={t('askShip.label')} value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} />
         <Button type="submit">{t('ask.send')}</Button>
@@ -241,7 +240,7 @@ export function AskShipScreen() {
 export function SafeAshoreScreen() {
   const { f, set } = useFinish()
   return (
-    <Page title="route.safeAshore" intro="ashore.intro" back={SHIP}>
+    <Page intro="ashore.intro" back={SHIP}>
       <Card labelledBy="as-who"><h2 id="as-who" className="card__title">{th('ashore.who')}</h2>
         {TRAVELLERS.map((w) => <label key={w} className="choice"><input type="checkbox" checked={f.travellers.includes(w)} onChange={(e) => set((x) => ({ ...x, travellers: e.target.checked ? [...x.travellers, w as Traveller] : x.travellers.filter((i) => i !== w) }))} /><span>{t(`ashore.w.${w}` as StringKey)}</span></label>)}
         <p className="muted">{t('ashore.private')}</p></Card>
@@ -258,7 +257,7 @@ export function AllergyChainScreen() {
   const now = useNow()
   const chain = allergyChain(memory.allergy, now)
   return (
-    <Page title="route.allergyChain" intro="chain.intro" back={SHIP}>
+    <Page intro="chain.intro" back={SHIP}>
       <Banner kind="info" title={t('chain.sim')} />
       <Card labelledBy="ch-steps"><h2 id="ch-steps" className="card__title">{th('chain.steps')}</h2>
         <ol>{chain.steps.map((s) => <li key={s.id}>{t(`chain.step.${s.id}` as StringKey)}: {s.done ? t('chain.done') : t('chain.waiting')}</li>)}</ol>
@@ -277,7 +276,7 @@ export function AllergyChainScreen() {
 export function GentleScreen() {
   const { f, set } = useFinish()
   return (
-    <Page title="route.gentle" intro="gentle.intro" back={ME}>
+    <Page intro="gentle.intro" back={ME}>
       <Card labelledBy="gn-h"><h2 id="gn-h" className="card__title">{th('gentle.title')}</h2>
         <label className="choice"><input type="checkbox" checked={f.gentle} onChange={(e) => set((x) => ({ ...x, gentle: e.target.checked }))} /><span>{t('gentle.wording')}<small>{t('gentle.onHint')}</small></span></label>
         <Field label={t('gentle.memorial')} hint={t('gentle.memorialHint')} value={f.memorial} maxLength={80} onChange={(e) => set((x) => ({ ...x, memorial: e.target.value }))} />
@@ -293,7 +292,7 @@ export function GentleScreen() {
 /** Anxiety toolkit (XI-11): breathing and grounding on the page, no scores, and a path to a quiet person. */
 export function AnxietyScreen() {
   return (
-    <Page title="route.anxiety" intro="anx.intro" back={ME}>
+    <Page intro="anx.intro" back={ME}>
       <Card labelledBy="ax-b"><h2 id="ax-b" className="card__title">{th('anx.breath')}</h2>
         <ol>
           <li>{t('anx.in', { n: BREATH.in })}</li>
@@ -319,7 +318,7 @@ export function FareCheckScreen() {
   const ind = fareIndicator(sailingId, category)
   const tier = tierForHabits(habits)
   return (
-    <Page title="route.fareCheck" intro="fare.intro" back={PLAN}>
+    <Page intro="fare.intro" back={PLAN}>
       <Banner kind="info" title={t('fare.sim')} />
       <Card labelledBy="fc-room"><h2 id="fc-room" className="card__title">{th('fare.room')}</h2>
         <label className="field"><span>{t('fare.sailing')}</span>
@@ -342,7 +341,7 @@ export function GiftsScreen() {
   const [noAlcohol, setNoAlcohol] = useState(false)
   const list = giftsFor(memory.budget, occasion, memory.allergy.items, noAlcohol, f.gentle)
   return (
-    <Page title="route.gifts" intro="gifts.intro" back={PLAN}>
+    <Page intro="gifts.intro" back={PLAN}>
       <Card labelledBy="gf-o"><h2 id="gf-o" className="card__title">{th('gifts.occasion')}</h2>
         {(['none', 'birthday', 'anniversary'] as const).map((o) => <label key={o} className="choice"><input type="radio" name="gf-occ" checked={occasion === o} onChange={() => setOccasion(o)} /><span>{t(`gifts.o.${o}` as StringKey)}</span></label>)}
         <label className="choice"><input type="checkbox" checked={noAlcohol} onChange={(e) => setNoAlcohol(e.target.checked)} /><span>{t('gifts.noAlcohol')}</span></label>
@@ -359,7 +358,7 @@ export function AlertsScreen() {
   const canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
   const test = (k: (typeof ALERT_KINDS)[number]) => { setShown(k); if (canVibrate) navigator.vibrate(VIBRATION[k]) }
   return (
-    <Page title="route.alerts" intro="alerts.intro" back={ME}>
+    <Page intro="alerts.intro" back={ME}>
       <Card labelledBy="al-h"><h2 id="al-h" className="card__title">{th('alerts.try')}</h2>
         <div className="button-row">{ALERT_KINDS.map((k) => <Button key={k} variant="secondary" onClick={() => test(k)}>{t(`alerts.k.${k}` as StringKey)}</Button>)}</div>
         <div role="status">{shown && <Banner kind={shown === 'critical' ? 'danger' : shown === 'important' ? 'warning' : 'info'} title={t(`alerts.k.${shown}` as StringKey)}><p>{t('alerts.shown')}</p></Banner>}</div>
@@ -390,7 +389,7 @@ export function ReadAloudScreen() {
   const plan = dp.ready ? planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty')) : null
   const walk = PORT_KNOWLEDGE[port].walks[0]
   return (
-    <Page title="route.readAloud" intro="read.intro" back={SHIP}>
+    <Page intro="read.intro" back={SHIP}>
       {!canSpeak && <Banner kind="info" title={t('read.unsupported')} />}
       <Card labelledBy="rd-r"><h2 id="rd-r" className="card__title">{th('read.speed')}</h2>
         {READ_RATES.map((r) => <label key={r} className="choice"><input type="radio" name="rd-rate" checked={rate === r} onChange={() => setRate(r)} /><span>{t(`read.rate.${String(r).replace('.', '')}` as StringKey)}</span></label>)}</Card>
@@ -412,7 +411,7 @@ export function PortSnapshotScreen() {
   const lines = portSnapshot(port, people)
   const copy = async () => { try { await navigator.clipboard.writeText(lines.join('\n')); setCopied(true) } catch { setCopied(false) } }
   return (
-    <Page title="route.portSnapshot" intro="snap.intro" back={{ to: '/ship/port', label: 'route.portDay' }}>
+    <Page intro="snap.intro" back={{ to: '/ship/port', label: 'route.portDay' }}>
       <Card labelledBy="sn-h"><h2 id="sn-h" className="card__title">{th('snap.which')}</h2>
         {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="sn-port" checked={port === p} onChange={() => { setPort(p); setCopied(false) }} /><span>{PORTS[p].name}</span></label>)}
         <label className="field"><span>{t('snap.people')}</span><select value={people} onChange={(e) => setPeople(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label></Card>

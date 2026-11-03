@@ -47,7 +47,6 @@ export function TextHelpScreen() {
   }
   return (
     <div className="page">
-      <h1>{th('route.textHelp')}</h1>
       <Banner kind="warning" title={t('txt.urgentTitle')}>
         <p>{t('txt.urgentBody')}</p>
         <a className="btn btn--danger btn--block" href={`tel:${EMERGENCY_NUMBER}`}><Phone aria-hidden="true" /> {th('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>

@@ -25,10 +25,9 @@ import { Printer, Share } from '../icons'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 
-const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
+const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
   <div className="page page--print">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{th(title)}</h1>
     <p className="no-print">{t(intro)}</p>
     {children}
   </div>
@@ -41,7 +40,7 @@ export function HoldScreen() {
   const [label, setLabel] = useState('')
   const h = holdState(state.hold, now)
   return (
-    <Page title="route.hold" intro="hold.intro">
+    <Page intro="hold.intro">
       <Card labelledBy="hold-t">
         <h2 id="hold-t" className="card__title">{th('hold.title')}</h2>
         {h.state === 'active' && <p role="status">{t('hold.active', { what: state.hold?.label ?? '', left: leftInWords(h.msLeft) })}</p>}
@@ -70,7 +69,7 @@ export function AccessScreen() {
     void api.account.profile(me.id).then((v) => api.account.saveProfile(me.id, { ...v.profile, needs: needsWithAccess(v.profile.needs, next) })).catch(() => undefined)
   }
   return (
-    <Page title="route.accessProfile" intro="access.intro">
+    <Page intro="access.intro">
       <Card labelledBy="acc-t">
         <fieldset>
           <legend id="acc-t">{t('access.legend')}</legend>
@@ -106,7 +105,7 @@ export function ContractScreen() {
   const now = useNow()
   const [note, setNote] = useState('')
   return (
-    <Page title="route.contract" intro="contract.intro">
+    <Page intro="contract.intro">
       <Load state={view}>
         {(v) => {
           const s = tripContract({ number: v.trip.number, name: me?.name ?? '', departure: v.trip.departure, guests: v.trip.guests, category: v.trip.categoryName, plan: v.trip.plan, balancePaid: v.trip.payment === 'paid', today: dateIn(now, 'America/New_York') })
@@ -140,7 +139,7 @@ export function ReadinessScreen() {
   const list = useMine(() => api.plan.checklist.get())
   const docs = useMine(() => api.documents.get())
   return (
-    <Page title="route.readiness" intro="ready.intro">
+    <Page intro="ready.intro">
       <Load state={list}>
         {(c) => (
           <Load state={docs}>
@@ -185,7 +184,7 @@ export function AllergyScreen() {
     setDraft('')
   }
   return (
-    <Page title="route.allergy" intro="allergy.intro">
+    <Page intro="allergy.intro">
       <Card labelledBy="al-t">
         <h2 id="al-t" className="card__title">{th('allergy.title')}</h2>
         {a.items.length === 0 ? <p>{t('allergy.none')}</p> : (
@@ -211,7 +210,7 @@ export function ShareLedgerScreen() {
   const [name, setName] = useState('')
   const sum = ledgerSummary(state.shares)
   return (
-    <Page title="route.shares" intro="shares.intro">
+    <Page intro="shares.intro">
       <SharingNote field="spending" />
       <Load state={view}>
         {(v) => (
@@ -247,7 +246,7 @@ export function PriceWatchScreen() {
   const now = useNow()
   const today = dateIn(now, 'America/New_York')
   return (
-    <Page title="route.priceWatch" intro="pwatch.intro">
+    <Page intro="pwatch.intro">
       <Banner kind="info" title={t('pwatch.sim')} />
       <Load state={view}>
         {(v) => <PriceWatchBody v={v} today={today} />}

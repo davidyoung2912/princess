@@ -34,7 +34,6 @@ export function OrderScreen() {
   useVisibleInterval(orders.retry, 10_000)
   return (
     <div className="page">
-      <h1>{th('route.order')}</h1>
       <p>{t('ord.intro')}</p>
       <Load state={menu}>
         {(m) => (

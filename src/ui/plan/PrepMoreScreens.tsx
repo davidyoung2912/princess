@@ -16,10 +16,9 @@ import { Field } from '../Field'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 
-const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
+const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -31,7 +30,7 @@ const portName = (p: PortId): string => (p === 'sea' ? t('mplan.sea') : PORTS[p]
 export function ShipPackingScreen() {
   const nights = 7
   return (
-    <Page title="route.shipPacking" intro="shipPack.intro">
+    <Page intro="shipPack.intro">
       <Card labelledBy="sp-no"><h2 id="sp-no" className="card__title">{th('shipPack.no')}</h2><ul>{PROHIBITED.map((k) => <li key={k}>{t(`shipPack.no.${k}` as StringKey)}</li>)}</ul></Card>
       <Card labelledBy="sp-out"><h2 id="sp-out" className="card__title">{th('shipPack.outlets')}</h2><ul>{OUTLETS.map((k) => <li key={k}>{t(`shipPack.out.${k}` as StringKey)}</li>)}</ul></Card>
       <Card labelledBy="sp-dress">
@@ -47,7 +46,7 @@ export function ShipPackingScreen() {
 /** Guaranteed-cabin odds (S2-07): authored history of how often a guarantee booking lands in the category booked or a better one. */
 export function GuaranteeScreen() {
   return (
-    <Page title="route.guarantee" intro="guar.intro">
+    <Page intro="guar.intro">
       <Banner kind="info" title={t('guar.sim')} />
       <ul className="card-grid">
         {(['interior', 'oceanview', 'balcony', 'miniSuite', 'sanctuaryMiniSuite', 'signatureSuite'] as const).map((id) => {
@@ -90,7 +89,7 @@ export function MoneyPlanScreen() {
   const keep = (next: { sea: number; port: number }) => update((m) => ({ ...m, planning: { ...m.planning, moneyDaily: next } }))
   const isBudget = mem.budget === plan.total
   return (
-    <Page title="route.moneyPlan" intro="mplan.intro">
+    <Page intro="mplan.intro">
       <Load state={trips}>
         {() => (
           <>
@@ -121,7 +120,7 @@ export function ChildStoryScreen() {
   const s = (trips.data?.upcoming[0] && sailingById(trips.data.upcoming[0].sailingId)) || REFERENCE_SAILING
   const lines = childStory(name, s)
   return (
-    <Page title="route.childStory" intro="kstory.intro">
+    <Page intro="kstory.intro">
       <Field label={t('kstory.name')} value={name} maxLength={20} onChange={(e) => setName(cleanName(e.target.value))} />
       <Card labelledBy="cs-t"><h2 id="cs-t" className="card__title">{th('kstory.title')}</h2>{lines.map((l) => <p key={l}>{l}</p>)}</Card>
       <Button variant="secondary" onClick={() => window.print()}>{t('kstory.print')}</Button>
@@ -137,7 +136,7 @@ export function PasteScreen() {
   const [keep, setKeep] = useState<Set<number>>(new Set())
   const read = () => { const d = parsePlan(text); setDraft(d); setKeep(new Set(d.map((_, i) => i))) }
   return (
-    <Page title="route.paste" intro="paste.intro">
+    <Page intro="paste.intro">
       <Card labelledBy="pa-t">
         <h2 id="pa-t" className="card__title">{th('paste.title')}</h2>
         <label htmlFor="paste-box">{t('paste.label')}</label>
@@ -172,7 +171,7 @@ export function StarterScreen() {
   const [style, setStyle] = useState<Style>(DEFAULT_STYLE)
   const days = itinerary(REFERENCE_SAILING)
   return (
-    <Page title="route.starter" intro="starter.intro">
+    <Page intro="starter.intro">
       <Card labelledBy="st-o">
         <fieldset>
           <legend id="st-o">{t('starter.occasion')}</legend>

@@ -23,7 +23,6 @@ export function DemoScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.demo')}</h1>
       <p>{t('demo.intro')}</p>
 
       <Card labelledBy="demo-persona-h">

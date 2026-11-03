@@ -8,7 +8,6 @@ import { Parties } from './Parties'
 export function SpaScreen() {
   return (
     <div className="page">
-      <h1>{th('route.spa')}</h1>
       <p>{t('spa.intro')}</p>
       <MyPicks groups={['spa', 'fitness']} />
       <h2>{th('spa.treatments')}</h2>
@@ -25,7 +24,6 @@ export function SpaScreen() {
 export function ShopsScreen() {
   return (
     <div className="page">
-      <h1>{th('route.shops')}</h1>
       <p>{t('shops.intro')}</p>
       <MyPicks groups={['shop', 'special']} />
       <h2>{th('shops.goods')}</h2>
@@ -44,7 +42,6 @@ export function ShopsScreen() {
 export function CommunityScreen() {
   return (
     <div className="page">
-      <h1>{th('route.community')}</h1>
       <p>{t('comm.intro')}</p>
       <MyPicks groups={['faith']} />
       <ItemList items={itemsIn('faith')} />
@@ -58,7 +55,6 @@ export function CommunityScreen() {
 export function AccessScreen() {
   return (
     <div className="page">
-      <h1>{th('route.access')}</h1>
       <p>{t('acc.intro')}</p>
       <MyPicks groups={['access']} />
       <ItemList items={itemsIn('access')} />

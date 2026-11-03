@@ -29,7 +29,6 @@ export function DeckMapScreen() {
   const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
   return (
     <div className="page">
-      <h1>{th('route.deckMap')}</h1>
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />

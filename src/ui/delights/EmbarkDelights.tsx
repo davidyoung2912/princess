@@ -72,7 +72,6 @@ export function EssentialsHome() {
   const result = buildJourney(plan, sailing.departure, 0)
   return (
     <div className="page">
-      <h1>{th('dl6.essentials.title')}</h1>
       <p>{t('dl6.essentials.body')}</p>
       <Card hero labelledBy="dl6-ess-pass">
         <h2 id="dl6-ess-pass" className="card__title">{th('route.boardingPass')}</h2>

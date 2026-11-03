@@ -8,7 +8,7 @@ import { api } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
-import { t, th, type StringKey } from '../../i18n'
+import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
@@ -22,7 +22,6 @@ export function LedgerScreen() {
   const pay = useMine(() => api.payments.get())
   return (
     <div className="page">
-      <h1>{th('route.ledger')}</h1>
       <p>{t('ledger.intro')}</p>
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : (
         <Saved copy={folio}>

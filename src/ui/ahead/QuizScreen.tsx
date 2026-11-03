@@ -35,7 +35,6 @@ export function QuizScreen() {
   const set = <K extends keyof QuizAnswers>(key: K) => (value: QuizAnswers[K]) => { setShown(false); setA({ ...a, [key]: value }) }
   return (
     <div className="page">
-      <h1>{th('route.quiz')}</h1>
       <p>{t('quiz.intro')}</p>
       <form onSubmit={(e) => { e.preventDefault(); setShown(true) }}>
         <Choice name="vibe" legend={t('quiz.vibe')} values={QUIZ_VIBES} value={a.vibe} onChange={set('vibe')} label={(v) => t(`quiz.vibe.${v}` as StringKey)} />

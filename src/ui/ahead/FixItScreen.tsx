@@ -54,7 +54,6 @@ export function FixItScreen() {
   const cases = useMine(() => api.ahead.fix.list())
   return (
     <div className="page">
-      <h1>{th('route.fixIt')}</h1>
       <p>{t('fix.intro')}</p>
       <ChildNote />
       <ul className="card-grid">{FIX_FLOWS.map((f) => <li key={f.id}><Flow flow={f} reload={cases.retry} /></li>)}</ul>

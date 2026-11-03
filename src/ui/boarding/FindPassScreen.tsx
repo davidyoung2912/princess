@@ -41,7 +41,6 @@ export function FindPassScreen() {
   const shown = found ?? (copy ? { pass: copy.value, copy: true, at: copy.savedAt } : null)
   return (
     <div className="page">
-      <h1>{th('route.findPass')}</h1>
       <p>{t('find.intro')}</p>
       <form onSubmit={(e) => void submit(e)} noValidate>
         <Field label={t('find.number')} hint={t('find.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false} />

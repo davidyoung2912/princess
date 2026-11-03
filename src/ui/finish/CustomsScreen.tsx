@@ -22,7 +22,6 @@ export function CustomsScreen() {
   const copy = useSavedCopy('customs', me?.booker ?? 'none', () => api.disembark.customs(), asCustomsView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.customs')}</h1>
       <p>{t('cus.intro')}</p>
       <Saved copy={copy}>{(v) => <Customs v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/home/disembark" label={t('route.disembark')} />

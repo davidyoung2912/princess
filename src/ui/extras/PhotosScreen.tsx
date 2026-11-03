@@ -25,7 +25,6 @@ export function PhotosScreen() {
   const copy = useSavedCopy('photos', me?.booker ?? 'none', () => api.photos.list(), asPhotosView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.photos')}</h1>
       <p>{t('pho.intro')}</p>
       <Saved copy={copy}>{(v) => <Photos v={v} reload={copy.retry} offline={copy.fromCopy} canBuy={!me?.child} />}</Saved>
       <BackLink to="/ship" label={t('route.ship')} />

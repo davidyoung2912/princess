@@ -64,7 +64,6 @@ export function WrappedScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.wrapped')}</h1>
       <p>{t('wrapped.intro')}</p>
 
       {memory && (

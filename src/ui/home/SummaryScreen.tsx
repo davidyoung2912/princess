@@ -56,7 +56,6 @@ export function SummaryScreen() {
   return (
     <div className="page">
       <BackLink to="/home/ask" label={t('route.ask')} />
-      <h1>{th('route.summary')}</h1>
       <p>{t('sum.intro')}</p>
       <div className="button-row" role="group" aria-label={t('sum.what')}>
         {(['day', 'bill', ...LEGAL.map((l) => l.id)] as Subject[]).map((k) => (

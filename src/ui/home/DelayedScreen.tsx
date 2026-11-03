@@ -36,7 +36,6 @@ export function DelayedScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.delayed')}</h1>
       <p>{t('delay.intro')}</p>
       <Banner kind="info" title={t('delay.call', { number: GUEST_SERVICES_NUMBER })}><p>{t('delay.callBody')}</p></Banner>
       {current ? (

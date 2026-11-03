@@ -51,7 +51,6 @@ export function JourneyScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.gettingThere')}</h1>
       <p>{t('journey.intro')}</p>
 
       <Card labelledBy="j-plan">

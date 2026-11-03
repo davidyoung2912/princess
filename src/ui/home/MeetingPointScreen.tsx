@@ -25,7 +25,6 @@ export function MeetingPointScreen() {
   }
   return (
     <div className="page">
-      <h1>{th('mp.title')}</h1>
       <p>{t('mp.intro')}</p>
 
       <Card labelledBy="meet-form-h">

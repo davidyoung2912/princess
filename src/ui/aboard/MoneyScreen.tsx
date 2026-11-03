@@ -29,7 +29,6 @@ export function MoneyScreen() {
   const view = useMine(() => api.aboard.money.view())
   return (
     <div className="page">
-      <h1>{th('route.money')}</h1>
       <p>{t('money.intro')}</p>
       <ChildNote />
       <Load state={view}>

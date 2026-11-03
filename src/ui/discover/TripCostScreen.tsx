@@ -49,7 +49,6 @@ export function TripCostScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.tripCost')}</h1>
       <p>{t('cost.intro')}</p>
 
       <Card>

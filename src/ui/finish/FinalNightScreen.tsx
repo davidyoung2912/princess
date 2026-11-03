@@ -20,7 +20,6 @@ export function FinalNightScreen() {
   const copy = useSavedCopy('night', me?.booker ?? 'none', () => api.disembark.night(), asNightView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.finalNight')}</h1>
       <p>{t('night.intro')}</p>
       <Saved copy={copy}>{(v) => <Night v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/home/disembark" label={t('route.disembark')} />

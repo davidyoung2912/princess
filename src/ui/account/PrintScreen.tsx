@@ -30,7 +30,6 @@ export function PrintScreen() {
   const [large, setLarge] = useState(false)
   return (
     <div className="page page--print">
-      <h1 className="no-print">{th('route.print')}</h1>
       <div className="no-print">
         <p>{t('prt.intro')}</p>
         <fieldset>

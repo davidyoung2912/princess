@@ -21,7 +21,6 @@ export function SkyScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{th('route.sky')}</h1>
       <p>{t('sky.intro')}</p>
       <Banner kind="info" title={t('sky.sim')} />
       <div className="field">

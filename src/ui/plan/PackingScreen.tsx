@@ -21,7 +21,6 @@ export function PackingScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.packing')}</h1>
       <p>{t('pack.intro')}</p>
       <Load state={list}>
         {(p) => {

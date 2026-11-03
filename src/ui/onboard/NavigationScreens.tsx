@@ -70,7 +70,6 @@ export function WhereScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{th('route.where')}</h1>
       <p>{t('nav.where.intro')}</p>
       {!p && <FeedWaiting />}
       {p && <WhereBody p={p} units={settings.units} />}
@@ -124,7 +123,6 @@ export function SeaScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{th('route.sea')}</h1>
       <p>{t('nav.sea.intro')}</p>
       {!s && <FeedWaiting />}
       {s && (
@@ -190,7 +188,6 @@ export function AlongScreen() {
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
-      <h1>{th('route.along')}</h1>
       <p>{t('nav.along.intro')}</p>
       {!a && <FeedWaiting />}
       {a && (

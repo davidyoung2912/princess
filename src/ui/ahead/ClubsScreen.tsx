@@ -87,7 +87,6 @@ export function ClubsScreen() {
   const view = useMine(() => api.ahead.clubs.view())
   return (
     <div className="page">
-      <h1>{th('route.clubs')}</h1>
       <p>{t('club.intro')}</p>
       <ChildNote />
       <Banner kind="info" title={t('club.privacy')}><p>{t('club.privacyBody')}</p></Banner>

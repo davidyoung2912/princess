@@ -14,7 +14,6 @@ export function PhoneScreen() {
   const moment = roamingMoment(stageAt(useSailing(), useNow()))
   return (
     <div className="page">
-      <h1>{th('route.phone')}</h1>
       <p>{t('phone.intro')}</p>
       {moment !== 'none' && <Banner kind="warning" title={t(`phone.moment.${moment}` as StringKey)}><p>{t(`phone.moment.${moment}.body` as StringKey)}</p></Banner>}
       <Card labelledBy="phone-steps-h">

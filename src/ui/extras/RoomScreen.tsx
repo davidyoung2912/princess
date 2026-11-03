@@ -19,7 +19,6 @@ export function RoomScreen() {
   const copy = useSavedCopy('room', me?.booker ?? 'none', () => api.room.view(), asRoomView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.room')}</h1>
       <Saved copy={copy}>{(r) => <Room r={r} reload={copy.retry} offline={copy.fromCopy} />}</Saved>
       <BackLink to="/ship" label={t('route.ship')} />
     </div>

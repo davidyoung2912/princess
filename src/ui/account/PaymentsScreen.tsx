@@ -33,7 +33,6 @@ export function PaymentsScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.payments')}</h1>
       <Load state={view}>
         {(v) => {
           const { trip } = v

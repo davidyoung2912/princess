@@ -27,7 +27,6 @@ export function MusterScreen() {
   const copy = useSavedCopy('muster', me?.booker ?? 'none', () => api.onboard.muster(), asMusterView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.muster')}</h1>
       <p>{t('muster.intro')}</p>
       <Saved copy={copy}>{(m) => <Station m={m} reload={copy.retry} />}</Saved>
       <Briefing />
@@ -114,7 +113,6 @@ export function EmergencyScreen() {
   const card = copy.data
   return (
     <div className="page">
-      <h1>{th('route.emergency')}</h1>
       <Card hero labelledBy="help-now-h">
         <h2 id="help-now-h" className="card__title"><Siren aria-hidden="true" /> {th('emerg.now')}</h2>
         <p className="emerg__big">{t('emerg.dial')}</p>

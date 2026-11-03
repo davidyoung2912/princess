@@ -24,10 +24,9 @@ import { Field } from '../Field'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 
-const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
+const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/plan" label={t('route.plan')} />
-    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -45,7 +44,7 @@ export function DifficultyScreen() {
   useCatalogue()
   const { memory } = usePlanning()
   return (
-    <Page title="route.difficulty" intro="diff.intro">
+    <Page intro="diff.intro">
       <ul className="card-grid">
         {EXCURSIONS.map((x) => {
           const d = difficultyOf(x.id)!
@@ -89,7 +88,7 @@ export function CompareScreen() {
     ['cmp.refund', t('cmp.refund.cancel'), t('cmp.refund.varies')],
   ]
   return (
-    <Page title="route.compare" intro="cmp.intro">
+    <Page intro="cmp.intro">
       <label htmlFor="cmp-x">{t('cmp.pick')}</label>
       <select id="cmp-x" className="field__input" value={id} onChange={(e) => setId(e.target.value)}>
         {EXCURSIONS.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -121,7 +120,7 @@ export function GroupPollScreen() {
     if (poll) { set((b) => ({ ...b, polls: [...b.polls, poll].slice(-6) })); setQuestion(''); setOptions('') }
   }
   return (
-    <Page title="route.groupPoll" intro="poll.intro">
+    <Page intro="poll.intro">
       <Banner kind="info" title={t('poll.shared')} />
       <Card labelledBy="poll-new">
         <h2 id="poll-new" className="card__title">{th('poll.new')}</h2>
@@ -174,7 +173,7 @@ export function SurprisesScreen() {
   const [pretend, setPretend] = useState(false)
   const demo = [{ id: 'd1', title: 'Dinner at 7' }, ...p.surprises.map((s) => ({ id: s.id, title: s.text }))]
   return (
-    <Page title="route.surprises" intro="surp.intro">
+    <Page intro="surp.intro">
       <Field label={t('surp.add')} hint={t('surp.hint')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
       <Button disabled={!text.trim()} onClick={() => { set((s) => ({ ...s, surprises: [...s.surprises, { id: newMemoryId(), text: text.trim() }].slice(0, 10) })); setText('') }}>{t('surp.addButton')}</Button>
       <ul className="plain-list">{p.surprises.map((s) => <li key={s.id}>{s.text} <Button variant="tertiary" onClick={() => set((x) => ({ ...x, surprises: x.surprises.filter((y) => y.id !== s.id) }))}>{t('poll.remove')}</Button></li>)}</ul>
@@ -193,7 +192,7 @@ export function TasteScreen() {
   const { state: pilot } = usePilot()
   const list = tasteInferences({ fit: memory.fit, pasted: memory.pasted, pace: pilot.prefs.pace, rhythm: p.rhythm }, p.tasteOff, p.tasteRemoved)
   return (
-    <Page title="route.taste" intro="taste.intro">
+    <Page intro="taste.intro">
       <label className="choice"><input type="checkbox" checked={p.tasteOff} onChange={(e) => set((s) => ({ ...s, tasteOff: e.target.checked }))} /><span>{t('taste.off')}</span></label>
       {p.tasteOff && <p role="status">{t('taste.isOff')}</p>}
       <ul className="plain-list">
@@ -216,7 +215,7 @@ export function ChildBriefScreen() {
   const field = (k: 'name' | 'allergies' | 'comfort' | 'bedtime' | 'needs', max: number) => <Field label={t(`brief.${k}` as StringKey)} value={b[k]} maxLength={max} onChange={(e) => set((s) => ({ ...s, brief: normalizeBrief({ ...s.brief, [k]: e.target.value }) }))} />
   const view = briefFor(b)
   return (
-    <Page title="route.childBrief" intro="cbrief.intro">
+    <Page intro="cbrief.intro">
       {field('name', 30)}
       <div className="field">
         <label htmlFor="brief-age">{t('brief.age')}</label>
@@ -243,7 +242,7 @@ export function RhythmScreen() {
   const save = (n: Partial<Rhythm>) => set((s) => ({ ...s, rhythm: { ...r, ...n } }))
   const [done, setDone] = useState(false)
   return (
-    <Page title="route.rhythm" intro="rhythm.intro">
+    <Page intro="rhythm.intro">
       <fieldset>
         <legend>{t('rhythm.wake')}</legend>
         {(['early', 'mid', 'late'] as const).map((w) => <label key={w} className="choice"><input type="radio" name="rhythm-wake" checked={r.wake === w} onChange={() => save({ wake: w })} /><span>{t(`rhythm.wake.${w}` as StringKey)}</span></label>)}
@@ -262,7 +261,7 @@ export function OrganiserScreen() {
   const trips = useMine(() => api.trips.list())
   const { sharing, set } = useSharing()
   return (
-    <Page title="route.organiser" intro="org.intro">
+    <Page intro="org.intro">
       <Load state={trips}>
         {(v) => {
           const number = (v.upcoming.find((x) => x.kind === 'current') ?? v.upcoming[0])?.number
@@ -339,7 +338,7 @@ export function CabinsScreen() {
   const toggle = (id: string, tour: string) => set((s) => ({ ...s, cabins: s.cabins.map((c) => (c.id === id ? { ...c, tourIds: c.tourIds.includes(tour) ? c.tourIds.filter((x) => x !== tour) : [...c.tourIds, tour] } : c)) }))
   const day = sharedDay(p.cabins)
   return (
-    <Page title="route.cabins2" intro="cab.intro">
+    <Page intro="cab.intro">
       <SharingNote field="plans" />
       <Field label={t('cab.name')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
       <Button disabled={!name.trim()} onClick={() => { set((s) => ({ ...s, cabins: [...s.cabins, { id: newMemoryId(), name: name.trim(), tourIds: [] }].slice(0, 6) })); setName('') }}>{t('cab.add')}</Button>
@@ -369,7 +368,7 @@ export function TraditionsScreen() {
   const [text, setText] = useState('')
   const [carried, setCarried] = useState(false)
   return (
-    <Page title="route.traditions" intro="trad.intro">
+    <Page intro="trad.intro">
       <Field label={t('trad.add')} value={text} maxLength={80} onChange={(e) => setText(e.target.value)} />
       <Button disabled={!text.trim()} onClick={() => { set((s) => ({ ...s, traditions: addTradition(s.traditions, newMemoryId(), text) })); setText('') }}>{t('trad.addButton')}</Button>
       <ul className="plain-list">

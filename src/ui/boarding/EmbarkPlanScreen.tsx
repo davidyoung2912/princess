@@ -42,7 +42,6 @@ export function EmbarkPlanScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.embarkPlan')}</h1>
       <p>{t('embarkPlan.intro')}</p>
 
       <Card labelledBy="e-needs">

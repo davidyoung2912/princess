@@ -69,7 +69,6 @@ export function BookAheadScreen() {
   const suggested = GIFTS_FOR[occasion].map((id) => itemById(id)).filter((i) => !!i)
   return (
     <div className="page">
-      <h1>{th('route.ahead')}</h1>
       <p>{t('ahead.intro')}</p>
       <p><Link to="/plan/cart">{t('route.cart')}</Link> · <Link to="/plan/prepay">{t('route.prepay')}</Link> · <Link to="/plan/clubs">{t('route.clubs')}</Link> · <Link to="/plan/upgrades">{t('route.upgrades')}</Link></p>
       <ChildNote />
@@ -117,7 +116,6 @@ export function CartScreen() {
   const dropPick = useAction(async (id: string) => { await api.aboard.selections.remove(id); picks.retry() })
   return (
     <div className="page">
-      <h1>{th('route.cart')}</h1>
       <p>{t('cart.intro')}</p>
       <AheadError error={remove.error ?? dropPick.error} />
       <section aria-labelledby="cart-now-h">
@@ -179,7 +177,6 @@ export function PrepayScreen() {
   const view = useMine(() => api.aboard.money.view())
   return (
     <div className="page">
-      <h1>{th('route.prepay')}</h1>
       <p>{t('prepay.intro')}</p>
       <ChildNote />
       <Load state={view}>

@@ -33,7 +33,6 @@ export function FinalBillScreen() {
   const bill = useMine(() => api.disembark.finalBill(), [])
   return (
     <div className="page">
-      <h1>{th('route.finalBill')}</h1>
       <p>{t('fb.intro')}</p>
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : (
         <Saved copy={folio}>{(f) => <Load state={bill}>{(b) => <FinalBill f={f} b={b} reload={() => { bill.retry(); folio.retry() }} />}</Load>}</Saved>

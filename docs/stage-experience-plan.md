@@ -1,6 +1,6 @@
 # One app, eleven stages: the staged-experience plan
 
-Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server) and P2 (the screen registry) are built; P3 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
+Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server), P2 (the screen registry) and P3 (page header and colour) are built; P4 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
 
 It builds on `docs/customer-journey-priorities.md` (what matters at each stage) and replaces the earlier "reorder but hide nothing" approach in `docs/stage-menus-matrix.md`.
 
@@ -718,3 +718,11 @@ Verification for every phase is `npm run test`, `npm run lint`, `npx tsc -b` and
 - Titles and subtexts are plain English in the registry for now. P3 moves them to `en.ts` and `es.ts` as keys (the i18n test requires every key to be used, so they cannot be added before the header uses them).
 - `HUBS`, `STAGE_MENUS` and `QUICK` are **not removed yet**: `HubList` and the tab front pages still read them. P4 switches the shell to the registry and deletes them. Until then both exist side by side.
 - `src/routes/screens.test.ts` repeats the section 9 checks (every route has an entry, unique titles, 2 or 3 tabs, every stage screen under a tab, per-stage counts 32/38/43/58/73/62/67/93/88/48/47).
+
+**P3 as built (2026-11-03).**
+- `src/ui/PageHeader.tsx` is the coloured bar (the page's one `h1` plus the subtext). The **Shell** draws it above every screen that has a registry entry and is not public (`X02`–`X04` sit outside the shell and keep their own `h1`); the 5 tab front pages (`/`, `/plan`, `/ship`, `/me`, and `/chat` which is also `C01`) are decided in P4/P5. The per-screen `h1`s were removed (about 120 files). Where an `h1` carried live information (sailing dates, port name, ship name, trip dates, check-in step, "Saved"), it is now an `h2` in the body.
+- Titles and subtexts are keys `screen.<ID>.title` and `screen.<ID>.subtext` in `en.ts`; `screens.ts` holds `titleKey`/`subtextKey`. **Spanish is not done:** the 382 strings fall back to English. `es.ts` does not require the `screen.` group yet; translate them before enabling it.
+- Colour: `--plum`, `--plum-tint`, `--header-plum-start/end` in all five theme blocks, and eight plum pairs in `contrast.ts` (checked by `contrast.test.ts`). The shell carries `data-area` (blue, teal, pink, gold, plum) in place of `data-section`; cards, section titles, the header and big figures read `--sec`, so the card colour rotation is gone.
+- `areaFor` (in `screens.ts`) picks the colour: Settings and help are plum; else the tab the link says it was opened from (`openedFrom(colour)` as router state), if the stage lists the screen under it; else the area the guest just left, by the same test; else the screen's primary tab; else the old tab colour. No link sends `openedFrom` yet (P4 wires the new tabs); the "area just left" rule covers moving around inside one area meanwhile.
+- `mp.title` and `dl6.essentials.title` were dropped (their screens now use the registry title).
+

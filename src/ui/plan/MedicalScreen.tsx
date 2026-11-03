@@ -30,7 +30,6 @@ export function MedicalScreen() {
   return (
     <div className="page page--print">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{th('route.medical')}</h1>
       <p className="no-print">{t('medical.intro')}</p>
       <div className="button-row no-print">
         <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('medical.print')}</Button>

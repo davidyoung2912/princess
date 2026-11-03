@@ -46,7 +46,6 @@ export function ContactScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.contact')}</h1>
       <p>{t('contact.intro')}</p>
       <p><Link to="/home/concierge">{t('contact.tryConcierge')}</Link></p>
       <ul className="card-grid">

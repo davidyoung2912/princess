@@ -13,7 +13,7 @@ export function ShipScreen() {
   const favourites = useFavourites()
   return (
     <div className="page">
-      <h1>{SHIP.name}</h1>
+      <h2>{SHIP.name}</h2>
       <p>{SHIP.intro}</p>
       <SaveShare kind="ship" id={SHIP.id} name={SHIP.name} favourites={favourites} />
 

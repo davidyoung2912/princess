@@ -8,7 +8,6 @@ import { BackLink } from '../onboard/common'
 export function SustainabilityScreen() {
   return (
     <div className="page">
-      <h1>{th('route.sustainability')}</h1>
       <p>{t('sus.intro')}</p>
       <Card labelledBy="sus-trip-h">
         <h2 id="sus-trip-h" className="card__title">{th('sus.trip')}</h2>

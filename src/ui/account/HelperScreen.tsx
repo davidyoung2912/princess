@@ -19,7 +19,6 @@ export function HelperScreen() {
   const helper = useMine(() => api.account.helper())
   return (
     <div className="page">
-      <h1>{th('route.helper')}</h1>
       <p>{t('helper.intro')}</p>
       <Load state={helper}>
         {(h) => <HelperBody key={h?.status ?? 'none'} helper={h} refresh={helper.retry} />}

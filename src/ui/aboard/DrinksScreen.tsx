@@ -21,7 +21,6 @@ export function DrinksScreen() {
   const undo = useAction(async (id: string) => { await api.aboard.drinks.undo(id); view.retry() })
   return (
     <div className="page">
-      <h1>{th('route.drinks')}</h1>
       <p>{t('drk.intro')}</p>
       <Load state={view}>
         {(v) => (

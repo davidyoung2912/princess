@@ -17,7 +17,6 @@ export function LoyaltyScreen() {
   const view = useMine(() => api.post.loyalty(), [])
   return (
     <div className="page">
-      <h1>{th('route.loyalty')}</h1>
       <p>{t('loy.intro')}</p>
       <Load state={view}>{(v) => <Loyalty v={v} />}</Load>
       <BackLink to="/me" label={t('route.me')} />

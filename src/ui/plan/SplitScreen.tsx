@@ -56,7 +56,6 @@ export function SplitScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.split')}</h1>
       <p>{t('split.intro')}</p>
       <Banner kind="info" title={t('split.noMoney')}><p>{t('split.noMoneyBody')}</p></Banner>
 

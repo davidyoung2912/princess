@@ -20,7 +20,6 @@ export function LaundryScreen() {
   const view = useMine(() => api.laundry.view(), [])
   return (
     <div className="page">
-      <h1>{th('route.laundry')}</h1>
       <p>{t('lau.intro')}</p>
       <Load state={view}>{(v) => <Laundry v={v} reload={view.retry} />}</Load>
       <BackLink to="/ship" label={t('route.ship')} />

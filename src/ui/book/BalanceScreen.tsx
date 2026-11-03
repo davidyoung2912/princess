@@ -6,7 +6,7 @@ import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th } from '../../i18n'
+import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Load } from '../account/parts'
@@ -24,14 +24,12 @@ export function BalanceScreen() {
   if (booking.status === 'error' && isApiError(booking.error) && booking.error.code === 'notFound' && !booking.data) {
     return (
       <div className="page">
-        <h1>{th('route.bookPay')}</h1>
         <Banner kind="warning" title={t('trip.notFound')} action={<LinkButton to="/me/trips" variant="secondary">{t('route.trips')}</LinkButton>}><p>{t('trip.notFoundBody')}</p></Banner>
       </div>
     )
   }
   return (
     <div className="page">
-      <h1>{th('route.bookPay')}</h1>
       <Load state={booking}>
         {(b) => (
           <>

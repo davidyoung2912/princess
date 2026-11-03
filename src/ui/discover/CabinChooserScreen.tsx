@@ -76,7 +76,6 @@ export function CabinChooserScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.cabins')}</h1>
       <p>{t('cabins.intro')}</p>
       <p className="muted">{t('cabins.sample')}</p>
 

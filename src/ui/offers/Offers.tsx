@@ -84,7 +84,6 @@ export function OffersScreen() {
   const aside = dismissedFor(ctx)
   return (
     <div className="page">
-      <h1>{th('route.offers')}</h1>
       <p>{t('offer.intro')}</p>
       <Load state={trips}>
         {() => !trip ? <p>{t('offer.noTrip')}</p> : (

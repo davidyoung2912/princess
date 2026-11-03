@@ -131,7 +131,6 @@ export function AskScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.ask')}</h1>
       <p>{t('ask.intro')}</p>
       <p className="muted">{t('ask.promise')}</p>
       <form onSubmit={submit}>

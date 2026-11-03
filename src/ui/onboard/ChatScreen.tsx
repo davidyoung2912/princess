@@ -30,7 +30,6 @@ export function ChatScreen() {
   const [mode, setMode] = useState<Mode>('party')
   return (
     <div className="page">
-      <h1>{heading('route.chat')}</h1>
       <p>{t('chat.free')}</p>
       <div className="chip-row" role="group" aria-label={t('chat.who')}>
         <Chip pressed={mode === 'party'} onToggle={() => setMode('party')}>{t('chat.party')}</Chip>

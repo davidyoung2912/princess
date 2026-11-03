@@ -26,7 +26,6 @@ export function ReceiptScreen() {
   const now = useNow()
   return (
     <div className="page">
-      <h1>{th('route.receipt')}</h1>
       <p>{t('receipt.intro')}</p>
       {receipt.data ? (
         <>

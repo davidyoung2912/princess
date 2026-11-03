@@ -7,6 +7,7 @@ import { t, th } from '../i18n'
 import { API_URL } from '../runtime'
 import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
 import { ROUTES } from '../routes/routes'
+import { screenForPath } from '../routes/screens'
 import { SCREENS } from '../screens'
 
 // Screens load on first visit; load them all first so each renders in a single pass.
@@ -30,7 +31,8 @@ describe('every screen renders inside the shell', () => {
     it(`${path}`, () => {
       const html = decode(render(path))
       expect(html).toContain(`<h1`)
-      expect(html).toContain(th(route.titleKey))
+      const screen = screenForPath(route.path)
+      expect(html).toContain(screen ? th(screen.titleKey) : th(route.titleKey))
       expect(html).toContain('class="tabs')
       expect(html).toContain(`>${t('help.button')}<`)
       expect(html).toContain('id="main"')
@@ -74,9 +76,9 @@ describe('discover screens', () => {
     expect(decode(render('/home/sailings'))).toContain(t('discover.loading'))
   })
 
-  it('shows a real sailing, port and ship, each with an h1 and a way to save', () => {
+  it('shows a real sailing, port and ship, each with its name and a way to save', () => {
     const sailing = decode(render('/home/sailings/sun-2027-03-21'))
-    expect(sailing).toContain('<h1>Mar 21 to Mar 28, 2027</h1>')
+    expect(sailing).toContain('<h2>Mar 21 to Mar 28, 2027</h2>')
     expect(sailing).toContain('Day 4')
     for (const path of ['/home/ports/belize', '/home/ship']) expect(decode(render(path))).toContain('aria-pressed')
   })
@@ -134,8 +136,8 @@ describe('check-in and boarding screens', () => {
   })
 
   it('names the step on a step address and the overview on an unknown one', () => {
-    expect(decode(render('/home/check-in/photo'))).toContain(`<h1>${th('checkin.step.photo')}</h1>`)
-    expect(decode(render('/home/check-in/nonsense'))).toContain(`<h1>${th('route.checkin')}</h1>`)
+    expect(decode(render('/home/check-in/photo'))).toContain(`<h2>${th('checkin.step.photo')}</h2>`)
+    expect(decode(render('/home/check-in/nonsense'))).toContain(`<h1 class="page-header__title">${th('screen.H28.title')}</h1>`)
   })
 
   it('needs no sign-in to find a pass, and asks only for the booking number and a last name', () => {

@@ -660,7 +660,6 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'dl6.driver.note': 'La terminal se confirma al registrarse. Si cambia, lo verá en su pase de embarque.',
   'dl6.lengths.line': 'Faltan {lengths} largos de barco ({miles} millas)',
   'dl6.lengths.arrived': 'Ya llegó, más o menos un largo de barco.',
-  'dl6.essentials.title': 'Solo lo esencial',
   'dl6.essentials.body': 'Solo lo que necesita hoy.',
   'dl6.essentials.leave': 'Salga antes de las',
   'dl6.essentials.leaveNote': 'Según su plan para llegar.',

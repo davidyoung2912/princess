@@ -41,7 +41,6 @@ export function VenuesScreen() {
   const list = DIRECTORY.filter((v) => (!openNow || openAt(v, day, time)) && (!included || v.price !== 'specialty'))
   return (
     <div className="page">
-      <h1>{th('route.venues')}</h1>
       <p>{t('ven.intro')}</p>
       <div className="chip-row">
         <Chip pressed={openNow} onToggle={() => setOpenNow(!openNow)}>{t('ven.openNow')}</Chip>
@@ -77,7 +76,6 @@ export function VenueScreen() {
   const [filtered, setFiltered] = useState(true)
   return (
     <div className="page">
-      <h1>{th('route.venue')}</h1>
       {!v ? (
         <Banner kind="info" title={t('ven.gone')} action={<LinkButton to="/ship/venues" variant="secondary">{t('route.venues')}</LinkButton>}><p>{t('ven.goneBody')}</p></Banner>
       ) : (

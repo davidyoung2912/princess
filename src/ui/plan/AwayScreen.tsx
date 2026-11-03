@@ -42,7 +42,6 @@ export function AwayScreen() {
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />
-      <h1>{th('route.away')}</h1>
       <p>{t('away.intro', { date: formatDate(sailing.departure) })}</p>
       <p className="progress-line" role="status">{t('away.progress', { done, total })}</p>
       <progress className="meter" max={total} value={done} aria-label={t('away.progress', { done, total })} />

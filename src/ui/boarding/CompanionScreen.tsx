@@ -22,7 +22,6 @@ export function CompanionScreen() {
   const current = view?.current ?? null
   return (
     <div className="page">
-      <h1>{th('route.companion')}</h1>
       <p>{t('companion.intro')}</p>
       {!view ? (embark.status === 'error' ? <LoadError retry={embark.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : (
         <>

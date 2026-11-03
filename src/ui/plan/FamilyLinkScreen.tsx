@@ -93,7 +93,6 @@ export function FamilyLinkScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.familyLink')}</h1>
       <p>{t('home.intro')}</p>
       <Card info>
         <h2 className="card__title">{th('home.sees')}</h2>

@@ -26,7 +26,6 @@ export function DisembarkScreen() {
   const copy = useSavedCopy('disembark', me?.booker ?? 'none', () => api.disembark.view(), asDisembarkView, [me?.id])
   return (
     <div className="page">
-      <h1>{th('route.disembark')}</h1>
       <AccessAreaNote area="disembark" />
       <p>{t('dis.intro')}</p>
       {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}

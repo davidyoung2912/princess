@@ -1,14 +1,21 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
+import { useJourneyStage } from '../hooks/useJourneyStage'
 import { track } from '../diagnostics/watch'
 import { usePushSync } from '../hooks/usePushSync'
 import { t, th } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
+import type { TabId } from '../routes/routes'
+import { areaFor, screenForPath, type TabColour } from '../routes/screens'
 import { applyPageMeta, seoFor } from '../seo'
 import { Chat, Help, Home, Me, Plan, Search, Ship } from './icons'
 import { HelpSheet } from './HelpSheet'
+import { PageHeader } from './PageHeader'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
+
+/** The colour of the five tabs as they stand until the shell moves to per-stage tabs (P4). */
+const LEGACY_AREA: Record<TabId, TabColour> = { home: 'blue', plan: 'teal', ship: 'pink', chat: 'gold', me: 'plum' }
 
 const TAB_ICONS = { home: Home, plan: Plan, ship: Ship, chat: Chat, me: Me } as const
 
@@ -18,7 +25,9 @@ const TAB_ICONS = { home: Home, plan: Plan, ship: Ship, chat: Chat, me: Me } as 
  * screen to screen readers, and moves focus to the main area so keyboard users start at the top of the new content.
  */
 export function Shell() {
-  const { pathname } = useLocation()
+  const { pathname, state } = useLocation()
+  const stage = useJourneyStage()
+  const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   usePushSync()
@@ -26,7 +35,13 @@ export function Shell() {
   const first = useRef(true)
   const activeTab = tabForPath(pathname)
   const route = routeForPath(pathname)
-  const title = route ? t(route.titleKey) : t('shell.notFound.title')
+  const screen = route && !route.public ? screenForPath(route.path) : undefined
+  const fallbackArea = LEGACY_AREA[activeTab ?? 'home']
+  // The area just left carries over to a screen the stage lists under the same colour, so one area keeps its colour while the guest moves about in it.
+  const previous = seen?.path === pathname ? seen.previous : (seen?.area ?? null)
+  const area = screen ? areaFor(screen.id, stage, (state as { area?: unknown } | null)?.area, previous, fallbackArea) : fallbackArea
+  if (seen?.path !== pathname || seen.area !== area) setSeen({ path: pathname, area, previous })
+  const title = screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
 
   useEffect(() => {
     const seo = seoFor(route?.path)
@@ -40,7 +55,7 @@ export function Shell() {
   }, [pathname, title, route?.path])
 
   return (
-    <div className="shell" data-section={activeTab ?? 'home'}>
+    <div className="shell" data-area={area}>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>{t('shell.skip')}</a>
       <div className="shell__top">
         <header className="topbar no-print">
@@ -70,6 +85,7 @@ export function Shell() {
       </nav>
       <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
+        {screen && <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} />}
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>

@@ -15,7 +15,6 @@ export function ChecklistScreen() {
   const tick = useAction(async (id: string, done: boolean) => { await api.plan.checklist.tick(id, done); list.retry() })
   return (
     <div className="page">
-      <h1>{th('route.checklist')}</h1>
       <p>{t('check.intro')}</p>
       <Load state={list}>
         {(c) => (

@@ -23,7 +23,6 @@ export function RebookScreen() {
   const view = useMine(() => api.post.rebook(), [])
   return (
     <div className="page">
-      <h1>{th('route.rebook')}</h1>
       <p>{t('reb.intro')}</p>
       <Load state={view}>{(v) => <Rebook v={v} reload={view.retry} />}</Load>
       <BackLink to="/me" label={t('route.me')} />

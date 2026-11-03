@@ -23,7 +23,6 @@ export function StatusScreen() {
   const issues = rows.filter((r) => r.issue)
   return (
     <div className="page">
-      <h1>{th('route.status')}</h1>
       {issues.length === 0 ? <Banner kind="success" title={t('stat.allOk')}><p>{t('stat.allOkBody')}</p></Banner> : <Banner kind="warning" title={t('stat.some', { count: issues.length })}><p>{t('stat.someBody')}</p></Banner>}
       <ul className="card-grid">
         {rows.map((r) => (
@@ -73,7 +72,6 @@ export function ReportProblemScreen() {
   }
   return (
     <div className="page">
-      <h1>{th('route.reportProblem')}</h1>
       <p>{t('bug.intro')}</p>
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void send.run() }}>
         <fieldset className="plain-fieldset">

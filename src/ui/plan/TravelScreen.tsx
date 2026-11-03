@@ -6,7 +6,7 @@ import { HOTELS, MODES, PORT_FACTS, TRANSPORT, type ModeId, type TravelPlan } fr
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th } from '../../i18n'
+import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -18,7 +18,6 @@ export function TravelScreen() {
   const view = useMine(() => api.plan.travel.get())
   return (
     <div className="page">
-      <h1>{th('route.travel')}</h1>
       <p>{t('travel.intro')}</p>
       <Card labelledBy="port-h">
         <h2 id="port-h" className="card__title">{PORT_FACTS.name}</h2>

@@ -21,10 +21,9 @@ import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 
-const Page = ({ title, intro, children }: { title: StringKey; intro: StringKey; children: React.ReactNode }) => (
+const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
     <BackLink to="/ship" label={t('route.ship')} />
-    <h1>{th(title)}</h1>
     <p>{t(intro)}</p>
     {children}
   </div>
@@ -45,7 +44,7 @@ export function SeasickScreen() {
   const now = useNow()
   const status = seasickStatus(a.seasick, now)
   return (
-    <Page title="route.seasick" intro="sick.intro">
+    <Page intro="sick.intro">
       <Card labelledBy="sick-where"><h2 id="sick-where" className="card__title">{th('sick.where')}</h2>
         <ul className="plain-list">{calmestPlaces().map((p) => <li key={p.id}>{p.name}, {t('quiet.deck', { deck: p.deck })}</li>)}</ul>
         <p className="muted">{t('sick.whereNote')}</p></Card>
@@ -69,7 +68,7 @@ export function LoungersScreen() {
   const others = useFeed(loungerFeed, Math.floor(now / 60_000))
   const board = others ? loungerBoard(now, a.lounger, a.reported, others) : []
   return (
-    <Page title="route.loungers" intro="lounge.intro">
+    <Page intro="lounge.intro">
       <Banner kind="info" title={t('lounge.sim')} />
       {!others && <FeedWaiting />}
       <ul className="card-grid">
@@ -101,7 +100,7 @@ export function KidsReportScreen() {
   const briefClub = brief.age === null ? undefined : clubFor(brief.age)
   const kids = fromClub.length > 0 ? fromClub : briefClub ? [{ key: 'brief', name: normalizeBrief(brief).name, clubId: briefClub.id, here: false }] : []
   return (
-    <Page title="route.kidsReport" intro="kreport.intro">
+    <Page intro="kreport.intro">
       <label className="choice"><input type="checkbox" checked={a.kidsConsent} onChange={(e) => set((x) => ({ ...x, kidsConsent: e.target.checked }))} /><span>{t('kreport.consent')}</span></label>
       {kids.length === 0 ? <p>{t('kreport.needBrief')} <Link to="/plan/child-brief">{t('route.childBrief')}</Link></p> : !a.kidsConsent ? <Nothing k="kreport.waiting" /> : kids.map((k) => (
         <Card key={k.key} labelledBy={`kr-${k.key}`}><h2 id={`kr-${k.key}`} className="card__title">{th('kreport.title', { club: clubById(k.clubId)?.name ?? k.clubId, day })}</h2>
@@ -119,7 +118,7 @@ export function TeenScreen() {
   const tn = a.teen
   const put = (n: Partial<typeof tn>) => set((x) => ({ ...x, teen: { ...x.teen, ...n } }))
   return (
-    <Page title="route.teen" intro="teen.intro">
+    <Page intro="teen.intro">
       <Banner kind="info" title={t('teen.nothingSent')} />
       <Field label={t('teen.name')} value={tn.name} maxLength={30} onChange={(e) => put({ name: e.target.value })} />
       <fieldset><legend>{t('teen.rules')}</legend>
@@ -138,7 +137,7 @@ export function OkTapScreen() {
   const now = useNow()
   const s = okStatus(a.ok, now)
   return (
-    <Page title="route.okTap" intro="ok.intro">
+    <Page intro="ok.intro">
       <Banner kind="info" title={t('ok.nothingSent')} />
       <Button block onClick={() => set((x) => ({ ...x, ok: { ...x.ok, lastAt: now } }))}>{t('ok.tap')}</Button>
       <p role="status">{t(`ok.status.${s}` as StringKey)}</p>
@@ -158,7 +157,7 @@ export function SoloScreen() {
   const sailing = useSailing()
   const s = soloState(a.solo, now)
   return (
-    <Page title="route.solo" intro="solo.intro">
+    <Page intro="solo.intro">
       <Banner kind="warning" title={t('solo.nothingSent')} />
       {s === 'none' ? (
         <>
@@ -182,7 +181,7 @@ export function DndScreen() {
   const { a, set } = useAboard()
   const patch = (id: string, n: Partial<AboardState['dnd'][number]>) => set((x) => ({ ...x, dnd: x.dnd.map((d) => (d.id === id ? { ...d, ...n } : d)) }))
   return (
-    <Page title="route.dnd" intro="dnd.intro">
+    <Page intro="dnd.intro">
       <Banner kind="info" title={t('dnd.critical')} />
       {a.dnd.map((d) => (
         <Card key={d.id} labelledBy={`dnd-${d.id}`}>
@@ -202,7 +201,7 @@ export function DndScreen() {
 /** "You said, we did" (S6-19): what guests asked for and what changed. An authored board. */
 export function YouSaidScreen() {
   return (
-    <Page title="route.youSaid" intro="said.intro">
+    <Page intro="said.intro">
       <ul className="card-grid">{YOU_SAID.map((k) => <li key={k}><Card labelledBy={`s-${k}`}><h2 id={`s-${k}`} className="card__title">{th(`said.${k}.said` as StringKey)}</h2><p>{t(`said.${k}.did` as StringKey)}</p></Card></li>)}</ul>
       <p className="muted">{t('said.sim')}</p>
     </Page>
@@ -215,7 +214,7 @@ export function DiningPrefsScreen() {
   const d = a.dining
   const table = (n: Partial<typeof d.table>) => set((x) => ({ ...x, dining: { ...x.dining, table: { ...x.dining.table, ...n } } }))
   return (
-    <Page title="route.diningPrefs" intro="dpref.intro">
+    <Page intro="dpref.intro">
       <Card labelledBy="dp-fav"><h2 id="dp-fav" className="card__title">{th('dpref.fav')}</h2>
         {diningPlaces().map((p) => <label key={p.id} className="choice"><input type="checkbox" checked={d.favourites.includes(p.id)} onChange={(e) => set((x) => ({ ...x, dining: { ...x.dining, favourites: e.target.checked ? [...x.dining.favourites, p.id] : x.dining.favourites.filter((f) => f !== p.id) } }))} /><span>{p.name}</span></label>)}</Card>
       <Card labelledBy="dp-table"><h2 id="dp-table" className="card__title">{th('dpref.table')}</h2>
@@ -237,7 +236,7 @@ export function StepsScreen() {
   const [text, setText] = useState(String(a.steps[String(day)] ?? ''))
   const c = challenge(a.steps, day)
   return (
-    <Page title="route.steps" intro="steps.intro">
+    <Page intro="steps.intro">
       <Field label={t('steps.today', { day })} inputMode="numeric" value={text} onChange={(e) => setText(e.target.value.replace(/\D/g, '').slice(0, 6))} />
       <Button onClick={() => set((x) => ({ ...x, steps: { ...x.steps, [String(day)]: Math.min(100_000, Number(text || '0')) } }))}>{t('steps.save')}</Button>
       <Card labelledBy="steps-h"><h2 id="steps-h" className="card__title">{th('steps.progress')}</h2>
@@ -259,7 +258,7 @@ export function LostFoundScreen() {
   const [what, setWhat] = useState('')
   const [where, setWhere] = useState('')
   return (
-    <Page title="route.lostFound" intro="lost.intro">
+    <Page intro="lost.intro">
       <Banner kind="info" title={t('lost.local')} />
       <Field label={t('lost.what')} value={what} maxLength={80} onChange={(e) => setWhat(e.target.value)} />
       <Field label={t('lost.where')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
@@ -288,7 +287,7 @@ export function SightingsScreen() {
   const seen = useFeed(sightingsFeed, day)
   const [pick, setPick] = useState<string>(SPECIES[0])
   return (
-    <Page title="route.sightings" intro="sight.intro">
+    <Page intro="sight.intro">
       <Card labelledBy="sight-today"><h2 id="sight-today" className="card__title">{th('sight.today')}</h2>
         <p>{seen ? seen.map((s) => t(`sight.${s}` as StringKey)).join(', ') : t('feed.waiting')}</p><p className="muted">{t('sight.sim')}</p></Card>
       <label htmlFor="sight-pick">{t('sight.saw')}</label>

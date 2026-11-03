@@ -23,7 +23,6 @@ export function CasesScreen() {
   const view = useMine(() => api.cases.list(), [])
   return (
     <div className="page">
-      <h1>{th('route.cases')}</h1>
       <p>{t('case.intro')}</p>
       <Load state={view}>{(v) => <Cases v={v} reload={view.retry} />}</Load>
       <Human />

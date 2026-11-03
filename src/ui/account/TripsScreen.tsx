@@ -38,7 +38,6 @@ export function TripsScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.trips')}</h1>
       <Load state={trips}>
         {(data) => (
           <>
