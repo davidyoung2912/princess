@@ -1051,6 +1051,8 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'testbar.dialog.apply': 'Usar esta fecha y hora',
   'testbar.dialog.invalid': 'Escribe una fecha y una hora.',
   'route.activity': 'Mi actividad',
+  'priv.exportLink': 'Descarga primero mis datos',
+  'priv.deleteExplain': 'Descargar guarda una copia como archivo en este dispositivo (tus viajes, notas, ajustes y lo que el servidor guarda de ti). Borrar elimina tus documentos guardados del servidor; los documentos de la reserva compartidos con otros huéspedes siguen para ellos. Tu registro de actividad se conserva como constancia del borrado. Pide a Atención al huésped que cierre la cuenta si lo deseas.',
   'activity.intro': 'Todo lo hecho en tu cuenta, lo más reciente primero: inicios de sesión, cambios que hiciste, cosas hechas por ti y cualquier fallo. Aquí nunca se guardan contraseñas, números de tarjeta ni lo que escribiste.',
   'activity.filter.label': 'Mostrar',
   'activity.filter.all': 'Todo',

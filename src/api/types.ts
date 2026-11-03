@@ -731,6 +731,8 @@ export interface Api {
     history(): Promise<HistoryEntry[]>
     /** The signed-in person's own audit trail, newest first. Page back with `before` (the oldest id seen). */
     activity(query?: { before?: number; max?: number }): Promise<ActivityEvent[]>
+    /** Everything the server holds for the signed-in person, as the JSON the privacy export returns. */
+    exportData(): Promise<unknown>
   }
   trips: {
     list(): Promise<TripsView>

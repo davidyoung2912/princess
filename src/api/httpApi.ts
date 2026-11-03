@@ -295,6 +295,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       revokeHelper: () => send('delete', '/me/helper'),
       history: () => get('/me/history'),
       activity: (q) => get(`/me/audit${activityQuery(q)}`),
+      exportData: () => get('/me/export'),
     },
     trips: {
       list: () => get('/trips'),

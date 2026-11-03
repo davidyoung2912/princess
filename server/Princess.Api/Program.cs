@@ -174,6 +174,13 @@ services.AddSwaggerGen(o =>
     o.AddSecurityRequirement(doc => new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("Bearer", doc)] = [] });
 });
 
+// Structured logs for operations: set Logging:Json=true to write one JSON object per line to the console (off by default).
+if (builder.Configuration.GetValue<bool>("Logging:Json"))
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole(o => { o.IncludeScopes = true; o.UseUtcTimestamp = true; o.TimestampFormat = "yyyy-MM-ddTHH:mm:ssZ "; });
+}
+
 var app = builder.Build();
 
 app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());

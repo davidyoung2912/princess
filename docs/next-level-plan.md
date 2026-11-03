@@ -327,7 +327,8 @@ Recommended order is N1 to N8 as listed. If you want the strongest guest-visible
 - **N8.3 prepared, not signed off:** `docs/content-verification.md` lists every "(verify)" line with a Source and Status column for the owner to fill; nothing is checked yet.
 - **N8.4 partly done:** `GET /health/providers` shows each real provider as `ok`, `degraded` or `fallback`; `docs/runbook.md` covers checks, providers, logs, retention, export and deletion. **Not built:** the error-reporting hook (PERF-07), structured JSON logs, a retention report.
 - **N8.5 partly done:** `/me/export` now also carries `trips` (number, sailing, ship, departure, nights, room type). It still holds only what the account's documents and bookings hold; orders, bookings detail and other server tables are not in it, and there is no download button in the app. The deletion explanation is in the runbook, not yet on a screen.
-- **Not done:** flight-status provider (needs your choice of service), N8.6 scorecard (process).
+- **Update (later 2026-11-02):** N8.5 download button added to the privacy centre (it calls `GET /me/export` through `api.account.exportData` and saves a JSON file) with a plain explanation of what download and delete do; N8.4 opt-in JSON console logs (`Logging:Json`, not compiled here); N8.6 `docs/release-scorecard.md` written. Still not built: error-reporting hook (the audit trail and `POST /telemetry` cover app problems), retention report, orders and booking detail in `/me/export`.
+- **Not done:** flight-status provider (needs your choice of service); N5.3, N5.4, N7.4, N8.3 are waiting on you (see section 6).
 - **Tests added:** `ProviderGuardTests.cs` (circuit, parse, fall-back, no call for sea or far dates, configuration switch). **Not compiled or run** (`dotnet` is not installed here); please run `dotnet build` on `server/`. Front end untouched.
 
 ---

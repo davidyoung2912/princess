@@ -35,3 +35,8 @@ Console logs from ASP.NET Core. Provider problems log as a warning with the prov
 ## Not built yet
 
 An error-reporting hook (PERF-07), structured JSON logs, a staff view of the moderation queue and a retention report. Add them before a pilot.
+
+## Structured logs
+
+Set `Logging__Json=true` (or `Logging:Json` in settings) to write one JSON object per line to the console, with UTC timestamps and scopes.
+Off by default so local runs stay readable. The audit trail (`dbo.AuditEvents`, `docs/audit-trail.md`) is separate and always on.

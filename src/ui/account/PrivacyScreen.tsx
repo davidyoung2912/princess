@@ -18,6 +18,7 @@ import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
+import { downloadText } from '../delights/cardTools'
 import { LoadError } from '../discover/parts'
 import { BackLink } from '../onboard/common'
 import type { ConsentRegion } from '../../domain/ahead'
@@ -30,6 +31,7 @@ export function PrivacyScreen() {
   const view = useAsync(() => api.privacy.view(), [me?.id])
   const set = useAction(async (person: string, consent: ConsentId, on: boolean) => { await api.privacy.setConsent(person as never, consent, on); if (consent === 'improve') setImproveConsent(on); view.retry() })
   const keep = useAction(setKeepPrivate)
+  const exporting = useAction(async () => { downloadText(`princess-my-data-${today}.json`, 'application/json', JSON.stringify(await api.account.exportData(), null, 2)) })
   const [keepPending, setKeepPending] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const today = dateIn(useNow(), 'America/New_York')
@@ -120,9 +122,11 @@ export function PrivacyScreen() {
           <Card labelledBy="priv-delete-h">
             <h2 id="priv-delete-h" className="card__title">{t('priv.delete')}</h2>
             <p>{t('priv.deleteBody')}</p>
+            <p>{t('priv.deleteExplain')}</p>
+            <ActionError error={exporting.error} />
             <div className="button-row">
               <Button variant="danger" onClick={() => setConfirm(true)}>{t('data.wipe')}</Button>
-              <Link to="/me/settings">{t('priv.exportLink')}</Link>
+              <Button variant="secondary" disabled={exporting.busy} onClick={() => void exporting.run()}>{t('priv.exportLink')}</Button>
             </div>
           </Card>
         </>
