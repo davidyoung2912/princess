@@ -7,6 +7,8 @@ export interface HomeFacts {
   draft: { id: string; categoryChosen: boolean; started: boolean } | null
   /** The guest's confirmed trip, for the stages from Manage to Get to the ship. */
   trip?: { number: string; paid: boolean; documentsOk: boolean; checkinDone: boolean; agent: boolean } | null
+  /** On board (P7): the muster drill is done, and it is the last full day (or later), when bag night and the exit time matter. */
+  aboard?: { musterDone: boolean; lastFullDay: boolean } | null
 }
 
 export interface NextStepItem { key: string; to: string; done: boolean }
@@ -16,6 +18,9 @@ export const TILE_STAGES: readonly JourneyStage[] = ['dream', 'discover', 'book'
 
 /** The stages whose Home is also built on a confirmed trip (P6). */
 export const TRIP_STAGES: readonly JourneyStage[] = ['manage', 'prebook', 'getToShip']
+
+/** The stages whose Home is built for a guest on board (P7). */
+export const ABOARD_STAGES: readonly JourneyStage[] = ['embark', 'sea', 'port', 'disembark']
 
 /** The three Next steps of a stage (plan section 8): actions, not screens. A step is done only when the data shows it. */
 export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
@@ -56,6 +61,32 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
         { key: 'stage.next.getToShip.1', to: f.trip?.checkinDone ? '/home/boarding-pass' : '/home/check-in', done: !!f.trip?.checkinDone },
         { key: 'stage.next.getToShip.2', to: '/plan/getting-there', done: false },
         { key: 'stage.next.getToShip.3', to: '/me/documents', done: !!f.trip?.documentsOk },
+      ]
+    case 'embark':
+      return [
+        { key: 'stage.next.embark.1', to: '/home/embarkation/steps', done: false },
+        { key: 'stage.next.embark.2', to: '/home/meeting-point', done: false },
+        { key: 'stage.next.embark.3', to: '/ship/muster', done: !!f.aboard?.musterDone },
+      ]
+    case 'sea': {
+      const steps: NextStepItem[] = [
+        { key: 'stage.next.sea.1', to: '/plan/day', done: false },
+        { key: 'stage.next.sea.2', to: '/plan/dining', done: false },
+      ]
+      if (f.aboard?.lastFullDay) steps.push({ key: 'stage.next.sea.3', to: '/home/disembark/bags', done: false })
+      return steps
+    }
+    case 'port':
+      return [
+        { key: 'stage.next.port.1', to: '/ship/port', done: false },
+        { key: 'stage.next.port.2', to: '/plan/excursions', done: false },
+        { key: 'stage.next.port.3', to: '/ship/safe-ashore', done: false },
+      ]
+    case 'disembark':
+      return [
+        { key: 'stage.next.disembark.1', to: '/home/disembark', done: false },
+        { key: 'stage.next.disembark.2', to: '/home/disembark/bags', done: false },
+        { key: 'stage.next.disembark.3', to: '/me/bill', done: false },
       ]
     default:
       return []

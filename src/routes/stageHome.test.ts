@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextSteps, stageTiles, TILE_STAGES, TRIP_STAGES } from './stageHome'
+import { nextSteps, stageTiles, ABOARD_STAGES, TILE_STAGES, TRIP_STAGES } from './stageHome'
 
 const none = { savedSailings: 0, draft: null }
 
@@ -29,5 +29,14 @@ describe('stage Home', () => {
     expect(nextSteps('manage', { ...none, trip })[0]).toMatchObject({ done: true, to: '/book/pay/B1' })
     expect(nextSteps('manage', { ...none, trip })[1]!.done).toBe(false)
     expect(nextSteps('getToShip', { ...none, trip })[0]).toMatchObject({ done: true, to: '/home/boarding-pass' })
+  })
+  it('builds the on-board stages, with bag night only from the last full day', () => {
+    for (const s of ABOARD_STAGES) expect(stageTiles(s, { sailingId: 'x', draftId: null })).toHaveLength(6)
+    const early = { ...none, aboard: { musterDone: true, lastFullDay: false } }
+    expect(nextSteps('embark', early)[2]).toMatchObject({ to: '/ship/muster', done: true })
+    expect(nextSteps('sea', early)).toHaveLength(2)
+    expect(nextSteps('sea', { ...none, aboard: { musterDone: true, lastFullDay: true } })[2]!.to).toBe('/home/disembark/bags')
+    expect(nextSteps('port', none)).toHaveLength(3)
+    expect(nextSteps('disembark', none)).toHaveLength(3)
   })
 })

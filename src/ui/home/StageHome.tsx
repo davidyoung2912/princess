@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import type { TripView } from '../../api/types'
+import type { OnboardToday, TripView } from '../../api/types'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
@@ -8,8 +8,8 @@ import { openedFrom } from '../../routes/screens'
 import { nextSteps, stageTiles, type HomeFacts } from '../../routes/stageHome'
 
 /** Home for Dream, Discover and Book: three Next steps, then six tiles with one line of state each (plan section 8). */
-export function StageHome({ trip = null }: { trip?: TripView | null }) {
-  const { stage, focusSailingId } = useJourneyPosition()
+export function StageHome({ trip = null, today = null }: { trip?: TripView | null; today?: OnboardToday | null }) {
+  const { stage, focusSailingId, day } = useJourneyPosition()
   const favourites = useMine(() => api.discover.favourites())
   const draft = useMine(() => api.booking.draft())
   const d = draft.data
@@ -17,6 +17,7 @@ export function StageHome({ trip = null }: { trip?: TripView | null }) {
     savedSailings: (favourites.data ?? []).filter((k) => k.startsWith('sailing:')).length,
     draft: d ? { id: d.id, categoryChosen: d.category !== '', started: d.category !== '' || d.people.some((p) => p.firstName !== '' || p.lastName !== '') } : null,
     trip: trip && { number: trip.number, paid: trip.payment === 'paid', documentsOk: !!trip.documents && trip.documents.missing === 0 && trip.documents.passportProblems === 0, checkinDone: trip.checkin.state === 'done', agent: trip.kind !== 'booked' },
+    aboard: today?.aboard ? { musterDone: today.muster.done, lastFullDay: day?.kind === 'cruiseDay' && day.day >= day.of - 1 } : null,
   }
   const steps = nextSteps(stage, facts)
   const tiles = stageTiles(stage, { sailingId: focusSailingId, draftId: d?.id ?? null })

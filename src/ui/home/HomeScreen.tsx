@@ -28,7 +28,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
-import { TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
+import { ABOARD_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { countdowns } from '../../domain/countdowns'
@@ -69,12 +69,10 @@ export function HomeScreen() {
     return (
       <div className="page">
         <NewTabsNote />
-        <StageLanding />
-        <JourneyStrip />
+        {!ABOARD_STAGES.includes(stage) && <StageLanding />}
         <NudgeCards aboard />
+        {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
-        <HomeOfferCard />
-        <TabScreens tabKey="home" />
       </div>
     )
   }
