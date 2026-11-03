@@ -28,7 +28,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
-import { TILE_STAGES } from '../../routes/stageHome'
+import { TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { countdowns } from '../../domain/countdowns'
@@ -44,7 +44,26 @@ export function HomeScreen() {
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
   const today = useOnboardToday()
   const { stage } = useJourneyPosition()
+  const now = useNow()
   if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><NewTabsNote /><UpdatesBanner /><StageHome /></div>
+  if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
+    const counts = countdowns(trip, now)
+    return (
+      <div className="page">
+        <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>
+        <NewTabsNote />
+        <UpdatesBanner />
+        <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
+        {counts.length > 0 && (
+          <ul className="muted calm-hide" aria-label={t('count.label')}>
+            {counts.map((c) => <li key={c.id}>{c.days === 0 ? t(`count.${c.id}.today` as StringKey) : t(`count.${c.id}` as StringKey, { count: c.days })}</li>)}
+          </ul>
+        )}
+        <NextStep trip={trip} />
+        <StageHome trip={trip} />
+      </div>
+    )
+  }
   if (settings.essentials && !today.data?.aboard) return <EssentialsHome />
   if (today.data?.aboard) {
     return (

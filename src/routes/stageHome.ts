@@ -5,12 +5,17 @@ import { SCREEN_BY_ID, STAGE_TABS, type ScreenDef } from './screens'
 export interface HomeFacts {
   savedSailings: number
   draft: { id: string; categoryChosen: boolean; started: boolean } | null
+  /** The guest's confirmed trip, for the stages from Manage to Get to the ship. */
+  trip?: { number: string; paid: boolean; documentsOk: boolean; checkinDone: boolean; agent: boolean } | null
 }
 
 export interface NextStepItem { key: string; to: string; done: boolean }
 
-/** The stages whose Home is rebuilt as Next steps plus six tiles (the later stages follow in P6 to P8). */
+/** The stages whose Home is rebuilt as Next steps plus six tiles for a guest with no trip (P5). */
 export const TILE_STAGES: readonly JourneyStage[] = ['dream', 'discover', 'book']
+
+/** The stages whose Home is also built on a confirmed trip (P6). */
+export const TRIP_STAGES: readonly JourneyStage[] = ['manage', 'prebook', 'getToShip']
 
 /** The three Next steps of a stage (plan section 8): actions, not screens. A step is done only when the data shows it. */
 export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
@@ -33,6 +38,24 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
         { key: 'stage.next.book.1', to: resume, done: false },
         { key: 'stage.next.book.2', to: f.draft ? `/book/pay/${f.draft.id}` : '/book', done: false },
         { key: 'stage.next.book.3', to: '/plan/party', done: false },
+      ]
+    case 'manage':
+      return [
+        { key: 'stage.next.manage.1', to: f.trip && !f.trip.agent ? `/book/pay/${f.trip.number}` : '/me/payments', done: !!f.trip?.paid },
+        { key: 'stage.next.manage.2', to: '/me/documents', done: !!f.trip?.documentsOk },
+        { key: 'stage.next.manage.3', to: '/plan/readiness', done: false },
+      ]
+    case 'prebook':
+      return [
+        { key: 'stage.next.prebook.1', to: '/plan/excursions', done: false },
+        { key: 'stage.next.prebook.2', to: '/plan/dining', done: false },
+        { key: 'stage.next.prebook.3', to: '/plan/packing', done: false },
+      ]
+    case 'getToShip':
+      return [
+        { key: 'stage.next.getToShip.1', to: f.trip?.checkinDone ? '/home/boarding-pass' : '/home/check-in', done: !!f.trip?.checkinDone },
+        { key: 'stage.next.getToShip.2', to: '/plan/getting-there', done: false },
+        { key: 'stage.next.getToShip.3', to: '/me/documents', done: !!f.trip?.documentsOk },
       ]
     default:
       return []
