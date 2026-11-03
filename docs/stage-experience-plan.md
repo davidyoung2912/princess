@@ -1,6 +1,6 @@
 # One app, eleven stages: the staged-experience plan
 
-Status: **Draft v3 for review (2026-11-03). No code has been changed.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
+Status: **v3, approved by the product owner (2026-11-03). No code has been changed.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
 
 It builds on `docs/customer-journey-priorities.md` (what matters at each stage) and replaces the earlier "reorder but hide nothing" approach in `docs/stage-menus-matrix.md`.
 
@@ -690,13 +690,15 @@ Verification for every phase is `npm run test`, `npm run lint`, `npx tsc -b` and
 
 **Settled:** Plum for Me. A tab keeps its colour at every stage, and a stage's three tabs are always different colours. Cards take the area's colour instead of rotating through four accents. Dream, Discover and Book show no Plan, Ship or Chat tab. No locked screens. Paying in full early opens excursions and dining. A guest can move themselves to Embark ("I'm at the terminal"). The disembark items appear on Home and in **Today** one night early while the stage is still Sea.
 
-**For you to confirm in this version:**
-1. **Tab names** in 5.1 and section 7. Any you would rename?
-2. **Dream has two stage tabs** (Explore, Ask) and the others three. Fine, or should Dream have a third?
-3. **Sea's Today tab** carries the "tomorrow we disembark" items (`H39`–`H41`, `H44`, `H45`) as a last-full-day section. OK?
-4. **Safety screens live inside Ship** rather than a separate Safety tab. OK?
-5. **Chat is not a tab** but is reachable in each stage as described in 5.1.
-6. **The titles and subtexts** in section 6 are my draft. Please mark any to change.
+**Also settled (review of v3):**
+- **Tab names** in 5.1 are approved as they are.
+- **Dream keeps two stage tabs** (Explore, Ask); we can add a third later if needed.
+- **Sea's Today tab** carries the last-full-day disembark screens (`H39`–`H41`, `H44`, `H45`).
+- **Safety screens live inside Ship**, with no separate Safety tab.
+- **Chat is not a tab for now.** Party chat and Guest Services sit inside Group, Plan, Board or People. Pulling Chat out onto its own tab is a likely later change, so the registry (P2) should make moving `C01` to a tab a data change, not a code change.
+- **Titles, subtexts and tab placements** in sections 6 and 8 are approved as drafted.
+
+**No decisions are open.** The next step is P1 when you ask for it.
 
 **Risks:**
 - **Reclassifying 191 screens** is the biggest piece of work. The generated check proves coverage, not whether each placement is right; I need your read of sections 6 and 8.
