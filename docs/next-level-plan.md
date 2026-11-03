@@ -1,6 +1,6 @@
 # Next-level plan: from "feature complete" to best in class
 
-Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 is built except N7.4; N8 is started (N8.1 and N8.2 weather built, see its record).** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
+Status: **Plan written 2026-11-02. N1 to N4 are built and N5 is built except N5.3 and N5.4; N6 is built (see the records at the end of its section); N7 is built except N7.4; N8 is built except the flight provider, the content sign-off, the retention report and the research sessions (see its record).** Source: `docs/customer-journey-priorities.md` (the "journey doc"), checked against the code as it stands today.
 
 ## 1. How the audit was done, and how far to trust it
 

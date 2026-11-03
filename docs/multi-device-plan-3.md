@@ -1,6 +1,6 @@
 # Multi-device plan 3: a client with nothing of its own
 
-Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 and 2 built; Phase 3 built in full (steps 1 to 8, see its record, with the authored first-paint copies kept); Phase 4 built in slices 1 to 7; Phase 5 built (see its record); Phase 6 built (server C# not compiled or run); Phase 7 built as a wider ratchet, not an empty gate (see its record).** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
+Status: **Plan written 2026-11-02 from a second audit of the front end and back end. Phases 1 to 7 are built. The "Not done" lines inside the records are history: later slices and the closing sections (personas removed, authored data deleted, fares served) finished most of them, and Phase 6's missing fall-back wrapper was built as `ProviderGuard` (next-level plan N8.1). Reconciled 2026-11-02: see the end of this file for what is really open.** Follows `docs/multi-device-plan.md` and `docs/multi-device-plan-2.md`. It replaces their "mock mode keeps working" rule (see Decisions).
 
 ## Goal and rules
 
@@ -383,3 +383,19 @@ After Phases 6 and 7, in separate commits: `Providers:*` shown in `appsettings.j
 - **Tests** get the tables from the `pricing` entry in `reference-fixture.json`, seeded by `src/testing/setup.ts`; `emptyStart.test.ts` checks they are empty on a cold start.
 - **`/rates`** now carries a `version` (hash of the day and rates). The client ignores it for now: the table is read on demand and `asOf` still drives the stale note.
 - **Left as recorded decisions:** the provider fall-back wrapper waits for the first real provider; the ~100 content arrays keep their authored first-paint copy (their data is already served and replaced in place).
+
+## Reconciliation (2026-11-02)
+
+Items that the records above list as "Not done" but that were finished later, and what is genuinely open.
+
+**Finished later:** `PersonaId` in the API types and the persona table (removed, "Personas removed"); the device-signed family link branch and the pretend callback queue (Phase 4 slice 3 and plan 2 Phase 6); authored first-paint copies of sailings, ports, excursions, dining, fares and the content arrays (deleted, `ReferenceGate`); `/reference/access` and `/rates` `version` (done with the pricing route); reference cache sweep (`sweepExpiredCopies`); the weather unification (slice 4); the `Providers:*` entries in `appsettings.json`; the provider fall-back wrapper (`ProviderGuard`, N8.1); `personaById` in `bindings.ts` and `portRows.ts` (gone with the table); `hub.cb.sim` wording (reworded); the day screens waiting for the served day (slice 7); the privacy download button and delete explanation (N8.5).
+
+**Still open:**
+- **Autopilot overlay:** `POST /me/autopilot/plan` and `/me/day-plan` are served (`AutopilotService`); the server does not read the `pilot` overlay, so moves and tour or dinner drops made on the device are not seen by the briefing or the concierge.
+- **Hub content, service status and guides** (`IDisruptionContent`, `IServiceStatus`) stay as keyed i18n strings on the client: serving them needs a localisation decision (serve the text in both languages, or keys).
+- **`ai/guard.ts` stays on the client on purpose** (offline emergency screen).
+- **Scalar limits** (`TOPUP_*` and the like) are now `let` exports that the served limits fill in place; whether every one has a named server constant was not re-checked in this pass.
+- **Public reference routes** for the signed-out landing and sailings pages: not decided (needs `AllowAnonymous()` for reference tables).
+- **Domain tests deleted with the mocks were not ported to C#.**
+- **Compile check:** run `dotnet build server/Princess.sln` and the new test classes once; everything since 2026-11-01 is uncompiled.
+- The `src/auditGate.test.ts` ratchet: catalogue screens 0, persona files 0, `'sim'` sources 0; `pricing` is the one module still on its list.

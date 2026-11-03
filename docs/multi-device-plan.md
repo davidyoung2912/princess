@@ -1,6 +1,6 @@
 # Multi-device plan: account data lives on the server
 
-Status: **Plan written 2026-11-01. Phases 1 to 3 built; Phase 4 partly built; Phase 5 built as far as it usefully goes (slices 1 to 6: rates, access reference, sky feed, flight feed, route conditions, demo state); the rest is parked, see the Phase 5 decision.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
+Status: **Superseded by `docs/multi-device-plan-2.md` and `docs/multi-device-plan-3.md`, which finished or replaced every item that was left open here. Reconciled 2026-11-02: see "Reconciliation" at the end. The "Not done" lists in the phase records below are the state on 2026-11-01 and are kept as history.** Companion to `docs/backend-plan.md` and `docs/backend-data-model.md`.
 
 ## Goal and rules
 
@@ -247,3 +247,32 @@ Decided 2026-11-01 after reading the remaining items in the code.
 - **Parked until a real source or a product need exists:** the on-board feeds above; port content, ship packing, dress nights and day stories (authored text; the server already serves packing through `PackingView` and ports through `ref.Ports`, so the question is whether the client copies should be removed, which is a content decision); `ref.Excursions` columns for difficulty (a schema and seed change with nothing the guest would notice); `POST /demo/jump` and `/demo/reset`.
 - **Still to do from earlier phases** (unchanged): sign-out flush, accounts with no persona, sync indicator, per-user settings keys, the calm profile and family contacts consent decision, screen copy that says "stays on this device", port ledger rows, plan changes into the day plan, signed family links, budget unification.
 - **Nothing in Phases 4 and 5 has been compiled or run on the server.** Before relying on any of it, run `dotnet build` and the new tests (`State*`, `Rates*`, `Reference*`, `Feed*`, `FlightFeed*`, `RouteFeed*`, `Demo*`) once.
+
+## Reconciliation (2026-11-02)
+
+Every "Not done" and "still to do" item above, checked against the code and the later plans. **Nothing in this plan is outstanding any more** except the items marked Open.
+
+| Item left open above | Now | Where |
+|---|---|---|
+| Sign-out flush | Done | Plan 2 Phase 5 (`signOutSaving`, `sync.flush`) |
+| Accounts with no persona; per-user settings keys | Done: keyed by user id (`ownerIdOf`) | Plan 2 Phase 5 |
+| Sync indicator | Done (Me screen: saved, saving, waiting) | Plan 2 Phase 5 |
+| Booking-scope client | Done (party; port moved to rows) | Plan 1 Phase 3, plan 2 Phase 6 |
+| Privacy export, "delete my data" | Server routes done; the privacy centre now has a **download** button (`api.account.exportData`) and a plain delete explanation | Next-level plan N8.5 |
+| Account deletion route (closing the account itself) | **Open**: still by asking Guest Services (the delete text says so) | Runbook |
+| Booking documents not deleted by "delete my data" | **Open by design** (other guests share them); message rows are purged 30 days after the cruise | Phase 4 slice 2 |
+| Dedicated medical/access/allergy storage | Done (encrypted `health`) | Phase 4 slice 2 |
+| Calm profile and family contacts consent | Done (`calm` and `family` keys behind `syncPrivate`) | Plan 2 Phase 5 |
+| One budget | Done (`memory.budget`; the aboard limit stays separate on purpose) | Plan 2 Phase 5 |
+| Port ledger and presence as rows | Done (`PortRows`) | Plan 2 Phase 6 |
+| Signed family links and public page | Done | Plan 2 Phase 6 |
+| Caregiver, callback and kit requests | Done against a simulated staff queue (`IStaffQueue`); there is still no staff side in this repo | Plan 2 Phase 6 |
+| Plan changes merged into the day plan | Partly: the server day plan and Autopilot are served; the server does not read the `pilot` overlay (moves, tour and dinner drops) | Plan 2 Phase 5 "Not done" |
+| `/demo/*` incl. `POST /demo/jump`, `/demo/reset`; speed drift; saved controls to a new device | Done (a stopped clock is stored as speed 1, so the server does not follow it: **Open, minor**) | Plan 2 Phase 5 |
+| Scenario ids in two places | Done (`scenarioParity.test.ts`) | Plan 2 Phase 5 |
+| Swagger list lacking the state routes | The delete and export routes are listed; the eight older ones are still covered only by `ApiSurfaceTests` (**Open, minor**) | |
+| Simulated feeds (pulse, line, crowd, storm, sky objects, heading, fare history, boards) | Served (`/feeds/*`); the "left alone" decision was reversed | Plan 3 Phase 4 |
+| Ports, packing, dress nights, day stories, `ref.Excursions` difficulty columns | Served as reference tables and content; difficulty figures are still in server code, not columns (**Open, minor**) | Plan 3 Phases 3 and 7 |
+| Screen copy "stays on this device" | Swept for the account-backed strings; strings about things that really are device-only were kept | Plan 2 Phase 5 |
+| Mock mode | Removed (REST only), see Decisions in plan 3 | Plan 3 Phase 2 |
+| Compile check of the server | **Open**: only run once, on 2026-11-01. Everything since is uncompiled | |

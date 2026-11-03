@@ -1,6 +1,6 @@
 # Phased implementation plan for the leading-features requirements
 
-Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 is in progress (slices 1 to 5 built, section 11). H8 slice 0, the audit, is done (section 12).**
+Status: **Plan saved 2026-11-01. Phases H1 to H6 are built (sections 5 to 10); H7 slices 1 to 5 are built (section 11); H8 slices 0 and A to D and the wire-through slice are built (sections 12 to 19). Reconciled 2026-11-02: the "Not done" lines in sections 5 to 19 were written when this app kept its data on the device and had a mock API; section 20 lists what is still open now.**
 Source: `docs/leading-features-requirements.md` (IDs below are from that file; decisions in its §22 are accepted).
 
 ## 1. Ground rules (from `CLAUDE.md` and the earlier G phases)
@@ -353,3 +353,29 @@ Front end only; no REST contract changes.
 **Part 7:** carbon range uses the sailing's nights (`sailingNights`, read from the itinerary) and says so; the cabin words route offers the cabin on the booking (read with `api.booking.get`) and the guest can still type another; the Home continue card names the step reached (`firstIncomplete`); the money plan keeps its daily amounts (`planning.moneyDaily`) and has "Use this as my trip budget", which feeds the 80 and 100 percent notes on the whole-trip cost screen. Still open from the original list: pasted lines merged into the day plan, day stories per persona, child brief tied to club check-in, storm card beyond pre-trip, assistant actions beyond the day plan, shared cabin day beyond excursions.
 
 **Part 8:** kept pasted lines show on their own day on the briefing and Autopilot screens (`PastedLines`), marked as the guest's notes, not bookings and not clash-checked; the day-story starter picks a style for each demo persona (`styleFor`) and says so; the kids' report reads the children the club knows from check-in (`api.family.view`), falling back to the child brief; the Home storm card now also appears aboard (`stormAboard`, to the Disruption Hub) while the simulated chance is higher, within the nudge budget and quiet modes; the assistant can put a named excursion in the cart (`parseExcursionRequest`) after a confirm tap, with no charge until the guest pays on the excursions screen. Still open: shared cabin day beyond excursions (needs another device to mean anything). Undated pasted lines are still shown only on the paste screen.
+
+## 20. Reconciliation (2026-11-02)
+
+Most "Not done" lines above said "needs a server", "simulated" or "mock mode". Since then the server (multi-device plans 1 to 3, next-level plan N1 to N8) has taken over and the mock layer is gone. Each family of line, checked against the code and the later plans:
+
+**Now done (the "needs a server" and "simulated" lines):**
+- Server storage for the charge check, suggestions budget, phone steps, ledger and the rest of the account state (`UserState`, plan 1); shared copies across phones (booking state and `PortRows`); a real signed family link and public page, callbacks, the caregiver link and the sensory-kit request reaching a staff queue (plan 2 Phase 6; the staff side is still simulated: `IStaffQueue`).
+- Pulse, line, crowd, storm, sky-night, ship position, sea conditions and landmarks are server feeds (`/feeds/*`); weather and flights are simulations behind provider interfaces, with a real Open-Meteo weather provider switchable by configuration (N8.1, N8.2).
+- The assistant runs on the server (`/me/concierge`, key proxy, 20 questions an hour per person), so XA-10's key proxy and cost cap are done; assistant actions beyond the day plan (request an item, add an excursion) were built in section 19 part 8.
+- Do not disturb and the quiet modes are read by Home nudges, the notifications list and offers (section 19); the cabin number is read from the booking; the kids' report reads club check-in; the accessibility profile filters excursions (section 19 parts 5 and 6).
+- S8-12 whole-history download: `GET /me/export` carries the trips and the privacy centre now downloads it (N8.5). Orders and booking detail are still left out.
+- Server-held photos and cleaning exist (N7); the group album (N7.4) waits on the moderation decision.
+
+**Still open (mostly decisions, content or people, not more code):**
+- **Audio and maps:** audio for phrases and walks (N5.4, needs recordings); an offline map layer for port walks, quiet spaces and pick-up points (N5.3, needs checked geography); S6A-14 port snapshot depends on the same.
+- **Group album and children's images** (XG-05, N7.4): moderation answer needed.
+- **XG-06 reunion mode (Could), S8-10 loyalty benefit worth, S8-11 honest referral screen:** not built.
+- **XI-06 spoken wayfinding, XI-07 visual and vibration alerts and a text emergency channel, XA-08 voice mode:** partly built; browsers without speech recognition get no voice button.
+- **Real flight, traffic and hurricane feeds:** the flight provider needs your choice of service; the storm card uses the simulated storm watch.
+- **A lock or PIN on the medical card, per-traveller cards, a consented pre-cruise notice to the ship's medical centre:** need a privacy review.
+- **S3-01 per-person readiness:** needs a decision on how checklist and documents combine per traveller.
+- **Nudge-budget Home cards** for the briefing, Autopilot proposals, the hold and the storm notice; a push for the back-aboard nudge.
+- **The week optimiser applying a week in one tap, booking a watched place for real, a real deck plan and heading, a PDF made by the app (print is used):** not built.
+- **A rendered check** of screens with data: excluded by project rule (no browser testing).
+
+The 76-ID table in section 12 is the 2026-11-01 position, kept as history. I did not re-count it ID by ID; re-running that count is the way to get an exact open number.

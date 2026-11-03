@@ -1,6 +1,6 @@
 # Multi-device plan 2: nothing but a thin client
 
-Status: **Plan written 2026-11-01 (audit of the front end and back end). Phase 5 is built in full; Phases 3, 4 and 6 are built in part and Phase 7 as a ratchet. The "Not done" lines in each record are the remaining work.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
+Status: **Plan written 2026-11-01. Phases 1 to 7 are built; what each "Not done" line left open was finished in `docs/multi-device-plan-3.md` (reconciled 2026-11-02, see the end of this file), except the items marked Open there.** Follows `docs/multi-device-plan.md` (Phases 1 to 5 there) and replaces its "Phase 5 decision: what was left alone".
 
 ## Goal and rules
 
@@ -125,3 +125,16 @@ Built 2026-11-02, **as a ratchet**.
 
 - `src/auditGate.test.ts` fails when a screen under `src/ui` imports an authored catalogue or simulation module (`pricing`, `sailings`, `excursions`, `dining`, `ports`, `portCrowd`, `pulse`, `cabinScore`) that is not on the known list (98 screens today), or when a file outside the stores, settings, sync, runtime and a short allowlist uses `localStorage`. Both lists must be edited when work removes an entry, so they can only shrink. A strict version (empty lists) is the end state of Phases 3 and 4.
 - **Compile check (finding F):** the user ran the server tests on 2026-11-01; the build compiled and four test-helper failures were fixed (`null` bodies read as `JsonValueKind.Null`; `InMemoryJourney.PurgeAsync` tolerates a booking with no party). Everything written since (Phases 1 to 6 of this plan) is still uncompiled.
+
+## Reconciliation (2026-11-02)
+
+| Item left open above | Now |
+|---|---|
+| Climate and per-day sky as two simulations (Phase 1) | Done: one weather model (plan 3 Phase 4 slice 4) |
+| `IShipTelemetry`, `IFareFeed` and the other feeds (Phase 1) | Done (plan 3 Phase 4) |
+| Existing concierge threads in IndexedDB not carried over (Phase 2) | Accepted: IndexedDB is gone entirely (plan 3 Phase 7) |
+| Ports from `sailings.ts`; other catalogues not served (Phase 3) | Done: sailings, ports, fares, packages, pricing and content are served; the authored copies are deleted from the client (plan 3 Phase 7) |
+| Server does not read `pilot` | **Open** |
+| Stopped demo clock stored as speed 1 | **Open, minor** |
+| Making a family link needs a connection | By design |
+| Compile check of Phases 1 to 6 | **Open**: run `dotnet build server/Princess.sln` |
