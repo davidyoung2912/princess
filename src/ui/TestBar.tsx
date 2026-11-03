@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router'
 import { useState, useSyncExternalStore, type FormEvent } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
@@ -52,11 +53,14 @@ function PickerDialog({ now, zone, onClose }: { now: number; zone: string; onClo
   const [date, setDate] = useState(() => new Date(now).toLocaleDateString('sv-SE', { timeZone: zone }))
   const [time, setTime] = useState(() => timeIn(now, zone))
   const [error, setError] = useState(false)
+  const navigate = useNavigate()
   const apply = (e: FormEvent) => {
     e.preventDefault()
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) { setError(true); return }
     jumpTo(zonedToEpoch(date, time, zone))
     onClose()
+    // The screen the tester was on may not fit the new stage: start again from the landing page.
+    void navigate('/')
   }
   return (
     <Dialog title={t('testbar.dialog')} onClose={onClose}>

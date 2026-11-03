@@ -26,6 +26,7 @@ import { OnboardHome } from '../onboard/OnboardHome'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
+import { StageLanding } from './StageLanding'
 import { NudgeCards } from './NudgeCards'
 import { countdowns } from '../../domain/countdowns'
 import { useNow } from '../../hooks/useDemo'
@@ -44,6 +45,7 @@ export function HomeScreen() {
     return (
       <div className="page">
         <h1>{t('route.home')}</h1>
+        <StageLanding />
         <JourneyStrip />
         <NudgeCards aboard />
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
@@ -56,6 +58,7 @@ export function HomeScreen() {
   return (
     <div className="page">
       <h1>{trip ? sailingRange(sailingById(trip.sailingId)!) : t('route.home')}</h1>
+      <StageLanding />
       {trip && <JourneyStrip />}
       <UpdatesBanner />
       <NudgeCards aboard={false} />

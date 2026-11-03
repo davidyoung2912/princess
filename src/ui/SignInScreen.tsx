@@ -1,4 +1,5 @@
-import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { AuthError } from '../auth/provider'
 import { t } from '../i18n'
 import { auth, retryReference } from '../runtime'
@@ -93,6 +94,14 @@ function TestAccounts() {
 /** Shows the sign-in page instead of the app while there is no session. */
 export function SignInGate({ children }: { children: ReactNode }) {
   const session = useSyncExternalStore(auth.subscribe, auth.current, auth.current)
+  const navigate = useNavigate()
+  const signedIn = !!session
+  const was = useRef(signedIn)
+  useEffect(() => {
+    // Just signed in: whatever address was open, start on the landing page.
+    if (signedIn && !was.current) void navigate('/', { replace: true })
+    was.current = signedIn
+  }, [signedIn, navigate])
   if (!session) return <SignInScreen />
   return <ReferenceGate>{children}</ReferenceGate>
 }
