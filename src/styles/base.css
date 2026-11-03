@@ -134,7 +134,7 @@ main.page > h1 { color: var(--primary); }
 .page--head + .page { padding-top: var(--space-5); }
 .page-header { margin: 0; box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--hdr-b) 85%, transparent), 0 4px 8px color-mix(in srgb, var(--hdr-b) 40%, transparent); }
 .page-header__row { display: flex; align-items: center; gap: var(--space-3); }
-.page-header__icon { flex: none; width: 2rem; height: 2rem; color: var(--on-header); }
+.page-header__row .page-header__icon { flex: none; width: 2.75rem; height: 2.75rem; color: var(--on-header); stroke-width: 2.75; }
 .page-header__title { margin: 0; color: inherit; font-size: var(--fs-headline); overflow-wrap: anywhere; }
 .page-header__back {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-top: var(--space-3);

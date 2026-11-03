@@ -48,6 +48,10 @@
 
 /* Banners */
 .banner { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; padding: var(--space-3) var(--space-4); background: var(--sky-tint); border-left: 0.5rem solid var(--primary); border-radius: var(--radius-card); }
+/* A form on a page leaves room before whatever follows it, so its last button never touches the next card or section. */
+.page > form { margin-bottom: var(--space-5); }
+.page > form:last-child { margin-bottom: 0; }
+
 /* A banner always leaves room before whatever follows it (cards, grids, text). */
 .banner { margin-bottom: var(--space-4); }
 .banner:last-child { margin-bottom: 0; }
