@@ -30,3 +30,5 @@ Other scripts: `db:check`, `api:check`, `db:seed:check`, `db:persona:check` (see
 ## Documents
 
 `docs/backend-plan.md` (phases), `docs/backend-data-model.md` (schema and API surface), `docs/functional-requirements.md`, `docs/design-language.md`.
+
+**Stage experience.** The app changes with the guest's journey stage (11 stages, derived on the server). Each stage shows Home, two or three stage tabs and Me, from one registry, `STAGE_TABS` in `src/routes/screens.ts`. The design is in `docs/stage-experience-plan.md` and the generated matrix of tabs, tiles and screens is `docs/stage-menus-matrix.md`.
