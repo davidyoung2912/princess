@@ -80,7 +80,12 @@ for (const file of Object.keys(FILE_TITLES)) {
   if ([...onDisk].some((ch) => ch.charCodeAt(0) > 126)) fail(`${file}.sql contains non-ASCII characters`)
 }
 
-for (const name of tables.keys()) if (!byName.has(name)) fail(`${name} has no seed`)
+// Tables owned by the catalogue seed (db/seed/catalogue, checked by `npm run catalogue:check`), not by the TypeScript fixtures above.
+const CATALOGUE_TABLES = new Set(['ref.Regions', 'ref.Terminals', 'ref.ItineraryPatterns', 'ref.ItineraryPatternDays', 'ref.SailingLegs', 'ref.SailingFares', 'ref.DressNights'])
+for (const name of CATALOGUE_TABLES) if (!tables.has(name)) fail(`${name} is listed as a catalogue table but is not in the schema`)
+for (const name of tables.keys()) if (!byName.has(name) && !CATALOGUE_TABLES.has(name)) fail(`${name} has no seed`)
+const runAll = readFileSync(new URL('../db/seed/reference/run-all.sql', import.meta.url), 'utf8')
+if (!runAll.includes(':r db/seed/catalogue/generated/catalogue.sql')) fail('run-all.sql does not load db/seed/catalogue/generated/catalogue.sql')
 
 const keyOf = (t: Table, row: unknown[]) => t.key.map((k) => String(row[t.cols.findIndex((c) => c.name === k)])).join('|')
 
@@ -117,7 +122,7 @@ for (const [name, def] of tables) {
   if (!t) continue
   for (const fk of def.fks) {
     const target = byName.get(fk.to)
-    if (!target) { fail(`${name} points at ${fk.to}, which has no seed`); continue }
+    if (!target) { if (!CATALOGUE_TABLES.has(fk.to)) fail(`${name} points at ${fk.to}, which has no seed`); continue }
     const wanted = new Set(target.rows.map((row) => fk.toCols.map((c) => String(row[target.cols.findIndex((x) => x.name === c)])).join('|')))
     for (const row of t.rows) {
       const parts = fk.cols.map((c) => row[t.cols.findIndex((x) => x.name === c)])

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "caribbean",
+    "name": "Caribbean"
+  },
+  {
+    "id": "western-med",
+    "name": "Western Mediterranean"
+  },
+  {
+    "id": "eastern-med",
+    "name": "Eastern Mediterranean and Adriatic"
+  },
+  {
+    "id": "atlantic",
+    "name": "Atlantic crossings and islands"
+  },
+  {
+    "id": "northern-europe",
+    "name": "Northern Europe"
+  },
+  {
+    "id": "scandinavia",
+    "name": "Scandinavia, Baltic and Iceland"
+  },
+  {
+    "id": "japan-korea",
+    "name": "Japan and Korea"
+  },
+  {
+    "id": "southeast-asia",
+    "name": "Southeast Asia"
+  },
+  {
+    "id": "australia-nz",
+    "name": "Australia and New Zealand"
+  }
+]

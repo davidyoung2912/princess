@@ -1,0 +1,76 @@
+[
+  {
+    "id": "sky-interior",
+    "ship": "sky-princess",
+    "name": "Interior",
+    "capacity": 4,
+    "sizeSqFt": 160,
+    "description": "The best-value way to sail. Sleeps two to four.",
+    "sortOrder": 1
+  },
+  {
+    "id": "sky-oceanview",
+    "ship": "sky-princess",
+    "name": "Oceanview",
+    "capacity": 4,
+    "sizeSqFt": 175,
+    "description": "A window onto the sea.",
+    "sortOrder": 2
+  },
+  {
+    "id": "sky-balcony",
+    "ship": "sky-princess",
+    "name": "Balcony",
+    "capacity": 4,
+    "sizeSqFt": 200,
+    "description": "A private balcony; 81 percent of staterooms have one.",
+    "sortOrder": 3
+  },
+  {
+    "id": "sky-minisuite",
+    "ship": "sky-princess",
+    "name": "Mini-Suite",
+    "isSuite": true,
+    "capacity": 4,
+    "sizeSqFt": 300,
+    "description": "Extra room, a sitting area and a larger balcony.",
+    "sortOrder": 4
+  },
+  {
+    "id": "sapphire-interior",
+    "ship": "sapphire-princess",
+    "name": "Interior",
+    "capacity": 4,
+    "sizeSqFt": 160,
+    "description": "The best-value way to sail. Sleeps two to four.",
+    "sortOrder": 1
+  },
+  {
+    "id": "sapphire-oceanview",
+    "ship": "sapphire-princess",
+    "name": "Oceanview",
+    "capacity": 4,
+    "sizeSqFt": 175,
+    "description": "A window onto the sea.",
+    "sortOrder": 2
+  },
+  {
+    "id": "sapphire-balcony",
+    "ship": "sapphire-princess",
+    "name": "Balcony",
+    "capacity": 4,
+    "sizeSqFt": 205,
+    "description": "A private balcony to watch each port arrive.",
+    "sortOrder": 3
+  },
+  {
+    "id": "sapphire-minisuite",
+    "ship": "sapphire-princess",
+    "name": "Mini-Suite",
+    "isSuite": true,
+    "capacity": 4,
+    "sizeSqFt": 290,
+    "description": "Extra room, a sitting area and a larger balcony.",
+    "sortOrder": 4
+  }
+]

@@ -8,7 +8,7 @@ SQL Server (T-SQL). The scripts are plain `.sql` files that you run by hand; the
 | --- | --- | --- |
 | 0 (optional) | `00-drop-all.sql` | Test databases only. Drops every table the schema creates, plus the `ref` and `demo` schemas. |
 | 1 | `01-schema.sql` | Creates the `ref`, `dbo` and `demo` schemas and all 157 tables, keys, indexes, checks and defaults. Re-runnable: a table that exists is left alone. |
-| 2 | `seed/reference/run-all.sql` | Phase 3. Reference data for all 38 `ref` tables (ship, ports, sailings, venues, excursions, fares, legal text and so on), nine files, run in order. |
+| 2 | `seed/reference/run-all.sql` | Phase 3. Reference data for all 38 `ref` tables (ship, ports, sailings, venues, excursions, fares, legal text and so on), nine files, run in order, then the generated catalogue (`seed/catalogue/generated/catalogue.sql`: regions, three ships, about 100 ports, itinerary patterns and 68 sample 2027 sailings; source JSON in `seed/catalogue`, regenerate with `npm run catalogue:gen`). |
 | 3 | `seed/personas/run-all.sql` | Phase 4. Resets then loads 34 demo people, 22 bookings and their journey data, in partial-completion states. Catalogue in `seed/personas/README.md`. |
 
 Create an empty database first, then run the scripts inside it:
@@ -53,7 +53,7 @@ It asks no question: it destroys all data in the Princess tables as soon as it r
 sqlcmd -S <server> -d <database> -b -i db/seed/reference/run-all.sql
 ```
 
-Run it from the repository root (the paths inside are relative to it), after `01-schema.sql`. Or run the nine numbered files one at a time. They are plain ASCII, so no code page option is needed.
+Run it from the repository root (the paths inside are relative to it), after `01-schema.sql`. Or run the nine numbered files one at a time, then `db/seed/catalogue/generated/catalogue.sql`. They are plain ASCII, so no code page option is needed.
 
 - **Generated, not written.** `npm run db:seed:gen` builds the files from the TypeScript fixtures in `src/` (`scripts/reference-seed.ts` says which source feeds which table). To change reference data, change the source and regenerate; do not edit the SQL.
 - **Idempotent.** Each table is one `MERGE` on its key. Re-running updates rows in place and adds missing ones; it never deletes, so a row removed from the source stays in the database until you drop it by hand.

@@ -17,6 +17,8 @@
     "content:gen": "vite-node scripts/gen-content.ts",
     "db:seed:gen": "vite-node scripts/gen-reference-seed.ts",
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
+    "catalogue:gen": "vite-node scripts/gen-catalogue-seed.ts",
+    "catalogue:check": "vite-node scripts/check-catalogue-seed.ts",
     "db:persona:gen": "vite-node scripts/gen-persona-seed.ts",
     "db:persona:check": "vite-node scripts/check-persona-seed.ts"
   },

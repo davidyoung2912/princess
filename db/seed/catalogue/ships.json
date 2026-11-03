@@ -1,0 +1,99 @@
+[
+  {
+    "id": "sun-princess",
+    "name": "Sun Princess",
+    "class": "Sphere class",
+    "grossTonnage": 177882,
+    "decks": 17,
+    "guests": 4300,
+    "crew": 1600,
+    "lengthFt": 1133,
+    "beamFt": 155,
+    "homeZone": "America/New_York",
+    "staterooms": 2157,
+    "entered": 2024,
+    "intro": "Princess' newest ship, built around the Piazza, a three-level gathering place under a glass Sphere, and the Dome, a glass-roofed pool by day and a theatre by night.",
+    "highlights": [
+      {
+        "title": "The Piazza",
+        "body": "Three levels of cafes, bars and live music under the Sphere."
+      },
+      {
+        "title": "The Dome",
+        "body": "A pool by day and acrobatic theatre at night."
+      },
+      {
+        "title": "Princess Arena",
+        "body": "The main show venue, set up three ways for different productions."
+      }
+    ],
+    "depth": "aboard"
+  },
+  {
+    "id": "sky-princess",
+    "name": "Sky Princess",
+    "class": "Royal class",
+    "grossTonnage": 145281,
+    "decks": 19,
+    "guests": 3660,
+    "crew": 1346,
+    "lengthFt": 1080,
+    "beamFt": 126,
+    "homeZone": "America/New_York",
+    "staterooms": 1830,
+    "entered": 2019,
+    "intro": "A Royal-class ship known for the SeaWalk, a glass-bottomed walkway that reaches out over the sea, and a three-deck Piazza.",
+    "highlights": [
+      {
+        "title": "SeaWalk",
+        "body": "A glass-bottomed walkway that extends about 28 feet beyond the side of the ship."
+      },
+      {
+        "title": "The Sanctuary",
+        "body": "An adults-only retreat with private cabanas."
+      },
+      {
+        "title": "Sky Suites",
+        "body": "Two top-deck suites with wraparound balconies and 270-degree views."
+      },
+      {
+        "title": "Movies Under the Stars",
+        "body": "A big outdoor screen above the pool deck."
+      }
+    ],
+    "depth": "browse"
+  },
+  {
+    "id": "sapphire-princess",
+    "name": "Sapphire Princess",
+    "class": "Gem class",
+    "grossTonnage": 115875,
+    "decks": 13,
+    "guests": 2670,
+    "crew": 1100,
+    "lengthFt": 951,
+    "beamFt": 121,
+    "homeZone": "Asia/Tokyo",
+    "entered": 2004,
+    "intro": "A mid-sized Gem-class ship with an Italian-inspired Piazza, an adults-only Serenity pool and a long Asia and Australia season.",
+    "highlights": [
+      {
+        "title": "The Sanctuary",
+        "body": "An adults-only retreat, the last ship to receive one."
+      },
+      {
+        "title": "The Piazza",
+        "body": "Italian-inspired, with an international cafe and a wine bar."
+      },
+      {
+        "title": "Skywalkers Nightclub",
+        "body": "A nightclub on the top deck."
+      },
+      {
+        "title": "Movies Under the Stars",
+        "body": "An outdoor screen on the pool deck."
+      }
+    ],
+    "depth": "browse"
+  }
+]

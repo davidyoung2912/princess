@@ -47,6 +47,17 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
 {
     public bool Available => true;
 
+    /// <summary>The API's own error text (<c>error.message</c>), cut short, for the log. It describes the request's shape or the account, not the guest's words.</summary>
+    private static async Task<string> ErrorOf(HttpResponseMessage res, CancellationToken ct)
+    {
+        try
+        {
+            var message = JsonNode.Parse(await res.Content.ReadAsStringAsync(ct))?["error"]?["message"]?.GetValue<string>() ?? "";
+            return message.Length > 300 ? message[..300] : message;
+        }
+        catch (Exception e) when (e is JsonException or InvalidOperationException) { return ""; }
+    }
+
     public async Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, CancellationToken ct)
     {
         var o = options.Value;
@@ -66,7 +77,7 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
                 {
                     HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => new ConciergeModelException("auth", "The key was refused."),
                     HttpStatusCode.TooManyRequests => new ConciergeModelException("rate", "Too many requests."),
-                    _ => new ConciergeModelException("bad", $"The service answered {(int)res.StatusCode}."),
+                    _ => new ConciergeModelException("bad", $"The service answered {(int)res.StatusCode}: {await ErrorOf(res, ct)}"),
                 };
             try { return JsonNode.Parse(await res.Content.ReadAsStringAsync(ct))?.AsObject() ?? throw new ConciergeModelException("bad", "An empty answer."); }
             catch (JsonException) { throw new ConciergeModelException("bad", "An unreadable answer."); }

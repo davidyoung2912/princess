@@ -27,6 +27,14 @@ GO
    4.2 Reference data (ref). String primary keys equal the ids in the TypeScript source.
    ===================================================================================================== */
 
+IF OBJECT_ID(N'ref.Regions', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.Regions (   -- catalogue (docs/catalogue-plan.md section 3); seeded from db/seed/catalogue
+  Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Regions PRIMARY KEY,
+  Name NVARCHAR(80) NOT NULL, SortOrder INT NOT NULL CONSTRAINT DF_Regions_SortOrder DEFAULT 0
+);
+END
+
 IF OBJECT_ID(N'ref.Ships', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Ships (
@@ -35,6 +43,10 @@ CREATE TABLE ref.Ships (
   Decks INT NOT NULL, Tonnage INT NOT NULL, Capacity INT NOT NULL,
   HomeZone NVARCHAR(40) NOT NULL,
   ProfileJson NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Ships_ProfileJson DEFAULT N'{}',
+  LengthFt INT NULL, BeamFt INT NULL, Crew INT NULL, Staterooms INT NULL, Entered INT NULL,
+  Intro NVARCHAR(1000) NOT NULL CONSTRAINT DF_Ships_Intro DEFAULT N'',
+  Depth VARCHAR(6) NOT NULL CONSTRAINT DF_Ships_Depth DEFAULT 'aboard',   -- browse = facts and categories only; aboard = decks, cabins, menus, programme
+  CONSTRAINT CK_Ships_Depth CHECK (Depth IN ('browse','aboard')),
   CONSTRAINT CK_Ships_ProfileJson CHECK (ISJSON(ProfileJson) = 1),
   CONSTRAINT CK_Ships_Sizes CHECK (Decks > 0 AND Tonnage > 0 AND Capacity > 0)
 );
@@ -59,6 +71,8 @@ CREATE TABLE ref.CabinCategories (
   Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_CabinCategories_Description DEFAULT N'',
   Features NVARCHAR(MAX) NOT NULL CONSTRAINT DF_CabinCategories_Features DEFAULT N'[]',
   SortOrder INT NOT NULL CONSTRAINT DF_CabinCategories_SortOrder DEFAULT 0,
+  ShipId NVARCHAR(40) NOT NULL CONSTRAINT DF_CabinCategories_ShipId DEFAULT N'sun-princess',
+  CONSTRAINT FK_CabinCategories_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   CONSTRAINT CK_CabinCategories_Features CHECK (ISJSON(Features) = 1),
   CONSTRAINT CK_CabinCategories_Capacity CHECK (Capacity > 0)
 );
@@ -100,7 +114,50 @@ CREATE TABLE ref.Ports (
   TimeZone NVARCHAR(40) NOT NULL, Tender BIT NOT NULL CONSTRAINT DF_Ports_Tender DEFAULT 0,
   EntryNote NVARCHAR(1000) NOT NULL CONSTRAINT DF_Ports_EntryNote DEFAULT N'',
   Contacts NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Ports_Contacts DEFAULT N'[]',
+  RegionId NVARCHAR(40) NULL, CountryCode CHAR(2) NULL, Lat DECIMAL(9,6) NULL, Lon DECIMAL(9,6) NULL,
+  Currency CHAR(3) NULL, Languages NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Ports_Languages DEFAULT N'[]',
+  Tier CHAR(1) NULL, GuideStatus VARCHAR(10) NOT NULL CONSTRAINT DF_Ports_GuideStatus DEFAULT 'none',   -- none | link | short | full
+  ArtId NVARCHAR(40) NULL,
+  CONSTRAINT FK_Ports_Regions FOREIGN KEY (RegionId) REFERENCES ref.Regions (Id),
+  CONSTRAINT CK_Ports_Tier CHECK (Tier IS NULL OR Tier IN ('A','B','C')),
+  CONSTRAINT CK_Ports_GuideStatus CHECK (GuideStatus IN ('none','link','short','full')),
+  CONSTRAINT CK_Ports_Languages CHECK (ISJSON(Languages) = 1),
   CONSTRAINT CK_Ports_Contacts CHECK (ISJSON(Contacts) = 1)
+);
+END
+
+IF OBJECT_ID(N'ref.Terminals', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.Terminals (   -- optional: where the ship berths, per port
+  Id NVARCHAR(40) NOT NULL CONSTRAINT PK_Terminals PRIMARY KEY,
+  PortId NVARCHAR(40) NOT NULL, Name NVARCHAR(120) NOT NULL,
+  Address NVARCHAR(300) NOT NULL CONSTRAINT DF_Terminals_Address DEFAULT N'', Notes NVARCHAR(1000) NOT NULL CONSTRAINT DF_Terminals_Notes DEFAULT N'',
+  CONSTRAINT FK_Terminals_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id)
+);
+END
+
+IF OBJECT_ID(N'ref.ItineraryPatterns', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.ItineraryPatterns (   -- a repeating shape: Eastern, Western A, Greek Isles ...
+  Id NVARCHAR(40) NOT NULL CONSTRAINT PK_ItineraryPatterns PRIMARY KEY,
+  Name NVARCHAR(120) NOT NULL, RegionId NVARCHAR(40) NOT NULL, Nights INT NOT NULL,
+  StartPortId NVARCHAR(40) NOT NULL, EndPortId NVARCHAR(40) NOT NULL, Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_ItineraryPatterns_Description DEFAULT N'',
+  CONSTRAINT FK_ItineraryPatterns_Regions FOREIGN KEY (RegionId) REFERENCES ref.Regions (Id),
+  CONSTRAINT FK_ItineraryPatterns_StartPort FOREIGN KEY (StartPortId) REFERENCES ref.Ports (Id),
+  CONSTRAINT FK_ItineraryPatterns_EndPort FOREIGN KEY (EndPortId) REFERENCES ref.Ports (Id),
+  CONSTRAINT CK_ItineraryPatterns_Nights CHECK (Nights > 0)
+);
+END
+
+IF OBJECT_ID(N'ref.ItineraryPatternDays', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.ItineraryPatternDays (
+  PatternId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, PortId NVARCHAR(40) NOT NULL,   -- PortId 'sea' for a sea day
+  ArriveLocal TIME(0) NULL, DepartLocal TIME(0) NULL, AllAboardLocal TIME(0) NULL,
+  ClockChangeHours INT NULL, ClockChangeAtLocal TIME(0) NULL,
+  CONSTRAINT PK_ItineraryPatternDays PRIMARY KEY (PatternId, [Day]),
+  CONSTRAINT FK_ItineraryPatternDays_Patterns FOREIGN KEY (PatternId) REFERENCES ref.ItineraryPatterns (Id),
+  CONSTRAINT FK_ItineraryPatternDays_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id)
 );
 END
 
@@ -112,11 +169,22 @@ CREATE TABLE ref.Sailings (
   IsHoliday BIT NOT NULL CONSTRAINT DF_Sailings_IsHoliday DEFAULT 0, IsReference BIT NOT NULL CONSTRAINT DF_Sailings_IsReference DEFAULT 0,
   Title NVARCHAR(120) NOT NULL,
   BookingOpen BIT NOT NULL CONSTRAINT DF_Sailings_BookingOpen DEFAULT 1,   -- manual close only; "1 day to go" is computed in the API
+  PatternId NVARCHAR(40) NULL,   -- the first leg's pattern; NULL for a custom route
+  StartPortId NVARCHAR(40) NULL, EndPortId NVARCHAR(40) NULL, LegCount INT NOT NULL CONSTRAINT DF_Sailings_LegCount DEFAULT 1,
+  RegionId NVARCHAR(40) NULL,
+  DataStatus VARCHAR(8) NOT NULL CONSTRAINT DF_Sailings_DataStatus DEFAULT 'served',   -- served | sample (dates and ports to be confirmed) | verified
   CONSTRAINT FK_Sailings_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
-  CONSTRAINT CK_Sailings_Nights CHECK (Nights > 0)
+  CONSTRAINT FK_Sailings_Patterns FOREIGN KEY (PatternId) REFERENCES ref.ItineraryPatterns (Id),
+  CONSTRAINT FK_Sailings_StartPort FOREIGN KEY (StartPortId) REFERENCES ref.Ports (Id),
+  CONSTRAINT FK_Sailings_EndPort FOREIGN KEY (EndPortId) REFERENCES ref.Ports (Id),
+  CONSTRAINT FK_Sailings_Regions FOREIGN KEY (RegionId) REFERENCES ref.Regions (Id),
+  CONSTRAINT CK_Sailings_DataStatus CHECK (DataStatus IN ('served','sample','verified')),
+  CONSTRAINT CK_Sailings_Nights CHECK (Nights > 0 AND LegCount > 0)
 );
 CREATE INDEX IX_Sailings_Departure ON ref.Sailings (Departure);
-CREATE UNIQUE INDEX UX_Sailings_ShipId_Departure ON ref.Sailings (ShipId, Departure);
+-- One ship can offer the same departure as a single leg and as joined legs (7, 14 and 21 nights), so Nights is part of the key.
+CREATE UNIQUE INDEX UX_Sailings_ShipId_Departure_Nights ON ref.Sailings (ShipId, Departure, Nights);
+CREATE INDEX IX_Sailings_RegionId ON ref.Sailings (RegionId);
 END
 
 IF OBJECT_ID(N'ref.ItineraryDays', N'U') IS NULL
@@ -133,6 +201,38 @@ CREATE UNIQUE INDEX UX_ItineraryDays_SailingId_Date ON ref.ItineraryDays (Sailin
 CREATE INDEX IX_ItineraryDays_PortId ON ref.ItineraryDays (PortId);
 END
 
+IF OBJECT_ID(N'ref.SailingLegs', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.SailingLegs (   -- which pattern each leg of a sailing follows; StartDay is the sailing day the leg begins on
+  SailingId NVARCHAR(40) NOT NULL, LegNo INT NOT NULL, PatternId NVARCHAR(40) NOT NULL, StartDay INT NOT NULL,
+  CONSTRAINT PK_SailingLegs PRIMARY KEY (SailingId, LegNo),
+  CONSTRAINT FK_SailingLegs_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
+  CONSTRAINT FK_SailingLegs_Patterns FOREIGN KEY (PatternId) REFERENCES ref.ItineraryPatterns (Id),
+  CONSTRAINT CK_SailingLegs_Numbers CHECK (LegNo > 0 AND StartDay > 0)
+);
+END
+
+IF OBJECT_ID(N'ref.SailingFares', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.SailingFares (   -- price in data: per person per night for two sharing, in cents; replaces the code dictionaries in X0c
+  SailingId NVARCHAR(40) NOT NULL, CategoryId NVARCHAR(30) NOT NULL, PerNightCents BIGINT NOT NULL,
+  CONSTRAINT PK_SailingFares PRIMARY KEY (SailingId, CategoryId),
+  CONSTRAINT FK_SailingFares_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
+  CONSTRAINT FK_SailingFares_CabinCategories FOREIGN KEY (CategoryId) REFERENCES ref.CabinCategories (Id),
+  CONSTRAINT CK_SailingFares_Price CHECK (PerNightCents > 0)
+);
+END
+
+IF OBJECT_ID(N'ref.DressNights', N'U') IS NULL
+BEGIN
+CREATE TABLE ref.DressNights (   -- the dinner dress code per sailing day, worked out at seed time from the sailing's length
+  SailingId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL, Code VARCHAR(8) NOT NULL,
+  CONSTRAINT PK_DressNights PRIMARY KEY (SailingId, [Day]),
+  CONSTRAINT FK_DressNights_Sailings FOREIGN KEY (SailingId) REFERENCES ref.Sailings (Id),
+  CONSTRAINT CK_DressNights_Code CHECK (Code IN ('casual','smart','elegant'))
+);
+END
+
 IF OBJECT_ID(N'ref.Venues', N'U') IS NULL
 BEGIN
 CREATE TABLE ref.Venues (
@@ -142,6 +242,8 @@ CREATE TABLE ref.Venues (
   Walkin BIT NOT NULL CONSTRAINT DF_Venues_Walkin DEFAULT 0, OpenFrom TIME(0) NOT NULL, OpenTo TIME(0) NOT NULL,
   CoverCents BIGINT NOT NULL CONSTRAINT DF_Venues_CoverCents DEFAULT 0, Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_Venues_Description DEFAULT N'',
   Hours NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Venues_Hours DEFAULT N'{}',
+  ShipId NVARCHAR(40) NOT NULL CONSTRAINT DF_Venues_ShipId DEFAULT N'sun-princess',
+  CONSTRAINT FK_Venues_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   CONSTRAINT CK_Venues_Kind CHECK (Kind IN ('main','specialty','casual')),
   CONSTRAINT CK_Venues_DressCode CHECK (DressCode IN ('casual','smart','elegant')),
   CONSTRAINT CK_Venues_Hours CHECK (ISJSON(Hours) = 1),
@@ -161,6 +263,8 @@ CREATE TABLE ref.MenuItems (
   Alcohol BIT NOT NULL CONSTRAINT DF_MenuItems_Alcohol DEFAULT 0, Packaged BIT NOT NULL CONSTRAINT DF_MenuItems_Packaged DEFAULT 0,   -- Packaged: a drinks package pays for it
   OnMenus NVARCHAR(MAX) NOT NULL CONSTRAINT DF_MenuItems_OnMenus DEFAULT N'[]',   -- which menus carry it: delivery, room
   SubstituteId NVARCHAR(40) NULL,   -- offered in its place when it runs out
+  ShipId NVARCHAR(40) NOT NULL CONSTRAINT DF_MenuItems_ShipId DEFAULT N'sun-princess',
+  CONSTRAINT FK_MenuItems_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   CONSTRAINT FK_MenuItems_Venues FOREIGN KEY (VenueId) REFERENCES ref.Venues (Id),
   CONSTRAINT FK_MenuItems_MenuItems_Substitute FOREIGN KEY (SubstituteId) REFERENCES ref.MenuItems (Id),
   CONSTRAINT CK_MenuItems_MenuGroup CHECK (MenuGroup IN ('mains','snacks','desserts','drinks','breakfast')),
@@ -192,6 +296,8 @@ CREATE TABLE ref.Excursions (
   StartLocal TIME(0) NOT NULL, BackByLocal TIME(0) NOT NULL, Tender BIT NOT NULL CONSTRAINT DF_Excursions_Tender DEFAULT 0,
   Capacity INT NOT NULL, Meeting NVARCHAR(200) NOT NULL CONSTRAINT DF_Excursions_Meeting DEFAULT N'', Description NVARCHAR(1000) NOT NULL CONSTRAINT DF_Excursions_Description DEFAULT N'',
   Tags NVARCHAR(MAX) NOT NULL CONSTRAINT DF_Excursions_Tags DEFAULT N'[]',
+  ShipId NVARCHAR(40) NOT NULL CONSTRAINT DF_Excursions_ShipId DEFAULT N'sun-princess',
+  CONSTRAINT FK_Excursions_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   Rating INT NOT NULL CONSTRAINT DF_Excursions_Rating DEFAULT 0, Reviews INT NOT NULL CONSTRAINT DF_Excursions_Reviews DEFAULT 0,   -- Rating in tenths of a star (47 = 4.7)
   WalkKm DECIMAL(4,1) NULL, Steps BIT NULL, Heat VARCHAR(6) NULL, Shade VARCHAR(6) NULL, Seats BIT NULL, Restrooms BIT NULL, Wet BIT NULL,   -- difficulty on foot (NULL = none authored)
   CONSTRAINT FK_Excursions_Ports FOREIGN KEY (PortId) REFERENCES ref.Ports (Id),
@@ -226,6 +332,8 @@ CREATE TABLE ref.Events (
   Ticketed BIT NOT NULL CONSTRAINT DF_Events_Ticketed DEFAULT 0, Seats INT NULL, Deck INT NULL,
   ExtraCents BIGINT NOT NULL CONSTRAINT DF_Events_ExtraCents DEFAULT 0,   -- extra cost per person; 0 is in the fare
   AfterAllAboard BIT NOT NULL CONSTRAINT DF_Events_AfterAllAboard DEFAULT 0,  -- on a port day, listed only once the ship is back aboard
+  ShipId NVARCHAR(40) NOT NULL CONSTRAINT DF_Events_ShipId DEFAULT N'sun-princess',
+  CONSTRAINT FK_Events_Ships FOREIGN KEY (ShipId) REFERENCES ref.Ships (Id),
   CONSTRAINT CK_Events_AgeGroup CHECK (AgeGroup IN ('all','kids','teens','adults')),
   CONSTRAINT CK_Events_Interests CHECK (ISJSON(Interests) = 1),
   CONSTRAINT CK_Events_Amounts CHECK (DurationMin > 0 AND ExtraCents >= 0)

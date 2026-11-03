@@ -1,0 +1,923 @@
+[
+  {
+    "id": "sun-2027-01-03-7",
+    "ship": "sun-princess",
+    "departure": "2027-01-03",
+    "title": "Eastern Caribbean A, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-03-14",
+    "ship": "sun-princess",
+    "departure": "2027-01-03",
+    "title": "Eastern Caribbean A and Western Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      },
+      {
+        "pattern": "carib-west-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-10-7",
+    "ship": "sun-princess",
+    "departure": "2027-01-10",
+    "title": "Western Caribbean B, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-b"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-10-14",
+    "ship": "sun-princess",
+    "departure": "2027-01-10",
+    "title": "Western Caribbean B and Eastern Caribbean B, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-b"
+      },
+      {
+        "pattern": "carib-east-b"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-17-14",
+    "ship": "sun-princess",
+    "departure": "2027-01-17",
+    "title": "Eastern Caribbean B and Western Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-b"
+      },
+      {
+        "pattern": "carib-west-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-24-7",
+    "ship": "sun-princess",
+    "departure": "2027-01-24",
+    "title": "Western Caribbean A, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-24-14",
+    "ship": "sun-princess",
+    "departure": "2027-01-24",
+    "title": "Western Caribbean A and Eastern Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-a"
+      },
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-31-7",
+    "ship": "sun-princess",
+    "departure": "2027-01-31",
+    "title": "Eastern Caribbean A, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-01-31-14",
+    "ship": "sun-princess",
+    "departure": "2027-01-31",
+    "title": "Eastern Caribbean A and Western Caribbean B, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      },
+      {
+        "pattern": "carib-west-b"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-07-14",
+    "ship": "sun-princess",
+    "departure": "2027-02-07",
+    "title": "Western Caribbean B and Eastern Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-b"
+      },
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-14-7",
+    "ship": "sun-princess",
+    "departure": "2027-02-14",
+    "title": "Eastern Caribbean A, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-14-14",
+    "ship": "sun-princess",
+    "departure": "2027-02-14",
+    "title": "Eastern Caribbean A and Western Caribbean C, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      },
+      {
+        "pattern": "carib-west-c"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-21-7",
+    "ship": "sun-princess",
+    "departure": "2027-02-21",
+    "title": "Western Caribbean C, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-c"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-21-14",
+    "ship": "sun-princess",
+    "departure": "2027-02-21",
+    "title": "Western Caribbean B and Eastern Caribbean C, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-b"
+      },
+      {
+        "pattern": "carib-east-c"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-02-28-14",
+    "ship": "sun-princess",
+    "departure": "2027-02-28",
+    "title": "Eastern Caribbean C and Western Caribbean D, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-c"
+      },
+      {
+        "pattern": "carib-west-d"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-07-7",
+    "ship": "sun-princess",
+    "departure": "2027-03-07",
+    "title": "Western Caribbean D, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-d"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-07-14",
+    "ship": "sun-princess",
+    "departure": "2027-03-07",
+    "title": "Western Caribbean A and Eastern Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-west-a"
+      },
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-14-7",
+    "ship": "sun-princess",
+    "departure": "2027-03-14",
+    "title": "Eastern Caribbean A, 7 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-14-14",
+    "ship": "sun-princess",
+    "departure": "2027-03-14",
+    "title": "Eastern Caribbean A and Western Caribbean A, 14 nights from Fort Lauderdale",
+    "legs": [
+      {
+        "pattern": "carib-east-a"
+      },
+      {
+        "pattern": "carib-west-a"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-28-14",
+    "ship": "sun-princess",
+    "departure": "2027-03-28",
+    "title": "Fort Lauderdale to Barcelona, 14 nights",
+    "legs": [
+      {
+        "pattern": "atlantic-fll-bcn-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-03-28-21",
+    "ship": "sun-princess",
+    "departure": "2027-03-28",
+    "title": "Fort Lauderdale to Civitavecchia (Rome), 21 nights",
+    "legs": [
+      {
+        "pattern": "atlantic-fll-bcn-14"
+      },
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-11-7",
+    "ship": "sun-princess",
+    "departure": "2027-04-11",
+    "title": "Western Mediterranean from Barcelona, 7 nights",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-11-14",
+    "ship": "sun-princess",
+    "departure": "2027-04-11",
+    "title": "Western Mediterranean and Greek Isles, 14 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-11-21",
+    "ship": "sun-princess",
+    "departure": "2027-04-11",
+    "title": "Mediterranean grand tour, 21 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-02-7",
+    "ship": "sun-princess",
+    "departure": "2027-05-02",
+    "title": "Western Mediterranean from Barcelona, 7 nights",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-02-14",
+    "ship": "sun-princess",
+    "departure": "2027-05-02",
+    "title": "Western Mediterranean and Greek Isles, 14 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-02-21",
+    "ship": "sun-princess",
+    "departure": "2027-05-02",
+    "title": "Mediterranean grand tour, 21 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-16-7",
+    "ship": "sun-princess",
+    "departure": "2027-05-16",
+    "title": "Western Mediterranean from Barcelona, 7 nights",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-16-14",
+    "ship": "sun-princess",
+    "departure": "2027-05-16",
+    "title": "Western Mediterranean and Greek Isles, 14 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-16-21",
+    "ship": "sun-princess",
+    "departure": "2027-05-16",
+    "title": "Mediterranean grand tour, 21 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-18-7",
+    "ship": "sun-princess",
+    "departure": "2027-04-18",
+    "title": "Greek Isles from Civitavecchia, 7 nights",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-18-14",
+    "ship": "sun-princess",
+    "departure": "2027-04-18",
+    "title": "Greek Isles and Adriatic, 14 nights from Civitavecchia",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-18-21",
+    "ship": "sun-princess",
+    "departure": "2027-04-18",
+    "title": "Mediterranean grand tour, 21 nights from Civitavecchia",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      },
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-09-7",
+    "ship": "sun-princess",
+    "departure": "2027-05-09",
+    "title": "Greek Isles from Civitavecchia, 7 nights",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-09-14",
+    "ship": "sun-princess",
+    "departure": "2027-05-09",
+    "title": "Greek Isles and Adriatic, 14 nights from Civitavecchia",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-09-21",
+    "ship": "sun-princess",
+    "departure": "2027-05-09",
+    "title": "Mediterranean grand tour, 21 nights from Civitavecchia",
+    "legs": [
+      {
+        "pattern": "gisles-civ-ath"
+      },
+      {
+        "pattern": "adriatic-ath-bcn"
+      },
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-25-7",
+    "ship": "sun-princess",
+    "departure": "2027-04-25",
+    "title": "Adriatic from Athens, 7 nights",
+    "legs": [
+      {
+        "pattern": "adriatic-ath-bcn"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-25-14",
+    "ship": "sun-princess",
+    "departure": "2027-04-25",
+    "title": "Adriatic and Western Mediterranean, 14 nights from Athens",
+    "legs": [
+      {
+        "pattern": "adriatic-ath-bcn"
+      },
+      {
+        "pattern": "wmed-bcn-civ"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-04-25-21",
+    "ship": "sun-princess",
+    "departure": "2027-04-25",
+    "title": "Mediterranean grand tour, 21 nights from Athens",
+    "legs": [
+      {
+        "pattern": "adriatic-ath-bcn"
+      },
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sun-2027-05-23-14",
+    "ship": "sun-princess",
+    "departure": "2027-05-23",
+    "title": "Western Mediterranean and Greek Isles, 14 nights from Barcelona",
+    "legs": [
+      {
+        "pattern": "wmed-bcn-civ"
+      },
+      {
+        "pattern": "gisles-civ-ath"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-01-04-6",
+    "ship": "sky-princess",
+    "departure": "2027-01-04",
+    "title": "Bahamas and Turks from Port Canaveral, 6 nights",
+    "legs": [
+      {
+        "pattern": "carib-canaveral-6"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-01-10-9",
+    "ship": "sky-princess",
+    "departure": "2027-01-10",
+    "title": "Eastern Caribbean from Port Canaveral, 8 nights",
+    "legs": [
+      {
+        "pattern": "carib-canaveral-8"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-01-18-6",
+    "ship": "sky-princess",
+    "departure": "2027-01-18",
+    "title": "Bahamas and Turks from Port Canaveral, 6 nights",
+    "legs": [
+      {
+        "pattern": "carib-canaveral-6"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-01-24-9",
+    "ship": "sky-princess",
+    "departure": "2027-01-24",
+    "title": "Eastern Caribbean from Port Canaveral, 8 nights",
+    "legs": [
+      {
+        "pattern": "carib-canaveral-8"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-03-01-6",
+    "ship": "sky-princess",
+    "departure": "2027-03-01",
+    "title": "Nassau and Turks from Port Canaveral, 6 nights",
+    "legs": [
+      {
+        "pattern": "carib-canaveral-nassau-6"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-03-07-15",
+    "ship": "sky-princess",
+    "departure": "2027-03-07",
+    "title": "Port Canaveral to Southampton, 15 nights",
+    "legs": [
+      {
+        "pattern": "atlantic-cape-sou-15"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-03-22-7",
+    "ship": "sky-princess",
+    "departure": "2027-03-22",
+    "title": "Atlantic France and Spain from Southampton, 7 nights",
+    "legs": [
+      {
+        "pattern": "nweurope-sou-7"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-03-29-14",
+    "ship": "sky-princess",
+    "departure": "2027-03-29",
+    "title": "Mediterranean from Southampton, 14 nights",
+    "legs": [
+      {
+        "pattern": "med-sou-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-04-24-14",
+    "ship": "sky-princess",
+    "departure": "2027-04-24",
+    "title": "Baltic capitals from Southampton, 14 nights",
+    "legs": [
+      {
+        "pattern": "baltic-sou-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-06-12-14",
+    "ship": "sky-princess",
+    "departure": "2027-06-12",
+    "title": "Norwegian fjords and the Arctic, 14 nights from Southampton",
+    "legs": [
+      {
+        "pattern": "fjords-arctic-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-06-26-14",
+    "ship": "sky-princess",
+    "departure": "2027-06-26",
+    "title": "Iceland and the fjords, 14 nights from Southampton",
+    "legs": [
+      {
+        "pattern": "iceland-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-07-17-7",
+    "ship": "sky-princess",
+    "departure": "2027-07-17",
+    "title": "Norway and Denmark from Southampton, 7 nights",
+    "legs": [
+      {
+        "pattern": "nordic-sou-7"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-07-24-14",
+    "ship": "sky-princess",
+    "departure": "2027-07-24",
+    "title": "Eclipse cruise from Southampton, 14 nights",
+    "legs": [
+      {
+        "pattern": "eclipse-sou-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-08-07-14",
+    "ship": "sky-princess",
+    "departure": "2027-08-07",
+    "title": "Mediterranean from Southampton, 14 nights",
+    "legs": [
+      {
+        "pattern": "med-sou-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-08-21-7",
+    "ship": "sky-princess",
+    "departure": "2027-08-21",
+    "title": "Norway and Denmark from Southampton, 7 nights",
+    "legs": [
+      {
+        "pattern": "nordic-sou-7b"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-08-28-14",
+    "ship": "sky-princess",
+    "departure": "2027-08-28",
+    "title": "Mediterranean from Southampton, 14 nights",
+    "legs": [
+      {
+        "pattern": "med-sou-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sky-2027-10-26-15",
+    "ship": "sky-princess",
+    "departure": "2027-10-26",
+    "title": "Southampton to Fort Lauderdale, 15 nights",
+    "legs": [
+      {
+        "pattern": "atlantic-sou-fll-15"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-03-06-11",
+    "ship": "sapphire-princess",
+    "departure": "2027-03-06",
+    "title": "Japan loop from Tokyo, 11 nights",
+    "legs": [
+      {
+        "pattern": "japan-loop-11"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-04-21-11",
+    "ship": "sapphire-princess",
+    "departure": "2027-04-21",
+    "title": "Northern Japan from Tokyo, 11 nights",
+    "legs": [
+      {
+        "pattern": "japan-north-11"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-07-07-10",
+    "ship": "sapphire-princess",
+    "departure": "2027-07-07",
+    "title": "Western Japan from Tokyo, 10 nights",
+    "legs": [
+      {
+        "pattern": "japan-west-10"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-07-17-7",
+    "ship": "sapphire-princess",
+    "departure": "2027-07-17",
+    "title": "Japan and Jeju from Tokyo, 7 nights",
+    "legs": [
+      {
+        "pattern": "japan-korea-7"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-09-14-14",
+    "ship": "sapphire-princess",
+    "departure": "2027-09-14",
+    "title": "Tokyo to Singapore, 14 nights",
+    "legs": [
+      {
+        "pattern": "tokyo-singapore-14"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-09-14-26",
+    "ship": "sapphire-princess",
+    "departure": "2027-09-14",
+    "title": "Tokyo to Perth, 26 nights",
+    "legs": [
+      {
+        "pattern": "tokyo-singapore-14"
+      },
+      {
+        "pattern": "sea-perth-12"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-09-28-12",
+    "ship": "sapphire-princess",
+    "departure": "2027-09-28",
+    "title": "Singapore to Perth, 12 nights",
+    "legs": [
+      {
+        "pattern": "sea-perth-12"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-09-28-25",
+    "ship": "sapphire-princess",
+    "departure": "2027-09-28",
+    "title": "Singapore to Brisbane, 25 nights",
+    "legs": [
+      {
+        "pattern": "sea-perth-12"
+      },
+      {
+        "pattern": "aus-perth-bne-13"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-09-28-28",
+    "ship": "sapphire-princess",
+    "departure": "2027-09-28",
+    "title": "Singapore to Sydney, 28 nights",
+    "legs": [
+      {
+        "pattern": "sea-perth-12"
+      },
+      {
+        "pattern": "aus-perth-bne-13"
+      },
+      {
+        "pattern": "aus-bne-syd-3"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-10-10-13",
+    "ship": "sapphire-princess",
+    "departure": "2027-10-10",
+    "title": "Perth to Brisbane, 13 nights",
+    "legs": [
+      {
+        "pattern": "aus-perth-bne-13"
+      }
+    ],
+    "dataStatus": "sample"
+  },
+  {
+    "id": "sapphire-2027-10-23-3",
+    "ship": "sapphire-princess",
+    "departure": "2027-10-23",
+    "title": "Brisbane to Sydney, 3 nights",
+    "legs": [
+      {
+        "pattern": "aus-bne-syd-3"
+      }
+    ],
+    "dataStatus": "sample"
+  }
+]

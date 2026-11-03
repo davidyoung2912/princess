@@ -1,0 +1,72 @@
+[
+  {
+    "ship": "sun-princess",
+    "category": "interior",
+    "perNightCents": 23000
+  },
+  {
+    "ship": "sun-princess",
+    "category": "oceanview",
+    "perNightCents": 28100
+  },
+  {
+    "ship": "sun-princess",
+    "category": "balcony",
+    "perNightCents": 33400
+  },
+  {
+    "ship": "sun-princess",
+    "category": "miniSuite",
+    "perNightCents": 43700
+  },
+  {
+    "ship": "sun-princess",
+    "category": "sanctuaryMiniSuite",
+    "perNightCents": 56400
+  },
+  {
+    "ship": "sun-princess",
+    "category": "signatureSuite",
+    "perNightCents": 78200
+  },
+  {
+    "ship": "sky-princess",
+    "category": "sky-interior",
+    "perNightCents": 20500
+  },
+  {
+    "ship": "sky-princess",
+    "category": "sky-oceanview",
+    "perNightCents": 24600
+  },
+  {
+    "ship": "sky-princess",
+    "category": "sky-balcony",
+    "perNightCents": 28700
+  },
+  {
+    "ship": "sky-princess",
+    "category": "sky-minisuite",
+    "perNightCents": 37900
+  },
+  {
+    "ship": "sapphire-princess",
+    "category": "sapphire-interior",
+    "perNightCents": 16500
+  },
+  {
+    "ship": "sapphire-princess",
+    "category": "sapphire-oceanview",
+    "perNightCents": 19800
+  },
+  {
+    "ship": "sapphire-princess",
+    "category": "sapphire-balcony",
+    "perNightCents": 23100
+  },
+  {
+    "ship": "sapphire-princess",
+    "category": "sapphire-minisuite",
+    "perNightCents": 29700
+  }
+]

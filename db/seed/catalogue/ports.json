@@ -1,0 +1,1536 @@
+[
+  {
+    "id": "fll",
+    "name": "Fort Lauderdale (Port Everglades)",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "caribbean",
+    "zone": "America/New_York",
+    "lat": 26.09,
+    "lon": -80.12,
+    "currency": "USD",
+    "languages": [
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "port-canaveral",
+    "name": "Port Canaveral",
+    "country": "United States",
+    "countryCode": "US",
+    "region": "caribbean",
+    "zone": "America/New_York",
+    "lat": 28.41,
+    "lon": -80.62,
+    "currency": "USD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "cozumel",
+    "name": "Cozumel, Mexico",
+    "country": "Mexico",
+    "countryCode": "MX",
+    "region": "caribbean",
+    "zone": "America/Cancun",
+    "lat": 20.51,
+    "lon": -86.95,
+    "currency": "MXN",
+    "languages": [
+      "es",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "belize",
+    "name": "Belize City, Belize",
+    "country": "Belize",
+    "countryCode": "BZ",
+    "region": "caribbean",
+    "zone": "America/Belize",
+    "lat": 17.5,
+    "lon": -88.19,
+    "currency": "BZD",
+    "languages": [
+      "en",
+      "es"
+    ],
+    "tier": "A",
+    "tender": true
+  },
+  {
+    "id": "roatan",
+    "name": "Roatán, Honduras",
+    "country": "Honduras",
+    "countryCode": "HN",
+    "region": "caribbean",
+    "zone": "America/Tegucigalpa",
+    "lat": 16.32,
+    "lon": -86.54,
+    "currency": "HNL",
+    "languages": [
+      "es",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "celebration-key",
+    "name": "Celebration Key, Grand Bahama",
+    "country": "Bahamas",
+    "countryCode": "BS",
+    "region": "caribbean",
+    "zone": "America/Nassau",
+    "lat": 26.53,
+    "lon": -78.7,
+    "currency": "BSD",
+    "languages": [
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "freeport",
+    "name": "Freeport, Bahamas",
+    "country": "Bahamas",
+    "countryCode": "BS",
+    "region": "caribbean",
+    "zone": "America/Nassau",
+    "lat": 26.53,
+    "lon": -78.7,
+    "currency": "BSD",
+    "languages": [
+      "en"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "nassau",
+    "name": "Nassau, Bahamas",
+    "country": "Bahamas",
+    "countryCode": "BS",
+    "region": "caribbean",
+    "zone": "America/Nassau",
+    "lat": 25.08,
+    "lon": -77.35,
+    "currency": "BSD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "grand-turk",
+    "name": "Grand Turk",
+    "country": "Turks and Caicos Islands",
+    "countryCode": "TC",
+    "region": "caribbean",
+    "zone": "America/Grand_Turk",
+    "lat": 21.46,
+    "lon": -71.14,
+    "currency": "USD",
+    "languages": [
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "san-juan",
+    "name": "San Juan, Puerto Rico",
+    "country": "United States (Puerto Rico)",
+    "countryCode": "PR",
+    "region": "caribbean",
+    "zone": "America/Puerto_Rico",
+    "lat": 18.46,
+    "lon": -66.11,
+    "currency": "USD",
+    "languages": [
+      "es",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "amber-cove",
+    "name": "Amber Cove, Dominican Republic",
+    "country": "Dominican Republic",
+    "countryCode": "DO",
+    "region": "caribbean",
+    "zone": "America/Santo_Domingo",
+    "lat": 19.83,
+    "lon": -70.69,
+    "currency": "DOP",
+    "languages": [
+      "es",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "ponta-delgada",
+    "name": "Ponta Delgada, Azores",
+    "country": "Portugal",
+    "countryCode": "PT",
+    "region": "atlantic",
+    "zone": "Atlantic/Azores",
+    "lat": 37.74,
+    "lon": -25.67,
+    "currency": "EUR",
+    "languages": [
+      "pt"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "casablanca",
+    "name": "Casablanca",
+    "country": "Morocco",
+    "countryCode": "MA",
+    "region": "atlantic",
+    "zone": "Africa/Casablanca",
+    "lat": 33.6,
+    "lon": -7.62,
+    "currency": "MAD",
+    "languages": [
+      "ar",
+      "fr"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "a-coruna",
+    "name": "A Coruña",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "atlantic",
+    "zone": "Europe/Madrid",
+    "lat": 43.37,
+    "lon": -8.4,
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "gl"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "vigo",
+    "name": "Vigo",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "atlantic",
+    "zone": "Europe/Madrid",
+    "lat": 42.24,
+    "lon": -8.73,
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "gl"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "bilbao",
+    "name": "Bilbao",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "atlantic",
+    "zone": "Europe/Madrid",
+    "lat": 43.34,
+    "lon": -3.05,
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "eu"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "cadiz",
+    "name": "Cádiz",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "atlantic",
+    "zone": "Europe/Madrid",
+    "lat": 36.53,
+    "lon": -6.29,
+    "currency": "EUR",
+    "languages": [
+      "es"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "lisbon",
+    "name": "Lisbon",
+    "country": "Portugal",
+    "countryCode": "PT",
+    "region": "atlantic",
+    "zone": "Europe/Lisbon",
+    "lat": 38.7,
+    "lon": -9.13,
+    "currency": "EUR",
+    "languages": [
+      "pt"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "funchal",
+    "name": "Funchal, Madeira",
+    "country": "Portugal",
+    "countryCode": "PT",
+    "region": "atlantic",
+    "zone": "Atlantic/Madeira",
+    "lat": 32.65,
+    "lon": -16.91,
+    "currency": "EUR",
+    "languages": [
+      "pt"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "tenerife",
+    "name": "Santa Cruz de Tenerife",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "atlantic",
+    "zone": "Atlantic/Canary",
+    "lat": 28.47,
+    "lon": -16.25,
+    "currency": "EUR",
+    "languages": [
+      "es"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "southampton",
+    "name": "Southampton",
+    "country": "United Kingdom",
+    "countryCode": "GB",
+    "region": "northern-europe",
+    "zone": "Europe/London",
+    "lat": 50.9,
+    "lon": -1.4,
+    "currency": "GBP",
+    "languages": [
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "cherbourg",
+    "name": "Cherbourg",
+    "country": "France",
+    "countryCode": "FR",
+    "region": "northern-europe",
+    "zone": "Europe/Paris",
+    "lat": 49.65,
+    "lon": -1.62,
+    "currency": "EUR",
+    "languages": [
+      "fr"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "bordeaux",
+    "name": "Bordeaux (Le Verdon)",
+    "country": "France",
+    "countryCode": "FR",
+    "region": "northern-europe",
+    "zone": "Europe/Paris",
+    "lat": 45.54,
+    "lon": -1.07,
+    "currency": "EUR",
+    "languages": [
+      "fr"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "zeebrugge",
+    "name": "Zeebrugge (Bruges)",
+    "country": "Belgium",
+    "countryCode": "BE",
+    "region": "northern-europe",
+    "zone": "Europe/Brussels",
+    "lat": 51.33,
+    "lon": 3.2,
+    "currency": "EUR",
+    "languages": [
+      "nl",
+      "fr"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "south-queensferry",
+    "name": "South Queensferry (Edinburgh)",
+    "country": "United Kingdom",
+    "countryCode": "GB",
+    "region": "northern-europe",
+    "zone": "Europe/London",
+    "lat": 55.99,
+    "lon": -3.4,
+    "currency": "GBP",
+    "languages": [
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "barcelona",
+    "name": "Barcelona",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "western-med",
+    "zone": "Europe/Madrid",
+    "lat": 41.35,
+    "lon": 2.17,
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "ca"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "palma",
+    "name": "Palma de Mallorca",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "western-med",
+    "zone": "Europe/Madrid",
+    "lat": 39.56,
+    "lon": 2.64,
+    "currency": "EUR",
+    "languages": [
+      "es",
+      "ca"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "marseille",
+    "name": "Marseille",
+    "country": "France",
+    "countryCode": "FR",
+    "region": "western-med",
+    "zone": "Europe/Paris",
+    "lat": 43.3,
+    "lon": 5.35,
+    "currency": "EUR",
+    "languages": [
+      "fr"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "toulon",
+    "name": "Toulon",
+    "country": "France",
+    "countryCode": "FR",
+    "region": "western-med",
+    "zone": "Europe/Paris",
+    "lat": 43.12,
+    "lon": 5.93,
+    "currency": "EUR",
+    "languages": [
+      "fr"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "genoa",
+    "name": "Genoa",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "western-med",
+    "zone": "Europe/Rome",
+    "lat": 44.41,
+    "lon": 8.93,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "la-spezia",
+    "name": "La Spezia",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "western-med",
+    "zone": "Europe/Rome",
+    "lat": 44.1,
+    "lon": 9.83,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "livorno",
+    "name": "Livorno (Florence and Pisa)",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "western-med",
+    "zone": "Europe/Rome",
+    "lat": 43.55,
+    "lon": 10.3,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "civitavecchia",
+    "name": "Civitavecchia (Rome)",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "western-med",
+    "zone": "Europe/Rome",
+    "lat": 42.09,
+    "lon": 11.79,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "naples",
+    "name": "Naples",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "western-med",
+    "zone": "Europe/Rome",
+    "lat": 40.84,
+    "lon": 14.26,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "cartagena",
+    "name": "Cartagena, Spain",
+    "country": "Spain",
+    "countryCode": "ES",
+    "region": "western-med",
+    "zone": "Europe/Madrid",
+    "lat": 37.6,
+    "lon": -0.98,
+    "currency": "EUR",
+    "languages": [
+      "es"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "messina",
+    "name": "Messina, Sicily",
+    "country": "Italy",
+    "countryCode": "IT",
+    "region": "eastern-med",
+    "zone": "Europe/Rome",
+    "lat": 38.19,
+    "lon": 15.55,
+    "currency": "EUR",
+    "languages": [
+      "it"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "athens",
+    "name": "Athens (Piraeus)",
+    "country": "Greece",
+    "countryCode": "GR",
+    "region": "eastern-med",
+    "zone": "Europe/Athens",
+    "lat": 37.94,
+    "lon": 23.64,
+    "currency": "EUR",
+    "languages": [
+      "el",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "santorini",
+    "name": "Santorini",
+    "country": "Greece",
+    "countryCode": "GR",
+    "region": "eastern-med",
+    "zone": "Europe/Athens",
+    "lat": 36.41,
+    "lon": 25.43,
+    "currency": "EUR",
+    "languages": [
+      "el",
+      "en"
+    ],
+    "tier": "A",
+    "tender": true
+  },
+  {
+    "id": "mykonos",
+    "name": "Mykonos",
+    "country": "Greece",
+    "countryCode": "GR",
+    "region": "eastern-med",
+    "zone": "Europe/Athens",
+    "lat": 37.45,
+    "lon": 25.33,
+    "currency": "EUR",
+    "languages": [
+      "el",
+      "en"
+    ],
+    "tier": "A",
+    "tender": true
+  },
+  {
+    "id": "chania",
+    "name": "Chania (Crete)",
+    "country": "Greece",
+    "countryCode": "GR",
+    "region": "eastern-med",
+    "zone": "Europe/Athens",
+    "lat": 35.52,
+    "lon": 24.02,
+    "currency": "EUR",
+    "languages": [
+      "el",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "corfu",
+    "name": "Corfu",
+    "country": "Greece",
+    "countryCode": "GR",
+    "region": "eastern-med",
+    "zone": "Europe/Athens",
+    "lat": 39.62,
+    "lon": 19.92,
+    "currency": "EUR",
+    "languages": [
+      "el",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "kusadasi",
+    "name": "Kusadasi (Ephesus)",
+    "country": "Turkey",
+    "countryCode": "TR",
+    "region": "eastern-med",
+    "zone": "Europe/Istanbul",
+    "lat": 37.86,
+    "lon": 27.26,
+    "currency": "TRY",
+    "languages": [
+      "tr",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "bar",
+    "name": "Bar, Montenegro",
+    "country": "Montenegro",
+    "countryCode": "ME",
+    "region": "eastern-med",
+    "zone": "Europe/Podgorica",
+    "lat": 42.09,
+    "lon": 19.09,
+    "currency": "EUR",
+    "languages": [
+      "sr",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "copenhagen",
+    "name": "Copenhagen",
+    "country": "Denmark",
+    "countryCode": "DK",
+    "region": "scandinavia",
+    "zone": "Europe/Copenhagen",
+    "lat": 55.69,
+    "lon": 12.6,
+    "currency": "DKK",
+    "languages": [
+      "da",
+      "en"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "skagen",
+    "name": "Skagen",
+    "country": "Denmark",
+    "countryCode": "DK",
+    "region": "scandinavia",
+    "zone": "Europe/Copenhagen",
+    "lat": 57.72,
+    "lon": 10.58,
+    "currency": "DKK",
+    "languages": [
+      "da",
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "warnemunde",
+    "name": "Warnemünde (Berlin)",
+    "country": "Germany",
+    "countryCode": "DE",
+    "region": "scandinavia",
+    "zone": "Europe/Berlin",
+    "lat": 54.18,
+    "lon": 12.09,
+    "currency": "EUR",
+    "languages": [
+      "de"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "tallinn",
+    "name": "Tallinn",
+    "country": "Estonia",
+    "countryCode": "EE",
+    "region": "scandinavia",
+    "zone": "Europe/Tallinn",
+    "lat": 59.44,
+    "lon": 24.76,
+    "currency": "EUR",
+    "languages": [
+      "et",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "helsinki",
+    "name": "Helsinki",
+    "country": "Finland",
+    "countryCode": "FI",
+    "region": "scandinavia",
+    "zone": "Europe/Helsinki",
+    "lat": 60.17,
+    "lon": 24.95,
+    "currency": "EUR",
+    "languages": [
+      "fi",
+      "sv"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "stockholm",
+    "name": "Stockholm",
+    "country": "Sweden",
+    "countryCode": "SE",
+    "region": "scandinavia",
+    "zone": "Europe/Stockholm",
+    "lat": 59.33,
+    "lon": 18.07,
+    "currency": "SEK",
+    "languages": [
+      "sv",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "visby",
+    "name": "Visby, Gotland",
+    "country": "Sweden",
+    "countryCode": "SE",
+    "region": "scandinavia",
+    "zone": "Europe/Stockholm",
+    "lat": 57.64,
+    "lon": 18.29,
+    "currency": "SEK",
+    "languages": [
+      "sv"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "kristiansand",
+    "name": "Kristiansand",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 58.15,
+    "lon": 8,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "oslo",
+    "name": "Oslo",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 59.91,
+    "lon": 10.75,
+    "currency": "NOK",
+    "languages": [
+      "no",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "bergen",
+    "name": "Bergen",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 60.39,
+    "lon": 5.32,
+    "currency": "NOK",
+    "languages": [
+      "no",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "skjolden",
+    "name": "Skjolden",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 61.49,
+    "lon": 7.67,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "nordfjordeid",
+    "name": "Nordfjordeid",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 61.9,
+    "lon": 6,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "trondheim",
+    "name": "Trondheim",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 63.43,
+    "lon": 10.4,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "honningsvag",
+    "name": "Honningsvåg (North Cape)",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 70.98,
+    "lon": 25.97,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "tromso",
+    "name": "Tromsø",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 69.65,
+    "lon": 18.96,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "molde",
+    "name": "Molde",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 62.74,
+    "lon": 7.16,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "haugesund",
+    "name": "Haugesund",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 59.41,
+    "lon": 5.27,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "alesund",
+    "name": "Ålesund",
+    "country": "Norway",
+    "countryCode": "NO",
+    "region": "scandinavia",
+    "zone": "Europe/Oslo",
+    "lat": 62.47,
+    "lon": 6.15,
+    "currency": "NOK",
+    "languages": [
+      "no"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "akureyri",
+    "name": "Akureyri",
+    "country": "Iceland",
+    "countryCode": "IS",
+    "region": "scandinavia",
+    "zone": "Atlantic/Reykjavik",
+    "lat": 65.68,
+    "lon": -18.09,
+    "currency": "ISK",
+    "languages": [
+      "is",
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "isafjordur",
+    "name": "Ísafjörður",
+    "country": "Iceland",
+    "countryCode": "IS",
+    "region": "scandinavia",
+    "zone": "Atlantic/Reykjavik",
+    "lat": 66.07,
+    "lon": -23.12,
+    "currency": "ISK",
+    "languages": [
+      "is",
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "reykjavik",
+    "name": "Reykjavík",
+    "country": "Iceland",
+    "countryCode": "IS",
+    "region": "scandinavia",
+    "zone": "Atlantic/Reykjavik",
+    "lat": 64.15,
+    "lon": -21.94,
+    "currency": "ISK",
+    "languages": [
+      "is",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "grundarfjordur",
+    "name": "Grundarfjörður",
+    "country": "Iceland",
+    "countryCode": "IS",
+    "region": "scandinavia",
+    "zone": "Atlantic/Reykjavik",
+    "lat": 64.92,
+    "lon": -23.26,
+    "currency": "ISK",
+    "languages": [
+      "is",
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "tokyo",
+    "name": "Tokyo (Yokohama)",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 35.45,
+    "lon": 139.64,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "toba",
+    "name": "Toba",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 34.48,
+    "lon": 136.84,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "kochi",
+    "name": "Kochi",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 33.56,
+    "lon": 133.54,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "kobe",
+    "name": "Kobe",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 34.67,
+    "lon": 135.2,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "osaka",
+    "name": "Osaka",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 34.65,
+    "lon": 135.43,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "nagoya",
+    "name": "Nagoya",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 35.07,
+    "lon": 136.88,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "shimizu",
+    "name": "Shimizu (Mount Fuji)",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 35.01,
+    "lon": 138.5,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "hiroshima",
+    "name": "Hiroshima",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 34.35,
+    "lon": 132.46,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "busan",
+    "name": "Busan",
+    "country": "South Korea",
+    "countryCode": "KR",
+    "region": "japan-korea",
+    "zone": "Asia/Seoul",
+    "lat": 35.1,
+    "lon": 129.04,
+    "currency": "KRW",
+    "languages": [
+      "ko"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "nagasaki",
+    "name": "Nagasaki",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 32.74,
+    "lon": 129.87,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "kagoshima",
+    "name": "Kagoshima",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 31.6,
+    "lon": 130.56,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "miyazaki",
+    "name": "Miyazaki",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 31.91,
+    "lon": 131.42,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "aomori",
+    "name": "Aomori",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 40.83,
+    "lon": 140.74,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "muroran",
+    "name": "Muroran",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 42.32,
+    "lon": 140.98,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "hakodate",
+    "name": "Hakodate",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 41.77,
+    "lon": 140.72,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "sakaiminato",
+    "name": "Sakaiminato",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 35.54,
+    "lon": 133.23,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "jeju",
+    "name": "Jeju",
+    "country": "South Korea",
+    "countryCode": "KR",
+    "region": "japan-korea",
+    "zone": "Asia/Seoul",
+    "lat": 33.52,
+    "lon": 126.54,
+    "currency": "KRW",
+    "languages": [
+      "ko"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "okinawa",
+    "name": "Okinawa (Naha)",
+    "country": "Japan",
+    "countryCode": "JP",
+    "region": "japan-korea",
+    "zone": "Asia/Tokyo",
+    "lat": 26.21,
+    "lon": 127.67,
+    "currency": "JPY",
+    "languages": [
+      "ja"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "kaohsiung",
+    "name": "Kaohsiung",
+    "country": "Taiwan",
+    "countryCode": "TW",
+    "region": "southeast-asia",
+    "zone": "Asia/Taipei",
+    "lat": 22.61,
+    "lon": 120.28,
+    "currency": "TWD",
+    "languages": [
+      "zh"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "hong-kong",
+    "name": "Hong Kong",
+    "country": "Hong Kong",
+    "countryCode": "HK",
+    "region": "southeast-asia",
+    "zone": "Asia/Hong_Kong",
+    "lat": 22.3,
+    "lon": 114.17,
+    "currency": "HKD",
+    "languages": [
+      "zh",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "chan-may",
+    "name": "Chân Mây (Da Nang)",
+    "country": "Vietnam",
+    "countryCode": "VN",
+    "region": "southeast-asia",
+    "zone": "Asia/Ho_Chi_Minh",
+    "lat": 16.3,
+    "lon": 108,
+    "currency": "VND",
+    "languages": [
+      "vi"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "ho-chi-minh",
+    "name": "Ho Chi Minh City (Phu My)",
+    "country": "Vietnam",
+    "countryCode": "VN",
+    "region": "southeast-asia",
+    "zone": "Asia/Ho_Chi_Minh",
+    "lat": 10.58,
+    "lon": 107.03,
+    "currency": "VND",
+    "languages": [
+      "vi"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "singapore",
+    "name": "Singapore",
+    "country": "Singapore",
+    "countryCode": "SG",
+    "region": "southeast-asia",
+    "zone": "Asia/Singapore",
+    "lat": 1.26,
+    "lon": 103.82,
+    "currency": "SGD",
+    "languages": [
+      "en",
+      "zh",
+      "ms",
+      "ta"
+    ],
+    "tier": "A"
+  },
+  {
+    "id": "port-klang",
+    "name": "Port Klang (Kuala Lumpur)",
+    "country": "Malaysia",
+    "countryCode": "MY",
+    "region": "southeast-asia",
+    "zone": "Asia/Kuala_Lumpur",
+    "lat": 3,
+    "lon": 101.39,
+    "currency": "MYR",
+    "languages": [
+      "ms",
+      "en"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "penang",
+    "name": "Penang",
+    "country": "Malaysia",
+    "countryCode": "MY",
+    "region": "southeast-asia",
+    "zone": "Asia/Kuala_Lumpur",
+    "lat": 5.42,
+    "lon": 100.34,
+    "currency": "MYR",
+    "languages": [
+      "ms",
+      "en"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "phuket",
+    "name": "Phuket",
+    "country": "Thailand",
+    "countryCode": "TH",
+    "region": "southeast-asia",
+    "zone": "Asia/Bangkok",
+    "lat": 7.88,
+    "lon": 98.4,
+    "currency": "THB",
+    "languages": [
+      "th",
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "benoa",
+    "name": "Benoa (Bali)",
+    "country": "Indonesia",
+    "countryCode": "ID",
+    "region": "southeast-asia",
+    "zone": "Asia/Makassar",
+    "lat": -8.75,
+    "lon": 115.21,
+    "currency": "IDR",
+    "languages": [
+      "id",
+      "en"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "perth",
+    "name": "Perth (Fremantle)",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Perth",
+    "lat": -32.05,
+    "lon": 115.74,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "broome",
+    "name": "Broome",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Perth",
+    "lat": -17.96,
+    "lon": 122.23,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "C",
+    "tender": true
+  },
+  {
+    "id": "darwin",
+    "name": "Darwin",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Darwin",
+    "lat": -12.46,
+    "lon": 130.84,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "cairns",
+    "name": "Cairns",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Brisbane",
+    "lat": -16.92,
+    "lon": 145.78,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "willis-island",
+    "name": "Willis Island (scenic cruising)",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Brisbane",
+    "lat": -16.29,
+    "lon": 149.96,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "C"
+  },
+  {
+    "id": "brisbane",
+    "name": "Brisbane",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Brisbane",
+    "lat": -27.38,
+    "lon": 153.17,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "B"
+  },
+  {
+    "id": "sydney",
+    "name": "Sydney",
+    "country": "Australia",
+    "countryCode": "AU",
+    "region": "australia-nz",
+    "zone": "Australia/Sydney",
+    "lat": -33.86,
+    "lon": 151.21,
+    "currency": "AUD",
+    "languages": [
+      "en"
+    ],
+    "tier": "A"
+  }
+]
