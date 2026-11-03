@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } fro
 import { Link } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
 import { MAX_MESSAGE } from '../../ai/guard'
-import { askStanley, getStanleyThread, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
+import { askStanley, cooldownSeconds, getStanleyThread, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t, type StringKey } from '../../i18n'
+import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { sendStanley } from '../../runtime'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
@@ -30,13 +31,20 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState('')
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const end = useRef<HTMLDivElement>(null)
   const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
-  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy])
+  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy, reveal?.i])
+  const cooldown = cooldownSeconds(messages, now)
+  useVisibleInterval(() => setNow(Date.now()), 1000, cooldown > 0)
+  useVisibleInterval(() => setReveal((r) => (r && r.i + 1 < r.steps.length ? { ...r, i: r.i + 1 } : null)), 80, reveal !== null)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (busy) return
+    setNow(Date.now())
+    if (cooldownSeconds(getStanleyThread(), Date.now())) return
     const p = stanleyProblem(draft)
     if (p) { setProblem(t(`stanley.problem.${p}` as StringKey, { max: MAX_MESSAGE })); return }
     setProblem(null)
@@ -49,7 +57,11 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
     const turn = await askStanley(sendStanley, withUser)
     const reply: StanleyMessage = { id: `a-${at}-${withUser.length}`, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback }
     setStanleyThread([...getStanleyThread(), reply])
+    setNow(Date.now())
     setBusy(false)
+    // An answer appears a few words at a time, as if it were arriving; with reduced motion it simply appears.
+    if (turn.kind !== 'answer' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    setReveal({ id: reply.id, steps: revealSteps(reply.text), i: 0 })
   }
 
   return (
@@ -69,7 +81,7 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
           {messages.map((m) => (
             <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
               <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
-              <p className="ai-msg__text">{m.text}</p>
+              <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>
               {m.kind === 'handoff' && <p className="ai-msg__cites"><Link to="/chat" onClick={onClose}>{t('route.chat')}</Link></p>}
             </li>
           ))}
@@ -79,9 +91,10 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
       <div ref={end} />
       <form onSubmit={(e) => void submit(e)} noValidate>
         <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} />
+        {cooldown > 0 && <p role="status" className="muted">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         {problem && <p role="alert" className="field__error">{problem}</p>}
         <div className="button-row">
-          <Button type="submit" disabled={busy}>{t('stanley.send')}</Button>
+          <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>
         </div>
       </form>
     </Dialog>

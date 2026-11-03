@@ -3314,6 +3314,7 @@ export const en = {
   'stanley.typing': 'Stanley is typing…',
   'stanley.ask': 'Your question for Stanley',
   'stanley.send': 'Send',
+  'stanley.cooldown': 'Let us take a short break. You can ask again in {seconds} seconds.',
   'stanley.blocked': 'I do not appreciate that kind of question. I am happy to help with anything about your cruise.',
   'stanley.offtopic': 'I can only help with cruising: this ship, its ports and planning your trip. Is there something about your cruise I can help with?',
   'stanley.unreachable': 'I could not be reached just now. Please try again in a moment.',

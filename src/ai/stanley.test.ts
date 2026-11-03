@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { askStanley, getStanleyThread, historyToSend, normalizeStanley, setStanleyThread, stanleyProblem, type StanleyMessage } from './stanley'
+import { askStanley, cooldownSeconds, revealSteps, getStanleyThread, historyToSend, normalizeStanley, setStanleyThread, stanleyProblem, type StanleyMessage } from './stanley'
 
 const u = (text: string, at = 1): StanleyMessage => ({ id: `u${at}`, role: 'user', text, at })
 const a = (text: string, kind: StanleyMessage['kind'] = 'answer', at = 2): StanleyMessage => ({ id: `a${at}`, role: 'assistant', text, at, kind })
@@ -57,5 +57,25 @@ describe('the thread and the message check', () => {
     expect(stanleyProblem(' ')).toBe('empty')
     expect(stanleyProblem('x'.repeat(501))).toBe('long')
     expect(stanleyProblem('hi')).toBeNull()
+  })
+})
+
+describe('cooldown and reveal (S4)', () => {
+  const msg = (role: 'user' | 'assistant', at: number, kind?: 'blocked' | 'answer'): StanleyMessage => ({ id: `${role}${at}`, role, text: 'x', at, kind })
+  const blockedRun = (n: number) => Array.from({ length: n }, (_, i) => [msg('user', i * 10), msg('assistant', i * 10 + 1, 'blocked')]).flat()
+  it('starts after three blocked replies in a row and counts down', () => {
+    expect(cooldownSeconds(blockedRun(2), 100)).toBe(0)
+    expect(cooldownSeconds(blockedRun(3), 100)).toBe(30)
+    expect(cooldownSeconds(blockedRun(3), 100 + 12_000)).toBe(18)
+    expect(cooldownSeconds(blockedRun(3), 100 + 40_000)).toBe(0)
+  })
+  it('is ended by a good answer', () => {
+    expect(cooldownSeconds([...blockedRun(3), msg('user', 50), msg('assistant', 51, 'answer')], 100)).toBe(0)
+  })
+  it('reveals text in word-boundary pieces ending with the whole text', () => {
+    const steps = revealSteps('one two three four five', 2)
+    expect(steps).toEqual(['one two ', 'one two three four ', 'one two three four five'])
+    expect(revealSteps('hi')).toEqual(['hi'])
+    expect(revealSteps('')).toEqual([''])
   })
 })

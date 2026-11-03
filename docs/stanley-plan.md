@@ -1,6 +1,6 @@
 # Stanley: the cruise chat helper
 
-Status: **plan agreed (2026-11-03). S1 (word filter), S2 (endpoint) and S3 (front end) are built; S4 is not started.**
+Status: **plan agreed (2026-11-03). S1 (word filter), S2 (endpoint) and S3 (front end) and S4 (polish) are built.**
 
 Stanley is a friendly guide the guest chats with in a dialog opened from his logo button, above Help in the left nav (and in the top bar on phones). He answers questions about cruising, this ship and its ports. He refuses rude messages and anything unrelated to cruising, politely.
 
@@ -68,3 +68,9 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 - `Shell.tsx`: a Stanley button above Help in the left nav (from 1024px) and a round picture button in the top bar on phones. `runtime` has `sendStanley` (`POST /me/stanley`).
 - `src/assets/stanley-small.png` is a 192-pixel copy (60 KB) of the 1.4 MB `stanley.png`; only the small one is imported, so only it is precached.
 - Replies still appear all at once; streaming is S4.
+
+## S4 as built
+
+- **Cooldown** (`cooldownSeconds` in `src/ai/stanley.ts`, tested): after 3 blocked replies in a row the box pauses for 30 seconds, with a countdown message (`stanley.cooldown`). A good answer ends the run. It is derived from the in-memory thread, so closing the dialog does not skip it. It is a courtesy only; the server's word filter and hourly limit remain the authority.
+- **Streamed look** (`revealSteps`, tested): an answer appears three words at a time; with reduced motion it appears at once. This is done on the device from the full reply. **True server streaming (SSE) was not built**: the server could not be compiled here (no `dotnet`), and a streaming endpoint would also have to run the word filter, prescan and limit before the first byte. It can replace `revealSteps` later with no change to the reply shape.
+- **Audit**: the model key stays on the server; blocked, off-topic, handed-off and failed exchanges are never resent; the matched word is never shown or logged; the dialog uses the shared focus-trapped `Dialog`, status regions and reduced-motion handling. Server tests for S1 and S2 are still unrun by hand (`dotnet test --filter Stanley`).

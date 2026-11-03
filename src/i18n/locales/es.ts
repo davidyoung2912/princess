@@ -22,6 +22,7 @@ export const es: Partial<Record<keyof typeof en, string>> = {
   'stanley.typing': 'Stanley está escribiendo…',
   'stanley.ask': 'Tu pregunta para Stanley',
   'stanley.send': 'Enviar',
+  'stanley.cooldown': 'Hagamos una breve pausa. Podrá preguntar de nuevo en {seconds} segundos.',
   'stanley.blocked': 'No me gusta ese tipo de pregunta. Con gusto te ayudo con cualquier cosa de tu crucero.',
   'stanley.offtopic': 'Solo puedo ayudar con cruceros: este barco, sus puertos y la planificación de tu viaje. ¿Hay algo de tu crucero en que pueda ayudarte?',
   'stanley.unreachable': 'No pude responder en este momento. Inténtalo de nuevo en un momento.',

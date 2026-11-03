@@ -88,3 +88,34 @@ export function setStanleyThread(next: readonly StanleyMessage[]) {
   thread = next.slice(-MAX_SENT)
   listeners.forEach((fn) => fn())
 }
+
+/** Blocked messages in a row (newest last) that start a cooldown, and how long it lasts. */
+export const COOLDOWN_AFTER = 3
+export const COOLDOWN_MS = 30_000
+
+/**
+ * Seconds left before the guest may send again. After {@link COOLDOWN_AFTER} blocked replies in a row, the box pauses for {@link COOLDOWN_MS} from the last one.
+ * A good exchange of any other kind ends the run. The server's word filter and hourly limit still apply; this only slows down a guest who keeps testing it.
+ */
+export function cooldownSeconds(thread: readonly StanleyMessage[], now: number): number {
+  let run = 0
+  let lastAt = 0
+  for (let i = thread.length - 1; i >= 0; i--) {
+    const m = thread[i]
+    if (m.role === 'user') continue
+    if (m.kind !== 'blocked') break
+    run++
+    lastAt = lastAt || m.at
+  }
+  if (run < COOLDOWN_AFTER) return 0
+  return Math.max(0, Math.ceil((lastAt + COOLDOWN_MS - now) / 1000))
+}
+
+/** The text in growing pieces of `words` words, each ending at a word boundary; the last piece is the whole text. Used to show an answer as it "arrives". */
+export function revealSteps(text: string, words = 3): string[] {
+  const parts = text.match(/\S+\s*/g) ?? []
+  const steps: string[] = []
+  for (let i = words; i < parts.length; i += words) steps.push(parts.slice(0, i).join(''))
+  steps.push(text)
+  return steps
+}
