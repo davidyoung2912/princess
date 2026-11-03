@@ -1,6 +1,6 @@
 # One app, eleven stages: the staged-experience plan
 
-Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server) is built; P2 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
+Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server) and P2 (the screen registry) are built; P3 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
 
 It builds on `docs/customer-journey-priorities.md` (what matters at each stage) and replaces the earlier "reorder but hide nothing" approach in `docs/stage-menus-matrix.md`.
 
@@ -712,3 +712,9 @@ Verification for every phase is `npm run test`, `npm run lint`, `npx tsc -b` and
 - **Server first.** P1 changes the context endpoint; `docs/backend-plan.md` and the API docs are updated with it.
 - **Guests don't progress in a straight line.** The reversals and multi-trip rules in section 3 are the likeliest to need adjusting.
 - **Long Ship tab at Sea.** It holds about 35 screens. The landing page groups them (Find, Services, Safety) to keep it readable.
+
+**P2 as built (2026-11-03).**
+- `src/routes/screens.ts` is the registry, generated from sections 6 and 8 of this plan: 191 `ScreenDef`s (`id`, `path`, `title`, `subtext`, `family`), `STAGE_TABS` (per stage: Home subtext and six tiles, 2 or 3 tabs with colour, subtext and ordered screen IDs, and Me), `SETTINGS_AND_HELP`, and helpers (`placementIn`, `screensOfStage`, `primaryTab`, `stageUses`, `screenForPath`). Moving a screen, `C01` included, between tabs is a data edit.
+- Titles and subtexts are plain English in the registry for now. P3 moves them to `en.ts` and `es.ts` as keys (the i18n test requires every key to be used, so they cannot be added before the header uses them).
+- `HUBS`, `STAGE_MENUS` and `QUICK` are **not removed yet**: `HubList` and the tab front pages still read them. P4 switches the shell to the registry and deletes them. Until then both exist side by side.
+- `src/routes/screens.test.ts` repeats the section 9 checks (every route has an entry, unique titles, 2 or 3 tabs, every stage screen under a tab, per-stage counts 32/38/43/58/73/62/67/93/88/48/47).
