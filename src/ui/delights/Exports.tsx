@@ -97,7 +97,7 @@ export function Keepsakes({ names, ports, seaDays, nauticalMiles, dinners, tours
         <Field label={t('dl.moment.line')} hint={t('dl.moment.hint', { max: MOMENT_MAX })} value={line} maxLength={MOMENT_MAX} onChange={(e) => setLine(e.target.value)} />
         <label htmlFor="dl-moment-photo">{t('dl.moment.photo')}</label>
         <input id="dl-moment-photo" type="file" accept="image/*" onChange={(e) => pick(e.target.files?.[0])} />
-        {photo && <button type="button" className="btn btn--tertiary" onClick={clear}>{t('dl.moment.drop')}</button>}
+        {photo && <button type="button" className="btn btn--tertiary" onClick={clear}>{th('dl.moment.drop')}</button>}
         <p className="muted">{t('dl.moment.private')}</p>
       </div>
       {line.trim() && <PrintCard label={t('dl.moment.label')} photo={photo} card={momentCard(line, who, dates)} />}

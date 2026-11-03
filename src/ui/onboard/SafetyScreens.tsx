@@ -118,7 +118,7 @@ export function EmergencyScreen() {
       <Card hero labelledBy="help-now-h">
         <h2 id="help-now-h" className="card__title"><Siren aria-hidden="true" /> {th('emerg.now')}</h2>
         <p className="emerg__big">{t('emerg.dial')}</p>
-        <a className="btn btn--danger btn--block emerg__call" href={`tel:${EMERGENCY_NUMBER}`}><Phone aria-hidden="true" /> {t('emerg.call', { number: EMERGENCY_NUMBER })}</a>
+        <a className="btn btn--danger btn--block emerg__call" href={`tel:${EMERGENCY_NUMBER}`}><Phone aria-hidden="true" /> {th('emerg.call', { number: EMERGENCY_NUMBER })}</a>
         <p>{t('emerg.medical')}</p>
       </Card>
 

@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router'
 import { track } from '../diagnostics/watch'
 import { usePushSync } from '../hooks/usePushSync'
-import { t } from '../i18n'
+import { t, th } from '../i18n'
 import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { applyPageMeta, seoFor } from '../seo'
 import { Chat, Help, Home, Me, Plan, Search, Ship } from './icons'
@@ -51,7 +51,7 @@ export function Shell() {
           </Link>
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
             <Help aria-hidden="true" />
-            <span>{t('help.button')}</span>
+            <span>{th('help.button')}</span>
           </button>
         </header>
         <TestBar />

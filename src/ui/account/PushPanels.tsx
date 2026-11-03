@@ -91,7 +91,7 @@ export function CalendarFeed() {
                 <p className="field__hint">{t('cal.once')}</p>
                 <div className="button-row">
                   <Button variant="secondary" onClick={() => { void navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => undefined) }}>{t('cal.copy')}</Button>
-                  <a className="btn btn--secondary" href={webcalUrl(url)}>{t('cal.open')}</a>
+                  <a className="btn btn--secondary" href={webcalUrl(url)}>{th('cal.open')}</a>
                 </div>
                 <p role="status" className="muted">{copied ? t('cal.copied') : ''}</p>
               </div>

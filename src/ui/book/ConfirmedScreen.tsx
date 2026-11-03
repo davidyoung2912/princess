@@ -100,7 +100,7 @@ function Confirmation({ b }: { b: BookingView }) {
           <ul className="plain-bullets">{b.notified.map((n) => <li key={n.via}>{t(`book.done.via.${n.via}` as StringKey, { to: n.to })}</li>)}</ul>
           <div className="button-row">
             <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('book.done.print')}</Button>
-            <a className="btn btn--secondary" href={calendarLink(b)} download={`sun-princess-${b.number}.ics`}><Download aria-hidden="true" /> {t('book.done.calendar')}</a>
+            <a className="btn btn--secondary" href={calendarLink(b)} download={`sun-princess-${b.number}.ics`}><Download aria-hidden="true" /> {th('book.done.calendar')}</a>
             <JourneyCalendarButton number={b.number} sailing={sailing} finalDue={b.finalDue} balance={b.balance} />
           </div>
           <Card info><p>{t('book.done.wallet', { date: formatDate(dateIn(sailingStart(b), 'America/New_York')) })}</p></Card>

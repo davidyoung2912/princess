@@ -33,7 +33,7 @@ describe('clear-to-use sentences (N7)', () => {
 
   it('a kept picture can be deleted and always has words for a screen reader', () => {
     const html = render(<KeptPicture media={m} alt={m.caption} onDeleted={() => undefined} />)
-    expect(html).toContain('Delete this picture')
+    expect(html).toContain('Delete This Picture')
     expect(html).toContain('Dinner on the Piazza')
     const theirs = render(<KeptPicture media={{ ...m, mine: false }} alt="x" onDeleted={() => undefined} />)
     expect(theirs).not.toContain('Delete this picture')

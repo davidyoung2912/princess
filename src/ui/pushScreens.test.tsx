@@ -44,7 +44,7 @@ describe('turning on alerts (N3.1)', () => {
     const net = await open()
     await within(main()).findByText('Get alerts on this phone?')
     expect(requestPermission).not.toHaveBeenCalled()
-    fireEvent.click(within(main()).getByRole('button', { name: 'Turn on alerts' }))
+    fireEvent.click(within(main()).getByRole('button', { name: 'Turn on Alerts' }))
     await waitFor(() => expect(requestPermission).toHaveBeenCalledOnce())
     await waitFor(() => expect(pushManager.subscribe).toHaveBeenCalledOnce())
     await waitFor(() => expect(net.calls).toContain('PUT /me/push/subscription'))
@@ -60,7 +60,7 @@ describe('turning on alerts (N3.1)', () => {
     vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Safari/604')
     await open()
     await within(main()).findByText('Add this app to your Home Screen first')
-    expect(within(main()).queryByRole('button', { name: 'Turn on alerts' })).toBeNull()
+    expect(within(main()).queryByRole('button', { name: 'Turn on Alerts' })).toBeNull()
   })
 
   it('says plainly that alerts are blocked in the browser, and who can change it', async () => {
@@ -79,7 +79,7 @@ describe('turning on alerts (N3.1)', () => {
     browserWithPush()
     await open({ '/me/push': { ...STATUS, available: false, publicKey: null } })
     await within(main()).findByText('Alerts are not switched on for this app yet')
-    expect(within(main()).queryByRole('button', { name: 'Turn on alerts' })).toBeNull()
+    expect(within(main()).queryByRole('button', { name: 'Turn on Alerts' })).toBeNull()
   })
 })
 
@@ -111,7 +111,7 @@ describe('what we sent you (N3.6)', () => {
 describe('the calendar link (N3.4)', () => {
   it('shows the address once when made, and then only says there is one', async () => {
     await open({ 'POST /me/calendar-feed': { on: true, path: '/calendar/tok123.ics' } })
-    fireEvent.click(await within(main()).findByRole('button', { name: 'Make my calendar link' }))
+    fireEvent.click(await within(main()).findByRole('button', { name: 'Make My Calendar Link' }))
     const box = (await within(main()).findByLabelText('Your calendar link')) as HTMLInputElement
     expect(box.value).toMatch(/\/calendar\/tok123\.ics$/)
     expect(within(main()).getByText(/cannot be shown again/)).toBeTruthy()
@@ -120,8 +120,8 @@ describe('the calendar link (N3.4)', () => {
   it('offers to replace or turn off a link that exists, never to show it', async () => {
     await open({ '/me/calendar-feed': { on: true, path: null } })
     await within(main()).findByText('You have a calendar link. It is not shown again.')
-    expect(within(main()).getByRole('button', { name: 'Make a new link' })).toBeTruthy()
-    expect(within(main()).getByRole('button', { name: 'Turn the link off' })).toBeTruthy()
+    expect(within(main()).getByRole('button', { name: 'Make a New Link' })).toBeTruthy()
+    expect(within(main()).getByRole('button', { name: 'Turn the Link Off' })).toBeTruthy()
     expect(within(main()).queryByLabelText('Your calendar link')).toBeNull()
   })
 })

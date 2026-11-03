@@ -66,7 +66,7 @@ function Hours({ v }: { v: HealthView }) {
       <p role="status"><strong>{v.open ? t('hlth.openNow') : v.nextOpen ? t('hlth.closedUntil', { time: formatTime(v.nextOpen) }) : t('hlth.closedToday')}</strong></p>
       <ul className="plain-bullets">{MEDICAL_HOURS[v.day].map(([a, b]) => <li key={a}>{formatTime(a)} {t('hlth.to')} {formatTime(b)}</li>)}</ul>
       <p>{t('hlth.afterHours')}</p>
-      <a className="btn btn--secondary" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {t('hlth.callMedical', { number: MEDICAL_NUMBER })}</a>
+      <a className="btn btn--secondary" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {th('hlth.callMedical', { number: MEDICAL_NUMBER })}</a>
     </Card>
   )
 }
@@ -174,8 +174,8 @@ export function HelpNowScreen() {
   return (
     <div className="page help-now">
       <h1>{th('route.helpNow')}</h1>
-      <a className="btn btn--danger btn--block help-now__call" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {t('help.callMedical', { number: MEDICAL_NUMBER })}</a>
-      <a className="btn btn--danger btn--block help-now__call" href={`tel:${EMERGENCY_NUMBER}`}><Siren aria-hidden="true" /> {t('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>
+      <a className="btn btn--danger btn--block help-now__call" href={`tel:${MEDICAL_NUMBER}`}><Phone aria-hidden="true" /> {th('help.callMedical', { number: MEDICAL_NUMBER })}</a>
+      <a className="btn btn--danger btn--block help-now__call" href={`tel:${EMERGENCY_NUMBER}`}><Siren aria-hidden="true" /> {th('help.callEmergency', { number: EMERGENCY_NUMBER })}</a>
 
       <Card hero labelledBy="say-now-h">
         <h2 id="say-now-h" className="card__title">{th('help.say')}</h2>

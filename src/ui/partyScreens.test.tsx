@@ -75,7 +75,7 @@ describe('group poll (N4.2)', () => {
     const m = within(main())
     fireEvent.change(await m.findByLabelText('Question'), { target: { value: 'Where to eat?' } })
     fireEvent.change(m.getByLabelText(/Choices/), { target: { value: 'Pizza, Tacos' } })
-    fireEvent.click(m.getByRole('button', { name: 'Create poll' }))
+    fireEvent.click(m.getByRole('button', { name: 'Create Poll' }))
     await m.findByText('You have not voted yet.', { exact: false })
     fireEvent.click(m.getByRole('button', { name: 'Pizza' }))
     await m.findByText(/You chose Pizza/)
@@ -108,7 +108,7 @@ describe('share links (N4.6)', () => {
     })
     const m = within(main())
     fireEvent.change(await m.findByLabelText(/A name for it/), { target: { value: 'Mum' } })
-    fireEvent.click(m.getByRole('button', { name: 'Make the link' }))
+    fireEvent.click(m.getByRole('button', { name: 'Make the Link' }))
     const field = await m.findByLabelText('The link address')
     expect((field as HTMLInputElement).value).toContain(`/shared/${TOKEN}`)
     await m.findByText('Mum')
@@ -118,7 +118,7 @@ describe('share links (N4.6)', () => {
   it('ends a link on request', async () => {
     const link = { id: 'l1', kind: 'caregiver', label: 'Mum', createdAt: 1, expiresAt: Date.now() + 90 * 86_400_000, lastCheckInAt: null, note: '' }
     const net = await open('/plan/share-links', { 'GET /bookings/B1/share-links': [link], 'DELETE /bookings/B1/share-links/l1': undefined })
-    fireEvent.click(await within(main()).findByRole('button', { name: 'End this link now' }))
+    fireEvent.click(await within(main()).findByRole('button', { name: 'End This Link Now' }))
     await waitFor(() => expect(net.calls.some((c) => c.startsWith('DELETE ') && c.includes('/share-links/l1'))).toBe(true))
   })
 
@@ -129,7 +129,7 @@ describe('share links (N4.6)', () => {
     const m = within(main())
     fireEvent.click(await m.findByLabelText('My travel advisor'))
     fireEvent.change(m.getByLabelText(/A name for it/), { target: { value: 'Pat' } })
-    fireEvent.click(m.getByRole('button', { name: 'Make the link' }))
+    fireEvent.click(m.getByRole('button', { name: 'Make the Link' }))
     await m.findByText(/Only the person who made the booking can make a link for an advisor/)
   })
 })

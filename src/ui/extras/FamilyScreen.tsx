@@ -79,7 +79,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
         <Banner kind="danger" title={t('fam.overdue', { name: k.name.split(' ')[0], ago: duration(minutes) })}>
           <p>{t('fam.overdueBody')}</p>
           <div className="button-row">
-            <a className="btn btn--danger" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {t('fam.callServices', { number: GUEST_SERVICES_NUMBER })}</a>
+            <a className="btn btn--danger" href={`tel:${GUEST_SERVICES_NUMBER}`}><Phone aria-hidden="true" /> {th('fam.callServices', { number: GUEST_SERVICES_NUMBER })}</a>
             <LinkButton to="/ship/emergency" variant="secondary">{t('route.emergency')}</LinkButton>
           </div>
           <p>{t('fam.meetAt', { place: placeName(v.reunion.placeId) })}</p>

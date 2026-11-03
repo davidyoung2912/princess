@@ -284,7 +284,7 @@ export function EmailRecap({ subject, body }: { subject: string; body: string })
   return (
     <div>
       <Field label={t('dl5.mail.to')} hint={t('dl5.mail.hint')} type="email" inputMode="email" autoComplete="off" value={to} onChange={(e) => setTo(e.target.value)} />
-      <a className="btn btn--secondary" href={recapMailto(to, subject, body)}>{t('dl5.mail.open')}</a>
+      <a className="btn btn--secondary" href={recapMailto(to, subject, body)}>{th('dl5.mail.open')}</a>
       <p className="muted">{t('dl5.mail.note')}</p>
     </div>
   )

@@ -9,7 +9,7 @@ import { dateIn } from '../../domain/timezones'
 import type { PersonaId } from '../../domain/people'
 import { demoNow } from '../../demo/store'
 import { useAction } from '../../hooks/useAction'
-import { t, type StringKey } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
@@ -179,7 +179,7 @@ export function PaymentStep({ view, save, busy, error }: StepProps) {
       <p>{t('checkin.payment.intro')}</p>
       {view.payment && <p role="status">{t('checkin.payment.saved', { card: view.payment.label })}</p>}
       {usable.length === 0 ? (
-        <Banner kind="warning" title={t('checkin.payment.none')} action={<Link className="btn btn--secondary" to="/me/payments">{t('route.payments')}</Link>}><p>{t('checkin.payment.noneBody')}</p></Banner>
+        <Banner kind="warning" title={t('checkin.payment.none')} action={<Link className="btn btn--secondary" to="/me/payments">{th('route.payments')}</Link>}><p>{t('checkin.payment.noneBody')}</p></Banner>
       ) : (
         <Form onSubmit={() => void save({ step: 'payment', cardId })} error={error} busy={busy || !cardId} label={t('checkin.payment.button')}>
           <fieldset>

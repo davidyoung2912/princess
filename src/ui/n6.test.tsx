@@ -30,7 +30,7 @@ describe('clear-to-use sentences (N6)', () => {
     expect(html).toContain('You do not need an account')
     expect(html).toContain('not saved')
     expect(html).toContain('nothing is booked')
-    expect(html).toContain('Sign in to plan your own days')
+    expect(html).toContain('Sign in to Plan Your Own Days')
     expect(html).toContain('id="main"')
   })
 
@@ -39,7 +39,7 @@ describe('clear-to-use sentences (N6)', () => {
     expect(html).toContain('Meeting-Point Card')
     expect(html).toContain('Drop-off at the cruise terminal')
     expect(html).toContain('1850 Eller Drive')
-    expect(html).toContain('Copy the card')
+    expect(html).toContain('Copy the Card')
     expect(html).not.toContain('<img')
   })
 })
