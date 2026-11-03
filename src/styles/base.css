@@ -69,6 +69,7 @@ img, svg { max-width: 100%; }
 
 .card {
   --accent: var(--sec);
+  --card-shadow: 0 7px 16px -3px color-mix(in srgb, var(--accent) 45%, transparent), 0 2px 5px color-mix(in srgb, var(--accent) 25%, transparent);
   --tint: var(--sec-tint);
   background: var(--tint);
   border: var(--border-width) solid var(--border);
@@ -76,6 +77,7 @@ img, svg { max-width: 100%; }
   border-radius: var(--radius-card);
   padding: var(--space-5);
   margin-bottom: var(--space-5);
+  box-shadow: var(--card-shadow);
 }
 /* Cards take the colour of the area the guest is in (blue, teal, pink, gold or plum); see --sec below. */
 .card--hero { border-radius: var(--radius-hero); }
@@ -90,7 +92,7 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 .choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
 .choice small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
 
-.swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); padding: 0; margin: 0; list-style: none; }
+.swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); padding: 0; margin: 0 0 var(--space-4); list-style: none; }
 .swatch { border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-card); padding: var(--space-3); min-height: 4rem; display: flex; align-items: flex-end; font-weight: 600; font-size: var(--fs-caption); }
 .swatch--primary { background: var(--primary); color: var(--on-primary); }
 .swatch--warm { background: var(--surface-warm); }
@@ -102,9 +104,10 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 
 .signin__logo {
   display: block;
-  width: min(60vw, 14rem);
+  width: min(90vw, 21rem);
   height: auto;
   margin: var(--space-4) auto var(--space-2);
+  filter: drop-shadow(0 4px 6px rgba(10, 20, 60, 0.35));
 }
 
 /* Each area has its own colour (home blue, teal, pink, gold, me plum), set on the shell from the tab the screen was opened from (plan 5.3). Dialogs outside the shell use the blue default. */
@@ -129,8 +132,18 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 main.page > h1 { color: var(--primary); }
 .page--head { padding-bottom: 0; }
 .page--head + .page { padding-top: var(--space-5); }
-.page-header { margin: 0; }
+.page-header { margin: 0; box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--hdr-b) 85%, transparent), 0 4px 8px color-mix(in srgb, var(--hdr-b) 40%, transparent); }
+.page-header__row { display: flex; align-items: center; gap: var(--space-3); }
+.page-header__icon { flex: none; width: 2rem; height: 2rem; color: var(--on-header); }
 .page-header__title { margin: 0; color: inherit; font-size: var(--fs-headline); overflow-wrap: anywhere; }
+.page-header__back {
+  display: inline-flex; align-items: center; gap: var(--space-2); margin-top: var(--space-3);
+  min-height: 2rem; padding: 0 var(--space-3);
+  background: var(--bg); color: var(--text); border: 2px solid var(--border-strong); border-radius: var(--radius-button);
+  font: inherit; font-size: 0.75em; font-weight: 600; cursor: pointer;
+}
+.page-header__back:hover { background: var(--sky-tint); }
+.page-header__back .lucide { width: 1.25em; height: 1.25em; }
 .page-header__subtext { margin: var(--space-2) 0 0; color: inherit; font-size: var(--fs-body); }
 .shell__main .page > h2, .shell__main .page > section > h2 { color: var(--sec); }
 .shell__main .page > h2::after, .shell__main .page > section > h2::after {

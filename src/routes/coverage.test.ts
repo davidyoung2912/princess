@@ -12,12 +12,12 @@ describe('final coverage audit (P9)', () => {
   it('catalogues every route: every route is a screen or a tab front page', () => {
     const catalogued = new Set([...SCREEN_LIST.map((s) => s.path), ...TAB_FRONT_PATHS])
     expect(ROUTES.filter((r) => !catalogued.has(r.path)).map((r) => r.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(191)
+    expect(SCREEN_LIST).toHaveLength(192)
   })
 
-  it('reaches every screen from a tab in at least one stage, except the three outside by design', () => {
+  it('reaches every screen from a tab in at least one stage, except the four outside by design', () => {
     const unreachable = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(unreachable.sort()).toEqual(['X01', 'X03', 'X04'])
+    expect(unreachable.sort()).toEqual(['X01', 'X03', 'X04', 'X05'])
   })
 
   it('has a Spanish title and subtext for every screen', () => {

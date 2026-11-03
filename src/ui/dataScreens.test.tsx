@@ -166,7 +166,7 @@ describe('top tasks: deck map, text size', () => {
 describe('top tasks: ask for help, guest services, emergency info', () => {
   it('opens from any screen, shows the desk number as text and a call link, and closes with Escape', async () => {
     await open('/me/settings')
-    fireEvent.click(await screen.findByRole('button', { name: 'Help' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Help' }))[0])
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getAllByText(new RegExp(GUEST_SERVICES_NUMBER.replace(/[+]/g, '\\+'))).length).toBeGreaterThan(0)
     expect(dialog.querySelector(`a[href="tel:${GUEST_SERVICES_NUMBER}"]`)).not.toBeNull()

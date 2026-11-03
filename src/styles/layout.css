@@ -18,6 +18,8 @@
   background: linear-gradient(90deg, var(--primary), var(--teal), var(--gold), var(--pink));
 }
 .topbar__brand { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-title); color: var(--primary); text-decoration: none; }
+.topbar__logo { display: inline-flex; align-items: center; min-width: var(--target-min); min-height: var(--target-min); border-radius: var(--radius-button); }
+.topbar__logo img { display: block; height: 2.75rem; width: auto; }
 .topbar__help {
   display: inline-flex; align-items: center; gap: var(--space-2);
   min-height: var(--target-min); padding: 0 var(--space-4);
@@ -38,7 +40,7 @@
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; grid-template-columns: repeat(var(--tab-count, 5), minmax(0, 1fr));
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  background: var(--bg);
+  background: linear-gradient(180deg, var(--rail-bg), var(--rail-bg-end));
   border-top: var(--border-width) solid var(--border-strong);
 }
 .tabs__item {
@@ -48,16 +50,29 @@
   border-top: 4px solid transparent;
   --tab: var(--primary);
 }
+.tabs { --rail-bg: color-mix(in srgb, var(--primary) 8%, var(--bg)); --rail-bg-end: color-mix(in srgb, var(--primary) 30%, var(--bg)); }
+/* The active tab is filled with its own colour and its text and icon use the on-colour (white in the light themes), which every theme's tab colour is checked against. */
 .tabs__item { --tab-tint: var(--sky-tint); }
+:root[data-contrast='high'] .tabs { --rail-bg: var(--bg); --rail-bg-end: var(--bg); }
 .tabs__item[data-colour='teal'] { --tab: var(--teal); --tab-tint: var(--teal-tint); }
 .tabs__item[data-colour='pink'] { --tab: var(--pink); --tab-tint: var(--pink-tint); }
 .tabs__item[data-colour='gold'] { --tab: var(--gold-text); --tab-tint: var(--gold-tint); }
 .tabs__item[data-colour='plum'] { --tab: var(--plum); --tab-tint: var(--plum-tint); }
+.tabs__logo, .tabs__help, .tabs__search { display: none; }
 .tabs__item span { overflow-wrap: anywhere; text-align: center; }
 .tabs__item .lucide { color: var(--tab); }
 .tabs__item .lucide { width: 1.5rem; height: 1.5rem; }
-.tabs__item[aria-current='page'] { color: var(--tab); font-weight: 700; border-top-color: var(--tab); background: var(--tab-tint); }
-.tabs__item:hover { color: var(--tab); }
+.tabs__item[aria-current='page'] { font-weight: 700; border-top-color: var(--tab); background: linear-gradient(135deg, color-mix(in srgb, var(--tab) 84%, var(--on-primary)), color-mix(in srgb, var(--tab) 63%, var(--text))); }
+.tabs__item[aria-current='page'] { box-shadow: 0 8px 18px -4px color-mix(in srgb, var(--tab) 85%, transparent), 0 3px 6px color-mix(in srgb, var(--tab) 45%, transparent); }
+.tabs__item[aria-current='page'], .tabs__item[aria-current='page']:hover, .tabs__item[aria-current='page'] .lucide { color: var(--on-primary); }
+.tabs__item[aria-current='page'] svg { color: var(--on-primary); stroke: currentColor; }
+/* Hover previews the selected look, ghosted: the tab's colour as a soft fill and edge, with normal text so it stays readable. */
+.tabs__item:not([aria-current='page']):hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--tab) 22%, transparent);
+  border-top-color: color-mix(in srgb, var(--tab) 55%, transparent);
+  border-left-color: color-mix(in srgb, var(--tab) 55%, transparent);
+}
 
 .shell__main { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); outline: none; }
 
@@ -67,14 +82,32 @@
   .tabs {
     grid-area: rail; position: sticky; top: 0; height: 100dvh; align-self: start;
     display: flex; flex-direction: column; gap: var(--space-1);
-    padding: calc(env(safe-area-inset-top) + var(--space-5)) var(--space-3) var(--space-5) calc(env(safe-area-inset-left) + var(--space-3));
+    padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--space-3) var(--space-5) calc(env(safe-area-inset-left) + var(--space-3));
     border-top: 0; border-right: var(--border-width) solid var(--border);
-    background: var(--bg);
+    background: linear-gradient(180deg, var(--rail-bg), var(--rail-bg-end));
   }
   .tabs__item { flex-direction: row; justify-content: flex-start; gap: var(--space-3); min-height: var(--target-min); padding: var(--space-2) var(--space-4); font-size: var(--fs-body); border-top: 0; border-left: 4px solid transparent; border-radius: var(--radius-card); }
-  .tabs__item[aria-current='page'] { border-left-color: var(--tab); background: var(--tab-tint); color: var(--text); }
+  .tabs__item[aria-current='page'] { border-left-color: var(--tab); background: linear-gradient(135deg, color-mix(in srgb, var(--tab) 84%, var(--on-primary)), color-mix(in srgb, var(--tab) 63%, var(--text))); color: var(--on-primary); }
   .shell__main { grid-area: main; padding-bottom: 0; }
-  .topbar__brand { display: none; }
+  .topbar { display: none; }
+  .tabs__search {
+    display: flex; align-items: center; gap: var(--space-3);
+    margin-top: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-2); min-height: var(--target-min);
+    border-top: var(--border-width) solid var(--border-strong); border-radius: 0;
+    color: var(--primary); font-weight: 600; text-decoration: none;
+  }
+  .tabs__search:hover { text-decoration: underline; }
+  .tabs__search .lucide { width: 1.5rem; height: 1.5rem; }
+  .tabs__logo { display: inline-flex; align-self: center; padding: 0; margin-bottom: var(--space-2); border-radius: var(--radius-button); }
+  .tabs__logo img { display: block; height: 6.75rem; width: auto; }
+  .tabs__help {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); margin-top: auto;
+    min-height: var(--target-min); padding: 0 var(--space-4);
+    background: linear-gradient(135deg, var(--primary), var(--primary-bright)); color: var(--on-primary);
+    border: 2px solid var(--primary); border-radius: var(--radius-button);
+    font-weight: 600; font-size: var(--fs-body); cursor: pointer;
+  }
+  .tabs__help:hover { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); border-color: var(--primary-dark); }
   .topbar { justify-content: flex-end; }
   .topbar__search { margin-left: 0; }
 }
@@ -114,12 +147,21 @@
 .testbar__item--time { align-items: flex-end; text-align: end; }
 .testbar__main { font-weight: 700; }
 .testbar__sub { font-size: var(--fs-small, 0.875rem); }
+.testbar__long, .testbar__stage--side { display: none; }
+.testbar__stages { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); font-size: var(--fs-small, 0.875rem); }
+.testbar__stage { padding: 0 var(--space-2); border-radius: var(--radius-button); border: 2px solid var(--border); background: var(--sky-tint); color: var(--text-muted); }
+.testbar__stage--current { background: linear-gradient(135deg, var(--primary), var(--primary-bright)); border-color: var(--primary); color: var(--on-primary); font-weight: 700; }
+@media (min-width: 1024px) {
+  .testbar__short { display: none; }
+  .testbar__long { display: inline; }
+  .testbar__stage--side { display: inline; }
+}
 .testbar__dialog { display: grid; gap: var(--space-3); }
 
 .stage-steps { padding-inline-start: var(--space-5); }
 .stage-steps li { padding-bottom: var(--space-2); }
 .stage-steps a { min-height: var(--target-min); font-weight: 600; }
 .stage-steps__done a { text-decoration: line-through; }
-.stage-tiles { list-style: none; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
-.stage-tile { border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 0.5rem); padding: var(--space-3); }
+.stage-tiles { list-style: none; padding: 0; margin: 0 0 var(--space-4); display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.stage-tile { box-shadow: 0 7px 16px -3px color-mix(in srgb, var(--sec) 45%, transparent), 0 2px 5px color-mix(in srgb, var(--sec) 25%, transparent); border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 0.5rem); padding: var(--space-3); }
 .stage-tile a { display: block; min-height: var(--target-min); font-weight: 600; }

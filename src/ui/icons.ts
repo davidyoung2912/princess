@@ -9,6 +9,7 @@ export {
   MessageCircle as Chat,
   UserRound as Me,
   LifeBuoy as Help,
+  ArrowLeft,
   WifiOff,
   RefreshCw as Sync,
   Info,

@@ -1,29 +1,26 @@
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
-import { Link, Navigate, Outlet, useLocation } from 'react-router'
+import logo from '../assets/princess.png'
+import { Link, Navigate, Outlet, useLocation, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
 import { track } from '../diagnostics/watch'
 import { usePushSync } from '../hooks/usePushSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
+import { recordVisit } from '../routes/trail'
 import { screenForPath, type TabColour } from '../routes/screens'
 import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
-import { Ask, Cabin, Chat, Compass, DoorOpen, Help, Home, HeartPulse, ClipboardList, Images, MapPin, Me, Plan, Plane, QrCode, Search, Ship, Sparkles, Star, Sun, Ticket, Trip, Users, Wallet, Anchor } from './icons'
+import { Help, Search } from './icons'
+import { SCREEN_ICONS } from './screenIcons'
+import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
 import { PageHeader } from './PageHeader'
 import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
 
-/** One icon per tab name, the same at every stage a tab appears in. */
-const TAB_ICONS: Record<string, typeof Home> = {
-  home: Home, me: Me, plan: Plan, ship: Ship, explore: Compass, ask: Ask, sailing: Anchor, cabin: Cabin, cost: Wallet, booking: Ticket, travellers: Users,
-  pay: Wallet, trip: Trip, needs: HeartPulse, group: Users, prepare: ClipboardList, board: QrCode, travel: Plane, today: Sun, people: Users, port: MapPin,
-  leave: DoorOpen, memories: Images, next: Sparkles, feedback: Star,
-}
-const FALLBACK_ICON = Chat
 
 /**
  * The app frame: skip link, top bar with the always-visible Help button, the stage's tabs (Home, two or three of its own, Me; a bottom bar on phones,
@@ -31,7 +28,8 @@ const FALLBACK_ICON = Chat
  * screen to screen readers, and moves focus to the main area so keyboard users start at the top of the new content.
  */
 export function Shell() {
-  const { pathname, state } = useLocation()
+  const { pathname, search, state } = useLocation()
+  const navigationType = useNavigationType()
   const { stage } = useJourneyPosition()
   const known = useSyncExternalStore(subscribeContext, getContext, getContext) !== null
   const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
@@ -56,6 +54,8 @@ export function Shell() {
   const landingWords = landing ? tabText(landing, stage) : null
   const title = landingWords ? landingWords.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
 
+  useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
+
   useEffect(() => {
     const seo = seoFor(route?.path)
     const full = `${title} · ${t('app.name')}`
@@ -69,6 +69,8 @@ export function Shell() {
 
   if (stale) return <Navigate to="/" replace />
   const activeKey = landing || (screen && screen.family !== 'X') ? activeTabKey(pathname, stage, area) : null
+  // The header wears its own screen's icon where there is a good one, otherwise the icon of the tab the screen belongs to.
+  const headerIcon = (!landing && screen ? SCREEN_ICONS[screen.id] : undefined) ?? (activeKey ? (TAB_ICONS[activeKey] ?? FALLBACK_ICON) : undefined)
 
   return (
     <div className="shell" data-area={area}>
@@ -84,10 +86,16 @@ export function Shell() {
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
           </button>
+          <Link to="/account" className="topbar__logo" aria-label={t('account.logo')}>
+            <img src={logo} alt="" width="1024" height="1024" />
+          </Link>
         </header>
         <TestBar />
       </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
+        <Link to="/account" className="tabs__logo" aria-label={t('account.logo')}>
+          <img src={logo} alt="" width="1024" height="1024" />
+        </Link>
         {tabs.map((tab) => {
           const Icon = TAB_ICONS[tab.key] ?? FALLBACK_ICON
           const active = activeKey === tab.key
@@ -98,10 +106,18 @@ export function Shell() {
             </Link>
           )
         })}
+        <Link to="/ship/search" className="tabs__search">
+          <Search aria-hidden="true" />
+          <span>{t('shell.search')}</span>
+        </Link>
+        <button type="button" className="tabs__help" onClick={() => setHelpOpen(true)}>
+          <Help aria-hidden="true" />
+          <span>{th('help.button')}</span>
+        </button>
       </nav>
       <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} />}
+        {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} back />}
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>

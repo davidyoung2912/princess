@@ -8,7 +8,7 @@
 }
 .btn--block { display: flex; width: 100%; max-width: var(--form-max); }
 .btn--primary { background: linear-gradient(135deg, var(--primary), var(--primary-bright)); color: var(--on-primary); }
-.btn--primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn--primary:hover { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); border-color: var(--primary-dark); }
 .btn--secondary { background: var(--sky-tint); color: var(--primary); }
 .btn--secondary:hover { background: var(--brand-tint); }
 .btn--tertiary { background: transparent; border-color: transparent; color: var(--link); text-decoration: underline; text-underline-offset: 0.2em; }
@@ -48,6 +48,9 @@
 
 /* Banners */
 .banner { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; padding: var(--space-3) var(--space-4); background: var(--sky-tint); border-left: 0.5rem solid var(--primary); border-radius: var(--radius-card); }
+/* A banner always leaves room before whatever follows it (cards, grids, text). */
+.banner { margin-bottom: var(--space-4); }
+.banner:last-child { margin-bottom: 0; }
 .banner__icon { width: 1.5rem; height: 1.5rem; margin-top: 0.1rem; }
 .banner__title { margin: 0; font-weight: 700; }
 .banner__text > div { color: var(--text); }
@@ -131,19 +134,71 @@ textarea { max-width: min(100%, 32rem); }
 .page.signin { max-width: 34rem; }
 
 /* Button rollovers: a soft glow and a small lift; pressing settles back down. Off for reduced motion. */
-.btn, .topbar__help, .topbar__search, .chip {
+.btn, .topbar__help, .topbar__search, .chip, .page-header__back {
   transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
-.btn:not(:disabled, [aria-disabled='true'], .btn--tertiary):hover, .topbar__help:hover, .topbar__search:hover, .chip:hover {
+.btn:not(:disabled, [aria-disabled='true'], .btn--tertiary):hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .page-header__back:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
 }
 .btn--danger:not(:disabled):hover { box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--danger) 50%, transparent), 0 0 14px color-mix(in srgb, var(--danger) 30%, transparent); }
-.btn:not(:disabled, [aria-disabled='true']):active, .topbar__help:active, .chip:active { transform: translateY(0) scale(0.98); box-shadow: none; }
+.btn:not(:disabled, [aria-disabled='true']):active, .topbar__help:active, .chip:active, .page-header__back:active { transform: translateY(0) scale(0.98); box-shadow: none; }
 .icon-btn { transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .icon-btn:hover { transform: scale(1.08); }
 @media (prefers-reduced-motion: reduce) {
-  .btn, .topbar__help, .topbar__search, .chip, .icon-btn { transition: none; }
-  .btn:hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .icon-btn:hover, .btn:active, .chip:active { transform: none; }
+  .btn, .topbar__help, .topbar__search, .chip, .icon-btn, .page-header__back { transition: none; }
+  .btn:hover, .topbar__help:hover, .topbar__search:hover, .chip:hover, .icon-btn:hover, .btn:active, .chip:active, .page-header__back:hover, .page-header__back:active { transform: none; }
 }
-:root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .chip, .icon-btn):is(:hover, :active) { transform: none; }
+:root[data-motion='reduced'] :is(.btn, .topbar__help, .topbar__search, .chip, .icon-btn, .page-header__back):is(:hover, :active) { transform: none; }
+
+/* The logo in the nav: one soft glow and a small grow and tilt on hover or focus. Reduced motion keeps the glow and drops the movement. */
+.tabs__logo img, .topbar__logo img { filter: drop-shadow(0 3px 4px rgba(10, 20, 60, 0.35)) drop-shadow(0 0 0 transparent); transition: transform var(--t-mid) var(--ease), filter var(--t-mid) var(--ease); }
+.tabs__logo:is(:hover, :focus-visible) img, .topbar__logo:is(:hover, :focus-visible) img {
+  transform: scale(1.08) rotate(-3deg);
+  filter: drop-shadow(0 3px 4px rgba(10, 20, 60, 0.35)) drop-shadow(0 0 5px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent));
+}
+.tabs__logo:active img, .topbar__logo:active img { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .tabs__logo img, .topbar__logo img { transition: none; }
+  .tabs__logo:is(:hover, :focus-visible) img, .topbar__logo:is(:hover, :focus-visible) img, .tabs__logo:active img, .topbar__logo:active img { transform: none; }
+}
+:root[data-motion='reduced'] :is(.tabs__logo, .topbar__logo):is(:hover, :focus-visible, :active) img { transform: none; }
+
+/* Just for fun: the coloured page header gives a quick wiggle, once per visit to a screen, the first time the pointer enters it (PageHeader.tsx). Pointer devices only; off for reduced motion. */
+@keyframes header-wiggle {
+  0%, 100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-0.315deg) scale(1.00525); }
+  40% { transform: rotate(0.2625deg) scale(1.00525); }
+  60% { transform: rotate(-0.1575deg) scale(1.002625); }
+  80% { transform: rotate(0.105deg) scale(1.00105); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .page-header--wiggle { animation: header-wiggle 0.5s var(--ease); }
+}
+:root[data-motion='reduced'] .page-header--wiggle { animation: none; }
+
+/* The selected tab gives a wiggle a little stronger than the header's on hover. */
+@keyframes tab-wiggle {
+  0%, 100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-0.7deg) scale(1.015); }
+  40% { transform: rotate(0.6deg) scale(1.015); }
+  60% { transform: rotate(-0.4deg) scale(1.008); }
+  80% { transform: rotate(0.2deg) scale(1.003); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .tabs__item[aria-current='page']:hover { animation: tab-wiggle 0.5s var(--ease); }
+}
+:root[data-motion='reduced'] .tabs__item[aria-current='page']:hover { animation: none; }
+
+/* Cards in a grid lift and grow a little under the pointer, with a deeper shadow, to say "this one". Pointer devices only; no movement for reduced motion. */
+.card-grid > li > .card, .card-grid > li.card, .fare-grid > li.card, .stage-tile {
+  position: relative;
+  transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card-grid > li > .card:hover, .card-grid > li.card:hover, .fare-grid > li.card:hover, .stage-tile:hover {
+    transform: translateY(-5px) scale(1.02);
+    z-index: 1;
+    box-shadow: 0 14px 28px -6px color-mix(in srgb, var(--sec) 55%, transparent), 0 4px 10px color-mix(in srgb, var(--sec) 28%, transparent);
+  }
+}

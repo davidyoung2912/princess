@@ -19,6 +19,7 @@ export const en = {
   'error.tryAgain': 'Try again',
   'error.help': 'If this keeps happening, tell Guest Services.',
 
+  'shell.back': 'Back',
   'shell.skip': 'Skip to main content',
   'shell.nav': 'Main',
   'shell.announce': '{title}',
@@ -176,6 +177,12 @@ export const en = {
   'route.settings': 'Settings',
   'route.demo': 'Demo controls',
   'route.kit': 'Component kit',
+  'route.account': 'Your account',
+  'account.logo': 'Your account',
+  'account.signedInAs': 'Signed in as',
+  'account.number': 'Account number',
+  'account.email': 'Email',
+  'account.demo': 'This is a demo account.',
 
   'route.trips': 'My trips',
   'route.trip': 'Trip',
@@ -8013,6 +8020,8 @@ export const en = {
   'screen.X03.title': 'Following the Trip',
   'screen.X03.subtext': 'Follow someone\'s trip, read-only, from a link they sent you. No account is needed.',
   'screen.X04.title': 'A Trip Shared with You',
+  'screen.X05.title': 'Your Account',
+  'screen.X05.subtext': 'See who you are signed in as and sign out when you are done.',
   'screen.X04.subtext': 'See a trip a friend or an advisor has shared with you. Open it and comment without signing up.',
 } as const
 

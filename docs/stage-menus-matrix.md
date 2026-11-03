@@ -261,4 +261,4 @@ Six tiles: `M16` Trip Memories; `M17` Memory Book and Next Trip; `M19` Rate Your
 
 ## Outside every stage
 
-`X01` Component Kit; `X03` Following the Trip; `X04` A Trip Shared with You. These are the developer page and two link-only pages, reachable by address only.
+`X01` Component Kit; `X03` Following the Trip; `X04` A Trip Shared with You; `X05` Your Account. These are the developer page, two link-only pages and the account page, which opens from the logo in the top bar at every stage.

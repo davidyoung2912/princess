@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router'
 import { useState, useSyncExternalStore, type FormEvent } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
-import { dayLabel, timeIn, zonedToEpoch } from '../domain/timezones'
+import { dayLabel, dayLabelLong, timeIn, zonedToEpoch } from '../domain/timezones'
 import { clockTime } from '../domain/syncAge'
 import type { DayOfStage } from '../domain/journeyPosition'
+import { JOURNEY_STAGES } from '../routes/hubs'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
 import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
@@ -34,11 +35,21 @@ function TestBarBody() {
   const now = useNow()
   const [open, setOpen] = useState(false)
   const stage = t(`journey.stage.${position.stage}`)
+  const at = JOURNEY_STAGES.indexOf(position.stage)
+  const previous = JOURNEY_STAGES[at - 1]
+  const next = JOURNEY_STAGES[at + 1]
   return (
     <div className="testbar no-print" role="group" aria-label={t('testbar.label')}>
-      <button type="button" className="testbar__item" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabel(now, position.zone)}`}>
-        <span className="testbar__main">{dayLabel(now, position.zone)}</span>
-        <span className="testbar__sub" title={position.stageReason ?? undefined}>{dayText(stage, position.day)}</span>
+      <button type="button" className="testbar__item" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}, ${dayText(stage, position.day)}`}>
+        <span className="testbar__main">
+          <span className="testbar__short">{dayLabel(now, position.zone)}</span>
+          <span className="testbar__long">{dayLabelLong(now, position.zone)}</span>
+        </span>
+        <span className="testbar__stages" title={position.stageReason ?? undefined}>
+          {previous && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${previous}`)}</span>}
+          <span className="testbar__stage testbar__stage--current" aria-current="step">{dayText(stage, position.day)}</span>
+          {next && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${next}`)}</span>}
+        </span>
       </button>
       <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
         <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>

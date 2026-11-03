@@ -51,6 +51,11 @@ export function dayLabel(epoch: number, zone: string): string {
   return new Intl.DateTimeFormat('en-US', { weekday: 'short', day: 'numeric', month: 'short', timeZone: zone }).format(epoch)
 }
 
+/** "Wednesday, March 24" for the date on a wall clock in `zone`. */
+export function dayLabelLong(epoch: number, zone: string): string {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'long', day: 'numeric', month: 'long', timeZone: zone }).format(epoch)
+}
+
 /** Whether `zone` is a zone the platform knows. */
 export function isZone(zone: unknown): zone is string {
   if (typeof zone !== 'string' || !zone) return false

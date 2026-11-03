@@ -4,7 +4,7 @@
   body { background: #fff; color: #000; }
   .no-print, .skip-link { display: none !important; }
   a { color: #000; text-decoration: underline; }
-  .card { border: 1px solid #000; background: #fff; break-inside: avoid; }
+  .card { border: 1px solid #000; background: #fff; break-inside: avoid; box-shadow: none; }
 }
 
 @media print {

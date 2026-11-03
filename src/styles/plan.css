@@ -24,7 +24,7 @@
 .meter { display: block; width: 100%; height: 0.75rem; margin: var(--space-1) 0 var(--space-2); }
 .progress-line { margin: 0 0 var(--space-2); font-weight: 600; }
 .price-note { margin: 0 0 var(--space-2); }
-.calc-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.calc-grid { margin-bottom: var(--space-4); display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
 .verdict { font-weight: 700; }
 .milestone { margin-bottom: var(--space-5); }
 .check-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-width) solid var(--border); }

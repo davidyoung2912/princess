@@ -44,7 +44,7 @@
 /* Plan changes and the quiet reading of a day. */
 .plan-row--dropped { text-decoration: line-through; opacity: 0.8; }
 .plan-row__note { display: block; font-size: 0.875rem; }
-.schedule-card { padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); margin: var(--space-2) 0; }
+.schedule-card { box-shadow: 0 7px 16px -3px color-mix(in srgb, var(--sec) 45%, transparent), 0 2px 5px color-mix(in srgb, var(--sec) 25%, transparent); padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); margin: var(--space-2) 0; }
 .schedule-card--now { border-width: 3px; }
 .pulse-bar { display: inline-block; width: 6rem; height: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; vertical-align: middle; overflow: hidden; background: var(--bg); }
 .pulse-bar > span { display: block; height: 100%; background: currentColor; }

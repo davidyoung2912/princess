@@ -155,6 +155,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/me/anxiety': 'feeling anxious; worry; nervous; panic; calm down',
   '/me/alerts': 'visual alerts; vibration; flash; deaf; alert style',
   '/me/trips': 'my trips; bookings; upcoming; booking number',
+  '/account': 'my account; sign out; log out; signed in as; who am I; logout',
   '/me/profile': 'my details; name; address; contact details; passport details',
   '/me/documents': 'documents; passport; papers; uploads; visas',
   '/me/payments': 'payments; card; pay balance; payment method; deposit',

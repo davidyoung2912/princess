@@ -40,6 +40,6 @@ describe('clear-to-use sentences (N6)', () => {
     expect(html).toContain('Drop-off at the cruise terminal')
     expect(html).toContain('1850 Eller Drive')
     expect(html).toContain('Copy the Card')
-    expect(html).not.toContain('<img')
+    expect(html.split('<main')[1]).not.toContain('<img')
   })
 })
