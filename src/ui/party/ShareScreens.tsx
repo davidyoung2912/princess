@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { linkState, normalizeSharedView, normalizeShareLink, normalizeShareLinks, type ShareKind, type ShareLink, type SharedView } from '../../domain/partyShare'
 import { useAction } from '../../hooks/useAction'
+import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t } from '../../i18n'
 import { api, partyShare } from '../../runtime'
@@ -41,6 +42,7 @@ export function ShareLinksScreen() {
 }
 
 function Links({ number }: { number: string }) {
+  const now = useNow()
   const list = useMine(async () => normalizeShareLinks(await partyShare.links(number)), [number])
   const [kind, setKind] = useState<ShareKind>('caregiver')
   const [label, setLabel] = useState('')
@@ -89,7 +91,7 @@ function Links({ number }: { number: string }) {
                 <li key={l.id}>
                   <Card labelledBy={`link-${l.id}`}>
                     <h3 id={`link-${l.id}`} className="card__title">{l.label}</h3>
-                    <p>{t(`links.kind.${l.kind}`)} · {t(`links.state.${linkState(l, Date.now())}`, { date: day(l.expiresAt) })}</p>
+                    <p>{t(`links.kind.${l.kind}`)} · {t(`links.state.${linkState(l, now)}`, { date: day(l.expiresAt) })}</p>
                     {l.kind === 'caregiver' && (
                       <>
                         <p>{l.lastCheckInAt ? t('links.lastFine', { date: day(l.lastCheckInAt), note: l.note }) : t('links.noFine')}</p>
