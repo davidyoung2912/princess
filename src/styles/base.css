@@ -16,7 +16,7 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   line-height: var(--lh-heading);
   margin: 0 0 var(--space-3);
 }
@@ -111,7 +111,7 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
   margin: var(--space-4) auto var(--space-2);
 }
 
-/* Page title: a brand-blue band with a pink and gold glow, white Cinzel text. */
+/* Page title: a brand-blue band with a pink and gold glow, white bold text. */
 .shell__main .page > h1 {
   margin: 0 0 var(--space-5);
   padding: var(--space-5) var(--space-5);
