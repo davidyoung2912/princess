@@ -20,6 +20,7 @@ import { PushSwitch } from '../account/PushPanels'
 import { PortCard } from './PortCard'
 import { PortParty } from './PortParty'
 import { PortPilot } from './PortPilot'
+import { PinAndDayCard, PocketStopwatch, PortStamps, SunNudge, TakeMeBack } from '../delights/PortDelights'
 
 /** The port day (POR-01 to POR-04, POR-11, POR-12): all-aboard, tender arrangements, and the day's tours with codes that work with no signal. */
 export function PortDayScreen() {
@@ -49,6 +50,8 @@ function Body({ v }: { v: PortDayView }) {
         </Banner>
       )}
       <PortCard view={v.day} />
+      <PocketStopwatch day={v.day} />
+      <SunNudge day={v.day} />
       <PortPilot v={v} />
       <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
@@ -56,6 +59,9 @@ function Body({ v }: { v: PortDayView }) {
       <LastMinute />
       <Readiness tender={v.day.tender} />
       <ContactsAshore port={v.day.port} />
+      <TakeMeBack port={v.day.port} />
+      <PinAndDayCard day={v.day} />
+      <PortStamps />
       <p><Link to={`/home/ports/${v.day.port}`}>{t('port.guide', { port: port.name })}</Link> · <Link to="/ship/port/guide">{t('route.portGuide')}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </>
   )

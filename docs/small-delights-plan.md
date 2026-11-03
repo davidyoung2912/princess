@@ -1,6 +1,6 @@
 # Phased implementation plan for the small delights
 
-Status: **Plan saved 2026-11-02. Phases DL1 to DL7 are built (sections 5 to 11); DL8 and DL9 are planned.**
+Status: **Plan saved 2026-11-02. Phases DL1 to DL8 are built (sections 5 to 12); DL9 is planned.**
 Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file).
 
 ## 1. Ground rules (from `CLAUDE.md` and the leading-features plan)
@@ -32,7 +32,7 @@ Source: `docs/small-delights.md` (IDs below, such as `D2-1`, are from that file)
 | DL5 | Prepare | D3-1, D3-2, D3-3, D3-5, D3-8, D0-2, D0-4, D0-8, D2-6, D2-8 | DL1 | **Built** (section 9) |
 | DL6 | Travel day and embark | D4A-1, D4A-2, D4A-6, D4A-8, D5-1 to D5-8 | DL1 | **Built** (section 10) |
 | DL7 | Sea days | D6-2 (tonight badge), D6-4, D6-5, D6-7, D6-8, D6-9, D6-10 | none | **Built** (section 11) |
-| DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | Planned |
+| DL8 | Ports and the way home | D6A-1, D6A-2, D6A-3, D6A-7, D6A-8, D6A-9, D7-1, D7-2, D7-4, D7-6, D7-8, D7-9 | DL1, DL2 | **Built** (section 12) |
 | DL9 | Memory and return | D8-1, D8-2, D8-3, D8-5, D8-7 | DL8 (stamps, pins, numbers) | Planned |
 
 Order rationale: DL1 builds the shared module and proves the wiring cheaply. DL2 adds the export helpers that DL4, DL8 and DL9 reuse. DL3 to DL7 follow the guest's journey and are independent of each other, so they can be reordered. DL9 comes last because it consumes what DL8 collects (port stamps, pinned spots, trip numbers).
@@ -274,3 +274,31 @@ Front end only; no REST contract changes. Favourites, diary, parked spot, kept t
   - A surprise celebration's messages are visible to everyone on the booking, including the person it is for; the card tells guests to keep surprises out.
   - No server-scheduled push for the spot timer, and no "you said, we did" loop for thank-yous.
   - The rotation is client-side authored; a real menu feed would replace `onTonight`.
+
+## 12. Phase DL8 in detail: ports and the way home
+
+**Goal:** the port-day and last-day delights as pure tested functions (`src/domain/portDelights.ts`, 17 tests) with thin cards in `src/ui/delights/PortDelights.tsx`. No new routes and no REST changes.
+
+### 12.1 Built (2026-11-02)
+
+Pins, the kept day card and the last look are the new `ports` part of the per-person memory store (it travels in the synced `memory` document). The empty-cabin photo is deliberately outside it.
+
+- **D6A-1** on the port day: the time to all-aboard as a big `H:MM` in ship time, with the urgency word of the existing all-aboard card.
+- **D6A-2** on the port day: where the ship is and what to say, large, in the local language (Spanish at Cozumel and Roatán, English at Belize) with English underneath. Authored concept values.
+- **D6A-3** on the port day: sunscreen, shade and water prompts from the existing sky feed (UV 3 and up, UV 8 or 90°F and up, 90°F and up). Nothing shows on a mild day.
+- **D6A-7** port stamps: one for each port reached, worked out from the route and ship date, so nothing is stored.
+- **D6A-8** pin a favourite spot with a note per port (30 pins, private).
+- **D6A-9** offline day card: plain text of the leave-by time, ship phone, the driver words and the port's pins; copy it, or keep it on the phone (it is also in the saved port-day copy, so it opens with no signal).
+- **D7-1** empty-cabin photo on the disembark screen: shrunk and kept in this browser's local storage only (`src/memory/devicePhoto.ts`); never uploaded; deletable.
+- **D7-2** final-day strip: ship ties up, last breakfast (90 minutes after arrival, an authored concept time), the guest's group or walk-off time, and cabin empty, in time order.
+- **D7-4** onboard credit note: shown only when the account is in credit (credits more than charges); informational.
+- **D7-6** last look: a tick and a line, kept for the memory book.
+- **D7-8** customs allowance left: under the goods field, from `ALLOWANCE_USD` times people less the typed total, with the "estimate, the form stays official" note.
+- **D7-9** trip numbers: nights, ports, sea days and nautical miles with a copyable line.
+- Spanish for all `dl8.*` strings; native review still needed.
+- **Verified:** `npm run test` (1864 passed), `npm run lint`, `npx tsc -b`, `npm run build`, `npm run api:check`.
+- **Not done:**
+  - Pins and the last look are not yet shown in the memory book; DL9 reads them.
+  - Take-me-back words, the breakfast hour and the pier names are authored, not served; the server should serve them per port (D6A-2 was marked "S (+API)").
+  - The UV prompt reuses the simulated sky feed, so it is only as real as that feed.
+  - Credit left is the account balance in credit, not a separate onboard-credit ledger.

@@ -14,6 +14,7 @@ import { Field } from '../Field'
 import { ExtraError, NotAboard } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
+import { AllowanceLeft } from '../delights/PortDelights'
 
 /** Customs and immigration (DEB-04): what to carry, what to declare, and one family declaration filled in on the phone. */
 export function CustomsScreen() {
@@ -58,6 +59,7 @@ function Customs({ v, reload }: { v: CustomsView; reload: () => void }) {
           <label className="choice"><input type="checkbox" checked={food} onChange={(e) => setFood(e.target.checked)} /><span>{t('cus.q.food')}</span></label>
           <label className="choice"><input type="checkbox" checked={cash} onChange={(e) => setCash(e.target.checked)} /><span>{t('cus.q.cash', { cash: CASH_LIMIT_USD })}</span></label>
           <Field label={t('cus.q.goods')} hint={t('cus.q.goodsHint', { allowance: ALLOWANCE_USD * v.people })} type="number" inputMode="numeric" min={0} max={GOODS_MAX} value={goods} onChange={(e) => setGoods(e.target.value)} error={bad ? t('cus.err.goods') : undefined} />
+          {!bad && <AllowanceLeft people={v.people} goodsUsd={goodsUsd} />}
           <Field label={t('cus.q.note')} maxLength={CUSTOMS_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} />
         </fieldset>
         <ExtraError error={save.error} />

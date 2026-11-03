@@ -17,6 +17,7 @@ import { ExtraError, NotAboard } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 
+import { CreditNote, EmptyCabinPhoto, FinalDayStrip, LastLook, TripNumbersCard } from '../delights/PortDelights'
 import { personFirstName } from '../../account/context'
 
 /** Getting off the ship (DEB-01, DEB-02, DEB-08): the morning in order, the choice of how to leave, luggage tags. Opens with no signal from the copy on the phone. */
@@ -59,6 +60,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
         </dl>
         {v.priority && <p>{t('dis.priority')}</p>}
       </Card>
+      <FinalDayStrip v={v} />
 
       {chosen && (
         <Card labelledBy="dis-mine-h">
@@ -112,6 +114,11 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
         <h2 id="dis-morning-h">{t('dis.morning')}</h2>
         <ol className="plain-bullets">{(['pack', 'breakfast', 'vacate', 'wait', 'leave', 'customs', 'bags'] as const).map((k) => <li key={k}>{t(`dis.step.${k}` as StringKey)}</li>)}</ol>
       </section>
+
+      <CreditNote />
+      <LastLook />
+      <EmptyCabinPhoto />
+      <TripNumbersCard />
 
       <nav aria-labelledby="dis-links-h">
         <h2 id="dis-links-h">{t('dis.more')}</h2>
