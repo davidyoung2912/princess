@@ -7,6 +7,7 @@ import { routeForPath, tabForPath, TABS } from '../routes/nav'
 import { applyPageMeta, seoFor } from '../seo'
 import { Chat, Help, Home, Me, Plan, Search, Ship } from './icons'
 import { HelpSheet } from './HelpSheet'
+import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
 
 const TAB_ICONS = { home: Home, plan: Plan, ship: Ship, chat: Chat, me: Me } as const
@@ -41,17 +42,20 @@ export function Shell() {
   return (
     <div className="shell">
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>{t('shell.skip')}</a>
-      <header className="topbar no-print">
-        <Link to="/" className="topbar__brand">{t('app.name')}</Link>
-        <Link to="/ship/search" className="topbar__search">
-          <Search aria-hidden="true" />
-          <span>{t('shell.search')}</span>
-        </Link>
-        <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
-          <Help aria-hidden="true" />
-          <span>{t('help.button')}</span>
-        </button>
-      </header>
+      <div className="shell__top">
+        <header className="topbar no-print">
+          <Link to="/" className="topbar__brand">{t('app.name')}</Link>
+          <Link to="/ship/search" className="topbar__search">
+            <Search aria-hidden="true" />
+            <span>{t('shell.search')}</span>
+          </Link>
+          <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
+            <Help aria-hidden="true" />
+            <span>{t('help.button')}</span>
+          </button>
+        </header>
+        <TestBar />
+      </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')}>
         {TABS.map((tab) => {
           const Icon = TAB_ICONS[tab.id]
