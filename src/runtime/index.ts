@@ -1,6 +1,7 @@
 import { createHttpGroups, toApi } from '../api/httpApi'
 import type { Api } from '../api/types'
 import type { ConciergeSender } from '../ai/concierge'
+import type { StanleySender } from '../ai/stanley'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { ownerIdOf } from '../auth/provider'
 import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, sweepExpiredCopies, wipeEverything } from '../data/lifecycle'
@@ -70,6 +71,9 @@ export const fetchRates = async (): Promise<RateTable> => normalizeRates(await h
 
 /** The concierge is answered by the server (model key, tools, guard and hourly limit stay there). */
 export const sendConcierge: ConciergeSender = (body) => http.post<unknown>('/me/concierge', body)
+
+/** Stanley, the cruise chat helper, is answered by the server too (word filter, topic gate, model and limit stay there). */
+export const sendStanley: StanleySender = (body) => http.post<unknown>('/me/stanley', body)
 
 /** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. */
 export const staffRequest = (kind: 'callback' | 'caregiver' | 'kit', reason?: string): Promise<unknown> => http.post<unknown>('/me/staff-requests', { kind, reason })

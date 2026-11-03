@@ -27,6 +27,13 @@
   border: 2px solid var(--primary); border-radius: var(--radius-button);
   font-weight: 600; cursor: pointer;
 }
+.topbar__stanley {
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  min-width: var(--target-min); min-height: var(--target-min);
+  background: var(--bg); border: 2px solid var(--primary); border-radius: 50%; cursor: pointer;
+}
+.topbar__stanley img { display: block; width: 2.5rem; height: 2.5rem; border-radius: 50%; }
+.topbar__stanley:hover { border-color: var(--primary-dark); }
 .topbar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto;
   min-height: var(--target-min); padding: 0 var(--space-3);
@@ -58,7 +65,7 @@
 .tabs__item[data-colour='pink'] { --tab: var(--pink); --tab-tint: var(--pink-tint); }
 .tabs__item[data-colour='gold'] { --tab: var(--gold-text); --tab-tint: var(--gold-tint); }
 .tabs__item[data-colour='plum'] { --tab: var(--plum); --tab-tint: var(--plum-tint); }
-.tabs__logo, .tabs__help, .tabs__search { display: none; }
+.tabs__logo, .tabs__help, .tabs__search, .tabs__stanley { display: none; }
 .tabs__item span { overflow-wrap: anywhere; text-align: center; }
 .tabs__item .lucide { color: var(--tab); }
 .tabs__item .lucide { width: 1.5rem; height: 1.5rem; }
@@ -100,8 +107,16 @@
   .tabs__search .lucide { width: 1.5rem; height: 1.5rem; }
   .tabs__logo { display: inline-flex; align-self: center; padding: 0; margin-bottom: var(--space-2); border-radius: var(--radius-button); }
   .tabs__logo img { display: block; height: 6.75rem; width: auto; }
+  .tabs__stanley {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); margin-top: auto;
+    min-height: var(--target-min); padding: var(--space-1) var(--space-3);
+    background: var(--bg); color: var(--primary); border: 2px solid var(--primary); border-radius: var(--radius-button);
+    font-weight: 600; font-size: var(--fs-body); cursor: pointer;
+  }
+  .tabs__stanley img { display: block; width: 2.5rem; height: 2.5rem; border-radius: 50%; }
+  .tabs__stanley:hover { background: color-mix(in srgb, var(--primary) 10%, var(--bg)); border-color: var(--primary-dark); }
   .tabs__help {
-    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); margin-top: auto;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); margin-top: var(--space-2);
     min-height: var(--target-min); padding: 0 var(--space-4);
     background: linear-gradient(135deg, var(--primary), var(--primary-bright)); color: var(--on-primary);
     border: 2px solid var(--primary); border-radius: var(--radius-button);

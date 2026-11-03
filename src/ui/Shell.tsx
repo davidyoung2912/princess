@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
 import logo from '../assets/princess.png'
+import stanley from '../assets/stanley-small.png'
 import { Link, Navigate, Outlet, useLocation, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
@@ -16,6 +17,7 @@ import { Help, Search } from './icons'
 import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
+import { StanleyDialog } from './ai/StanleyDialog'
 import { PageHeader } from './PageHeader'
 import { tabText } from './tabText'
 import { TestBar } from './TestBar'
@@ -34,6 +36,7 @@ export function Shell() {
   const known = useSyncExternalStore(subscribeContext, getContext, getContext) !== null
   const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [stanleyOpen, setStanleyOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   usePushSync()
   const main = useRef<HTMLElement>(null)
@@ -82,6 +85,9 @@ export function Shell() {
             <Search aria-hidden="true" />
             <span>{t('shell.search')}</span>
           </Link>
+          <button type="button" className="topbar__stanley" onClick={() => setStanleyOpen(true)} aria-label={t('stanley.button')}>
+            <img src={stanley} alt="" width="192" height="192" />
+          </button>
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
@@ -110,6 +116,10 @@ export function Shell() {
           <Search aria-hidden="true" />
           <span>{t('shell.search')}</span>
         </Link>
+        <button type="button" className="tabs__stanley" onClick={() => setStanleyOpen(true)}>
+          <img src={stanley} alt="" width="192" height="192" />
+          <span>{th('stanley.button')}</span>
+        </button>
         <button type="button" className="tabs__help" onClick={() => setHelpOpen(true)}>
           <Help aria-hidden="true" />
           <span>{th('help.button')}</span>
@@ -124,6 +134,7 @@ export function Shell() {
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
       {helpOpen && <HelpSheet onClose={() => setHelpOpen(false)} />}
+      {stanleyOpen && <StanleyDialog onClose={() => setStanleyOpen(false)} />}
     </div>
   )
 }

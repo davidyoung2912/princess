@@ -1,6 +1,6 @@
 # Stanley: the cruise chat helper
 
-Status: **plan agreed (2026-11-03). S1 (word filter) and S2 (endpoint) are built; S3 and S4 are not started.**
+Status: **plan agreed (2026-11-03). S1 (word filter), S2 (endpoint) and S3 (front end) are built; S4 is not started.**
 
 Stanley is a friendly guide the guest chats with in a dialog opened from his logo button, above Help in the left nav (and in the top bar on phones). He answers questions about cruising, this ship and its ports. He refuses rude messages and anything unrelated to cruising, politely.
 
@@ -60,3 +60,11 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 - The hourly limit is **shared with the concierge** (the same 20 an hour per person), so no new table is needed. A separate budget would need a new `ConciergeUses`-style table; say if you want one.
 - Blocked and handed-off messages are dropped from the context by the server as well as by the client, so a client that resends them cannot get them into a prompt. A message the prescan called off topic is not known to the server on the next turn, so **the S3 client should leave off-topic and blocked exchanges out of the history it sends**.
 - With no model: a keyword gate (English and Spanish) stands in for the prescan, and a fixed scripted answer is returned.
+
+## S3 as built
+
+- `src/ai/stanley.ts` (pure, tested in `stanley.test.ts`): reply reading (`normalizeStanley`), the history sent (`historyToSend`: only clean round trips, latest 10, then the new message, so blocked, off-topic, handed-off and failed exchanges never go back to the server), the on-device safety screen (an emergency shows the numbers with no signal), and the in-memory thread (closing the dialog keeps it, a refresh clears it).
+- `src/ui/ai/StanleyDialog.tsx`: the chat in the shared `Dialog` (focus trap, Escape), his picture, subtext, an AI label, example questions, a typing indicator (still under reduced motion) and the box. Stanley's wording for every non-answer kind is in the English and Spanish strings (`stanley.*`); handoffs reuse the concierge's `ai.handoff.*` wording.
+- `Shell.tsx`: a Stanley button above Help in the left nav (from 1024px) and a round picture button in the top bar on phones. `runtime` has `sendStanley` (`POST /me/stanley`).
+- `src/assets/stanley-small.png` is a 192-pixel copy (60 KB) of the 1.4 MB `stanley.png`; only the small one is imported, so only it is precached.
+- Replies still appear all at once; streaming is S4.
