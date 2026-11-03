@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextSteps, stageTiles, ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from './stageHome'
+import { nextSteps, stageTiles, urgentStep, ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from './stageHome'
 
 const none = { savedSailings: 0, draft: null }
 
@@ -43,5 +43,23 @@ describe('stage Home', () => {
     for (const s of REMEMBER_STAGES) expect(stageTiles(s, { sailingId: null, draftId: null })).toHaveLength(6)
     expect(nextSteps('remember', none).map((x) => x.to)).toEqual(['/me/recap', '/me/feedback', '/home/sailings'])
     expect(nextSteps('remember', { ...none, savedSailings: 1 })[2]!.done).toBe(true)
+  })
+})
+
+describe('urgent step', () => {
+  const trip = { number: 'B1', paid: false, documentsOk: true, checkinDone: false, agent: false }
+  const none2 = { savedSailings: 0, draft: null }
+  it('leads with Next steps for a near final payment, check-in, documents, muster or bag night', () => {
+    expect(urgentStep('manage', { ...none2, trip: { ...trip, daysToFinal: 14 } })).toBe('payment')
+    expect(urgentStep('manage', { ...none2, trip: { ...trip, paid: true, checkinOpen: true, daysToDeparture: 3 } })).toBe('checkin')
+    expect(urgentStep('manage', { ...none2, trip: { ...trip, paid: true, documentsOk: false, daysToDeparture: 30 } })).toBe('documents')
+    expect(urgentStep('embark', { ...none2, aboard: { musterDone: false, lastFullDay: false } })).toBe('muster')
+    expect(urgentStep('sea', { ...none2, aboard: { musterDone: true, lastFullDay: true } })).toBe('bags')
+  })
+  it('lets the recent card lead otherwise', () => {
+    expect(urgentStep('manage', { ...none2, trip: { ...trip, daysToFinal: 15, daysToDeparture: 60 } })).toBeNull()
+    expect(urgentStep('manage', { ...none2, trip: { ...trip, paid: true, documentsOk: false, daysToDeparture: 31 } })).toBeNull()
+    expect(urgentStep('dream', none2)).toBeNull()
+    expect(urgentStep('embark', { ...none2, aboard: { musterDone: true, lastFullDay: false } })).toBeNull()
   })
 })

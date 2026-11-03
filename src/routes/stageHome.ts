@@ -6,7 +6,11 @@ export interface HomeFacts {
   savedSailings: number
   draft: { id: string; categoryChosen: boolean; started: boolean } | null
   /** The guest's confirmed trip, for the stages from Manage to Get to the ship. */
-  trip?: { number: string; paid: boolean; documentsOk: boolean; checkinDone: boolean; agent: boolean } | null
+  trip?: {
+    number: string; paid: boolean; documentsOk: boolean; checkinDone: boolean; agent: boolean
+    /** Days to the final payment date (negative once past) and to departure, and whether online check-in is open. Left out: nothing is urgent. */
+    daysToFinal?: number; daysToDeparture?: number; checkinOpen?: boolean
+  } | null
   /** On board (P7): the muster drill is done, and it is the last full day (or later), when bag night and the exit time matter. */
   aboard?: { musterDone: boolean; lastFullDay: boolean } | null
 }
@@ -100,6 +104,21 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
     default:
       return []
   }
+}
+
+export type UrgentReason = 'payment' | 'checkin' | 'documents' | 'muster' | 'bags'
+
+/** Why Next steps should lead Home (and its first undone step get the primary button), or null when the recent card leads (docs/returning-home-plan.md, "Urgent"). */
+export function urgentStep(stage: JourneyStage, f: HomeFacts): UrgentReason | null {
+  const trip = f.trip
+  if (trip) {
+    if (!trip.paid && trip.daysToFinal !== undefined && trip.daysToFinal <= 14) return 'payment'
+    if (trip.checkinOpen && !trip.checkinDone && trip.daysToDeparture !== undefined && trip.daysToDeparture <= 3) return 'checkin'
+    if (!trip.agent && !trip.documentsOk && trip.daysToDeparture !== undefined && trip.daysToDeparture <= 30) return 'documents'
+  }
+  if (stage === 'embark' && f.aboard && !f.aboard.musterDone) return 'muster'
+  if (stage === 'sea' && f.aboard?.lastFullDay) return 'bags'
+  return null
 }
 
 /** Where a tile opens, or null when it needs an id Home does not have. */

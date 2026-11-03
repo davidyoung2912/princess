@@ -28,6 +28,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
+import { RecentCard } from './RecentCard'
 import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
@@ -96,6 +97,7 @@ export function HomeScreen() {
       {trip && <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>}
       <NewTabsNote />
       <StageLanding />
+      <RecentCard />
       {trip && <JourneyStrip />}
       <UpdatesBanner />
       <NudgeCards aboard={false} />

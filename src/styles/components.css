@@ -221,3 +221,11 @@ textarea { max-width: min(100%, 32rem); }
 .btn.tip__got { min-height: 2rem; padding: 0 var(--space-3); font-size: 0.75em; font-weight: 600; border-width: 2px; background: var(--bg); color: var(--text); border-color: var(--border-strong); }
 .btn.tip__got:hover { background: var(--sky-tint); }
 .tip__count { color: var(--text-muted); white-space: nowrap; }
+
+/* Pick up where you left off (Home). */
+.recent-list { list-style: none; padding: 0; margin: 0 0 var(--space-2); display: grid; gap: var(--space-2); }
+.recent-row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.recent-row__icon { width: 1.5rem; height: 1.5rem; flex: none; }
+.recent-row__text { flex: 1 1 12rem; min-width: 0; }
+.recent-row a:not(.btn) { min-height: var(--target-min); display: inline-flex; align-items: center; }
+.recent-foot { margin: 0; font-size: 0.875rem; }

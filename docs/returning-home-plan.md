@@ -1,6 +1,6 @@
 # Returning-guest Home: "Pick up where you left off" and stronger Next steps
 
-Status: **plan agreed (2026-11-03). R1 (server) and R2 (front-end logic) are built; R3 and R4 are not started.**
+Status: **plan agreed (2026-11-03). R1 (server), R2 (front-end logic) and R3 (recent card) and R4 (restyle) are built.**
 
 ## Why
 
@@ -56,5 +56,5 @@ Otherwise the recent card leads. Both blocks are always shown; only the order an
 
 - **R1: Server.** Add the `recent` key to `StateRules.UserKeys`, with the shape check above. Tests in `StateTests.cs`. Not run here (no `dotnet test`, per project rules); the npm checks are the gate.
 - **R2: Front-end logic (built; the list is held in memory only, the server copy is the real one).** `src/routes/recent.ts` (what counts, dedupe, cap at three, safe path, relative time, resolve to a screen); a sync binding and merge for `recent` (`src/sync/bindings.ts`, `merges.ts`); the Shell records a visit next to `recordVisit`. Vitest in node.
-- **R3: Recent card.** `RecentCard.tsx`, placed in every Home variant, English and Spanish strings, Clear button, `urgentStep` and the ordering.
-- **R4: Restyle.** New `StageHome` markup and CSS; render and a11y tests updated.
+- **R3: Recent card (built; `StageHome` orders it against Next steps, the default Home shows it under the stage landing).** `RecentCard.tsx`, placed in every Home variant, English and Spanish strings, Clear button, `urgentStep` and the ordering.
+- **R4: Restyle (built; the attention badge marks the tile that opens the first undone step when Next steps is urgent).** New `StageHome` markup and CSS; render and a11y tests updated.
