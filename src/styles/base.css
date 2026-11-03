@@ -91,7 +91,7 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 
 /* Choice rows: a native radio or checkbox with a label, large enough to tap. */
 .choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target-min); cursor: pointer; }
-.choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--primary); flex: none; }
+.choice input { width: 1.5rem; height: 1.5rem; accent-color: var(--sec); flex: none; }
 .choice small { display: block; color: var(--text-muted); font-size: var(--fs-caption); }
 
 .swatches { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); padding: 0; margin: 0; list-style: none; }
@@ -111,6 +111,13 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
   margin: var(--space-4) auto var(--space-2);
 }
 
+/* Each tab has its own accent (home blue, plan teal, ship pink, chat gold, me navy); dialogs outside the shell use the blue default. */
+:root { --sec: var(--primary); --sec-tint: var(--sky-tint); --hdr-a: var(--header-start); --hdr-b: var(--header-end); }
+.shell[data-section='plan'] { --sec: var(--teal); --sec-tint: var(--teal-tint); --hdr-a: var(--header-teal-start); --hdr-b: var(--header-teal-end); }
+.shell[data-section='ship'] { --sec: var(--pink); --sec-tint: var(--pink-tint); --hdr-a: var(--header-pink-start); --hdr-b: var(--header-pink-end); }
+.shell[data-section='chat'] { --sec: var(--gold-text); --sec-tint: var(--gold-tint); --hdr-a: var(--header-gold-start); --hdr-b: var(--header-gold-end); }
+.shell[data-section='me'] { --sec: var(--primary-dark); }
+
 /* Page title: a brand-blue band with a pink and gold glow, white bold text. */
 .shell__main .page > h1 {
   margin: 0 0 var(--space-5);
@@ -119,13 +126,17 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
   background:
     radial-gradient(circle at 100% 0%, rgba(230, 0, 96, 0.4), transparent 45%),
     radial-gradient(circle at 0% 100%, rgba(170, 130, 71, 0.35), transparent 40%),
-    linear-gradient(135deg, var(--header-start), var(--header-end));
+    linear-gradient(135deg, var(--hdr-a), var(--hdr-b));
   border-radius: var(--radius-hero);
   overflow-wrap: anywhere;
 }
 main.page > h1 { color: var(--primary); }
-.shell__main .page > h2, .shell__main .page > section > h2 { color: var(--primary); }
+.shell__main .page > h2, .shell__main .page > section > h2 { color: var(--sec); }
 .shell__main .page > h2::after, .shell__main .page > section > h2::after {
   content: ''; display: block; width: 3rem; height: 4px; margin-top: var(--space-2); border-radius: 2px;
   background: linear-gradient(90deg, var(--pink), var(--gold));
 }
+
+/* Big figures (prices, totals, booking numbers) take the section accent. */
+.price__amount, .fare__total, .booking-number, .trip-count, .bill__big, .help-now__big, .wrapped-card__big { color: var(--sec); }
+progress, meter { accent-color: var(--sec); }

@@ -48,13 +48,14 @@
   border-top: 4px solid transparent;
   --tab: var(--primary);
 }
-.tabs__item:nth-child(2) { --tab: var(--teal); }
-.tabs__item:nth-child(3) { --tab: var(--primary); }
-.tabs__item:nth-child(4) { --tab: var(--pink); }
-.tabs__item:nth-child(5) { --tab: var(--gold-text); }
+.tabs__item { --tab-tint: var(--sky-tint); }
+.tabs__item:nth-child(2) { --tab: var(--teal); --tab-tint: var(--teal-tint); }
+.tabs__item:nth-child(3) { --tab: var(--pink); --tab-tint: var(--pink-tint); }
+.tabs__item:nth-child(4) { --tab: var(--gold-text); --tab-tint: var(--gold-tint); }
+.tabs__item:nth-child(5) { --tab: var(--primary-dark); }
 .tabs__item .lucide { color: var(--tab); }
 .tabs__item .lucide { width: 1.5rem; height: 1.5rem; }
-.tabs__item[aria-current='page'] { color: var(--tab); font-weight: 700; border-top-color: var(--tab); background: var(--sky-tint); }
+.tabs__item[aria-current='page'] { color: var(--tab); font-weight: 700; border-top-color: var(--tab); background: var(--tab-tint); }
 .tabs__item:hover { color: var(--tab); }
 
 .shell__main { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); outline: none; }
@@ -67,10 +68,10 @@
     display: flex; flex-direction: column; gap: var(--space-1);
     padding: calc(env(safe-area-inset-top) + var(--space-5)) var(--space-3) var(--space-5) calc(env(safe-area-inset-left) + var(--space-3));
     border-top: 0; border-right: var(--border-width) solid var(--border);
-    background: var(--sky-tint);
+    background: var(--bg);
   }
   .tabs__item { flex-direction: row; justify-content: flex-start; gap: var(--space-3); min-height: var(--target-min); padding: var(--space-2) var(--space-4); font-size: var(--fs-body); border-top: 0; border-left: 4px solid transparent; border-radius: var(--radius-card); }
-  .tabs__item[aria-current='page'] { border-left-color: var(--tab); background: var(--bg); color: var(--text); }
+  .tabs__item[aria-current='page'] { border-left-color: var(--tab); background: var(--tab-tint); color: var(--text); }
   .shell__main { grid-area: main; padding-bottom: 0; }
   .topbar__brand { display: none; }
   .topbar { justify-content: flex-end; }

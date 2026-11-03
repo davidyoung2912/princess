@@ -40,7 +40,7 @@ export function Shell() {
   }, [pathname, title, route?.path])
 
   return (
-    <div className="shell">
+    <div className="shell" data-section={activeTab ?? 'home'}>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>{t('shell.skip')}</a>
       <div className="shell__top">
         <header className="topbar no-print">

@@ -85,9 +85,9 @@
 .stepper { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
 .stepper__step { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target-min); }
 .stepper__mark { display: inline-grid; place-items: center; flex: none; width: 2rem; height: 2rem; border: 2px solid var(--border-strong); border-radius: 50%; font-weight: 700; font-size: var(--fs-caption); }
-.stepper__step--done .stepper__mark { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.stepper__step--done .stepper__mark { background: var(--sec); border-color: var(--sec); color: var(--on-primary); }
 .stepper__step--current { font-weight: 700; }
-.stepper__step--current .stepper__mark { border: 4px solid var(--primary); }
+.stepper__step--current .stepper__mark { border: 4px solid var(--sec); }
 
 /* Timeline */
 .timeline { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
@@ -119,3 +119,7 @@
 
 /* Small delights: a short text to copy and send. */
 .copy-text { margin: 0 0 var(--space-2); padding: var(--space-3); border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 8px); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* List rows and hub summaries pick up the section tint on hover. */
+.link-list li:hover, .hub > summary:hover { background: var(--sec-tint); }
+.hub[open] > summary { color: var(--sec); }
