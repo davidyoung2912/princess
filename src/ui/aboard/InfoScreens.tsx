@@ -6,9 +6,16 @@ import { PORTS } from '../../domain/sailings'
 import type { Recent } from '../../domain/recentSearches'
 import { clearRecent, loadRecent, rememberSearch } from '../../settings/recentSearches'
 import { MIN_QUERY, searchContent } from '../../domain/searchIndex'
-import { noonReport } from '../../domain/shipInfo'
+import { captainAnnouncement } from '../../domain/shipInfo'
+import { distanceParts } from '../../domain/navigation'
+import type { ShipPosition } from '../../domain/navigation'
+import type { Units } from '../../domain/readiness'
+import { positionFeed } from '../../feeds/navigation'
+import { useFeed } from '../../hooks/useServedFeeds'
+import { FeedWaiting } from '../FeedWaiting'
+import { coordinates, positionLine } from '../onboard/navigationText'
 import { screenHits } from '../../routes/screenWords'
-import { useSailing } from '../../hooks/useDemo'
+import { useNow, useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -17,38 +24,35 @@ import { Field } from '../Field'
 import { Saved } from '../onboard/common'
 import { Back } from './common'
 
-/** Ship news (OB-06): the captain's announcement, where the ship is and how fast, the weather and the sea, as the noon report. */
+/** Ship news (OB-06): the captain's announcement, today's weather and the ship at a glance, with links to the fuller navigation screens. */
 export function ShipInfoScreen() {
   const [settings] = useSettings()
   const today = useOnboardToday()
   const sailing = useSailing()
+  const p = useFeed(positionFeed, sailing.departure, Math.floor(useNow() / 60_000) * 60_000)
   return (
     <div className="page">
       <h1>{t('route.shipInfo')}</h1>
       <Saved copy={today}>
         {(v) => {
           if (!v.aboard || v.day === null) return <Banner kind="info" title={t('info.notYet')}><p>{t('info.notYetBody')}</p></Banner>
-          const r = noonReport(sailing, v.day)
-          const target = r.at === 'sea' ? r.next : r.at
-          const near = target && target !== 'sea' ? PORTS[target].name : ''
           return (
             <>
               <Card hero labelledBy="capt-h">
                 <h2 id="capt-h" className="card__title">{t('info.captain')}</h2>
-                <blockquote>{r.announcement}</blockquote>
+                <blockquote>{captainAnnouncement(v.day)}</blockquote>
                 <p className="muted">{t('info.captainNote')}</p>
               </Card>
-              <Card labelledBy="noon-h">
-                <h2 id="noon-h" className="card__title">{t('info.noon', { day: r.day })}</h2>
-                <dl className="facts">
-                  <div><dt>{t('info.position')}</dt><dd>{r.at === 'sea' ? t('info.atSea', { miles: r.milesToNext, port: near }) : t('info.inPort', { port: near })}</dd></div>
-                  <div><dt>{t('info.speed')}</dt><dd>{r.knots === 0 ? t('info.alongside') : t('info.knots', { knots: r.knots })}</dd></div>
-                  <div><dt>{t('info.sky')}</dt><dd>{t(`info.sky.${r.sky}` as StringKey)}</dd></div>
-                  <div><dt>{t('info.air')}</dt><dd>{formatTemp(r.airF, settings.units)}</dd></div>
-                  <div><dt>{t('info.water')}</dt><dd>{formatTemp(r.waterF, settings.units)}</dd></div>
-                  <div><dt>{t('info.sea')}</dt><dd>{t('info.seaBody', { wind: r.windKnots, wave: r.waveFt })}</dd></div>
-                </dl>
-                <p className="muted">{t('info.concept')}</p>
+              {v.weather && (
+                <Card labelledBy="wx-h">
+                  <h2 id="wx-h" className="card__title">{t('info.weather')}</h2>
+                  <p>{t('onb.weather', { summary: v.weather.summary, high: formatTemp(v.weather.highF, settings.units), low: formatTemp(v.weather.lowF, settings.units) })} {v.weather.sea}</p>
+                </Card>
+              )}
+              <Card labelledBy="glance-h">
+                <h2 id="glance-h" className="card__title">{t('info.glance')}</h2>
+                {p ? <GlanceBody p={p} units={settings.units} /> : <FeedWaiting />}
+                <p><Link to="/ship/where">{t('route.where')}</Link> · <Link to="/ship/sea">{t('route.sea')}</Link> · <Link to="/ship/along">{t('route.along')}</Link></p>
               </Card>
             </>
           )
@@ -57,6 +61,21 @@ export function ShipInfoScreen() {
       <p><Link to="/ship/search">{t('route.search')}</Link></p>
       <Back to="/ship" label={t('route.ship')} />
     </div>
+  )
+}
+
+/** The short form of the ship's position: the one-line status, where it is bound and the ship's clock. */
+function GlanceBody({ p, units }: { p: ShipPosition; units: Units }) {
+  const remaining = distanceParts(p.nmRemaining, units)
+  return (
+    <>
+      <p>{positionLine(p, units)}</p>
+      <dl className="facts">
+        <div><dt>{t('nav.pos')}</dt><dd>{coordinates(p.lat, p.lon)}</dd></div>
+        {p.nextPort && <div><dt>{t('nav.remaining', { port: PORTS[p.nextPort].name })}</dt><dd>{t('nav.distance', { nm: remaining.nm, other: remaining.other })}</dd></div>}
+        <div><dt>{t('nav.time.ship', { zone: t(`nav.zone.${p.clock.shipZone}` as StringKey) })}</dt><dd>{p.clock.shipTime}</dd></div>
+      </dl>
+    </>
   )
 }
 

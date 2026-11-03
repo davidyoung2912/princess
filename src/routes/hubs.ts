@@ -68,7 +68,7 @@ export const HUBS: readonly HubDef[] = [
   { id: 'plan.wish', tab: 'plan', labelKey: 'hub.plan.wish', stage: 'prebook', paths: [plan('ahead'), plan('clubs'), plan('gifts')] },
 
   { id: 'ship.safety', tab: 'ship', labelKey: 'hub.ship.safety', stage: 'embark', paths: [ship('emergency'), ship('muster'), ship('help-now'), ship('text-help'), ship('report'), ship('health'), ship('seasick'), ship('safe-ashore'), ship('allergy-chain'), ship('lost-found'), ship('access'), ship('dnd')] },
-  { id: 'ship.find', tab: 'ship', labelKey: 'hub.ship.find', stage: 'sea', paths: [ship('map'), ship('venues'), ship('info'), ship('search'), ship('steps'), ship('loungers'), ship('sightings'), ship('sky'), ship('pulse'), ship('ask-ship')] },
+  { id: 'ship.find', tab: 'ship', labelKey: 'hub.ship.find', stage: 'sea', paths: [ship('map'), ship('venues'), ship('info'), ship('search'), ship('steps'), ship('loungers'), ship('sightings'), ship('where'), ship('sea'), ship('along'), ship('sky'), ship('pulse'), ship('ask-ship')] },
   { id: 'ship.service', tab: 'ship', labelKey: 'hub.ship.service', stage: 'sea', paths: [ship('order'), ship('drinks'), ship('shops'), ship('spa'), ship('dining-prefs'), ship('laundry'), ship('requests'), ship('room'), ship('wifi'), ship('tv')] },
   { id: 'ship.port', tab: 'ship', labelKey: 'hub.ship.port', stage: 'port', paths: [ship('port'), ship('port/guide'), ship('port/snapshot')] },
   { id: 'ship.people', tab: 'ship', labelKey: 'hub.ship.people', stage: 'sea', paths: [ship('family'), ship('kids-report'), ship('teen'), ship('games'), ship('community'), ship('solo'), ship('ok-tap'), ship('you-said'), ship('photos'), ship('read-aloud')] },

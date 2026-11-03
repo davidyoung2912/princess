@@ -26,6 +26,7 @@ public static class ProviderRegistration
         "FlightStatusProvider" => "Flight",
         "RouteConditionsProvider" => "Route",
         "ShipTelemetry" => "Telemetry",
+        "ShipNavigation" => "Navigation",
         "EmailSender" => "Email",
         _ => name,
     };
@@ -37,6 +38,7 @@ public static class ProviderRegistration
         S<IFlightStatusProvider, SimFlightStatusProvider>(),
         S<IRouteConditionsProvider, SimRouteConditionsProvider>(),
         S<IShipTelemetry, SimShipTelemetry>(),
+        S<IShipNavigation, SimShipNavigation>(),
         S<IStaffQueue, SimStaffQueue>(),
         S<IFareFeed, SimFareFeed>(),
         S<IProgramChanges, SimProgramChanges>(),

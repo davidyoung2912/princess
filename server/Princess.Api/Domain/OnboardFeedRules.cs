@@ -15,7 +15,7 @@ public sealed record StormDto(string Source, string Departure, string Returns, b
 
 public sealed record MoonDto(string Phase, string Name, int Lit);
 
-public sealed record SkyNightDto(int Day, string Port, string Sunrise, string Sunset, long SunsetAt, MoonDto Moon, string SunsetSide, string? SailAway, bool SailAwayAtSunset, string[] Stars, bool DarkSky, string Source);
+public sealed record SkyNightDto(int Day, string Port, string Sunrise, string Sunset, long SunsetAt, MoonDto Moon, string SunsetSide, string? SailAway, bool SailAwayAtSunset, string[] Stars, bool DarkSky, string FirstLight, string LastLight, string DarkAt, string Source);
 
 public sealed record LoungerDto(int Id, string State, int? ReturnsIn);
 
@@ -162,13 +162,14 @@ public static class OnboardFeedRules
 
     private static long Midnight(string date) => new DateTimeOffset(DateOnly.ParseExact(date, "yyyy-MM-dd").ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).ToUnixTimeMilliseconds();
 
-    private static (long Sunrise, long Sunset) SunTimes(string date, double lat, double lon)
+    /// <summary>The two moments the sun crosses a height above the horizon (degrees; -0.833 is sunrise and sunset, -6 civil twilight, -12 nautical twilight).</summary>
+    private static (long Sunrise, long Sunset) SunTimes(string date, double lat, double lon, double altitude = -0.833)
     {
         var n = (int)((Midnight(date) - Midnight($"{date[..4]}-01-01")) / 86_400_000) + 1;
         var decl = 23.44 * Math.Sin(Rad * (360.0 / 365) * (n - 81));
         var b = Rad * (360.0 / 364) * (n - 81);
         var eotMin = 9.87 * Math.Sin(2 * b) - 7.53 * Math.Cos(b) - 1.5 * Math.Sin(b);
-        var h = Math.Acos(Math.Max(-1, Math.Min(1, (Math.Sin(Rad * -0.833) - Math.Sin(Rad * lat) * Math.Sin(Rad * decl)) / (Math.Cos(Rad * lat) * Math.Cos(Rad * decl))))) / Rad / 15;
+        var h = Math.Acos(Math.Max(-1, Math.Min(1, (Math.Sin(Rad * altitude) - Math.Sin(Rad * lat) * Math.Sin(Rad * decl)) / (Math.Cos(Rad * lat) * Math.Cos(Rad * decl))))) / Rad / 15;
         var noonUtcH = 12 - lon / 15 - eotMin / 60;
         var baseMs = (double)Midnight(date);
         return (Pricing.JsRound(baseMs + (noonUtcH - h) * 3_600_000), Pricing.JsRound(baseMs + (noonUtcH + h) * 3_600_000));
@@ -208,12 +209,14 @@ public static class OnboardFeedRules
         var zone = Itinerary.ShipZoneOnDate(dep, d.Date);
         var date = d.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var (sunrise, sunset) = SunTimes(date, lat, lon);
+        var (civilDawn, civilDusk) = SunTimes(date, lat, lon, -6);
+        var (_, nauticalDusk) = SunTimes(date, lat, lon, -12);
         var moon = MoonAt(sunset);
         string Clock(long ms) => Itinerary.LocalAt(Utc(ms), zone).Time.ToString("HH:mm", CultureInfo.InvariantCulture);
         long? sailAt = d.Depart is { } dp ? new DateTimeOffset(Itinerary.LocalToUtc(d.Date, dp, d.Port is "sea" or "fll" ? zone : Itinerary.Ports[d.Port].Zone), TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
         return new SkyNightDto(
             day, d.Port, Clock(sunrise), Clock(sunset), sunset, new MoonDto(moon.Phase, moon.Name, moon.Lit), AfternoonSide(Headings[day]),
-            d.Depart?.ToString("HH:mm", CultureInfo.InvariantCulture), sailAt is { } s && s <= sunset + 45 * Min && s >= sunset - 90 * Min, Season[d.Date.Month - 1], moon.Lit < 70, FeedRules.Sim);
+            d.Depart?.ToString("HH:mm", CultureInfo.InvariantCulture), sailAt is { } s && s <= sunset + 45 * Min && s >= sunset - 90 * Min, Season[d.Date.Month - 1], moon.Lit < 70, Clock(civilDawn), Clock(civilDusk), Clock(nauticalDusk), FeedRules.Sim);
     }
 
     // ---------- loungers (aboardMore.ts) ----------

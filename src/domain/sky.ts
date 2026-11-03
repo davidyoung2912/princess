@@ -29,6 +29,10 @@ export interface SkyNight {
   stars: readonly string[]
   /** Dark enough for stars: the moon is not near full. */
   darkSky: boolean
+  /** First light (civil dawn), the end of twilight (civil dusk) and full dark (nautical dusk), ship time "HH:MM". */
+  firstLight: string
+  lastLight: string
+  darkAt: string
 }
 
 /** The best place to watch from, in words. */

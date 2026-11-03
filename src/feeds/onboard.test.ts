@@ -11,7 +11,7 @@ import { normalizeStorm, stormFeed } from './storm'
 const sailing = { id: 'x', departure: '2027-03-21' }
 
 const storm = { departure: '2027-09-12', returns: '2027-09-19', inSeason: true, percent: 15, band: 'higher', phase: 'near', lineMay: ['reroute', 'swap'], youCan: ['insurance', 'flights'], peak: true }
-const night = { day: 3, port: 'cozumel', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: '17:00', sailAwayAtSunset: false, stars: ['Orion'], darkSky: false }
+const night = { day: 3, port: 'cozumel', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: '17:00', sailAwayAtSunset: false, stars: ['Orion'], darkSky: false, firstLight: '06:05', lastLight: '19:05', darkAt: '19:30' }
 const others: LoungerOther[] = Array.from({ length: 8 }, (_, i) => (i % 3 === 0 ? { id: i + 1, state: 'free' as const, returnsIn: null } : i % 3 === 1 ? { id: i + 1, state: 'held' as const, returnsIn: 12 } : { id: i + 1, state: 'overdue' as const, returnsIn: null }))
 const NOW = Date.parse('2027-03-23T15:20:00Z')
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bestSpot, type SkyNight } from './sky'
 
-const NIGHT: SkyNight = { day: 2, port: 'sea', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: null, sailAwayAtSunset: false, stars: ['Orion'], darkSky: false }
+const NIGHT: SkyNight = { day: 2, port: 'sea', sunrise: '06:30', sunset: '18:40', sunsetAt: Date.parse('2027-03-23T23:40:00Z'), moon: { phase: 'full', name: 'Full moon', lit: 99 }, sunsetSide: 'port', sailAway: null, sailAwayAtSunset: false, stars: ['Orion'], darkSky: false, firstLight: '06:05', lastLight: '19:05', darkAt: '19:30' }
 
 describe('sky guide (S6-07)', () => {
   it('does not claim a planet, and says when the moon will wash out the stars', () => {

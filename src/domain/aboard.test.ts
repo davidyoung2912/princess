@@ -2,25 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { ITEMS, chargeFor, endTime, itemById, placesLeft, selectionProblem, takenByOthers } from './catalogue'
 import { PLACES } from './deck'
 import { HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, normalizeGame, triviaScore } from './games'
-import { REFERENCE_SAILING } from './sailings'
 import { searchContent } from './searchIndex'
 import {
   BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, splitEvenly, systemStatus, topUpProblem,
 } from './services'
-import { noonReport } from './shipInfo'
+import { captainAnnouncement } from './shipInfo'
 import { CHANNELS, VOD, onNow, titleAllowed } from './tv'
 
 const MIN = 60_000
 
 describe('ship info (OB-06)', () => {
-  it('gives the same report for the same day, in port and at sea', () => {
-    const s = REFERENCE_SAILING
-    expect(noonReport(s, 2)).toEqual(noonReport(s, 2))
-    expect(noonReport(s, 2)).toMatchObject({ at: 'sea', next: 'cozumel' })
-    expect(noonReport(s, 2).knots).toBeGreaterThan(0)
-    expect(noonReport(s, 3)).toMatchObject({ at: 'cozumel', knots: 0, milesToNext: 0 })
-    expect(noonReport(s, 99).day).toBe(8)
-    for (let d = 1; d <= 8; d++) expect(noonReport(s, d).announcement.length).toBeGreaterThan(10)
+  it('gives a captain\u2019s announcement for every day and holds a day out of range to the nearest end', () => {
+    for (let d = 1; d <= 8; d++) expect(captainAnnouncement(d).length).toBeGreaterThan(10)
+    expect(captainAnnouncement(99)).toBe(captainAnnouncement(8))
+    expect(captainAnnouncement(-3)).toBe(captainAnnouncement(1))
   })
 })
 

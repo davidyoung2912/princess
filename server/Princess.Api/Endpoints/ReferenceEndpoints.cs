@@ -112,6 +112,27 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("Sunrise, sunset, the moon, easy constellations and the sunset side of the ship for a cruise day. Worked out from the date and an authored position; `source` says so.");
 
+        api.MapGet("/feeds/ship-position", (string departure, long now, IShipNavigation nav) =>
+            {
+                if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(nav.Position(DateOnly.ParseExact(departure, "yyyy-MM-dd"), now));
+            })
+            .WithTags("Reference").WithSummary("Where the ship is at a moment: latitude and longitude, speed in knots, heading, nautical miles sailed since the last port and still to go, the voyage so far, and ship time against local time with the next clock change. A simulated feed; `source` says so.");
+
+        api.MapGet("/feeds/sea-conditions", (string departure, long now, IShipNavigation nav) =>
+            {
+                if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(nav.Sea(DateOnly.ParseExact(departure, "yyyy-MM-dd"), now));
+            })
+            .WithTags("Reference").WithSummary("The sea at the ship at a moment: depth below the keel and its class (shelf, slope, deep, trench), water temperature, wind, Beaufort force, sea state, wave and swell height and period. Metric. A simulated feed; `source` says so.");
+
+        api.MapGet("/feeds/along-the-way", (string departure, long now, IShipNavigation nav) =>
+            {
+                if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(nav.Along(DateOnly.ParseExact(departure, "yyyy-MM-dd"), now));
+            })
+            .WithTags("Reference").WithSummary("The sea zone the ship is in (habitat and the wildlife to look for) and the landmarks it is passing, has just passed and will pass next, with the side they lie on and when. A simulated feed; `source` says so.");
+
         api.MapGet("/feeds/loungers", (long now, IShipTelemetry ship) =>
             {
                 if (!OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");

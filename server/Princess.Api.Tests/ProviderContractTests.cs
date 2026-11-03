@@ -114,6 +114,12 @@ public class ProviderContractTests
                 Assert.NotNull(t.Sightings(2));
                 Assert.NotNull(t.SkyNight("2027-03-21", 2));
                 break;
+            case IShipNavigation nav:
+                var navAt = new DateTimeOffset(2027, 3, 22, 18, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
+                Assert.NotNull(nav.Position(Day, navAt));
+                Assert.NotNull(nav.Sea(Day, navAt));
+                Assert.NotNull(nav.Along(Day, navAt));
+                break;
             case IStaffQueue q:
                 var now = new DateTime(2027, 1, 10, 12, 0, 0, DateTimeKind.Utc);
                 var ticket = await q.EnqueueAsync(Guid.NewGuid(), "callback", "other", now, CancellationToken.None);
