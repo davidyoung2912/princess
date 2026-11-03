@@ -31,6 +31,20 @@
   --focus: #007cdb;
   --focus-inner: #ffffff;
   --scrim: rgba(2, 2, 21, 0.72);
+  /* Colour accents (phase 2): each accent is a text-safe colour with a matching pale tint, used for card edges, banners and badges. */
+  --primary-bright: #1a5fd0;
+  --sky-tint: #e8f0fd;
+  --teal: #00707c;
+  --teal-tint: #e0f3f5;
+  --pink: #b5004a;
+  --pink-tint: #fde8f1;
+  --gold-tint: #f8eedb;
+  --success-tint: #e2f3e8;
+  --warning-tint: #fdeed6;
+  --danger-tint: #fde6ea;
+  --header-start: #002a77;
+  --header-end: #1a5fd0;
+  --on-header: #ffffff;
 }
 
 :root[data-theme='dark'] {
@@ -57,6 +71,19 @@
   --focus: #8fb0ff;
   --focus-inner: #020215;
   --scrim: rgba(2, 2, 21, 0.82);
+  --primary-bright: #6f97ff;
+  --sky-tint: #14224f;
+  --teal: #5fd0dc;
+  --teal-tint: #0e2e35;
+  --pink: #ff8fbb;
+  --pink-tint: #3a1230;
+  --gold-tint: #33290f;
+  --success-tint: #0f2d1c;
+  --warning-tint: #382608;
+  --danger-tint: #3c1219;
+  --header-start: #0d1a47;
+  --header-end: #24449c;
+  --on-header: #f2efed;
 }
 
 /* High contrast: pure surfaces, strong borders, no tints. Applies on top of light or dark. */
@@ -79,6 +106,19 @@
   --danger: #8a0019;
   --attention: #a30046;
   --focus: #00205a;
+  --primary-bright: #00205a;
+  --sky-tint: #ffffff;
+  --teal: #004a52;
+  --teal-tint: #ffffff;
+  --pink: #8a0036;
+  --pink-tint: #ffffff;
+  --gold-tint: #ffffff;
+  --success-tint: #ffffff;
+  --warning-tint: #ffffff;
+  --danger-tint: #ffffff;
+  --header-start: #00205a;
+  --header-end: #00205a;
+  --on-header: #ffffff;
 }
 
 :root[data-theme='dark'][data-contrast='high'] {
@@ -100,6 +140,19 @@
   --danger: #ffa3b0;
   --attention: #ff8fbb;
   --focus: #b4c9ff;
+  --primary-bright: #b4c9ff;
+  --sky-tint: #000000;
+  --teal: #9be8f0;
+  --teal-tint: #000000;
+  --pink: #ffb3d1;
+  --pink-tint: #000000;
+  --gold-tint: #000000;
+  --success-tint: #000000;
+  --warning-tint: #000000;
+  --danger-tint: #000000;
+  --header-start: #000000;
+  --header-end: #000000;
+  --on-header: #ffffff;
 }
 
 /*
@@ -130,4 +183,17 @@
   --focus: #ffb3a8;
   --focus-inner: #0b0000;
   --scrim: rgba(0, 0, 0, 0.88);
+  --primary-bright: #ffa699;
+  --sky-tint: #1c0505;
+  --teal: #f0a878;
+  --teal-tint: #260c08;
+  --pink: #ff8080;
+  --pink-tint: #220606;
+  --gold-tint: #1f0e06;
+  --success-tint: #1f0e06;
+  --warning-tint: #2e1408;
+  --danger-tint: #2e0808;
+  --header-start: #1a0505;
+  --header-end: #4a1010;
+  --on-header: #ff9d8f;
 }
