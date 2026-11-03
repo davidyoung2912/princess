@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_TEXT_SIZE, ROOT_PERCENT, TEXT_SIZES, isTextSize, rootPixels } from './textSize'
 
 describe('text size', () => {
-  it('gives 18, 22 and 26 pixels at the browser default', () => {
-    expect(rootPixels('standard')).toBe(18)
-    expect(rootPixels('large')).toBe(22)
-    expect(rootPixels('xlarge')).toBe(26)
+  it('gives 16, 20 and 24 pixels at the browser default', () => {
+    expect(rootPixels('standard')).toBe(16)
+    expect(rootPixels('large')).toBe(20)
+    expect(rootPixels('xlarge')).toBe(24)
   })
 
   it('scales with a larger browser setting', () => {
-    expect(rootPixels('standard', 20)).toBe(22.5)
+    expect(rootPixels('standard', 20)).toBe(20)
   })
 
   it('grows with each step and defaults to standard', () => {

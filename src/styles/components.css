@@ -3,10 +3,10 @@
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: var(--target-min); padding: 0 var(--space-5);
-  border: 2px solid var(--primary); border-radius: var(--radius-button);
+  border: 1px solid var(--primary); border-radius: var(--radius-button);
   font-weight: 600; text-align: center; text-decoration: none; cursor: pointer;
 }
-.btn--block { display: flex; width: 100%; }
+.btn--block { display: flex; width: 100%; max-width: var(--form-max); }
 .btn--primary { background: linear-gradient(135deg, var(--primary), var(--primary-bright)); color: var(--on-primary); }
 .btn--primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
 .btn--secondary { background: var(--sky-tint); color: var(--primary); }
@@ -36,8 +36,8 @@
 @media (forced-colors: active) { .dialog { border: 2px solid CanvasText; } }
 
 /* Fields */
-.field { margin-bottom: var(--space-4); }
-.field label { display: block; font-weight: 600; margin-bottom: var(--space-1); }
+.field { margin-bottom: var(--space-5); max-width: var(--form-max); }
+.field label { display: block; font-weight: 600; margin-bottom: var(--space-2); }
 .field__hint { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--fs-caption); }
 .field__input { width: 100%; min-height: var(--target-min); padding: var(--space-2) var(--space-3); background: var(--bg); color: var(--text); border: 2px solid var(--border-strong); border-radius: var(--radius-card); }
 .field__input[aria-invalid='true'] { border-color: var(--danger); }
@@ -106,7 +106,7 @@
 /* Button rows and plain lists (demo controls, dialogs) */
 .button-row { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
 .plain-list { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
-.plain-list > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); border-bottom: var(--border-width) solid var(--border); }
+.plain-list > li { padding: var(--space-2) 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); border-bottom: var(--border-width) solid var(--border); }
 .field select { width: 100%; min-height: var(--target-min); font: inherit; }
 
 /* Three clocks */
@@ -123,3 +123,9 @@
 /* List rows and hub summaries pick up the section tint on hover. */
 .link-list li:hover, .hub > summary:hover { background: var(--sec-tint); }
 .hub[open] > summary { color: var(--sec); }
+
+/* Single-line controls never stretch across a wide screen; on a phone they still fill the width. */
+input:not([type='checkbox'], [type='radio'], [type='range']), select { max-width: var(--form-max); }
+textarea { max-width: min(100%, 32rem); }
+/* Sign-in and onboarding pages are a single narrow column. */
+.page.signin { max-width: 34rem; }

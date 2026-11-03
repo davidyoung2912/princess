@@ -4,8 +4,8 @@ export type TextSize = 'standard' | 'large' | 'xlarge'
 
 export const TEXT_SIZES: readonly TextSize[] = ['standard', 'large', 'xlarge']
 
-/** Root size as a percentage of the browser default (16px): 18px, 22px and 26px at the default. */
-export const ROOT_PERCENT: Record<TextSize, number> = { standard: 112.5, large: 137.5, xlarge: 162.5 }
+/** Root size as a percentage of the browser default (16px): 16px, 20px and 24px at the default. */
+export const ROOT_PERCENT: Record<TextSize, number> = { standard: 100, large: 125, xlarge: 150 }
 
 export const DEFAULT_TEXT_SIZE: TextSize = 'standard'
 
