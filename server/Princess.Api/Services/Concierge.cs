@@ -50,7 +50,8 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
     public async Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, CancellationToken ct)
     {
         var o = options.Value;
-        var body = new JsonObject { ["model"] = o.Model, ["max_tokens"] = o.MaxTokens, ["system"] = system, ["tools"] = JsonNode.Parse(toolsJson), ["messages"] = messages };
+        var body = new JsonObject { ["model"] = o.Model, ["max_tokens"] = o.MaxTokens, ["system"] = system, ["messages"] = messages };
+        if (JsonNode.Parse(toolsJson) is JsonArray { Count: > 0 } tools) body["tools"] = tools;   // Stanley asks with no tools: the API refuses an empty list
         using var req = new HttpRequestMessage(HttpMethod.Post, o.Endpoint) { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") };
         req.Headers.Add("x-api-key", o.ApiKey);
         req.Headers.Add("anthropic-version", "2023-06-01");

@@ -1,6 +1,6 @@
 # Stanley: the cruise chat helper
 
-Status: **plan agreed (2026-11-03). S1 (word filter) is built; S2 to S4 are not started.**
+Status: **plan agreed (2026-11-03). S1 (word filter) and S2 (endpoint) are built; S3 and S4 are not started.**
 
 Stanley is a friendly guide the guest chats with in a dialog opened from his logo button, above Help in the left nav (and in the top bar on phones). He answers questions about cruising, this ship and its ports. He refuses rude messages and anything unrelated to cruising, politely.
 
@@ -50,4 +50,13 @@ The server returns a result `kind` (`blocked`, `offtopic`, `handoff`, `answer`, 
 
 ## Testing note
 
-`CLAUDE.md` says never to run a full `dotnet test`. Server tests for S1 and S2 are written but not run here; the front end is verified with the npm checks. A targeted run, `dotnet test --filter ProfanityFilter`, can be run by hand.
+`CLAUDE.md` says never to run a full `dotnet test`. Server tests for S1 and S2 are written but not run here (no `dotnet` in this environment, so S2 has not even been compiled); the front end is verified with the npm checks. A targeted run, `dotnet test --filter ProfanityFilter`, can be run by hand.
+
+## S2 as built
+
+- `POST /me/stanley` (`Endpoints/StanleyEndpoints.cs`) calls `StanleyService` (`Services/Stanley.cs`); the pure rules are in `Domain/StanleyRules.cs`. Tests: `StanleyTests.cs`.
+- Reply: `{ kind, text, handoff, source, fallback }` (see `docs/backend-data-model.md`). Only `answer` carries text.
+- The model client is the concierge's `IConciergeModel`, called with no tools (the Anthropic client now omits an empty `tools` list). The prescan and the answer are two calls; the limiter counts one question.
+- The hourly limit is **shared with the concierge** (the same 20 an hour per person), so no new table is needed. A separate budget would need a new `ConciergeUses`-style table; say if you want one.
+- Blocked and handed-off messages are dropped from the context by the server as well as by the client, so a client that resends them cannot get them into a prompt. A message the prescan called off topic is not known to the server on the next turn, so **the S3 client should leave off-topic and blocked exchanges out of the history it sends**.
+- With no model: a keyword gate (English and Spanish) stands in for the prescan, and a fixed scripted answer is returned.
