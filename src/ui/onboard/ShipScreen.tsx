@@ -5,7 +5,7 @@ import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
-import { HubList } from '../HubList'
+import { TabScreens } from '../TabScreens'
 import { Card } from '../Card'
 import { Siren } from '../icons'
 import { Saved } from './common'
@@ -21,7 +21,6 @@ export function ShipScreen() {
   const aboard = today.data?.aboard ?? false
   return (
     <div className="page">
-      <h1>{th('route.ship')}</h1>
       <p>{t('ship.intro')}</p>
 
       <Card hero labelledBy="safe-h">
@@ -39,7 +38,7 @@ export function ShipScreen() {
         )}
       </Card>
 
-      <HubList tab="ship" />
+      <TabScreens tabKey="ship" />
     </div>
   )
 }

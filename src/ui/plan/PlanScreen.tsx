@@ -6,7 +6,7 @@ import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { t, th } from '../../i18n'
 import { Card } from '../Card'
-import { HubList } from '../HubList'
+import { TabScreens } from '../TabScreens'
 import { Load } from '../account/parts'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { Planner } from '../onboard/Planner'
@@ -23,7 +23,6 @@ export function PlanScreen() {
   const aboard = today.data?.aboard ? today.data : null
   return (
     <div className="page">
-      <h1>{th('route.plan')}</h1>
       {aboard ? <Planner today={aboard} /> : <p>{t('plan.intro')}</p>}
 
       <Load state={list}>
@@ -39,7 +38,7 @@ export function PlanScreen() {
 
       <OccasionsCard />
 
-      <HubList tab="plan" />
+      <TabScreens tabKey="plan" />
 
       <section aria-labelledby="days-h">
         <h2 id="days-h">{th('plan.days')}</h2>

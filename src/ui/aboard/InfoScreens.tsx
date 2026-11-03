@@ -14,7 +14,8 @@ import { positionFeed } from '../../feeds/navigation'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { FeedWaiting } from '../FeedWaiting'
 import { coordinates, positionLine } from '../onboard/navigationText'
-import { screenHits } from '../../routes/screenWords'
+import { screenHits, visibleAt } from '../../routes/screenWords'
+import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { t, th, type StringKey } from '../../i18n'
@@ -85,7 +86,8 @@ export function SearchScreen() {
   const [recent, setRecent] = useState<Recent[]>(loadRecent)
   const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
   const forget = () => { clearRecent(); setRecent([]) }
-  const hits = searchContent(query, screenHits(t))
+  const { stage } = useJourneyPosition()
+  const hits = searchContent(query, screenHits(t, stage), (to) => visibleAt(stage, to))
   const enough = query.trim().length >= MIN_QUERY
   return (
     <div className="page">

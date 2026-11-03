@@ -233,8 +233,8 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
 /** Settings and help: the same group under Me at every stage, and always plum. */
 export const SETTINGS_AND_HELP: readonly string[] = ['M04', 'M33', 'M28', 'M25', 'M26', 'M35', 'M36', 'M30', 'M31', 'M32', 'M29', 'M27', 'M34', 'M37', 'M38', 'M39', 'M40', 'M41']
 
-/** The four tab front pages, which become the tab landing pages (plan section 7). */
-export const TAB_FRONT_PATHS: readonly string[] = ['/', '/plan', '/ship', '/chat', '/me']
+/** The tab front pages and the landing page of every other stage tab (plan section 7); they hold the tab's screens, so they are not screens themselves (`/chat` is also `C01`). */
+export const TAB_FRONT_PATHS: readonly string[] = ['/', '/plan', '/ship', '/chat', '/me', '/tab/:slug']
 
 export const STAGE_TABS: Record<JourneyStage, StageDef> = {
   dream: {

@@ -7,6 +7,11 @@ import { AppRoutes } from '../App'
 import { auth, startRuntime } from '../runtime'
 import { markReferenceAllReady } from '../domain/referenceStatus'
 import { SCREENS } from '../screens'
+import { getContext, setContext } from '../account/context'
+import { routeForPath } from '../routes/nav'
+import { JOURNEY_STAGES } from '../routes/hubs'
+import { screenForPath, stageUses } from '../routes/screens'
+import { accessAt } from '../routes/stageNav'
 
 export type Answer = unknown | ((url: URL, init?: RequestInit) => unknown)
 export type Fixtures = Record<string, Answer>
@@ -50,6 +55,12 @@ export async function signInAs(): Promise<void> {
 /** Renders the app at a path. Screens load lazily, so preload them all first (as the render test does). */
 export async function renderAt(path: string) {
   await Promise.all(Object.values(SCREENS).map((s) => ('preload' in s ? s.preload() : null)))
+  // A screen is only open at the stages that use it, and a stale address goes Home: put a signed-in guest at the first stage that uses the screen.
+  const route = routeForPath(path.split(/[?#]/)[0])
+  const screen = route ? screenForPath(route.path) : undefined
+  const context = getContext()
+  const stage = screen ? JOURNEY_STAGES.find((s) => stageUses(screen.id, s)) : route ? JOURNEY_STAGES.find((s) => accessAt(route.path, path.split(/[?#]/)[0], s) === 'show') : undefined
+  if (context && stage) setContext({ ...context, stage })
   let view!: ReturnType<typeof render>
   await act(async () => {
     view = render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>)

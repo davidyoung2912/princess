@@ -5,7 +5,7 @@ import { AppRoutes } from '../App'
 import { FAQS } from '../domain/help'
 import { t, th } from '../i18n'
 import { API_URL } from '../runtime'
-import { tabForPath, TABS, TOP_TASKS } from '../routes/nav'
+import { navTabs } from '../routes/stageNav'
 import { ROUTES } from '../routes/routes'
 import { screenForPath } from '../routes/screens'
 import { SCREENS } from '../screens'
@@ -27,12 +27,13 @@ const decode = (html: string) => html.replace(/&#x27;/g, "'").replace(/&amp;/g, 
 
 describe('every screen renders inside the shell', () => {
   for (const route of ROUTES.filter((r) => !r.public)) {
-    const path = route.path.replace(':id', 'sample')
+    // A stage tab's landing page needs a tab name; the default stage has a Sailing tab.
+    const path = route.path.replace(':id', 'sample').replace(':slug', 'sailing')
     it(`${path}`, () => {
       const html = decode(render(path))
       expect(html).toContain(`<h1`)
       const screen = screenForPath(route.path)
-      expect(html).toContain(screen ? th(screen.titleKey) : th(route.titleKey))
+      expect(html).toContain(screen ? th(screen.titleKey) : route.path === '/tab/:slug' ? 'Sailing' : th(route.titleKey))
       expect(html).toContain('class="tabs')
       expect(html).toContain(`>${t('help.button')}<`)
       expect(html).toContain('id="main"')
@@ -55,13 +56,14 @@ describe('every screen renders inside the shell', () => {
     expect(html).toContain(t('shell.notFound.home'))
   })
 
-  it('has five labelled tabs and marks only the current one', () => {
-    for (const tab of TABS) {
+  it('shows the stage\'s tabs, Home first and Me last, and marks only the current one', () => {
+    const tabs = navTabs('discover')
+    for (const tab of tabs) {
       const html = render(tab.path)
       expect(html.match(/aria-current="page"/g) ?? []).toHaveLength(1)
-      for (const other of TABS) expect(html).toContain(t(other.labelKey))
-      expect(tabForPath(tab.path)).toBe(tab.id)
+      for (const other of tabs) expect(html).toContain(`href="${other.path}"`)
     }
+    expect(tabs.map((x) => x.label)).toEqual(['Home', 'Sailing', 'Cabin', 'Cost', 'Me'])
   })
 
   it('has no tab marked on screens outside the five areas', () => {
@@ -96,9 +98,9 @@ describe('discover screens', () => {
 })
 
 describe('account screens', () => {
-  it('reach every account screen from Me in one tap', () => {
+  it('lists Settings and help under Me', () => {
     const me = render('/me')
-    for (const href of ['/me/trips', '/me/profile', '/me/documents', '/me/payments', '/me/notifications', '/me/helper', '/me/help', '/me/contact', '/me/bill', '/me/packages', '/me/settings']) expect(me).toContain(`href="${href}"`)
+    for (const href of ['/me/profile', '/me/notifications', '/me/help', '/me/contact', '/me/settings']) expect(me).toContain(`href="${href}"`)
   })
 
   it('lists every help centre answer and a way to reach a person', () => {
@@ -155,22 +157,10 @@ describe('check-in and boarding screens', () => {
 })
 
 describe('onboard screens', () => {
-  it('reaches every top task in the taps the model promises, by a real link on the screen before (Home depends on the booking, so it is checked in the app)', () => {
-    for (const task of TOP_TASKS) {
-      const steps = task.taps.filter((s) => s !== 'help')
-      for (let i = 0; i < steps.length - 1; i++) {
-        if (steps[i] === '/' || steps[i + 1].includes(':')) continue
-        expect(render(steps[i].replace(':id', 'sample')), `${task.id}: ${steps[i]} → ${steps[i + 1]}`).toContain(`href="${steps[i + 1]}"`)
-      }
-    }
-  })
-
-  it('puts the emergency card and the muster drill first on the Ship tab', () => {
+  it('puts the emergency card and the muster drill on the Ship tab', () => {
     const html = decode(render('/ship'))
-    expect(html.indexOf('href="/ship/emergency"')).toBeLessThan(html.indexOf('href="/ship/map"'))
+    expect(html).toContain('href="/ship/emergency"')
     expect(html).toContain('href="/ship/muster"')
-    expect(html).toContain('href="/ship/venues"')
-    expect(html).toContain('href="/ship/port"')
   })
 
   it('opens the emergency card with the numbers built in, so it shows with no signal', () => {

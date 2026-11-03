@@ -167,6 +167,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/ship/port/snapshot', titleKey: 'route.portSnapshot', tab: 'ship', phase: 28 },
   { path: '/ship/report', titleKey: 'route.report', tab: 'ship', phase: 12 },
   { path: '/chat', titleKey: 'route.chat', tab: 'chat', phase: 6 },
+  { path: '/tab/:slug', titleKey: 'route.tabLanding', tab: null, phase: 4 },
   { path: '/book', titleKey: 'route.book', tab: 'home', phase: 3 },
   { path: '/book/:id', titleKey: 'route.book', tab: 'home', phase: 3 },
   { path: '/book/confirmed/:id', titleKey: 'route.bookConfirmed', tab: 'home', phase: 3 },

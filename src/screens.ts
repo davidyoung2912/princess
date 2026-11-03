@@ -166,6 +166,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/me/money': screen(() => import('./ui/aboard/MoneyScreen'), 'MoneyScreen'),
   '/me/status': screen(() => import('./ui/aboard/SupportScreens'), 'StatusScreen'),
   '/me/report-problem': screen(() => import('./ui/aboard/SupportScreens'), 'ReportProblemScreen'),
+  '/tab/:slug': screen(() => import('./ui/TabLanding'), 'TabLanding'),
   '/chat': screen(() => import('./ui/onboard/ChatScreen'), 'ChatScreen'),
   '/me/bill': screen(() => import('./ui/onboard/BillScreen'), 'BillScreen'),
   '/me/bill/final': screen(() => import('./ui/finish/FinalBillScreen'), 'FinalBillScreen'),

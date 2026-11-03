@@ -2,50 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { searchContent } from '../domain/searchIndex'
 import { parseRecent, pushRecent } from '../domain/recentSearches'
 import { t } from '../i18n'
-import { HUBS, JOURNEY_OF_STAGE, JOURNEY_STAGES, QUICK, STAGE_ACTION, depthOf, hubFor, hubProblems, stageOfPath } from './hubs'
+import { JOURNEY_OF_STAGE, JOURNEY_STAGES, STAGE_ACTION } from './hubs'
 import { ROUTES } from './routes'
 import { FIND_TASKS, SCREEN_WORDS, screenHits } from './screenWords'
 import { STAGE_IDS } from '../domain/sailings'
-
-const inJourney = ROUTES.filter((r) => r.tab !== null && r.path !== '/kit' && !r.public)
-
-describe('hubs and depth (N2.2, N2.4)', () => {
-  it('has no problems: every screen is in one hub of its tab and at most three taps from launch', () => {
-    expect(hubProblems()).toEqual([])
-  })
-
-  it('gives every screen a stage, a hub (or a list it comes from) and a depth of at most three', () => {
-    for (const r of inJourney) {
-      expect(stageOfPath(r.path), r.path).not.toBeNull()
-      expect(depthOf(r.path), r.path).toBeLessThanOrEqual(3)
-      if (!['/', '/plan', '/ship', '/chat', '/me'].includes(r.path)) expect(hubFor(r.path), r.path).not.toBeNull()
-    }
-  })
-
-  it('keeps the fifteen top tasks at two taps, because their screens are kept on the tab front page', () => {
-    for (const p of ['/home/boarding-pass', '/plan/reservations', '/plan/excursions', '/ship/order', '/me/bill', '/ship/map', '/ship/family', '/me/packages', '/me/settings']) expect(depthOf(p), p).toBeLessThanOrEqual(2)
-  })
-
-  it('is about eight to ten hubs a tab at most, each with a label', () => {
-    for (const tab of ['home', 'plan', 'ship', 'me'] as const) expect(HUBS.filter((h) => h.tab === tab).length).toBeLessThanOrEqual(8)
-    for (const h of HUBS) expect(t(h.labelKey).length, h.id).toBeGreaterThan(3)
-  })
-
-  it('catches a screen filed in no hub', () => {
-    const hub = HUBS.find((h) => h.id === 'plan.wish')!
-    const saved = hub.paths
-    ;(hub as { paths: readonly string[] }).paths = saved.filter((p) => p !== '/plan/gifts')
-    try {
-      expect(hubProblems().some((p) => p.includes('/plan/gifts'))).toBe(true)
-    } finally {
-      ;(hub as { paths: readonly string[] }).paths = saved
-    }
-  })
-
-  it('only quick-links screens that are also in a hub', () => {
-    for (const list of Object.values(QUICK)) for (const p of list) expect(hubFor(p), p).not.toBeNull()
-  })
-})
 
 describe('journey stages (N2.1)', () => {
   it('maps every point of the sailing to one of the eleven stages and gives each stage an action on a real screen', () => {

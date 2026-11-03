@@ -36,13 +36,13 @@ const INDEX: readonly Entry[] = [
   ...Object.values(PORTS).map((p) => entry({ kind: 'port', id: p.id, title: p.name, detail: '', to: `/home/ports/${p.id}` }, '', 1)),
 ]
 
-/** Everything whose text holds every word of the query, best matches first (title matches before the rest), at most `MAX_HITS`. `extra` adds screens the caller knows by name. */
-export function searchContent(query: string, extra: readonly Hit[] = []): Hit[] {
+/** Everything whose text holds every word of the query, best matches first (title matches before the rest), at most `MAX_HITS`. `extra` adds screens the caller knows by name; `allow` keeps only the results whose address the guest may open. */
+export function searchContent(query: string, extra: readonly Hit[] = [], allow: (to: string) => boolean = () => true): Hit[] {
   const words = flat(query).split(/\s+/).filter(Boolean)
   if (words.length === 0 || flat(query).trim().length < MIN_QUERY) return []
   const pool: Entry[] = [...INDEX, ...extra.map((h) => entry(h, `${h.detail} ${h.words ?? ''}`, 3))]
   return pool
-    .filter((e) => words.every((w) => e.haystack.includes(w)))
+    .filter((e) => allow(e.to) && words.every((w) => e.haystack.includes(w)))
     .map((e) => ({ e, score: e.weight + (words.every((w) => flat(e.title).includes(w)) ? 10 : 0) + (flat(e.title).startsWith(words[0]) ? 5 : 0) }))
     .sort((a, b) => b.score - a.score || a.e.title.localeCompare(b.e.title))
     .slice(0, MAX_HITS)

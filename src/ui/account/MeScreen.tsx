@@ -8,7 +8,7 @@ import { usePersona } from '../../hooks/useDemo'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { HubList } from '../HubList'
+import { TabScreens } from '../TabScreens'
 import { countdown, formatMoment } from './format'
 import { Load } from './parts'
 import { NextStep, PaymentBadge } from './tripParts'
@@ -25,7 +25,6 @@ export function MeScreen() {
 
   return (
     <div className="page">
-      <h1>{th('route.me')}</h1>
       {me && (
         <Card>
           <p className="me-name">{me.name}</p>
@@ -49,7 +48,7 @@ export function MeScreen() {
         </Load>
       </section>
 
-      <HubList tab="me" badges={{ '/me/notifications': unread > 0 ? <span className="tag tag--alert">{t('me.unread', { count: unread })}</span> : null }} />
+      <TabScreens tabKey="me" badges={{ '/me/notifications': unread > 0 ? <span className="tag tag--alert">{t('me.unread', { count: unread })}</span> : null }} />
 
       <section aria-labelledby="hist-h">
         <h2 id="hist-h">{th('me.history')}</h2>
