@@ -1,6 +1,6 @@
 # One app, eleven stages: the staged-experience plan
 
-Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server), P2 (the screen registry), P3 (page header and colour) and P4 (shell and navigation) and P5 (Home for Dream, Discover and Book) P6 (Home for Manage, Prebook and Get to the ship) and P7 (Home for Embark, Sea, Port and Disembark) are built; P8 onward are not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
+Status: **v3, approved by the product owner (2026-11-03). P1 (the stage engine on the server), P2 (the screen registry), P3 (page header and colour) and P4 (shell and navigation) and P5 (Home for Dream, Discover and Book) P6 (Home for Manage, Prebook and Get to the ship) and P7 (Home for Embark, Sea, Port and Disembark) and P8 (Home for Remember, other trips) are built; P9 is not started.** This version follows your structure: every screen gets an ID, a Title Case title and a goal-describing subtext shown in the coloured header; each of the 11 stages has Home first, Me last and two or three stage tabs between; every screen a stage uses is reachable from one of those tabs.
 
 It builds on `docs/customer-journey-priorities.md` (what matters at each stage) and replaces the earlier "reorder but hide nothing" approach in `docs/stage-menus-matrix.md`.
 
@@ -756,3 +756,8 @@ Verification for every phase is `npm run test`, `npm run lint`, `npx tsc -b` and
 - `stageHome.ts` has `ABOARD_STAGES` and the Next steps for Embark (next boarding step, meeting point, muster drill), Sea (today's plan, dining, and bag night from the last full day), Port (port day, excursions, safe ashore) and Disembark (exit time, bags, bill). Keys `stage.next.embark|sea|port|disembark.*` are in `en.ts` and `es.ts`. Six tiles come from the registry.
 - A step is ticked only from data: the muster drill (`today.muster.done`). Sea's third step appears only on the last full day or later. The others keep no record.
 - `HomeScreen`, for a guest on board at these stages: updates and nudges, then `StageHome`, then the live on-board card (`OnboardHome`: port countdown, weather, tonight). The landing card, journey strip, offer card and old tab list no longer sit on this Home. The tabs, Me lists and subtexts came with P2 to P4.
+
+**P8 as built (2026-11-03).**
+- `stageHome.ts` has `REMEMBER_STAGES` and the Remember Next steps (see your recap, tell us how it went, dream up the next one). Only the third is ticked, once a sailing is saved (which is also what starts the Next trip track on the server). Keys `stage.next.remember.1-3` and `stage.otherTrip` are in `en.ts` and `es.ts`.
+- `HomeScreen`, at Remember: updates, `StageHome` (steps and six tiles), then one "Your other trip" line per booking still to sail, so a returning guest with a new booking is not lost. The old after-cruise card no longer sits on this Home.
+- Multi-trip and cancelled-booking cases need no new rule here: the server's stage engine already returns a cancelled booking to Discover (P1), and the "other trips" list reads `/me/trips`.

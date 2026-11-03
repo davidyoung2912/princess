@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextSteps, stageTiles, ABOARD_STAGES, TILE_STAGES, TRIP_STAGES } from './stageHome'
+import { nextSteps, stageTiles, ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from './stageHome'
 
 const none = { savedSailings: 0, draft: null }
 
@@ -38,5 +38,10 @@ describe('stage Home', () => {
     expect(nextSteps('sea', { ...none, aboard: { musterDone: true, lastFullDay: true } })[2]!.to).toBe('/home/disembark/bags')
     expect(nextSteps('port', none)).toHaveLength(3)
     expect(nextSteps('disembark', none)).toHaveLength(3)
+  })
+  it('builds Remember: recap, feedback, then the next trip, done once a sailing is saved', () => {
+    for (const s of REMEMBER_STAGES) expect(stageTiles(s, { sailingId: null, draftId: null })).toHaveLength(6)
+    expect(nextSteps('remember', none).map((x) => x.to)).toEqual(['/me/recap', '/me/feedback', '/home/sailings'])
+    expect(nextSteps('remember', { ...none, savedSailings: 1 })[2]!.done).toBe(true)
   })
 })

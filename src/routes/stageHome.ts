@@ -22,6 +22,9 @@ export const TRIP_STAGES: readonly JourneyStage[] = ['manage', 'prebook', 'getTo
 /** The stages whose Home is built for a guest on board (P7). */
 export const ABOARD_STAGES: readonly JourneyStage[] = ['embark', 'sea', 'port', 'disembark']
 
+/** The stage whose Home is built for a guest who has sailed (P8). */
+export const REMEMBER_STAGES: readonly JourneyStage[] = ['remember']
+
 /** The three Next steps of a stage (plan section 8): actions, not screens. A step is done only when the data shows it. */
 export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
   const resume = f.draft ? `/book/resume/${f.draft.id}` : '/book'
@@ -87,6 +90,12 @@ export function nextSteps(stage: JourneyStage, f: HomeFacts): NextStepItem[] {
         { key: 'stage.next.disembark.1', to: '/home/disembark', done: false },
         { key: 'stage.next.disembark.2', to: '/home/disembark/bags', done: false },
         { key: 'stage.next.disembark.3', to: '/me/bill', done: false },
+      ]
+    case 'remember':
+      return [
+        { key: 'stage.next.remember.1', to: '/me/recap', done: false },
+        { key: 'stage.next.remember.2', to: '/me/feedback', done: false },
+        { key: 'stage.next.remember.3', to: '/home/sailings', done: f.savedSailings > 0 },
       ]
     default:
       return []

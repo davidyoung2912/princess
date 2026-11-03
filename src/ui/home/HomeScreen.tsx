@@ -28,7 +28,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
-import { ABOARD_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
+import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { countdowns } from '../../domain/countdowns'
@@ -61,6 +61,21 @@ export function HomeScreen() {
         )}
         <NextStep trip={trip} />
         <StageHome trip={trip} />
+      </div>
+    )
+  }
+  if (REMEMBER_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
+    const others = trips.data?.upcoming ?? []
+    return (
+      <div className="page">
+        <NewTabsNote />
+        <UpdatesBanner />
+        <StageHome />
+        {others.length > 0 && (
+          <ul className="link-list">
+            {others.map((x) => <li key={x.number}><Link to={`/me/trips/${x.number}`}>{t('stage.otherTrip', { number: x.number })}</Link> · {sailingRange(sailingById(x.sailingId)!)}</li>)}
+          </ul>
+        )}
       </div>
     )
   }
