@@ -101,5 +101,38 @@ export function areaAt(pathname: string, pattern: string | null, stage: JourneyS
 export const newTabLabels = (stage: JourneyStage, seen: readonly string[]): string[] =>
   navTabs(stage).filter((tab) => tab.kind === 'stage' && !seen.includes(tab.key)).map((tab) => tab.label)
 
+/** The address of every stage tab any stage can show. */
+export const ALL_TAB_PATHS: readonly string[] = [...new Set(JOURNEY_STAGES.flatMap((s) => navTabs(s).map((t) => t.path)))]
+
 /** Every tab key any stage can show; used to read a stored list safely. */
 export const ALL_TAB_KEYS: readonly string[] = [...new Set(JOURNEY_STAGES.flatMap((s) => navTabs(s).map((t) => t.key)))]
+
+/**
+ * Whether an address is a screen from a stage before this one that this stage no longer uses ("From your trip"): search still finds it, labelled,
+ * and opening it from the result is allowed. A direct address to it still goes Home.
+ */
+export function earlierAt(pattern: string | null, stage: JourneyStage): boolean {
+  const screen = pattern ? screenForPath(pattern) : undefined
+  if (!screen || screen.family === 'X' || screen.path.includes(':') || stageUses(screen.id, stage)) return false
+  return JOURNEY_STAGES.slice(0, JOURNEY_STAGES.indexOf(stage)).some((s) => stageUses(screen.id, s))
+}
+
+/** The groups a long Ship tab is split into on its landing page (plan section 11, "Long Ship tab at Sea"), in order. */
+export const SHIP_GROUPS = ['find', 'services', 'safety'] as const
+export type ShipGroup = (typeof SHIP_GROUPS)[number]
+
+/** Find: S01–S14 (maps, places, the ship and the sea); Services: S15–S24 (order, shops, requests); Safety: S25–S36 (muster, emergency, help, health, lost and found). */
+export function shipGroupOf(id: string): ShipGroup | null {
+  const n = /^S(\d+)$/.exec(id)?.[1]
+  if (!n) return null
+  const k = Number(n)
+  return k <= 14 ? 'find' : k <= 24 ? 'services' : k <= 36 ? 'safety' : null
+}
+
+/** Screens split into the Ship groups, each keeping its order, when the list is long enough to need it (more than twelve); otherwise one unnamed group. */
+export function groupShip(ids: readonly string[]): { group: ShipGroup | null; ids: string[] }[] {
+  if (ids.length <= 12) return [{ group: null, ids: [...ids] }]
+  const out = SHIP_GROUPS.map((group) => ({ group: group as ShipGroup | null, ids: ids.filter((id) => shipGroupOf(id) === group) }))
+  const rest = ids.filter((id) => shipGroupOf(id) === null)
+  return [...out, { group: null, ids: rest }].filter((g) => g.ids.length > 0)
+}

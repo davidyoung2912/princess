@@ -3,7 +3,7 @@ import type { StringKey } from '../i18n'
 import type { JourneyStage } from './hubs.ts'
 import { routeForPath } from './nav.ts'
 import { ROUTES } from './routes.ts'
-import { accessAt } from './stageNav.ts'
+import { accessAt, earlierAt } from './stageNav.ts'
 
 /** Plain phrases a guest might type to find a screen, whatever its official title (N2.3). Phrases are separated by semicolons; every screen has at least two. */
 export const SCREEN_WORDS: Record<string, string> = {
@@ -190,8 +190,8 @@ export const SCREEN_WORDS: Record<string, string> = {
 }
 
 /** One search result for every screen a guest can reach: its title, plus the plain phrases that lead to it. */
-export function screenHits(title: (key: StringKey) => string, stage?: JourneyStage): Hit[] {
-  return ROUTES.filter((r) => r.tab !== null && !r.path.includes(':') && r.path !== '/kit' && (!stage || accessAt(r.path, r.path, stage) === 'show')).map((r) => ({ kind: 'screen', id: r.path, title: title(r.titleKey), detail: '', words: SCREEN_WORDS[r.path] ?? '', to: r.path }))
+export function screenHits(title: (key: StringKey) => string, stage?: JourneyStage, earlier = false): Hit[] {
+  return ROUTES.filter((r) => r.tab !== null && !r.path.includes(':') && r.path !== '/kit' && (!stage || (earlier ? earlierAt(r.path, stage) : accessAt(r.path, r.path, stage) === 'show'))).map((r) => ({ kind: 'screen', id: r.path, title: title(r.titleKey), detail: '', words: SCREEN_WORDS[r.path] ?? '', to: r.path }))
 }
 
 /** A thing a guest wants to do at one stage, the plain words they would type, and the screen that should come up. Two taps: Search, then the result. */
@@ -229,4 +229,10 @@ export const FIND_TASKS: readonly FindTask[] = [
 export function visibleAt(stage: JourneyStage, to: string): boolean {
   const route = routeForPath(to.split(/[?#]/)[0])
   return !route || accessAt(route.path, to.split(/[?#]/)[0], stage) === 'show'
+}
+
+/** Whether an address is a screen of an earlier stage that this stage no longer uses: search labels it "From your trip". */
+export function isFromEarlier(stage: JourneyStage, to: string): boolean {
+  const route = routeForPath(to.split(/[?#]/)[0])
+  return !!route && earlierAt(route.path, stage)
 }

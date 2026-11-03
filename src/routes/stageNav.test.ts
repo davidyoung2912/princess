@@ -3,8 +3,9 @@ import { JOURNEY_STAGES } from './hubs'
 import { TOP_TASKS } from './nav'
 import { ROUTES } from './routes'
 import { SCREEN_BY_ID, SCREEN_LIST, STAGE_TABS, stageUses } from './screens'
-import { SCREEN_WORDS, screenHits, visibleAt } from './screenWords'
-import { ALL_TAB_KEYS, accessAt, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
+import { SCREEN_WORDS, isFromEarlier, screenHits, visibleAt } from './screenWords'
+import { ALL_TAB_KEYS, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
+import { tabText } from '../ui/tabText'
 import { searchContent } from '../domain/searchIndex'
 
 describe('tabs by stage (P4)', () => {
@@ -74,8 +75,7 @@ describe('tabs by stage (P4)', () => {
       const ok = JOURNEY_STAGES.some((stage) => navTabs(stage).some((tab) => tab.path === steps[0] && tabScreenIds(tab, stage).includes(target?.id ?? '')))
       if (!ok) misses.push(`${task.id}: ${steps[0]} → ${steps[1]}`)
     }
-    // Find My Family moved to People in the approved plan (S40), a gold tab with its own address; the task list still names the old Ship tab (P9 updates it).
-    expect(misses).toEqual(['findFamily: /ship → /ship/family'])
+    expect(misses).toEqual([])
   })
 })
 
@@ -114,6 +114,39 @@ describe('stale addresses and the active tab', () => {
     expect(newTabLabels('sea', ['today', 'people'])).toEqual(['Ship'])
     expect(newTabLabels('sea', ['today', 'ship', 'people'])).toEqual([])
     expect(ALL_TAB_KEYS).toContain('get-to-the-ship'.slice(0, 0) || 'board')
+  })
+})
+
+describe('tab words', () => {
+  it('has the registry English for every tab, Home and Me in the locale file, so the two cannot drift', () => {
+    for (const stage of JOURNEY_STAGES) for (const tab of navTabs(stage)) {
+      const words = tabText(tab, stage)
+      if (tab.kind === 'stage') expect(words).toEqual({ label: tab.label, subtext: tab.subtext })
+      else expect(words.subtext.replace(/'/g, '’')).toBe(tab.subtext.replace(/'/g, '’'))
+    }
+  })
+})
+
+describe('Ship groups and earlier screens', () => {
+  it('splits a long Ship tab into Find, Services and Safety, in order, and leaves a short one whole', () => {
+    const sea = tabScreenIds(navTabs('sea')[2], 'sea')
+    const groups = groupShip(sea)
+    expect(groups.map((g) => g.group)).toEqual(['find', 'services', 'safety'])
+    expect(groups.flatMap((g) => g.ids).sort()).toEqual([...sea].sort())
+    expect(groupShip(['S01', 'S02'])).toEqual([{ group: null, ids: ['S01', 'S02'] }])
+    expect(shipGroupOf('S25')).toBe('safety')
+    expect(shipGroupOf('S40')).toBeNull()
+  })
+
+  it('treats a screen from an earlier stage as "from your trip", never a current one or a later one', () => {
+    expect(earlierAt('/book', 'manage')).toBe(true)
+    expect(earlierAt('/home/quiz', 'manage')).toBe(true)
+    expect(earlierAt('/home/quiz', 'dream')).toBe(false)
+    expect(earlierAt('/ship/order', 'dream')).toBe(false)
+    expect(earlierAt('/me/settings', 'sea')).toBe(false)
+    expect(earlierAt('/home/sailings/:id', 'sea')).toBe(false)
+    expect(isFromEarlier('manage', '/home/quiz')).toBe(true)
+    expect(screenHits((k) => k, 'manage', true).every((h) => isFromEarlier('manage', h.to))).toBe(true)
   })
 })
 

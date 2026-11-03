@@ -14,7 +14,7 @@ import { positionFeed } from '../../feeds/navigation'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { FeedWaiting } from '../FeedWaiting'
 import { coordinates, positionLine } from '../onboard/navigationText'
-import { screenHits, visibleAt } from '../../routes/screenWords'
+import { isFromEarlier, screenHits, visibleAt } from '../../routes/screenWords'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
@@ -87,7 +87,10 @@ export function SearchScreen() {
   const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
   const forget = () => { clearRecent(); setRecent([]) }
   const { stage } = useJourneyPosition()
-  const hits = searchContent(query, screenHits(t, stage), (to) => visibleAt(stage, to))
+  const now = searchContent(query, screenHits(t, stage), (to) => visibleAt(stage, to))
+  // Screens of an earlier stage come after, labelled, and open from the result.
+  const earlier = searchContent(query, screenHits(t, stage, true), (to) => isFromEarlier(stage, to)).filter((h) => !now.some((n) => n.to === h.to))
+  const hits = [...now, ...earlier]
   const enough = query.trim().length >= MIN_QUERY
   return (
     <div className="page">
@@ -106,7 +109,7 @@ export function SearchScreen() {
       <ul className="link-list">
         {hits.map((h) => (
           <li key={`${h.kind}-${h.id}`}>
-            <Link to={h.to} onClick={() => remember({ to: h.to, title: h.title })}>{h.title}</Link> <span className="muted">· {t(`search.kind.${h.kind}` as StringKey)}</span>
+            <Link to={h.to} state={isFromEarlier(stage, h.to) ? { earlier: true } : undefined} onClick={() => remember({ to: h.to, title: h.title })}>{h.title}</Link> <span className="muted">· {isFromEarlier(stage, h.to) ? t('search.fromTrip') : t(`search.kind.${h.kind}` as StringKey)}</span>
             {h.detail && <small className="muted"> {h.detail}</small>}
           </li>
         ))}

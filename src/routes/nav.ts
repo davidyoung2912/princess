@@ -1,6 +1,7 @@
 import { matchPath } from 'react-router'
 import type { StringKey } from '../i18n'
 import { ROUTES, type RouteDef, type TabId } from './routes.ts'
+import { ALL_TAB_PATHS } from './stageNav.ts'
 
 export interface TabDef {
   id: TabId
@@ -36,7 +37,7 @@ export const TOP_TASKS: readonly TaskDef[] = [
   { id: 'deckMap', labelKey: 'task.deckMap', taps: ['/ship', '/ship/map'] },
   { id: 'guestServices', labelKey: 'task.guestServices', taps: ['help'] },
   { id: 'changeDining', labelKey: 'task.changeDining', taps: ['/plan', '/plan/reservations/:id'] },
-  { id: 'findFamily', labelKey: 'task.findFamily', taps: ['/ship', '/ship/family'] },
+  { id: 'findFamily', labelKey: 'task.findFamily', taps: ['/tab/people', '/ship/family'] },
   { id: 'addPackage', labelKey: 'task.addPackage', taps: ['/me', '/me/packages'] },
   { id: 'allAboard', labelKey: 'task.allAboard', taps: ['/'] },
   { id: 'emergencyInfo', labelKey: 'task.emergencyInfo', taps: ['help'] },
@@ -72,9 +73,9 @@ export function navProblems(): string[] {
     if (seen.has(task.id)) problems.push(`duplicate task ${task.id}`)
     seen.add(task.id)
     if (task.taps.length === 0 || task.taps.length > MAX_TAPS) problems.push(`${task.id} takes ${task.taps.length} taps`)
-    for (const step of task.taps) if (step !== 'help' && !known.has(step)) problems.push(`${task.id} uses unknown screen ${step}`)
+    for (const step of task.taps) if (step !== 'help' && !known.has(step) && !ALL_TAB_PATHS.includes(step)) problems.push(`${task.id} uses unknown screen ${step}`)
     const first = task.taps[0]
-    if (first !== 'help' && !TABS.some((t) => t.path === first)) problems.push(`${task.id} does not start at a tab or Help`)
+    if (first !== 'help' && !TABS.some((t) => t.path === first) && !ALL_TAB_PATHS.includes(first)) problems.push(`${task.id} does not start at a tab or Help`)
   }
   return problems
 }

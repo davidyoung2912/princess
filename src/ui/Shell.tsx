@@ -8,11 +8,12 @@ import { usePushSync } from '../hooks/usePushSync'
 import { t, th } from '../i18n'
 import { routeForPath } from '../routes/nav'
 import { screenForPath, type TabColour } from '../routes/screens'
-import { accessAt, activeTabKey, areaAt, navTabs, tabAtPath } from '../routes/stageNav'
+import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
 import { Ask, Cabin, Chat, Compass, DoorOpen, Help, Home, HeartPulse, ClipboardList, Images, MapPin, Me, Plan, Plane, QrCode, Search, Ship, Sparkles, Star, Sun, Ticket, Trip, Users, Wallet, Anchor } from './icons'
 import { HelpSheet } from './HelpSheet'
 import { PageHeader } from './PageHeader'
+import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
 
@@ -44,13 +45,16 @@ export function Shell() {
   const landing = tabAtPath(pathname, stage)
   const tabs = navTabs(stage)
   // Until the server has said which stage the guest is in, the stage is a guess; a stale address is only judged once it is known.
-  const stale = known && !!route && !route.public && accessAt(route.path, pathname, stage) === 'home'
+  // A screen of an earlier stage opens when the guest chose it from a search result ("From your trip"); typed or refreshed, it is stale.
+  const fromSearch = (state as { earlier?: unknown } | null)?.earlier === true && !!route && earlierAt(route.path, stage)
+  const stale = known && !!route && !route.public && !fromSearch && accessAt(route.path, pathname, stage) === 'home'
   const fallbackArea: TabColour = 'blue'
   // The area just left carries over to a screen the stage lists under the same colour, so one area keeps its colour while the guest moves about in it.
   const previous = seen?.path === pathname ? seen.previous : (seen?.area ?? null)
   const area = areaAt(pathname, route?.path ?? null, stage, (state as { area?: unknown } | null)?.area, previous, fallbackArea)
   if (seen?.path !== pathname || seen.area !== area) setSeen({ path: pathname, area, previous })
-  const title = landing ? landing.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
+  const landingWords = landing ? tabText(landing, stage) : null
+  const title = landingWords ? landingWords.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
 
   useEffect(() => {
     const seo = seoFor(route?.path)
@@ -90,14 +94,14 @@ export function Shell() {
           return (
             <Link key={tab.key} to={tab.path} data-colour={tab.colour} className="tabs__item" aria-current={active ? 'page' : undefined}>
               <Icon aria-hidden="true" />
-              <span>{tab.key === 'home' ? t('tab.home') : tab.key === 'me' ? t('tab.me') : tab.label}</span>
+              <span>{tabText(tab, stage).label}</span>
             </Link>
           )
         })}
       </nav>
       <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
-        {landing ? <PageHeader title={landing.label} subtext={landing.subtext} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} />}
+        {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} />}
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>
