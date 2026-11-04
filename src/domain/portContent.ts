@@ -9,12 +9,14 @@ export const isGuidePort = (x: unknown): x is GuidePort => GUIDE_PORTS.includes(
 
 export interface FairPrice { route: string; /** US dollars for the whole car, up to four people. */ car: number; /** Do not pay more than this. */ ceiling: number }
 export interface Phrase { say: string; means: string; /** How it sounds, plainly. */ sounds: string }
-export interface AllergyCard { allergy: string; language: string; text: string; english: string }
+export interface AllergyCard { allergy: string; language: string; /** BCP 47 code for the card's text; Spanish when absent. */ lang?: string; text: string; english: string }
 export interface Walk { id: string; name: string; minutes: number; step: string; accessible: string; sit: string; restroom: string }
 export interface DayPass { id: string; name: string; price: number; distance: string; crowd: 'quiet' | 'moderate' | 'busy' }
 export interface Vendor { name: string; what: string }
 
 export interface PortKnowledge {
+  /** Language of the phrases (BCP 47); Spanish when absent. */
+  lang?: string
   fairPrices: readonly FairPrice[]
   taxiStand: string
   scams: readonly string[]

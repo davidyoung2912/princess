@@ -94,13 +94,34 @@ export interface TippingNorm {
   dollarsAccepted: boolean
 }
 
-export const TIPPING_NORMS: Record<'cozumel' | 'belize' | 'roatan', TippingNorm> = {
+export const TIPPING_NORMS: Record<string, TippingNorm> = {
   cozumel: { country: 'Mexico', serviceIncluded: 'rarely', restaurantPercent: 15, taxi: 'roundUp', dollarsAccepted: true },
   belize: { country: 'Belize', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: true },
   roatan: { country: 'Honduras', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: true },
+  'celebration-key': { country: 'Bahamas', serviceIncluded: 'sometimes', restaurantPercent: 15, taxi: 'tenPercent', dollarsAccepted: true },
+  'grand-turk': { country: 'Turks and Caicos', serviceIncluded: 'rarely', restaurantPercent: 15, taxi: 'tenPercent', dollarsAccepted: true },
+  'san-juan': { country: 'Puerto Rico', serviceIncluded: 'rarely', restaurantPercent: 18, taxi: 'tenPercent', dollarsAccepted: true },
+  'amber-cove': { country: 'Dominican Republic', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: true },
+  'southampton': { country: 'the United Kingdom', serviceIncluded: 'usually', restaurantPercent: 12.5, taxi: 'notExpected', dollarsAccepted: false },
+  'barcelona': { country: 'Spain', serviceIncluded: 'sometimes', restaurantPercent: 7, taxi: 'roundUp', dollarsAccepted: false },
+  'palma': { country: 'Spain', serviceIncluded: 'sometimes', restaurantPercent: 7, taxi: 'roundUp', dollarsAccepted: false },
+  'marseille': { country: 'France', serviceIncluded: 'usually', restaurantPercent: 5, taxi: 'notExpected', dollarsAccepted: false },
+  'genoa': { country: 'Italy', serviceIncluded: 'usually', restaurantPercent: 5, taxi: 'roundUp', dollarsAccepted: false },
+  'la-spezia': { country: 'Italy', serviceIncluded: 'usually', restaurantPercent: 5, taxi: 'roundUp', dollarsAccepted: false },
+  'civitavecchia': { country: 'Italy', serviceIncluded: 'usually', restaurantPercent: 5, taxi: 'roundUp', dollarsAccepted: false },
+  'naples': { country: 'Italy', serviceIncluded: 'usually', restaurantPercent: 5, taxi: 'roundUp', dollarsAccepted: false },
+  'athens': { country: 'Greece', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: false },
+  'santorini': { country: 'Greece', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: false },
+  'mykonos': { country: 'Greece', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: false },
+  'kusadasi': { country: 'Turkey', serviceIncluded: 'sometimes', restaurantPercent: 10, taxi: 'roundUp', dollarsAccepted: true },
+  'copenhagen': { country: 'Denmark', serviceIncluded: 'usually', restaurantPercent: 0, taxi: 'notExpected', dollarsAccepted: false },
+  'tokyo': { country: 'Japan', serviceIncluded: 'usually', restaurantPercent: 0, taxi: 'notExpected', dollarsAccepted: false },
+  'hakodate': { country: 'Japan', serviceIncluded: 'usually', restaurantPercent: 0, taxi: 'notExpected', dollarsAccepted: false },
+  'singapore': { country: 'Singapore', serviceIncluded: 'usually', restaurantPercent: 0, taxi: 'notExpected', dollarsAccepted: false },
+  'sydney': { country: 'Australia', serviceIncluded: 'sometimes', restaurantPercent: 0, taxi: 'notExpected', dollarsAccepted: false },
 }
 
-export const tippingNorm = (port: string): TippingNorm | undefined => (Object.prototype.hasOwnProperty.call(TIPPING_NORMS, port) ? TIPPING_NORMS[port as keyof typeof TIPPING_NORMS] : undefined)
+export const tippingNorm = (port: string): TippingNorm | undefined => (Object.prototype.hasOwnProperty.call(TIPPING_NORMS, port) ? TIPPING_NORMS[port] : undefined)
 
 // ---------------------------------------------------------------- D3-7: an out-of-office message
 

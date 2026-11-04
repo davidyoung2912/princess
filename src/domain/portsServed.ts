@@ -27,11 +27,11 @@ function guide(id: string, r: unknown): boolean {
 }
 
 function knowledge(r: unknown): boolean {
-  if (!rec(r) || !str(r.taxiStand)) return false
+  if (!rec(r) || !str(r.taxiStand) || (r.lang !== undefined && !str(r.lang, 12))) return false
   for (const k of ['scams', 'etiquette', 'advisories', 'laws', 'dontBringBack', 'kids'] as const) if (!strs(r[k])) return false
   return each(r.fairPrices, (p) => str(p.route, 200) && num(p.car) && num(p.ceiling) && (p.ceiling as number) >= (p.car as number))
     && each(r.phrases, (p) => str(p.say, 200) && str(p.means, 200) && str(p.sounds, 200))
-    && each(r.allergy, (a) => str(a.allergy, 60) && str(a.language, 80) && str(a.text) && str(a.english))
+    && each(r.allergy, (a) => str(a.allergy, 60) && str(a.language, 80) && (a.lang === undefined || str(a.lang, 12)) && str(a.text) && str(a.english))
     && each(r.walks, (w) => str(w.id, 40) && str(w.name, 120) && num(w.minutes, 1, 600) && str(w.step) && str(w.accessible) && str(w.sit) && str(w.restroom))
     && each(r.dayPasses, (d) => str(d.id, 40) && str(d.name, 120) && num(d.price) && str(d.distance, 120) && (d.crowd === 'quiet' || d.crowd === 'moderate' || d.crowd === 'busy'))
     && each(r.vendors, (v) => str(v.name, 120) && str(v.what, 200))

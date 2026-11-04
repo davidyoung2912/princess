@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { ALERT_KINDS, planSpeech, portSnapshot, READ_RATES, VIBRATION, walkSpeech, allergyChain, askShip, BREATH, DOCTOR_TELL, easyLeaveBy, EASY_EXTRA_MIN, farewellDone, fareIndicator, FAREWELL_MOMENTS, flightAdvice, followState, FOLLOW_DAYS, GROUND_STEPS, giftsFor, HABITS, notesFor, poolRide, bagNight, SWEEP_ITEMS, sweepAllDone, tierForHabits, TRAVELLERS, RIDE_NAMES_MAX, type FinishState, type Traveller } from '../../domain/finishMore'
-import { GUIDE_PORTS, PORT_KNOWLEDGE, type GuidePort } from '../../domain/portContent'
-import { PORTS } from '../../domain/sailings'
+import { guidePickerPorts, knowledgeOf } from '../../domain/portTier'
+import { useItinerary } from '../../hooks/useShipCatalogue'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
 import { disembarkTimes, groupFor, onwardMode, ONWARD_MODES, type OnwardMode } from '../../domain/disembark'
 import { FARES } from '../../domain/fares'
 import { formatMoney } from '../../domain/money'
 import { ledgerSummary } from '../../domain/bookingPrep'
 import { CATEGORIES, type CategoryId } from '../../domain/ship'
-import { SAILINGS } from '../../domain/sailings'
+import { portById, SAILINGS } from '../../domain/sailings'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { t, th, type StringKey } from '../../i18n'
@@ -373,7 +373,9 @@ export function AlertsScreen() {
 export function ReadAloudScreen() {
   const day = useCurrentDay()
   const dp = useDayPlan(day)
-  const [port, setPort] = useState<GuidePort>('cozumel')
+  const ports = guidePickerPorts(useItinerary().map((d) => d.port))
+  const [chosen, setPort] = useState<string | null>(null)
+  const port = chosen ?? ports[0] ?? ''
   const [rate, setRate] = useState<number>(1)
   const [reading, setReading] = useState(false)
   const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window
@@ -387,7 +389,7 @@ export function ReadAloudScreen() {
     synth.speak(u)
   }
   const plan = dp.ready ? planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty')) : null
-  const walk = PORT_KNOWLEDGE[port].walks[0]
+  const walk = knowledgeOf(port)?.walks[0]
   return (
     <Page intro="read.intro" back={SHIP}>
       {!canSpeak && <Banner kind="info" title={t('read.unsupported')} />}
@@ -397,7 +399,7 @@ export function ReadAloudScreen() {
         {plan === null ? <FeedWaiting /> : <p>{plan}</p>}
         {canSpeak && plan !== null && <Button onClick={() => speak(plan)}>{reading ? t('read.stop') : t('read.play')}</Button>}</Card>
       <Card labelledBy="rd-w"><h2 id="rd-w" className="card__title">{th('read.walk')}</h2>
-        {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="rd-port" checked={port === p} onChange={() => setPort(p)} /><span>{PORTS[p].name}</span></label>)}
+        {ports.map((p) => <label key={p} className="choice"><input type="radio" name="rd-port" checked={port === p} onChange={() => setPort(p)} /><span>{portById(p)?.name ?? p}</span></label>)}
         {walk && <><p>{walkSpeech(walk)}</p>{canSpeak && <Button onClick={() => speak(walkSpeech(walk))}>{reading ? t('read.stop') : t('read.play')}</Button>}</>}</Card>
     </Page>
   )
@@ -405,7 +407,9 @@ export function ReadAloudScreen() {
 
 /** Port snapshot (S6A-14): a text summary of the port day to copy for the group or the recap. No photos. */
 export function PortSnapshotScreen() {
-  const [port, setPort] = useState<GuidePort>('cozumel')
+  const ports = guidePickerPorts(useItinerary().map((d) => d.port))
+  const [chosen, setPort] = useState<string | null>(null)
+  const port = chosen ?? ports[0] ?? ''
   const [people, setPeople] = useState(2)
   const [copied, setCopied] = useState(false)
   const lines = portSnapshot(port, people)
@@ -413,9 +417,9 @@ export function PortSnapshotScreen() {
   return (
     <Page intro="snap.intro" back={{ to: '/ship/port', label: 'route.portDay' }}>
       <Card labelledBy="sn-h"><h2 id="sn-h" className="card__title">{th('snap.which')}</h2>
-        {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="sn-port" checked={port === p} onChange={() => { setPort(p); setCopied(false) }} /><span>{PORTS[p].name}</span></label>)}
+        {ports.map((p) => <label key={p} className="choice"><input type="radio" name="sn-port" checked={port === p} onChange={() => { setPort(p); setCopied(false) }} /><span>{portById(p)?.name ?? p}</span></label>)}
         <label className="field"><span>{t('snap.people')}</span><select value={people} onChange={(e) => setPeople(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label></Card>
-      <Card labelledBy="sn-t"><h2 id="sn-t" className="card__title">{PORTS[port].name}</h2>
+      <Card labelledBy="sn-t"><h2 id="sn-t" className="card__title">{portById(port)?.name ?? port}</h2>
         <ul>{lines.map((l) => <li key={l}>{l}</li>)}</ul>
         <Button onClick={() => void copy()}>{t('snap.copy')}</Button>
         {copied && <p role="status">{t('snap.copied')}</p>}

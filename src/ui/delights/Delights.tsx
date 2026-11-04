@@ -82,7 +82,7 @@ export function TippingCard({ port }: { port: string }) {
       <h2 id="dl-tip-h" className="card__title">{th('dl.tip.title', { country: n.country })}</h2>
       <ul>
         <li>{t(`dl.tip.included.${n.serviceIncluded}` as StringKey)}</li>
-        <li>{t('dl.tip.restaurant', { percent: n.restaurantPercent })}</li>
+        {n.restaurantPercent > 0 && <li>{t('dl.tip.restaurant', { percent: n.restaurantPercent })}</li>}
         <li>{t(`dl.tip.taxi.${n.taxi}` as StringKey)}</li>
         {n.dollarsAccepted && <li>{t('dl.tip.dollars')}</li>}
       </ul>

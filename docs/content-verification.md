@@ -2,6 +2,12 @@
 
 Every authored line that says "(verify)" or tells the guest to check it. Nothing here has a recorded source yet. For each line, write the source and date in the **Source** column and set **Status** to `checked`, or remove the line. The owner signs off at the bottom. Legal, safety, health, document and port-rule text must not ship to a real pilot unchecked.
 
+## Port guides added in X0g (2026-11-03)
+
+Authored in `server/Princess.Api/Domain/PortsReference.cs` as concept samples, with no recorded source yet: guides and knowledge for 21 Tier A ports (Celebration Key, Grand Turk, San Juan, Amber Cove, Southampton, Barcelona, Palma, Marseille, Genoa, La Spezia, Civitavecchia, Naples, Athens, Santorini, Mykonos, Kusadasi, Copenhagen, Tokyo/Yokohama, Hakodate, Singapore, Sydney). Fort Lauderdale keeps its guide only. Everything in them (taxi fares in US dollars, day pass prices, excursion prices, hours, local laws, tipping norms in `src/domain/delights.ts`, phrases and allergy cards) is **unverified**: each law line says "(verify)", and the allergy cards and phrases need a native-speaker check before real use. Line numbers in the table below are from before X0g and are out of date; regenerate with the grep above.
+
+Not authored: Tier B short guides, per-country entry rows, ashore contacts and the port day pilot for the new ports.
+
 Regenerate the list with: `grep -rn "(verify)" src server/Princess.Api --include=*.ts --include=*.cs`
 
 | File:line | Text | Source | Status |

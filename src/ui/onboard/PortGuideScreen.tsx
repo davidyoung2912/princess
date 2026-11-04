@@ -2,8 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { portDayAt } from '../../domain/allaboard'
 import { usePortCrowd } from '../../hooks/useServedFeeds'
-import { GUIDE_PORTS, isGuidePort, PORT_KNOWLEDGE, perPerson, type GuidePort } from '../../domain/portContent'
-import { PORTS } from '../../domain/sailings'
+import type { CrowdPort } from '../../domain/portCrowd'
+import { perPerson } from '../../domain/portContent'
+import { guideLevelOf, guidePickerPorts, knowledgeOf, portFacts } from '../../domain/portTier'
+import { portById } from '../../domain/sailings'
+import { portGuideById } from '../../domain/ports'
+import { useItinerary } from '../../hooks/useShipCatalogue'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -16,10 +20,12 @@ export function PortGuideScreen() {
   const sailing = useSailing()
   const now = useNow()
   const next = portDayAt(sailing, now)?.port
-  const [port, setPort] = useState<GuidePort>(isGuidePort(next) ? next : 'cozumel')
-  const k = PORT_KNOWLEDGE[port]
+  const ports = guidePickerPorts(useItinerary().map((d) => d.port))
+  const [chosen, setPort] = useState<string | null>(null)
+  const port = chosen ?? (next && ports.includes(next) ? next : ports[0] ?? '')
+  const k = knowledgeOf(port)
   const day = portDayAt(sailing, now)
-  const served = usePortCrowd(port, day?.date ?? '')
+  const served = usePortCrowd(port as CrowdPort, k ? day?.date ?? '' : '')
   const crowd = day && day.port === port ? served : null
 
   return (
@@ -28,9 +34,34 @@ export function PortGuideScreen() {
       <Banner kind="info" title={t('guide.verify')}><p>{t('guide.verifyBody')}</p></Banner>
       <fieldset>
         <legend>{t('guide.port')}</legend>
-        {GUIDE_PORTS.map((p) => <label key={p} className="choice"><input type="radio" name="guide-port" checked={port === p} onChange={() => setPort(p)} /><span>{PORTS[p].name}</span></label>)}
+        {ports.map((p) => <label key={p} className="choice"><input type="radio" name="guide-port" checked={port === p} onChange={() => setPort(p)} /><span>{portById(p)?.name ?? p}</span></label>)}
       </fieldset>
 
+      {!k && <ShortGuide port={port} />}
+      {k && <FullGuide port={port} k={k} crowd={crowd} />}
+      <BackLink to="/ship/port" label={t('route.portDay')} />
+    </div>
+  )
+}
+
+/** The Tier B and C fallback: only the facts the catalogue holds, and a plain note that the guide is not written yet. */
+function ShortGuide({ port }: { port: string }) {
+  const g = portGuideById(port)
+  const p = portById(port)
+  const level = guideLevelOf(port)
+  return (
+    <Card labelledBy="g-short">
+      <h2 id="g-short" className="card__title">{th('guide.short.title', { port: p?.name ?? port })}</h2>
+      {g && <p>{g.blurb}</p>}
+      <dl className="plain-dl">{portFacts(port).map((f) => <div key={f.label}><dt>{t(`guide.fact.${f.label}` as StringKey)}</dt><dd>{f.label === 'landing' ? t(`guide.fact.landing.${f.value}` as StringKey) : f.value}</dd></div>)}</dl>
+      <Banner kind="info" title={t(level === 'short' ? 'guide.short.pending' : 'guide.link.pending')}><p>{t('guide.short.body')}</p></Banner>
+    </Card>
+  )
+}
+
+function FullGuide({ port, k, crowd }: { port: string; k: NonNullable<ReturnType<typeof knowledgeOf>>; crowd: ReturnType<typeof usePortCrowd> }) {
+  return (
+    <>
       <TippingCard port={port} />
 
       <Card labelledBy="g-price">
@@ -66,15 +97,15 @@ export function PortGuideScreen() {
 
       <Card labelledBy="g-talk">
         <h2 id="g-talk" className="card__title">{th('guide.talk')}</h2>
-        <p className="muted">{t('guide.talk.note')}</p>
-        <dl className="plain-dl">{k.phrases.map((p) => <div key={p.say}><dt lang={port === 'belize' ? 'en' : 'es'}>{p.say}</dt><dd>{p.means} <span className="muted">({p.sounds})</span></dd></div>)}</dl>
+        {k.phrases.length > 0 && <p className="muted">{t('guide.talk.note')}</p>}
+        <dl className="plain-dl">{k.phrases.map((p) => <div key={p.say}><dt lang={k.lang ?? (port === 'belize' ? 'en' : 'es')}>{p.say}</dt><dd>{p.means} <span className="muted">({p.sounds})</span></dd></div>)}</dl>
         <h3>{th('guide.etiquette')}</h3>
         <ul className="plain-bullets">{k.etiquette.map((x) => <li key={x}>{x}</li>)}</ul>
-        <h3>{th('guide.allergy')}</h3>
+        {k.allergy.length > 0 && <h3>{th('guide.allergy')}</h3>}
         {k.allergy.map((a) => (
           <div key={a.language} className="card card--info">
             <p className="muted">{t('guide.allergy.card', { allergy: a.allergy, language: a.language })}</p>
-            <p lang={a.language.startsWith('Spanish') ? 'es' : 'en'}>{a.text}</p>
+            <p lang={a.lang ?? (a.language.startsWith('Spanish') ? 'es' : 'en')}>{a.text}</p>
             <p className="muted">{a.english}</p>
           </div>
         ))}
@@ -116,7 +147,6 @@ export function PortGuideScreen() {
         <p className="muted">{t('guide.local.reef')}</p>
       </Card>
 
-      <BackLink to="/ship/port" label={t('route.portDay')} />
-    </div>
+    </>
   )
 }

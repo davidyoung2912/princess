@@ -4,7 +4,8 @@ import { type AllergyFlag, galleyStatus, type GalleyStatus, splitEven, type Shar
 import { offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
 import { FARE_IDS, type FareId } from './fares'
 import { rankNudges, type Nudge, type NudgeBudget } from './nudges'
-import { PORT_KNOWLEDGE, perPerson, type GuidePort } from './portContent'
+import { perPerson } from './portContent'
+import { knowledgeOf, shortSnapshot } from './portTier'
 import { REQUEST_ITEMS } from './services'
 import type { StormBand, StormPhase } from './storm'
 import { fareFor } from './pricing'
@@ -291,8 +292,9 @@ export const walkSpeech = (w: { name: string; minutes: number; step: string; acc
 
 // ---- S6A-14: port snapshot as text ----
 /** A short text summary of a port day for the group chat or the recap. Text only: no photos are made or shared here. */
-export function portSnapshot(port: GuidePort, people: number): string[] {
-  const k = PORT_KNOWLEDGE[port]
+export function portSnapshot(port: string, people: number): string[] {
+  const k = knowledgeOf(port)
+  if (!k) return shortSnapshot(port)
   const car = k.fairPrices[0]
   return [
     ...(car ? [`Taxi: ${car.route}, about $${car.car} for the car, $${perPerson(car, people)} each. Do not pay over $${car.ceiling}.`] : []),
