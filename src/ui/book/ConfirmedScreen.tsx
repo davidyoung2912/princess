@@ -20,6 +20,7 @@ import { Card } from '../Card'
 import { Download, Printer } from '../icons'
 import { formatDateTime } from '../account/format'
 import { Load } from '../account/parts'
+import { StanleyMoment } from '../ai/StanleyMoment'
 import { BookingNumber } from '../delights/Delights'
 import { JourneyCalendarButton } from '../delights/Exports'
 
@@ -58,6 +59,7 @@ function Confirmation({ b }: { b: BookingView }) {
       {cancelled
         ? <Banner kind="warning" title={t('book.done.cancelled')}><p>{t('book.done.cancelledBody', { refund: formatMoney(b.cancelled?.refund ?? 0) })}</p></Banner>
         : <Banner kind="success" title={t('book.done.title')}><p>{t('book.done.body', { email: b.notified.find((n) => n.via === 'email')?.to ?? '' })}</p></Banner>}
+      {!cancelled && <StanleyMoment id="booked" subject={b.number} />}
       <Card hero>
         <p className="eyebrow">{t('book.done.number')}</p>
         <BookingNumber number={b.number} />

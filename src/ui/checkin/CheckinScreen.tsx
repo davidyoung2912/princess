@@ -21,6 +21,7 @@ import { CheckinError } from './CheckinError'
 import { ArrivalStep, ConfirmStep, ContractStep, DocumentStep, EmergencyStep, HealthStep, PaymentStep, PhotoStep } from './steps'
 import { personFirstName } from '../../account/context'
 import { TicketProgress } from '../delights/EmbarkDelights'
+import { StanleyMoment } from '../ai/StanleyMoment'
 
 const REVIEW = 'review'
 const stepLabel = (step: StepId | typeof REVIEW) => t(`checkin.step.${step}` as StringKey)
@@ -67,6 +68,7 @@ function Overview({ view }: { view: CheckinView }) {
           <p>{view.finishedAt ? t('checkin.finishedAt', { when: formatDateTime(view.finishedAt) }) : ''} <Link to="/home/check-in/receipt">{t('checkin.seeReceipt')}</Link></p>
         </Banner>
       )}
+      {done && <StanleyMoment id="checkedIn" subject={String(view.finishedAt ?? 'done')} />}
       <Gate view={view}>
         <TicketProgress lines={steps.map((s) => ({ id: s.id, label: s.label, state: s.state }))} done={progress.done} total={progress.total} />
 

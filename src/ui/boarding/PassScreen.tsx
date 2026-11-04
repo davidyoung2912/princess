@@ -1,4 +1,5 @@
 import { useWakeLock } from '../../hooks/useWakeLock'
+import { StanleyMoment } from '../ai/StanleyMoment'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asBoardingView } from '../../api/guards'
@@ -45,6 +46,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
   return (
     <>
       {offline && <Banner kind="offline" title={t('pass.offline')}><p>{t('pass.offlineBody')}</p></Banner>}
+      {pass.checkinDone && <StanleyMoment id="passReady" subject={pass.number} />}
       {pass.terminal.changedFrom && <Banner kind="warning" title={t('pass.terminalChanged', { from: pass.terminal.changedFrom, to: pass.terminal.name })}><p>{t('pass.terminalChangedBody')}</p></Banner>}
       {!pass.checkinDone && (
         <Banner kind="warning" title={t('pass.notReady')} action={signedIn ? <LinkButton to="/home/check-in" variant="secondary">{t('route.checkin')}</LinkButton> : undefined}>

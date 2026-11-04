@@ -2,7 +2,11 @@ import { GUEST_SERVICES_NUMBER } from '../domain/contacts'
 import { t, th } from '../i18n'
 import { Dialog } from './Dialog'
 import { DialogHeader } from './DialogHeader'
-import { LinkButton } from './Button'
+import { Button, LinkButton } from './Button'
+import { coachCanReplay, hasCoach } from '../ai/stanleyMoments'
+import { useSettings } from '../hooks/useSettings'
+import { requestReplay } from '../settings/stanleySeen'
+import { stanleyLevelFor } from '../settings/settings'
 import { Help, Phone, Siren } from './icons'
 import { UrgentIssues } from './onboard/UrgentIssues'
 
@@ -10,7 +14,9 @@ import { UrgentIssues } from './onboard/UrgentIssues'
  * The help sheet reachable from the top bar on every screen (requirement SUP-08). Everything in it works offline:
  * the phone numbers are plain text and `tel:` links, and nothing depends on chat being up.
  */
-export function HelpSheet({ onClose }: { onClose: () => void }) {
+export function HelpSheet({ onClose, screenId }: { onClose: () => void; screenId?: string }) {
+  const [settings] = useSettings()
+  const tour = hasCoach(screenId) && coachCanReplay(stanleyLevelFor(settings))
   return (
     <Dialog title={t('help.title')} onClose={onClose} header={(titleId) => <DialogHeader titleId={titleId} title={t('help.title')} subtext={t('help.intro')} icon={Help} onClose={onClose} />}>
       <div className="stack">
@@ -19,6 +25,7 @@ export function HelpSheet({ onClose }: { onClose: () => void }) {
           <p>{t('help.callNumber', { number: GUEST_SERVICES_NUMBER })}</p>
           <a className="btn btn--primary btn--block" href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a>
         </section>
+        {tour && <Button variant="secondary" block onClick={() => { requestReplay(`coach:${screenId}`); onClose() }}>{t('stanley.coach.replay')}</Button>}
         <LinkButton to="/chat" variant="secondary" block onClick={onClose}>{t('help.chat')}</LinkButton>
         <section className="card" aria-labelledby="help-emergency-h">
           <h3 id="help-emergency-h"><Siren aria-hidden="true" /> {th('help.emergency')}</h3>
