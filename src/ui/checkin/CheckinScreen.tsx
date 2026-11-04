@@ -22,6 +22,8 @@ import { ArrivalStep, ConfirmStep, ContractStep, DocumentStep, EmergencyStep, He
 import { personFirstName } from '../../account/context'
 import { TicketProgress } from '../delights/EmbarkDelights'
 import { StanleyMoment } from '../ai/StanleyMoment'
+import { useDiaryLine } from '../../hooks/useDiary'
+import { useSailing } from '../../hooks/useDemo'
 
 const REVIEW = 'review'
 const stepLabel = (step: StepId | typeof REVIEW) => t(`checkin.step.${step}` as StringKey)
@@ -60,6 +62,7 @@ function Overview({ view }: { view: CheckinView }) {
     state: stepDone(s, view.guests, progress.bookingLeft) ? 'done' : progress.next?.step === s ? 'current' : 'todo',
   }))
   const done = status.state === 'done'
+  useDiaryLine(useSailing().id, 'checkedIn', 'checkedIn', t('diary.auto.checkedIn'), done)
   return (
     <>
       <p>{t('checkin.intro')}</p>

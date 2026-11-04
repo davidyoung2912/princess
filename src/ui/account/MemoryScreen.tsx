@@ -21,6 +21,7 @@ import { Load } from './parts'
 import { BookPagePictures, DayPictureEditor } from './BookPictures'
 import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
+import { TripDiary } from '../delights/TripDiary'
 import { StanleyStoryteller } from '../ai/StanleyStoryteller'
 import { Keepsakes } from '../delights/Exports'
 import { StubsCard } from '../delights/EmbarkDelights'
@@ -90,6 +91,7 @@ export function MemoryScreen() {
       <StubsCard />
       <SailedMap />
       <FavouritesRanked />
+      <TripDiary />
       <StanleyStoryteller days={days} journal={state.journal} onSave={(journal) => update((s) => ({ ...s, journal }))} />
       <Card labelledBy="mem-journal" >
         <h2 id="mem-journal" className="card__title no-print">{th('memory.journal')}</h2>

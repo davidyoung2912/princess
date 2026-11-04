@@ -1,5 +1,7 @@
 import { useWakeLock } from '../../hooks/useWakeLock'
 import { StanleyMoment } from '../ai/StanleyMoment'
+import { useDiaryLine } from '../../hooks/useDiary'
+import { useSailing } from '../../hooks/useDemo'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asBoardingView } from '../../api/guards'
@@ -42,6 +44,7 @@ export function PassScreen() {
 
 export function PassBody({ pass, offline, reload, signedIn = true }: { pass: BoardingView; offline: boolean; reload: () => void; signedIn?: boolean }) {
   const [bright, setBright] = useState<GuestPass | null>(null)
+  useDiaryLine(useSailing().id, 'pass', 'pass', t('diary.auto.pass'), pass.checkinDone)
   const wallet = useAction(async () => { await api.boarding.addToWallet(); reload() })
   return (
     <>

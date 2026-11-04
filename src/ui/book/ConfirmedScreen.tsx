@@ -21,6 +21,7 @@ import { Download, Printer } from '../icons'
 import { formatDateTime } from '../account/format'
 import { Load } from '../account/parts'
 import { StanleyMoment } from '../ai/StanleyMoment'
+import { useDiaryLine } from '../../hooks/useDiary'
 import { BookingNumber } from '../delights/Delights'
 import { JourneyCalendarButton } from '../delights/Exports'
 
@@ -54,6 +55,7 @@ function Confirmation({ b }: { b: BookingView }) {
   const { state: mem } = useMemory()
   const sailing = sailingById(b.sailingId)!
   const cancelled = b.status === 'cancelled'
+  useDiaryLine(b.sailingId, 'booked', 'booked', t('diary.auto.booked', { number: b.number }), !cancelled)
   return (
     <>
       {cancelled

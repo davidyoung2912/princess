@@ -10,6 +10,7 @@ import { EMPTY_EMBARK, normalizeEmbark, type EmbarkState } from '../domain/embar
 import { EMPTY_SEA, normalizeSea, type SeaState } from '../domain/seaDelights'
 import { EMPTY_PORTS, normalizePorts, type PortsState } from '../domain/portDelights'
 import { EMPTY_REMEMBER, normalizeRemember, type RememberState } from '../domain/rememberDelights'
+import { EMPTY_DIARY, normalizeDiary, type DiaryState } from '../domain/tripDiary'
 import { EMPTY_PREPARE, normalizePrepare, type PrepareState } from '../domain/prepareDelights'
 import { normalizePlanLines, type PlanLine } from '../domain/prepMore'
 import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/medicalCard'
@@ -62,9 +63,11 @@ export interface MemoryState {
   ports: PortsState
   /** Small delights DL9, on this device and in the memory document: postcards to a future self, trips kept in the sailed record, and places wanted next. */
   remember: RememberState
+  /** The Trip Diary (X7), on this device and in the memory document: dated lines made from what happens and from what the guest adds. */
+  diary: DiaryState
 }
 
-export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH, prepare: EMPTY_PREPARE, embark: EMPTY_EMBARK, sea: EMPTY_SEA, ports: EMPTY_PORTS, remember: EMPTY_REMEMBER }
+export const EMPTY_MEMORY: MemoryState = { journal: {}, reflections: [], drinks: null, anniversary: false, contacts: [], blocked: [], use: { drinks: 0, dinners: 0, wifiNights: 0, paid: 0 }, fit: [], budget: null, away: [], awayExtras: [], medical: EMPTY_MEDICAL, hold: null, access: EMPTY_ACCESS, allergy: EMPTY_ALLERGY, shares: [], companionOff: false, pasted: [], planning: EMPTY_PLANNING, aboard: EMPTY_ABOARD, finish: EMPTY_FINISH, polish: EMPTY_POLISH, prepare: EMPTY_PREPARE, embark: EMPTY_EMBARK, sea: EMPTY_SEA, ports: EMPTY_PORTS, remember: EMPTY_REMEMBER, diary: EMPTY_DIARY }
 
 const money = (v: unknown): number | null => (typeof v === 'number' && v > 0 ? Math.min(100_000_000, Math.round(v)) : null)
 const int = (v: unknown, max: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v))) : 0)
@@ -98,7 +101,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
     return [{ id: o.id, text: cleanExtra(o.text), done: o.done === true }]
   }).slice(0, EXTRAS_MAX)
   return {
-    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish), prepare: normalizePrepare(r.prepare), embark: normalizeEmbark(r.embark), sea: normalizeSea(r.sea), ports: normalizePorts(r.ports), remember: normalizeRemember(r.remember),
+    journal, reflections, contacts, away, awayExtras, medical: normalizeMedical(r.medical), hold: normalizeHold(r.hold), access: normalizeAccess(r.access), allergy: normalizeAllergy(r.allergy), shares: normalizeShares(r.shares), companionOff: r.companionOff === true, pasted: normalizePlanLines(r.pasted), planning: normalizePlanning(r.planning), aboard: normalizeAboard(r.aboard), finish: normalizeFinish(r.finish), polish: normalizePolish(r.polish), prepare: normalizePrepare(r.prepare), embark: normalizeEmbark(r.embark), sea: normalizeSea(r.sea), ports: normalizePorts(r.ports), remember: normalizeRemember(r.remember), diary: normalizeDiary(r.diary),
     drinks: typeof r.drinks === 'number' && r.drinks > 0 ? int(r.drinks, 999) : null,
     anniversary: r.anniversary === true,
     blocked: (Array.isArray(r.blocked) ? r.blocked : []).filter((b): b is string => typeof b === 'string').map((b) => b.slice(0, CONTACT_NAME_MAX)).slice(0, 50),
