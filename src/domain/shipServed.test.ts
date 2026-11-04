@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { applyShip, normalizeShip } from './shipServed'
-import { CATEGORIES, OTHER_SHIPS, ABOARD_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from './ship'
+import { CATEGORIES, OTHER_SHIPS, SUN_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from './ship'
 import { DECKS, ELEVATORS, MUSTER_STATIONS, PLACES } from './deck'
 
 const wire = (): Record<string, any> => ({
   version: 'v1',
-  ship: { ...ABOARD_SHIP, name: 'Star Princess' },
+  ship: { ...SUN_SHIP, name: 'Star Princess' },
   highlights: [{ title: 'The Piazza', body: 'A gathering place.' }],
   categories: [{ id: 'interior', name: 'Interior', code: 'IF', size: '135 sq ft', view: 'No window', summary: 'Value.', ratio: 1 }, { id: 'miniSuite', name: 'Mini-Suite', code: 'MB', size: 'Larger', view: 'Balcony', summary: 'Room.', ratio: 1.9, suite: true }],
   accessibility: ['Six elevator banks.'],
@@ -42,7 +42,7 @@ describe('normalizeShip', () => {
 })
 
 describe('applyShip', () => {
-  const saved = { ship: { ...ABOARD_SHIP }, h: [...SHIP_HIGHLIGHTS], c: [...CATEGORIES], a: [...SHIP_ACCESSIBILITY], o: [...OTHER_SHIPS], p: [...PLACES], e: [...ELEVATORS], m: Object.values(MUSTER_STATIONS) }
+  const saved = { ship: { ...SUN_SHIP }, h: [...SHIP_HIGHLIGHTS], c: [...CATEGORIES], a: [...SHIP_ACCESSIBILITY], o: [...OTHER_SHIPS], p: [...PLACES], e: [...ELEVATORS], m: Object.values(MUSTER_STATIONS) }
   afterEach(() => {
     applyShip({ version: 'back', ship: saved.ship, highlights: saved.h, categories: saved.c, accessibility: saved.a, otherShips: saved.o, places: saved.p, elevators: saved.e, muster: saved.m })
   })
@@ -51,7 +51,7 @@ describe('applyShip', () => {
     const places = PLACES
     applyShip(normalizeShip(wire())!)
     expect(PLACES).toBe(places)
-    expect(ABOARD_SHIP.name).toBe('Star Princess')
+    expect(SUN_SHIP.name).toBe('Star Princess')
     expect(CATEGORIES.map((c) => c.id)).toEqual(['interior', 'miniSuite'])
     expect(PLACES.map((p) => p.id)).toEqual(['piazza', 'bar'])
     expect([...DECKS]).toEqual([7, 12])

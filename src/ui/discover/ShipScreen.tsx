@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { t, th } from '../../i18n'
-import { CATEGORIES, ABOARD_SHIP, categoryById, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
+import { CATEGORIES, SUN_SHIP, categoryById, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { browseSailings, shipSailingSummary } from '../../domain/catalogueBrowse'
 import { catalogueShips, shipById } from '../../domain/shipCatalogue'
 import { useShip, useShipAccessibility, useShipRooms } from '../../hooks/useShipCatalogue'
@@ -26,8 +26,8 @@ export function ShipScreen() {
   const current = useShip()
   const ship = id ? shipById(id) : current
   const favourites = useFavourites()
-  const otherAccess = useShipAccessibility(ship && ship.id !== ABOARD_SHIP.id ? ship.id : undefined)
-  const browseRooms = useShipRooms(ship && ship.id !== ABOARD_SHIP.id ? ship.id : undefined)
+  const otherAccess = useShipAccessibility(ship && ship.id !== SUN_SHIP.id ? ship.id : undefined)
+  const browseRooms = useShipRooms(ship && ship.id !== SUN_SHIP.id ? ship.id : undefined)
   if (!ship) {
     return (
       <div className="page">
@@ -38,7 +38,7 @@ export function ShipScreen() {
     )
   }
   const aboard = ship.depth === 'aboard'
-  const isSun = ship.id === ABOARD_SHIP.id
+  const isSun = ship.id === SUN_SHIP.id
   const highlights = ship.highlights.length > 0 ? ship.highlights : isSun ? SHIP_HIGHLIGHTS : []
   const mine = shipSailingSummary(ship.id, browseSailings())
   const others = catalogueShips().filter((s) => s.id !== ship.id)
@@ -89,7 +89,7 @@ export function ShipScreen() {
               </li>
             ))}
           </ul>
-          <p className="muted">{t('discover.accessibleRooms', { count: ABOARD_SHIP.accessibleStaterooms })}</p>
+          <p className="muted">{t('discover.accessibleRooms', { count: SUN_SHIP.accessibleStaterooms })}</p>
         </section>
       )}
 

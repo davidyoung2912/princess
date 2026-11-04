@@ -4,7 +4,7 @@ import { useCatalogue } from './useCatalogue'
 import { itinerary, type ItineraryDay } from '../domain/sailings'
 import { loadSailingRooms, loadShipRooms, sailingRooms, shipRooms, type Room } from '../domain/shipRooms'
 import { cruiseOf, loadItinerary, pricedSailings, sailingFor, shipOf, type CruiseSummary, type SailingEntry, type ShipSummary } from '../domain/shipCatalogue'
-import { ABOARD_SHIP, CATEGORIES } from '../domain/ship'
+import { SUN_SHIP, CATEGORIES } from '../domain/ship'
 import { positionFeed } from '../feeds/navigation'
 import { setVoyageMiles } from '../domain/postcruise'
 import { notifyCatalogue } from '../domain/catalogueServed'
@@ -74,7 +74,7 @@ export interface RoomChoice { id: string; name: string; summary: string }
 export function useRoomChoices(sailingId: string): RoomChoice[] {
   const rooms = useSailingRooms(sailingId || undefined)
   if (rooms) return rooms.map((r) => ({ id: r.id, name: r.name, summary: r.description || CATEGORIES.find((c) => c.id === r.id)?.summary || '' }))
-  return shipOf(sailingId).depth === 'browse' || shipOf(sailingId).id !== ABOARD_SHIP.id ? [] : CATEGORIES.map((c) => ({ id: c.id, name: c.name, summary: c.summary }))
+  return shipOf(sailingId).depth === 'browse' || shipOf(sailingId).id !== SUN_SHIP.id ? [] : CATEGORIES.map((c) => ({ id: c.id, name: c.name, summary: c.summary }))
 }
 
 /** The days of any one sailing (not only the focused one), asked of the server when they are not yet in use. */

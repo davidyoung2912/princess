@@ -3,7 +3,7 @@
 // The sailings, ports, excursions, dining rooms and fares are no longer authored in the client: the test fixture is now the source of the seeds.
 import '../src/testing/setup.ts'
 import { en } from '../src/i18n/locales/en.ts'
-import { CATEGORIES, ABOARD_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS, OTHER_SHIPS } from '../src/domain/ship.ts'
+import { CATEGORIES, SUN_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS, OTHER_SHIPS } from '../src/domain/ship.ts'
 import { capacityOf, FARES, FARE_IDS, EARLY_CREDIT_DAYS, promotionsFor } from '../src/domain/fares.ts'
 import { cabinsFor } from '../src/domain/cabins.ts'
 import { MUSTER_STATIONS, PLACES, placeById } from '../src/domain/deck.ts'
@@ -41,7 +41,7 @@ export interface Col { name: string; type: ColType }
 export interface Table { file: string; name: string; cols: Col[]; key: string[]; rows: Cell[][] }
 
 const t = (name: string, type: ColType): Col => ({ name, type })
-const SHIP_ID = ABOARD_SHIP.id
+const SHIP_ID = SUN_SHIP.id
 const text = (key: string): string => (en as Record<string, string>)[key] ?? ''
 const first = <T>(list: readonly T[]): T => list[0]
 
@@ -63,8 +63,8 @@ export function buildTables(): Table[] {
   const decks = [...new Set([...PLACES.map((p) => p.deck), ...CATEGORIES.flatMap((c) => cabinsFor('x', c.id).map((x) => x.deck))])].sort((a, b) => a - b)
   add('01-ship', 'ref.Ships', ['Id'],
     [t('Id', 'str'), t('Name', 'str'), t('Class', 'str'), t('Decks', 'int'), t('Tonnage', 'int'), t('Capacity', 'int'), t('HomeZone', 'str'), t('ProfileJson', 'json')],
-    [[SHIP_ID, ABOARD_SHIP.name, ABOARD_SHIP.className, ABOARD_SHIP.decks, ABOARD_SHIP.tonnage, ABOARD_SHIP.guests, HOME_ZONE,
-      { ...ABOARD_SHIP, highlights: SHIP_HIGHLIGHTS, accessibility: SHIP_ACCESSIBILITY, otherShips: OTHER_SHIPS }]])
+    [[SHIP_ID, SUN_SHIP.name, SUN_SHIP.className, SUN_SHIP.decks, SUN_SHIP.tonnage, SUN_SHIP.guests, HOME_ZONE,
+      { ...SUN_SHIP, highlights: SHIP_HIGHLIGHTS, accessibility: SHIP_ACCESSIBILITY, otherShips: OTHER_SHIPS }]])
 
   add('01-ship', 'ref.Decks', ['ShipId', 'Number'],
     [t('ShipId', 'str'), t('Number', 'int'), t('Name', 'str'), t('Summary', 'str')],
@@ -237,7 +237,7 @@ export function buildTables(): Table[] {
 
   const blocks: Cell[][] = []
   const block = (id: string, area: string, title: string, body: string) => blocks.push([id, area, title, body, 'en', blocks.length + 1])
-  block('ship-intro', 'ship', ABOARD_SHIP.name, ABOARD_SHIP.intro)
+  block('ship-intro', 'ship', SUN_SHIP.name, SUN_SHIP.intro)
   SHIP_HIGHLIGHTS.forEach((h, i) => block(`ship-highlight-${i + 1}`, 'ship', h.title, h.body))
   SHIP_ACCESSIBILITY.forEach((a, i) => block(`ship-access-${i + 1}`, 'ship-access', 'Accessibility', a))
   for (const guide of Object.values(PORT_GUIDES)) {

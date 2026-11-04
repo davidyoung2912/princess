@@ -41,7 +41,7 @@ export function toggleFavourite(favs: readonly Favourite[], venueId: string, dis
 
 const hash = (s: string): number => { let h = 5381; for (const c of s) h = (Math.imul(h, 33) + c.charCodeAt(0)) >>> 0; return h }
 
-/** Counters and cafés keep the same dishes every day; the dining rooms and specialty restaurants rotate. */
+/** Counters and cafés keep the same dishes every day; the dining rooms and specialty restaurants rotate. (`americana` is Sun's diner; the ids are harmless on other ships.) */
 const FIXED_MENU: readonly string[] = ['eatery', 'americana', 'lido', 'intl-cafe', 'omalleys', 'alfredo']
 
 /**

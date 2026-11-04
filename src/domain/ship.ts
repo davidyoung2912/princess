@@ -1,11 +1,11 @@
-/** The facts of the ship at `aboard` depth (Sun Princess), served by the reference and swapped in by `replaceShip`; the authored values show until it arrives. Other ships come from the catalogue (`shipCatalogue.ts`). */
+/** The facts of Sun Princess, the ship the server's `/reference/ship` serves, swapped in by `replaceShip`; the authored values show until it arrives. All three ships are at `aboard` depth; the others come from the catalogue (`shipCatalogue.ts`). */
 export interface ShipFacts {
   id: string; name: string; className: string; entered: number; tonnage: number; length: string; guests: number; crew: number
   staterooms: number; accessibleStaterooms: number; connectingStaterooms: number; decks: number; sanctuaryStaterooms: number; intro: string
 }
 
 /** The authored values show until the server's reference arrives; `replaceShip` swaps every table below in place (see `shipServed.ts`). */
-export const ABOARD_SHIP: ShipFacts = {
+export const SUN_SHIP: ShipFacts = {
   id: 'sun-princess',
   name: 'Sun Princess',
   className: 'Sphere class',
@@ -112,7 +112,7 @@ export interface ShipContent {
 
 /** Replaces the ship content in place, so every earlier import sees the served values. */
 export function replaceShip(next: ShipContent): void {
-  Object.assign(ABOARD_SHIP, next.ship)
+  Object.assign(SUN_SHIP, next.ship)
   const swap = <T,>(list: readonly T[], to: readonly T[]) => { (list as T[]).splice(0, list.length, ...to) }
   swap(SHIP_HIGHLIGHTS, next.highlights)
   swap(CATEGORIES, next.categories)

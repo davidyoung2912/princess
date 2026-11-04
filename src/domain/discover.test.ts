@@ -6,7 +6,7 @@ import { PORT_GUIDES, portGuideById } from './ports'
 import { ALL_CATEGORY_IDS, fromPrice, lowestFromPrice, MAX_GUESTS, quote, TAXES_AND_FEES } from './pricing'
 import { formatMoney } from './money'
 import { itinerary, PORTS, REFERENCE_SAILING, SAILINGS } from './sailings'
-import { CATEGORIES, categoryById, OTHER_SHIPS, ABOARD_SHIP } from './ship'
+import { CATEGORIES, categoryById, OTHER_SHIPS, SUN_SHIP } from './ship'
 
 describe('pricing', () => {
   it('has a price for every sailing and room type', () => {
@@ -95,8 +95,8 @@ describe('cruise content', () => {
   })
 
   it('describes the ship from the profile, with a teaser of other ships that are not bookable', () => {
-    expect(ABOARD_SHIP.guests).toBe(4300)
-    expect(ABOARD_SHIP.accessibleStaterooms).toBe(51)
+    expect(SUN_SHIP.guests).toBe(4300)
+    expect(SUN_SHIP.accessibleStaterooms).toBe(51)
     expect(OTHER_SHIPS.length).toBeGreaterThan(0)
     expect(categoryById('balcony')!.code).toBe('BF')
     expect(categoryById('x')).toBeUndefined()

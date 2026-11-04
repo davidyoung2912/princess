@@ -1,5 +1,5 @@
 import { useShip } from '../../hooks/useShipCatalogue'
-import { ABOARD_SHIP } from '../../domain/ship'
+import { SUN_SHIP } from '../../domain/ship'
 import { SUSTAINABILITY } from '../../domain/postcruise'
 import { t, th, type StringKey } from '../../i18n'
 import { CarbonCard } from '../plan/PrepMoreScreens'
@@ -8,7 +8,7 @@ import { BackLink } from '../onboard/common'
 
 /** Caring for the sea (POS-12): the cruise's distance and fuel, what the ship does, and what a guest can do. Concept figures, to be checked before real use. */
 export function SustainabilityScreen() {
-  const onSun = useShip().id === ABOARD_SHIP.id
+  const onSun = useShip().id === SUN_SHIP.id
   return (
     <div className="page">
       <p>{t('sus.intro')}</p>

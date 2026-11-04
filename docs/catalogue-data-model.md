@@ -60,7 +60,7 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 
 ## What X0b seeded
 
-- 9 regions, 3 ships (Sun `aboard`, Sky and Sapphire `browse`), 99 ports (25 tier A), 32 itinerary patterns, 68 sample 2027 sailings (all `DataStatus = sample`), fares for each ship, and sample stateroom categories for Sky and Sapphire.
+- 9 regions, 3 ships (all `aboard` since AB6; Sky and Sapphire are concept samples), 99 ports (25 tier A), 32 itinerary patterns, 68 sample 2027 sailings (all `DataStatus = sample`), fares for each ship, and sample stateroom categories for Sky and Sapphire.
 - Each sailing is materialised into `ref.Sailings`, `ref.ItineraryDays`, `ref.SailingLegs`, `ref.DressNights` and `ref.SailingFares` by `scripts/catalogue.ts` (`materialiseSailing`). Joined legs share their turnaround day. Ship clock changes are worked out from the real zone offsets on each date (so a March sailing sees US daylight saving).
 - `ref.Sailings.BookingOpen` is 0 for the catalogue sailings and `Pricing.HasPrice` is false for them, so Discover and booking do not offer them until X0c.
 - **The 12 seeded Sun Princess sailings stay as they are** (ids `sun-yyyy-mm-dd`, Western A route) and are backfilled to pattern `carib-west-a`, region `caribbean`, one leg. The catalogue leaves out the 7-night sailings on 17 Jan, 7 Feb, 28 Feb and 21 Mar 2027, which clash with them (the research shows different routes on three of those dates; X0h reconciles). The 14-night sailings on those dates are in the catalogue.
@@ -94,4 +94,4 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 | `SHIP_WEST_ZONE` | 1 | 4 | 0 / 0 | 0 / 0 |
 | literal port ids (`cozumel`, `belize`, `roatan`, `fll`, `sea`) | 63 | 227 | 63 / 219 | 7 / 35 (`sea` is not counted, nor is `src/testing`) |
 
-Lower the ceilings in the test as each phase removes references; The `SHIP` constant is now `ABOARD_SHIP`, the served facts of the one aboard-depth ship (not a singleton for the whole app). What remains of the literal port ids is the authored Western Caribbean sample week of that ship (demo stage ids, photo spots, port contacts, plan B, clearance rows, call-port phrases, scenarios); moving it to served data is later work. Never raise a ceiling.
+Lower the ceilings in the test as each phase removes references; The `SHIP` constant is now `SUN_SHIP`, the served facts of Sun Princess (not a singleton for the whole app). What remains of the literal port ids is the authored Western Caribbean sample week of that ship (demo stage ids, photo spots, port contacts, plan B, clearance rows, call-port phrases, scenarios); moving it to served data is later work. Never raise a ceiling.
