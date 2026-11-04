@@ -1,6 +1,7 @@
 import { portGuideById } from './ports'
-import { sailingById } from './sailings'
+import { portById, sailingById } from './sailings'
 import { SHIP } from './ship'
+import { sailingEntryOf, shipById } from './shipCatalogue'
 
 /** Things a guest can save: a sailing date, a port, or the ship (DIS-08). */
 export type FavouriteKind = 'sailing' | 'port' | 'ship'
@@ -20,7 +21,7 @@ export function parseFavouriteKey(key: unknown): { kind: FavouriteKind; id: stri
 
 /** The address of a saved item inside the app. */
 export function favouritePath(kind: FavouriteKind, id: string): string {
-  return kind === 'sailing' ? `/home/sailings/${id}` : kind === 'port' ? `/home/ports/${id}` : '/home/ship'
+  return kind === 'sailing' ? `/home/sailings/${id}` : kind === 'port' ? `/home/ports/${id}` : `/home/ships/${id}`
 }
 
 /** A link a guest can send, so whoever opens it lands on the same screen. */
@@ -33,7 +34,7 @@ export const toggleKey = (keys: readonly string[], key: string): string[] => (ke
 export function isSavable(key: unknown): boolean {
   const parsed = parseFavouriteKey(key)
   if (!parsed) return false
-  if (parsed.kind === 'sailing') return !!sailingById(parsed.id)
-  if (parsed.kind === 'port') return !!portGuideById(parsed.id)
-  return parsed.id === SHIP.id
+  if (parsed.kind === 'sailing') return !!sailingById(parsed.id) || !!sailingEntryOf(parsed.id)
+  if (parsed.kind === 'port') return !!portGuideById(parsed.id) || !!portById(parsed.id)
+  return parsed.id === SHIP.id || !!shipById(parsed.id)
 }

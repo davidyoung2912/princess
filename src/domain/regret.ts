@@ -1,6 +1,6 @@
 import type { CabinScore } from './cabinScore'
 import { PORT_GUIDES } from './ports'
-import { itinerary, PORTS, shipClockChanges, type Sailing } from './sailings'
+import { itinerary, portById, shipClockChanges, type Sailing } from './sailings'
 
 /**
  * "What I'd regret" cards (N6.2): one plain line about a choice a guest may wish they had made differently, always with the evidence under it.
@@ -43,10 +43,10 @@ export function itineraryRegrets(sailing: Sailing): RegretCard[] {
   const out: RegretCard[] = []
 
   for (const d of days) {
-    if (d.port === 'sea' || d.port === 'fll') continue
+    if (d.port === 'sea' || d.day === 1 || d.day === days.length) continue
     const guide = PORT_GUIDES[d.port]
-    const name = PORTS[d.port]?.name ?? guide?.short ?? d.port
-    if (guide?.landing === 'tender' || PORTS[d.port]?.tender) out.push({ id: `tender-${d.port}`, line: `You may regret leaving ${name} until the last tender.`, evidence: `${name} day ${d.day}: the ship anchors off shore and guests go in by tender boat.` })
+    const name = portById(d.port)?.name ?? guide?.short ?? d.port
+    if (guide?.landing === 'tender' || portById(d.port)?.tender) out.push({ id: `tender-${d.port}`, line: `You may regret leaving ${name} until the last tender.`, evidence: `${name} day ${d.day}: the ship anchors off shore and guests go in by tender boat.` })
     if (d.arrive && d.depart) {
       const stay = minutesBetween(d.arrive, d.depart)
       if (stay > 0 && stay <= 8 * 60) out.push({ id: `short-${d.port}`, line: `You may regret a slow start in ${name}.`, evidence: `${name} day ${d.day}: the ship is in port ${hoursWord(stay)}, ${d.arrive} to ${d.depart} local time.` })

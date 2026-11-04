@@ -77,12 +77,12 @@ describe('discover screens', () => {
     for (const href of ['/home/sailings', '/home/ship', '/home/saved']) expect(home).toContain(`href="${href}"`)
     const sailing = render('/tab/sailing')
     for (const href of ['/home/cruise']) expect(sailing).toContain(`href="${href}"`)
-    expect(decode(render('/home/sailings'))).toContain(t('discover.loading'))
+    expect(decode(render('/home/sailings'))).toContain(t('cat.browseIntro'))
   })
 
   it('shows a real sailing, port and ship, each with its name and a way to save', () => {
     const sailing = decode(render('/home/sailings/sun-2027-03-21'))
-    expect(sailing).toContain('<h2>Mar 21 to Mar 28, 2027</h2>')
+    expect(sailing).toContain('Mar 21 to Mar 28, 2027')
     expect(sailing).toContain('Day 4')
     for (const path of ['/home/ports/belize', '/home/ship']) expect(decode(render(path))).toContain('aria-pressed')
   })

@@ -1,4 +1,4 @@
-import { itinerary, PORTS, type ItineraryDay, type PortId, type Sailing } from './sailings'
+import { itinerary, portById, type ItineraryDay, type PortId, type Sailing } from './sailings'
 import { PORT_COORDS } from './ports'
 
 /** The one cruise (requirements §22.6): 7-night Western Caribbean with Mexico, round trip Fort Lauderdale, on Sun Princess. */
@@ -39,7 +39,7 @@ export interface ItineraryStop extends ItineraryDay {
 }
 
 export function stops(s: Sailing): ItineraryStop[] {
-  return itinerary(s).map((d) => ({ ...d, place: d.port === 'sea' ? 'At sea' : PORTS[d.port].name, tender: d.port !== 'sea' && PORTS[d.port].tender }))
+  return itinerary(s).map((d) => ({ ...d, place: d.port === 'sea' ? 'At sea' : portById(d.port)?.name ?? d.port, tender: d.port !== 'sea' && !!portById(d.port)?.tender }))
 }
 
 /** The ports in sailing order, once each, home port first. */

@@ -6,6 +6,10 @@ import { DEFAULT_QUIZ, QUIZ_BUDGETS, QUIZ_MOBILITY, QUIZ_MUSTS, QUIZ_VIBES, QUIZ
 import { formatMoney } from '../../domain/money'
 import { categoryById } from '../../domain/ship'
 import { REFERENCE_SAILING } from '../../domain/sailings'
+import { NIGHTS_BANDS, browseSailings, matchSailings, monthLabel, monthsOf, rangeOf, type NightsBand, type SailingWish } from '../../domain/catalogueBrowse'
+import { catalogueRegions } from '../../domain/shipCatalogue'
+import { useCatalogue } from '../../hooks/useCatalogue'
+import { regionName, shipName } from '../discover/catalogueNames'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -25,10 +29,17 @@ function Choice<T extends string>({ name, legend, values, value, onChange, label
   )
 }
 
-/** A short "Find my cruise" quiz that ends in a ranked shortlist of room types and a package, with the reasons (DIS-06). The ship, route and nights are fixed, so the quiz picks the room and what to add. */
+/** A short "Find my cruise" quiz that ends in a ranked shortlist of room types and a package, with the reasons (DIS-06). It also picks sailings: the region, month and length the guest names narrow the catalogue to the best few. */
 export function QuizScreen() {
+  useCatalogue()
   const [a, setA] = useState<QuizAnswers>(DEFAULT_QUIZ)
+  const [wish, setWish] = useState<SailingWish>({})
+  const sailings = browseSailings()
+  const regions = catalogueRegions().filter((r) => sailings.some((x) => x.region === r.id))
+  const months = monthsOf(sailings)
   const [shown, setShown] = useState(false)
+  const setW = (key: keyof SailingWish, value: string) => { setShown(false); setWish((w) => ({ ...w, [key]: value || undefined }) as SailingWish) }
+  const matches = shown ? matchSailings(sailings, wish) : []
   const { state } = useMemory()
   const result = shown ? recommend(a, state.prepare.moods) : null
   const toggle = (m: QuizMust) => { setShown(false); setA({ ...a, musts: a.musts.includes(m) ? a.musts.filter((x) => x !== m) : [...a.musts, m] }) }
@@ -50,6 +61,36 @@ export function QuizScreen() {
             </label>
           ))}
         </fieldset>
+        {(regions.length > 1 || months.length > 1) && (
+          <fieldset>
+            <legend>{t('cat.quiz.where')}</legend>
+            {regions.length > 1 && (
+              <div className="field">
+                <label htmlFor="wish-region">{t('cat.region')}</label>
+                <select id="wish-region" value={wish.region ?? ''} onChange={(e) => setW('region', e.target.value)}>
+                  <option value="">{t('cat.anyRegion')}</option>
+                  {regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+            )}
+            {months.length > 1 && (
+              <div className="field">
+                <label htmlFor="wish-month">{t('cat.month')}</label>
+                <select id="wish-month" value={wish.month ?? ''} onChange={(e) => setW('month', e.target.value)}>
+                  <option value="">{t('cat.anyMonth')}</option>
+                  {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="wish-nights">{t('cat.length')}</label>
+              <select id="wish-nights" value={wish.nights ?? ''} onChange={(e) => setW('nights', e.target.value)}>
+                <option value="">{t('cat.anyLength')}</option>
+                {NIGHTS_BANDS.map((b: NightsBand) => <option key={b} value={b}>{t(`cat.nights.${b}` as StringKey)}</option>)}
+              </select>
+            </div>
+          </fieldset>
+        )}
         <Button type="submit">{t('quiz.show')}</Button>
       </form>
       {result && (
@@ -72,6 +113,22 @@ export function QuizScreen() {
                 )
               })}
             </ol>
+          )}
+          {matches.length > 0 && (
+            <section aria-labelledby="quiz-sailings-h">
+              <h3 id="quiz-sailings-h">{th('cat.quiz.sailings')}</h3>
+              <ol className="card-grid">
+                {matches.map((m) => (
+                  <li key={m.sailing.id}>
+                    <Card>
+                      <h4 className="card__title"><Link to={`/home/sailings/${m.sailing.id}`}>{m.sailing.title}</Link></h4>
+                      <p>{rangeOf(m.sailing)} · {shipName(m.sailing.ship)}{m.sailing.region ? ` · ${regionName(m.sailing.region)}` : ''}</p>
+                      <ul className="plain-bullets">{m.reasons.map((r) => <li key={r}>{t(`cat.quiz.why.${r}` as StringKey)}</li>)}</ul>
+                    </Card>
+                  </li>
+                ))}
+              </ol>
+            </section>
           )}
           <p><strong>{t('quiz.package')}</strong> {t(`quiz.pkg.${result.package}` as StringKey)} {t(`quiz.pkgWhy.${result.packageWhy}` as StringKey)}</p>
           {result.notes.length > 0 && <ul className="plain-bullets">{result.notes.map((n) => <li key={n}>{t(`quiz.note.${n}` as StringKey)}</li>)}</ul>}

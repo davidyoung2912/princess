@@ -5,7 +5,7 @@ import type { Cabin } from '../../domain/cabins'
 import { cabinNeighbours, cabinWalks, canFlip, costPerDay, dayOn, dayStrip, flipHint, flipPick, LAND_HOLIDAY_PER_DAY, leftOff, stripSummary, sunByDay } from '../../domain/discoverDelights'
 import { formatMoney } from '../../domain/money'
 import { PORT_COORDS } from '../../domain/ports'
-import { itinerary, PORTS, SAILINGS, sailingNights, type Sailing } from '../../domain/sailings'
+import { itinerary, portById, SAILINGS, sailingNights, type Sailing } from '../../domain/sailings'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -13,8 +13,8 @@ import { Card } from '../Card'
 /** D1-2: one block per day (sea, home, dock, tender) with hours in port, so the shape of the trip is clear at a glance. Words carry the meaning, not colour. */
 export function DayStrip({ sailing }: { sailing: Sailing }) {
   const days = itinerary(sailing)
-  const tenders = new Set(Object.values(PORTS).filter((p) => p.tender).map((p) => p.id))
-  const strip = dayStrip(days, tenders)
+  const tenders = new Set(days.filter((d) => portById(d.port)?.tender).map((d) => d.port))
+  const strip = dayStrip(days, tenders, days[0]?.port)
   const sum = stripSummary(strip)
   return (
     <section aria-labelledby="dl3-strip-h">
@@ -38,7 +38,7 @@ export function OnThatDate({ sailing }: { sailing: Sailing }) {
   const days = itinerary(sailing)
   const [date, setDate] = useState(days[0]?.date ?? '')
   const d = dayOn(days, date)
-  const port = d && d.port !== 'sea' ? PORTS[d.port] : null
+  const port = d && d.port !== 'sea' ? portById(d.port) ?? null : null
   const times = d ? [d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ') : ''
   return (
     <section aria-labelledby="dl3-date-h">
@@ -50,9 +50,9 @@ export function OnThatDate({ sailing }: { sailing: Sailing }) {
         </select>
       </div>
       <p role="status">
-        {!d ? '' : !port ? t('dl3.date.sea') : d.port === 'fll' ? t('dl3.date.home', { port: port.name, what: d.day === 1 ? t('dl3.date.leaves') : t('dl3.date.arrives') }) : t('dl3.date.port', { port: port.name, times })}
+        {!d ? '' : !port ? t('dl3.date.sea') : d.day === 1 || d.day === days.length ? t('dl3.date.home', { port: port.name, what: d.day === 1 ? t('dl3.date.leaves') : t('dl3.date.arrives') }) : t('dl3.date.port', { port: port.name, times })}
       </p>
-      {port && d && d.port !== 'fll' && <p><Link to={`/home/ports/${d.port}`}>{t('dl3.date.guide')}</Link></p>}
+      {port && d && d.day !== 1 && d.day !== days.length && <p><Link to={`/home/ports/${d.port}`}>{t('dl3.date.guide')}</Link></p>}
     </section>
   )
 }

@@ -9,8 +9,8 @@ its tabs, Home and search. Tests in `src/routes/screens.test.ts` and `coverage.t
 
 | Stage | Tabs between Home and Me | Screens used |
 |---|---|---|
-| Dream | Explore (teal) · Ask (pink) | 32 |
-| Discover | Sailing (teal) · Cabin (pink) · Cost (gold) | 38 |
+| Dream | Explore (teal) · Ask (pink) | 37 |
+| Discover | Sailing (teal) · Cabin (pink) · Cost (gold) | 43 |
 | Book | Booking (teal) · Travellers (pink) · Pay (gold) | 43 |
 | Manage | Trip (teal) · Needs (pink) · Group (gold) | 58 |
 | Prebook | Plan (teal) · Prepare (pink) · Group (gold) | 73 |
@@ -19,7 +19,7 @@ its tabs, Home and search. Tests in `src/routes/screens.test.ts` and `coverage.t
 | Sea | Today (teal) · Ship (pink) · People (gold) | 93 |
 | Port | Port (teal) · Ship (pink) · People (gold) | 88 |
 | Disembark | Leave (teal) · Ship (pink) · People (gold) | 48 |
-| Remember | Memories (teal) · Next (pink) · Feedback (gold) | 47 |
+| Remember | Memories (teal) · Next (pink) · Feedback (gold) | 49 |
 
 ## Dream
 
@@ -29,7 +29,7 @@ Six tiles: `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H07` Sailing Dat
 
 **Explore** (teal). Browse the cruise, the sailings and the ports.
 
-`H06` 7-Night Western Caribbean with Mexico; `H07` Sailing Dates; `H08` Sailing Details; `H09` Port Details; `H11` Saved Sailings; `P04` Occasion Starter; `X02` A Day on This Ship
+`H06` The Cruise and Its Route; `H07` Sailing Dates; `H50` Explore by Region and Month; `H08` Sailing Details; `H09` Port Details; `H47` Princess Ships; `H49` Ship Details; `H48` Compare Ships; `H11` Saved Sailings; `H51` Compare Sailings; `P04` Occasion Starter; `X02` A Day on This Ship
 
 **Ask** (pink). Get answers and advice before you decide.
 
@@ -37,7 +37,7 @@ Six tiles: `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H07` Sailing Dat
 
 **Me** (plum). Your details and the sailings you have saved.
 
-`H11` Saved Sailings; plus settings and help (18 screens, every stage).
+`H11` Saved Sailings; `H51` Compare Sailings; plus settings and help (18 screens, every stage).
 
 ## Discover
 
@@ -47,7 +47,7 @@ Six tiles: `H08` Sailing Details; `H12` What the Whole Trip Costs; `H14` Choose 
 
 **Sailing** (teal). Everything about the sailing you are considering.
 
-`H08` Sailing Details; `H07` Sailing Dates; `H09` Port Details; `H06` 7-Night Western Caribbean with Mexico; `H10` Your Ship; `S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `H13` Is This Cruise for Me?; `X02` A Day on This Ship
+`H08` Sailing Details; `H07` Sailing Dates; `H50` Explore by Region and Month; `H09` Port Details; `H06` The Cruise and Its Route; `H10` Your Ship; `H47` Princess Ships; `H49` Ship Details; `H48` Compare Ships; `S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `H13` Is This Cruise for Me?; `X02` A Day on This Ship
 
 **Cabin** (pink). Pick the room that suits you.
 
@@ -59,7 +59,7 @@ Six tiles: `H08` Sailing Details; `H12` What the Whole Trip Costs; `H14` Choose 
 
 **Me** (plum). Your saved sailings, price watches and details.
 
-`H11` Saved Sailings; `P17` Price-Drop Watch; plus settings and help (18 screens, every stage).
+`H11` Saved Sailings; `H51` Compare Sailings; `P17` Price-Drop Watch; plus settings and help (18 screens, every stage).
 
 ## Book
 
@@ -249,7 +249,7 @@ Six tiles: `M16` Trip Memories; `M17` Memory Book and Next Trip; `M19` Rate Your
 
 **Next** (pink). Where to next.
 
-`M22` Book Your Next Cruise; `H06` 7-Night Western Caribbean with Mexico; `H07` Sailing Dates; `H08` Sailing Details; `H09` Port Details; `H11` Saved Sailings; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H04` Ask the Concierge; `P28` Gift Ideas; `P04` Occasion Starter; `M09` Captain's Circle and Rewards
+`M22` Book Your Next Cruise; `H06` The Cruise and Its Route; `H07` Sailing Dates; `H50` Explore by Region and Month; `H08` Sailing Details; `H09` Port Details; `H47` Princess Ships; `H11` Saved Sailings; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H04` Ask the Concierge; `P28` Gift Ideas; `P04` Occasion Starter; `M09` Captain's Circle and Rewards
 
 **Feedback** (gold). Tell us how it went.
 

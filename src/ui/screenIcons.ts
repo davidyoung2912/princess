@@ -5,6 +5,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Accessibility,
+  Compass,
   Activity,
   AlarmClock,
   Ambulance,
@@ -165,7 +166,7 @@ export const SCREEN_ICONS: Record<string, LucideIcon> = {
   H11: Bookmark, H12: Receipt, H13: Scale, H14: BedDouble, H15: Tag, H16: Ticket, H17: Ticket, H18: PenLine, H19: CreditCard, H20: CircleCheck,
   H21: Bell, H22: Sunrise, H23: FileText, H24: TriangleAlert, H25: Clock, H26: ScanSearch, H27: ClipboardCheck, H28: UserCheck, H29: FileCheck,
   H30: Building2, H31: QrCode, H32: LogIn, H33: ListOrdered, H34: Route, H35: MapPinned, H36: CircleDot, H37: Luggage, H38: Globe, H39: LogOut,
-  H40: Briefcase, H41: ListChecks, H42: DoorClosed, H43: Stamp, H44: PlaneTakeoff, H45: Bus, H46: Car, P01: ListChecks, P02: Shirt, P03: Package,
+  H40: Briefcase, H41: ListChecks, H42: DoorClosed, H43: Stamp, H44: PlaneTakeoff, H45: Bus, H46: Car, H47: Ship, H48: Scale, H49: Ship, H50: Compass, H51: Scale, P01: ListChecks, P02: Shirt, P03: Package,
   P04: PartyPopper, P05: Smartphone, P06: Gauge, P07: HeartPulse, P08: Stethoscope, P09: Accessibility, P10: HandHelping, P11: ShieldAlert,
   P12: CircleCheckBig, P13: FileSignature, P14: PiggyBank, P15: Coins, P16: HandCoins, P17: TrendingDown, P18: BadgeDollarSign, P19: Dices,
   P20: Timer, P21: ClipboardPaste, P22: Lightbulb, P23: Banknote, P24: ShoppingBasket, P25: CircleArrowUp, P26: CalendarPlus, P27: Baby, P28: Gift,

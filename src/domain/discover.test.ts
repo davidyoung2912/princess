@@ -139,6 +139,6 @@ describe('favourites', () => {
   it('makes a share link that points at the same screen', () => {
     expect(shareUrl('https://x.test', 'sailing', 'sun-2027-03-21')).toBe('https://x.test/home/sailings/sun-2027-03-21')
     expect(favouritePath('port', 'belize')).toBe('/home/ports/belize')
-    expect(favouritePath('ship', 'sun-princess')).toBe('/home/ship')
+    expect(favouritePath('ship', 'sun-princess')).toBe('/home/ships/sun-princess')
   })
 })

@@ -17,6 +17,9 @@ export const SAILINGS: readonly Sailing[] = []
 export const REFERENCE_SAILING: Sailing = { id: '', departure: '1970-01-01', reference: true }
 // The reference object is kept (and updated in place) when the served table replaces the list, so imports of it stay current.
 
+/** Whether an itinerary day's port is the sea (a day at sea). */
+export const isSeaDay = (port: string): boolean => port === 'sea'
+
 export const sailingById = (id: unknown): Sailing | undefined => SAILINGS.find((s) => s.id === id)
 
 /** A port id from the served catalogue (a short lower-case slug), or `'sea'` for a day at sea. */

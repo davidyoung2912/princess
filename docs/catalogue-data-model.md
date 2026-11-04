@@ -74,6 +74,13 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 - Each itinerary day carries `shipZone`, the zone the ship's clocks follow that day (the server works it out from the day rows); a change of zone between days is a clock change at 02:00. The legacy sailings template carries it too.
 - Not done in X0d: the stage list (`StageId`, `stageStarts`) is still the eight-day route's; `itinerary(sailing)` returns the older template for a sailing whose days are not loaded; port guides, crowd, plan-B and excursions exist only for Cozumel, Belize and Roatán. The old constants remain as adapters (`SHIP`, `CRUISE`, `REFERENCE_SAILING`) for screens not yet moved (X0e).
 
+### Front end (X0e)
+
+- Pure rules in `src/domain/catalogueBrowse.ts` (filter, sort, group by month, leg badges, sailing and ship comparison, region by month grid, the quiz match, route sketch), tested in `catalogueBrowse.test.ts`. Before the catalogue arrives the older sailings stand in.
+- Screens: H07 browse (filters kept in the address), H08 per sailing (price estimate only when the sailing can be booked), H06 itinerary page (`?sailing=`), H10 any ship (`/home/ships/:id`, `/home/ship` for the current one), new H47 ships, H48 compare ships, H50 explore by region and month, H51 compare saved sailings; the quiz also picks sailings by region, month and length. Saved items accept catalogue sailings, ports and ships.
+- English only (CLAUDE.md): no Spanish strings for X0e; the two tests that required Spanish page titles and keys are skipped.
+- Not done: H09 port pages and the aboard-stage screens still read the older route's ports (X0f, X0g); the booking sailing step still lists the older sailings.
+
 ## Guard rail
 
 `src/domain/singleRoute.test.ts` counts single-route references in non-test source and fails if a count rises. Baseline (2026-11-03), with the ceilings after X0d in the last column:

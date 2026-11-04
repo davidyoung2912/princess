@@ -1,5 +1,5 @@
-import { isCallPort, type CallPort, type Pin } from './portDelights'
-import { itinerary, PORTS, type Sailing } from './sailings'
+import type { CallPort, Pin } from './portDelights'
+import { itinerary, portById, type Sailing } from './sailings'
 import type { DiaryEntry, Favourite } from './seaDelights'
 
 /**
@@ -130,7 +130,10 @@ const SKIP_WORDS = new Set(['city', 'port', 'fort', 'the', 'and', 'island', 'bay
 
 /** The places a sailing calls at: each port of call once, in the order of the cruise, as the guest reads them ("Cozumel, Mexico"). */
 export function callPlaces(s: Sailing): string[] {
-  return [...new Set(itinerary(s).flatMap((d) => (isCallPort(d.port) ? [PORTS[d.port].name] : [])))]
+  const days = itinerary(s)
+  // The home port of a round trip is where the guest starts and ends, not a place the cruise calls at.
+  const home = days.length > 1 && days[0].port === days[days.length - 1].port ? days[0].port : null
+  return [...new Set(days.flatMap((d) => (d.port === 'sea' || d.port === home ? [] : [portById(d.port)?.name ?? d.port])))]
 }
 
 /** Which of the places a guest wants are on a route: a want matches when it is inside a place name ("cozumel") or when it names a word of one ("a week in Mexico"). Accents and case do not matter. */

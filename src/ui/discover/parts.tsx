@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { t, type StringKey } from '../../i18n'
-import { formatDate, formatTime, routePoints, ROUTE, stops } from '../../domain/cruise'
+import { formatDate, formatTime, ROUTE, stops } from '../../domain/cruise'
+import { portName, routeOf, routeSketch } from '../../domain/catalogueBrowse'
 import type { Favourites } from '../../hooks/useFavourites'
 import { favouriteKey, shareUrl, type FavouriteKind } from '../../domain/favourites'
 import { type FromPrice, type Quote } from '../../domain/priceShapes'
 import { formatMoney } from '../../domain/money'
-import { PORTS, type Sailing } from '../../domain/sailings'
+import type { ItineraryDay, Sailing } from '../../domain/sailings'
 import { Anchor, Bookmark, BookmarkCheck, Share, Waves } from '../icons'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -73,9 +74,10 @@ export function PriceState({ state, children }: { state: Async<unknown> & { retr
 
 /** The day-by-day plan. The same order sails every week, so dates appear only when a sailing is given. */
 export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: boolean }) {
+  const list = stops(sailing)
   return (
     <ol className="itinerary">
-      {stops(sailing).map((d) => (
+      {list.map((d) => (
         <li key={d.day} className="itinerary__day">
           <div className="itinerary__head">
             <span className="itinerary__num">{t('discover.day', { day: d.day })}</span>
@@ -91,7 +93,7 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
               <p className="muted">
                 {[d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ')}
               </p>
-              {d.port !== 'fll' && (
+              {d.day !== 1 && d.day !== list.length && (
                 <p><span className={`tag${d.tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {d.tender ? t('discover.tender') : t('discover.dock')}</span></p>
               )}
             </>
@@ -105,17 +107,20 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
 const W = 300
 const H = 200
 
-/** A sketch of the route with numbered stops; the list beside it carries the same information in words. */
-export function RouteMap() {
-  const pts = routePoints(W, H)
-  const path = [...ROUTE, 'fll' as const].map((id) => `${pts[id].x},${pts[id].y}`).join(' ')
-  const names = ROUTE.map((id) => (id === 'fll' ? 'Fort Lauderdale' : PORTS[id].name.split(',')[0]))
+/** A sketch of the route with numbered stops; the list beside it carries the same information in words. Given the days of a sailing it draws that route; with none, the older one. */
+export function RouteMap({ days }: { days?: readonly Pick<ItineraryDay, 'port'>[] }) {
+  const ids = days ? routeOf(days) : [...ROUTE]
+  const pts = routeSketch(ids, W, H)
+  if (pts.length === 0) return null
+  const round = days ? days[0]?.port === days[days.length - 1]?.port : true
+  const line = [...pts, ...(round && pts.length > 1 ? [pts[0]] : [])].map((p) => `${p.x},${p.y}`).join(' ')
+  const names = pts.map((p) => portName(p.id))
   return (
     <figure className="route-map">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('discover.mapLabel', { stops: names.join(', ') })}>
-        <polyline points={path} className="route-map__line" fill="none" />
-        {ROUTE.map((id, i) => (
-          <g key={id} transform={`translate(${pts[id].x} ${pts[id].y})`}>
+        <polyline points={line} className="route-map__line" fill="none" />
+        {pts.map((p, i) => (
+          <g key={p.id} transform={`translate(${p.x} ${p.y})`}>
             <circle r="13" className="route-map__dot" />
             <text textAnchor="middle" dominantBaseline="central" className="route-map__num">{i + 1}</text>
           </g>
@@ -123,7 +128,7 @@ export function RouteMap() {
       </svg>
       <figcaption>
         <ol className="route-map__legend">
-          {ROUTE.map((id, i) => <li key={id} value={i + 1}>{names[i]}{id === 'fll' ? ` ${t('discover.startFinish')}` : ''}</li>)}
+          {pts.map((p, i) => <li key={p.id} value={i + 1}>{names[i]}{i === 0 && round ? ` ${t('discover.startFinish')}` : ''}</li>)}
         </ol>
       </figcaption>
     </figure>

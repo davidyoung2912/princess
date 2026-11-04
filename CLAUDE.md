@@ -8,6 +8,7 @@ A new React web site, designed for both mobile phone and desktop use (mobile-fir
 - Oxlint for linting (react, typescript, oxc and jsx-a11y plugins), Vitest for tests.
 - `vite-plugin-pwa` for offline/installable support; `viewport-fit=cover` in `index.html` for notched phones.
 - Framework-free logic belongs in plain TypeScript modules under `src`, separate from React components, so it can be unit tested in a node environment.
+- English only for now: do not add or update non-English (Spanish) strings for new work, and do not worry about translation coverage. Existing Spanish files stay as they are.
 - Aim for WCAG 2.2 AA accessibility (keyboard use, focus-trapping dialogs that close on Escape, reduced-motion support, contrast checks).
 
 ## Backend
