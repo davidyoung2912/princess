@@ -29,7 +29,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
         if (!c.Timeline.Aboard(c.Now)) return [];
         var sea = c.Timeline.AtSea(c.Now);
         var time = Itinerary.LocalAt(c.Now, c.Timeline.ShipZoneAt(c.Now)).Time.ToString("HH:mm");
-        return [.. WaitRules.Venues.Where(v => WaitRules.OpenAt(v, sea, time)).Select(v => v.Id)];
+        return [.. ShipDining.QueueOf(AboardPlans.ShipOfSailing(c.Booking.SailingId)).Where(v => WaitRules.OpenAt(v, sea, time)).Select(v => v.Id)];
     }
 
     private async Task<WaitsViewDto> ViewAsync(Scope c, CancellationToken ct)
@@ -71,7 +71,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     public async Task<WaitsViewDto> JoinQueueAsync(UserRecord actor, string? number, JoinQueueRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, true, ct);
-        var venue = WaitRules.VenueById(body?.VenueId) ?? throw ApiException.Invalid("venue");
+        var venue = ShipDining.QueueOf(AboardPlans.ShipOfSailing(c.Booking.SailingId)).FirstOrDefault(v => v.Id == body?.VenueId) ?? throw ApiException.Invalid("venue");
         if (!c.Confirmed || !OpenNow(c).Contains(venue.Id)) throw ApiException.Conflict("closed");
         var nowMs = Ms(c.Now);
         var mine = (await store.ListQueuesAsync(c.Booking.BookingId, ct)).Where(q => q.VenueId == venue.Id).ToList();
@@ -92,7 +92,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     public async Task<WaitsViewDto> JoinWaitlistAsync(UserRecord actor, string? number, JoinWaitlistRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, true, ct);
-        var v = DiningRules.VenueById(body?.VenueId);
+        var v = DiningRules.VenueOn(AboardPlans.ShipOfSailing(c.Booking.SailingId), body?.VenueId);
         if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
         var who = c.GuestsIn(body.Guests);
         if (who.Count > DiningRules.MaxParty) throw ApiException.Invalid("partySize");

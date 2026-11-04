@@ -15,6 +15,11 @@ public static class ContentReference
 
     public static string Json => Body.Value;
 
+    private static readonly Lazy<System.Text.Json.JsonDocument> Parsed = new(() => System.Text.Json.JsonDocument.Parse(Body.Value));
+
+    /// <summary>One served list or record by its <c>module.NAME</c> key; throws for a key nobody registered.</summary>
+    public static System.Text.Json.JsonElement Value(string key) => Parsed.Value.RootElement.GetProperty("values").GetProperty(key);
+
     private static string Load()
     {
         using var stream = typeof(ContentReference).Assembly.GetManifestResourceStream("reference-content.json")

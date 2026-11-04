@@ -339,7 +339,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     public async Task<List<Slot>> SlotsAsync(UserRecord actor, string? number, string? venueId, int day, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, false, ct);
-        var v = DiningRules.VenueById(venueId);
+        var v = DiningRules.VenueOn(AboardPlans.ShipOfSailing(c.Booking.SailingId), venueId);
         if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, day)) throw ApiException.Invalid("venue");
         var slots = DiningRules.SlotsFor(v.Id, c.Booking.SailingId, day);
         var result = new List<Slot>();
@@ -361,7 +361,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var c = await LoadAsync(actor, number, true, ct);
         RequireDiningOpen(c);
-        var v = DiningRules.VenueById(body?.VenueId);
+        var v = DiningRules.VenueOn(AboardPlans.ShipOfSailing(c.Booking.SailingId), body?.VenueId);
         if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
         var who = GuestsIn(c, body.Guests);
         if (who.Count > DiningRules.MaxParty) throw ApiException.Invalid("partySize");

@@ -30,7 +30,7 @@ public static class WaitRules
         new("alfredo", [["11:30", "22:00"]], [["16:00", "22:00"]]),
     ];
 
-    public static QueueVenue? VenueById(string? id) => Venues.FirstOrDefault(v => v.Id == id);
+    public static QueueVenue? VenueById(string? id) => ShipDining.AnyQueue(id);
 
     private static int Mins(string t) => int.Parse(t[..2]) * 60 + int.Parse(t[3..]);
 

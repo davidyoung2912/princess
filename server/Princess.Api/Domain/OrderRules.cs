@@ -73,27 +73,32 @@ public static class OrderRules
         Item("orange-juice", "Orange juice", "breakfast", 0, Room),
     ];
 
-    public static MenuItem? ItemById(string? id) => Menu.FirstOrDefault(m => m.Id == id);
+    /// <summary>The item with this id on any ship (ids are unique across ships).</summary>
+    public static MenuItem? ItemById(string? id) => ShipDining.AnyItem(id);
 
     public static readonly string[] Kinds = ["delivery", "room", "breakfast"];
 
-    public static IEnumerable<MenuItem> MenuFor(string kind) =>
-        Menu.Where(m => kind == "breakfast" ? m.Group == "breakfast" : m.Group != "breakfast" && m.On.Contains(kind));
+    public static IEnumerable<MenuItem> MenuFor(string kind, string? shipId = null) =>
+        ShipDining.MenuOf(shipId).Where(m => kind == "breakfast" ? m.Group == "breakfast" : m.Group != "breakfast" && m.On.Contains(kind));
 
     /// <summary>What the <c>orderStock</c> scenario takes off the menu before checkout, and what runs out while the order is being made.</summary>
     public static readonly string[] OutAtMenu = ["fish-tacos"];
     public static readonly string[] OutWhilePreparing = ["lava-cake"];
 
+    /// <summary>The same two lists under a ship's own item ids.</summary>
+    public static string[] OutAtMenuOn(string? shipId) => [.. OutAtMenu.Select(i => ShipDining.ItemOn(shipId, i))];
+    public static string[] OutWhilePreparingOn(string? shipId) => [.. OutWhilePreparing.Select(i => ShipDining.ItemOn(shipId, i))];
+
     /// <summary>Places the crew deliver to on deck (ids from the deck plan).</summary>
     public static readonly string[] DeliveryZones = ["lido-pool", "promenade", "sea-view", "dome", "piazza"];
 
-    public static string? LocationProblem(OrderLocation? l)
+    public static string? LocationProblem(OrderLocation? l, string? shipId = null)
     {
         if (l is null) return "badLocation";
         return l.Kind switch
         {
             "cabin" => null,
-            "zone" => l.PlaceId is not null && DeliveryZones.Contains(l.PlaceId) ? null : "badLocation",
+            "zone" => l.PlaceId is not null && ShipDining.ZonesOf(shipId).Contains(l.PlaceId) ? null : "badLocation",
             "other" => l.Text is not null && l.Text.Trim().Length is >= 3 and <= 80 ? null : "badLocation",
             _ => "badLocation",
         };
@@ -107,15 +112,15 @@ public static class OrderRules
     public const double ServiceRate = 0.18;
 
     /// <summary>Why an order cannot be placed, or null. <paramref name="outOfStock"/> lists items the kitchen has already run out of (title <c>unavailable</c>, which the caller answers with a conflict).</summary>
-    public static string? OrderProblem(string kind, IReadOnlyList<OrderLineIn> lines, OrderLocation? location, long tip, long? deliverAt, IReadOnlyList<OrderGuestInfo> guests, IReadOnlyCollection<string> outOfStock)
+    public static string? OrderProblem(string kind, IReadOnlyList<OrderLineIn> lines, OrderLocation? location, long tip, long? deliverAt, IReadOnlyList<OrderGuestInfo> guests, IReadOnlyCollection<string> outOfStock, string? shipId = null)
     {
         if (!Kinds.Contains(kind)) return "badKind";
         if (lines.Count == 0) return "empty";
         if (lines.Count > MaxLines) return "tooMany";
         if (!Tips.Contains(tip)) return "badTip";
-        if (LocationProblem(location) is { } lp) return lp;
+        if (LocationProblem(location, shipId) is { } lp) return lp;
         if (kind == "breakfast" && deliverAt is null) return "noTime";
-        var menu = MenuFor(kind).ToList();
+        var menu = MenuFor(kind, shipId).ToList();
         foreach (var l in lines)
         {
             var m = ItemById(l.ItemId);

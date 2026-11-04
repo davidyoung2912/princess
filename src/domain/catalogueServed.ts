@@ -26,7 +26,7 @@ function excursion(raw: unknown): ExcursionItem | null {
   return { id: r.id, port: r.port as ExcursionPort, name: r.name, summary: r.summary, hours: r.hours, price: r.price, activity: r.activity as ExcursionItem['activity'], wheelchair: r.wheelchair, family: r.family, interests: r.interests as ExcursionItem['interests'], rating: r.rating, reviews: r.reviews, meeting: r.meeting, start: r.start, capacity: r.capacity }
 }
 
-function venue(raw: unknown): Venue | null {
+export function venue(raw: unknown): Venue | null {
   if (!rec(raw)) return null
   const r = raw
   if (!str(r.id, 40) || !str(r.name, 120) || !str(r.kind, 20) || !KINDS.includes(r.kind) || !num(r.cover, 0, 1_000_000) || typeof r.walkIn !== 'boolean') return null
@@ -55,9 +55,15 @@ export function notifyCatalogue(): void {
   for (const f of [...listeners]) f()
 }
 
+const afterServed: (() => void)[] = []
+/** Registers what must run after served reference data lands (the ship's own dining goes back over the Sun Princess lists). */
+export function onServedApplied(f: () => void): void { afterServed.push(f) }
+export function runServedApplied(): void { for (const f of afterServed) f() }
+
 /** Puts the server's catalogue in use (or the authored one back, with `null`) and tells the screens. */
 export function applyCatalogue(c: ServedCatalogue | null): void {
   replaceExcursions(c?.excursions ?? null)
   replaceVenues(c?.venues ?? null)
+  runServedApplied()
   notifyCatalogue()
 }

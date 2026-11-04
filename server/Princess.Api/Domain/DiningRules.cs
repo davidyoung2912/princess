@@ -17,6 +17,7 @@ public sealed record ReservedTable(string VenueId, int Day, string Time, IReadOn
 /// <summary>Dining reservations before sailing, ported from <c>src/domain/dining.ts</c>.</summary>
 public static class DiningRules
 {
+    /// <summary>Sun Princess's rooms; <see cref="ShipDining.VenuesOf"/> gives any ship's.</summary>
     public static readonly IReadOnlyList<Venue> Venues =
     [
         new("eclipse", "Eclipse Dining Room", "main", 0, false, "Deck 7 aft", "Traditional three-course dinner", "smart", "Seared sea bass, braised short rib, a vegetarian tasting plate, and a different dessert every night."),
@@ -27,7 +28,11 @@ public static class DiningRules
         new("alfredo", "Alfredo’s Pizzeria", "casual", 1_499, true, "Deck 9 Piazza", "Neapolitan pizza", "casual", "Margherita, diavola and a pizza of the day, with a dessert to share."),
     ];
 
-    public static Venue? VenueById(string? id) => Venues.FirstOrDefault(v => v.Id == id);
+    /// <summary>The room with this id on any ship (ids are unique across ships).</summary>
+    public static Venue? VenueById(string? id) => ShipDining.AnyVenue(id);
+
+    /// <summary>The room with this id if it is on this ship; a booking can reserve only its own ship's rooms.</summary>
+    public static Venue? VenueOn(string shipId, string? id) => ShipDining.VenueOn(shipId, id);
 
     /// <summary>Dinner nights a reservation can be made for (embarkation evening to the last night, whatever the length of the sailing).</summary>
     public static bool IsDinnerDay(Timeline timeline, int day) => DayKinds.Is(timeline, day, "night");

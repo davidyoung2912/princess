@@ -73,7 +73,7 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
         var room = Shipboard.Stateroom(c, await Shipboard.NeedsStepFreeAsync(accounts, c, ct));
         var guests = await GuestsAsync(c, ct);
         return new OrderMenuDto(
-            open, scenarios.Contains("orderStock") ? [.. OrderRules.OutAtMenu] : [],
+            open, scenarios.Contains("orderStock") ? [.. OrderRules.OutAtMenuOn(AboardPlans.ShipOfSailing(c.Booking.SailingId))] : [],
             [.. c.Party.Select(p => new OrderGuestDto(p.Id, p.Name, p.Age, guests.First(g => g.Id == p.Id).DrinkCapUsd))],
             room.Number, room.Deck, open ? OrderRules.BreakfastMornings(c.Timeline, c.Now) : [], HealthRules.Isolating(await ReportTimesAsync(c, ct), c.Now), open && !actor.IsSupervised && c.Confirmed);
     }
@@ -96,7 +96,8 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
         var stock = scenarios.Contains("orderStock");
         var lines = (body.Lines ?? []).Select(l => new OrderLineIn(l.ItemId ?? "", l.Qty, [.. l.Extras ?? []], l.Guest, l.Note)).ToList();
         var kind = body.Kind ?? "";
-        var problem = OrderRules.OrderProblem(kind, lines, body.Location, body.Tip, body.DeliverAt, guests, stock ? OrderRules.OutAtMenu : []);
+        var ship = AboardPlans.ShipOfSailing(c.Booking.SailingId);
+        var problem = OrderRules.OrderProblem(kind, lines, body.Location, body.Tip, body.DeliverAt, guests, stock ? OrderRules.OutAtMenuOn(ship) : [], ship);
         if (problem == "unavailable") throw ApiException.Conflict("unavailable");
         if (problem is not null) throw ApiException.Invalid(problem);
         if (kind == "breakfast" && !OrderRules.BreakfastMornings(c.Timeline, c.Now, 8).Any(m => m.Slots.Any(s => s.At == body.DeliverAt))) throw ApiException.Invalid("noTime");
@@ -114,7 +115,7 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
                 {
                     Seq = i, ItemId = m.Id, Qty = l.Qty, GuestUserId = c.PersonById(l.Guest)!.UserId, Extras = string.Join(',', l.Extras), Note = note,
                     UnitCents = m.Cents + l.Extras.Sum(e => m.Extras.First(x => x.Id == e).Cents),
-                    Unavailable = stock && OrderRules.OutWhilePreparing.Contains(m.Id),
+                    Unavailable = stock && OrderRules.OutWhilePreparingOn(ship).Contains(m.Id),
                 };
             })],
         };
@@ -170,7 +171,7 @@ public sealed class OrderService(ScopeLoader scopes, IShipboardStore store, IAcc
     public async Task<OrderDto> MoveAsync(UserRecord actor, string? number, Guid id, MoveOrderRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
-        if (OrderRules.LocationProblem(body?.Location) is { } problem) throw ApiException.Invalid(problem);
+        if (OrderRules.LocationProblem(body?.Location, AboardPlans.ShipOfSailing(c.Booking.SailingId)) is { } problem) throw ApiException.Invalid(problem);
         var o = await OrderAsync(c, id, ct);
         var guests = await GuestsAsync(c, ct);
         var reports = await ReportTimesAsync(c, ct);

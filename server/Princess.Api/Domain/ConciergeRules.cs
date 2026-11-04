@@ -147,7 +147,7 @@ public static class ConciergeRules
                 return Ok(new { excursions = found }, new CitationDto("Shore excursions", "/plan/excursions"));
             }
             case "list_restaurants":
-                return Ok(new { restaurants = DiningRules.Venues.Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn }) }, new CitationDto("Dining", "/plan/dining"));
+                return Ok(new { restaurants = ShipDining.VenuesOf(ctx.SailingId is null ? null : AboardPlans.ShipOfSailing(ctx.SailingId)).Select(v => new { id = v.Id, name = v.Name, kind = v.Kind, cover_usd_per_person = Usd(v.Cover), walk_in = v.WalkIn }) }, new CitationDto("Dining", "/plan/dining"));
             case "build_day":
                 return BuildDay(input, ctx);
             case "my_trip":

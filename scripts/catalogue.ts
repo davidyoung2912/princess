@@ -263,6 +263,9 @@ function merge(table: string, keys: string[], cols: string[], rows: string[][], 
 /** Pre-quoted SQL rows of the other ships' decks, muster stations and sample staterooms (built by `ship-cabin-rows.ts`, which reads the client's cabin generator). */
 export interface ShipCabinRows { decks: string[][]; stations: string[][]; cabins: string[][] }
 export const NO_SHIP_CABINS: ShipCabinRows = { decks: [], stations: [], cabins: [] }
+/** Pre-quoted SQL rows of the other ships' dining rooms, menu items (room service and dishes) and menu extras (built by `ship-venue-data.ts`). */
+export interface ShipVenueRows { venues: string[][]; menu: string[][]; extras: string[][] }
+export const NO_SHIP_VENUES: ShipVenueRows = { venues: [], menu: [], extras: [] }
 
 const GUIDE: Record<PortTier, string> = { A: 'full', B: 'short', C: 'link' }
 
@@ -275,7 +278,7 @@ function profileJson(s: CatalogueShip): string {
 }
 
 /** Renders the generated SQL: the catalogue tables, the new columns, the materialised sailings and the backfill of the seeded ones. */
-export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_SHIP_CABINS): string {
+export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_SHIP_CABINS, dining: ShipVenueRows = NO_SHIP_VENUES): string {
   const categories = c.categories ?? []
   const material = c.sailings.map((s) => ({ s, m: materialiseSailing(c, s) }))
   const out: string[] = [
@@ -310,6 +313,11 @@ export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_S
     ...merge('ref.Decks', ['ShipId', 'Number'], ['ShipId', 'Number', 'Name', 'Summary'], own.decks, ['Name'], `${own.decks.length} decks of the other ships`),
     ...merge('ref.MusterStations', ['Id'], ['Id', 'ShipId', 'Name', 'Place', 'Deck'], own.stations, ['ShipId', 'Name', 'Place', 'Deck'], `${own.stations.length} sample muster stations of the other ships`),
     ...merge('ref.Cabins', ['ShipId', 'Number'], ['ShipId', 'Number', 'CategoryId', 'Deck', 'Section', 'Side', 'Accessible', 'Connecting', 'MusterStationId'], own.cabins, ['CategoryId', 'Deck', 'Section', 'Side', 'Accessible', 'Connecting', 'MusterStationId'], `${own.cabins.length} sample staterooms of the other ships (generated, deterministic; not the real deck plan)`),
+  )
+  out.push(
+    ...merge('ref.Venues', ['Id'], ['Id', 'Kind', 'Name', 'Cuisine', 'Deck', 'DressCode', 'Capacity', 'Walkin', 'OpenFrom', 'OpenTo', 'CoverCents', 'Description', 'Hours', 'ShipId'], dining.venues, ['Kind', 'Name', 'Cuisine', 'Deck', 'DressCode', 'Capacity', 'Walkin', 'OpenFrom', 'OpenTo', 'CoverCents', 'Description', 'Hours', 'ShipId'], `${dining.venues.length} sample dining rooms of the other ships`),
+    ...merge('ref.MenuItems', ['Id'], ['Id', 'VenueId', 'MenuGroup', 'Name', 'Description', 'PriceCents', 'Dietary', 'Orderable', 'Stock', 'Alcohol', 'Packaged', 'OnMenus', 'SubstituteId', 'ShipId'], dining.menu, ['VenueId', 'MenuGroup', 'Name', 'Description', 'PriceCents', 'Dietary', 'Orderable', 'Alcohol', 'Packaged', 'OnMenus', 'SubstituteId', 'ShipId'], `${dining.menu.length} sample room-service items and dishes of the other ships`),
+    ...merge('ref.MenuExtras', ['Id'], ['Id', 'ItemId', 'Label', 'Cents'], dining.extras, ['ItemId', 'Label', 'Cents'], `${dining.extras.length} menu extras of the other ships`),
   )
   out.push(
     ...merge(

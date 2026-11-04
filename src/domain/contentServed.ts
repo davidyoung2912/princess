@@ -18,7 +18,7 @@ import './room'
 import './orders'
 import './menus'
 import { setContent } from './content'
-import { notifyCatalogue } from './catalogueServed'
+import { notifyCatalogue, runServedApplied } from './catalogueServed'
 
 /** The content from the server: `{ version, values: { 'module.NAME': list or record } }`. */
 export interface ServedContent { version: string; values: Record<string, unknown[] | Record<string, unknown>> }
@@ -38,5 +38,6 @@ export function normalizeContent(raw: unknown): ServedContent | null {
 /** Puts the served content in use and tells the screens. */
 export function applyContent(c: ServedContent): void {
   setContent(c.values)
+  runServedApplied()
   notifyCatalogue()
 }

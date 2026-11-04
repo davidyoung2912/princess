@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts", "scripts/persona-seed.ts", "scripts/gen-persona-seed.ts", "scripts/check-persona-seed.ts", "scripts/ship-cabin-rows.ts", "scripts/gen-catalogue-seed.ts", "scripts/check-catalogue-seed.ts"]
+  "include": ["src", "scripts/reference-seed.ts", "scripts/gen-reference-seed.ts", "scripts/check-reference-seed.ts", "scripts/persona-seed.ts", "scripts/gen-persona-seed.ts", "scripts/check-persona-seed.ts", "scripts/ship-cabin-rows.ts", "scripts/ship-venue-data.ts", "scripts/gen-ship-venues.ts", "scripts/gen-catalogue-seed.ts", "scripts/check-catalogue-seed.ts"]
 }
