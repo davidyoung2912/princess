@@ -19,6 +19,8 @@ import { FeedWaiting } from '../FeedWaiting'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
 import { wishOf } from '../../domain/autopilot'
+import { itinerary } from '../../domain/sailings'
+import { StanleyDaily } from '../ai/StanleyDaily'
 
 /** Morning briefing and evening preview (XA-04). It is made when the guest opens it, is short, shows where each line came from, and can be read aloud. Nothing is sent. */
 export function BriefingScreen() {
@@ -59,6 +61,7 @@ export function BriefingScreen() {
   return (
     <div className="page">
       <BackLink to="/" label={t('route.home')} />
+      <StanleyDaily day={dp.itineraryDay} of={itinerary(sailing).length} />
       <p>{t('brief.intro')}</p>
       <div className="button-row" role="group" aria-label={t('route.briefing')}>
         {(['morning', 'evening'] as const).map((k) => <Button key={k} variant={kind === k ? 'primary' : 'secondary'} aria-pressed={kind === k} onClick={() => { setKind(k); setCopied(false) }}>{t(k === 'morning' ? 'brief.morning' : 'brief.evening')}</Button>)}

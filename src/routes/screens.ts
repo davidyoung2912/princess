@@ -234,6 +234,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'X03', path: '/at-sea/:token', titleKey: 'screen.X03.title', subtextKey: 'screen.X03.subtext', family: 'X' },
   { id: 'X04', path: '/shared/:token', titleKey: 'screen.X04.title', subtextKey: 'screen.X04.subtext', family: 'X' },
   { id: 'X05', path: '/account', titleKey: 'screen.X05.title', subtextKey: 'screen.X05.subtext', family: 'X' },
+  { id: 'X06', path: '/home/mode', titleKey: 'screen.X06.title', subtextKey: 'screen.X06.subtext', family: 'X' },
 ]
 
 /** Settings and help: the same group under Me at every stage, and always plum. */

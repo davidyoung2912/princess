@@ -2,16 +2,20 @@ import { t, type StringKey } from '../../i18n'
 import type { JourneyStage } from '../../routes/hubs'
 import { BOOK } from './book'
 import { DISCOVER } from './discover'
+import { DISEMBARK } from './disembark'
 import { DREAM } from './dream'
+import { EMBARK } from './embark'
 import { GET_TO_SHIP } from './getToShip'
 import { MANAGE } from './manage'
+import { PORT } from './port'
 import { PREBOOK } from './prebook'
+import { SEA } from './sea'
 import type { LibraryEntry } from './types'
 
 export type { LibraryEntry } from './types'
 
-/** Every authored entry, in the order of the journey: Dream to Book, then Manage, Prebook and Get to the ship. */
-export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK, ...MANAGE, ...PREBOOK, ...GET_TO_SHIP]
+/** Every authored entry, in the order of the journey: Dream to Book, then Manage, Prebook and Get to the ship, then Embark, Sea, Port and Disembark. */
+export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK, ...MANAGE, ...PREBOOK, ...GET_TO_SHIP, ...EMBARK, ...SEA, ...PORT, ...DISEMBARK]
 
 export const questionOf = (e: LibraryEntry): string => t(`stanley.q.${e.id}` as StringKey)
 export const answerOf = (e: LibraryEntry): string => t(`stanley.a.${e.id}` as StringKey)

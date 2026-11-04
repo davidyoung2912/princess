@@ -45,6 +45,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/home/offers': 'offers; deals; discounts; sale',
   '/home/updates': 'changes to my trip; updates; what changed; news',
   '/home/ask': 'ask your cruise; questions; answers; how does it work',
+  '/home/mode': 'guided day; stanley leads; what now today; day mode; boarding day; port day; last morning; first four hours',
   '/home/briefing': 'briefing; morning briefing; evening briefing; today summary',
   '/home/summary': 'summary; plain english; simple words; explain my booking',
   '/home/disruption': 'something changed; disruption; problem with trip; plan b',

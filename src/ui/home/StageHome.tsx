@@ -8,6 +8,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { RecentCard } from './RecentCard'
 import { StanleyNext } from '../ai/StanleyNext'
+import { StanleyModeCard } from '../ai/StanleyModeCard'
 import { LinkButton } from '../Button'
 import { SCREEN_ICONS } from '../screenIcons'
 import { useNow } from '../../hooks/useDemo'
@@ -42,6 +43,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
   if (steps.length === 0) return <RecentCard />
   return (
     <>
+      <StanleyModeCard />
       <StanleyNext stage={stage} facts={facts} />
       {!urgent && <RecentCard />}
       <section aria-labelledby="stage-next-h" className="stage-next">

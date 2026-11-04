@@ -55,13 +55,13 @@ public static class PushRules
             if (AllAboardSteps.Where(s => left <= s).Cast<int?>().Min() is { } step)
             {
                 list.Add(new($"allAboard:{day.Date}:{step}", "allAboard", "critical", true, 100, "/ship/port",
-                    "All aboard soon", $"All aboard is at {day.AllAboardShip} ship time. About {left} minutes left.",
+                    "Stanley: time to head back", $"All aboard is at {day.AllAboardShip} ship time, in about {left} minutes. I would start back now.",
                     new() { ["port"] = day.Port, ["time"] = day.AllAboardShip, ["minutes"] = left }));
             }
             if (i.SomeoneNotBack && left <= i.AlertBefore)
             {
                 list.Add(new($"backAboard:{day.Date}", "backAboard", "critical", false, 90, "/ship/port",
-                    "Is everyone back aboard?", $"Someone in your group is not marked back. All aboard is at {day.AllAboardShip}.",
+                    "Stanley: is everyone back?", $"Someone in your group is not marked back yet. All aboard is at {day.AllAboardShip}. Shall we check?",
                     new() { ["port"] = day.Port, ["time"] = day.AllAboardShip }));
             }
         }
@@ -69,14 +69,14 @@ public static class PushRules
         foreach (var d in i.Disruptions)
         {
             list.Add(new($"disruption:{d.Id}", "disruption", "critical", d.Severity == "critical", d.Severity == "critical" ? 95 : 70, "/home/updates",
-                "A change to your trip", "The ship has made a change that affects you. Open the app to see it.",
+                "Stanley: a change to your trip", "The ship has made a change that affects you. Open the app and I will show you.",
                 new() { ["id"] = d.Id, ["severity"] = d.Severity }));
         }
 
         foreach (var c in i.Changes.Where(c => i.Watched.Contains(c.EventId) && c.Day >= i.DayNumber && c.Day <= i.DayNumber + 1))
         {
             list.Add(new($"change:{c.EventId}:{c.Kind}:{c.Start}", "scheduleChange", "critical", false, 80, "/home/updates",
-                c.Kind == "cancelled" ? "An event you saved is cancelled" : "An event you saved has moved",
+                c.Kind == "cancelled" ? "Stanley: an event you saved is cancelled" : "Stanley: an event you saved has moved",
                 c.Reason ?? "Open the app to see the new time.",
                 new() { ["event"] = c.EventId, ["change"] = c.Kind, ["start"] = c.Start ?? "" }));
         }
@@ -85,7 +85,7 @@ public static class PushRules
         {
             var overdue = i.Payment == "overdue";
             list.Add(new($"payment:{i.Payment}:{i.FinalDue}", "payment", "payments", overdue, overdue ? 92 : 60, "/me/payments",
-                overdue ? "Your payment is overdue" : "Your payment is due soon", $"The final payment date is {i.FinalDue}.",
+                overdue ? "Stanley: your payment is overdue" : "Stanley: your payment is due soon", $"The final payment date is {i.FinalDue}. I would pay what is due first.",
                 new() { ["date"] = i.FinalDue, ["overdue"] = overdue ? 1 : 0 }));
         }
 
@@ -93,7 +93,7 @@ public static class PushRules
         if (i.ReminderAt is { } at && TripRules.ToMs(i.Now) >= at)
         {
             list.Add(new($"reminder:{at}", "reminder", "offers", false, 20, "/home",
-                "A week has passed", "You asked to think things over. Your notes are in the app whenever you are ready.",
+                "Stanley: a week has passed", "You asked to think things over. Your notes are in the app whenever you are ready.",
                 new() { ["at"] = at }));
         }
 
@@ -101,7 +101,7 @@ public static class PushRules
         if (i.PostcardIds is { Count: > 0 } cards)
         {
             list.Add(new($"postcard:{cards[0]}", "reminder", "offers", false, 20, "/home",
-                "A postcard from you", "You left yourself a note for this trip. It is on Home whenever you are ready.",
+                "Stanley: a postcard from you", "You left yourself a note for this trip. It is on Home whenever you are ready.",
                 new() { ["postcard"] = cards[0] }));
         }
 

@@ -38,6 +38,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/home/updates', titleKey: 'route.updates', tab: 'home', phase: 11 },
   { path: '/home/ask', titleKey: 'route.ask', tab: 'home', phase: 25 },
   { path: '/home/briefing', titleKey: 'route.briefing', tab: 'home', phase: 27 },
+  { path: '/home/mode', titleKey: 'route.mode', tab: 'home', phase: 27 },
   { path: '/home/summary', titleKey: 'route.summary', tab: 'home', phase: 27 },
   { path: '/home/disruption', titleKey: 'route.disruption', tab: 'home', phase: 22 },
   { path: '/home/delayed', titleKey: 'route.delayed', tab: 'home', phase: 22 },
