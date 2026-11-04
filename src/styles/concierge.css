@@ -102,6 +102,15 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-moment__added { align-self: center; }
 .stanley-coach { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); border-inline-start: 4px solid var(--primary); }
 .stanley-coach__text { flex: 1; min-width: 0; }
+/* The tour spotlight: the page is dimmed except for a hole round the part being described. */
+.coach-backdrop { position: fixed; inset: 0; z-index: 60; }
+.coach-backdrop[data-lit='no'] { background: rgba(0, 0, 0, 0.6); }
+.coach-hole { position: fixed; border-radius: var(--radius-card); box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6); outline: 3px solid #fff; pointer-events: none; transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s; }
+.coach-dialog { position: fixed; inset: 0; outline: none; }
+.coach-note { position: fixed; left: 50%; transform: translateX(-50%); width: min(30rem, calc(100vw - 2rem)); box-sizing: border-box; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); background: var(--surface-info); max-height: calc(100vh - 2rem); overflow: auto; }
+.coach-note--bottom { bottom: max(1rem, env(safe-area-inset-bottom)); }
+@media (prefers-reduced-motion: reduce) { .coach-hole { transition: none; } }
+:root[data-motion='reduced'] .coach-hole { transition: none; }
 @keyframes stanley-stamp { from { transform: rotate(-8deg) scale(1.8); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
 :root[data-motion='reduced'] .stanley-moment__stamp { animation: none; }
 
