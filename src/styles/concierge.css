@@ -52,3 +52,21 @@
 @keyframes stanley-dot { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .stanley__typing i { animation: none; opacity: 0.7; } }
 :root[data-motion='reduced'] .stanley__typing i { animation: none; opacity: 0.7; }
+
+/* Stanley's question chips, answer sheet and empty states (SG1). */
+.stanley-chips { margin-top: var(--space-4); }
+.stanley-chips__title { font-size: var(--fs-caption); margin: 0 0 var(--space-2); color: var(--text-muted); }
+.stanley-chips__list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip-q { min-height: var(--target-min); padding: var(--space-1) var(--space-3); font: inherit; font-size: var(--fs-caption); color: var(--text); background: var(--surface-info); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-pill); cursor: pointer; text-align: left; }
+.chip-q:hover { background: var(--sky-tint); }
+.chip-q--more { background: var(--bg); font-weight: 600; }
+.stanley-answer { display: flex; gap: var(--space-3); align-items: flex-start; }
+.stanley-answer p { margin: 0 0 var(--space-2); }
+.stanley-answer__q { font-weight: 600; }
+.stanley-answer__face { width: 2.75rem; height: 2.75rem; border-radius: 50%; flex: none; }
+.stanley-answer__rate { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-2); }
+.stanley-empty { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); }
+.stanley-empty img { width: 3rem; height: 3rem; border-radius: 50%; flex: none; }
+.stanley-empty p { margin: 0 0 var(--space-2); }
+.stanley-empty p:last-child { margin: 0; }
+img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
-import { MAX_MESSAGE } from '../../ai/guard'
+import { MAX_MESSAGE, screen } from '../../ai/guard'
+import { answerOf, matchQuestion } from '../../ai/stanleyLibrary'
+import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { askStanley, cooldownSeconds, getStanleyThread, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t, type StringKey } from '../../i18n'
@@ -30,6 +32,7 @@ function wording(turn: StanleyTurn): string {
  */
 export function StanleyDialog({ onClose }: { onClose: () => void }) {
   const [draft, setDraft] = useState('')
+  const { stage } = useJourneyPosition()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
@@ -55,7 +58,9 @@ export function StanleyDialog({ onClose }: { onClose: () => void }) {
     setStanleyThread(withUser)
     setDraft('')
     setBusy(true)
-    const turn = await askStanley(sendStanley, withUser)
+    // The cheap tier: a strong match with an authored answer is shown without calling the model. The safety screen comes first, so an emergency is never answered from the library.
+    const known = screen(asked.text) ? null : matchQuestion(asked.text, stage)
+    const turn: StanleyTurn = known ? { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } : await askStanley(sendStanley, withUser)
     const reply: StanleyMessage = { id: `a-${at}-${withUser.length}`, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())

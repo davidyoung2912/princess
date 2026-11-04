@@ -39,7 +39,18 @@ export interface Settings {
   nudgesPerDay: NudgeBudget
   /** The guest agreed to keep their private notes and health details (medical card, access needs, allergy flag, child brief, journal) in their account so every device shows them. Off until they say so. */
   syncPrivate: boolean
+  /** How much Stanley speaks up (Quiet Stanley). Chosen per device. Calm and simple mode cap it at "asked" (see `stanleyLevelFor`). */
+  stanleyLevel: StanleyLevel
 }
+
+/** Chatty: notes, chips and extra tips. Helpful: notes and chips. Asked: only the button. Off: no Stanley at all. */
+export const STANLEY_LEVELS = ['chatty', 'helpful', 'asked', 'off'] as const
+export type StanleyLevel = (typeof STANLEY_LEVELS)[number]
+export const isStanleyLevel = (v: unknown): v is StanleyLevel => STANLEY_LEVELS.includes(v as StanleyLevel)
+
+/** What Stanley actually does: calm mode and simple mode keep him to "asked" (never more than the guest chose, and Off stays Off). */
+export const stanleyLevelFor = (s: Pick<Settings, 'stanleyLevel' | 'calm' | 'simple'>): StanleyLevel =>
+  (s.calm || s.simple) && (s.stanleyLevel === 'chatty' || s.stanleyLevel === 'helpful') ? 'asked' : s.stanleyLevel
 
 /** The measuring system most readers of each language expect; used only as a starting point when the language changes. */
 export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metric' }
@@ -47,7 +58,7 @@ export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metr
 /** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
 export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful' }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -91,6 +102,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     chargeCheck: isChargeCheck(o.chargeCheck) ? o.chargeCheck : defaults.chargeCheck,
     nudgesPerDay: isNudgeBudget(o.nudgesPerDay) ? o.nudgesPerDay : defaults.nudgesPerDay,
     syncPrivate: typeof o.syncPrivate === 'boolean' ? o.syncPrivate : defaults.syncPrivate,
+    stanleyLevel: isStanleyLevel(o.stanleyLevel) ? o.stanleyLevel : defaults.stanleyLevel,
   }
 }
 

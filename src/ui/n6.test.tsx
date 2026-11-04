@@ -40,6 +40,7 @@ describe('clear-to-use sentences (N6)', () => {
     expect(html).toContain('Drop-off at the cruise terminal')
     expect(html).toContain('1850 Eller Drive')
     expect(html).toContain('Copy the Card')
-    expect(html.split('<main')[1]).not.toContain('<img')
+    // The tip's small round face of Stanley is decoration, not a picture of the meeting point.
+    expect(html.split('<main')[1].replace(/<img class="tip__icon"[^>]*>/, '')).not.toContain('<img')
   })
 })

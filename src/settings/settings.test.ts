@@ -8,7 +8,7 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true }
+    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true, stanleyLevel: 'chatty' }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
@@ -49,7 +49,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false }, false)).toEqual({
+    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false, stanleyLevel: 'helpful' }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-calm': 'off', 'data-captions': 'off', 'data-light': 'on',
     })
   })

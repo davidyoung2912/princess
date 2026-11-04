@@ -19,6 +19,9 @@ import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
 import { StanleyDialog } from './ai/StanleyDialog'
+import { StanleyChips } from './ai/StanleyChips'
+import { stanleyLevelFor } from '../settings/settings'
+import { useSettings } from '../hooks/useSettings'
 import { PageHeader } from './PageHeader'
 import { TipCard } from './TipCard'
 import { tipIdFor } from '../settings/tips'
@@ -41,6 +44,8 @@ export function Shell() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [stanleyOpen, setStanleyOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('')
+  const [settings] = useSettings()
+  const stanleyOff = stanleyLevelFor(settings) === 'off'
   usePushSync()
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
@@ -91,9 +96,11 @@ export function Shell() {
             <Search aria-hidden="true" />
             <span>{t('shell.search')}</span>
           </Link>
-          <button type="button" className="topbar__stanley" onClick={() => setStanleyOpen(true)} aria-label={t('stanley.button')}>
-            <img src={stanley} alt="" width="192" height="192" />
-          </button>
+          {!stanleyOff && (
+            <button type="button" className="topbar__stanley" onClick={() => setStanleyOpen(true)} aria-label={t('stanley.button')}>
+              <img src={stanley} alt="" width="192" height="192" />
+            </button>
+          )}
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
             <Help aria-hidden="true" />
             <span>{th('help.button')}</span>
@@ -122,10 +129,12 @@ export function Shell() {
           <Search aria-hidden="true" />
           <span>{t('shell.search')}</span>
         </Link>
-        <button type="button" className="tabs__stanley" onClick={() => setStanleyOpen(true)}>
-          <img src={stanley} alt="" width="192" height="192" />
-          <span>{th('stanley.button')}</span>
-        </button>
+        {!stanleyOff && (
+          <button type="button" className="tabs__stanley" onClick={() => setStanleyOpen(true)}>
+            <img src={stanley} alt="" width="192" height="192" />
+            <span>{th('stanley.button')}</span>
+          </button>
+        )}
         <button type="button" className="tabs__help" onClick={() => setHelpOpen(true)}>
           <Help aria-hidden="true" />
           <span>{th('help.button')}</span>
@@ -138,6 +147,7 @@ export function Shell() {
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>
+        {route && !route.public && !landing && <StanleyChips screenId={screen?.id} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
       {helpOpen && <HelpSheet onClose={() => setHelpOpen(false)} />}

@@ -1470,6 +1470,8 @@ Built once, used on every screen. Each is a small React component over the exist
 
 SG1 can start now, in parallel with the catalogue phase X0, because it needs no new data.
 
+**SG1 built (2026-11-03), as X9a.** What exists: the 40-entry library (`src/ai/stanleyLibrary/`: Dream 13, Discover 14, Book 13; words in `en.ts` as `stanley.q.*` and `stanley.a.*`), `chipsFor` (up to three chips, the screen's own first), `matchQuestion` (free text matched on the device; a strong match is answered with no model call, after the safety screen), `StanleyChips` with the answer sheet and "Was that helpful?", `StanleyEmpty` and `StanleyOops`, the Quiet Stanley setting (`stanleyLevel`: chatty, helpful, asked, off; per device; calm and simple mode cap it at asked; Off hides his buttons), and `TipCard` now wearing his face and obeying the level. **Not done:** the five poses (no art yet, so his one small picture is used everywhere), the dock's speech dot (needs reasons worth a dot, so it waits for SG3 and SG5), the "Was that helpful?" answer is not recorded anywhere yet, Spanish (English only for now), and `StanleyEmpty` and `StanleyOops` are built but not yet placed on screens.
+
 ---
 
 ## 14. Illustration briefs

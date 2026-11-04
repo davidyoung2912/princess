@@ -4,12 +4,14 @@ import { Card } from './Card'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
 import { DisplaySettings } from './DisplaySettings'
+import { StanleySettings } from './StanleySettings'
 import { TipsSettings } from './TipsSettings'
 
 export function SettingsScreen() {
   return (
     <div className="page">
       <DisplaySettings />
+      <StanleySettings />
       <TipsSettings />
       <DataSettings />
       <DiagnosticsSettings />
