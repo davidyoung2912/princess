@@ -3,12 +3,15 @@ import type { JourneyStage } from '../../routes/hubs'
 import { BOOK } from './book'
 import { DISCOVER } from './discover'
 import { DREAM } from './dream'
+import { GET_TO_SHIP } from './getToShip'
+import { MANAGE } from './manage'
+import { PREBOOK } from './prebook'
 import type { LibraryEntry } from './types'
 
 export type { LibraryEntry } from './types'
 
-/** Every authored entry, Dream then Discover then Book. */
-export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK]
+/** Every authored entry, in the order of the journey: Dream to Book, then Manage, Prebook and Get to the ship. */
+export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK, ...MANAGE, ...PREBOOK, ...GET_TO_SHIP]
 
 export const questionOf = (e: LibraryEntry): string => t(`stanley.q.${e.id}` as StringKey)
 export const answerOf = (e: LibraryEntry): string => t(`stanley.a.${e.id}` as StringKey)

@@ -7,6 +7,7 @@ import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { t, th, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { RecentCard } from './RecentCard'
+import { StanleyNext } from '../ai/StanleyNext'
 import { LinkButton } from '../Button'
 import { SCREEN_ICONS } from '../screenIcons'
 import { useNow } from '../../hooks/useDemo'
@@ -41,6 +42,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
   if (steps.length === 0) return <RecentCard />
   return (
     <>
+      <StanleyNext stage={stage} facts={facts} />
       {!urgent && <RecentCard />}
       <section aria-labelledby="stage-next-h" className="stage-next">
         <h2 id="stage-next-h">{th('stage.next.title')}</h2>

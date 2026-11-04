@@ -7,10 +7,10 @@ import { LIBRARY, answerOf, chipsFor, matchQuestion, questionOf } from '.'
 const staticPaths = new Set(SCREEN_LIST.map((s) => s.path).filter((p) => !p.includes(':')))
 
 describe('Stanley library', () => {
-  it('has 40 entries with unique ids across Dream, Discover and Book', () => {
-    expect(LIBRARY).toHaveLength(40)
-    expect(new Set(LIBRARY.map((e) => e.id)).size).toBe(40)
-    for (const stage of ['dream', 'discover', 'book'] as const) expect(LIBRARY.filter((e) => e.stages.includes(stage)).length).toBeGreaterThanOrEqual(13)
+  it('has 79 entries with unique ids across six stages', () => {
+    expect(LIBRARY).toHaveLength(79)
+    expect(new Set(LIBRARY.map((e) => e.id)).size).toBe(79)
+    for (const stage of ['dream', 'discover', 'book', 'manage', 'prebook', 'getToShip'] as const) expect(LIBRARY.filter((e) => e.stages.includes(stage)).length).toBeGreaterThanOrEqual(13)
   })
 
   it('has a question and an answer for every entry, in his voice', () => {
@@ -38,7 +38,7 @@ describe('Stanley library', () => {
     const chips = chipsFor('H14', 'discover')
     expect(chips).toHaveLength(3)
     expect(chips[0].screens).toContain('H14')
-    expect(chipsFor('H14', 'sea')).toEqual([])
+    expect(chipsFor('H14', 'port')).toEqual([])
     expect(chipsFor(undefined, 'book')).toHaveLength(3)
   })
 

@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { Anchor } from '../icons'
 import { SaveShare } from './parts'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** A port guide: how you get ashore and how accessible it is come first, then things to do and sample excursions (DIS-05). */
 export function PortScreen() {
@@ -32,7 +33,7 @@ export function PortScreen() {
   return (
     <div className="page">
       <h2>{name}</h2>
-      <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{day && <> <span className="muted">{t('discover.visitedDay', { day: day.day })}</span></>}</p>
+      <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{tender && <StanleyExplain term="tender" />}{day && <> <span className="muted">{t('discover.visitedDay', { day: day.day })}</span></>}</p>
       <SaveShare kind="port" id={guide.id} name={name} favourites={favourites} />
 
       <section aria-labelledby="access-h">

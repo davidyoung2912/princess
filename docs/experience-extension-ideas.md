@@ -1474,6 +1474,8 @@ SG1 can start now, in parallel with the catalogue phase X0, because it needs no 
 
 **SG2 built (2026-11-03).** What exists: `StanleyAsk` (one question at a time, tap to answer, Back, Skip, "Show all questions"; logic in `src/ai/stanleyAsk.ts`), used by the Find My Cruise quiz (all eight questions including region, month and length; opens as a conversation at Helpful and Chatty, the old form at Only when asked, Off, calm and simple mode), by "Tell me which one" on the cabin chooser (five yes or no questions that set the filters, which stay editable), and a one-line "why we ask" note on each booking step except Pay. **Not done:** booking as a full conversation (the steps stay forms with a note, because the forms hold names, dates and food needs that are safer typed in a form), the Moment on confirm (SG4), and the Spanish text.
 
+**SG3 built (2026-11-03).** What exists: `StanleyNext` at the top of Home at every stage that uses the stage Home (logic in `src/ai/stanleyNext.ts`: an urgent reason first, then at sea and in port from 18:00 a look at tomorrow, then the first undone step, then "up to date"; shown at Helpful and Chatty), `StanleyExplain` (a "?" button that opens a plain explanation; 20 terms in `src/ai/stanleyTerms.ts`; shown at every level except Off) placed on the cost table (taxes, gratuities) and on the tender tags of the sailing itinerary and the port page, and 39 more library entries (`manage.ts`, `prebook.ts`, `getToShip.ts`, 13 each; 79 in all). **Not done:** "?" on the other screens named in 13.4 (booking fields, dining, boarding, final payment), the Home fallback screens that do not use the stage Home (essentials mode, the combined landing), a dismiss for StanleyNext, and the Spanish text.
+
 ---
 
 ## 14. Illustration briefs

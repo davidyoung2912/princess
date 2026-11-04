@@ -11,6 +11,7 @@ import type { ItineraryDay, Sailing } from '../../domain/sailings'
 import { Anchor, Bookmark, BookmarkCheck, Share, Waves } from '../icons'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
+import { StanleyExplain } from '../ai/StanleyExplain'
 import type { Async } from '../../hooks/useAsync'
 
 /** Save and Share for one thing. The name is read out but not repeated on screen; `aria-pressed` carries saved or not. */
@@ -94,7 +95,7 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
                 {[d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ')}
               </p>
               {d.day !== 1 && d.day !== list.length && (
-                <p><span className={`tag${d.tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {d.tender ? t('discover.tender') : t('discover.dock')}</span></p>
+                <p><span className={`tag${d.tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {d.tender ? t('discover.tender') : t('discover.dock')}</span>{d.tender && <StanleyExplain term="tender" />}</p>
               )}
             </>
           )}
@@ -148,8 +149,8 @@ export function PriceBreakdown({ quote }: { quote: Quote }) {
           <tr key={l.key}>
             <th scope="row">
               {t(`discover.line.${l.key}` as StringKey, { count: l.guests })}
-              {l.key === 'gratuities' && <small className="muted">{t('discover.line.gratuitiesNote')}</small>}
-              {l.key === 'taxes' && <small className="muted">{t('discover.line.taxesNote')}</small>}
+              {l.key === 'gratuities' && <><StanleyExplain term="gratuities" /><small className="muted">{t('discover.line.gratuitiesNote')}</small></>}
+              {l.key === 'taxes' && <><StanleyExplain term="taxes" /><small className="muted">{t('discover.line.taxesNote')}</small></>}
             </th>
             <td className="num">{formatMoney(l.cents)}</td>
           </tr>

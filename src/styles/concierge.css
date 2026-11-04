@@ -81,3 +81,10 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-ask__opt[aria-pressed='true'] { background: var(--primary); color: var(--on-primary); border-color: transparent; }
 .stanley-why { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); background: var(--surface-info); border-radius: var(--radius-card); }
 .stanley-why p { margin: 0; }
+
+/* Stanley Next on Home and the ? explainers (SG3). */
+.stanley-next { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); }
+.stanley-next p { margin: 0; flex: 1; }
+.stanley-next__face { width: 2.25rem; height: 2.25rem; border-radius: 50%; flex: none; }
+.explain-btn { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; margin-block: calc(var(--target-min) / -4); color: var(--link, var(--primary)); background: none; border: 0; border-radius: 50%; cursor: pointer; vertical-align: middle; }
+.explain-btn:hover { background: var(--sky-tint); }
