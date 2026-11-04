@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { ALERT_KINDS, planSpeech, portSnapshot, READ_RATES, VIBRATION, walkSpeech, allergyChain, askShip, BREATH, DOCTOR_TELL, easyLeaveBy, EASY_EXTRA_MIN, farewellDone, fareIndicator, FAREWELL_MOMENTS, flightAdvice, followState, FOLLOW_DAYS, GROUND_STEPS, giftsFor, HABITS, notesFor, poolRide, bagNight, SWEEP_ITEMS, sweepAllDone, tierForHabits, TRAVELLERS, RIDE_NAMES_MAX, type FinishState, type Traveller } from '../../domain/finishMore'
+import { ALERT_KINDS, planSpeech, portSnapshot, READ_RATES, VIBRATION, walkSpeech, allergyChain, BREATH, DOCTOR_TELL, easyLeaveBy, EASY_EXTRA_MIN, farewellDone, fareIndicator, FAREWELL_MOMENTS, flightAdvice, followState, FOLLOW_DAYS, GROUND_STEPS, giftsFor, HABITS, notesFor, poolRide, bagNight, SWEEP_ITEMS, sweepAllDone, tierForHabits, TRAVELLERS, RIDE_NAMES_MAX, type FinishState, type Traveller } from '../../domain/finishMore'
 import { guidePickerPorts, knowledgeOf } from '../../domain/portTier'
 import { useItinerary } from '../../hooks/useShipCatalogue'
 import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
@@ -212,26 +212,6 @@ export function FollowUpScreen() {
           <ul>{DOCTOR_TELL.map((k) => <li key={k}>{t(`follow.tell.${k}` as StringKey)}</li>)}</ul>
           <Human /></Card>
       )}
-    </Page>
-  )
-}
-
-/** Ask the ship (S6-26): facts that are not a service request, from authored content. */
-export function AskShipScreen() {
-  const [q, setQ] = useState('')
-  const [asked, setAsked] = useState<string | null>(null)
-  const fact = asked === null ? null : askShip(asked)
-  const submit = (e: FormEvent) => { e.preventDefault(); if (q.trim()) setAsked(q) }
-  return (
-    <Page intro="askShip.intro" back={SHIP_BACK}>
-      <form onSubmit={submit}>
-        <Field label={t('askShip.label')} value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} />
-        <Button type="submit">{t('ask.send')}</Button>
-      </form>
-      <section aria-live="polite">
-        {asked !== null && (fact ? <Card><p><strong>{fact.q}</strong></p><p>{fact.a}</p></Card> : <Banner kind="info" title={t('askShip.unknown')}><p>{t('askShip.unknownBody')}</p><LinkButton to="/me/contact" variant="secondary">{t('route.contact')}</LinkButton></Banner>)}
-      </section>
-      <p className="muted">{t('askShip.note')}</p>
     </Page>
   )
 }

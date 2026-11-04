@@ -1,6 +1,6 @@
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { EXCURSIONS, excursionById } from '../../domain/excursions'
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { clubById } from '../../domain/family'
@@ -110,7 +110,9 @@ export function GroupPollScreen() {
   const who = me?.id ?? ''
   const board = state.board
   const set = (change: (b: BoardState) => BoardState) => update((s) => ({ ...s, board: change(s.board) }))
-  const [question, setQuestion] = useState('')
+  // Stanley can hand a question here for the group; it is filled in, and the guest adds the choices and creates the poll.
+  const [params] = useSearchParams()
+  const [question, setQuestion] = useState(() => (params.get('q') ?? '').slice(0, 80))
   const [options, setOptions] = useState('')
   const [idea, setIdea] = useState('')
   const [problem, setProblem] = useState(false)

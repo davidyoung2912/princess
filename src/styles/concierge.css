@@ -112,3 +112,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-mode__now h3 { margin: var(--space-2) 0; font-size: var(--fs-h2, 1.5rem); }
 .stanley-mode__line { font-size: 1.125rem; margin: 0 0 var(--space-2); }
 .stanley-mode__time { margin: 0 0 var(--space-3); font-weight: 600; }
+.stanley__actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0 0; }
+.stanley__follow { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0 0; padding: 0; }
+.stanley__chip { min-height: 2.75rem; padding: var(--space-1) var(--space-2); border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: var(--fs-caption); cursor: pointer; text-align: left; }
+.stanley__confirm { margin-top: var(--space-1); }

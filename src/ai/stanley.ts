@@ -1,4 +1,6 @@
 import { MAX_MESSAGE, screen, type Handoff } from './guard'
+import type { AnswerAction, StanleySource } from './stanleyRoute'
+import type { Citation } from './types'
 
 /** What Stanley's reply was, as the server names it. The front end words everything but an answer from its own strings. */
 export type StanleyKind = 'answer' | 'blocked' | 'offtopic' | 'handoff' | 'unavailable'
@@ -13,6 +15,16 @@ export interface StanleyMessage {
   kind?: StanleyKind | 'unreachable'
   handoff?: Handoff | null
   fallback?: StanleyFallback | null
+  /** On an assistant message: which source answered, so the guest can see it. */
+  source?: StanleySource
+  /** The screens an answer used, shown as links. */
+  citations?: Citation[]
+  /** Buttons under the answer: a way on, the screens used, the group. */
+  actions?: AnswerAction[]
+  /** The words of a request to change something, shown with a preview and a Confirm button under the answer. */
+  confirm?: string
+  /** The library entry that answered, so follow-up chips can follow on from it. */
+  entryId?: string
 }
 
 export interface StanleyTurn {

@@ -19,6 +19,7 @@ import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
 import { StanleyDialog } from './ai/StanleyDialog'
+import { subscribeStanleyRequest, takeStanleyRequest } from '../ai/stanleyOpen'
 import { StanleyChips } from './ai/StanleyChips'
 import { stanleyLevelFor } from '../settings/settings'
 import { useSettings } from '../hooks/useSettings'
@@ -44,6 +45,8 @@ export function Shell() {
   const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [stanleyOpen, setStanleyOpen] = useState(false)
+  const [prefill, setPrefill] = useState('')
+  useEffect(() => subscribeStanleyRequest(() => { const r = takeStanleyRequest(); if (r) { setPrefill(r.prefill); setStanleyOpen(true) } }), [])
   const [announcement, setAnnouncement] = useState('')
   const [settings] = useSettings()
   const stanleyOff = stanleyLevelFor(settings) === 'off'
@@ -153,7 +156,7 @@ export function Shell() {
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
       {helpOpen && <HelpSheet screenId={screen?.id} onClose={() => setHelpOpen(false)} />}
-      {stanleyOpen && <StanleyDialog onClose={() => setStanleyOpen(false)} />}
+      {stanleyOpen && <StanleyDialog prefill={prefill} onClose={() => { setStanleyOpen(false); setPrefill('') }} />}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { clearLog, logToText, readLog } from '../diagnostics/log'
-import { t, th } from '../i18n'
+import { clearTiers, freeShare, readTiers, TIERS } from '../diagnostics/stanleyTiers'
+import { t, th, type StringKey } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
 
@@ -12,6 +13,8 @@ const store = (): Storage | null => {
 export function DiagnosticsSettings() {
   const [entries, setEntries] = useState(() => readLog(store()))
   const [note, setNote] = useState('')
+  const [tiers, setTiers] = useState(() => readTiers(store()))
+  const share = freeShare(tiers)
 
   async function copy() {
     try {
@@ -42,6 +45,15 @@ export function DiagnosticsSettings() {
           </div>
         </>
       )}
+      <h3>{t('diag.stanley.title')}</h3>
+      <p>{t('diag.stanley.intro')}</p>
+      {TIERS.some((k) => tiers[k] > 0) ? (
+        <>
+          <ul>{TIERS.map((k) => <li key={k}>{t(`diag.stanley.${k}` as StringKey)}: {tiers[k]}</li>)}</ul>
+          {share !== null && <p>{t('diag.stanley.share', { percent: share })}</p>}
+          <Button variant="secondary" onClick={() => { clearTiers(store()); setTiers(readTiers(store())) }}>{t('diag.stanley.clear')}</Button>
+        </>
+      ) : <p>{t('diag.stanley.none')}</p>}
       <p role="status">{note}</p>
     </Card>
   )

@@ -108,12 +108,12 @@ describe('H8 slice D promises', () => {
     expect(en['ashore.verify']).toMatch(/official travel advice/)
   })
   it('never guesses and keeps gifts away from task screens', () => {
-    expect(en['askShip.unknown']).toMatch(/do not have an answer/)
+    expect(en['stanley.door.ship']).toMatch(/says when he does not know/)
     expect(read('src/ui/home/HomeScreen.tsx') + read('src/ui/finish/DisembarkScreen.tsx')).not.toMatch(/giftsFor|GiftsScreen/)
   })
   it('keeps the budget and the safety exception on Home, and the confirm rule on voice and item requests', () => {
     expect(homeNudges({ budget: 0, quiet: true, backAboardMin: 30, storm: 'higher', stormPhase: 'near', proposals: 3, briefing: true }).map((n) => n.id)).toEqual(['backAboard'])
-    const ask = read('src/ui/home/AskScreen.tsx')
+    const ask = read('src/ui/ai/StanleyConfirm.tsx')
     expect(ask).toMatch(/onClick=\{\(\) => void confirmItem\(\)\}/)
     expect(ask).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
     expect(en['ask.speakNote']).toMatch(/nothing happens until you confirm/)
@@ -199,7 +199,7 @@ describe('H8 wire-through promises', () => {
     expect(parseExcursionRequest('add the reef snorkel to my cart')).toBeNull() // two tours match: ask, do not guess
     expect(parseExcursionRequest('please add an excursion')).toBeNull()
     expect(parseExcursionRequest('what is the reef snorkel like')).toBeNull()
-    const ask = read('src/ui/home/AskScreen.tsx')
+    const ask = read('src/ui/ai/StanleyConfirm.tsx')
     expect(ask).toMatch(/onClick=\{\(\) => void confirmExcursion\(\)\}/)
     expect(ask).not.toMatch(/excursions\.(checkout|pay)/)
     expect(en['ask.excNote']).toMatch(/Nothing is booked or charged/)
