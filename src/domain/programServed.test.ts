@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
-import { applyProgram, normalizeProgram } from './programServed'
+import { activateProgram, activeProgramShip, applyProgram, clearPrograms, keepProgram, loadShipProgram, normalizeProgram, programOf, setProgramLoader } from './programServed'
+import { isTicketed } from './tickets'
+import { shipProgrammes, shipProgrammesFileText } from '../../scripts/ship-programme-data'
 import { EVENTS, PLAN_CHANGES } from './program'
 
 const wire = (): Record<string, any> => ({
@@ -48,5 +51,60 @@ describe('applyProgram', () => {
     expect(EVENTS).toBe(events)
     expect(EVENTS.map((e) => e.id)).toEqual(['a', 'b'])
     expect(PLAN_CHANGES).toHaveLength(2)
+  })
+})
+
+describe('a ship\'s programme in use', () => {
+  const saved = { events: [...EVENTS], changes: [...PLAN_CHANGES] }
+  afterEach(() => { clearPrograms(); setProgramLoader(null); applyProgram({ version: 'back', events: saved.events, changes: saved.changes }); clearPrograms() })
+
+  const sky = () => normalizeProgram({ ...wire(), version: 'sky' })!
+
+  it('puts the chosen ship\'s events where the screens read them', () => {
+    keepProgram('sky-princess', sky())
+    expect(activateProgram('sky-princess')).toBe(true)
+    expect(EVENTS.map((e) => e.id)).toEqual(['a', 'b'])
+    expect(activeProgramShip()).toBe('sky-princess')
+  })
+
+  it('does not let the Sun programme arriving later replace the ship in use', () => {
+    keepProgram('sky-princess', sky())
+    activateProgram('sky-princess')
+    applyProgram({ version: 'sun', events: saved.events, changes: saved.changes })
+    expect(EVENTS.map((e) => e.id)).toEqual(['a', 'b'])
+    expect(programOf('sun-princess')?.version).toBe('sun')
+    expect(activateProgram('sun-princess')).toBe(true)
+    expect(EVENTS.length).toBe(saved.events.length)
+  })
+
+  it('refuses a ship that is not loaded and loads it once', async () => {
+    expect(activateProgram('sky-princess')).toBe(false)
+    let calls = 0
+    setProgramLoader(async () => { calls++; return wire() })
+    const both = await Promise.all([loadShipProgram('sky-princess'), loadShipProgram('sky-princess')])
+    expect(both).toEqual([true, true])
+    expect(calls).toBe(1)
+    expect(await loadShipProgram('sky-princess')).toBe(true)
+    expect(calls).toBe(1)
+  })
+
+  it('keeps nothing from a malformed answer', async () => {
+    setProgramLoader(async () => ({ version: 'x', events: [], planChanges: [] }))
+    expect(await loadShipProgram('sky-princess')).toBe(false)
+    expect(programOf('sky-princess')).toBeUndefined()
+  })
+})
+
+describe('the programme of the other ships', () => {
+  it('matches the file the server embeds (run npm run shipprogrammes:gen when this fails)', () => {
+    expect(readFileSync(new URL('../../server/Princess.Api/Content/ship-programmes.json', import.meta.url), 'utf8')).toBe(shipProgrammesFileText())
+  })
+
+  it('has no event in a room Sun Princess alone has', () => {
+    for (const p of shipProgrammes()) {
+      expect(p.events.some((e) => ['arena', 'dome', 'live', 'eclipse', 'crooners'].includes(e.placeId))).toBe(false)
+      expect(new Set(p.events.map((e) => e.id)).size).toBe(p.events.length)
+      expect(p.events.every((e) => isTicketed(e.id) || !['late-show'].includes(e.id))).toBe(true)
+    }
   })
 })

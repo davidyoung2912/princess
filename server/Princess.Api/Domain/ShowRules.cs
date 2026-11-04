@@ -9,27 +9,14 @@ public static class ShowRules
     public const int MaxSeats = 8;
     private const int Adult = 18;
 
-    private sealed record Def(string Id, string[] When, string Start, string Title, string PlaceId, string Age, int Capacity, bool AfterAllAboard);
+    /// <summary>The seats of each ticketed event, by event id (the same on every ship; a ship's programme says which of them it runs).</summary>
+    private static readonly IReadOnlyDictionary<string, int> Capacity = new Dictionary<string, int>
+    {
+        ["welcome-show"] = 900, ["cooking"] = 40, ["art-talk"] = 80, ["spa-tour"] = 20, ["stage-show"] = 700, ["stage-early"] = 700,
+        ["dome-show"] = 300, ["late-show"] = 300, ["wine"] = 24, ["farewell-show"] = 900, ["port-show"] = 700, ["port-quiet"] = 12,
+    };
 
-    private static readonly string[] Sea = ["sea"];
-    private static readonly string[] PortDays = ["port"];
-
-    private static readonly Def[] Defs =
-    [
-        new("welcome-show", ["embark"], "20:30", "Welcome aboard show", "arena", "all", 900, false),
-        new("cooking", Sea, "11:00", "Cooking demo with the executive chef", "eclipse", "all", 40, false),
-        new("art-talk", ["seaMid"], "15:00", "Art talk: the ship’s collection", "piazza", "all", 80, false),
-        new("spa-tour", ["seaMid"], "11:30", "Spa tour and tasting", "lotus", "adults", 20, false),
-        new("stage-show", ["sea"], "20:30", "Main stage production", "arena", "all", 700, false),
-        new("stage-early", ["firstSea"], "18:30", "Main stage production, early show", "arena", "all", 700, false),
-        new("dome-show", ["seaMid", "portOdd"], "22:00", "Acrobatic show in the Dome", "dome", "all", 300, false),
-        new("wine", ["seaMid"], "16:00", "Wine tasting", "bellinis", "adults", 24, false),
-        new("farewell-show", ["last"], "19:30", "Farewell show", "arena", "all", 900, false),
-        new("port-show", PortDays, "20:30", "Main stage production", "arena", "all", 700, true),
-        new("port-quiet", PortDays, "17:45", "Quiet hour in the spa", "lotus", "adults", 12, true),
-    ];
-
-    public static bool IsTicketed(string? eventId) => Defs.Any(d => d.Id == eventId);
+    public static bool IsTicketed(string? eventId) => eventId is not null && Capacity.ContainsKey(eventId);
 
     public static bool Exists(string? eventId) => IsTicketed(eventId);
 
@@ -46,24 +33,24 @@ public static class ShowRules
     /// <summary>Seats other guests hold: between 55% and 100% of the room.</summary>
     public static int TakenByOthers(string eventId, int day)
     {
-        var cap = Defs.First(d => d.Id == eventId).Capacity;
+        var cap = Capacity[eventId];
         if (Full.Contains($"{eventId}|{day}")) return cap;
         var share = 55 + (int)(Fnv($"{eventId}|{day}") % 46);
         return Math.Min(cap, cap * share / 100);
     }
 
     /// <summary>Seats left on one day. <paramref name="heldOnSailing"/> counts every active ticket on the sailing, not only the caller's.</summary>
-    public static int SeatsLeft(string eventId, int day, int heldOnSailing) => Math.Max(0, Defs.First(d => d.Id == eventId).Capacity - TakenByOthers(eventId, day) - heldOnSailing);
+    public static int SeatsLeft(string eventId, int day, int heldOnSailing) => Math.Max(0, Capacity[eventId] - TakenByOthers(eventId, day) - heldOnSailing);
 
     /// <summary>The ticketed events on a day, in time order. A port-day event is listed only once the ship is back aboard.</summary>
-    public static List<ShowEvent> On(Timeline timeline, int day)
+    public static List<ShowEvent> On(Timeline timeline, int day, string? shipId = null)
     {
         if (day is < 1 or > Itinerary.MaxDay) return [];
         var date = timeline.Departure.AddDays(day - 1);
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);
         var list = new List<ShowEvent>();
-        foreach (var d in Defs.Where(d => DayKinds.Runs(timeline, day, d.When)))
+        foreach (var d in ShipPrograms.Of(shipId).Where(d => IsTicketed(d.Id) && DayKinds.Runs(timeline, day, d.When)))
         {
             var start = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(d.Start, "HH:mm"), zone);
             if (d.AfterAllAboard && aboard is { } a && start < a) continue;
@@ -72,7 +59,7 @@ public static class ShowRules
         return [.. list.OrderBy(e => e.StartAt).ThenBy(e => e.Title, StringComparer.Ordinal)];
     }
 
-    public static ShowEvent? Find(Timeline timeline, string eventId, int day) => On(timeline, day).FirstOrDefault(e => e.Id == eventId);
+    public static ShowEvent? Find(Timeline timeline, string eventId, int day, string? shipId = null) => On(timeline, day, shipId).FirstOrDefault(e => e.Id == eventId);
 
     /// <summary>The first reason a seat cannot be reserved, or null. <paramref name="holders"/> are people who already hold a seat for this event and day.</summary>
     public static string? Problem(ShowEvent e, DateTime now, IReadOnlyCollection<(Guid Id, int Age)> guests, IReadOnlyCollection<Guid> holders)

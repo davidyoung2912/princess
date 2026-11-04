@@ -43,8 +43,66 @@ export function normalizeProgram(raw: unknown): ServedProgram | null {
   return { version: raw.version, events: es, changes: cs }
 }
 
-/** Puts the served programme in use and tells the screens. */
-export function applyProgram(p: ServedProgram): void {
+const SUN = 'sun-princess'
+const KEPT = new Map<string, ServedProgram>()
+/** The ship whose programme is in use; empty until a screen chooses one (the programme that arrives with the reference tables, Sun Princess's, shows meanwhile). */
+let active = ''
+
+export const programOf = (shipId: string): ServedProgram | undefined => KEPT.get(shipId)
+export const activeProgramShip = (): string => active
+
+function put(p: ServedProgram): void {
   replaceProgram({ events: p.events, changes: p.changes })
   notifyCatalogue()
 }
+
+/** Puts the programme that arrives with the reference tables (Sun Princess's) in use, unless another ship's is the one in use. Kept as Sun Princess's either way. */
+export function applyProgram(p: ServedProgram): void {
+  KEPT.set(SUN, p)
+  if (active === '' || active === SUN) put(p)
+}
+
+/** Keeps a ship's programme; if it is the one in use it is put in use at once. */
+export function keepProgram(shipId: string, p: ServedProgram): void {
+  KEPT.set(shipId, p)
+  if (active === shipId) put(p)
+}
+
+/** Puts a ship's programme in use for the screens. False when that ship's has not been loaded (the one in use stays). */
+export function activateProgram(shipId: string): boolean {
+  const p = KEPT.get(shipId)
+  if (!p) return false
+  if (active === shipId) return true
+  active = shipId
+  put(p)
+  return true
+}
+
+type Loader = (shipId: string) => Promise<unknown>
+let loader: Loader | null = null
+const inFlight = new Map<string, Promise<boolean>>()
+
+/** What fetches a ship's programme (the runtime sets it); without one nothing is loaded. */
+export function setProgramLoader(next: Loader | null): void { loader = next }
+
+/** Asks for a ship's programme unless it is already kept. True when it is kept afterwards. */
+export function loadShipProgram(shipId: string): Promise<boolean> {
+  if (KEPT.has(shipId)) return Promise.resolve(true)
+  const running = inFlight.get(shipId)
+  if (running) return running
+  if (!loader) return Promise.resolve(false)
+  const p = loader(shipId)
+    .then((raw) => {
+      const v = normalizeProgram(raw)
+      if (!v) return false
+      keepProgram(shipId, v)
+      return true
+    })
+    .catch(() => false)
+    .finally(() => { inFlight.delete(shipId) })
+  inFlight.set(shipId, p)
+  return p
+}
+
+/** Forgets every kept programme (tests). */
+export function clearPrograms(): void { KEPT.clear(); inFlight.clear(); active = '' }

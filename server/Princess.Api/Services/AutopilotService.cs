@@ -21,14 +21,16 @@ public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgram
     public async Task<WeekDto> PlanAsync(AutopilotPlanRequest? body, CancellationToken ct)
     {
         if (body is null || !AutopilotRules.Valid(body.Prefs)) throw ApiException.Invalid("badAutopilot");
-        return AutopilotRules.OptimiseWeek(await DepartureAsync(body.SailingId, "badAutopilot", ct), body.Prefs!);
+        var timeline = await DepartureAsync(body.SailingId, "badAutopilot", ct);
+        return AutopilotRules.OptimiseWeek(timeline, body.Prefs!, AboardPlans.ShipOfSailing(body.SailingId!));
     }
 
     /// <summary>One day: the plan for the guest's wishes, what could join it, and the ship's own changes today.</summary>
     public async Task<DayPlanDto> DayAsync(DayPlanRequest? body, CancellationToken ct)
     {
         if (body is null || body.Day is < 1 or > Itinerary.MaxDay || !DayPlanRules.Valid(body.Wish)) throw ApiException.Invalid("badDayPlan");
-        return DayPlanRules.Plan(await DepartureAsync(body.SailingId, "badDayPlan", ct), body.Day, body.Wish!, programChanges.Current());
+        var timeline = await DepartureAsync(body.SailingId, "badDayPlan", ct);
+        return DayPlanRules.Plan(timeline, body.Day, body.Wish!, programChanges.Current(), AboardPlans.ShipOfSailing(body.SailingId!));
     }
 
     /// <summary>
@@ -45,6 +47,6 @@ public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgram
         var departure = DateOnly.FromDateTime(sailing.Departure);
         var timeline = TimelineBook.For(sailing.Id, departure);
         var days = timeline.Days.Select(d => new TrialDayChoice(d.Day, d.Port, d.Port == "sea" ? "At sea" : Itinerary.PortById(d.Port).Name)).ToList();
-        return new TrialDayDto(days, DayPlanRules.Plan(timeline, body.Day, body.Wish!, programChanges.Current()));
+        return new TrialDayDto(days, DayPlanRules.Plan(timeline, body.Day, body.Wish!, programChanges.Current(), AboardPlans.ShipOfSailing(sailing.Id)));
     }
 }

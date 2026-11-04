@@ -61,15 +61,16 @@ public static class ProgramRules
         Ev("port-quiet", Port, "17:45", 60, "Quiet hour in the spa", "lotus", "adults", "wellness", 2500, true),
     ];
 
-    public static ProgramReferenceDto Reference(IReadOnlyList<PlanChange> feed)
+    public static ProgramReferenceDto Reference(IReadOnlyList<PlanChange> feed, string? shipId = null)
     {
-        var text = string.Join('|', Events.Select(e => $"{e.Id}:{string.Join(',', e.When)}:{e.Start}:{e.Minutes}:{e.Title}:{e.PlaceId}:{e.Age}:{e.Interest}:{e.Extra}:{e.AfterAllAboard}"))
+        var events = ShipPrograms.Of(shipId);
+        var text = string.Join('|', events.Select(e => $"{e.Id}:{string.Join(',', e.When)}:{e.Start}:{e.Minutes}:{e.Title}:{e.PlaceId}:{e.Age}:{e.Interest}:{e.Extra}:{e.AfterAllAboard}"))
             + "#" + string.Join('|', feed.Select(c => $"{c.EventId}:{c.Day}:{c.Kind}:{c.Start}:{c.Reason}"));
         var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
-        return new(version, Events, feed);
+        return new(version, events, feed);
     }
 
-    public static ShipEvent? ById(string? id) => Events.FirstOrDefault(e => e.Id == id);
+    public static ShipEvent? ById(string? id, string? shipId = null) => ShipPrograms.Of(shipId).FirstOrDefault(e => e.Id == id);
 
     /// <summary>A change the ship makes mid-day (OB-08): the scenario "Daily plan changes mid-day".</summary>
     public static readonly IReadOnlyList<PlanChange> PlanChanges =
@@ -79,7 +80,7 @@ public static class ProgramRules
     ];
 
     /// <summary>The events on a day of the cruise, in time order, with any mid-day changes applied when <paramref name="changes"/> is on. A port-day event is listed only once the ship is back aboard.</summary>
-    public static List<DatedEvent> On(Timeline timeline, int day, bool changes, IReadOnlyList<PlanChange>? feed = null)
+    public static List<DatedEvent> On(Timeline timeline, int day, bool changes, IReadOnlyList<PlanChange>? feed = null, string? shipId = null)
     {
         feed ??= PlanChanges;
         if (day is < 1 or > Itinerary.MaxDay) return [];
@@ -87,7 +88,7 @@ public static class ProgramRules
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);
         var list = new List<DatedEvent>();
-        foreach (var e in Events.Where(e => DayKinds.Runs(timeline, day, e.When)))
+        foreach (var e in ShipPrograms.Of(shipId).Where(e => DayKinds.Runs(timeline, day, e.When)))
         {
             var change = changes ? feed.FirstOrDefault(c => c.EventId == e.Id && c.Day == day) : null;
             var start = change is { Kind: "moved", Start: { } s } ? s : e.Start;

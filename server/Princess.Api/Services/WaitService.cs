@@ -143,7 +143,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
         var c = await scopes.LoadAsync(actor, number, false, ct);
         if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("day");
         var list = new List<ShowSeatsDto>();
-        foreach (var e in ShowRules.On(c.Timeline, day))
+        foreach (var e in ShowRules.On(c.Timeline, day, AboardPlans.ShipOfSailing(c.Booking.SailingId)))
             list.Add(new ShowSeatsDto(e.Id, ShowRules.SeatsLeft(e.Id, day, await store.CountSeatsAsync(c.Booking.SailingId, e.Id, day, ct))));
         return list;
     }
@@ -153,7 +153,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
         var list = new List<(DateTime Start, ShowTicketDto Dto)>();
         foreach (var t in await store.ListTicketsAsync(c.Booking.BookingId, ct))
         {
-            var e = ShowRules.Find(c.Timeline, t.EventId, t.Day);
+            var e = ShowRules.Find(c.Timeline, t.EventId, t.Day, AboardPlans.ShipOfSailing(c.Booking.SailingId));
             if (e is null) continue;
             list.Add((e.StartAt, new ShowTicketDto(t.PublicId, e.Id, e.Title, e.Day, Ms(e.StartAt), e.PlaceId, "on", c.Named(t.GuestIds), ShowRules.CanReturn(e, c.Now))));
         }
@@ -169,7 +169,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
         RequireShowsOpen(c);
         if (body is null || !ShowRules.Exists(body.EventId) || body.Day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("show");
         var who = c.GuestsIn(body.Guests);
-        var e = ShowRules.Find(c.Timeline, body.EventId!, body.Day) ?? throw ApiException.Invalid("day");
+        var e = ShowRules.Find(c.Timeline, body.EventId!, body.Day, AboardPlans.ShipOfSailing(c.Booking.SailingId)) ?? throw ApiException.Invalid("day");
         var mine = (await store.ListTicketsAsync(c.Booking.BookingId, ct)).Where(t => t.EventId == e.Id && t.Day == body.Day).ToList();
         var problem = ShowRules.Problem(e, c.Now, [.. who.Select(g => (g.Id, g.Age))], [.. mine.SelectMany(t => c.Ids(t.GuestIds))]);
         if (problem is not null) throw ApiException.Conflict(problem);
@@ -182,7 +182,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     {
         var c = await scopes.LoadAsync(actor, number, true, ct);
         var t = (await store.ListTicketsAsync(c.Booking.BookingId, ct)).FirstOrDefault(x => x.PublicId == id) ?? throw ApiException.NotFound();
-        var e = ShowRules.Find(c.Timeline, t.EventId, t.Day);
+        var e = ShowRules.Find(c.Timeline, t.EventId, t.Day, AboardPlans.ShipOfSailing(c.Booking.SailingId));
         if (e is not null && !ShowRules.CanReturn(e, c.Now)) throw ApiException.Conflict("started");
         await store.DeleteTicketAsync(c.Booking.BookingId, t.Id, ct);
         return await TicketsViewAsync(c, ct);

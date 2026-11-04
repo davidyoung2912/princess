@@ -35,7 +35,7 @@ import { setPlanLoader } from '../domain/aboardPlans'
 import { setVenueLoader } from '../domain/shipVenues'
 import { applyCataloguePorts, applyPatterns, applyRegions, applyShips, normalizeCataloguePorts, normalizePatterns, normalizeRegions, normalizeShips, setItineraryLoader } from '../domain/shipCatalogue'
 import { applyShip, normalizeShip } from '../domain/shipServed'
-import { applyProgram, normalizeProgram } from '../domain/programServed'
+import { applyProgram, normalizeProgram, setProgramLoader } from '../domain/programServed'
 import { applyPorts, normalizePorts } from '../domain/portsServed'
 import { applyPackages, normalizePackages } from '../domain/packagesServed'
 import { applyPricing, normalizePricing } from '../domain/pricingServed'
@@ -270,6 +270,21 @@ setVenueLoader(async (shipId) => {
   if (!auth.current()) return kept()
   try {
     const raw = await http.get<unknown>(`/reference/ships/${encodeURIComponent(shipId)}/venues`)
+    cachePut(tableStore(), kind, shipId, raw, Date.now())
+    return raw
+  } catch (e) {
+    const old = kept()
+    if (old) return old
+    throw e
+  }
+})
+/** A ship's programme, fetched when its sailing is in focus and kept on this device like its deck plan. */
+setProgramLoader(async (shipId) => {
+  const kind = 'programme'
+  const kept = () => cacheGet(tableStore(), kind, shipId, (raw) => raw, Date.now())?.value
+  if (!auth.current()) return kept()
+  try {
+    const raw = await http.get<unknown>(`/reference/ships/${encodeURIComponent(shipId)}/program`)
     cachePut(tableStore(), kind, shipId, raw, Date.now())
     return raw
   } catch (e) {

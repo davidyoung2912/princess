@@ -7,6 +7,7 @@ import { cruiseOf, loadItinerary, pricedSailings, sailingFor, shipOf, type Cruis
 import { CATEGORIES } from '../domain/ship'
 import { activateDeck, loadAboardPlan } from '../domain/aboardPlans'
 import { activateVenues, loadShipVenues } from '../domain/shipVenues'
+import { activateProgram, loadShipProgram } from '../domain/programServed'
 
 /** The ship the focused sailing runs on. Draws again when the catalogue arrives. */
 export function useShip(): ShipSummary {
@@ -69,7 +70,7 @@ export function useDaysOf(sailingId: string): ItineraryDay[] {
   return s ? itinerary(s) : []
 }
 
-/** Keeps the deck plan the screens read (places, elevators, muster stations) and the dining (rooms, menus, delivery zones) on those of the focused sailing's ship, asking the server for it when it is not yet kept. */
+/** Keeps the deck plan the screens read (places, elevators, muster stations) the dining (rooms, menus, delivery zones) and the programme on those of the focused sailing's ship, asking the server for it when it is not yet kept. */
 export function useActiveDeck(): void {
   const sailing = useSailing()
   useCatalogue()
@@ -83,5 +84,10 @@ export function useActiveDeck(): void {
     if (!shipId) return
     if (activateVenues(shipId)) return
     void loadShipVenues(shipId).then((ok) => { if (ok) activateVenues(shipId) })
+  }, [shipId])
+  useEffect(() => {
+    if (!shipId) return
+    if (activateProgram(shipId)) return
+    void loadShipProgram(shipId).then((ok) => { if (ok) activateProgram(shipId) })
   }, [shipId])
 }

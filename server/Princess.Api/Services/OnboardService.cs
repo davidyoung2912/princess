@@ -55,7 +55,7 @@ public sealed class OnboardService(
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("day");
         var changes = (await ScenariosAsync(actor, ct)).Contains("planChange");
-        var events = ProgramRules.On(c.Timeline, day, changes, programChanges.Current());
+        var events = ProgramRules.On(c.Timeline, day, changes, programChanges.Current(), AboardPlans.ShipOfSailing(c.Booking.SailingId));
         var x = c.Timeline.Days[day - 1];
         var mine = (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == day).Select(r => r.EventId).ToHashSet();
         return new ProgramViewDto(day, Iso(x.Date), x.Port, events, [.. events.Select(e => e.Id).Where(mine.Contains)], events.Any(e => e.Status != "on"), !actor.IsSupervised);
@@ -64,7 +64,7 @@ public sealed class OnboardService(
     public async Task<List<string>> TogglePlanAsync(UserRecord actor, string? number, string? eventId, PlanToggleRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
-        var ev = ProgramRules.ById(eventId) ?? throw ApiException.Invalid("event");
+        var ev = ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(c.Booking.SailingId)) ?? throw ApiException.Invalid("event");
         if (body is null || !DayKinds.Runs(c.Timeline, body.Day, ev.When)) throw ApiException.Invalid("day");
         await store.SetPlanAsync(actor.Id, c.Booking.SailingId, ev.Id, body.Day, body.On, ct);
         return [.. (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == body.Day).Select(r => r.EventId)];

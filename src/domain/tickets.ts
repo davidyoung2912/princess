@@ -9,6 +9,7 @@ export const TICKETED: Readonly<Record<string, { capacity: number }>> = {
   'port-show': { capacity: 700 },
   'farewell-show': { capacity: 900 },
   'dome-show': { capacity: 300 },
+  'late-show': { capacity: 300 },
   cooking: { capacity: 40 },
   'art-talk': { capacity: 80 },
   'spa-tour': { capacity: 20 },

@@ -63,7 +63,7 @@ public static class ShipDining
     private static Entry Of(string? shipId) => shipId is not null && All.Value.TryGetValue(shipId, out var e) ? e : All.Value[SunId];
 
     /// <summary>The ships that have dining.</summary>
-    public static IReadOnlyCollection<string> Ships => All.Value.Keys;
+    public static IReadOnlyCollection<string> Ships => [.. All.Value.Keys];
 
     /// <summary>One ship's dining, or null for a ship with none.</summary>
     public static ShipVenuesDto? For(string shipId) => All.Value.TryGetValue(shipId, out var e) ? e.Dto : null;

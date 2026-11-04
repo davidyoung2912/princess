@@ -371,6 +371,75 @@ WHEN MATCHED THEN UPDATE SET t.[ItemId] = s.[ItemId], t.[Label] = s.[Label], t.[
 WHEN NOT MATCHED THEN INSERT ([Id], [ItemId], [Label], [Cents]) VALUES (s.[Id], s.[ItemId], s.[Label], s.[Cents]);
 GO
 
+-- ref.Events: 60 sample programme events of the other ships
+MERGE ref.Events AS t
+USING (VALUES
+  (N'sky-muster', N'learning', N'Muster drill: go to your station', N'piazza', N'14:00:00', 30, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-sailaway', N'music', N'Sail-away party', N'lido-pool', N'15:00:00', 60, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-welcome-piazza', N'music', N'Welcome music in the Piazza', N'piazza', N'19:00:00', 45, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-welcome-show', N'shows', N'Welcome aboard show', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-kids-open-house', N'family', N'Kids' + NCHAR(8217) + N' club open house', N'firefly', N'16:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-teen-open-house', N'family', N'Teen lounge meet-up', N'underground', N'17:00:00', 45, N'teens', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-stretch', N'wellness', N'Morning stretch', N'fitness', N'08:00:00', 45, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-trivia', N'games', N'Team trivia', N'explorers-lounge', N'10:30:00', 45, N'all', CAST(N'["games"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-cooking', N'learning', N'Cooking demo with the executive chef', N'allegro', N'11:00:00', 60, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-bingo', N'games', N'Bingo', N'explorers-lounge', N'14:00:00', 60, N'adults', CAST(N'["games"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 2500, 0, N'sky-princess'),
+  (N'sky-art-talk', N'learning', N'Art talk: the ship' + NCHAR(8217) + N's collection', N'piazza', N'15:00:00', 45, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-craft', N'family', N'Craft time', N'firefly', N'10:00:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-tween-games', N'family', N'Tween games afternoon', N'neon-grove', N'13:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-teen-night', N'nightlife', N'Teen dance night', N'underground', N'21:30:00', 90, N'teens', CAST(N'["nightlife"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-spa-tour', N'wellness', N'Spa tour and tasting', N'lotus', N'11:30:00', 30, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-stage-show', N'shows', N'Main stage production', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-stage-early', N'shows', N'Main stage production, early show', N'princess-theater', N'18:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-jazz', N'music', N'Live jazz', N'explorers-lounge', N'21:30:00', 90, N'adults', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-piazza-band', N'music', N'Piazza live band', N'piazza', N'17:30:00', 45, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-late-show', N'shows', N'Aerial show on the SeaWalk', N'seawalk', N'22:00:00', 45, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-late-dj', N'nightlife', N'Dance party at the Sea View Bar', N'sea-view', N'23:00:00', 90, N'adults', CAST(N'["nightlife"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-movie', N'family', N'Movie under the stars', N'movies', N'20:00:00', 120, N'all', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-wine', N'learning', N'Wine tasting', N'bellinis', N'16:00:00', 60, N'adults', CAST(N'["learning"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 3500, 0, N'sky-princess'),
+  (N'sky-farewell-show', N'shows', N'Farewell show', N'princess-theater', N'19:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-packing', N'learning', N'Disembarkation talk', N'piazza', N'15:00:00', 40, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sky-princess'),
+  (N'sky-port-lecture', N'learning', N'Tomorrow' + NCHAR(8217) + N's port: talk and questions', N'piazza', N'19:00:00', 40, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sky-princess'),
+  (N'sky-port-music', N'music', N'Sail-away steel drums', N'lido-pool', N'18:00:00', 60, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sky-princess'),
+  (N'sky-port-show', N'shows', N'Main stage production', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sky-princess'),
+  (N'sky-port-kids', N'family', N'Evening kids' + NCHAR(8217) + N' club', N'firefly', N'19:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sky-princess'),
+  (N'sky-port-quiet', N'wellness', N'Quiet hour in the spa', N'lotus', N'17:45:00', 60, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 2500, 1, N'sky-princess'),
+  (N'sapphire-muster', N'learning', N'Muster drill: go to your station', N'piazza', N'14:00:00', 30, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-sailaway', N'music', N'Sail-away party', N'lido-pool', N'15:00:00', 60, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-welcome-piazza', N'music', N'Welcome music in the Piazza', N'piazza', N'19:00:00', 45, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-welcome-show', N'shows', N'Welcome aboard show', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-kids-open-house', N'family', N'Kids' + NCHAR(8217) + N' club open house', N'firefly', N'16:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-teen-open-house', N'family', N'Teen lounge meet-up', N'underground', N'17:00:00', 45, N'teens', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-stretch', N'wellness', N'Morning stretch', N'fitness', N'08:00:00', 45, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-trivia', N'games', N'Team trivia', N'explorers-lounge', N'10:30:00', 45, N'all', CAST(N'["games"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-cooking', N'learning', N'Cooking demo with the executive chef', N'santa-fe', N'11:00:00', 60, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-bingo', N'games', N'Bingo', N'explorers-lounge', N'14:00:00', 60, N'adults', CAST(N'["games"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 2500, 0, N'sapphire-princess'),
+  (N'sapphire-art-talk', N'learning', N'Art talk: the ship' + NCHAR(8217) + N's collection', N'piazza', N'15:00:00', 45, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-craft', N'family', N'Craft time', N'firefly', N'10:00:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-tween-games', N'family', N'Tween games afternoon', N'neon-grove', N'13:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-teen-night', N'nightlife', N'Teen dance night', N'underground', N'21:30:00', 90, N'teens', CAST(N'["nightlife"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-spa-tour', N'wellness', N'Spa tour and tasting', N'lotus', N'11:30:00', 30, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-stage-show', N'shows', N'Main stage production', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-stage-early', N'shows', N'Main stage production, early show', N'princess-theater', N'18:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-jazz', N'music', N'Live jazz', N'explorers-lounge', N'21:30:00', 90, N'adults', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-piazza-band', N'music', N'Piazza live band', N'piazza', N'17:30:00', 45, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-late-show', N'shows', N'Late show: comedy and magic', N'princess-theater', N'22:00:00', 45, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-late-dj', N'nightlife', N'Dance party at the Sea View Bar', N'sea-view', N'23:00:00', 90, N'adults', CAST(N'["nightlife"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-movie', N'family', N'Movie under the stars', N'movies', N'20:00:00', 120, N'all', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-wine', N'learning', N'Wine tasting', N'sabatini', N'16:00:00', 60, N'adults', CAST(N'["learning"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 3500, 0, N'sapphire-princess'),
+  (N'sapphire-farewell-show', N'shows', N'Farewell show', N'princess-theater', N'19:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-packing', N'learning', N'Disembarkation talk', N'piazza', N'15:00:00', 40, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 0, N'sapphire-princess'),
+  (N'sapphire-port-lecture', N'learning', N'Tomorrow' + NCHAR(8217) + N's port: talk and questions', N'piazza', N'19:00:00', 40, N'all', CAST(N'["learning"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sapphire-princess'),
+  (N'sapphire-port-music', N'music', N'Sail-away steel drums', N'lido-pool', N'18:00:00', 60, N'all', CAST(N'["music"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sapphire-princess'),
+  (N'sapphire-port-show', N'shows', N'Main stage production', N'princess-theater', N'20:30:00', 60, N'all', CAST(N'["shows"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sapphire-princess'),
+  (N'sapphire-port-kids', N'family', N'Evening kids' + NCHAR(8217) + N' club', N'firefly', N'19:30:00', 60, N'kids', CAST(N'["family"]' AS NVARCHAR(MAX)), 0, NULL, NULL, 0, 1, N'sapphire-princess'),
+  (N'sapphire-port-quiet', N'wellness', N'Quiet hour in the spa', N'lotus', N'17:45:00', 60, N'adults', CAST(N'["wellness"]' AS NVARCHAR(MAX)), 1, NULL, NULL, 2500, 1, N'sapphire-princess')
+) AS s ([Id], [Kind], [Title], [Place], [StartLocal], [DurationMin], [AgeGroup], [Interests], [Ticketed], [Seats], [Deck], [ExtraCents], [AfterAllAboard], [ShipId])
+ON t.[Id] = s.[Id]
+WHEN MATCHED THEN UPDATE SET t.[Kind] = s.[Kind], t.[Title] = s.[Title], t.[Place] = s.[Place], t.[StartLocal] = s.[StartLocal], t.[DurationMin] = s.[DurationMin], t.[AgeGroup] = s.[AgeGroup], t.[Interests] = s.[Interests], t.[Ticketed] = s.[Ticketed], t.[ExtraCents] = s.[ExtraCents], t.[AfterAllAboard] = s.[AfterAllAboard], t.[ShipId] = s.[ShipId]
+WHEN NOT MATCHED THEN INSERT ([Id], [Kind], [Title], [Place], [StartLocal], [DurationMin], [AgeGroup], [Interests], [Ticketed], [Seats], [Deck], [ExtraCents], [AfterAllAboard], [ShipId]) VALUES (s.[Id], s.[Kind], s.[Title], s.[Place], s.[StartLocal], s.[DurationMin], s.[AgeGroup], s.[Interests], s.[Ticketed], s.[Seats], s.[Deck], s.[ExtraCents], s.[AfterAllAboard], s.[ShipId]);
+GO
+
 -- ref.Ports: 99 rows (a seeded port keeps its name, entry note and contacts)
 MERGE ref.Ports AS t
 USING (VALUES

@@ -67,6 +67,9 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/program", (IProgramChanges changes) => Results.Ok(ProgramRules.Reference(changes.Current())))
             .WithTags("Reference").WithSummary("Every programme event with the days it runs, and the mid-day changes the ship has made (moved or cancelled, with a reason). A guest sees the changes only when the day's plan-change scenario applies to them; `GET /onboard/program/{day}` is the guest's own day.");
 
+        api.MapGet("/reference/ships/{id}/program", (string id, IProgramChanges changes) => ShipPrograms.For(id) is not null ? Results.Ok(ProgramRules.Reference(changes.Current(), id)) : throw ApiException.NotFound())
+            .WithTags("Reference").WithSummary("One ship's programme: every event with the days it runs and the mid-day changes the ship has made, in the shape of `GET /reference/program` but with the ship's own rooms. Not found for a ship with no programme.");
+
         api.MapGet("/reference/ports", () => Results.Ok(PortsReference.Get()))
             .WithTags("Reference").WithSummary("The port guides (landing, access, what to do, excursion summaries), the port knowledge (fair taxi prices, scam alerts, phrases, allergy cards, walks, day passes, family notes, vendors) and the map coordinates, by port id. `version` changes when any of it does.");
 

@@ -266,6 +266,8 @@ export const NO_SHIP_CABINS: ShipCabinRows = { decks: [], stations: [], cabins: 
 /** Pre-quoted SQL rows of the other ships' dining rooms, menu items (room service and dishes) and menu extras (built by `ship-venue-data.ts`). */
 export interface ShipVenueRows { venues: string[][]; menu: string[][]; extras: string[][] }
 export const NO_SHIP_VENUES: ShipVenueRows = { venues: [], menu: [], extras: [] }
+/** Pre-quoted SQL rows of the other ships' programme events (built by `ship-programme-data.ts`). */
+export type ShipEventRows = string[][]
 
 const GUIDE: Record<PortTier, string> = { A: 'full', B: 'short', C: 'link' }
 
@@ -278,7 +280,7 @@ function profileJson(s: CatalogueShip): string {
 }
 
 /** Renders the generated SQL: the catalogue tables, the new columns, the materialised sailings and the backfill of the seeded ones. */
-export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_SHIP_CABINS, dining: ShipVenueRows = NO_SHIP_VENUES): string {
+export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_SHIP_CABINS, dining: ShipVenueRows = NO_SHIP_VENUES, events: ShipEventRows = []): string {
   const categories = c.categories ?? []
   const material = c.sailings.map((s) => ({ s, m: materialiseSailing(c, s) }))
   const out: string[] = [
@@ -318,6 +320,9 @@ export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_S
     ...merge('ref.Venues', ['Id'], ['Id', 'Kind', 'Name', 'Cuisine', 'Deck', 'DressCode', 'Capacity', 'Walkin', 'OpenFrom', 'OpenTo', 'CoverCents', 'Description', 'Hours', 'ShipId'], dining.venues, ['Kind', 'Name', 'Cuisine', 'Deck', 'DressCode', 'Capacity', 'Walkin', 'OpenFrom', 'OpenTo', 'CoverCents', 'Description', 'Hours', 'ShipId'], `${dining.venues.length} sample dining rooms of the other ships`),
     ...merge('ref.MenuItems', ['Id'], ['Id', 'VenueId', 'MenuGroup', 'Name', 'Description', 'PriceCents', 'Dietary', 'Orderable', 'Stock', 'Alcohol', 'Packaged', 'OnMenus', 'SubstituteId', 'ShipId'], dining.menu, ['VenueId', 'MenuGroup', 'Name', 'Description', 'PriceCents', 'Dietary', 'Orderable', 'Alcohol', 'Packaged', 'OnMenus', 'SubstituteId', 'ShipId'], `${dining.menu.length} sample room-service items and dishes of the other ships`),
     ...merge('ref.MenuExtras', ['Id'], ['Id', 'ItemId', 'Label', 'Cents'], dining.extras, ['ItemId', 'Label', 'Cents'], `${dining.extras.length} menu extras of the other ships`),
+  )
+  out.push(
+    ...merge('ref.Events', ['Id'], ['Id', 'Kind', 'Title', 'Place', 'StartLocal', 'DurationMin', 'AgeGroup', 'Interests', 'Ticketed', 'Seats', 'Deck', 'ExtraCents', 'AfterAllAboard', 'ShipId'], events, ['Kind', 'Title', 'Place', 'StartLocal', 'DurationMin', 'AgeGroup', 'Interests', 'Ticketed', 'ExtraCents', 'AfterAllAboard', 'ShipId'], `${events.length} sample programme events of the other ships`),
   )
   out.push(
     ...merge(
