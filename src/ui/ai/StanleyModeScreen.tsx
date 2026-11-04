@@ -1,6 +1,6 @@
 import stanley from '../../assets/stanley-small.png'
 import { Check } from 'lucide-react'
-import { lineKey, modeCanOpen, timingOf, titleKey, type ModeStep } from '../../ai/stanleyModes'
+import { goodNowKey, lineKey, modeCanOpen, timingOf, titleKey, type ModeStep } from '../../ai/stanleyModes'
 import { useSettings } from '../../hooks/useSettings'
 import { useStanleyMode } from '../../hooks/useStanleyMode'
 import { t, type StringKey } from '../../i18n'
@@ -10,13 +10,15 @@ import { timeIn } from '../../domain/timezones'
 import { Button, LinkButton } from '../Button'
 import { BackLink } from '../onboard/common'
 
+const reducedMotion = (): boolean => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 /**
  * Stanley leads the day (N-G1, N-E1, N-O1, N-L1): one big next step, the time, a way to the right screen and a "Done" button, with the rest of the day as a thin strip
  * above it. Boarding Day, First Four Hours, Port Day and Last Morning are the same screen with different steps. Rules only; no model is called.
  */
 export function StanleyModeScreen() {
   const [settings] = useSettings()
-  const { mode, view, zone, tick } = useStanleyMode()
+  const { mode, view, zone, tick, goodNow } = useStanleyMode()
   const level = stanleyLevelFor(settings)
   const back = <BackLink to="/" label={t('route.home')} />
   if (!modeCanOpen(level)) return <div className="page">{back}<p>{t('stanley.mode.off')}</p></div>
@@ -24,7 +26,12 @@ export function StanleyModeScreen() {
   const cur = view.current
   const timing = timingOf(view.minutesTo)
   const at = (s: ModeStep) => (s.at === null ? '' : timeIn(s.at, zone))
-  const title = (s: ModeStep) => t(titleKey(mode, s) as StringKey)
+  const title = (s: ModeStep) => s.label ?? t(titleKey(mode, s) as StringKey)
+  const onTick = (s: ModeStep) => {
+    tick(s.id)
+    // A small buzz on the very last step, only where the guest has not asked for calm or less motion (Android only; iOS Safari has no vibrate).
+    if (view.later.length === 0 && !settings.calm && !settings.reduceMotion && !reducedMotion() && typeof navigator.vibrate === 'function') navigator.vibrate(60)
+  }
   return (
     <div className="page stanley-mode">
       {back}
@@ -46,11 +53,12 @@ export function StanleyModeScreen() {
         <section className="stanley-mode__now" aria-labelledby="stanley-mode-h" data-timing={timing}>
           <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
           <h3 id="stanley-mode-h">{t('stanley.mode.next', { step: title(cur) })}</h3>
-          <p className="stanley-mode__line">{t(lineKey(mode, cur, timing) as StringKey, { time: at(cur), minutes: Math.max(0, view.minutesTo ?? 0) })}</p>
+          <p className="stanley-mode__line">{t(lineKey(mode, cur, timing) as StringKey, { time: at(cur), minutes: Math.max(0, view.minutesTo ?? 0), place: cur.where ?? '' })}</p>
+          {cur.walk !== undefined && <p className="muted">{t('stanley.mode.seaDay.walk', { minutes: cur.walk })}</p>}
           {cur.at !== null && <p className="stanley-mode__time" role="timer" aria-live="off">{timing === 'past' ? t('stanley.mode.past', { time: at(cur) }) : t('stanley.mode.in', { time: at(cur), minutes: view.minutesTo ?? 0 })}</p>}
           <div className="button-row">
             <LinkButton to={cur.to} state={openedFrom('blue')}>{t('stanley.mode.open')}</LinkButton>
-            {!cur.done && <Button variant="secondary" onClick={() => tick(cur.id)}>{t('stanley.mode.tick')}</Button>}
+            {!cur.done && <Button variant="secondary" onClick={() => onTick(cur)}>{t('stanley.mode.tick')}</Button>}
           </div>
         </section>
       ) : (
@@ -60,6 +68,7 @@ export function StanleyModeScreen() {
           <p className="stanley-mode__line">{t(`stanley.mode.${mode}.finished` as StringKey)}</p>
         </section>
       )}
+      {mode === 'seaDay' && goodNow && <p className="stanley-mode__good">{t(goodNowKey(goodNow) as StringKey, { time: timeIn(goodNow.at, zone) })} <LinkButton to="/ship/pulse" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.seaDay.pulse')}</LinkButton></p>}
       {mode === 'portDay' && <p><LinkButton to="/ship/safe-ashore" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.portHelp')}</LinkButton></p>}
       <p className="muted">{t('stanley.mode.hint')}</p>
     </div>

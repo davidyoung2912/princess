@@ -1,12 +1,14 @@
 import type { JourneyStage } from '../routes/hubs'
 import { planPortDay, DEFAULT_BUFFER } from '../domain/portPilot'
 import type { StanleyLevel } from '../settings/settings'
+import { placeById } from '../domain/deck'
+import { walkMinutes } from '../domain/discoverDelights'
 
 /**
  * The four journey modes Stanley leads (docs/experience-extension-ideas.md N-G1, N-E1, N-O1, N-L1). Each is a short, time-ordered list of steps with one big
  * next step on top. Pure data and rules, so they are tested in node; the words are `stanley.mode.<mode>.<step>.title` and `.line`.
  */
-export const MODE_IDS = ['boardingDay', 'firstFour', 'portDay', 'lastMorning'] as const
+export const MODE_IDS = ['boardingDay', 'firstFour', 'portDay', 'lastMorning', 'seaDay'] as const
 export type ModeId = (typeof MODE_IDS)[number]
 
 export interface ModeStep {
@@ -15,15 +17,27 @@ export interface ModeStep {
   at: number | null
   /** The screen that helps with it. */
   to: string
+  /** A title that is not a library word (a planned event's own title). */
+  label?: string
+  /** Where it happens, as a place name with its deck, when it is a planned event. */
+  where?: string
+  /** Minutes to walk from the previous planned event's place, when both are on the deck map. */
+  walk?: number
   /** The data already shows it is done (muster done, say), so the guest need not tick it. */
   done?: boolean
 }
+
+/** An event in the guest's own plan on a sea day, as the Right Now card needs it. */
+export interface SeaEvent { id: string; title: string; startAt: number; endAt: number; placeId: string }
+/** How many planned events the sea-day mode lists. */
+export const SEA_EVENTS_SHOWN = 4
 
 /** Everything the steps are made from; each mode reads only its own part. All times are epoch milliseconds. */
 export interface ModeFacts {
   boardingDay?: { checkinDone: boolean }
   firstFour?: { musterAt: number; musterDone: boolean; sailAwayAt: number | null }
   portDay?: { allAboardAt: number; arriveAt: number; tender: boolean; skipped: boolean }
+  seaDay?: { events: SeaEvent[] }
   lastMorning?: { tipBy: number; bagsOutAt: number; arrivalAt: number; vacateAt: number }
 }
 
@@ -52,6 +66,7 @@ export function modeFor(p: ModePosition): ModeId | null {
   if (p.stage === 'port') return p.aboard ? 'portDay' : null
   if (p.stage === 'disembark') return 'lastMorning'
   if (p.stage === 'sea' && p.aboard && p.lastFullDay && p.hour >= LAST_EVENING_HOUR) return 'lastMorning'
+  if (p.stage === 'sea' && p.aboard) return 'seaDay'
   return null
 }
 
@@ -94,6 +109,18 @@ export function modeSteps(mode: ModeId, f: ModeFacts): ModeStep[] {
       if (!p || p.skipped) return []
       const plan = planPortDay({ day: { allAboardAt: p.allAboardAt, arriveAt: p.arriveAt, tender: p.tender }, travelMinutes: 0, outingMinutes: null, buffer: DEFAULT_BUFFER, crowd: 'moderate' })
       return plan.steps.filter((s) => s.id !== 'start').map((s) => ({ id: s.id, at: s.at, to: '/ship/port' }))
+    }
+    case 'seaDay': {
+      const sea = f.seaDay
+      if (!sea) return []
+      if (sea.events.length === 0) return [{ id: 'free', at: null, to: '/ship/pulse' }]
+      let before = placeById(sea.events[0].placeId)
+      return sea.events.slice(0, SEA_EVENTS_SHOWN).map((e, i): ModeStep => {
+        const place = placeById(e.placeId)
+        const walk = i > 0 && before && place && before.id !== place.id ? walkMinutes(before, place) : null
+        before = place
+        return { id: e.id, at: e.startAt, to: '/ship/map', label: e.title, where: place ? `${place.name}, deck ${place.deck}` : undefined, ...(walk !== null ? { walk } : {}) }
+      })
     }
     case 'lastMorning': {
       const l = f.lastMorning
@@ -141,9 +168,14 @@ export function timingOf(minutesTo: number | null): StepTiming {
 
 /** The key of the sentence Stanley says for the current step: the "late" wording when its time has passed (every step with a time has one), otherwise the plain one. */
 export function lineKey(mode: ModeId, step: ModeStep, timing: StepTiming): string {
+  if (mode === 'seaDay' && step.label) return timing === 'past' ? 'stanley.mode.seaDay.event.late' : 'stanley.mode.seaDay.event.line'
   return timing === 'past' ? `stanley.mode.${mode}.${step.id}.late` : `stanley.mode.${mode}.${step.id}.line`
 }
 export const titleKey = (mode: ModeId, step: ModeStep): string => `stanley.mode.${mode}.${step.id}.title`
+
+/** The quiet-pool suggestion for the Right Now card: the pool is quiet now, or quietest at a later time; null when it is not quiet at all. */
+export interface GoodNow { now: boolean; at: number }
+export const goodNowKey = (g: GoodNow): string => (g.now ? 'stanley.mode.seaDay.goodNow' : 'stanley.mode.seaDay.goodAt')
 
 // The daily line (docs 13.4, H22 Briefing).
 export type DailyKind = 'firstDay' | 'port' | 'tender' | 'sea' | 'lastDay'

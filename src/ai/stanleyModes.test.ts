@@ -8,6 +8,7 @@ const facts: Required<ModeFacts> = {
   boardingDay: { checkinDone: false },
   firstFour: { musterAt: 5 * H, musterDone: false, sailAwayAt: 7 * H },
   portDay: { allAboardAt: 16 * H, arriveAt: 8 * H, tender: true, skipped: false },
+  seaDay: { events: [{ id: 'trivia', title: 'Team trivia', startAt: 10 * H, endAt: 11 * H, placeId: 'live' }, { id: 'cooking', title: 'Cooking demo', startAt: 11 * H, endAt: 12 * H, placeId: 'eclipse' }] },
   lastMorning: { tipBy: 20 * H, bagsOutAt: 22 * H, arrivalAt: 30 * H, vacateAt: 32 * H },
 }
 const staticPaths = new Set(SCREEN_LIST.map((s) => s.path).filter((p) => !p.includes(':')))
@@ -20,12 +21,14 @@ describe('which mode is on', () => {
     expect(modeFor({ stage: 'embark', hour: 9, aboard: false })).toBeNull()
     expect(modeFor({ stage: 'port', hour: 9, aboard: true })).toBe('portDay')
     expect(modeFor({ stage: 'disembark', hour: 5, aboard: true })).toBe('lastMorning')
+    expect(modeFor({ stage: 'sea', lastFullDay: false, hour: 10, aboard: true })).toBe('seaDay')
+    expect(modeFor({ stage: 'sea', hour: 10, aboard: false })).toBeNull()
     expect(modeFor({ stage: 'dream', hour: 9, aboard: false })).toBeNull()
   })
   it('starts Last Morning on the evening of the last full day, not before', () => {
-    expect(modeFor({ stage: 'sea', lastFullDay: true, hour: 17, aboard: true })).toBeNull()
+    expect(modeFor({ stage: 'sea', lastFullDay: true, hour: 17, aboard: true })).toBe('seaDay')
     expect(modeFor({ stage: 'sea', lastFullDay: true, hour: 18, aboard: true })).toBe('lastMorning')
-    expect(modeFor({ stage: 'sea', lastFullDay: false, hour: 20, aboard: true })).toBeNull()
+    expect(modeFor({ stage: 'sea', lastFullDay: false, hour: 20, aboard: true })).toBe('seaDay')
   })
   it('starts by itself at Helpful and Chatty and opens by hand unless Stanley is Off', () => {
     expect(modeAutoShows('helpful') && modeAutoShows('chatty')).toBe(true)
@@ -38,7 +41,7 @@ describe('which mode is on', () => {
 describe('mode steps', () => {
   it('has steps for every mode and none without facts', () => {
     for (const m of MODE_IDS) {
-      expect(modeSteps(m, facts).length, m).toBeGreaterThanOrEqual(5)
+      expect(modeSteps(m, facts).length, m).toBeGreaterThanOrEqual(m === 'seaDay' ? 2 : 5)
       expect(modeSteps(m, {}), m).toEqual([])
     }
   })
@@ -59,6 +62,21 @@ describe('mode steps', () => {
     const done = modeSteps('boardingDay', { boardingDay: { checkinDone: true } })[0]
     expect(done.done).toBe(true)
     expect(modeSteps('firstFour', { firstFour: { ...facts.firstFour, musterDone: true } }).find((s) => s.id === 'muster')!.done).toBe(true)
+  })
+})
+
+describe('the sea day', () => {
+  it('lists the planned events with where they are and the walk from the one before', () => {
+    const steps = modeSteps('seaDay', facts)
+    expect(steps.map((s) => s.label)).toEqual(['Team trivia', 'Cooking demo'])
+    expect(steps[0].where).toMatch(/deck \d+/)
+    expect(steps[0].walk).toBeUndefined()
+    expect(steps[1].walk).toBeGreaterThan(0)
+  })
+  it('offers a free-day step when nothing is planned, and shows at most four events', () => {
+    expect(modeSteps('seaDay', { seaDay: { events: [] } }).map((s) => s.id)).toEqual(['free'])
+    const many = Array.from({ length: 7 }, (_, i) => ({ id: `e${i}`, title: 'x', startAt: i, endAt: i + 1, placeId: 'live' }))
+    expect(modeSteps('seaDay', { seaDay: { events: many } })).toHaveLength(4)
   })
 })
 
@@ -93,6 +111,11 @@ describe('the words', () => {
     }
     for (const [m, id, timed] of all) {
       const step = { id, at: timed ? 1 : null, to: '/' }
+      if (m === 'seaDay') {
+        const ev = { ...step, label: 'Trivia' }
+        expect(lineKey(m, ev, 'ahead') in en && lineKey(m, ev, 'past') in en, 'seaDay event').toBe(true)
+        continue
+      }
       expect(titleKey(m, step) in en, `${m}.${id} title`).toBe(true)
       expect(lineKey(m, step, 'ahead') in en, `${m}.${id} line`).toBe(true)
       if (timed) expect(lineKey(m, step, 'past') in en, `${m}.${id} late`).toBe(true)

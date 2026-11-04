@@ -31,6 +31,7 @@ const MUST_WORK_OFFLINE: Record<string, string> = {
 /** Kinds shown through a parent that already carries the age, or that feed another copy rather than a page of their own. Each needs a reason. */
 const AGE_SHOWN_ELSEWHERE: Record<string, string> = {
   'src/hooks/useOnboardToday.ts': 'a hook; its screens show the copy age through `Saved`',
+  'src/hooks/useStanleyMode.ts': 'a hook feeding the Right Now card; the plan screens it points to show the copy age',
 }
 
 describe('the offline day', () => {
