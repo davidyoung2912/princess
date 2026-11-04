@@ -362,3 +362,15 @@ curl -s $B/api/v1/me/loyalty-summary -H "$H"
 Check that `dbo.DisembarkChoices` and `dbo.DisembarkBags`, `dbo.Customs`, `dbo.OnwardPlans`, `dbo.NightTicks`, `dbo.FinalBill`, `dbo.Cases` (a `recovery` row with `FromFeedback = 1` after the poor feedback), `dbo.PostFeedback`, `dbo.RebookHolds` and `dbo.DeskAppointments` rows appear, and that `dbo.FolioLines` has rows with `SourceType` `tip`, `hold` and `fcc`. Stored rows from the persona scripts are read as far as they fit (a customs declaration with `goods`, an onward `Mode` of `flight`, feedback with the area scores at the top level). None of `DapperFinishStore` has touched SQL Server yet.
 
 `npm run api:check` (Node, no server needed) compares every method of the TypeScript `Api` interface with the rows of section 6; `ApiSurfaceTests` compares the routes those rows state in full with the OpenAPI document.
+
+## Deployment settings (security phase 2)
+
+Off or closed unless configured (all but `Security:Contact` are on in `appsettings.Development.json`, and the tests turn on Swagger and Demo):
+
+- `Swagger:Enabled` (default false), `Demo:Enabled` (default false: `/auth/demo-accounts` is 404).
+- `AllowedHosts`: `localhost` in the base file; set the real host names per environment.
+- `ForwardedHeaders:KnownProxies` (IPs), `ForwardedHeaders:KnownNetworks` (CIDR), `ForwardedHeaders:ForwardLimit`: set when behind a proxy so limits and the audit log see the client address.
+- `RateLimit:RequestsPerMinute` (300), `Limits:MaxRequestBodyBytes` (1048576), `Limits:MaxConcurrentConnections` (2000).
+- `Security:Contact`: the `mailto:` or `https:` contact in `/.well-known/security.txt`.
+- `GET /health/providers` needs a sign-in; `/health` and `/health/db` stay open for probes.
+- Static host headers for `dist/`: `docs/static-host-headers.md`.

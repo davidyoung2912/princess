@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -162,6 +163,50 @@ services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, a
         }));
 });
 
+// A global limit for everything else (signed-in routes and public reads), per person or, failing that, per address. Health probes are exempt.
+services.AddOptions<RateLimiterOptions>().Configure<IConfiguration>((o, config) =>
+{
+    var perMinute = config.GetValue("RateLimit:RequestsPerMinute", 300);
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(http =>
+        http.Request.Path.StartsWithSegments("/health")
+            ? RateLimitPartition.GetNoLimiter("health")
+            : RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = perMinute,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+});
+
+// Behind a reverse proxy the socket address is the proxy's. Trust X-Forwarded-* only from the proxies and networks listed in ForwardedHeaders:*.
+var knownProxies = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [];
+var knownNetworks = builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [];
+var forwarded = knownProxies.Length + knownNetworks.Length > 0;
+if (forwarded)
+    services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.ForwardLimit = builder.Configuration.GetValue("ForwardedHeaders:ForwardLimit", 1);
+        o.KnownProxies.Clear();
+        o.KnownNetworks.Clear();   // the loopback defaults are replaced by the configured list
+        foreach (var p in knownProxies) o.KnownProxies.Add(System.Net.IPAddress.Parse(p));
+        foreach (var n in knownNetworks)
+        {
+            var parts = n.Split('/');
+            o.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Parse(parts[0]), int.Parse(parts[1])));
+        }
+    });
+
+// Request-size and connection limits (Limits:*). The API takes small JSON bodies only.
+builder.WebHost.ConfigureKestrel(k =>
+{
+    k.AddServerHeader = false;
+    k.Limits.MaxRequestBodySize = builder.Configuration.GetValue("Limits:MaxRequestBodyBytes", 1_048_576L);
+    k.Limits.MaxRequestHeadersTotalSize = 32 * 1024;
+    k.Limits.MaxConcurrentConnections = builder.Configuration.GetValue<long?>("Limits:MaxConcurrentConnections", 2000);
+    k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+});
+
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
 
@@ -188,10 +233,11 @@ if (builder.Configuration.GetValue<bool>("Logging:Json"))
 
 var app = builder.Build();
 
+if (forwarded) app.UseForwardedHeaders();
 app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());
 app.UseExceptionHandler();
 app.UseStatusCodePages();
-if (app.Configuration.GetValue("Swagger:Enabled", true))
+if (app.Configuration.GetValue("Swagger:Enabled", false))
 {
     app.UseSwagger();
     app.UseSwaggerUI(o => o.SwaggerEndpoint("/swagger/v1/swagger.json", "Princess API v1"));
@@ -231,7 +277,7 @@ v1.MapAuditEndpoints();
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>
 {
-    var swagger = app.Configuration.GetValue("Swagger:Enabled", true);
+    var swagger = app.Configuration.GetValue("Swagger:Enabled", false);
     foreach (var address in app.Urls)
         Console.WriteLine(swagger ? $"Princess API: {address}  (Swagger: {address.TrimEnd('/')}/swagger)" : $"Princess API: {address}");
 });

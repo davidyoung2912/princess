@@ -13,7 +13,7 @@ public static class HealthEndpoints
             .AllowAnonymous().WithTags("Health").WithSummary("Liveness: the process is up.");
 
         app.MapGet("/health/providers", (ProviderHealth health) => Results.Ok(new { providers = health.Snapshot() }))
-            .AllowAnonymous().WithTags("Health").WithSummary("Real providers that are switched on and whether each is working, degraded or has fallen back to the simulation. Empty when everything is simulated.");
+            .WithTags("Health").WithSummary("Needs a sign-in. Real providers that are switched on and whether each is working, degraded or has fallen back to the simulation. Empty when everything is simulated.");
 
         app.MapGet("/health/db", async (IDbConnectionFactory db, ILogger<Program> log, HttpContext http, CancellationToken ct) =>
             {

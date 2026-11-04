@@ -10,12 +10,12 @@ Status key: [ ] not started, [~] in progress, [x] done (built, not committed unt
 - `StateService` must not turn a decrypt failure into an empty document that the next save overwrites. Fail the read with a server error and log it instead.
 - Audit `Target()` must not store the calendar feed token (`/calendar/{file}`): rename the route value to `token` or extend the deny list. Done both: the route value is `token` and `file` is on the deny list.
 
-## Phase 2 [ ] Deployment surface
+## Phase 2 [x] Deployment surface
 
 - `UseForwardedHeaders` with configured `KnownProxies` / `KnownNetworks` (`ForwardedHeaders:*`), so rate limits key on the real client address.
-- A global per-user/per-IP limiter for authenticated endpoints, Kestrel request-size and concurrency limits.
-- Demo and diagnostics off by default: `Demo:Enabled` flag (not just `IsProduction()`) for `/auth/demo-accounts`; `Swagger:Enabled` defaults to false; `/health/providers` behind auth or an internal-only flag; `AllowedHosts` set per environment; real `security.txt` contact.
-- Document the static-host headers for `dist/` (CSP with `frame-ancestors`, HSTS, `X-Frame-Options`, long immutable cache for hashed assets, Brotli).
+- A global per-user/per-IP limiter for authenticated endpoints, Kestrel request-size and concurrency limits. Done: `RateLimit:RequestsPerMinute` (default 300, per user or address, `/health` exempt); `Limits:MaxRequestBodyBytes` (1 MB), `Limits:MaxConcurrentConnections` (2000); `ForwardedHeaders:KnownProxies` / `KnownNetworks` (CIDR) / `ForwardLimit` enable `UseForwardedHeaders`, and nothing is trusted when they are empty.
+- Demo and diagnostics off by default: `Demo:Enabled` flag (not just `IsProduction()`) for `/auth/demo-accounts`; `Swagger:Enabled` defaults to false; `/health/providers` behind auth or an internal-only flag; `AllowedHosts` set per environment; real `security.txt` contact. Done: all default off/closed (`Swagger:Enabled`, `Demo:Enabled` false; Development turns both on); `/health/providers` now needs a sign-in; `AllowedHosts` is `localhost` in the base file and `*` only in Development; the API's security.txt contact comes from `Security:Contact` (still the placeholder until the user supplies a real address).
+- Document the static-host headers for `dist/` (CSP with `frame-ancestors`, HSTS, `X-Frame-Options`, long immutable cache for hashed assets, Brotli). Done in `docs/static-host-headers.md`.
 
 ## Phase 3 [ ] Sign-in hardening
 

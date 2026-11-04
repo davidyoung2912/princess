@@ -55,6 +55,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             ["Jwt:SigningKey"] = "test-signing-key-test-signing-key-0123456789",
             ["Auth:LoginAttemptsPerMinute"] = LoginAttemptsPerMinute.ToString(),
             ["Retention:IntervalMinutes"] = "0",
+            ["Swagger:Enabled"] = "true",
+            ["Demo:Enabled"] = "true",
+            ["RateLimit:RequestsPerMinute"] = "1000000",
             ["DataProtection:Store"] = "ephemeral",   // no database in these tests
             ["Providers:ConciergeLimit"] = "memory",
             ["Providers:Concierge"] = "sim",   // never the model, even when a key is set in the machine's environment
