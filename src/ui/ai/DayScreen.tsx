@@ -17,6 +17,7 @@ import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { BackLink } from '../onboard/common'
 import { partyPeople } from '../../account/context'
+import { StanleyEmpty } from './StanleyEmpty'
 
 const MOBILITY: readonly Mobility[] = ['any', 'easy', 'wheelchair']
 const toggle = <T,>(list: readonly T[], x: T): T[] => (list.includes(x) ? list.filter((y) => y !== x) : [...list, x])
@@ -62,7 +63,7 @@ export function DayScreen() {
       <Card hero labelledBy="day-plan-h">
         <h2 id="day-plan-h" className="card__title">{th('day.yours', { day })}</h2>
         {!plan && <FeedWaiting />}
-        {plan?.empty && <p role="status">{t('day.empty')}</p>}
+        {plan?.empty && <StanleyEmpty>{t('day.empty')}</StanleyEmpty>}
         <ol className="build-list">
           {plan?.items.map((i) => (
             <li key={`${i.kind}-${i.id}`}>

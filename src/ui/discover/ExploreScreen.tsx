@@ -3,8 +3,8 @@ import { t } from '../../i18n'
 import { browseSailings, monthLabel, monthsOf, regionMonthGrid } from '../../domain/catalogueBrowse'
 import { catalogueRegions } from '../../domain/shipCatalogue'
 import { useCatalogue } from '../../hooks/useCatalogue'
-import { Card } from '../Card'
 import { regionName } from './catalogueNames'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 /** Explore by region and month (H50): how many sailings leave in each month for each region, every count a link to those sailings. */
 export function ExploreScreen() {
@@ -15,7 +15,7 @@ export function ExploreScreen() {
   return (
     <div className="page">
       <p>{t('cat.explore.intro')}</p>
-      {grid.length === 0 ? <Card info><p>{t('cat.explore.empty')}</p></Card> : (
+      {grid.length === 0 ? <StanleyEmpty>{t('cat.explore.empty')}</StanleyEmpty> : (
         <div className="table-scroll">
           <table className="compare-table">
             <caption>{t('cat.explore.caption')}</caption>

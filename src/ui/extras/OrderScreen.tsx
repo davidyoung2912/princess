@@ -23,6 +23,7 @@ import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { ExtraError, NotAboard } from './common'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 const KINDS: readonly OrderKind[] = ['delivery', 'room', 'breakfast']
 
@@ -114,7 +115,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
 
       <Card hero labelledBy="cart-h">
         <h2 id="cart-h" className="card__title">{th('ord.yours')}</h2>
-        {lines.length === 0 ? <p>{t('ord.empty')}</p> : (
+        {lines.length === 0 ? <StanleyEmpty>{t('ord.empty')}</StanleyEmpty> : (
           <ul className="plain-bullets">
             {priced.lines.map((l, i) => (
               <li key={i}>

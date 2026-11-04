@@ -12,6 +12,7 @@ import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { FeedWaiting } from '../FeedWaiting'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 const MOBILITY: readonly Mobility[] = ['any', 'easy', 'wheelchair']
 const toggle = <T,>(list: readonly T[], x: T): T[] => (list.includes(x) ? list.filter((y) => y !== x) : [...list, x])
@@ -64,7 +65,7 @@ export function TrialDayScreen() {
         <Card hero labelledBy="trial-plan-h">
           <h2 id="trial-plan-h" className="card__title">{choice ? th('trial.yours', { day, place: choice.place }) : th('day.yours', { day })}</h2>
           {!plan && <FeedWaiting />}
-          {plan?.empty && <p role="status">{t('day.empty')}</p>}
+          {plan?.empty && <StanleyEmpty>{t('day.empty')}</StanleyEmpty>}
           <ol className="build-list">
             {plan?.items.map((i) => (
               <li key={`${i.kind}-${i.id}`}>

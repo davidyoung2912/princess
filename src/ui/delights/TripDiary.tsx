@@ -12,6 +12,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 const portName = (port: string): string => PORTS[port as keyof typeof PORTS]?.name ?? port
 
@@ -119,7 +120,7 @@ export function TripDiary() {
         <Composer sailingId={sailing.id} today={today} now={now} id="diary-save" />
 
         {mine.length > 0 && <Field label={t('diary.search')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} />}
-        {mine.length === 0 && <p className="muted">{t('diary.empty')}</p>}
+        {mine.length === 0 && <StanleyEmpty>{t('diary.empty')}</StanleyEmpty>}
         {mine.length > 0 && shown.length === 0 && <p role="status">{t('diary.noMatch')}</p>}
         {groups.map((g) => (
           <section key={g.day} aria-labelledby={`diary-day-${g.day}`}>

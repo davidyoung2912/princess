@@ -192,3 +192,7 @@
 .stage-tile__title { font-size: 1.125rem; font-weight: 700; }
 .stage-tile--attention { border-color: var(--warning); border-width: 2px; }
 .stage-tile__badge { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); border-radius: 999px; background: var(--warning-tint); color: var(--text); border: 1px solid var(--warning); font-size: 0.75rem; font-weight: 600; }
+
+/* Stanley's speech dot: shown when he has something urgent to say. Position is relative to the button. */
+.topbar__stanley, .tabs__stanley { position: relative; }
+.stanley-dot { position: absolute; top: 0.1rem; right: 0.1rem; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--warning); border: 2px solid var(--bg); }

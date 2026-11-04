@@ -20,6 +20,7 @@ import { dayNumbers } from '../../domain/nightsRules'
 import { useItinerary } from '../../hooks/useShipCatalogue'
 import { SlotWatch } from './SlotWatch'
 import { WeekPlanner } from './WeekPlanner'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 const TENDER_DELAYS = [20, 40, 60] as const
 
@@ -96,7 +97,7 @@ export function AutopilotScreen() {
           ))}
         </ul>
         {!dp.ready && <FeedWaiting />}
-        {dp.ready && shown.length === 0 && <p>{t('autopilot.empty')}</p>}
+        {dp.ready && shown.length === 0 && <StanleyEmpty>{t('autopilot.empty')}</StanleyEmpty>}
         <label className="choice"><input type="checkbox" checked={state.gentle} onChange={(e) => update((s) => ({ ...s, gentle: e.target.checked }))} /><span>{t('gentle.on')}<small>{t('gentle.hint')}</small></span></label>
         {notes.length > 0 && (
           <ul className="plain-list" aria-label={t('gentle.list')}>

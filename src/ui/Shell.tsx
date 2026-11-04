@@ -20,6 +20,7 @@ import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
 import { StanleyDialog } from './ai/StanleyDialog'
 import { subscribeStanleyRequest, takeStanleyRequest } from '../ai/stanleyOpen'
+import { dismissDot, dotVisible, subscribeDot } from '../ai/stanleyDot'
 import { StanleyChips } from './ai/StanleyChips'
 import { stanleyLevelFor } from '../settings/settings'
 import { useSettings } from '../hooks/useSettings'
@@ -49,6 +50,7 @@ export function Shell() {
   useEffect(() => subscribeStanleyRequest(() => { const r = takeStanleyRequest(); if (r) { setPrefill(r.prefill); setStanleyOpen(true) } }), [])
   const [announcement, setAnnouncement] = useState('')
   const [settings] = useSettings()
+  const dot = useSyncExternalStore(subscribeDot, dotVisible, () => false)
   const stanleyOff = stanleyLevelFor(settings) === 'off'
   usePushSync()
   const main = useRef<HTMLElement>(null)
@@ -101,8 +103,9 @@ export function Shell() {
             <span>{t('shell.search')}</span>
           </Link>
           {!stanleyOff && (
-            <button type="button" className="topbar__stanley" onClick={() => setStanleyOpen(true)} aria-label={t('stanley.button')}>
+            <button type="button" className="topbar__stanley" onClick={() => { dismissDot(); setStanleyOpen(true) }} aria-label={dot ? `${t('stanley.button')}. ${t('stanley.dot')}` : t('stanley.button')}>
               <img src={stanley} alt="" width="192" height="192" />
+              {dot && <span className="stanley-dot" aria-hidden="true" />}
             </button>
           )}
           <button type="button" className="topbar__help" onClick={() => setHelpOpen(true)}>
@@ -134,9 +137,10 @@ export function Shell() {
           <span>{t('shell.search')}</span>
         </Link>
         {!stanleyOff && (
-          <button type="button" className="tabs__stanley" onClick={() => setStanleyOpen(true)}>
+          <button type="button" className="tabs__stanley" onClick={() => { dismissDot(); setStanleyOpen(true) }}>
             <img src={stanley} alt="" width="192" height="192" />
-            <span>{th('stanley.button')}</span>
+            {dot && <span className="stanley-dot" aria-hidden="true" />}
+            <span>{th('stanley.button')}{dot && <span className="visually-hidden">. {t('stanley.dot')}</span>}</span>
           </button>
         )}
         <button type="button" className="tabs__help" onClick={() => setHelpOpen(true)}>

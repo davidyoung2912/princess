@@ -14,6 +14,10 @@ import { SCREEN_ICONS } from '../screenIcons'
 import { useNow } from '../../hooks/useDemo'
 import { daysBetween } from '../../domain/trip'
 import { dateIn } from '../../domain/timezones'
+import { useEffect } from 'react'
+import { dotReason, publishDot } from '../../ai/stanleyDot'
+import { stanleyLevelFor } from '../../settings/settings'
+import { useSettings } from '../../hooks/useSettings'
 import { nextSteps, stageTiles, urgentStep, type HomeFacts } from '../../routes/stageHome'
 
 /** Home for Dream, Discover and Book: three Next steps, then six tiles with one line of state each (plan section 8). */
@@ -30,6 +34,9 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
       daysToFinal: daysBetween(dateIn(now, 'America/New_York'), trip.plan.finalDue), daysToDeparture: trip.daysToDeparture, checkinOpen: trip.checkin.state === 'open' },
     aboard: today?.aboard ? { musterDone: today.muster.done, lastFullDay: day?.kind === 'cruiseDay' && day.day >= day.of - 1 } : null,
   }
+  const [settings] = useSettings()
+  const reason = dotReason(stage, facts, stanleyLevelFor(settings))
+  useEffect(() => { publishDot(reason); return () => publishDot(null) }, [reason])
   const steps = nextSteps(stage, facts)
   const tiles = stageTiles(stage, { sailingId: focusSailingId, draftId: d?.id ?? null })
   const stateOf = (id: string): string | null => {

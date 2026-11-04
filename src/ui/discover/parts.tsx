@@ -9,9 +9,9 @@ import { type FromPrice, type Quote } from '../../domain/priceShapes'
 import { formatMoney } from '../../domain/money'
 import type { ItineraryDay, Sailing } from '../../domain/sailings'
 import { Anchor, Bookmark, BookmarkCheck, Share, Waves } from '../icons'
-import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { StanleyExplain } from '../ai/StanleyExplain'
+import { StanleyOops } from '../ai/StanleyEmpty'
 import type { Async } from '../../hooks/useAsync'
 
 /** Save and Share for one thing. The name is read out but not repeated on screen; `aria-pressed` carries saved or not. */
@@ -50,11 +50,7 @@ export function SaveShare({ kind, id, name, favourites }: { kind: FavouriteKind;
 
 /** The "couldn't load" state: says what happened, offers a retry, and points to a person. */
 export function LoadError({ retry }: { retry: () => void }) {
-  return (
-    <Banner kind="danger" title={t('discover.error.title')} action={<Button variant="secondary" onClick={retry}>{t('error.tryAgain')}</Button>}>
-      <p>{t('discover.error.body')}</p>
-    </Banner>
-  )
+  return <StanleyOops onRetry={retry}>{t('discover.error.body')}</StanleyOops>
 }
 
 /** "From $1,539 per person" with what is added on top, so the price is not a teaser. */

@@ -23,6 +23,7 @@ import { Card } from '../Card'
 import { Field } from '../Field'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
+import { StanleyEmpty } from '../ai/StanleyEmpty'
 
 const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
   <div className="page">
@@ -203,7 +204,7 @@ export function TasteScreen() {
             <Button variant="tertiary" onClick={() => set((s) => ({ ...s, tasteRemoved: [...s.tasteRemoved, i.id] }))}>{t('taste.remove')}</Button></li>
         ))}
       </ul>
-      {!p.tasteOff && list.length === 0 && <p>{t('taste.empty')}</p>}
+      {!p.tasteOff && list.length === 0 && <StanleyEmpty>{t('taste.empty')}</StanleyEmpty>}
       {p.tasteRemoved.length > 0 && <Button variant="secondary" onClick={() => set((s) => ({ ...s, tasteRemoved: [] }))}>{t('taste.restore')}</Button>}
       <p className="muted">{t('taste.note')}</p>
     </Page>
