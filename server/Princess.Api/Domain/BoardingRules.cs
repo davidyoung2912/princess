@@ -72,12 +72,20 @@ public static class BoardingRules
         return $"{body}|{Sign(key, body)}";
     }
 
-    public static PassData? DecodePass(string key, string text)
+    /// <summary>The key passes are signed with: <c>Passes:SigningKey</c> when set, otherwise an HKDF-SHA256 derivation from the JWT key, so a leaked pass key never exposes the token key and the reverse.</summary>
+    public static string DerivePassKey(string jwtKey, string? configured) =>
+        !string.IsNullOrWhiteSpace(configured)
+            ? configured
+            : Convert.ToHexString(HKDF.DeriveKey(HashAlgorithmName.SHA256, Encoding.UTF8.GetBytes(jwtKey), 32, info: Encoding.UTF8.GetBytes("princess-boarding-pass-v1")));
+
+    /// <summary>Checks a pass under the current key, or under <paramref name="legacyKey"/> (the JWT key that signed passes before the separate key) during the transition.</summary>
+    public static PassData? DecodePass(string key, string text, string? legacyKey = null)
     {
         var parts = text.Split('|');
         if (parts.Length != 8 || parts[0] != "PCP1") return null;
-        var expected = Sign(key, string.Join('|', parts[..7]));
-        if (!CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(expected), Encoding.ASCII.GetBytes(parts[7]))) return null;
+        var body = string.Join('|', parts[..7]);
+        bool Matches(string k) => CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(Sign(k, body)), Encoding.ASCII.GetBytes(parts[7]));
+        if (!Matches(key) && !(legacyKey is not null && Matches(legacyKey))) return null;
         return int.TryParse(parts[2], out var seq) && seq >= 1 ? new PassData(parts[1], seq, parts[3], parts[4], parts[5], parts[6]) : null;
     }
 

@@ -21,15 +21,16 @@ const local = (): Storage | null => {
 export function FindPassScreen() {
   const [number, setNumber] = useState('')
   const [lastName, setLastName] = useState('')
+  const [dob, setDob] = useState('')
   const [found, setFound] = useState<{ pass: BoardingView; copy: boolean; at: number } | null>(null)
   const [problem, setProblem] = useState<'format' | 'noMatch' | null>(null)
-  const look = useAction(async (n: string, last: string) => api.boarding.lookup(n, last))
+  const look = useAction(async (n: string, last: string, born: string) => api.boarding.lookup(n, last, born))
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const key = normalizeBookingNumber(number)
-    if (!key || !lastName.trim()) { setProblem('format'); return }
+    if (!key || !lastName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) { setProblem('format'); return }
     setProblem(null)
-    const result = await look.run(number, lastName)
+    const result = await look.run(number, lastName, dob)
     if (result) {
       setFound({ pass: result, copy: false, at: demoNow() })
       cachePut(local(), 'found', key, result, demoNow())
@@ -45,6 +46,7 @@ export function FindPassScreen() {
       <form onSubmit={(e) => void submit(e)} noValidate>
         <Field label={t('find.number')} hint={t('find.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
         <Field label={t('find.lastName')} hint={t('find.lastNameHint')} value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+        <Field label={t('find.dob')} hint={t('find.dobHint')} type="date" value={dob} onChange={(e) => setDob(e.target.value)} autoComplete="off" />
         {problem === 'format' && <p role="alert" className="field__error">{t('find.err.format')}</p>}
         {error && error.code === 'notFound' && <p role="alert" className="field__error">{t('find.err.noMatch')} <Link to="/me/contact">{t('account.err.contact')}</Link></p>}
         {offline && !copy && <p role="alert" className="field__error">{t('find.err.offline')}</p>}

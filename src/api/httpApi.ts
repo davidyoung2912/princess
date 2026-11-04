@@ -107,7 +107,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   }
   const boarding: HttpGroups['boarding'] = {
     pass: () => inBooking('/boarding'),
-    lookup: (n, lastName) => get(`/pass/lookup?number=${seg(n)}&lastName=${seg(lastName)}`),
+    lookup: (n, lastName, dob) => get(`/pass/lookup?number=${seg(n)}&lastName=${seg(lastName)}&dob=${seg(dob)}`),
     addToWallet: () => inTrip('post', '/boarding/wallet'),
     embark: () => inBooking('/embark'),
     setCompanion: (step, done) => inTrip('put', `/embark/companion/${seg(step)}`, { done }),

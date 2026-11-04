@@ -44,8 +44,8 @@ public static class CheckinEndpoints
         em.MapPut("/bags", async (string number, BagsRequest body, ICurrentUser me, CheckinService svc, CancellationToken ct) => Results.Ok(await svc.SetBagsAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Records that the bags were dropped with the porters now, or not.");
 
-        api.MapGet("/pass/lookup", async (string? number, string? lastName, CheckinService svc, CancellationToken ct) => Results.Ok(await svc.LookupAsync(number, lastName, ct)))
+        api.MapGet("/pass/lookup", async (string? number, string? lastName, string? dob, CheckinService svc, CancellationToken ct) => Results.Ok(await svc.LookupAsync(number, lastName, dob, ct)))
             .AllowAnonymous().RequireRateLimiting(LookupLimiter).WithTags("Boarding")
-            .WithSummary("A pass by booking number and any guest's last name, with no sign-in. Rate-limited; every mismatch is the same 404.");
+            .WithSummary("A pass by booking number, any guest's last name and that guest's date of birth (yyyy-MM-dd), with no sign-in. Rate-limited, and a booking number locks after repeated misses; every mismatch is the same 404. The stateroom, deck and muster station are left out.");
     }
 }

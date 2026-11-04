@@ -90,6 +90,8 @@ services.AddScoped<PlanService>();
 services.AddScoped<ScopeLoader>();
 services.AddScoped<WaitService>();
 services.AddScoped<AheadService>();
+services.AddOptions<PassOptions>().BindConfiguration(PassOptions.Section).ValidateDataAnnotations().ValidateOnStart();
+services.AddSingleton<PassLookupGuard>();
 services.AddScoped<CheckinService>();
 services.AddScoped<OnboardService>();
 services.AddScoped<ServiceChatService>();

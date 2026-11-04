@@ -372,7 +372,7 @@ public class CheckinApiTests : JourneyWorld
         Assert.Equal([1, 2, 3], passes.Select(p => p.GetProperty("seq").GetInt32()));
         Assert.Equal([Daniel.PublicId, Priya.PublicId, Maya.PublicId], passes.Select(p => p.GetProperty("id").GetGuid()));
         Assert.Equal("HARPER/PRIYA", passes[1].GetProperty("printed").GetString());
-        var key = "test-signing-key-test-signing-key-0123456789";
+        var key = BoardingRules.DerivePassKey("test-signing-key-test-signing-key-0123456789", null);
         foreach (var p in passes)
         {
             var data = BoardingRules.DecodePass(key, p.GetProperty("code").GetString()!);
@@ -446,7 +446,7 @@ public class CheckinApiTests : JourneyWorld
     public async Task LooksUpAPassWithNoSignInByBookingNumberAndAnyGuestsLastName()
     {
         await Finish(await DanielToken());
-        var r = await Get("/api/v1/pass/lookup?number=pc%20243-902&lastName=%20harper%20", null);
+        var r = await Get("/api/v1/pass/lookup?number=pc%20243-902&lastName=%20harper%20&dob=1984-06-02", null);
         Assert.Equal(HttpStatusCode.OK, r.Status);
         Assert.Equal("PC243902", r.Json.GetProperty("number").GetString());
         Assert.True(r.Json.GetProperty("checkinDone").GetBoolean());
@@ -455,27 +455,43 @@ public class CheckinApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task TheAnonymousViewLeavesOutStateroomDeckAndMuster()
+    {
+        await Finish(await DanielToken());
+        var r = await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper&dob=1982-04-10", null);
+        Assert.All(r.Json.GetProperty("passes").EnumerateArray(), p => Assert.Equal(("", 0, ""), (p.GetProperty("cabin").GetString(), p.GetProperty("deck").GetInt32(), p.GetProperty("muster").GetString())));
+    }
+
+    [Fact]
+    public async Task RepeatedMissesLockTheBookingNumberEvenForTheRightDetails()
+    {
+        await Finish(await DanielToken());
+        for (var i = 0; i < 5; i++) Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper&dob=1999-01-01", null)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper&dob=1982-04-10", null)).Status);
+    }
+
+    [Fact]
     public async Task ALookupBeforeCheckinShowsTheBlueLaneAndNoCodes()
     {
-        var r = await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper", null);
+        var r = await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper&dob=1982-04-10", null);
         Assert.Equal(("blue", false), (r.Json.GetProperty("lane").GetString(), r.Json.GetProperty("checkinDone").GetBoolean()));
         Assert.All(r.Json.GetProperty("passes").EnumerateArray(), p => Assert.Equal("", p.GetProperty("code").GetString()));
     }
 
     [Theory]
     [InlineData("number=PC243902&lastName=Smith")]
-    [InlineData("number=PC999999&lastName=Harper")]
+    [InlineData("number=PC999999&lastName=Harper&dob=1982-04-10")]
     [InlineData("number=PC243902&lastName=")]
-    [InlineData("number=&lastName=Harper")]
-    [InlineData("lastName=Harper")]
+    [InlineData("number=&lastName=Harper&dob=1982-04-10")]
+    [InlineData("lastName=Harper&dob=1982-04-10")]
     [InlineData("number=PC243902")]
-    [InlineData("number=short&lastName=Harper")]
-    [InlineData("number=PC179254&lastName=Harper")]
+    [InlineData("number=short&lastName=Harper&dob=1982-04-10")]
+    [InlineData("number=PC179254&lastName=Harper&dob=1982-04-10")]
     public async Task EveryMismatchIsTheSameNotFound(string query)
     {
         var r = await Get($"/api/v1/pass/lookup?{query}", null);
         Assert.Equal((HttpStatusCode.NotFound, "notFound"), (r.Status, r.ProblemTitle));
-        var baseline = await Get("/api/v1/pass/lookup?number=PC000000&lastName=Nobody", null);
+        var baseline = await Get("/api/v1/pass/lookup?number=PC000000&lastName=Nobody&dob=1980-01-01", null);
         static string Body(Reply x) => string.Join(',', x.Json.EnumerateObject().Where(p => p.Name is not ("instance" or "traceId")).Select(p => $"{p.Name}={p.Value}"));
         Assert.Equal(Body(baseline), Body(r));                                                                   // nothing in the answer tells a wrong number from a wrong name
     }
@@ -484,8 +500,8 @@ public class CheckinApiTests : JourneyWorld
     public async Task ACancelledOrAgentBookingCannotBeLookedUp()
     {
         Harper.Status = "cancelled";
-        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper", null)).Status);
-        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=AG7P31BK&lastName=Whitfield", null)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=PC243902&lastName=Harper&dob=1982-04-10", null)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/pass/lookup?number=AG7P31BK&lastName=Whitfield&dob=1980-01-01", null)).Status);
     }
 
     [Fact]
@@ -494,7 +510,7 @@ public class CheckinApiTests : JourneyWorld
         using var limited = new ApiFactory { LoginAttemptsPerMinute = 3 };
         using var http = limited.CreateClient();
         var codes = new List<HttpStatusCode>();
-        for (var i = 0; i < 5; i++) codes.Add((await http.GetAsync("/api/v1/pass/lookup?number=PC000000&lastName=Nobody")).StatusCode);
+        for (var i = 0; i < 5; i++) codes.Add((await http.GetAsync("/api/v1/pass/lookup?number=PC000000&lastName=Nobody&dob=1980-01-01")).StatusCode);
         Assert.Equal([HttpStatusCode.NotFound, HttpStatusCode.NotFound, HttpStatusCode.NotFound, HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests], codes);
     }
 

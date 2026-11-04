@@ -27,12 +27,14 @@ Status key: [ ] not started, [~] in progress, [x] done (built, not committed unt
 
 Done: `Auth:CodeRequestsPerHour` (3, per account and purpose; over the cap the answer is the same 204 but no email) and `Auth:MaxCodeAttemptsPerHour` (10 wrong tries across all codes issued in the hour); codes are HMAC-SHA-256 under a key derived from `Jwt:SigningKey` over a per-challenge 16-byte `AuthChallenges.Salt` (codes issued before the salt column cannot match, they last 15 minutes); failed passwords are throttled per (account, address) in `dbo.LoginThrottle` (`Auth:MaxFailedLogins` then `LockoutMinutes`, doubling per repeat lock up to `MaxLockoutMinutes`, forgotten after a day), and the whole account only pauses after `MaxFailedLoginsPerAccount` (30) failures across all addresses; the account number signs in only when `Auth:AllowAccountNumberLogin` is true (default false, otherwise it behaves as an unknown account); a password reset sets `Users.SessionsValidFrom`, and the JWT bearer handler refuses any access token issued before it. Logout still revokes only the refresh-token family: the access token on that device lives for up to `Jwt:AccessTokenMinutes` (15), the documented window, because tokens carry no session id and revoking them all would sign the person out everywhere. Existing databases pick up the new columns and table by re-running `db/01-schema.sql`.
 
-## Phase 4 [ ] Boarding pass lookup and booking numbers
+## Phase 4 [x] Boarding pass lookup and booking numbers
 
 - Booking numbers from a CSPRNG with a longer alphabet (existing numbers keep working).
 - Anonymous `/pass/lookup` needs a second factor (date of birth or an emailed code) and a per-booking-number attempt counter with lockout.
 - Strip the cabin, deck and muster from the anonymous view; return the QR only after check-in and the second factor.
 - Separate pass-signing key (HKDF from the JWT key or `Passes:SigningKey`); `DecodePass` accepts the old key for a transition window.
+
+Done: new booking numbers are `PB` plus six characters from `RandomNumberGenerator` over a 31-symbol alphabet without look-alikes (I, L, O, 0, 1), checked for uniqueness; existing numbers are untouched. `/pass/lookup` now needs `dob` (yyyy-MM-dd) of the same guest whose last name matches; `PassLookupGuard` counts misses per booking number from any address (`Passes:MaxLookupMisses` 5 within `Passes:LookupLockoutMinutes` 15) and a locked number answers the same 404. The count is in memory, so it is per process. The anonymous view blanks `cabin`, `deck` and `muster`; the QR text is still empty until check-in is finished, and the date of birth is the second factor for it. Passes are signed with `Passes:SigningKey` or, when empty, an HKDF-SHA256 key derived from `Jwt:SigningKey` (`BoardingRules.DerivePassKey`); `DecodePass(key, text, legacyKey)` also accepts the old JWT-signed form when given it (nothing on the server verifies passes yet, so no flag). Ship-tour codes (`PCX1`) still use the JWT key through `BoardingRules.Sign`.
 
 ## Phase 5 [ ] PII retention and exposure
 

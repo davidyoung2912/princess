@@ -166,7 +166,7 @@ describe('REST check-in and boarding groups', () => {
       '/bookings/PC2/embark/companion/c1': {},
       '/bookings/PC2/embark/carry-on/k1': {},
       '/bookings/PC2/embark/bags': {},
-      "/pass/lookup?number=PC%202&lastName=O'Neil": {},
+      "/pass/lookup?number=PC%202&lastName=O'Neil&dob=1980-02-03": {},
     })
     const g = createHttpGroups(http).groups
     await g.checkin.view()
@@ -176,13 +176,13 @@ describe('REST check-in and boarding groups', () => {
     await g.boarding.setCompanion('c1' as never, true)
     await g.boarding.setCarryOn('k1' as never, false)
     await g.boarding.setBags(true)
-    await g.boarding.lookup('PC 2', "O'Neil")
+    await g.boarding.lookup('PC 2', "O'Neil", '1980-02-03')
     const body = (path: string) => calls.find((c) => c.path === path)?.body
     expect(body('/bookings/PC2/checkin/steps/document')).toEqual({ guest: PERSONA_GUIDS.maya, kind: 'passport', country: 'US', number: 'X1', expires: '2030-01-01' })
     expect(body('/bookings/PC2/checkin/steps/confirm')).toEqual({ guests: [PERSONA_GUIDS.maya, PERSONA_GUIDS.ethan] })
     expect(body('/bookings/PC2/embark/companion/c1')).toEqual({ done: true })
     expect(body('/bookings/PC2/embark/bags')).toEqual({ dropped: true })
-    expect(calls.some((c) => c.path === "/pass/lookup?number=PC%202&lastName=O'Neil")).toBe(true)
+    expect(calls.some((c) => c.path === "/pass/lookup?number=PC%202&lastName=O'Neil&dob=1980-02-03")).toBe(true)
   })
 })
 

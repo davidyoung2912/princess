@@ -200,13 +200,14 @@ public sealed class BookingService(
 
     // ---- Book ----
 
-    private async Task<string> NewNumberAsync(string draftId, CancellationToken ct)
+    /// <summary>Letters and digits without the look-alikes (no I, L, O, 0 or 1): 31 symbols, so 31^6 numbers after the PB prefix.</summary>
+    private const string NumberAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+    private async Task<string> NewNumberAsync(CancellationToken ct)
     {
-        var h = 5381u;
-        foreach (var ch in draftId) h = unchecked(h * 33 + ch);
-        for (uint n = 0; ; n++)
+        while (true)
         {
-            var number = $"PB{100_000 + unchecked(h + n * 7919) % 900_000}";
+            var number = "PB" + RandomNumberGenerator.GetString(NumberAlphabet, 6);
             if (!await bookings.NumberTakenAsync(number, ct)) return number;
         }
     }
@@ -259,7 +260,7 @@ public sealed class BookingService(
         var due = Pricing.DueNow(plan, option);
         var parts = await ResolvePartsAsync(actor, req.Parts, due, today, ct);
 
-        var number = await NewNumberAsync(draft.Id, ct);
+        var number = await NewNumberAsync(ct);
         var reference = $"PAY-{number}-{(option == "full" ? "F" : "D")}-{now:yyMMddHHmmss}";
         var charged = await gateway.ChargeAsync(reference, parts, req.Challenge, ct);
 

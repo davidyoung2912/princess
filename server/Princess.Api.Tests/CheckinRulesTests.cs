@@ -176,6 +176,20 @@ public class CheckinRulesTests
     }
 
     [Fact]
+    public void ThePassKeyIsSeparateFromTheJwtKeyAndTheOldKeyIsAcceptedOnRequest()
+    {
+        var passKey = BoardingRules.DerivePassKey(Key, null);
+        Assert.NotEqual(Key, passKey);
+        Assert.Equal(passKey, BoardingRules.DerivePassKey(Key, null));
+        Assert.Equal("configured-pass-key", BoardingRules.DerivePassKey(Key, "configured-pass-key"));
+        var pass = new PassData("PC243902", 1, "HARPER/DANIEL", "2027-03-21", "10101", "Group 1");
+        var oldCode = BoardingRules.EncodePass(Key, pass);
+        Assert.Null(BoardingRules.DecodePass(passKey, oldCode));
+        Assert.Equal(pass, BoardingRules.DecodePass(passKey, oldCode, Key));
+        Assert.Equal(pass, BoardingRules.DecodePass(passKey, BoardingRules.EncodePass(passKey, pass), Key));
+    }
+
+    [Fact]
     public void APipeInANameCannotBreakTheCode()
     {
         var code = BoardingRules.EncodePass(Key, new PassData("PC1", 1, "O'NEIL|X/ANN", "2027-03-21", "10101", "Group|1"));

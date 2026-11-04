@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// at 10:00 on sailing day, on the person's own clock (D4). The pass lookup is public and answers a uniform <c>notFound</c>.
 /// </summary>
 public sealed class CheckinService(
-    ScopeLoader scopes, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt)
+    ScopeLoader scopes, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt, IOptions<PassOptions> passes, PassLookupGuard guard)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
@@ -21,7 +21,7 @@ public sealed class CheckinService(
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
 
-    private string Key => jwt.Value.SigningKey;
+    private string Key => BoardingRules.DerivePassKey(jwt.Value.SigningKey, passes.Value.SigningKey);
 
     // ---- State ----
 
@@ -323,19 +323,34 @@ public sealed class CheckinService(
         return await BoardingAsync(c.Actor, c.Booking, c.Now, ct);
     }
 
-    /// <summary>The pass for a booking number and any guest's last name, with no sign-in. Every mismatch is the same <c>notFound</c>, so a stranger learns nothing.</summary>
-    public async Task<BoardingViewDto> LookupAsync(string? number, string? lastName, CancellationToken ct)
+    /// <summary>
+    /// The pass for a booking number, a guest's last name and that same guest's date of birth, with no sign-in. Every mismatch is the same <c>notFound</c>, so a stranger learns nothing;
+    /// repeated misses on one booking number lock it for a while. The anonymous view leaves out the stateroom, deck and muster station.
+    /// </summary>
+    public async Task<BoardingViewDto> LookupAsync(string? number, string? lastName, string? dob, CancellationToken ct)
     {
         var n = AccessRules.NormalizeBookingNumber(number);
         var last = lastName?.Trim().ToLowerInvariant();
-        if (n is null || string.IsNullOrEmpty(last)) throw ApiException.NotFound();
-        var id = await store.FindBookingIdAsync(n, ct) ?? throw ApiException.NotFound();
-        var booking = await trips.GetAsync(id, ct) ?? throw ApiException.NotFound();
-        if (booking.Status != "confirmed") throw ApiException.NotFound();
-        var party = await accounts.GetPartyAsync(id, ct);
-        if (!party.Any(g => g.LastName.Trim().ToLowerInvariant() == last)) throw ApiException.NotFound();
-        var booker = await users.FindByIdAsync(booking.BookerUserId, ct) ?? throw ApiException.NotFound();
-        return await BoardingAsync(booker, booking, await clock.NowAsync(booker, ct), ct);
+        if (n is null) throw ApiException.NotFound();
+        if (guard.IsLocked(n)) throw ApiException.NotFound();
+        try
+        {
+            if (string.IsNullOrEmpty(last) || !DateOnly.TryParseExact(dob?.Trim(), "yyyy-MM-dd", out var born)) throw ApiException.NotFound();
+            var id = await store.FindBookingIdAsync(n, ct) ?? throw ApiException.NotFound();
+            var booking = await trips.GetAsync(id, ct) ?? throw ApiException.NotFound();
+            if (booking.Status != "confirmed") throw ApiException.NotFound();
+            var party = await accounts.GetPartyAsync(id, ct);
+            if (!party.Any(g => g.LastName.Trim().ToLowerInvariant() == last && D(g.Dob) == born)) throw ApiException.NotFound();
+            var booker = await users.FindByIdAsync(booking.BookerUserId, ct) ?? throw ApiException.NotFound();
+            var view = await BoardingAsync(booker, booking, await clock.NowAsync(booker, ct), ct);
+            guard.Succeeded(n);
+            return view with { Passes = view.Passes.Select(p => p with { Cabin = "", Deck = 0, Muster = "" }).ToList() };
+        }
+        catch (ApiException)
+        {
+            guard.Failed(n);
+            throw;
+        }
     }
 
     public async Task<BoardingViewDto> AddToWalletAsync(UserRecord actor, string? number, CancellationToken ct)

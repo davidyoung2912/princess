@@ -677,8 +677,8 @@ export interface Api {
   boarding: {
     /** The signed-in booking's passes. */
     pass(): Promise<BoardingView>
-    /** A pass by booking number and a guest's last name, with no sign-in; rejects `notFound` for any mismatch. */
-    lookup(number: string, lastName: string): Promise<BoardingView>
+    /** A pass by booking number, a guest's last name and that guest's date of birth (yyyy-MM-dd), with no sign-in; rejects `notFound` for any mismatch. The stateroom, deck and muster are blank. */
+    lookup(number: string, lastName: string, dob: string): Promise<BoardingView>
     addToWallet(): Promise<BoardingView>
     embark(): Promise<EmbarkView>
     setCompanion(step: CompanionId, done: boolean): Promise<EmbarkView>

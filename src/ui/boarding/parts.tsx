@@ -13,8 +13,8 @@ export function PassFace({ pass, p, big }: { pass: BoardingView; p: GuestPass; b
       <dl className="pass__facts">
         <div><dt>{t('pass.group')}</dt><dd>{p.group}</dd></div>
         <div><dt>{t('pass.lane')}</dt><dd>{t(pass.lane === 'green' ? 'pass.lane.green' : 'pass.lane.blue')}</dd></div>
-        <div><dt>{t('pass.stateroom')}</dt><dd>{p.cabin}</dd></div>
-        <div><dt>{t('pass.muster')}</dt><dd>{p.muster}</dd></div>
+        {p.cabin && <div><dt>{t('pass.stateroom')}</dt><dd>{p.cabin}</dd></div>}
+        {p.muster && <div><dt>{t('pass.muster')}</dt><dd>{p.muster}</dd></div>}
         <div><dt>{t('pass.terminalLabel')}</dt><dd>{pass.terminal.name}</dd></div>
         <div><dt>{t('pass.booking')}</dt><dd>{pass.number}</dd></div>
       </dl>
