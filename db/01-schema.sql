@@ -991,6 +991,17 @@ CREATE TABLE dbo.ConciergeUses (
 CREATE INDEX IX_ConciergeUses_UserId_UsedAt ON dbo.ConciergeUses (UserId, UsedAt);
 END
 
+IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
+BEGIN
+-- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.
+CREATE TABLE dbo.DataProtectionKeys (
+  Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DataProtectionKeys PRIMARY KEY,
+  FriendlyName NVARCHAR(200) NOT NULL,
+  Xml NVARCHAR(MAX) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_DataProtectionKeys_CreatedAt DEFAULT SYSUTCDATETIME()
+);
+END
+
 IF OBJECT_ID(N'dbo.GuestMedia', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.GuestMedia (

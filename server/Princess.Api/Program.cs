@@ -18,6 +18,7 @@ services.AddOptions<JwtOptions>().BindConfiguration(JwtOptions.Section).Validate
 services.AddOptions<AuthOptions>().BindConfiguration(AuthOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 
 services.AddMemoryCache();
+services.AddPrincessDataProtection(builder.Configuration, builder.Environment);
 services.AddSingleton<UserCache>();
 services.AddSingleton<SailingCache>();
 services.AddSingleton<IClock, SystemClock>();

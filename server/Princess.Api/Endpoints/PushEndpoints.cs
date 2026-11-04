@@ -51,9 +51,9 @@ public static class PushEndpoints
                 Results.Ok(await svc.RevokeAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Calendar").WithSummary("Turns the calendar feed off; its address stops working at once.");
 
-        api.MapGet("/calendar/{file}", async (string file, CalendarFeedService svc, CancellationToken ct) =>
+        api.MapGet("/calendar/{token}", async (string token, CalendarFeedService svc, CancellationToken ct) =>
             {
-                var text = file.EndsWith(".ics", StringComparison.Ordinal) ? await svc.RenderAsync(file[..^4], ct) : null;
+                var text = token.EndsWith(".ics", StringComparison.Ordinal) ? await svc.RenderAsync(token[..^4], ct) : null;
                 return text is null ? Results.NotFound() : Results.Text(text, "text/calendar; charset=utf-8");
             })
             .AllowAnonymous().WithTags("Calendar").WithSummary("The calendar feed itself. The address is the secret; no sign-in.");

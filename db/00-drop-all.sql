@@ -83,6 +83,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'GuestMedia'),
   (N'dbo', N'StaffTickets'),
   (N'dbo', N'ConciergeUses'),
+  (N'dbo', N'DataProtectionKeys'),
   (N'demo', N'DemoState'),
   (N'dbo', N'Bookings'),
   (N'dbo', N'BookingGuests'),

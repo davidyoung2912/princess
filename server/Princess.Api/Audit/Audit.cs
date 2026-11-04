@@ -133,7 +133,7 @@ public static class AuditContext
 public sealed class AuditMiddleware(RequestDelegate next)
 {
     private static readonly string[] Skipped = ["/health", "/swagger", "/.well-known", "/api/v1/telemetry"];   // telemetry writes its own rows
-    private static readonly string[] SecretRouteKeys = ["token", "code", "secret", "key", "password"];
+    private static readonly string[] SecretRouteKeys = ["token", "code", "secret", "key", "password", "file"];
 
     public async Task InvokeAsync(HttpContext http, IAuditLog audit)
     {

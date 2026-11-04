@@ -15,14 +15,22 @@ public sealed class StateService(IStateStore store, ITripStore trips, AccessServ
 {
     private readonly IDataProtector _protector = protection.CreateProtector("Princess.Api.State.v1");
 
-    /// <summary>Encrypted keys are stored as <c>{"enc":"..."}</c>; everything else as the document itself.</summary>
-    private StateDto Dto(StateRow r)
+    /// <summary>
+    /// Encrypted keys are stored as <c>{"enc":"..."}</c>; everything else as the document itself. A document that cannot be decrypted (the key ring was lost)
+    /// is never answered as an empty one, because the next save would overwrite the real data: a read or save fails (and is logged by the error handler), and
+    /// the privacy export marks the document <c>{"unreadable":true}</c> so one bad document does not block the rest.
+    /// </summary>
+    private StateDto Dto(StateRow r, bool forExport = false)
     {
         var node = JsonNode.Parse(r.Json);
         if (StateRules.EncryptedKeys.Contains(r.Key) && node is JsonObject o && o["enc"]?.GetValue<string>() is { } cipher)
         {
             try { node = JsonNode.Parse(_protector.Unprotect(cipher)); }
-            catch (System.Security.Cryptography.CryptographicException) { node = new JsonObject(); }   // key ring lost: treat as empty rather than fail the whole export
+            catch (System.Security.Cryptography.CryptographicException e)
+            {
+                if (!forExport) throw new InvalidOperationException($"State document '{r.Key}' cannot be decrypted: the Data Protection key ring has changed or been lost.", e);
+                node = new JsonObject { ["unreadable"] = true };
+            }
         }
         return new StateDto(r.Key, r.Version, node, TripRules.ToMs(r.UpdatedAt));
     }
@@ -84,13 +92,13 @@ public sealed class StateService(IStateStore store, ITripStore trips, AccessServ
     public async Task<StateExportDto> ExportAsync(UserRecord actor, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);
-        var account = (await store.ListAsync(false, actor.Id, ct)).Select(Dto).ToList();
+        var account = (await store.ListAsync(false, actor.Id, ct)).Select(r => Dto(r, forExport: true)).ToList();
         var bookings = new List<BookingStateExportDto>();
         var history = new List<ExportTripDto>();
         foreach (var b in await trips.ListForUserAsync(actor.Id, ct))
         {
             history.Add(new ExportTripDto(b.Number, b.SailingTitle, b.ShipName, b.Departure.ToString("yyyy-MM-dd"), b.Nights, b.CategoryName));
-            var docs = (await store.ListAsync(true, b.BookingId, ct)).Select(Dto).ToList();
+            var docs = (await store.ListAsync(true, b.BookingId, ct)).Select(r => Dto(r, forExport: true)).ToList();
             var (rows, count) = await portRows.ExportAsync(b.BookingId, ct);
             if (count > 0) docs.Add(new StateDto("port-rows", count, rows, TripRules.ToMs(now)));
             if (docs.Count > 0) bookings.Add(new BookingStateExportDto(b.Number, docs));
