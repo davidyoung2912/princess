@@ -4,7 +4,7 @@ import { PORT_COORDS, PORT_GUIDES } from './ports'
 import { PORT_KNOWLEDGE } from './portContent'
 
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x))
-const wire = (): Record<string, any> => ({ version: 'x1', guides: clone(PORT_GUIDES), knowledge: clone(PORT_KNOWLEDGE), coords: clone(PORT_COORDS) })
+const wire = (): Record<string, any> => ({ version: 'x1', guides: clone(PORT_GUIDES), knowledge: clone(PORT_KNOWLEDGE), coords: clone(PORT_COORDS), ashore: {} })
 
 describe('normalizePorts', () => {
   it('reads the authored content as a good answer', () => {

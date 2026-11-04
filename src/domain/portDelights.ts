@@ -36,11 +36,13 @@ export function stopwatch(allAboardAt: number, now: number): Stopwatch {
 
 export interface TakeMeBack { port: CallPort; /** Where the ship is, in the local language. */ place: string; /** What to say, in the local language. */ say: string; /** The same in English, for the guest. */ english: string; lang: 'es' | 'en' }
 
-/** Authored concept values: the cruise pier or tender point and a short request. A real berth feed would replace these. */
-const AUTHORED_TAKE_ME_BACK: Record<string, TakeMeBack> = {
-  cozumel: { port: 'cozumel', place: 'Muelle internacional de cruceros, Cozumel', say: 'Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.', english: 'Please take me to the cruise pier. My ship is the Sun Princess.', lang: 'es' },
-  belize: { port: 'belize', place: 'Fort Street Tourism Village (the tender pier), Belize City', say: 'Please take me to the Tourism Village tender pier. My ship is the Sun Princess.', english: 'Please take me to the Tourism Village tender pier. My ship is the Sun Princess.', lang: 'en' },
-  roatan: { port: 'roatan', place: 'Muelle de cruceros, Coxen Hole, Roatán', say: 'Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.', english: 'Please take me to the cruise pier. My ship is the Sun Princess.', lang: 'es' },
+/** The cruise pier or tender point and a short request, for the ports that have authored words; served with the port reference (`portsServed.ts`). A real berth feed would replace these. */
+const AUTHORED_TAKE_ME_BACK: Record<string, TakeMeBack> = {}
+
+/** Replaces the authored words in place, so earlier imports see the served values. */
+export function replaceTakeMeBack(next: Record<string, TakeMeBack>): void {
+  for (const k of Object.keys(AUTHORED_TAKE_ME_BACK)) delete AUTHORED_TAKE_ME_BACK[k]
+  Object.assign(AUTHORED_TAKE_ME_BACK, next)
 }
 
 /** The card for any port: the authored words where there are some, otherwise a plain English request that names only the port (no invented pier). */

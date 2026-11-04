@@ -1,6 +1,10 @@
 import { replacePortKnowledge, type PortKnowledge } from './portContent'
 import { replacePorts, type PortGuide } from './ports'
 import { notifyCatalogue } from './catalogueServed'
+import { replacePortContacts, type PortContacts } from './services'
+import { PLAN_B_TRIGGERS, replacePlanB, type PlanB, type PlanBTrigger } from './portPilot'
+import { replaceClearance, type Clearance } from './readiness'
+import { replaceTakeMeBack, type TakeMeBack } from './portDelights'
 
 /**
  * The port guides and port knowledge from the server (multi-device plan 3, Phase 3 step 4). The authored values in `ports.ts` and `portContent.ts`
@@ -11,6 +15,15 @@ export interface ServedPorts {
   guides: Record<string, PortGuide>
   knowledge: Record<string, PortKnowledge>
   coords: Record<string, [number, number]>
+  /** What a guest needs ashore, per port id: contacts, plan B, take-me-back words and entry papers. Optional per port; absent on an older server. */
+  ashore: Record<string, Ashore>
+}
+
+export interface Ashore {
+  contacts?: PortContacts
+  planB?: Record<PlanBTrigger, PlanB>
+  takeMeBack?: Omit<TakeMeBack, 'port'>
+  clearance?: Omit<Clearance, 'port'>
 }
 
 type Rec = Record<string, unknown>
@@ -38,6 +51,20 @@ function knowledge(r: unknown): boolean {
     && each(r.souvenirs, (s) => str(s.item, 120) && str(s.fair, 60))
 }
 
+function ashoreOk(r: unknown): boolean {
+  if (!rec(r)) return false
+  if (r.contacts !== undefined && !(rec(r.contacts) && str(r.contacts.consulate) && str(r.contacts.emergency) && str(r.contacts.agent))) return false
+  if (r.planB !== undefined && !(rec(r.planB) && PLAN_B_TRIGGERS.every((k) => {
+    const b = (r.planB as Rec)[k]
+    return rec(b) && b.id === k && str(b.title, 120) && str(b.detail) && typeof b.nearShip === 'boolean'
+  }))) return false
+  const t = r.takeMeBack
+  if (t !== undefined && !(rec(t) && str(t.place, 200) && str(t.say, 300) && str(t.english, 300) && (t.lang === 'es' || t.lang === 'en'))) return false
+  const c = r.clearance
+  if (c !== undefined && !(rec(c) && str(c.country, 120) && rec(c.documents) && str(c.documents.us) && str(c.documents.other) && strs(c.forms) && strs(c.notes))) return false
+  return true
+}
+
 /** Reads the server's answer, all or nothing: every guide port needs a guide and its knowledge, every guide a coordinate pair, and every entry its expected shape. */
 export function normalizePorts(raw: unknown): ServedPorts | null {
   if (!rec(raw) || !str(raw.version, 80) || !rec(raw.guides) || !rec(raw.knowledge) || !rec(raw.coords)) return null
@@ -47,14 +74,36 @@ export function normalizePorts(raw: unknown): ServedPorts | null {
     const c = raw.coords[id]
     if (!Array.isArray(c) || c.length !== 2 || !num(c[0], -180, 180) || !num(c[1], -90, 90)) return null
   }
+  const ash = raw.ashore === undefined ? {} : raw.ashore
+  if (!rec(ash)) return null
+  for (const id of Object.keys(ash)) if (!raw.guides[id] || !ashoreOk(ash[id])) return null
   if (Object.keys(raw.guides).length === 0) return null
   for (const id of Object.keys(raw.knowledge)) if (!raw.guides[id] || !raw.coords[id]) return null
-  return { version: raw.version, guides: raw.guides as unknown as ServedPorts['guides'], knowledge: raw.knowledge as unknown as ServedPorts['knowledge'], coords: raw.coords as unknown as ServedPorts['coords'] }
+  return { version: raw.version, guides: raw.guides as unknown as ServedPorts['guides'], knowledge: raw.knowledge as unknown as ServedPorts['knowledge'], coords: raw.coords as unknown as ServedPorts['coords'], ashore: ash as unknown as ServedPorts['ashore'] }
+}
+
+/** Puts the served per-port ashore content in use (contacts, plan B, take-me-back words, entry papers). */
+export function applyAshore(ashore: ServedPorts['ashore']): void {
+  const contacts: Record<string, PortContacts> = {}
+  const planB: Record<string, Record<PlanBTrigger, PlanB>> = {}
+  const takeMeBack: Record<string, TakeMeBack> = {}
+  const clearance: Clearance[] = []
+  for (const [port, a] of Object.entries(ashore)) {
+    if (a.contacts) contacts[port] = a.contacts
+    if (a.planB) planB[port] = a.planB
+    if (a.takeMeBack) takeMeBack[port] = { port, ...a.takeMeBack }
+    if (a.clearance) clearance.push({ port, ...a.clearance })
+  }
+  replacePortContacts(contacts)
+  replacePlanB(planB)
+  replaceTakeMeBack(takeMeBack)
+  replaceClearance(clearance)
 }
 
 /** Puts the served port content in use and tells the screens. */
 export function applyPorts(p: ServedPorts): void {
   replacePorts({ guides: p.guides, coords: p.coords })
   replacePortKnowledge(p.knowledge)
+  applyAshore(p.ashore)
   notifyCatalogue()
 }

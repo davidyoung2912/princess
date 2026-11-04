@@ -249,11 +249,13 @@ export function systemStatus(scenarios: readonly ScenarioId[], offline: boolean)
 export let LAST_MINUTE_LEAD_MIN = 120
 
 export interface PortContacts { consulate: string; emergency: string; agent: string }
-/** Sample numbers: 555 numbers are reserved for fiction. */
-export const PORT_CONTACTS: Record<string, PortContacts> = {
-  cozumel: { consulate: 'U.S. consular agency, Cozumel: 555-0141', emergency: '911 (Mexico)', agent: 'Ship’s agent, Cozumel pier: 555-0142' },
-  belize: { consulate: 'U.S. Embassy, Belmopan: 555-0151', emergency: '911 (Belize)', agent: 'Ship’s agent, Belize tender pier: 555-0152' },
-  roatan: { consulate: 'U.S. Embassy, Tegucigalpa: 555-0161', emergency: '911 (Honduras)', agent: 'Ship’s agent, Mahogany Bay: 555-0162' },
+/** Sample numbers (555 numbers are reserved for fiction), served per port with the port reference (`portsServed.ts`). */
+export const PORT_CONTACTS: Record<string, PortContacts> = {}
+
+/** Replaces the ashore contacts in place, so earlier imports see the served values. */
+export function replacePortContacts(next: Record<string, PortContacts>): void {
+  for (const k of Object.keys(PORT_CONTACTS)) delete PORT_CONTACTS[k]
+  Object.assign(PORT_CONTACTS, next)
 }
 
 export interface ReadyItem { id: string; tender?: boolean; sun?: boolean }

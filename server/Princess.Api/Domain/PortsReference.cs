@@ -4276,6 +4276,186 @@ public static class PortsReference
    153.17,
    -27.38
   ]
+ },
+ "ashore": {
+  "fll": {
+   "clearance": {
+    "country": "United States (embarkation and return)",
+    "documents": {
+     "us": "A valid passport book or card, or an enhanced driver’s licence and a birth certificate for a closed-loop cruise. A passport is the easiest.",
+     "other": "A valid passport, and the visa you need for the United States. Check this before you pay the balance."
+    },
+    "forms": [
+     "Your cruise line shares your passenger list with U.S. Customs and Border Protection (CBP) before you sail, so there is no separate form to file.",
+     "On return, complete the customs declaration in the app (Disembark, then Customs) or on the paper form."
+    ],
+    "notes": [
+     "Allow time at the terminal for CBP on your return day.",
+     "Fresh fruit, meat and plants cannot be brought into the United States."
+    ]
+   }
+  },
+  "cozumel": {
+   "contacts": {
+    "consulate": "U.S. consular agency, Cozumel: 555-0141",
+    "emergency": "911 (Mexico)",
+    "agent": "Ship’s agent, Cozumel pier: 555-0142"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "Covered shops and a museum",
+     "detail": "The pier shops are under cover. The island museum is a short taxi ride and takes about 90 minutes.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "A beach club with shade",
+     "detail": "Pick a club with a shaded area and a pool. Go before midday and be back at the pier by early afternoon.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay at the pier",
+     "detail": "Cozumel has a pier, so a tender change is unlikely. If it happens, shop and eat near the landing and keep the plan short.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow morning ashore",
+     "detail": "Walk the pier shops, have a long lunch with a seat, and go back to the ship early for the pool.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Mexico",
+    "documents": {
+     "us": "Passport or the closed-loop papers above. Carry a photo copy ashore and leave the original in the cabin safe.",
+     "other": "A valid passport. Some nationalities need a Mexican visa even for a day ashore: check before you go."
+    },
+    "forms": [
+     "Cruise arrivals do not file a visitor form beforehand. The ship’s manifest covers entry.",
+     "A small port tax is included in your cruise fare."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Do not bring camouflage-patterned clothing ashore: it is not allowed in Mexico."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Muelle internacional de cruceros, Cozumel",
+    "say": "Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise pier. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  },
+  "belize": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Belmopan: 555-0151",
+    "emergency": "911 (Belize)",
+    "agent": "Ship’s agent, Belize tender pier: 555-0152"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "Indoor museum and market",
+     "detail": "The Tourism Village at the landing has covered shops and cafes. A short taxi ride reaches the Museum of Belize.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Morning tour, afternoon aboard",
+     "detail": "Do a morning tour that is back by noon, then use the ship’s pool when the sun is highest.",
+     "nearShip": true
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Keep it inside the village",
+     "detail": "If tenders run late, stay at the Tourism Village near the landing and take the first tender back after your lunch.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A short, seated outing",
+     "detail": "A river or harbour boat ride with seats, or lunch at the village, then back on an early tender.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Belize",
+    "documents": {
+     "us": "Passport or the closed-loop papers. Belize checks your ship card at the tender dock.",
+     "other": "A valid passport. Some nationalities need a visa; ask Guest Services at least 30 days before you sail."
+    },
+    "forms": [
+     "No form to file ahead. A departure tax and port fee are in your fare.",
+     "A Belize tourist guide is required for some sites; book through a ship excursion to be covered."
+    ],
+    "notes": [
+     "Belize City is a tender port. Tenders have steps; ask Guest Services about help getting aboard."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Fort Street Tourism Village (the tender pier), Belize City",
+    "say": "Please take me to the Tourism Village tender pier. My ship is the Sun Princess.",
+    "english": "Please take me to the Tourism Village tender pier. My ship is the Sun Princess.",
+    "lang": "en"
+   }
+  },
+  "roatan": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Tegucigalpa: 555-0161",
+    "emergency": "911 (Honduras)",
+    "agent": "Ship’s agent, Mahogany Bay: 555-0162"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "The pier shops and a cafe",
+     "detail": "The pier area has covered shops and cafes. Wildlife parks may stay open in light rain; ask before you go.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Shaded wildlife park or a beach",
+     "detail": "The wildlife park is mostly in shade. At the beach, hire a shaded chair and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Weather switch to a tender",
+     "detail": "In rough weather the ship may tender instead of docking. Stay near the landing, and use the tender planner above.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "Beach by the pier",
+     "detail": "Walk to the beach by the pier, rent a chair and stay close. Nothing to book.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Honduras",
+    "documents": {
+     "us": "Passport or the closed-loop papers. Keep a copy with you ashore.",
+     "other": "A valid passport. Check whether your nationality needs a visa to enter Honduras, even for a day."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship handles the manifest.",
+     "Port charges are in your fare; you pay for anything you buy ashore, often in U.S. dollars."
+    ],
+    "notes": [
+     "Use ship-booked tours or licensed taxis only.",
+     "Bring a refillable bottle and reef-safe sunscreen: some beaches ask for it."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Muelle de cruceros, Coxen Hole, Roatán",
+    "say": "Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise pier. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  }
  }
 }
 """;

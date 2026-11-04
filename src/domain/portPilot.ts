@@ -106,26 +106,13 @@ export const PLAN_B_TRIGGERS: readonly PlanBTrigger[] = ['rain', 'heat', 'tender
 
 export interface PlanB { id: PlanBTrigger; title: string; detail: string; /** Whether it keeps everyone close to the ship. */ nearShip: boolean }
 
-/** A plan B for each trigger, per port. Authored sample suggestions. */
-export const PLAN_B: Record<string, Record<PlanBTrigger, PlanB>> = {
-  cozumel: {
-    rain: { id: 'rain', title: 'Covered shops and a museum', detail: 'The pier shops are under cover. The island museum is a short taxi ride and takes about 90 minutes.', nearShip: true },
-    heat: { id: 'heat', title: 'A beach club with shade', detail: 'Pick a club with a shaded area and a pool. Go before midday and be back at the pier by early afternoon.', nearShip: false },
-    tender: { id: 'tender', title: 'Stay at the pier', detail: 'Cozumel has a pier, so a tender change is unlikely. If it happens, shop and eat near the landing and keep the plan short.', nearShip: true },
-    energy: { id: 'energy', title: 'A slow morning ashore', detail: 'Walk the pier shops, have a long lunch with a seat, and go back to the ship early for the pool.', nearShip: true },
-  },
-  belize: {
-    rain: { id: 'rain', title: 'Indoor museum and market', detail: 'The Tourism Village at the landing has covered shops and cafes. A short taxi ride reaches the Museum of Belize.', nearShip: true },
-    heat: { id: 'heat', title: 'Morning tour, afternoon aboard', detail: 'Do a morning tour that is back by noon, then use the ship’s pool when the sun is highest.', nearShip: true },
-    tender: { id: 'tender', title: 'Keep it inside the village', detail: 'If tenders run late, stay at the Tourism Village near the landing and take the first tender back after your lunch.', nearShip: true },
-    energy: { id: 'energy', title: 'A short, seated outing', detail: 'A river or harbour boat ride with seats, or lunch at the village, then back on an early tender.', nearShip: true },
-  },
-  roatan: {
-    rain: { id: 'rain', title: 'The pier shops and a cafe', detail: 'The pier area has covered shops and cafes. Wildlife parks may stay open in light rain; ask before you go.', nearShip: true },
-    heat: { id: 'heat', title: 'Shaded wildlife park or a beach', detail: 'The wildlife park is mostly in shade. At the beach, hire a shaded chair and drink water often.', nearShip: false },
-    tender: { id: 'tender', title: 'Weather switch to a tender', detail: 'In rough weather the ship may tender instead of docking. Stay near the landing, and use the tender planner above.', nearShip: true },
-    energy: { id: 'energy', title: 'Beach by the pier', detail: 'Walk to the beach by the pier, rent a chair and stay close. Nothing to book.', nearShip: true },
-  },
+/** A plan B for each trigger, for the ports that have an authored one. Served with the port reference (`portsServed.ts`). */
+export const PLAN_B: Record<string, Record<PlanBTrigger, PlanB>> = {}
+
+/** Replaces the authored plans in place, so earlier imports see the served values. */
+export function replacePlanB(next: Record<string, Record<PlanBTrigger, PlanB>>): void {
+  for (const k of Object.keys(PLAN_B)) delete PLAN_B[k]
+  Object.assign(PLAN_B, next)
 }
 
 /**

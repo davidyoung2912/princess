@@ -54,3 +54,18 @@ describe('authored port guides (X0g)', () => {
     }
   })
 })
+
+describe('authored ashore content served with the ports (X0l)', () => {
+  it('is valid in the served shape and only names ports that have a guide', () => {
+    const p = normalizePorts({ version: 'test', ...json })
+    expect(p).not.toBeNull()
+    expect(Object.keys(json.ashore)).toEqual(['fll', 'cozumel', 'belize', 'roatan'])
+    for (const id of Object.keys(json.ashore)) expect(json.guides[id], id).toBeTruthy()
+  })
+  it('rejects a malformed plan B or entry row', () => {
+    const bad = (mut: (a: Record<string, any>) => void) => { const c = JSON.parse(JSON.stringify(json)); mut(c.ashore); return normalizePorts({ version: 'test', ...c }) }
+    expect(bad((a) => { delete a.cozumel.planB.rain })).toBeNull()
+    expect(bad((a) => { a.belize.clearance.forms = 'none' })).toBeNull()
+    expect(bad((a) => { a.nowhere = { contacts: a.cozumel.contacts } })).toBeNull()
+  })
+})

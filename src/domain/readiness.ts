@@ -27,32 +27,13 @@ export interface Clearance {
   notes: string[]
 }
 
-export const CLEARANCE: readonly Clearance[] = [
-  {
-    port: 'fll', country: 'United States (embarkation and return)',
-    documents: { us: 'A valid passport book or card, or an enhanced driver’s licence and a birth certificate for a closed-loop cruise. A passport is the easiest.', other: 'A valid passport, and the visa you need for the United States. Check this before you pay the balance.' },
-    forms: ['Your cruise line shares your passenger list with U.S. Customs and Border Protection (CBP) before you sail, so there is no separate form to file.', 'On return, complete the customs declaration in the app (Disembark, then Customs) or on the paper form.'],
-    notes: ['Allow time at the terminal for CBP on your return day.', 'Fresh fruit, meat and plants cannot be brought into the United States.'],
-  },
-  {
-    port: 'cozumel', country: 'Mexico',
-    documents: { us: 'Passport or the closed-loop papers above. Carry a photo copy ashore and leave the original in the cabin safe.', other: 'A valid passport. Some nationalities need a Mexican visa even for a day ashore: check before you go.' },
-    forms: ['Cruise arrivals do not file a visitor form beforehand. The ship’s manifest covers entry.', 'A small port tax is included in your cruise fare.'],
-    notes: ['Bring your ship card; you need it to get back on board.', 'Do not bring camouflage-patterned clothing ashore: it is not allowed in Mexico.'],
-  },
-  {
-    port: 'belize', country: 'Belize',
-    documents: { us: 'Passport or the closed-loop papers. Belize checks your ship card at the tender dock.', other: 'A valid passport. Some nationalities need a visa; ask Guest Services at least 30 days before you sail.' },
-    forms: ['No form to file ahead. A departure tax and port fee are in your fare.', 'A Belize tourist guide is required for some sites; book through a ship excursion to be covered.'],
-    notes: ['Belize City is a tender port. Tenders have steps; ask Guest Services about help getting aboard.'],
-  },
-  {
-    port: 'roatan', country: 'Honduras',
-    documents: { us: 'Passport or the closed-loop papers. Keep a copy with you ashore.', other: 'A valid passport. Check whether your nationality needs a visa to enter Honduras, even for a day.' },
-    forms: ['No form to file ahead for a cruise stop. The ship handles the manifest.', 'Port charges are in your fare; you pay for anything you buy ashore, often in U.S. dollars.'],
-    notes: ['Use ship-booked tours or licensed taxis only.', 'Bring a refillable bottle and reef-safe sunscreen: some beaches ask for it.'],
-  },
-]
+/** Served per port with the port reference (`portsServed.ts`). */
+export const CLEARANCE: Clearance[] = []
+
+/** Replaces the clearance rows in place, so earlier imports see the served values. */
+export function replaceClearance(next: readonly Clearance[]): void {
+  CLEARANCE.splice(0, CLEARANCE.length, ...next)
+}
 
 export const clearanceFor = (port: PortId): Clearance | undefined => CLEARANCE.find((c) => c.port === port)
 
