@@ -6,6 +6,7 @@ import { earliestRebook } from './postcruise'
 import type { Recap } from './recap'
 import { itinerary, PORTS, type Sailing } from './sailings'
 import type { CategoryId } from './ship'
+import type { Mood, TripEntry } from './tripDiary'
 
 /**
  * The memory loop, part two (S8-02, S8-03, S8-05, S8-06): the memory book, "what I'd change", a seeded next trip and staying in touch.
@@ -19,14 +20,19 @@ export type Journal = Record<number, string>
 
 export interface BookSection { id: string; heading: string; lines: string[] }
 
+const MOOD_LABEL: Record<Mood, string> = { great: 'Loved it', good: 'Good', ok: 'Fine', tired: 'Tired' }
+
 const dayName = (port: string): string => (port === 'sea' ? 'At sea' : (PORTS[port as keyof typeof PORTS]?.name ?? port))
 
 /** The pages of the book: a title page, each day with the guest's note (a day with no note is still shown), and the facts. Plain text so it prints and works offline. */
-export function memoryBook(sailing: Sailing, recap: Recap, journal: Journal, reflections: readonly Reflection[], includeReflections: boolean): BookSection[] {
+export function memoryBook(sailing: Sailing, recap: Recap, journal: Journal, reflections: readonly Reflection[], includeReflections: boolean, diary: readonly TripEntry[] = []): BookSection[] {
   const sections: BookSection[] = [{ id: 'title', heading: recap.title, lines: [`${recap.nights} nights on Sun Princess`, recap.dates] }]
   for (const d of itinerary(sailing)) {
     const note = (journal[d.day] ?? '').trim()
-    sections.push({ id: `day-${d.day}`, heading: `Day ${d.day}: ${dayName(d.port)}`, lines: [formatDate(d.date), note || 'No note for this day.'] })
+    // The guest's own diary lines for the day (and what the app wrote) fill the page, so a day with no journal note is not empty.
+    const diaryLines = diary.filter((e) => e.day === d.day).map((e) => (e.mood ? `${MOOD_LABEL[e.mood]}: ${e.text}` : e.text))
+    const lines = [formatDate(d.date), ...(note ? [note] : []), ...diaryLines]
+    sections.push({ id: `day-${d.day}`, heading: `Day ${d.day}: ${dayName(d.port)}`, lines: note || diaryLines.length ? lines : [...lines, 'No note for this day.'] })
   }
   const facts = [`Ports: ${recap.ports.join(', ')}`, `${recap.seaDays} days at sea, about ${recap.nauticalMiles.toLocaleString('en-US')} nautical miles`]
   if (recap.tourNames.length) facts.push(`Ashore: ${recap.tourNames.join('; ')}`)

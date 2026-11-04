@@ -208,6 +208,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/calm', titleKey: 'route.calm', tab: 'me', phase: 25 },
   { path: '/me/assist', titleKey: 'route.assist', tab: 'me', phase: 13 },
   { path: '/me/wrapped', titleKey: 'route.wrapped', tab: 'me', phase: 26 },
+  { path: '/me/diary', titleKey: 'route.diary', tab: 'me', phase: 26 },
   { path: '/me/memories', titleKey: 'route.memories', tab: 'me', phase: 26 },
   { path: '/me/recap', titleKey: 'route.recap', tab: 'me', phase: 9 },
   { path: '/me/sustainability', titleKey: 'route.sustainability', tab: 'me', phase: 8 },

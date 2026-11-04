@@ -1,3 +1,4 @@
+import { QuickDiary } from '../delights/TripDiary'
 import { EssentialsHome } from '../delights/EmbarkDelights'
 import { useSettings } from '../../hooks/useSettings'
 import { PostcardArrives } from '../delights/RememberDelights'
@@ -62,6 +63,7 @@ export function HomeScreen() {
         )}
         <NextStep trip={trip} />
         <StageHome trip={trip} />
+        <QuickDiary />
       </div>
     )
   }
@@ -88,6 +90,7 @@ export function HomeScreen() {
         {!ABOARD_STAGES.includes(stage) && <StageLanding />}
         <NudgeCards aboard />
         {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
+        <QuickDiary />
         <Saved copy={today}>{(d) => <OnboardHome today={d} />}</Saved>
       </div>
     )

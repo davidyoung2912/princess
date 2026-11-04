@@ -228,6 +228,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'M38', path: '/me/assist', titleKey: 'screen.M38.title', subtextKey: 'screen.M38.subtext', family: 'M' },
   { id: 'M39', path: '/me/status', titleKey: 'screen.M39.title', subtextKey: 'screen.M39.subtext', family: 'M' },
   { id: 'M40', path: '/me/report-problem', titleKey: 'screen.M40.title', subtextKey: 'screen.M40.subtext', family: 'M' },
+  { id: 'M42', path: '/me/diary', titleKey: 'screen.M42.title', subtextKey: 'screen.M42.subtext', family: 'M' },
   { id: 'M41', path: '/me/demo', titleKey: 'screen.M41.title', subtextKey: 'screen.M41.subtext', family: 'M' },
   { id: 'X01', path: '/kit', titleKey: 'screen.X01.title', subtextKey: 'screen.X01.subtext', family: 'X' },
   { id: 'X02', path: '/trial-day', titleKey: 'screen.X02.title', subtextKey: 'screen.X02.subtext', family: 'X' },
@@ -347,7 +348,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your trip, and where to next.',
     tiles: ['M16', 'M17', 'M19', 'M09', 'M15', 'M22'],
     tabs: [
-      { label: 'Memories', colour: 'teal', subtext: 'Your trip, kept.', screens: ['M16', 'M17', 'M18', 'S48', 'S47', 'M15'] },
+      { label: 'Memories', colour: 'teal', subtext: 'Your trip, kept.', screens: ['M16', 'M17', 'M42', 'M18', 'S48', 'S47', 'M15'] },
       { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09'] },
       { label: 'Feedback', colour: 'gold', subtext: 'Tell us how it went.', screens: ['M19', 'M21', 'M20', 'M23', 'M24'] },
     ],

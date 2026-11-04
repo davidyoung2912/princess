@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router'
 import { addAuto, addNote, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
 import { formatDate } from '../../domain/cruise'
 import { itinerary, PORTS } from '../../domain/sailings'
@@ -16,20 +17,14 @@ const portName = (port: string): string => PORTS[port as keyof typeof PORTS]?.na
  * boarding pass, each port or sea day as the day comes), and the guest adds a line and a mood in a few seconds. Every line can be edited or removed, and a
  * removed app line stays removed. Text only; it lives in the memory document and follows the guest to every device.
  */
-export function TripDiary() {
+/** The sailing's days, the trip day it is now, and the one line per day that has begun (written once; the guest can edit or remove it). */
+function useDiaryDays() {
   const sailing = useSailing()
   const now = useNow()
-  const { state, update } = useMemory()
+  const { update } = useMemory()
   const days = useMemo(() => itinerary(sailing), [sailing])
   const dates = useMemo(() => days.map((d) => d.date), [days])
-  const [text, setText] = useState('')
-  const [mood, setMood] = useState<Mood | null>(null)
-  const [query, setQuery] = useState('')
-  const [editing, setEditing] = useState<string | null>(null)
-  const [draft, setDraft] = useState('')
-
   const today = dayFor(dates, now)
-  // Each day that has begun gets one line saying where it was (written once; the guest can edit or remove it).
   useEffect(() => {
     if (today < 1) return
     update((s) => {
@@ -41,17 +36,57 @@ export function TripDiary() {
       return diary === s.diary ? s : { ...s, diary }
     })
   }, [today, days, sailing.id, update])
+  return { sailing, now, days, today }
+}
+
+/** A line and a mood, added to today in a few seconds. */
+function Composer({ sailingId, today, now, id }: { sailingId: string; today: number; now: number; id: string }) {
+  const { update } = useMemory()
+  const [text, setText] = useState('')
+  const [mood, setMood] = useState<Mood | null>(null)
+  const add = () => {
+    update((s) => ({ ...s, diary: addNote(s.diary, { id: newMemoryId(), sailingId, day: today, at: now, text, mood }) }))
+    setText('')
+    setMood(null)
+  }
+  return (
+    <>
+      <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
+      <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
+        {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
+      </div>
+      <div className="actions"><Button id={id} onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
+    </>
+  )
+}
+
+/** The Quick Diary for Home and at sea (N-S5): add a line or a mood to today, with a way into the whole diary. */
+export function QuickDiary() {
+  const { sailing, now, today } = useDiaryDays()
+  const { state } = useMemory()
+  const count = entriesFor(state.diary, sailing.id).length
+  return (
+    <Card labelledBy="quick-diary-title">
+      <h2 id="quick-diary-title" className="card__title">{th('diary.quick.title')}</h2>
+      <p>{t('diary.quick.body')}</p>
+      <Composer sailingId={sailing.id} today={today} now={now} id="quick-diary-save" />
+      <p><Link to="/me/diary">{t('diary.quick.all', { count })}</Link></p>
+    </Card>
+  )
+}
+
+export function TripDiary() {
+  const { sailing, now, days, today } = useDiaryDays()
+  const { state, update } = useMemory()
+  const [query, setQuery] = useState('')
+  const [editing, setEditing] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
 
   const mine = entriesFor(state.diary, sailing.id)
   const shown = searchEntries(mine, query)
   const groups = groupByDay(shown)
   const dateOf = (day: number): string => formatDate(days.find((d) => d.day === day)?.date ?? days[0].date)
 
-  const add = () => {
-    update((s) => ({ ...s, diary: addNote(s.diary, { id: newMemoryId(), sailingId: sailing.id, day: today, at: now, text, mood }) }))
-    setText('')
-    setMood(null)
-  }
   const startEdit = (e: TripEntry) => { setEditing(e.id); setDraft(e.text) }
   const saveEdit = (id: string) => {
     update((s) => ({ ...s, diary: editEntry(s.diary, id, draft) }))
@@ -63,11 +98,7 @@ export function TripDiary() {
       <h2 id="diary-title" className="card__title no-print">{th('diary.title')}</h2>
       <div className="no-print">
         <p>{t('diary.intro')}</p>
-        <TextArea label={t('diary.add')} hint={t('diary.addHint', { day: today > 0 ? today : 0 })} value={text} maxLength={ENTRY_MAX} onChange={(e) => setText(e.target.value)} />
-        <div className="stanley-ask__options" role="group" aria-label={t('diary.mood')}>
-          {MOODS.map((m) => <button key={m} type="button" className="chip-q stanley-ask__opt" aria-pressed={mood === m} onClick={() => setMood(mood === m ? null : m)}>{t(`diary.mood.${m}` as StringKey)}</button>)}
-        </div>
-        <div className="actions"><Button onClick={add} disabled={text.trim() === ''}>{t('diary.save')}</Button></div>
+        <Composer sailingId={sailing.id} today={today} now={now} id="diary-save" />
 
         {mine.length > 0 && <Field label={t('diary.search')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} />}
         {mine.length === 0 && <p className="muted">{t('diary.empty')}</p>}

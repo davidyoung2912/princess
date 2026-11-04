@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { contactProblem, memoryBook, nextTripText, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, type Contact, type Reflection } from './memoryBook'
 import { buildRecap } from './recap'
 import { REFERENCE_SAILING as S } from './sailings'
+import type { TripEntry } from './tripDiary'
 import { packageHindsight } from './wrapped'
 
 const recap = buildRecap({ sailing: S, party: ['Ann'], tours: [], dinners: [], photos: 0 })
@@ -16,6 +17,19 @@ describe('memory book', () => {
     expect(b.find((s) => s.id === 'day-3')!.lines).toContain('No note for this day.')
     expect(b.some((s) => s.id === 'change')).toBe(false)
     expect(memoryBook(S, recap, {}, [r('cabin', 'Not forward')], true).some((s) => s.id === 'change')).toBe(true)
+  })
+})
+
+describe('memory book from the diary', () => {
+  const e = (day: number, text: string, mood: TripEntry['mood'] = null): TripEntry => ({ id: text, sailingId: S.id, day, at: 0, kind: 'note', text, mood, auto: false, key: '' })
+  it('puts the diary lines on their day, with the mood, and drops the empty-day note', () => {
+    const b = memoryBook(S, recap, {}, [], false, [e(3, 'Best pastry ever', 'great'), e(3, 'Sunset on deck')])
+    expect(b.find((s) => s.id === 'day-3')!.lines).toEqual([expect.any(String), 'Loved it: Best pastry ever', 'Sunset on deck'])
+    expect(b.find((s) => s.id === 'day-4')!.lines).toContain('No note for this day.')
+  })
+  it('keeps the journal note first', () => {
+    const b = memoryBook(S, recap, { 2: 'Quiet day.' }, [], false, [e(2, 'Read a book')])
+    expect(b.find((s) => s.id === 'day-2')!.lines.slice(1)).toEqual(['Quiet day.', 'Read a book'])
   })
 })
 

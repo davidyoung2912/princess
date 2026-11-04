@@ -12,7 +12,7 @@ describe('final coverage audit (P9)', () => {
   it('catalogues every route: every route is a screen or a tab front page', () => {
     const catalogued = new Set([...SCREEN_LIST.map((s) => s.path), ...TAB_FRONT_PATHS])
     expect(ROUTES.filter((r) => !catalogued.has(r.path)).map((r) => r.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(198)
+    expect(SCREEN_LIST).toHaveLength(199)
   })
 
   it('reaches every screen from a tab in at least one stage, except the four outside by design', () => {
