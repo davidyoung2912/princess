@@ -19,6 +19,16 @@ services.AddOptions<JwtOptions>().BindConfiguration(JwtOptions.Section).Validate
 services.AddOptions<AuthOptions>().BindConfiguration(AuthOptions.Section).ValidateDataAnnotations().ValidateOnStart();
 
 services.AddMemoryCache();
+// Brotli/gzip for JSON, also over HTTPS. BREACH needs a secret and attacker-chosen text in one response; the API's JSON has no reflected input beside a token.
+services.AddResponseCompression(o =>
+{
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+    o.EnableForHttps = true;
+    o.MimeTypes = ["application/json", "application/problem+json", "text/calendar"];
+});
+services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 services.AddPrincessDataProtection(builder.Configuration, builder.Environment);
 services.AddSingleton<UserCache>();
 services.AddSingleton<SailingCache>();
@@ -32,6 +42,9 @@ services.AddScoped<IUserStore, DapperUserStore>();
 services.AddScoped<IRefreshTokenStore, DapperRefreshTokenStore>();
 services.AddScoped<IAccessStore, DapperAccessStore>();
 services.AddScoped<IAuditStore, DapperAuditStore>();
+services.AddOptions<AuditWriterOptions>().BindConfiguration(AuditWriterOptions.Section);
+services.AddSingleton<AuditQueue>();
+services.AddHostedService<AuditWriterService>();
 services.AddScoped<IAuditLog, AuditLog>();
 services.AddScoped<ISignInStore, DapperSignInStore>();
 services.AddScoped<IMessageSender, StubMessageSender>();
@@ -237,6 +250,8 @@ var app = builder.Build();
 
 if (forwarded) app.UseForwardedHeaders();
 app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());
+app.UseResponseCompression();
+app.UseReferenceCaching(TimeSpan.FromSeconds(app.Configuration.GetValue("Reference:MaxAgeSeconds", 300)));
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 if (app.Configuration.GetValue("Swagger:Enabled", false))

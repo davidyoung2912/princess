@@ -108,6 +108,13 @@ export function PrivacyScreen() {
             </ul>
           </section>
 
+          <section aria-labelledby="priv-assistant-h">
+            <h2 id="priv-assistant-h">{th('priv.assistant')}</h2>
+            <p>{t('priv.assistantBody')}</p>
+            <h3>{th('priv.signinRecords')}</h3>
+            <p>{t('priv.signinRecordsBody')}</p>
+          </section>
+
           <section aria-labelledby="priv-access-h">
             <h2 id="priv-access-h">{th('priv.access')}</h2>
             <p>{t('priv.accessBody')}</p>

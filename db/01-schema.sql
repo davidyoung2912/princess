@@ -888,11 +888,19 @@ CREATE INDEX IX_AuditEvents_Outcome_At ON dbo.AuditEvents (Outcome, [At] DESC) W
 CREATE INDEX IX_AuditEvents_Correlation ON dbo.AuditEvents (CorrelationId) WHERE CorrelationId IS NOT NULL;
 END
 
--- Append-only: nothing edits or deletes an audit row. (An approved archive job can disable this trigger for its run.)
-IF OBJECT_ID(N'dbo.TR_AuditEvents_AppendOnly', N'TR') IS NULL
+-- Append-only: no row is deleted and no fact in it is changed. The one allowed edit is blanking the address, device and stack trace of an old row
+-- (the retention job does this after Retention:NetworkDataDays); any other column in an UPDATE is refused. Re-running this script replaces the trigger.
+IF OBJECT_ID(N'dbo.TR_AuditEvents_AppendOnly', N'TR') IS NOT NULL DROP TRIGGER dbo.TR_AuditEvents_AppendOnly;
 EXEC(N'CREATE TRIGGER dbo.TR_AuditEvents_AppendOnly ON dbo.AuditEvents INSTEAD OF UPDATE, DELETE AS
 BEGIN
-  THROW 51000, N''dbo.AuditEvents is append-only.'', 1;
+  SET NOCOUNT ON;
+  IF NOT EXISTS (SELECT 1 FROM inserted) THROW 51000, N''dbo.AuditEvents is append-only.'', 1;
+  IF UPDATE(Id) OR UPDATE(EventId) OR UPDATE([At]) OR UPDATE(Category) OR UPDATE(Action) OR UPDATE(Outcome) OR UPDATE(ActorPublicId) OR UPDATE(ActorRole)
+     OR UPDATE(SubjectPublicId) OR UPDATE(Target) OR UPDATE(HttpMethod) OR UPDATE(Route) OR UPDATE(StatusCode) OR UPDATE(DurationMs) OR UPDATE(ErrorCode)
+     OR UPDATE(ErrorType) OR UPDATE(ErrorMessage) OR UPDATE(Detail) OR UPDATE(CorrelationId)
+    THROW 51000, N''dbo.AuditEvents is append-only (only Ip, UserAgent and ErrorDetail may be blanked).'', 1;
+  UPDATE a SET Ip = i.Ip, UserAgent = i.UserAgent, ErrorDetail = i.ErrorDetail
+  FROM dbo.AuditEvents a JOIN inserted i ON i.Id = a.Id;
 END');
 
 IF OBJECT_ID(N'dbo.RetentionRuns', N'U') IS NULL

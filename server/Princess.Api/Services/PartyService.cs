@@ -12,9 +12,6 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class PartyService(AccessService access, IAccountStore accounts, ITripStore trips, ICheckinStore checkin, IStateStore state, IPortRowStore portRows, IUserClock clock)
 {
-    private async Task<JsonNode?> SharingOfAsync(long userId, CancellationToken ct) =>
-        await state.GetAsync(false, userId, "sharing", ct) is { } row ? JsonNode.Parse(row.Json) : null;
-
     public async Task<OrganiserDto> OrganiserAsync(UserRecord actor, string? number, CancellationToken ct)
     {
         var m = await access.RequireAdultMemberAsync(actor, number, ct);
@@ -25,9 +22,11 @@ public sealed class PartyService(AccessService access, IAccountStore accounts, I
         var isBooker = m.BookerUserId == actor.Id;
 
         var guests = new List<OrganiserGuestDto>();
-        foreach (var g in await accounts.GetPartyAsync(m.BookingId, ct))
+        var party = await accounts.GetPartyAsync(m.BookingId, ct);
+        var sharings = await state.GetManyAsync(false, [.. party.Select(g => g.UserId)], "sharing", ct);   // one read, not one per guest
+        foreach (var g in party)
         {
-            var sharing = await SharingOfAsync(g.UserId, ct);
+            var sharing = sharings.TryGetValue(g.UserId, out var row) ? JsonNode.Parse(row.Json) : null;
             var shares = PartyRules.Shares(sharing, "status");
             var may = PartyRules.MayViewStatus(actor.Id, g.UserId, g.IsSupervised, g.BookerUserId, sharing);
             var done = steps.TryGetValue(g.UserId, out var d) ? d.Count(CheckinRules.IsGuestStep) : 0;

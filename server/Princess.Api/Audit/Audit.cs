@@ -72,7 +72,7 @@ public interface IAuditLog
     Task RecordAsync(AuditEntry entry, CancellationToken ct = default);
 }
 
-public sealed class AuditLog(IAuditStore store, IClock clock, IHttpContextAccessor http, ILogger<AuditLog> log) : IAuditLog
+public sealed class AuditLog(IAuditStore store, AuditQueue queue, IClock clock, IHttpContextAccessor http, ILogger<AuditLog> log) : IAuditLog
 {
     public async Task RecordAsync(AuditEntry e, CancellationToken ct = default)
     {
@@ -91,7 +91,11 @@ public sealed class AuditLog(IAuditStore store, IClock clock, IHttpContextAccess
             e.Action = Cut(e.Action, 120)!;
             e.Target = Cut(e.Target, 200);
             e.Detail = Cut(e.Detail, 1000);
-            await store.AppendAsync(e, ct);
+            e.ErrorMessage = Cut(ScrubError(e.ErrorMessage), 400);
+            e.ErrorDetail = Cut(ScrubError(e.ErrorDetail), 2000);
+            // Queued rows are written by AuditWriterService; a full queue drops its oldest row rather than slow the request.
+            if (queue.Background) queue.TryEnqueue(e);
+            else await store.AppendAsync(e, ct);
         }
         catch (Exception ex)
         {
@@ -99,6 +103,11 @@ public sealed class AuditLog(IAuditStore store, IClock clock, IHttpContextAccess
             log.LogError(ex, "Audit write failed for {Action} ({Outcome})", e.Action, e.Outcome);
         }
     }
+
+    private static readonly System.Text.RegularExpressions.Regex Tokens = new(@"eyJ[\w-]{8,}(\.[\w-]+){1,2}", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>An exception message can quote a value the database or a parser choked on (an address, a number, a token); the trail keeps the shape of the error, not the person's data.</summary>
+    public static string? ScrubError(string? text) => string.IsNullOrEmpty(text) ? text : TelemetryRules.Scrub(Tokens.Replace(text, "[token]"));
 
     public static string? Cut(string? s, int max) => string.IsNullOrEmpty(s) ? null : s.Length <= max ? s : s[..max];
 }

@@ -52,6 +52,20 @@ export function clearPersonCopies(storage: KeyValueStorage | null, keep: readonl
   keys.forEach((k) => storage.removeItem(k))
 }
 
+/**
+ * Removes only the saved screens of a person (boarding pass, muster, found items and the like: `princess:cache:` copies that are not shared reference
+ * tables). They are read-only copies of what the server holds, so they can go even while a typed change waits to be sent.
+ */
+export function clearSavedScreens(storage: KeyValueStorage | null): void {
+  if (!storage) return
+  const keys: string[] = []
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i)
+    if (k?.startsWith(CACHE_PREFIX) && isPersonKey(k)) keys.push(k)
+  }
+  keys.forEach((k) => storage.removeItem(k))
+}
+
 /** "Reset demo": the demo controls go back to first-run. */
 export async function resetDemo(local: KeyValueStorage | null): Promise<void> {
   local?.removeItem(DEMO_KEY)

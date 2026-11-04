@@ -36,7 +36,7 @@ Done: `Auth:CodeRequestsPerHour` (3, per account and purpose; over the cap the a
 
 Done: new booking numbers are `PB` plus six characters from `RandomNumberGenerator` over a 31-symbol alphabet without look-alikes (I, L, O, 0, 1), checked for uniqueness; existing numbers are untouched. `/pass/lookup` now needs `dob` (yyyy-MM-dd) of the same guest whose last name matches; `PassLookupGuard` counts misses per booking number from any address (`Passes:MaxLookupMisses` 5 within `Passes:LookupLockoutMinutes` 15) and a locked number answers the same 404. The count is in memory, so it is per process. The anonymous view blanks `cabin`, `deck` and `muster`; the QR text is still empty until check-in is finished, and the date of birth is the second factor for it. Passes are signed with `Passes:SigningKey` or, when empty, an HKDF-SHA256 key derived from `Jwt:SigningKey` (`BoardingRules.DerivePassKey`); `DecodePass(key, text, legacyKey)` also accepts the old JWT-signed form when given it (nothing on the server verifies passes yet, so no flag). Ship-tour codes (`PCX1`) still use the JWT key through `BoardingRules.Sign`.
 
-## Phase 5 [ ] PII retention and exposure
+## Phase 5 [~] PII retention and exposure
 
 - Retention for `AuditLog` and `RefreshTokens` IP / user agent: truncate or hash the IP after 30 to 90 days in `RetentionPurgeService`.
 - Scrub `AuditLog.ErrorDetail` and `ErrorMessage`; confirm `/me/audit` `Detail` never holds another person's data.
@@ -44,12 +44,18 @@ Done: new booking numbers are `PB` plus six characters from `RandomNumberGenerat
 - Front end: always clear person copies from `localStorage` on explicit sign-out; stop caching the most sensitive keys on shared devices.
 - Move the refresh token to an httpOnly `SameSite` cookie (server sets it; front end stops reading it).
 
-## Phase 6 [ ] Backend performance
+Done: `RetentionPurgeService` also blanks `Ip`, `UserAgent` (and an audit row's `ErrorDetail` stack trace) on `AuditEvents` and `RefreshTokens` rows older than `Retention:NetworkDataDays` (60; 0 keeps them), in batches of 5000, and records a `retention.network` system row. The audit trigger in `db/01-schema.sql` now allows only that edit (any other column in an UPDATE, and every DELETE, still throws); re-run the script to replace it. Every audit `ErrorMessage` / `ErrorDetail` goes through `AuditLog.ScrubError` (e-mail, links, long digit runs and JWT-shaped tokens out). `/me/audit` returns `Detail` only for rows about the viewer or about nobody; a row where the viewer acted on someone else keeps the action and target but not the content. The privacy centre now says what the assistants send to the AI provider and that sign-in records are blanked after 60 days; `server/README.md` already requires `Encrypt=True` and TDE. On explicit sign-out the saved screens (`princess:cache:` person copies) are removed even while a typed change waits to be sent; the waiting documents and outbox stay so nothing typed is lost.
+
+Not done: moving the refresh token to an httpOnly `SameSite` cookie. It changes the sign-in contract (cookie set and read by the server, CORS credentials, CSRF protection on `/auth/refresh`, and a same-site deployment of front end and API) and needs a decision on the hosting layout first, so it is left for its own phase.
+
+## Phase 6 [x] Backend performance
 
 - Audit writes through a bounded `Channel<T>` background writer; aggregate 401 and 429 events so unauthenticated floods do not each cost a DB write.
 - Remove N+1 reads (`ShareLinkService.ViewAsync` state per party member and similar).
 - Response compression; ETag and `Cache-Control` for the rarely changing public reference endpoints (ships, ports, rooms) instead of blanket `no-store`.
 - Note the per-process 30 s user cache for multi-instance deployments.
+
+Done: audit rows go through `AuditQueue` (bounded `Channel`, drop-oldest, counted and logged) to `AuditWriterService`; anonymous 401/429 rows are gathered per address, route and status for `Audit:AggregateSeconds` into one row with a count (`Audit:Background=false` keeps the in-request write, set in the test factory). `IStateStore.GetManyAsync` reads one key for many owners in one query (`ShareLinkService.ViewAsync` skips the owner and their supervised children, `PartyService.OrganiserAsync` reads all in one). Brotli/gzip compression is on, also over HTTPS. `ReferenceCaching` adds an ETag, `Cache-Control: public, max-age=300` and 304 handling to the authored reference reads; feeds, sailings and programme reads stay `no-store`. The 30 s `UserCache` limit for several instances is written up in `server/README.md`. Checked with `dotnet build` only.
 
 ## Phase 7 [ ] Front-end performance
 

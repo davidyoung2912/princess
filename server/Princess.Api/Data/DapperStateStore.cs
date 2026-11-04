@@ -22,6 +22,16 @@ public sealed class DapperStateStore(IDbConnectionFactory db) : IStateStore
         return await c.QuerySingleOrDefaultAsync<StateRow>(Sql.Cmd($"SELECT StateKey AS [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} = @ownerId AND StateKey = @key", new { ownerId, key }, null, ct));
     }
 
+    public async Task<Dictionary<long, StateRow>> GetManyAsync(bool booking, IReadOnlyCollection<long> ownerIds, string key, CancellationToken ct)
+    {
+        if (ownerIds.Count == 0) return [];
+        var (t, o) = Where(booking);
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(long Owner, string Key, int Version, string Json, DateTime UpdatedAt)>(Sql.Cmd(
+            $"SELECT {o} AS Owner, StateKey AS [Key], Version, Json, UpdatedAt FROM {t} WHERE {o} IN @ownerIds AND StateKey = @key", new { ownerIds = ownerIds.Distinct().ToArray(), key }, null, ct));
+        return rows.ToDictionary(r => r.Owner, r => new StateRow(r.Key, r.Version, r.Json, r.UpdatedAt));
+    }
+
     public async Task<StateRow?> SaveAsync(bool booking, long ownerId, string key, string json, int baseVersion, DateTime now, CancellationToken ct)
     {
         var (t, o) = Where(booking);

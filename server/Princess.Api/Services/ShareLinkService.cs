@@ -66,9 +66,12 @@ public sealed class ShareLinkService(IShareStore store, AccessService access, IT
         // The advisor sees only the people whose status the link's owner may see: themself, their supervised children and anyone who shares it.
         var done = 0;
         var total = 0;
+        // One read for the sharing choice of everyone whose status is not already the owner's or their supervised child's.
+        var others = party.Where(g => g.UserId != link.UserId && !(g.IsSupervised && g.BookerUserId == link.UserId)).Select(g => g.UserId).ToList();
+        var sharings = await state.GetManyAsync(false, others, "sharing", ct);
         foreach (var g in party)
         {
-            var sharing = await state.GetAsync(false, g.UserId, "sharing", ct) is { } row ? System.Text.Json.Nodes.JsonNode.Parse(row.Json) : null;
+            var sharing = sharings.TryGetValue(g.UserId, out var row) ? System.Text.Json.Nodes.JsonNode.Parse(row.Json) : null;
             if (!PartyRules.MayViewStatus(link.UserId, g.UserId, g.IsSupervised, g.BookerUserId, sharing)) continue;
             done += steps.TryGetValue(g.UserId, out var n) ? n : 0;
             total += CheckinRules.GuestSteps.Length;

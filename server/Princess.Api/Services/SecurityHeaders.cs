@@ -21,7 +21,8 @@ public static class SecurityHeaders
                 if (IsData(http.Request.Path))
                 {
                     h["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
-                    h["Cache-Control"] = "no-store";
+                    // The reference reads set their own revalidating policy (ReferenceCaching); everything else is never stored.
+                    if (!ReferenceCaching.Applies(http.Request)) h["Cache-Control"] = "no-store";
                 }
                 return Task.CompletedTask;
             });

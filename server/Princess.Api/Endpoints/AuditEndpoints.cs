@@ -43,5 +43,7 @@ public static class AuditEndpoints
 
     private static AuditEventDto ToDto(AuditEntry r, Guid me) => new(
         r.Id, new DateTimeOffset(DateTime.SpecifyKind(r.At, DateTimeKind.Utc)).ToUnixTimeMilliseconds(), r.Category, r.Action, r.Outcome, r.Target, r.StatusCode,
-        r.Category == AuditCategory.Error ? "server" : r.ErrorMessage ?? r.ErrorCode, r.Detail, r.CorrelationId, r.ActorPublicId == me, r.SubjectPublicId == me);
+        r.Category == AuditCategory.Error ? "server" : r.ErrorMessage ?? r.ErrorCode,
+        // What changed is shown only where the change was to the viewer's own account (or to nobody's): a row where the viewer acted on someone else keeps the action, not the content.
+        r.SubjectPublicId is null || r.SubjectPublicId == me ? r.Detail : null, r.CorrelationId, r.ActorPublicId == me, r.SubjectPublicId == me);
 }

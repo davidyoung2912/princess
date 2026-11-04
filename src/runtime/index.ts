@@ -4,7 +4,7 @@ import type { ConciergeSender } from '../ai/concierge'
 import type { StanleySender } from '../ai/stanley'
 import { createHttpAuthProvider } from '../auth/httpProvider'
 import { ownerIdOf } from '../auth/provider'
-import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, resetDemo, sweepExpiredCopies, wipeEverything } from '../data/lifecycle'
+import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, clearSavedScreens, resetDemo, sweepExpiredCopies, wipeEverything } from '../data/lifecycle'
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
 import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
@@ -407,13 +407,14 @@ export async function signOutSaving(): Promise<void> {
 
 /**
  * After sign-out, removes everything this device kept for the person. If a change still has not reached the server (the sync indicator shows it),
- * their documents stay, so nothing typed is lost; so does the outbox of unsent messages. The next different person to sign in clears what stays.
+ * their documents stay (saved screens still go), so nothing typed is lost; so does the outbox of unsent messages. The next different person to sign in clears what stays.
  */
 function clearOwnCopies(): void {
   const store = local()
   if (!store) return
   const waiting = sync.status() === 'error' || portRows.status() === 'error'
   if (!waiting) clearPersonCopies(store, UNSENT_PREFIXES)
+  else clearSavedScreens(store)   // a typed change may wait, but the read-only copies (boarding pass, muster, found items) never stay on a signed-out device
   const stillUnsent = waiting || Array.from({ length: store.length }, (_, i) => store.key(i)).some((k) => !!k && k.startsWith(UNSENT_PREFIXES[0]))
   if (!stillUnsent) { try { store.removeItem(OWNER_KEY) } catch { /* blocked */ } }
 }

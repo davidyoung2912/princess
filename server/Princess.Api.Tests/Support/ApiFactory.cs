@@ -60,6 +60,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             ["Swagger:Enabled"] = "true",
             ["Demo:Enabled"] = "true",
             ["RateLimit:RequestsPerMinute"] = "1000000",
+            ["Audit:Background"] = "false",   // tests read the trail straight after a request
             ["DataProtection:Store"] = "ephemeral",   // no database in these tests
             ["Providers:ConciergeLimit"] = "memory",
             ["Providers:Concierge"] = "sim",   // never the model, even when a key is set in the machine's environment

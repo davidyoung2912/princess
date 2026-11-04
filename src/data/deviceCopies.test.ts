@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cacheGet, cachePut, maxAgeFor } from '../domain/offlineCache'
 import { normalizeCallbacks } from '../domain/disruptionHub'
-import { clearPersonCopies, sweepExpiredCopies, isPersonKey, OWNER_KEY, UNSENT_PREFIXES, type KeyValueStorage } from './lifecycle'
+import { clearPersonCopies, clearSavedScreens, sweepExpiredCopies, isPersonKey, OWNER_KEY, UNSENT_PREFIXES, type KeyValueStorage } from './lifecycle'
 import { hasUnsent } from './outbox'
 
 class Fake implements KeyValueStorage {
@@ -28,6 +28,14 @@ describe('a person\'s copies on the device', () => {
     expect(s.items.has('princess:outbox:u1:chat')).toBe(false)
     expect(s.items.has('princess:settings:u1')).toBe(true)
     expect(() => clearPersonCopies(null)).not.toThrow()
+  })
+
+  it('clears only the saved screens while a change waits to be sent', () => {
+    const s = new Fake()
+    for (const k of ['princess:hub:u1', 'princess:cache:pass:b1', 'princess:cache:muster:u1', 'princess:outbox:u1:chat', 'princess:cache:ports:v1']) s.items.set(k, '1')
+    clearSavedScreens(s)
+    expect([...s.items.keys()].sort()).toEqual(['princess:cache:ports:v1', 'princess:hub:u1', 'princess:outbox:u1:chat'])
+    expect(() => clearSavedScreens(null)).not.toThrow()
   })
 
   it('says an outbox with something in it is unsent', () => {
