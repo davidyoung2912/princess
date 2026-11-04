@@ -2,7 +2,7 @@ import { computeEntitlements } from './entitlements'
 import { excursionById } from './excursions'
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { addOnPrice } from './packages'
-import { MAX_GUESTS, NIGHTS } from './pricing'
+import { MAX_GUESTS, nightsOf } from './pricing'
 import { type Cents } from './money'
 import type { CategoryId } from './ship'
 
@@ -58,6 +58,7 @@ export function tripCost(input: TripCostInput): TripCost | null {
   const adults = clamp(input.adults, 0, guests)
   const dinners = clamp(input.dinners, 0, MAX_DINNERS)
   const days = input.daysToDeparture
+  const nights = nightsOf(input.sailingId)
   const excursions = input.excursionIds.map((id) => excursionById(id)).filter((x) => !!x)
   const excursionTotal = excursions.reduce((sum, x) => sum + x.price, 0) * guests
   const dinnerPrice = Math.round(addOnPrice('specialtyPass', days) / PASS_DINNERS)
@@ -72,8 +73,8 @@ export function tripCost(input: TripCostInput): TripCost | null {
     add('cruise', quote.lines.filter((l) => l.key !== 'gratuities' && l.key !== 'package').reduce((sum, l) => sum + l.cents, 0))
     add('gratuities', quote.lines.filter((l) => l.key === 'gratuities').reduce((sum, l) => sum + l.cents, 0))
     add('package', quote.lines.filter((l) => l.key === 'package').reduce((sum, l) => sum + l.cents, 0))
-    if (input.drinks && e.drinkCapUsd === 0) add('drinks', addOnPrice('drinks', days) * adults * NIGHTS)
-    if (input.wifi && e.wifiDevices === 0) add('wifi', addOnPrice('wifi', days) * guests * NIGHTS)
+    if (input.drinks && e.drinkCapUsd === 0) add('drinks', addOnPrice('drinks', days) * adults * nights)
+    if (input.wifi && e.wifiDevices === 0) add('wifi', addOnPrice('wifi', days) * guests * nights)
     add('dining', Math.max(0, dinners - e.specialtyMeals) * guests * dinnerPrice)
     add('excursions', excursionTotal)
     add('excursionCredit', -Math.min(excursionTotal, e.excursionCreditUsd * 100 * guests))

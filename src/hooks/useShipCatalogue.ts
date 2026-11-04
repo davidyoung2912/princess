@@ -3,7 +3,8 @@ import { useSailing } from './useDemo'
 import { useCatalogue } from './useCatalogue'
 import { itinerary, type ItineraryDay } from '../domain/sailings'
 import { loadSailingRooms, loadShipRooms, sailingRooms, shipRooms, type Room } from '../domain/shipRooms'
-import { cruiseOf, loadItinerary, shipOf, type CruiseSummary, type ShipSummary } from '../domain/shipCatalogue'
+import { cruiseOf, loadItinerary, pricedSailings, sailingFor, shipOf, type CruiseSummary, type SailingEntry, type ShipSummary } from '../domain/shipCatalogue'
+import { CATEGORIES } from '../domain/ship'
 
 /** The ship the focused sailing runs on. Draws again when the catalogue arrives. */
 export function useShip(): ShipSummary {
@@ -39,4 +40,29 @@ export function useShipRooms(shipId: string | undefined): readonly Room[] | null
   useCatalogue()
   useEffect(() => { if (shipId) void loadShipRooms(shipId) }, [shipId])
   return (shipId && shipRooms(shipId)) || null
+}
+
+/** The sailings with fares, of any ship, soonest first (`aboardOnly` keeps those on a ship that has the deck plan). Draws again when the catalogue arrives. */
+export function usePricedSailings(aboardOnly = false): readonly SailingEntry[] {
+  useCatalogue()
+  const all = pricedSailings()
+  return aboardOnly ? all.filter((e) => shipOf(e.id).depth === 'aboard') : all
+}
+
+/** One room type to choose from. */
+export interface RoomChoice { id: string; name: string; summary: string }
+
+/** The room types to choose from for a sailing: the ship's own as the server serves them, or Sun Princess's six while a Sun sailing's answer is on its way. Empty while another ship's load. */
+export function useRoomChoices(sailingId: string): RoomChoice[] {
+  const rooms = useSailingRooms(sailingId || undefined)
+  if (rooms) return rooms.map((r) => ({ id: r.id, name: r.name, summary: r.description || CATEGORIES.find((c) => c.id === r.id)?.summary || '' }))
+  return shipOf(sailingId).depth === 'browse' ? [] : CATEGORIES.map((c) => ({ id: c.id, name: c.name, summary: c.summary }))
+}
+
+/** The days of any one sailing (not only the focused one), asked of the server when they are not yet in use. */
+export function useDaysOf(sailingId: string): ItineraryDay[] {
+  useCatalogue()
+  useEffect(() => { if (sailingId) void loadItinerary(sailingId) }, [sailingId])
+  const s = sailingFor(sailingId)
+  return s ? itinerary(s) : []
 }

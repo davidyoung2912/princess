@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { compareMatrix, MAX_COMPARE, NO_FILTER, notIncluded, type CabinFilter, type CabinScore, type CompareColumn } from '../../domain/cabinScore'
-import { capacityOf, FARES, fareOptions, type FareId } from '../../domain/fares'
-import { SAILINGS, sailingById } from '../../domain/sailings'
+import { capacityIn, FARES, fareOptions, type FareId } from '../../domain/fares'
+import { sailingFor } from '../../domain/shipCatalogue'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
 import { useSailing } from '../../hooks/useDemo'
+import { usePricedSailings, useSailingRooms } from '../../hooks/useShipCatalogue'
 import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { t, th, type StringKey } from '../../i18n'
 import { cabinRegrets } from '../../domain/regret'
@@ -34,7 +35,11 @@ export function CabinChooserScreen() {
   const [params] = useSearchParams()
   // A shared comparison link opens with the same sailing, party, fare and picks; anything that does not match the guide is ignored.
   const [shared] = useState(() => parseCompareQuery(params.toString()))
-  const [sailingId, setSailingId] = useState(shared.sailingId && sailingById(shared.sailingId) ? shared.sailingId : demo.id)
+  // The deck plan, cabin scores and sun side are the aboard-depth ship's, so only its priced sailings are offered (not the browse-depth ships').
+  const sailings = usePricedSailings(true)
+  const [pickedSailing, setSailingId] = useState(shared.sailingId ?? demo.id)
+  const sailingId = sailings.some((s) => s.id === pickedSailing) ? pickedSailing : (sailings[0]?.id ?? pickedSailing)
+  useSailingRooms(sailingId)
   useJourneyEvent('cabinView', sailingId)
   const [category, setCategory] = useState<CategoryId>('balcony')
   const [guests, setGuests] = useState(shared.guests ?? 2)
@@ -60,17 +65,17 @@ export function CabinChooserScreen() {
   })
   const reopen = () => {
     if (!left) return
-    if (left.sailingId && sailingById(left.sailingId)) setSailingId(left.sailingId)
+    if (left.sailingId && sailings.some((s) => s.id === left.sailingId)) setSailingId(left.sailingId)
     if (left.guests) setGuests(left.guests)
     if (left.fare && left.fare in FARES) setFare(left.fare as FareId)
     setPicked((left.picks ?? []).filter((p) => categoryById(p.category)).map((p) => ({ category: p.category as CategoryId, number: p.number })))
     setLeft(null)
   }
 
-  const sailing = sailingById(sailingId) ?? demo
+  const sailing = sailingFor(sailingId) ?? demo
   const options = fareOptions(category)
   const useFare: FareId = options.includes(fare) ? fare : options[0]
-  const maxGuests = capacityOf(category)
+  const maxGuests = capacityIn(sailingId, category)
   const useGuests = Math.min(guests, maxGuests)
   const guide = useFeed(cabinGuideFeed, sailing.id, category, filter)
   const cabins = guide ?? []
@@ -126,7 +131,7 @@ export function CabinChooserScreen() {
         <div className="field">
           <label htmlFor="cabins-sailing">{t('cost.sailing')}</label>
           <select id="cabins-sailing" value={sailing.id} onChange={(e) => setSailingId(e.target.value)}>
-            {SAILINGS.map((s) => <option key={s.id} value={s.id}>{s.departure}</option>)}
+            {sailings.map((s) => <option key={s.id} value={s.id}>{s.departure} · {s.title}</option>)}
           </select>
         </div>
         <div className="field">

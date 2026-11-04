@@ -14,11 +14,13 @@ For whoever keeps the server running. Commands assume `$B` is the server's base 
 
 The ship, region, port, pattern and sailing catalogue is read from the database tables once and held for ten minutes (`ICatalogueStore`); after changing the seed, run the seed scripts and restart the API or wait. The simulated ship feeds (`/feeds/pulse`, `pulse-day`, `storm`, `sky-night`, `ship-position`, `sea-conditions`, `along-the-way`, `route`) need a `sailing` id; a missing or unknown one answers `badFeedQuery`.
 
+Fares are served per sailing: a sailing is offered when it has a fare for any room type of its ship (`ref.SailingFares`, or the older Sun table for the 12 first sailings). `GET /reference/sailings/{id}/rooms` shows its room types with sample fares whether or not booking is open; a catalogue sailing opens for booking when `BookingOpen` is set to 1 in data. Port guides, ashore rows and entry rows are authored in `PortsReference.cs` and `ReferenceRules.cs` (unverified sample content, see `docs/content-verification.md`). Placeholder art ids for ships, regions and Tier A ports come from `src/domain/artIds.ts` (`artManifest`); no image files exist yet.
+
 ## Providers
 
 Chosen under `Providers:*` in configuration; the default for each is `sim`. A name that is not registered stops the server at start-up and names the choices.
 
-- `Providers:Weather` = `openmeteo`: real sky forecast (UV, high, rain window) for the four ports, up to 15 days ahead. Anything it cannot answer is simulated, and `source` in the answer says `forecast` or `sim`. After 3 failures in a row it stops calling for 2 minutes. Keys: `OpenMeteo:ApiKey` (user-secrets) for a paid plan.
+- `Providers:Weather` = `openmeteo`: real sky forecast (UV, high, rain window) for the ports in its coordinates table (`OpenMeteoWeather.Ports`; any other port is simulated), up to 15 days ahead. Anything it cannot answer is simulated, and `source` in the answer says `forecast` or `sim`. After 3 failures in a row it stops calling for 2 minutes. Keys: `OpenMeteo:ApiKey` (user-secrets) for a paid plan.
 - `Providers:Rates` = `http`: exchange rates. On failure it keeps the last table and shows its date.
 - `Providers:Concierge` = `anthropic`: needs `Concierge:ApiKey`.
 

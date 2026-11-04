@@ -5,9 +5,9 @@ import { MAX_GUESTS } from '../../domain/priceShapes'
 import { rangeOf, browseSailingById, nextLegOf, browseSailings, portsOf, seaDaysOf, portName, type BrowseSailing } from '../../domain/catalogueBrowse'
 import type { Sailing } from '../../domain/sailings'
 import { hasSailingDays, sailingById } from '../../domain/sailings'
-import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
-import { loadItinerary, shipOf } from '../../domain/shipCatalogue'
-import { useSailingRooms } from '../../hooks/useShipCatalogue'
+import type { CategoryId } from '../../domain/ship'
+import { loadItinerary } from '../../domain/shipCatalogue'
+import { useRoomChoices, useSailingRooms } from '../../hooks/useShipCatalogue'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
@@ -21,15 +21,6 @@ import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { PriceUnitLine } from '../delights/Delights'
 import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDelights'
 import { CataloguePrice, DataStatusNote, SailingFactsList } from './catalogueParts'
-
-export interface RoomChoice { id: string; name: string; summary: string }
-
-/** The room types to choose from for a sailing: the ship's own as the server serves them, or Sun Princess's six while a Sun sailing's answer is on its way. Empty while another ship's load. */
-function useRoomOptions(sailingId: string): RoomChoice[] {
-  const rooms = useSailingRooms(sailingId)
-  if (rooms) return rooms.map((r) => ({ id: r.id, name: r.name, summary: r.description || categoryById(r.id)?.summary || '' }))
-  return shipOf(sailingId).depth === 'browse' ? [] : CATEGORIES.map((c) => ({ id: c.id, name: c.name, summary: c.summary }))
-}
 
 /** The sample stateroom prices of a sailing that is not open for booking yet: each of the ship's room types with a per-person fare for two sharing. */
 function SampleRooms({ sailingId, nights }: { sailingId: string; nights: number }) {
@@ -55,7 +46,7 @@ function SampleRooms({ sailingId, nights }: { sailingId: string; nights: number 
 
 /** The price estimate for a sailing that can be booked: a room type and party size give an all-in quote. */
 function Estimate({ sailing, nights }: { sailing: Sailing; nights: number }) {
-  const options = useRoomOptions(sailing.id)
+  const options = useRoomChoices(sailing.id)
   const [picked, setPicked] = useState<CategoryId>('balcony')
   const category = options.some((o) => o.id === picked) ? picked : (options.find((o) => o.id === 'balcony') ?? options[0])?.id ?? ''
   const setCategory = setPicked

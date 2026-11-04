@@ -6,10 +6,11 @@ import { parseMoney } from '../../domain/money'
 import { MAX_GUESTS } from '../../domain/priceShapes'
 import { formatMoney } from '../../domain/money'
 import { fareName, MAX_DINNERS, tripCost, type CostKey } from '../../domain/tripCost'
-import { sailingById, SAILINGS } from '../../domain/sailings'
-import { CATEGORIES, type CategoryId } from '../../domain/ship'
+import type { CategoryId } from '../../domain/ship'
+import { sailingFor } from '../../domain/shipCatalogue'
 import { zonedToEpoch } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { useDaysOf, usePricedSailings, useRoomChoices, useSailingRooms } from '../../hooks/useShipCatalogue'
 import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -26,8 +27,16 @@ export function TripCostScreen() {
   const { state: memory, update: updateMemory } = useMemory()
   const [budgetText, setBudgetText] = useState('')
   const now = useNow()
-  const [sailingId, setSailingId] = useState(demoSailing.id)
-  const [category, setCategory] = useState<CategoryId>('balcony')
+  const sailings = usePricedSailings()
+  const [pickedSailing, setSailingId] = useState(demoSailing.id)
+  // The sailing the guest chose, else the one they are on; if that has no fares, the soonest sailing that does.
+  const sailingId = sailings.some((s) => s.id === pickedSailing) ? pickedSailing : (sailings[0]?.id ?? pickedSailing)
+  const rooms = useRoomChoices(sailingId)
+  useSailingRooms(sailingId)
+  const [pickedRoom, setCategory] = useState<CategoryId>('balcony')
+  const category = rooms.some((r) => r.id === pickedRoom) ? pickedRoom : (rooms.find((r) => r.id === 'balcony') ?? rooms[0])?.id ?? ''
+  const ports = new Set(useDaysOf(sailingId).map((d) => d.port))
+  const excursions = EXCURSIONS.filter((x) => ports.has(x.port))
   const [guests, setGuests] = useState(2)
   const [adults, setAdults] = useState(2)
   const [drinks, setDrinks] = useState(false)
@@ -36,12 +45,12 @@ export function TripCostScreen() {
   const [picked, setPicked] = useState<string[]>([])
   const [text, setText] = useState({ flights: '', hotel: '', other: '' })
 
-  const sailing = sailingById(sailingId)!
-  const days = Math.max(0, Math.ceil((zonedToEpoch(sailing.departure, '00:00', 'America/New_York') - now) / DAY))
+  const sailing = sailingFor(sailingId)
+  const days = !sailing ? 0 : Math.max(0, Math.ceil((zonedToEpoch(sailing.departure, '00:00', 'America/New_York') - now) / DAY))
   const amounts = (['flights', 'hotel', 'other'] as const).map((k) => [k, text[k].trim() === '' ? 0 : parseMoney(text[k])] as const)
   const bad = (k: 'flights' | 'hotel' | 'other') => amounts.find(([key]) => key === k)![1] === null
   const money = (k: 'flights' | 'hotel' | 'other') => amounts.find(([key]) => key === k)![1] ?? 0
-  const cost = tripCost({ sailingId, category, guests, adults: Math.min(adults, guests), daysToDeparture: days, drinks, wifi, dinners, excursionIds: picked, flights: money('flights'), hotel: money('hotel'), other: money('other') })
+  const cost = !sailing || !category ? null : tripCost({ sailingId, category, guests, adults: Math.min(adults, guests), daysToDeparture: days, drinks, wifi, dinners, excursionIds: picked.filter((id) => excursions.some((x) => x.id === id)), flights: money('flights'), hotel: money('hotel'), other: money('other') })
   const rows = cost ? [...new Set(cost.options.flatMap((o) => o.lines.map((l) => l.key)))] as CostKey[] : []
   const order: CostKey[] = ['cruise', 'gratuities', 'package', 'drinks', 'wifi', 'dining', 'excursions', 'excursionCredit', 'flights', 'hotel', 'other']
   rows.sort((a, b) => order.indexOf(a) - order.indexOf(b))
@@ -55,13 +64,13 @@ export function TripCostScreen() {
         <div className="field">
           <label htmlFor="cost-sailing">{t('cost.sailing')}</label>
           <select id="cost-sailing" value={sailingId} onChange={(e) => setSailingId(e.target.value)}>
-            {SAILINGS.map((s) => <option key={s.id} value={s.id}>{s.departure}</option>)}
+            {sailings.map((s) => <option key={s.id} value={s.id}>{s.departure} · {s.title}</option>)}
           </select>
         </div>
         <div className="field">
           <label htmlFor="cost-room">{t('cost.room')}</label>
           <select id="cost-room" value={category} onChange={(e) => setCategory(e.target.value as CategoryId)}>
-            {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {rooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div className="field">
@@ -95,7 +104,7 @@ export function TripCostScreen() {
         </div>
         <fieldset className="field">
           <legend>{t('cost.excursions')}</legend>
-          {EXCURSIONS.map((x) => (
+          {excursions.map((x) => (
             <label key={x.id} className="check-row">
               <input type="checkbox" checked={picked.includes(x.id)} onChange={(e) => setPicked(e.target.checked ? [...picked, x.id] : picked.filter((id) => id !== x.id))} /> {x.name} <span className="muted">{formatMoney(x.price)}</span>
             </label>

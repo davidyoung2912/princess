@@ -1,4 +1,4 @@
-import { CATALOGUE_PORTS, hasSailingDays, portById, setSailingDays, type ItineraryDay, type Port } from './sailings'
+import { CATALOGUE_PORTS, hasSailingDays, portById, sailingById, setSailingDays, type ItineraryDay, type Port, type Sailing } from './sailings'
 import { notifyCatalogue } from './catalogueServed'
 
 /**
@@ -213,6 +213,17 @@ export const catalogueSailings = (): readonly SailingEntry[] => ENTRIES
 export const regionById = (id: string | undefined): Region | undefined => REGIONS.find((r) => r.id === id)
 export const patternById = (id: string): ItineraryPattern | undefined => PATTERNS.find((p) => p.id === id)
 export const sailingEntryOf = (sailingId: string): SailingEntry | undefined => ENTRIES.find((e) => e.id === sailingId)
+
+/** Every sailing of the catalogue that has fares, of any ship, soonest first: what the cost, cabin and decide screens let a guest pick from. */
+export const pricedSailings = (): readonly SailingEntry[] => [...ENTRIES].filter((e) => e.fromCents !== undefined).sort((a, b) => a.departure.localeCompare(b.departure) || a.id.localeCompare(b.id))
+
+/** A sailing by id for the screens that only need its id and departure: the older table first, then the catalogue. */
+export const sailingFor = (sailingId: string): Sailing | undefined => {
+  const own = sailingById(sailingId)
+  if (own) return own
+  const e = sailingEntryOf(sailingId)
+  return e ? { id: e.id, departure: e.departure, ...(e.holiday ? { holiday: true } : {}) } : undefined
+}
 
 /** What a screen gets before the catalogue has arrived: no facts, so nothing is invented. */
 const NO_SHIP: ShipSummary = { id: '', name: '', className: '', depth: 'browse', decks: 0, tonnage: 0, guests: 0, intro: '', highlights: [] }

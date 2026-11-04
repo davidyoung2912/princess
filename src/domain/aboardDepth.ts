@@ -8,7 +8,6 @@ export type AboardFeature = 'deckPlan' | 'cabins' | 'venues' | 'muster' | 'order
 const SCREENS: readonly { path: string; feature: AboardFeature }[] = [
   { path: '/ship/map', feature: 'deckPlan' },
   { path: '/home/cabins', feature: 'cabins' },
-  { path: '/home/decide', feature: 'cabins' },
   { path: '/ship/venues', feature: 'venues' },
   { path: '/plan/dining', feature: 'venues' },
   { path: '/ship/muster', feature: 'muster' },

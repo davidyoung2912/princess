@@ -1,8 +1,9 @@
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { formatDate } from './cruise'
-import { NIGHTS } from './pricing'
+import { nightsOf } from './pricing'
 import { formatMoney, type Cents } from './money'
 import type { Sailing } from './sailings'
+import { cruiseOf, shipOf } from './shipCatalogue'
 import { CATEGORIES, type CategoryId } from './ship'
 
 /**
@@ -80,16 +81,17 @@ export interface BudgetResult {
 
 export const MAX_BUDGET: Cents = 100_000_000
 
-export function budgetSearch(sailing: Sailing, budget: Cents, guests: number): BudgetResult {
+/** Searches the room types given (a sailing's own, for any ship); Sun Princess's six when none are given. */
+export function budgetSearch(sailing: Sailing, budget: Cents, guests: number, rooms: readonly { id: CategoryId }[] = CATEGORIES): BudgetResult {
   if (!Number.isInteger(guests) || guests < 1 || guests > 4 || !Number.isFinite(budget) || budget < 0) return { fitting: [], nearMiss: [], cheapest: null }
   const b = Math.min(Math.round(budget), MAX_BUDGET)
   const all: BudgetOption[] = []
-  for (const c of CATEGORIES) {
+  for (const c of rooms) {
     for (const fare of fareOptions(c.id)) {
       const q = bookingQuote(sailing.id, c.id, guests, fare)
       if (!q) continue
       const left = b - q.total
-      all.push({ category: c.id, fare, total: q.total, left, perPersonPerDay: Math.round(Math.max(0, left) / guests / NIGHTS), fits: left >= 0 })
+      all.push({ category: c.id, fare, total: q.total, left, perPersonPerDay: Math.round(Math.max(0, left) / guests / nightsOf(sailing.id)), fits: left >= 0 })
     }
   }
   all.sort((x, y) => x.total - y.total)
@@ -109,6 +111,8 @@ export interface SailingQuality { sailingId: string; notes: QualityNote[] }
 export interface DecisionInput {
   sailing: Sailing | null
   category: CategoryId | null
+  /** The room type's name on the sailing's ship; Sun Princess's name for the id when absent. */
+  categoryName?: string
   fare: FareId | null
   guests: number
   fitsChecked: boolean
@@ -123,8 +127,8 @@ export function decisionSummary(i: DecisionInput): DecisionSummary {
   const mightChange: string[] = []
   if (i.sailing) decided.push(`Sailing: ${formatDate(i.sailing.departure)}`)
   else left.push('Choose a sailing')
-  const cat = CATEGORIES.find((c) => c.id === i.category)
-  if (cat) decided.push(`Room type: ${cat.name}`)
+  const catName = i.categoryName ?? CATEGORIES.find((c) => c.id === i.category)?.name
+  if (catName) decided.push(`Room type: ${catName}`)
   else left.push('Choose a room type')
   if (i.fare) decided.push(`Fare: ${FARES[i.fare].name}`)
   else left.push('Choose a fare')
@@ -147,10 +151,18 @@ export function decisionText(s: DecisionSummary): string {
 
 export const INVITE_NAME_MAX = 40
 
+/** What the invitation says about a sailing's trip, from the catalogue; absent while the catalogue has not named it. */
+export function inviteTrip(sailingId: string): { ship: string; nights: number; from: string; title: string } | undefined {
+  const cruise = cruiseOf(sailingId)
+  return cruise.name ? { ship: shipOf(sailingId).name, nights: cruise.nights || nightsOf(sailingId), from: cruise.homePort, title: cruise.name } : undefined
+}
+
 /** The invitation as text. It names the sailing and the ship, and nothing about the sender but the first name they typed. */
-export function inviteText(sailing: Sailing, firstName: string, note: string): string {
+export function inviteText(sailing: Sailing, firstName: string, note: string, trip?: { ship: string; nights: number; from: string; title: string }): string {
   const name = firstName.trim().slice(0, INVITE_NAME_MAX) || 'A friend'
-  const lines = [`${name} would like you to come cruising: Sun Princess, 7 nights from Fort Lauderdale, leaving ${formatDate(sailing.departure)}.`, 'Cozumel, Belize City and Roatán.']
+  const where = trip ? [trip.ship, trip.nights > 0 ? `${trip.nights} nights` : '', trip.from ? `from ${trip.from}` : ''].filter(Boolean).join(', ') : ''
+  const lines = [`${name} would like you to come cruising${where ? `: ${where}` : ''}, leaving ${formatDate(sailing.departure)}.`]
+  if (trip?.title) lines.push(`${trip.title}.`)
   const extra = note.trim().slice(0, 200)
   if (extra) lines.push(extra)
   return lines.join('\n')

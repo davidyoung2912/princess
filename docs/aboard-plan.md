@@ -1,0 +1,46 @@
+# Phase AB: all three ships at `aboard` depth
+
+Status: **Plan written 2026-11-03. Nothing built yet.** Decision (owner): Sun Princess, Sky Princess and Sapphire Princess are supported equally, so all three are `aboard` depth. Follows `CLAUDE.md`: phases, each ending in a commit and a stop; verify with `npm run test`, `npm run lint`, `npx tsc -b`, `npm run build` (plus `api:check`, `db:check`, `db:seed:check` when the REST surface or schema changes); never run `dotnet test`; secrets out of git. `dotnet` is not installed in the working environment, so server changes are built by the owner.
+
+## 1. What "aboard" needs, and where it is single-ship today
+
+`ref.Ships.Depth` and the schema are already per ship (`ref.Decks`, `ref.Cabins`, `ref.MusterStations`, `ref.CabinCategories`, `ref.Venues`, `ref.MenuItems`, `ref.Excursions` all carry `ShipId`). The gap is that the **content is Sun's and mostly authored in code**, and the code reads it as if there were one ship.
+
+| Part | Where it is single-ship now | Becomes |
+|---|---|---|
+| Deck plan: places, elevator banks, muster stations, accessibility notes, highlights | `ShipReference.cs` (one JSON), `GET /reference/ship`, client `deck.ts` + `shipServed.ts` (`replaceDeck`, `replaceShip`), 12 screens and domain files read `PLACES`, `ELEVATORS`, `MUSTER_STATIONS`, `placeById` | Per-ship rows (`ref.Places`, `ref.ElevatorBanks`, `ref.MusterStations`), `GET /reference/ships/{id}/aboard`, client store keyed by ship id, read through the focused sailing's ship |
+| Muster | `ProgramRules.MusterStations` + `PlaceNames` (A to F, Sun's rooms), `OnboardService` | Per ship, from the same rows |
+| Cabins by number, positions, sun side, cabin scores | `CabinRules.Decks` (Sun's six category ids and decks), used in 11 places (`CabinGuideRules`, `BoardingRules`, `AheadService`, `BookingService`, `DiscoverService`, ...) | Generated from `ref.Cabins` per ship and the ship's own categories (`sky-balcony`, ...) |
+| Venues, dining, menus, room-service order | `DiningRules.Venues`, `ref.MenuItems` filtered to Sun, client `dining.ts`, `menus.ts`, `orders.ts` | Per-ship venues and menus read by the sailing's ship |
+| Programme and shows | `ProgramRules.Events`, `ShowRules`, `ref.Events` (no `ShipId`), client `program.ts` | `ShipId` on events; each ship its own theatre, pool and show names |
+| Ship feeds that name rooms (loungers, pulse, queues, lost property places) | Hard-coded place ids such as `lido-pool`, `eatery`, `guest-services` | Ids that exist on every ship, or per-ship lookups |
+| Screens that gate on depth | `aboardDepth.ts`, `BrowseDepthNote` | Stay as a safety net; no ship is `browse` once AB6 is done |
+
+## 2. Content rule
+
+Sky and Sapphire content is **concept sample data, in the same honest way as Sun's** (`content-verification.md`): plausible decks, places, venues and cabins in the right classes (Sky is Grand class, Sapphire is Coral class), clearly marked unverified, never presented as the real deck plan. Where the real ship has a well-known feature (Sky's SeaWalk, Sapphire's Movies Under the Stars) the sample may use it; numbers (cabin counts, positions) are generated, not claimed. Each ship gets a `dataStatus: sample` until someone verifies it.
+
+## 3. Phases
+
+**AB1: Ship-keyed deck plan (server and client).** Schema `ref.Places`, `ref.ElevatorBanks` (and `ref.MusterStations` filled); seed Sun's from the current JSON; author Sky and Sapphire (about 40 places each, six or fewer elevator banks, muster stations); `GET /reference/ships/{id}/aboard`; client keeps one deck plan per ship and `PLACES`, `ELEVATORS`, `MUSTER_STATIONS`, `placeById` read the focused sailing's ship; single-ship test ceiling for them goes to zero. Done when the deck map, route finder, muster and boarding pass work for a Sky sailing with its own rooms.
+
+**AB2: Cabins per ship.** `ref.Cabins` seeded for each ship (generated, deterministic); `CabinRules` reads them with the ship's categories; cabin guide, scores, sun side, accessible cabins and "cabin guide" feed take the sailing's ship; the cabin chooser offers every ship's priced sailings. Done when the chooser compares cabins on a Sapphire sailing.
+
+**AB3: Venues, dining and menus per ship.** Venues and menu items for Sky and Sapphire; reservations, walk-in, dining times, room-service order and allergy matching read the sailing's ship.
+
+**AB4: Programme, shows and activities per ship.** `ShipId` on `ref.Events`; Sky and Sapphire programmes and shows; the activity catalogue keeps its day kinds and names venues from the ship.
+
+**AB5: Feeds and the remaining hard-coded places.** Pulse, loungers, lost property, queues, day plan and Stanley's place talk use ids from the ship; contacts and guest-services places per ship.
+
+**AB6: Flip to `aboard`.** Set Sky and Sapphire to `aboard` in `db/seed/catalogue/ships.json`; run `catalogue:gen`; the "ship page" no longer lists them as browse; update `aboardDepth.ts` text, `catalogue-plan.md` section 5, the README, `stage-menus-matrix.md` and `content-verification.md`. Done when no screen shows a browse-depth note for any of the three ships.
+
+Order matters: AB1 and AB2 first (they unblock the most screens), the flip last so no screen ever promises what the data lacks. Each phase is one commit.
+
+## 4. Risks
+
+| Risk | Handling |
+|---|---|
+| Authoring two more ships is a lot of sample content | Generate from small per-class templates plus a short hand-written list of signature places; label as sample |
+| Single-ship ids hidden in rules (`lido-pool`, `eatery`) | A test lists the place ids every ship must have; AB5 removes the rest |
+| Server changes cannot be compiled here | Each phase lists the files changed; the owner builds `server/` and re-runs `01-schema.sql` and the seeds |
+| Real Sky and Sapphire layouts differ from the sample | Marked `sample`; a verified deck plan replaces the rows with no code change |

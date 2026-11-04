@@ -1,6 +1,8 @@
 import { CATEGORIES, categoryById, type CategoryId } from './ship'
 import { SAILINGS, sailingById } from './sailings'
 import { limit } from './limits'
+import { sailingRooms, type Room } from './shipRooms'
+import { sailingEntryOf } from './shipCatalogue'
 
 import { formatMoney, parseMoney, type Cents } from './money'
 import { MAX_GUESTS, type FromPrice, type LineKey, type Quote, type QuoteLine } from './priceShapes'
@@ -13,6 +15,23 @@ export const INTERIOR_FARE: Record<string, Cents> = {}
 export const FUTURE_DEPARTURES: { id: string; departure: string }[] = []
 
 export const NIGHTS = 7
+
+/** Nights on a sailing: its catalogue length, or a week for a sailing the catalogue does not list. */
+export const nightsOf = (sailingId: string): number => sailingEntryOf(sailingId)?.nights ?? NIGHTS
+
+/** The room type as the server served it for this sailing (any ship), once the screen has loaded the sailing's rooms. */
+const roomOf = (sailingId: string, category: CategoryId): Room | undefined => sailingRooms(sailingId)?.find((r) => r.id === category)
+
+/** Whether a room type is a suite (pays the higher gratuity), by the served room when there is one. */
+const suiteIn = (sailingId: string, category: CategoryId): boolean | undefined => {
+  const room = roomOf(sailingId, category)
+  if (room) return room.suite
+  const cat = categoryById(category)
+  return cat ? !!cat.suite : undefined
+}
+
+/** How many guests a room type sleeps on this sailing: the served room's count, or null when the room is not known here. */
+export const roomCapacity = (sailingId: string, category: CategoryId): number | null => roomOf(sailingId, category)?.capacity ?? null
 /** Government taxes, port charges and fees per person. Served; zero until the table arrives. */
 export let TAXES_AND_FEES: Cents = 0
 /** Discretionary onboard gratuity per person per night, by room type. Served. */
@@ -41,6 +60,8 @@ export let SOLO_MULTIPLE = 2
 const round = (n: number): Cents => Math.round(n / 100) * 100
 
 export const fareFor = (sailingId: string, category: CategoryId): Cents | null => {
+  const served = roomOf(sailingId, category)?.fare
+  if (served !== undefined) return served
   const base = INTERIOR_FARE[sailingId]
   const cat = categoryById(category)
   return base === undefined || !cat ? null : round(base * cat.ratio)
@@ -49,8 +70,9 @@ export const fareFor = (sailingId: string, category: CategoryId): Cents | null =
 /** An all-in estimate for a sailing, room type and party size, or null for an unknown sailing, room type or party size. Every charge is a line, so no total hides anything. */
 export function quote(sailingId: string, category: CategoryId, guests: number): Quote | null {
   const fare = fareFor(sailingId, category)
-  const cat = categoryById(category)
-  if (fare === null || !cat || !Number.isInteger(guests) || guests < 1 || guests > MAX_GUESTS) return null
+  const suite = suiteIn(sailingId, category)
+  const nights = nightsOf(sailingId)
+  if (fare === null || suite === undefined || !Number.isInteger(guests) || guests < 1 || guests > MAX_GUESTS) return null
   const lines: QuoteLine[] = []
   const paying = Math.min(guests, 2)
   if (guests === 1) {
@@ -60,7 +82,7 @@ export function quote(sailingId: string, category: CategoryId, guests: number): 
     lines.push({ key: 'fare', guests: paying, cents: fare * paying })
     if (guests > 2) lines.push({ key: 'extraFare', guests: guests - 2, cents: Math.round(fare * EXTRA_GUEST_SHARE) * (guests - 2) })
   }
-  const gratuities = (cat.suite ? GRATUITY_PER_NIGHT_SUITE : GRATUITY_PER_NIGHT) * NIGHTS * guests
+  const gratuities = (suite ? GRATUITY_PER_NIGHT_SUITE : GRATUITY_PER_NIGHT) * nights * guests
   lines.push({ key: 'taxes', guests, cents: TAXES_AND_FEES * guests })
   lines.push({ key: 'gratuities', guests, cents: gratuities })
   const total = lines.reduce((sum, l) => sum + l.cents, 0)
@@ -73,7 +95,7 @@ export function fromPrice(sailingId: string): FromPrice | null {
   const q = quote(sailingId, 'interior', 2)
   const fare = fareFor(sailingId, 'interior')
   if (!q || fare === null) return null
-  return { fare, taxes: TAXES_AND_FEES, gratuities: GRATUITY_PER_NIGHT * NIGHTS, allIn: q.perPerson }
+  return { fare, taxes: TAXES_AND_FEES, gratuities: GRATUITY_PER_NIGHT * nightsOf(sailingId), allIn: q.perPerson }
 }
 
 /** The lowest "from" fare over every sailing. */

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { budgetSearch, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, NOT_FOR, SUITS, type FitKey } from '../../domain/dream'
+import { budgetSearch, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, inviteTrip, NOT_FOR, SUITS, type FitKey } from '../../domain/dream'
 import { FARES, fareOptions, type FareId } from '../../domain/fares'
 import { parseMoney } from '../../domain/money'
 import { formatMoney } from '../../domain/money'
-import { SAILINGS, sailingById } from '../../domain/sailings'
-import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
+import type { CategoryId } from '../../domain/ship'
+import { sailingFor } from '../../domain/shipCatalogue'
 import { useSailing } from '../../hooks/useDemo'
+import { usePricedSailings, useRoomChoices, useSailingRooms } from '../../hooks/useShipCatalogue'
 import { useMemory } from '../../hooks/useMemory'
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
@@ -36,21 +37,25 @@ export function DecideScreen() {
   const { state, me, update } = useMemory()
   const [budgetText, setBudgetText] = useState(state.budget === null ? '' : String(state.budget / 100))
   const [guests, setGuests] = useState(2)
-  const [sailingId, setSailingId] = useState(demo.id)
+  const sailings = usePricedSailings()
+  const [pickedSailing, setSailingId] = useState(demo.id)
+  const sailingId = sailings.some((s) => s.id === pickedSailing) ? pickedSailing : (sailings[0]?.id ?? pickedSailing)
+  const rooms = useRoomChoices(sailingId)
+  useSailingRooms(sailingId)
   const [category, setCategory] = useState<CategoryId | ''>('')
   const [fare, setFare] = useState<FareId | ''>('')
   const [inviteNote, setInviteNote] = useState('')
   const [shared, setShared] = useState<string | null>(null)
 
-  const sailing = sailingById(sailingId) ?? demo
+  const sailing = sailingFor(sailingId) ?? demo
   const budget = parseMoney(budgetText)
-  const result = budget !== null && budget > 0 ? budgetSearch(sailing, budget, guests) : null
+  const result = budget !== null && budget > 0 ? budgetSearch(sailing, budget, guests, rooms) : null
   const quality = useFeed(qualityFeed, sailing.id)
-  const useFare: FareId | null = category && fare && fareOptions(category).includes(fare) ? fare : null
-  const summary = decisionSummary({ sailing, category: category || null, fare: useFare, guests, fitsChecked: state.fit.length > 0, budget: budget && budget > 0 ? budget : null })
+  const useFare: FareId | null = category && rooms.some((r) => r.id === category) && fare && fareOptions(category).includes(fare) ? fare : null
+  const summary = decisionSummary({ sailing, category: category && rooms.some((r) => r.id === category) ? category : null, categoryName: rooms.find((r) => r.id === category)?.name, fare: useFare, guests, fitsChecked: state.fit.length > 0, budget: budget && budget > 0 ? budget : null })
   const toggleFit = (k: FitKey) => update((s) => ({ ...s, fit: s.fit.includes(k) ? s.fit.filter((x) => x !== k) : [...s.fit, k] }))
   const nick = state.prepare.nickname
-  const invite = withNickname(nick, inviteText(sailing, me?.firstName ?? '', inviteNote))
+  const invite = withNickname(nick, inviteText(sailing, me?.firstName ?? '', inviteNote, inviteTrip(sailing.id)))
   const recap = withNickname(nick, decisionText(summary))
   const say = async (text: string, title: string) => setShared(await send(text, title))
 
@@ -94,7 +99,7 @@ export function DecideScreen() {
         <div className="field">
           <label htmlFor="dec-sailing">{t('cost.sailing')}</label>
           <select id="dec-sailing" value={sailing.id} onChange={(e) => setSailingId(e.target.value)}>
-            {SAILINGS.map((s) => <option key={s.id} value={s.id}>{s.departure}</option>)}
+            {sailings.map((s) => <option key={s.id} value={s.id}>{s.departure} · {s.title}</option>)}
           </select>
         </div>
         <WantMatchLine sailing={sailing} />
@@ -111,7 +116,7 @@ export function DecideScreen() {
               <ul className="plain-list">
                 {result.fitting.slice(0, 6).map((o) => (
                   <li key={`${o.category}-${o.fare}`}>
-                    <strong>{categoryById(o.category)?.name}</strong> · {FARES[o.fare].name} · {formatMoney(o.total)}
+                    <strong>{rooms.find((r) => r.id === o.category)?.name}</strong> · {FARES[o.fare].name} · {formatMoney(o.total)}
                     <br /><span className="muted">{t('decide.budgetLeft', { left: formatMoney(o.left), perDay: formatMoney(o.perPersonPerDay) })}</span>
                   </li>
                 ))}
@@ -120,7 +125,7 @@ export function DecideScreen() {
             {result.nearMiss.length > 0 && result.fitting.length === 0 && (
               <>
                 <h3>{th('decide.nearMiss')}</h3>
-                <ul className="plain-list">{result.nearMiss.map((o) => <li key={`${o.category}-${o.fare}`}>{categoryById(o.category)?.name} · {FARES[o.fare].name} · {formatMoney(o.total)} ({t('decide.over', { amount: formatMoney(-o.left) })})</li>)}</ul>
+                <ul className="plain-list">{result.nearMiss.map((o) => <li key={`${o.category}-${o.fare}`}>{rooms.find((r) => r.id === o.category)?.name} · {FARES[o.fare].name} · {formatMoney(o.total)} ({t('decide.over', { amount: formatMoney(-o.left) })})</li>)}</ul>
               </>
             )}
             <p className="muted">{t('decide.budgetNote')}</p>
@@ -150,7 +155,7 @@ export function DecideScreen() {
           <label htmlFor="dec-room">{t('cost.room')}</label>
           <select id="dec-room" value={category} onChange={(e) => setCategory(e.target.value as CategoryId | '')}>
             <option value="">{t('decide.notYet')}</option>
-            {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {rooms.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div className="field">

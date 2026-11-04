@@ -1,5 +1,5 @@
 import { computeEntitlements } from './entitlements'
-import { NIGHTS, quote, type Quote } from './pricing'
+import { nightsOf, quote, roomCapacity, type Quote } from './pricing'
 import { type Cents } from './money'
 import { categoryById, type CategoryId } from './ship'
 import { DEFAULT_FINAL_PAYMENT_DAYS, DEPOSIT_SHARE } from './trip'
@@ -52,6 +52,9 @@ export function fareIncludes(id: FareId): string[] {
 /** Rooms hold at most four guests, a Signature Suite three. */
 export const capacityOf = (category: CategoryId): number => (category === 'signatureSuite' ? 3 : 4)
 
+/** How many a room type sleeps on one sailing: the served count for any ship, else the older rule. */
+export const capacityIn = (sailingId: string, category: CategoryId): number => roomCapacity(sailingId, category) ?? capacityOf(category)
+
 export interface BookingQuote extends Quote {
   fare: FareId
 }
@@ -59,11 +62,11 @@ export interface BookingQuote extends Quote {
 /** The all-in price with a fare: the Discover estimate, with the package added and the gratuities line replaced when the package covers them. Null for anything not bookable. */
 export function bookingQuote(sailingId: string, category: CategoryId, guests: number, fare: FareId): BookingQuote | null {
   const base = quote(sailingId, category, guests)
-  if (!base || guests > capacityOf(category) || !fareOptions(category).includes(fare)) return null
+  if (!base || guests > capacityIn(sailingId, category) || !fareOptions(category).includes(fare)) return null
   if (fare === 'standard') return { ...base, fare }
   const included = fareIncluded(category) !== null
   const lines = base.lines.filter((l) => l.key !== 'gratuities')
-  lines.push({ key: 'package', guests, cents: included ? 0 : FARES[fare].perNight * NIGHTS * guests })
+  lines.push({ key: 'package', guests, cents: included ? 0 : FARES[fare].perNight * nightsOf(sailingId) * guests })
   const total = lines.reduce((sum, l) => sum + l.cents, 0)
   return { ...base, fare, lines, total, perPerson: Math.round(total / guests), gratuities: 0 }
 }
