@@ -1,5 +1,5 @@
 /**
- * Screens that need a ship at `aboard` depth (its deck plan, cabins by number, muster stations, venues and menus). A ship at `browse` depth has facts, highlights,
+ * Screens that need a ship at `aboard` depth (its deck plan, cabins by number, muster stations, venues and menus). All three ships (Sun, Sky, Sapphire) are `aboard` since AB6, so the note is a safety net for a future ship. A ship at `browse` depth has facts, highlights,
  * sailings and sample room prices but not these, so when the sailing in focus runs on one of those ships, the screen says so plainly and points to what is
  * available instead (`docs/catalogue-plan.md` section 5). The ship in focus is the sailing's ship, so the demo personas, who sail Sun Princess, never see it.
  */

@@ -45,7 +45,7 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         var purchases = await store.ListPhotoPurchasesAsync(c.Booking.BookingId, ct);
         return new PhotosViewDto(
             AllPhotos(c), await store.ListFavouritesAsync(actor.Id, ct), [.. purchases.SelectMany(p => p.Items.Select(i => i.PhotoId)).Distinct()],
-            [.. purchases.Select(Receipt).Reverse()], await IncludedLeftAsync(c, purchases, ct), PhotoRules.PhotographersFor(c.Timeline),
+            [.. purchases.Select(Receipt).Reverse()], await IncludedLeftAsync(c, purchases, ct), PhotoRules.PhotographersFor(c.Timeline, AboardPlans.ShipOfSailing(c.Booking.SailingId)),
             [.. c.Party.Select(p => new GuestDto(p.Id, p.Name))], ThroughDay(c));
     }
 

@@ -67,3 +67,25 @@ describe('a ship\'s deck plan', () => {
     expect(planOf('sapphire-princess')).toBeUndefined()
   })
 })
+
+describe('rooms that only Sun has (AB5)', () => {
+  const sun = PLACES.map((p) => ({ ...p }))
+  const sunMuster = Object.values(MUSTER_STATIONS).map((m) => ({ ...m }))
+  const sunElevators = ELEVATORS.map((e) => ({ ...e }))
+  const plan = (ids: string[]) => ids.map((id) => ({ id, name: id, deck: 5, section: 'midship' as const, kind: 'show' as const, stepFree: true }))
+  it('maps Sun-only rooms to the focused ship\'s own and drops those it lacks', async () => {
+    const { replaceDeck, roomId, roomIds } = await import('./deck')
+    const els = [{ bank: 'A' as const, section: 'forward' as const, side: 'port' as const }]
+    replaceDeck({ places: plan(['princess-theater', 'allegro', 'seawalk', 'lido-pool']), elevators: els, muster: [] })
+    expect(roomId('arena')).toBe('princess-theater')
+    expect(roomId('eclipse')).toBe('allegro')
+    expect(roomId('dome')).toBe('seawalk')
+    expect(roomId('americana')).toBeUndefined()
+    expect(roomId('lido-pool')).toBe('lido-pool')
+    expect(roomIds(['arena', 'dome', 'americana', 'lido-pool', 'arena'])).toEqual(['princess-theater', 'seawalk', 'lido-pool'])
+    replaceDeck({ places: plan(['arena', 'eclipse', 'dome', 'americana']), elevators: els, muster: [] })
+    expect(roomId('arena')).toBe('arena')
+    expect(roomIds(['arena', 'dome'])).toEqual(['arena', 'dome'])
+    replaceDeck({ places: sun, elevators: sunElevators, muster: sunMuster })
+  })
+})

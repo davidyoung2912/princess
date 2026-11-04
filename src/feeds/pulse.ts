@@ -1,5 +1,6 @@
 import { createFeed, isInt, isRecord } from './feed'
 import { PULSE_STEP_MIN, PULSE_VENUES, type PulseEnv, type PulseId } from '../domain/pulse'
+import { roomId } from '../domain/deck'
 import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const MIN = 60_000
@@ -17,7 +18,7 @@ export function normalizePulse(raw: unknown): ServedLevels | null {
   const observedAt = raw.observedAt as number
   const map = new Map<string, number>()
   for (const v of PULSE_VENUES) {
-    const row = raw.venues[v.id]
+    const row = raw.venues[roomId(v.id) ?? v.id]
     if (!isRecord(row) || !isInt(row.observed, 0, 100) || !Array.isArray(row.ahead) || row.ahead.length !== HALF_HOURS) return null
     map.set(at(v.id, observedAt), row.observed)
     for (let i = 0; i < HALF_HOURS; i++) {
@@ -46,7 +47,7 @@ export function normalizePulseDay(raw: unknown): ServedDay | null {
   if (!isRecord(raw) || !isInt(raw.day, 1, MAX_PLAN_DAY) || !Number.isFinite(raw.startAt) || !isRecord(raw.venues)) return null
   const levels = new Map<string, readonly number[]>()
   for (const v of PULSE_VENUES) {
-    const row = raw.venues[v.id]
+    const row = raw.venues[roomId(v.id) ?? v.id]
     if (!Array.isArray(row) || row.length !== 48 || !row.every((n) => isInt(n, 0, 100))) return null
     levels.set(v.id, row as number[])
   }

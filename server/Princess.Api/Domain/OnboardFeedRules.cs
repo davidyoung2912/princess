@@ -81,6 +81,7 @@ public static class OnboardFeedRules
         return port is "cozumel" or "belize" or "roatan" && time.Hour >= 9 && time.Hour < 16;
     }
 
+    /// <summary>The venues are keyed by the ship's own place ids (the main theatre is <c>arena</c> on Sun and <c>princess-theater</c> on Sky and Sapphire); a level is worked out from the Sun id, so the figures match on every ship.</summary>
     /// <summary>The level (0 to 100) of a venue at a moment (<c>levelAt</c>).</summary>
     public static int PulseLevel(string id, long atMs, Timeline timeline)
     {
@@ -99,20 +100,20 @@ public static class OnboardFeedRules
 
     public static bool ValidPulseDay(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= Itinerary.MaxDay;
 
-    public static PulseDayDto PulseDay(Timeline timeline, int day)
+    public static PulseDayDto PulseDay(Timeline timeline, int day, string? shipId = null)
     {
         var date = timeline.Departure.AddDays(day - 1);
         var startAt = new DateTimeOffset(Itinerary.LocalToUtc(date, new TimeOnly(0, 0), timeline.ShipZoneOnDate(date)), TimeSpan.Zero).ToUnixTimeMilliseconds();
-        var venues = PulseVenues.ToDictionary(v => v.Id, v => Enumerable.Range(0, 48).Select(i => PulseLevel(v.Id, startAt + i * 30 * Min, timeline)).ToArray());
+        var venues = PulseVenues.ToDictionary(v => AboardPlans.Room(shipId, v.Id) ?? v.Id, v => Enumerable.Range(0, 48).Select(i => PulseLevel(v.Id, startAt + i * 30 * Min, timeline)).ToArray());
         return new PulseDayDto(day, startAt, venues, FeedRules.Sim);
     }
 
-    public static PulseDto Pulse(Timeline timeline, long now)
+    public static PulseDto Pulse(Timeline timeline, long now, string? shipId = null)
     {
         var observedAt = (long)Math.Floor(now / (double)(5 * Min)) * 5 * Min;
         var venues = new Dictionary<string, PulseVenueDto>();
         foreach (var (id, _) in PulseVenues)
-            venues[id] = new PulseVenueDto(PulseLevel(id, observedAt, timeline), Enumerable.Range(0, 9).Select(i => PulseLevel(id, now + i * 30 * Min, timeline)).ToArray());
+            venues[AboardPlans.Room(shipId, id) ?? id] = new PulseVenueDto(PulseLevel(id, observedAt, timeline), Enumerable.Range(0, 9).Select(i => PulseLevel(id, now + i * 30 * Min, timeline)).ToArray());
         return new PulseDto(now, observedAt, venues, FeedRules.Sim);
     }
 

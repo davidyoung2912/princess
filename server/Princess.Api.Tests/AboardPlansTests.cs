@@ -118,3 +118,43 @@ public class CabinsPerShipTests
         Assert.Empty(CabinRules.CabinsOn("sky-princess", "s", "sky-suite"));
     }
 }
+
+public class SharedRoomTests
+{
+    [Theory]
+    [InlineData("sun-princess", "arena", "arena")]
+    [InlineData("sky-princess", "arena", "princess-theater")]
+    [InlineData("sapphire-princess", "eclipse", "santa-fe")]
+    [InlineData("sky-princess", "eclipse", "allegro")]
+    [InlineData("sky-princess", "dome", "seawalk")]
+    [InlineData("sky-princess", "lido-pool", "lido-pool")]
+    public void SunOnlyRoomsMapToTheShipsOwn(string ship, string id, string expected) => Assert.Equal(expected, AboardPlans.Room(ship, id));
+
+    [Fact]
+    public void ARoomTheShipLacksIsDropped()
+    {
+        Assert.Null(AboardPlans.Room("sky-princess", "americana"));
+        Assert.Equal(["firefly", "lido-pool", "eatery"], FamilyRules.DefaultZones(5, "sky-princess"));
+        Assert.Equal(FamilyRules.KidZones.ToList(), FamilyRules.KidZonesOn("sun-princess"));
+    }
+
+    [Fact]
+    public void EveryMappedRoomExistsOnItsShip()
+    {
+        foreach (var ship in AboardPlans.Ships)
+            foreach (var id in FamilyRules.KidZones.Concat(["arena", "eclipse", "dome"]))
+                if (AboardPlans.Room(ship, id) is { } room)
+                    Assert.Contains(AboardPlans.For(ship)!.Places, p => p.Id == room);
+    }
+
+    [Fact]
+    public void ThePulseIsKeyedByTheShipsOwnTheatre()
+    {
+        var timeline = Timeline.Legacy(new DateOnly(2027, 3, 6));
+        var sky = OnboardFeedRules.Pulse(timeline, 1_800_000_000_000, "sky-princess");
+        var sun = OnboardFeedRules.Pulse(timeline, 1_800_000_000_000, "sun-princess");
+        Assert.True(sky.Venues.ContainsKey("princess-theater") && !sky.Venues.ContainsKey("arena"));
+        Assert.Equal(sun.Venues["arena"].Observed, sky.Venues["princess-theater"].Observed);
+        Assert.Equal("allegro", DayPlanRules.Build(timeline, 2, new DayWishDto([], [], "any", false, null), "sky-princess").Items.Single(i => i.Kind == "dinner").Id);
+    }
+}

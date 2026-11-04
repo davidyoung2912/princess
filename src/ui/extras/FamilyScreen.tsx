@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { asFamilyView } from '../../api/guards'
 import type { FamilyKid, FamilyView } from '../../api/types'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { KID_ZONES, MEETING_PLACES, clubById, placeName, type ReunionPlan } from '../../domain/family'
+import { kidZones, MEETING_PLACES, clubById, placeName, type ReunionPlan } from '../../domain/family'
 import { formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -103,7 +103,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
           <fieldset className="plain-fieldset">
             <legend>{t('fam.zones')}</legend>
             <p className="field__hint">{t('fam.zonesHint')}</p>
-            {KID_ZONES.map((z) => <label key={z} className="choice"><input type="checkbox" checked={zones.includes(z)} onChange={() => setZones(zones.includes(z) ? zones.filter((x) => x !== z) : [...zones, z])} /><span>{placeName(z)}</span></label>)}
+            {kidZones().map((z) => <label key={z} className="choice"><input type="checkbox" checked={zones.includes(z)} onChange={() => setZones(zones.includes(z) ? zones.filter((x) => x !== z) : [...zones, z])} /><span>{placeName(z)}</span></label>)}
           </fieldset>
           <ExtraError error={saveZones.error} />
           <Button variant="secondary" disabled={saveZones.busy} onClick={() => void saveZones.run()}>{t('fam.saveZones')}</Button>

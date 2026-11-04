@@ -81,10 +81,10 @@ Not every screen needs a full deck plan. Add `Depth` to each ship:
 
 | Depth | Contains | Ships at first |
 |---|---|---|
-| **browse** | Facts, class, highlights, deck list, venue list (names, kind, deck, hours approximate), stateroom categories with sample prices, photos (placeholder art), accessibility summary | Sky Princess, Sapphire Princess |
-| **aboard** | Everything above plus cabins by number, muster stations, deck graph, menus, programme (events and shows), excursions, services, photos catalogue, the games and trivia set | Sun Princess (exists) |
+| **browse** | Facts, class, highlights, deck list, venue list (names, kind, deck, hours approximate), stateroom categories with sample prices, photos (placeholder art), accessibility summary | None now (Sky and Sapphire were `browse` until AB6; the depth stays in the schema for a future ship) |
+| **aboard** | Everything above plus cabins by number, muster stations, deck graph, menus, programme (events and shows), excursions, services, photos catalogue, the games and trivia set | Sun, Sky and Sapphire Princess |
 
-Screens that need aboard depth (deck map, cabin chooser scores, walking times, muster, venue menus, order, programme) show an honest message when the sailing's ship is `browse` ("The deck plan for Sky Princess is not in the app yet") and offer the next best thing. The demo personas stay on Sun Princess. Bringing a ship to `aboard` is a later content phase per ship.
+Screens that need aboard depth (deck map, cabin chooser scores, walking times, muster, venue menus, order, programme) show an honest message when the sailing's ship is `browse` ("The deck plan for Sky Princess is not in the app yet") and offer the next best thing. The demo personas stay on Sun Princess. Bringing a ship to `aboard` is a content phase per ship (Sky and Sapphire: `docs/aboard-plan.md`, AB1 to AB6, done 2026-11-03; their content is concept sample data).
 
 ## 6. API
 

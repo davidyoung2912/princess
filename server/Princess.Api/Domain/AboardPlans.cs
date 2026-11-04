@@ -40,6 +40,33 @@ public static class AboardPlans
     /// <summary>The ship a sailing runs on; Sun Princess for a sailing the book does not list (the older sample sailings).</summary>
     public static string ShipOfSailing(string sailingId) => FareBook.ShipOf(sailingId) ?? "sun-princess";
 
+    /// <summary>
+    /// The rooms Sun Princess's content names that other ships house elsewhere: Sun's id, then each ship's id for the same job
+    /// (null when the ship has no such room). Content that names a Sun room goes through <see cref="Room"/>.
+    /// </summary>
+    private static readonly Dictionary<string, Dictionary<string, string?>> Rooms = new()
+    {
+        ["arena"] = new() { ["sun-princess"] = "arena", ["sky-princess"] = "princess-theater", ["sapphire-princess"] = "princess-theater" },
+        ["eclipse"] = new() { ["sun-princess"] = "eclipse", ["sky-princess"] = "allegro", ["sapphire-princess"] = "santa-fe" },
+        ["dome"] = new() { ["sun-princess"] = "dome", ["sky-princess"] = "seawalk", ["sapphire-princess"] = null },
+        ["americana"] = new() { ["sun-princess"] = "americana", ["sky-princess"] = null, ["sapphire-princess"] = null },
+    };
+
+    /// <summary>The place that does a Sun room's job on a ship (<c>arena</c> is the main theatre, <c>eclipse</c> the main dining room, <c>dome</c> the late-night room), the id itself when it is not a Sun-only room, or null when the ship has none.</summary>
+    public static string? Room(string? shipId, string id) =>
+        !Rooms.TryGetValue(id, out var byShip) ? id : byShip.GetValueOrDefault(shipId ?? "sun-princess", id);
+
+    /// <summary>A ship's place ids for a list of Sun place ids: each mapped, those the ship has no room for dropped, repeats kept out.</summary>
+    public static List<string> MapRooms(string? shipId, IEnumerable<string> ids) =>
+        [.. ids.Select(i => Room(shipId, i)).OfType<string>().Distinct()];
+
+    /// <summary>Like <see cref="MapRooms"/> but keeps repeats, for a rotation where an id's weight is its count.</summary>
+    public static string[] MapRoomsKeepingRepeats(string? shipId, IEnumerable<string> ids) =>
+        [.. ids.Select(i => Room(shipId, i)).OfType<string>()];
+
+    /// <summary>The name of the main dining room on a ship, for plan text.</summary>
+    public static string MainDiningName(string? shipId) => PlaceName(shipId ?? "sun-princess", Room(shipId, "eclipse") ?? "eclipse") is { Length: > 0 } n ? n : "Eclipse Dining Room";
+
     /// <summary>The muster station with this letter on a ship, or null.</summary>
     public static MusterStation? Station(string shipId, string letter) =>
         For(shipId)?.Muster.FirstOrDefault(m => m.Letter == letter) is { } m ? new MusterStation(m.Letter, m.Name, m.PlaceId, m.Deck) : null;

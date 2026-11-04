@@ -1,4 +1,4 @@
-import { placeById } from './deck'
+import { placeById, roomId } from './deck'
 import { shipZoneAt, type Sailing } from './sailings'
 import { timeIn } from './timezones'
 
@@ -132,7 +132,7 @@ export function quietSpaces(now: number, env: PulseEnv, f: QuietFilter = NO_QUIE
   const hour = env.hour(now)
   const out: QuietResult[] = []
   for (const q of QUIET_SPACES) {
-    const place = placeById(q.placeId)
+    const place = placeById(roomId(q.placeId) ?? '')
     if (!place) continue
     if ((f.stepFree && !place.stepFree) || (f.shade && !q.shade) || (f.seating && !q.seating)) continue
     const level = q.follows ? levelAt(q.follows, now, env) : Math.min(60, Math.round(levelAt('promenade', now, env) + (hash(q.id) % 15)))

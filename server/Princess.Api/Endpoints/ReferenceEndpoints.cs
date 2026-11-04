@@ -129,7 +129,7 @@ public static class ReferenceEndpoints
             {
                 var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidDate(departure) || !OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");
-                return Results.Ok(ship.Pulse(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
+                return Results.Ok(ship.Pulse(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now, AboardPlans.ShipOfSailing(sailing)));
             })
             .WithTags("Reference").WithSummary("How busy each ship venue is at the last five-minute mark and for the next four hours in half hours (0 to 100), for Ship Pulse, the lines and the quiet spaces. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
@@ -137,7 +137,7 @@ public static class ReferenceEndpoints
             {
                 var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidPulseDay(departure, day)) throw ApiException.Invalid("badFeedQuery");
-                return Results.Ok(ship.PulseDay(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), day));
+                return Results.Ok(ship.PulseDay(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), day, AboardPlans.ShipOfSailing(sailing)));
             })
             .WithTags("Reference").WithSummary("How busy each ship venue is at every half hour of a cruise day, from midnight ship time (48 levels, 0 to 100), for plans that look across the day. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 

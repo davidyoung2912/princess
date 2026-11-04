@@ -17,7 +17,7 @@ const number = new Intl.NumberFormat('en-US')
 
 /**
  * A ship (H10): `/home/ships/:id` for any ship of the catalogue, and `/home/ship` for the ship of the sailing the app is on. Every ship shows its facts and
- * highlights; a ship at `aboard` depth (Sun Princess) also shows its accessibility notes, terms and stateroom types, and a `browse` ship says plainly that the
+ * highlights; Sun Princess also shows its accessibility notes, terms and stateroom types, a ship not at `aboard` depth says plainly that the
  * deck plan and rooms are not in the app yet.
  */
 export function ShipScreen() {

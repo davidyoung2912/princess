@@ -26,15 +26,16 @@ public sealed class FamilyService(ScopeLoader scopes, IShipboardStore store)
         var open = (await store.ListOpenCheckinsAsync([.. kids.Select(k => k.UserId)], ct)).ToDictionary(x => x.ChildUserId);
         var me = c.PersonByUser(c.Actor.Id);
 
+        var ship = AboardPlans.ShipOfSailing(c.Booking.SailingId);
         var list = new List<FamilyKidDto>();
         foreach (var g in kids)
         {
             var club = FamilyRules.ClubFor(g.Age);
             InClubDto? inClub = open.TryGetValue(g.UserId, out var o) && FamilyRules.ClubById(o.ClubId) is { } oc ? new InClubDto(oc.Id, Shipboard.Ms(o.InAt)) : null;
             zones.TryGetValue(g.UserId, out var z);
-            var allowed = FamilyRules.ZonesOf(z?.ZoneIds) is { Count: > 0 } stored ? stored : FamilyRules.DefaultZones(g.Age);
+            var allowed = FamilyRules.ZonesOf(z?.ZoneIds) is { Count: > 0 } stored ? stored : FamilyRules.DefaultZones(g.Age, ship);
             var auth = FamilyRules.NormalizeAuth(z?.Auth, adultIds);
-            var seen = FamilyRules.LastSeen(g.Id.ToString(), g.Age, now, inClub is null ? null : (inClub.ClubId, inClub.At), scenarios.Contains("childMissing") && youngest is not null && g.Id == youngest.Id && inClub is null);
+            var seen = FamilyRules.LastSeen(g.Id.ToString(), g.Age, now, inClub is null ? null : (inClub.ClubId, inClub.At), scenarios.Contains("childMissing") && youngest is not null && g.Id == youngest.Id && inClub is null, ship);
             var self = me is not null && me.Id == g.Id && auth.SignOutAlone && club?.AloneFrom is { } from && g.Age >= from;
             list.Add(new FamilyKidDto(
                 g.Id, g.Name, g.Age, club is null ? null : new KidClubDto(club.Id, club.Name, FamilyRules.ClubOpen(club, time), club.Opens, club.Closes),
@@ -55,7 +56,7 @@ public sealed class FamilyService(ScopeLoader scopes, IShipboardStore store)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         var kid = KidOf(c, child);
-        if (FamilyRules.ZonesProblem(body?.Zones) is { } problem) throw ApiException.Invalid(problem);
+        if (FamilyRules.ZonesProblem(body?.Zones, AboardPlans.ShipOfSailing(c.Booking.SailingId)) is { } problem) throw ApiException.Invalid(problem);
         await store.SaveZonesAsync(c.Booking.BookingId, kid.UserId, System.Text.Json.JsonSerializer.Serialize(body!.Zones!.Distinct()), ct);
         return await ViewAsync(c, ct);
     }

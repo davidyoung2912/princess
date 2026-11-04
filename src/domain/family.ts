@@ -1,5 +1,5 @@
 import type { PersonaId } from './people'
-import { placeById } from './deck'
+import { placeById, roomId, roomIds } from './deck'
 import { limit } from './limits'
 
 /**
@@ -52,6 +52,9 @@ export function checkInProblem(club: Club, age: number, time: string, alreadyIn:
 
 /** Places a parent can allow a child to be (the club for the age is always included). */
 export const KID_ZONES: readonly string[] = ['firefly', 'neon-grove', 'underground', 'lido-pool', 'piazza', 'arena', 'dome', 'promenade', 'eatery', 'americana', 'lido', 'shops', 'intl-cafe']
+
+/** The places a parent can allow on the focused ship: the list above with Sun-only rooms swapped for the ship's own. */
+export const kidZones = (): string[] => roomIds(KID_ZONES)
 
 /** Where a child may go before a parent changes it. */
 export function defaultZones(age: number): string[] {
@@ -129,7 +132,7 @@ export function normalizeReunion(raw: unknown): ReunionPlan {
   return { placeId: ok(o.placeId, DEFAULT_REUNION.placeId), backupId: ok(o.backupId, DEFAULT_REUNION.backupId), note: typeof o.note === 'string' ? o.note.slice(0, 200) : '' }
 }
 
-export const placeName = (id: string): string => (id === 'cabin' ? 'Stateroom' : (placeById(id)?.name ?? id))
+export const placeName = (id: string): string => (id === 'cabin' ? 'Stateroom' : (placeById(roomId(id) ?? id)?.name ?? id))
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('OVERDUE_MINUTES', (v) => { OVERDUE_MINUTES = v }, OVERDUE_MINUTES)

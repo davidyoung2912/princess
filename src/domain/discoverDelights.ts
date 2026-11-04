@@ -1,5 +1,5 @@
 import type { Cabin, Side } from './cabins'
-import { ELEVATORS, PLACES, placeById, type Place, type PlaceKind } from './deck'
+import { ELEVATORS, PLACES, placeById, roomId, type Place, type PlaceKind } from './deck'
 import { wayBetween } from './deckGraph'
 import type { ItineraryDay, PortId } from './sailings'
 
@@ -90,7 +90,7 @@ export const WALK_TARGETS = ['lido', 'arena', 'guest-services'] as const
 export function cabinWalks(c: Pick<Cabin, 'deck' | 'position'>): { walks: Walk[]; lift: { bank: string; minutes: number } } {
   const from = cabinSpot(c)
   const walks = WALK_TARGETS.flatMap((id): Walk[] => {
-    const p = placeById(id)
+    const p = placeById(roomId(id) ?? '')
     const minutes = p ? walkMinutes(from, p) : null
     return p && minutes !== null ? [{ id, name: p.name, minutes }] : []
   })

@@ -46,10 +46,14 @@ public static class FamilyRules
     public static readonly string[] KidZones = ["firefly", "neon-grove", "underground", "lido-pool", "piazza", "arena", "dome", "promenade", "eatery", "americana", "lido", "shops", "intl-cafe"];
 
     /// <summary>Where a child may go before a parent changes it.</summary>
-    public static List<string> DefaultZones(int age) =>
-        age < 8 ? ["firefly", "lido-pool", "americana", "eatery"]
-        : age < 13 ? ["neon-grove", "lido-pool", "piazza", "promenade", "dome", "lido", "americana", "eatery"]
-        : [.. KidZones];
+    public static List<string> DefaultZones(int age, string? shipId = null) =>
+        AboardPlans.MapRooms(shipId,
+            age < 8 ? ["firefly", "lido-pool", "americana", "eatery"]
+            : age < 13 ? ["neon-grove", "lido-pool", "piazza", "promenade", "dome", "lido", "americana", "eatery"]
+            : KidZones);
+
+    /// <summary>The places a parent can allow on a ship: Sun's list with each Sun-only room swapped for the ship's own (and dropped where it has none).</summary>
+    public static List<string> KidZonesOn(string? shipId) => AboardPlans.MapRooms(shipId, KidZones);
 
     private static readonly Dictionary<string, string[]> Rotation = new()
     {
@@ -64,11 +68,11 @@ public static class FamilyRules
     public const int OverdueMinutes = 30;
 
     /// <summary>Where a child was last seen. In the missing-child scenario the youngest child's band last reported a while ago.</summary>
-    public static Seen LastSeen(string child, int age, long now, (string ClubId, long At)? club, bool missing)
+    public static Seen LastSeen(string child, int age, long now, (string ClubId, long At)? club, bool missing, string? shipId = null)
     {
         if (club is { } c) return new Seen(ClubById(c.ClubId)!.PlaceId, c.At, "club");
         if (missing) return new Seen("lido-pool", now - OverdueMinutes * 60_000L - 15 * 60_000L, "band");
-        var rotation = Rotation[BandOf(age)];
+        var rotation = AboardPlans.MapRoomsKeepingRepeats(shipId, Rotation[BandOf(age)]);
         var b = now / (15 * 60_000L);
         var place = rotation[(int)((ExcursionRules.Hash(child) + (ulong)b) % (ulong)rotation.Length)];
         return new Seen(place, Math.Max(b * 15 * 60_000L, now - ExcursionRules.Hash($"{child}{b}") % 10 * 60_000L), "band");
@@ -127,8 +131,8 @@ public static class FamilyRules
             backup is not null && MeetingPlaces.Contains(backup) ? backup : DefaultReunion.BackupId,
             note is null ? "" : note.Length > 200 ? note[..200] : note);
 
-    public static string? ZonesProblem(IReadOnlyCollection<string>? zones) =>
-        zones is null || zones.Count == 0 || !zones.All(KidZones.Contains) ? "badZones" : null;
+    public static string? ZonesProblem(IReadOnlyCollection<string>? zones, string? shipId = null) =>
+        zones is null || zones.Count == 0 || !zones.All(KidZonesOn(shipId).Contains) ? "badZones" : null;
 
     public static string? MeetingProblem(string? place, string? backup) =>
         place is null || backup is null || !MeetingPlaces.Contains(place) || !MeetingPlaces.Contains(backup) || place == backup ? "badMeeting" : null;

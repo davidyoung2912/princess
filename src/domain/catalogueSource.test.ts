@@ -75,9 +75,9 @@ describe('catalogue rules (X0b)', () => {
 
 describe('the authored catalogue (X0b)', () => {
   const c = loadCatalogue()
-  it('is consistent and covers three ships, with Sun Princess aboard and the others browse', () => {
+  it('is consistent and covers three ships, with all three ships aboard', () => {
     expect(validateCatalogue(c)).toEqual([])
-    expect(c.ships.map((s) => [s.id, s.depth])).toEqual([['sun-princess', 'aboard'], ['sky-princess', 'browse'], ['sapphire-princess', 'browse']])
+    expect(c.ships.map((s) => [s.id, s.depth])).toEqual([['sun-princess', 'aboard'], ['sky-princess', 'aboard'], ['sapphire-princess', 'aboard']])
     expect(c.ports.length).toBeGreaterThanOrEqual(90)
     expect(c.ports.filter((p) => p.tier === 'A').length).toBe(25)
   })

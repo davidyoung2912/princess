@@ -58,6 +58,27 @@ export const PLACES: readonly Place[] = [
 
 export const placeById = (id: unknown): Place | undefined => PLACES.find((p) => p.id === id)
 
+/**
+ * Rooms that only Sun Princess has under that id, and the place that does the same job on other ships (the server mirrors this in `AboardPlans.Room`): `arena` is the main theatre,
+ * `eclipse` the main dining room, `dome` the late-night room. Content written for Sun names them; this finds the focused ship's own, or undefined when it has none.
+ */
+const OTHER_SHIPS_ROOM: Readonly<Record<string, readonly string[]>> = {
+  arena: ['princess-theater'],
+  eclipse: ['allegro', 'santa-fe'],
+  dome: ['seawalk'],
+  americana: [],
+}
+
+export function roomId(id: string): string | undefined {
+  if (PLACES.some((p) => p.id === id)) return id
+  const alternatives = OTHER_SHIPS_ROOM[id]
+  if (!alternatives) return id
+  return alternatives.find((a) => PLACES.some((p) => p.id === a))
+}
+
+/** A list of Sun place ids as the focused ship's: each mapped, rooms it has no match for dropped, repeats removed. */
+export const roomIds = (ids: readonly string[]): string[] => [...new Set(ids.flatMap((i) => roomId(i) ?? []))]
+
 const deckNumbers = (): number[] => [...new Set(PLACES.map((p) => p.deck))].sort((a, b) => a - b)
 export const DECKS: readonly number[] = deckNumbers()
 

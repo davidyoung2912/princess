@@ -29,7 +29,7 @@ Other scripts: `db:check`, `api:check`, `db:seed:check`, `db:persona:check` (see
 
 ## The catalogue
 
-The app serves three ships (Sun Princess at `aboard` depth, Sky and Sapphire at `browse` depth), their regions, ports, itinerary patterns and 2027 sailings from the server (`/reference/catalogue/*` and `/reference/sailings`); the front end holds none of it (`src/domain/shipCatalogue.ts`). The ship feeds under `/feeds/*` take `sailing` (an id). Plan and data model: `docs/catalogue-plan.md`, `docs/catalogue-data-model.md`. Regenerate and check the seed with `npm run catalogue:gen` and `npm run catalogue:check`.
+The app serves three ships (all three at `aboard` depth; Sky and Sapphire's decks, rooms, dining and programme are concept samples, see `docs/aboard-plan.md`), their regions, ports, itinerary patterns and 2027 sailings from the server (`/reference/catalogue/*` and `/reference/sailings`); the front end holds none of it (`src/domain/shipCatalogue.ts`). The ship feeds under `/feeds/*` take `sailing` (an id). Plan and data model: `docs/catalogue-plan.md`, `docs/catalogue-data-model.md`. Regenerate and check the seed with `npm run catalogue:gen` and `npm run catalogue:check`.
 
 ## Documents
 

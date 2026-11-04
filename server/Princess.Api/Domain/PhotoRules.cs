@@ -95,7 +95,7 @@ public static class PhotoRules
     public const int RedownloadDays = 14;
 
     /// <summary>The photographers' posted sessions for a sailing, from the same days as the photo spots.</summary>
-    public static List<PhotographerSlot> PhotographersFor(Timeline timeline)
+    public static List<PhotographerSlot> PhotographersFor(Timeline timeline, string? shipId = null)
     {
         var slots = new List<PhotographerSlot> { new(1, "12:00", "landing", "Welcome aboard photos at the gangway") };
         var formal = FormalDays(timeline.Nights);
@@ -105,7 +105,7 @@ public static class PhotoRules
             if (d.Port == "sea")
             {
                 slots.Add(new(d.Day, "11:00", "lido-pool", "Pool and deck photos"));
-                slots.Add(new(d.Day, "19:00", "eclipse", "Dining room table photos"));
+                slots.Add(new(d.Day, "19:00", AboardPlans.Room(shipId, "eclipse") ?? "eclipse", "Dining room table photos"));
             }
             else if (timeline.IsCall(d))
                 slots.Add(new(d.Day, Hm(Before(d.AllAboard ?? new TimeOnly(16, 30), 90)), "landing", $"Back at the ship, {Short(Itinerary.PortOf(d.Port)?.Name ?? d.Port)}"));

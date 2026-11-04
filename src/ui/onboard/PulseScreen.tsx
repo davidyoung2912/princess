@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { placeById } from '../../domain/deck'
+import { placeById, roomId } from '../../domain/deck'
 import { goodTime, lineReading, LINES, NO_QUIET_FILTER, pulseAt, PULSE_VENUES, quietSpaces, type PulseEnv } from '../../domain/pulse'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -45,7 +45,7 @@ function PulseBody({ env, now }: { env: PulseEnv; now: number }) {
             const g = goodTime(v.id, now, env)
             return (
               <li key={v.id}>
-                <strong>{placeById(v.id)?.name}</strong>: {t(`pulse.label.${p.label}` as StringKey)} <span className="pulse-bar" aria-hidden="true"><span style={{ width: `${p.level}%` }} /></span>
+                <strong>{placeById(roomId(v.id) ?? v.id)?.name}</strong>: {t(`pulse.label.${p.label}` as StringKey)} <span className="pulse-bar" aria-hidden="true"><span style={{ width: `${p.level}%` }} /></span>
                 <span className="plan-row__note">{t('pulse.age', { count: p.ageMinutes })} · {t(`pulse.confidence.${p.confidence}` as StringKey)} · {t('pulse.sim')}</span>
                 <span className="plan-row__note">{g.now ? t('pulse.goNow') : t('pulse.goAt', { time: time(g.at) })}</span>
               </li>

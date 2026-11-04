@@ -36,8 +36,8 @@ public interface IRouteConditionsProvider
 public interface IShipTelemetry
 {
     PortCrowdDto PortCrowd(string port, string date);
-    PulseDto Pulse(Timeline timeline, long now);
-    PulseDayDto PulseDay(Timeline timeline, int day);
+    PulseDto Pulse(Timeline timeline, long now, string? shipId = null);
+    PulseDayDto PulseDay(Timeline timeline, int day, string? shipId = null);
     LoungersDto Loungers(long now);
     SightingsDto Sightings(int day);
     SkyNightDto SkyNight(string departure, int day, string? sailing = null);
@@ -97,8 +97,8 @@ public sealed class SimWeatherService : IWeatherService
 public sealed class SimShipTelemetry : IShipTelemetry
 {
     public PortCrowdDto PortCrowd(string port, string date) => ShipFeedRules.PortCrowd(port, date);
-    public PulseDto Pulse(Timeline timeline, long now) => OnboardFeedRules.Pulse(timeline, now);
-    public PulseDayDto PulseDay(Timeline timeline, int day) => OnboardFeedRules.PulseDay(timeline, day);
+    public PulseDto Pulse(Timeline timeline, long now, string? shipId = null) => OnboardFeedRules.Pulse(timeline, now, shipId);
+    public PulseDayDto PulseDay(Timeline timeline, int day, string? shipId = null) => OnboardFeedRules.PulseDay(timeline, day, shipId);
     public LoungersDto Loungers(long now) => OnboardFeedRules.LoungerBoard(now);
     public SightingsDto Sightings(int day) => OnboardFeedRules.Sightings(day);
     public SkyNightDto SkyNight(string departure, int day, string? sailing = null) => OnboardFeedRules.SkyNight(departure, day, sailing);

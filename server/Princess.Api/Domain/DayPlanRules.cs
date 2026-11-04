@@ -33,7 +33,7 @@ public static class DayPlanRules
     public static readonly string[] TourInterests = ["water", "culture", "nature", "adventure", "relax"];
     public static readonly string[] EventInterests = ["shows", "music", "games", "wellness", "learning", "family", "nightlife"];
     private static readonly string[] Activities = ["easy", "moderate", "strenuous"];
-    private static readonly HashSet<string> OutdoorPlaces = ["lido-pool", "promenade", "sea-view", "sun-bar"];
+    private static readonly HashSet<string> OutdoorPlaces = ["lido-pool", "promenade", "sea-view", "sun-bar", "seawalk"];
 
     public const string DinnerStart = "18:30";
     public const int DinnerMinutes = 90;
@@ -103,7 +103,7 @@ public static class DayPlanRules
         foreach (var e in PickEvents(timeline, day, w, d.Port == "sea" ? 3 : 1, shipId))
             items.Add(FromEvent(e, e.Extra > 0 ? $"extra cost {Money(e.Extra)} each" : "included in your fare"));
         if (day <= 7)
-            items.Add(new("eclipse", "Dinner in the Eclipse Dining Room", DinnerStart, DinnerMinutes, "dinner", null, false, "/plan/dining", w.Mobility == "any" ? "main dining room, included" : "main dining room, level access"));
+            items.Add(new(AboardPlans.Room(shipId, "eclipse") ?? "eclipse", $"Dinner in the {AboardPlans.MainDiningName(shipId)}", DinnerStart, DinnerMinutes, "dinner", null, false, "/plan/dining", w.Mobility == "any" ? "main dining room, included" : "main dining room, level access"));
         return ([.. items.OrderBy(i => Minutes(i.Start)).ThenBy(i => i.Id, StringComparer.Ordinal)], tour is null ? null : ExcursionRules.BackBy(tour, d));
     }
 
