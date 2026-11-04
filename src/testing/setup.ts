@@ -10,7 +10,7 @@ import { applyPricing } from '../domain/pricingServed'
 import { markReferenceAllReady, requireReference } from '../domain/referenceStatus'
 
 export function seedReference(): void {
-  replaceSailings({ sailings: fixture.sailings, ports: fixture.ports, template: fixture.template, homeZone: fixture.homeZone, westZone: fixture.westZone } as never)
+  replaceSailings({ sailings: fixture.sailings, ports: fixture.ports, template: fixture.template } as never)
   replaceExcursions(fixture.excursions as never)
   replaceVenues(fixture.venues as never)
   replacePorts({ guides: fixture.guides, coords: fixture.coords } as never)

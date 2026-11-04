@@ -1,8 +1,7 @@
 import { Link } from 'react-router'
 import { t, th } from '../../i18n'
-import { CRUISE } from '../../domain/cruise'
 import { PORT_GUIDES } from '../../domain/ports'
-import { SHIP } from '../../domain/ship'
+import { useCruise, useShip } from '../../hooks/useShipCatalogue'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { Card } from '../Card'
@@ -11,14 +10,16 @@ import { FromPriceBlock, PriceState } from './parts'
 
 /** The cruise, its price, where it goes and the ship (DIS-01): what a guest browses from Home, with no account needed. */
 export function Explore() {
+  const cruise = useCruise()
+  const ship = useShip()
   const offers = useAsync(() => api.discover.offers(), [])
   const lowest = offers.data ? offers.data.map((o) => o.from).reduce((a, b) => (b.fare < a.fare ? b : a)) : null
   return (
     <>
       <Card hero labelledBy="cruise-h">
-        <p className="eyebrow">{t('discover.eyebrow', { ship: SHIP.name })}</p>
-        <h2 id="cruise-h">{CRUISE.name}</h2>
-        <p>{CRUISE.intro}</p>
+        <p className="eyebrow">{t('discover.eyebrow', { ship: ship.name })}</p>
+        <h2 id="cruise-h">{cruise.name}</h2>
+        <p>{cruise.intro}</p>
         <PriceState state={offers}>{lowest && <FromPriceBlock price={lowest} />}</PriceState>
         <div className="button-row">
           <LinkButton to="/book">{t('discover.book')}</LinkButton>
@@ -42,8 +43,8 @@ export function Explore() {
       <section aria-labelledby="ship-h">
         <h2 id="ship-h">{th('discover.yourShip')}</h2>
         <Card>
-          <h3><Link to="/home/ship">{SHIP.name}</Link></h3>
-          <p>{SHIP.intro}</p>
+          <h3><Link to="/home/ship">{ship.name}</Link></h3>
+          <p>{ship.intro}</p>
         </Card>
       </section>
 

@@ -7,7 +7,7 @@ import { itinerary } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { sameCelebrations } from '../../domain/planPolish'
-import { SHIP } from '../../domain/ship'
+import { shipOf } from '../../domain/shipCatalogue'
 import { skyNightFeed } from '../../feeds/skyNight'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSailing } from '../../hooks/useDemo'
@@ -152,7 +152,7 @@ export function OccasionsCard() {
       {hits.map(({ occasion, day }) => (
         <div key={occasion.id}>
           <p role="status"><strong>{t('dl4.occ.atSea', { label: occasion.label, day, date: formatDate(days[day - 1].date) })}</strong></p>
-          <CopyText text={occasionNote(occasion, SHIP.name)} label={t('dl4.occ.copy')} />
+          <CopyText text={occasionNote(occasion, shipOf(sailing.id).name)} label={t('dl4.occ.copy')} />
         </div>
       ))}
       {view?.canEdit && (toTell.length > 0 || view.items.length > 0) && (

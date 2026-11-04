@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { portDayAt } from '../../domain/allaboard'
 import { usePortCrowd } from '../../hooks/useServedFeeds'
-import { GUIDE_PORTS, PORT_KNOWLEDGE, perPerson, type GuidePort } from '../../domain/portContent'
+import { GUIDE_PORTS, isGuidePort, PORT_KNOWLEDGE, perPerson, type GuidePort } from '../../domain/portContent'
 import { PORTS } from '../../domain/sailings'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { t, th, type StringKey } from '../../i18n'
@@ -16,7 +16,7 @@ export function PortGuideScreen() {
   const sailing = useSailing()
   const now = useNow()
   const next = portDayAt(sailing, now)?.port
-  const [port, setPort] = useState<GuidePort>(next && GUIDE_PORTS.includes(next) ? next : 'cozumel')
+  const [port, setPort] = useState<GuidePort>(isGuidePort(next) ? next : 'cozumel')
   const k = PORT_KNOWLEDGE[port]
   const day = portDayAt(sailing, now)
   const served = usePortCrowd(port, day?.date ?? '')

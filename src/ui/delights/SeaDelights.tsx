@@ -5,7 +5,7 @@ import { DIRECTORY, type DayType, type DirectoryVenue } from '../../domain/menus
 import { placeById } from '../../domain/deck'
 import { itinerary, portAt, shipZoneAt } from '../../domain/sailings'
 import { dateIn } from '../../domain/timezones'
-import { SHIP } from '../../domain/ship'
+import { useShip } from '../../hooks/useShipCatalogue'
 import {
   addDiaryEntry, addThanks, CELEBRATION_MAX, wishesFor, dressTonight, favouritesTonight, isFavourite, occasionOn, orderAgain, parkSpot, spotDue, spotMinutesLeft, spotPlaces,
   SPOT_DEFAULT_MINUTES, SPOT_MINUTES, THANKS_TARGETS, thanksText, toggleFavourite, VERDICTS, type Verdict,
@@ -224,6 +224,7 @@ export function SayThanks({ team }: { team?: string }) {
 
 /** D6-8: on a birthday or anniversary that falls today, a card with messages from everyone on the booking. */
 export function CelebrationDay({ date }: { date: string }) {
+  const ship = useShip()
   const { state } = useMemory()
   const wishes = useMine(() => api.plan.wishes.get())
   const [text, setText] = useState('')
@@ -240,7 +241,7 @@ export function CelebrationDay({ date }: { date: string }) {
   return (
     <Card hero labelledBy="dl7-cel-h">
       <h2 id="dl7-cel-h" className="card__title">{th('dl7.cel.title', { label: occasion.label })}</h2>
-      <p>{t('dl7.cel.body', { date: formatDate(date), ship: SHIP.name })}</p>
+      <p>{t('dl7.cel.body', { date: formatDate(date), ship: ship.name })}</p>
       {list.length > 0 && <ul className="plain-bullets">{list.map((w) => <li key={w.id}><strong>{w.mine ? t('dl7.cel.you') : w.author}:</strong> {w.text}</li>)}</ul>}
       {view?.canAdd && (
         <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) void add() }}>

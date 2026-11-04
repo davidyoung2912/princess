@@ -1,12 +1,12 @@
 import { Link, useParams } from 'react-router'
 import type { BookingView } from '../../api/types'
 import { buildIcs } from '../../domain/calendar'
-import { CRUISE, formatDate, sailingRange } from '../../domain/cruise'
+import { formatDate, sailingRange } from '../../domain/cruise'
 import { FARES } from '../../domain/fares'
 import { formatMoney } from '../../domain/money'
 import { legalById } from '../../domain/policy'
 import { sailingById } from '../../domain/sailings'
-import { SHIP } from '../../domain/ship'
+import { cruiseOf, shipOf } from '../../domain/shipCatalogue'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { offersQuiet } from '../../domain/finishMore'
@@ -43,8 +43,8 @@ export function ConfirmedScreen() {
 
 function calendarLink(b: BookingView): string {
   const ics = buildIcs({
-    uid: `${b.number}@princess.concept`, summary: `${CRUISE.name} on ${SHIP.name}`, start: b.departure, end: b.returnDate, stamp: b.createdAt, location: CRUISE.homePort,
-    description: `Booking ${b.number}. Sail from ${CRUISE.homePort} on ${formatDate(b.departure)} and return on ${formatDate(b.returnDate)}.`,
+    uid: `${b.number}@princess.concept`, summary: `${cruiseOf(b.sailingId).name} on ${shipOf(b.sailingId).name}`, start: b.departure, end: b.returnDate, stamp: b.createdAt, location: cruiseOf(b.sailingId).homePort,
+    description: `Booking ${b.number}. Sail from ${cruiseOf(b.sailingId).homePort} on ${formatDate(b.departure)} and return on ${formatDate(b.returnDate)}.`,
   })
   return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`
 }

@@ -4,6 +4,9 @@ import { REFERENCE_SAILING, SAILINGS } from './sailings'
 import { applySailings } from './sailingsServed'
 import { zonedToEpoch } from './timezones'
 
+const NY = 'America/New_York'
+const BZ = 'America/Belize'
+
 const wire = () => ({
   version: 'abc',
   sailings: [{ id: 'sun-2027-03-21', departure: '2027-03-21', holiday: false, reference: true }],
@@ -12,17 +15,15 @@ const wire = () => ({
     { id: 'cozumel', name: 'Cozumel, Mexico', zone: 'America/Cancun', tender: false },
   ],
   itinerary: [
-    { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00' },
-    { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
-    { day: 4, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 5, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null },
+    { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00', shipZone: NY },
+    { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+    { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00', shipZone: NY },
+    { day: 4, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 5, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+    { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null, shipZone: NY },
   ],
-  shipHomeZone: 'America/New_York',
-  shipWestZone: 'America/Belize',
 })
 
 const PHONE = 'America/Chicago'

@@ -1,5 +1,5 @@
 import type { StringKey } from '../i18n'
-import { allAboardEpoch, itinerary, SHIP_HOME_ZONE, type Sailing, type StageId } from './sailings'
+import { allAboardEpoch, itinerary, shipHomeZone, type Sailing, type StageId } from './sailings'
 import { zonedToEpoch } from './timezones'
 
 /**
@@ -93,7 +93,7 @@ export function normalizeDelay(raw: unknown): DelayState {
 
 /** The next moment the ship will not wait past: all-aboard 30 minutes before sailing on day 1, then each port's posted all-aboard. Null once there are none left. */
 export function nextDeadline(sailing: Sailing, now: number): number | null {
-  const first = zonedToEpoch(itinerary(sailing)[0].date, '14:30', SHIP_HOME_ZONE)
+  const first = zonedToEpoch(itinerary(sailing)[0].date, '14:30', shipHomeZone(sailing))
   const moments = [first, ...itinerary(sailing).flatMap((d) => allAboardEpoch(sailing, d.day) ?? [])]
   return moments.find((m) => m > now) ?? null
 }

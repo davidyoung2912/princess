@@ -30,6 +30,7 @@ import { trialDayFeed } from '../feeds/trialDay'
 import { markAccount, refreshContext, setContext } from '../account/context'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
+import { applyCataloguePorts, applyPatterns, applyRegions, applyShips, normalizeCataloguePorts, normalizePatterns, normalizeRegions, normalizeShips, setItineraryLoader } from '../domain/shipCatalogue'
 import { applyShip, normalizeShip } from '../domain/shipServed'
 import { applyProgram, normalizeProgram } from '../domain/programServed'
 import { applyPorts, normalizePorts } from '../domain/portsServed'
@@ -183,6 +184,10 @@ const TABLES: Table[] = [
   table('catalogue', '/reference/catalogue', normalizeCatalogue, applyCatalogue, true),
   table('sailings', '/reference/sailings', normalizeSailings, applySailings, true),
   table('ship', '/reference/ship', normalizeShip, applyShip),
+  table('catalogue-ships', '/reference/catalogue/ships', normalizeShips, applyShips),
+  table('catalogue-regions', '/reference/catalogue/regions', normalizeRegions, applyRegions),
+  table('catalogue-ports', '/reference/catalogue/ports', normalizeCataloguePorts, applyCataloguePorts),
+  table('catalogue-patterns', '/reference/catalogue/patterns', normalizePatterns, applyPatterns),
   table('program', '/reference/program', normalizeProgram, applyProgram),
   table('ports', '/reference/ports', normalizePorts, applyPorts, true),
   table('packages', '/reference/packages', normalizePackages, applyPackages),
@@ -222,6 +227,24 @@ function loadTables(): void {
       .catch(() => markReferenceFailed(t.kind))
   }
 }
+/**
+ * One sailing's days are fetched when a screen asks (`loadItinerary`), and the last answer for each is kept on this device so an offline guest still sees
+ * the route of the sailing they were looking at. Without a sign-in the kept copy is all there is.
+ */
+setItineraryLoader(async (sailingId) => {
+  const kind = 'itinerary'
+  const kept = () => cacheGet(tableStore(), kind, sailingId, (raw) => raw, Date.now())?.value
+  if (!auth.current()) return kept()
+  try {
+    const raw = await http.get<unknown>(`/reference/sailings/${encodeURIComponent(sailingId)}/itinerary`)
+    cachePut(tableStore(), kind, sailingId, raw, Date.now())
+    return raw
+  } catch (e) {
+    const old = kept()
+    if (old) return old
+    throw e
+  }
+})
 requireReference(TABLES.filter((t) => t.required).map((t) => t.kind))
 applyKeptTables()
 

@@ -25,14 +25,14 @@ function count(re: RegExp) {
   return { files, hits }
 }
 
-// Baseline recorded 2026-11-03 at the start of X0 (X0a).
+// Baseline recorded 2026-11-03 at the start of X0 (X0a); lowered in X0d.
 const CEILINGS: Record<string, { re: RegExp; files: number; hits: number }> = {
-  'SHIP singleton': { re: /\bSHIP\b/g, files: 13, hits: 48 },
-  'CRUISE constant': { re: /\bCRUISE\b/g, files: 5, hits: 19 },
+  'SHIP singleton': { re: /\bSHIP\b/g, files: 6, hits: 27 },
+  'CRUISE constant': { re: /\bCRUISE\b/g, files: 2, hits: 4 },
   'REFERENCE_SAILING': { re: /\bREFERENCE_SAILING\b/g, files: 7, hits: 20 },
-  'SHIP_HOME_ZONE': { re: /\bSHIP_HOME_ZONE\b/g, files: 3, hits: 15 },
-  'SHIP_WEST_ZONE': { re: /\bSHIP_WEST_ZONE\b/g, files: 1, hits: 4 },
-  'literal port ids': { re: /['"](cozumel|belize|roatan|fll|sea)['"]/g, files: 63, hits: 227 },
+  'SHIP_HOME_ZONE': { re: /\bSHIP_HOME_ZONE\b/g, files: 0, hits: 0 },
+  'SHIP_WEST_ZONE': { re: /\bSHIP_WEST_ZONE\b/g, files: 0, hits: 0 },
+  'literal port ids': { re: /['"](cozumel|belize|roatan|fll|sea)['"]/g, files: 63, hits: 219 },
 }
 
 describe('single-route references (X0 guard rail)', () => {

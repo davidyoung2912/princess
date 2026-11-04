@@ -1,7 +1,7 @@
 import { buildIcsCalendar, type IcsEvent } from './calendar'
 import { formatDate } from './cruise'
 import type { PlanDay } from './plan'
-import { itinerary, PORTS, shipZoneOnDate, SHIP_HOME_ZONE, type ItineraryDay, type Sailing } from './sailings'
+import { itinerary, portById, shipHomeZone, shipZoneOnDate, type ItineraryDay, type Sailing } from './sailings'
 import { addDays } from './timezones'
 
 /**
@@ -36,7 +36,7 @@ export function journeyCalendar(i: JourneyCalendarInput): string {
   const events: IcsEvent[] = [
     { ...base, uid: `${i.number}-sailing@${PRODUCT}`, summary: `${i.shipName}: sailing`, description: `Booking ${i.number}.`, start: first.date, end: last.date },
     { ...base, uid: `${i.number}-opens@${PRODUCT}`, summary: 'Online check-in opens', description: 'Have passports and the booking number ready.', start: opens, end: opens },
-    { ...base, uid: `${i.number}-closes@${PRODUCT}`, summary: 'Online check-in closes at 10:00', description: 'After this the terminal desk takes over.', start: i.sailing.departure, end: i.sailing.departure, at: '09:00', minutes: 60, zone: SHIP_HOME_ZONE },
+    { ...base, uid: `${i.number}-closes@${PRODUCT}`, summary: 'Online check-in closes at 10:00', description: 'After this the terminal desk takes over.', start: i.sailing.departure, end: i.sailing.departure, at: '09:00', minutes: 60, zone: shipHomeZone(i.sailing) },
   ]
   if (i.finalDue) events.push({ ...base, uid: `${i.number}-final@${PRODUCT}`, summary: 'Final payment due', description: i.balanceText ? `Balance: ${i.balanceText}.` : 'Nothing left to pay.', start: i.finalDue, end: i.finalDue })
   if (first.depart) events.push({ ...base, uid: `${i.number}-sail@${PRODUCT}`, summary: 'Sail-away', description: 'Local time at the port.', start: first.date, end: first.date, at: first.depart, minutes: 30, zone: portZone(first, i.sailing) })
@@ -45,7 +45,7 @@ export function journeyCalendar(i: JourneyCalendarInput): string {
 
 /** The zone a day's clock times are in: the port's own on a port day, the ship's on a sea day. */
 function portZone(d: Pick<ItineraryDay, 'port' | 'date'>, sailing: Sailing): string {
-  return d.port === 'sea' ? shipZoneOnDate(sailing, d.date) : PORTS[d.port]?.zone ?? SHIP_HOME_ZONE
+  return d.port === 'sea' ? shipZoneOnDate(sailing, d.date) : portById(d.port)?.zone ?? shipHomeZone(sailing)
 }
 
 export type PlanScope = 'day' | 'week'

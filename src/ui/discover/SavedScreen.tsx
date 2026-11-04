@@ -5,7 +5,7 @@ import { sailingRange } from '../../domain/cruise'
 import { favouritePath, parseFavouriteKey } from '../../domain/favourites'
 import { portGuideById } from '../../domain/ports'
 import { PORTS, sailingById } from '../../domain/sailings'
-import { SHIP } from '../../domain/ship'
+import { shipOf } from '../../domain/shipCatalogue'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
@@ -20,7 +20,7 @@ export function SavedScreen() {
   const items = favourites.keys.flatMap((key) => {
     const p = parseFavouriteKey(key)
     if (!p) return []
-    const name = p.kind === 'sailing' ? (sailingById(p.id) ? sailingRange(sailingById(p.id)!) : null) : p.kind === 'port' ? (portGuideById(p.id) ? PORTS[portGuideById(p.id)!.id].name : null) : SHIP.name
+    const name = p.kind === 'sailing' ? (sailingById(p.id) ? sailingRange(sailingById(p.id)!) : null) : p.kind === 'port' ? (portGuideById(p.id) ? PORTS[portGuideById(p.id)!.id].name : null) : shipOf(sailing.id).name
     return name ? [{ key, name, kind: p.kind, path: favouritePath(p.kind, p.id) }] : []
   })
   return (

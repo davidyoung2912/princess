@@ -14,8 +14,8 @@ public sealed record AccessReferenceDto(string Version, Dictionary<string, Excur
 /// <summary>One sailing in the served table. Every sailing runs the same eight-day timeline from its departure date.</summary>
 public sealed record SailingRefDto(string Id, string Departure, bool Holiday, bool Reference);
 
-/// <summary>One day of the timeline, relative to departure (day 1 is the departure date); times are local to the port, <c>HH:mm</c>.</summary>
-public sealed record ItineraryRefDto(int Day, string Port, string? Arrive, string? AllAboard, string? Depart);
+/// <summary>One day of the timeline, relative to departure (day 1 is the departure date); times are local to the port, <c>HH:mm</c>. <c>ShipZone</c> is the zone the ship's clocks follow on that day.</summary>
+public sealed record ItineraryRefDto(int Day, string Port, string? Arrive, string? AllAboard, string? Depart, string? ShipZone = null);
 
 /// <summary>The sailings, the ports they call at, the shared itinerary and the zones the ship's clocks follow (multi-device plan 3, Phase 3). <c>Version</c> changes when the content does.</summary>
 public sealed record SailingsReferenceDto(string Version, IReadOnlyList<SailingRefDto> Sailings, IReadOnlyList<Port> Ports, IReadOnlyList<ItineraryRefDto> Itinerary, string ShipHomeZone, string ShipWestZone, IReadOnlyList<CatalogueSailingDto>? Entries = null);
@@ -55,7 +55,8 @@ public static class ReferenceRules
     public static SailingsReferenceDto Sailings(IEnumerable<SailingRow> rows)
     {
         var sailings = rows.Select(r => new SailingRefDto(r.Id, DateOnly.FromDateTime(r.Departure).ToString("yyyy-MM-dd"), r.IsHoliday, r.IsReference)).ToList();
-        var template = Itinerary.Days(new DateOnly(2000, 1, 1)).Select(d => new ItineraryRefDto(d.Day, d.Port, d.Arrive?.ToString("HH:mm"), d.AllAboard?.ToString("HH:mm"), d.Depart?.ToString("HH:mm"))).ToList();
+        var legacy = Timeline.Legacy(new DateOnly(2000, 1, 1));
+        var template = legacy.Days.Select(d => new ItineraryRefDto(d.Day, d.Port, d.Arrive?.ToString("HH:mm"), d.AllAboard?.ToString("HH:mm"), d.Depart?.ToString("HH:mm"), legacy.ShipZoneOnDate(d.Date))).ToList();
         var ports = Itinerary.Ports.Values.ToList();
         var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
             string.Join('|', sailings.Select(x => $"{x.Id}:{x.Departure}:{x.Holiday}:{x.Reference}")) + "#" + string.Join('|', template) + "#" + string.Join('|', ports)))).ToLowerInvariant()[..16];

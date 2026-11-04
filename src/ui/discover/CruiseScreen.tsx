@@ -1,9 +1,8 @@
 import { Link } from 'react-router'
 import { t, th, headingCase } from '../../i18n'
-import { CRUISE } from '../../domain/cruise'
 import { PORT_GUIDES } from '../../domain/ports'
 import { REFERENCE_SAILING } from '../../domain/sailings'
-import { SHIP } from '../../domain/ship'
+import { useCruise, useShip } from '../../hooks/useShipCatalogue'
 import { itineraryRegrets } from '../../domain/regret'
 import { Card } from '../Card'
 import { RegretCards } from './RegretCards'
@@ -12,14 +11,16 @@ import { ItineraryList, RouteMap } from './parts'
 
 /** Itinerary detail (DIS-05) and the seasonality note (DIS-02) for the one cruise. */
 export function CruiseScreen() {
+  const cruise = useCruise()
+  const ship = useShip()
   return (
     <div className="page">
-      <h2>{headingCase(CRUISE.name)}</h2>
-      <p>{CRUISE.intro}</p>
+      <h2>{headingCase(cruise.name)}</h2>
+      <p>{cruise.intro}</p>
       <dl className="facts">
-        <div><dt>{t('discover.fact.ship')}</dt><dd><Link to="/home/ship">{SHIP.name}</Link></dd></div>
-        <div><dt>{t('discover.fact.nights')}</dt><dd>{CRUISE.nights}</dd></div>
-        <div><dt>{t('discover.fact.from')}</dt><dd>{CRUISE.homePort}</dd></div>
+        <div><dt>{t('discover.fact.ship')}</dt><dd><Link to="/home/ship">{ship.name}</Link></dd></div>
+        <div><dt>{t('discover.fact.nights')}</dt><dd>{cruise.nights}</dd></div>
+        <div><dt>{t('discover.fact.from')}</dt><dd>{cruise.homePort}</dd></div>
       </dl>
 
       <section aria-labelledby="route-h">
@@ -38,7 +39,7 @@ export function CruiseScreen() {
 
       <section aria-labelledby="when-h">
         <h2 id="when-h">{th('discover.whenToGo')}</h2>
-        <Card info><p>{CRUISE.bestTime}</p></Card>
+        {cruise.bestTime && <Card info><p>{cruise.bestTime}</p></Card>}
         <ul className="plain-list">
           {Object.values(PORT_GUIDES).filter((g) => g.id !== 'fll').map((g) => (
             <li key={g.id}><Link to={`/home/ports/${g.id}`}>{g.short}</Link> <span className="muted">{g.bestTime}</span></li>

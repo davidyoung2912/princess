@@ -29,7 +29,7 @@ public sealed record CatalogueLegDto(int Leg, string Pattern, int StartDay);
 /// <summary>One sailing in the catalogue. <c>FromCents</c> is the cheapest fare for two sharing times the nights, per person, before taxes (null when the sailing has no fares).</summary>
 public sealed record CatalogueSailingDto(string Id, string Ship, string Departure, int Nights, string Title, string? Region, string? StartPort, string? EndPort, IReadOnlyList<CatalogueLegDto> Legs, bool Holiday, bool BookingOpen, string DataStatus, long? FromCents);
 
-public sealed record CatalogueItineraryDayDto(int Day, string Date, string Port, string? Arrive, string? AllAboard, string? Depart, int? ClockChangeHours, string? ClockChangeAt, string? Dress);
+public sealed record CatalogueItineraryDayDto(int Day, string Date, string Port, string? Arrive, string? AllAboard, string? Depart, int? ClockChangeHours, string? ClockChangeAt, string? Dress, string? ShipZone = null);
 
 public sealed record CatalogueItineraryDto(string Version, string Sailing, string Ship, int Nights, IReadOnlyList<CatalogueItineraryDayDto> Days);
 
@@ -127,15 +127,15 @@ public static class ShipCatalogueRules
             .ToList();
     }
 
-    /// <summary>The days of one sailing with ports, times, clock changes and the dress code for the evening. Null for an unknown id.</summary>
-    public static CatalogueItineraryDto? ItineraryOf(CatalogueSnapshot s, string sailingId)
+    /// <summary>The days of one sailing with ports, times, clock changes, the zone the ship's clocks follow each day (when a <paramref name="timeline"/> is given) and the dress code for the evening. Null for an unknown id.</summary>
+    public static CatalogueItineraryDto? ItineraryOf(CatalogueSnapshot s, string sailingId, Timeline? timeline = null)
     {
         var sailing = s.Sailings.FirstOrDefault(x => x.Id == sailingId);
         if (sailing is null) return null;
         var dress = s.Dress.Where(d => d.SailingId == sailingId).ToDictionary(d => d.Day, d => d.Code);
         var days = s.SailingDays.Where(d => d.OwnerId == sailingId).OrderBy(d => d.Day)
             .Select(d => new CatalogueItineraryDayDto(d.Day, Iso(d.Date ?? sailing.Departure.AddDays(d.Day - 1)), d.PortId, Hm(d.ArriveLocal), Hm(d.AllAboardLocal), Hm(d.DepartLocal),
-                d.ClockChangeHours, Hm(d.ClockChangeAtLocal), dress.GetValueOrDefault(d.Day))).ToList();
+                d.ClockChangeHours, Hm(d.ClockChangeAtLocal), dress.GetValueOrDefault(d.Day), timeline?.ShipZoneOnDate(DateOnly.FromDateTime(d.Date ?? sailing.Departure.AddDays(d.Day - 1))))).ToList();
         return new(VersionOf(days), sailing.Id, sailing.ShipId, sailing.Nights, days);
     }
 

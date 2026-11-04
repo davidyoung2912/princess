@@ -10,6 +10,7 @@ import { usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
+import { isGuidePort } from '../../domain/portContent'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
 import { QrCode } from '../checkin/QrCode'
@@ -51,13 +52,13 @@ function Body({ v }: { v: PortDayView }) {
       <PortCard view={v.day} />
       <PocketStopwatch day={v.day} />
       <SunNudge day={v.day} />
-      <PortPilot v={v} />
+      {isGuidePort(v.day.port) && <PortPilot v={v} />}
       <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
       <Tours tours={v.tours} port={v.day.port} />
       <LastMinute />
       <Readiness tender={v.day.tender} />
-      <ContactsAshore port={v.day.port} />
+      {isGuidePort(v.day.port) && <ContactsAshore port={v.day.port} />}
       <TakeMeBack port={v.day.port} />
       <PinAndDayCard day={v.day} />
       <PortStamps />

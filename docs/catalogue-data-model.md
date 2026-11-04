@@ -68,17 +68,23 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 - The 12 seeded sailings have no `ref.SailingFares` or `ref.DressNights` rows yet; X0c moves `Pricing` onto the table and backfills them.
 - Port `GuideStatus` follows the tier at seed time (A `full`, B `short`, C `link`) although only the existing five ports have guides in the app today. X0g writes the content.
 
+### Front end (X0d)
+
+- `src/domain/shipCatalogue.ts` holds the served catalogue: `catalogueShips`, `catalogueRegions`, `cataloguePatterns`, `catalogueSailings` (the `entries` of `/reference/sailings`), ports in `CATALOGUE_PORTS` (read with `portById`), and each sailing's days on demand (`loadItinerary`, `GET /reference/sailings/{id}/itinerary`, kept on the device after the first answer). `shipOf(sailingId)` and `cruiseOf(sailingId)` answer for any sailing and fall back to the older `SHIP` and `CRUISE` until the catalogue arrives. Hooks: `useShip`, `useCruise`, `useItinerary`.
+- Each itinerary day carries `shipZone`, the zone the ship's clocks follow that day (the server works it out from the day rows); a change of zone between days is a clock change at 02:00. The legacy sailings template carries it too.
+- Not done in X0d: the stage list (`StageId`, `stageStarts`) is still the eight-day route's; `itinerary(sailing)` returns the older template for a sailing whose days are not loaded; port guides, crowd, plan-B and excursions exist only for Cozumel, Belize and Roatán. The old constants remain as adapters (`SHIP`, `CRUISE`, `REFERENCE_SAILING`) for screens not yet moved (X0e).
+
 ## Guard rail
 
-`src/domain/singleRoute.test.ts` counts single-route references in non-test source and fails if a count rises. Baseline (2026-11-03):
+`src/domain/singleRoute.test.ts` counts single-route references in non-test source and fails if a count rises. Baseline (2026-11-03), with the ceilings after X0d in the last column:
 
-| Reference | Files | Hits |
-|---|---|---|
-| `SHIP` | 13 | 48 |
-| `CRUISE` | 5 | 19 |
-| `REFERENCE_SAILING` | 7 | 20 |
-| `SHIP_HOME_ZONE` | 3 | 15 |
-| `SHIP_WEST_ZONE` | 1 | 4 |
-| literal port ids (`cozumel`, `belize`, `roatan`, `fll`, `sea`) | 63 | 227 |
+| Reference | Files | Hits | After X0d (files / hits) |
+|---|---|---|---|
+| `SHIP` | 13 | 48 | 6 / 27 |
+| `CRUISE` | 5 | 19 | 2 / 4 |
+| `REFERENCE_SAILING` | 7 | 20 | 7 / 20 |
+| `SHIP_HOME_ZONE` | 3 | 15 | 0 / 0 |
+| `SHIP_WEST_ZONE` | 1 | 4 | 0 / 0 |
+| literal port ids (`cozumel`, `belize`, `roatan`, `fll`, `sea`) | 63 | 227 | 63 / 219 |
 
 Lower the ceilings in the test as each phase removes references; X0h sets them to zero. Never raise one.

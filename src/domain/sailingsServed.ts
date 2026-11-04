@@ -1,9 +1,10 @@
 import { replaceSailings, type ItineraryTemplateDay, type Port, type PortId, type Sailing } from './sailings'
 import { notifyCatalogue } from './catalogueServed'
+import { normalizeEntries, setSailingEntries, type SailingEntry } from './shipCatalogue'
 
 /**
- * The sailings table from the server (multi-device plan 3, Phase 3): sailings, ports, the eight-day itinerary every sailing runs, and the two zones
- * the ship's clocks follow. The authored values in `sailings.ts` show until it arrives; the last answer is kept on the device as a cache
+ * The sailings table from the server (multi-device plan 3, Phase 3): sailings, ports, the eight-day itinerary the older sailings run (each day with
+ * the zone the ship's clocks follow), and the catalogue's `entries` (every sailing of every ship). The authored values in `sailings.ts` show until it arrives; the last answer is kept on the device as a cache
  * (`runtime/index.ts`). Pure apart from the swap and the change notice.
  */
 export interface ServedSailings {
@@ -11,8 +12,7 @@ export interface ServedSailings {
   sailings: Sailing[]
   ports: Record<string, Port>
   template: ItineraryTemplateDay[]
-  homeZone: string
-  westZone: string
+  entries: SailingEntry[]
 }
 
 const rec = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
@@ -35,7 +35,8 @@ function port(raw: unknown): Port | null {
 
 function day(raw: unknown): ItineraryTemplateDay | null {
   if (!rec(raw) || typeof raw.day !== 'number' || !Number.isInteger(raw.day) || raw.day < 1 || raw.day > 30 || !str(raw.port, 20)) return null
-  const out: ItineraryTemplateDay = { day: raw.day, port: raw.port as PortId }
+  if (!str(raw.shipZone, 60)) return null
+  const out: ItineraryTemplateDay = { day: raw.day, port: raw.port as PortId, zone: raw.shipZone }
   for (const k of ['arrive', 'allAboard', 'depart'] as const) {
     const v = raw[k]
     if (v === null || v === undefined) continue
@@ -46,11 +47,11 @@ function day(raw: unknown): ItineraryTemplateDay | null {
 }
 
 /**
- * Reads the server's answer. All or nothing: anything malformed, no reference sailing, an itinerary that is not the eight days in order, or a day at
+ * Reads the server's answer. All or nothing: anything malformed, no reference sailing, an itinerary that is not the eight days in order, or a day with no ship zone, or a day at
  * a port the table does not list gives null (the authored values, or the kept copy, stay).
  */
 export function normalizeSailings(raw: unknown): ServedSailings | null {
-  if (!rec(raw) || !str(raw.version, 80) || !str(raw.shipHomeZone, 60) || !str(raw.shipWestZone, 60)) return null
+  if (!rec(raw) || !str(raw.version, 80)) return null
   if (!Array.isArray(raw.sailings) || !Array.isArray(raw.ports) || !Array.isArray(raw.itinerary)) return null
   const sailings = raw.sailings.map(sailing)
   const ports = raw.ports.map(port)
@@ -65,11 +66,12 @@ export function normalizeSailings(raw: unknown): ServedSailings | null {
   if (!ts.every((t) => t.port === 'sea' || ids.has(t.port))) return null
   const byId: Record<string, Port> = {}
   for (const p of ps) byId[p.id] = p
-  return { version: raw.version, sailings: ss, ports: byId, template: ts, homeZone: raw.shipHomeZone, westZone: raw.shipWestZone }
+  return { version: raw.version, sailings: ss, ports: byId, template: ts, entries: normalizeEntries(raw.entries) }
 }
 
 /** Puts the served table in use and tells the screens. */
 export function applySailings(s: ServedSailings): void {
-  replaceSailings({ sailings: s.sailings, ports: s.ports, template: s.template, homeZone: s.homeZone, westZone: s.westZone })
+  replaceSailings({ sailings: s.sailings, ports: s.ports, template: s.template })
+  setSailingEntries(s.entries)
   notifyCatalogue()
 }

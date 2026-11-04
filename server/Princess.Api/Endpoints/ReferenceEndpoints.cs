@@ -32,8 +32,8 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("The sailings, the ports and the eight-day itinerary the Sun Princess runs, and the zones the ship's clocks follow (`version` changes when any of it does), plus `entries`: every catalogue sailing with its ship, nights, title, region, start and end port, legs, holiday flag, whether booking is open, its data status (`served`, `sample` or `verified`) and the cheapest per-person fare before taxes. Optional filters: `ship`, `region`, `from` and `to` (`yyyy-MM-dd`), `nightsMin`, `nightsMax`, and `port` (any stop on the route).");
 
-        api.MapGet("/reference/sailings/{id}/itinerary", async (string id, ICatalogueStore catalogue, CancellationToken ct) =>
-                ShipCatalogueRules.ItineraryOf(await catalogue.GetAsync(ct), id) is { } days ? Results.Ok(days) : throw ApiException.NotFound())
+        api.MapGet("/reference/sailings/{id}/itinerary", async (string id, ITripStore trips, ICatalogueStore catalogue, CancellationToken ct) =>
+                await ItineraryAsync(trips, catalogue, id, ct) is { } days ? Results.Ok(days) : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("The days of one sailing: date, port (or `sea`), arrival, all-aboard and departure times local to the port, any change of the ship's clock (`clockChangeHours` at `clockChangeAt`) and the dress code for the evening. Not found for an unknown sailing.");
 
         api.MapGet("/reference/catalogue/ships", async (ICatalogueStore catalogue, CancellationToken ct) => Results.Ok(ShipCatalogueRules.Ships(await catalogue.GetAsync(ct))))
@@ -231,6 +231,16 @@ public static class ReferenceEndpoints
                 return Results.NoContent();
             })
             .WithTags("Reference").WithSummary("Sends a batch of error reports (always sent; each is also written to the audit trail as a client error) and usage counts (only with the guest's consent) (1 to 100 items, known kinds and event names only; no person or typed text). 400 badTelemetry for anything else.");
+    }
+
+    /// <summary>One sailing's days with the ship's zone for each. Loading the sailings first makes the day rows known to <see cref="TimelineBook"/>, which works the zones out.</summary>
+    private static async Task<CatalogueItineraryDto?> ItineraryAsync(ITripStore trips, ICatalogueStore catalogue, string id, CancellationToken ct)
+    {
+        var snapshot = await catalogue.GetAsync(ct);
+        var row = snapshot.Sailings.FirstOrDefault(x => x.Id == id);
+        if (row is null) return null;
+        await trips.ListSailingsAsync(ct);
+        return ShipCatalogueRules.ItineraryOf(snapshot, id, TimelineBook.For(id, DateOnly.FromDateTime(row.Departure)));
     }
 
     /// <summary>

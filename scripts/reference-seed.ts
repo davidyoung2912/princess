@@ -7,7 +7,7 @@ import { CATEGORIES, SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS, OTHER_SHIPS } fr
 import { capacityOf, FARES, FARE_IDS, EARLY_CREDIT_DAYS, promotionsFor } from '../src/domain/fares.ts'
 import { cabinsFor } from '../src/domain/cabins.ts'
 import { MUSTER_STATIONS, PLACES, placeById } from '../src/domain/deck.ts'
-import { itinerary, PORTS, SAILINGS, SHIP_HOME_ZONE, shipClockChanges } from '../src/domain/sailings.ts'
+import { itinerary, PORTS, SAILINGS, shipClockChanges } from '../src/domain/sailings.ts'
 import { PORT_COORDS, PORT_GUIDES } from '../src/domain/ports.ts'
 import { PORT_ENTRY } from '../src/domain/documents.ts'
 import { PORT_CONTACTS, REQUEST_ITEMS, BAR_MENU } from '../src/domain/services.ts'
@@ -52,6 +52,9 @@ const hhmm = (minutes: number): string => `${String(Math.floor(minutes / 60)).pa
 
 const REFERENCE = SAILINGS.find((s) => s.reference)!
 
+/** The Sun Princess sails from Fort Lauderdale, on Eastern time. */
+const HOME_ZONE = 'America/New_York'
+
 export function buildTables(): Table[] {
   const tables: Table[] = []
   const add = (file: string, name: string, key: string[], cols: Col[], rows: Cell[][]) => tables.push({ file, name, key, cols, rows })
@@ -60,7 +63,7 @@ export function buildTables(): Table[] {
   const decks = [...new Set([...PLACES.map((p) => p.deck), ...CATEGORIES.flatMap((c) => cabinsFor('x', c.id).map((x) => x.deck))])].sort((a, b) => a - b)
   add('01-ship', 'ref.Ships', ['Id'],
     [t('Id', 'str'), t('Name', 'str'), t('Class', 'str'), t('Decks', 'int'), t('Tonnage', 'int'), t('Capacity', 'int'), t('HomeZone', 'str'), t('ProfileJson', 'json')],
-    [[SHIP_ID, SHIP.name, SHIP.className, SHIP.decks, SHIP.tonnage, SHIP.guests, SHIP_HOME_ZONE,
+    [[SHIP_ID, SHIP.name, SHIP.className, SHIP.decks, SHIP.tonnage, SHIP.guests, HOME_ZONE,
       { ...SHIP, highlights: SHIP_HIGHLIGHTS, accessibility: SHIP_ACCESSIBILITY, otherShips: OTHER_SHIPS }]])
 
   add('01-ship', 'ref.Decks', ['ShipId', 'Number'],
@@ -90,7 +93,7 @@ export function buildTables(): Table[] {
   const entry = (id: string) => PORT_ENTRY.find((e) => e.country.toLowerCase().includes(({ cozumel: 'cozumel', belize: 'belize', roatan: 'roat' } as Record<string, string>)[id] ?? '\0'))?.note ?? ''
   add('02-itinerary', 'ref.Ports', ['Id'],
     [t('Id', 'str'), t('Name', 'str'), t('Country', 'str'), t('TimeZone', 'str'), t('Tender', 'bit'), t('EntryNote', 'str'), t('Contacts', 'json')],
-    [['sea', 'At sea', '', SHIP_HOME_ZONE, false, '', []],
+    [['sea', 'At sea', '', HOME_ZONE, false, '', []],
       ...Object.values(PORTS).map((p) => [p.id, p.name, countries[p.id], p.zone, p.tender, entry(p.id), p.id in PORT_CONTACTS ? PORT_CONTACTS[p.id as keyof typeof PORT_CONTACTS] : []] as Cell[])])
 
   add('02-itinerary', 'ref.Sailings', ['Id'],

@@ -5,7 +5,7 @@ import {
 } from '../../domain/delights'
 import { formatDate } from '../../domain/cruise'
 import { sailingNights, shipZoneAt } from '../../domain/sailings'
-import { SHIP } from '../../domain/ship'
+import { useShip } from '../../hooks/useShipCatalogue'
 import { TERMINALS } from '../../domain/boarding'
 import { addDays, timeIn } from '../../domain/timezones'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -49,7 +49,8 @@ export function BookingNumber({ number }: { number: string }) {
 
 /** D1-1: the ship in familiar terms. */
 export function ShipTerms() {
-  const f = shipInFamiliarTerms(SHIP.length, SHIP.guests, SHIP.crew)
+  const ship = useShip()
+  const f = shipInFamiliarTerms(`${ship.lengthFt ?? 0} ft`, ship.guests, ship.crew ?? 0)
   if (f.pitches === 0) return null
   return (
     <Card info labelledBy="dl-ship-h">

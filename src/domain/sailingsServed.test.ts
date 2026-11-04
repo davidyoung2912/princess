@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { applySailings, normalizeSailings } from './sailingsServed'
-import { itinerary, PORTS, REFERENCE_SAILING, SAILINGS, SHIP_HOME_ZONE } from './sailings'
+import { itinerary, PORTS, REFERENCE_SAILING, SAILINGS, shipHomeZone, shipZoneOnDate } from './sailings'
+
+const NY = 'America/New_York'
+const BZ = 'America/Belize'
 
 const wire = () => ({
   version: 'abc',
@@ -13,17 +16,15 @@ const wire = () => ({
     { id: 'cozumel', name: 'Cozumel, Mexico', zone: 'America/Cancun', tender: false },
   ],
   itinerary: [
-    { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00' },
-    { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
-    { day: 4, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 5, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null },
-    { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null },
+    { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00', shipZone: NY },
+    { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+    { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00', shipZone: NY },
+    { day: 4, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 5, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+    { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+    { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null, shipZone: NY },
   ],
-  shipHomeZone: 'America/New_York',
-  shipWestZone: 'America/Belize',
 })
 
 describe('normalizeSailings', () => {
@@ -31,7 +32,7 @@ describe('normalizeSailings', () => {
     const s = normalizeSailings(wire())!
     expect(s.sailings.map((x) => x.id)).toEqual(['sun-2027-03-21', 'sun-2027-04-11'])
     expect(s.sailings[0].reference).toBe(true)
-    expect(s.template[2]).toEqual({ day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' })
+    expect(s.template[2]).toEqual({ day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00', zone: NY })
   })
 
   it.each([
@@ -44,7 +45,7 @@ describe('normalizeSailings', () => {
     ['days out of order', () => { const w = wire(); w.itinerary[1].day = 5; return w }],
     ['a bad time', () => { const w = wire(); w.itinerary[2].arrive = '7am'; return w }],
     ['a day at an unlisted port', () => { const w = wire(); w.itinerary[2].port = 'nassau'; return w }],
-    ['an empty zone', () => { const w = wire(); w.shipWestZone = ''; return w }],
+    ['a day with no ship zone', () => { const w = wire(); delete (w.itinerary[3] as { shipZone?: string }).shipZone; return w }],
   ])('rejects %s', (_n, make) => {
     expect(normalizeSailings(make())).toBeNull()
   })
@@ -57,14 +58,14 @@ describe('applySailings', () => {
     raw.sailings = saved.sailings.map((s) => ({ id: s.id, departure: s.departure, holiday: !!s.holiday, reference: !!s.reference }))
     raw.ports = Object.values(saved.ports)
     raw.itinerary = [
-      { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00' },
-      { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null },
-      { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00' },
-      { day: 4, port: 'belize', arrive: '07:00', allAboard: '16:00', depart: '17:00' },
-      { day: 5, port: 'roatan', arrive: '08:00', allAboard: '16:30', depart: '17:00' },
-      { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null },
-      { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null },
-      { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null },
+      { day: 1, port: 'fll', arrive: null, allAboard: null, depart: '15:00', shipZone: NY },
+      { day: 2, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+      { day: 3, port: 'cozumel', arrive: '07:00', allAboard: '16:30', depart: '17:00', shipZone: NY },
+      { day: 4, port: 'belize', arrive: '07:00', allAboard: '16:00', depart: '17:00', shipZone: BZ },
+      { day: 5, port: 'roatan', arrive: '08:00', allAboard: '16:30', depart: '17:00', shipZone: BZ },
+      { day: 6, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: BZ },
+      { day: 7, port: 'sea', arrive: null, allAboard: null, depart: null, shipZone: NY },
+      { day: 8, port: 'fll', arrive: '06:00', allAboard: null, depart: null, shipZone: NY },
     ]
     applySailings(normalizeSailings(raw)!)
   })
@@ -78,6 +79,8 @@ describe('applySailings', () => {
     expect(REFERENCE_SAILING).toBe(ref)
     expect(Object.keys(PORTS).sort()).toEqual(['cozumel', 'fll'])
     expect(itinerary(SAILINGS[1])[2]).toMatchObject({ day: 3, date: '2027-04-13', port: 'cozumel', allAboard: '16:30' })
-    expect(SHIP_HOME_ZONE).toBe('America/New_York')
+    expect(shipHomeZone(SAILINGS[1])).toBe(NY)
+    expect(shipZoneOnDate(SAILINGS[1], '2027-04-14')).toBe(BZ)
+    expect(shipZoneOnDate(SAILINGS[1], '2027-04-17')).toBe(NY)
   })
 })
