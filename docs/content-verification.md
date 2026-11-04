@@ -6,7 +6,7 @@ Every authored line that says "(verify)" or tells the guest to check it. Nothing
 
 Authored in `server/Princess.Api/Domain/PortsReference.cs` as concept samples, with no recorded source yet: guides and knowledge for 21 Tier A ports (Celebration Key, Grand Turk, San Juan, Amber Cove, Southampton, Barcelona, Palma, Marseille, Genoa, La Spezia, Civitavecchia, Naples, Athens, Santorini, Mykonos, Kusadasi, Copenhagen, Tokyo/Yokohama, Hakodate, Singapore, Sydney). Fort Lauderdale keeps its guide only. Everything in them (taxi fares in US dollars, day pass prices, excursion prices, hours, local laws, tipping norms in `src/domain/delights.ts`, phrases and allergy cards) is **unverified**: each law line says "(verify)", and the allergy cards and phrases need a native-speaker check before real use. Line numbers in the table below are from before X0g and are out of date; regenerate with the grep above.
 
-Not authored: Tier B short guides, per-country entry rows, ashore contacts and the port day pilot for the new ports.
+Per-country entry rows (passport months and visa hint for 36 countries, in `ReferenceRules.cs`) are authored from general knowledge and are unverified: check each against the country's official source before relying on it. Not authored: Tier B short guides, ashore contacts and the port day pilot for the new ports.
 
 Regenerate the list with: `grep -rn "(verify)" src server/Princess.Api --include=*.ts --include=*.cs`
 

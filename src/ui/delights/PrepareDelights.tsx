@@ -9,7 +9,7 @@ import {
 } from '../../domain/prepareDelights'
 import { personReadiness } from '../../domain/bookingPrep'
 import { passportValidUntil, type Citizenship } from '../../domain/documents'
-import { PORTS, sailingById } from '../../domain/sailings'
+import { portById, sailingById } from '../../domain/sailings'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useRates } from '../../hooks/useRates'
@@ -107,7 +107,7 @@ export function PassportByPortCard() {
             <ul className="plain-list">
               {checks.map((c) => (
                 <li key={c.port}>
-                  <span><strong>{c.port === 'fll' ? t('dl5.pass.home') : PORTS[c.port].name}</strong> · {formatDate(c.date)}<br />{t(`dl5.pass.${c.status}` as StringKey, { until: formatDate(c.needUntil) })}{c.visaCheck && <><br />{t('dl5.pass.visa')}</>}</span>
+                  <span><strong>{c.port === 'fll' ? t('dl5.pass.home') : portById(c.port)?.name ?? c.port}</strong> · {formatDate(c.date)}<br />{t(`dl5.pass.${c.status}` as StringKey, { until: formatDate(c.needUntil) })}{c.visaCheck && <><br />{t('dl5.pass.visa')}</>}</span>
                 </li>
               ))}
             </ul>

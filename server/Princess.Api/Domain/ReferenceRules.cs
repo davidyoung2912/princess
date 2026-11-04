@@ -5,7 +5,7 @@ namespace Princess.Api.Domain;
 public sealed record ExcursionDifficulty(double Km, bool Steps, string Heat, string Shade, bool Seats, bool Restrooms, bool Wet);
 
 /// <summary>How long a passport must still be valid beyond the day the ship is in a country, by the guest's citizenship, and whether a guest of another nationality should check for a visa. Authored concept figures: the guest is always sent to the official source.</summary>
-public sealed record EntryRuleDto(string Port, int MonthsUs, int MonthsOther, bool VisaCheckOther);
+public sealed record EntryRuleDto(string Country, int MonthsUs, int MonthsOther, bool VisaCheckOther);
 
 public sealed record EntryReferenceDto(string Version, IReadOnlyList<EntryRuleDto> Rules);
 
@@ -63,12 +63,48 @@ public static class ReferenceRules
         return new(version, sailings, ports, template, Itinerary.ShipHomeZone, Itinerary.ShipWestZone);
     }
 
+    /// <summary>
+    /// A row for each country the catalogue sails to, keyed by ISO country code. Months of passport validity beyond the day the ship is there, by citizenship, and whether a guest of another
+    /// nationality should check for a visa or travel authorisation. Authored samples, unverified (see docs/content-verification.md): the guest is always sent to the official source.
+    /// </summary>
     public static readonly IReadOnlyList<EntryRuleDto> EntryRules =
     [
-        new("fll", 0, 0, true),
-        new("cozumel", 0, 0, true),
-        new("belize", 6, 6, true),
-        new("roatan", 6, 6, true),
+        new("US", 0, 0, true),
+        new("MX", 0, 0, true),
+        new("BZ", 6, 6, true),
+        new("HN", 6, 6, true),
+        new("BS", 0, 0, true),
+        new("TC", 0, 0, true),
+        new("PR", 0, 0, true),
+        new("DO", 0, 0, true),
+        new("ES", 3, 3, true),
+        new("FR", 3, 3, true),
+        new("IT", 3, 3, true),
+        new("PT", 3, 3, true),
+        new("BE", 3, 3, true),
+        new("DE", 3, 3, true),
+        new("DK", 3, 3, true),
+        new("SE", 3, 3, true),
+        new("FI", 3, 3, true),
+        new("EE", 3, 3, true),
+        new("NO", 3, 3, true),
+        new("IS", 3, 3, true),
+        new("GR", 3, 3, true),
+        new("ME", 3, 3, true),
+        new("TR", 6, 6, true),
+        new("GB", 0, 0, true),
+        new("MA", 6, 6, true),
+        new("JP", 0, 0, true),
+        new("KR", 0, 0, true),
+        new("TW", 6, 6, true),
+        new("HK", 1, 1, true),
+        new("VN", 6, 6, true),
+        new("SG", 6, 6, true),
+        new("MY", 6, 6, true),
+        new("TH", 6, 6, true),
+        new("ID", 6, 6, true),
+        new("AU", 0, 0, true),
+        new("NZ", 3, 3, true),
     ];
 
     public static EntryReferenceDto Entry()

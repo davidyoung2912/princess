@@ -69,10 +69,10 @@ describe('passportByPort', () => {
 
 describe('entry rules by citizenship', () => {
   const rules = [
-    { port: 'fll', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
-    { port: 'cozumel', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
-    { port: 'belize', monthsUs: 3, monthsOther: 6, visaCheckOther: true },
-    { port: 'roatan', monthsUs: 3, monthsOther: 6, visaCheckOther: false },
+    { country: 'US', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
+    { country: 'MX', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
+    { country: 'BZ', monthsUs: 3, monthsOther: 6, visaCheckOther: true },
+    { country: 'HN', monthsUs: 3, monthsOther: 6, visaCheckOther: false },
   ] as const
   const d = new Date(`${sailing.departure}T00:00:00Z`)
   d.setUTCMonth(d.getUTCMonth() + 5)
@@ -89,9 +89,9 @@ describe('entry rules by citizenship', () => {
   })
   it('uses the served table when it arrives and the authored one when it is bad', () => {
     expect(normalizeEntry(null)).toBeNull()
-    expect(normalizeEntry({ version: 'v', rules: [{ port: 'mars', monthsUs: 1, monthsOther: 1 }, { port: 'belize', monthsUs: 99, monthsOther: 1 }] })).toBeNull()
-    const served = normalizeEntry({ version: 'v1', rules: [{ port: 'belize', monthsUs: 1, monthsOther: 2, visaCheckOther: true }, { port: 'belize', monthsUs: 9, monthsOther: 9 }] })!
-    expect(served.rules).toEqual([{ port: 'belize', monthsUs: 1, monthsOther: 2, visaCheckOther: true }])
+    expect(normalizeEntry({ version: 'v', rules: [{ country: 'mars', monthsUs: 1, monthsOther: 1 }, { country: 'BZ', monthsUs: 99, monthsOther: 1 }] })).toBeNull()
+    const served = normalizeEntry({ version: 'v1', rules: [{ country: 'BZ', monthsUs: 1, monthsOther: 2, visaCheckOther: true }, { country: 'BZ', monthsUs: 9, monthsOther: 9 }] })!
+    expect(served.rules).toEqual([{ country: 'BZ', monthsUs: 1, monthsOther: 2, visaCheckOther: true }])
     applyEntry(served)
     try {
       expect(passportByPort('2035-01-01', sailing, 'us')!.map((c) => c.port)).toEqual(['belize'])

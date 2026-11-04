@@ -1,4 +1,4 @@
-import { itinerary, PORTS, type PortId, type Sailing } from './sailings'
+import { itinerary, PORTS, portById, type PortId, type Sailing } from './sailings'
 import { CURRENCIES } from './services'
 import { inCurrencyAt, type RateTable } from './rates'
 import type { Citizenship } from './documents'
@@ -58,7 +58,8 @@ export function smallThing(daysToDeparture: number, done: readonly string[], off
 // ---------------------------------------------------------------- D3-3: passport check by port
 
 export interface EntryRule {
-  port: Exclude<PortId, 'sea'>
+  /** ISO country code, as the catalogue gives it. */
+  country: string
   /** Months the passport must still be valid for beyond the day the ship is in that country, by citizenship (authored sample, served). */
   monthsUs: number
   monthsOther: number
@@ -66,20 +67,20 @@ export interface EntryRule {
   visaCheckOther: boolean
 }
 
-/** The rules on the device until the server's table arrives (or without a server). */
-export const AUTHORED_ENTRY_RULES: readonly EntryRule[] = [
-  { port: 'fll', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
-  { port: 'cozumel', monthsUs: 0, monthsOther: 0, visaCheckOther: true },
-  { port: 'belize', monthsUs: 6, monthsOther: 6, visaCheckOther: true },
-  { port: 'roatan', monthsUs: 6, monthsOther: 6, visaCheckOther: true },
-]
+const row = (country: string, monthsUs: number, monthsOther: number): EntryRule => ({ country, monthsUs, monthsOther, visaCheckOther: true })
+
+/** The rules on the device until the server's table arrives (or without a server): the countries of the older route. The served table has a row for every country the catalogue sails to. */
+export const AUTHORED_ENTRY_RULES: readonly EntryRule[] = [row('US', 0, 0), row('MX', 0, 0), row('BZ', 6, 6), row('HN', 6, 6)]
 
 export interface EntryReference { version: string; rules: EntryRule[] }
 let servedEntry: EntryReference | null = null
 export const entryRules = (): readonly EntryRule[] => servedEntry?.rules ?? AUTHORED_ENTRY_RULES
 export const applyEntry = (ref: EntryReference | null): void => { servedEntry = ref }
 
-const STOPS = new Set<string>(['fll', 'cozumel', 'belize', 'roatan'])
+/** The country of the older route's own ports, which the catalogue may not list. */
+const LEGACY_COUNTRY: Record<string, string> = { fll: 'US', cozumel: 'MX', belize: 'BZ', roatan: 'HN' }
+export const countryOfPort = (id: string): string | undefined => portById(id)?.countryCode ?? LEGACY_COUNTRY[id]
+
 const months = (v: unknown): number | null => (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 12 ? v : null)
 
 /** Reads the server's table; a bad row is dropped and an answer with no usable row gives null so the authored rules stay in use. */
@@ -91,9 +92,9 @@ export function normalizeEntry(raw: unknown): EntryReference | null {
     const o = rec(x)
     const us = months(o.monthsUs)
     const other = months(o.monthsOther)
-    if (typeof o.port !== 'string' || !STOPS.has(o.port) || seen.has(o.port) || us === null || other === null) return []
-    seen.add(o.port)
-    return [{ port: o.port as EntryRule['port'], monthsUs: us, monthsOther: other, visaCheckOther: o.visaCheckOther === true }]
+    if (typeof o.country !== 'string' || !/^[A-Z]{2}$/.test(o.country) || seen.has(o.country) || us === null || other === null) return []
+    seen.add(o.country)
+    return [{ country: o.country, monthsUs: us, monthsOther: other, visaCheckOther: o.visaCheckOther === true }]
   })
   return rules.length === 0 ? null : { version: r.version, rules }
 }
@@ -116,7 +117,7 @@ export function passportByPort(expires: string, sailing: Sailing, citizenship: C
   for (const day of itinerary(sailing)) {
     if (day.port === 'sea' || seen.has(day.port)) continue
     seen.add(day.port)
-    const rule = rules.find((r) => r.port === day.port)
+    const rule = rules.find((r) => r.country === countryOfPort(day.port))
     if (!rule) continue
     const needUntil = addMonthsTo(day.date, citizenship === 'us' ? rule.monthsUs : rule.monthsOther)
     out.push({ port: day.port, date: day.date, needUntil, visaCheck: citizenship === 'other' && rule.visaCheckOther, status: expires < day.date ? 'expired' : expires < needUntil ? 'tooSoon' : 'ok' })
