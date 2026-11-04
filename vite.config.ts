@@ -38,13 +38,19 @@ const contentSecurityPolicy = (apiUrl: string): Plugin => ({
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   server: { proxy: { '/api': { target: loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182', changeOrigin: true } } },
+  build: {
+    rolldownOptions: {
+      // React and the router get their own long-lived chunk, so a release that changes only app code leaves them cached.
+      output: { codeSplitting: { groups: [{ name: 'react-vendor', test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/, priority: 10 }] } },
+    },
+  },
   plugins: [
     react(),
     contentSecurityPolicy(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_URL?.trim() ?? ''),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-      workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
+      workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,webmanifest}'], maximumFileSizeToCacheInBytes: 700 * 1024, navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
       manifest: {
         name: 'Princess Voyages',
         short_name: 'Princess',

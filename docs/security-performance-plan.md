@@ -57,11 +57,15 @@ Not done: moving the refresh token to an httpOnly `SameSite` cookie. It changes 
 
 Done: audit rows go through `AuditQueue` (bounded `Channel`, drop-oldest, counted and logged) to `AuditWriterService`; anonymous 401/429 rows are gathered per address, route and status for `Audit:AggregateSeconds` into one row with a count (`Audit:Background=false` keeps the in-request write, set in the test factory). `IStateStore.GetManyAsync` reads one key for many owners in one query (`ShareLinkService.ViewAsync` skips the owner and their supervised children, `PartyService.OrganiserAsync` reads all in one). Brotli/gzip compression is on, also over HTTPS. `ReferenceCaching` adds an ETag, `Cache-Control: public, max-age=300` and 304 handling to the authored reference reads; feeds, sailings and programme reads stay `no-store`. The 30 s `UserCache` limit for several instances is written up in `server/README.md`. Checked with `dotnet build` only.
 
-## Phase 7 [ ] Front-end performance
+## Phase 7 [x] Front-end performance
 
 - Route-level code splitting with `React.lazy` (booking, aboard, reference data); find what makes the 614 KB `jsx-runtime` chunk.
 - Convert the 1.9 MB `princess-*.png` (and other large PNGs) to sized WebP or AVIF.
 - Exclude large images from the service worker precache.
+
+Done: routes were already lazy (`src/screens.ts`), so the 614 KB `jsx-runtime` chunk was React plus the 620 KB English catalogue (`i18n/locales/en.ts`) that many modules import. React, React DOM and the router now build into their own `react-vendor` chunk (257 KB) via `build.rolldownOptions.output.codeSplitting`, so an app-only release leaves them cached; the catalogue becomes its own `i18n` chunk (584 KB, 700 KB precache limit set so it is still available offline). `princess.png` (1.9 MB) is now a 512 px `princess.webp` (45 KB); the unused `stanley.png` (1.4 MB) is deleted. The service worker precache dropped from 4.7 MB to 2.9 MB (the only large file left is the English text, which has to be there offline); the precache limit of 700 KB makes any future oversized file fail the build instead of being silently skipped.
+
+Not done: making English load asynchronously. `t()` is synchronous and `en` is imported by many modules, so that needs a loading state at start-up; it is a separate change.
 
 ## Out of scope
 

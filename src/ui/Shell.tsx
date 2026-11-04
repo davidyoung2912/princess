@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
-import logo from '../assets/princess.png'
+import logo from '../assets/princess.webp'
 import stanley from '../assets/stanley-small.png'
 import { Link, Navigate, Outlet, useLocation, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
@@ -116,14 +116,14 @@ export function Shell() {
             <span>{th('help.button')}</span>
           </button>
           <Link to="/account" className="topbar__logo" aria-label={t('account.logo')}>
-            <img src={logo} alt="" width="1024" height="1024" />
+            <img src={logo} alt="" width="512" height="512" />
           </Link>
         </header>
         <TestBar />
       </div>
       <nav className="tabs no-print" aria-label={t('shell.nav')} style={{ '--tab-count': tabs.length } as CSSProperties}>
         <Link to="/account" className="tabs__logo" aria-label={t('account.logo')}>
-          <img src={logo} alt="" width="1024" height="1024" />
+          <img src={logo} alt="" width="512" height="512" />
         </Link>
         {tabs.map((tab) => {
           const Icon = TAB_ICONS[tab.key] ?? FALLBACK_ICON

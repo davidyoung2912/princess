@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import logo from '../assets/princess.png'
+import logo from '../assets/princess.webp'
 import { AuthError } from '../auth/provider'
 import { t, th } from '../i18n'
 import { auth, retryReference } from '../runtime'
@@ -52,7 +52,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   const problems = [missing.id, missing.pw, error].filter((x): x is string => !!x)
   return (
     <main className="page signin" id="main">
-      <img className="signin__logo" src={logo} alt="Princess Voyages" width="1024" height="1024" />
+      <img className="signin__logo" src={logo} alt="Princess Voyages" width="512" height="512" />
       <h1>{th('signin.title')}</h1>
       <p>{t('signin.intro')}</p>
       <ErrorSummary title={t('signin.problems')} errors={problems} />
