@@ -55,6 +55,131 @@ WHEN MATCHED THEN UPDATE SET t.[Name] = s.[Name], t.[IsSuite] = s.[IsSuite], t.[
 WHEN NOT MATCHED THEN INSERT ([Id], [Name], [IsSuite], [Capacity], [SizeSqFt], [Description], [Features], [SortOrder], [ShipId]) VALUES (s.[Id], s.[Name], s.[IsSuite], s.[Capacity], s.[SizeSqFt], s.[Description], s.[Features], s.[SortOrder], s.[ShipId]);
 GO
 
+-- ref.Decks: 14 decks of the other ships
+MERGE ref.Decks AS t
+USING (VALUES
+  (N'sky-princess', 5, N'Deck 5', N''),
+  (N'sky-princess', 6, N'Deck 6', N''),
+  (N'sky-princess', 7, N'Deck 7', N''),
+  (N'sky-princess', 9, N'Deck 9', N''),
+  (N'sky-princess', 10, N'Deck 10', N''),
+  (N'sky-princess', 11, N'Deck 11', N''),
+  (N'sky-princess', 12, N'Deck 12', N''),
+  (N'sky-princess', 14, N'Deck 14', N''),
+  (N'sapphire-princess', 5, N'Deck 5', N''),
+  (N'sapphire-princess', 6, N'Deck 6', N''),
+  (N'sapphire-princess', 8, N'Deck 8', N''),
+  (N'sapphire-princess', 9, N'Deck 9', N''),
+  (N'sapphire-princess', 10, N'Deck 10', N''),
+  (N'sapphire-princess', 11, N'Deck 11', N'')
+) AS s ([ShipId], [Number], [Name], [Summary])
+ON t.[ShipId] = s.[ShipId] AND t.[Number] = s.[Number]
+WHEN MATCHED THEN UPDATE SET t.[Name] = s.[Name]
+WHEN NOT MATCHED THEN INSERT ([ShipId], [Number], [Name], [Summary]) VALUES (s.[ShipId], s.[Number], s.[Name], s.[Summary]);
+GO
+
+-- ref.MusterStations: 12 sample muster stations of the other ships
+MERGE ref.MusterStations AS t
+USING (VALUES
+  (N'sky-station-a', N'sky-princess', N'Station A', N'Princess Theater, port side', 7),
+  (N'sky-station-b', N'sky-princess', N'Station B', N'Princess Theater, starboard side', 7),
+  (N'sky-station-c', N'sky-princess', N'Station C', N'The Piazza, port side', 5),
+  (N'sky-station-d', N'sky-princess', N'Station D', N'The Piazza, starboard side', 5),
+  (N'sky-station-e', N'sky-princess', N'Station E', N'Concerto Dining Room', 7),
+  (N'sky-station-f', N'sky-princess', N'Station F', N'Allegro Dining Room', 6),
+  (N'sapphire-station-a', N'sapphire-princess', N'Station A', N'Princess Theater, port side', 6),
+  (N'sapphire-station-b', N'sapphire-princess', N'Station B', N'Princess Theater, starboard side', 6),
+  (N'sapphire-station-c', N'sapphire-princess', N'Station C', N'The Piazza, port side', 5),
+  (N'sapphire-station-d', N'sapphire-princess', N'Station D', N'The Piazza, starboard side', 5),
+  (N'sapphire-station-e', N'sapphire-princess', N'Station E', N'Vivaldi Dining Room', 6),
+  (N'sapphire-station-f', N'sapphire-princess', N'Station F', N'Santa Fe Dining Room', 5)
+) AS s ([Id], [ShipId], [Name], [Place], [Deck])
+ON t.[Id] = s.[Id]
+WHEN MATCHED THEN UPDATE SET t.[ShipId] = s.[ShipId], t.[Name] = s.[Name], t.[Place] = s.[Place], t.[Deck] = s.[Deck]
+WHEN NOT MATCHED THEN INSERT ([Id], [ShipId], [Name], [Place], [Deck]) VALUES (s.[Id], s.[ShipId], s.[Name], s.[Place], s.[Deck]);
+GO
+
+-- ref.Cabins: 72 sample staterooms of the other ships (generated, deterministic; not the real deck plan)
+MERGE ref.Cabins AS t
+USING (VALUES
+  (N'sky-princess', N'9188', N'sky-interior', 9, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'10225', N'sky-interior', 10, N'mid', N'starboard', 1, 0, N'sky-station-d'),
+  (N'sky-princess', N'11262', N'sky-interior', 11, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'12299', N'sky-interior', 12, N'fwd', N'starboard', 0, 0, N'sky-station-b'),
+  (N'sky-princess', N'14336', N'sky-interior', 14, N'mid', N'port', 0, 0, N'sky-station-c'),
+  (N'sky-princess', N'9373', N'sky-interior', 9, N'aft', N'starboard', 0, 0, N'sky-station-f'),
+  (N'sky-princess', N'10410', N'sky-interior', 10, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'11447', N'sky-interior', 11, N'mid', N'starboard', 0, 0, N'sky-station-d'),
+  (N'sky-princess', N'12484', N'sky-interior', 12, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'9199', N'sky-oceanview', 9, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'10236', N'sky-oceanview', 10, N'mid', N'starboard', 1, 0, N'sky-station-d'),
+  (N'sky-princess', N'11273', N'sky-oceanview', 11, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'9310', N'sky-oceanview', 9, N'fwd', N'starboard', 0, 0, N'sky-station-b'),
+  (N'sky-princess', N'10347', N'sky-oceanview', 10, N'mid', N'port', 0, 0, N'sky-station-c'),
+  (N'sky-princess', N'11384', N'sky-oceanview', 11, N'aft', N'starboard', 0, 0, N'sky-station-f'),
+  (N'sky-princess', N'9421', N'sky-oceanview', 9, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'10458', N'sky-oceanview', 10, N'mid', N'starboard', 0, 0, N'sky-station-d'),
+  (N'sky-princess', N'11495', N'sky-oceanview', 11, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'9177', N'sky-balcony', 9, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'10214', N'sky-balcony', 10, N'mid', N'starboard', 1, 0, N'sky-station-d'),
+  (N'sky-princess', N'11251', N'sky-balcony', 11, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'12288', N'sky-balcony', 12, N'fwd', N'starboard', 0, 0, N'sky-station-b'),
+  (N'sky-princess', N'14325', N'sky-balcony', 14, N'mid', N'port', 0, 0, N'sky-station-c'),
+  (N'sky-princess', N'9362', N'sky-balcony', 9, N'aft', N'starboard', 0, 0, N'sky-station-f'),
+  (N'sky-princess', N'10399', N'sky-balcony', 10, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'11436', N'sky-balcony', 11, N'mid', N'starboard', 0, 0, N'sky-station-d'),
+  (N'sky-princess', N'12473', N'sky-balcony', 12, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'12232', N'sky-minisuite', 12, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'14269', N'sky-minisuite', 14, N'mid', N'starboard', 1, 0, N'sky-station-d'),
+  (N'sky-princess', N'12306', N'sky-minisuite', 12, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sky-princess', N'14343', N'sky-minisuite', 14, N'fwd', N'starboard', 0, 0, N'sky-station-b'),
+  (N'sky-princess', N'12380', N'sky-minisuite', 12, N'mid', N'port', 0, 0, N'sky-station-c'),
+  (N'sky-princess', N'14417', N'sky-minisuite', 14, N'aft', N'starboard', 0, 0, N'sky-station-f'),
+  (N'sky-princess', N'12454', N'sky-minisuite', 12, N'fwd', N'port', 0, 0, N'sky-station-a'),
+  (N'sky-princess', N'14491', N'sky-minisuite', 14, N'mid', N'starboard', 0, 0, N'sky-station-d'),
+  (N'sky-princess', N'12128', N'sky-minisuite', 12, N'aft', N'port', 0, 0, N'sky-station-e'),
+  (N'sapphire-princess', N'8188', N'sapphire-interior', 8, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'9225', N'sapphire-interior', 9, N'mid', N'starboard', 1, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10262', N'sapphire-interior', 10, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'11299', N'sapphire-interior', 11, N'fwd', N'starboard', 0, 0, N'sapphire-station-b'),
+  (N'sapphire-princess', N'8336', N'sapphire-interior', 8, N'mid', N'port', 0, 0, N'sapphire-station-c'),
+  (N'sapphire-princess', N'9373', N'sapphire-interior', 9, N'aft', N'starboard', 0, 0, N'sapphire-station-f'),
+  (N'sapphire-princess', N'10410', N'sapphire-interior', 10, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'11447', N'sapphire-interior', 11, N'mid', N'starboard', 0, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'8484', N'sapphire-interior', 8, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'8199', N'sapphire-oceanview', 8, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'9236', N'sapphire-oceanview', 9, N'mid', N'starboard', 1, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10273', N'sapphire-oceanview', 10, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'8310', N'sapphire-oceanview', 8, N'fwd', N'starboard', 0, 0, N'sapphire-station-b'),
+  (N'sapphire-princess', N'9347', N'sapphire-oceanview', 9, N'mid', N'port', 0, 0, N'sapphire-station-c'),
+  (N'sapphire-princess', N'10384', N'sapphire-oceanview', 10, N'aft', N'starboard', 0, 0, N'sapphire-station-f'),
+  (N'sapphire-princess', N'8421', N'sapphire-oceanview', 8, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'9458', N'sapphire-oceanview', 9, N'mid', N'starboard', 0, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10495', N'sapphire-oceanview', 10, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'8177', N'sapphire-balcony', 8, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'9214', N'sapphire-balcony', 9, N'mid', N'starboard', 1, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10251', N'sapphire-balcony', 10, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'11288', N'sapphire-balcony', 11, N'fwd', N'starboard', 0, 0, N'sapphire-station-b'),
+  (N'sapphire-princess', N'8325', N'sapphire-balcony', 8, N'mid', N'port', 0, 0, N'sapphire-station-c'),
+  (N'sapphire-princess', N'9362', N'sapphire-balcony', 9, N'aft', N'starboard', 0, 0, N'sapphire-station-f'),
+  (N'sapphire-princess', N'10399', N'sapphire-balcony', 10, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'11436', N'sapphire-balcony', 11, N'mid', N'starboard', 0, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'8473', N'sapphire-balcony', 8, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'10232', N'sapphire-minisuite', 10, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'11269', N'sapphire-minisuite', 11, N'mid', N'starboard', 1, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10306', N'sapphire-minisuite', 10, N'aft', N'port', 0, 0, N'sapphire-station-e'),
+  (N'sapphire-princess', N'11343', N'sapphire-minisuite', 11, N'fwd', N'starboard', 0, 0, N'sapphire-station-b'),
+  (N'sapphire-princess', N'10380', N'sapphire-minisuite', 10, N'mid', N'port', 0, 0, N'sapphire-station-c'),
+  (N'sapphire-princess', N'11417', N'sapphire-minisuite', 11, N'aft', N'starboard', 0, 0, N'sapphire-station-f'),
+  (N'sapphire-princess', N'10454', N'sapphire-minisuite', 10, N'fwd', N'port', 0, 0, N'sapphire-station-a'),
+  (N'sapphire-princess', N'11491', N'sapphire-minisuite', 11, N'mid', N'starboard', 0, 0, N'sapphire-station-d'),
+  (N'sapphire-princess', N'10128', N'sapphire-minisuite', 10, N'aft', N'port', 0, 0, N'sapphire-station-e')
+) AS s ([ShipId], [Number], [CategoryId], [Deck], [Section], [Side], [Accessible], [Connecting], [MusterStationId])
+ON t.[ShipId] = s.[ShipId] AND t.[Number] = s.[Number]
+WHEN MATCHED THEN UPDATE SET t.[CategoryId] = s.[CategoryId], t.[Deck] = s.[Deck], t.[Section] = s.[Section], t.[Side] = s.[Side], t.[Accessible] = s.[Accessible], t.[Connecting] = s.[Connecting], t.[MusterStationId] = s.[MusterStationId]
+WHEN NOT MATCHED THEN INSERT ([ShipId], [Number], [CategoryId], [Deck], [Section], [Side], [Accessible], [Connecting], [MusterStationId]) VALUES (s.[ShipId], s.[Number], s.[CategoryId], s.[Deck], s.[Section], s.[Side], s.[Accessible], s.[Connecting], s.[MusterStationId]);
+GO
+
 -- ref.Ports: 99 rows (a seeded port keeps its name, entry note and contacts)
 MERGE ref.Ports AS t
 USING (VALUES

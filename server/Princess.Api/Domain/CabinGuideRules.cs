@@ -20,14 +20,14 @@ public static class CabinGuideRules
 {
     private static int Clamp(int n) => Math.Max(1, Math.Min(5, n));
 
-    private static (int Score, List<string> Why) Sleep(CabinInfo c)
+    private static (int Score, List<string> Why) Sleep(CabinInfo c, CabinRules.ShipCabinProfile p, bool sun)
     {
         var why = new List<string>();
         var s = 5;
-        if (c.Position == "forward" && c.Deck <= 9) { s--; why.Add("The bow thrusters are close by. They run when the ship docks, often early in the morning."); }
-        if (c.Position == "aft" && c.Deck <= 10) { s--; why.Add("The engine and propellers are near, so you may feel a low hum or vibration."); }
-        if (c.Deck >= 16 && c.Position == "midship") { s--; why.Add("The Dome is close by, and its late-night dance party can carry."); }
-        if (c.Position == "midship" && c.Deck <= 11) { s--; why.Add("A galley and laundry sit nearby, with early-morning deliveries."); }
+        if (c.Position == "forward" && c.Deck <= p.LowDeck) { s--; why.Add("The bow thrusters are close by. They run when the ship docks, often early in the morning."); }
+        if (c.Position == "aft" && c.Deck <= p.LowDeck + 1) { s--; why.Add("The engine and propellers are near, so you may feel a low hum or vibration."); }
+        if (sun && c.Deck >= 16 && c.Position == "midship") { s--; why.Add("The Dome is close by, and its late-night dance party can carry."); }
+        if (c.Position == "midship" && c.Deck <= p.LowDeck + 2) { s--; why.Add("A galley and laundry sit nearby, with early-morning deliveries."); }
         if (why.Count == 0) why.Add("Nothing noisy above, below or beside this one in our sample plan.");
         return (Clamp(s), why);
     }
@@ -44,12 +44,12 @@ public static class CabinGuideRules
         return (Clamp(s), why);
     }
 
-    private static (int Score, List<string> Why) Noise(CabinInfo c)
+    private static (int Score, List<string> Why) Noise(CabinInfo c, CabinRules.ShipCabinProfile p)
     {
         var why = new List<string>();
         var s = 5;
         if (c.Position == "midship") { s--; why.Add("Near the elevators, so people walk past all day."); }
-        if (c.Deck >= 14) { s -= 2; why.Add("Close to the pool decks, with music and chairs moving in the daytime."); }
+        if (c.Deck >= p.PoolDeck) { s -= 2; why.Add("Close to the pool decks, with music and chairs moving in the daytime."); }
         if (c.Accessible) why.Add("An accessible cabin, so a wider door and a hallway built for wheelchairs. Neighbours may need help at any hour.");
         if (why.Count == 0) why.Add("Away from the lifts, stairs and pool decks.");
         return (Clamp(s), why);
@@ -99,25 +99,27 @@ public static class CabinGuideRules
         return new(mornings, afternoons, portAfternoons, label, text);
     }
 
-    public static CabinScoreDto Score(string category, CabinInfo cabin)
+    public static CabinScoreDto Score(string category, CabinInfo cabin, string shipId = CabinRules.SunShip)
     {
-        var sleep = Sleep(cabin);
+        var profile = CabinRules.ProfileOf(shipId);
+        var sleep = Sleep(cabin, profile, shipId == CabinRules.SunShip);
         var motion = Motion(cabin);
-        var noise = Noise(cabin);
+        var noise = Noise(cabin, profile);
         var warnings = new List<string>();
         if (cabin.Obstructed) warnings.Add("The view is partly blocked by lifeboats.");
         if (!cabin.Available) warnings.Add("This cabin is already taken on this sailing.");
         if (cabin.Accessible) warnings.Add("Reserved for guests who need an accessible cabin; ask before booking it.");
-        return new(cabin, category, sleep.Score, motion.Score, noise.Score, new(sleep.Why, motion.Why, noise.Why), category != "interior" ? Sun(cabin.Side) : null, warnings);
+        return new(cabin, category, sleep.Score, motion.Score, noise.Score, new(sleep.Why, motion.Why, noise.Why), CabinRules.ClassOf(category) != "interior" ? Sun(cabin.Side) : null, warnings);
     }
 
-    public static bool ValidCategory(string? category) => category is "interior" or "oceanview" or "balcony" or "miniSuite" or "sanctuaryMiniSuite" or "signatureSuite";
+    public static bool ValidCategory(string? category) => category is "interior" or "oceanview" or "balcony" or "miniSuite" or "sanctuaryMiniSuite" or "signatureSuite" || (category is not null && FareBook.Category(category) is not null);
 
     /// <summary>Cabins for a room type with their scores. The quiet filter needs good sleep and low noise; the calm-sea filter needs a motion score of 4 or more.</summary>
     public static CabinGuideDto Guide(string sailingId, string category, CabinFilterDto filter, IReadOnlySet<string>? taken)
     {
+        var shipId = AboardPlans.ShipOfSailing(sailingId);
         var list = CabinRules.CabinsFor(sailingId, category, taken)
-            .Select(c => Score(category, c))
+            .Select(c => Score(category, c, shipId))
             .Where(s => (!filter.AvailableOnly || s.Cabin.Available) && (!filter.Quiet || (s.Sleep >= 4 && s.Noise >= 4)) && (!filter.CalmSea || s.Motion >= 4)
                 && (!filter.Accessible || s.Cabin.Accessible) && (!filter.ClearView || !s.Cabin.Obstructed))
             .OrderByDescending(s => s.Sleep + s.Motion + s.Noise)

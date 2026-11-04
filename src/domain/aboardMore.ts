@@ -1,9 +1,7 @@
-import { cabinsFor, type Cabin } from './cabins'
+import { cabinsFor, ownCategoryId, SHIP_CABINS, SUN_SHIP, type Cabin } from './cabins'
 import { ELEVATORS, PLACES, type Place } from './deck'
 import type { ClubId } from './family'
 import { inQuietHours, type Category } from './notifications'
-import { SAILINGS } from './sailings'
-import { CATEGORIES } from './ship'
 import { MAX_PLAN_DAY } from './nightsRules'
 
 /**
@@ -84,7 +82,7 @@ export const soloState = (s: SoloTimer | null, now: number): SoloState => (!s ? 
 
 // ---- S6-16: words-only route to the cabin ----
 export const findCabin = (number: string): Cabin | null => {
-  for (const s of SAILINGS) for (const c of CATEGORIES) { const f = cabinsFor(s.id, c.id).find((x) => x.number === number.trim()); if (f) return f }
+  for (const [ship, layout] of Object.entries(SHIP_CABINS)) for (const roomClass of Object.keys(layout.decks)) { const f = cabinsFor('x', ship === SUN_SHIP ? roomClass : ownCategoryId(ship, roomClass), ship).find((x) => x.number === number.trim()); if (f) return f }
   return null
 }
 /** Steps in plain words from the nearest lift bank. Authored positions; check the signs on board. */

@@ -78,3 +78,43 @@ public class AboardPlansTests
         Assert.Equal("The Piazza, starboard side", sky.MusterPlace!.Name);
     }
 }
+
+/// <summary>Staterooms per ship (<see cref="CabinRules"/>): each ship's own categories, decks and unique numbers; Sun Princess unchanged.</summary>
+public class CabinsPerShipTests
+{
+    public static TheoryData<string> Ships => new() { "sun-princess", "sky-princess", "sapphire-princess" };
+
+    [Theory]
+    [MemberData(nameof(Ships))]
+    public void Every_class_has_nine_staterooms_on_the_ships_decks_with_unique_numbers(string ship)
+    {
+        var profile = CabinRules.ProfileOf(ship);
+        var numbers = new List<string>();
+        foreach (var (roomClass, decks) in profile.Decks)
+        {
+            var category = ship == "sun-princess" ? roomClass : CabinRules.OwnId(ship, roomClass);
+            var list = CabinRules.CabinsOn(ship, "x", category);
+            Assert.Equal(9, list.Count);
+            Assert.All(list, c => Assert.Contains(c.Deck, decks));
+            numbers.AddRange(list.Select(c => c.Number));
+        }
+        Assert.Equal(numbers.Count, numbers.Distinct().Count());
+    }
+
+    [Fact]
+    public void Class_of_a_ship_category_is_the_room_class()
+    {
+        Assert.Equal("balcony", CabinRules.ClassOf("sky-balcony"));
+        Assert.Equal("miniSuite", CabinRules.ClassOf("sapphire-minisuite"));
+        Assert.Equal("interior", CabinRules.ClassOf("interior"));
+        Assert.Equal("sky-minisuite", CabinRules.OwnId("sky-princess", "miniSuite"));
+    }
+
+    [Fact]
+    public void Sun_staterooms_are_unchanged_and_other_ships_differ()
+    {
+        Assert.Equal(["10177", "11214", "12251"], CabinRules.CabinsOn("sun-princess", "s", "balcony").Take(3).Select(c => c.Number));
+        Assert.NotEqual("10177", CabinRules.CabinsOn("sky-princess", "s", "sky-balcony")[0].Number);
+        Assert.Empty(CabinRules.CabinsOn("sky-princess", "s", "sky-suite"));
+    }
+}

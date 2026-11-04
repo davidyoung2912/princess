@@ -260,6 +260,10 @@ function merge(table: string, keys: string[], cols: string[], rows: string[][], 
   return out
 }
 
+/** Pre-quoted SQL rows of the other ships' decks, muster stations and sample staterooms (built by `ship-cabin-rows.ts`, which reads the client's cabin generator). */
+export interface ShipCabinRows { decks: string[][]; stations: string[][]; cabins: string[][] }
+export const NO_SHIP_CABINS: ShipCabinRows = { decks: [], stations: [], cabins: [] }
+
 const GUIDE: Record<PortTier, string> = { A: 'full', B: 'short', C: 'link' }
 
 function profileJson(s: CatalogueShip): string {
@@ -271,7 +275,7 @@ function profileJson(s: CatalogueShip): string {
 }
 
 /** Renders the generated SQL: the catalogue tables, the new columns, the materialised sailings and the backfill of the seeded ones. */
-export function renderCatalogueSql(c: CatalogueSource): string {
+export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_SHIP_CABINS): string {
   const categories = c.categories ?? []
   const material = c.sailings.map((s) => ({ s, m: materialiseSailing(c, s) }))
   const out: string[] = [
@@ -301,6 +305,11 @@ export function renderCatalogueSql(c: CatalogueSource): string {
       categories.map((k) => [q(k.id), q(k.name), bit(k.isSuite), String(k.capacity), String(k.sizeSqFt), q(k.description), q('{}'), String(k.sortOrder), q(k.ship)]),
       ['Name', 'IsSuite', 'Capacity', 'SizeSqFt', 'Description', 'SortOrder', 'ShipId'], `${categories.length} stateroom categories for the browse ships`,
     ),
+  )
+  out.push(
+    ...merge('ref.Decks', ['ShipId', 'Number'], ['ShipId', 'Number', 'Name', 'Summary'], own.decks, ['Name'], `${own.decks.length} decks of the other ships`),
+    ...merge('ref.MusterStations', ['Id'], ['Id', 'ShipId', 'Name', 'Place', 'Deck'], own.stations, ['ShipId', 'Name', 'Place', 'Deck'], `${own.stations.length} sample muster stations of the other ships`),
+    ...merge('ref.Cabins', ['ShipId', 'Number'], ['ShipId', 'Number', 'CategoryId', 'Deck', 'Section', 'Side', 'Accessible', 'Connecting', 'MusterStationId'], own.cabins, ['CategoryId', 'Deck', 'Section', 'Side', 'Accessible', 'Connecting', 'MusterStationId'], `${own.cabins.length} sample staterooms of the other ships (generated, deterministic; not the real deck plan)`),
   )
   out.push(
     ...merge(
