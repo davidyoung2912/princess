@@ -97,7 +97,7 @@ public static class OnboardFeedRules
         return (int)Math.Max(0, Math.Min(100, Pricing.JsRound(shape + wobble - drop)));
     }
 
-    public static bool ValidPulseDay(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= 8;
+    public static bool ValidPulseDay(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= Itinerary.MaxDay;
 
     public static PulseDayDto PulseDay(Timeline timeline, int day)
     {
@@ -199,7 +199,7 @@ public static class OnboardFeedRules
         return port <= starboard ? "port" : "starboard";
     }
 
-    public static bool ValidSkyQuery(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= 8;
+    public static bool ValidSkyQuery(string? departure, int day) => ValidDate(departure) && day is >= 1 and <= Itinerary.MaxDay;
 
     public static SkyNightDto SkyNight(string departure, int day, string? sailing = null)
     {

@@ -1,5 +1,6 @@
 import { AGE_GROUPS, EVENT_INTERESTS, replaceProgram, type AgeGroup, type EventInterest, type PlanChange, type ShipEvent } from './program'
 import { notifyCatalogue } from './catalogueServed'
+import { MAX_PLAN_DAY } from './nightsRules'
 
 /**
  * The programme from the server (multi-device plan 3, Phase 3 step 3): every event and the mid-day changes the ship has made (the server's
@@ -12,7 +13,7 @@ const str = (v: unknown, max = 200): v is string => typeof v === 'string' && v.l
 const hhmm = (v: unknown): v is string => typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v)
 
 function event(r: unknown): ShipEvent | null {
-  if (!rec(r) || !str(r.id, 40) || !Array.isArray(r.days) || r.days.length === 0 || !r.days.every((d) => Number.isInteger(d) && d >= 1 && d <= 8)) return null
+  if (!rec(r) || !str(r.id, 40) || !Array.isArray(r.days) || r.days.length === 0 || !r.days.every((d) => Number.isInteger(d) && d >= 1 && d <= MAX_PLAN_DAY)) return null
   if (!hhmm(r.start) || typeof r.minutes !== 'number' || !(r.minutes >= 5 && r.minutes <= 600) || !str(r.title) || !str(r.placeId, 40)) return null
   if (!(AGE_GROUPS as readonly unknown[]).includes(r.age) || !(EVENT_INTERESTS as readonly unknown[]).includes(r.interest)) return null
   if (typeof r.extra !== 'number' || !Number.isInteger(r.extra) || r.extra < 0 || r.extra > 10_000_000) return null
@@ -22,7 +23,7 @@ function event(r: unknown): ShipEvent | null {
 }
 
 function change(r: unknown): PlanChange | null {
-  if (!rec(r) || !str(r.eventId, 40) || typeof r.day !== 'number' || !Number.isInteger(r.day) || r.day < 1 || r.day > 8 || (r.kind !== 'moved' && r.kind !== 'cancelled') || !str(r.reason, 400)) return null
+  if (!rec(r) || !str(r.eventId, 40) || typeof r.day !== 'number' || !Number.isInteger(r.day) || r.day < 1 || r.day > MAX_PLAN_DAY || (r.kind !== 'moved' && r.kind !== 'cancelled') || !str(r.reason, 400)) return null
   const c: PlanChange = { eventId: r.eventId, day: r.day, kind: r.kind, reason: r.reason }
   if (r.kind === 'moved') { if (!hhmm(r.start)) return null; c.start = r.start }
   return c

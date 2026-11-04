@@ -32,7 +32,7 @@ public static class AutopilotRules
 
     /// <summary>At most one block a day, each on a day of the cruise (1 to 8) with a known part.</summary>
     public static bool RestValid(IReadOnlyList<RestBlockDto>? rest) =>
-        rest is null || rest.Count <= MaxRestBlocks && rest.All(r => r is not null && r.Day is >= 1 and <= 8 && RestParts.Contains(r.Part)) && rest.Select(r => r.Day).Distinct().Count() == rest.Count;
+        rest is null || rest.Count <= MaxRestBlocks && rest.All(r => r is not null && r.Day is >= 1 and <= Itinerary.MaxDay && RestParts.Contains(r.Part)) && rest.Select(r => r.Day).Distinct().Count() == rest.Count;
 
     /// <summary>The minutes of the day (start included, end not) a rest part covers.</summary>
     public static (int From, int To) RestWindow(string part) => part switch

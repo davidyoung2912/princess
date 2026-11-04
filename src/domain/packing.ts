@@ -1,5 +1,6 @@
 import { excursionById, type ExcursionItem } from './excursions'
 import type { NeedId } from './account'
+import { elegantCount, medicationSupplyDays, packCounts } from './nightsRules'
 
 /** The packing list generator (MNG-08): built from the itinerary, the season, the dress codes, the ship and what the party has booked. */
 export type PackGroup = 'documents' | 'clothes' | 'beach' | 'health' | 'tech' | 'kids'
@@ -53,12 +54,13 @@ export interface PackInput {
   elegantNights: number
 }
 
-/** Elegant evenings on a seven-night cruise: two. */
-export const elegantNights = (nights: number): number => (nights >= 7 ? 2 : nights >= 5 ? 1 : 0)
+/** Elegant evenings for a cruise of this length (see `nightsRules`): two on seven nights. */
+export const elegantNights = elegantCount
 
 export function buildPackingList(i: PackInput): PackItem[] {
   const w = weatherFor(i.departure)
   const kinds = new Set(i.tours.map((id) => excursionById(id)).filter((x): x is ExcursionItem => !!x).flatMap((x) => [x.activity, ...x.interests]))
+  const counts = packCounts(i.nights)
   const items: PackItem[] = []
   const add = (id: string, group: PackGroup, label: string, why: string) => items.push({ id, group, label, why })
 
@@ -67,14 +69,14 @@ export function buildPackingList(i: PackInput): PackItem[] {
   add('cards', 'documents', 'Credit card and some small bills', 'For tips ashore, taxis and small shops.')
   add('insurance', 'documents', 'Travel insurance details', 'Keep the policy number and phone number together.')
 
-  add('daywear', 'clothes', `Lightweight daywear for ${i.nights} days`, `Highs of ${w.highF}°F and lows of ${w.lowF}°F. ${w.note}`)
+  add('daywear', 'clothes', counts.laundry ? `Lightweight daywear for ${counts.daywear} days, then wash and repeat` : `Lightweight daywear for ${counts.daywear} days`, `Highs of ${w.highF}°F and lows of ${w.lowF}°F. ${w.note}`)
   add('smart', 'clothes', 'Smart casual outfits for dinner', 'Collared shirts or a nice top; shorts and flip-flops are not worn at dinner.')
   if (i.elegantNights > 0) add('elegant', 'clothes', `${i.elegantNights === 1 ? 'One outfit' : `${i.elegantNights} outfits`} for elegant evenings`, 'A jacket or a dress; the ship marks these nights on the daily plan.')
   add('lightLayer', 'clothes', 'A light jacket or wrap', 'Dining rooms and the Dome theatre are cool, and the evening deck breeze is stronger.')
   add('comfyShoes', 'clothes', 'Comfortable walking shoes', 'The ship is long, and ports mean cobbles and uneven pavements.')
   if (w.rain !== 'low') add('rain', 'clothes', 'A light rain jacket or compact umbrella', `Showers are ${w.rain === 'high' ? 'likely' : 'possible'} at this time of year.`)
 
-  add('swim', 'beach', 'Two swimsuits', 'One is always drying.')
+  add('swim', 'beach', `${counts.swimsuits === 3 ? 'Three' : 'Two'} swimsuits`, 'One is always drying.')
   add('sunscreen', 'beach', 'Sunscreen, reef-safe if you will snorkel', 'The Caribbean sun burns in under 30 minutes.')
   add('hat', 'beach', 'Hat and sunglasses', 'Shade is scarce on the pier and the pool deck.')
   if (kinds.has('water')) add('waterShoes', 'beach', 'Water shoes and a quick-dry towel', 'For your snorkelling or beach excursion. Gear is provided; shoes are not.')
@@ -82,7 +84,8 @@ export function buildPackingList(i: PackInput): PackItem[] {
   if (kinds.has('strenuous')) add('closedShoes', 'beach', 'Closed shoes you can get muddy', 'Your zip-line or cave tour needs them.')
   if (i.tender) add('tenderBag', 'beach', 'A small bag with a zip', 'Going ashore by tender at Belize City: you will step across a gap, so keep both hands free.')
 
-  add('meds', 'health', 'Prescription medicines in their own bottles, in hand luggage', 'Pack extra for two days. Do not put them in checked bags.')
+  add('meds', 'health', 'Prescription medicines in their own bottles, in hand luggage', `Pack ${medicationSupplyDays(i.nights)} days of each, which is every day aboard and a spare for delays. Do not put them in checked bags.`)
+  if (counts.laundry) add('laundry', 'clothes', 'Laundry detergent sheets or a few coins for the launderette', 'On a longer cruise you will wash once or twice; the ship also has a laundry service.')
   add('firstAid', 'health', 'Seasickness tablets and a small first-aid kit', 'The medical centre charges for these.')
   if (i.needs.includes('cpap')) add('cpap', 'health', 'CPAP machine, distilled water and an extension cord', 'Staterooms have limited sockets. Ask for a power strip in your assistance request.')
   if (i.needs.includes('oxygen')) add('oxygen', 'health', 'Portable oxygen concentrator and spare batteries', 'Carry them yourself. Tell the ship in advance.')

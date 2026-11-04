@@ -16,7 +16,7 @@ describe('day plan feed', () => {
     expect(d?.items.map((i) => i.id)).toEqual(['jazz', 'eclipse'])
     expect(d?.items[0].placeId).toBe('live')
     expect(d?.shipChanges).toHaveLength(2)
-    expect(normalizeDay({ ...answer(), day: 9 })).toBeNull()
+    expect(normalizeDay({ ...answer(), day: 42 })).toBeNull()
     expect(normalizeDay({ ...answer(), backBy: '25:00' })).toBeNull()
     expect(normalizeDay({ ...answer(), items: [entry('x', 'party', '10:00')] })).toBeNull()
     expect(normalizeDay({ ...answer(), shipChanges: [{ id: 'a', kind: 'vanished', start: null, reason: null }] })).toBeNull()

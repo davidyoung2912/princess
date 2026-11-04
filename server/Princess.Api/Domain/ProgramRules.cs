@@ -82,7 +82,7 @@ public static class ProgramRules
     public static List<DatedEvent> On(Timeline timeline, int day, bool changes, IReadOnlyList<PlanChange>? feed = null)
     {
         feed ??= PlanChanges;
-        if (day is < 1 or > 8) return [];
+        if (day is < 1 or > Itinerary.MaxDay) return [];
         var date = timeline.Departure.AddDays(day - 1);
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);

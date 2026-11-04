@@ -8,6 +8,9 @@ public sealed record ItineraryDay(int Day, DateOnly Date, string Port, TimeOnly?
 /// <summary>The four ports and the zones of the older Western A route, kept for callers that have only a departure date; a sailing's own days and ports come from <see cref="Timeline"/> and <see cref="TimelineBook"/>.</summary>
 public static class Itinerary
 {
+    /// <summary>The most days a sailing has: 40 nights and the morning of disembarkation. Day numbers in requests are checked against this, then against the sailing.</summary>
+    public const int MaxDay = 41;
+
     public const string ShipHomeZone = "America/New_York";
     public const string ShipWestZone = "America/Belize";
 

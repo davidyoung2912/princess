@@ -1,5 +1,5 @@
-import { elegantNights } from './packing'
-import { itinerary, PORTS, type PortId, type Sailing } from './sailings'
+import { elegantDays, MAX_PLAN_DAY } from './nightsRules'
+import { itinerary, portById, type PortId, type Sailing } from './sailings'
 import type { Cents } from './money'
 
 /**
@@ -20,10 +20,8 @@ export function companionWeek(daysToDeparture: number): number | null {
 // ---- Packing for this ship (S3-06) ----
 export const PROHIBITED = ['irons', 'kettles', 'surge', 'candles', 'drones', 'walkie', 'alcohol'] as const
 export const OUTLETS = ['twoUs', 'noEu', 'usb', 'strip'] as const
-/** Days (of 8) that are elegant evenings, from the same rule `packing.ts` uses. */
-export function dressNights(nights: number): number[] {
-  return [2, 7].slice(0, elegantNights(nights))
-}
+/** The days that are elegant evenings, from the same rule `packing.ts` uses (see `nightsRules`). */
+export const dressNights = elegantDays
 
 // ---- Guaranteed-cabin odds (S2-07) ----
 export interface Odds { same: number; up: number }
@@ -48,8 +46,10 @@ const CASH_PER_PORT = 3000
 /** A budget for each day by day type: port days include some cash for tips and small shops. All per person, then times guests. */
 export function moneyPlan(s: Sailing, guests: number, daily: { sea: Cents; port: Cents } = DEFAULT_DAILY): MoneyPlan {
   const g = Math.max(1, guests)
-  const days = itinerary(s).filter((d) => d.day !== 8).map((d): MoneyDay => {
-    const ashore = d.port !== 'sea' && d.port !== 'fll'
+  const all = itinerary(s)
+  const home = all[0]?.port
+  const days = all.filter((d) => d.day !== all.length).map((d): MoneyDay => {
+    const ashore = d.port !== 'sea' && d.port !== home
     return { day: d.day, port: d.port, kind: ashore ? 'port' : 'sea', budget: (ashore ? daily.port : daily.sea) * g, cash: ashore ? CASH_PER_PORT * g : 0 }
   })
   const total = days.reduce((a, d) => a + d.budget, 0), cash = days.reduce((a, d) => a + d.cash, 0)
@@ -63,11 +63,13 @@ export const cleanName = (v: string): string => v.replace(/[^\p{L}\p{N} '’-]/g
 export function childStory(name: string, s: Sailing): string[] {
   const n = cleanName(name) || 'You'
   const lines = [`${n} is going on a big ship!`]
-  for (const d of itinerary(s)) {
-    if (d.day === 1) lines.push(`On day 1, ${n} waves goodbye to Fort Lauderdale.`)
+  const days = itinerary(s)
+  for (const d of days) {
+    const place = portById(d.port)?.name.split(',')[0] ?? d.port
+    if (d.day === 1) lines.push(`On day 1, ${n} waves goodbye to ${place}.`)
+    else if (d.day === days.length) lines.push(`On day ${d.day}, the ship comes home and ${n} says goodbye to the sea.`)
     else if (d.port === 'sea') lines.push(`On day ${d.day}, the ship sails all day. ${n} can swim, play and watch for dolphins.`)
-    else if (d.day === 8) lines.push(`On day 8, the ship comes home and ${n} says goodbye to the sea.`)
-    else lines.push(`On day ${d.day}, the ship stops at ${PORTS[d.port as Exclude<PortId, 'sea'>].name.split(',')[0]}. ${n} goes ashore with a grown-up.`)
+    else lines.push(`On day ${d.day}, the ship stops at ${place}. ${n} goes ashore with a grown-up.`)
   }
   lines.push(`${n} has the best week ever.`)
   return lines
@@ -83,9 +85,9 @@ export function parsePlan(text: string): PlanLine[] {
   const out: PlanLine[] = []
   for (const raw of text.split(/\r?\n/)) {
     const cleaned = raw.replace(/^[\s*#>\-•\d.)]*(?=day\b)/i, '').replace(/^[\s*#>\-•]+/, '').replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim()
-    const m = /^day\s*(\d)\b\s*[:.\-–—]?\s*(.*)$/i.exec(cleaned)
+    const m = /^day\s*(\d{1,2})\b\s*[:.\-–—]?\s*(.*)$/i.exec(cleaned)
     const body = (m ? m[2] : cleaned).slice(0, PASTE_LINE_MAX).trim()
-    const day = m && Number(m[1]) >= 1 && Number(m[1]) <= 8 ? Number(m[1]) : null
+    const day = m && Number(m[1]) >= 1 && Number(m[1]) <= MAX_PLAN_DAY ? Number(m[1]) : null
     if (body === '' || /https?:\/\//i.test(body)) continue
     if (out.some((l) => l.day === day && l.text.toLowerCase() === body.toLowerCase())) continue
     out.push({ day, text: body })
@@ -98,7 +100,7 @@ export function normalizePlanLines(raw: unknown): PlanLine[] {
   return (Array.isArray(raw) ? raw : []).flatMap((x): PlanLine[] => {
     const o = x as Record<string, unknown> | null
     if (!o || typeof o.text !== 'string' || o.text.trim() === '') return []
-    const day = typeof o.day === 'number' && o.day >= 1 && o.day <= 8 ? Math.floor(o.day) : null
+    const day = typeof o.day === 'number' && o.day >= 1 && o.day <= MAX_PLAN_DAY ? Math.floor(o.day) : null
     return [{ day, text: o.text.slice(0, PASTE_LINE_MAX) }]
   }).slice(0, PASTE_MAX)
 }

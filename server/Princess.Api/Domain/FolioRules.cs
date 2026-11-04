@@ -73,14 +73,14 @@ public static class FolioRules
             {
                 if (!used.TryGetValue(g.Id, out var state)) used[g.Id] = state = new Used();
                 var rate = g.Suite ? Pricing.GratuityPerNightSuite : Pricing.GratuityPerNight;
-                if (day <= 7)
+                if (day < days.Count)
                 {
                     var tipAt = TripRules.ToMs(At(day, 6));
                     lines.Add(g.Entitlements.GratuitiesIncluded
                         ? new FolioLine($"tip-{g.Id}-{day}", day, tipAt, "gratuities", "Daily gratuity", g.Id, 0, rate, "package")
                         : new FolioLine($"tip-{g.Id}-{day}", day, tipAt, "gratuities", "Daily gratuity", g.Id, rate, null, null));
                 }
-                if (day == 1 || day >= 8) continue;
+                if (day == 1 || day >= days.Count) continue;
                 var picks = CabinRules.Hash($"{sailingId}|{g.Id}|{day}");
                 var count = g.Age < 18 ? 0 : picks % 4 == 0 ? 0 : 1 + (int)(picks % 2);
                 for (var n = 0; n < count; n++)
@@ -125,7 +125,7 @@ public static class FolioRules
         return new FolioTotals(charges, credits, covered, charges - credits);
     }
 
-    /// <summary>The cruise day (1 to 8) for a moment in ship time; 0 before the first day and 9 after the last.</summary>
+    /// <summary>The cruise day for a moment in ship time; 0 before the first day and one past the last day after it.</summary>
     public static int CruiseDay(Timeline timeline, DateTime now)
     {
         var days = timeline.Days;

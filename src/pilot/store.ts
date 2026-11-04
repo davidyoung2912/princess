@@ -5,6 +5,7 @@ import { EMPTY_CALM, normalizeCalm, type CalmState } from '../domain/calm'
 import { INTERESTS, type Interest } from '../domain/excursions'
 import { EVENT_INTERESTS, type EventInterest } from '../domain/program'
 import { isHhmm, type Change, type Edit, type PlanEntry } from '../domain/planChange'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 /** Everything Phase H5 keeps on this device for one person: plan changes and their log, slot watches, week preferences, and the inclusion settings. */
 export interface PilotState { changes: Change[]; watches: Watch[]; prefs: WeekPrefs; gentle: boolean; calm: CalmState }
@@ -34,7 +35,7 @@ export function normalizeChanges(raw: unknown): Change[] {
   return raw.flatMap((r): Change[] => {
     if (!r || typeof r !== 'object') return []
     const o = r as Record<string, unknown>
-    if (typeof o.id !== 'string' || !Number.isInteger(o.day) || (o.day as number) < 1 || (o.day as number) > 8 || typeof o.title !== 'string' || !STATUSES.includes(o.status as string) || (o.source !== 'autopilot' && o.source !== 'assistant')) return []
+    if (typeof o.id !== 'string' || !Number.isInteger(o.day) || (o.day as number) < 1 || (o.day as number) > MAX_PLAN_DAY || typeof o.title !== 'string' || !STATUSES.includes(o.status as string) || (o.source !== 'autopilot' && o.source !== 'assistant')) return []
     if (typeof o.proposedAt !== 'number' || typeof o.undoUntil !== 'number' || !Array.isArray(o.edits)) return []
     const edits = o.edits.map(editOf)
     if (edits.some((e) => e === null)) return []

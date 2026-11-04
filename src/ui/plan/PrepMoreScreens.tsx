@@ -10,6 +10,7 @@ import { useMine } from '../../hooks/useMine'
 import { t, th, type StringKey } from '../../i18n'
 import { api, recordJourney } from '../../runtime'
 import { useSailing } from '../../hooks/useDemo'
+import { useItinerary } from '../../hooks/useShipCatalogue'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -29,7 +30,7 @@ const portName = (p: PortId): string => (p === 'sea' ? t('mplan.sea') : PORTS[p]
 
 /** Packing for this ship (S3-06): what is not allowed, the outlets, and which evenings are elegant. */
 export function ShipPackingScreen() {
-  const nights = 7
+  const nights = useItinerary().length - 1
   return (
     <Page intro="shipPack.intro">
       <Card labelledBy="sp-no"><h2 id="sp-no" className="card__title">{th('shipPack.no')}</h2><ul>{PROHIBITED.map((k) => <li key={k}>{t(`shipPack.no.${k}` as StringKey)}</li>)}</ul></Card>

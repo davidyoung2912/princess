@@ -18,6 +18,8 @@ import { Chip } from '../Chip'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError } from '../account/parts'
 import { Saved } from './common'
+import { dayNumbers } from '../../domain/nightsRules'
+import { useItinerary } from '../../hooks/useShipCatalogue'
 import { MyTickets, SeatControl, type SeatsInfo } from './Tickets'
 import { useAsync } from '../../hooks/useAsync'
 import { useShipTime } from './shipTime'
@@ -26,6 +28,7 @@ import { useShipTime } from './shipTime'
 export function Planner({ today }: { today: OnboardToday }) {
   const me = usePersona()
   const [day, setDay] = useState(today.day ?? 1)
+  const dayCount = useItinerary().length
   const [filter, setFilter] = useState<EventFilter>(NO_EVENT_FILTER)
   const [mineOnly, setMineOnly] = useState(false)
   const [sort, setSort] = useState<EventSort>('time')
@@ -36,7 +39,7 @@ export function Planner({ today }: { today: OnboardToday }) {
       <div className="field">
         <label htmlFor="planner-day">{t('onb.planner.day')}</label>
         <select id="planner-day" className="field__input" value={day} onChange={(e) => setDay(Number(e.target.value))}>
-          {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('plan.day', { n })}{n === today.day ? ` (${t('onb.planner.today')})` : ''}</option>)}
+          {dayNumbers(dayCount - 1).map((n) => <option key={n} value={n}>{t('plan.day', { n })}{n === today.day ? ` (${t('onb.planner.today')})` : ''}</option>)}
         </select>
       </div>
       <Saved copy={copy}>

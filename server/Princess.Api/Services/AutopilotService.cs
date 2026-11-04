@@ -27,7 +27,7 @@ public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgram
     /// <summary>One day: the plan for the guest's wishes, what could join it, and the ship's own changes today.</summary>
     public async Task<DayPlanDto> DayAsync(DayPlanRequest? body, CancellationToken ct)
     {
-        if (body is null || body.Day is < 1 or > 8 || !DayPlanRules.Valid(body.Wish)) throw ApiException.Invalid("badDayPlan");
+        if (body is null || body.Day is < 1 or > Itinerary.MaxDay || !DayPlanRules.Valid(body.Wish)) throw ApiException.Invalid("badDayPlan");
         return DayPlanRules.Plan(await DepartureAsync(body.SailingId, "badDayPlan", ct), body.Day, body.Wish!, programChanges.Current());
     }
 
@@ -38,7 +38,7 @@ public sealed class AutopilotService(ICurrentUser me, ITripStore trips, IProgram
     /// </summary>
     public async Task<TrialDayDto> TrialDayAsync(TrialDayRequest? body, CancellationToken ct)
     {
-        if (body is null || body.Day is < 1 or > 8 || !DayPlanRules.Valid(body.Wish)) throw ApiException.Invalid("badDayPlan");
+        if (body is null || body.Day is < 1 or > Itinerary.MaxDay || !DayPlanRules.Valid(body.Wish)) throw ApiException.Invalid("badDayPlan");
         var sailings = (await trips.ListSailingsAsync(ct)).OrderBy(s => s.Departure).ToList();
         var today = clock.UtcNow;
         var sailing = sailings.FirstOrDefault(s => s.Departure >= today.Date) ?? sailings.LastOrDefault() ?? throw ApiException.Invalid("badDayPlan");

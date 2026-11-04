@@ -194,7 +194,7 @@ export type NightAuto = 'option' | 'customs' | 'tags'
 
 export interface NightItem {
   id: string
-  /** 7 for the last evening, 8 for the last morning. */
+  /** 7 for the last evening, 8 for the last morning: on any sailing these are the last evening and last morning (see `the last two days of the itinerary`). */
   day: 7 | 8
   time: string
   auto: NightAuto | null
@@ -227,7 +227,7 @@ export interface NightInput { sailing: Sailing; now: number; option: WalkOffId |
 export function nightEntries(i: NightInput): NightEntry[] {
   const days = itinerary(i.sailing)
   return NIGHT_ITEMS.filter((item) => !item.taggedOnly || i.option === null || i.option === 'tagged').map((item) => {
-    const date = days[item.day - 1].date
+    const date = days[(item.day === 8 ? days.length : days.length - 1) - 1].date
     const dueAt = zonedToEpoch(date, item.time, item.day === 8 ? PORT_ZONE : shipZoneOnDate(i.sailing, date))
     const automatic = item.auto === 'option' ? i.option !== null : item.auto === 'customs' ? i.customsDone : item.auto === 'tags' ? i.tagsOn : false
     const done = automatic || i.ticked.includes(item.id)

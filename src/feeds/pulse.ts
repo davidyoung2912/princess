@@ -1,5 +1,6 @@
 import { createFeed, isInt, isRecord } from './feed'
 import { PULSE_STEP_MIN, PULSE_VENUES, type PulseEnv, type PulseId } from '../domain/pulse'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const MIN = 60_000
 const HALF_HOURS = 9
@@ -42,7 +43,7 @@ export interface ServedDay { day: number; startAt: number; levels: ReadonlyMap<s
 
 /** Reads a day of levels: every venue present with 48 whole numbers from 0 to 100. */
 export function normalizePulseDay(raw: unknown): ServedDay | null {
-  if (!isRecord(raw) || !isInt(raw.day, 1, 8) || !Number.isFinite(raw.startAt) || !isRecord(raw.venues)) return null
+  if (!isRecord(raw) || !isInt(raw.day, 1, MAX_PLAN_DAY) || !Number.isFinite(raw.startAt) || !isRecord(raw.venues)) return null
   const levels = new Map<string, readonly number[]>()
   for (const v of PULSE_VENUES) {
     const row = raw.venues[v.id]

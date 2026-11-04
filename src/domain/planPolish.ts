@@ -3,6 +3,7 @@ import { cabinPlace, wayBetween } from './deckGraph'
 import { walkMinutes } from './discoverDelights'
 import { VENUES } from './dining'
 import type { PlanEntry } from './plan'
+import { MAX_PLAN_DAY } from './nightsRules'
 
 /**
  * Small delights, phase DL4 (docs/small-delights.md): plan polish. Pure helpers for the rest block, walks between bookings, sunrise and sunset
@@ -54,7 +55,7 @@ export function normalizePolish(raw: unknown): PolishState {
     const o = typeof x === 'number' ? { day: x, part: 'all' } : rec(x)
     const part = REST_PARTS.find((p) => p === o.part)
     const key = `${o.day}`
-    if (!Number.isInteger(o.day) || (o.day as number) < 1 || (o.day as number) > 8 || !part || seen.has(key)) return []
+    if (!Number.isInteger(o.day) || (o.day as number) < 1 || (o.day as number) > MAX_PLAN_DAY || !part || seen.has(key)) return []
     seen.add(key)
     return [{ day: o.day as number, part }]
   }).sort((a, b) => a.day - b.day)

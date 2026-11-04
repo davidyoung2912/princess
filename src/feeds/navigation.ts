@@ -2,6 +2,7 @@ import { COMPASS_POINTS, DEPTH_CLASSES, LANDMARK_KINDS, SIDES, WILDLIFE } from '
 import type { AlongTheWay, CompassPoint, Landmark, SeaConditions, ShipClock, ShipPosition } from '../domain/navigation'
 import type { StopId } from '../domain/navigation'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const PORT_IDS: readonly StopId[] = ['fll', 'cozumel', 'belize', 'roatan']
 const HHMM = /^\d{2}:\d{2}$/
@@ -16,7 +17,7 @@ function normalizeClock(raw: unknown): ShipClock | null {
   const c = raw.nextChange
   let nextChange: ShipClock['nextChange'] = null
   if (c !== null) {
-    if (!isRecord(c) || !num(c.at, 0, 5e12) || !isInt(c.hours, -3, 3) || !isInt(c.day, 1, 8)) return null
+    if (!isRecord(c) || !num(c.at, 0, 5e12) || !isInt(c.hours, -3, 3) || !isInt(c.day, 1, MAX_PLAN_DAY)) return null
     nextChange = { at: c.at, hours: c.hours, day: c.day }
   }
   if (!hhmm(raw.shipTime) || !hhmm(raw.localTime) || !isInt(raw.shipOffsetMinutes, -840, 840) || !isInt(raw.localOffsetMinutes, -840, 840) || !isInt(raw.differenceMinutes, -1440, 1440)) return null
@@ -33,10 +34,10 @@ export function normalizePosition(raw: unknown): ShipPosition | null {
   const clock = normalizeClock(raw.clock)
   const a = raw.arrival
   if (!clock || !num(raw.now, 0, 5e12) || !num(raw.lat, -90, 90) || !num(raw.lon, -180, 180) || !num(raw.speedKnots, 0, 40) || !isInt(raw.headingDegrees, 0, 359) || !compass(raw.compass)) return null
-  if (raw.day !== null && !isInt(raw.day, 1, 8)) return null
+  if (raw.day !== null && !isInt(raw.day, 1, MAX_PLAN_DAY)) return null
   if ((raw.inPort !== null && !oneOf(raw.inPort, PORT_IDS)) || !oneOf(raw.lastPort, PORT_IDS) || (raw.nextPort !== null && !oneOf(raw.nextPort, PORT_IDS))) return null
   if (!isInt(raw.nmSailed, 0, 5000) || !isInt(raw.nmRemaining, 0, 5000) || !isInt(raw.legPercent, 0, 100) || !isInt(raw.voyageNmSailed, 0, 20000) || !isInt(raw.voyageNmTotal, 1, 20000)) return null
-  if (a !== null && (!isRecord(a) || !num(a.at, 0, 5e12) || !hhmm(a.shipTime) || !isInt(a.day, 1, 8))) return null
+  if (a !== null && (!isRecord(a) || !num(a.at, 0, 5e12) || !hhmm(a.shipTime) || !isInt(a.day, 1, MAX_PLAN_DAY))) return null
   return {
     now: raw.now, day: raw.day as number | null, lat: raw.lat, lon: raw.lon, speedKnots: raw.speedKnots, headingDegrees: raw.headingDegrees, compass: raw.compass,
     inPort: raw.inPort as StopId | null, lastPort: raw.lastPort, nextPort: raw.nextPort as StopId | null, nmSailed: raw.nmSailed, nmRemaining: raw.nmRemaining,
@@ -60,7 +61,7 @@ export function normalizeSea(raw: unknown): SeaConditions | null {
 function normalizeLandmark(raw: unknown): Landmark | null {
   if (!isRecord(raw)) return null
   if (!text(raw.id, 40) || !text(raw.name, 80) || !oneOf(raw.kind, LANDMARK_KINDS) || !text(raw.blurb, 400) || !num(raw.lat, -90, 90) || !num(raw.lon, -180, 180)) return null
-  if (!isInt(raw.closestNm, 0, 500) || !oneOf(raw.side, SIDES) || !num(raw.passesAt, 0, 5e12) || !hhmm(raw.shipTime) || !isInt(raw.day, 1, 8) || !isInt(raw.distanceNm, 0, 20000)) return null
+  if (!isInt(raw.closestNm, 0, 500) || !oneOf(raw.side, SIDES) || !num(raw.passesAt, 0, 5e12) || !hhmm(raw.shipTime) || !isInt(raw.day, 1, MAX_PLAN_DAY) || !isInt(raw.distanceNm, 0, 20000)) return null
   return {
     id: raw.id, name: raw.name, kind: raw.kind, blurb: raw.blurb, lat: raw.lat, lon: raw.lon, closestNm: raw.closestNm, side: raw.side,
     passesAt: raw.passesAt, shipTime: raw.shipTime, day: raw.day, distanceNm: raw.distanceNm,

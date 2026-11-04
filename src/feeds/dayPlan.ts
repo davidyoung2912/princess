@@ -1,6 +1,7 @@
 import type { DayWish } from '../domain/day'
 import type { PlanEntry } from '../domain/planChange'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const KINDS = ['tour', 'event', 'dinner'] as const
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -47,7 +48,7 @@ export function normalizeEntries(raw: unknown, max: number): ServedEntry[] | nul
 
 /** Reads the server's day. Anything wrong gives null. */
 export function normalizeDay(raw: unknown): ServedDay | null {
-  if (!isRecord(raw) || !isInt(raw.day, 1, 8) || typeof raw.empty !== 'boolean') return null
+  if (!isRecord(raw) || !isInt(raw.day, 1, MAX_PLAN_DAY) || typeof raw.empty !== 'boolean') return null
   if (raw.backBy !== null && (typeof raw.backBy !== 'string' || !HHMM.test(raw.backBy))) return null
   const items = normalizeEntries(raw.items, 12)
   const alternatives = normalizeEntries(raw.alternatives, 40)

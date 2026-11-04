@@ -34,7 +34,7 @@ public sealed class OnboardService(
         var sail = Itinerary.LocalToUtc(c.Departure, c.Timeline.Days[0].Depart!.Value, c.Timeline.HomeZone);
         var change = c.Timeline.ClockChanges().FirstOrDefault(x => x.At > c.Now && x.At - c.Now < TimeSpan.FromHours(24));
         return new OnboardTodayDto(
-            aboard, day is >= 1 and <= 8 ? day : null, Iso(date), c.Timeline.PortAt(c.Now).Port, zone,
+            aboard, day >= 1 && day <= c.Timeline.Days.Count ? day : null, Iso(date), c.Timeline.PortAt(c.Now).Port, zone,
             aboard ? weather.Today(date, scenarios.Contains("belizeTender")) : null,
             portDay is null ? null : AboardRules.WithState(portDay, c.Now),
             new MusterBriefDto(aboard && !all, all, Ms(AboardRules.DrillAt(c.Departure))),
@@ -53,7 +53,7 @@ public sealed class OnboardService(
     public async Task<ProgramViewDto> ProgramAsync(UserRecord actor, string? number, int day, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
-        if (day is < 1 or > 8) throw ApiException.Invalid("day");
+        if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("day");
         var changes = (await ScenariosAsync(actor, ct)).Contains("planChange");
         var events = ProgramRules.On(c.Timeline, day, changes, programChanges.Current());
         var x = c.Timeline.Days[day - 1];
@@ -162,7 +162,7 @@ public sealed class OnboardService(
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         var day = FolioRules.CruiseDay(c.Timeline, c.Now);
-        var throughDay = day >= 9 ? 8 : Math.Max(0, day);
+        var throughDay = day > c.Timeline.Days.Count ? c.Timeline.Days.Count : Math.Max(0, day);
         var entitlements = await planService.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
         var guests = c.Party.Select(p => new FolioGuest(p.Id, p.First, p.Age, entitlements[p.UserId], suite)).ToList();

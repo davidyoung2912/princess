@@ -178,7 +178,7 @@ public static class ReferenceEndpoints
 
         api.MapGet("/feeds/sightings", (int day, IShipTelemetry ship) =>
             {
-                if (day is < 1 or > 8) throw ApiException.Invalid("badFeedQuery");
+                if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(ship.Sightings(day));
             })
             .WithTags("Reference").WithSummary("Which kinds of wildlife the ship is said to have seen on a cruise day. A simulated feed.");

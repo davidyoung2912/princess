@@ -15,6 +15,7 @@ import { normalizePlanLines, type PlanLine } from '../domain/prepMore'
 import { EMPTY_MEDICAL, normalizeMedical, type MedicalCard } from '../domain/medicalCard'
 import { FIT_QUESTIONS, type FitKey } from '../domain/dream'
 import { CONTACT_NAME_MAX, CONTACT_NOTE_MAX, CONTACTS_MAX, isTopic, NOTE_MAX, REFLECTION_MAX, REFLECTIONS_MAX, type Contact, type Journal, type Reflection } from '../domain/memoryBook'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 /** Everything Phase H6 keeps on this device for one person: the journal, "what I would change", wrapped and anniversary choices, contacts met on board, and what they have decided so far about a trip. */
 /** What the guest remembers using, and what the package cost them (cents). */
@@ -75,7 +76,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
   if (r.journal && typeof r.journal === 'object') {
     for (const [k, v] of Object.entries(r.journal as Record<string, unknown>)) {
       const day = Number(k)
-      if (Number.isInteger(day) && day >= 1 && day <= 8 && typeof v === 'string' && v.trim() !== '') journal[day] = v.slice(0, NOTE_MAX)
+      if (Number.isInteger(day) && day >= 1 && day <= MAX_PLAN_DAY && typeof v === 'string' && v.trim() !== '') journal[day] = v.slice(0, NOTE_MAX)
     }
   }
   const reflections = (Array.isArray(r.reflections) ? r.reflections : []).flatMap((x): Reflection[] => {

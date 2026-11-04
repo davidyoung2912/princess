@@ -76,7 +76,7 @@ public static class ConciergeRules
       {"name":"get_port","description":"A port: whether guests tender ashore, the ship's arrival and all-aboard times, and the shore excursions on offer.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["fll","cozumel","belize","roatan"]}},"required":["port"]}},
       {"name":"search_excursions","description":"Shore excursions, filtered. Prices are per adult in US dollars.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["cozumel","belize","roatan"]},"interests":{"type":"array","items":{"type":"string","enum":["water","nature","culture","relax","adventure"]}},"max_activity":{"type":"string","enum":["easy","moderate","strenuous"]},"max_price_usd":{"type":"number"},"family":{"type":"boolean","description":"Only tours suitable for children."},"wheelchair":{"type":"boolean","description":"Only tours a wheelchair user can join."}}}},
       {"name":"list_restaurants","description":"Dining venues on the ship with cuisine, cover charge and dress code.","input_schema":{"type":"object","properties":{}}},
-      {"name":"build_day","description":"A suggested plan for one day of the cruise (1 to 8): a tour that fits the ship's day, and dinner.","input_schema":{"type":"object","properties":{"day":{"type":"integer","minimum":1,"maximum":8},"tour_interests":{"type":"array","items":{"type":"string","enum":["water","nature","culture","relax","adventure"]}},"mobility":{"type":"string","enum":["any","easy","wheelchair"]},"with_children":{"type":"boolean"}},"required":["day"]}},
+      {"name":"build_day","description":"A suggested plan for one day of the cruise (1 to the last day): a tour that fits the ship's day, and dinner.","input_schema":{"type":"object","properties":{"day":{"type":"integer","minimum":1,"maximum":41},"tour_interests":{"type":"array","items":{"type":"string","enum":["water","nature","culture","relax","adventure"]}},"mobility":{"type":"string","enum":["any","easy","wheelchair"]},"with_children":{"type":"boolean"}},"required":["day"]}},
       {"name":"my_trip","description":"The signed-in guest's own cruise: who is in the party, the departure and stateroom type.","input_schema":{"type":"object","properties":{}}}
     ]
     """;
@@ -161,8 +161,9 @@ public static class ConciergeRules
     /// <summary>One day: on a port day the best-rated tour that fits the ship's day and the guest's wishes, then dinner (none on the last morning).</summary>
     private static ToolOutcome BuildDay(JsonObject input, ConciergeContext ctx)
     {
-        if (ctx.Departure is not { } dep || input["day"] is not JsonValue dv || !dv.TryGetValue<int>(out var n) || n is < 1 or > 8) return Fail("day must be a whole number from 1 to 8.");
+        if (ctx.Departure is not { } dep || input["day"] is not JsonValue dv || !dv.TryGetValue<int>(out var n) || n < 1) return Fail("day must be a whole number from 1.");
         var timeline = TimelineBook.For(ctx.SailingId, dep);
+        if (n > timeline.Days.Count) return Fail($"day must be a whole number from 1 to {timeline.Days.Count}.");
         var day = timeline.Days.First(d => d.Day == n);
         var wanted = Strings(input, "tour_interests", Interests);
         var mobility = Text(input, "mobility") is "easy" or "wheelchair" ? Text(input, "mobility")! : ctx.Mobility;
@@ -180,7 +181,7 @@ public static class ConciergeRules
                 backBy = ExcursionRules.BackBy(tour, day);
             }
         }
-        if (n < 8) items.Add(new { kind = "dinner", title = "Dinner in the Eclipse Dining Room", starts = "18:00", why = "Included with your fare." });
+        if (n < timeline.Days.Count) items.Add(new { kind = "dinner", title = "Dinner in the Eclipse Dining Room", starts = "18:00", why = "Included with your fare." });
         return Ok(new { day = n, items, back_on_ship_by = backBy }, new CitationDto("Build my day", "/plan/day"));
     }
 

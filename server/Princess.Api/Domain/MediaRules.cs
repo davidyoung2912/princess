@@ -48,7 +48,7 @@ public static class MediaRules
         return purpose switch
         {
             "cabin" => clean.Length is > 0 and <= MaxRef && clean.All(char.IsAsciiLetter),
-            "book" => clean == "cover" || (int.TryParse(clean, out var day) && day is >= 1 and <= 8 && clean == day.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            "book" => clean == "cover" || (int.TryParse(clean, out var day) && day is >= 1 and <= Itinerary.MaxDay && clean == day.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             "postcard" => clean.Length == 0,
             _ => false,
         };

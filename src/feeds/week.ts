@@ -5,6 +5,7 @@ import { INTERESTS } from '../domain/excursions'
 import type { PortId } from '../domain/sailings'
 import { normalizeEntries, entriesOf } from './dayPlan'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const PORT_IDS: readonly PortId[] = ['fll', 'sea', 'cozumel', 'belize', 'roatan']
 const KINDS = ['tour', 'event', 'dinner'] as const
@@ -25,7 +26,7 @@ function prefsOf(raw: unknown): WeekPrefs | null {
 
 /** Reads the server's week: eight days, each with its items in time order. Anything wrong gives null. */
 export function normalizeWeek(raw: unknown): Week | null {
-  if (!isRecord(raw) || !Array.isArray(raw.days) || raw.days.length !== 8 || !isInt(raw.totalTours, 0, 99_999_900_00)) return null
+  if (!isRecord(raw) || !Array.isArray(raw.days) || raw.days.length < 2 || raw.days.length > MAX_PLAN_DAY || !isInt(raw.totalTours, 0, 99_999_900_00)) return null
   const prefs = prefsOf(raw.prefs)
   if (!prefs) return null
   const days: WeekDay[] = []

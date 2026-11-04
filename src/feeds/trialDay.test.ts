@@ -15,7 +15,7 @@ describe('a day on this ship for someone not signed in (N6.1)', () => {
   it('ignores an answer in the wrong shape rather than drawing half a page', () => {
     expect(normalizeTrialDay(null)).toBeNull()
     expect(normalizeTrialDay({ days: [], plan })).toBeNull()
-    expect(normalizeTrialDay({ days: [{ day: 9, port: 'sea', place: 'x' }], plan })).toBeNull()
+    expect(normalizeTrialDay({ days: [{ day: 42, port: 'sea', place: 'x' }], plan })).toBeNull()
     expect(normalizeTrialDay({ days: [{ day: 2, port: 'sea', place: '' }], plan })).toBeNull()
     expect(normalizeTrialDay({ days, plan: { day: 3 } })).toBeNull()
   })

@@ -1,6 +1,7 @@
 import { type MoonPhase, type SkyNight, PHASE_NAMES } from '../domain/sky'
 import type { PortId } from '../domain/sailings'
 import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 const PHASES = Object.keys(PHASE_NAMES) as MoonPhase[]
 const PORT_IDS: readonly PortId[] = ['fll', 'sea', 'cozumel', 'belize', 'roatan']
@@ -9,7 +10,7 @@ const HHMM = /^\d{2}:\d{2}$/
 
 /** Reads the server's sun, moon and stars for a day; anything wrong in it gives null so nothing is shown. */
 export function normalizeSkyNight(raw: unknown): SkyNight | null {
-  if (!isRecord(raw) || !isInt(raw.day, 1, 8) || !oneOf(raw.port, PORT_IDS) || !oneOf(raw.sunsetSide, SIDES)) return null
+  if (!isRecord(raw) || !isInt(raw.day, 1, MAX_PLAN_DAY) || !oneOf(raw.port, PORT_IDS) || !oneOf(raw.sunsetSide, SIDES)) return null
   const m = raw.moon
   if (typeof raw.sunrise !== 'string' || !HHMM.test(raw.sunrise) || typeof raw.sunset !== 'string' || !HHMM.test(raw.sunset) || !Number.isFinite(raw.sunsetAt)) return null
   if (!isRecord(m) || !oneOf(m.phase, PHASES) || !isInt(m.lit, 0, 100)) return null

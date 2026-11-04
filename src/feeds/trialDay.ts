@@ -1,5 +1,6 @@
 import { normalizeDay, type ServedDay } from './dayPlan'
 import { createFeed, isInt, isRecord } from './feed'
+import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
 /** One day the visitor can pick: its number, the port id (`sea` for a day at sea) and the place's name as the server writes it. */
 export interface TrialChoice { day: number; port: string; place: string }
@@ -9,10 +10,10 @@ export interface TrialDay { days: TrialChoice[]; plan: ServedDay }
 
 /** Reads the server's answer. Anything wrong gives null. */
 export function normalizeTrialDay(raw: unknown): TrialDay | null {
-  if (!isRecord(raw) || !Array.isArray(raw.days) || raw.days.length < 1 || raw.days.length > 8) return null
+  if (!isRecord(raw) || !Array.isArray(raw.days) || raw.days.length < 1 || raw.days.length > MAX_PLAN_DAY) return null
   const days: TrialChoice[] = []
   for (const d of raw.days) {
-    if (!isRecord(d) || !isInt(d.day, 1, 8) || typeof d.port !== 'string' || d.port.length === 0 || d.port.length > 20 || typeof d.place !== 'string' || d.place.length === 0 || d.place.length > 80) return null
+    if (!isRecord(d) || !isInt(d.day, 1, MAX_PLAN_DAY) || typeof d.port !== 'string' || d.port.length === 0 || d.port.length > 20 || typeof d.place !== 'string' || d.place.length === 0 || d.place.length > 80) return null
     days.push({ day: d.day, port: d.port, place: d.place })
   }
   const plan = normalizeDay(raw.plan)

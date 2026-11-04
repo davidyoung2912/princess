@@ -4,6 +4,7 @@ import type { ClubId } from './family'
 import { inQuietHours, type Category } from './notifications'
 import { SAILINGS } from './sailings'
 import { CATEGORIES } from './ship'
+import { MAX_PLAN_DAY } from './nightsRules'
 
 /**
  * H8 slice C: on board (S6-08, S6-09, S6-10, S6-13 to S6-21, S6-25). Pure. Everything is single-device and simulated where it says so;
@@ -178,6 +179,6 @@ export function normalizeAboard(raw: unknown): AboardState {
     },
     steps,
     lost: arr(r.lost).flatMap((x): LostReport[] => { const o = rec(x); return typeof o.id === 'string' && clean(o.what, 80) ? [{ id: o.id, what: clean(o.what, 80), where: clean(o.where, 80), at: typeof o.at === 'number' ? o.at : 0 }] : [] }).slice(0, LOST_MAX),
-    sightings: arr(r.sightings).flatMap((x): Sighting[] => { const o = rec(x); const day = num(o.day, 1, 8); return typeof o.id === 'string' && (SPECIES as readonly unknown[]).includes(o.species) && day !== null ? [{ id: o.id, species: o.species as string, day }] : [] }).slice(0, SIGHTINGS_MAX),
+    sightings: arr(r.sightings).flatMap((x): Sighting[] => { const o = rec(x); const day = num(o.day, 1, MAX_PLAN_DAY); return typeof o.id === 'string' && (SPECIES as readonly unknown[]).includes(o.species) && day !== null ? [{ id: o.id, species: o.species as string, day }] : [] }).slice(0, SIGHTINGS_MAX),
   }
 }

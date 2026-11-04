@@ -141,7 +141,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     public async Task<List<ShowSeatsDto>> SeatsAsync(UserRecord actor, string? number, int day, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, false, ct);
-        if (day is < 1 or > 8) throw ApiException.Invalid("day");
+        if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("day");
         var list = new List<ShowSeatsDto>();
         foreach (var e in ShowRules.On(c.Timeline, day))
             list.Add(new ShowSeatsDto(e.Id, ShowRules.SeatsLeft(e.Id, day, await store.CountSeatsAsync(c.Booking.SailingId, e.Id, day, ct))));
@@ -167,7 +167,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     {
         var c = await scopes.LoadAsync(actor, number, true, ct);
         RequireShowsOpen(c);
-        if (body is null || !ShowRules.Exists(body.EventId) || body.Day is < 1 or > 8) throw ApiException.Invalid("show");
+        if (body is null || !ShowRules.Exists(body.EventId) || body.Day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("show");
         var who = c.GuestsIn(body.Guests);
         var e = ShowRules.Find(c.Timeline, body.EventId!, body.Day) ?? throw ApiException.Invalid("day");
         var mine = (await store.ListTicketsAsync(c.Booking.BookingId, ct)).Where(t => t.EventId == e.Id && t.Day == body.Day).ToList();

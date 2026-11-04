@@ -16,6 +16,8 @@ import { BackLink } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { FeedWaiting } from '../FeedWaiting'
 import { REFUSED } from './refused'
+import { dayNumbers } from '../../domain/nightsRules'
+import { useItinerary } from '../../hooks/useShipCatalogue'
 import { SlotWatch } from './SlotWatch'
 import { WeekPlanner } from './WeekPlanner'
 
@@ -31,6 +33,7 @@ function describe(edit: Edit, rows: readonly PlanRow[]): string {
 
 /** Autopilot day (S6-02, S6-03, S4-01, S4-02): the day plan proposes changes when something moves; nothing changes until the guest accepts, and an accepted change can be undone. */
 export function AutopilotScreen() {
+  const dayCount = useItinerary().length
   const { state, update } = usePilot()
   const now = useNow()
   const time = useShipTime()
@@ -81,7 +84,7 @@ export function AutopilotScreen() {
         <h2 id="ap-day" className="card__title">{th('autopilot.day')}</h2>
         <label htmlFor="ap-pick">{t('autopilot.pick')}</label>
         <select id="ap-pick" className="field__input" value={day} onChange={(e) => { setDay(Number(e.target.value)); setMessage(null) }}>
-          {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('autopilot.dayOption', { n })}{n === today ? ` · ${t('autopilot.today')}` : ''}</option>)}
+          {dayNumbers(dayCount - 1).map((n) => <option key={n} value={n}>{t('autopilot.dayOption', { n })}{n === today ? ` · ${t('autopilot.today')}` : ''}</option>)}
         </select>
         {dp.weather ? <p className="muted">{t('autopilot.sky', { uv: dp.weather.uv, f: dp.weather.tempF, c: Math.round(((dp.weather.tempF - 32) * 5) / 9) })}{dp.weather.rainFrom ? ` ${t('autopilot.rain', { from: dp.weather.rainFrom, to: dp.weather.rainTo ?? '' })}` : ''} {t('autopilot.simulated')}</p> : <FeedWaiting />}
         <ul className="plain-list">

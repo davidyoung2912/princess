@@ -16,7 +16,7 @@ describe('memory store', () => {
   })
   it('drops what is malformed', () => {
     const m = normalizeMemory({
-      journal: { 0: 'x', 9: 'x', 3: '  ', 4: 'ok', z: 'x' },
+      journal: { 0: 'x', 42: 'x', 3: '  ', 4: 'ok', z: 'x' },
       reflections: [{ id: 'a', topic: 'cabin', text: 'ok', shared: true }, { id: 'b', topic: 'zzz', text: 'x' }, { id: 'c', topic: 'port', text: ' ' }],
       contacts: [{ id: 'a', name: 'Sam', consent: true, reply: 'accepted' }, { id: 'b', name: 'No consent', consent: false }, { id: 'c', name: '', consent: true }],
       drinks: -4, budget: 'lots', fit: ['tenders', 'bogus'], use: { drinks: 99999 },

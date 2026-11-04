@@ -113,7 +113,7 @@ describe('ship pulse feed', () => {
     expect(dayLevel(null, 'lido', NOW)).toBeUndefined()
     expect(withServed(envFor(sailing, () => undefined), null, day).served('lido', NOW + 30 * 60_000)).toBe(1)
     expect(normalizePulseDay({ day: 3, startAt: NOW, venues: { ...venues, lido: [1] } })).toBeNull()
-    expect(normalizePulseDay({ day: 9, startAt: NOW, venues })).toBeNull()
+    expect(normalizePulseDay({ day: 42, startAt: NOW, venues })).toBeNull()
     expect(normalizePulseDay(null)).toBeNull()
   })
   it('reads whole minutes so one answer covers the minute', async () => {

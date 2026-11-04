@@ -19,7 +19,7 @@ describe('pilot store', () => {
 
   it('drops changes that are malformed rather than trusting them', () => {
     expect(normalizeChanges('x')).toEqual([])
-    expect(normalizeChanges([change, { ...change, status: 'weird' }, { ...change, source: 'someone' }, { ...change, day: 9 }, { ...change, edits: [{ op: 'move', id: 'a', to: '25:00' }] }, { ...change, edits: [{ op: 'nope' }] }, null])).toHaveLength(1)
+    expect(normalizeChanges([change, { ...change, status: 'weird' }, { ...change, source: 'someone' }, { ...change, day: 42 }, { ...change, edits: [{ op: 'move', id: 'a', to: '25:00' }] }, { ...change, edits: [{ op: 'nope' }] }, null])).toHaveLength(1)
     expect(normalizeChanges([{ ...change, edits: [{ op: 'add', entry: { id: 'x', title: 'X', start: '10:00', minutes: 30, kind: 'added', path: 'http://evil' } }] }])[0].edits[0]).toMatchObject({ op: 'add', entry: { path: '/plan', outdoor: false } })
   })
 
