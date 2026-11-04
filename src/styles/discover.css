@@ -87,3 +87,12 @@ textarea.field__input { resize: vertical; }
 .day-strip__day--sea { border-style: dashed; }
 .day-strip__day--tender { border-width: 3px; }
 .day-strip__num { font-weight: 700; }
+
+.reel { text-align: center; }
+.reel__slide { min-height: 9rem; display: flex; flex-direction: column; justify-content: center; }
+.reel__kicker { margin: 0; font-weight: 600; }
+.reel__big { font-family: var(--font-display); font-size: var(--fs-headline); font-weight: 700; margin: 0; overflow-wrap: anywhere; color: var(--sec); }
+@media (prefers-reduced-motion: no-preference) {
+  .reel__slide { animation: reel-in 400ms ease-out; }
+  @keyframes reel-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
+}

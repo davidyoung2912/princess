@@ -3,6 +3,7 @@ import { formatMoney, type Cents } from './money'
 import type { Recap } from './recap'
 import { itinerary, PORTS, type Sailing } from './sailings'
 import { formatDate } from './cruise'
+import type { TripEntry } from './tripDiary'
 
 /**
  * The memory loop, part one (S8-01, S8-04, S8-07, S8-08): "wrapped" cards, what a package was really worth, "this day last year", and an expense export.
@@ -15,12 +16,19 @@ export interface WrappedOptions {
   drinks: number | null
 }
 
+/** What the trip itself recorded (X7e): the steps the guest noted, sightings logged, and the Trip Diary. All of it is the guest's own and stays on their devices. */
+export interface WrappedExtras {
+  steps: Readonly<Record<string, number>>
+  sightings: number
+  diary: readonly TripEntry[]
+}
+
 export const DEFAULT_WRAPPED: WrappedOptions = { drinks: null }
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
 
 /** A few quiet cards from the recap. A card with nothing to say is left out rather than shown as zero. */
-export function buildWrapped(r: Recap, opt: WrappedOptions = DEFAULT_WRAPPED): WrappedCard[] {
+export function buildWrapped(r: Recap, opt: WrappedOptions = DEFAULT_WRAPPED, extras?: WrappedExtras): WrappedCard[] {
   const cards: WrappedCard[] = [
     { id: 'miles', title: 'Distance', big: r.nauticalMiles.toLocaleString('en-US'), line: `nautical miles, ${plural(r.nights, 'night', 'nights')} from ${r.dates}.` },
     { id: 'ports', title: 'Ports', big: String(Math.max(0, r.ports.length - 1)), line: `new ports: ${r.ports.slice(1, -1).join(', ') || 'none'}, and ${plural(r.seaDays, 'day', 'days')} at sea.` },
@@ -28,8 +36,31 @@ export function buildWrapped(r: Recap, opt: WrappedOptions = DEFAULT_WRAPPED): W
   if (r.tourNames.length) cards.push({ id: 'tours', title: 'Ashore', big: String(r.tourNames.length), line: r.tourNames.join(', ') })
   if (r.favouriteMeal) cards.push({ id: 'meal', title: 'Favourite table', big: r.favouriteMeal.name, line: r.favouriteMeal.times > 1 ? `${r.favouriteMeal.times} dinners there.` : 'One dinner, and it stuck.' })
   if (r.photos) cards.push({ id: 'photos', title: 'Photos', big: String(r.photos), line: 'to remember it by.' })
+  if (extras) cards.push(...extraCards(extras))
   if (opt.drinks !== null && opt.drinks > 0) cards.push({ id: 'drinks', title: 'Drinks', big: String(opt.drinks), line: 'in total. You chose to show this card.' })
   return cards
+}
+
+/** Cards from the trip's own record. Each is left out when there is nothing to say; none carries the guest's own words, so they are safe to share. */
+export function extraCards(x: WrappedExtras): WrappedCard[] {
+  const out: WrappedCard[] = []
+  const days = Object.entries(x.steps).map(([d, n]) => ({ day: Number(d), n })).filter((e) => e.n > 0)
+  const total = days.reduce((a, e) => a + e.n, 0)
+  if (total > 0) {
+    const best = days.reduce((a, e) => (e.n > a.n ? e : a))
+    out.push({ id: 'steps', title: 'Steps', big: total.toLocaleString('en-US'), line: `steps walked. Your best day was day ${best.day}, with ${best.n.toLocaleString('en-US')}.` })
+  }
+  if (x.sightings > 0) out.push({ id: 'sightings', title: 'Spotted', big: String(x.sightings), line: x.sightings === 1 ? 'wild sighting logged from the deck.' : 'wild sightings logged from the deck.' })
+  const own = x.diary.filter((e) => !e.auto)
+  const loved = new Set(own.filter((e) => e.mood === 'great').map((e) => e.day).filter((d) => d > 0)).size
+  if (own.length > 0) out.push({ id: 'diary', title: 'Your diary', big: String(own.length), line: loved > 0 ? `lines in your own words, and ${plural(loved, 'day', 'days')} you loved.` : 'lines in your own words.' })
+  return out
+}
+
+/** The guest's own best line: the latest one marked "Loved it", or null. Only for showing in the app; it is the guest's words, so it is never put in a card or a share. */
+export function bestMoment(diary: readonly TripEntry[]): TripEntry | null {
+  const loved = diary.filter((e) => !e.auto && e.mood === 'great').sort((a, b) => b.at - a.at)
+  return loved[0] ?? null
 }
 
 /** Text for one card that is safe to share: no names, no cabin, no booking number. */

@@ -4,6 +4,9 @@ import { parseMoney } from '../../domain/money'
 import { formatMoney } from '../../domain/money'
 import { ADD_ONS } from '../../domain/packages'
 import { formatDate } from '../../domain/cruise'
+import { buildReel } from '../../domain/highlightReel'
+import { entriesFor } from '../../domain/tripDiary'
+import { HighlightReel } from '../delights/HighlightReel'
 import { anniversaryOn, buildWrapped, cardText, expenseCsv, packageHindsight, type ExpenseRow } from '../../domain/wrapped'
 import { api } from '../../runtime'
 import { useNow, useSailing } from '../../hooks/useDemo'
@@ -75,9 +78,11 @@ export function WrappedScreen() {
 
       <Load state={recap}>
         {(r) => {
-          const cards = buildWrapped(r, { drinks: state.drinks })
+          const diary = entriesFor(state.diary, sailing.id)
+          const cards = buildWrapped(r, { drinks: state.drinks }, { steps: state.aboard.steps, sightings: state.aboard.sightings.length, diary })
           return (
             <>
+              <HighlightReel slides={buildReel(sailing, r, cards, diary)} />
               {cards.map((c) => (
                 <Card key={c.id} labelledBy={`w-${c.id}`}>
                   <div className="wrapped-card">
