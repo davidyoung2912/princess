@@ -6,7 +6,7 @@ import type { DisembarkView } from '../../api/finishTypes'
 import { MAX_BAGS, MAX_CARRY_BAGS, WALKOFF_IDS, type WalkOffId } from '../../domain/disembark'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -19,15 +19,21 @@ import { useShipTime } from '../onboard/shipTime'
 
 import { CreditNote, EmptyCabinPhoto, FinalDayStrip, LastLook, TripNumbersCard } from '../delights/PortDelights'
 import { personFirstName } from '../../account/context'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { useClockMoment } from '../../hooks/useClockMoments'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** Getting off the ship (DEB-01, DEB-02, DEB-08): the morning in order, the choice of how to leave, luggage tags. Opens with no signal from the copy on the phone. */
 export function DisembarkScreen() {
   const me = usePersona()
+  const offShip = useClockMoment('offShip')
+  const sailing = useSailing()
   const copy = useSavedCopy('disembark', me?.booker ?? 'none', () => api.disembark.view(), asDisembarkView, [me?.id])
   return (
     <div className="page">
+      {offShip && <StanleyMoment id="offShip" subject={sailing.id} />}
       <AccessAreaNote area="disembark" />
-      <p>{t('dis.intro')}</p>
+      <p>{t('dis.intro')}<StanleyExplain term="disembarkation" /></p>
       {me?.child && <SupervisedNote booker={personFirstName(me.booker)} />}
       <Saved copy={copy}>{(v) => <Disembark v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/" label={t('route.home')} />

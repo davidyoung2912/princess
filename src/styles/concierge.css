@@ -88,6 +88,8 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-next__face { width: 2.25rem; height: 2.25rem; border-radius: 50%; flex: none; }
 .explain-btn { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; margin-block: calc(var(--target-min) / -4); color: var(--link, var(--primary)); background: none; border: 0; border-radius: 50%; cursor: pointer; vertical-align: middle; }
 .explain-btn:hover { background: var(--sky-tint); }
+.explain-btn--text { border-radius: var(--radius, 8px); padding-inline: var(--space-2); gap: var(--space-1); font: inherit; text-decoration: underline; }
+.explain-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-2); }
 
 /* Moments and Coach (SG4). The stamp lands with a short drop; motion stops under reduced motion and in calm mode. */
 .stanley-moment { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4); margin-bottom: var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); border: 2px dashed var(--primary); }
@@ -97,6 +99,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-moment__title, .stanley-coach__title { margin: 0 0 var(--space-1); font-size: var(--fs-body); }
 .stanley-moment__text p, .stanley-coach__text p { margin: 0 0 var(--space-2); }
 .stanley-moment__actions, .stanley-coach__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.stanley-moment__added { align-self: center; }
 .stanley-coach { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); border-inline-start: 4px solid var(--primary); }
 .stanley-coach__text { flex: 1; min-width: 0; }
 @keyframes stanley-stamp { from { transform: rotate(-8deg) scale(1.8); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }

@@ -16,6 +16,7 @@ import { ChoiceError } from './ChoiceError'
 import { StepSection, type StepProps } from './common'
 import { CancellationTable } from './Policy'
 import { PerksPanel } from './PerksPanel'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** Step 6: everything in one place before paying (BOK-05, BOK-08, BOK-19): choices with a way to change each, the full price, the payment plan, the cancellation terms, and the documents to accept. */
 export function ReviewStep({ draft, update, error }: StepProps) {
@@ -51,7 +52,7 @@ export function ReviewStep({ draft, update, error }: StepProps) {
               <PriceBreakdown quote={quote.data.quote} />
               <Card info>
                 <p>{t('book.review.lock', { time: formatDateTime(quote.data.lockedUntil) })}</p>
-                {quote.data.promotions.map((p) => <p key={p.id}><strong>{t('book.review.credit', { amount: formatMoney(p.creditCents) })}</strong> {t('book.review.creditBody')}</p>)}
+                {quote.data.promotions.map((p) => <p key={p.id}><strong>{t('book.review.credit', { amount: formatMoney(p.creditCents) })}</strong> {t('book.review.creditBody')}<StanleyExplain term="onboardCredit" /></p>)}
                 {quote.data.total !== quote.data.quote.total && <p><strong>{t('book.review.youPay', { total: formatMoney(quote.data.total) })}</strong></p>}
                 <p>
                   {quote.data.pay.options.includes('deposit')

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { en } from '../i18n/locales/en'
 import { SCREEN_BY_ID } from '../routes/screens'
-import { COACH_SCREENS, COACH_STEPS, MOMENTS, coachAutoShows, coachCanReplay, hasCoach, momentKey, momentsShow } from './stanleyMoments'
+import { COACH_SCREENS, COACH_STEPS, MOMENTS, coachAutoShows, coachCanReplay, hasCoach, momentDiaryKey, momentKey, momentsShow } from './stanleyMoments'
+import { ROUTES } from '../routes/routes'
 
 describe('Stanley moments', () => {
   it('has a title, a line and a way on for each, with exclamation marks only in titles', () => {
@@ -10,6 +11,23 @@ describe('Stanley moments', () => {
       expect(en[`stanley.moment.${m.id}.line` as keyof typeof en], m.id).not.toMatch(/!/)
       expect((en[`stanley.moment.${m.id}.line` as keyof typeof en] as string).length).toBeLessThanOrEqual(160)
     }
+  })
+
+  it('covers every journey moment, each with a real way on and a diary line', () => {
+    expect(MOMENTS.map((m) => m.id)).toEqual(['booked', 'docsReady', 'checkedIn', 'passReady', 'medallion', 'muster', 'sailAway', 'port', 'lastNight', 'offShip', 'home'])
+    const paths = new Set([...ROUTES.map((r) => r.path), '/home'])
+    for (const m of MOMENTS) {
+      expect(paths.has(m.to), `${m.id} -> ${m.to}`).toBe(true)
+      expect(m.diary.key.length, m.id).toBeLessThanOrEqual(40)
+    }
+    for (const k of ['medallion', 'muster', 'portStamp']) expect(`diary.auto.${k}` in en, k).toBe(true)
+  })
+
+  it('writes a port stamp for each day but every other moment once', () => {
+    expect(momentDiaryKey('port', '3')).toBe('moment:port:3')
+    expect(momentDiaryKey('port', '4')).not.toBe(momentDiaryKey('port', '3'))
+    expect(momentDiaryKey('sailAway', 'x')).toBe('moment:sail')
+    expect(momentDiaryKey('docsReady', 'x')).toBe('moment:docs')
   })
 
   it('shows at Helpful and Chatty only', () => {

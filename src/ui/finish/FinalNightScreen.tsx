@@ -4,7 +4,7 @@ import type { NightView } from '../../api/finishTypes'
 import { nextNightItem, type NightEntry } from '../../domain/disembark'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -13,13 +13,18 @@ import { ExtraError } from '../extras/common'
 import { BackLink, Saved } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
 import { ChargeCard } from '../delights/Delights'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { useClockMoment } from '../../hooks/useClockMoments'
 
 /** The final-night checklist (DEB-07): what to do before the bags go out and before morning, with the time each is due. */
 export function FinalNightScreen() {
   const me = usePersona()
+  const lastNight = useClockMoment('lastNight')
+  const sailing = useSailing()
   const copy = useSavedCopy('night', me?.booker ?? 'none', () => api.disembark.night(), asNightView, [me?.id])
   return (
     <div className="page">
+      {lastNight && <StanleyMoment id="lastNight" subject={sailing.id} />}
       <p>{t('night.intro')}</p>
       <Saved copy={copy}>{(v) => <Night v={v} reload={copy.retry} />}</Saved>
       <BackLink to="/home/disembark" label={t('route.disembark')} />

@@ -22,6 +22,7 @@ import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { Back, GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** Restaurant reservations before sailing, with the loyalty window explained (PRE-03, DIN-12). */
 export function DiningScreen() {
@@ -50,7 +51,7 @@ function Body({ view, reload }: { view: DiningView; reload: () => void }) {
       )}
       <Card labelledBy="main-h">
         <h2 id="main-h" className="card__title">{th('dine.main')}</h2>
-        {view.seating ? <p>{t('dine.fixed', { time: formatTime(SEATINGS[view.plan as 'early' | 'late']) })}</p> : <p>{t('dine.anytime')}</p>}
+        {view.seating ? <p>{t('dine.fixed', { time: formatTime(SEATINGS[view.plan as 'early' | 'late']) })}</p> : <p>{t('dine.anytime')}<StanleyExplain term="anytimeDining" /></p>}
       </Card>
 
       <section aria-labelledby="res-h">
@@ -153,6 +154,7 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
           ) : <p role="status" className="muted">{t('account.loading')}</p>}
         </fieldset>
 
+        {venue.kind === 'specialty' && <p className="explain-row"><StanleyExplain term="specialty" labelled /></p>}
         {venue.kind === 'specialty' && guests.length > 0 && (
           <p aria-live="polite">{cost.pays === 0 ? t('dine.costCovered', { count: guests.length }) : cost.covered > 0 ? t('dine.costSome', { covered: cost.covered, amount: formatMoney(cost.charge) }) : t('dine.costAll', { amount: formatMoney(cost.charge) })}</p>
         )}

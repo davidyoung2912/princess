@@ -84,11 +84,12 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
             {d.port === 'sea' ? d.place : <Link to={`/home/ports/${d.port}`}>{d.place}</Link>}
           </p>
           {d.port === 'sea' ? (
-            <p className="muted"><Waves aria-hidden="true" /> {t('discover.seaDay')}</p>
+            <p className="muted"><Waves aria-hidden="true" /> {t('discover.seaDay')}<StanleyExplain term="seaDay" /></p>
           ) : (
             <>
               <p className="muted">
                 {[d.arrive && t('discover.arrive', { time: formatTime(d.arrive) }), d.allAboard && t('discover.allAboard', { time: formatTime(d.allAboard) }), d.depart && t('discover.depart', { time: formatTime(d.depart) })].filter(Boolean).join(' · ')}
+                {d.allAboard && <StanleyExplain term="allAboard" />}
               </p>
               {d.day !== 1 && d.day !== list.length && (
                 <p><span className={`tag${d.tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {d.tender ? t('discover.tender') : t('discover.dock')}</span>{d.tender && <StanleyExplain term="tender" />}</p>
@@ -145,6 +146,7 @@ export function PriceBreakdown({ quote }: { quote: Quote }) {
           <tr key={l.key}>
             <th scope="row">
               {t(`discover.line.${l.key}` as StringKey, { count: l.guests })}
+              {l.key === 'fare' && <StanleyExplain term="fare" />}
               {l.key === 'gratuities' && <><StanleyExplain term="gratuities" /><small className="muted">{t('discover.line.gratuitiesNote')}</small></>}
               {l.key === 'taxes' && <><StanleyExplain term="taxes" /><small className="muted">{t('discover.line.taxesNote')}</small></>}
             </th>

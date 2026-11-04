@@ -6,11 +6,11 @@ import { useStanleyMode } from '../../hooks/useStanleyMode'
 import { t, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { stanleyLevelFor } from '../../settings/settings'
+import { BUZZ, buzz } from '../../settings/haptics'
 import { timeIn } from '../../domain/timezones'
 import { Button, LinkButton } from '../Button'
 import { BackLink } from '../onboard/common'
 
-const reducedMotion = (): boolean => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 /**
  * Stanley leads the day (N-G1, N-E1, N-O1, N-L1): one big next step, the time, a way to the right screen and a "Done" button, with the rest of the day as a thin strip
@@ -30,7 +30,7 @@ export function StanleyModeScreen() {
   const onTick = (s: ModeStep) => {
     tick(s.id)
     // A small buzz on the very last step, only where the guest has not asked for calm or less motion (Android only; iOS Safari has no vibrate).
-    if (view.later.length === 0 && !settings.calm && !settings.reduceMotion && !reducedMotion() && typeof navigator.vibrate === 'function') navigator.vibrate(60)
+    if (view.later.length === 0) buzz(settings, BUZZ.last)
   }
   return (
     <div className="page stanley-mode">

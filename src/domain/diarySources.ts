@@ -69,24 +69,35 @@ const hhmm = (v: string | undefined, fallback: [number, number]): [number, numbe
   return m ? [Number(m[1]), Number(m[2])] : fallback
 }
 
+/** When the moments that come with the clock happen on this sailing: the ship leaves the dock, the last evening, leaving the ship, and home. Null when the itinerary is too short. */
+export function clockMomentTimes(days: readonly ItineraryDay[]): { sail: number; lastNight: number | null; off: number; home: number } | null {
+  const first = days[0]
+  const last = days[days.length - 1]
+  if (!first || !last) return null
+  const [h, m] = hhmm(first.depart, [17, 0])
+  const eve = days.length >= 3 ? days[days.length - 2] : undefined
+  return { sail: dayStart(first, h, m), lastNight: eve ? dayStart(eve, 18) : null, off: dayStart(last, 8), home: dayStart(last, 18) }
+}
+
 /**
  * The moments (docs/experience-extension-ideas.md 4.3) that write a line: documents ready, sail-away, the last night, leaving the ship and home.
- * Documents come from what the guest holds; the rest come with the itinerary and the clock. Muster and the medallion are not recorded anywhere, so they write nothing.
+ * Documents come from what the guest holds; the rest come with the itinerary and the clock. Muster, the medallion and each port stamp are not recorded anywhere,
+ * so they write a line only when the guest presses "Add to my diary" on the moment.
  */
 function momentLines(s: DiarySources): DiaryLineSpec[] {
   const out: DiaryLineSpec[] = []
   const first = s.days[0]
   const last = s.days[s.days.length - 1]
-  if (!first || !last) return out
+  const times = clockMomentTimes(s.days)
+  if (!first || !last || !times) return out
   const add = (day: number, at: number, id: string, text: string): void => { if (s.now >= at) out.push({ day, at, kind: 'moment', key: `moment:${id}`, text }) }
   // Documents are an event with no date of its own: the line is written the first time the diary sees them all ready, and it sits before the ship.
   if (s.docsReady && s.today === 0) out.push({ day: 0, at: s.now, kind: 'docs', key: 'moment:docs', text: t('diary.auto.docs') })
   if (s.docsReady && s.today > 0) out.push({ day: 0, at: (Date.parse(`${first.date}T00:00:00Z`) || 0) - 1, kind: 'docs', key: 'moment:docs', text: t('diary.auto.docs') })
-  const [h, m] = hhmm(first.depart, [17, 0])
-  add(first.day, dayStart(first, h, m), 'sail', t('diary.auto.sail'))
+  add(first.day, times.sail, 'sail', t('diary.auto.sail'))
   const eve = s.days.length >= 3 ? s.days[s.days.length - 2] : undefined
-  if (eve) add(eve.day, dayStart(eve, 18), 'lastNight', t('diary.auto.lastNight'))
-  add(last.day, dayStart(last, 8), 'off', t('diary.auto.off'))
-  add(last.day, dayStart(last, 18), 'home', t('diary.auto.home'))
+  if (eve && times.lastNight !== null) add(eve.day, times.lastNight, 'lastNight', t('diary.auto.lastNight'))
+  add(last.day, times.off, 'off', t('diary.auto.off'))
+  add(last.day, times.home, 'home', t('diary.auto.home'))
   return out
 }

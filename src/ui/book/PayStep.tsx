@@ -14,6 +14,7 @@ import { Button } from '../Button'
 import { PriceState } from '../discover/parts'
 import { StepSection } from './common'
 import { PayPanel } from './PayPanel'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** Why a booking was refused when the answer is not about the payment itself. */
 export function BookingConflict({ message, onRefresh }: { message: string; onRefresh: () => void }) {
@@ -52,6 +53,7 @@ export function PayStep({ draft, onBooked }: { draft: Draft; onBooked: (booking:
                   <input type="radio" name="pay-option" checked={option === 'full'} onChange={() => setChoice('full')} />
                   <span>{t('book.pay.full', { amount: formatMoney(plan.total) })}<small>{t('book.pay.fullBody')}</small></span>
                 </label>
+                <p className="explain-row"><StanleyExplain term="deposit" labelled /><StanleyExplain term="finalPayment" labelled /></p>
               </fieldset>
             ) : <Banner kind="info" title={t('book.pay.fullOnly', { date: formatDate(plan.finalDue) })} />}
             {book.error?.code === 'conflict' && <BookingConflict message={book.error.message} onRefresh={() => { book.clear(); quote.retry() }} />}

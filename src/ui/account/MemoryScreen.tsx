@@ -26,6 +26,8 @@ import { StanleyStoryteller } from '../ai/StanleyStoryteller'
 import { Keepsakes } from '../delights/Exports'
 import { StubsCard } from '../delights/EmbarkDelights'
 import { FavouritesRanked, PostcardWriter, SailedMap, WantNext } from '../delights/RememberDelights'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { useClockMoment } from '../../hooks/useClockMoments'
 
 const stateroomCategory = (stateroom: string | undefined): CategoryId => (!stateroom ? 'balcony' : /suite/i.test(stateroom) ? 'miniSuite' : /balcony/i.test(stateroom) ? 'balcony' : /ocean/i.test(stateroom) ? 'oceanview' : 'interior')
 
@@ -45,6 +47,7 @@ export function MemoryScreen() {
   const now = useNow()
   const { state, me, update } = useMemory()
   const recap = useRecapData()
+  const home = useClockMoment('home')
   const pictures = useMyMedia('book')
   const [topic, setTopic] = useState<Topic>('cabin')
   /** Asks the server how a friend answered; the contact was added with the guest's consent, and nothing changes if no answer comes. */
@@ -86,6 +89,7 @@ export function MemoryScreen() {
 
   return (
     <div className="page">
+      {home && <StanleyMoment id="home" subject={sailing.id} />}
       <p>{t('memory.intro')}</p>
 
       <StubsCard />

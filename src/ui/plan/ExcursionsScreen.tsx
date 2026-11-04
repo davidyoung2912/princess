@@ -24,6 +24,7 @@ import { Load } from '../account/parts'
 import { PayPanel } from '../book/PayPanel'
 import { Back, GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** A port's short name: its guide's, else the catalogue's. */
 const portLabel = (id: string): string => PORT_GUIDES[id]?.short ?? portById(id)?.name ?? id
@@ -34,7 +35,7 @@ export function ExcursionsScreen() {
   const view = useMine(() => api.plan.excursions.list())
   return (
     <div className="page">
-      <p>{t('exc.intro')}</p>
+      <p>{t('exc.intro')}<StanleyExplain term="shoreExcursion" /></p>
       <AccessAreaNote area="excursions" />
       <Load state={view}>{(v) => <Body view={v} reload={view.retry} />}</Load>
       <Back to="/plan" label={t('route.plan')} />

@@ -8,7 +8,7 @@ import { formatDate, formatTime } from '../../domain/cruise'
 import { venueById } from '../../domain/dining'
 import { PORTS } from '../../domain/sailings'
 import { api } from '../../runtime'
-import { useNow, usePersona } from '../../hooks/useDemo'
+import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
@@ -21,6 +21,8 @@ import { DisembarkCard } from '../finish/HomeCards'
 import { HomeBudgetAlert } from './BudgetCard'
 import { UpdatesBanner } from './Updates'
 import { CelebrationDay, DressBadge, FavouritesTonight } from '../delights/SeaDelights'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { useClockMoment } from '../../hooks/useClockMoments'
 
 /** The contextual home on board (OB-01): where the ship is, the all-aboard card, what is on next, tonight's table and the muster drill. Works from the copy saved on the phone. */
 export function OnboardHome({ today }: { today: OnboardToday }) {
@@ -32,8 +34,11 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
   const program = useSavedCopy('program', `${me?.id ?? 'none'}:${day}`, () => api.onboard.program(day), asProgramView, [me?.id, day])
   const dining = useSavedCopy('dining', me?.booker ?? 'none', () => api.plan.dining.view(), asDiningView, [me?.id])
   const place = today.port === 'sea' ? t('onb.atSea') : PORTS[today.port].name
+  const sailing = useSailing()
+  const sailAway = useClockMoment('sailAway')
   return (
     <>
+      {sailAway && today.day === 1 && <StanleyMoment id="sailAway" subject={sailing.id} />}
       <Card hero labelledBy="now-h">
         <h2 id="now-h" className="card__title">{th('onb.today', { day: today.day ?? 0, date: formatDate(today.date) })}</h2>
         <p className="onb__place"><strong>{place}</strong></p>

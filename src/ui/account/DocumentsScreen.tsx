@@ -11,6 +11,7 @@ import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { ActionError, Load } from './parts'
 import { PapersCheck } from './PapersCheck'
+import { StanleyMoment } from '../ai/StanleyMoment'
 
 /** The documents wallet and entry-requirements engine (MNG-05, MNG-11): what each guest needs, what they hold, and what is wrong. */
 export function DocumentsScreen() {
@@ -24,6 +25,7 @@ export function DocumentsScreen() {
       <Load state={docs}>
         {(d) => (
           <>
+            {d.guests.length > 0 && d.guests.every((g) => g.blocking === 0) && <StanleyMoment id="docsReady" subject={d.returnDate} />}
             <p className="muted">{t('docs.returnDate', { date: formatDate(d.returnDate), until: formatDate(passportValidUntil(d.returnDate)) })}</p>
             <ActionError error={set.error} />
             {d.guests.map((g) => (

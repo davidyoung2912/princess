@@ -21,6 +21,8 @@ import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { formatDateTime } from '../account/format'
 import { AheadError, Back, ChildNote } from './common'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** The medallion: where it is, how to switch it on, and what to do if it is lost (CHK-06). */
 export function MedallionScreen() {
@@ -29,11 +31,12 @@ export function MedallionScreen() {
   const lost = useAction(async () => { await api.ahead.medallion.lost(); view.retry() })
   return (
     <div className="page">
-      <p>{t('med.intro')}</p>
+      <p>{t('med.intro')}<StanleyExplain term="medallion" /></p>
       <ChildNote />
       <Load state={view}>
         {(v) => (
           <>
+            {v.activatedAt !== null && v.lostAt === null && <StanleyMoment id="medallion" subject={String(v.activatedAt)} />}
             <Card hero labelledBy="med-h">
               <h2 id="med-h" className="card__title">{th(`med.stage.${v.stage}` as StringKey)}</h2>
               <p>{t(`med.stageBody.${v.stage}` as StringKey)}</p>

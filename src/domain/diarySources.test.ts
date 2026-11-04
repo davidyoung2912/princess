@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EXCURSIONS } from './excursions'
 import { VENUES } from './dining'
-import { sourceLines, type DiarySources } from './diarySources'
+import { clockMomentTimes, sourceLines, type DiarySources } from './diarySources'
 import type { ItineraryDay } from './sailings'
 
 const day = (n: number, port: string): ItineraryDay => ({ day: n, date: `2027-03-0${6 + n}`, port } as ItineraryDay)
@@ -53,5 +53,16 @@ describe('steps and moments', () => {
     const docs = sourceLines({ ...base, today: 0, now: 5, docsReady: true })
     expect(docs).toEqual([expect.objectContaining({ day: 0, kind: 'docs', key: 'moment:docs' })])
     expect(sourceLines({ ...base, docsReady: true }).find((l) => l.key === 'moment:docs')!.day).toBe(0)
+  })
+})
+
+describe('clockMomentTimes', () => {
+  it('orders sail-away, the last night, leaving the ship and home', () => {
+    const times = clockMomentTimes(days)
+    expect(times).not.toBeNull()
+    expect(times!.sail).toBeLessThan(times!.lastNight!)
+    expect(times!.lastNight!).toBeLessThan(times!.off)
+    expect(times!.off).toBeLessThan(times!.home)
+    expect(clockMomentTimes([])).toBeNull()
   })
 })

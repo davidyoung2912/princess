@@ -6,7 +6,7 @@ import { formatTime } from '../../domain/cruise'
 import { PORTS } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { api } from '../../runtime'
-import { usePersona } from '../../hooks/useDemo'
+import { useNow, usePersona } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -22,6 +22,7 @@ import { PortCard } from './PortCard'
 import { PortParty } from './PortParty'
 import { PortPilot } from './PortPilot'
 import { PinAndDayCard, PocketStopwatch, PortStamps, SunNudge, TakeMeBack } from '../delights/PortDelights'
+import { StanleyMoment } from '../ai/StanleyMoment'
 
 /** The port day (POR-01 to POR-04, POR-11, POR-12): all-aboard, tender arrangements, and the day's tours with codes that work with no signal. */
 export function PortDayScreen() {
@@ -42,8 +43,10 @@ export function PortDayScreen() {
 
 function Body({ v }: { v: PortDayView }) {
   const port = PORTS[v.day.port]
+  const now = useNow()
   return (
     <>
+      {!v.skipped && now >= v.day.arriveAt && <StanleyMoment id="port" subject={String(v.day.day)} params={{ port: port.name }} />}
       {v.skipped && (
         <Banner kind="danger" title={t('port.skipped', { port: port.name })} action={<LinkButton to="/chat" variant="secondary">{t('port.skippedAsk')}</LinkButton>}>
           <p>{t('port.skippedBody')}</p>

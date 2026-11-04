@@ -20,6 +20,8 @@ import { ActionError } from '../account/parts'
 import { BackLink, Saved } from './common'
 import { UrgentIssues } from './UrgentIssues'
 import { useShipTime } from './shipTime'
+import { StanleyMoment } from '../ai/StanleyMoment'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** The muster drill (SAF-01): where to go, how to check in, the briefing in five languages, and ways to take part if the usual way does not work. */
 export function MusterScreen() {
@@ -27,7 +29,7 @@ export function MusterScreen() {
   const copy = useSavedCopy('muster', me?.booker ?? 'none', () => api.onboard.muster(), asMusterView, [me?.id])
   return (
     <div className="page">
-      <p>{t('muster.intro')}</p>
+      <p>{t('muster.intro')}<StanleyExplain term="muster" /></p>
       <Saved copy={copy}>{(m) => <Station m={m} reload={copy.retry} />}</Saved>
       <Briefing />
       <Alternatives />
@@ -44,6 +46,7 @@ function Station({ m, reload }: { m: MusterView; reload: () => void }) {
   const err = confirm.error
   return (
     <>
+      {m.done && <StanleyMoment id="muster" subject={String(m.at)} />}
       <Card hero labelledBy="station-h">
         <h2 id="station-h" className="card__title">{m.station}</h2>
         <p className="muster__big"><strong>{m.stationName}</strong>, {t('map.deckShort', { deck: m.deck })}</p>

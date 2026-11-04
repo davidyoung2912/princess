@@ -13,6 +13,7 @@ import { PriceState } from '../discover/parts'
 import { ChoiceError } from './ChoiceError'
 import { withCategory } from './changes'
 import { StepSection, type StepProps } from './common'
+import { StanleyExplain } from '../ai/StanleyExplain'
 
 /** Step 2: room type, how many guests, and a guaranteed room or a chosen one (BOK-03). */
 export function RoomStep({ draft, update, error }: StepProps) {
@@ -79,6 +80,7 @@ function CabinChoice({ draft, update, error, stepFreeNeeded }: Pick<StepProps, '
         <input type="radio" name="cabin-mode" checked={draft.cabinMode === 'pick'} onChange={() => update((d) => ({ ...d, cabinMode: 'pick' }))} />
         <span>{t('book.cabin.pick')}<small>{t('book.cabin.pickBody')}</small></span>
       </label>
+      <p className="explain-row"><StanleyExplain term="guarantee" labelled /><StanleyExplain term="obstructedView" labelled /></p>
       {draft.cabinMode === 'pick' && (
         <div>
           <label className="choice">
