@@ -186,12 +186,24 @@ export const deskTimes = (): string[] => {
 
 // ---- Sustainability (POS-12) ----
 
-export const SUSTAINABILITY = {
+export const SUSTAINABILITY: {
+  /** The focused sailing's whole track in nautical miles, from the server's ship-position feed; 0 while it is not known. The authored 2000 is the sample week's. */
+  nauticalMiles: number
+  fuel: 'lng'
+  programmes: readonly ['shorePower', 'foodWaste', 'noPlastic', 'ecoExcursions']
+  tips: readonly ['towels', 'refill', 'excursions', 'lights']
+} = {
   nauticalMiles: 2000,
   fuel: 'lng',
-  programmes: ['shorePower', 'foodWaste', 'noPlastic', 'ecoExcursions'] as const,
-  tips: ['towels', 'refill', 'excursions', 'lights'] as const,
-} as const
+  programmes: ['shorePower', 'foodWaste', 'noPlastic', 'ecoExcursions'],
+  tips: ['towels', 'refill', 'excursions', 'lights'],
+}
+
+/** Sets the distance of the sailing in focus (0 when unknown); screens that show it draw again on the catalogue notice. */
+export const setVoyageMiles = (nm: number): void => { SUSTAINABILITY.nauticalMiles = Number.isFinite(nm) && nm > 0 ? Math.round(nm) : 0 }
+
+/** ", about 2,000 nautical miles" for a sentence, or nothing when the distance is not known. */
+export const milesPhrase = (nm: number): string => (nm > 0 ? `, about ${nm.toLocaleString('en-US')} nautical miles` : '')
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('CASE_TEXT_MAX', (v) => { CASE_TEXT_MAX = v }, CASE_TEXT_MAX)

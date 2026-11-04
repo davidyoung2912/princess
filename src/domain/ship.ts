@@ -58,7 +58,33 @@ export const CATEGORIES: readonly StateroomCategory[] = [
   { id: 'signatureSuite', name: 'Signature Suite', code: 'SS', size: 'About 270 sq ft plus balcony', view: 'Large balcony', summary: 'Suite lounge access, priority boarding and the Premier package.', ratio: 3.4, suite: true },
 ]
 
-export const categoryById = (id: unknown): StateroomCategory | undefined => CATEGORIES.find((c) => c.id === id)
+/** Sun's room class of another ship's own id (`sky-balcony` is `balcony`, `sapphire-minisuite` is `miniSuite`), or undefined when the id is not of that form. */
+export function classOfOwnId(id: string): string | undefined {
+  const m = /^[a-z]+-(interior|oceanview|balcony|minisuite|signaturesuite|sanctuaryminisuite)$/.exec(id)
+  return m ? CATEGORIES.find((c) => c.id.toLowerCase() === m[1])?.id : undefined
+}
+
+/** Other ships' room types as their servers describe them (kept when a ship's or sailing's rooms load), by id. */
+const OWN_CATEGORIES = new Map<string, StateroomCategory>()
+
+/** A room another ship serves, as a category: its own name, size and words, with the view and price ratio of the same class on Sun. */
+export function categoryFromRoom(r: { id: string; name: string; suite: boolean; sizeSqFt: number; description: string }): StateroomCategory | undefined {
+  const base = CATEGORIES.find((c) => c.id === classOfOwnId(r.id))
+  if (!base) return undefined
+  return { ...base, id: r.id, name: r.name, suite: r.suite, size: r.sizeSqFt > 0 ? `About ${r.sizeSqFt} sq ft` : base.size, summary: r.description || base.summary }
+}
+
+export function registerCategories(list: readonly StateroomCategory[]): void { for (const c of list) OWN_CATEGORIES.set(c.id, c) }
+
+/** A room type by id: Sun's six, then another ship's as it served them, then another ship's own id described by its class (so a saved choice survives before the rooms load). */
+export function categoryById(id: unknown): StateroomCategory | undefined {
+  const sun = CATEGORIES.find((c) => c.id === id)
+  if (sun || typeof id !== 'string') return sun
+  const served = OWN_CATEGORIES.get(id)
+  if (served) return served
+  const base = CATEGORIES.find((c) => c.id === classOfOwnId(id))
+  return base ? { ...base, id } : undefined
+}
 
 /** What the ship offers guests who need step-free access or help (accessibility notes up front, per the Linda test). */
 export const SHIP_ACCESSIBILITY: readonly string[] = [

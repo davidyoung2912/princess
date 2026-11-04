@@ -141,7 +141,7 @@ export interface CertificateInput { name: string; nights: number; ports: readonl
 /** D8-9: a small, silly certificate of nights at sea, ports and crossings. */
 export const certificateCard = (i: CertificateInput): Card => ({
   id: 'certificate', title: `Certificate for ${i.name}`, subtitle: `${i.nights} nights at sea aboard ${i.shipName}`,
-  lines: [`Ports: ${i.ports.join(', ')}`, `${i.seaDays} days at sea and about ${new Intl.NumberFormat('en-US').format(i.nauticalMiles)} nautical miles`, i.dates],
+  lines: [`Ports: ${i.ports.join(', ')}`, `${i.seaDays} days at sea${i.nauticalMiles > 0 ? ` and about ${new Intl.NumberFormat('en-US').format(i.nauticalMiles)} nautical miles` : ''}`, i.dates],
   footer: 'Awarded for good company and sea legs.',
 })
 

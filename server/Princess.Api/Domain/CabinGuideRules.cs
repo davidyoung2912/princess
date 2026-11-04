@@ -20,13 +20,13 @@ public static class CabinGuideRules
 {
     private static int Clamp(int n) => Math.Max(1, Math.Min(5, n));
 
-    private static (int Score, List<string> Why) Sleep(CabinInfo c, CabinRules.ShipCabinProfile p, bool sun)
+    private static (int Score, List<string> Why) Sleep(CabinInfo c, CabinRules.ShipCabinProfile p)
     {
         var why = new List<string>();
         var s = 5;
         if (c.Position == "forward" && c.Deck <= p.LowDeck) { s--; why.Add("The bow thrusters are close by. They run when the ship docks, often early in the morning."); }
         if (c.Position == "aft" && c.Deck <= p.LowDeck + 1) { s--; why.Add("The engine and propellers are near, so you may feel a low hum or vibration."); }
-        if (sun && c.Deck >= 16 && c.Position == "midship") { s--; why.Add("The Dome is close by, and its late-night dance party can carry."); }
+        if (p.Late is { } late && c.Position == late.Position && c.Deck >= late.Deck - late.Reach) { s--; why.Add($"{late.Name} is close by, and its late-night dance party can carry."); }
         if (c.Position == "midship" && c.Deck <= p.LowDeck + 2) { s--; why.Add("A galley and laundry sit nearby, with early-morning deliveries."); }
         if (why.Count == 0) why.Add("Nothing noisy above, below or beside this one in our sample plan.");
         return (Clamp(s), why);
@@ -102,7 +102,7 @@ public static class CabinGuideRules
     public static CabinScoreDto Score(string category, CabinInfo cabin, string shipId = CabinRules.SunShip)
     {
         var profile = CabinRules.ProfileOf(shipId);
-        var sleep = Sleep(cabin, profile, shipId == CabinRules.SunShip);
+        var sleep = Sleep(cabin, profile);
         var motion = Motion(cabin);
         var noise = Noise(cabin, profile);
         var warnings = new List<string>();

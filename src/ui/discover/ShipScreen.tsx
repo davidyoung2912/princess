@@ -1,9 +1,9 @@
 import { Link, useParams } from 'react-router'
 import { t, th } from '../../i18n'
-import { CATEGORIES, ABOARD_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
+import { CATEGORIES, ABOARD_SHIP, categoryById, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { browseSailings, shipSailingSummary } from '../../domain/catalogueBrowse'
 import { catalogueShips, shipById } from '../../domain/shipCatalogue'
-import { useShip, useShipRooms } from '../../hooks/useShipCatalogue'
+import { useShip, useShipAccessibility, useShipRooms } from '../../hooks/useShipCatalogue'
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Banner } from '../Banner'
@@ -26,6 +26,7 @@ export function ShipScreen() {
   const current = useShip()
   const ship = id ? shipById(id) : current
   const favourites = useFavourites()
+  const otherAccess = useShipAccessibility(ship && ship.id !== ABOARD_SHIP.id ? ship.id : undefined)
   const browseRooms = useShipRooms(ship && ship.id !== ABOARD_SHIP.id ? ship.id : undefined)
   if (!ship) {
     return (
@@ -48,15 +49,13 @@ export function ShipScreen() {
       {!aboard && <Card info><p>{t('cat.ship.browseNote', { ship: ship.name })}</p></Card>}
       <SaveShare kind="ship" id={ship.id} name={ship.name} favourites={favourites} />
 
-      {isSun && (
-        <>
-          <Card info labelledBy="acc-h">
-            <h2 id="acc-h">{th('discover.accessibility')}</h2>
-            <ul>{SHIP_ACCESSIBILITY.map((x) => <li key={x}>{x}</li>)}</ul>
-          </Card>
-          <ShipTerms />
-        </>
+      {(isSun || (otherAccess && otherAccess.length > 0)) && (
+        <Card info labelledBy="acc-h">
+          <h2 id="acc-h">{th('discover.accessibility')}</h2>
+          <ul>{(isSun ? SHIP_ACCESSIBILITY : otherAccess ?? []).map((x) => <li key={x}>{x}</li>)}</ul>
+        </Card>
       )}
+      <ShipTerms of={ship} />
 
       <dl className="facts">
         <div><dt>{t('discover.ship.class')}</dt><dd>{ship.className}</dd></div>
@@ -105,7 +104,7 @@ export function ShipScreen() {
                   <li key={r.id} className="card">
                     <h3>{r.name}</h3>
                     {r.description && <p>{r.description}</p>}
-                    <p className="muted">{[r.sizeSqFt > 0 ? t('cat.roomSize', { size: r.sizeSqFt }) : '', t('cat.roomSleeps', { count: r.capacity })].filter(Boolean).join(' · ')}</p>
+                    <p className="muted">{[r.sizeSqFt > 0 ? t('cat.roomSize', { size: r.sizeSqFt }) : '', categoryById(r.id)?.view ?? '', t('cat.roomSleeps', { count: r.capacity })].filter(Boolean).join(' · ')}</p>
                   </li>
                 ))}
               </ul>

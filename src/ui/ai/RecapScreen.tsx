@@ -52,7 +52,7 @@ export function RecapScreen() {
                 <dl className="recap-stats">
                   <div><dt>{t('recap.ports')}</dt><dd>{recap.ports.length}</dd></div>
                   <div><dt>{t('recap.seaDays')}</dt><dd>{recap.seaDays}</dd></div>
-                  <div><dt>{t('recap.miles')}</dt><dd>{recap.nauticalMiles.toLocaleString('en-US')}</dd></div>
+                  {recap.nauticalMiles > 0 && <div><dt>{t('recap.miles')}</dt><dd>{recap.nauticalMiles.toLocaleString('en-US')}</dd></div>}
                   <div><dt>{t('recap.photos')}</dt><dd>{recap.photos}</dd></div>
                   <div><dt>{t('recap.dinners')}</dt><dd>{recap.dinnerCount}</dd></div>
                 </dl>

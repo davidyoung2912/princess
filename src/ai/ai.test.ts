@@ -115,3 +115,20 @@ describe('trip recap', () => {
     expect(text).not.toMatch(/Harper/)
   })
 })
+
+describe('trip recap distance and ship (AB7)', () => {
+  const input = { sailing: REFERENCE_SAILING, party: ['Daniel'], tours: [], dinners: [], photos: 0 }
+  it('leaves the distance out when it is not known and names the ship from the catalogue', async () => {
+    const { SUSTAINABILITY, setVoyageMiles, milesPhrase } = await import('../domain/postcruise')
+    const keep = SUSTAINABILITY.nauticalMiles
+    try {
+      setVoyageMiles(0)
+      const r = buildRecap(input)
+      expect(r.nauticalMiles).toBe(0)
+      expect(recapText(r)).not.toContain('nautical')
+      setVoyageMiles(3120)
+      expect(recapText(buildRecap(input))).toContain('about 3,120 nautical miles')
+      expect(milesPhrase(0)).toBe('')
+    } finally { setVoyageMiles(keep) }
+  })
+})

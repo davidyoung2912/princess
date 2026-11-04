@@ -30,7 +30,7 @@ const plural = (n: number, one: string, many: string): string => `${n} ${n === 1
 /** A few quiet cards from the recap. A card with nothing to say is left out rather than shown as zero. */
 export function buildWrapped(r: Recap, opt: WrappedOptions = DEFAULT_WRAPPED, extras?: WrappedExtras): WrappedCard[] {
   const cards: WrappedCard[] = [
-    { id: 'miles', title: 'Distance', big: r.nauticalMiles.toLocaleString('en-US'), line: `nautical miles, ${plural(r.nights, 'night', 'nights')} from ${r.dates}.` },
+    ...(r.nauticalMiles > 0 ? [{ id: 'miles' as const, title: 'Distance', big: r.nauticalMiles.toLocaleString('en-US'), line: `nautical miles, ${plural(r.nights, 'night', 'nights')} from ${r.dates}.` }] : []),
     { id: 'ports', title: 'Ports', big: String(Math.max(0, r.ports.length - 1)), line: `new ports: ${r.ports.slice(1, -1).join(', ') || 'none'}, and ${plural(r.seaDays, 'day', 'days')} at sea.` },
   ]
   if (r.tourNames.length) cards.push({ id: 'tours', title: 'Ashore', big: String(r.tourNames.length), line: r.tourNames.join(', ') })

@@ -158,3 +158,18 @@ public class SharedRoomTests
         Assert.Equal("allegro", DayPlanRules.Build(timeline, 2, new DayWishDto([], [], "any", false, null), "sky-princess").Items.Single(i => i.Kind == "dinner").Id);
     }
 }
+
+public class LateNightSpotTests
+{
+    [Theory]
+    [InlineData("sun-princess", "The Dome")]
+    [InlineData("sky-princess", "The Sea View Bar")]
+    [InlineData("sapphire-princess", "The Sea View Bar")]
+    public void EveryShipNamesItsLateNightSpotInTheCabinGuide(string ship, string name)
+    {
+        var late = CabinRules.ProfileOf(ship).Late;
+        Assert.NotNull(late);
+        Assert.Equal(name, late!.Name);
+        Assert.Contains(AboardPlans.For(ship)!.Places, p => p.Name.Contains(late.Name.Replace("The ", "")));
+    }
+}

@@ -1,8 +1,12 @@
 import { excursionById } from './excursions'
 import { venueById } from './dining'
-import { SUSTAINABILITY } from './postcruise'
+import { SUSTAINABILITY, milesPhrase } from './postcruise'
+import { portName } from './catalogueBrowse'
+import { cruiseOf, shipOf } from './shipCatalogue'
 import { itinerary, type Sailing } from './sailings'
 import { formatDate } from './cruise'
+
+const shortPort = (id: string): string => portName(id).replace(/\s*\(.*\)$/, '')
 
 /** Trip memories (POS-03): the facts of a finished cruise gathered into a recap, and the words to share. Pure; the screen supplies what the guest booked and kept. */
 export interface RecapInput {
@@ -19,6 +23,7 @@ export interface RecapInput {
 
 export interface Recap {
   title: string
+  shipName: string
   nights: number
   dates: string
   /** Ports visited, home port first and last, in order. */
@@ -34,18 +39,18 @@ export interface Recap {
   favouriteMeal: { name: string; times: number } | null
 }
 
-const PORT_NAMES: Record<string, string> = { fll: 'Fort Lauderdale', cozumel: 'Cozumel', belize: 'Belize City', roatan: 'Roatán' }
 
 export function buildRecap(i: RecapInput): Recap {
   const days = itinerary(i.sailing)
   const ports: string[] = []
-  for (const d of days) if (d.port !== 'sea' && PORT_NAMES[d.port] && !ports.includes(PORT_NAMES[d.port])) ports.push(PORT_NAMES[d.port])
+  for (const d of days) if (d.port !== 'sea' && !ports.includes(shortPort(d.port))) ports.push(shortPort(d.port))
   const counts = new Map<string, number>()
   for (const id of i.dinners) if (venueById(id)) counts.set(id, (counts.get(id) ?? 0) + 1)
   // Most visited; a tie goes to the first in the ship's own list, so the answer never depends on booking order.
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]
   return {
-    title: `${i.party.join(' and ')}’s Western Caribbean`,
+    title: `${i.party.join(' and ')}’s ${cruiseOf(i.sailing.id).name || 'cruise'}`,
+    shipName: shipOf(i.sailing.id).name || 'Princess',
     nights: days.length - 1,
     dates: `${formatDate(days[0].date)} to ${formatDate(days[days.length - 1].date)}`,
     ports,
@@ -63,8 +68,8 @@ export function buildRecap(i: RecapInput): Recap {
 export function recapText(r: Recap): string {
   const lines = [
     r.title,
-    `${r.nights} nights on Sun Princess, ${r.dates}.`,
-    `Ports: ${r.ports.join(', ')}. ${r.seaDays} days at sea, about ${r.nauticalMiles.toLocaleString('en-US')} nautical miles.`,
+    `${r.nights} nights on ${r.shipName}, ${r.dates}.`,
+    `Ports: ${r.ports.join(', ')}. ${r.seaDays} days at sea${milesPhrase(r.nauticalMiles)}.`,
   ]
   if (r.tourNames.length) lines.push(`Ashore: ${r.tourNames.join('; ')}.`)
   if (r.favouriteMeal) lines.push(`Favourite table: ${r.favouriteMeal.name}${r.favouriteMeal.times > 1 ? ` (${r.favouriteMeal.times} dinners)` : ''}.`)

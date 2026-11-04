@@ -2,7 +2,7 @@ import { formatDate } from './cruise'
 import type { Hindsight } from './wrapped'
 import type { FareId } from './fares'
 import { FUTURE_DEPARTURES } from './pricing'
-import { earliestRebook } from './postcruise'
+import { earliestRebook, milesPhrase } from './postcruise'
 import type { Recap } from './recap'
 import { itinerary, PORTS, type Sailing } from './sailings'
 import type { CategoryId } from './ship'
@@ -37,7 +37,7 @@ export function memoryBook(sailing: Sailing, recap: Recap, journal: Journal, ref
     const lines = [formatDate(d.date), ...(note ? [note] : []), ...diaryLines]
     sections.push({ id: `day-${d.day}`, heading: `Day ${d.day}: ${dayName(d.port)}`, lines: note || diaryLines.length ? lines : [...lines, 'No note for this day.'] })
   }
-  const facts = [`Ports: ${recap.ports.join(', ')}`, `${recap.seaDays} days at sea, about ${recap.nauticalMiles.toLocaleString('en-US')} nautical miles`]
+  const facts = [`Ports: ${recap.ports.join(', ')}`, `${recap.seaDays} days at sea${milesPhrase(recap.nauticalMiles)}`]
   if (recap.tourNames.length) facts.push(`Ashore: ${recap.tourNames.join('; ')}`)
   if (recap.favouriteMeal) facts.push(`Favourite table: ${recap.favouriteMeal.name}`)
   sections.push({ id: 'facts', heading: 'The trip in numbers', lines: facts })

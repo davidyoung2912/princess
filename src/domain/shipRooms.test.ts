@@ -46,3 +46,16 @@ describe('stateroom types of a ship', () => {
     expect(await loadSailingRooms('s2')).toBe(false)
   })
 })
+
+describe('other ships\' room types as categories (AB7)', () => {
+  it('describes a Sky or Sapphire room id by its class, before and after its rooms load', async () => {
+    const { categoryById, categoryFromRoom, registerCategories } = await import('./ship')
+    expect(categoryById('sky-balcony')?.view).toBe('Private balcony')
+    expect(categoryById('sapphire-minisuite')?.suite).toBe(true)
+    expect(categoryById('sky-penthouse')).toBeUndefined()
+    expect(categoryById('balcony')?.id).toBe('balcony')
+    const served = categoryFromRoom({ id: 'sky-balcony', name: 'Sky Balcony', suite: false, sizeSqFt: 180, description: 'Own words' })!
+    registerCategories([served])
+    expect(categoryById('sky-balcony')).toMatchObject({ name: 'Sky Balcony', size: 'About 180 sq ft', summary: 'Own words', view: 'Private balcony' })
+  })
+})

@@ -202,7 +202,7 @@ export function TripNumbersCard() {
         <div><dt>{t('dl8.nums.nights')}</dt><dd>{n.nights}</dd></div>
         <div><dt>{t('dl8.nums.ports')}</dt><dd>{n.ports}</dd></div>
         <div><dt>{t('dl8.nums.sea')}</dt><dd>{n.seaDays}</dd></div>
-        <div><dt>{t('dl8.nums.miles')}</dt><dd>{n.nauticalMiles.toLocaleString('en-US')}</dd></div>
+        {n.nauticalMiles > 0 && <div><dt>{t('dl8.nums.miles')}</dt><dd>{n.nauticalMiles.toLocaleString('en-US')}</dd></div>}
       </dl>
       <CopyText text={tripNumbersText(n)} label={t('dl8.nums.copy')} />
     </Card>

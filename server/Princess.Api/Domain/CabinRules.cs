@@ -6,7 +6,10 @@ public sealed record CabinInfo(string Number, int Deck, string Position, string 
 public static class CabinRules
 {
     /// <summary>How a ship's staterooms are laid out: the decks of each room class, the lowest deck with a pool above it (noise), and the highest deck whose views the lifeboats block.</summary>
-    public sealed record ShipCabinProfile(IReadOnlyDictionary<string, int[]> Decks, int PoolDeck, int LowDeck, int LifeboatDeck);
+    public sealed record ShipCabinProfile(IReadOnlyDictionary<string, int[]> Decks, int PoolDeck, int LowDeck, int LifeboatDeck, LateNightSpot? Late = null);
+
+    /// <summary>Where the ship's late-night party is: cabins on its position and at most <paramref name="Reach"/> decks below it hear it.</summary>
+    public sealed record LateNightSpot(string Name, int Deck, string Position, int Reach);
 
     public const string SunShip = "sun-princess";
 
@@ -21,21 +24,21 @@ public static class CabinRules
             ["miniSuite"] = [14, 15, 16],
             ["sanctuaryMiniSuite"] = [16],
             ["signatureSuite"] = [16],
-        }, 14, 9, 9),
+        }, 14, 9, 9, new("The Dome", 16, "midship", 0)),
         ["sky-princess"] = new(new Dictionary<string, int[]>
         {
             ["interior"] = [9, 10, 11, 12, 14],
             ["oceanview"] = [9, 10, 11],
             ["balcony"] = [9, 10, 11, 12, 14],
             ["miniSuite"] = [12, 14],
-        }, 15, 10, 10),
+        }, 15, 10, 10, new("The Sea View Bar", 17, "forward", 3)),
         ["sapphire-princess"] = new(new Dictionary<string, int[]>
         {
             ["interior"] = [8, 9, 10, 11],
             ["oceanview"] = [8, 9, 10],
             ["balcony"] = [8, 9, 10, 11],
             ["miniSuite"] = [10, 11],
-        }, 11, 8, 8),
+        }, 11, 8, 8, new("The Sea View Bar", 13, "forward", 3)),
     };
 
     /// <summary>The ships whose staterooms are laid out.</summary>

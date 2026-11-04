@@ -2,7 +2,7 @@ import type { SimWeather } from './autopilot'
 import { aboardState, type AboardLevel } from './allaboard'
 import { ALLOWANCE_USD } from './disembark'
 import { itinerary, portById, type PortId, type Sailing } from './sailings'
-import { SUSTAINABILITY } from './postcruise'
+import { SUSTAINABILITY, milesPhrase } from './postcruise'
 
 /**
  * Small delights, phase DL8 (docs/small-delights.md): port days and the way home. Pure helpers for the pocket stopwatch, the take-me-back card, the
@@ -154,7 +154,7 @@ export function tripNumbers(s: Sailing): TripNumbers {
 }
 
 export const tripNumbersText = (n: TripNumbers): string =>
-  `${n.nights} nights, ${n.ports} ports, ${n.seaDays} days at sea, about ${n.nauticalMiles.toLocaleString('en-US')} nautical miles.`
+  `${n.nights} nights, ${n.ports} ports, ${n.seaDays} days at sea${milesPhrase(n.nauticalMiles)}.`
 
 // ---------------------------------------------------------------- state
 

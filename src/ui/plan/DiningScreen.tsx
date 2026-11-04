@@ -1,3 +1,4 @@
+import { placeById, roomId } from '../../domain/deck'
 import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -51,7 +52,7 @@ function Body({ view, reload }: { view: DiningView; reload: () => void }) {
       )}
       <Card labelledBy="main-h">
         <h2 id="main-h" className="card__title">{th('dine.main')}</h2>
-        {view.seating ? <p>{t('dine.fixed', { time: formatTime(SEATINGS[view.plan as 'early' | 'late']) })}</p> : <p>{t('dine.anytime')}<StanleyExplain term="anytimeDining" /></p>}
+        {view.seating ? <p>{t('dine.fixed', { time: formatTime(SEATINGS[view.plan as 'early' | 'late']) })}</p> : <p>{t('dine.anytime', { room: placeById(roomId('eclipse') ?? '')?.name ?? t('dine.anyRoom') })}<StanleyExplain term="anytimeDining" /></p>}
       </Card>
 
       <section aria-labelledby="res-h">

@@ -48,8 +48,9 @@ export function BookingNumber({ number }: { number: string }) {
 }
 
 /** D1-1: the ship in familiar terms. */
-export function ShipTerms() {
-  const ship = useShip()
+export function ShipTerms({ of }: { of?: { lengthFt?: number; guests: number; crew?: number } } = {}) {
+  const current = useShip()
+  const ship = of ?? current
   const f = shipInFamiliarTerms(`${ship.lengthFt ?? 0} ft`, ship.guests, ship.crew ?? 0)
   if (f.pitches === 0) return null
   return (

@@ -1,4 +1,5 @@
 import { notifyCatalogue } from './catalogueServed'
+import { categoryFromRoom, registerCategories } from './ship'
 
 /**
  * The stateroom types of a ship, as the server serves them: a sailing's rooms with sample fares (`GET /reference/sailings/{id}/rooms`, open for booking or not)
@@ -74,6 +75,7 @@ function load(kind: 'sailing' | 'ship', id: string): Promise<boolean> {
       const got = kind === 'sailing' ? normalizeSailingRooms(raw) : normalizeShipRooms(raw)
       if (!got) return false
       store.set(id, got)
+      registerCategories(got.flatMap((r) => categoryFromRoom(r) ?? []))
       notifyCatalogue()
       return true
     })

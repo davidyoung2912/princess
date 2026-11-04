@@ -1,3 +1,4 @@
+import { SUSTAINABILITY } from '../domain/postcruise'
 import { buildRecap, type Recap } from '../domain/recap'
 
 import { api } from '../runtime'
@@ -19,5 +20,5 @@ export function useRecapData(): Mine<Recap> {
       dinners: dining.reservations.map((r) => r.venueId),
       photos: photos.photos.length,
     })
-  }, [sailing.id])
+  }, [sailing.id, SUSTAINABILITY.nauticalMiles])
 }
