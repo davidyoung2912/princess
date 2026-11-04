@@ -60,7 +60,7 @@ Cross-cutting conventions: surrogate `UNIQUEIDENTIFIER` or `BIGINT` ids (decided
 
 ## 5. Persona seed scenarios (to be finalised in Phase 4)
 
-Each scenario is a set of users plus data in a partial state. Journey stages follow `STAGE_IDS` (booked, preCruise, checkIn, embarkation, seaDay, cozumel, belize, roatan, seaDay2, farewell, disembark, postCruise) plus **pre-booking** (no booking yet, a saved draft, favourites).
+Each scenario is a set of users plus data in a partial state. Journey stages follow `STAGE_IDS` (booked, preCruise, checkIn, embarkation, seaDay, portDay, farewell, disembark, postCruise; the days in between come from the sailing's itinerary, X0l) plus **pre-booking** (no booking yet, a saved draft, favourites).
 
 - **Existing 12 personas**, each seeded at a different stage so every stage has coverage.
 - **Pre-booking:** a brand-new account with nothing; a returning guest with a saved draft and favourites; a guest comparing sailings with a Captain's Circle tier and future cruise credit.

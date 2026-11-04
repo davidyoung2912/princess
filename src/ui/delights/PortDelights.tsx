@@ -7,7 +7,7 @@ import { folioTotals } from '../../domain/folio'
 import { formatMoney } from '../../domain/money'
 import { PORTS } from '../../domain/sailings'
 import {
-  addPin, allowanceLeft, creditLeft, dayCardText, finalDayStrip, LAST_LOOK_NOTE_MAX, pinsAt, portStamps, removePin, stopwatch, sunPrompts, TAKE_ME_BACK, tripNumbers, tripNumbersText,
+  addPin, allowanceLeft, creditLeft, dayCardText, finalDayStrip, LAST_LOOK_NOTE_MAX, pinsAt, portStamps, removePin, stopwatch, sunPrompts, takeMeBackFor, tripNumbers, tripNumbersText,
 } from '../../domain/portDelights'
 import { ALLOWANCE_USD } from '../../domain/disembark'
 import { dateIn } from '../../domain/timezones'
@@ -43,7 +43,7 @@ export function PocketStopwatch({ day }: { day: Day }) {
 
 /** D6A-2: where the ship is and what to say, in the local language, large enough to show a driver. */
 export function TakeMeBack({ port }: { port: Day['port'] }) {
-  const back = TAKE_ME_BACK[port]
+  const back = takeMeBackFor(port)
   return (
     <Card labelledBy="dl8-back-h">
       <h2 id="dl8-back-h" className="card__title">{th('dl8.back.title')}</h2>

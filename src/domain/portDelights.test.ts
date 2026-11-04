@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SAILINGS } from './sailings'
 import {
-  addPin, allowanceLeft, creditLeft, dayCardText, EMPTY_PORTS, finalDayStrip, normalizePorts, PINS_MAX, pinsAt, portStamps, removePin, stopwatch, sunPrompts, TAKE_ME_BACK, tripNumbers, tripNumbersText,
+  addPin, allowanceLeft, creditLeft, dayCardText, EMPTY_PORTS, finalDayStrip, normalizePorts, PINS_MAX, pinsAt, portStamps, removePin, stopwatch, sunPrompts, takeMeBackFor, tripNumbers, tripNumbersText,
 } from './portDelights'
 
 const MIN = 60_000
@@ -19,9 +19,9 @@ describe('stopwatch', () => {
 
 describe('take me back', () => {
   it('has words for every port in the local language', () => {
-    expect(TAKE_ME_BACK.cozumel.lang).toBe('es')
-    expect(TAKE_ME_BACK.belize.lang).toBe('en')
-    expect(TAKE_ME_BACK.roatan.say).toContain('Sun Princess')
+    expect(takeMeBackFor('cozumel').lang).toBe('es')
+    expect(takeMeBackFor('belize').lang).toBe('en')
+    expect(takeMeBackFor('roatan').say).toContain('Sun Princess')
   })
 })
 
@@ -64,7 +64,7 @@ describe('dayCardText', () => {
     expect(text).toContain('all aboard 3:30 pm ship time (2:30 pm here)')
     expect(text).toContain('555-0100')
     expect(text).toContain('Best coffee')
-    expect(text).toContain(TAKE_ME_BACK.roatan.say)
+    expect(text).toContain(takeMeBackFor('roatan').say)
   })
 })
 

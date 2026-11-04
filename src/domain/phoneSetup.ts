@@ -22,7 +22,7 @@ export const PHONE_STEPS: readonly PhoneStep[] = [
 export type RoamingMoment = 'none' | 'beforeSailing' | 'sailAway' | 'atSea' | 'inPort'
 
 const MOMENTS: Partial<Record<StageId, RoamingMoment>> = {
-  preCruise: 'beforeSailing', checkIn: 'beforeSailing', embarkation: 'sailAway', seaDay: 'atSea', seaDay2: 'atSea', farewell: 'atSea', cozumel: 'inPort', belize: 'inPort', roatan: 'inPort',
+  preCruise: 'beforeSailing', checkIn: 'beforeSailing', embarkation: 'sailAway', seaDay: 'atSea', portDay: 'inPort', farewell: 'atSea',
 }
 
 /** Which reminder fits the stage: before sailing, at sail-away, on sea days, and in port where a local network can connect without warning. */

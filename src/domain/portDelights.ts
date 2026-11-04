@@ -1,7 +1,7 @@
 import type { SimWeather } from './autopilot'
 import { aboardState, type AboardLevel } from './allaboard'
 import { ALLOWANCE_USD } from './disembark'
-import { itinerary, type PortId, type Sailing } from './sailings'
+import { itinerary, portById, type PortId, type Sailing } from './sailings'
 import { SUSTAINABILITY } from './postcruise'
 
 /**
@@ -16,8 +16,8 @@ const rec = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
 export type CallPort = PortId
-export const CALL_PORTS: readonly CallPort[] = ['cozumel', 'belize', 'roatan']
-export const isCallPort = (v: unknown): v is CallPort => CALL_PORTS.some((p) => p === v)
+/** Any stop in the catalogue (not a day at sea) is a call port. */
+export const isCallPort = (v: unknown): v is CallPort => typeof v === 'string' && v !== 'sea' && portById(v) !== undefined
 
 // ---------------------------------------------------------------- D6A-1: pocket stopwatch
 
@@ -37,10 +37,16 @@ export function stopwatch(allAboardAt: number, now: number): Stopwatch {
 export interface TakeMeBack { port: CallPort; /** Where the ship is, in the local language. */ place: string; /** What to say, in the local language. */ say: string; /** The same in English, for the guest. */ english: string; lang: 'es' | 'en' }
 
 /** Authored concept values: the cruise pier or tender point and a short request. A real berth feed would replace these. */
-export const TAKE_ME_BACK: Record<CallPort, TakeMeBack> = {
+const AUTHORED_TAKE_ME_BACK: Record<string, TakeMeBack> = {
   cozumel: { port: 'cozumel', place: 'Muelle internacional de cruceros, Cozumel', say: 'Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.', english: 'Please take me to the cruise pier. My ship is the Sun Princess.', lang: 'es' },
   belize: { port: 'belize', place: 'Fort Street Tourism Village (the tender pier), Belize City', say: 'Please take me to the Tourism Village tender pier. My ship is the Sun Princess.', english: 'Please take me to the Tourism Village tender pier. My ship is the Sun Princess.', lang: 'en' },
   roatan: { port: 'roatan', place: 'Muelle de cruceros, Coxen Hole, Roatán', say: 'Por favor, lléveme al muelle de cruceros. Mi barco es el Sun Princess.', english: 'Please take me to the cruise pier. My ship is the Sun Princess.', lang: 'es' },
+}
+
+/** The card for any port: the authored words where there are some, otherwise a plain English request that names only the port (no invented pier). */
+export function takeMeBackFor(port: CallPort): TakeMeBack {
+  const name = portById(port)?.name.split(',')[0] ?? port
+  return AUTHORED_TAKE_ME_BACK[port] ?? { port, place: `The cruise ship, ${name}`, say: 'Please take me to the cruise ship.', english: 'Please take me to the cruise ship.', lang: 'en' }
 }
 
 // ---------------------------------------------------------------- D6A-3: UV and heat prompt
@@ -88,7 +94,7 @@ export const DAY_CARD_MAX = 1200
 
 /** Plain text for the day ashore, kept on the phone: leave-by time, the number to call, the words for a taxi and the guest's own pins. */
 export function dayCardText(i: DayCardInput): string {
-  const back = TAKE_ME_BACK[i.port]
+  const back = takeMeBackFor(i.port)
   const lines = [
     `${i.portName}: all aboard ${i.allAboardShip} ship time (${i.allAboardLocal} here).`,
     `Ship phone: ${i.phone}.`,

@@ -250,7 +250,7 @@ export let LAST_MINUTE_LEAD_MIN = 120
 
 export interface PortContacts { consulate: string; emergency: string; agent: string }
 /** Sample numbers: 555 numbers are reserved for fiction. */
-export const PORT_CONTACTS: Record<'cozumel' | 'belize' | 'roatan', PortContacts> = {
+export const PORT_CONTACTS: Record<string, PortContacts> = {
   cozumel: { consulate: 'U.S. consular agency, Cozumel: 555-0141', emergency: '911 (Mexico)', agent: 'Ship’s agent, Cozumel pier: 555-0142' },
   belize: { consulate: 'U.S. Embassy, Belmopan: 555-0151', emergency: '911 (Belize)', agent: 'Ship’s agent, Belize tender pier: 555-0152' },
   roatan: { consulate: 'U.S. Embassy, Tegucigalpa: 555-0161', emergency: '911 (Honduras)', agent: 'Ship’s agent, Mahogany Bay: 555-0162' },

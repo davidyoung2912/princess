@@ -172,34 +172,50 @@ export function allAboardEpoch(s: Sailing, day: number): number | null {
   return zonedToEpoch(d.date, d.allAboard, port.zone)
 }
 
-export type StageId = 'booked' | 'preCruise' | 'checkIn' | 'embarkation' | 'seaDay' | 'cozumel' | 'belize' | 'roatan' | 'seaDay2' | 'farewell' | 'disembark' | 'postCruise'
+/**
+ * The journey stages of a sailing, whatever its length. The days in between are derived from the itinerary: a day at sea is `seaDay`, a day
+ * in port is `portDay`, and the last day at sea before the final morning is `farewell`.
+ */
+export type StageId = 'booked' | 'preCruise' | 'checkIn' | 'embarkation' | 'seaDay' | 'portDay' | 'farewell' | 'disembark' | 'postCruise'
 
-/** Journey stages in order, with when each begins (ship time unless the stage is before or after the cruise). */
-export function stageStarts(s: Sailing): { id: StageId; at: number }[] {
+/** Journey stages in order. A sea day and a port day sit side by side in the middle of the trip (see `stageRank`). */
+export const STAGE_IDS: readonly StageId[] = ['booked', 'preCruise', 'checkIn', 'embarkation', 'seaDay', 'portDay', 'farewell', 'disembark', 'postCruise']
+
+/** Where a stage falls in the trip: sea days and port days share a rank, since they alternate. */
+export const stageRank = (stage: StageId): number => STAGE_IDS.indexOf(stage === 'portDay' ? 'seaDay' : stage)
+
+export interface StageStart { id: StageId; at: number; /** The cruise day the stage starts on; absent before and after the cruise. */ day?: number }
+
+/** Journey stages in order, with when each begins (ship time unless the stage is before or after the cruise). One entry per cruise day from day 2 on. */
+export function stageStarts(s: Sailing): StageStart[] {
   const days = itinerary(s)
   const homeZone = shipHomeZone(s)
   const at = (n: number, time: string) => zonedToEpoch(days[n - 1].date, time, shipZoneOnDate(s, days[n - 1].date))
   const home = (offset: number, time: string) => zonedToEpoch(addDays(s.departure, offset), time, homeZone)
+  const last = days.length
+  if (last < 2) return [
+    { id: 'booked', at: home(-90, '10:00') },
+    { id: 'preCruise', at: home(-14, '10:00') },
+    { id: 'checkIn', at: home(-3, '10:00') },
+  ]
+  const middle: StageStart[] = []
+  for (let n = 2; n < last; n++) {
+    const sea = days[n - 1].port === 'sea'
+    middle.push({ id: sea ? (n === last - 1 ? 'farewell' : 'seaDay') : 'portDay', at: at(n, '08:00'), day: n })
+  }
   return [
     { id: 'booked', at: home(-90, '10:00') },
     { id: 'preCruise', at: home(-14, '10:00') },
     { id: 'checkIn', at: home(-3, '10:00') },
-    { id: 'embarkation', at: at(1, '11:00') },
-    { id: 'seaDay', at: at(2, '08:00') },
-    { id: 'cozumel', at: at(3, '08:00') },
-    { id: 'belize', at: at(4, '08:00') },
-    { id: 'roatan', at: at(5, '09:00') },
-    { id: 'seaDay2', at: at(6, '08:00') },
-    { id: 'farewell', at: at(7, '08:00') },
-    { id: 'disembark', at: at(8, '06:00') },
-    { id: 'postCruise', at: home(10, '10:00') },
+    { id: 'embarkation', at: at(1, '11:00'), day: 1 },
+    ...middle,
+    { id: 'disembark', at: at(last, '06:00'), day: last },
+    { id: 'postCruise', at: home(last + 2, '10:00') },
   ]
 }
 
 /** A stage on a day in port (as opposed to boarding, a day at sea or going home). */
-export const isPortStage = (stage: StageId): boolean => stage === 'cozumel' || stage === 'belize' || stage === 'roatan'
-
-export const STAGE_IDS: readonly StageId[] = ['booked', 'preCruise', 'checkIn', 'embarkation', 'seaDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell', 'disembark', 'postCruise']
+export const isPortStage = (stage: StageId): boolean => stage === 'portDay'
 
 /** The stage a moment falls in; any time before the first stage counts as "booked". */
 export function stageAt(s: Sailing, at: number): StageId {
@@ -208,7 +224,8 @@ export function stageAt(s: Sailing, at: number): StageId {
   return current
 }
 
-/** A moment inside the stage, used by "jump to a stage". */
-export function timeForStage(s: Sailing, stage: StageId): number {
-  return stageStarts(s).find((x) => x.id === stage)!.at
+/** The start of a stage; `nth` picks the 2nd, 3rd and so on when a stage comes round more than once (a second day at sea). Falls back to the first. */
+export function timeForStage(s: Sailing, stage: StageId, nth = 0): number {
+  const all = stageStarts(s).filter((x) => x.id === stage)
+  return (all[nth] ?? all[0] ?? stageStarts(s)[0]).at
 }

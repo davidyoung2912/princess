@@ -58,7 +58,7 @@ function Body({ v }: { v: PortDayView }) {
       <Tours tours={v.tours} port={v.day.port} />
       <LastMinute />
       <Readiness tender={v.day.tender} />
-      {v.day.port in PORT_CONTACTS && <ContactsAshore port={v.day.port as keyof typeof PORT_CONTACTS} />}
+      {v.day.port in PORT_CONTACTS && <ContactsAshore port={v.day.port} />}
       <TakeMeBack port={v.day.port} />
       <PinAndDayCard day={v.day} />
       <PortStamps />

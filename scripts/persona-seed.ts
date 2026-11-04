@@ -19,7 +19,13 @@ export const PBKDF2_ITERATIONS = 600_000
 const REF = SAILINGS.find((s) => s.reference)!
 const DEPARTURE = REF.departure
 const DAYS = itinerary(REF)
-const stageAtMs = (id: StageId, hours = 0): number => stageStarts(REF).find((s) => s.id === id)!.at + hours * 3_600_000
+/** Persona stages are the journey stages, plus the sample week's second day at sea and its three port days (first, second and third port day). */
+type PersonaStage = StageId | 'seaDay2' | 'cozumel' | 'belize' | 'roatan'
+const NTH: Partial<Record<PersonaStage, readonly [StageId, number]>> = { seaDay2: ['seaDay', 1], cozumel: ['portDay', 0], belize: ['portDay', 1], roatan: ['portDay', 2] }
+const stageAtMs = (id: PersonaStage, hours = 0): number => {
+  const [kind, nth] = NTH[id] ?? [id as StageId, 0]
+  return stageStarts(REF).filter((s) => s.id === kind)[nth]!.at + hours * 3_600_000
+}
 
 // ---------------------------------------------------------------- SQL helpers
 class Raw {
@@ -61,7 +67,7 @@ type Diet = 'vegetarian' | 'vegan' | 'glutenFree' | 'nutAllergy' | 'shellfishAll
 
 export interface Person {
   slug: string; first: string; last: string; age: number
-  stage: StageId; /** Clock override, ISO UTC; otherwise a few hours into the stage. */ clock?: string
+  stage: PersonaStage; /** Clock override, ISO UTC; otherwise a few hours into the stage. */ clock?: string
   tier?: Tier; sanctuary?: boolean; textSize?: string; child?: string
   needs?: Need[]; diet?: Diet[]; other?: boolean
   passport?: string | null | 'none'; scenarios?: string[]
@@ -403,7 +409,7 @@ function journeyFile(): string {
       const p = person(b.booker)
       const ids: string[] = []
       if (b.plan === 'depBal' || b.plan === 'full') ids.push('pay')
-      if (['preCruise', 'checkIn', 'embarkation', 'seaDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell', 'disembark', 'postCruise'].includes(p.stage) && b.checkin !== 'none') ids.push('names', 'documents', 'insurance')
+      if (['preCruise', 'checkIn', 'embarkation', 'seaDay', 'portDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell', 'disembark', 'postCruise'].includes(p.stage) && b.checkin !== 'none') ids.push('names', 'documents', 'insurance')
       if (b.tours?.length) ids.push('tours')
       if (b.dine?.length) ids.push('dining')
       if (b.assist) ids.push('assistance')

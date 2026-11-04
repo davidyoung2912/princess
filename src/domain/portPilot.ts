@@ -107,7 +107,7 @@ export const PLAN_B_TRIGGERS: readonly PlanBTrigger[] = ['rain', 'heat', 'tender
 export interface PlanB { id: PlanBTrigger; title: string; detail: string; /** Whether it keeps everyone close to the ship. */ nearShip: boolean }
 
 /** A plan B for each trigger, per port. Authored sample suggestions. */
-export const PLAN_B: Record<'cozumel' | 'belize' | 'roatan', Record<PlanBTrigger, PlanB>> = {
+export const PLAN_B: Record<string, Record<PlanBTrigger, PlanB>> = {
   cozumel: {
     rain: { id: 'rain', title: 'Covered shops and a museum', detail: 'The pier shops are under cover. The island museum is a short taxi ride and takes about 90 minutes.', nearShip: true },
     heat: { id: 'heat', title: 'A beach club with shade', detail: 'Pick a club with a shaded area and a pool. Go before midday and be back at the pier by early afternoon.', nearShip: false },
@@ -133,7 +133,7 @@ export const PLAN_B: Record<'cozumel' | 'belize' | 'roatan', Record<PlanBTrigger
  * day passes (no invented places), and a plain line where the port has none. Tender wording follows the landing.
  */
 export function planBFor(port: string, k: PortKnowledge | undefined, tender: boolean): Record<PlanBTrigger, PlanB> {
-  const authored = (PLAN_B as Record<string, Record<PlanBTrigger, PlanB>>)[port]
+  const authored = PLAN_B[port]
   if (authored) return authored
   const walk = k?.walks[0]
   const pass = k?.dayPasses.find((d) => d.crowd !== 'busy') ?? k?.dayPasses[0]

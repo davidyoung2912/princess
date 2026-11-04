@@ -13,7 +13,7 @@ describe('phone setup (XT-01, S3-07)', () => {
     expect(roamingMoment('preCruise')).toBe('beforeSailing')
     expect(roamingMoment('embarkation')).toBe('sailAway')
     expect(roamingMoment('seaDay')).toBe('atSea')
-    expect(roamingMoment('belize')).toBe('inPort')
+    expect(roamingMoment('portDay')).toBe('inPort')
     expect(roamingMoment('postCruise')).toBe('none')
     expect(roamingMoment('booked')).toBe('none')
     for (const s of STAGE_IDS) expect(['none', 'beforeSailing', 'sailAway', 'atSea', 'inPort']).toContain(roamingMoment(s))

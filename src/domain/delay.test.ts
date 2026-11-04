@@ -44,8 +44,8 @@ describe('delay', () => {
     expect(expectedArrival(1_000_000, r)).toBe(1_000_000 + 30 * 60_000)
   })
   it('has steps with English text for every stage', () => {
-    for (const stage of ['booked', 'embarkation', 'cozumel', 'seaDay'] as const) for (const k of delayNextSteps(stage)) expect(en[k as keyof typeof en], k).toBeTruthy()
-    expect(delayNextSteps('cozumel')).toContain('delay.next.portAgent')
+    for (const stage of ['booked', 'embarkation', 'portDay', 'seaDay'] as const) for (const k of delayNextSteps(stage)) expect(en[k as keyof typeof en], k).toBeTruthy()
+    expect(delayNextSteps('portDay')).toContain('delay.next.portAgent')
     expect(delayNextSteps('embarkation')).toContain('delay.next.terminal')
   })
   it('lists the facts an insurer asks for', () => {

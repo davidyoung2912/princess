@@ -15,7 +15,7 @@ import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { AboardError } from './common'
 
-type Contactable = keyof typeof PORT_CONTACTS
+type Contactable = string
 
 /** Last-minute tours that can still be booked on board today, with the seats left (POR-05). */
 export function LastMinute() {

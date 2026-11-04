@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { clockAt, clockNow, CLOCK_SPEEDS, normalizeClock, setClockSpeed, stepClock } from './clock'
 import { clockView } from './clockView'
 import { balances, computeEntitlements, sourceOf } from './entitlements'
-import { allAboardEpoch, itinerary, portAt, REFERENCE_SAILING, SAILINGS, shipClockChanges, shipZoneAt, STAGE_IDS, stageAt, stageStarts, timeForStage } from './sailings'
+import { allAboardEpoch, itinerary, portAt, REFERENCE_SAILING, SAILINGS, shipClockChanges, shipZoneAt, STAGE_IDS, stageAt, stageRank, stageStarts, timeForStage } from './sailings'
 import { activeFaults, appliesTo, SCENARIOS, targetMatches } from './scenarios'
 import { addDays, dateIn, offsetMinutes, zonedToEpoch } from './timezones'
 
@@ -62,13 +62,16 @@ describe('sailings', () => {
     expect(new Date(allAboardEpoch(march, 3)!).toISOString()).toBe('2027-03-23T21:30:00.000Z')
     expect(allAboardEpoch(march, 2)).toBeNull()
   })
-  it('has stages in order, each landing in itself', () => {
-    expect(STAGE_IDS).toEqual(stageStarts(march).map((s) => s.id))
+  it('derives the stages from the itinerary, each landing in itself', () => {
+    expect(stageStarts(march).map((s) => s.id)).toEqual(['booked', 'preCruise', 'checkIn', 'embarkation', 'seaDay', 'portDay', 'portDay', 'portDay', 'seaDay', 'farewell', 'disembark', 'postCruise'])
     for (const s of SAILINGS) {
       const starts = stageStarts(s)
       for (let i = 1; i < starts.length; i++) expect(starts[i].at, `${s.id} ${starts[i].id}`).toBeGreaterThan(starts[i - 1].at)
-      for (const id of STAGE_IDS) expect(stageAt(s, timeForStage(s, id)), `${s.id} ${id}`).toBe(id)
+      for (const st of starts) expect(stageAt(s, st.at), `${s.id} ${st.id}`).toBe(st.id)
+      for (let i = 1; i < starts.length; i++) expect(stageRank(starts[i].id), `${s.id} ${starts[i].id}`).toBeGreaterThanOrEqual(stageRank(starts[i - 1].id))
+      expect(starts.filter((x) => x.day !== undefined).length).toBe(itinerary(s).length)
     }
+    expect(timeForStage(march, 'seaDay', 1)).toBeGreaterThan(timeForStage(march, 'seaDay'))
     expect(stageAt(march, 0)).toBe('booked')
   })
 })
