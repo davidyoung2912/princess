@@ -3,6 +3,7 @@ import stanley from '../../assets/stanley-small.png'
 import { BITS, bitLabel, draftDayNote, emptyDays, nextEmptyDay, saveDraft, storyShows, type Bit } from '../../ai/stanleyStory'
 import { PORTS, type ItineraryDay } from '../../domain/sailings'
 import type { Journal } from '../../domain/memoryBook'
+import type { TripEntry } from '../../domain/tripDiary'
 import { useSettings } from '../../hooks/useSettings'
 import { t } from '../../i18n'
 import { stanleyLevelFor } from '../../settings/settings'
@@ -14,7 +15,7 @@ const placeOf = (port: string): string | null => (port === 'sea' ? null : (PORTS
  * Stanley the storyteller (SG6): asks what the favourite bit of the next empty day was, shows a first draft, and saves it as that day's note only when the
  * guest says so. The note then sits in the diary below, where it is edited like any other. Shown at Helpful and Chatty; nothing is sent anywhere.
  */
-export function StanleyStoryteller({ days, journal, onSave }: { days: readonly ItineraryDay[]; journal: Journal; onSave: (next: Journal) => void }) {
+export function StanleyStoryteller({ days, journal, onSave, diary = [] }: { days: readonly ItineraryDay[]; journal: Journal; diary?: readonly TripEntry[]; onSave: (next: Journal) => void }) {
   const [settings] = useSettings()
   const [bit, setBit] = useState<Bit | null>(null)
   const [saved, setSaved] = useState<number | null>(null)
@@ -24,7 +25,7 @@ export function StanleyStoryteller({ days, journal, onSave }: { days: readonly I
   if (day === null && saved === null) return null
   const info = days.find((d) => d.day === (day ?? saved))
   const place = info ? placeOf(info.port) : null
-  const draft = day !== null && bit && info ? draftDayNote({ port: place, bit }) : ''
+  const draft = day !== null && bit && info ? draftDayNote({ port: place, bit, diary: diary.filter((e) => e.day === day) }) : ''
   const keep = () => {
     if (day === null) return
     const next = saveDraft(journal, day, draft)

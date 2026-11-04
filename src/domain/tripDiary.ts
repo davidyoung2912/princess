@@ -4,7 +4,7 @@
  * Nothing here books, sends or sells anything.
  */
 
-export const DIARY_KINDS = ['booked', 'docs', 'checkedIn', 'pass', 'boarded', 'port', 'meal', 'tour', 'note'] as const
+export const DIARY_KINDS = ['booked', 'docs', 'checkedIn', 'pass', 'boarded', 'port', 'meal', 'tour', 'photo', 'note'] as const
 export type DiaryKind = (typeof DIARY_KINDS)[number]
 export const isDiaryKind = (v: unknown): v is DiaryKind => DIARY_KINDS.includes(v as DiaryKind)
 

@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { addAuto, addNote, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
 import { formatDate } from '../../domain/cruise'
+import { sourceLines } from '../../domain/diarySources'
 import { itinerary, PORTS } from '../../domain/sailings'
+import { api } from '../../runtime'
+import { useMine } from '../../hooks/useMine'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { t, th, type StringKey } from '../../i18n'
@@ -25,6 +28,16 @@ function useDiaryDays() {
   const days = useMemo(() => itinerary(sailing), [sailing])
   const dates = useMemo(() => days.map((d) => d.date), [days])
   const today = dayFor(dates, now)
+  // What the guest booked and kept: dinners, tours and photos. A failed load just means no extra lines for now.
+  const source = useMine(async () => {
+    const [tours, dining, photos] = await Promise.all([api.plan.excursions.list(), api.plan.dining.view(), api.photos.list()])
+    return {
+      tours: tours.booked.filter((b) => b.status === 'booked').map((b) => b.excursionId),
+      meals: dining.reservations.map((r) => ({ venueId: r.venueId, day: r.day, time: r.time })),
+      photoDays: photos.photos.map((p) => p.day),
+    }
+  }, [sailing.id])
+  const sources = source.status === 'ready' ? source.data : null
   useEffect(() => {
     if (today < 1) return
     update((s) => {
@@ -33,9 +46,10 @@ function useDiaryDays() {
         const line = d.port === 'sea' ? t('diary.auto.sea', { day: d.day }) : t('diary.auto.port', { day: d.day, port: portName(d.port) })
         diary = addAuto(diary, { id: newMemoryId(), sailingId: sailing.id, day: d.day, at: Date.parse(`${d.date}T08:00:00Z`) || 0, kind: 'port', text: line, key: `day:${d.day}` })
       }
+      for (const l of sources && today >= 1 ? sourceLines({ days, today, ...sources }) : []) diary = addAuto(diary, { id: newMemoryId(), sailingId: sailing.id, ...l })
       return diary === s.diary ? s : { ...s, diary }
     })
-  }, [today, days, sailing.id, update])
+  }, [today, days, sailing.id, sources, update])
   return { sailing, now, days, today }
 }
 

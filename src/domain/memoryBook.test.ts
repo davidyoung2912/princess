@@ -27,6 +27,11 @@ describe('memory book from the diary', () => {
     expect(b.find((s) => s.id === 'day-3')!.lines).toEqual([expect.any(String), 'Loved it: Best pastry ever', 'Sunset on deck'])
     expect(b.find((s) => s.id === 'day-4')!.lines).toContain('No note for this day.')
   })
+  it('opens with a Before the ship page from the day-0 lines, and has none without them', () => {
+    const b = memoryBook(S, recap, {}, [], false, [e(0, 'Booked the cruise')])
+    expect(b[1]).toMatchObject({ id: 'day-0', heading: 'Before the ship', lines: ['Booked the cruise'] })
+    expect(memoryBook(S, recap, {}, [], false, []).some((x) => x.id === 'day-0')).toBe(false)
+  })
   it('keeps the journal note first', () => {
     const b = memoryBook(S, recap, { 2: 'Quiet day.' }, [], false, [e(2, 'Read a book')])
     expect(b.find((s) => s.id === 'day-2')!.lines.slice(1)).toEqual(['Quiet day.', 'Read a book'])

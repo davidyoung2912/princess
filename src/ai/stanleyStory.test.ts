@@ -52,3 +52,12 @@ describe('Stanley the storyteller', () => {
     expect(storyShows('off')).toBe(false)
   })
 })
+
+describe('the storyteller reads the diary', () => {
+  it('uses the day\'s meal or tour line for the bit that asks for it', () => {
+    const diary = [{ kind: 'meal' as const, text: 'Dinner at Crown Grill, 18:30.' }, { kind: 'tour' as const, text: 'Ashore: Snorkel trip.' }]
+    expect(draftDayNote({ port: null, bit: 'food', diary })).toContain('Dinner at Crown Grill, 18:30.')
+    expect(draftDayNote({ port: 'Roatán', bit: 'ashore', diary })).toContain('Ashore: Snorkel trip.')
+    expect(draftDayNote({ port: null, bit: 'view', diary })).not.toMatch(/Crown Grill|Snorkel/)
+  })
+})

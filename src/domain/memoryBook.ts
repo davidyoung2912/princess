@@ -27,6 +27,9 @@ const dayName = (port: string): string => (port === 'sea' ? 'At sea' : (PORTS[po
 /** The pages of the book: a title page, each day with the guest's note (a day with no note is still shown), and the facts. Plain text so it prints and works offline. */
 export function memoryBook(sailing: Sailing, recap: Recap, journal: Journal, reflections: readonly Reflection[], includeReflections: boolean, diary: readonly TripEntry[] = []): BookSection[] {
   const sections: BookSection[] = [{ id: 'title', heading: recap.title, lines: [`${recap.nights} nights on Sun Princess`, recap.dates] }]
+  // Before the ship (day 0): booking, documents and check-in lines, so the book starts where the trip did.
+  const before = diary.filter((e) => e.day === 0).map((e) => (e.mood ? `${MOOD_LABEL[e.mood]}: ${e.text}` : e.text))
+  if (before.length) sections.push({ id: 'day-0', heading: 'Before the ship', lines: before })
   for (const d of itinerary(sailing)) {
     const note = (journal[d.day] ?? '').trim()
     // The guest's own diary lines for the day (and what the app wrote) fill the page, so a day with no journal note is not empty.

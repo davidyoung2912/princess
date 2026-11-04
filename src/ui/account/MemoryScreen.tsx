@@ -96,7 +96,7 @@ export function MemoryScreen() {
         <p>{t('diary.screenBody')}</p>
         <LinkButton to="/me/diary" variant="secondary">{t('diary.open')}</LinkButton>
       </Card>
-      <StanleyStoryteller days={days} journal={state.journal} onSave={(journal) => update((s) => ({ ...s, journal }))} />
+      <StanleyStoryteller days={days} journal={state.journal} diary={entriesFor(state.diary, sailing.id)} onSave={(journal) => update((s) => ({ ...s, journal }))} />
       <Card labelledBy="mem-journal" >
         <h2 id="mem-journal" className="card__title no-print">{th('memory.journal')}</h2>
         <div className="no-print">
