@@ -69,10 +69,43 @@ public class AuthApiTests : IDisposable
     }
 
     [Fact]
-    public async Task LoginByAccountNumberAndCaseInsensitiveEmail()
-    {
-        Assert.Equal(_gerald.PublicId, (await SignIn(_gerald.AccountNumber)).User.Id);
+    public async Task LoginByCaseInsensitiveEmail() =>
         Assert.Equal(_gerald.PublicId, (await SignIn("GERALD@Demo.Princess.Example")).User.Id);
+
+    [Fact]
+    public async Task AccountNumberSignsInOnlyWhenTheSwitchIsOn()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Login(_gerald.AccountNumber, Password)).StatusCode);
+        using var on = new ApiFactory { AllowAccountNumberLogin = true };
+        var user = on.Users.Add("a@example.com", Password);
+        using var c = on.CreateClient();
+        var r = await c.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(user.AccountNumber, Password));
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+    }
+
+    [Fact]
+    public async Task AStrangersFailuresLockOnlyTheirOwnAddressAndBackOff()
+    {
+        // The test client has no remote address, so seed a lock for "elsewhere" by hand: it must not stop the owner.
+        for (var i = 0; i < 5; i++) await _f.SignIn.RecordThrottleFailureAsync(_gerald.Id, "203.0.113.9", 5, TimeSpan.FromMinutes(15), TimeSpan.FromHours(24), _f.Clock.UtcNow, default);
+        Assert.NotNull((await _f.SignIn.GetThrottleAsync(_gerald.Id, "203.0.113.9", default))!.LockedUntil);
+        Assert.Equal(HttpStatusCode.OK, (await Login(_gerald.Email!, Password)).StatusCode);
+
+        // Second lock from the same place lasts twice as long.
+        var first = (await _f.SignIn.GetThrottleAsync(_gerald.Id, "203.0.113.9", default))!.LockedUntil!.Value - _f.Clock.UtcNow;
+        ThrottleState? last = null;
+        for (var i = 0; i < 5; i++) last = await _f.SignIn.RecordThrottleFailureAsync(_gerald.Id, "203.0.113.9", 5, TimeSpan.FromMinutes(15), TimeSpan.FromHours(24), _f.Clock.UtcNow, default);
+        Assert.Equal(first * 2, last!.LockedUntil!.Value - _f.Clock.UtcNow);
+    }
+
+    [Fact]
+    public async Task AResetEndsAccessTokensAlreadyIssued()
+    {
+        var s = await SignIn();
+        Assert.Equal(HttpStatusCode.OK, (await _http.SendAsync(Authed(HttpMethod.Get, "/api/v1/me", s.AccessToken))).StatusCode);
+        _f.Clock.UtcNow = _f.Clock.UtcNow.AddMinutes(1);
+        await _f.SignIn.SetPasswordAsync(_gerald.Id, TestHashes.Make("another-new-password"), _f.Clock.UtcNow, default);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _http.SendAsync(Authed(HttpMethod.Get, "/api/v1/me", s.AccessToken))).StatusCode);
     }
 
     [Fact]

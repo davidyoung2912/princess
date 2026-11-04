@@ -9,11 +9,36 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         public ChallengeRecord Record { get; init; } = new();
         public string Purpose { get; init; } = "";
         public DateTime? UsedAt { get; set; }
+        public DateTime CreatedAt { get; init; }
     }
 
     public List<Challenge> Challenges { get; } = [];
     public List<OutboxMessage> Outbox { get; } = [];
+    public Dictionary<(long UserId, string Ip), (ThrottleState State, DateTime At)> Throttles { get; } = [];
     private long _next = 1;
+
+    public Task<ChallengeUsage> ChallengeUsageAsync(long userId, string purpose, DateTime since, CancellationToken ct)
+    {
+        var rows = Challenges.Where(c => c.Record.UserId == userId && c.Purpose == purpose && c.CreatedAt >= since).ToList();
+        return Task.FromResult(new ChallengeUsage(rows.Count, rows.Sum(c => c.Record.Attempts)));
+    }
+
+    public Task<ThrottleState?> GetThrottleAsync(long userId, string ip, CancellationToken ct) =>
+        Task.FromResult(Throttles.TryGetValue((userId, ip), out var t) ? t.State : null);
+
+    public Task<ThrottleState> RecordThrottleFailureAsync(long userId, string ip, int maxFailures, TimeSpan baseLockout, TimeSpan maxLockout, DateTime now, CancellationToken ct)
+    {
+        Throttles.TryGetValue((userId, ip), out var old);
+        var next = LoginThrottle.Next(old.State, old.State is null ? null : old.At, maxFailures, baseLockout, maxLockout, now);
+        Throttles[(userId, ip)] = (next, now);
+        return Task.FromResult(next);
+    }
+
+    public Task ClearThrottleAsync(long userId, string ip, CancellationToken ct)
+    {
+        Throttles.Remove((userId, ip));
+        return Task.CompletedTask;
+    }
 
     public Task<long?> CreateAccountAsync(NewAccount a, DateTime now, CancellationToken ct)
     {
@@ -30,14 +55,16 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         u.PasswordHash = passwordHash;
         u.FailedLogins = 0;
         u.LockedUntil = null;
+        u.SessionsValidFrom = now;
+        foreach (var key in Throttles.Keys.Where(k => k.UserId == userId).ToList()) Throttles.Remove(key);
         foreach (var row in refresh.Rows.Where(r => r.Record.UserId == userId && r.Record.RevokedAt is null && r.Record.UsedAt is null)) row.Record.RevokedAt = now;
         return Task.CompletedTask;
     }
 
-    public Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, DateTime expiresAt, DateTime now, CancellationToken ct)
+    public Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, byte[] salt, DateTime expiresAt, DateTime now, CancellationToken ct)
     {
         foreach (var c in Challenges.Where(c => c.Record.UserId == userId && c.Purpose == purpose && c.UsedAt is null)) c.UsedAt = now;
-        Challenges.Add(new Challenge { Purpose = purpose, Record = new ChallengeRecord { Id = _next++, UserId = userId, CodeHash = codeHash, ExpiresAt = expiresAt } });
+        Challenges.Add(new Challenge { Purpose = purpose, CreatedAt = now, Record = new ChallengeRecord { Id = _next++, UserId = userId, CodeHash = codeHash, Salt = salt, ExpiresAt = expiresAt } });
         return Task.CompletedTask;
     }
 

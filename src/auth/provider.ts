@@ -24,7 +24,7 @@ export const ownerIdOf = (session: Pick<Session, 'user'> | null | undefined): st
 
 export type AuthMethod = 'password' | 'code'
 
-/** Ways to sign in. `password` takes an email or 10-digit account number (ACT-01). */
+/** Ways to sign in. `password` takes an email (the server can be switched to accept the 10-digit account number too) (ACT-01). */
 export type Credentials =
   | { method: 'password'; identifier: string; password: string }
   /** The one-time code emailed after `requestCode('magic', email)`. */

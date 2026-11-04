@@ -111,6 +111,44 @@ public class SignInFlowsApiTests : IDisposable
     }
 
     [Fact]
+    public async Task OnlyThreeCodesAnHourPerAccountAndPurpose()
+    {
+        for (var i = 0; i < 5; i++) Assert.Equal(HttpStatusCode.NoContent, (await Post("forgot", new CodeRequest(_gerald.Email))).StatusCode);
+        Assert.Equal(3, _f.SignIn.Outbox.Count);
+        // Sign-in codes have their own allowance.
+        await Post("magic", new CodeRequest(_gerald.Email));
+        Assert.Equal(4, _f.SignIn.Outbox.Count);
+        _f.Clock.UtcNow = _f.Clock.UtcNow.AddMinutes(61);
+        await Post("forgot", new CodeRequest(_gerald.Email));
+        Assert.Equal(5, _f.SignIn.Outbox.Count);
+    }
+
+    [Fact]
+    public async Task WrongTriesCarryOverToAFreshCode()
+    {
+        for (var round = 0; round < 3; round++)
+        {
+            await Post("forgot", new CodeRequest(_gerald.Email));
+            var wrong = LastCode() == "000000" ? "111111" : "000000";
+            for (var i = 0; i < 4; i++) await Post("reset", new ResetRequest(_gerald.Email, wrong, "a-brand-new-password"));
+        }
+        // Ten wrong tries this hour: even the right code is refused now.
+        var challenge = _f.SignIn.Challenges.Last();
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post("reset", new ResetRequest(_gerald.Email, LastCode(), "a-brand-new-password"))).StatusCode);
+        Assert.Null(challenge.UsedAt);
+    }
+
+    [Fact]
+    public async Task CodesAreStoredSaltedAndKeyed()
+    {
+        await Post("forgot", new CodeRequest(_gerald.Email));
+        var rec = _f.SignIn.Challenges.Single().Record;
+        Assert.Equal(16, rec.Salt!.Length);
+        var plain = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"reset:{_gerald.Id}:{LastCode()}"));
+        Assert.NotEqual(plain, rec.CodeHash);
+    }
+
+    [Fact]
     public async Task ANewCodeSpendsTheOldOne()
     {
         await Post("forgot", new CodeRequest(_gerald.Email));

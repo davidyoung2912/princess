@@ -572,6 +572,7 @@ CREATE TABLE dbo.Users (
   Locale NVARCHAR(10) NOT NULL CONSTRAINT DF_Users_Locale DEFAULT N'en',
   LockedUntil DATETIME2(0) NULL,
   FailedLogins INT NOT NULL CONSTRAINT DF_Users_FailedLogins DEFAULT 0,
+  SessionsValidFrom DATETIME2(0) NULL,           -- access tokens issued before this are refused (password reset)
   LastLoginAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -647,7 +648,8 @@ CREATE TABLE dbo.AuthChallenges (
   Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AuthChallenges PRIMARY KEY,
   UserId BIGINT NOT NULL,
   Purpose VARCHAR(5) NOT NULL,
-  CodeHash BINARY(32) NOT NULL,                 -- SHA-256 of purpose:userId:code; the code itself is never stored
+  CodeHash BINARY(32) NOT NULL,                 -- HMAC-SHA-256 (server key) of salt|purpose|userId|code; the code itself is never stored
+  Salt BINARY(16) NULL,                         -- random per code; NULL on a code issued before salts (it cannot match)
   Attempts INT NOT NULL CONSTRAINT DF_AuthChallenges_Attempts DEFAULT 0,
   ExpiresAt DATETIME2(0) NOT NULL, UsedAt DATETIME2(0) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_AuthChallenges_CreatedAt DEFAULT SYSUTCDATETIME(),
@@ -656,6 +658,24 @@ CREATE TABLE dbo.AuthChallenges (
 );
 CREATE INDEX IX_AuthChallenges_UserId_Purpose ON dbo.AuthChallenges (UserId, Purpose, CreatedAt DESC);
 CREATE INDEX IX_AuthChallenges_ExpiresAt ON dbo.AuthChallenges (ExpiresAt);   -- expiry sweep
+END
+IF COL_LENGTH(N'dbo.AuthChallenges', N'Salt') IS NULL ALTER TABLE dbo.AuthChallenges ADD Salt BINARY(16) NULL;
+IF COL_LENGTH(N'dbo.Users', N'SessionsValidFrom') IS NULL ALTER TABLE dbo.Users ADD SessionsValidFrom DATETIME2(0) NULL;
+
+-- Failed password tries per (account, address), so a stranger cannot lock a known email out for everyone.
+IF OBJECT_ID(N'dbo.LoginThrottle', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.LoginThrottle (
+  UserId BIGINT NOT NULL,
+  Ip VARCHAR(45) NOT NULL,
+  Failures INT NOT NULL CONSTRAINT DF_LoginThrottle_Failures DEFAULT 0,
+  Strikes INT NOT NULL CONSTRAINT DF_LoginThrottle_Strikes DEFAULT 0,   -- earlier locks; each doubles the next
+  LockedUntil DATETIME2(0) NULL,
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LoginThrottle_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_LoginThrottle PRIMARY KEY (UserId, Ip),
+  CONSTRAINT FK_LoginThrottle_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_LoginThrottle_UpdatedAt ON dbo.LoginThrottle (UpdatedAt);   -- retention sweep
 END
 
 IF OBJECT_ID(N'dbo.Outbox', N'U') IS NULL

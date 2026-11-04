@@ -14,7 +14,7 @@ import { CodeFlow, SignUpForm } from './SignInFlows'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 
-/** The sign-in page: email or 10-digit account number plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
+/** The sign-in page: email plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
 // TEMPORARY, development builds only: pre-fill the "dream" test account so testing is one click.
 const DEV_LOGIN = import.meta.env.PROD ? '' : 'dream'
 

@@ -17,13 +17,15 @@ Status key: [ ] not started, [~] in progress, [x] done (built, not committed unt
 - Demo and diagnostics off by default: `Demo:Enabled` flag (not just `IsProduction()`) for `/auth/demo-accounts`; `Swagger:Enabled` defaults to false; `/health/providers` behind auth or an internal-only flag; `AllowedHosts` set per environment; real `security.txt` contact. Done: all default off/closed (`Swagger:Enabled`, `Demo:Enabled` false; Development turns both on); `/health/providers` now needs a sign-in; `AllowedHosts` is `localhost` in the base file and `*` only in Development; the API's security.txt contact comes from `Security:Contact` (still the placeholder until the user supplies a real address).
 - Document the static-host headers for `dist/` (CSP with `frame-ancestors`, HSTS, `X-Frame-Options`, long immutable cache for hashed assets, Brotli). Done in `docs/static-host-headers.md`.
 
-## Phase 3 [ ] Sign-in hardening
+## Phase 3 [x] Sign-in hardening
 
 - Cap one-time-code requests per account (for example 3 an hour) and keep a cumulative attempt cap across re-issued codes.
 - Store codes as a keyed (HMAC with a server secret, per-challenge salt) hash instead of unsalted SHA-256.
 - Per-account email send cap on `/forgot` and `/magic`; lockout keyed on (account, IP) with backoff so strangers cannot lock a known email out.
 - Stop accepting the 10-digit account number as an unauthenticated login identifier, or make its failure indistinguishable and limited.
 - Revoke access-token validity on password reset and logout (token version or short denylist), or document the 15-minute window.
+
+Done: `Auth:CodeRequestsPerHour` (3, per account and purpose; over the cap the answer is the same 204 but no email) and `Auth:MaxCodeAttemptsPerHour` (10 wrong tries across all codes issued in the hour); codes are HMAC-SHA-256 under a key derived from `Jwt:SigningKey` over a per-challenge 16-byte `AuthChallenges.Salt` (codes issued before the salt column cannot match, they last 15 minutes); failed passwords are throttled per (account, address) in `dbo.LoginThrottle` (`Auth:MaxFailedLogins` then `LockoutMinutes`, doubling per repeat lock up to `MaxLockoutMinutes`, forgotten after a day), and the whole account only pauses after `MaxFailedLoginsPerAccount` (30) failures across all addresses; the account number signs in only when `Auth:AllowAccountNumberLogin` is true (default false, otherwise it behaves as an unknown account); a password reset sets `Users.SessionsValidFrom`, and the JWT bearer handler refuses any access token issued before it. Logout still revokes only the refresh-token family: the access token on that device lives for up to `Jwt:AccessTokenMinutes` (15), the documented window, because tokens carry no session id and revoking them all would sign the person out everywhere. Existing databases pick up the new columns and table by re-running `db/01-schema.sql`.
 
 ## Phase 4 [ ] Boarding pass lookup and booking numbers
 

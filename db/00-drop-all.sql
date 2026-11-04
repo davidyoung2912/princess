@@ -60,6 +60,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Profiles'),
   (N'dbo', N'ProfileTags'),
   (N'dbo', N'RefreshTokens'),
+  (N'dbo', N'LoginThrottle'),
   (N'dbo', N'AuthChallenges'),
   (N'dbo', N'Outbox'),
   (N'dbo', N'HelperLinks'),

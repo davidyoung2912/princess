@@ -59,6 +59,10 @@ describe('responsible disclosure (SEC-10)', () => {
   })
   it('matches the text the server sends', () => {
     const cs = readFileSync('server/Princess.Api/Endpoints/SecurityTxtEndpoint.cs', 'utf8')
-    for (const line of txt.trim().split('\n')) expect(cs).toContain(line)
+    // The server's contact comes from `Security:Contact`; its default is the same placeholder this file carries.
+    for (const line of txt.trim().split('\n')) {
+      if (line.startsWith('Contact: ')) expect(cs).toContain(`PlaceholderContact = "${line.slice('Contact: '.length)}"`)
+      else expect(cs).toContain(line)
+    }
   })
 })

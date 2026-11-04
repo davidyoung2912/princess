@@ -33,6 +33,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public InMemoryStaffTicketStore Staff { get; } = new();
     public FakeClock Clock { get; } = new(DateTime.UtcNow.AddTicks(-(DateTime.UtcNow.Ticks % TimeSpan.TicksPerSecond)));   // whole seconds, so a demo offset (kept in seconds) lands exactly
     public int LoginAttemptsPerMinute { get; init; } = 1000;
+    public bool AllowAccountNumberLogin { get; init; }
 
     public ApiFactory()
     {
@@ -54,6 +55,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         {
             ["Jwt:SigningKey"] = "test-signing-key-test-signing-key-0123456789",
             ["Auth:LoginAttemptsPerMinute"] = LoginAttemptsPerMinute.ToString(),
+            ["Auth:AllowAccountNumberLogin"] = AllowAccountNumberLogin.ToString(),
             ["Retention:IntervalMinutes"] = "0",
             ["Swagger:Enabled"] = "true",
             ["Demo:Enabled"] = "true",

@@ -27,6 +27,15 @@ public sealed class ConfigureJwtBearer(IOptions<JwtOptions> jwt) : IConfigureNam
         };
         options.Events = new JwtBearerEvents
         {
+            // A password reset ends access tokens already issued, not just refresh tokens. The user row is the cached one every request loads anyway.
+            OnTokenValidated = async ctx =>
+            {
+                if (ctx.SecurityToken is not Microsoft.IdentityModel.JsonWebTokens.JsonWebToken jwt || !Guid.TryParse(jwt.Subject, out var id)) return;
+                var user = await ctx.HttpContext.RequestServices.GetRequiredService<Data.IUserStore>().FindByPublicIdAsync(id, ctx.HttpContext.RequestAborted);
+                // The stored time is rounded to the second, so allow a second either way.
+                if (user?.SessionsValidFrom is { } from && jwt.IssuedAt.AddSeconds(1) < DateTime.SpecifyKind(from, DateTimeKind.Utc))
+                    ctx.Fail("sessionEnded");
+            },
             // 401 and 403 as problem details; the client refreshes silently on 401 and treats 403 as final.
             OnChallenge = ctx =>
             {

@@ -17,6 +17,8 @@ public sealed class UserRecord
     public string Currency { get; set; } = "USD";
     public int FailedLogins { get; set; }
     public DateTime? LockedUntil { get; set; }
+    /// <summary>Access tokens issued before this moment are refused (set when the password is reset).</summary>
+    public DateTime? SessionsValidFrom { get; set; }
     /// <summary>The last successful sign-in before this one (shown in the activity report as "previous sign-in").</summary>
     public DateTime? LastLoginAt { get; set; }
     public string? FirstName { get; set; }

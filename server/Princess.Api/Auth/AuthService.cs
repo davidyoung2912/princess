@@ -47,8 +47,10 @@ public sealed class AuthService(
             throw ApiException.Invalid();
 
         var now = clock.UtcNow;
-        var user = await users.FindByIdentifierAsync(identifier, ct);
+        // With account numbers off, a number is just an unknown account: the same time and the same answer.
+        var user = IsAccountNumber(identifier) && !auth.Value.AllowAccountNumberLogin ? null : await users.FindByIdentifierAsync(identifier, ct);
         var verified = hasher.Verify(request.Password, user?.PasswordHash ?? DummyHash);
+        var address = ip ?? "unknown";
         // Every failure looks the same from outside: unknown account, no password (supervised child), locked, wrong password.
         // The response is the same for every failure; the audit row says which it was.
         if (user is null || user.PasswordHash is null)
@@ -56,21 +58,26 @@ public sealed class AuthService(
             await Audit("auth.login", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAccount" : "noPassword", attempt = AuditContext.Fingerprint(identifier) }, ct);
             throw BadCredentials();
         }
-        if (user.LockedUntil is { } until && until > now)
+        // Two locks: this account from this address (short, backing off), and the account as a whole (a far higher bar).
+        var throttle = await signIn.GetThrottleAsync(user.Id, address, ct);
+        if (user.LockedUntil is { } until && until > now || throttle?.LockedUntil is { } pairUntil && pairUntil > now)
         {
             await Audit("auth.login", AuditOutcome.Denied, user, new { reason = "locked" }, ct);
             throw BadCredentials();
         }
         if (!verified)
         {
-            await users.RecordLoginFailureAsync(user.Id, auth.Value.MaxFailedLogins, TimeSpan.FromMinutes(auth.Value.LockoutMinutes), now, ct);
-            var locks = user.FailedLogins + 1 >= auth.Value.MaxFailedLogins;
+            var baseLock = TimeSpan.FromMinutes(auth.Value.LockoutMinutes);
+            await users.RecordLoginFailureAsync(user.Id, auth.Value.MaxFailedLoginsPerAccount, baseLock, now, ct);
+            var state = await signIn.RecordThrottleFailureAsync(user.Id, address, auth.Value.MaxFailedLogins, baseLock, TimeSpan.FromMinutes(auth.Value.MaxLockoutMinutes), now, ct);
+            var locks = state.LockedUntil is not null;
             await Audit("auth.login", AuditOutcome.Failure, user, new { reason = "wrongPassword", failedLogins = user.FailedLogins + 1, lockedNow = locks }, ct);
-            if (locks) await Audit("auth.lockout", AuditOutcome.Denied, user, new { minutes = auth.Value.LockoutMinutes }, ct);
+            if (locks) await Audit("auth.lockout", AuditOutcome.Denied, user, new { minutes = (int)(state.LockedUntil!.Value - now).TotalMinutes, strikes = state.Strikes }, ct);
             throw BadCredentials();
         }
 
         await users.RecordLoginSuccessAsync(user.Id, now, ct);
+        if (throttle is not null) await signIn.ClearThrottleAsync(user.Id, address, ct);
         await Audit("auth.login", AuditOutcome.Success, user, new { previousLogin = user.LastLoginAt }, ct);
         var familyId = Random.Shared.NextInt64(1, long.MaxValue);
         return await IssueAsync(user, familyId, refreshTokenId: null, userAgent, ip, ct);
@@ -156,8 +163,16 @@ public sealed class AuthService(
         }
 
         var now = clock.UtcNow;
+        // The same answer as any other request, but no email: a stranger cannot fill someone's inbox with codes.
+        var used = await signIn.ChallengeUsageAsync(user.Id, purpose, now.AddHours(-1), ct);
+        if (used.Requests >= auth.Value.CodeRequestsPerHour)
+        {
+            await Audit($"auth.{purpose}.request", AuditOutcome.Denied, user, new { reason = "tooManyRequests" }, ct);
+            return;
+        }
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
-        await signIn.ReplaceChallengeAsync(user.Id, purpose, CodeHash(purpose, user.Id, code), now.AddMinutes(CodeMinutes), now, ct);
+        var salt = RandomNumberGenerator.GetBytes(16);
+        await signIn.ReplaceChallengeAsync(user.Id, purpose, CodeHash(purpose, user.Id, code, salt), salt, now.AddMinutes(CodeMinutes), now, ct);
         var subject = purpose == Reset ? "Your Princess password reset code" : "Your Princess sign-in code";
         var body = $"Your code is {code}. It works once and lasts {CodeMinutes} minutes. If you did not ask for it, ignore this message; nothing has changed.";
         await sender.SendAsync(new OutboxMessage(user.Id, "email", "critical", user.Email, subject, body), ct);
@@ -187,12 +202,15 @@ public sealed class AuthService(
         if (email is null || code is null || code.Length != 6 || !code.All(char.IsAsciiDigit)) throw ApiException.Invalid("badCode");
         var user = await users.FindByIdentifierAsync(email, ct);
         var challenge = user is null ? null : await signIn.FindOpenChallengeAsync(user.Id, purpose, clock.UtcNow, ct);
-        if (user is null || challenge is null || challenge.Attempts >= MaxCodeAttempts)
+        // Wrong tries add up across every code issued this hour, so asking for a new code does not refill the guesses.
+        var recent = user is null || challenge is null ? null : await signIn.ChallengeUsageAsync(user.Id, purpose, clock.UtcNow.AddHours(-1), ct);
+        if (user is null || challenge is null || challenge.Attempts >= MaxCodeAttempts || recent!.Attempts >= auth.Value.MaxCodeAttemptsPerHour)
         {
             await Audit($"auth.{purpose}.redeem", AuditOutcome.Failure, user, new { reason = user is null ? "unknownAddress" : challenge is null ? "noOpenCode" : "tooManyTries", attempt = AuditContext.Fingerprint(email) }, ct);
             throw ApiException.Invalid("badCode");
         }
-        if (!CryptographicOperations.FixedTimeEquals(challenge.CodeHash, CodeHash(purpose, user.Id, code)))
+        var matches = challenge.Salt is { } salt && CryptographicOperations.FixedTimeEquals(challenge.CodeHash, CodeHash(purpose, user.Id, code, salt));
+        if (!matches)
         {
             await signIn.AddChallengeAttemptAsync(challenge.Id, ct);
             await Audit($"auth.{purpose}.redeem", AuditOutcome.Failure, user, new { reason = "wrongCode", attempts = challenge.Attempts + 1 }, ct);
@@ -206,7 +224,14 @@ public sealed class AuthService(
         return user;
     }
 
-    public static byte[] CodeHash(string purpose, long userId, string code) => SHA256.HashData(Encoding.UTF8.GetBytes($"{purpose}:{userId}:{code}"));
+    /// <summary>HMAC-SHA-256 under a key derived from the server's signing key, over the challenge's own salt, the purpose, the account and the code. A copy of the table cannot be ground against the 10^6 codes without the key.</summary>
+    private byte[] CodeHash(string purpose, long userId, string code, byte[] salt)
+    {
+        var key = HMACSHA256.HashData(Encoding.UTF8.GetBytes(jwt.Value.SigningKey), "auth-code-hash"u8);
+        return HMACSHA256.HashData(key, (byte[])[.. salt, .. Encoding.UTF8.GetBytes($"|{purpose}|{userId}|{code}")]);
+    }
+
+    private static bool IsAccountNumber(string identifier) => identifier.Length == 10 && identifier.All(char.IsAsciiDigit);
 
     public static bool ValidPassword(string? p) => p is { Length: >= MinPasswordLength and <= 200 };
 
