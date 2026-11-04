@@ -23,7 +23,8 @@ public class ShipProgramTests
     public void Every_ship_runs_the_core_events_and_a_main_show(string ship)
     {
         var ids = ShipPrograms.For(ship)!.Select(e => e.Id).ToHashSet();
-        Assert.Superset(["muster", "sailaway", "stage-show", "welcome-show", "farewell-show", "movie"], ids);
+        foreach (var core in new[] { "muster", "sailaway", "stage-show", "welcome-show", "farewell-show", "movie" })
+            Assert.Contains(core, ids);
         Assert.Contains(ShipPrograms.For(ship)!, e => e.Id == "stage-show" && e.Interest == "shows");
     }
 
