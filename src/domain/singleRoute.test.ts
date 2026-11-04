@@ -32,9 +32,9 @@ const CEILINGS: Record<string, { re: RegExp; files: number; hits: number }> = {
   'REFERENCE_SAILING': { re: /\bREFERENCE_SAILING\b/g, files: 3, hits: 8 },
   'SHIP_HOME_ZONE': { re: /\bSHIP_HOME_ZONE\b/g, files: 0, hits: 0 },
   'SHIP_WEST_ZONE': { re: /\bSHIP_WEST_ZONE\b/g, files: 0, hits: 0 },
-  // `sea` is the id of a day at sea on every route, so it is not counted. What is left is the authored Western Caribbean sample week of the one
-  // aboard-depth ship (stage ids, photo spots, port contacts, plan B, clearance rows, call-port phrases, scenarios); `src/testing` is not counted.
-  'literal port ids': { re: /['"](cozumel|belize|roatan|fll)['"]/g, files: 7, hits: 35 },
+  // `sea` is the id of a day at sea on every route, so it is not counted; `src/testing` is not counted. The sample week's port content is served
+  // (`ashore`, photo spots, call-port phrases), so no source file names a port.
+  'literal port ids': { re: /['"](cozumel|belize|roatan|fll)['"]/g, files: 0, hits: 0 },
 }
 
 describe('single-route references (X0 guard rail)', () => {

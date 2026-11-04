@@ -477,7 +477,7 @@ public class ShipboardRulesTests
         var seven = PhotoRules.SpotsFor(Timeline.Legacy(new DateOnly(2027, 3, 6)));
         Assert.Equal(seven.Select(s => s.Id).Distinct().Count(), seven.Count);
         Assert.Equal("the tender pier", PhotoRules.SpotsFor(Timeline.Legacy(new DateOnly(2027, 3, 6))).First(s => s.Id == "port-4-belize").Title.Split(", ")[1]);
-        Assert.Equal(PhotoRules.PhotographersFor(Timeline.Legacy(new DateOnly(2027, 3, 6))).Count(s => s.PlaceId == "landing"), 4);
+        Assert.Equal(4, PhotoRules.PhotographersFor(Timeline.Legacy(new DateOnly(2027, 3, 6))).Count(s => s.PlaceId == "landing"));
     }
 
     [Theory]

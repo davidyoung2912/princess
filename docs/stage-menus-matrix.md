@@ -19,13 +19,13 @@ its tabs, Home and search. Tests in `src/routes/screens.test.ts` and `coverage.t
 | Sea | Today (teal) · Ship (pink) · People (gold) | 93 |
 | Port | Port (teal) · Ship (pink) · People (gold) | 88 |
 | Disembark | Leave (teal) · Ship (pink) · People (gold) | 48 |
-| Remember | Memories (teal) · Next (pink) · Feedback (gold) | 49 |
+| Remember | Memories (teal) · Next (pink) · Feedback (gold) | 50 |
 
 ## Dream
 
 **Home.** Let's find a cruise you'll love. Start with the quiz.
 
-Six tiles: `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H07` Sailing Dates; `H04` Ask the Concierge; `P49` Group Poll and Dream Board; `H11` Saved Sailings
+Six tiles: `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H07` Sailing Dates; `H04` Ask Stanley (before you book); `P49` Group Poll and Dream Board; `H11` Saved Sailings
 
 **Explore** (teal). Browse the cruise, the sailings and the ports.
 
@@ -33,7 +33,7 @@ Six tiles: `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H07` Sailing Dat
 
 **Ask** (pink). Get answers and advice before you decide.
 
-`H04` Ask the Concierge; `H03` Talk to a Travel Advisor; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `P21` Paste a Plan; `P49` Group Poll and Dream Board; `P50` Links for Someone at Home or Your Advisor
+`H04` Ask Stanley (before you book); `H03` Talk to a Travel Advisor; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `P21` Paste a Plan; `P49` Group Poll and Dream Board; `P50` Links for Someone at Home or Your Advisor
 
 **Me** (plum). Your details and the sailings you have saved.
 
@@ -55,7 +55,7 @@ Six tiles: `H08` Sailing Details; `H12` What the Whole Trip Costs; `H14` Choose 
 
 **Cost** (gold). The real, all-in price, and ways to pay less.
 
-`H12` What the Whole Trip Costs; `H15` Offers for Your Trip; `P17` Price-Drop Watch; `P18` Is This Fare Fair?; `H16` Book Your Cruise; `H03` Talk to a Travel Advisor; `H04` Ask the Concierge
+`H12` What the Whole Trip Costs; `H15` Offers for Your Trip; `P17` Price-Drop Watch; `P18` Is This Fare Fair?; `H16` Book Your Cruise; `H03` Talk to a Travel Advisor; `H04` Ask Stanley (before you book)
 
 **Me** (plum). Your saved sailings, price watches and details.
 
@@ -91,7 +91,7 @@ Six tiles: `P14` Money Plan; `M06` Documents; `P12` Readiness for Each Traveller
 
 **Trip** (teal). Your confirmed trip, and what changes.
 
-`M02` My Trips; `M03` Trip Details; `H20` Booking Confirmed; `H21` Changes to Your Trip; `H23` Plain-English Summaries; `H05` Ask Your Cruise; `H08` Sailing Details; `H09` Port Details; `H10` Your Ship; `S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `P01` Pre-Cruise Checklist; `P13` Trip Contract; `P14` Money Plan
+`M02` My Trips; `M03` Trip Details; `H20` Booking Confirmed; `H21` Changes to Your Trip; `H23` Plain-English Summaries; `H05` Ask Stanley (your trip); `H08` Sailing Details; `H09` Port Details; `H10` Your Ship; `S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `P01` Pre-Cruise Checklist; `P13` Trip Contract; `P14` Money Plan
 
 **Needs** (pink). Documents, health and access for every traveller.
 
@@ -161,7 +161,7 @@ Six tiles: `H33` Embarkation Companion; `H35` Meeting-Point Card; `S25` Muster D
 
 **Ship** (pink). Everything aboard in one place, including safety.
 
-`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S14` Ask the Ship; `S15` Order Food and Drinks; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
+`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S14` Ask Stanley (the ship); `S15` Order Food and Drinks; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
 
 **Plan** (teal). Book excursions and dining and shape your days.
 
@@ -183,7 +183,7 @@ Six tiles: `H22` Morning and Evening Briefing; `P38` Dining Reservations; `P34` 
 
 **Ship** (pink). Everything aboard in one place, including safety.
 
-`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S06` Steps and Deck Laps; `S07` Loungers; `S08` Sightings; `S09` Where Are We; `S10` The Sea Beneath Us; `S11` Along the Way; `S12` Sun, Moon and Stars; `S13` Ship Pulse; `S14` Ask the Ship; `S15` Order Food and Drinks; `S16` Bar Menu and Drinks Tracker; `S17` Shops and Specials; `S18` Spa, Salon and Fitness; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
+`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S06` Steps and Deck Laps; `S07` Loungers; `S08` Sightings; `S09` Where Are We; `S10` The Sea Beneath Us; `S11` Along the Way; `S12` Sun, Moon and Stars; `S13` Ship Pulse; `S14` Ask Stanley (the ship); `S15` Order Food and Drinks; `S16` Bar Menu and Drinks Tracker; `S17` Shops and Specials; `S18` Spa, Salon and Fitness; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
 
 **People** (gold). Your family, your group and the community.
 
@@ -205,7 +205,7 @@ Six tiles: `S37` Port Day; `S38` Port Know-How; `P37` My Excursions; `S32` Safe 
 
 **Ship** (pink). Everything aboard in one place, including safety.
 
-`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S06` Steps and Deck Laps; `S07` Loungers; `S08` Sightings; `S09` Where Are We; `S10` The Sea Beneath Us; `S11` Along the Way; `S12` Sun, Moon and Stars; `S13` Ship Pulse; `S14` Ask the Ship; `S15` Order Food and Drinks; `S16` Bar Menu and Drinks Tracker; `S17` Shops and Specials; `S18` Spa, Salon and Fitness; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
+`S01` Deck Map; `S02` Restaurants and Bars; `S03` Venue Details; `S04` Ship News; `S05` Search the Ship; `S06` Steps and Deck Laps; `S07` Loungers; `S08` Sightings; `S09` Where Are We; `S10` The Sea Beneath Us; `S11` Along the Way; `S12` Sun, Moon and Stars; `S13` Ship Pulse; `S14` Ask Stanley (the ship); `S15` Order Food and Drinks; `S16` Bar Menu and Drinks Tracker; `S17` Shops and Specials; `S18` Spa, Salon and Fitness; `S19` Dining Favourites and Table; `S20` Laundry and Pressing; `S21` Cabin Requests; `S22` My Stateroom; `S23` Wi-Fi; `S24` Cabin TV; `S25` Muster Drill; `S26` Emergency Card; `S27` Medical Help Now; `S28` Ask for Help by Text; `S29` Report a Security Concern; `S30` Health and Medical Center; `S31` Seasickness First Aid; `S33` Allergy Confidence; `S34` Lost and Found; `S35` Captioned and Signed Shows; `S36` Do Not Disturb
 
 **People** (gold). Your family, your group and the community.
 
@@ -245,11 +245,11 @@ Six tiles: `M16` Trip Memories; `M17` Memory Book and Next Trip; `M19` Rate Your
 
 **Memories** (teal). Your trip, kept.
 
-`M16` Trip Memories; `M17` Memory Book and Next Trip; `M18` Your Cruise, Wrapped; `S48` Photos; `S47` You Said, We Did; `M15` Trip History and Receipts
+`M16` Trip Memories; `M17` Memory Book and Next Trip; `M42` Trip Diary; `M18` Your Cruise, Wrapped; `S48` Photos; `S47` You Said, We Did; `M15` Trip History and Receipts
 
 **Next** (pink). Where to next.
 
-`M22` Book Your Next Cruise; `H06` The Cruise and Its Route; `H07` Sailing Dates; `H50` Explore by Region and Month; `H08` Sailing Details; `H09` Port Details; `H47` Princess Ships; `H11` Saved Sailings; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H04` Ask the Concierge; `P28` Gift Ideas; `P04` Occasion Starter; `M09` Captain's Circle and Rewards
+`M22` Book Your Next Cruise; `H06` The Cruise and Its Route; `H07` Sailing Dates; `H50` Explore by Region and Month; `H08` Sailing Details; `H09` Port Details; `H47` Princess Ships; `H11` Saved Sailings; `H02` Find My Cruise; `H13` Is This Cruise for Me?; `H04` Ask Stanley (before you book); `P28` Gift Ideas; `P04` Occasion Starter; `M09` Captain's Circle and Rewards
 
 **Feedback** (gold). Tell us how it went.
 
