@@ -19,7 +19,7 @@ export type Journal = Record<number, string>
 
 export interface BookSection { id: string; heading: string; lines: string[] }
 
-const dayName = (port: string): string => (port === 'sea' ? 'At sea' : port === 'fll' ? 'Fort Lauderdale' : (PORTS[port as keyof typeof PORTS]?.name ?? port))
+const dayName = (port: string): string => (port === 'sea' ? 'At sea' : (PORTS[port as keyof typeof PORTS]?.name ?? port))
 
 /** The pages of the book: a title page, each day with the guest's note (a day with no note is still shown), and the facts. Plain text so it prints and works offline. */
 export function memoryBook(sailing: Sailing, recap: Recap, journal: Journal, reflections: readonly Reflection[], includeReflections: boolean): BookSection[] {

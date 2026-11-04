@@ -67,7 +67,7 @@ export function DayPolish({ day }: { day: PlanDay }) {
   const sailing = useSailing()
   const { state, update } = useMemory()
   const cabin = useMyCabin()
-  const sky = useFeed(skyNightFeed, sailing.departure, day.day)
+  const sky = useFeed(skyNightFeed, sailing.id, day.day)
   const block = state.polish.rest.find((r) => r.day === day.day)
   const walks = dayWalks(day.entries, cabin)
   const set = (part: RestPart | null) => update((s) => ({ ...s, polish: { ...s.polish, rest: setRest(s.polish.rest, day.day, part) } }))

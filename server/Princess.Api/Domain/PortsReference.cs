@@ -1416,6 +1416,7 @@ public static class PortsReference
    ]
   },
   "belize": {
+   "lang": "en",
    "fairPrices": [
     {
      "route": "Tourism Village to Belize Zoo",

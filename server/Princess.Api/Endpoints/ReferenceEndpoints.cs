@@ -90,14 +90,14 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("Status of a flight on a date (on time, delayed with minutes, or cancelled). A simulated feed, the same for every device; `source` says so.");
 
-        api.MapGet("/feeds/route", async (string? departure, string? sailing, string crowd, IRouteConditionsProvider route, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/route", async (string sailing, string crowd, IRouteConditionsProvider route, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!System.Text.RegularExpressions.Regex.IsMatch(departure ?? "", @"^[0-9]{4}-[0-9]{2}-[0-9]{2}$") || !FeedRules.ValidCrowd(crowd ?? ""))
                     throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(route.Conditions(departure!, crowd!));
             })
-            .WithTags("Reference").WithSummary("Traffic and weather on the way to the port for a sailing date and arrival-window crowd, with how much earlier to leave. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("Traffic and weather on the way to the port for a sailing date and arrival-window crowd, with how much earlier to leave. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
         api.MapGet("/feeds/port-crowd", (string port, string date, IShipTelemetry ship) =>
             {
@@ -113,61 +113,61 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("The weekly fare for the same cabin since booking (for the price-drop watch), as `[{ date, total }]` in cents, at most 26 points. A simulated feed, the same for every device.");
 
-        api.MapGet("/feeds/pulse", async (string? departure, string? sailing, long now, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/pulse", async (string sailing, long now, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidDate(departure) || !OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(ship.Pulse(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
             })
-            .WithTags("Reference").WithSummary("How busy each ship venue is at the last five-minute mark and for the next four hours in half hours (0 to 100), for Ship Pulse, the lines and the quiet spaces. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("How busy each ship venue is at the last five-minute mark and for the next four hours in half hours (0 to 100), for Ship Pulse, the lines and the quiet spaces. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/pulse-day", async (string? departure, string? sailing, int day, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/pulse-day", async (string sailing, int day, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidPulseDay(departure, day)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(ship.PulseDay(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), day));
             })
-            .WithTags("Reference").WithSummary("How busy each ship venue is at every half hour of a cruise day, from midnight ship time (48 levels, 0 to 100), for plans that look across the day. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("How busy each ship venue is at every half hour of a cruise day, from midnight ship time (48 levels, 0 to 100), for plans that look across the day. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/storm", async (string? departure, string? sailing, int days, IStormOutlook storm, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/storm", async (string sailing, int days, IStormOutlook storm, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidStormQuery(departure, days)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(storm.Outlook(departure, days));
             })
-            .WithTags("Reference").WithSummary("How likely a named storm is to touch a sailing's route, from authored chances by month, with what the line may do and what a guest can do. Not a forecast; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("How likely a named storm is to touch a sailing's route, from authored chances by month, with what the line may do and what a guest can do. Not a forecast; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/sky-night", async (string? departure, string? sailing, int day, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/sky-night", async (string sailing, int day, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!OnboardFeedRules.ValidSkyQuery(departure, day)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(ship.SkyNight(departure, day, sailing));
             })
-            .WithTags("Reference").WithSummary("Sunrise, sunset, the moon, easy constellations and the sunset side of the ship for a cruise day. Worked out from the date and an authored position; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("Sunrise, sunset, the moon, easy constellations and the sunset side of the ship for a cruise day. Worked out from the date and an authored position; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/ship-position", async (string? departure, string? sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/ship-position", async (string sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(nav.Position(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
             })
-            .WithTags("Reference").WithSummary("Where the ship is at a moment: latitude and longitude, speed in knots, heading, nautical miles sailed since the last port and still to go, the voyage so far, and ship time against local time with the next clock change. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("Where the ship is at a moment: latitude and longitude, speed in knots, heading, nautical miles sailed since the last port and still to go, the voyage so far, and ship time against local time with the next clock change. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/sea-conditions", async (string? departure, string? sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/sea-conditions", async (string sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(nav.Sea(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
             })
-            .WithTags("Reference").WithSummary("The sea at the ship at a moment: depth below the keel and its class (shelf, slope, deep, trench), water temperature, wind, Beaufort force, sea state, wave and swell height and period. Metric. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("The sea at the ship at a moment: depth below the keel and its class (shelf, slope, deep, trench), water temperature, wind, Beaufort force, sea state, wave and swell height and period. Metric. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
-        api.MapGet("/feeds/along-the-way", async (string? departure, string? sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
+        api.MapGet("/feeds/along-the-way", async (string sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
             {
-                departure = await DepartureOfAsync(departure, sailing, trips, ct);
+                var departure = await DepartureOfAsync(sailing, trips, ct);
                 if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
                 return Results.Ok(nav.Along(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
             })
-            .WithTags("Reference").WithSummary("The sea zone the ship is in (habitat and the wildlife to look for) and the landmarks it is passing, has just passed and will pass next, with the side they lie on and when. A simulated feed; `source` says so. Name the sailing with `sailing` (an id); the `departure` date still works for one more phase but is ambiguous when a ship offers the same date at more than one length.");
+            .WithTags("Reference").WithSummary("The sea zone the ship is in (habitat and the wildlife to look for) and the landmarks it is passing, has just passed and will pass next, with the side they lie on and when. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
         api.MapGet("/feeds/loungers", (long now, IShipTelemetry ship) =>
             {
@@ -244,13 +244,13 @@ public static class ReferenceEndpoints
     }
 
     /// <summary>
-    /// The departure date a feed works from: the named sailing's date, or the older <c>departure</c> parameter. A sailing id that is not in the catalogue is a bad query.
+    /// The departure date a feed works from: the named sailing's date. A sailing id that is not in the catalogue is a bad query.
     /// Loading the sailings also makes each sailing's days known to <see cref="TimelineBook"/>, which the feed engines read.
     /// </summary>
-    private static async Task<string> DepartureOfAsync(string? departure, string? sailing, ITripStore trips, CancellationToken ct)
+    private static async Task<string> DepartureOfAsync(string? sailing, ITripStore trips, CancellationToken ct)
     {
         var all = await trips.ListSailingsAsync(ct);
-        if (string.IsNullOrEmpty(sailing)) return departure ?? "";
+        if (string.IsNullOrEmpty(sailing)) throw ApiException.Invalid("badFeedQuery");
         var row = sailing.Length <= 40 ? all.FirstOrDefault(s => s.Id == sailing) : null;
         return row is null ? throw ApiException.Invalid("badFeedQuery") : row.Departure.ToString("yyyy-MM-dd");
     }

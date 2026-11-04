@@ -1,4 +1,4 @@
-import { GUIDE_PORTS, replacePortKnowledge, type PortKnowledge } from './portContent'
+import { replacePortKnowledge, type PortKnowledge } from './portContent'
 import { replacePorts, type PortGuide } from './ports'
 import { notifyCatalogue } from './catalogueServed'
 
@@ -47,8 +47,8 @@ export function normalizePorts(raw: unknown): ServedPorts | null {
     const c = raw.coords[id]
     if (!Array.isArray(c) || c.length !== 2 || !num(c[0], -180, 180) || !num(c[1], -90, 90)) return null
   }
-  for (const id of GUIDE_PORTS) if (!raw.guides[id] || !raw.knowledge[id] || !raw.coords[id]) return null
-  if (!raw.guides.fll || !raw.coords.fll) return null
+  if (Object.keys(raw.guides).length === 0) return null
+  for (const id of Object.keys(raw.knowledge)) if (!raw.guides[id] || !raw.coords[id]) return null
   return { version: raw.version, guides: raw.guides as unknown as ServedPorts['guides'], knowledge: raw.knowledge as unknown as ServedPorts['knowledge'], coords: raw.coords as unknown as ServedPorts['coords'] }
 }
 

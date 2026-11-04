@@ -246,7 +246,7 @@ public static class NavigationRules
         string Hhmm(DateTime u, int off) => u.AddMinutes(off).ToString("HH:mm", CultureInfo.InvariantCulture);
         var change = timeline.ClockChanges().FirstOrDefault(c => c.At > utc);
         return new ShipClockDto(
-            Hhmm(utc, shipOffset), shipOffset, shipZone == timeline.HomeZone ? "eastern" : "belize", localPort, Hhmm(utc, localOffset), localOffset, localOffset - shipOffset,
+            Hhmm(utc, shipOffset), shipOffset, shipZone == timeline.HomeZone ? "home" : "other", localPort, Hhmm(utc, localOffset), localOffset, localOffset - shipOffset,
             change is null ? null : new ShipClockChangeDto(Ms(change.At), change.Hours, ShipWall(timeline, change.At.AddMilliseconds(-1)).Day));
     }
 

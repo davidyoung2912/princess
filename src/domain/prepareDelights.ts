@@ -164,7 +164,7 @@ export const MOODS = ['quietBeach', 'market', 'history', 'reef', 'wildlife', 'se
 export type MoodId = (typeof MOODS)[number]
 export const isMood = (v: unknown): v is MoodId => MOODS.some((m) => m === v)
 
-type StopId = Exclude<PortId, 'sea' | 'fll'>
+type StopId = PortId
 /** Authored: what each stop is known for. */
 export const PORT_MOODS: Record<StopId, readonly MoodId[]> = {
   cozumel: ['quietBeach', 'market', 'history', 'reef'],

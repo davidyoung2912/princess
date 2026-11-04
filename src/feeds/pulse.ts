@@ -34,8 +34,8 @@ export const minuteOf = (now: number): number => Math.floor(now / MIN) * MIN
 /** The five-minute mark a reading is taken at (kept here so the contract is in one place). */
 export const observedMark = (now: number): number => Math.floor(now / (PULSE_STEP_MIN * MIN)) * PULSE_STEP_MIN * MIN
 
-/** Pulse levels from the server for a sailing (by departure date) and a whole minute; none until they arrive. */
-export const pulseFeed = createFeed<[departure: string, minute: number], ServedLevels>((d, m) => `${d}|${m}`, normalizePulse)
+/** Pulse levels from the server for a sailing (by id) and a whole minute; none until they arrive. */
+export const pulseFeed = createFeed<[sailing: string, minute: number], ServedLevels>((d, m) => `${d}|${m}`, normalizePulse)
 
 /** The same environment with the server's levels laid over it where it has them. */
 /** A whole cruise day at half-hour steps from midnight ship time, as the server gave it. */
@@ -53,8 +53,8 @@ export function normalizePulseDay(raw: unknown): ServedDay | null {
   return { day: raw.day, startAt: raw.startAt as number, levels }
 }
 
-/** Pulse levels across a cruise day for a sailing (by departure date) and day. */
-export const pulseDayFeed = createFeed<[departure: string, day: number], ServedDay>((d, n) => `${d}|${n}`, normalizePulseDay)
+/** Pulse levels across a cruise day for a sailing (by id) and day. */
+export const pulseDayFeed = createFeed<[sailing: string, day: number], ServedDay>((d, n) => `${d}|${n}`, normalizePulseDay)
 
 /** The level at the nearest half hour of a served day, or undefined when the moment is outside it. */
 export function dayLevel(day: ServedDay | null, id: PulseId, ms: number): number | undefined {

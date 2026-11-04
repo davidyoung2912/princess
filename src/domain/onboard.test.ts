@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aboardState, mayTenderInstead, portDayAt, REMINDER_THRESHOLDS, reminderTimes, tenderGroupFor, tenderView, TENDER_GROUPS } from './allaboard'
+import { aboardState, portDayAt, REMINDER_THRESHOLDS, reminderTimes, tenderGroupFor, tenderView, TENDER_GROUPS } from './allaboard'
 import { channelById, chatState, ESCALATE_AFTER_MINUTES, replyAt, SLOW_FACTOR } from './chat'
 import { DECKS, ELEVATORS, MUSTER_STATIONS, musterByLabel, placeById, PLACES, searchPlaces } from './deck'
 import { buildFolio, filterFolio, folioTotals, NO_FOLIO_FILTER, runningTotals, type FolioGuest } from './folio'
@@ -243,12 +243,6 @@ describe('all aboard', () => {
     expect(late.status).toBe('delayed')
     expect(late.lastTenderAt).toBeLessThan(belize.allAboardAt)
     expect(tenderView(belize, g1, first + 5 * 60_000, 0).lastTenderAt).toBe(late.lastTenderAt)
-  })
-
-  it('flags Roatán as a possible tender port only in the weather scenario', () => {
-    expect(mayTenderInstead('roatan', true)).toBe(true)
-    expect(mayTenderInstead('roatan', false)).toBe(false)
-    expect(mayTenderInstead('cozumel', true)).toBe(false)
   })
 })
 

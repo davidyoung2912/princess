@@ -2,8 +2,9 @@ import { Link, useParams } from 'react-router'
 import { t, th, type StringKey } from '../../i18n'
 import { portGuideById } from '../../domain/ports'
 import { formatMoney } from '../../domain/money'
-import { PORTS, REFERENCE_SAILING, itinerary } from '../../domain/sailings'
+import { PORTS, itinerary } from '../../domain/sailings'
 import { useFavourites } from '../../hooks/useFavourites'
+import { useSailing } from '../../hooks/useDemo'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
@@ -12,6 +13,7 @@ import { SaveShare } from './parts'
 
 /** A port guide: how you get ashore and how accessible it is come first, then things to do and sample excursions (DIS-05). */
 export function PortScreen() {
+  const sailing = useSailing()
   const { id } = useParams()
   const guide = portGuideById(id)
   const favourites = useFavourites()
@@ -25,7 +27,7 @@ export function PortScreen() {
     )
   }
   const name = PORTS[guide.id].name
-  const day = itinerary(REFERENCE_SAILING).find((d) => d.port === guide.id)
+  const day = itinerary(sailing).find((d) => d.port === guide.id)
   const tender = guide.landing === 'tender'
   return (
     <div className="page">

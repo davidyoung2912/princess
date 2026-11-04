@@ -19,7 +19,7 @@ const minutesOf = (hhmm: string | undefined): number | null => {
 }
 
 /** One block per day: sea, home port, dock or tender, with the hours between arriving and leaving (past midnight counts as the next day). */
-export function dayStrip(days: readonly Pick<ItineraryDay, 'day' | 'port' | 'arrive' | 'depart'>[], tenderPorts: ReadonlySet<string>, homePort = 'fll'): StripDay[] {
+export function dayStrip(days: readonly Pick<ItineraryDay, 'day' | 'port' | 'arrive' | 'depart'>[], tenderPorts: ReadonlySet<string>, homePort: string | undefined = days[0]?.port): StripDay[] {
   return days.map((d) => {
     if (d.port === 'sea') return { day: d.day, kind: 'sea', hours: null }
     const a = minutesOf(d.arrive)

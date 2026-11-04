@@ -1,10 +1,10 @@
 import { COMPASS_POINTS, DEPTH_CLASSES, LANDMARK_KINDS, SIDES, WILDLIFE } from '../domain/navigation'
 import type { AlongTheWay, CompassPoint, Landmark, SeaConditions, ShipClock, ShipPosition } from '../domain/navigation'
 import type { StopId } from '../domain/navigation'
-import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { createFeed, isInt, isPortIdText, isRecord, oneOf } from './feed'
 import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
-const PORT_IDS: readonly StopId[] = ['fll', 'cozumel', 'belize', 'roatan']
+const isStop = (v: unknown): v is string => isPortIdText(v) && v !== 'sea'
 const HHMM = /^\d{2}:\d{2}$/
 
 const num = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max
@@ -21,7 +21,7 @@ function normalizeClock(raw: unknown): ShipClock | null {
     nextChange = { at: c.at, hours: c.hours, day: c.day }
   }
   if (!hhmm(raw.shipTime) || !hhmm(raw.localTime) || !isInt(raw.shipOffsetMinutes, -840, 840) || !isInt(raw.localOffsetMinutes, -840, 840) || !isInt(raw.differenceMinutes, -1440, 1440)) return null
-  if (!oneOf(raw.shipZone, ['eastern', 'belize'] as const) || !oneOf(raw.localPlace, PORT_IDS)) return null
+  if (!oneOf(raw.shipZone, ['home', 'other'] as const) || !isStop(raw.localPlace)) return null
   return {
     shipTime: raw.shipTime, shipOffsetMinutes: raw.shipOffsetMinutes, shipZone: raw.shipZone, localPlace: raw.localPlace,
     localTime: raw.localTime, localOffsetMinutes: raw.localOffsetMinutes, differenceMinutes: raw.differenceMinutes, nextChange,
@@ -35,7 +35,7 @@ export function normalizePosition(raw: unknown): ShipPosition | null {
   const a = raw.arrival
   if (!clock || !num(raw.now, 0, 5e12) || !num(raw.lat, -90, 90) || !num(raw.lon, -180, 180) || !num(raw.speedKnots, 0, 40) || !isInt(raw.headingDegrees, 0, 359) || !compass(raw.compass)) return null
   if (raw.day !== null && !isInt(raw.day, 1, MAX_PLAN_DAY)) return null
-  if ((raw.inPort !== null && !oneOf(raw.inPort, PORT_IDS)) || !oneOf(raw.lastPort, PORT_IDS) || (raw.nextPort !== null && !oneOf(raw.nextPort, PORT_IDS))) return null
+  if ((raw.inPort !== null && !isStop(raw.inPort)) || !isStop(raw.lastPort) || (raw.nextPort !== null && !isStop(raw.nextPort))) return null
   if (!isInt(raw.nmSailed, 0, 5000) || !isInt(raw.nmRemaining, 0, 5000) || !isInt(raw.legPercent, 0, 100) || !isInt(raw.voyageNmSailed, 0, 20000) || !isInt(raw.voyageNmTotal, 1, 20000)) return null
   if (a !== null && (!isRecord(a) || !num(a.at, 0, 5e12) || !hhmm(a.shipTime) || !isInt(a.day, 1, MAX_PLAN_DAY))) return null
   return {
@@ -91,10 +91,10 @@ export function normalizeAlong(raw: unknown): AlongTheWay | null {
   return { now: raw.now, zone: { id: z.id, name: z.name, habitat: z.habitat, wildlife: z.wildlife as AlongTheWay['zone']['wildlife'] }, passing, ahead, behind }
 }
 
-type Key = [departure: string, minute: number]
+type Key = [sailing: string, minute: number]
 const key = (d: string, m: number): string => `${d}|${m}`
 
-/** The ship's position, speed, heading, distances and clocks at a whole minute of a sailing (by departure date). Not kept on the device: an old position is not a position. */
+/** The ship's position, speed, heading, distances and clocks at a whole minute of a sailing (by id). Not kept on the device: an old position is not a position. */
 export const positionFeed = createFeed<Key, ShipPosition>(key, normalizePosition)
 /** The sea at the ship at a whole minute. */
 export const seaFeed = createFeed<Key, SeaConditions>(key, normalizeSea)

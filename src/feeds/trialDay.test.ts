@@ -21,9 +21,11 @@ describe('a day on this ship for someone not signed in (N6.1)', () => {
   })
 
   it('offers tours only on a port day, not at sea or at the home port', () => {
-    expect(hasTours({ day: 3, port: 'cozumel', place: 'Cozumel' })).toBe(true)
-    expect(hasTours({ day: 2, port: 'sea', place: 'At sea' })).toBe(false)
-    expect(hasTours({ day: 1, port: 'fll', place: 'Fort Lauderdale' })).toBe(false)
+    const week = [{ day: 1, port: 'fll', place: 'Fort Lauderdale' }, { day: 2, port: 'sea', place: 'At sea' }, { day: 3, port: 'cozumel', place: 'Cozumel' }, { day: 4, port: 'fll', place: 'Fort Lauderdale' }]
+    expect(hasTours(week[2], week)).toBe(true)
+    expect(hasTours(week[1], week)).toBe(false)
+    expect(hasTours(week[0], week)).toBe(false)
+    expect(hasTours(week[3], week)).toBe(false)
     expect(hasTours(undefined)).toBe(false)
   })
 })

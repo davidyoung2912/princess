@@ -16,7 +16,7 @@ export function SkyScreen() {
   const sailing = useSailing()
   const current = useCurrentDay()
   const [day, setDay] = useState(current)
-  const n = useFeed(skyNightFeed, sailing.departure, day)
+  const n = useFeed(skyNightFeed, sailing.id, day)
   const days = itinerary(sailing)
   return (
     <div className="page">
@@ -26,7 +26,7 @@ export function SkyScreen() {
       <div className="field">
         <label htmlFor="sky-day">{t('sky.day')}</label>
         <select id="sky-day" className="field__input" value={day} onChange={(e) => setDay(Number(e.target.value))}>
-          {days.map((d) => <option key={d.day} value={d.day}>{`${d.day} · ${d.port === 'sea' ? 'At sea' : d.port === 'fll' ? 'Fort Lauderdale' : PORTS[d.port].name}`}</option>)}
+          {days.map((d) => <option key={d.day} value={d.day}>{`${d.day} · ${d.port === 'sea' ? 'At sea' : PORTS[d.port].name}`}</option>)}
         </select>
       </div>
       {!n && <FeedWaiting />}

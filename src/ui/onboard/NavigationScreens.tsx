@@ -66,7 +66,7 @@ function TimeCard({ clock }: { clock: ShipClock }) {
 export function WhereScreen() {
   const [settings] = useSettings()
   const sailing = useSailing()
-  const p = useFeed(positionFeed, sailing.departure, useMinute())
+  const p = useFeed(positionFeed, sailing.id, useMinute())
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />
@@ -117,8 +117,8 @@ export function SeaScreen() {
   const [settings] = useSettings()
   const sailing = useSailing()
   const day = useCurrentDay()
-  const s = useFeed(seaFeed, sailing.departure, useMinute())
-  const sky = useFeed(skyNightFeed, sailing.departure, day)
+  const s = useFeed(seaFeed, sailing.id, useMinute())
+  const sky = useFeed(skyNightFeed, sailing.id, day)
   const units = settings.units
   return (
     <div className="page">
@@ -184,7 +184,7 @@ function LandmarkList({ id, items }: { id: string; items: Landmark[] }) {
 /** Along the way: the sea zone and the wildlife to look for, and the places the ship is passing. */
 export function AlongScreen() {
   const sailing = useSailing()
-  const a = useFeed(alongFeed, sailing.departure, useMinute())
+  const a = useFeed(alongFeed, sailing.id, useMinute())
   return (
     <div className="page">
       <BackLink to="/ship" label={t('route.ship')} />

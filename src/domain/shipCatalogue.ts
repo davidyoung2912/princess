@@ -1,13 +1,11 @@
 import { CATALOGUE_PORTS, hasSailingDays, portById, setSailingDays, type ItineraryDay, type Port } from './sailings'
-import { SHIP, type ShipFacts } from './ship'
-import { CRUISE } from './cruise'
 import { notifyCatalogue } from './catalogueServed'
 
 /**
  * The served catalogue of ships, regions, ports, itinerary patterns and sailings (phase X0, `docs/catalogue-plan.md` sections 6 and 7), and the days of any one
  * sailing, loaded when a screen asks for them. Everything here is read from the server (`/reference/catalogue/*`, the `entries` of `/reference/sailings`
- * and `/reference/sailings/{id}/itinerary`); nothing is authored in the app. `shipOf` and `cruiseOf` answer for any sailing id, and fall back to the older
- * single-ship constants (`SHIP`, `CRUISE`) until the catalogue has arrived. Pure apart from the swaps and the change notice.
+ * and `/reference/sailings/{id}/itinerary`); nothing is authored in the app. `shipOf` and `cruiseOf` answer for any sailing id, and answer with an
+ * empty summary until the catalogue has arrived. Pure apart from the swaps and the change notice.
  */
 export type ShipDepth = 'browse' | 'aboard'
 export type DataStatus = 'served' | 'sample' | 'verified'
@@ -216,26 +214,21 @@ export const regionById = (id: string | undefined): Region | undefined => REGION
 export const patternById = (id: string): ItineraryPattern | undefined => PATTERNS.find((p) => p.id === id)
 export const sailingEntryOf = (sailingId: string): SailingEntry | undefined => ENTRIES.find((e) => e.id === sailingId)
 
-/** The older single ship's facts as a summary, for the time before the catalogue arrives. */
-function summaryOfOlder(f: ShipFacts): ShipSummary {
-  const ft = Number(f.length.replace(/[^\d]/g, ''))
-  return { id: f.id, name: f.name, className: f.className, depth: 'aboard', decks: f.decks, tonnage: f.tonnage, guests: f.guests, crew: f.crew, staterooms: f.staterooms, entered: f.entered, ...(ft > 0 ? { lengthFt: ft } : {}), intro: f.intro, highlights: [] }
-}
+/** What a screen gets before the catalogue has arrived: no facts, so nothing is invented. */
+const NO_SHIP: ShipSummary = { id: '', name: '', className: '', depth: 'browse', decks: 0, tonnage: 0, guests: 0, intro: '', highlights: [] }
 
 export const shipById = (id: string): ShipSummary | undefined => SHIPS.find((s) => s.id === id)
 
-/** The ship a sailing runs on. A sailing the catalogue does not know (or a catalogue not yet loaded) is the older single ship. */
+/** The ship a sailing runs on. A sailing the catalogue does not know (or a catalogue not yet loaded) gets an empty summary. */
 export function shipOf(sailingId: string): ShipSummary {
   const entry = sailingEntryOf(sailingId)
-  return (entry && shipById(entry.ship)) || shipById(SHIP.id) || summaryOfOlder(SHIP)
+  return (entry && shipById(entry.ship)) || NO_SHIP
 }
 
-const olderRoute = (e: SailingEntry): boolean => e.legs.length === 1 && e.legs[0].pattern === 'carib-west-a'
-
-/** What a screen shows about a sailing's cruise: built from its entry and the patterns of its legs; the older Western Caribbean sailings keep their authored copy. */
+/** What a screen shows about a sailing's cruise: built from its entry and the patterns of its legs. */
 export function cruiseOf(sailingId: string): CruiseSummary {
   const entry = sailingEntryOf(sailingId)
-  if (!entry || olderRoute(entry)) return { ...CRUISE }
+  if (!entry) return { id: sailingId, name: '', nights: 0, homePort: '', intro: '' }
   const patterns = entry.legs.map((l) => patternById(l.pattern)).filter((p): p is ItineraryPattern => !!p)
   const start = entry.startPort ? portById(entry.startPort)?.name : undefined
   const intro = patterns.length > 0 ? patterns.map((p) => p.description).filter(Boolean).join(' ') : ''

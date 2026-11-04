@@ -43,7 +43,7 @@ export function JourneyScreen() {
   const delay = watchDelay(status)
   const result = buildJourney(plan, sailing.departure, delay)
   const early = flyEarlyAdvice(plan, sailing.departure, delay)
-  const cond = useRouteConditions(sailing.departure, plan.windowStart)
+  const cond = useRouteConditions(sailing.id, plan.windowStart)
   /** Minutes to leave earlier for traffic and weather; none until the server's answer is here. */
   const earlier = cond?.leaveEarlierMinutes ?? 0
   const hotel = hotelHandoff(plan, sailing.departure, earlier)

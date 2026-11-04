@@ -1,3 +1,4 @@
+import { portById } from './sailings'
 import { ACTIVITIES, INTERESTS, replaceExcursions, type ExcursionItem, type ExcursionPort } from './excursions'
 import { replaceVenues, type DressCode, type Venue } from './dining'
 
@@ -9,7 +10,6 @@ import { replaceVenues, type DressCode, type Venue } from './dining'
  */
 export interface ServedCatalogue { version: string; excursions: ExcursionItem[]; venues: Venue[] }
 
-const PORTS: readonly string[] = ['cozumel', 'belize', 'roatan']
 const KINDS: readonly string[] = ['main', 'specialty', 'casual']
 const DRESS: readonly string[] = ['casual', 'smart', 'elegant']
 const rec = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
@@ -19,7 +19,7 @@ const num = (v: unknown, min: number, max: number): v is number => typeof v === 
 function excursion(raw: unknown): ExcursionItem | null {
   if (!rec(raw)) return null
   const r = raw
-  if (!str(r.id, 40) || !str(r.port, 20) || !PORTS.includes(r.port) || !str(r.name, 120) || !str(r.summary) || !num(r.hours, 0.25, 24) || !num(r.price, 0, 10_000_000)) return null
+  if (!str(r.id, 40) || !str(r.port, 20) || portById(r.port) === undefined || !str(r.name, 120) || !str(r.summary) || !num(r.hours, 0.25, 24) || !num(r.price, 0, 10_000_000)) return null
   if (!(ACTIVITIES as readonly unknown[]).includes(r.activity) || typeof r.wheelchair !== 'boolean' || typeof r.family !== 'boolean') return null
   if (!Array.isArray(r.interests) || !r.interests.every((i) => (INTERESTS as readonly unknown[]).includes(i))) return null
   if (!num(r.rating, 0, 5) || !num(r.reviews, 0, 1_000_000) || !str(r.meeting, 200) || typeof r.start !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(r.start) || !num(r.capacity, 1, 10_000)) return null

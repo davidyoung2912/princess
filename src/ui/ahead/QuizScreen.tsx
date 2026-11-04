@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { DEFAULT_QUIZ, QUIZ_BUDGETS, QUIZ_MOBILITY, QUIZ_MUSTS, QUIZ_VIBES, QUIZ_WITH, quizFare, recommend, type QuizAnswers, type QuizMust } from '../../domain/ahead'
 import { formatMoney } from '../../domain/money'
 import { categoryById } from '../../domain/ship'
-import { REFERENCE_SAILING } from '../../domain/sailings'
+import { useSailing } from '../../hooks/useDemo'
 import { NIGHTS_BANDS, browseSailings, matchSailings, monthLabel, monthsOf, rangeOf, type NightsBand, type SailingWish } from '../../domain/catalogueBrowse'
 import { catalogueRegions } from '../../domain/shipCatalogue'
 import { useCatalogue } from '../../hooks/useCatalogue'
@@ -31,6 +31,7 @@ function Choice<T extends string>({ name, legend, values, value, onChange, label
 
 /** A short "Find my cruise" quiz that ends in a ranked shortlist of room types and a package, with the reasons (DIS-06). It also picks sailings: the region, month and length the guest names narrow the catalogue to the best few. */
 export function QuizScreen() {
+  const sailing = useSailing()
   useCatalogue()
   const [a, setA] = useState<QuizAnswers>(DEFAULT_QUIZ)
   const [wish, setWish] = useState<SailingWish>({})
@@ -100,7 +101,7 @@ export function QuizScreen() {
             <ol className="card-grid">
               {result.picks.map((p, i) => {
                 const c = categoryById(p.category)!
-                const fare = quizFare(REFERENCE_SAILING.id, p.category)
+                const fare = quizFare(sailing.id, p.category)
                 return (
                   <li key={p.category}>
                     <Card hero={i === 0}>

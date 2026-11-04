@@ -4,7 +4,6 @@ import {
   normalizePatterns, normalizeShips, setItineraryLoader, setSailingEntries, shipOf,
 } from './shipCatalogue'
 import { CATALOGUE_PORTS, itinerary, portAt, portById, setSailingDays, shipClockChanges, shipHomeZone, shipZoneAt, shipZoneOnDate, type Sailing } from './sailings'
-import { CRUISE } from './cruise'
 import { zonedToEpoch } from './timezones'
 
 const ship = (over: object = {}) => ({ id: 'sky-princess', name: 'Sky Princess', class: 'Royal class', depth: 'browse', decks: 19, tonnage: 145281, capacity: 3660, lengthFt: 1080, crew: 1346, staterooms: 1830, entered: 2019, homeZone: 'America/New_York', intro: 'A Royal-class ship.', profile: { highlights: [{ title: 'SeaWalk', body: 'A glass-bottomed walkway.' }] }, ...over })
@@ -78,9 +77,9 @@ describe('shipOf and cruiseOf', () => {
     applyCataloguePorts({ version: 'x', items: [] })
   })
 
-  it('fall back to the older ship and cruise before the catalogue arrives', () => {
-    expect(shipOf('anything').name).toBe('Sun Princess')
-    expect(cruiseOf('anything')).toEqual(CRUISE)
+  it('answer with an empty summary before the catalogue arrives', () => {
+    expect(shipOf('anything').name).toBe('')
+    expect(cruiseOf('anything')).toEqual({ id: 'anything', name: '', nights: 0, homePort: '', intro: '' })
   })
 
   it('answer for the ship and legs of any sailing', () => {
@@ -91,7 +90,7 @@ describe('shipOf and cruiseOf', () => {
     expect(catalogueShips().map((s) => s.id)).toEqual(['sky-princess', 'sun-princess'])
     expect(shipOf('sky-2027-03-01-10').name).toBe('Sky Princess')
     expect(cruiseOf('sky-2027-03-01-10')).toMatchObject({ name: 'Sky Princess: Western Mediterranean', nights: 10, homePort: 'Barcelona, Spain', intro: 'Barcelona to Rome.', region: 'mediterranean' })
-    expect(cruiseOf('sun-2027-03-21')).toEqual(CRUISE)
+    expect(cruiseOf('sun-2027-03-21')).toMatchObject({ nights: 7, id: 'sun-2027-03-21' })
     expect(portById('barcelona')?.zone).toBe('Europe/Madrid')
   })
 })

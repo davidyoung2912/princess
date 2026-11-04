@@ -20,5 +20,5 @@ export function normalizeStorm(raw: unknown): StormReading | null {
   return { departure: raw.departure, returns: raw.returns, inSeason: raw.inSeason, percent: raw.percent, band: raw.band, phase: raw.phase, lineMay, youCan, peak: raw.peak }
 }
 
-/** The storm watch for a sailing (by departure date) and the days until it leaves. */
-export const stormFeed = createFeed<[departure: string, days: number], StormReading>((d, n) => `${d}|${n}`, normalizeStorm, 'storm')
+/** The storm watch for a sailing (by id) and the days until it leaves. */
+export const stormFeed = createFeed<[sailing: string, days: number], StormReading>((d, n) => `${d}|${n}`, normalizeStorm, 'storm')

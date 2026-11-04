@@ -1,11 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { formatDate, formatTime, routePoints, ROUTE, sailingRange, stops } from './cruise'
+import { afterEach, describe, expect, it } from 'vitest'
+import { applyShips, normalizeShips } from './shipCatalogue'
+import { formatDate, formatTime, sailingRange, stops } from './cruise'
 import { favouriteKey, favouritePath, isSavable, parseFavouriteKey, shareUrl, toggleKey } from './favourites'
 import { PORT_GUIDES, portGuideById } from './ports'
 import { ALL_CATEGORY_IDS, fromPrice, lowestFromPrice, MAX_GUESTS, quote, TAXES_AND_FEES } from './pricing'
 import { formatMoney } from './money'
 import { itinerary, PORTS, REFERENCE_SAILING, SAILINGS } from './sailings'
-import { CATEGORIES, categoryById, OTHER_SHIPS, SHIP } from './ship'
+import { CATEGORIES, categoryById, OTHER_SHIPS, ABOARD_SHIP } from './ship'
 
 describe('pricing', () => {
   it('has a price for every sailing and room type', () => {
@@ -93,21 +94,9 @@ describe('cruise content', () => {
     for (const g of Object.values(PORT_GUIDES)) for (const e of g.excursions) expect(e.price).toBeGreaterThan(0)
   })
 
-  it('places the route sketch inside its canvas, north above south and west left of east', () => {
-    const pts = routePoints(300, 220)
-    for (const id of ROUTE) {
-      expect(pts[id].x).toBeGreaterThanOrEqual(0)
-      expect(pts[id].x).toBeLessThanOrEqual(300)
-      expect(pts[id].y).toBeGreaterThanOrEqual(0)
-      expect(pts[id].y).toBeLessThanOrEqual(220)
-    }
-    expect(pts.fll.y).toBeLessThan(pts.roatan.y)
-    expect(pts.fll.x).toBeGreaterThan(pts.cozumel.x)
-  })
-
   it('describes the ship from the profile, with a teaser of other ships that are not bookable', () => {
-    expect(SHIP.guests).toBe(4300)
-    expect(SHIP.accessibleStaterooms).toBe(51)
+    expect(ABOARD_SHIP.guests).toBe(4300)
+    expect(ABOARD_SHIP.accessibleStaterooms).toBe(51)
     expect(OTHER_SHIPS.length).toBeGreaterThan(0)
     expect(categoryById('balcony')!.code).toBe('BF')
     expect(categoryById('x')).toBeUndefined()
@@ -122,7 +111,10 @@ describe('favourites', () => {
     for (const bad of ['', 'port', 'port:', ':x', 'boat:x', 7, null]) expect(parseFavouriteKey(bad)).toBeNull()
   })
 
+  afterEach(() => { applyShips({ version: 'x', items: [] }) })
+
   it('accepts only things that exist', () => {
+    applyShips(normalizeShips({ version: 'a', items: [{ id: 'sun-princess', name: 'Sun Princess', class: 'Sphere class', depth: 'aboard', decks: 17, tonnage: 177882, capacity: 4300, homeZone: 'America/New_York', intro: 'A ship.' }] })!)
     expect(isSavable('sailing:sun-2027-03-21')).toBe(true)
     expect(isSavable('port:roatan')).toBe(true)
     expect(isSavable('ship:sun-princess')).toBe(true)

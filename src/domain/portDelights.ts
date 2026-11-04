@@ -15,7 +15,7 @@ const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.re
 const rec = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {})
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
-export type CallPort = Exclude<PortId, 'sea' | 'fll'>
+export type CallPort = PortId
 export const CALL_PORTS: readonly CallPort[] = ['cozumel', 'belize', 'roatan']
 export const isCallPort = (v: unknown): v is CallPort => CALL_PORTS.some((p) => p === v)
 

@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { t, th } from '../../i18n'
-import { CATEGORIES, SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
+import { CATEGORIES, ABOARD_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { browseSailings, shipSailingSummary } from '../../domain/catalogueBrowse'
 import { catalogueShips, shipById } from '../../domain/shipCatalogue'
 import { useShip } from '../../hooks/useShipCatalogue'
@@ -36,7 +36,7 @@ export function ShipScreen() {
     )
   }
   const aboard = ship.depth === 'aboard'
-  const isSun = ship.id === SHIP.id
+  const isSun = ship.id === ABOARD_SHIP.id
   const highlights = ship.highlights.length > 0 ? ship.highlights : isSun ? SHIP_HIGHLIGHTS : []
   const mine = shipSailingSummary(ship.id, browseSailings())
   const others = catalogueShips().filter((s) => s.id !== ship.id)
@@ -89,7 +89,7 @@ export function ShipScreen() {
               </li>
             ))}
           </ul>
-          <p className="muted">{t('discover.accessibleRooms', { count: SHIP.accessibleStaterooms })}</p>
+          <p className="muted">{t('discover.accessibleRooms', { count: ABOARD_SHIP.accessibleStaterooms })}</p>
         </section>
       )}
 

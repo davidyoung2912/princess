@@ -27,7 +27,7 @@ export interface ShipClock {
   /** Ship time, "HH:MM". */
   shipTime: string
   shipOffsetMinutes: number
-  shipZone: 'eastern' | 'belize'
+  shipZone: 'home' | 'other'
   /** The port whose local time is compared: the port the ship is in, or the one it is heading for. */
   localPlace: StopId
   localTime: string

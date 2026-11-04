@@ -13,5 +13,5 @@ export function normalizeConditions(raw: unknown): Conditions | null {
   return { traffic: r.traffic as Conditions['traffic'], sky: r.sky as Conditions['sky'], leaveEarlierMinutes: mins }
 }
 
-/** Traffic and weather on the way to the port, by departure date and the crowd for the arrival window. */
-export const conditionsFeed = createFeed<[departure: string, crowd: Crowd], Conditions>((d, c) => `${d}|${c}`, normalizeConditions, 'route')
+/** Traffic and weather on the way to the port, by id and the crowd for the arrival window. */
+export const conditionsFeed = createFeed<[sailing: string, crowd: Crowd], Conditions>((d, c) => `${d}|${c}`, normalizeConditions, 'route')

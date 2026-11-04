@@ -81,7 +81,7 @@ export function packageHindsight(i: HindsightInput): Hindsight {
 
 export interface Anniversary { date: string; day: number; place: string; text: string }
 
-const placeName = (port: string): string => (port === 'sea' ? 'at sea' : port === 'fll' ? 'in Fort Lauderdale' : `in ${PORTS[port as keyof typeof PORTS]?.name.split(',')[0] ?? port}`)
+const placeName = (port: string): string => (port === 'sea' ? 'at sea' : `in ${PORTS[port as keyof typeof PORTS]?.name.split(',')[0] ?? port}`)
 
 /** A memory when today is one year after a day of the cruise. Never fires if the guest switched it off. */
 export function anniversaryOn(sailing: Sailing, today: string, enabled: boolean): Anniversary | null {

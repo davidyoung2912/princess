@@ -2,7 +2,6 @@ import { musterByLabel, ELEVATORS, PLACES, placeById, type Place, type Section }
 import { cabinPlace, wayBetween } from './deckGraph'
 import type { Status } from './journey'
 import { itinerary, type Sailing } from './sailings'
-import { SHIP } from './ship'
 
 /**
  * Small delights, phase DL6 (docs/small-delights.md): travel day and embark. Pure helpers for the traffic-light card, the show-the-driver card, the
@@ -42,14 +41,16 @@ export function driverCard(lang: DriverLang, place: { terminal: string; address:
 /** Average road speed used to turn minutes into miles for a drive (authored, 45 mph). */
 export const MILES_PER_MINUTE = 0.75
 const FEET_PER_MILE = 5280
+/** A large ship's length, used for the comparison when a ship's own length is not known. */
+const DEFAULT_SHIP_FEET = 1133
 
 /** The ship's length in feet, read from its facts ("1,133 ft"). */
-export const shipLengthFeet = (text: string = SHIP.length): number => {
+export const shipLengthFeet = (text: string): number => {
   const n = Number(text.replace(/[^\d.]/g, ''))
-  return Number.isFinite(n) && n > 0 ? n : 1133
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_SHIP_FEET
 }
 
-export const shipLengthsIn = (miles: number, feet: number = shipLengthFeet()): number => Math.max(0, Math.round((miles * FEET_PER_MILE) / feet))
+export const shipLengthsIn = (miles: number, feet: number = DEFAULT_SHIP_FEET): number => Math.max(0, Math.round((miles * FEET_PER_MILE) / feet))
 
 /** Minutes of driving left: the planned drive less the time since leaving, never below zero or above the whole drive. Before leaving, the whole drive. */
 export function driveMinutesLeft(roadMinutes: number, leaveByMs: number | null, nowMs: number): number {

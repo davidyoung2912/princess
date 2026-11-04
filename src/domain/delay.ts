@@ -1,5 +1,5 @@
 import type { StringKey } from '../i18n'
-import { allAboardEpoch, itinerary, shipHomeZone, type Sailing, type StageId } from './sailings'
+import { allAboardEpoch, isPortStage, itinerary, shipHomeZone, type Sailing, type StageId } from './sailings'
 import { zonedToEpoch } from './timezones'
 
 /**
@@ -57,7 +57,7 @@ export const delayVisibleToOthers = (state: DelayState): boolean => !!state.curr
 /** What to do next, by where the trip is: before sailing the ship leaves on time; in port the ship waits for no one. */
 export function delayNextSteps(stage: StageId): StringKey[] {
   if (stage === 'embarkation' || stage === 'preCruise' || stage === 'checkIn' || stage === 'booked') return ['delay.next.call', 'delay.next.terminal', 'delay.next.catchUp', 'delay.next.keep']
-  if (stage === 'cozumel' || stage === 'belize' || stage === 'roatan') return ['delay.next.call', 'delay.next.portAgent', 'delay.next.allAboard', 'delay.next.keep']
+  if (isPortStage(stage)) return ['delay.next.call', 'delay.next.portAgent', 'delay.next.allAboard', 'delay.next.keep']
   return ['delay.next.call', 'delay.next.keep']
 }
 

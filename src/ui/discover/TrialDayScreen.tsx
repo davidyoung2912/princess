@@ -44,7 +44,7 @@ export function TrialDayScreen() {
               {(trial?.days ?? [{ day, port: '', place: '' }]).map((d) => <option key={d.day} value={d.day}>{d.place ? t('trial.option', { day: d.day, place: d.place }) : t('trial.optionLoading', { day: d.day })}</option>)}
             </select>
           </div>
-          {hasTours(choice) && (
+          {hasTours(choice, trial?.days) && (
             <fieldset className="chip-group">
               <legend>{t('day.tours')}</legend>
               {INTERESTS.map((i: Interest) => <Chip key={i} pressed={wish.tours.includes(i)} onToggle={() => setWish({ ...wish, tours: toggle(wish.tours, i) })}>{t(`exc.interest.${i}` as StringKey)}</Chip>)}

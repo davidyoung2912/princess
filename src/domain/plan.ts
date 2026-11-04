@@ -31,9 +31,11 @@ export interface PlanDay {
 }
 
 export function buildPlan(s: Sailing, tours: readonly PlanTour[], tables: readonly PlanTable[]): PlanDay[] {
-  return itinerary(s).map((d: ItineraryDay): PlanDay => {
+  const all = itinerary(s)
+  const lastDay = all[all.length - 1]?.day
+  return all.map((d: ItineraryDay): PlanDay => {
     const entries: PlanEntry[] = []
-    if (d.depart && d.port === 'fll') entries.push({ kind: 'sail', time: d.depart, name: '', guests: [] })
+    if (d.depart && d.day === 1) entries.push({ kind: 'sail', time: d.depart, name: '', guests: [] })
     if (d.allAboard) entries.push({ kind: 'allAboard', time: d.allAboard, name: '', guests: [] })
     for (const t of tours) {
       const x = excursionById(t.excursionId)
@@ -42,7 +44,7 @@ export function buildPlan(s: Sailing, tours: readonly PlanTour[], tables: readon
     for (const r of tables) if (r.day === d.day) entries.push({ kind: 'dinner', time: r.time, name: venueById(r.venueId)?.name ?? r.venueId, id: r.id, guests: r.guests })
     entries.sort((a, b) => a.time.localeCompare(b.time))
     const gaps: GapKind[] = []
-    if (d.port !== 'sea' && d.port !== 'fll' && !entries.some((e) => e.kind === 'tour')) gaps.push('tour')
+    if (d.port !== 'sea' && d.day !== 1 && d.day !== lastDay && !entries.some((e) => e.kind === 'tour')) gaps.push('tour')
     if (d.day <= 7 && !entries.some((e) => e.kind === 'dinner')) gaps.push('dinner')
     return { day: d.day, date: d.date, port: d.port, place: d.port === 'sea' ? '' : PORTS[d.port].name, entries, gaps }
   })

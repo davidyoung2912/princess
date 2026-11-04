@@ -196,6 +196,9 @@ export function stageStarts(s: Sailing): { id: StageId; at: number }[] {
   ]
 }
 
+/** A stage on a day in port (as opposed to boarding, a day at sea or going home). */
+export const isPortStage = (stage: StageId): boolean => stage === 'cozumel' || stage === 'belize' || stage === 'roatan'
+
 export const STAGE_IDS: readonly StageId[] = ['booked', 'preCruise', 'checkIn', 'embarkation', 'seaDay', 'cozumel', 'belize', 'roatan', 'seaDay2', 'farewell', 'disembark', 'postCruise']
 
 /** The stage a moment falls in; any time before the first stage counts as "booked". */

@@ -14,7 +14,7 @@ import { Card } from '../Card'
 export function DayStrip({ sailing }: { sailing: Sailing }) {
   const days = itinerary(sailing)
   const tenders = new Set(days.filter((d) => portById(d.port)?.tender).map((d) => d.port))
-  const strip = dayStrip(days, tenders, days[0]?.port)
+  const strip = dayStrip(days, tenders)
   const sum = stripSummary(strip)
   return (
     <section aria-labelledby="dl3-strip-h">

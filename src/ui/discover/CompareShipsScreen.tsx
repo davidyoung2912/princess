@@ -21,7 +21,7 @@ export function CompareShipsScreen() {
   useCatalogue()
   const current = useShip()
   const [params, setParams] = useSearchParams()
-  const ships = catalogueShips().length > 0 ? catalogueShips() : [current]
+  const ships = catalogueShips().length > 0 ? catalogueShips() : current.id ? [current] : []
   const chosen = ['a', 'b', 'c'].map((k) => params.get(k) ?? '')
   // Two ships are always shown: the ones named, then the first not yet shown.
   const picked: ShipSummary[] = []

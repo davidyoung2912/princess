@@ -129,6 +129,7 @@ export function LuggageScreen() {
 /** What to carry, and which forms (if any) each stop needs (CHK-10). */
 export function ClearanceScreen() {
   const [who, setWho] = useState<ClearanceCitizenship>('us')
+  const stops = new Set(itinerary(useSailing()).map((d) => d.port))
   return (
     <div className="page">
       <p>{t('clr.intro')}</p>
@@ -142,7 +143,7 @@ export function ClearanceScreen() {
         ))}
       </fieldset>
       <ul className="card-grid">
-        {CLEARANCE.map((c) => (
+        {CLEARANCE.filter((c) => stops.has(c.port)).map((c) => (
           <li key={c.port}>
             <Card>
               <h2 className="card__title">{PORTS[c.port].name}: {c.country}</h2>
@@ -174,7 +175,7 @@ export function WeatherScreen() {
       <p>{t('wx.intro')}</p>
       <ul className="card-grid">
         {days.map((day) => {
-          const port = day.port === 'sea' ? 'cozumel' : day.port
+          const port = day.port === 'sea' ? (days.find((d) => d.port !== 'sea')?.port ?? day.port) : day.port
           const o = outlook(port as ClimatePort, day.date)
           return (
             <li key={day.day}>

@@ -14,7 +14,7 @@ const number = new Intl.NumberFormat('en-US')
 export function ShipsScreen() {
   useCatalogue()
   const current = useShip()
-  const ships = catalogueShips().length > 0 ? catalogueShips() : [current]
+  const ships = catalogueShips().length > 0 ? catalogueShips() : current.id ? [current] : []
   const sailings = browseSailings()
   return (
     <div className="page">

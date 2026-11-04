@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { t, type StringKey } from '../../i18n'
-import { formatDate, formatTime, ROUTE, stops } from '../../domain/cruise'
+import { formatDate, formatTime, stops } from '../../domain/cruise'
 import { portName, routeOf, routeSketch } from '../../domain/catalogueBrowse'
 import type { Favourites } from '../../hooks/useFavourites'
 import { favouriteKey, shareUrl, type FavouriteKind } from '../../domain/favourites'
@@ -107,9 +107,9 @@ export function ItineraryList({ sailing, dated }: { sailing: Sailing; dated?: bo
 const W = 300
 const H = 200
 
-/** A sketch of the route with numbered stops; the list beside it carries the same information in words. Given the days of a sailing it draws that route; with none, the older one. */
+/** A sketch of the route with numbered stops; the list beside it carries the same information in words. Given the days of a sailing it draws that route; with none it draws nothing. */
 export function RouteMap({ days }: { days?: readonly Pick<ItineraryDay, 'port'>[] }) {
-  const ids = days ? routeOf(days) : [...ROUTE]
+  const ids = routeOf(days ?? [])
   const pts = routeSketch(ids, W, H)
   if (pts.length === 0) return null
   const round = days ? days[0]?.port === days[days.length - 1]?.port : true

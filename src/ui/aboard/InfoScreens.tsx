@@ -30,7 +30,7 @@ export function ShipInfoScreen() {
   const [settings] = useSettings()
   const today = useOnboardToday()
   const sailing = useSailing()
-  const p = useFeed(positionFeed, sailing.departure, Math.floor(useNow() / 60_000) * 60_000)
+  const p = useFeed(positionFeed, sailing.id, Math.floor(useNow() / 60_000) * 60_000)
   return (
     <div className="page">
       <Saved copy={today}>

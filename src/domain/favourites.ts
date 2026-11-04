@@ -1,6 +1,5 @@
 import { portGuideById } from './ports'
 import { portById, sailingById } from './sailings'
-import { SHIP } from './ship'
 import { sailingEntryOf, shipById } from './shipCatalogue'
 
 /** Things a guest can save: a sailing date, a port, or the ship (DIS-08). */
@@ -36,5 +35,5 @@ export function isSavable(key: unknown): boolean {
   if (!parsed) return false
   if (parsed.kind === 'sailing') return !!sailingById(parsed.id) || !!sailingEntryOf(parsed.id)
   if (parsed.kind === 'port') return !!portGuideById(parsed.id) || !!portById(parsed.id)
-  return parsed.id === SHIP.id || !!shipById(parsed.id)
+  return !!shipById(parsed.id)
 }

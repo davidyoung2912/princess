@@ -15,7 +15,7 @@ import { Link } from 'react-router'
 export function StormScreen() {
   const sailing = useSailing()
   const today = dateIn(useNow(), 'America/New_York')
-  const r = useFeed(stormFeed, sailing.departure, daysBetween(today, sailing.departure))
+  const r = useFeed(stormFeed, sailing.id, daysBetween(today, sailing.departure))
   return (
     <div className="page">
       <BackLink to="/plan" label={t('route.plan')} />

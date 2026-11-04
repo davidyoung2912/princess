@@ -1,7 +1,8 @@
 import { Link } from 'react-router'
 import { t, th } from '../../i18n'
-import { PORT_GUIDES } from '../../domain/ports'
-import { useCruise, useShip } from '../../hooks/useShipCatalogue'
+import { portGuideById } from '../../domain/ports'
+import { portById } from '../../domain/sailings'
+import { useCruise, useItinerary, useShip } from '../../hooks/useShipCatalogue'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { Card } from '../Card'
@@ -12,6 +13,8 @@ import { FromPriceBlock, PriceState } from './parts'
 export function Explore() {
   const cruise = useCruise()
   const ship = useShip()
+  const days = useItinerary()
+  const calls = [...new Set(days.map((d) => d.port))].filter((p) => p !== 'sea' && p !== days[0]?.port)
   const offers = useAsync(() => api.discover.offers(), [])
   const lowest = offers.data ? offers.data.map((o) => o.from).reduce((a, b) => (b.fare < a.fare ? b : a)) : null
   return (
@@ -31,12 +34,12 @@ export function Explore() {
       <section aria-labelledby="ports-h">
         <h2 id="ports-h">{th('discover.whereYouGo')}</h2>
         <ul className="card-grid">
-          {Object.values(PORT_GUIDES).filter((g) => g.id !== 'fll').map((g) => (
-            <li key={g.id} className="card">
-              <h3><Link to={`/home/ports/${g.id}`}>{g.short}</Link></h3>
-              <p>{g.blurb}</p>
+          {calls.map((id) => { const g = portGuideById(id); return (
+            <li key={id} className="card">
+              <h3>{g ? <Link to={`/home/ports/${id}`}>{g.short}</Link> : portById(id)?.name ?? id}</h3>
+              {g && <p>{g.blurb}</p>}
             </li>
-          ))}
+          ) })}
         </ul>
       </section>
 

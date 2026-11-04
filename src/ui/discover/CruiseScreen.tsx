@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router'
 import { useEffect } from 'react'
 import { t, th, headingCase } from '../../i18n'
-import { PORT_GUIDES, portGuideById } from '../../domain/ports'
+import { portGuideById } from '../../domain/ports'
 import { hasSailingDays, itinerary, portById, type Sailing } from '../../domain/sailings'
 import { browseSailingById, portsOf, portName, seaDaysOf, rangeOf } from '../../domain/catalogueBrowse'
 import { cruiseOf, loadItinerary, shipOf } from '../../domain/shipCatalogue'
@@ -31,13 +31,12 @@ export function CruiseScreen() {
   const days = ready ? itinerary(sailing) : []
   const ports = entry ? portsOf(entry, days) : []
   const sea = entry ? seaDaysOf(entry, days) : null
-  const olderRoute = !entry || entry.legs.length === 0 || (entry.legs.length === 1 && entry.legs[0].pattern === 'carib-west-a')
   return (
     <div className="page">
       <h2>{headingCase(cruise.name)}</h2>
       {cruise.intro && <p>{cruise.intro}</p>}
       <dl className="facts">
-        <div><dt>{t('discover.fact.ship')}</dt><dd><Link to={`/home/ships/${ship.id}`}>{ship.name}</Link></dd></div>
+        <div><dt>{t('discover.fact.ship')}</dt><dd>{ship.id ? <Link to={`/home/ships/${ship.id}`}>{ship.name}</Link> : null}</dd></div>
         <div><dt>{t('discover.fact.nights')}</dt><dd>{cruise.nights}</dd></div>
         <div><dt>{t('discover.fact.from')}</dt><dd>{cruise.homePort}</dd></div>
         {entry && <div><dt>{t('cat.dates')}</dt><dd>{rangeOf(entry)}</dd></div>}
@@ -68,7 +67,7 @@ export function CruiseScreen() {
         <h2 id="when-h">{th('discover.whenToGo')}</h2>
         {cruise.bestTime && <Card info><p>{cruise.bestTime}</p></Card>}
         <ul className="plain-list">
-          {(olderRoute ? Object.values(PORT_GUIDES).filter((g) => g.id !== 'fll').map((g) => ({ id: g.id, name: g.short, note: g.bestTime })) : ports.filter((p) => p !== (days[0]?.port)).map((id) => ({ id, name: portName(id), note: portById(id)?.country ?? '' }))).map((p) => (
+          {(ports.filter((p) => p !== (days[0]?.port)).map((id) => ({ id, name: portName(id), note: portGuideById(id)?.bestTime ?? portById(id)?.country ?? '' }))).map((p) => (
             <li key={p.id}>{portGuideById(p.id) ? <Link to={`/home/ports/${p.id}`}>{p.name}</Link> : p.name} <span className="muted">{p.note}</span></li>
           ))}
         </ul>

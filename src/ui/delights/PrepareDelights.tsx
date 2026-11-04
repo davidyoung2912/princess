@@ -105,9 +105,9 @@ export function PassportByPortCard() {
           <>
             <p><strong>{t(`dl5.pass.worst.${worst}` as StringKey)}</strong></p>
             <ul className="plain-list">
-              {checks.map((c) => (
+              {checks.map((c, i) => (
                 <li key={c.port}>
-                  <span><strong>{c.port === 'fll' ? t('dl5.pass.home') : portById(c.port)?.name ?? c.port}</strong> · {formatDate(c.date)}<br />{t(`dl5.pass.${c.status}` as StringKey, { until: formatDate(c.needUntil) })}{c.visaCheck && <><br />{t('dl5.pass.visa')}</>}{c.source && <><br /><a href={c.source} target="_blank" rel="noreferrer">{t('dl5.pass.source')}<span className="visually-hidden"> {t('embark.newTab')}</span></a>{c.asOf && <span className="muted"> · {t('dl5.pass.asOf', { date: formatDate(c.asOf) })}</span>}</>}</span>
+                  <span><strong>{i === 0 ? t('dl5.pass.home') : portById(c.port)?.name ?? c.port}</strong> · {formatDate(c.date)}<br />{t(`dl5.pass.${c.status}` as StringKey, { until: formatDate(c.needUntil) })}{c.visaCheck && <><br />{t('dl5.pass.visa')}</>}{c.source && <><br /><a href={c.source} target="_blank" rel="noreferrer">{t('dl5.pass.source')}<span className="visually-hidden"> {t('embark.newTab')}</span></a>{c.asOf && <span className="muted"> · {t('dl5.pass.asOf', { date: formatDate(c.asOf) })}</span>}</>}</span>
                 </li>
               ))}
             </ul>

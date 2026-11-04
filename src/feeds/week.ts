@@ -2,12 +2,10 @@ import type { RestBlock } from '../domain/planPolish'
 import { isPace, type Week, type WeekDay, type WeekItem, type WeekPrefs } from '../domain/autopilot'
 import { EVENT_INTERESTS } from '../domain/program'
 import { INTERESTS } from '../domain/excursions'
-import type { PortId } from '../domain/sailings'
 import { normalizeEntries, entriesOf } from './dayPlan'
-import { createFeed, isInt, isRecord, oneOf } from './feed'
+import { createFeed, isInt, isPortIdText, isRecord, oneOf } from './feed'
 import { MAX_PLAN_DAY } from '../domain/nightsRules'
 
-const PORT_IDS: readonly PortId[] = ['fll', 'sea', 'cozumel', 'belize', 'roatan']
 const KINDS = ['tour', 'event', 'dinner'] as const
 const MOBILITY = ['any', 'easy', 'wheelchair'] as const
 const HHMM = /^\d{2}:\d{2}$/
@@ -32,7 +30,7 @@ export function normalizeWeek(raw: unknown): Week | null {
   const days: WeekDay[] = []
   for (let n = 0; n < raw.days.length; n++) {
     const d = raw.days[n]
-    if (!isRecord(d) || d.day !== n + 1 || !oneOf(d.port, PORT_IDS) || !Array.isArray(d.items) || d.items.length > 12 || typeof d.restDay !== 'boolean' || !isInt(d.tourCost, 0, 99_999_900)) return null
+    if (!isRecord(d) || d.day !== n + 1 || !isPortIdText(d.port) || !Array.isArray(d.items) || d.items.length > 12 || typeof d.restDay !== 'boolean' || !isInt(d.tourCost, 0, 99_999_900)) return null
     if (d.alternative !== null && !text(d.alternative, 200)) return null
     const items: WeekItem[] = []
     for (const i of d.items) {

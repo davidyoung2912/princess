@@ -26,7 +26,7 @@ export function NudgeCards({ aboard }: { aboard: boolean }) {
   const at = portAt(sailing, now)
   const allAboard = aboard && at.port !== 'sea' && at.day !== null ? allAboardEpoch(sailing, at.day) : null
   const quiet = settings.calm || dndNow(state.aboard.dnd, timeIn(now, shipZoneAt(sailing, now)), 'offers')
-  const storm = useFeed(stormFeed, sailing.departure, daysBetween(dateIn(now, 'America/New_York'), sailing.departure))
+  const storm = useFeed(stormFeed, sailing.id, daysBetween(dateIn(now, 'America/New_York'), sailing.departure))
   const list = homeNudges({
     budget: settings.nudgesPerDay, quiet,
     backAboardMin: allAboard === null ? null : Math.ceil((allAboard - now) / 60_000),

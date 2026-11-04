@@ -28,7 +28,7 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 
 - `ICatalogueStore` (`Data/CatalogueStore.cs`) reads the catalogue tables once and holds them ten minutes; `Domain/ShipCatalogueRules.cs` shapes them (pure, tested in `ShipCatalogueRulesTests`, compiled only).
 - The five `/reference/catalogue/*` reads, `GET /reference/sailings/{id}/itinerary`, and `entries` plus the seven filters on `GET /reference/sailings`. `entries[].fromCents` is the cheapest fare times the nights, per person, before taxes. The older fields of `/reference/sailings` are unchanged.
-- The `/feeds/*` that took `departure` (route, pulse, pulse-day, storm, sky-night, ship-position, sea-conditions, along-the-way) also take `sailing`, which wins when both are given; an unknown sailing is `badFeedQuery`.
+- The `/feeds/*` that took `departure` (route, pulse, pulse-day, storm, sky-night, ship-position, sea-conditions, along-the-way) take `sailing` (an id) and no longer accept `departure` (removed in the cleanup phase); a missing or unknown sailing is `badFeedQuery`.
 
 ### Price and length from data (X0c, second half)
 
@@ -50,12 +50,12 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 
 - Day numbers are still capped at 8 in request checks (`Day is < 1 or > 8`), the packing, laundry and plan screens assume a week, and `PhotoService` clamps the cruise day to 8. Planning for 3 to 40 days is X0f.
 - Authored content is still the Western A route's: excursions (Cozumel, Belize, Roatan), port crowd comfort figures, photo spots, concierge port list, the along-the-way landmarks, the storm outlook, and the weather coordinates. Port content for the rest is X0g.
-- The `departure` feed parameter, `/reference/ship` and `/reference/ports` stay until X0h. The `"eastern"` and `"belize"` labels on the ship clock mean "home zone" and "other zone" for a sailing that is not Western A.
+- The `departure` feed parameter is gone. `/reference/ship` and `/reference/ports` stay: they still serve the aboard ship's categories, deck plan and the port guides the app reads. The ship clock's `shipZone` is `"home"` or `"other"` (the sailing's home zone or the zone after a clock change).
 
 ## Migration notes
 
 1. X0b (done) adds the tables and columns to `db/01-schema.sql` (which is not an upgrade script: reset the database with `db/00-drop-all.sql`, then run the schema and seeds). `ShipId` on venues, menu items, events, excursions and categories is `NOT NULL DEFAULT 'sun-princess'`, so the existing seeds backfill themselves.
-2. `/reference/ship`, `/reference/ports` and the `departure` feed parameter stay until X0h.
+2. `/reference/ship` and `/reference/ports` stay (see above); the `departure` feed parameter is removed.
 3. Demo personas keep their sailing ids.
 
 ## What X0b seeded
@@ -64,7 +64,7 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 - Each sailing is materialised into `ref.Sailings`, `ref.ItineraryDays`, `ref.SailingLegs`, `ref.DressNights` and `ref.SailingFares` by `scripts/catalogue.ts` (`materialiseSailing`). Joined legs share their turnaround day. Ship clock changes are worked out from the real zone offsets on each date (so a March sailing sees US daylight saving).
 - `ref.Sailings.BookingOpen` is 0 for the catalogue sailings and `Pricing.HasPrice` is false for them, so Discover and booking do not offer them until X0c.
 - **The 12 seeded Sun Princess sailings stay as they are** (ids `sun-yyyy-mm-dd`, Western A route) and are backfilled to pattern `carib-west-a`, region `caribbean`, one leg. The catalogue leaves out the 7-night sailings on 17 Jan, 7 Feb, 28 Feb and 21 Mar 2027, which clash with them (the research shows different routes on three of those dates; X0h reconciles). The 14-night sailings on those dates are in the catalogue.
-- The old unique index on `(ShipId, Departure)` is now `(ShipId, Departure, Nights)`, because one departure is sold as 7, 14 and 21 nights. Feeds that take only a `departure` date are ambiguous for those dates until X0c switches them to `sailing`.
+- The old unique index on `(ShipId, Departure)` is now `(ShipId, Departure, Nights)`, because one departure is sold as 7, 14 and 21 nights. The feeds now take `sailing`, so those dates are no longer ambiguous.
 - The 12 seeded sailings have no `ref.SailingFares` or `ref.DressNights` rows yet; X0c moves `Pricing` onto the table and backfills them.
 - Port `GuideStatus` follows the tier at seed time (A `full`, B `short`, C `link`) although only the existing five ports have guides in the app today. X0g writes the content.
 
@@ -83,15 +83,15 @@ Existing sailing and port ids stay stable. New sailings: `<ship>-<yyyy-mm-dd>-<n
 
 ## Guard rail
 
-`src/domain/singleRoute.test.ts` counts single-route references in non-test source and fails if a count rises. Baseline (2026-11-03), with the ceilings after X0d in the last column:
+`src/domain/singleRoute.test.ts` counts single-route references in non-test source and fails if a count rises. Baseline (2026-11-03), with the ceilings after X0d and after the cleanup phase in the last columns:
 
-| Reference | Files | Hits | After X0d (files / hits) |
-|---|---|---|---|
-| `SHIP` | 13 | 48 | 6 / 27 |
-| `CRUISE` | 5 | 19 | 2 / 4 |
-| `REFERENCE_SAILING` | 7 | 20 | 7 / 20 |
-| `SHIP_HOME_ZONE` | 3 | 15 | 0 / 0 |
-| `SHIP_WEST_ZONE` | 1 | 4 | 0 / 0 |
-| literal port ids (`cozumel`, `belize`, `roatan`, `fll`, `sea`) | 63 | 227 | 63 / 219 |
+| Reference | Files | Hits | After X0d (files / hits) | After cleanup (files / hits) |
+|---|---|---|---|---|
+| `SHIP` | 13 | 48 | 6 / 27 | 0 / 0 |
+| `CRUISE` | 5 | 19 | 2 / 4 | 0 / 0 |
+| `REFERENCE_SAILING` | 7 | 20 | 7 / 20 | 3 / 8 (the placeholder sailing, the demo state and the account fallback) |
+| `SHIP_HOME_ZONE` | 3 | 15 | 0 / 0 | 0 / 0 |
+| `SHIP_WEST_ZONE` | 1 | 4 | 0 / 0 | 0 / 0 |
+| literal port ids (`cozumel`, `belize`, `roatan`, `fll`, `sea`) | 63 | 227 | 63 / 219 | 7 / 35 (`sea` is not counted, nor is `src/testing`) |
 
-Lower the ceilings in the test as each phase removes references; X0h sets them to zero. Never raise one.
+Lower the ceilings in the test as each phase removes references; The `SHIP` constant is now `ABOARD_SHIP`, the served facts of the one aboard-depth ship (not a singleton for the whole app). What remains of the literal port ids is the authored Western Caribbean sample week of that ship (demo stage ids, photo spots, port contacts, plan B, clearance rows, call-port phrases, scenarios); moving it to served data is later work. Never raise a ceiling.

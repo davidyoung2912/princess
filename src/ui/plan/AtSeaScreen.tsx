@@ -49,8 +49,8 @@ export function AtSeaScreen() {
   const here = tablesReady ? portAt(sailing, now) : { port: 'sea' as const, day: null }
   const shipFacts = {
     shipName: t('route.sunPrincess'),
-    itinerary: (tablesReady ? itinerary(sailing) : []).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : d.port === 'fll' ? PORTS.fll.name : PORTS[d.port].name })),
-    shipAt: here.port === 'sea' ? null : here.port === 'fll' ? PORTS.fll.name : PORTS[here.port].name,
+    itinerary: (tablesReady ? itinerary(sailing) : []).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : PORTS[d.port].name })),
+    shipAt: here.port === 'sea' ? null : PORTS[here.port].name,
   }
   /** The page's facts, or why there is no page. */
   const found: { view: FamilyView } | { reason: LinkProblem } | 'loading' = (() => {

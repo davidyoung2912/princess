@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { depthGauge, depthText, differenceHours, distanceParts, speedParts, waterTempText, waveText } from '../domain/navigation'
 import { normalizeAlong, normalizePosition, normalizeSea } from './navigation'
 
-const clock = { shipTime: '14:05', shipOffsetMinutes: -300, shipZone: 'eastern', localPlace: 'cozumel', localTime: '14:05', localOffsetMinutes: -300, differenceMinutes: 0, nextChange: { at: 1_800_000_000_000, hours: -1, day: 4 } }
+const clock = { shipTime: '14:05', shipOffsetMinutes: -300, shipZone: 'home', localPlace: 'cozumel', localTime: '14:05', localOffsetMinutes: -300, differenceMinutes: 0, nextChange: { at: 1_800_000_000_000, hours: -1, day: 4 } }
 const position = {
   now: 1_800_000_000_000, day: 2, lat: 24.5, lon: -82.1, speedKnots: 14.8, headingDegrees: 235, compass: 'SW', inPort: null, lastPort: 'fll', nextPort: 'cozumel',
   nmSailed: 210, nmRemaining: 383, legPercent: 35, voyageNmSailed: 210, voyageNmTotal: 1700, arrival: { at: 1_800_100_000_000, shipTime: '07:00', day: 3 }, clock,
@@ -13,7 +13,7 @@ const along = { now: 1_800_000_000_000, zone: { id: 'straits', name: 'Gulf Strea
 
 describe('ship position feed', () => {
   it('reads a good answer', () => {
-    expect(normalizePosition(JSON.parse(JSON.stringify(position)))).toMatchObject({ speedKnots: 14.8, compass: 'SW', nextPort: 'cozumel', clock: { shipZone: 'eastern' } })
+    expect(normalizePosition(JSON.parse(JSON.stringify(position)))).toMatchObject({ speedKnots: 14.8, compass: 'SW', nextPort: 'cozumel', clock: { shipZone: 'home' } })
     expect(normalizePosition({ ...position, inPort: 'cozumel', speedKnots: 0, arrival: null, nextPort: null })).toMatchObject({ inPort: 'cozumel', arrival: null })
   })
   it('refuses anything out of shape', () => {

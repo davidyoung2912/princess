@@ -10,6 +10,10 @@ For whoever keeps the server running. Commands assume `$B` is the server's base 
 | `GET $B/health/db` | The database answers. 503 `databaseUnavailable` means it does not. |
 | `GET $B/health/providers` | Real providers switched on and their state: `ok`, `degraded` (recent failures) or `fallback` (the circuit is open and guests are getting the simulation). `{"providers":[]}` means everything is simulated. |
 
+## Catalogue and feeds
+
+The ship, region, port, pattern and sailing catalogue is read from the database tables once and held for ten minutes (`ICatalogueStore`); after changing the seed, run the seed scripts and restart the API or wait. The simulated ship feeds (`/feeds/pulse`, `pulse-day`, `storm`, `sky-night`, `ship-position`, `sea-conditions`, `along-the-way`, `route`) need a `sailing` id; a missing or unknown one answers `badFeedQuery`.
+
 ## Providers
 
 Chosen under `Providers:*` in configuration; the default for each is `sim`. A name that is not registered stops the server at start-up and names the choices.

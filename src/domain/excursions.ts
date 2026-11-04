@@ -4,7 +4,7 @@ import type { Cents } from './money'
 import { limit } from './limits'
 
 /** Shore excursions (PRE-01, PRE-02). Names, lengths and prices agree with the Discover port guides (tested); the rest is authored concept data. */
-export type ExcursionPort = Exclude<PortId, 'sea' | 'fll'>
+export type ExcursionPort = PortId
 export type Interest = 'water' | 'culture' | 'nature' | 'adventure' | 'relax'
 export type Activity = 'easy' | 'moderate' | 'strenuous'
 

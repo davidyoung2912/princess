@@ -3,9 +3,8 @@
  * local vendors. Every value is an authored concept sample: verify prices, rules and hours before real use. Nothing here earns a commission,
  * and vendors are listed in a fixed order (XT-08).
  */
-export type GuidePort = 'cozumel' | 'belize' | 'roatan'
-export const GUIDE_PORTS: readonly GuidePort[] = ['cozumel', 'belize', 'roatan']
-export const isGuidePort = (x: unknown): x is GuidePort => GUIDE_PORTS.includes(x as GuidePort)
+/** A port id with authored knowledge (the ports of the Tier A list that have it). */
+export type GuidePort = string
 
 export interface FairPrice { route: string; /** US dollars for the whole car, up to four people. */ car: number; /** Do not pay more than this. */ ceiling: number }
 export interface Phrase { say: string; means: string; /** How it sounds, plainly. */ sounds: string }
@@ -33,7 +32,7 @@ export interface PortKnowledge {
   souvenirs: readonly { item: string; fair: string }[]
 }
 
-export const PORT_KNOWLEDGE: Record<GuidePort, PortKnowledge> = {} as Record<GuidePort, PortKnowledge>
+export const PORT_KNOWLEDGE: Record<GuidePort, PortKnowledge> = {}
 
 /** Whether a quoted fare is over the line. */
 export const overCeiling = (quoted: number, p: FairPrice): boolean => quoted > p.ceiling

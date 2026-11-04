@@ -98,7 +98,7 @@ function FullGuide({ port, k, crowd }: { port: string; k: NonNullable<ReturnType
       <Card labelledBy="g-talk">
         <h2 id="g-talk" className="card__title">{th('guide.talk')}</h2>
         {k.phrases.length > 0 && <p className="muted">{t('guide.talk.note')}</p>}
-        <dl className="plain-dl">{k.phrases.map((p) => <div key={p.say}><dt lang={k.lang ?? (port === 'belize' ? 'en' : 'es')}>{p.say}</dt><dd>{p.means} <span className="muted">({p.sounds})</span></dd></div>)}</dl>
+        <dl className="plain-dl">{k.phrases.map((p) => <div key={p.say}><dt lang={k.lang ?? 'es'}>{p.say}</dt><dd>{p.means} <span className="muted">({p.sounds})</span></dd></div>)}</dl>
         <h3>{th('guide.etiquette')}</h3>
         <ul className="plain-bullets">{k.etiquette.map((x) => <li key={x}>{x}</li>)}</ul>
         {k.allergy.length > 0 && <h3>{th('guide.allergy')}</h3>}

@@ -28,7 +28,7 @@ export function BriefingScreen() {
   const dp = useDayPlan(day)
   const { state } = usePilot()
   const checklist = useMine(() => api.plan.checklist.get())
-  const sky = useFeed(skyNightFeed, sailing.departure, day)
+  const sky = useFeed(skyNightFeed, sailing.id, day)
   const nowHhmm = timeIn(now, shipZoneAt(sailing, now))
   const [kind, setKind] = useState<BriefingKind>(kindAt(nowHhmm))
   const [reading, setReading] = useState(false)

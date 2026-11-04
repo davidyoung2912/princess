@@ -54,11 +54,11 @@ public class NavigationRulesTests
     public void ShipTimeAndLocalTimeDifferWhereTheZonesDo()
     {
         var clock = NavigationRules.Position(Dep, At(4, 12, "America/Belize")).Clock;
-        Assert.Equal("belize", clock.ShipZone);
+        Assert.Equal("other", clock.ShipZone);
         Assert.Equal("belize", clock.LocalPlace);
         Assert.Equal(0, clock.DifferenceMinutes);
         var before = NavigationRules.Position(Dep, At(3, 20, "America/Cancun")).Clock;
-        Assert.Equal("eastern", before.ShipZone);
+        Assert.Equal("home", before.ShipZone);
         Assert.NotNull(before.NextChange);
     }
 

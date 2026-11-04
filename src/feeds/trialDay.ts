@@ -23,5 +23,6 @@ export function normalizeTrialDay(raw: unknown): TrialDay | null {
 /** A day for a visitor, from a day number and wishes (see `wishKey`). Not kept on the device: nothing here belongs to a person. */
 export const trialDayFeed = createFeed<[day: number, wishes: string], TrialDay>((d, w) => `${d}|${w}`, normalizeTrialDay)
 
-/** A port day is one with a tour to pick; a day at sea or at the home port has events and dinner only. */
-export const hasTours = (c: TrialChoice | undefined): boolean => !!c && c.port !== 'sea' && c.port !== 'fll'
+/** A port day is one with a tour to pick; a day at sea or on the first or last day (in the home port) has events and dinner only. */
+export const hasTours = (c: TrialChoice | undefined, days: readonly TrialChoice[] = []): boolean =>
+  !!c && c.port !== 'sea' && c.day !== days[0]?.day && c.day !== days[days.length - 1]?.day

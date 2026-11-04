@@ -136,7 +136,7 @@ export function callPlaces(s: Sailing): string[] {
   return [...new Set(days.flatMap((d) => (d.port === 'sea' || d.port === home ? [] : [portById(d.port)?.name ?? d.port])))]
 }
 
-/** Which of the places a guest wants are on a route: a want matches when it is inside a place name ("cozumel") or when it names a word of one ("a week in Mexico"). Accents and case do not matter. */
+/** Which of the places a guest wants are on a route: a want matches when it is inside a place name (for example Cozumel) or when it names a word of one ("a week in Mexico"). Accents and case do not matter. */
 export function wantMatches(wants: readonly string[], places: readonly string[]): { want: string; place: string }[] {
   const out: { want: string; place: string }[] = []
   for (const want of wants) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { portDayAt } from './allaboard'
 import { hourlyCrowd, quietestWindow } from './portCrowd'
-import { PORT_KNOWLEDGE, GUIDE_PORTS, overCeiling, perPerson } from './portContent'
+import { PORT_KNOWLEDGE, overCeiling, perPerson } from './portContent'
 import { latestStart, planBFor, planPortDay, PLAN_B, PLAN_B_TRIGGERS, recommendedPlanB, RETURN_QUEUE } from './portPilot'
 import { REFERENCE_SAILING } from './sailings'
 
@@ -117,7 +117,7 @@ describe('crowds (S6A-02)', () => {
 
 describe('port knowledge', () => {
   it('has fair prices with a ceiling above the fare, scam alerts, and every section for every port', () => {
-    for (const port of GUIDE_PORTS) {
+    for (const port of Object.keys(PORT_KNOWLEDGE)) {
       const k = PORT_KNOWLEDGE[port]
       expect(k.fairPrices.length).toBeGreaterThan(0)
       for (const p of k.fairPrices) expect(p.ceiling).toBeGreaterThan(p.car)
@@ -127,11 +127,11 @@ describe('port knowledge', () => {
   })
 
   it('has an allergy card for nuts in a language the port speaks', () => {
-    for (const port of GUIDE_PORTS) expect(PORT_KNOWLEDGE[port].allergy.some((a) => /nut/i.test(a.allergy) && a.english)).toBe(true)
+    for (const port of Object.keys(PORT_KNOWLEDGE)) expect(PORT_KNOWLEDGE[port].allergy.some((a) => /nut/i.test(a.allergy) && a.english)).toBe(true)
   })
 
   it('marks every local-law note to verify, and states no commission on vendors', () => {
-    for (const port of GUIDE_PORTS) for (const law of PORT_KNOWLEDGE[port].laws) expect(law).toMatch(/\(verify\)/)
+    for (const port of Object.keys(PORT_KNOWLEDGE)) for (const law of PORT_KNOWLEDGE[port].laws) expect(law).toMatch(/\(verify\)/)
   })
 
   it('compares a quote with the ceiling and shares a car fare', () => {

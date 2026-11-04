@@ -4,10 +4,11 @@ import { SaveButton } from '../ahead/common'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
 import type { PaymentPart } from '../../domain/fares'
 import { formatDate, formatTime } from '../../domain/cruise'
-import { ACTIVITIES, filterExcursions, formatHours, guestPrice, INTERESTS, NO_FILTER, type ExcursionPort, type Filter, type Interest } from '../../domain/excursions'
+import { ACTIVITIES, EXCURSIONS, filterExcursions, formatHours, guestPrice, INTERESTS, NO_FILTER, type ExcursionPort, type Filter, type Interest } from '../../domain/excursions'
 import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { PORT_GUIDES } from '../../domain/ports'
+import { portById } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -24,7 +25,8 @@ import { PayPanel } from '../book/PayPanel'
 import { Back, GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
 
-const PORTS: readonly ExcursionPort[] = ['cozumel', 'belize', 'roatan']
+/** A port's short name: its guide's, else the catalogue's. */
+const portLabel = (id: string): string => PORT_GUIDES[id]?.short ?? portById(id)?.name ?? id
 const PRICES = [50, 75, 100]
 
 /** Shore excursions: the catalogue, a cart, and what is booked, with clash and all-aboard checks (PRE-01, PRE-02). */
@@ -41,6 +43,7 @@ export function ExcursionsScreen() {
 }
 
 function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
+  const PORTS = [...new Set(EXCURSIONS.map((e) => e.port))]
   const [filter, setFilter] = useState<Filter>(NO_FILTER)
   const { state: mem } = useMemory()
   const [suits, setSuits] = useState(false)
@@ -106,7 +109,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
                   <h3 className="card__title">{o.item.name}</h3>
                   <p><StatusBadge kind="booked" label={t('exc.status.booked')} /></p>
                   <ul className="tour__facts">
-                    <li>{formatDate(o.date)} · {formatTime(o.item.start)} · {PORT_GUIDES[o.item.port].short}</li>
+                    <li>{formatDate(o.date)} · {formatTime(o.item.start)} · {portLabel(o.item.port)}</li>
                     <li>{names(b.guests)}</li>
                     <li>{b.credit > 0 && b.credit === b.total ? t('exc.paidCredit', { total: formatMoney(b.total) }) : `${formatMoney(b.total)}${b.methods.length > 0 ? ` · ${b.methods.join(', ')}` : ''}`}</li>
                     <li>{t('exc.backBy', { time: formatTime(o.backBy) })}</li>
@@ -137,7 +140,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
             <label htmlFor="f-port">{t('exc.f.port')}</label>
             <select id="f-port" value={filter.port ?? ''} onChange={(e) => set({ port: (e.target.value || null) as ExcursionPort | null })}>
               <option value="">{t('exc.f.all')}</option>
-              {PORTS.map((p) => <option key={p} value={p}>{PORT_GUIDES[p].short}</option>)}
+              {PORTS.map((p) => <option key={p} value={p}>{portLabel(p)}</option>)}
             </select>
           </div>
           <div className="field">
@@ -168,7 +171,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
           if (list.length === 0) return null
           return (
             <section key={p} aria-labelledby={`port-${p}`}>
-              <h3 id={`port-${p}`}>{PORT_GUIDES[p].short}</h3>
+              <h3 id={`port-${p}`}>{portLabel(p)}</h3>
               <p className="muted">{list[0].tender ? t('exc.tender') : t('exc.pier')}</p>
               <ul className="card-grid">
                 {list.map((o) => <Tour key={o.item.id} offer={o} view={view} concerns={difficultyConcerns(o.item, mem.access)} busy={add.busy} onAdd={() => void pick(o)} />)}

@@ -49,8 +49,8 @@ export function useFareHistory(b: Pick<WhatIfBooking, 'plan' | 'today'>, number:
  */
 export function usePulseEnv(sailing: Sailing, now: number, day: number): { env: PulseEnv | null; now: number; dayReady: boolean } {
   const minute = minuteOf(now)
-  const live = useFeed(pulseFeed, sailing.departure, minute)
-  const served = useFeed(pulseDayFeed, sailing.departure, day)
+  const live = useFeed(pulseFeed, sailing.id, minute)
+  const served = useFeed(pulseDayFeed, sailing.id, day)
   const env = useMemo(() => (live ? withServed(envFor(sailing, () => undefined), live, served) : null), [sailing, live, served])
   return { env, now: minute, dayReady: !!served }
 }

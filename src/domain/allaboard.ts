@@ -38,7 +38,7 @@ export const reminderTimes = (allAboardAt: number): { minutes: number; at: numbe
 
 export interface PortDay {
   day: number
-  port: Exclude<PortId, 'sea' | 'fll'>
+  port: PortId
   date: string
   /** All-aboard, ship time and local port time, "9:30 am". */
   allAboardShip: string
@@ -53,9 +53,9 @@ export interface PortDay {
 
 /** The port day a moment falls in, or the nearest one still to come, or null when none is left. */
 export function portDayAt(s: Sailing, now: number): PortDay | null {
-  const days = itinerary(s).filter((x) => x.port !== 'sea' && x.port !== 'fll')
+  const days = itinerary(s).filter((x) => x.port !== 'sea' && !!x.allAboard)
   for (const x of days) {
-    if (x.port === 'sea' || x.port === 'fll') continue
+    if (x.port === 'sea') continue
     const zone = PORTS[x.port].zone
     const depart = zonedToEpoch(x.date, x.depart!, zone)
     if (now > depart) continue
@@ -127,9 +127,6 @@ export function tenderView(day: PortDay, group: TenderGroup, now: number, delayM
   const waitMinutes = status === 'running' ? 10 + (hash(`${day.date}|${Math.floor(now / 900_000)}`) % 11) : status === 'calling' ? 15 : 0
   return { group, callAt, status, delayMinutes, waitMinutes, lastTenderAt: day.allAboardAt - LAST_TENDER_MINUTES * 60_000 }
 }
-
-/** Whether the ship may tender instead of docking: Roatán in the weather scenario (POR-04). */
-export const mayTenderInstead = (port: PortDay['port'], weather: boolean): boolean => weather && port === 'roatan'
 
 // ---- Running late (POR-08) ----
 

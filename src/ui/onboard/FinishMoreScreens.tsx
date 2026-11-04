@@ -29,7 +29,7 @@ const Page = ({ intro, back, children }: { intro: StringKey; back: Back; childre
   </div>
 )
 const DIS: Back = { to: '/home/disembark', label: 'route.disembark' }
-const SHIP: Back = { to: '/ship', label: 'route.ship' }
+const SHIP_BACK: Back = { to: '/ship', label: 'route.ship' }
 const ME: Back = { to: '/me', label: 'route.me' }
 const PLAN: Back = { to: '/plan', label: 'route.plan' }
 
@@ -223,7 +223,7 @@ export function AskShipScreen() {
   const fact = asked === null ? null : askShip(asked)
   const submit = (e: FormEvent) => { e.preventDefault(); if (q.trim()) setAsked(q) }
   return (
-    <Page intro="askShip.intro" back={SHIP}>
+    <Page intro="askShip.intro" back={SHIP_BACK}>
       <form onSubmit={submit}>
         <Field label={t('askShip.label')} value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} />
         <Button type="submit">{t('ask.send')}</Button>
@@ -240,7 +240,7 @@ export function AskShipScreen() {
 export function SafeAshoreScreen() {
   const { f, set } = useFinish()
   return (
-    <Page intro="ashore.intro" back={SHIP}>
+    <Page intro="ashore.intro" back={SHIP_BACK}>
       <Card labelledBy="as-who"><h2 id="as-who" className="card__title">{th('ashore.who')}</h2>
         {TRAVELLERS.map((w) => <label key={w} className="choice"><input type="checkbox" checked={f.travellers.includes(w)} onChange={(e) => set((x) => ({ ...x, travellers: e.target.checked ? [...x.travellers, w as Traveller] : x.travellers.filter((i) => i !== w) }))} /><span>{t(`ashore.w.${w}` as StringKey)}</span></label>)}
         <p className="muted">{t('ashore.private')}</p></Card>
@@ -257,7 +257,7 @@ export function AllergyChainScreen() {
   const now = useNow()
   const chain = allergyChain(memory.allergy, now)
   return (
-    <Page intro="chain.intro" back={SHIP}>
+    <Page intro="chain.intro" back={SHIP_BACK}>
       <Banner kind="info" title={t('chain.sim')} />
       <Card labelledBy="ch-steps"><h2 id="ch-steps" className="card__title">{th('chain.steps')}</h2>
         <ol>{chain.steps.map((s) => <li key={s.id}>{t(`chain.step.${s.id}` as StringKey)}: {s.done ? t('chain.done') : t('chain.waiting')}</li>)}</ol>
@@ -391,7 +391,7 @@ export function ReadAloudScreen() {
   const plan = dp.ready ? planSpeech(dp.rows.filter((r) => r.state !== 'dropped').map((r) => r.entry), t('read.empty')) : null
   const walk = knowledgeOf(port)?.walks[0]
   return (
-    <Page intro="read.intro" back={SHIP}>
+    <Page intro="read.intro" back={SHIP_BACK}>
       {!canSpeak && <Banner kind="info" title={t('read.unsupported')} />}
       <Card labelledBy="rd-r"><h2 id="rd-r" className="card__title">{th('read.speed')}</h2>
         {READ_RATES.map((r) => <label key={r} className="choice"><input type="radio" name="rd-rate" checked={rate === r} onChange={() => setRate(r)} /><span>{t(`read.rate.${String(r).replace('.', '')}` as StringKey)}</span></label>)}</Card>

@@ -4,7 +4,7 @@ import type { TripView } from '../../api/types'
 import { categoryById } from '../../domain/ship'
 import { carbonRange, childStory, cleanName, DEFAULT_DAILY, dressNights, guaranteeOdds, KG_PER_GUEST_NIGHT, moneyPlan, OCCASIONS, OUTLETS, parsePlan, PROHIBITED, STARTERS, STORY_DAYS, STYLES, DEFAULT_STYLE, type Occasion, type PlanLine, type Style } from '../../domain/prepMore'
 import { formatMoney } from '../../domain/money'
-import { itinerary, PORTS, REFERENCE_SAILING, sailingById, sailingNights, type PortId } from '../../domain/sailings'
+import { itinerary, PORTS, sailingNights, type PortId } from '../../domain/sailings'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { t, th, type StringKey } from '../../i18n'
@@ -64,9 +64,10 @@ export function GuaranteeScreen() {
 
 /** Carbon estimate range with its method shown (S2-09, XT-08); shown on the sustainability screen. */
 export function CarbonCard() {
+  const sailing = useSailing()
   const trips = useMine(() => api.trips.list())
   const trip: TripView | undefined = trips.data?.upcoming[0]
-  const nights = sailingNights((trip && sailingById(trip.sailingId)) || REFERENCE_SAILING)
+  const nights = sailingNights(sailing)
   const r = carbonRange(nights, trip?.guests ?? 1)
   return (
     <Card labelledBy="sus-co2-h">
@@ -79,13 +80,14 @@ export function CarbonCard() {
 
 /** Money plan (S3-12): a budget for each day by day type, cash for ports and card for the ship. */
 export function MoneyPlanScreen() {
+  const sailing = useSailing()
   const trips = useMine(() => api.trips.list())
   const trip = trips.data?.upcoming[0]
   const { state: mem, update } = useMemory()
   const saved = mem.planning.moneyDaily ?? DEFAULT_DAILY
   const [sea, setSea] = useState(String(saved.sea / 100))
   const [port, setPort] = useState(String(saved.port / 100))
-  const s = (trip && sailingById(trip.sailingId)) || REFERENCE_SAILING
+  const s = sailing
   const daily = { sea: Number(sea || '0') * 100, port: Number(port || '0') * 100 }
   const plan = moneyPlan(s, trip?.guests ?? 1, daily)
   const keep = (next: { sea: number; port: number }) => update((m) => ({ ...m, planning: { ...m.planning, moneyDaily: next } }))
@@ -117,9 +119,9 @@ export function MoneyPlanScreen() {
 
 /** A child-friendly story of the trip (S3-14), made on the screen from the itinerary. */
 export function ChildStoryScreen() {
+  const sailing = useSailing()
   const [name, setName] = useState('')
-  const trips = useMine(() => api.trips.list())
-  const s = (trips.data?.upcoming[0] && sailingById(trips.data.upcoming[0].sailingId)) || REFERENCE_SAILING
+  const s = sailing
   const lines = childStory(name, s)
   return (
     <Page intro="kstory.intro">
@@ -170,9 +172,10 @@ export function PasteScreen() {
 
 /** Occasion starter and authored day stories (S0-09, S0-08). */
 export function StarterScreen() {
+  const sailing = useSailing()
   const [occasion, setOccasion] = useState<Occasion>('firstCruise')
   const [style, setStyle] = useState<Style>(DEFAULT_STYLE)
-  const days = itinerary(REFERENCE_SAILING)
+  const days = itinerary(sailing)
   return (
     <Page intro="starter.intro">
       <Card labelledBy="st-o">

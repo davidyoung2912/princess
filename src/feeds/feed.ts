@@ -1,4 +1,5 @@
 import { cacheGet, cachePut, CACHE_PREFIX } from '../domain/offlineCache'
+import { portById } from '../domain/sailings'
 
 /**
  * One feed the server answers. The client holds no simulation of its own: `now()` is the server's answer if it has come, else the last answer kept
@@ -71,4 +72,7 @@ export function createFeed<A extends unknown[], V>(key: (...args: A) => string, 
 
 export const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 export const isInt = (v: unknown, min: number, max: number): v is number => Number.isInteger(v) && (v as number) >= min && (v as number) <= max
+/** A port the catalogue knows, or `sea`. The feed does not know the route; any port of any sailing is allowed. */
+export const isPortIdText = (v: unknown): v is string => typeof v === 'string' && (v === 'sea' || portById(v) !== undefined)
+
 export const oneOf = <T extends string>(v: unknown, list: readonly T[]): v is T => typeof v === 'string' && (list as readonly string[]).includes(v)

@@ -1,6 +1,6 @@
 // Guard rail for phase X0 (docs/catalogue-plan.md). The app was built around one ship and one route; the catalogue
 // work removes that. This test counts the remaining single-route references in non-test source and fails when the
-// count goes UP. Each X0 phase lowers a ceiling; X0h sets them all to zero. Never raise a ceiling.
+// count goes UP. Each X0 phase lowers a ceiling; the cleanup phase set most to zero. Never raise a ceiling.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -9,7 +9,7 @@ function sources(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = join(dir, e.name)
     if (e.isDirectory()) return sources(p)
-    return /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) ? [p] : []
+    return /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !p.includes('/testing/') ? [p] : []
   })
 }
 
@@ -27,12 +27,14 @@ function count(re: RegExp) {
 
 // Baseline recorded 2026-11-03 at the start of X0 (X0a); lowered in X0d.
 const CEILINGS: Record<string, { re: RegExp; files: number; hits: number }> = {
-  'SHIP singleton': { re: /\bSHIP\b/g, files: 6, hits: 27 },
-  'CRUISE constant': { re: /\bCRUISE\b/g, files: 2, hits: 4 },
-  'REFERENCE_SAILING': { re: /\bREFERENCE_SAILING\b/g, files: 7, hits: 20 },
+  'SHIP singleton': { re: /\bSHIP\b/g, files: 0, hits: 0 },
+  'CRUISE constant': { re: /\bCRUISE\b/g, files: 0, hits: 0 },
+  'REFERENCE_SAILING': { re: /\bREFERENCE_SAILING\b/g, files: 3, hits: 8 },
   'SHIP_HOME_ZONE': { re: /\bSHIP_HOME_ZONE\b/g, files: 0, hits: 0 },
   'SHIP_WEST_ZONE': { re: /\bSHIP_WEST_ZONE\b/g, files: 0, hits: 0 },
-  'literal port ids': { re: /['"](cozumel|belize|roatan|fll|sea)['"]/g, files: 63, hits: 219 },
+  // `sea` is the id of a day at sea on every route, so it is not counted. What is left is the authored Western Caribbean sample week of the one
+  // aboard-depth ship (stage ids, photo spots, port contacts, plan B, clearance rows, call-port phrases, scenarios); `src/testing` is not counted.
+  'literal port ids': { re: /['"](cozumel|belize|roatan|fll)['"]/g, files: 7, hits: 35 },
 }
 
 describe('single-route references (X0 guard rail)', () => {

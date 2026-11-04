@@ -27,6 +27,10 @@ npm run build     # production build + PWA
 
 Other scripts: `db:check`, `api:check`, `db:seed:check`, `db:persona:check` (see `package.json`).
 
+## The catalogue
+
+The app serves three ships (Sun Princess at `aboard` depth, Sky and Sapphire at `browse` depth), their regions, ports, itinerary patterns and 2027 sailings from the server (`/reference/catalogue/*` and `/reference/sailings`); the front end holds none of it (`src/domain/shipCatalogue.ts`). The ship feeds under `/feeds/*` take `sailing` (an id). Plan and data model: `docs/catalogue-plan.md`, `docs/catalogue-data-model.md`. Regenerate and check the seed with `npm run catalogue:gen` and `npm run catalogue:check`.
+
 ## Documents
 
 `docs/backend-plan.md` (phases), `docs/backend-data-model.md` (schema and API surface), `docs/functional-requirements.md`, `docs/design-language.md`.
