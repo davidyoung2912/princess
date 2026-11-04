@@ -1,4 +1,8 @@
 import { useMemory } from '../../hooks/useMemory'
+import { useSettings } from '../../hooks/useSettings'
+import { stanleyLevelFor } from '../../settings/settings'
+import type { AskValue } from '../../ai/stanleyAsk'
+import { StanleyAsk, type AskItem } from '../ai/StanleyAsk'
 import { MoodTiles } from '../delights/PrepareDelights'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -39,16 +43,45 @@ export function QuizScreen() {
   const regions = catalogueRegions().filter((r) => sailings.some((x) => x.region === r.id))
   const months = monthsOf(sailings)
   const [shown, setShown] = useState(false)
+  // Stanley asks one question at a time unless the guest keeps him quiet or picks the plain form; the answers are the same either way.
+  const [settings] = useSettings()
+  const level = stanleyLevelFor(settings)
+  const [mode, setMode] = useState<'ask' | 'done' | 'form'>(level === 'helpful' || level === 'chatty' ? 'ask' : 'form')
   const setW = (key: keyof SailingWish, value: string) => { setShown(false); setWish((w) => ({ ...w, [key]: value || undefined }) as SailingWish) }
   const matches = shown ? matchSailings(sailings, wish) : []
   const { state } = useMemory()
   const result = shown ? recommend(a, state.prepare.moods) : null
   const toggle = (m: QuizMust) => { setShown(false); setA({ ...a, musts: a.musts.includes(m) ? a.musts.filter((x) => x !== m) : [...a.musts, m] }) }
   const set = <K extends keyof QuizAnswers>(key: K) => (value: QuizAnswers[K]) => { setShown(false); setA({ ...a, [key]: value }) }
+  const none = { value: '', label: t('stanley.ask.quiz.any') }
+  const opts = <T extends string>(values: readonly T[], key: string) => values.map((v) => ({ value: v, label: t(`quiz.${key}.${v}` as StringKey) }))
+  const items: AskItem[] = [
+    { id: 'vibe', prompt: t('quiz.vibe'), why: t('stanley.ask.quiz.why.vibe'), options: opts(QUIZ_VIBES, 'vibe') },
+    { id: 'budget', prompt: t('quiz.budget'), why: t('stanley.ask.quiz.why.budget'), options: opts(QUIZ_BUDGETS, 'budget') },
+    { id: 'with', prompt: t('quiz.with'), why: t('stanley.ask.quiz.why.with'), options: opts(QUIZ_WITH, 'with') },
+    { id: 'mobility', prompt: t('quiz.mobility'), why: t('stanley.ask.quiz.why.mobility'), options: opts(QUIZ_MOBILITY, 'mobility') },
+    { id: 'musts', prompt: t('quiz.musts'), why: t('stanley.ask.quiz.why.musts'), multi: true, options: opts(QUIZ_MUSTS, 'must') },
+    ...(regions.length > 1 ? [{ id: 'region', prompt: t('cat.region'), why: t('stanley.ask.quiz.why.region'), options: [none, ...regions.map((r) => ({ value: r.id, label: r.name }))] }] : []),
+    ...(months.length > 1 ? [{ id: 'month', prompt: t('cat.month'), why: t('stanley.ask.quiz.why.month'), options: [none, ...months.map((m) => ({ value: m, label: monthLabel(m) }))] }] : []),
+    { id: 'nights', prompt: t('cat.length'), why: t('stanley.ask.quiz.why.nights'), options: [none, ...NIGHTS_BANDS.map((b: NightsBand) => ({ value: b, label: t(`cat.nights.${b}` as StringKey) }))] },
+  ]
+  const values: Record<string, AskValue | undefined> = { ...a, region: wish.region ?? '', month: wish.month ?? '', nights: wish.nights ?? '' }
+  const answer = (id: string, value: AskValue) => {
+    if (id === 'region' || id === 'month' || id === 'nights') setW(id, value as string)
+    else if (id === 'musts') { setShown(false); setA((x) => ({ ...x, musts: value as QuizMust[] })) }
+    else { setShown(false); setA((x) => ({ ...x, [id]: value }) as QuizAnswers) }
+  }
   return (
     <div className="page">
       <p>{t('quiz.intro')}</p>
-      <form onSubmit={(e) => { e.preventDefault(); setShown(true) }}>
+      {mode === 'ask' && <StanleyAsk title={t('stanley.ask.quiz.title')} items={items} values={values} onChange={answer} onDone={() => { setShown(true); setMode('done') }} onShowAll={() => setMode('form')} />}
+      {mode === 'done' && (
+        <div className="button-row">
+          <Button variant="secondary" onClick={() => setMode('ask')}>{t('stanley.ask.change')}</Button>
+          <Button variant="tertiary" onClick={() => setMode('form')}>{t('stanley.ask.showAll')}</Button>
+        </div>
+      )}
+      {mode === 'form' && <form onSubmit={(e) => { e.preventDefault(); setShown(true) }}>
         <Choice name="vibe" legend={t('quiz.vibe')} values={QUIZ_VIBES} value={a.vibe} onChange={set('vibe')} label={(v) => t(`quiz.vibe.${v}` as StringKey)} />
         <Choice name="budget" legend={t('quiz.budget')} values={QUIZ_BUDGETS} value={a.budget} onChange={set('budget')} label={(v) => t(`quiz.budget.${v}` as StringKey)} />
         <Choice name="with" legend={t('quiz.with')} values={QUIZ_WITH} value={a.with} onChange={set('with')} label={(v) => t(`quiz.with.${v}` as StringKey)} />
@@ -93,7 +126,7 @@ export function QuizScreen() {
           </fieldset>
         )}
         <Button type="submit">{t('quiz.show')}</Button>
-      </form>
+      </form>}
       {result && (
         <section aria-labelledby="quiz-result-h" aria-live="polite">
           <h2 id="quiz-result-h">{th('quiz.result')}</h2>

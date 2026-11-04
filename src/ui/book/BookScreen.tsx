@@ -8,6 +8,9 @@ import { useDraft } from '../../hooks/useDraft'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, type StringKey } from '../../i18n'
+import { useSettings } from '../../hooks/useSettings'
+import { stanleyLevelFor } from '../../settings/settings'
+import stanley from '../../assets/stanley-small.png'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ErrorSummary } from '../Field'
@@ -56,6 +59,8 @@ function Funnel({ stored, onRestart }: { stored: Draft | null; onRestart: () => 
   const [attempt, setAttempt] = useState<{ step: StepId; problems: Problem[] }>({ step: 'sailing', problems: [] })
   const [dialog, setDialog] = useState<'link' | 'restart' | null>(null)
   const heading = useRef<HTMLParagraphElement>(null)
+  const [settings] = useSettings()
+  const level = stanleyLevelFor(settings)
 
   // A "Book this date" link brings a sailing in the address.
   const wanted = params.get('sailing')
@@ -86,6 +91,13 @@ function Funnel({ stored, onRestart }: { stored: Draft | null; onRestart: () => 
       <p ref={heading} tabIndex={-1} className="visually-hidden">{summary.length > 0 ? t('book.fixHeading') : ''}</p>
       <ErrorSummary title={t('book.fix')} errors={summary} />
       {state === 'failed' && <Banner kind="warning" title={t('book.save.failed')}><p>{t('book.save.failedBody')}</p></Banner>}
+
+      {step !== 'pay' && (level === 'helpful' || level === 'chatty') && (
+        <aside className="stanley-why" aria-label={t('stanley.why.label')}>
+          <img className="stanley-answer__face" src={stanley} alt="" width="192" height="192" />
+          <p>{t(`stanley.why.${step}` as StringKey)}</p>
+        </aside>
+      )}
 
       {Body ? <Body draft={draft} update={update} error={error} ctx={ctx} /> : <PayStep draft={draft} onBooked={(b) => { stop(); navigate(`/book/confirmed/${b.number}`) }} />}
 

@@ -16,6 +16,11 @@ import { ShareCard } from '../delights/Exports'
 import { CabinExtras, LeftOffCard } from '../delights/DiscoverDelights'
 import { loadLastComparison, saveLastComparison } from '../../settings/lastComparison'
 import { compareQuery, comparisonCard, parseCompareQuery } from '../../domain/export'
+import { CABIN_ASKS, cabinFilterFrom, type AskValue } from '../../ai/stanleyAsk'
+import { stanleyLevelFor } from '../../settings/settings'
+import { useSettings } from '../../hooks/useSettings'
+import { Button } from '../Button'
+import { StanleyAsk, type AskItem } from '../ai/StanleyAsk'
 import { cabinGuideFeed } from '../../feeds/cabinGuide'
 import { useFeed, useFeedList } from '../../hooks/useServedFeeds'
 
@@ -35,6 +40,16 @@ export function CabinChooserScreen() {
   const [guests, setGuests] = useState(shared.guests ?? 2)
   const [fare, setFare] = useState<FareId>(shared.fare && shared.fare in FARES ? (shared.fare as FareId) : 'standard')
   const [filter, setFilter] = useState<CabinFilter>(NO_FILTER)
+  // "Tell me which one": Stanley asks yes or no questions and sets the filters; the guest can still change every filter by hand.
+  const [settings] = useSettings()
+  const [asking, setAsking] = useState<'idle' | 'ask' | 'done'>('idle')
+  const [told, setTold] = useState<Record<string, AskValue | undefined>>({})
+  const askItems: AskItem[] = CABIN_ASKS.map((q) => ({
+    id: q.id,
+    prompt: t(`stanley.ask.cabin.${q.id}` as StringKey),
+    why: t(`stanley.ask.cabin.${q.id}.why` as StringKey),
+    options: [{ value: 'yes', label: t('stanley.ask.cabin.yes') }, { value: 'no', label: t('stanley.ask.cabin.no') }],
+  }))
   const [picked, setPicked] = useState<{ category: CategoryId; number: string }[]>(() => (shared.picks ?? []).filter((p) => categoryById(p.category)).map((p) => ({ category: p.category as CategoryId, number: p.number })))
 
   // D1-7: the comparison this device had open last time, offered once and only when this visit did not start from a shared link.
@@ -82,6 +97,29 @@ export function CabinChooserScreen() {
       <p className="muted">{t('cabins.sample')}</p>
 
       {left && picked.length === 0 && <LeftOffCard picks={left.picks ?? []} onOpen={reopen} onForget={() => { saveLastComparison(''); setLeft(null) }} />}
+
+      {stanleyLevelFor(settings) !== 'off' && asking === 'idle' && (
+        <div className="stanley-why no-print">
+          <p>{t('stanley.ask.cabin.intro')}</p>
+          <Button variant="secondary" onClick={() => setAsking('ask')}>{t('stanley.ask.cabin.start')}</Button>
+        </div>
+      )}
+      {asking === 'ask' && (
+        <StanleyAsk
+          title={t('stanley.ask.cabin.title')}
+          items={askItems}
+          values={told}
+          onChange={(id, v) => setTold((x) => ({ ...x, [id]: v }))}
+          onDone={(final) => { setFilter(cabinFilterFrom(final)); setAsking('done') }}
+          onShowAll={() => setAsking('idle')}
+        />
+      )}
+      {asking === 'done' && (
+        <div className="stanley-why no-print">
+          <p role="status">{t('stanley.ask.cabin.done')}</p>
+          <Button variant="secondary" onClick={() => setAsking('ask')}>{t('stanley.ask.change')}</Button>
+        </div>
+      )}
 
       <Card labelledBy="cabins-pick">
         <h2 id="cabins-pick" className="card__title">{th('cabins.choose')}</h2>

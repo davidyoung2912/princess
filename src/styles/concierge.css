@@ -70,3 +70,14 @@
 .stanley-empty p { margin: 0 0 var(--space-2); }
 .stanley-empty p:last-child { margin: 0; }
 img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
+
+/* Stanley asks one question at a time (SG2). */
+.stanley-ask { display: grid; gap: var(--space-3); padding: var(--space-4); margin-bottom: var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); }
+.stanley-ask__bubble { display: flex; gap: var(--space-3); align-items: flex-start; }
+.stanley-ask__bubble p { margin: 0; }
+.stanley-ask__count { font-size: var(--fs-caption); }
+.stanley-ask__q { margin: 0 0 var(--space-1); }
+.stanley-ask__options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.stanley-ask__opt[aria-pressed='true'] { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+.stanley-why { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); background: var(--surface-info); border-radius: var(--radius-card); }
+.stanley-why p { margin: 0; }
