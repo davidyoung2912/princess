@@ -9,13 +9,14 @@ import { GET_TO_SHIP } from './getToShip'
 import { MANAGE } from './manage'
 import { PORT } from './port'
 import { PREBOOK } from './prebook'
+import { REMEMBER } from './remember'
 import { SEA } from './sea'
 import type { LibraryEntry } from './types'
 
 export type { LibraryEntry } from './types'
 
-/** Every authored entry, in the order of the journey: Dream to Book, then Manage, Prebook and Get to the ship, then Embark, Sea, Port and Disembark. */
-export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK, ...MANAGE, ...PREBOOK, ...GET_TO_SHIP, ...EMBARK, ...SEA, ...PORT, ...DISEMBARK]
+/** Every authored entry, in the order of the journey: Dream to Book, then Manage, Prebook and Get to the ship, then Embark, Sea, Port and Disembark, then Remember. */
+export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK, ...MANAGE, ...PREBOOK, ...GET_TO_SHIP, ...EMBARK, ...SEA, ...PORT, ...DISEMBARK, ...REMEMBER]
 
 export const questionOf = (e: LibraryEntry): string => t(`stanley.q.${e.id}` as StringKey)
 export const answerOf = (e: LibraryEntry): string => t(`stanley.a.${e.id}` as StringKey)

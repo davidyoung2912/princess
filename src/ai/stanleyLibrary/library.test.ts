@@ -7,11 +7,11 @@ import { LIBRARY, answerOf, chipsFor, matchQuestion, questionOf } from '.'
 const staticPaths = new Set(SCREEN_LIST.map((s) => s.path).filter((p) => !p.includes(':')))
 
 describe('Stanley library', () => {
-  it('has 119 entries with unique ids across ten stages', () => {
-    expect(LIBRARY).toHaveLength(119)
-    expect(new Set(LIBRARY.map((e) => e.id)).size).toBe(119)
+  it('has 129 entries with unique ids across eleven stages', () => {
+    expect(LIBRARY).toHaveLength(129)
+    expect(new Set(LIBRARY.map((e) => e.id)).size).toBe(129)
     for (const stage of ['dream', 'discover', 'book', 'manage', 'prebook', 'getToShip'] as const) expect(LIBRARY.filter((e) => e.stages.includes(stage)).length).toBeGreaterThanOrEqual(13)
-    for (const stage of ['embark', 'sea', 'port', 'disembark'] as const) expect(LIBRARY.filter((e) => e.stages.includes(stage)).length).toBe(10)
+    for (const stage of ['embark', 'sea', 'port', 'disembark', 'remember'] as const) expect(LIBRARY.filter((e) => e.stages.includes(stage)).length).toBe(10)
   })
 
   it('has a question and an answer for every entry, in his voice', () => {
@@ -35,11 +35,11 @@ describe('Stanley library', () => {
     }
   })
 
-  it('gives at most three chips, the screen\'s own first, and none for a stage with no library', () => {
+  it('gives at most three chips, the screen\'s own first, and a page of the Remember stage gets its own', () => {
     const chips = chipsFor('H14', 'discover')
     expect(chips).toHaveLength(3)
     expect(chips[0].screens).toContain('H14')
-    expect(chipsFor('H14', 'remember')).toEqual([])
+    expect(chipsFor('M17', 'remember')[0].screens).toContain('M17')
     expect(chipsFor(undefined, 'book')).toHaveLength(3)
   })
 
