@@ -42,6 +42,9 @@ public static class FareBook
     public static IReadOnlyList<ShipCategory> CategoriesOf(string sailingId) =>
         _ships.TryGetValue(sailingId, out var ship) ? [.. _categories.Where(c => c.ShipId == ship)] : [];
 
+    /// <summary>The ship a sailing runs on, or null when the sailing is not known.</summary>
+    public static string? ShipOf(string sailingId) => _ships.GetValueOrDefault(sailingId);
+
     public static ShipCategory? Category(string? id) => _categories.FirstOrDefault(c => c.Id == id);
 
     /// <summary>The category with the lowest fare on a sailing (the "from" price), or null when it has no fares.</summary>

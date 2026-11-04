@@ -30,3 +30,7 @@ Regenerate the list with: `grep -rn "(verify)" src server/Princess.Api --include
 | server/Princess.Api/Domain/PortsReference.cs:506 | "Drug possession is illegal and enforced (verify)" | | open |
 
 Sign-off: ______________________  Date: __________
+
+## Deck plans added in AB1 (2026-11-03)
+
+`AboardPlans.cs` holds concept-sample deck plans for Sky Princess and Sapphire Princess: place names, decks and sections, step-free flags, accessibility notes, muster stations and the dining room, theatre and lounge names are **unverified** and are not the real deck plans. The names borrow Princess's public vocabulary (Piazza, Lido, SeaWalk, Movies Under the Stars, Crown Grill, Sabatini's); where a ship's real dining rooms differ (`Allegro`, `Concerto`, `Santa Fe`, `Vivaldi` are samples) they must be replaced. Sun Princess's plan is the earlier sample in `ShipReference.cs`.

@@ -1,3 +1,4 @@
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { useId } from 'react'
 import { ELEVATORS, type Place } from '../../domain/deck'
 import { HULL_PATH, PLAN_H, PLAN_W, SECTION_DIVIDERS, SECTION_LABEL_X, placeLifts, placePlaces, type Point } from '../../domain/deckPlan'
@@ -23,6 +24,7 @@ interface Props {
  * described as one image. Marks never rely on colour alone: a muster station has a letter, a quiet space a ring and a step a dashed outline.
  */
 export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [] }: Props) {
+  useCatalogue()
   const id = useId()
   const placed = placePlaces(deck)
   const lifts = placeLifts()

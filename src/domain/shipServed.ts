@@ -1,6 +1,7 @@
-import { replaceDeck, type ElevatorBank, type MusterStation, type Place, type PlaceKind, type Section } from './deck'
+import { type ElevatorBank, type MusterStation, type Place, type PlaceKind, type Section } from './deck'
 import { replaceShip, type CategoryId, type ShipContent, type ShipFacts, type StateroomCategory } from './ship'
 import { notifyCatalogue } from './catalogueServed'
+import { keepPlan } from './aboardPlans'
 
 /**
  * The ship reference from the server (multi-device plan 3, Phase 3 step 2): ship facts, stateroom categories, the deck plan, elevator banks and
@@ -35,7 +36,7 @@ function category(r: unknown): StateroomCategory | null {
   return c
 }
 
-function place(r: unknown): Place | null {
+export function place(r: unknown): Place | null {
   if (!rec(r) || !str(r.id, 40) || !str(r.name, 120) || !num(r.deck, 1, 30) || !str(r.section, 10) || !SECTIONS.includes(r.section) || !str(r.kind, 20) || !KINDS.includes(r.kind) || typeof r.stepFree !== 'boolean') return null
   if (r.note !== undefined && r.note !== null && !str(r.note)) return null
   const p: Place = { id: r.id, name: r.name, deck: r.deck, section: r.section as Section, kind: r.kind as PlaceKind, stepFree: r.stepFree }
@@ -43,17 +44,17 @@ function place(r: unknown): Place | null {
   return p
 }
 
-function bank(r: unknown): ElevatorBank | null {
+export function bank(r: unknown): ElevatorBank | null {
   if (!rec(r) || !str(r.bank, 1) || !LETTERS.includes(r.bank) || !str(r.section, 10) || !SECTIONS.includes(r.section) || (r.side !== 'port' && r.side !== 'starboard')) return null
   return { bank: r.bank as ElevatorBank['bank'], section: r.section as Section, side: r.side }
 }
 
-function station(r: unknown): MusterStation | null {
+export function station(r: unknown): MusterStation | null {
   if (!rec(r) || !str(r.letter, 1) || !LETTERS.includes(r.letter) || !str(r.name, 120) || !str(r.placeId, 40) || !num(r.deck, 1, 30)) return null
   return { letter: r.letter as MusterStation['letter'], name: r.name, placeId: r.placeId, deck: r.deck }
 }
 
-const list = <T,>(v: unknown, f: (x: unknown) => T | null): T[] | null => {
+export const list = <T,>(v: unknown, f: (x: unknown) => T | null): T[] | null => {
   if (!Array.isArray(v)) return null
   const out = v.map(f)
   return out.some((x) => x === null) ? null : (out as T[])
@@ -82,6 +83,7 @@ export function normalizeShip(raw: unknown): ServedShip | null {
 /** Puts the served ship reference in use and tells the screens. */
 export function applyShip(s: ServedShip): void {
   replaceShip(s)
-  replaceDeck(s)
+  // This is the aboard-depth Sun Princess's plan; it is the one in use unless another ship's plan was switched in (`aboardPlans.ts`).
+  keepPlan({ version: s.version, shipId: s.ship.id, accessibility: s.accessibility, places: s.places, elevators: s.elevators, muster: s.muster })
   notifyCatalogue()
 }

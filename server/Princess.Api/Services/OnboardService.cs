@@ -123,10 +123,11 @@ public sealed class OnboardService(
         var needsStepFree = (await accounts.GetProfileAsync(c.Booking.BookerUserId, ct))?.Needs.Contains("mobility") == true;
         var place = BoardingRules.AssignmentFor(c.Booking.Number, c.Booking.SailingId, c.Booking.CategoryId, c.Booking.CabinNumber, needsStepFree);
         var letter = place.Muster[^1..];
-        var station = ProgramRules.MusterStations.GetValueOrDefault(letter);
+        var ship = AboardPlans.ShipOfSailing(c.Booking.SailingId);
+        var station = AboardPlans.Station(ship, letter);
         var all = c.Party.All(p => done.ContainsKey(p.UserId));
         return new MusterViewDto(
-            Ms(AboardRules.DrillAt(c.Departure)), !all, all, place.Muster, station?.Name ?? place.Muster, station is null ? "" : ProgramRules.PlaceName(station.PlaceId), station?.Deck ?? 7,
+            Ms(AboardRules.DrillAt(c.Departure)), !all, all, place.Muster, station?.Name ?? place.Muster, station is null ? "" : AboardPlans.PlaceName(ship, station.PlaceId), station?.Deck ?? 7,
             [.. c.Party.Select(p => new MusterGuestDto(p.Id, p.Name, done.TryGetValue(p.UserId, out var at) ? Ms(at) : null))], !c.Actor.IsSupervised);
     }
 
@@ -153,7 +154,7 @@ public sealed class OnboardService(
         var needsStepFree = (await accounts.GetProfileAsync(c.Booking.BookerUserId, ct))?.Needs.Contains("mobility") == true;
         var place = BoardingRules.AssignmentFor(c.Booking.Number, c.Booking.SailingId, c.Booking.CategoryId, c.Booking.CabinNumber, needsStepFree);
         var me = c.PersonByUser(actor.Id)?.Name ?? c.Party.FirstOrDefault()?.Name ?? "";
-        return AboardRules.EmergencyCardOf(me, place.Number, place.Deck, place.Muster);
+        return AboardRules.EmergencyCardOf(me, place.Number, place.Deck, place.Muster, AboardPlans.ShipOfSailing(c.Booking.SailingId));
     }
 
     // ---- The onboard account ----

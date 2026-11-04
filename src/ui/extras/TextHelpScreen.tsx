@@ -1,3 +1,4 @@
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { EMERGENCY_NUMBER } from '../../domain/contacts'
@@ -24,6 +25,7 @@ import { ExtraError } from './common'
  * when a message has not been sent. Interpreter times for signed shows are listed from the catalogue.
  */
 export function TextHelpScreen() {
+  useCatalogue()
   const me = usePersona()
   const health = useMine(() => api.health.view(), [])
   const shipTime = useShipTime()

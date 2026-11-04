@@ -1,3 +1,4 @@
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
 import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placeById, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
 import { t, th, type StringKey } from '../../i18n'
@@ -17,6 +18,7 @@ const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
  * The graphic plan (N5.1) sits above the table; both come from the same data. There is no location sensor: "you are here" is shown only when the guest says where they are.
  */
 export function DeckMapScreen() {
+  useCatalogue()
   const [query, setQuery] = useState('')
   const [deck, setDeck] = useState(7)
   const [stepFree, setStepFree] = useState(false)

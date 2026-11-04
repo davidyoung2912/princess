@@ -1,3 +1,4 @@
+import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { DECKS, placesOnDeck } from '../../domain/deck'
@@ -34,6 +35,7 @@ function stepText(s: RouteStep): string {
 
 /** Directions between two places on the ship (ACS-02), in words, with a step-free option. The nearest alternative is offered where a place has steps. */
 export function RouteFinder() {
+  useCatalogue()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [stepFree, setStepFree] = useState(false)

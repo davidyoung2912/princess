@@ -58,6 +58,9 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/ship", () => Results.Ok(ShipReference.Get()))
             .WithTags("Reference").WithSummary("The ship (facts, highlights, accessibility notes), its stateroom categories, the deck plan, the six elevator banks and the muster stations. `version` changes when any of it does.");
 
+        api.MapGet("/reference/ships/{id}/aboard", (string id) => AboardPlans.For(id) is { } plan ? Results.Ok(plan) : throw ApiException.NotFound())
+            .WithTags("Reference").WithSummary("One ship's deck plan: its places, the six elevator banks, the six muster stations and accessibility notes. `version` changes when any of it does. Not found for a ship with no plan.");
+
         api.MapGet("/reference/program", (IProgramChanges changes) => Results.Ok(ProgramRules.Reference(changes.Current())))
             .WithTags("Reference").WithSummary("Every programme event with the days it runs, and the mid-day changes the ship has made (moved or cancelled, with a reason). A guest sees the changes only when the day's plan-change scenario applies to them; `GET /onboard/program/{day}` is the guest's own day.");
 

@@ -128,15 +128,16 @@ public static class AboardRules
 
     public static DateTime DrillAt(DateOnly departure) => Itinerary.LocalToUtc(departure.AddDays(DrillDay - 1), TimeOnly.ParseExact(DrillTime, "HH:mm"), Itinerary.ShipHomeZone);
 
-    public static readonly IReadOnlyList<Contact> EmergencyContacts =
+    /// <summary>The emergency contacts with the Medical Center and Guest Services placed on the ship's own deck plan (the numbers are the same on every ship).</summary>
+    public static IReadOnlyList<Contact> ContactsOn(string shipId) =>
     [
         new("cabin", CabinEmergency, "From any cabin or ship phone"),
         new("mobile", EmergencyNumber, "From your own phone on the ship’s network"),
-        new("medical", MedicalNumber, "Medical Center, Deck 4 forward"),
-        new("guestServices", GuestServicesNumber, "Guest Services, Deck 6 forward"),
+        new("medical", MedicalNumber, AboardPlans.Where(shipId, "medical", "Medical Center, Deck 4 forward")),
+        new("guestServices", GuestServicesNumber, AboardPlans.Where(shipId, "guest-services", "Guest Services, Deck 6 forward")),
     ];
 
     /// <summary>The card a guest keeps offline: stateroom, station, who to call, and the words to say.</summary>
-    public static EmergencyCard EmergencyCardOf(string guest, string stateroom, int deck, string muster) =>
-        new(guest, stateroom, deck, muster, ProgramRules.MusterByLabel(muster), EmergencyContacts, $"This is {guest}. I need help in stateroom {stateroom}, deck {deck}.");
+    public static EmergencyCard EmergencyCardOf(string guest, string stateroom, int deck, string muster, string shipId = "sun-princess") =>
+        new(guest, stateroom, deck, muster, AboardPlans.StationByLabel(shipId, muster), ContactsOn(shipId), $"This is {guest}. I need help in stateroom {stateroom}, deck {deck}.");
 }

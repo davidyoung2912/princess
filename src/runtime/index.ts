@@ -31,6 +31,7 @@ import { markAccount, refreshContext, setContext } from '../account/context'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
 import { setRoomLoaders } from '../domain/shipRooms'
+import { setPlanLoader } from '../domain/aboardPlans'
 import { applyCataloguePorts, applyPatterns, applyRegions, applyShips, normalizeCataloguePorts, normalizePatterns, normalizeRegions, normalizeShips, setItineraryLoader } from '../domain/shipCatalogue'
 import { applyShip, normalizeShip } from '../domain/shipServed'
 import { applyProgram, normalizeProgram } from '../domain/programServed'
@@ -239,6 +240,21 @@ setItineraryLoader(async (sailingId) => {
   try {
     const raw = await http.get<unknown>(`/reference/sailings/${encodeURIComponent(sailingId)}/itinerary`)
     cachePut(tableStore(), kind, sailingId, raw, Date.now())
+    return raw
+  } catch (e) {
+    const old = kept()
+    if (old) return old
+    throw e
+  }
+})
+/** A ship's deck plan, fetched when its sailing is in focus and kept on this device, so an offline guest aboard still has the plan of their ship. */
+setPlanLoader(async (shipId) => {
+  const kind = 'aboard'
+  const kept = () => cacheGet(tableStore(), kind, shipId, (raw) => raw, Date.now())?.value
+  if (!auth.current()) return kept()
+  try {
+    const raw = await http.get<unknown>(`/reference/ships/${encodeURIComponent(shipId)}/aboard`)
+    cachePut(tableStore(), kind, shipId, raw, Date.now())
     return raw
   } catch (e) {
     const old = kept()

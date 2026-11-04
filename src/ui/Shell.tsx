@@ -26,6 +26,7 @@ import { stanleyLevelFor } from '../settings/settings'
 import { useSettings } from '../hooks/useSettings'
 import { PageHeader } from './PageHeader'
 import { BrowseDepthNote } from './BrowseDepthNote'
+import { useActiveDeck } from '../hooks/useShipCatalogue'
 import { TipCard } from './TipCard'
 import { StanleyCoach } from './ai/StanleyCoach'
 import { tipIdFor } from '../settings/tips'
@@ -43,6 +44,7 @@ export function Shell() {
   const { pathname, search, state } = useLocation()
   const navigationType = useNavigationType()
   const { stage } = useJourneyPosition()
+  useActiveDeck()
   const known = useSyncExternalStore(subscribeContext, getContext, getContext) !== null
   const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
