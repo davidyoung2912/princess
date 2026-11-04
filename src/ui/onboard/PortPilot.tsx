@@ -6,10 +6,10 @@ import { PORT_GUIDES } from '../../domain/ports'
 import { usePortCrowd } from '../../hooks/useServedFeeds'
 import { hourlyCrowd, quietestWindow } from '../../domain/portCrowd'
 import { agreePlan, clearPlan, dayOf, planAgreed, proposePlan, setPlanB } from '../../domain/portParty'
-import { ACCESSIBLE_TENDER_STEPS, BUFFER_CHOICES, DEFAULT_BUFFER, latestStart, PLAN_B, PLAN_B_TRIGGERS, planPortDay, pilotStepLabel, recommendedPlanB, type PlanBTrigger } from '../../domain/portPilot'
-import { PORTS } from '../../domain/sailings'
+import { ACCESSIBLE_TENDER_STEPS, BUFFER_CHOICES, DEFAULT_BUFFER, latestStart, PLAN_B_TRIGGERS, planBFor, planPortDay, pilotStepLabel, recommendedPlanB, type PlanBTrigger } from '../../domain/portPilot'
+import { PORTS, portById } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
-import type { GuidePort } from '../../domain/portContent'
+import { knowledgeOf } from '../../domain/portTier'
 import { usePort } from '../../hooks/usePort'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -25,8 +25,8 @@ const TRAVEL_CHOICES = [0, 10, 20, 30, 45, 60] as const
 export function PortPilot({ v }: { v: PortDayView }) {
   const shipTime = useShipTime()
   const { state, update, me } = usePort()
-  const port = v.day.port as GuidePort
-  const excursions = PORT_GUIDES[port].excursions
+  const port = v.day.port
+  const excursions = PORT_GUIDES[port as keyof typeof PORT_GUIDES]?.excursions ?? []
   const crowd = usePortCrowd(port, v.day.date)
   const day = dayOf(state.party, v.day.date)
   const [outing, setOuting] = useState<string>(day.plan?.outing ?? 'free')
@@ -51,13 +51,13 @@ export function PortPilot({ v }: { v: PortDayView }) {
   const iAgreed = !!me && !!day.plan?.agreed.includes(me.id)
   const quiet = crowd ? quietestWindow(hourlyCrowd(crowd, 8, 17)) : null
   const recommended = recommendedPlanB({ tenderDelayMinutes: v.tender?.delayMinutes ?? v.delayMinutes, tenderInstead: v.tender?.mayTender ?? false, tender: v.day.tender })
-  const planB = PLAN_B[port]
+  const planB = planBFor(port, knowledgeOf(port), v.day.tender)
   const chosenB = day.planB && (PLAN_B_TRIGGERS as readonly string[]).includes(day.planB) ? planB[day.planB as PlanBTrigger] : null
 
   return (
     <>
       <Card hero labelledBy="pilot-h">
-        <h2 id="pilot-h" className="card__title">{th('pilot.title', { port: PORTS[port].name })}</h2>
+        <h2 id="pilot-h" className="card__title">{th('pilot.title', { port: PORTS[port as keyof typeof PORTS]?.name ?? portById(port)?.name ?? port })}</h2>
         <p className="muted">{t('pilot.intro')}</p>
         <fieldset>
           <legend>{t('pilot.outing')}</legend>

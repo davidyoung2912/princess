@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import ports from '../../db/seed/catalogue/ports.json'
 import { normalizePorts } from './portsServed'
 import { tippingNorm } from './delights'
+import { PLAN_B, PLAN_B_TRIGGERS, planBFor } from './portPilot'
 
 /** The authored content in the server's `PortsReference.cs` (X0g): every Tier A port has a guide, every port but the home port has knowledge, and the served shape is the one the app reads. */
 const cs = readFileSync(new URL('../../server/Princess.Api/Domain/PortsReference.cs', import.meta.url), 'utf8')
@@ -29,5 +30,14 @@ describe('authored port guides (X0g)', () => {
   })
   it('has a tipping norm for every port with knowledge', () => {
     for (const id of Object.keys(json.knowledge)) expect(tippingNorm(id), id).toBeTruthy()
+  })
+  it('builds a plan B (X0i) for every other port from its own walks and day passes', () => {
+    const others = Object.keys(json.knowledge).filter((id) => !(id in PLAN_B))
+    expect(others.length).toBeGreaterThan(10)
+    for (const id of others) {
+      const b = planBFor(id, json.knowledge[id], false)
+      for (const trigger of PLAN_B_TRIGGERS) expect(b[trigger].detail.length, `${id} ${trigger}`).toBeGreaterThan(20)
+      expect(b.rain.detail).toContain(json.knowledge[id].walks[0].name)
+    }
   })
 })

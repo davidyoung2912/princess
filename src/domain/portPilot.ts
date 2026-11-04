@@ -1,5 +1,6 @@
 import { LAST_TENDER_MINUTES, type PortDay } from './allaboard'
 import type { StringKey } from '../i18n'
+import type { PortKnowledge } from './portContent'
 
 /**
  * The Port Day Pilot (S6A-01, S6A-04, S6A-15): one plan for the port day, worked backward from the all-aboard time in ship time.
@@ -125,6 +126,26 @@ export const PLAN_B: Record<'cozumel' | 'belize' | 'roatan', Record<PlanBTrigger
     tender: { id: 'tender', title: 'Weather switch to a tender', detail: 'In rough weather the ship may tender instead of docking. Stay near the landing, and use the tender planner above.', nearShip: true },
     energy: { id: 'energy', title: 'Beach by the pier', detail: 'Walk to the beach by the pier, rent a chair and stay close. Nothing to book.', nearShip: true },
   },
+}
+
+/**
+ * The plan B for any port. The three first ports have authored suggestions; every other port gets one built only from that port's own walks and
+ * day passes (no invented places), and a plain line where the port has none. Tender wording follows the landing.
+ */
+export function planBFor(port: string, k: PortKnowledge | undefined, tender: boolean): Record<PlanBTrigger, PlanB> {
+  const authored = (PLAN_B as Record<string, Record<PlanBTrigger, PlanB>>)[port]
+  if (authored) return authored
+  const walk = k?.walks[0]
+  const pass = k?.dayPasses.find((d) => d.crowd !== 'busy') ?? k?.dayPasses[0]
+  const near = walk ? `${walk.name} is about ${walk.minutes} minutes. Seating: ${walk.sit}. Restrooms: ${walk.restroom}.` : 'Stay close to the landing and ask the shore excursions desk what is near.'
+  return {
+    rain: { id: 'rain', title: 'Stay under cover near the ship', detail: `Keep to covered places close to the landing and ask what stays open in the rain. ${near}`, nearShip: true },
+    heat: { id: 'heat', title: 'Go early, rest in the shade', detail: pass ? `Go before midday and be back aboard by early afternoon. ${pass.name} (${pass.distance}) is the quieter choice.` : 'Go before midday, carry water, rest in shade and be back aboard by early afternoon.', nearShip: false },
+    tender: tender
+      ? { id: 'tender', title: 'Keep it short near the landing', detail: 'If tenders run late, stay near the landing, have lunch there and take an early tender back. Use the tender planner above.', nearShip: true }
+      : { id: 'tender', title: 'Stay at the pier', detail: 'If the ship has to tender instead of docking, stay near the landing and keep the plan short. Use the tender planner above.', nearShip: true },
+    energy: { id: 'energy', title: 'A slow, seated outing', detail: walk ? `${walk.name}: step ${walk.step}; accessible ${walk.accessible}. Have a long lunch with a seat and go back to the ship early.` : 'Have a long lunch with a seat near the landing and go back to the ship early for the pool.', nearShip: true },
+  }
 }
 
 /** The plan B worth showing first: a late tender or a weather switch points at the tender plan, otherwise none is pushed. */

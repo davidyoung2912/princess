@@ -82,7 +82,10 @@ public class ShipFeedTests
         Assert.Contains(c.Level, new[] { "quiet", "moderate", "busy" });
         foreach (var p in new[] { "cozumel", "belize", "roatan" }) Assert.InRange(ship.PortCrowd(p, "2027-03-24").Ships, 1, p == "belize" ? 3 : p == "roatan" ? 4 : 5);
         Assert.True(ShipFeedRules.ValidPort("belize"));
-        Assert.False(ShipFeedRules.ValidPort("mars"));
+        Assert.True(ShipFeedRules.ValidPort("juneau"));
+        Assert.InRange(ship.PortCrowd("juneau", "2027-03-24").Ships, 1, 3);
+        Assert.False(ShipFeedRules.ValidPort("sea"));
+        Assert.False(ShipFeedRules.ValidPort("Mars!"));
         Assert.False(ShipFeedRules.ValidDate("2027-13-40"));
     }
 

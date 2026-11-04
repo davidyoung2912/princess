@@ -17,7 +17,12 @@ public static class ShipFeedRules
     private static readonly Dictionary<string, int> MaxShips = new() { ["cozumel"] = 5, ["belize"] = 3, ["roatan"] = 4 };
     private static readonly Regex IsoDate = new(@"^[0-9]{4}-[0-9]{2}-[0-9]{2}$", RegexOptions.Compiled);
 
-    public static bool ValidPort(string? port) => port is not null && Comfort.ContainsKey(port);
+    /// <summary>Ports not listed use a middling comfort level and ship count, so any catalogue port id gets a crowd.</summary>
+    private const int DefaultComfort = 8_000;
+    private const int DefaultMaxShips = 3;
+    private static readonly Regex PortId = new(@"^[a-z0-9-]{2,40}$", RegexOptions.Compiled);
+
+    public static bool ValidPort(string? port) => port is not null && port != "sea" && PortId.IsMatch(port);
     public static bool ValidDate(string? date) => date is not null && IsoDate.IsMatch(date) && DateOnly.TryParseExact(date, "yyyy-MM-dd", out _);
 
     private static uint Fnv(string text)
@@ -33,9 +38,9 @@ public static class ShipFeedRules
     /// <summary>Ships in port and the expected crowd for a port on a date.</summary>
     public static PortCrowdDto PortCrowd(string port, string date)
     {
-        var ships = 1 + (int)(Fnv($"{port}|{date}") % (uint)MaxShips[port]);
+        var ships = 1 + (int)(Fnv($"{port}|{date}") % (uint)MaxShips.GetValueOrDefault(port, DefaultMaxShips));
         var guests = ships * ShipGuests;
-        var ratio = (double)guests / Comfort[port];
+        var ratio = (double)guests / Comfort.GetValueOrDefault(port, DefaultComfort);
         var level = ratio >= 1 ? "busy" : ratio >= 0.6 ? "moderate" : "quiet";
         return new PortCrowdDto(ships, guests, level, level == "busy", FeedRules.Sim);
     }

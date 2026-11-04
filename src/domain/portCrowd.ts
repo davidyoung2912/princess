@@ -4,7 +4,7 @@ import type { CrowdLevel } from './portPilot'
  * Ships in port and the expected crowd (S6A-02). A simulation: a stable number per port and date, shaped like a real feed
  * so one can replace it. `source` says so wherever it is shown.
  */
-export type CrowdPort = 'cozumel' | 'belize' | 'roatan'
+export type CrowdPort = string
 
 export interface PortCrowd {
   /** All ships alongside or at anchor, including this one. */

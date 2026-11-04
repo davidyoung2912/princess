@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { portDayAt } from './allaboard'
 import { hourlyCrowd, quietestWindow } from './portCrowd'
 import { PORT_KNOWLEDGE, GUIDE_PORTS, overCeiling, perPerson } from './portContent'
-import { latestStart, planPortDay, PLAN_B, PLAN_B_TRIGGERS, recommendedPlanB, RETURN_QUEUE } from './portPilot'
+import { latestStart, planBFor, planPortDay, PLAN_B, PLAN_B_TRIGGERS, recommendedPlanB, RETURN_QUEUE } from './portPilot'
 import { REFERENCE_SAILING } from './sailings'
 
 const MIN = 60_000
@@ -141,5 +141,17 @@ describe('port knowledge', () => {
     expect(perPerson({ route: 'x', car: 20, ceiling: 30 }, 4)).toBe(5)
     expect(perPerson({ route: 'x', car: 20, ceiling: 30 }, 0)).toBe(20)
     expect(perPerson({ route: 'x', car: 20, ceiling: 30 }, 9)).toBe(5)
+  })
+})
+
+describe('plan B for any port (X0i)', () => {
+  it('keeps the authored plan for the first three ports', () => {
+    expect(planBFor('cozumel', PORT_KNOWLEDGE.cozumel, false)).toBe(PLAN_B.cozumel)
+  })
+
+  it('still answers for a port with no knowledge, and words the tender plan by landing', () => {
+    const b = planBFor('nowhere', undefined, true)
+    expect(b.rain.detail).toMatch(/shore excursions desk/)
+    expect(b.tender.title).not.toBe(planBFor('nowhere', undefined, false).tender.title)
   })
 })
