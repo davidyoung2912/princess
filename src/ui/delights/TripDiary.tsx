@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
-import { addAuto, addNote, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
+import { addAuto, addNote, syncAuto, dayFor, editEntry, entriesFor, groupByDay, MOODS, removeEntry, searchEntries, ENTRY_MAX, type Mood, type TripEntry } from '../../domain/tripDiary'
 import { formatDate } from '../../domain/cruise'
 import { sourceLines } from '../../domain/diarySources'
 import { itinerary, PORTS } from '../../domain/sailings'
@@ -24,32 +24,36 @@ const portName = (port: string): string => PORTS[port as keyof typeof PORTS]?.na
 function useDiaryDays() {
   const sailing = useSailing()
   const now = useNow()
-  const { update } = useMemory()
+  const { state, update } = useMemory()
   const days = useMemo(() => itinerary(sailing), [sailing])
   const dates = useMemo(() => days.map((d) => d.date), [days])
   const today = dayFor(dates, now)
   // What the guest booked and kept: dinners, tours and photos. A failed load just means no extra lines for now.
   const source = useMine(async () => {
-    const [tours, dining, photos] = await Promise.all([api.plan.excursions.list(), api.plan.dining.view(), api.photos.list()])
+    const [tours, dining, photos, docs] = await Promise.all([api.plan.excursions.list(), api.plan.dining.view(), api.photos.list(), api.documents.get().catch(() => null)])
     return {
+      docsReady: !!docs && docs.guests.length > 0 && docs.guests.every((g) => g.blocking === 0),
       tours: tours.booked.filter((b) => b.status === 'booked').map((b) => b.excursionId),
       meals: dining.reservations.map((r) => ({ venueId: r.venueId, day: r.day, time: r.time })),
       photoDays: photos.photos.map((p) => p.day),
     }
   }, [sailing.id])
   const sources = source.status === 'ready' ? source.data : null
+  // The clock only matters to the diary a minute at a time (the moments that come with it).
+  const minute = Math.floor(now / 60_000)
+  const steps = state.aboard.steps
   useEffect(() => {
-    if (today < 1) return
     update((s) => {
       let diary = s.diary
       for (const d of days.filter((x) => x.day <= today)) {
         const line = d.port === 'sea' ? t('diary.auto.sea', { day: d.day }) : t('diary.auto.port', { day: d.day, port: portName(d.port) })
         diary = addAuto(diary, { id: newMemoryId(), sailingId: sailing.id, day: d.day, at: Date.parse(`${d.date}T08:00:00Z`) || 0, kind: 'port', text: line, key: `day:${d.day}` })
       }
-      for (const l of sources && today >= 1 ? sourceLines({ days, today, ...sources }) : []) diary = addAuto(diary, { id: newMemoryId(), sailingId: sailing.id, ...l })
+      // Lines whose words can change (photos, steps) are brought up to date; the rest are written once.
+      if (sources) for (const l of sourceLines({ days, today, now: minute * 60_000, steps, ...sources })) diary = syncAuto(diary, { id: newMemoryId(), sailingId: sailing.id, ...l })
       return diary === s.diary ? s : { ...s, diary }
     })
-  }, [today, days, sailing.id, sources, update])
+  }, [today, minute, days, sailing.id, sources, steps, update])
   return { sailing, now, days, today }
 }
 

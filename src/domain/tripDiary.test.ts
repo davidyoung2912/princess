@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addAuto, addNote, dayFor, editEntry, ENTRY_MAX, ENTRIES_MAX, EMPTY_DIARY, entriesFor, groupByDay, normalizeDiary, removeEntry, searchEntries } from './tripDiary'
+import { addAuto, addNote, dayFor, editEntry, ENTRY_MAX, ENTRIES_MAX, EMPTY_DIARY, entriesFor, groupByDay, normalizeDiary, removeEntry, searchEntries, syncAuto } from './tripDiary'
 
 const auto = (id: string, key: string, day = 0, text = 'Booked.') => ({ id, sailingId: 's1', day, at: day * 1000, kind: 'booked' as const, text, key })
 
@@ -62,5 +62,17 @@ describe('trip diary', () => {
     expect(d.entries).toHaveLength(1)
     expect(d.entries[0]).toMatchObject({ day: 60, mood: null })
     expect(d.skipped).toEqual(['s1:booked'])
+  })
+  it('brings an app line up to date, but leaves the guest\'s edit and a removed line alone', () => {
+    const e = (id: string, text: string) => ({ ...auto(id, 'booked'), kind: 'steps' as const, key: 'steps:1', text })
+    const d = syncAuto(EMPTY_DIARY, e('a', 'Walked 100 steps.'))
+    const up = syncAuto(d, e('b', 'Walked 900 steps.'))
+    expect(up.entries).toHaveLength(1)
+    expect(up.entries[0]).toMatchObject({ id: 'a', text: 'Walked 900 steps.', auto: true })
+    expect(syncAuto(up, e('c', 'Walked 900 steps.'))).toBe(up)
+    const mine = editEntry(up, 'a', 'Long walk!')
+    expect(syncAuto(mine, e('d', 'Walked 2000 steps.'))).toBe(mine)
+    const gone = removeEntry(up, 'a')
+    expect(syncAuto(gone, e('e', 'Walked 2000 steps.'))).toBe(gone)
   })
 })

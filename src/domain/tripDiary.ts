@@ -4,7 +4,7 @@
  * Nothing here books, sends or sells anything.
  */
 
-export const DIARY_KINDS = ['booked', 'docs', 'checkedIn', 'pass', 'boarded', 'port', 'meal', 'tour', 'photo', 'note'] as const
+export const DIARY_KINDS = ['booked', 'docs', 'checkedIn', 'pass', 'boarded', 'port', 'meal', 'tour', 'photo', 'steps', 'moment', 'note'] as const
 export type DiaryKind = (typeof DIARY_KINDS)[number]
 export const isDiaryKind = (v: unknown): v is DiaryKind => DIARY_KINDS.includes(v as DiaryKind)
 
@@ -76,6 +76,19 @@ export function addAuto(d: DiaryState, e: { id: string; sailingId: string; day: 
   if (d.entries.some((x) => x.sailingId === e.sailingId && x.key === key) || d.skipped.includes(`${e.sailingId}:${key}`)) return d
   const entry: TripEntry = { id: e.id, sailingId: e.sailingId, day: Math.max(0, Math.round(e.day)), at: e.at, kind: e.kind, text, mood: null, auto: true, key }
   return { ...d, entries: [...d.entries, entry].sort(byTime) }
+}
+
+/**
+ * Like `addAuto`, but for a line whose words can change as the day goes on (steps walked, photos taken): a line the app wrote and the guest has not edited
+ * is updated in place. A line the guest edited, or removed, is left alone.
+ */
+export function syncAuto(d: DiaryState, e: { id: string; sailingId: string; day: number; at: number; kind: DiaryKind; text: string; key: string }): DiaryState {
+  const text = clean(e.text, ENTRY_MAX)
+  const key = clean(e.key, 40)
+  const old = d.entries.find((x) => x.sailingId === e.sailingId && x.key === key)
+  if (!old) return addAuto(d, e)
+  if (!old.auto || old.text === text || !text) return d
+  return { ...d, entries: d.entries.map((x) => (x === old ? { ...x, text } : x)) }
 }
 
 export function editEntry(d: DiaryState, id: string, text: string, mood?: Mood | null): DiaryState {
