@@ -779,6 +779,500 @@ public static class PortsReference
      "access": "some"
     }
    ]
+  },
+  "port-canaveral": {
+   "id": "port-canaveral",
+   "short": "Port Canaveral",
+   "landing": "pier",
+   "blurb": "Florida's space coast cruise port, close to the beaches of Cocoa Beach and the Kennedy Space Center. Most guests use it as an embarkation port.",
+   "bestTime": "Late autumn to spring is mild and dry. Summer is hot with afternoon storms.",
+   "access": "Level cruise terminals with taxis, rideshare and shuttles outside. Orlando is about an hour's drive away.",
+   "doThis": [
+    "Visit the Kennedy Space Center",
+    "Walk the beach at Cocoa Beach",
+    "Eat fresh seafood at the Port Canaveral waterfront"
+   ],
+   "excursions": []
+  },
+  "nassau": {
+   "id": "nassau",
+   "short": "Nassau",
+   "landing": "pier",
+   "blurb": "The Bahamian capital, with colourful colonial streets, a busy straw market and beaches a short ride away. Up to several ships can be in port at once.",
+   "bestTime": "December to April is the driest and coolest. June to October is hot and wet.",
+   "access": "Level pier beside the shopping area and the old town; most of central Nassau is a flat walk. Taxis go to Cable Beach and Paradise Island.",
+   "doThis": [
+    "Walk the old town and Queen's Staircase",
+    "Browse the Straw Market",
+    "Take a taxi to Cable Beach",
+    "Visit Fort Fincastle"
+   ],
+   "excursions": []
+  },
+  "casablanca": {
+   "id": "casablanca",
+   "short": "Casablanca",
+   "landing": "pier",
+   "blurb": "Morocco's largest city, with the huge Hassan II Mosque, a lively medina and Art Deco downtown. The port is close to the centre.",
+   "bestTime": "March to May and September to November are mild. Summer is warm and humid on the coast.",
+   "access": "Ship docks inside the port with a walk or short shuttle to the gate. Pavements are uneven in the old medina. Use licensed taxis.",
+   "doThis": [
+    "Tour the Hassan II Mosque",
+    "Walk the old medina",
+    "See the Art Deco buildings near the Place Mohammed V"
+   ],
+   "excursions": []
+  },
+  "a-coruna": {
+   "id": "a-coruna",
+   "short": "A Coruña",
+   "landing": "pier",
+   "blurb": "A Galician port city with a long seafront promenade and the Roman Tower of Hercules lighthouse. Santiago de Compostela is about an hour inland.",
+   "bestTime": "June to September is warmest and driest. Winters are mild and rainy.",
+   "access": "The pier is a short walk from the city centre on flat ground. The Tower of Hercules is a few kilometres away by taxi or bus.",
+   "doThis": [
+    "Visit the Tower of Hercules",
+    "Walk the seafront promenade",
+    "Taste Galician seafood",
+    "Take a trip to Santiago de Compostela"
+   ],
+   "excursions": []
+  },
+  "bilbao": {
+   "id": "bilbao",
+   "short": "Bilbao",
+   "landing": "pier",
+   "blurb": "A Basque city known for the Guggenheim Museum and a lively old quarter of pintxos bars. The ships dock at Getxo or Santurtzi, some distance from the centre.",
+   "bestTime": "May to September is the warmest. Rain is possible in any month.",
+   "access": "Ships dock outside the city, so plan for a shuttle, taxi or train to the centre, about 30 to 45 minutes.",
+   "doThis": [
+    "Visit the Guggenheim Museum",
+    "Walk the Casco Viejo old town",
+    "Try pintxos in the old town bars"
+   ],
+   "excursions": []
+  },
+  "cadiz": {
+   "id": "cadiz",
+   "short": "Cádiz",
+   "landing": "pier",
+   "blurb": "One of Europe's oldest cities, on a peninsula in southern Spain, with a cathedral, a seafront and the old town close to the pier. Seville is about 90 minutes inland.",
+   "bestTime": "April to June and September to October are pleasant. July and August are hot.",
+   "access": "The pier is right beside the old town, flat and walkable. Seville trips use coach or train.",
+   "doThis": [
+    "Walk the old town and Cathedral",
+    "Stroll the Caleta beach and seafront",
+    "Take a day trip to Seville or Jerez"
+   ],
+   "excursions": []
+  },
+  "lisbon": {
+   "id": "lisbon",
+   "short": "Lisbon",
+   "landing": "pier",
+   "blurb": "Portugal's hilly capital, with trams, tiled buildings and river views. The cruise terminals sit along the river close to the Alfama district.",
+   "bestTime": "April to June and September to October are warm and bright. Summer afternoons are hot.",
+   "access": "Terminals are on the river, with a flat walk to Alfama and Baixa. Many streets are steep and cobbled. Taxis and rideshare are easy.",
+   "doThis": [
+    "Ride Tram 28 or walk the Alfama",
+    "Visit Belém Tower and the Jerónimos Monastery",
+    "Try a pastel de nata",
+    "Take a day trip to Sintra"
+   ],
+   "excursions": []
+  },
+  "funchal": {
+   "id": "funchal",
+   "short": "Funchal",
+   "landing": "pier",
+   "blurb": "The capital of Madeira, with steep gardens, a market hall and cable cars up the hillside. The pier is close to the old town.",
+   "bestTime": "The climate is mild all year. April to October is the driest.",
+   "access": "Pier is a short walk from the old town. The town is hilly; cable cars and taxis help reach the viewpoints.",
+   "doThis": [
+    "Ride the cable car to Monte",
+    "Visit the Mercado dos Lavradores market",
+    "Walk the old town",
+    "Try the toboggan ride"
+   ],
+   "excursions": []
+  },
+  "tenerife": {
+   "id": "tenerife",
+   "short": "Tenerife",
+   "landing": "pier",
+   "blurb": "The largest Canary Island, with a volcano, black sand beaches and the capital Santa Cruz at the pier. Mount Teide is a long day trip.",
+   "bestTime": "Mild all year; summers are dry and warm.",
+   "access": "The pier is a short walk from central Santa Cruz. The beaches and Teide need a taxi, bus or tour.",
+   "doThis": [
+    "Walk Santa Cruz and its market",
+    "Take a day trip to Mount Teide",
+    "Visit Las Teresitas beach"
+   ],
+   "excursions": []
+  },
+  "cherbourg": {
+   "id": "cherbourg",
+   "short": "Cherbourg",
+   "landing": "pier",
+   "blurb": "A Normandy port, and the usual stop for the D-Day beaches, Mont-Saint-Michel and Bayeux. The town itself is small.",
+   "bestTime": "May to September is the warmest. The weather is changeable all year.",
+   "access": "Ship docks near the town. Most visits are by coach tour and take most of the day; check the return time.",
+   "doThis": [
+    "Visit the D-Day beaches and museums",
+    "Walk Cherbourg town",
+    "Take a tour to Mont-Saint-Michel"
+   ],
+   "excursions": []
+  },
+  "livorno": {
+   "id": "livorno",
+   "short": "Livorno",
+   "landing": "pier",
+   "blurb": "The port for Florence and Pisa, each about an hour or more away. The town has canals and a fish market.",
+   "bestTime": "April to June and September to October are best. July and August are very hot in Florence.",
+   "access": "The pier is away from the town centre, so shuttles, taxis or a train from the station are needed. Florence and Pisa trips take most of the day.",
+   "doThis": [
+    "Visit Florence",
+    "See the Leaning Tower in Pisa",
+    "Walk the Livorno canals and market"
+   ],
+   "excursions": []
+  },
+  "chania": {
+   "id": "chania",
+   "short": "Chania",
+   "landing": "pier",
+   "blurb": "A Venetian harbour town on Crete, with a lighthouse, narrow lanes and gorges and beaches nearby. The ship docks at Souda, a few kilometres away.",
+   "bestTime": "May to June and September to October are warm without the peak heat of midsummer.",
+   "access": "Ship docks at Souda Bay; bus or taxi to the old town takes about 15 minutes.",
+   "doThis": [
+    "Walk the Venetian harbour and old town",
+    "Visit Elafonisi or Balos beach",
+    "Try Cretan food in the old port"
+   ],
+   "excursions": []
+  },
+  "corfu": {
+   "id": "corfu",
+   "short": "Corfu",
+   "landing": "pier",
+   "blurb": "A green Ionian island with a Venetian old town, fortresses and beaches. The pier is a short walk from the old town.",
+   "bestTime": "May to June and September are warm. July and August are hot and busy.",
+   "access": "The pier is close to the old town, though streets are cobbled. Beaches need a taxi or bus.",
+   "doThis": [
+    "Walk the old town",
+    "Visit the Old Fortress",
+    "Take a taxi to a west coast beach"
+   ],
+   "excursions": []
+  },
+  "bar": {
+   "id": "bar",
+   "short": "Bar",
+   "landing": "pier",
+   "blurb": "A Montenegrin port town on the Adriatic, with an old town of ruins up the hill. Kotor and Budva are an hour away.",
+   "bestTime": "May to June and September are warm. July and August are hot.",
+   "access": "The pier is by the town. The old town of Bar is a few kilometres inland; Kotor trips are by coach or taxi.",
+   "doThis": [
+    "Visit Stari Bar, the old town ruins",
+    "Take a tour to Kotor",
+    "Relax on the beach at Sutomore or Budva"
+   ],
+   "excursions": []
+  },
+  "tallinn": {
+   "id": "tallinn",
+   "short": "Tallinn",
+   "landing": "pier",
+   "blurb": "A walled medieval old town in Estonia, with cobbled lanes, church spires and a good craft scene. The port is a short walk.",
+   "bestTime": "June to August is warmest with long days. Winters are cold and dark.",
+   "access": "The terminal is about 15 minutes' walk from the old town on flat ground; the old town's streets are cobbled and some are steep.",
+   "doThis": [
+    "Walk the Old Town",
+    "Climb to Toompea Hill for the view",
+    "Visit St. Nicholas' Church"
+   ],
+   "excursions": []
+  },
+  "helsinki": {
+   "id": "helsinki",
+   "short": "Helsinki",
+   "landing": "pier",
+   "blurb": "Finland's capital, with a market square beside the harbour, the Suomenlinna fortress island and modern design shops.",
+   "bestTime": "June to August is mild with long days. Winters are snowy.",
+   "access": "Ships dock near the centre; many sights are a flat walk or tram ride away.",
+   "doThis": [
+    "Browse the Market Square",
+    "Take the ferry to Suomenlinna",
+    "Visit the Rock Church"
+   ],
+   "excursions": []
+  },
+  "stockholm": {
+   "id": "stockholm",
+   "short": "Stockholm",
+   "landing": "pier",
+   "blurb": "A capital spread over islands, with the Gamla Stan old town, the Vasa warship museum and boat tours.",
+   "bestTime": "June to August is warmest with very long days. Winters are cold.",
+   "access": "Ships dock outside the centre at Stockholm or Nynäshamn; plan for a shuttle, bus or train. Gamla Stan is cobbled.",
+   "doThis": [
+    "Walk Gamla Stan",
+    "Visit the Vasa Museum",
+    "Take a boat tour of the archipelago"
+   ],
+   "excursions": []
+  },
+  "oslo": {
+   "id": "oslo",
+   "short": "Oslo",
+   "landing": "pier",
+   "blurb": "Norway's capital, with the opera house, Viking ships museum and fjord views. The pier is a short walk from the centre.",
+   "bestTime": "June to August is warmest. Winters are cold with snow.",
+   "access": "Level pier beside the Akershus Fortress, and the city centre is walkable. Trams and buses cover the rest.",
+   "doThis": [
+    "Visit the Viking Ship Museum",
+    "Walk the Akershus Fortress and harbour",
+    "Visit the Opera House roof"
+   ],
+   "excursions": []
+  },
+  "bergen": {
+   "id": "bergen",
+   "short": "Bergen",
+   "landing": "pier",
+   "blurb": "A wooden harbour town in the Norwegian fjords with the Bryggen wharf, the fish market and a funicular. It rains often.",
+   "bestTime": "May to September is the warmest. Bring waterproofs all year.",
+   "access": "Pier is a short walk from Bryggen and the market. The funicular is a few minutes' walk. Cobbles can be wet and slippery.",
+   "doThis": [
+    "Walk Bryggen wharf",
+    "Ride the Fløibanen funicular",
+    "Visit the fish market"
+   ],
+   "excursions": []
+  },
+  "tromso": {
+   "id": "tromso",
+   "short": "Tromsø",
+   "landing": "pier",
+   "blurb": "An Arctic Norwegian city known for the midnight sun in summer and the northern lights in winter, with a cable car and a cathedral.",
+   "bestTime": "June to July for the midnight sun. Late September to March for the northern lights.",
+   "access": "The pier is a short walk from the centre. Sights beyond need a bus, taxi or tour. Dress for the cold.",
+   "doThis": [
+    "Ride the Fjellheisen cable car",
+    "Visit the Arctic Cathedral",
+    "Take a northern lights tour in winter"
+   ],
+   "excursions": []
+  },
+  "reykjavik": {
+   "id": "reykjavik",
+   "short": "Reykjavík",
+   "landing": "pier",
+   "blurb": "Iceland's capital, with a colourful old town, the Hallgrímskirkja church and day trips to waterfalls, geysers and lava fields. Ships dock at Skarfabakki or Sundahöfn.",
+   "bestTime": "June to August has the longest days. September to March is best for the northern lights.",
+   "access": "Ships dock a few kilometres from the centre, so plan for a shuttle, bus or taxi. The weather changes quickly; bring layers.",
+   "doThis": [
+    "Visit Hallgrímskirkja",
+    "Take the Golden Circle tour",
+    "Soak in a geothermal spa"
+   ],
+   "excursions": []
+  },
+  "kobe": {
+   "id": "kobe",
+   "short": "Kobe",
+   "landing": "pier",
+   "blurb": "A port city with a Chinatown, a harbour front and Arima Onsen. Osaka and Kyoto are within reach by train.",
+   "bestTime": "March to May and October to November are best. Summer is hot and humid.",
+   "access": "The terminal is near the Kobe Harbourland; a train or taxi goes to the centre. Station signs are in English.",
+   "doThis": [
+    "Walk the Harborland waterfront",
+    "Eat Kobe beef",
+    "Take a train to Kyoto or Osaka"
+   ],
+   "excursions": []
+  },
+  "osaka": {
+   "id": "osaka",
+   "short": "Osaka",
+   "landing": "pier",
+   "blurb": "A food-loving city, with Osaka Castle and the Dotonbori entertainment street. Kyoto and Nara are a train ride away.",
+   "bestTime": "March to May and October to November are best.",
+   "access": "The terminal is some distance from the centre, so shuttle, train and taxi are the ways in. Stations have English signs.",
+   "doThis": [
+    "Visit Osaka Castle",
+    "Eat street food in Dotonbori",
+    "Take a day trip to Kyoto or Nara"
+   ],
+   "excursions": []
+  },
+  "shimizu": {
+   "id": "shimizu",
+   "short": "Shimizu",
+   "landing": "pier",
+   "blurb": "The port for Mount Fuji, with views across Suruga Bay and tea fields. Fuji trips take a full day.",
+   "bestTime": "Autumn and winter give the clearest Fuji views. The summit is often hidden in summer.",
+   "access": "The ship docks at a terminal with a shuttle or coach to the sights. Fuji tours are by coach.",
+   "doThis": [
+    "See Mount Fuji from Miho no Matsubara",
+    "Ride the ropeway at Nihondaira",
+    "Visit a tea plantation"
+   ],
+   "excursions": []
+  },
+  "hiroshima": {
+   "id": "hiroshima",
+   "short": "Hiroshima",
+   "landing": "pier",
+   "blurb": "A city rebuilt after 1945, with the Peace Memorial Park and Museum and nearby Miyajima island.",
+   "bestTime": "March to May and October to November are best.",
+   "access": "The ship docks some way from the centre; a shuttle, tram or taxi goes to the park. Miyajima is a ferry ride away.",
+   "doThis": [
+    "Visit the Peace Memorial Park and Museum",
+    "Take the ferry to Miyajima",
+    "Try Hiroshima-style okonomiyaki"
+   ],
+   "excursions": []
+  },
+  "busan": {
+   "id": "busan",
+   "short": "Busan",
+   "landing": "pier",
+   "blurb": "South Korea's second city, with beaches, a fish market, temples on the coast and colourful hillside villages.",
+   "bestTime": "April to June and September to November are mild.",
+   "access": "The terminal is near the city centre, with taxis and a subway nearby. Many sights are hilly.",
+   "doThis": [
+    "Visit Jagalchi Fish Market",
+    "See Haedong Yonggungsa Temple",
+    "Walk Gamcheon Culture Village"
+   ],
+   "excursions": []
+  },
+  "nagasaki": {
+   "id": "nagasaki",
+   "short": "Nagasaki",
+   "landing": "pier",
+   "blurb": "A hilly harbour city with a mix of Japanese, Dutch and Chinese history and the Peace Park. Trams cover most sights.",
+   "bestTime": "March to May and October to November are best.",
+   "access": "The terminal is close to the centre; the trams are simple and cheap. The city is hilly.",
+   "doThis": [
+    "Visit the Peace Park and Atomic Bomb Museum",
+    "Ride the trams",
+    "Walk Glover Garden"
+   ],
+   "excursions": []
+  },
+  "okinawa": {
+   "id": "okinawa",
+   "short": "Okinawa",
+   "landing": "pier",
+   "blurb": "A subtropical island chain, with Naha's markets, Shuri Castle and beaches. The pace is slower than the mainland.",
+   "bestTime": "April to June and October to November. Typhoons are possible from July to October.",
+   "access": "Ship docks in Naha; the monorail and taxis go to the centre. Beaches need a taxi or tour.",
+   "doThis": [
+    "Walk Kokusai Street and the market",
+    "Visit Shuri Castle",
+    "Relax at a beach"
+   ],
+   "excursions": []
+  },
+  "hong-kong": {
+   "id": "hong-kong",
+   "short": "Hong Kong",
+   "landing": "pier",
+   "blurb": "A dense, hilly city with a famous skyline, markets, Victoria Peak and ferries. The cruise terminal is at Kai Tak.",
+   "bestTime": "October to December is dry and mild. Summer is hot and humid with typhoons.",
+   "access": "The terminal is a bus or taxi ride from the centre. The MTR and ferries are good. Some streets are steep.",
+   "doThis": [
+    "Ride the Peak Tram",
+    "Take the Star Ferry",
+    "Browse the Temple Street night market"
+   ],
+   "excursions": []
+  },
+  "ho-chi-minh": {
+   "id": "ho-chi-minh",
+   "short": "Ho Chi Minh City",
+   "landing": "pier",
+   "blurb": "Vietnam's biggest city, with busy markets, French colonial landmarks and motorbikes everywhere. The ship docks at Phu My, about two hours away.",
+   "bestTime": "December to April is dry. May to November is the rainy season.",
+   "access": "Ship docks well outside the city; a coach or tour takes about two hours each way. Crossing the road needs care.",
+   "doThis": [
+    "Visit the Ben Thanh Market",
+    "See the Notre-Dame Cathedral and Post Office",
+    "Visit the War Remnants Museum"
+   ],
+   "excursions": []
+  },
+  "phuket": {
+   "id": "phuket",
+   "short": "Phuket",
+   "landing": "tender",
+   "blurb": "A Thai island with beaches, a hillside Big Buddha and an old town of Sino-Portuguese shophouses. Ships usually anchor offshore and tender in.",
+   "bestTime": "November to April is dry. May to October is the rainy season.",
+   "access": "Ships usually tender to the pier, with a transfer by taxi or songthaew. Taxis agree a fare before the ride.",
+   "doThis": [
+    "Visit the Big Buddha",
+    "Walk Phuket Old Town",
+    "Take a boat to Phi Phi or Phang Nga Bay"
+   ],
+   "excursions": []
+  },
+  "perth": {
+   "id": "perth",
+   "short": "Perth",
+   "landing": "pier",
+   "blurb": "Western Australia's capital, with parks, beaches and the Swan River. Ships dock at Fremantle, about 30 minutes from the city.",
+   "bestTime": "October to April is warm and dry. Winters are mild and wet.",
+   "access": "Ship docks at Fremantle, with a short walk to the old town. A train goes to Perth city.",
+   "doThis": [
+    "Explore Fremantle Market and Prison",
+    "Take a train to Perth city",
+    "Visit Rottnest Island by ferry"
+   ],
+   "excursions": []
+  },
+  "darwin": {
+   "id": "darwin",
+   "short": "Darwin",
+   "landing": "pier",
+   "blurb": "The tropical capital of the Northern Territory, with markets, a waterfront and gateway trips to Kakadu and Litchfield.",
+   "bestTime": "May to October is the dry season. November to April is hot and humid with storms.",
+   "access": "Ship docks at the wharf, with shuttles to the centre. Most sights beyond need a tour or taxi.",
+   "doThis": [
+    "Visit the Mindil Beach Sunset Market",
+    "Walk the Waterfront",
+    "Take a tour to Litchfield National Park"
+   ],
+   "excursions": []
+  },
+  "cairns": {
+   "id": "cairns",
+   "short": "Cairns",
+   "landing": "tender",
+   "blurb": "The gateway to the Great Barrier Reef and the Daintree rainforest. Large ships usually anchor offshore and tender in.",
+   "bestTime": "May to October is the dry season. November to April is hot and wet.",
+   "access": "Ships tender to the Cairns terminal in the centre of town. Reef trips leave from the marina.",
+   "doThis": [
+    "Take a Great Barrier Reef cruise",
+    "Ride the Skyrail to Kuranda",
+    "Explore the Daintree rainforest"
+   ],
+   "excursions": []
+  },
+  "brisbane": {
+   "id": "brisbane",
+   "short": "Brisbane",
+   "landing": "pier",
+   "blurb": "Queensland's capital, on a river, with a riverside South Bank, markets and koala sanctuaries. The cruise terminal is at Luggage Point, about 20 minutes from the centre.",
+   "bestTime": "April to October is mild and dry. Summer is hot and humid.",
+   "access": "The terminal is outside the centre, so plan for a shuttle, taxi or train. The city is flat to walk.",
+   "doThis": [
+    "Walk South Bank and the Wheel of Brisbane",
+    "Visit Lone Pine Koala Sanctuary",
+    "Ride a CityCat ferry"
+   ],
+   "excursions": []
   }
  },
  "knowledge": {
@@ -3640,6 +4134,146 @@ public static class PortsReference
   "sydney": [
    151.21,
    -33.86
+  ],
+  "port-canaveral": [
+   -80.62,
+   28.41
+  ],
+  "nassau": [
+   -77.35,
+   25.08
+  ],
+  "casablanca": [
+   -7.62,
+   33.6
+  ],
+  "a-coruna": [
+   -8.4,
+   43.37
+  ],
+  "bilbao": [
+   -3.05,
+   43.34
+  ],
+  "cadiz": [
+   -6.29,
+   36.53
+  ],
+  "lisbon": [
+   -9.13,
+   38.7
+  ],
+  "funchal": [
+   -16.91,
+   32.65
+  ],
+  "tenerife": [
+   -16.25,
+   28.47
+  ],
+  "cherbourg": [
+   -1.62,
+   49.65
+  ],
+  "livorno": [
+   10.3,
+   43.55
+  ],
+  "chania": [
+   24.02,
+   35.52
+  ],
+  "corfu": [
+   19.92,
+   39.62
+  ],
+  "bar": [
+   19.09,
+   42.09
+  ],
+  "tallinn": [
+   24.76,
+   59.44
+  ],
+  "helsinki": [
+   24.95,
+   60.17
+  ],
+  "stockholm": [
+   18.07,
+   59.33
+  ],
+  "oslo": [
+   10.75,
+   59.91
+  ],
+  "bergen": [
+   5.32,
+   60.39
+  ],
+  "tromso": [
+   18.96,
+   69.65
+  ],
+  "reykjavik": [
+   -21.94,
+   64.15
+  ],
+  "kobe": [
+   135.2,
+   34.67
+  ],
+  "osaka": [
+   135.43,
+   34.65
+  ],
+  "shimizu": [
+   138.5,
+   35.01
+  ],
+  "hiroshima": [
+   132.46,
+   34.35
+  ],
+  "busan": [
+   129.04,
+   35.1
+  ],
+  "nagasaki": [
+   129.87,
+   32.74
+  ],
+  "okinawa": [
+   127.67,
+   26.21
+  ],
+  "hong-kong": [
+   114.17,
+   22.3
+  ],
+  "ho-chi-minh": [
+   107.03,
+   10.58
+  ],
+  "phuket": [
+   98.4,
+   7.88
+  ],
+  "perth": [
+   115.74,
+   -32.05
+  ],
+  "darwin": [
+   130.84,
+   -12.46
+  ],
+  "cairns": [
+   145.78,
+   -16.92
+  ],
+  "brisbane": [
+   153.17,
+   -27.38
   ]
  }
 }

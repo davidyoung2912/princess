@@ -8,7 +8,9 @@ import { PLAN_B, PLAN_B_TRIGGERS, planBFor } from './portPilot'
 /** The authored content in the server's `PortsReference.cs` (X0g): every Tier A port has a guide, every port but the home port has knowledge, and the served shape is the one the app reads. */
 const cs = readFileSync(new URL('../../server/Princess.Api/Domain/PortsReference.cs', import.meta.url), 'utf8')
 const json = JSON.parse(cs.slice(cs.indexOf('"""\n') + 4, cs.lastIndexOf('\n""";')))
-const tierA = ((ports as { ports?: { id: string; tier: string }[] }).ports ?? (ports as unknown as { id: string; tier: string }[])).filter((p) => p.tier === 'A').map((p) => p.id)
+const all = (ports as { ports?: { id: string; tier: string }[] }).ports ?? (ports as unknown as { id: string; tier: string }[])
+const tierA = all.filter((p) => p.tier === 'A').map((p) => p.id)
+const tierB = all.filter((p) => p.tier === 'B').map((p) => p.id)
 
 describe('authored port guides (X0g)', () => {
   it('reads as the served shape', () => {
@@ -38,6 +40,17 @@ describe('authored port guides (X0g)', () => {
       const b = planBFor(id, json.knowledge[id], false)
       for (const trigger of PLAN_B_TRIGGERS) expect(b[trigger].detail.length, `${id} ${trigger}`).toBeGreaterThan(20)
       expect(b.rain.detail).toContain(json.knowledge[id].walks[0].name)
+    }
+  })
+  it('has a short guide and coordinates for each Tier B port, with no knowledge and no invented prices (X0j)', () => {
+    expect(tierB).toHaveLength(35)
+    for (const id of tierB) {
+      const g = json.guides[id]
+      expect(g, `guide ${id}`).toBeTruthy()
+      expect(json.coords[id], `coords ${id}`).toBeTruthy()
+      expect(json.knowledge[id], `no knowledge ${id}`).toBeUndefined()
+      expect(g.excursions, `no priced outings ${id}`).toEqual([])
+      expect(g.doThis.length, `doThis ${id}`).toBeGreaterThanOrEqual(3)
     }
   })
 })

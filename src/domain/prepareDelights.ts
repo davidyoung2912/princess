@@ -65,6 +65,10 @@ export interface EntryRule {
   monthsOther: number
   /** Whether a guest of another nationality should check for a visa. */
   visaCheckOther: boolean
+  /** The official page to check this rule against (https), when the server gave one. */
+  source?: string
+  /** The date the sample was written ("YYYY-MM-DD"). It is not a date the rule was verified. */
+  asOf?: string
 }
 
 const row = (country: string, monthsUs: number, monthsOther: number): EntryRule => ({ country, monthsUs, monthsOther, visaCheckOther: true })
@@ -94,7 +98,9 @@ export function normalizeEntry(raw: unknown): EntryReference | null {
     const other = months(o.monthsOther)
     if (typeof o.country !== 'string' || !/^[A-Z]{2}$/.test(o.country) || seen.has(o.country) || us === null || other === null) return []
     seen.add(o.country)
-    return [{ country: o.country, monthsUs: us, monthsOther: other, visaCheckOther: o.visaCheckOther === true }]
+    const source = typeof o.source === 'string' && /^https:\/\/[^\s]+$/.test(o.source) && o.source.length <= 300 ? o.source : undefined
+    const asOf = typeof o.asOf === 'string' && DATE.test(o.asOf) ? o.asOf : undefined
+    return [{ country: o.country, monthsUs: us, monthsOther: other, visaCheckOther: o.visaCheckOther === true, ...(source ? { source } : {}), ...(asOf ? { asOf } : {}) }]
   })
   return rules.length === 0 ? null : { version: r.version, rules }
 }
@@ -107,7 +113,7 @@ export const addMonthsTo = (date: string, months: number): string => {
 }
 
 export type EntryStatus = 'ok' | 'tooSoon' | 'expired'
-export interface PortPassportCheck { port: Exclude<PortId, 'sea'>; date: string; status: EntryStatus; /** The last expiry date that would still do for this port. */ needUntil: string; /** A guest of another nationality should check for a visa here. */ visaCheck: boolean }
+export interface PortPassportCheck { port: Exclude<PortId, 'sea'>; date: string; status: EntryStatus; /** The last expiry date that would still do for this port. */ needUntil: string; /** A guest of another nationality should check for a visa here. */ visaCheck: boolean; /** The official page for this stop's country, when known. */ source?: string; /** The date the rule sample was written. */ asOf?: string }
 
 /** Whether a passport expiring on `expires` ("YYYY-MM-DD") is long enough for each stop of the sailing, for a citizen of the US or of another country. Null when the date is not a date. */
 export function passportByPort(expires: string, sailing: Sailing, citizenship: Citizenship = 'us', rules: readonly EntryRule[] = entryRules()): PortPassportCheck[] | null {
@@ -120,7 +126,7 @@ export function passportByPort(expires: string, sailing: Sailing, citizenship: C
     const rule = rules.find((r) => r.country === countryOfPort(day.port))
     if (!rule) continue
     const needUntil = addMonthsTo(day.date, citizenship === 'us' ? rule.monthsUs : rule.monthsOther)
-    out.push({ port: day.port, date: day.date, needUntil, visaCheck: citizenship === 'other' && rule.visaCheckOther, status: expires < day.date ? 'expired' : expires < needUntil ? 'tooSoon' : 'ok' })
+    out.push({ port: day.port, date: day.date, needUntil, visaCheck: citizenship === 'other' && rule.visaCheckOther, ...(rule.source ? { source: rule.source } : {}), ...(rule.asOf ? { asOf: rule.asOf } : {}), status: expires < day.date ? 'expired' : expires < needUntil ? 'tooSoon' : 'ok' })
   }
   return out
 }

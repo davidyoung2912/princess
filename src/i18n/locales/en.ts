@@ -7281,6 +7281,8 @@ export const en = {
   'dl5.mail.note': 'This opens your own email app with the words filled in. Nothing is sent from here.',
   'dl5.pack.shared': 'Ticks are kept on the booking, so everyone who opens it sees the same list and no one packs the same thing twice.',
   'dl5.mail.notIncluded': 'Not in the price:',
+  'dl5.pass.source': 'Official rules for this country',
+  'dl5.pass.asOf': 'sample written {date}, not yet verified',
   'dl5.pass.visa': 'Citizens of some countries need a visa even for a day ashore. Check before you pay the balance.',
   'dl5.homeRing.title': 'How ready you are',
   'dl5.homeRing.next': 'Next: {item}, due {date}.',

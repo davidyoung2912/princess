@@ -5,7 +5,8 @@ namespace Princess.Api.Domain;
 public sealed record ExcursionDifficulty(double Km, bool Steps, string Heat, string Shade, bool Seats, bool Restrooms, bool Wet);
 
 /// <summary>How long a passport must still be valid beyond the day the ship is in a country, by the guest's citizenship, and whether a guest of another nationality should check for a visa. Authored concept figures: the guest is always sent to the official source.</summary>
-public sealed record EntryRuleDto(string Country, int MonthsUs, int MonthsOther, bool VisaCheckOther);
+/// <summary>One country's passport and visa rule. <c>Source</c> is the official page to check it against and <c>AsOf</c> the date the sample was written (not a date it was verified).</summary>
+public sealed record EntryRuleDto(string Country, int MonthsUs, int MonthsOther, bool VisaCheckOther, string? Source = null, string? AsOf = null);
 
 public sealed record EntryReferenceDto(string Version, IReadOnlyList<EntryRuleDto> Rules);
 
@@ -67,7 +68,44 @@ public static class ReferenceRules
     /// A row for each country the catalogue sails to, keyed by ISO country code. Months of passport validity beyond the day the ship is there, by citizenship, and whether a guest of another
     /// nationality should check for a visa or travel authorisation. Authored samples, unverified (see docs/content-verification.md): the guest is always sent to the official source.
     /// </summary>
-    public static readonly IReadOnlyList<EntryRuleDto> EntryRules =
+    /// <summary>The date the entry rows were written. Unverified: see <c>docs/content-verification.md</c>.</summary>
+    public const string EntryAsOf = "2026-11-03";
+
+    private static readonly string Schengen = "https://home-affairs.ec.europa.eu/policies/schengen-borders-and-visa_en";
+
+    /// <summary>The official page for each country's entry rules (a government immigration or foreign ministry site).</summary>
+    public static readonly IReadOnlyDictionary<string, string> EntrySources = new Dictionary<string, string>
+    {
+        ["US"] = "https://www.cbp.gov/travel/international-visitors",
+        ["PR"] = "https://www.cbp.gov/travel/international-visitors",
+        ["MX"] = "https://www.gob.mx/inm",
+        ["BZ"] = "https://immigration.gov.bz",
+        ["HN"] = "https://www.inm.gob.hn",
+        ["BS"] = "https://www.bahamas.gov.bs",
+        ["TC"] = "https://www.gov.tc",
+        ["DO"] = "https://www.migracion.gob.do",
+        ["ES"] = Schengen, ["FR"] = Schengen, ["IT"] = Schengen, ["PT"] = Schengen, ["BE"] = Schengen, ["DE"] = Schengen, ["DK"] = Schengen,
+        ["SE"] = Schengen, ["FI"] = Schengen, ["EE"] = Schengen, ["NO"] = Schengen, ["IS"] = Schengen, ["GR"] = Schengen,
+        ["ME"] = "https://www.gov.me",
+        ["TR"] = "https://www.mfa.gov.tr",
+        ["GB"] = "https://www.gov.uk/check-uk-visa",
+        ["MA"] = "https://www.diplomatie.ma",
+        ["JP"] = "https://www.mofa.go.jp/j_info/visit/visa/index.html",
+        ["KR"] = "https://www.visa.go.kr",
+        ["TW"] = "https://www.boca.gov.tw",
+        ["HK"] = "https://www.immd.gov.hk",
+        ["VN"] = "https://evisa.gov.vn",
+        ["SG"] = "https://www.ica.gov.sg",
+        ["MY"] = "https://www.imi.gov.my",
+        ["TH"] = "https://www.thaievisa.go.th",
+        ["ID"] = "https://www.imigrasi.go.id",
+        ["AU"] = "https://immi.homeaffairs.gov.au",
+        ["NZ"] = "https://www.immigration.govt.nz",
+    };
+
+    public static IReadOnlyList<EntryRuleDto> EntryRules => EntryRows.Select(r => r with { Source = EntrySources[r.Country], AsOf = EntryAsOf }).ToList();
+
+    private static readonly IReadOnlyList<EntryRuleDto> EntryRows =
     [
         new("US", 0, 0, true),
         new("MX", 0, 0, true),

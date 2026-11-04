@@ -92,6 +92,13 @@ describe('entry rules by citizenship', () => {
     expect(normalizeEntry({ version: 'v', rules: [{ country: 'mars', monthsUs: 1, monthsOther: 1 }, { country: 'BZ', monthsUs: 99, monthsOther: 1 }] })).toBeNull()
     const served = normalizeEntry({ version: 'v1', rules: [{ country: 'BZ', monthsUs: 1, monthsOther: 2, visaCheckOther: true }, { country: 'BZ', monthsUs: 9, monthsOther: 9 }] })!
     expect(served.rules).toEqual([{ country: 'BZ', monthsUs: 1, monthsOther: 2, visaCheckOther: true }])
+    const linked = normalizeEntry({ version: 'v2', rules: [
+      { country: 'BZ', monthsUs: 1, monthsOther: 2, source: 'https://immigration.gov.bz', asOf: '2026-11-03' },
+      { country: 'HN', monthsUs: 1, monthsOther: 2, source: 'javascript:alert(1)', asOf: 'last week' },
+    ] })!
+    expect(linked.rules[0]).toMatchObject({ source: 'https://immigration.gov.bz', asOf: '2026-11-03' })
+    expect(linked.rules[1]).not.toHaveProperty('source')
+    expect(linked.rules[1]).not.toHaveProperty('asOf')
     applyEntry(served)
     try {
       expect(passportByPort('2035-01-01', sailing, 'us')!.map((c) => c.port)).toEqual(['belize'])

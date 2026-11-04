@@ -16,6 +16,12 @@ describe('per-country entry rows', () => {
     const missing = [...catalogue].filter((c) => !served.has(c))
     expect(missing).toEqual([])
   })
+  it('gives every served row an official https link and the sample date', () => {
+    const cs = read('server/Princess.Api/Domain/ReferenceRules.cs')
+    const sources = new Map([...cs.matchAll(/\["([A-Z]{2})"\] = (?:"(https:\/\/[^"\s]+)"|Schengen)/g)].map((m) => [m[1]!, m[2] ?? 'schengen'] as const))
+    expect([...served].filter((c) => !sources.has(c))).toEqual([])
+    expect(cs).toMatch(/EntryAsOf = "\d{4}-\d{2}-\d{2}"/)
+  })
   it('maps the older route ports to their countries', () => {
     expect(['fll', 'cozumel', 'belize', 'roatan'].map(countryOfPort)).toEqual(['US', 'MX', 'BZ', 'HN'])
   })
