@@ -4455,6 +4455,1132 @@ public static class PortsReference
     "english": "Please take me to the cruise pier. My ship is the Sun Princess.",
     "lang": "es"
    }
+  },
+  "celebration-key": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Nassau: 555-0171",
+    "emergency": "911 (Bahamas)",
+    "agent": "Ship’s agent, Celebration Key pier: 555-0190"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to the main beach” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Celebration Key.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to the main beach” walk early, rest in the shade or indoors at midday and drink water often. A shaded lounger or cabana (Premium lounger and cabana) gives you a seat out of the sun.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Celebration Key and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to the main beach” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "The Bahamas",
+    "documents": {
+     "us": "Passport or the closed-loop papers. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a visa for the Bahamas, even for a day."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Port fees are in your fare."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Celebration Key",
+    "say": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "en"
+   }
+  },
+  "grand-turk": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Nassau (covers Turks and Caicos): 555-0172",
+    "emergency": "911 (Turks and Caicos)",
+    "agent": "Ship’s agent, Grand Turk cruise centre: 555-0191"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to the lighthouse” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Grand Turk.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to the lighthouse” walk early, rest in the shade or indoors at midday and drink water often. A shaded lounger or cabana (Beach lounger and cabana) gives you a seat out of the sun.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Grand Turk and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to the lighthouse” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Turks and Caicos Islands",
+    "documents": {
+     "us": "Passport or the closed-loop papers. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a visa for the Turks and Caicos Islands."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Port fees are in your fare."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Grand Turk",
+    "say": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "en"
+   }
+  },
+  "san-juan": {
+   "contacts": {
+    "consulate": "None needed: Puerto Rico is U.S. territory. Call the ship’s agent for any help.",
+    "emergency": "911 (Puerto Rico)",
+    "agent": "Ship’s agent, San Juan pier: 555-0192"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to El Morro” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in San Juan.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to El Morro” walk early, rest in the shade or indoors at midday and drink water often. A shaded lounger or cabana (Condado beach club) gives you a seat out of the sun.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in San Juan and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to El Morro” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Puerto Rico (United States)",
+    "documents": {
+     "us": "Puerto Rico is U.S. territory, so there is no entry check ashore. Carry photo ID; a passport is still the easiest.",
+     "other": "A valid passport, and the visa you need for the United States. Check this before you sail."
+    },
+    "forms": [
+     "No form to file ahead for a stop in Puerto Rico.",
+     "Your return to the mainland is checked at your home port."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, San Juan",
+    "say": "Por favor, lléveme al puerto de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise port. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  },
+  "amber-cove": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Santo Domingo: 555-0173",
+    "emergency": "911 (Dominican Republic)",
+    "agent": "Ship’s agent, Amber Cove port: 555-0193"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to the beach and shops” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Amber Cove.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to the beach and shops” walk early, rest in the shade or indoors at midday and drink water often. A shaded lounger or cabana (Beachfront lounger area) gives you a seat out of the sun.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Amber Cove and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to the beach and shops” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Dominican Republic",
+    "documents": {
+     "us": "Passport or the closed-loop papers. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a visa for the Dominican Republic."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Port fees are in your fare."
+    ],
+    "notes": [
+     "Use ship-booked tours or licensed taxis only."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Amber Cove",
+    "say": "Por favor, lléveme al puerto de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise port. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  },
+  "southampton": {
+   "contacts": {
+    "consulate": "U.S. Embassy, London: 555-0174",
+    "emergency": "999 or 112 (United Kingdom)",
+    "agent": "Ship’s agent, Southampton terminal: 555-0194"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to the Old Town walls” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Southampton.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to the Old Town walls” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Southampton and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to the Old Town walls” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "United Kingdom",
+    "documents": {
+     "us": "A valid passport. Check whether you need a UK electronic travel authorisation before you sail (verify).",
+     "other": "A valid passport, and any visa or electronic travel authorisation you need for the United Kingdom. Check this before you pay the balance."
+    },
+    "forms": [
+     "Check the UK entry rules for your nationality before you travel (verify).",
+     "Allow time at the terminal for border checks if you start or end your cruise here."
+    ],
+    "notes": [
+     "Drive and tipping habits differ from home: keep to the signs and the pavements."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Southampton",
+    "say": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "en"
+   }
+  },
+  "barcelona": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Barcelona: 555-0175",
+    "emergency": "112 (Spain)",
+    "agent": "Ship’s agent, Barcelona terminal: 555-0195"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to the Gothic Quarter” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Barcelona.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to the Gothic Quarter” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Barcelona and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to the Gothic Quarter” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Spain",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Pickpockets work crowded streets and metros: keep bags closed and in front."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Barcelona",
+    "say": "Por favor, lléveme al puerto de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise port. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  },
+  "palma": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Madrid: 555-0176",
+    "emergency": "112 (Spain)",
+    "agent": "Ship’s agent, Palma pier: 555-0196"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to La Seu cathedral” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Palma de Mallorca.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to La Seu cathedral” walk early, rest in the shade or indoors at midday and drink water often. A shaded lounger or cabana (Beach club near the city) gives you a seat out of the sun.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Palma de Mallorca and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to La Seu cathedral” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Spain",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Pickpockets work crowded streets and metros: keep bags closed and in front."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Palma de Mallorca",
+    "say": "Por favor, lléveme al puerto de cruceros. Mi barco es el Sun Princess.",
+    "english": "Please take me to the cruise port. My ship is the Sun Princess.",
+    "lang": "es"
+   }
+  },
+  "marseille": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Marseille: 555-0177",
+    "emergency": "112 (France)",
+    "agent": "Ship’s agent, Marseille terminal: 555-0197"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Old Port loop” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Marseille.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Old Port loop” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Marseille and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Old Port loop” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "France",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Marseille",
+    "say": "Pouvez-vous m’emmener au terminal de croisière, s’il vous plaît ? Mon navire est le Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "fr"
+   }
+  },
+  "genoa": {
+   "contacts": {
+    "consulate": "U.S. Consular Agency, Genoa: 555-0178",
+    "emergency": "112 (Italy)",
+    "agent": "Ship’s agent, Genoa terminal: 555-0198"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to Piazza De Ferrari” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Genoa.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to Piazza De Ferrari” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Genoa and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to Piazza De Ferrari” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Italy",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Dress covers shoulders and knees to enter churches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Genoa",
+    "say": "Mi porti al terminal crociere, per favore. La mia nave è la Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "it"
+   }
+  },
+  "la-spezia": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Florence: 555-0179",
+    "emergency": "112 (Italy)",
+    "agent": "Ship’s agent, La Spezia terminal: 555-0199"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to the promenade” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in La Spezia.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to the promenade” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in La Spezia and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to the promenade” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Italy",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Dress covers shoulders and knees to enter churches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, La Spezia",
+    "say": "Mi porti al terminal crociere, per favore. La mia nave è la Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "it"
+   }
+  },
+  "civitavecchia": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Rome: 555-0180",
+    "emergency": "112 (Italy)",
+    "agent": "Ship’s agent, Civitavecchia terminal: 555-0200"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Port to the Civitavecchia fort” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Civitavecchia (Rome).",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Port to the Civitavecchia fort” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Civitavecchia (Rome) and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Port to the Civitavecchia fort” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Italy",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Dress covers shoulders and knees to enter churches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Civitavecchia (Rome)",
+    "say": "Mi porti al terminal crociere, per favore. La mia nave è la Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "it"
+   }
+  },
+  "naples": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Naples: 555-0181",
+    "emergency": "112 (Italy)",
+    "agent": "Ship’s agent, Naples terminal: 555-0201"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to Piazza del Plebiscito” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Naples.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to Piazza del Plebiscito” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Naples and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to Piazza del Plebiscito” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Italy",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Dress covers shoulders and knees to enter churches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Naples",
+    "say": "Mi porti al terminal crociere, per favore. La mia nave è la Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "it"
+   }
+  },
+  "athens": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Athens: 555-0182",
+    "emergency": "112 (Greece)",
+    "agent": "Ship’s agent, Piraeus terminal: 555-0202"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Syntagma to the Plaka” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Athens (Piraeus).",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Syntagma to the Plaka” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Athens (Piraeus) and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Syntagma to the Plaka” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Greece",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Do not take antiquities, stones or sand from historic sites or beaches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Athens (Piraeus)",
+    "say": "Παρακαλώ, πηγαίνετε με στο λιμάνι. Το πλοίο μου είναι το Sun Princess.",
+    "english": "Please take me to the port. My ship is the Sun Princess.",
+    "lang": "el"
+   }
+  },
+  "santorini": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Athens: 555-0182",
+    "emergency": "112 (Greece)",
+    "agent": "Ship’s agent, Santorini tender landing: 555-0203"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Fira to Firostefani” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Santorini.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Fira to Firostefani” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay near the tender landing",
+     "detail": "Santorini is a tender port. If tenders run late or stop, stay close to the landing, keep the outing short and take an early tender back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Fira to Firostefani” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Greece",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Do not take antiquities, stones or sand from historic sites or beaches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Santorini tender landing, Santorini",
+    "say": "Παρακαλώ, πηγαίνετε με στο λιμάνι. Το πλοίο μου είναι το Sun Princess.",
+    "english": "Please take me to the port. My ship is the Sun Princess.",
+    "lang": "el"
+   }
+  },
+  "mykonos": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Athens: 555-0182",
+    "emergency": "112 (Greece)",
+    "agent": "Ship’s agent, Mykonos tender landing: 555-0204"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Old port to Little Venice” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Mykonos.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Old port to Little Venice” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay near the tender landing",
+     "detail": "Mykonos is a tender port. If tenders run late or stop, stay close to the landing, keep the outing short and take an early tender back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Old port to Little Venice” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Greece",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Do not take antiquities, stones or sand from historic sites or beaches."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Mykonos tender landing, Mykonos",
+    "say": "Παρακαλώ, πηγαίνετε με στο λιμάνι. Το πλοίο μου είναι το Sun Princess.",
+    "english": "Please take me to the port. My ship is the Sun Princess.",
+    "lang": "el"
+   }
+  },
+  "kusadasi": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Istanbul: 555-0183",
+    "emergency": "112 (Türkiye)",
+    "agent": "Ship’s agent, Kusadasi pier: 555-0205"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to the bazaar” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Kusadasi (Ephesus).",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to the bazaar” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Kusadasi (Ephesus) and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to the bazaar” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Türkiye",
+    "documents": {
+     "us": "Passport. Check whether you need an electronic visa for Türkiye; many cruise guests do (verify).",
+     "other": "A valid passport. Check whether your nationality needs a visa for Türkiye (verify)."
+    },
+    "forms": [
+     "Check the visa rule for your nationality before you sail (verify).",
+     "The ship’s manifest covers a day call, but you still carry your passport ashore."
+    ],
+    "notes": [
+     "Do not export antiquities. Ask for a receipt for carpets and leather."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Kusadasi (Ephesus)",
+    "say": "Lütfen beni gemi limanına götürün. Gemim Sun Princess.",
+    "english": "Please take me to the cruise port. My ship is the Sun Princess.",
+    "lang": "tr"
+   }
+  },
+  "copenhagen": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Copenhagen: 555-0184",
+    "emergency": "112 (Denmark)",
+    "agent": "Ship’s agent, Copenhagen terminal: 555-0206"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Nyhavn to the Little Mermaid” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Copenhagen.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Nyhavn to the Little Mermaid” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Copenhagen and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Nyhavn to the Little Mermaid” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Denmark",
+    "documents": {
+     "us": "Passport. Carry a copy ashore and keep the original in the cabin safe.",
+     "other": "A valid passport. Check whether your nationality needs a Schengen visa or travel authorisation (verify)."
+    },
+    "forms": [
+     "No form to file ahead for a cruise stop. The ship’s manifest covers entry.",
+     "Check the current Schengen entry rules for your nationality (verify)."
+    ],
+    "notes": [
+     "Bring your ship card; you need it to get back on board.",
+     "Cycle lanes are busy: look both ways before you cross."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Copenhagen",
+    "say": "Kør mig venligst til krydstogtterminalen. Mit skib er Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "da"
+   }
+  },
+  "tokyo": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Tokyo: 555-0185",
+    "emergency": "110 police, 119 ambulance or fire (Japan)",
+    "agent": "Ship’s agent, Yokohama terminal: 555-0207"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to Chinatown” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Tokyo (Yokohama).",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to Chinatown” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Tokyo (Yokohama) and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to Chinatown” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Japan",
+    "documents": {
+     "us": "Passport. Carry it ashore: foreign visitors must be able to show it on request.",
+     "other": "A valid passport. Check whether your nationality needs a visa for Japan, even for a day call (verify)."
+    },
+    "forms": [
+     "Cruise guests are processed on arrival by the ship; follow Guest Services’ instructions on the day.",
+     "Bring your landing card or pass if the ship issues one."
+    ],
+    "notes": [
+     "Some common medicines (certain cold remedies) are restricted in Japan: check before you pack (verify).",
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Tokyo (Yokohama)",
+    "say": "クルーズターミナルまでお願いします。私の船はサン・プリンセスです。",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "ja"
+   }
+  },
+  "hakodate": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Sapporo: 555-0186",
+    "emergency": "110 police, 119 ambulance or fire (Japan)",
+    "agent": "Ship’s agent, Hakodate pier: 555-0208"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Pier to the morning market” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Hakodate.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Pier to the morning market” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Hakodate and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Pier to the morning market” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Japan",
+    "documents": {
+     "us": "Passport. Carry it ashore: foreign visitors must be able to show it on request.",
+     "other": "A valid passport. Check whether your nationality needs a visa for Japan, even for a day call (verify)."
+    },
+    "forms": [
+     "Cruise guests are processed on arrival by the ship; follow Guest Services’ instructions on the day.",
+     "Bring your landing card or pass if the ship issues one."
+    ],
+    "notes": [
+     "Some common medicines (certain cold remedies) are restricted in Japan: check before you pack (verify).",
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise pier, Hakodate",
+    "say": "クルーズターミナルまでお願いします。私の船はサン・プリンセスです。",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "ja"
+   }
+  },
+  "singapore": {
+   "contacts": {
+    "consulate": "U.S. Embassy, Singapore: 555-0187",
+    "emergency": "999 police, 995 ambulance (Singapore)",
+    "agent": "Ship’s agent, Singapore terminal: 555-0209"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Terminal to the Marina Bay waterfront” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Singapore.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Terminal to the Marina Bay waterfront” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Singapore and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Terminal to the Marina Bay waterfront” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Singapore",
+    "documents": {
+     "us": "Passport. Check whether you need to complete a digital arrival card (verify).",
+     "other": "A valid passport. Check whether your nationality needs a visa for Singapore (verify)."
+    },
+    "forms": [
+     "Singapore may ask for a digital arrival card within days of arrival (verify).",
+     "Allow time at the terminal for immigration if you start or end your cruise here."
+    ],
+    "notes": [
+     "Chewing gum, e-cigarettes and vapes are banned. Penalties are strict.",
+     "Bring your ship card; you need it to get back on board."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Singapore",
+    "say": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "en"
+   }
+  },
+  "sydney": {
+   "contacts": {
+    "consulate": "U.S. Consulate General, Sydney: 555-0188",
+    "emergency": "000 (Australia)",
+    "agent": "Ship’s agent, Sydney terminal: 555-0210"
+   },
+   "planB": {
+    "rain": {
+     "id": "rain",
+     "title": "A short outing and a cafe",
+     "detail": "Keep to the part of the “Circular Quay to the Botanic Garden” walk nearest the ship, wait out the rain in a cafe and head back early. Ask Guest Services about covered options in Sydney.",
+     "nearShip": true
+    },
+    "heat": {
+     "id": "heat",
+     "title": "Early start, shade and water",
+     "detail": "Do the “Circular Quay to the Botanic Garden” walk early, rest in the shade or indoors at midday and drink water often.",
+     "nearShip": false
+    },
+    "tender": {
+     "id": "tender",
+     "title": "Stay close to the ship",
+     "detail": "If the ship tenders instead of docking or the schedule changes, keep to the area around the landing in Sydney and allow extra time to get back.",
+     "nearShip": true
+    },
+    "energy": {
+     "id": "energy",
+     "title": "A slow, seated outing",
+     "detail": "Take a taxi or a short stretch of the “Circular Quay to the Botanic Garden” walk, have a long lunch with a seat and go back to the ship early to rest.",
+     "nearShip": true
+    }
+   },
+   "clearance": {
+    "country": "Australia",
+    "documents": {
+     "us": "Passport and an Australian electronic travel authority or visa (verify). Check this before you sail.",
+     "other": "A valid passport, and the visa or electronic travel authority you need for Australia. Check this before you pay the balance."
+    },
+    "forms": [
+     "Complete the Incoming Passenger Card as the ship instructs.",
+     "Declare all food, wooden items and outdoor gear."
+    ],
+    "notes": [
+     "Australia has very strict biosecurity: clean muddy shoes and gear, and declare anything from nature."
+    ]
+   },
+   "takeMeBack": {
+    "place": "Cruise terminal, Sydney",
+    "say": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "english": "Please take me to the cruise terminal. My ship is the Sun Princess.",
+    "lang": "en"
+   }
   }
  }
 }

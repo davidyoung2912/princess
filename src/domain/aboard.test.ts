@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ITEMS, chargeFor, endTime, itemById, placesLeft, selectionProblem, takenByOthers } from './catalogue'
+import { daysOf, type DayShape } from './dayKinds'
+import { ITEMS, chargeFor, itemDays, endTime, itemById, placesLeft, selectionProblem, takenByOthers } from './catalogue'
 import { PLACES } from './deck'
 import { HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, normalizeGame, triviaScore } from './games'
 import { searchContent } from './searchIndex'
@@ -10,6 +11,7 @@ import { captainAnnouncement } from './shipInfo'
 import { CHANNELS, VOD, onNow, titleAllowed } from './tv'
 
 const MIN = 60_000
+const WEEK: DayShape[] = ['fll', 'sea', 'cozumel', 'belize', 'roatan', 'sea', 'sea', 'fll'].map((port, i) => ({ port, date: `2027-03-${21 + i}` }))
 
 describe('ship info (OB-06)', () => {
   it('gives a captain\u2019s announcement for every day and holds a day out of range to the nearest end', () => {
@@ -54,17 +56,25 @@ describe('catalogue (ENT-03, SHP-01, SHP-04, SHP-06, ACS-04)', () => {
     expect(placesLeft(itemById('faith-mass')!, 2, '08:30', 0)).toBeNull()
   })
 
+  it('runs the activities on the days of the sailing, whatever its length', () => {
+    expect(itemDays(itemById('fit-yoga')!, WEEK)).toEqual([2, 6, 7])
+    expect(itemDays(itemById('faith-shabbat')!, WEEK)).toEqual([6])
+    const long: DayShape[] = [...WEEK.slice(0, 7), ...WEEK.slice(1, 7).map((d, i) => ({ ...d, date: `2027-03-${28 + i}` })), { port: 'fll', date: '2027-04-03' }]
+    expect(itemDays(itemById('fit-yoga')!, long).length).toBeGreaterThan(3)
+    expect(daysOf(long, 'last')).toEqual([long.length - 1])
+  })
+
   it('checks a selection against its item', () => {
     const ok = { item: 'spa-swedish', day: 3, time: '10:00', qty: 1 }
-    expect(selectionProblem(ok, 41)).toBeNull()
-    expect(selectionProblem({ ...ok, item: 'nope' }, 41)).toBe('unknown')
-    expect(selectionProblem(ok, 12)).toBe('age')
-    expect(selectionProblem({ ...ok, day: 8 }, 41)).toBe('badDay')
-    expect(selectionProblem({ ...ok, time: '03:00' }, 41)).toBe('badTime')
-    expect(selectionProblem({ ...ok, qty: 2 }, 41, 3)).toBe('soldOut')
-    expect(selectionProblem({ ...ok, qty: 0 }, 41)).toBe('badQty')
-    expect(selectionProblem({ item: 'shop-hat', day: 0, time: '', qty: 2 }, 12)).toBeNull()
-    expect(selectionProblem({ item: 'shop-hat', day: 2, time: '', qty: 1 }, 41)).toBe('notBookable')
+    expect(selectionProblem(ok, 41, WEEK)).toBeNull()
+    expect(selectionProblem({ ...ok, item: 'nope' }, 41, WEEK)).toBe('unknown')
+    expect(selectionProblem(ok, 12, WEEK)).toBe('age')
+    expect(selectionProblem({ ...ok, day: 8 }, 41, WEEK)).toBe('badDay')
+    expect(selectionProblem({ ...ok, time: '03:00' }, 41, WEEK)).toBe('badTime')
+    expect(selectionProblem({ ...ok, qty: 2 }, 41, WEEK, 3)).toBe('soldOut')
+    expect(selectionProblem({ ...ok, qty: 0 }, 41, WEEK)).toBe('badQty')
+    expect(selectionProblem({ item: 'shop-hat', day: 0, time: '', qty: 2 }, 12, WEEK)).toBeNull()
+    expect(selectionProblem({ item: 'shop-hat', day: 2, time: '', qty: 1 }, 41, WEEK)).toBe('notBookable')
     expect(chargeFor({ item: 'shop-hat', day: 0, time: '', qty: 2 })).toBe(5800)
     expect(chargeFor({ item: 'faith-mass', day: 2, time: '08:30', qty: 1 })).toBe(0)
   })

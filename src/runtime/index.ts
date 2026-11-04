@@ -30,6 +30,7 @@ import { trialDayFeed } from '../feeds/trialDay'
 import { markAccount, refreshContext, setContext } from '../account/context'
 import { applyCatalogue, normalizeCatalogue } from '../domain/catalogueServed'
 import { applySailings, normalizeSailings } from '../domain/sailingsServed'
+import { setRoomLoaders } from '../domain/shipRooms'
 import { applyCataloguePorts, applyPatterns, applyRegions, applyShips, normalizeCataloguePorts, normalizePatterns, normalizeRegions, normalizeShips, setItineraryLoader } from '../domain/shipCatalogue'
 import { applyShip, normalizeShip } from '../domain/shipServed'
 import { applyProgram, normalizeProgram } from '../domain/programServed'
@@ -244,6 +245,11 @@ setItineraryLoader(async (sailingId) => {
     if (old) return old
     throw e
   }
+})
+/** A sailing's rooms with sample fares, and a ship's rooms, fetched when a screen asks (only the server knows another ship's stateroom types). */
+setRoomLoaders({
+  sailing: (sailingId) => http.get<unknown>(`/reference/sailings/${encodeURIComponent(sailingId)}/rooms`),
+  ship: (shipId) => http.get<unknown>(`/reference/catalogue/ships/${encodeURIComponent(shipId)}`),
 })
 requireReference(TABLES.filter((t) => t.required).map((t) => t.kind))
 applyKeptTables()

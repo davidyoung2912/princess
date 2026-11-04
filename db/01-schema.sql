@@ -340,17 +340,9 @@ CREATE TABLE ref.Events (
 );
 END
 
-IF OBJECT_ID(N'ref.EventDays', N'U') IS NULL
-BEGIN
-CREATE TABLE ref.EventDays (
-  EventId NVARCHAR(40) NOT NULL, SailingId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
-  StatusOverride NVARCHAR(20) NULL,
-  CONSTRAINT PK_EventDays PRIMARY KEY (EventId, SailingId, [Day]),
-  CONSTRAINT FK_EventDays_Events FOREIGN KEY (EventId) REFERENCES ref.Events (Id),
-  CONSTRAINT FK_EventDays_ItineraryDays FOREIGN KEY (SailingId, [Day]) REFERENCES ref.ItineraryDays (SailingId, [Day])
-);
-CREATE INDEX IX_EventDays_SailingId_Day ON ref.EventDays (SailingId, [Day]);   -- shows.day
-END
+-- X0n: the days an event runs on come from its day kinds and the sailing's own days (DayKinds), not a row per sailing and day.
+IF OBJECT_ID(N'FK_PlanEvents_EventDays', N'F') IS NOT NULL ALTER TABLE dbo.PlanEvents DROP CONSTRAINT FK_PlanEvents_EventDays;
+IF OBJECT_ID(N'ref.EventDays', N'U') IS NOT NULL DROP TABLE ref.EventDays;
 
 IF OBJECT_ID(N'ref.Fares', N'U') IS NULL
 BEGIN
@@ -413,22 +405,6 @@ CREATE TABLE ref.Entitlements (
   Priority BIT NOT NULL CONSTRAINT DF_Entitlements_Priority DEFAULT 0,
   CONSTRAINT PK_Entitlements PRIMARY KEY (SourceKind, SourceId),
   CONSTRAINT CK_Entitlements_SourceKind CHECK (SourceKind IN ('tier','package'))
-);
-END
-
-IF OBJECT_ID(N'ref.PhotoCatalogue', N'U') IS NULL
-BEGIN
-CREATE TABLE ref.PhotoCatalogue (
-  Id NVARCHAR(40) NOT NULL CONSTRAINT PK_PhotoCatalogue PRIMARY KEY,
-  [Day] INT NOT NULL, Place NVARCHAR(80) NOT NULL, Caption NVARCHAR(200) NOT NULL CONSTRAINT DF_PhotoCatalogue_Caption DEFAULT N'', Thumb NVARCHAR(200) NOT NULL
-);
-END
-
-IF OBJECT_ID(N'ref.PhotographerSlots', N'U') IS NULL
-BEGIN
-CREATE TABLE ref.PhotographerSlots (
-  [Day] INT NOT NULL, Place NVARCHAR(80) NOT NULL, StartLocal TIME(0) NOT NULL,
-  CONSTRAINT PK_PhotographerSlots PRIMARY KEY ([Day], Place, StartLocal)
 );
 END
 
@@ -1982,8 +1958,7 @@ CREATE TABLE dbo.PlanEvents (
   UserId BIGINT NOT NULL, SailingId NVARCHAR(40) NOT NULL, EventId NVARCHAR(40) NOT NULL, [Day] INT NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PlanEvents_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PlanEvents PRIMARY KEY (UserId, SailingId, EventId, [Day]),
-  CONSTRAINT FK_PlanEvents_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_PlanEvents_EventDays FOREIGN KEY (EventId, SailingId, [Day]) REFERENCES ref.EventDays (EventId, SailingId, [Day])
+  CONSTRAINT FK_PlanEvents_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
 END
 
@@ -2325,8 +2300,7 @@ CREATE TABLE dbo.PhotoSelections (
   UserId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoSelections_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PhotoSelections PRIMARY KEY (UserId, PhotoId),
-  CONSTRAINT FK_PhotoSelections_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_PhotoSelections_PhotoCatalogue FOREIGN KEY (PhotoId) REFERENCES ref.PhotoCatalogue (Id)
+  CONSTRAINT FK_PhotoSelections_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
 );
 END
 
@@ -2352,10 +2326,15 @@ CREATE TABLE dbo.PhotoPurchaseItems (
   PurchaseId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL, Downloaded BIT NOT NULL CONSTRAINT DF_PhotoPurchaseItems_Downloaded DEFAULT 0,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoPurchaseItems_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT PK_PhotoPurchaseItems PRIMARY KEY (PurchaseId, PhotoId),
-  CONSTRAINT FK_PhotoPurchaseItems_PhotoPurchases FOREIGN KEY (PurchaseId) REFERENCES dbo.PhotoPurchases (Id) ON DELETE CASCADE,
-  CONSTRAINT FK_PhotoPurchaseItems_PhotoCatalogue FOREIGN KEY (PhotoId) REFERENCES ref.PhotoCatalogue (Id)
+  CONSTRAINT FK_PhotoPurchaseItems_PhotoPurchases FOREIGN KEY (PurchaseId) REFERENCES dbo.PhotoPurchases (Id) ON DELETE CASCADE
 );
 END
+
+-- X0l: photo spots come from the sailing's own days (PhotoRules.SpotsFor), so the global spot table and its keys are gone.
+IF OBJECT_ID(N'FK_PhotoSelections_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoSelections DROP CONSTRAINT FK_PhotoSelections_PhotoCatalogue;
+IF OBJECT_ID(N'FK_PhotoPurchaseItems_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoPurchaseItems DROP CONSTRAINT FK_PhotoPurchaseItems_PhotoCatalogue;
+IF OBJECT_ID(N'ref.PhotoCatalogue', N'U') IS NOT NULL DROP TABLE ref.PhotoCatalogue;
+IF OBJECT_ID(N'ref.PhotographerSlots', N'U') IS NOT NULL DROP TABLE ref.PhotographerSlots;
 
 IF OBJECT_ID(N'dbo.LaundryRequests', N'U') IS NULL
 BEGIN

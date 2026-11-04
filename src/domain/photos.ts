@@ -11,32 +11,7 @@ export type PhotoVenue = 'gangway' | 'portrait' | 'port' | 'pool' | 'dining'
 
 export const PHOTO_VENUES: readonly PhotoVenue[] = ['gangway', 'portrait', 'port', 'pool', 'dining']
 
-export interface Spot { id: string; day: number; venue: PhotoVenue; title: string; time: string; individual: boolean }
-
-export const SPOTS: readonly Spot[] = [
-  { id: 'gangway', day: 1, venue: 'gangway', title: 'Welcome aboard, the gangway', time: '12:30', individual: false },
-  { id: 'formal1', day: 2, venue: 'portrait', title: 'Formal night portraits, the Piazza', time: '18:00', individual: true },
-  { id: 'cozumel', day: 3, venue: 'port', title: 'Cozumel, back at the dock', time: '16:00', individual: false },
-  { id: 'belize', day: 4, venue: 'port', title: 'Belize City tender pier', time: '13:30', individual: false },
-  { id: 'roatan', day: 5, venue: 'port', title: 'Roatán, the cruise pier', time: '14:00', individual: false },
-  { id: 'pool', day: 6, venue: 'pool', title: 'Lido pool, sea day', time: '11:30', individual: false },
-  { id: 'dining', day: 6, venue: 'dining', title: 'Your table, Eclipse Dining Room', time: '19:15', individual: false },
-  { id: 'formal2', day: 7, venue: 'portrait', title: 'Second formal night portraits', time: '18:00', individual: true },
-]
-
 export interface Photo { id: string; day: number; venue: PhotoVenue; title: string; time: string; people: PersonaId[] }
-
-/** Photos taken so far of the people on the booking: one group photo per spot, and one each at portrait spots. */
-export function photosFor(party: readonly PersonaId[], throughDay: number): Photo[] {
-  const out: Photo[] = []
-  for (const s of SPOTS) {
-    if (s.day > throughDay) continue
-    const base = { day: s.day, venue: s.venue, title: s.title, time: s.time }
-    out.push({ ...base, id: `ph-${s.id}-group`, people: [...party] })
-    if (s.individual && party.length > 1) for (const p of party) out.push({ ...base, id: `ph-${s.id}-${p}`, people: [p] })
-  }
-  return out
-}
 
 export interface PhotoFilter { day: number | null; venue: PhotoVenue | null; person: PersonaId | null; favouritesOnly: boolean }
 export const NO_PHOTO_FILTER: PhotoFilter = { day: null, venue: null, person: null, favouritesOnly: false }
@@ -83,20 +58,12 @@ export function checksum(id: string): string {
 
 export let REDOWNLOAD_DAYS = 14
 
+/** Photographers' posted sessions, served with the photos for the sailing. */
 export interface PhotographerSlot { day: number; time: string; placeId: string; what: string }
-
-export const PHOTOGRAPHERS: readonly PhotographerSlot[] = [
-  { day: 1, time: '12:00', placeId: 'landing', what: 'Welcome aboard photos at the gangway' },
-  { day: 2, time: '18:00', placeId: 'piazza', what: 'Formal night portraits' },
-  { day: 3, time: '15:30', placeId: 'landing', what: 'Back at the ship, Cozumel' },
-  { day: 6, time: '11:00', placeId: 'lido-pool', what: 'Pool and deck photos' },
-  { day: 6, time: '19:00', placeId: 'eclipse', what: 'Dining room table photos' },
-  { day: 7, time: '18:00', placeId: 'piazza', what: 'Second formal night portraits' },
-]
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('INCLUDED_WITH_PREMIER', (v) => { INCLUDED_WITH_PREMIER = v }, INCLUDED_WITH_PREMIER)
 limit('DOWNLOAD_BATCH', (v) => { DOWNLOAD_BATCH = v }, DOWNLOAD_BATCH)
 limit('REDOWNLOAD_DAYS', (v) => { REDOWNLOAD_DAYS = v }, REDOWNLOAD_DAYS)
 
-registerContent('photos', { PHOTO_VENUES, SPOTS, NO_PHOTO_FILTER, PRICES, OPTION_IDS, PHOTOGRAPHERS })
+registerContent('photos', { PHOTO_VENUES, NO_PHOTO_FILTER, PRICES, OPTION_IDS })

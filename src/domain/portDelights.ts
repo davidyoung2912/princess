@@ -34,7 +34,7 @@ export function stopwatch(allAboardAt: number, now: number): Stopwatch {
 
 // ---------------------------------------------------------------- D6A-2: take me back to the ship
 
-export interface TakeMeBack { port: CallPort; /** Where the ship is, in the local language. */ place: string; /** What to say, in the local language. */ say: string; /** The same in English, for the guest. */ english: string; lang: 'es' | 'en' }
+export interface TakeMeBack { port: CallPort; /** Where the ship is, in the local language. */ place: string; /** What to say, in the local language. */ say: string; /** The same in English, for the guest. */ english: string; lang: string }
 
 /** The cruise pier or tender point and a short request, for the ports that have authored words; served with the port reference (`portsServed.ts`). A real berth feed would replace these. */
 const AUTHORED_TAKE_ME_BACK: Record<string, TakeMeBack> = {}

@@ -93,7 +93,7 @@ public sealed class WaitService(ScopeLoader scopes, IAheadStore store, IPlanStor
     {
         var c = await scopes.LoadAsync(actor, number, true, ct);
         var v = DiningRules.VenueById(body?.VenueId);
-        if (v is null || v.WalkIn || !DiningRules.DinnerDays.Contains(body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
+        if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
         var who = c.GuestsIn(body.Guests);
         if (who.Count > DiningRules.MaxParty) throw ApiException.Invalid("partySize");
         if (!DiningOpen(c)) throw ApiException.Conflict("closed");

@@ -1,11 +1,11 @@
 namespace Princess.Api.Domain;
 
 /// <summary>One thing on the daily programme. <see cref="Extra"/> is cents per person (0 is in the fare).</summary>
-public sealed record ShipEvent(string Id, int[] Days, string Start, int Minutes, string Title, string PlaceId, string Age, string Interest, long Extra, bool AfterAllAboard);
+public sealed record ShipEvent(string Id, string[] When, string Start, int Minutes, string Title, string PlaceId, string Age, string Interest, long Extra, bool AfterAllAboard);
 
 /// <summary>An event on a given day with its instants and any mid-day change applied. Field names follow <c>DatedEvent</c> in <c>src/domain/program.ts</c>.</summary>
 public sealed record DatedEvent(
-    string Id, int[] Days, string Start, int Minutes, string Title, string PlaceId, string Age, string Interest, long Extra, bool AfterAllAboard,
+    string Id, string[] When, string Start, int Minutes, string Title, string PlaceId, string Age, string Interest, long Extra, bool AfterAllAboard,
     int Day, string Date, long StartAt, long EndAt, string Status, string? Was, string? Reason);
 
 public sealed record PlanChange(string EventId, int Day, string Kind, string? Start, string Reason);
@@ -18,41 +18,41 @@ public sealed record MusterStation(string Letter, string Name, string PlaceId, i
 /// <summary>Ported from <c>src/domain/program.ts</c> (the daily programme, "Patter") and the muster stations of <c>src/domain/deck.ts</c>. Titles, times and prices are authored concept values.</summary>
 public static class ProgramRules
 {
-    private static ShipEvent Ev(string id, int[] days, string start, int minutes, string title, string place, string age, string interest, long extra = 0, bool after = false) =>
-        new(id, days, start, minutes, title, place, age, interest, extra, after);
+    private static ShipEvent Ev(string id, string[] when, string start, int minutes, string title, string place, string age, string interest, long extra = 0, bool after = false) =>
+        new(id, when, start, minutes, title, place, age, interest, extra, after);
 
-    private static readonly int[] Sea = [2, 6, 7];
-    private static readonly int[] Port = [3, 4, 5];
-    private static readonly int[] Nights = [1, 2, 3, 4, 5, 6, 7];
+    private static readonly string[] Sea = ["sea"];
+    private static readonly string[] Port = ["port"];
+    private static readonly string[] Nights = ["night"];
 
     public static readonly IReadOnlyList<ShipEvent> Events =
     [
-        Ev("muster", [1], "14:00", 30, "Muster drill: go to your station", "piazza", "all", "learning"),
-        Ev("sailaway", [1], "15:00", 60, "Sail-away party", "lido-pool", "all", "music"),
-        Ev("welcome-piazza", [1], "19:00", 45, "Welcome music in the Piazza", "piazza", "all", "music"),
-        Ev("welcome-show", [1], "20:30", 60, "Welcome aboard show", "arena", "all", "shows"),
-        Ev("kids-open-house", [1], "16:30", 60, "Kids’ club open house", "firefly", "kids", "family"),
-        Ev("teen-open-house", [1], "17:00", 45, "Teen lounge meet-up", "underground", "teens", "family"),
+        Ev("muster", ["embark"], "14:00", 30, "Muster drill: go to your station", "piazza", "all", "learning"),
+        Ev("sailaway", ["embark"], "15:00", 60, "Sail-away party", "lido-pool", "all", "music"),
+        Ev("welcome-piazza", ["embark"], "19:00", 45, "Welcome music in the Piazza", "piazza", "all", "music"),
+        Ev("welcome-show", ["embark"], "20:30", 60, "Welcome aboard show", "arena", "all", "shows"),
+        Ev("kids-open-house", ["embark"], "16:30", 60, "Kids’ club open house", "firefly", "kids", "family"),
+        Ev("teen-open-house", ["embark"], "17:00", 45, "Teen lounge meet-up", "underground", "teens", "family"),
 
         Ev("stretch", Sea, "08:00", 45, "Morning stretch", "fitness", "adults", "wellness"),
         Ev("trivia", Sea, "10:30", 45, "Team trivia", "live", "all", "games"),
         Ev("cooking", Sea, "11:00", 60, "Cooking demo with the executive chef", "eclipse", "all", "learning"),
         Ev("bingo", Sea, "14:00", 60, "Bingo", "live", "adults", "games", 2500),
-        Ev("art-talk", [2, 6], "15:00", 45, "Art talk: the ship’s collection", "piazza", "all", "learning"),
+        Ev("art-talk", ["seaMid"], "15:00", 45, "Art talk: the ship’s collection", "piazza", "all", "learning"),
         Ev("craft", Sea, "10:00", 60, "Craft time", "firefly", "kids", "family"),
         Ev("tween-games", Sea, "13:30", 60, "Tween games afternoon", "neon-grove", "kids", "family"),
         Ev("teen-night", Sea, "21:30", 90, "Teen dance night", "underground", "teens", "nightlife"),
-        Ev("spa-tour", [2, 6], "11:30", 30, "Spa tour and tasting", "lotus", "adults", "wellness"),
-        Ev("stage-show", [2, 6, 7], "20:30", 60, "Main stage production", "arena", "all", "shows"),
-        Ev("stage-early", [2], "18:30", 60, "Main stage production, early show", "arena", "all", "shows"),
+        Ev("spa-tour", ["seaMid"], "11:30", 30, "Spa tour and tasting", "lotus", "adults", "wellness"),
+        Ev("stage-show", ["sea"], "20:30", 60, "Main stage production", "arena", "all", "shows"),
+        Ev("stage-early", ["firstSea"], "18:30", 60, "Main stage production, early show", "arena", "all", "shows"),
         Ev("jazz", Nights, "21:30", 90, "Live jazz", "crooners", "adults", "music"),
         Ev("piazza-band", Nights, "17:30", 45, "Piazza live band", "piazza", "all", "music"),
-        Ev("dome-show", [2, 3, 5, 6], "22:00", 45, "Acrobatic show in the Dome", "dome", "all", "shows"),
-        Ev("dome-dj", [2, 6, 7], "23:00", 90, "Dance party in the Dome", "dome", "adults", "nightlife"),
+        Ev("dome-show", ["seaMid", "portOdd"], "22:00", 45, "Acrobatic show in the Dome", "dome", "all", "shows"),
+        Ev("dome-dj", ["sea"], "23:00", 90, "Dance party in the Dome", "dome", "adults", "nightlife"),
         Ev("movie", Nights, "20:00", 120, "Movie under the stars", "lido-pool", "all", "family"),
-        Ev("wine", [2, 6], "16:00", 60, "Wine tasting", "bellinis", "adults", "learning", 3500),
-        Ev("farewell-show", [7], "19:30", 60, "Farewell show", "arena", "all", "shows"),
-        Ev("packing", [7], "15:00", 40, "Disembarkation talk", "piazza", "all", "learning"),
+        Ev("wine", ["seaMid"], "16:00", 60, "Wine tasting", "bellinis", "adults", "learning", 3500),
+        Ev("farewell-show", ["last"], "19:30", 60, "Farewell show", "arena", "all", "shows"),
+        Ev("packing", ["last"], "15:00", 40, "Disembarkation talk", "piazza", "all", "learning"),
 
         Ev("port-lecture", Port, "19:00", 40, "Tomorrow’s port: talk and questions", "piazza", "all", "learning", 0, true),
         Ev("port-music", Port, "18:00", 60, "Sail-away steel drums", "lido-pool", "all", "music", 0, true),
@@ -63,7 +63,7 @@ public static class ProgramRules
 
     public static ProgramReferenceDto Reference(IReadOnlyList<PlanChange> feed)
     {
-        var text = string.Join('|', Events.Select(e => $"{e.Id}:{string.Join(',', e.Days)}:{e.Start}:{e.Minutes}:{e.Title}:{e.PlaceId}:{e.Age}:{e.Interest}:{e.Extra}:{e.AfterAllAboard}"))
+        var text = string.Join('|', Events.Select(e => $"{e.Id}:{string.Join(',', e.When)}:{e.Start}:{e.Minutes}:{e.Title}:{e.PlaceId}:{e.Age}:{e.Interest}:{e.Extra}:{e.AfterAllAboard}"))
             + "#" + string.Join('|', feed.Select(c => $"{c.EventId}:{c.Day}:{c.Kind}:{c.Start}:{c.Reason}"));
         var version = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant()[..16];
         return new(version, Events, feed);
@@ -87,14 +87,14 @@ public static class ProgramRules
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);
         var list = new List<DatedEvent>();
-        foreach (var e in Events.Where(e => e.Days.Contains(day)))
+        foreach (var e in Events.Where(e => DayKinds.Runs(timeline, day, e.When)))
         {
             var change = changes ? feed.FirstOrDefault(c => c.EventId == e.Id && c.Day == day) : null;
             var start = change is { Kind: "moved", Start: { } s } ? s : e.Start;
             var startAt = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(start, "HH:mm"), zone);
             if (e.AfterAllAboard && aboard is { } a && startAt < a) continue;
             list.Add(new DatedEvent(
-                e.Id, e.Days, start, e.Minutes, e.Title, e.PlaceId, e.Age, e.Interest, e.Extra, e.AfterAllAboard, day, date.ToString("yyyy-MM-dd"),
+                e.Id, e.When, start, e.Minutes, e.Title, e.PlaceId, e.Age, e.Interest, e.Extra, e.AfterAllAboard, day, date.ToString("yyyy-MM-dd"),
                 TripRules.ToMs(startAt), TripRules.ToMs(startAt.AddMinutes(e.Minutes)), change?.Kind ?? "on", change?.Kind == "moved" ? e.Start : null, change?.Reason));
         }
         return [.. list.OrderBy(e => e.StartAt).ThenBy(e => e.Title, StringComparer.InvariantCulture)];

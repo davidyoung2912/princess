@@ -5,7 +5,7 @@ import { asDiningView } from '../../api/guards'
 import type { HistoryEntry } from '../../domain/account'
 import type { Reservation } from '../../api/types'
 import { formatDate, formatTime } from '../../domain/cruise'
-import { DINNER_DAYS, DRESS_NOTES, venueById } from '../../domain/dining'
+import { dinnerDays, DRESS_NOTES, venueById } from '../../domain/dining'
 import { formatMoney } from '../../domain/money'
 import { itinerary, PORTS, type PortId } from '../../domain/sailings'
 import { addDays } from '../../domain/timezones'
@@ -162,7 +162,7 @@ function Detail({ r, canEdit, reload }: { r: Reservation; canEdit: boolean; relo
               <div className="field">
                 <label htmlFor="res-day">{t('dine.night')}</label>
                 <select id="res-day" className="field__input" value={day} onChange={(e) => { setDay(Number(e.target.value)); setTime(''); setMoved(null) }}>
-                  {DINNER_DAYS.map((n) => <option key={n} value={n}>{t('plan.day', { n })} · {formatDate(days[n - 1].date)} · {placeName(days[n - 1].port)}</option>)}
+                  {dinnerDays(days.length).map((n) => <option key={n} value={n}>{t('plan.day', { n })} · {formatDate(days[n - 1].date)} · {placeName(days[n - 1].port)}</option>)}
                 </select>
               </div>
               <fieldset>

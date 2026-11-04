@@ -59,7 +59,7 @@ function ashoreOk(r: unknown): boolean {
     return rec(b) && b.id === k && str(b.title, 120) && str(b.detail) && typeof b.nearShip === 'boolean'
   }))) return false
   const t = r.takeMeBack
-  if (t !== undefined && !(rec(t) && str(t.place, 200) && str(t.say, 300) && str(t.english, 300) && (t.lang === 'es' || t.lang === 'en'))) return false
+  if (t !== undefined && !(rec(t) && str(t.place, 200) && str(t.say, 300) && str(t.english, 300) && str(t.lang, 12))) return false
   const c = r.clearance
   if (c !== undefined && !(rec(c) && str(c.country, 120) && rec(c.documents) && str(c.documents.us) && str(c.documents.other) && strs(c.forms) && strs(c.notes))) return false
   return true

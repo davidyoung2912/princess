@@ -458,11 +458,26 @@ public class ShipboardRulesTests
     public void PhotosAppearAsTheCruiseGoesOn()
     {
         var party = new List<Guid> { Dan, Kid };
-        Assert.Empty(PhotoRules.PhotosFor(party, 0));
-        Assert.Equal(["gangway"], PhotoRules.PhotosFor(party, 1).Select(p => p.Id));
-        Assert.Equal(["gangway", "formal1"], PhotoRules.PhotosFor(party, 2).Select(p => p.Id));
-        Assert.Equal(8, PhotoRules.PhotosFor(party, 8).Count);
-        Assert.All(PhotoRules.PhotosFor(party, 8), p => Assert.Equal(party, p.People));
+        var week = Timeline.Legacy(new DateOnly(2027, 3, 6));
+        Assert.Empty(PhotoRules.PhotosFor(week, party, 0));
+        Assert.Equal(["gangway"], PhotoRules.PhotosFor(week, party, 1).Select(p => p.Id));
+        Assert.Equal(["gangway", "formal-2"], PhotoRules.PhotosFor(week, party, 2).Select(p => p.Id));
+        Assert.Equal(["gangway", "formal-2", "port-3-cozumel", "port-4-belize", "port-5-roatan", "pool-6", "dining-6", "formal-7", "pool-7", "dining-7"], PhotoRules.PhotosFor(week, party, 8).Select(p => p.Id));
+        Assert.All(PhotoRules.PhotosFor(week, party, 8), p => Assert.Equal(party, p.People));
+    }
+
+    [Fact]
+    public void PhotoSpotsFollowTheLengthOfTheSailing()
+    {
+        Assert.Equal([], PhotoRules.FormalDays(4));
+        Assert.Equal([2], PhotoRules.FormalDays(6));
+        Assert.Equal([2, 7], PhotoRules.FormalDays(7));
+        Assert.Equal(4, PhotoRules.FormalDays(14).Count);
+        Assert.Equal(14, PhotoRules.FormalDays(14)[^1]);
+        var seven = PhotoRules.SpotsFor(Timeline.Legacy(new DateOnly(2027, 3, 6)));
+        Assert.Equal(seven.Select(s => s.Id).Distinct().Count(), seven.Count);
+        Assert.Equal("the tender pier", PhotoRules.SpotsFor(Timeline.Legacy(new DateOnly(2027, 3, 6))).First(s => s.Id == "port-4-belize").Title.Split(", ")[1]);
+        Assert.Equal(PhotoRules.PhotographersFor(Timeline.Legacy(new DateOnly(2027, 3, 6))).Count(s => s.PlaceId == "landing"), 4);
     }
 
     [Theory]

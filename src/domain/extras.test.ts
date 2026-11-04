@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { checkInProblem, clubFor, defaultZones, kidStatus, lastSeen, normalizeAuth, normalizeReunion, CLUBS } from './family'
 import { isolating, medicalOpen, nextOpening, reportProblem } from './health'
 import { canCancel, breakfastMornings, itemById, orderFolioLines, orderProblem, orderProgress, priceOrder, MENU, menuFor, type GuestInfo, type OrderLine } from './orders'
-import { checksum, cheapest, filterPhotos, NO_PHOTO_FILTER, photoOptions, photosFor } from './photos'
+import { checksum, cheapest, filterPhotos, NO_PHOTO_FILTER, photoOptions, type Photo } from './photos'
 import { laundryPrice, laundryStage, pickupOptions, serviceById } from './laundry'
 import { devicesProblem, dndCheckDue, normalizeDevices, normalizeHousekeeping } from './room'
 import { addProblem, upgradeCost, planById, usedTodayMb } from './wifi'
@@ -209,16 +209,9 @@ describe('health and room', () => {
 
 describe('photos, laundry and Wi-Fi', () => {
   const party = ['daniel', 'priya', 'ethan', 'maya'] as const
-  it('only shows photos taken so far, with singles at portrait spots', () => {
-    expect(photosFor(party, 0)).toHaveLength(0)
-    expect(photosFor(party, 1)).toHaveLength(1)
-    expect(photosFor(party, 2)).toHaveLength(1 + 1 + 4)
-    expect(photosFor(['gerald'], 2)).toHaveLength(2)
-    const all = photosFor(party, 8)
-    expect(new Set(all.map((p) => p.id)).size).toBe(all.length)
-  })
+  const photo = (id: string, day: number, venue: Photo['venue'], people: Photo['people']): Photo => ({ id, day, venue, title: id, time: '12:00', people })
+  const all: Photo[] = [photo('gangway', 1, 'gangway', [...party]), photo('formal-2', 2, 'portrait', [...party]), photo('ph-formal-2-maya', 2, 'portrait', ['maya']), photo('pool-6', 6, 'pool', [...party])]
   it('filters by day, place, person and favourite', () => {
-    const all = photosFor(party, 8)
     expect(filterPhotos(all, { ...NO_PHOTO_FILTER, day: 2 }, []).every((p) => p.day === 2)).toBe(true)
     expect(filterPhotos(all, { ...NO_PHOTO_FILTER, venue: 'portrait', person: 'maya' }, []).every((p) => p.people.includes('maya'))).toBe(true)
     expect(filterPhotos(all, { ...NO_PHOTO_FILTER, favouritesOnly: true }, [all[0].id])).toEqual([all[0]])

@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { EMERGENCY_NUMBER } from '../../domain/contacts'
 import { DECKS, placesOnDeck } from '../../domain/deck'
-import { itemsIn } from '../../domain/catalogue'
+import { itemDays, itemsIn } from '../../domain/catalogue'
+import { itinerary } from '../../domain/sailings'
 import { RESPONSE_MINUTES, TEXT_HELP_MAX, textHelpProblem } from '../../domain/health'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
@@ -37,6 +38,7 @@ export function TextHelpScreen() {
     setSent(true)
     health.retry()
   })
+  const sailing = useSailing()
   const signed = itemsIn('access').filter((i) => i.support?.includes('signed'))
   const mine = (health.data?.requests ?? []).filter((r) => r.kind === 'textHelp')
   const submit = () => {
@@ -89,7 +91,7 @@ export function TextHelpScreen() {
         <h2 id="txt-sign-h">{th('txt.interpreters')}</h2>
         <p>{t('txt.interpretersBody')}</p>
         <ul className="plain-bullets">
-          {signed.map((i) => <li key={i.id}>{t('txt.signedAt', { title: i.title, days: i.days.join(', '), time: i.times.join(', ') })}</li>)}
+          {signed.map((i) => <li key={i.id}>{t('txt.signedAt', { title: i.title, days: itemDays(i, itinerary(sailing)).join(', '), time: i.times.join(', ') })}</li>)}
         </ul>
         <p><Link to="/ship/access">{t('route.access')}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
       </section>

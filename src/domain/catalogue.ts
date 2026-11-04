@@ -1,5 +1,6 @@
 import type { Cents } from './money'
 import { limit } from './limits'
+import { runsOn, type DayKind, type DayShape } from './dayKinds'
 
 /**
  * What can be booked, ordered or joined on board (ENT-03, SHP-01, SHP-04, SHP-06, ACS-04): spa and fitness, shops and gift cards,
@@ -18,8 +19,8 @@ export interface Item {
   detail: string
   /** A place on the deck plan, or "" when the item has no single place. */
   placeId: string
-  /** Cruise days it runs, 1 to 8. */
-  days: readonly number[]
+  /** The kinds of day it runs on (any one is enough), so it fits a sailing of any length; `itemDays` gives the day numbers. */
+  when: readonly DayKind[]
   /** Ship-time start times to choose from; empty for items with no time (shop goods). */
   times: readonly string[]
   minutes: number
@@ -34,23 +35,23 @@ export interface Item {
   support?: readonly Support[]
 }
 
-const SEA = [2, 6, 7]
-const AT_SEA_OR_PORT = [1, 2, 3, 4, 5, 6, 7]
-const PORT = [3, 4, 5]
+const SEA: DayKind[] = ['sea']
+const AT_SEA_OR_PORT: DayKind[] = ['night']
+const PORT: DayKind[] = ['port']
 
 const item = (i: Partial<Item> & Pick<Item, 'id' | 'group' | 'title' | 'detail'>): Item => ({
-  placeId: '', days: AT_SEA_OR_PORT, times: [], minutes: 0, price: null, limit: null, minAge: 0, mode: 'going', ...i,
+  placeId: '', when: AT_SEA_OR_PORT, times: [], minutes: 0, price: null, limit: null, minAge: 0, mode: 'going', ...i,
 })
 
 export const ITEMS: readonly Item[] = [
   item({ id: 'spa-swedish', group: 'spa', title: 'Swedish massage', detail: '50 minutes, light to medium pressure.', placeId: 'lotus', times: ['10:00', '13:00', '16:00'], minutes: 50, price: 13900, limit: 4, minAge: 18, mode: 'book' }),
   item({ id: 'spa-hotstone', group: 'spa', title: 'Hot stone massage', detail: '75 minutes with warmed basalt stones.', placeId: 'lotus', times: ['11:00', '15:00'], minutes: 75, price: 18900, limit: 3, minAge: 18, mode: 'book' }),
   item({ id: 'spa-facial', group: 'spa', title: 'Hydrating facial', detail: '50 minutes. Please tell us about allergies when you book.', placeId: 'lotus', times: ['09:30', '12:30', '17:00'], minutes: 50, price: 12900, limit: 4, minAge: 16, mode: 'book' }),
-  item({ id: 'spa-port-special', group: 'spa', title: 'Port-day special: back and shoulders', detail: '25 minutes while most guests are ashore.', placeId: 'lotus', days: PORT, times: ['10:30', '14:00'], minutes: 25, price: 6900, limit: 6, minAge: 18, mode: 'book' }),
+  item({ id: 'spa-port-special', group: 'spa', title: 'Port-day special: back and shoulders', detail: '25 minutes while most guests are ashore.', placeId: 'lotus', when: PORT, times: ['10:30', '14:00'], minutes: 25, price: 6900, limit: 6, minAge: 18, mode: 'book' }),
   item({ id: 'salon-cut', group: 'spa', title: 'Haircut and style', detail: '45 minutes.', placeId: 'lotus', times: ['09:00', '11:30', '15:00'], minutes: 45, price: 6500, limit: 3, mode: 'book' }),
   item({ id: 'salon-nails', group: 'spa', title: 'Manicure', detail: '40 minutes.', placeId: 'lotus', times: ['10:00', '14:30'], minutes: 40, price: 4500, limit: 3, mode: 'book' }),
-  item({ id: 'fit-yoga', group: 'fitness', title: 'Sunrise yoga', detail: 'All levels. Mats provided.', placeId: 'fitness', days: SEA, times: ['07:00'], minutes: 45, price: 0, limit: 20, mode: 'book' }),
-  item({ id: 'fit-spin', group: 'fitness', title: 'Spin class', detail: 'High energy, 45 minutes.', placeId: 'fitness', days: [2, 3, 5, 6], times: ['08:30', '17:30'], minutes: 45, price: 1200, limit: 14, minAge: 16, mode: 'book' }),
+  item({ id: 'fit-yoga', group: 'fitness', title: 'Sunrise yoga', detail: 'All levels. Mats provided.', placeId: 'fitness', when: SEA, times: ['07:00'], minutes: 45, price: 0, limit: 20, mode: 'book' }),
+  item({ id: 'fit-spin', group: 'fitness', title: 'Spin class', detail: 'High energy, 45 minutes.', placeId: 'fitness', when: ['seaMid', 'portOdd'], times: ['08:30', '17:30'], minutes: 45, price: 1200, limit: 14, minAge: 16, mode: 'book' }),
   item({ id: 'fit-trainer', group: 'fitness', title: 'Personal training session', detail: 'One to one, 45 minutes.', placeId: 'fitness', times: ['09:00', '16:00'], minutes: 45, price: 8500, limit: 2, minAge: 16, mode: 'book' }),
   item({ id: 'shop-sunscreen', group: 'shop', title: 'Reef-safe sunscreen SPF 50', detail: 'Pick up at Lido Gifts the next day.', placeId: 'shops', price: 1800, limit: 30, mode: 'order' }),
   item({ id: 'shop-hat', group: 'shop', title: 'Wide-brim sun hat', detail: 'Packs flat. Pick up at Lido Gifts.', placeId: 'shops', price: 2900, limit: 12, mode: 'order' }),
@@ -64,22 +65,25 @@ export const ITEMS: readonly Item[] = [
   item({ id: 'gift-cake', group: 'gift', title: 'Celebration cake', detail: 'A small cake with a message, brought to your table at dinner.', placeId: 'shops', price: 3500, limit: 16, mode: 'order' }),
   item({ id: 'gift-decor', group: 'gift', title: 'Stateroom decorating', detail: 'Balloons, banner and petals for a birthday, anniversary or honeymoon.', placeId: 'shops', price: 5500, limit: 12, mode: 'order' }),
   item({ id: 'gift-kids', group: 'gift', title: 'Kids’ welcome package', detail: 'A plush toy, colouring pack and a snack box in the cabin on arrival.', placeId: 'shops', price: 3000, limit: 24, mode: 'order' }),
-  item({ id: 'sp-art', group: 'special', title: 'Art auction', detail: 'Free champagne. You are not obliged to bid.', placeId: 'piazza', days: [2, 6], times: ['15:30'], minutes: 60 }),
-  item({ id: 'sp-jewel', group: 'special', title: 'Jewellery event', detail: 'Port-day offers on watches and gems.', placeId: 'shops', days: PORT, times: ['11:00'], minutes: 45 }),
-  item({ id: 'sp-bingo', group: 'special', title: 'Bingo book, three games', detail: 'Pre-order a book to skip the line before play.', placeId: 'live', days: SEA, times: ['14:00'], minutes: 60, price: 2500, limit: 40, minAge: 18, mode: 'order' }),
-  item({ id: 'sp-daily', group: 'special', title: 'Daily special: deck-sale table', detail: 'Marked-down swimwear and souvenirs.', placeId: 'shops', days: [2, 6, 7], times: ['10:00'], minutes: 180 }),
-  item({ id: 'faith-mass', group: 'faith', title: 'Catholic Mass', detail: 'All welcome.', placeId: 'piazza', days: [2, 6], times: ['08:30'], minutes: 40 }),
-  item({ id: 'faith-shabbat', group: 'faith', title: 'Shabbat service', detail: 'Led by a guest volunteer. Kosher grape juice provided.', placeId: 'live', days: [5], times: ['18:00'], minutes: 40 }),
-  item({ id: 'faith-interfaith', group: 'faith', title: 'Interfaith reflection', detail: 'A quiet half hour of reading and silence.', placeId: 'live', days: [2, 6], times: ['09:30'], minutes: 30 }),
+  item({ id: 'sp-art', group: 'special', title: 'Art auction', detail: 'Free champagne. You are not obliged to bid.', placeId: 'piazza', when: ['seaMid'], times: ['15:30'], minutes: 60 }),
+  item({ id: 'sp-jewel', group: 'special', title: 'Jewellery event', detail: 'Port-day offers on watches and gems.', placeId: 'shops', when: PORT, times: ['11:00'], minutes: 45 }),
+  item({ id: 'sp-bingo', group: 'special', title: 'Bingo book, three games', detail: 'Pre-order a book to skip the line before play.', placeId: 'live', when: SEA, times: ['14:00'], minutes: 60, price: 2500, limit: 40, minAge: 18, mode: 'order' }),
+  item({ id: 'sp-daily', group: 'special', title: 'Daily special: deck-sale table', detail: 'Marked-down swimwear and souvenirs.', placeId: 'shops', when: ['sea'], times: ['10:00'], minutes: 180 }),
+  item({ id: 'faith-mass', group: 'faith', title: 'Catholic Mass', detail: 'All welcome.', placeId: 'piazza', when: ['seaMid'], times: ['08:30'], minutes: 40 }),
+  item({ id: 'faith-shabbat', group: 'faith', title: 'Shabbat service', detail: 'Led by a guest volunteer. Kosher grape juice provided.', placeId: 'live', when: ['friday'], times: ['18:00'], minutes: 40 }),
+  item({ id: 'faith-interfaith', group: 'faith', title: 'Interfaith reflection', detail: 'A quiet half hour of reading and silence.', placeId: 'live', when: ['seaMid'], times: ['09:30'], minutes: 30 }),
   item({ id: 'faith-aa', group: 'faith', title: 'Friends of Bill W. meet-up', detail: 'A private room; ask Guest Services for the door.', placeId: 'guest-services', times: ['17:00'], minutes: 60 }),
-  item({ id: 'faith-solo', group: 'faith', title: 'Solo travellers’ meet-up', detail: 'Drinks and introductions.', placeId: 'live', days: [1, 2, 6], times: ['17:30'], minutes: 45 }),
-  item({ id: 'acc-show-cc', group: 'access', title: 'Welcome aboard show with captions', detail: 'Captions on the screens either side of the stage.', placeId: 'arena', days: [1], times: ['20:30'], minutes: 60, support: ['captioned'] }),
-  item({ id: 'acc-show-sign', group: 'access', title: 'Stage show with sign-language interpreter', detail: 'Interpreter stands stage left. Seats reserved at the front.', placeId: 'arena', days: [2, 6], times: ['20:30'], minutes: 60, support: ['signed', 'captioned'] }),
-  item({ id: 'acc-cooking', group: 'access', title: 'Cooking demo transcript', detail: 'A written transcript is handed out at the door.', placeId: 'eclipse', days: SEA, times: ['11:00'], minutes: 60, support: ['transcript'] }),
-  item({ id: 'acc-comedy', group: 'access', title: 'Comedy night with captions', detail: 'Live captions on the screens.', placeId: 'live', days: [4, 7], times: ['21:30'], minutes: 45, support: ['captioned'] }),
+  item({ id: 'faith-solo', group: 'faith', title: 'Solo travellers’ meet-up', detail: 'Drinks and introductions.', placeId: 'live', when: ['embark', 'seaMid'], times: ['17:30'], minutes: 45 }),
+  item({ id: 'acc-show-cc', group: 'access', title: 'Welcome aboard show with captions', detail: 'Captions on the screens either side of the stage.', placeId: 'arena', when: ['embark'], times: ['20:30'], minutes: 60, support: ['captioned'] }),
+  item({ id: 'acc-show-sign', group: 'access', title: 'Stage show with sign-language interpreter', detail: 'Interpreter stands stage left. Seats reserved at the front.', placeId: 'arena', when: ['seaMid'], times: ['20:30'], minutes: 60, support: ['signed', 'captioned'] }),
+  item({ id: 'acc-cooking', group: 'access', title: 'Cooking demo transcript', detail: 'A written transcript is handed out at the door.', placeId: 'eclipse', when: SEA, times: ['11:00'], minutes: 60, support: ['transcript'] }),
+  item({ id: 'acc-comedy', group: 'access', title: 'Comedy night with captions', detail: 'Live captions on the screens.', placeId: 'live', when: ['last', 'portEven'], times: ['21:30'], minutes: 45, support: ['captioned'] }),
 ]
 
 export const itemById = (id: unknown): Item | undefined => ITEMS.find((i) => i.id === id)
+
+/** The days of the sailing an item runs on. */
+export const itemDays = (i: Item, days: readonly DayShape[]): number[] => days.map((_, n) => n + 1).filter((d) => runsOn(days, d, i.when))
 
 export const itemsIn = (group: Group): Item[] => ITEMS.filter((i) => i.group === group)
 
@@ -117,14 +121,15 @@ export type SelectionProblem = 'unknown' | 'badDay' | 'badTime' | 'badQty' | 'ag
 
 export let MAX_QTY = 6
 
-export function selectionProblem(s: Selection, age: number, taken = 0): SelectionProblem | null {
+/** `days` is the sailing's own days (port and date of each), which decide the days an item runs on. */
+export function selectionProblem(s: Selection, age: number, days: readonly DayShape[], taken = 0): SelectionProblem | null {
   const i = itemById(s.item)
   if (!i) return 'unknown'
   if (age < i.minAge) return 'age'
   if (i.mode === 'order') {
     if (s.day !== 0 || s.time !== '') return 'notBookable'
   } else {
-    if (!Number.isInteger(s.day) || !i.days.includes(s.day)) return 'badDay'
+    if (!Number.isInteger(s.day) || !runsOn(days, s.day, i.when)) return 'badDay'
     if (i.times.length > 0 ? !i.times.includes(s.time) : s.time !== '') return 'badTime'
   }
   const perPerson = i.mode === 'going' ? 1 : MAX_QTY

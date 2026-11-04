@@ -340,7 +340,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
     {
         var c = await LoadAsync(actor, number, false, ct);
         var v = DiningRules.VenueById(venueId);
-        if (v is null || v.WalkIn || !DiningRules.DinnerDays.Contains(day)) throw ApiException.Invalid("venue");
+        if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, day)) throw ApiException.Invalid("venue");
         var slots = DiningRules.SlotsFor(v.Id, c.Booking.SailingId, day);
         var result = new List<Slot>();
         foreach (var s in slots) result.Add(s with { Tables = Math.Max(0, s.Tables - await plan.CountTablesAsync(c.Booking.SailingId, v.Id, day, s.Time, null, ct)) });
@@ -362,7 +362,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var c = await LoadAsync(actor, number, true, ct);
         RequireDiningOpen(c);
         var v = DiningRules.VenueById(body?.VenueId);
-        if (v is null || v.WalkIn || !DiningRules.DinnerDays.Contains(body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
+        if (v is null || v.WalkIn || !DiningRules.IsDinnerDay(c.Timeline, body!.Day) || body.Time is null || !DiningRules.DinnerTimes.Contains(body.Time)) throw ApiException.Invalid("venue");
         var who = GuestsIn(c, body.Guests);
         if (who.Count > DiningRules.MaxParty) throw ApiException.Invalid("partySize");
         if (!who.Any(g => g.Age >= ExcursionRules.AdultAge)) throw ApiException.Conflict("age");
@@ -407,7 +407,7 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         RequireDiningOpen(c);
         var old = await FindTableAsync(c, id, ct);
         var v = DiningRules.VenueById(old.VenueId)!;
-        if (to is null || !DiningRules.DinnerDays.Contains(to.Day) || to.Time is null || !DiningRules.DinnerTimes.Contains(to.Time)) throw ApiException.Invalid("slot");
+        if (to is null || !DiningRules.IsDinnerDay(c.Timeline, to.Day) || to.Time is null || !DiningRules.DinnerTimes.Contains(to.Time)) throw ApiException.Invalid("slot");
         if (to.Day == old.Day && to.Time == old.Time) throw ApiException.Conflict("unchanged");
         if (DiningRules.DinnerPast(c.Timeline, old.Day, old.Time, c.Now) || DiningRules.DinnerPast(c.Timeline, to.Day, to.Time, c.Now)) throw ApiException.Conflict("closed");
         var existing = await plan.ListTablesAsync(c.Booking.BookingId, ct);

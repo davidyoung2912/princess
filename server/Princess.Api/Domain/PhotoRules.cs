@@ -17,21 +17,55 @@ public sealed record PhotographerSlot(int Day, string Time, string PlaceId, stri
 /// </summary>
 public static class PhotoRules
 {
-    public static readonly IReadOnlyList<PhotoSpot> Spots =
-    [
-        new("gangway", 1, "gangway", "Welcome aboard, the gangway", "12:30"),
-        new("formal1", 2, "portrait", "Formal night portraits, the Piazza", "18:00"),
-        new("cozumel", 3, "port", "Cozumel, back at the dock", "16:00"),
-        new("belize", 4, "port", "Belize City tender pier", "13:30"),
-        new("roatan", 5, "port", "Roatán, the cruise pier", "14:00"),
-        new("pool", 6, "pool", "Lido pool, sea day", "11:30"),
-        new("dining", 6, "dining", "Your table, Eclipse Dining Room", "19:15"),
-        new("formal2", 7, "portrait", "Second formal night portraits", "18:00"),
-    ];
+    /// <summary>Elegant evenings for a sailing of this many nights: none under 5, one for 5 to 6, then about one every three and a half nights.</summary>
+    public static int FormalCount(int nights) => nights < 5 ? 0 : nights < 7 ? 1 : (int)Math.Floor(nights / 3.5);
+
+    /// <summary>The days of the elegant evenings: the first on day 2, the last on the final night, the rest spread evenly between.</summary>
+    public static List<int> FormalDays(int nights)
+    {
+        var k = FormalCount(nights);
+        if (k == 0) return [];
+        if (k == 1) return [2];
+        return [.. Enumerable.Range(0, k).Select(i => 2 + (int)Math.Round(i * (nights - 2) / (double)(k - 1), MidpointRounding.AwayFromZero))];
+    }
+
+    private static string Short(string name) => name.Split(',')[0].Split('(')[0].Trim();
+
+    private static TimeOnly Before(TimeOnly t, int minutes) => t.AddMinutes(-minutes);
+
+    private static string Hm(TimeOnly t) => t.ToString("HH:mm");
+
+    /// <summary>
+    /// The photo spots of a sailing, worked out from its days: the gangway on day 1, portraits on each elegant evening, one spot back at the dock on every port call,
+    /// and the pool and the dining room on every sea day. Ids carry the day (and the port) so they stay the same for the life of the sailing.
+    /// </summary>
+    public static List<PhotoSpot> SpotsFor(Timeline timeline)
+    {
+        var spots = new List<PhotoSpot> { new("gangway", 1, "gangway", "Welcome aboard, the gangway", "12:30") };
+        var formal = FormalDays(timeline.Nights);
+        foreach (var d in timeline.Days)
+        {
+            if (formal.Contains(d.Day))
+                spots.Add(new($"formal-{d.Day}", d.Day, "portrait", formal[0] == d.Day ? "Formal night portraits, the Piazza" : "Formal night portraits", "18:00"));
+            if (d.Port == "sea")
+            {
+                spots.Add(new($"pool-{d.Day}", d.Day, "pool", "Lido pool, sea day", "11:30"));
+                spots.Add(new($"dining-{d.Day}", d.Day, "dining", "Your table, Eclipse Dining Room", "19:15"));
+            }
+            else if (timeline.IsCall(d))
+            {
+                var port = Itinerary.PortOf(d.Port);
+                var name = Short(port?.Name ?? d.Port);
+                var at = d.AllAboard is { } a ? Before(a, port?.Tender == true ? 150 : 60) : new TimeOnly(14, 0);
+                spots.Add(new($"port-{d.Day}-{d.Port}", d.Day, "port", port?.Tender == true ? $"{name}, the tender pier" : $"{name}, back at the dock", Hm(at)));
+            }
+        }
+        return [.. spots.OrderBy(s => s.Day)];
+    }
 
     /// <summary>Photos taken so far of the people on the booking.</summary>
-    public static List<Photo> PhotosFor(IReadOnlyList<Guid> party, int throughDay) =>
-        [.. Spots.Where(s => s.Day <= throughDay).Select(s => new Photo(s.Id, s.Day, s.Venue, s.Title, s.Time, [.. party]))];
+    public static List<Photo> PhotosFor(Timeline timeline, IReadOnlyList<Guid> party, int throughDay) =>
+        [.. SpotsFor(timeline).Where(s => s.Day <= throughDay).Select(s => new Photo(s.Id, s.Day, s.Venue, s.Title, s.Time, [.. party]))];
 
     public const long PriceEach = 1995, PriceFive = 7995, PriceAll = 14995;
 
@@ -60,14 +94,22 @@ public static class PhotoRules
 
     public const int RedownloadDays = 14;
 
-    /// <summary>The photographers' posted sessions.</summary>
-    public static readonly IReadOnlyList<PhotographerSlot> Photographers =
-    [
-        new(1, "12:00", "landing", "Welcome aboard photos at the gangway"),
-        new(2, "18:00", "piazza", "Formal night portraits"),
-        new(3, "15:30", "landing", "Back at the ship, Cozumel"),
-        new(6, "11:00", "lido-pool", "Pool and deck photos"),
-        new(6, "19:00", "eclipse", "Dining room table photos"),
-        new(7, "18:00", "piazza", "Second formal night portraits"),
-    ];
+    /// <summary>The photographers' posted sessions for a sailing, from the same days as the photo spots.</summary>
+    public static List<PhotographerSlot> PhotographersFor(Timeline timeline)
+    {
+        var slots = new List<PhotographerSlot> { new(1, "12:00", "landing", "Welcome aboard photos at the gangway") };
+        var formal = FormalDays(timeline.Nights);
+        foreach (var d in timeline.Days)
+        {
+            if (formal.Contains(d.Day)) slots.Add(new(d.Day, "18:00", "piazza", formal[0] == d.Day ? "Formal night portraits" : "Another formal night's portraits"));
+            if (d.Port == "sea")
+            {
+                slots.Add(new(d.Day, "11:00", "lido-pool", "Pool and deck photos"));
+                slots.Add(new(d.Day, "19:00", "eclipse", "Dining room table photos"));
+            }
+            else if (timeline.IsCall(d))
+                slots.Add(new(d.Day, Hm(Before(d.AllAboard ?? new TimeOnly(16, 30), 90)), "landing", $"Back at the ship, {Short(Itinerary.PortOf(d.Port)?.Name ?? d.Port)}"));
+        }
+        return [.. slots.OrderBy(s => s.Day).ThenBy(s => s.Time)];
+    }
 }

@@ -8,7 +8,10 @@ public sealed record SailingOfferDto(string Id, string Departure, bool Holiday, 
 
 public sealed record BookableSailingDto(string Id, string Departure, bool Holiday, FromPrice From, int DaysToDeparture, bool Open);
 
-public sealed record RoomOptionDto(string Id, long Fare, int Capacity, string? Includes);
+public sealed record RoomOptionDto(string Id, long Fare, int Capacity, string? Includes, string Name, bool Suite, int SizeSqFt, string Description);
+
+/// <summary>A room type of a sailing for browsing: the ship's own category with its sample fare (per person for two sharing) and per-night fare.</summary>
+public sealed record SampleRoomDto(string Id, string Name, bool Suite, int Capacity, int SizeSqFt, string Description, long PerNight, long Fare);
 
 public sealed record FareOptionDto(string Id, long Total, long Difference, bool Included, long PerNight);
 

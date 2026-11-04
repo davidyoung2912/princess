@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { ApiError } from '../../api/errors'
-import { chargeFor, endTime, itemById, placesLeft, type Item, type Selection } from '../../domain/catalogue'
+import { chargeFor, endTime, itemById, itemDays, placesLeft, type Item, type Selection } from '../../domain/catalogue'
 import { formatTime } from '../../domain/cruise'
 import { placeById } from '../../domain/deck'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
+import { itinerary } from '../../domain/sailings'
 import { t, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -46,7 +47,9 @@ const ordinal = (day: number) => t('ab.day', { day })
 
 /** A bookable or joinable item with its days, times and price, and the controls for its mode (ENT-03, SHP-01, SHP-04, SHP-06, ACS-04). */
 export function ItemCard({ item, mine, reload, canEdit, day }: { item: Item; mine: Selection[]; reload: () => void; canEdit: boolean; day: number | null }) {
-  const days = day === null ? item.days : item.days.filter((x) => x === day)
+  const sailing = useSailing()
+  const runs = itemDays(item, itinerary(sailing))
+  const days = day === null ? runs : runs.filter((x) => x === day)
   const [pick, setPick] = useState<{ day: number; time: string }>({ day: days[0] ?? 0, time: item.times[0] ?? '' })
   const [qty, setQty] = useState(1)
   const add = useAction(async (s: Selection) => { await api.aboard.selections.add(s); reload() })

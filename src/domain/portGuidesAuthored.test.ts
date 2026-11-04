@@ -59,8 +59,21 @@ describe('authored ashore content served with the ports (X0l)', () => {
   it('is valid in the served shape and only names ports that have a guide', () => {
     const p = normalizePorts({ version: 'test', ...json })
     expect(p).not.toBeNull()
-    expect(Object.keys(json.ashore)).toEqual(['fll', 'cozumel', 'belize', 'roatan'])
     for (const id of Object.keys(json.ashore)) expect(json.guides[id], id).toBeTruthy()
+  })
+  it('covers every Tier A port: the home port and the ports with knowledge', () => {
+    const tierA = ['fll', ...Object.keys(json.knowledge)]
+    expect(Object.keys(json.ashore).sort()).toEqual(tierA.sort())
+  })
+  it('gives every port with knowledge contacts, four plan B cards, entry papers and take-me-back words in its own language', () => {
+    for (const [id, k] of Object.entries<any>(json.knowledge)) {
+      const a = json.ashore[id]
+      expect(a.contacts.emergency, id).toBeTruthy()
+      expect(Object.keys(a.planB).sort(), id).toEqual(['energy', 'heat', 'rain', 'tender'])
+      expect(a.clearance.country, id).toBeTruthy()
+      if (k.lang) expect(a.takeMeBack.lang, id).toBe(k.lang)
+      expect(a.takeMeBack.say, id).toBeTruthy()
+    }
   })
   it('rejects a malformed plan B or entry row', () => {
     const bad = (mut: (a: Record<string, any>) => void) => { const c = JSON.parse(JSON.stringify(json)); mut(c.ashore); return normalizePorts({ version: 'test', ...c }) }

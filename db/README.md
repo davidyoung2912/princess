@@ -77,7 +77,7 @@ These are the places where the TypeScript and the schema did not line up one for
 - **Events:** `Kind` is the event's interest, `Ticketed` means `ExtraCents > 0`, and `StatusOverride` is empty (the plan-change scenario applies in code).
 - **Legal documents:** the version `2026-10` is stored as the number `202610`.
 - **Entitlements:** `LaundryBags` is 1 where the tier has the free-laundry perk. `PhotoIncluded` is true for the Premier package.
-- **Photos:** `PhotoCatalogue` is the eight photo spots (`Place` is the kind of spot); `Thumb` is empty because the source has no image files. `PhotoOptions.Count` 0 means every photo.
+- **Photos:** The photo spots come from the sailing's days in code (`PhotoRules.SpotsFor`), not a table. `PhotoOptions.Count` 0 means every photo.
 - **Content:** `Faqs` drop their "link" (the screen decides where to link); `HelpTopics` holds the muster drill text in five languages; `ContentBlocks` holds the ship profile text, the port guides (body is JSON), and the port facts, transport modes and hotels for getting to the terminal.
 - **Checklists:** labels are the English text from `src/i18n`. `Auto`/link/timing of checklist and last-night items stay in code.
 - **Not seeded** because the schema has no table for them: the deck plan places, dish prices, the drinks-package break-even figures and the weather table.

@@ -5,7 +5,7 @@ import { hasAccessibleCabins } from '../../domain/cabins'
 import { useMemory } from '../../hooks/useMemory'
 import { resizePeople } from '../../domain/booking'
 import { formatMoney } from '../../domain/money'
-import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
+import { categoryById, type CategoryId } from '../../domain/ship'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { t } from '../../i18n'
@@ -29,15 +29,16 @@ export function RoomStep({ draft, update, error }: StepProps) {
         {rooms.data && (
           <fieldset>
             <legend>{t('book.room.legend')}</legend>
-            {CATEGORIES.map((c) => {
-              const r = rooms.data!.find((x) => x.id === c.id)!
+            {rooms.data.map((r) => {
+              const c = categoryById(r.id)
+              const size = c ? `${c.code} · ${c.size} · ${c.view}` : r.sizeSqFt ? t('cat.roomSize', { size: r.sizeSqFt }) : ''
               return (
-                <label key={c.id} className="choice choice--top">
-                  <input type="radio" name="category" value={c.id} checked={draft.category === c.id} onChange={() => update(withCategory(c.id, r.capacity))} />
+                <label key={r.id} className="choice choice--top">
+                  <input type="radio" name="category" value={r.id} checked={draft.category === r.id} onChange={() => update(withCategory(r.id, r.capacity))} />
                   <span>
-                    <strong>{c.name}</strong> <span className="muted">{c.code} · {c.size} · {c.view}</span>
-                    <small>{c.summary}</small>
-                    {stepFreeNeeded && <small>{hasAccessibleCabins(c.id) ? t('book.room.accessYes') : t('book.room.accessNo')}</small>}
+                    <strong>{c?.name ?? r.name ?? r.id}</strong> {size && <span className="muted">{size}</span>}
+                    <small>{c?.summary ?? r.description ?? ''}</small>
+                    {stepFreeNeeded && c && <small>{hasAccessibleCabins(r.id) ? t('book.room.accessYes') : t('book.room.accessNo')}</small>}
                     <small>{t('book.room.from', { price: formatMoney(r.fare) })}{r.includes ? ` · ${t('book.room.includes')}` : ''}</small>
                   </span>
                 </label>

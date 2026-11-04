@@ -119,7 +119,7 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
     {
         var days = c.Timeline.Days;
         var all = new List<(long At, int Day, DateTime Local)>();
-        foreach (var n in PostCruiseRules.DeskDays)
+        foreach (var n in PostCruiseRules.DeskDays(c.Timeline))
         {
             var date = days[n - 1].Date;
             foreach (var time in PostCruiseRules.DeskTimes())

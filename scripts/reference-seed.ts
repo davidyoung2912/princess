@@ -19,7 +19,7 @@ import { DIFFICULTY } from '../src/domain/planning.ts'
 import { EVENTS } from '../src/domain/program.ts'
 import { ADD_ONS, unitPrice, upgradesFrom, upgradePrice } from '../src/domain/packages.ts'
 import { computeEntitlements } from '../src/domain/entitlements.ts'
-import { INCLUDED_WITH_PREMIER, PHOTOGRAPHERS, PRICES, SPOTS } from '../src/domain/photos.ts'
+import { INCLUDED_WITH_PREMIER, PRICES } from '../src/domain/photos.ts'
 import { CREW, DESK, deskTimes } from '../src/domain/postcruise.ts'
 import { FUTURE_DEPARTURES } from '../src/domain/pricing.ts'
 import { ADVISORS } from '../src/domain/ahead.ts'
@@ -166,10 +166,6 @@ export function buildTables(): Table[] {
     [t('Id', 'str'), t('Kind', 'str'), t('Title', 'str'), t('Place', 'str'), t('StartLocal', 'time'), t('DurationMin', 'int'), t('AgeGroup', 'str'), t('Interests', 'json'), t('Ticketed', 'bit'), t('Seats', 'int'), t('Deck', 'int'), t('ExtraCents', 'int'), t('AfterAllAboard', 'bit')],
     EVENTS.map((e) => [e.id, e.interest, e.title, e.placeId, clock(e.start), e.minutes, e.age, [e.interest], e.extra > 0, null, placeById(e.placeId)?.deck ?? null, e.extra, !!e.afterAllAboard]))
 
-  add('05-programme', 'ref.EventDays', ['EventId', 'SailingId', 'Day'],
-    [t('EventId', 'str'), t('SailingId', 'str'), t('Day', 'int'), t('StatusOverride', 'str')],
-    EVENTS.flatMap((e) => SAILINGS.flatMap((s) => e.days.map((day) => [e.id, s.id, day, null] as Cell[]))))
-
   add('05-programme', 'ref.Clubs', ['Id'],
     [t('Id', 'str'), t('Name', 'str'), t('MinAge', 'int'), t('MaxAge', 'int'), t('Deck', 'int'), t('OpenFrom', 'time'), t('OpenTo', 'time')],
     CLUBS.map((c) => [c.id, c.name, c.minAge, c.maxAge, placeById(c.placeId)!.deck, clock(c.opens), clock(c.closes)]))
@@ -222,14 +218,6 @@ export function buildTables(): Table[] {
       ...(['none', 'plus', 'premier'] as const).map((id) => entitlementRow('package', id, 'none', id))])
 
   // ---------------------------------------------------------------- 07 photos and people
-  add('07-photos-people', 'ref.PhotoCatalogue', ['Id'],
-    [t('Id', 'str'), t('Day', 'int'), t('Place', 'str'), t('Caption', 'str'), t('Thumb', 'str')],
-    SPOTS.map((s) => [s.id, s.day, s.venue, s.title, '']))
-
-  add('07-photos-people', 'ref.PhotographerSlots', ['Day', 'Place', 'StartLocal'],
-    [t('Day', 'int'), t('Place', 'str'), t('StartLocal', 'time')],
-    PHOTOGRAPHERS.map((p) => [p.day, p.placeId, clock(p.time)]))
-
   add('07-photos-people', 'ref.PhotoOptions', ['Id'],
     [t('Id', 'str'), t('Cents', 'int'), t('PhotoCount', 'int'), t('Description', 'str')],
     [['each', PRICES.each, 1, 'One photo'], ['five', PRICES.five, 5, 'A pack of five photos'], ['all', PRICES.all, 0, `Every photo (the Premier package includes ${INCLUDED_WITH_PREMIER})`]])

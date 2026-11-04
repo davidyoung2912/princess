@@ -83,7 +83,7 @@ USING (VALUES
   (N'ruinsShoes', N'Sturdy shoes and a small day bag', N'{"group":"beach","why":"For the temple or ruins visit: steps, stones and no shade.","always":false}'),
   (N'closedShoes', N'Closed shoes you can get muddy', N'{"group":"beach","why":"Your zip-line or cave tour needs them.","always":false}'),
   (N'tenderBag', N'A small bag with a zip', N'{"group":"beach","why":"Going ashore by tender at Belize City: you will step across a gap, so keep both hands free.","always":false}'),
-  (N'meds', N'Prescription medicines in their own bottles, in hand luggage', N'{"group":"health","why":"Pack extra for two days. Do not put them in checked bags.","always":true}'),
+  (N'meds', N'Prescription medicines in their own bottles, in hand luggage', N'{"group":"health","why":"Pack 11 days of each, which is every day aboard and a spare for delays. Do not put them in checked bags.","always":true}'),
   (N'firstAid', N'Seasickness tablets and a small first-aid kit', N'{"group":"health","why":"The medical centre charges for these.","always":true}'),
   (N'cpap', N'CPAP machine, distilled water and an extension cord', N'{"group":"health","why":"Staterooms have limited sockets. Ask for a power strip in your assistance request.","always":false}'),
   (N'oxygen', N'Portable oxygen concentrator and spare batteries', N'{"group":"health","why":"Carry them yourself. Tell the ship in advance.","always":false}'),

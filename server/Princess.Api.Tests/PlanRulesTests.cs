@@ -123,7 +123,7 @@ public class PlanRulesTests
         var a = DiningRules.SlotsFor("crown", Sailing, 3);
         Assert.Equal(a, DiningRules.SlotsFor("crown", Sailing, 3));
         Assert.Equal(DiningRules.DinnerTimes, a.Select(s => s.Time));
-        int Full(string time) => DiningRules.DinnerDays.SelectMany(n => new[] { "crown", "sabatini", "catch", "love" }.Select(v => DiningRules.SlotsFor(v, Sailing, n).First(s => s.Time == time))).Count(s => s.Tables == 0);
+        int Full(string time) => DiningRules.DinnerDays(Timeline.Legacy(Departure)).SelectMany(n => new[] { "crown", "sabatini", "catch", "love" }.Select(v => DiningRules.SlotsFor(v, Sailing, n).First(s => s.Time == time))).Count(s => s.Tables == 0);
         Assert.True(Full("19:00") + Full("19:30") > Full("17:30") + Full("18:00"));
         Assert.Contains(a, s => s.Tables > 0);
     }

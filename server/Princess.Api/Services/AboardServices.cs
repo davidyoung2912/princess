@@ -30,7 +30,7 @@ public sealed class SelectionService(ScopeLoader scopes, IAboardStore store)
         Shipboard.RequireOpen(c);
         var ask = new SelectionAsk(body?.Item, body?.Day ?? 0, body?.Time ?? "", body?.Qty ?? 0);
         var item = CatalogueRules.ById(ask.Item);
-        var problem = CatalogueRules.Problem(ask, Shipboard.AgeOf(c, actor), item is null ? 0 : CatalogueRules.TakenByOthers(item, ask.Day, ask.Time ?? ""));
+        var problem = CatalogueRules.Problem(ask, Shipboard.AgeOf(c, actor), c.Timeline, item is null ? 0 : CatalogueRules.TakenByOthers(item, ask.Day, ask.Time ?? ""));
         if (problem == "soldOut") throw ApiException.Conflict("soldOut");
         if (problem is not null) throw ApiException.Invalid(problem);
         var time = ask.Time ?? "";

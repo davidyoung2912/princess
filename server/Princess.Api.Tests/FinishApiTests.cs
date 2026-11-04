@@ -673,7 +673,7 @@ public class FinishApiTests : JourneyWorld
     private void OpenDesk()
     {
         var days = Itinerary.Days(new DateOnly(2027, 3, 21));
-        foreach (var n in PostCruiseRules.DeskDays)
+        foreach (var n in PostCruiseRules.DeskDays(Timeline.Legacy(new DateOnly(2027, 3, 21))))
             foreach (var t in PostCruiseRules.DeskTimes())
                 F.Finish.Slots[days[n - 1].Date.ToDateTime(t)] = 1;
     }

@@ -9,22 +9,22 @@ public static class ShowRules
     public const int MaxSeats = 8;
     private const int Adult = 18;
 
-    private sealed record Def(string Id, int[] Days, string Start, string Title, string PlaceId, string Age, int Capacity, bool AfterAllAboard);
+    private sealed record Def(string Id, string[] When, string Start, string Title, string PlaceId, string Age, int Capacity, bool AfterAllAboard);
 
-    private static readonly int[] Sea = [2, 6, 7];
-    private static readonly int[] PortDays = [3, 4, 5];
+    private static readonly string[] Sea = ["sea"];
+    private static readonly string[] PortDays = ["port"];
 
     private static readonly Def[] Defs =
     [
-        new("welcome-show", [1], "20:30", "Welcome aboard show", "arena", "all", 900, false),
+        new("welcome-show", ["embark"], "20:30", "Welcome aboard show", "arena", "all", 900, false),
         new("cooking", Sea, "11:00", "Cooking demo with the executive chef", "eclipse", "all", 40, false),
-        new("art-talk", [2, 6], "15:00", "Art talk: the ship’s collection", "piazza", "all", 80, false),
-        new("spa-tour", [2, 6], "11:30", "Spa tour and tasting", "lotus", "adults", 20, false),
-        new("stage-show", [2, 6, 7], "20:30", "Main stage production", "arena", "all", 700, false),
-        new("stage-early", [2], "18:30", "Main stage production, early show", "arena", "all", 700, false),
-        new("dome-show", [2, 3, 5, 6], "22:00", "Acrobatic show in the Dome", "dome", "all", 300, false),
-        new("wine", [2, 6], "16:00", "Wine tasting", "bellinis", "adults", 24, false),
-        new("farewell-show", [7], "19:30", "Farewell show", "arena", "all", 900, false),
+        new("art-talk", ["seaMid"], "15:00", "Art talk: the ship’s collection", "piazza", "all", 80, false),
+        new("spa-tour", ["seaMid"], "11:30", "Spa tour and tasting", "lotus", "adults", 20, false),
+        new("stage-show", ["sea"], "20:30", "Main stage production", "arena", "all", 700, false),
+        new("stage-early", ["firstSea"], "18:30", "Main stage production, early show", "arena", "all", 700, false),
+        new("dome-show", ["seaMid", "portOdd"], "22:00", "Acrobatic show in the Dome", "dome", "all", 300, false),
+        new("wine", ["seaMid"], "16:00", "Wine tasting", "bellinis", "adults", 24, false),
+        new("farewell-show", ["last"], "19:30", "Farewell show", "arena", "all", 900, false),
         new("port-show", PortDays, "20:30", "Main stage production", "arena", "all", 700, true),
         new("port-quiet", PortDays, "17:45", "Quiet hour in the spa", "lotus", "adults", 12, true),
     ];
@@ -63,7 +63,7 @@ public static class ShowRules
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);
         var list = new List<ShowEvent>();
-        foreach (var d in Defs.Where(d => d.Days.Contains(day)))
+        foreach (var d in Defs.Where(d => DayKinds.Runs(timeline, day, d.When)))
         {
             var start = Itinerary.LocalToUtc(date, TimeOnly.ParseExact(d.Start, "HH:mm"), zone);
             if (d.AfterAllAboard && aboard is { } a && start < a) continue;

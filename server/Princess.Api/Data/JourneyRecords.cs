@@ -176,6 +176,7 @@ public sealed class SailingRow
     public bool IsHoliday { get; set; }
     public bool IsReference { get; set; }
     public int Nights { get; set; } = 7;
+    public string ShipId { get; set; } = "sun-princess";
     /// <summary><c>ref.Sailings.BookingOpen</c>: a manual close. "One day to go" is worked out from the date.</summary>
     public bool BookingOpen { get; set; } = true;
 

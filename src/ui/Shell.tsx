@@ -25,6 +25,7 @@ import { StanleyChips } from './ai/StanleyChips'
 import { stanleyLevelFor } from '../settings/settings'
 import { useSettings } from '../hooks/useSettings'
 import { PageHeader } from './PageHeader'
+import { BrowseDepthNote } from './BrowseDepthNote'
 import { TipCard } from './TipCard'
 import { StanleyCoach } from './ai/StanleyCoach'
 import { tipIdFor } from '../settings/tips'
@@ -151,6 +152,7 @@ export function Shell() {
       <UpdateBanner />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} back />}
+        {route && !route.public && <BrowseDepthNote />}
         {route && !route.public && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>

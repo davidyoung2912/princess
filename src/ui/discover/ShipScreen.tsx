@@ -3,7 +3,7 @@ import { t, th } from '../../i18n'
 import { CATEGORIES, ABOARD_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { browseSailings, shipSailingSummary } from '../../domain/catalogueBrowse'
 import { catalogueShips, shipById } from '../../domain/shipCatalogue'
-import { useShip } from '../../hooks/useShipCatalogue'
+import { useShip, useShipRooms } from '../../hooks/useShipCatalogue'
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useFavourites } from '../../hooks/useFavourites'
 import { Banner } from '../Banner'
@@ -26,6 +26,7 @@ export function ShipScreen() {
   const current = useShip()
   const ship = id ? shipById(id) : current
   const favourites = useFavourites()
+  const browseRooms = useShipRooms(ship && ship.id !== ABOARD_SHIP.id ? ship.id : undefined)
   if (!ship) {
     return (
       <div className="page">
@@ -90,6 +91,25 @@ export function ShipScreen() {
             ))}
           </ul>
           <p className="muted">{t('discover.accessibleRooms', { count: ABOARD_SHIP.accessibleStaterooms })}</p>
+        </section>
+      )}
+
+      {!isSun && (
+        <section aria-labelledby="rooms-b-h">
+          <h2 id="rooms-b-h">{th('cat.ship.roomsBrowse')}</h2>
+          {browseRooms === null
+            ? <p role="status" className="muted">{t('cat.ship.roomsLoading')}</p>
+            : (
+              <ul className="card-grid">
+                {browseRooms.map((r) => (
+                  <li key={r.id} className="card">
+                    <h3>{r.name}</h3>
+                    {r.description && <p>{r.description}</p>}
+                    <p className="muted">{[r.sizeSqFt > 0 ? t('cat.roomSize', { size: r.sizeSqFt }) : '', t('cat.roomSleeps', { count: r.capacity })].filter(Boolean).join(' · ')}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
         </section>
       )}
 

@@ -65,7 +65,7 @@ public sealed class OnboardService(
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         var ev = ProgramRules.ById(eventId) ?? throw ApiException.Invalid("event");
-        if (body is null || !ev.Days.Contains(body.Day)) throw ApiException.Invalid("day");
+        if (body is null || !DayKinds.Runs(c.Timeline, body.Day, ev.When)) throw ApiException.Invalid("day");
         await store.SetPlanAsync(actor.Id, c.Booking.SailingId, ev.Id, body.Day, body.On, ct);
         return [.. (await store.ListPlanAsync(actor.Id, c.Booking.SailingId, ct)).Where(r => r.Day == body.Day).Select(r => r.EventId)];
     }

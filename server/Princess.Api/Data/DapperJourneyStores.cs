@@ -300,9 +300,11 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
     public Task<List<SailingRow>> ListSailingsAsync(CancellationToken ct) => sailings.GetOrLoadAsync(async () =>
     {
         await using var c = await db.OpenAsync(ct);
-        var rows = (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
+        var rows = (await c.QueryAsync<SailingRow>(Sql.Cmd("SELECT Id, Departure, IsHoliday, IsReference, Nights, BookingOpen, ShipId FROM ref.Sailings ORDER BY Departure, Id", null, null, ct))).ToList();
         var fares = await c.QueryAsync<(string SailingId, string CategoryId, long PerNightCents)>(Sql.Cmd("SELECT SailingId, CategoryId, PerNightCents FROM ref.SailingFares", null, null, ct));
         FareBook.Set(rows.Select(r => (r.Id, r.Nights, r.BookingOpen)), fares);   // price and length live in data: Pricing reads them from here
+        var cats = await c.QueryAsync<(string Id, string ShipId, string Name, bool IsSuite, int Capacity, int SizeSqFt, string Description, int SortOrder)>(Sql.Cmd("SELECT Id, ShipId, Name, IsSuite, Capacity, SizeSqFt, Description, SortOrder FROM ref.CabinCategories", null, null, ct));
+        FareBook.SetShips(rows.Select(r => (r.Id, r.ShipId)), cats.Select(x => new ShipCategory(x.Id, x.ShipId, x.Name, x.IsSuite, x.Capacity, x.SizeSqFt, x.Description, x.SortOrder)));
         var dayRows = await c.QueryAsync<(string SailingId, int Day, DateTime Date, string PortId, TimeSpan? Arrive, TimeSpan? Depart, TimeSpan? AllAboard, int? Hours, TimeSpan? At)>(Sql.Cmd(
             "SELECT SailingId, [Day], [Date], PortId, ArriveLocal AS Arrive, DepartLocal AS Depart, AllAboardLocal AS AllAboard, ClockChangeHours AS Hours, ClockChangeAtLocal AS [At] FROM ref.ItineraryDays", null, null, ct));
         var portRows = await c.QueryAsync<(string Id, string Name, string TimeZone, bool Tender, decimal? Lat, decimal? Lon)>(Sql.Cmd("SELECT Id, Name, TimeZone, Tender, Lat, Lon FROM ref.Ports", null, null, ct));

@@ -31,8 +31,8 @@ internal static class Shipboard
         if (!IsAboard(c) || !c.Confirmed) throw ApiException.Conflict("closed");
     }
 
-    /// <summary>The cruise day, 1 to 8, that a moment falls on.</summary>
-    public static int DayAt(Scope c, DateTime at) => Math.Clamp(FolioRules.CruiseDay(c.Timeline, at), 1, 8);
+    /// <summary>The cruise day, 1 to the last day of the sailing, that a moment falls on.</summary>
+    public static int DayAt(Scope c, DateTime at) => Math.Clamp(FolioRules.CruiseDay(c.Timeline, at), 1, c.Timeline.Days.Count);
 
     /// <summary>Ship time as "HH:mm".</summary>
     public static string ShipTime(Scope c) => Itinerary.LocalAt(c.Now, c.Timeline.ShipZoneAt(c.Now)).Time.ToString("HH:mm");

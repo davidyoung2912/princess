@@ -2,6 +2,7 @@ import type { Cents } from './money'
 import { placeById } from './deck'
 import { allAboardEpoch, itinerary, shipZoneOnDate, type Sailing } from './sailings'
 import { zonedToEpoch } from './timezones'
+import { runsOn, type DayKind } from './dayKinds'
 
 /** The daily programme ("Patter", OB-02, OB-09): what is on, where, and for whom. Titles, times and prices are authored concept values. */
 export type AgeGroup = 'all' | 'kids' | 'teens' | 'adults'
@@ -12,8 +13,8 @@ export const EVENT_INTERESTS: readonly EventInterest[] = ['shows', 'music', 'gam
 
 export interface ShipEvent {
   id: string
-  /** Days of the cruise it runs on, 1 to 8. */
-  days: readonly number[]
+  /** The kinds of day it runs on (any one is enough): the programme fits a sailing of any length. */
+  when: readonly DayKind[]
   /** Ship time, "HH:MM". */
   start: string
   minutes: number
@@ -27,39 +28,39 @@ export interface ShipEvent {
   afterAllAboard?: boolean
 }
 
-const ev = (id: string, days: readonly number[], start: string, minutes: number, title: string, placeId: string, age: AgeGroup, interest: EventInterest, extra: Cents = 0): ShipEvent => ({ id, days, start, minutes, title, placeId, age, interest, extra })
+const ev = (id: string, when: readonly DayKind[], start: string, minutes: number, title: string, placeId: string, age: AgeGroup, interest: EventInterest, extra: Cents = 0): ShipEvent => ({ id, when, start, minutes, title, placeId, age, interest, extra })
 
-const SEA = [2, 6, 7]
-const PORT = [3, 4, 5]
-const NIGHTS = [1, 2, 3, 4, 5, 6, 7]
+const SEA: DayKind[] = ['sea']
+const PORT: DayKind[] = ['port']
+const NIGHTS: DayKind[] = ['night']
 
 export const EVENTS: readonly ShipEvent[] = [
-  ev('muster', [1], '14:00', 30, 'Muster drill: go to your station', 'piazza', 'all', 'learning'),
-  ev('sailaway', [1], '15:00', 60, 'Sail-away party', 'lido-pool', 'all', 'music'),
-  ev('welcome-piazza', [1], '19:00', 45, 'Welcome music in the Piazza', 'piazza', 'all', 'music'),
-  ev('welcome-show', [1], '20:30', 60, 'Welcome aboard show', 'arena', 'all', 'shows'),
-  ev('kids-open-house', [1], '16:30', 60, 'Kids’ club open house', 'firefly', 'kids', 'family'),
-  ev('teen-open-house', [1], '17:00', 45, 'Teen lounge meet-up', 'underground', 'teens', 'family'),
+  ev('muster', ['embark'], '14:00', 30, 'Muster drill: go to your station', 'piazza', 'all', 'learning'),
+  ev('sailaway', ['embark'], '15:00', 60, 'Sail-away party', 'lido-pool', 'all', 'music'),
+  ev('welcome-piazza', ['embark'], '19:00', 45, 'Welcome music in the Piazza', 'piazza', 'all', 'music'),
+  ev('welcome-show', ['embark'], '20:30', 60, 'Welcome aboard show', 'arena', 'all', 'shows'),
+  ev('kids-open-house', ['embark'], '16:30', 60, 'Kids’ club open house', 'firefly', 'kids', 'family'),
+  ev('teen-open-house', ['embark'], '17:00', 45, 'Teen lounge meet-up', 'underground', 'teens', 'family'),
 
   ev('stretch', SEA, '08:00', 45, 'Morning stretch', 'fitness', 'adults', 'wellness'),
   ev('trivia', SEA, '10:30', 45, 'Team trivia', 'live', 'all', 'games'),
   ev('cooking', SEA, '11:00', 60, 'Cooking demo with the executive chef', 'eclipse', 'all', 'learning'),
   ev('bingo', SEA, '14:00', 60, 'Bingo', 'live', 'adults', 'games', 2500),
-  ev('art-talk', [2, 6], '15:00', 45, 'Art talk: the ship’s collection', 'piazza', 'all', 'learning'),
+  ev('art-talk', ['seaMid'], '15:00', 45, 'Art talk: the ship’s collection', 'piazza', 'all', 'learning'),
   ev('craft', SEA, '10:00', 60, 'Craft time', 'firefly', 'kids', 'family'),
   ev('tween-games', SEA, '13:30', 60, 'Tween games afternoon', 'neon-grove', 'kids', 'family'),
   ev('teen-night', SEA, '21:30', 90, 'Teen dance night', 'underground', 'teens', 'nightlife'),
-  ev('spa-tour', [2, 6], '11:30', 30, 'Spa tour and tasting', 'lotus', 'adults', 'wellness'),
-  ev('stage-show', [2, 6, 7], '20:30', 60, 'Main stage production', 'arena', 'all', 'shows'),
-  ev('stage-early', [2], '18:30', 60, 'Main stage production, early show', 'arena', 'all', 'shows'),
+  ev('spa-tour', ['seaMid'], '11:30', 30, 'Spa tour and tasting', 'lotus', 'adults', 'wellness'),
+  ev('stage-show', ['sea'], '20:30', 60, 'Main stage production', 'arena', 'all', 'shows'),
+  ev('stage-early', ['firstSea'], '18:30', 60, 'Main stage production, early show', 'arena', 'all', 'shows'),
   ev('jazz', NIGHTS, '21:30', 90, 'Live jazz', 'crooners', 'adults', 'music'),
   ev('piazza-band', NIGHTS, '17:30', 45, 'Piazza live band', 'piazza', 'all', 'music'),
-  ev('dome-show', [2, 3, 5, 6], '22:00', 45, 'Acrobatic show in the Dome', 'dome', 'all', 'shows'),
-  ev('dome-dj', [2, 6, 7], '23:00', 90, 'Dance party in the Dome', 'dome', 'adults', 'nightlife'),
+  ev('dome-show', ['seaMid', 'portOdd'], '22:00', 45, 'Acrobatic show in the Dome', 'dome', 'all', 'shows'),
+  ev('dome-dj', ['sea'], '23:00', 90, 'Dance party in the Dome', 'dome', 'adults', 'nightlife'),
   ev('movie', NIGHTS, '20:00', 120, 'Movie under the stars', 'lido-pool', 'all', 'family'),
-  ev('wine', [2, 6], '16:00', 60, 'Wine tasting', 'bellinis', 'adults', 'learning', 3500),
-  ev('farewell-show', [7], '19:30', 60, 'Farewell show', 'arena', 'all', 'shows'),
-  ev('packing', [7], '15:00', 40, 'Disembarkation talk', 'piazza', 'all', 'learning'),
+  ev('wine', ['seaMid'], '16:00', 60, 'Wine tasting', 'bellinis', 'adults', 'learning', 3500),
+  ev('farewell-show', ['last'], '19:30', 60, 'Farewell show', 'arena', 'all', 'shows'),
+  ev('packing', ['last'], '15:00', 40, 'Disembarkation talk', 'piazza', 'all', 'learning'),
 
   { ...ev('port-lecture', PORT, '19:00', 40, 'Tomorrow’s port: talk and questions', 'piazza', 'all', 'learning'), afterAllAboard: true },
   { ...ev('port-music', PORT, '18:00', 60, 'Sail-away steel drums', 'lido-pool', 'all', 'music'), afterAllAboard: true },
@@ -92,13 +93,14 @@ export interface DatedEvent extends ShipEvent {
 
 /** The events on a day of the cruise, in time order, with any mid-day changes applied when `changes` is on. */
 export function eventsOn(s: Sailing, day: number, changes: boolean): DatedEvent[] {
-  const date = itinerary(s)[day - 1]?.date
+  const days = itinerary(s)
+  const date = days[day - 1]?.date
   if (!date) return []
   const zone = shipZoneOnDate(s, date)
   const aboard = allAboardEpoch(s, day)
   const out: DatedEvent[] = []
   for (const e of EVENTS) {
-    if (!e.days.includes(day)) continue
+    if (!runsOn(days, day, e.when)) continue
     const change = changes ? PLAN_CHANGES.find((c) => c.eventId === e.id && c.day === day) : undefined
     const start = change?.kind === 'moved' && change.start ? change.start : e.start
     const startAt = zonedToEpoch(date, start, zone)

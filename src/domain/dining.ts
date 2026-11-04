@@ -49,8 +49,8 @@ export const SEATINGS: Record<'early' | 'late', string> = { early: '17:00', late
 export const DINING_PLAN: Partial<Record<PersonaId, DiningPlan>> = { gerald: 'early' }
 export const planOf = (id: PersonaId): DiningPlan => DINING_PLAN[id] ?? 'anytime'
 
-/** Dinner nights a reservation can be made for (embarkation evening to the second-last night). */
-export const DINNER_DAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7]
+/** Dinner nights a reservation can be made for: embarkation evening to the last night, whatever the length of the sailing (`days` is the sailing's day count). */
+export const dinnerDays = (days: number): number[] => Array.from({ length: Math.max(0, days - 1) }, (_, i) => i + 1)
 /** Dinner times offered, 5:30 pm to 8:30 pm. */
 export const DINNER_TIMES: readonly string[] = ['17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30']
 

@@ -36,6 +36,9 @@ public static class ReferenceEndpoints
                 await ItineraryAsync(trips, catalogue, id, ct) is { } days ? Results.Ok(days) : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("The days of one sailing: date, port (or `sea`), arrival, all-aboard and departure times local to the port, any change of the ship's clock (`clockChangeHours` at `clockChangeAt`) and the dress code for the evening. Not found for an unknown sailing.");
 
+        api.MapGet("/reference/sailings/{id}/rooms", async (string id, DiscoverService svc, CancellationToken ct) => Results.Ok(await svc.SampleRoomsAsync(id, ct)))
+            .WithTags("Reference").WithSummary("The room types of one sailing's ship with sample fares (per person for two sharing, and per night), open for booking or not. 400 for a sailing with no prices.");
+
         api.MapGet("/reference/catalogue/ships", async (ICatalogueStore catalogue, CancellationToken ct) => Results.Ok(ShipCatalogueRules.Ships(await catalogue.GetAsync(ct))))
             .WithTags("Reference").WithSummary("Every ship in the catalogue: facts, class, intro and highlights (`profile`), and its depth (`aboard` has decks, cabins, menus and programme in the app; `browse` has facts and stateroom categories only). `version` changes when any of it does.");
 

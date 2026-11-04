@@ -6,7 +6,9 @@ import { rangeOf, browseSailingById, nextLegOf, browseSailings, portsOf, seaDays
 import type { Sailing } from '../../domain/sailings'
 import { hasSailingDays, sailingById } from '../../domain/sailings'
 import { CATEGORIES, categoryById, type CategoryId } from '../../domain/ship'
-import { loadItinerary } from '../../domain/shipCatalogue'
+import { loadItinerary, shipOf } from '../../domain/shipCatalogue'
+import { useSailingRooms } from '../../hooks/useShipCatalogue'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAsync } from '../../hooks/useAsync'
 import { useCatalogue } from '../../hooks/useCatalogue'
@@ -20,11 +22,45 @@ import { PriceUnitLine } from '../delights/Delights'
 import { DayStrip, LandHolidayCompare, OnThatDate } from '../delights/DiscoverDelights'
 import { CataloguePrice, DataStatusNote, SailingFactsList } from './catalogueParts'
 
+export interface RoomChoice { id: string; name: string; summary: string }
+
+/** The room types to choose from for a sailing: the ship's own as the server serves them, or Sun Princess's six while a Sun sailing's answer is on its way. Empty while another ship's load. */
+function useRoomOptions(sailingId: string): RoomChoice[] {
+  const rooms = useSailingRooms(sailingId)
+  if (rooms) return rooms.map((r) => ({ id: r.id, name: r.name, summary: r.description || categoryById(r.id)?.summary || '' }))
+  return shipOf(sailingId).depth === 'browse' ? [] : CATEGORIES.map((c) => ({ id: c.id, name: c.name, summary: c.summary }))
+}
+
+/** The sample stateroom prices of a sailing that is not open for booking yet: each of the ship's room types with a per-person fare for two sharing. */
+function SampleRooms({ sailingId, nights }: { sailingId: string; nights: number }) {
+  const rooms = useSailingRooms(sailingId)
+  if (!rooms || rooms.length === 0) return null
+  return (
+    <section aria-labelledby="rooms-h">
+      <h2 id="rooms-h">{th('cat.roomsTitle')}</h2>
+      <ul className="card-grid">
+        {rooms.map((r) => (
+          <li key={r.id} className="card">
+            <h3>{r.name}</h3>
+            {r.description && <p>{r.description}</p>}
+            <p className="muted">{[r.sizeSqFt > 0 ? t('cat.roomSize', { size: r.sizeSqFt }) : '', t('cat.roomSleeps', { count: r.capacity })].filter(Boolean).join(' · ')}</p>
+            {r.fare !== undefined && <p><strong>{t('cat.roomFrom', { price: formatMoney(r.fare) })}</strong> <span className="muted">{t('cat.roomFor', { nights })}</span></p>}
+          </li>
+        ))}
+      </ul>
+      <Card info><p>{t('cat.roomsNote')}</p></Card>
+    </section>
+  )
+}
+
 /** The price estimate for a sailing that can be booked: a room type and party size give an all-in quote. */
 function Estimate({ sailing, nights }: { sailing: Sailing; nights: number }) {
-  const [category, setCategory] = useState<CategoryId>('balcony')
+  const options = useRoomOptions(sailing.id)
+  const [picked, setPicked] = useState<CategoryId>('balcony')
+  const category = options.some((o) => o.id === picked) ? picked : (options.find((o) => o.id === 'balcony') ?? options[0])?.id ?? ''
+  const setCategory = setPicked
   const [guests, setGuests] = useState(2)
-  const quote = useAsync(() => api.discover.quote(sailing.id, category, guests), [sailing.id, category, guests])
+  const quote = useAsync(() => (category ? api.discover.quote(sailing.id, category, guests) : Promise.resolve(null)), [sailing.id, category, guests])
   return (
     <section aria-labelledby="price-h">
       <h2 id="price-h">{th('discover.estimate')}</h2>
@@ -32,9 +68,9 @@ function Estimate({ sailing, nights }: { sailing: Sailing; nights: number }) {
       <div className="field">
         <label htmlFor="room">{t('discover.roomType')}</label>
         <select id="room" value={category} onChange={(e) => setCategory(e.target.value as CategoryId)}>
-          {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {options.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <p className="field__hint">{categoryById(category)!.summary}</p>
+        <p className="field__hint">{options.find((o) => o.id === category)?.summary ?? ''}</p>
       </div>
       <div className="field">
         <label htmlFor="guests">{t('discover.guests')}</label>
@@ -122,6 +158,7 @@ export function SailingScreen() {
             <Card info><p>{t('cat.priceNote')}</p></Card>
           </section>
         )}
+      {!entry.bookingOpen && <SampleRooms sailingId={entry.id} nights={entry.nights} />}
 
       {daysReady ? (
         <>

@@ -8,37 +8,6 @@ SET NOCOUNT ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
--- ref.PhotoCatalogue: 8 rows
-MERGE ref.PhotoCatalogue AS t
-USING (VALUES
-  (N'gangway', 1, N'gangway', N'Welcome aboard, the gangway', N''),
-  (N'formal1', 2, N'portrait', N'Formal night portraits, the Piazza', N''),
-  (N'cozumel', 3, N'port', N'Cozumel, back at the dock', N''),
-  (N'belize', 4, N'port', N'Belize City tender pier', N''),
-  (N'roatan', 5, N'port', N'Roat' + NCHAR(225) + N'n, the cruise pier', N''),
-  (N'pool', 6, N'pool', N'Lido pool, sea day', N''),
-  (N'dining', 6, N'dining', N'Your table, Eclipse Dining Room', N''),
-  (N'formal2', 7, N'portrait', N'Second formal night portraits', N'')
-) AS s ([Id], [Day], [Place], [Caption], [Thumb])
-ON t.[Id] = s.[Id]
-WHEN MATCHED THEN UPDATE SET t.[Day] = s.[Day], t.[Place] = s.[Place], t.[Caption] = s.[Caption], t.[Thumb] = s.[Thumb]
-WHEN NOT MATCHED THEN INSERT ([Id], [Day], [Place], [Caption], [Thumb]) VALUES (s.[Id], s.[Day], s.[Place], s.[Caption], s.[Thumb]);
-GO
-
--- ref.PhotographerSlots: 6 rows
-MERGE ref.PhotographerSlots AS t
-USING (VALUES
-  (1, N'landing', CAST('12:00:00' AS TIME(0))),
-  (2, N'piazza', CAST('18:00:00' AS TIME(0))),
-  (3, N'landing', CAST('15:30:00' AS TIME(0))),
-  (6, N'lido-pool', CAST('11:00:00' AS TIME(0))),
-  (6, N'eclipse', CAST('19:00:00' AS TIME(0))),
-  (7, N'piazza', CAST('18:00:00' AS TIME(0)))
-) AS s ([Day], [Place], [StartLocal])
-ON t.[Day] = s.[Day] AND t.[Place] = s.[Place] AND t.[StartLocal] = s.[StartLocal]
-WHEN NOT MATCHED THEN INSERT ([Day], [Place], [StartLocal]) VALUES (s.[Day], s.[Place], s.[StartLocal]);
-GO
-
 -- ref.PhotoOptions: 3 rows
 MERGE ref.PhotoOptions AS t
 USING (VALUES

@@ -206,6 +206,11 @@ export interface RoomOption {
   capacity: number
   /** The package the room type includes, if any. */
   includes: FareId | null
+  /** The ship's own words for the room type (the server sends them for every ship). */
+  name?: string
+  suite?: boolean
+  sizeSqFt?: number
+  description?: string
 }
 
 export interface FareOption {

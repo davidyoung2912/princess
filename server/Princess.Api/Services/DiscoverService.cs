@@ -37,7 +37,21 @@ public sealed class DiscoverService(ITripStore trips, IBookingStore bookings, IC
     public async Task<List<RoomOptionDto>> RoomsAsync(string sailingId, CancellationToken ct)
     {
         await SailingAsync(sailingId, ct);
-        return Pricing.Categories.Select(c => new RoomOptionDto(c.Id, Pricing.FareFor(sailingId, c.Id)!.Value, Pricing.CapacityOf(c.Id), Pricing.FareIncluded(c.Id))).ToList();
+        return [.. Pricing.CategoriesOf(sailingId).Select(c => (Cat: c, Fare: Pricing.FareFor(sailingId, c.Id))).Where(x => x.Fare is not null)
+            .Select(x => new RoomOptionDto(x.Cat.Id, x.Fare!.Value, Pricing.CapacityOf(x.Cat.Id), Pricing.FareIncluded(x.Cat.Id), x.Cat.Name, x.Cat.Suite, FareBook.Category(x.Cat.Id)?.SizeSqFt ?? 0, FareBook.Category(x.Cat.Id)?.Description ?? ""))];
+    }
+
+    /// <summary>The room types of any sailing that has prices in data, open for booking or not, with the ship's own words for each and a sample fare. 400 for a sailing with no prices.</summary>
+    public async Task<List<SampleRoomDto>> SampleRoomsAsync(string sailingId, CancellationToken ct)
+    {
+        if (!(await trips.ListSailingsAsync(ct)).Any(s => s.Id == sailingId) || !(Pricing.HasPrice(sailingId) || FareBook.Priced(sailingId))) throw ApiException.Invalid("sailing");
+        var nights = Pricing.NightsOf(sailingId);
+        return [.. Pricing.CategoriesOf(sailingId).Select(c =>
+        {
+            var own = FareBook.Category(c.Id);
+            var fare = Pricing.FareFor(sailingId, c.Id);
+            return fare is null ? null : new SampleRoomDto(c.Id, c.Name, c.Suite, c.Capacity, own?.SizeSqFt ?? 0, own?.Description ?? "", fare.Value / nights, fare.Value);
+        }).OfType<SampleRoomDto>()];
     }
 
     /// <summary>The cabins already booked on a sailing, after checking the sailing and room type.</summary>

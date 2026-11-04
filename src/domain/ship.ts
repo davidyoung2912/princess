@@ -32,7 +32,8 @@ export const SHIP_HIGHLIGHTS: readonly { title: string; body: string }[] = [
   { title: 'The Sanctuary', body: 'An adults-only retreat on deck 18 for guests in the Sanctuary Collection of 215 staterooms.' },
 ]
 
-export type CategoryId = 'interior' | 'oceanview' | 'balcony' | 'miniSuite' | 'sanctuaryMiniSuite' | 'signatureSuite'
+/** A stateroom type id: Sun Princess's six (`interior`, `oceanview`, `balcony`, `miniSuite`, `sanctuaryMiniSuite`, `signatureSuite`) or another ship's own (`sky-balcony`). */
+export type CategoryId = string
 
 export interface StateroomCategory {
   id: CategoryId

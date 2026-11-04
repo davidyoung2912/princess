@@ -180,7 +180,8 @@ public static class PostCruiseRules
 
     // ---- The Future Cruise desk (POS-06) ----
 
-    public static readonly int[] DeskDays = [2, 6, 7];
+    /// <summary>The days the desk is open: the sea days (the first sea day when a sailing has none to speak of is not special-cased).</summary>
+    public static List<int> DeskDays(Timeline timeline) => DayKinds.DaysOf(timeline, "sea");
     public const int DeskStepMinutes = 30;
 
     public static List<TimeOnly> DeskTimes()

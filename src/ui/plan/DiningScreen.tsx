@@ -2,7 +2,7 @@ import { AccessAreaNote } from '../AccessAreaNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { DiningView, Reservation } from '../../api/types'
-import { DINNER_DAYS, DRESS_NOTES, mealCharge, reservable, SEATINGS, venueById, MAX_PARTY, type Venue } from '../../domain/dining'
+import { dinnerDays, DRESS_NOTES, mealCharge, reservable, SEATINGS, venueById, MAX_PARTY, type Venue } from '../../domain/dining'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { itinerary, PORTS } from '../../domain/sailings'
 import type { PersonaId } from '../../domain/people'
@@ -129,7 +129,7 @@ function Reserve({ view, venues, open, onDone }: { view: DiningView; venues: Ven
         <div className="field">
           <label htmlFor="dine-day">{t('dine.night')}</label>
           <select id="dine-day" value={day} onChange={(e) => { setDay(Number(e.target.value)); setTime(''); setDone(null) }}>
-            {DINNER_DAYS.map((n) => {
+            {dinnerDays(days.length).map((n) => {
               const d = days[n - 1]
               return <option key={n} value={n}>{t('plan.day', { n })} · {formatDate(d.date)} · {d.port === 'sea' ? t('plan.atSea') : PORTS[d.port].name}</option>
             })}

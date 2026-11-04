@@ -14,9 +14,9 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
     private static long Until(Scope c) =>
         Shipboard.Ms(Itinerary.LocalToUtc(c.Timeline.Days[^1].Date.AddDays(PhotoRules.RedownloadDays), new TimeOnly(23, 59), c.Timeline.FinalZone));
 
-    private static int ThroughDay(Scope c) => Shipboard.IsAboard(c) ? Math.Clamp(FolioRules.CruiseDay(c.Timeline, c.Now), 0, 8) : 0;
+    private static int ThroughDay(Scope c) => Shipboard.IsAboard(c) ? Math.Clamp(FolioRules.CruiseDay(c.Timeline, c.Now), 0, c.Timeline.Days.Count) : 0;
 
-    private static List<Photo> AllPhotos(Scope c) => PhotoRules.PhotosFor([.. c.Party.Select(p => p.Id)], ThroughDay(c));
+    private static List<Photo> AllPhotos(Scope c) => PhotoRules.PhotosFor(c.Timeline, [.. c.Party.Select(p => p.Id)], ThroughDay(c));
 
     private static int IncludedIn(PhotoPurchaseRow p) => (int)(p.SavedCents / PhotoRules.PriceEach);
 
@@ -45,7 +45,7 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         var purchases = await store.ListPhotoPurchasesAsync(c.Booking.BookingId, ct);
         return new PhotosViewDto(
             AllPhotos(c), await store.ListFavouritesAsync(actor.Id, ct), [.. purchases.SelectMany(p => p.Items.Select(i => i.PhotoId)).Distinct()],
-            [.. purchases.Select(Receipt).Reverse()], await IncludedLeftAsync(c, purchases, ct), [.. PhotoRules.Photographers],
+            [.. purchases.Select(Receipt).Reverse()], await IncludedLeftAsync(c, purchases, ct), PhotoRules.PhotographersFor(c.Timeline),
             [.. c.Party.Select(p => new GuestDto(p.Id, p.Name))], ThroughDay(c));
     }
 

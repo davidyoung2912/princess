@@ -68,4 +68,24 @@ public class NightsPricingTests : IDisposable
         Assert.True(Itinerary.Aboard(dep, at(10), 14));
         Assert.False(Itinerary.Aboard(dep, at(31), 31));
     }
+
+    [Fact]
+    public void AShipsOwnCategoriesPriceItsSailings()
+    {
+        FareBook.Set([("sky-1", 10, true), ("sky-closed", 10, false)],
+            [("sky-1", "sky-interior", 20_000L), ("sky-1", "sky-balcony", 30_000L), ("sky-closed", "sky-interior", 20_000L), ("sky-closed", "sky-balcony", 30_000L)]);
+        FareBook.SetShips([("sky-1", "sky-princess"), ("sky-closed", "sky-princess")],
+            [new("sky-interior", "sky-princess", "Interior", false, 4, 160, "Best value.", 1), new("sky-balcony", "sky-princess", "Balcony", false, 4, 200, "A balcony.", 2), new("interior", "sun-princess", "Interior", false, 4, 140, "Sun.", 1)]);
+        Assert.Equal(["sky-interior", "sky-balcony"], Pricing.CategoriesOf("sky-1").Select(c => c.Id));
+        Assert.Equal(300_000L, Pricing.FareFor("sky-1", "sky-balcony"));
+        Assert.Null(Pricing.FareFor("sky-1", "balcony"));          // a Sun category is not sold on a Sky sailing
+        Assert.NotNull(Pricing.Quote("sky-1", "sky-balcony", 2));
+        Assert.Equal("sky-interior", Pricing.CheapestCategory("sky-1"));
+        Assert.Equal(200_000L, Pricing.FromPriceOf("sky-1")!.Fare);
+        Assert.True(Pricing.HasPrice("sky-1"));
+        Assert.False(Pricing.HasPrice("sky-closed"));              // closed: not offered, though FareBook.Priced says it has sample prices
+        Assert.True(FareBook.Priced("sky-closed"));
+        Assert.Equal(6, Pricing.CategoriesOf("sun-2027-03-21").Count);   // the older sailings keep the older six
+        Assert.Null(Pricing.FareFor("sun-2027-03-21", "sky-balcony"));
+    }
 }

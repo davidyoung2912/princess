@@ -209,7 +209,7 @@ public class OnboardRulesTests
     [Fact]
     public void EveryEventIsOnAtLeastOneDayOfTheCruise()
     {
-        Assert.All(ProgramRules.Events, e => Assert.True(e.Days.Length > 0 && e.Days.All(d => d is >= 1 and <= 8), e.Id));
+        Assert.All(ProgramRules.Events, e => Assert.True(e.When.Length > 0 && e.When.All(DayKinds.Valid), e.Id));
         Assert.Equal(ProgramRules.Events.Count, ProgramRules.Events.Select(e => e.Id).Distinct().Count());
     }
 
@@ -396,5 +396,41 @@ public class OnboardRulesTests
         var t = FolioRules.Totals(lines);
         Assert.Equal((3600L, 5000L, 5500L, -1400L), (t.Charges, t.Credits, t.Covered, t.Balance));
         Assert.Equal(["c", "a", "b", "d"], FolioRules.Sorted(lines).Select(l => l.Id));
+    }
+
+    // ---- Longer and shorter sailings: the programme follows the days of the sailing, not the sample week ----
+
+    private static Timeline Cruise(DateOnly departure, params string[] ports)
+    {
+        var days = ports.Select((p, i) => new ItineraryDay(i + 1, departure.AddDays(i), p,
+            p == "sea" ? null : i == 0 ? null : new TimeOnly(7, 0), p == "sea" || i == 0 || i == ports.Length - 1 ? null : new TimeOnly(16, 30), p == "sea" || i == ports.Length - 1 ? null : new TimeOnly(17, 0))).ToList();
+        return Timeline.FromDays(null, departure, days);
+    }
+
+    [Fact]
+    public void ProgrammeAndShowsFollowTheDaysOfALongSailing()
+    {
+        var t = Cruise(new DateOnly(2027, 5, 1), "fll", "sea", "cozumel", "sea", "belize", "sea", "sea", "roatan", "sea", "cozumel", "sea", "sea", "sea", "belize", "fll");
+        Assert.Equal(14, t.Nights);
+        Assert.Contains(ProgramRules.On(t, 12, false), e => e.Id == "stretch");
+        Assert.Contains(ProgramRules.On(t, 14, false), e => e.Id == "farewell-show");
+        Assert.DoesNotContain(ProgramRules.On(t, 7, false), e => e.Id == "farewell-show");
+        Assert.Contains(ProgramRules.On(t, 10, true), e => e.Id == "port-show");
+        Assert.Empty(ProgramRules.On(t, 15, false));
+        Assert.Contains(ShowRules.On(t, 12).Select(e => e.Id), id => id == "stage-show");
+        Assert.True(DiningRules.IsDinnerDay(t, 14));
+        Assert.False(DiningRules.IsDinnerDay(t, 15));
+        Assert.Equal([2, 4, 6, 7, 9, 11, 12, 13], PostCruiseRules.DeskDays(t));
+    }
+
+    [Fact]
+    public void AShortSailingHasItsOwnFirstAndLastNights()
+    {
+        var t = Cruise(new DateOnly(2027, 5, 1), "fll", "cozumel", "sea", "fll");
+        Assert.Equal(3, t.Nights);
+        Assert.Contains(ProgramRules.On(t, 3, false), e => e.Id == "farewell-show");
+        Assert.Contains(ProgramRules.On(t, 1, false), e => e.Id == "muster");
+        Assert.DoesNotContain(ProgramRules.On(t, 3, false), e => e.Id == "art-talk");
+        Assert.Equal([1, 2, 3], DayKinds.DaysOf(t, "night"));
     }
 }

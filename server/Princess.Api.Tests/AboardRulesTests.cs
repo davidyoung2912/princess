@@ -5,6 +5,8 @@ namespace Princess.Api.Tests;
 /// <summary>The pure rules of Phase 10c, ported from src/domain/services.ts, catalogue.ts, tv.ts and games.ts.</summary>
 public class AboardRulesTests
 {
+    private static readonly Timeline Week = Timeline.Legacy(new DateOnly(2027, 3, 21));
+
     private const long Min = 60_000;
 
     // ---- Requests ----
@@ -185,24 +187,24 @@ public class AboardRulesTests
     [Fact]
     public void ABookingNeedsAKnownItemAValidDayAndTimeAndAnAllowedQuantity()
     {
-        Assert.Null(CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 1), 30));
-        Assert.Equal("unknown", CatalogueRules.Problem(new("nope", 2, "13:00", 1), 30));
-        Assert.Equal("badDay", CatalogueRules.Problem(new("fit-yoga", 3, "07:00", 1), 30));
-        Assert.Equal("badTime", CatalogueRules.Problem(new("spa-swedish", 2, "12:00", 1), 30));
-        Assert.Equal("badTime", CatalogueRules.Problem(new("sp-art", 2, "", 1), 30));
-        Assert.Equal("badQty", CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 7), 30));
-        Assert.Equal("badQty", CatalogueRules.Problem(new("sp-art", 2, "15:30", 2), 30));            // you just mark that you are going
-        Assert.Equal("age", CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 1), 15));
+        Assert.Null(CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 1), 30, Week));
+        Assert.Equal("unknown", CatalogueRules.Problem(new("nope", 2, "13:00", 1), 30, Week));
+        Assert.Equal("badDay", CatalogueRules.Problem(new("fit-yoga", 3, "07:00", 1), 30, Week));
+        Assert.Equal("badTime", CatalogueRules.Problem(new("spa-swedish", 2, "12:00", 1), 30, Week));
+        Assert.Equal("badTime", CatalogueRules.Problem(new("sp-art", 2, "", 1), 30, Week));
+        Assert.Equal("badQty", CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 7), 30, Week));
+        Assert.Equal("badQty", CatalogueRules.Problem(new("sp-art", 2, "15:30", 2), 30, Week));            // you just mark that you are going
+        Assert.Equal("age", CatalogueRules.Problem(new("spa-swedish", 2, "13:00", 1), 15, Week));
     }
 
     [Fact]
     public void GoodsAreOrderedWithNoDayOrTimeAndMustBeInStock()
     {
-        Assert.Null(CatalogueRules.Problem(new("shop-hat", 0, "", 2), 30));
-        Assert.Equal("notBookable", CatalogueRules.Problem(new("shop-hat", 2, "", 2), 30));
-        Assert.Equal("notBookable", CatalogueRules.Problem(new("shop-hat", 0, "10:00", 2), 30));
-        Assert.Equal("soldOut", CatalogueRules.Problem(new("shop-hat", 0, "", 3), 30, taken: 10));  // 12 in stock, 10 gone
-        Assert.Equal("age", CatalogueRules.Problem(new("gift-champagne", 0, "", 1), 20));
+        Assert.Null(CatalogueRules.Problem(new("shop-hat", 0, "", 2), 30, Week));
+        Assert.Equal("notBookable", CatalogueRules.Problem(new("shop-hat", 2, "", 2), 30, Week));
+        Assert.Equal("notBookable", CatalogueRules.Problem(new("shop-hat", 0, "10:00", 2), 30, Week));
+        Assert.Equal("soldOut", CatalogueRules.Problem(new("shop-hat", 0, "", 3), 30, Week, taken: 10));  // 12 in stock, 10 gone
+        Assert.Equal("age", CatalogueRules.Problem(new("gift-champagne", 0, "", 1), 20, Week));
     }
 
     [Fact]

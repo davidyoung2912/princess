@@ -83,7 +83,22 @@ public static class Pricing
         new("premier", "Princess Premier", 9_000, "More of everything, with an excursion credit."),
     ];
 
-    public static RoomCategory? Category(string? id) => Categories.FirstOrDefault(c => c.Id == id);
+    /// <summary>A room type by id: the older Sun Princess six, then any ship's category from the catalogue (its fares are per night in data, so the ratio is not used).</summary>
+    public static RoomCategory? Category(string? id) =>
+        Categories.FirstOrDefault(c => c.Id == id) ?? (FareBook.Category(id) is { } c ? new RoomCategory(c.Id, c.Name, 1, c.Suite, c.Capacity) : null);
+
+    private static bool Legacy(string sailingId) => InteriorFare.ContainsKey(sailingId) || NextSeasonFare.ContainsKey(sailingId);
+
+    /// <summary>The room types a sailing offers: its ship's own categories from the catalogue, or the older six for the older sailings.</summary>
+    public static IReadOnlyList<RoomCategory> CategoriesOf(string sailingId)
+    {
+        if (Legacy(sailingId)) return Categories;
+        var own = FareBook.CategoriesOf(sailingId);
+        return own.Count == 0 ? Categories : [.. own.Select(c => new RoomCategory(c.Id, c.Name, 1, c.Suite, c.Capacity))];
+    }
+
+    /// <summary>The room type that sets the "from" price: interior for the older sailings, the cheapest fare otherwise.</summary>
+    public static string CheapestCategory(string sailingId) => Legacy(sailingId) ? "interior" : FareBook.Cheapest(sailingId) ?? "interior";
 
     public static FareInfo? Fare(string? id) => Fares.FirstOrDefault(f => f.Id == id);
 
@@ -101,7 +116,7 @@ public static class Pricing
     {
         var cat = Category(category);
         if (cat is null) return null;
-        if (InteriorFare.TryGetValue(sailingId, out var baseFare) || NextSeasonFare.TryGetValue(sailingId, out baseFare)) return RoundToDollar(baseFare * cat.Ratio);
+        if (InteriorFare.TryGetValue(sailingId, out var baseFare) || NextSeasonFare.TryGetValue(sailingId, out baseFare)) return Categories.Any(c => c.Id == category) ? RoundToDollar(baseFare * cat.Ratio) : null;
         // Anything else is priced from ref.SailingFares: the per-night fare for the category times the sailing's nights.
         return FareBook.PerNight(sailingId, category) is { } perNight ? perNight * NightsOf(sailingId) : null;
     }
@@ -152,8 +167,9 @@ public static class Pricing
 
     public static FromPrice? FromPriceOf(string sailingId)
     {
-        var q = Quote(sailingId, "interior", 2);
-        var fare = FareFor(sailingId, "interior");
+        var low = CheapestCategory(sailingId);
+        var q = Quote(sailingId, low, 2);
+        var fare = FareFor(sailingId, low);
         return q is null || fare is null ? null : new FromPrice(fare.Value, TaxesAndFees, GratuityPerNight * NightsOf(sailingId), q.PerPerson);
     }
 

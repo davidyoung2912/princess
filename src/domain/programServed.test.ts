@@ -5,8 +5,8 @@ import { EVENTS, PLAN_CHANGES } from './program'
 const wire = (): Record<string, any> => ({
   version: 'p1',
   events: [
-    { id: 'a', days: [2, 6], start: '10:00', minutes: 45, title: 'A', placeId: 'piazza', age: 'all', interest: 'music', extra: 0, afterAllAboard: false },
-    { id: 'b', days: [3], start: '19:00', minutes: 40, title: 'B', placeId: 'piazza', age: 'kids', interest: 'family', extra: 2500, afterAllAboard: true },
+    { id: 'a', when: ['seaMid'], start: '10:00', minutes: 45, title: 'A', placeId: 'piazza', age: 'all', interest: 'music', extra: 0, afterAllAboard: false },
+    { id: 'b', when: ['port'], start: '19:00', minutes: 40, title: 'B', placeId: 'piazza', age: 'kids', interest: 'family', extra: 2500, afterAllAboard: true },
   ],
   planChanges: [
     { eventId: 'a', day: 2, kind: 'moved', start: '11:00', reason: 'Late.' },
@@ -25,12 +25,13 @@ describe('normalizeProgram', () => {
   it.each([
     ['not an object', () => null],
     ['a repeated id', () => { const w = wire(); w.events[1].id = 'a'; return w }],
-    ['a day out of range', () => { const w = wire(); w.events[0].days = [9]; return w }],
+    ['an unknown kind of day', () => { const w = wire(); w.events[0].when = ['tuesday']; return w }],
+    ['no kind of day', () => { const w = wire(); w.events[0].when = []; return w }],
     ['a bad time', () => { const w = wire(); w.events[0].start = '25:00'; return w }],
     ['an unknown age group', () => { const w = wire(); w.events[0].age = 'pets'; return w }],
     ['a negative price', () => { const w = wire(); w.events[0].extra = -1; return w }],
     ['a move with no time', () => { const w = wire(); w.planChanges[0].start = null; return w }],
-    ['a change on a day the event does not run', () => { const w = wire(); w.planChanges[0].day = 3; return w }],
+    ['a change to an event that is not there', () => { const w = wire(); w.planChanges[0].eventId = 'zzz'; return w }],
     ['no events', () => { const w = wire(); w.events = []; w.planChanges = []; return w }],
   ])('rejects %s', (_n, make) => {
     expect(normalizeProgram(make())).toBeNull()

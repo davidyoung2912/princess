@@ -29,8 +29,10 @@ public static class DiningRules
 
     public static Venue? VenueById(string? id) => Venues.FirstOrDefault(v => v.Id == id);
 
-    /// <summary>Dinner nights a reservation can be made for (embarkation evening to the second-last night).</summary>
-    public static readonly int[] DinnerDays = [1, 2, 3, 4, 5, 6, 7];
+    /// <summary>Dinner nights a reservation can be made for (embarkation evening to the last night, whatever the length of the sailing).</summary>
+    public static bool IsDinnerDay(Timeline timeline, int day) => DayKinds.Is(timeline, day, "night");
+
+    public static List<int> DinnerDays(Timeline timeline) => DayKinds.DaysOf(timeline, "night");
     public static readonly string[] DinnerTimes = ["17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"];
     public const int MaxParty = 8;
     public const int SittingMinutes = 120;
