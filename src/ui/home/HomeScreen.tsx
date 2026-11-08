@@ -29,6 +29,7 @@ import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
 import { StageLanding } from './StageLanding'
 import { StageHome } from './StageHome'
+import { StageHero } from '../StageHero'
 import { RecentCard } from './RecentCard'
 import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
@@ -47,11 +48,12 @@ export function HomeScreen() {
   const today = useOnboardToday()
   const { stage } = useJourneyPosition()
   const now = useNow()
-  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><NewTabsNote /><UpdatesBanner /><StageHome /></div>
+  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
     const counts = countdowns(trip, now)
     return (
       <div className="page">
+        <StageHero stage={stage} />
         <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>
         <NewTabsNote />
         <UpdatesBanner />
@@ -71,6 +73,7 @@ export function HomeScreen() {
     const others = trips.data?.upcoming ?? []
     return (
       <div className="page">
+        <StageHero stage={stage} />
         <NewTabsNote />
         <UpdatesBanner />
         <StageHome />
@@ -86,6 +89,7 @@ export function HomeScreen() {
   if (today.data?.aboard) {
     return (
       <div className="page">
+        <StageHero stage={stage} />
         <NewTabsNote />
         {!ABOARD_STAGES.includes(stage) && <StageLanding />}
         <NudgeCards aboard />
@@ -97,6 +101,7 @@ export function HomeScreen() {
   }
   return (
     <div className="page">
+      <StageHero stage={stage} />
       {trip && <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>}
       <NewTabsNote />
       <StageLanding />

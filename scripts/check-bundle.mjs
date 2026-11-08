@@ -20,7 +20,8 @@ const firstLoad = first.reduce((sum, f) => sum + gz(join(dist, f)), 0)
 const assets = readdirSync(join(dist, 'assets')).filter((f) => f.endsWith('.js'))
 const screens = assets.map((f) => ({ f, size: gz(join(dist, 'assets', f)) })).filter((a) => !firstSet.has(`assets/${a.f}`))
 const biggest = screens.reduce((a, b) => (b.size > a.size ? b : a), { f: '', size: 0 })
-const precache = readdirSync(join(dist, 'assets')).reduce((sum, f) => sum + statSync(join(dist, 'assets', f)).size, 0)
+// Art (WebP) is cached as it is used, not precached; only the logo is precached.
+const precache = readdirSync(join(dist, 'assets')).filter((f) => !f.endsWith('.webp') || f.startsWith('princess-')).reduce((sum, f) => sum + statSync(join(dist, 'assets', f)).size, 0)
 
 const problems = []
 if (firstLoad > FIRST_LOAD_MAX) problems.push(`first load is ${(firstLoad / KB).toFixed(1)} kB gzip, budget ${FIRST_LOAD_MAX / KB} kB (${first.join(', ')})`)
