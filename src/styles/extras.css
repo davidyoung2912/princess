@@ -19,6 +19,7 @@
 .kid__status--outOfZone { color: var(--warning); }
 .kid__status--overdue { color: var(--danger); }
 
+.photo__img { display: block; width: 100%; height: auto; aspect-ratio: 8 / 5; object-fit: cover; border-radius: var(--radius-card); margin: 0 0 var(--space-2); background: var(--border); }
 .photo__title { margin: 0 0 var(--space-1); }
 .photo__progress { width: 100%; height: 1.25rem; margin: 0 0 var(--space-3); accent-color: var(--primary); }
 

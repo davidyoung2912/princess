@@ -43,7 +43,6 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
   const owned = new Set(v.owned)
   return (
     <>
-      <Banner kind="info" title={t('pho.noPreview')}><p>{t('pho.noPreviewBody')}</p></Banner>
       {v.includedLeft > 0 && <Banner kind="success" title={t('pho.included', { count: v.includedLeft })}><p>{t('pho.includedBody')}</p></Banner>}
 
       <Card labelledBy="sched-h">
@@ -83,6 +82,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
               const mine = owned.has(p.id)
               return (
                 <li key={p.id} className="photo">
+                  {p.preview && <img className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} loading="lazy" />}
                   <p className="photo__title"><strong>{p.title}</strong></p>
                   <p className="muted">{t('plan.day', { n: p.day })}, {formatTime(p.time)} · {p.people.map((x) => v.people.find((y) => y.id === x)?.name.split(' ')[0]).join(', ')}</p>
                   <div className="button-row">

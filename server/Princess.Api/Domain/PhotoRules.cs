@@ -2,7 +2,7 @@ namespace Princess.Api.Domain;
 
 public sealed record PhotoSpot(string Id, int Day, string Venue, string Title, string Time);
 
-public sealed record Photo(string Id, int Day, string Venue, string Title, string Time, List<Guid> People);
+public sealed record Photo(string Id, int Day, string Venue, string Title, string Time, List<Guid> People, string Preview);
 
 public sealed record PhotoOption(string Id, long Total, int Covers);
 
@@ -65,7 +65,22 @@ public static class PhotoRules
 
     /// <summary>Photos taken so far of the people on the booking.</summary>
     public static List<Photo> PhotosFor(Timeline timeline, IReadOnlyList<Guid> party, int throughDay) =>
-        [.. SpotsFor(timeline).Where(s => s.Day <= throughDay).Select(s => new Photo(s.Id, s.Day, s.Venue, s.Title, s.Time, [.. party]))];
+        [.. SpotsFor(timeline).Where(s => s.Day <= throughDay).Select(s => new Photo(s.Id, s.Day, s.Venue, s.Title, s.Time, [.. party], PreviewFor(s)))];
+
+    private static readonly Dictionary<string, (string From, string To)> Palettes = new()
+    {
+        ["gangway"] = ("#1d4e89", "#7fb7e6"), ["portrait"] = ("#3b1f5c", "#c9a0dc"), ["pool"] = ("#0b6e8a", "#8fe0e8"),
+        ["dining"] = ("#6b2d1a", "#f0b36b"), ["port"] = ("#1f6b4a", "#a7e3b0"),
+    };
+
+    /// <summary>A small mock picture for a photo spot, as an inline SVG. A real photo service returns a thumbnail address here and nothing in the front end changes.</summary>
+    public static string PreviewFor(PhotoSpot s)
+    {
+        var (from, to) = Palettes.GetValueOrDefault(s.Venue, ("#1d4e89", "#7fb7e6"));
+        var title = System.Net.WebUtility.HtmlEncode(s.Title);
+        var svg = $"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='{from}'/><stop offset='1' stop-color='{to}'/></linearGradient></defs><rect width='320' height='200' fill='url(#g)'/><circle cx='110' cy='95' r='24' fill='#fff' fill-opacity='.55'/><circle cx='170' cy='100' r='24' fill='#fff' fill-opacity='.55'/><circle cx='230' cy='95' r='24' fill='#fff' fill-opacity='.55'/><text x='160' y='180' font-family='sans-serif' font-size='13' fill='#fff' text-anchor='middle' fill-opacity='.8'>PREVIEW · {title}</text></svg>";
+        return "data:image/svg+xml;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
+    }
 
     public const long PriceEach = 1995, PriceFive = 7995, PriceAll = 14995;
 

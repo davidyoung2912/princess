@@ -11,7 +11,7 @@ export type PhotoVenue = 'gangway' | 'portrait' | 'port' | 'pool' | 'dining'
 
 export const PHOTO_VENUES: readonly PhotoVenue[] = ['gangway', 'portrait', 'port', 'pool', 'dining']
 
-export interface Photo { id: string; day: number; venue: PhotoVenue; title: string; time: string; people: PersonaId[] }
+export interface Photo { id: string; day: number; venue: PhotoVenue; title: string; time: string; people: PersonaId[]; preview?: string }
 
 export interface PhotoFilter { day: number | null; venue: PhotoVenue | null; person: PersonaId | null; favouritesOnly: boolean }
 export const NO_PHOTO_FILTER: PhotoFilter = { day: null, venue: null, person: null, favouritesOnly: false }

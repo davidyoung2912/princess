@@ -2814,8 +2814,7 @@ export const en = {
   'room.shades': 'Shades closed',
 
   'pho.intro': 'Photos from the ship’s photographers of your party. Choose the ones you want, see what each way of buying costs for your choice, then buy.',
-  'pho.noPreview': 'No picture previews in this concept',
-  'pho.noPreviewBody': 'Each photo is shown as a description: where and when it was taken and who is in it.',
+  'pho.previewAlt': 'Preview of the photo: {title}',
   'pho.included_one': '{count} photo included',
   'pho.included_other': '{count} photos included',
   'pho.includedBody': 'Your Premier package includes digital photos. They are used first.',
