@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { tileValues } from './tileLive'
+import { localDate, tileValues, tonightsDinner } from './tileLive'
 
-const words = { checklist: (d: number, t: number) => `${d}/${t} done`, packing: (d: number, t: number) => `${d}/${t} packed`, dinners: (n: number) => `${n} dinners`, docsReady: 'ready', docsMissing: (n: number) => `${n} missing`, docsPassport: (n: number) => `${n} passport` }
+const words = { checklist: (d: number, t: number) => `${d}/${t} done`, packing: (d: number, t: number) => `${d}/${t} packed`, dinners: (n: number) => `${n} dinners`, dinnersTonight: (n: number, t: string) => `${n} dinners, tonight ${t}`, docsReady: 'ready', docsMissing: (n: number) => `${n} missing`, docsPassport: (n: number) => `${n} passport` }
 
 describe('tileValues', () => {
   it('words the checklist and packing progress', () => {
@@ -21,5 +21,17 @@ describe('tileValues', () => {
     expect(tileValues({ documents: { missing: 2, passportProblems: 0 } }, words)['/me/documents']).toBe('2 missing')
     expect(tileValues({ documents: { missing: 0, passportProblems: 0 } }, words)['/me/documents']).toBe('ready')
     expect(tileValues({ documents: null }, words)).toEqual({})
+  })
+  it('adds tonight\'s dinner time when there is one', () => {
+    expect(tileValues({ dinners: 2, tonight: '18:30' }, words)['/plan/reservations']).toBe('2 dinners, tonight 18:30')
+    expect(tileValues({ dinners: 2, tonight: null }, words)['/plan/reservations']).toBe('2 dinners')
+  })
+  it('finds the earliest dinner on today\'s date only', () => {
+    const days = [{ date: '2027-01-02', entries: [{ kind: 'dinner', time: '20:00' }, { kind: 'dinner', time: '18:00' }, { kind: 'tour', time: '09:00' }] }, { date: '2027-01-03', entries: [{ kind: 'dinner', time: '17:00' }] }]
+    expect(tonightsDinner(days, '2027-01-02')).toBe('18:00')
+    expect(tonightsDinner(days, '2027-01-04')).toBeNull()
+  })
+  it('formats a local date', () => {
+    expect(localDate(new Date(2027, 0, 5, 12).getTime())).toBe('2027-01-05')
   })
 })

@@ -1333,6 +1333,7 @@ export const en = {
   'plan.gap.dinnerGo': 'Reserve dinner',
   'tile.checklist': '{done} of {total} done',
   'tile.dinners': '{count} dinners booked',
+  'tile.dinnersTonight': '{count} dinners booked, tonight at {time}',
   'tile.docsReady': 'All ready',
   'tile.docsMissing': '{count} missing',
   'tile.docsPassport': '{count} passport to check',
