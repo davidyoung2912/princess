@@ -14,6 +14,7 @@ import { DayCalendarButton, PlanExports } from '../delights/Exports'
 import { DayPolish, EntryNote, Guests, OccasionsCard, TravellerColours } from '../delights/PlanPolish'
 import { useTravellerColours } from '../delights/travellerColours'
 import { useMemory } from '../../hooks/useMemory'
+import { SpendForecastCard } from './SpendForecastCard'
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
 export function PlanScreen() {
@@ -37,6 +38,8 @@ export function PlanScreen() {
       </Load>
 
       <OccasionsCard />
+
+      <SpendForecastCard />
 
       <TabScreens tabKey="plan" />
 
