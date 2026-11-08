@@ -2381,6 +2381,32 @@ CREATE TABLE dbo.PhotoAlbum (
 );
 END
 
+-- X8b: Print It. A printed book or postcard set made from owned photos; the print shop's reference and promised delivery are kept.
+IF OBJECT_ID(N'dbo.PrintOrders', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PrintOrders (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PrintOrders PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PrintOrders_PublicId DEFAULT NEWID() CONSTRAINT UX_PrintOrders_PublicId UNIQUE,
+  BookingId BIGINT NOT NULL, Product NVARCHAR(20) NOT NULL, Reference NVARCHAR(40) NOT NULL, TotalCents BIGINT NOT NULL,
+  DeliverBy DATETIME2(0) NOT NULL, [At] DATETIME2(0) NOT NULL, BuyerUserId BIGINT NOT NULL,
+  CONSTRAINT FK_PrintOrders_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_PrintOrders_Users FOREIGN KEY (BuyerUserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_PrintOrders_Product CHECK (Product IN ('book','postcards')),
+  CONSTRAINT CK_PrintOrders_Total CHECK (TotalCents >= 0)
+);
+CREATE INDEX IX_PrintOrders_BookingId ON dbo.PrintOrders (BookingId);
+END
+
+IF OBJECT_ID(N'dbo.PrintOrderItems', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PrintOrderItems (
+  OrderId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PrintOrderItems_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_PrintOrderItems PRIMARY KEY (OrderId, PhotoId),
+  CONSTRAINT FK_PrintOrderItems_PrintOrders FOREIGN KEY (OrderId) REFERENCES dbo.PrintOrders (Id) ON DELETE CASCADE
+);
+END
+
 -- X0l: photo spots come from the sailing's own days (PhotoRules.SpotsFor), so the global spot table and its keys are gone.
 IF OBJECT_ID(N'FK_PhotoSelections_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoSelections DROP CONSTRAINT FK_PhotoSelections_PhotoCatalogue;
 IF OBJECT_ID(N'FK_PhotoPurchaseItems_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoPurchaseItems DROP CONSTRAINT FK_PhotoPurchaseItems_PhotoCatalogue;

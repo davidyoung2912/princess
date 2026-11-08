@@ -625,6 +625,17 @@ public class ShipboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task PrintItNeedsOwnedPhotosAndTheRightCountAndShowsHowFarAnOrderHasGot()
+    {
+        var token = await DanielToken();
+        SetNow(SeaDay);
+        Assert.Equal(2, (await Read("photos/print", token)).Json.GetProperty("products").GetArrayLength());
+        Assert.Equal("badProduct", (await Post("photos/print", token, new { product = "mug", photoIds = new[] { "gangway" } })).ProblemTitle);
+        Assert.Equal("photoCount", (await Post("photos/print", token, new { product = "book", photoIds = new[] { "gangway" } })).ProblemTitle);
+        Assert.Equal("notOwned", (await Post("photos/print", token, new { product = "postcards", photoIds = new[] { "a", "b", "c", "d" } })).ProblemTitle);
+    }
+
+    [Fact]
     public async Task AQuotePricesEachWayOfBuyingAndChecksTheChoice()
     {
         var token = await DanielToken();

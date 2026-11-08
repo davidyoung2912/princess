@@ -93,6 +93,19 @@ public sealed class RoomSettingsRow
     public string Devices { get; set; } = "{}";
 }
 
+public sealed class PrintOrderRow
+{
+    public long Id { get; set; }
+    public Guid PublicId { get; set; }
+    public string Product { get; set; } = "";
+    public string Reference { get; set; } = "";
+    public long TotalCents { get; set; }
+    public DateTime At { get; set; }
+    public DateTime DeliverBy { get; set; }
+    public long BuyerUserId { get; set; }
+    public List<string> PhotoIds { get; set; } = [];
+}
+
 public sealed record AlbumEntry(string PhotoId, long UserId);
 
 public sealed class PhotoPurchaseRow
@@ -185,6 +198,8 @@ public interface IShipboardStore
     Task<List<AlbumEntry>> ListAlbumAsync(long bookingId, CancellationToken ct);
     /// <summary>Shares the photo with the party, or takes the caller's share back; returns the album.</summary>
     Task<List<AlbumEntry>> ToggleAlbumAsync(long bookingId, long userId, string photoId, CancellationToken ct);
+    Task<List<PrintOrderRow>> ListPrintOrdersAsync(long bookingId, CancellationToken ct);
+    Task<PrintOrderRow> AddPrintOrderAsync(long bookingId, PrintOrderRow order, IReadOnlyList<FolioWrite> folio, CancellationToken ct);
     Task<List<PhotoPurchaseRow>> ListPhotoPurchasesAsync(long bookingId, CancellationToken ct);
     Task<PhotoPurchaseRow> AddPhotoPurchaseAsync(long bookingId, PhotoPurchaseRow purchase, IReadOnlyList<FolioWrite> folio, CancellationToken ct);
     /// <summary>Marks the next batch of unsaved photos as saved; keeps what earlier attempts saved.</summary>

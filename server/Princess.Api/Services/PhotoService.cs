@@ -9,7 +9,7 @@ namespace Princess.Api.Services;
 /// Ship photos (SHP-02, SHP-07): browse by day, place and person, choose first, see the options priced against the choice, buy and save in resumable batches. Ports <c>photos</c> of <c>src/api/extrasMock.ts</c>.
 /// A purchase is one account line. A purchase of photos that the package included is stored with option <c>each</c> and no payment, and shows as <c>included</c>; how many were included is its saving over the price of one.
 /// </summary>
-public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, PlanService plan)
+public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, PlanService plan, IPrintProvider printShop)
 {
     private static long Until(Scope c) =>
         Shipboard.Ms(Itinerary.LocalToUtc(c.Timeline.Days[^1].Date.AddDays(PhotoRules.RedownloadDays), new TimeOnly(23, 59), c.Timeline.FinalZone));
@@ -65,6 +65,33 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         if (!AllPhotos(c).Any(p => p.Id == photoId)) throw ApiException.Invalid("unknownPhoto");
         return AlbumView(c, await store.ToggleAlbumAsync(c.Booking.BookingId, actor.Id, photoId!, ct));
+    }
+
+    private static PrintOrderDto PrintView(PrintOrderRow o, DateTime now) =>
+        new(o.PublicId, o.Product, o.Reference, o.TotalCents, o.PhotoIds.Count, PrintRules.Stage(o.At, o.DeliverBy, now), Shipboard.Ms(o.At), Shipboard.Ms(o.DeliverBy));
+
+    /// <summary>Print It: what can be printed and the orders so far, newest first.</summary>
+    public async Task<PrintViewDto> PrintListAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: false, ct);
+        var orders = await store.ListPrintOrdersAsync(c.Booking.BookingId, ct);
+        return new PrintViewDto([.. PrintRules.Products], [.. orders.Select(o => PrintView(o, c.Now)).Reverse()]);
+    }
+
+    /// <summary>Orders a printed book or postcard set from photos the booking owns. The total goes on the account.</summary>
+    public async Task<PrintOrderDto> PrintOrderAsync(UserRecord actor, string? number, PrintRequest? body, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: true, ct);
+        var product = PrintRules.Find(body?.Product) ?? throw ApiException.Invalid("badProduct");
+        var ids = (body?.PhotoIds ?? []).Distinct().ToList();
+        var owned = (await store.ListPhotoPurchasesAsync(c.Booking.BookingId, ct)).SelectMany(p => p.Items.Select(i => i.PhotoId)).ToHashSet();
+        if (ids.Count < product.MinPhotos || ids.Count > product.MaxPhotos) throw ApiException.Invalid("photoCount");
+        if (!ids.All(owned.Contains)) throw ApiException.Invalid("notOwned");
+        var sent = printShop.Submit(product.Id, ids.Count, c.Now);
+        var row = new PrintOrderRow { Product = product.Id, Reference = sent.Reference, TotalCents = product.Cents, At = c.Now, DeliverBy = sent.DeliverBy, BuyerUserId = actor.Id, PhotoIds = ids };
+        var what = product.Id == "book" ? "Printed photo book" : "Printed postcard set";
+        var folio = new FolioWrite(actor.Id, Shipboard.DayAt(c, c.Now), "photos", $"{what}, {ids.Count} photos", product.Cents, null, c.Now);
+        return PrintView(await store.AddPrintOrderAsync(c.Booking.BookingId, row, [folio], ct), c.Now);
     }
 
     public async Task<PhotoQuoteDto> QuoteAsync(UserRecord actor, string? number, PhotoIdsRequest? body, CancellationToken ct)

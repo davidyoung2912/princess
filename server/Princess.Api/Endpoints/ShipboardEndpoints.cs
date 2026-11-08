@@ -65,6 +65,10 @@ public static class ShipboardEndpoints
             .WithSummary("Adds a photo to the caller's favourites, or takes it off, and returns the list. 400 unknownPhoto.");
         p.MapPut("/{photoId}/album", async (string number, string photoId, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.ToggleAlbumAsync(await me.LoadAsync(ct), number, photoId, ct)))
             .WithSummary("Shares a photo with the party's album, or takes the caller's share back, and returns the album. 400 unknownPhoto; 403 for a child account.");
+        p.MapGet("/print", async (string number, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.PrintListAsync(await me.LoadAsync(ct), number, ct)))
+            .WithSummary("Print It: the printed products and the booking's print orders with how far each has got.");
+        p.MapPost("/print", async (string number, PrintRequest body, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.PrintOrderAsync(await me.LoadAsync(ct), number, body, ct)))
+            .WithSummary("Orders a printed book or postcard set from owned photos and puts it on the account. 400 badProduct, photoCount or notOwned; 403 for a child account.");
         p.MapPost("/quote", async (string number, PhotoIdsRequest body, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.QuoteAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Prices each way of buying a choice of photos after any the package includes. 400 empty, unknownPhoto or alreadyOwned.");
         p.MapPost("/purchases", async (string number, BuyPhotosRequest body, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.BuyAsync(await me.LoadAsync(ct), number, body, ct)))

@@ -1,5 +1,5 @@
 import type { CustomsView, DisembarkView, NightView, OnwardView } from './finishTypes'
-import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, ProgramView, ReceiptView, RoomView } from './types'
+import type { BoardingView, DiningView, EmbarkView, FamilyView, FolioView, HealthView, MusterView, OnboardToday, PhotosView, PortDayView, PrintView, ProgramView, ReceiptView, RoomView } from './types'
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 
@@ -88,6 +88,11 @@ export function asHealthView(raw: unknown): HealthView | null {
 export function asRoomView(raw: unknown): RoomView | null {
   const o = obj(raw)
   return o && typeof o.number === 'string' && typeof o.steward === 'string' && Array.isArray(o.amenities) && obj(o.housekeeping) && obj(o.devices) ? (raw as RoomView) : null
+}
+
+export function asPrintView(raw: unknown): PrintView | null {
+  const o = raw as Record<string, unknown> | null
+  return o && Array.isArray(o.products) && Array.isArray(o.orders) ? (raw as PrintView) : null
 }
 
 export function asPhotosView(raw: unknown): PhotosView | null {

@@ -1,7 +1,7 @@
 import { useConfirmCharge } from '../ConfirmCharge'
 import { useState } from 'react'
-import { asPhotosView } from '../../api/guards'
-import type { PhotoQuote, PhotoReceipt, PhotosView } from '../../api/types'
+import { asPhotosView, asPrintView } from '../../api/guards'
+import type { PhotoQuote, PhotoReceipt, PhotosView, PrintProductId, PrintView } from '../../api/types'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import { NO_PHOTO_FILTER, PHOTO_VENUES, filterPhotos, type OptionId, type PhotoFilter, type PhotoVenue } from '../../domain/photos'
@@ -106,6 +106,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
 
       {canBuy && !offline && picked.length > 0 && <Options picked={picked} done={() => { setPicked([]); reload() }} />}
       <Receipts receipts={v.receipts} reload={reload} offline={offline} />
+      {canBuy && !offline && <Print v={v} />}
     </>
   )
 }
@@ -129,6 +130,68 @@ function Album({ v, share, busy }: { v: PhotosView; share: (id: string) => void;
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  )
+}
+
+/** Print It: a printed book or postcard set from photos the booking owns, then the orders and how far each has got. */
+function Print({ v }: { v: PhotosView }) {
+  const sure = useConfirmCharge()
+  const copy = useSavedCopy('photo-print', 'none', () => api.photos.printList(), asPrintView, [v.owned.length])
+  return <Saved copy={copy}>{(pv) => <PrintBody v={v} pv={pv} reload={copy.retry} sure={sure} />}</Saved>
+}
+
+function PrintBody({ v, pv, reload, sure }: { v: PhotosView; pv: PrintView; reload: () => void; sure: ReturnType<typeof useConfirmCharge> }) {
+  const [product, setProduct] = useState<PrintProductId>('book')
+  const [picked, setPicked] = useState<string[]>([])
+  const spec = pv.products.find((x) => x.id === product)
+  const order = useAction(async () => { await api.photos.printOrder(product, picked); setPicked([]); reload() })
+  const ok = !!spec && picked.length >= spec.minPhotos && picked.length <= spec.maxPhotos
+  const mine = v.photos.filter((p) => v.owned.includes(p.id))
+  return (
+    <section aria-labelledby="print-h">
+      <h2 id="print-h">{th('pho.print.title')}</h2>
+      <p>{t('pho.print.intro')}</p>
+      {mine.length === 0 ? <p className="muted">{t('pho.print.none')}</p> : (
+        <>
+          <fieldset className="plain-fieldset">
+            <legend>{t('pho.print.product')}</legend>
+            {pv.products.map((x) => (
+              <label key={x.id} className="choice choice--top">
+                <input type="radio" name="pho-print" checked={product === x.id} onChange={() => setProduct(x.id)} />
+                <span>{t(`pho.print.${x.id}` as StringKey, { price: formatMoney(x.cents), min: x.minPhotos, max: x.maxPhotos })}</span>
+              </label>
+            ))}
+          </fieldset>
+          <fieldset className="plain-fieldset">
+            <legend>{t('pho.print.pick', { count: picked.length })}</legend>
+            {mine.map((p) => (
+              <label key={p.id} className="choice">
+                <input type="checkbox" checked={picked.includes(p.id)} onChange={() => setPicked(picked.includes(p.id) ? picked.filter((x) => x !== p.id) : [...picked, p.id])} />
+                <span>{p.title}</span>
+              </label>
+            ))}
+          </fieldset>
+          {spec && !ok && <p className="muted">{t('pho.print.count', { min: spec.minPhotos, max: spec.maxPhotos })}</p>}
+          <ExtraError error={order.error} />
+          <Button disabled={!ok || order.busy} onClick={() => sure.ask(spec!.cents, t('pho.print.confirmWhat'), () => void order.run())}>{order.busy ? t('account.saving') : t('pho.print.order', { amount: formatMoney(spec?.cents ?? 0) })}</Button>
+          {sure.dialog}
+        </>
+      )}
+      {pv.orders.length > 0 && (
+        <>
+          <h3>{th('pho.print.orders')}</h3>
+          <ul className="order-list">
+            {pv.orders.map((o) => (
+              <li key={o.id} className="order">
+                <p><strong>{t(`pho.print.stage.${o.stage}` as StringKey)}</strong></p>
+                <p>{t('pho.print.row', { product: t(`pho.print.name.${o.product}` as StringKey), count: o.photos, amount: formatMoney(o.total), ref: o.reference })}</p>
+                {o.stage !== 'delivered' && <p className="muted">{t('pho.print.by', { date: new Date(o.deliverBy).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }) })}</p>}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   )

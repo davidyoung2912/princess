@@ -28,6 +28,7 @@ public static class ProviderRegistration
         "ShipTelemetry" => "Telemetry",
         "ShipNavigation" => "Navigation",
         "EmailSender" => "Email",
+        "PrintProvider" => "Print",
         _ => name,
     };
 
@@ -54,6 +55,7 @@ public static class ProviderRegistration
         S<IPushSender, SimPushSender>(),
         S<IMediaScanner, SimMediaScanner>(),
         S<IEmailSender, SimEmailSender>(),
+        S<IPrintProvider, SimPrintProvider>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)

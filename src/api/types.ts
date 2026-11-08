@@ -1108,6 +1108,12 @@ export interface PhotosView {
 
 export interface AlbumPhoto { photoId: string; by: string; mine: boolean }
 
+export type PrintProductId = 'book' | 'postcards'
+export interface PrintProduct { id: PrintProductId; cents: number; minPhotos: number; maxPhotos: number }
+export type PrintStage = 'placed' | 'printing' | 'posted' | 'delivered'
+export interface PrintOrder { id: string; product: PrintProductId; reference: string; total: number; photos: number; stage: PrintStage; at: number; deliverBy: number }
+export interface PrintView { products: PrintProduct[]; orders: PrintOrder[] }
+
 export interface PhotoQuote { included: number; paid: number; options: PhotoOption[]; cheapest: OptionId }
 
 export interface PhotosApi {
@@ -1115,6 +1121,10 @@ export interface PhotosApi {
   toggleFavourite(photoId: string): Promise<string[]>
   /** Shares a photo with the party's album, or takes the caller's share back. Rejects `invalid` (`unknownPhoto`) or `forbidden`. */
   toggleAlbum(photoId: string): Promise<AlbumPhoto[]>
+  /** Print It: what can be printed and the orders so far. */
+  printList(): Promise<PrintView>
+  /** Orders a printed book or postcard set from owned photos. Rejects `invalid` (`badProduct`, `photoCount`, `notOwned`) or `forbidden`. */
+  printOrder(product: PrintProductId, photoIds: string[]): Promise<PrintOrder>
   quote(photoIds: string[]): Promise<PhotoQuote>
   /** Rejects `invalid` (`empty`, `unknownPhoto`, `alreadyOwned`) or `forbidden`. */
   buy(photoIds: string[], option: OptionId): Promise<PhotoReceipt>

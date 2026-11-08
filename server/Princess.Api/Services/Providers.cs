@@ -217,3 +217,17 @@ public sealed class LoggingTelemetrySink(ILogger<LoggingTelemetrySink> log) : IT
         return Task.CompletedTask;
     }
 }
+
+public sealed record PrintSubmission(string Reference, DateTime DeliverBy);
+
+/// <summary>A print-on-demand shop. A real one takes the order and answers with its own reference and promised delivery; the simulated one answers at once.</summary>
+public interface IPrintProvider
+{
+    PrintSubmission Submit(string product, int photos, DateTime now);
+}
+
+public sealed class SimPrintProvider : IPrintProvider
+{
+    public PrintSubmission Submit(string product, int photos, DateTime now) =>
+        new($"PR-{Math.Abs(HashCode.Combine(product, photos, now.Ticks)) % 1_000_000:D6}", now.AddDays(product == "book" ? 10 : 7));
+}

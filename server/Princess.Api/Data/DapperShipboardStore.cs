@@ -256,6 +256,37 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         return (await c.QueryAsync<string>(Sql.Cmd("SELECT PhotoId FROM dbo.PhotoSelections WHERE UserId = @userId ORDER BY CreatedAt, PhotoId", new { userId }, null, ct))).ToList();
     }
 
+    public async Task<List<PrintOrderRow>> ListPrintOrdersAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = (await c.QueryAsync<PrintOrderRow>(Sql.Cmd(
+            "SELECT Id, PublicId, Product, Reference, TotalCents, [At], DeliverBy, BuyerUserId FROM dbo.PrintOrders WHERE BookingId = @bookingId ORDER BY [At], Id", new { bookingId }, null, ct))).ToList();
+        if (rows.Count == 0) return rows;
+        var ids = rows.Select(r => r.Id).ToArray();
+        var items = (await c.QueryAsync<(long OrderId, string PhotoId)>(Sql.Cmd(
+            "SELECT OrderId, PhotoId FROM dbo.PrintOrderItems WHERE OrderId IN @ids ORDER BY OrderId, CreatedAt, PhotoId", new { ids }, null, ct))).ToList();
+        foreach (var r in rows) r.PhotoIds = [.. items.Where(i => i.OrderId == r.Id).Select(i => i.PhotoId)];
+        return rows;
+    }
+
+    public async Task<PrintOrderRow> AddPrintOrderAsync(long bookingId, PrintOrderRow o, IReadOnlyList<FolioWrite> folio, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
+            INSERT INTO dbo.PrintOrders (BookingId, Product, Reference, TotalCents, DeliverBy, [At], BuyerUserId)
+            OUTPUT INSERTED.Id, INSERTED.PublicId
+            VALUES (@bookingId, @Product, @Reference, @TotalCents, @DeliverBy, @At, @BuyerUserId)
+            """, new { bookingId, o.Product, o.Reference, o.TotalCents, o.DeliverBy, o.At, o.BuyerUserId }, tx, ct));
+        foreach (var photoId in o.PhotoIds)
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.PrintOrderItems (OrderId, PhotoId) VALUES (@id, @photoId)", new { id, photoId }, tx, ct));
+        await ReplaceFolioAsync(c, tx, bookingId, "print", id, folio, ct);
+        await tx.CommitAsync(ct);
+        o.Id = id;
+        o.PublicId = publicId;
+        return o;
+    }
+
     private static async Task<List<AlbumEntry>> LoadAlbumAsync(DbConnection c, long bookingId, CancellationToken ct) =>
         (await c.QueryAsync<AlbumEntry>(Sql.Cmd("SELECT PhotoId, UserId FROM dbo.PhotoAlbum WHERE BookingId = @bookingId ORDER BY CreatedAt, PhotoId, UserId", new { bookingId }, null, ct))).ToList();
 

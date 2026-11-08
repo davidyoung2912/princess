@@ -70,6 +70,12 @@ public sealed record AlbumPhotoDto(string PhotoId, Guid By, bool Mine);
 public sealed record PhotosViewDto(
     List<Photo> Photos, List<string> Favourites, List<string> Owned, List<PhotoReceiptDto> Receipts, int IncludedLeft, List<PhotographerSlot> Schedule, List<GuestDto> People, int ThroughDay, List<AlbumPhotoDto> Album);
 
+public sealed record PrintOrderDto(Guid Id, string Product, string Reference, long Total, int Photos, string Stage, long At, long DeliverBy);
+
+public sealed record PrintViewDto(List<PrintProduct> Products, List<PrintOrderDto> Orders);
+
+public sealed record PrintRequest(string? Product, List<string>? PhotoIds);
+
 public sealed record PhotoQuoteDto(int Included, int Paid, List<PhotoOption> Options, string Cheapest);
 
 public sealed record PhotoIdsRequest(List<string>? PhotoIds);
