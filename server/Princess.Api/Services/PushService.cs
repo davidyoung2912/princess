@@ -135,8 +135,9 @@ public sealed class PushService(
         var rows = port is null ? [] : (await portRows.ListAsync(booking.BookingId, ct)).Where(r => !r.Deleted).ToList();
         var notBack = port is not null && rows.Any(r => r.Kind == "presence" && r.Key.StartsWith(port.Date + "|", StringComparison.Ordinal) && Status(r.Json) is not (null or "back"));
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;
+        var buffer = port is null ? null : PlanBuffer(rows.FirstOrDefault(r => r.Kind == "plan" && r.Key == port.Date)?.Json);
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer);
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>
@@ -149,6 +150,11 @@ public sealed class PushService(
         if (await state.GetAsync(false, userId, "reminder", ct) is not { } row) return null;
         try { return JsonNode.Parse(row.Json)?["at"] is JsonValue v && v.TryGetValue<long>(out var at) && at > 0 ? at : null; }
         catch (System.Text.Json.JsonException) { return null; }
+    }
+
+    private static int? PlanBuffer(string? json)
+    {
+        try { return JsonNode.Parse(json ?? "null")?["buffer"] is JsonValue v && v.TryGetValue<int>(out var b) ? b : null; } catch (Exception e) when (e is System.Text.Json.JsonException or InvalidOperationException or FormatException) { return null; }
     }
 
     private static string? Status(string? json)

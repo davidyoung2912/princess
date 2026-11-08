@@ -13,7 +13,7 @@ public sealed record PushDecision(bool Send, string? Reason);
 /// <summary>What the first five notices are built from. Everything here is already known to the server.</summary>
 public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
-    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null);
+    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -32,6 +32,10 @@ public static class PushRules
 
     /// <summary>Minutes before all-aboard at which the escalation speaks (90, 60, 30 and 10).</summary>
     public static readonly int[] AllAboardSteps = [90, 60, 30, 10];
+
+    /// <summary>The steps for one guest: the usual ones plus their own safety buffer from the port-day plan (5 to 120 minutes), so one alert lands as that buffer begins.</summary>
+    public static int[] StepsFor(int? planBuffer) =>
+        planBuffer is { } b && b is >= 5 and <= 120 ? [.. AllAboardSteps.Append(b).Distinct().OrderByDescending(x => x)] : AllAboardSteps;
 
     public static PushSettings NormalizeSettings(int? budget, bool? calm, IEnumerable<string>? watch) => new(
         budget is { } b && BudgetChoices.Contains(b) ? b : DefaultBudget,
@@ -52,7 +56,7 @@ public static class PushRules
         if (i.PortDay is { } day && i.ArrivedInPort && i.Now < DateTimeOffset.FromUnixTimeMilliseconds(day.AllAboardAt).UtcDateTime)
         {
             var left = day.State.MinutesLeft;
-            if (AllAboardSteps.Where(s => left <= s).Cast<int?>().Min() is { } step)
+            if (StepsFor(i.PlanBuffer).Where(s => left <= s).Cast<int?>().Min() is { } step)
             {
                 list.Add(new($"allAboard:{day.Date}:{step}", "allAboard", "critical", true, 100, "/ship/port",
                     "Stanley: time to head back", $"All aboard is at {day.AllAboardShip} ship time, in about {left} minutes. I would start back now.",

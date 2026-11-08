@@ -80,6 +80,15 @@ public class PushRulesTests
     }
 
     [Fact]
+    public void AllAboardAlsoSpeaksAtTheGuestsOwnBuffer()
+    {
+        var n = PushRules.Build(Input(PortDay(44)) with { PlanBuffer = 45 }).Single(x => x.Kind == "allAboard");
+        Assert.EndsWith(":45", n.Key);
+        Assert.EndsWith(":60", PushRules.Build(Input(PortDay(44))).Single(x => x.Kind == "allAboard").Key);
+        Assert.Equal(PushRules.AllAboardSteps, PushRules.StepsFor(500));
+    }
+
+    [Fact]
     public void AllAboardIsSilentBeforeArrivalAndAfterTheTime()
     {
         var port = PortDay(50);
