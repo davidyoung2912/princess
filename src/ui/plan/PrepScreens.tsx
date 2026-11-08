@@ -5,7 +5,7 @@ import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useFareHistory } from '../../hooks/useServedFeeds'
-import { ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
+import { acknowledgedAt, allergySteps, ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
@@ -19,6 +19,7 @@ import { api } from '../../runtime'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { Stepper } from '../Stepper'
 import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { Printer, Share } from '../icons'
@@ -196,8 +197,12 @@ export function AllergyScreen() {
             <Button type="submit" variant="secondary" disabled={cleanAllergy(draft) === ''}>{t('allergy.addButton')}</Button>
           </form>
         )}
+        {a.items.length > 0 && <Stepper label={t('allergy.track')} steps={allergySteps(status).map((s) => ({ id: s.id, state: s.state, label: t(`allergy.step.${s.id}` as StringKey) }))} />}
         <p role="status"><strong>{t('allergy.status')}:</strong> {t(`allergy.s.${status}` as StringKey)}</p>
       </Card>
+      {acknowledgedAt(a, now) !== null && (
+        <Card info><h2 className="card__title">{th('allergy.show.title')}</h2><p>{t('allergy.show.body', { items: a.items.join(', '), date: new Date(acknowledgedAt(a, now)!).toLocaleDateString() })}</p></Card>
+      )}
       <Banner kind="info" title={t('allergy.sim')} />
     </Page>
   )

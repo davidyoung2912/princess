@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accessNotes, EMPTY_ACCESS, galleyStatus, holdState, ledgerSummary, leftInWords, normalizeAllergy, normalizeHold, personReadiness, priceWatch, splitEven, tripContract } from './bookingPrep'
+import { acknowledgedAt, allergySteps, accessNotes, EMPTY_ACCESS, galleyStatus, holdState, ledgerSummary, leftInWords, normalizeAllergy, normalizeHold, personReadiness, priceWatch, splitEven, tripContract } from './bookingPrep'
 import { buildChecklist } from './checklist'
 
 const H = 3_600_000
@@ -70,5 +70,18 @@ describe('access profile and account needs share four answers', () => {
     expect(needsWithAccess(['cpap', 'hearing'], { ...EMPTY_ACCESS, mobility: true })).toEqual(['cpap', 'mobility'])
     const a = accessWithNeeds({ ...EMPTY_ACCESS, sensory: true, device: 'cane' }, ['hearing', 'oxygen'])
     expect(a).toMatchObject({ hearing: true, mobility: false, sensory: true, device: 'cane' })
+  })
+})
+
+describe('allergy tracking', () => {
+  const f = normalizeAllergy({ items: ['peanuts'], at: 0 })
+  it('shows steps only once flagged', () => {
+    expect(allergySteps('notSent')).toEqual([])
+    expect(allergySteps('noted').map((s) => s.state)).toEqual(['done', 'done', 'current'])
+    expect(allergySteps('acknowledged').map((s) => s.state)).toEqual(['done', 'done', 'done'])
+  })
+  it('gives the acknowledgement time only after it happens', () => {
+    expect(acknowledgedAt(f, 3_600_000)).toBeNull()
+    expect(acknowledgedAt(f, 13 * 3_600_000)).toBe(12 * 3_600_000)
   })
 })

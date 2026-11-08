@@ -184,6 +184,18 @@ export function galleyStatus(flag: AllergyFlag, now: number): GalleyStatus {
   return now - flag.at >= GALLEY_HOURS * 3_600_000 ? 'acknowledged' : 'noted'
 }
 
+export type AllergyStep = 'flagged' | 'noted' | 'acknowledged'
+/** The "what happened to this" steps for the allergy flag: nothing flagged shows none; noted is the current step until the galley acknowledges. */
+export function allergySteps(status: GalleyStatus): { id: AllergyStep; state: 'done' | 'current' | 'todo' }[] {
+  if (status === 'notSent') return []
+  const ack = status === 'acknowledged'
+  return [{ id: 'flagged', state: 'done' }, { id: 'noted', state: 'done' }, { id: 'acknowledged', state: ack ? 'done' : 'current' }]
+}
+
+/** When the galley acknowledged the flag, or null while it has not. */
+export const acknowledgedAt = (flag: AllergyFlag, now: number): number | null =>
+  galleyStatus(flag, now) === 'acknowledged' && flag.at !== null ? flag.at + GALLEY_HOURS * 3_600_000 : null
+
 // ---- Pay-your-share ledger (S2-04) ----
 export interface Share { id: string; name: string; amount: Cents; paid: boolean }
 export const SHARES_MAX = 12
