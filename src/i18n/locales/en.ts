@@ -9513,6 +9513,7 @@ export const en = {
   'stanley.mode.seaDay.event.late': 'It started at {time} and may still be on. It is at {place}.',
   'stanley.mode.seaDay.free.title': 'Nothing is planned yet',
   'stanley.mode.seaDay.free.line': 'You have a free day. See which places are quiet, or add something to your plan.',
+  'stanley.mode.seaDay.walkCabin': 'About {minutes} minutes to walk from your cabin.',
   'stanley.mode.seaDay.walk': 'About {minutes} minutes to walk from the one before.',
   'stanley.mode.seaDay.goodNow': 'The pool is quiet right now.',
   'stanley.mode.seaDay.goodAt': 'The pool will be quietest around {time}.',

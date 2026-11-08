@@ -58,7 +58,7 @@ export function StanleyModeScreen() {
           <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
           <h3 id="stanley-mode-h">{t('stanley.mode.next', { step: title(cur) })}</h3>
           <p className="stanley-mode__line">{t(lineKey(mode, cur, timing) as StringKey, { time: at(cur), minutes: Math.max(0, view.minutesTo ?? 0), place: cur.where ?? '' })}</p>
-          {cur.walk !== undefined && <p className="muted">{t('stanley.mode.seaDay.walk', { minutes: cur.walk })}</p>}
+          {cur.walk !== undefined && <p className="muted">{t(cur.walkFromCabin ? 'stanley.mode.seaDay.walkCabin' : 'stanley.mode.seaDay.walk', { minutes: cur.walk })}</p>}
           {cur.at !== null && <p className="stanley-mode__time" role="timer" aria-live="off">{timing === 'past' ? t('stanley.mode.past', { time: at(cur) }) : t('stanley.mode.in', { time: at(cur), minutes: view.minutesTo ?? 0 })}</p>}
           <div className="button-row">
             <LinkButton to={cur.to} state={openedFrom('blue')}>{t('stanley.mode.open')}</LinkButton>

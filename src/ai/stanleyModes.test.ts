@@ -78,6 +78,10 @@ describe('the sea day', () => {
     expect(steps[1].walk).toBeGreaterThan(0)
   })
   it('offers a free-day step when nothing is planned, and shows at most four events', () => {
+    const fromCabin = modeSteps('seaDay', { seaDay: { events: facts.seaDay!.events, cabin: { deck: 9, position: 'aft' } } })[0]
+    expect(fromCabin.walkFromCabin).toBe(true)
+    expect(fromCabin.walk).toBeGreaterThan(0)
+    expect(modeSteps('seaDay', facts)[0].walkFromCabin).toBeUndefined()
     expect(modeSteps('seaDay', { seaDay: { events: [] } }).map((s) => s.id)).toEqual(['free'])
     const many = Array.from({ length: 7 }, (_, i) => ({ id: `e${i}`, title: 'x', startAt: i, endAt: i + 1, placeId: 'live' }))
     expect(modeSteps('seaDay', { seaDay: { events: many } })).toHaveLength(4)

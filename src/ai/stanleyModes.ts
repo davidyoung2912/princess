@@ -2,7 +2,7 @@ import type { JourneyStage } from '../routes/hubs'
 import { planPortDay, DEFAULT_BUFFER } from '../domain/portPilot'
 import type { StanleyLevel } from '../settings/settings'
 import { placeById } from '../domain/deck'
-import { walkMinutes } from '../domain/discoverDelights'
+import { walkFromCabin, walkMinutes } from '../domain/discoverDelights'
 
 /**
  * The four journey modes Stanley leads (docs/experience-extension-ideas.md N-G1, N-E1, N-O1, N-L1). Each is a short, time-ordered list of steps with one big
@@ -23,6 +23,8 @@ export interface ModeStep {
   where?: string
   /** Minutes to walk from the previous planned event's place, when both are on the deck map. */
   walk?: number
+  /** The walk is from the guest's cabin, not from the step before. */
+  walkFromCabin?: boolean
   /** The data already shows it is done (muster done, say), so the guest need not tick it. */
   done?: boolean
 }
@@ -37,7 +39,7 @@ export interface ModeFacts {
   boardingDay?: { checkinDone: boolean; /** When to set off, from the travel plan; null when unknown. */ leaveAt?: number | null; /** When the guest's arrival window opens; null when unknown. */ terminalAt?: number | null }
   firstFour?: { musterAt: number; musterDone: boolean; sailAwayAt: number | null }
   portDay?: { allAboardAt: number; arriveAt: number; tender: boolean; skipped: boolean }
-  seaDay?: { events: SeaEvent[] }
+  seaDay?: { events: SeaEvent[]; /** The guest's stateroom, when known, so the first event shows the walk from it. */ cabin?: { deck: number; position: 'forward' | 'midship' | 'aft' } | null }
   lastMorning?: { tipBy: number; bagsOutAt: number; arrivalAt: number; vacateAt: number }
 }
 
@@ -117,9 +119,10 @@ export function modeSteps(mode: ModeId, f: ModeFacts): ModeStep[] {
       let before = placeById(sea.events[0].placeId)
       return sea.events.slice(0, SEA_EVENTS_SHOWN).map((e, i): ModeStep => {
         const place = placeById(e.placeId)
-        const walk = i > 0 && before && place && before.id !== place.id ? walkMinutes(before, place) : null
+        const fromCabin = i === 0 && sea.cabin && place ? walkFromCabin(sea.cabin, place) : null
+        const walk = fromCabin ?? (i > 0 && before && place && before.id !== place.id ? walkMinutes(before, place) : null)
         before = place
-        return { id: e.id, at: e.startAt, to: '/ship/map', label: e.title, where: place ? `${place.name}, deck ${place.deck}` : undefined, ...(walk !== null ? { walk } : {}) }
+        return { id: e.id, at: e.startAt, to: '/ship/map', label: e.title, where: place ? `${place.name}, deck ${place.deck}` : undefined, ...(walk !== null ? { walk, ...(fromCabin !== null ? { walkFromCabin: true } : {}) } : {}) }
       })
     }
     case 'lastMorning': {

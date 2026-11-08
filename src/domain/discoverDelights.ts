@@ -84,6 +84,9 @@ export function walkMinutes(a: Place, b: Place): number | null {
   return Math.max(1, Math.ceil(1 + walked + ride))
 }
 
+/** Minutes from a stateroom to a public place, from the deck graph; null when there is no way. */
+export const walkFromCabin = (c: Pick<Cabin, 'deck' | 'position'>, to: Place): number | null => walkMinutes(cabinSpot(c), to)
+
 export const WALK_TARGETS = ['lido', 'arena', 'guest-services'] as const
 
 /** Minutes from the cabin to the places guests ask about, from the deck graph. The nearest lift is always in the cabin's own section (a minute). */

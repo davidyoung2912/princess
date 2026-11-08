@@ -7,6 +7,7 @@ import { shipZoneAt } from '../domain/sailings'
 import { api } from '../runtime'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../settings/stanleySeen'
 import { buildJourney, windowOpensAt } from '../domain/journey'
+import { cabinsFor } from '../domain/cabins'
 import { useTrip } from './useTrip'
 import { useRouteConditions } from './useRouteConditions'
 import { useNow, usePersona, useSailing } from './useDemo'
@@ -52,6 +53,10 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   const program = useSavedCopy('program', `${me?.id ?? 'none'}:${cruiseDay}`, () => api.onboard.program(cruiseDay), asProgramView, [me?.id, cruiseDay])
   const { env, now: pulseNow } = usePulseEnv(sailing, now, cruiseDay)
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
+  const wantCabin = forced === 'seaDay' || (!forced && pos.stage === 'sea')
+  const booking = useMine(() => (wantCabin && trip ? api.booking.get(trip.number) : Promise.resolve(null)), [wantCabin, trip?.number])
+  const cabinNumber = booking.data?.cabin ?? null
+  const cabin = cabinNumber && booking.data ? (cabinsFor(booking.data.sailingId, booking.data.category).find((c) => c.number === cabinNumber) ?? null) : null
   const zone = shipZoneAt(sailing, now)
   const aboard = !!today.data?.aboard
   const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', hour12: false }).format(now)) % 24
@@ -72,7 +77,7 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   }
   if (mode === 'seaDay' && program.data) {
     const mine = program.data.events.filter((e) => program.data!.mine.includes(e.id) && e.status !== 'cancelled' && e.endAt > now)
-    facts.seaDay = { events: mine.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, endAt: e.endAt, placeId: e.placeId })) }
+    facts.seaDay = { cabin, events: mine.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, endAt: e.endAt, placeId: e.placeId })) }
   }
   let goodNow: GoodNow | null = null
   if (mode === 'seaDay' && env) {
