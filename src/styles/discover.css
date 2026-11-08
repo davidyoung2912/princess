@@ -103,3 +103,5 @@ textarea.field__input { resize: vertical; }
 .price-cal__row p { margin: 0 0 var(--space-2); }
 .price-cal__bar { height: 0.75rem; background: var(--surface-muted, transparent); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: var(--space-2); }
 .price-cal__bar span { display: block; height: 100%; background: var(--trip, var(--accent)); }
+.price-cal__compare { padding: var(--space-3); border: 2px solid var(--border-strong); border-radius: var(--radius-md, 0.5rem); margin-bottom: var(--space-3); }
+.price-cal__compare p { margin: 0 0 var(--space-2); }

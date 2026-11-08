@@ -6,7 +6,7 @@ import type { Cents } from './money'
 
 export interface CalendarSailing { id: string; departure: string; nights: number; holiday: boolean; month: string }
 
-export type CalendarBadge = 'cheapest' | 'bestValue' | 'holiday' | 'hurricane'
+export type CalendarBadge = 'cheapest' | 'bestValue' | 'holiday' | 'hurricane' | 'quieter'
 
 export interface CalendarRow {
   id: string
@@ -25,6 +25,9 @@ const dayMs = (iso: string) => Date.parse(`${iso}T00:00:00Z`)
 
 /** Atlantic hurricane season, June to November. Shown as a plain shading, not a forecast. */
 export const inHurricaneSeason = (month: string): boolean => { const m = Number(month.slice(5, 7)); return m >= 6 && m <= 11 }
+
+/** Peak months for family travel: June to August and December. A guide to crowds, not a count of them. */
+export const inPeakMonth = (month: string): boolean => { const m = Number(month.slice(5, 7)); return (m >= 6 && m <= 8) || m === 12 }
 
 export function weeksUntil(departure: string, today: string): number | null {
   const days = Math.round((dayMs(departure) - dayMs(today)) / DAY)
@@ -46,6 +49,7 @@ export function calendarRows(list: readonly CalendarSailing[], priceOf: (id: str
     if (price !== null && price === lowest) badges.push('cheapest')
     if (price !== null && bestNight !== null && price / Math.max(1, s.nights) === bestNight) badges.push('bestValue')
     if (s.holiday) badges.push('holiday')
+    else if (!inPeakMonth(s.month)) badges.push('quieter')
     if (inHurricaneSeason(s.month)) badges.push('hurricane')
     return {
       id: s.id, departure: s.departure, nights: s.nights, price,
@@ -53,4 +57,25 @@ export function calendarRows(list: readonly CalendarSailing[], priceOf: (id: str
       weeksAway: weeksUntil(s.departure, today), badges,
     }
   })
+}
+
+export interface DateComparison {
+  /** Both prices, the gap (second minus first) and the gap a night; null when either price is missing. */
+  firstPrice: Cents | null
+  secondPrice: Cents | null
+  difference: Cents | null
+  perNightDifference: number | null
+  /** Which is cheaper in total; 'same' when equal, null when it cannot be told. */
+  cheaper: 'first' | 'second' | 'same' | null
+}
+
+/** Two picked sailings side by side on price. Rows come from calendarRows. */
+export function compareRows(a: CalendarRow, b: CalendarRow): DateComparison {
+  if (a.price === null || b.price === null) return { firstPrice: a.price, secondPrice: b.price, difference: null, perNightDifference: null, cheaper: null }
+  const difference = b.price - a.price
+  return {
+    firstPrice: a.price, secondPrice: b.price, difference,
+    perNightDifference: Math.round(b.price / Math.max(1, b.nights) - a.price / Math.max(1, a.nights)),
+    cheaper: difference === 0 ? 'same' : difference > 0 ? 'first' : 'second',
+  }
 }
