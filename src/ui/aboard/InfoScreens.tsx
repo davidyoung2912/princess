@@ -5,6 +5,12 @@ import { Link } from 'react-router'
 import { PORTS } from '../../domain/sailings'
 import type { Recent } from '../../domain/recentSearches'
 import { clearRecent, loadRecent, rememberSearch } from '../../settings/recentSearches'
+import { answerCards } from '../../domain/answerCards'
+import { PLANS } from '../../domain/wifi'
+import { formatMoney } from '../../domain/money'
+import { api } from '../../runtime'
+import { useMine } from '../../hooks/useMine'
+import { localDate, tonightsDinner } from '../../domain/tileLive'
 import { MIN_QUERY, searchContent } from '../../domain/searchIndex'
 import { captainAnnouncement } from '../../domain/shipInfo'
 import { distanceParts } from '../../domain/navigation'
@@ -92,6 +98,10 @@ export function SearchScreen() {
   const earlier = searchContent(query, screenHits(t, stage, true), (to) => isFromEarlier(stage, to)).filter((h) => !now.some((n) => n.to === h.to))
   const hits = [...now, ...earlier]
   const enough = query.trim().length >= MIN_QUERY
+  const wantDinner = enough && answerCards(query, { wifiFrom: null, dinnerTonight: null }).some((c) => c.id === 'dinner')
+  const plan = useMine(() => (wantDinner ? api.plan.overview() : Promise.resolve(null)), [wantDinner])
+  const today = localDate(useNow())
+  const cards = answerCards(query, { wifiFrom: formatMoney(Math.min(...PLANS.map((p) => p.perDay))), dinnerTonight: plan.data ? tonightsDinner(plan.data.days, today) : null }, (to) => visibleAt(stage, to))
   return (
     <div className="page">
       <form role="search" onSubmit={(e) => e.preventDefault()}>
@@ -106,6 +116,12 @@ export function SearchScreen() {
           <p><button type="button" className="link-button" onClick={forget}>{t('search.clearRecent')}</button></p>
         </section>
       )}
+      {cards.map((c) => (
+        <Card key={c.id} labelledBy={`answer-${c.id}`}>
+          <p id={`answer-${c.id}`}><strong>{c.id === 'wifi' ? (c.value ? t('search.answer.wifi', { value: c.value }) : t('search.answer.wifiNoPrice')) : c.id === 'dinner' ? (c.value ? t('search.answer.dinner', { value: c.value }) : t('search.answer.dinnerNone')) : t('search.answer.late')}</strong></p>
+          <Link to={c.to} onClick={() => remember({ to: c.to, title: t(`search.answer.${c.id}Go` as StringKey) })}>{t(`search.answer.${c.id}Go` as StringKey)}</Link>
+        </Card>
+      ))}
       <ul className="link-list">
         {hits.map((h) => (
           <li key={`${h.kind}-${h.id}`}>
