@@ -9101,6 +9101,8 @@ export const en = {
   'cat.sailingFact.from': 'From, per person',
   'cat.sailingFact.perNight': 'Per person, a night',
   'cat.sailingFact.ports': 'Ports',
+  'cat.sailingFact.wanted': 'Places you want',
+  'cat.compare.noWanted': 'None of your wanted places',
   'cat.sailingFact.seaDays': 'Days at sea',
   'cat.sailingFact.holiday': 'Holiday sailing',
   'cat.sailingFact.status': 'Status',

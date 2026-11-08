@@ -5,6 +5,9 @@ import { formatMoney } from '../../domain/money'
 import { browseSailings, compareHighlights, portName, rangeOf, sailingFacts, type BrowseSailing } from '../../domain/catalogueBrowse'
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useFavourites } from '../../hooks/useFavourites'
+import { useMemory } from '../../hooks/useMemory'
+import { wantMatches } from '../../domain/rememberDelights'
+import { portById } from '../../domain/sailings'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { regionName, shipName } from './catalogueNames'
@@ -15,6 +18,8 @@ const MAX = 3
 export function CompareSailingsScreen() {
   useCatalogue()
   const favourites = useFavourites()
+  const { state } = useMemory()
+  const wants = state.remember.wants
   const all = browseSailings()
   const saved = favourites.keys.flatMap((k) => (k.startsWith('sailing:') ? all.filter((s) => s.id === k.slice('sailing:'.length)) : []))
   // Until the guest touches a box, the first three saved sailings are compared.
@@ -32,6 +37,10 @@ export function CompareSailingsScreen() {
     { key: 'cat.sailingFact.from', cell: (f) => (f.fromCents === undefined ? t('cat.noPrice') : formatMoney(f.fromCents)) },
     { key: 'cat.sailingFact.perNight', cell: (f) => (f.perNightCents === null ? t('cat.noPrice') : formatMoney(f.perNightCents)) },
     { key: 'cat.sailingFact.ports', cell: (f) => (f.ports.length > 0 ? f.ports.map(portName).join(', ') : t('cat.compare.unknown')) },
+    ...(wants.length > 0 ? [{ key: 'cat.sailingFact.wanted' as StringKey, cell: (f: (typeof facts)[number]) => {
+      const hits = wantMatches(wants, f.ports.map((p) => portById(p)?.name ?? p))
+      return hits.length > 0 ? [...new Set(hits.map((h) => h.place))].join('; ') : t('cat.compare.noWanted')
+    } }] : []),
     { key: 'cat.sailingFact.seaDays', cell: (f) => (f.seaDays === null ? t('cat.compare.unknown') : String(f.seaDays)) },
     { key: 'cat.sailingFact.holiday', cell: (f) => t(f.holiday ? 'cat.yes' : 'cat.no') },
     { key: 'cat.sailingFact.status', cell: (f) => t(f.bookingOpen ? 'cat.status.open' : f.dataStatus === 'sample' ? 'cat.status.sample' : 'cat.status.browse') },
