@@ -7,6 +7,7 @@ import { formatDate, formatTime } from '../../domain/cruise'
 import { ACTIVITIES, EXCURSIONS, filterExcursions, formatHours, guestPrice, INTERESTS, NO_FILTER, type ExcursionPort, type Filter, type Interest } from '../../domain/excursions'
 import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
+import { fitTours, NO_FIT, type FitAnswers } from '../../domain/excursionFit'
 import { PORT_GUIDES } from '../../domain/ports'
 import { portById } from '../../domain/sailings'
 import { api } from '../../runtime'
@@ -48,6 +49,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   const [filter, setFilter] = useState<Filter>(NO_FILTER)
   const { state: mem } = useMemory()
   const [suits, setSuits] = useState(false)
+  const [fit, setFit] = useState<FitAnswers | null>(null)
   const [adding, setAdding] = useState<ExcursionOffer | null>(null)
   const [changing, setChanging] = useState<TourBooking | null>(null)
   const [cancelling, setCancelling] = useState<TourBooking | null>(null)
@@ -57,6 +59,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
 
   const offerOf = (id: string) => view.offers.find((o) => o.item.id === id)!
   const shown = filterExcursions(view.offers.map((o) => o.item), filter).filter((x) => !suits || difficultyConcerns(x, mem.access).length === 0).map((x) => offerOf(x.id))
+  const matches = fit ? fitTours(view.offers, fit) : []
   const active = view.booked.filter((b) => b.status === 'booked')
   const past = view.booked.filter((b) => b.status === 'cancelled')
   const due = view.cartTotal - view.creditApplied
@@ -131,6 +134,56 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
             <h3>{th('exc.cancelled')}</h3>
             <ul className="plain-list">{past.map((b) => <li key={b.id}><span>{offerOf(b.excursionId).item.name}</span><span className="muted">{b.cancel.fee > 0 ? t('exc.feeKept', { fee: formatMoney(b.cancel.fee) }) : t('exc.refunded', { amount: formatMoney(b.cancel.refund) })}</span></li>)}</ul>
           </>
+        )}
+      </section>
+
+      <section aria-labelledby="fit-h">
+        <h2 id="fit-h">{th('exc.fit.title')}</h2>
+        <p>{t('exc.fit.intro')}</p>
+        <div className="filters">
+          <div className="field">
+            <label htmlFor="fit-active">{t('exc.fit.active')}</label>
+            <select id="fit-active" value={fit?.activity ?? ''} onChange={(e) => setFit({ ...(fit ?? NO_FIT), activity: e.target.value as FitAnswers['activity'] })}>
+              {!fit && <option value="">{t('exc.fit.choose')}</option>}
+              {ACTIVITIES.map((a) => <option key={a} value={a}>{t(`exc.fit.active.${a}` as StringKey)}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="fit-spend">{t('exc.fit.spend')}</label>
+            <select id="fit-spend" value={fit?.maxPrice ?? ''} onChange={(e) => setFit({ ...(fit ?? NO_FIT), maxPrice: e.target.value ? Number(e.target.value) : null })}>
+              <option value="">{t('exc.f.any')}</option>
+              {PRICES.map((p) => <option key={p} value={p}>{t('exc.f.under', { amount: `$${p}` })}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="fit-who">{t('exc.fit.who')}</label>
+            <select id="fit-who" value={fit?.who ?? 'adults'} onChange={(e) => setFit({ ...(fit ?? NO_FIT), who: e.target.value as FitAnswers['who'] })}>
+              {(['adults', 'children', 'wheelchair'] as const).map((w) => <option key={w} value={w}>{t(`exc.fit.who.${w}` as StringKey)}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="fit-port">{t('exc.f.port')}</label>
+            <select id="fit-port" value={fit?.port ?? ''} onChange={(e) => setFit({ ...(fit ?? NO_FIT), port: (e.target.value || null) as ExcursionPort | null })}>
+              <option value="">{t('exc.f.all')}</option>
+              {PORTS.map((p) => <option key={p} value={p}>{portLabel(p)}</option>)}
+            </select>
+          </div>
+        </div>
+        {fit && (
+          <div role="status">
+            {matches.length === 0 ? <p>{t('exc.fit.none')}</p> : (
+              <ol className="card-grid">
+                {matches.slice(0, 5).map((m) => (
+                  <li key={m.offer.item.id} className="card">
+                    <h3 className="card__title">{m.offer.item.name}</h3>
+                    <p className="muted">{portLabel(m.offer.item.port)} · {formatDate(m.offer.date)}</p>
+                    <p>{m.reasons.join(', ')}.</p>
+                    <Button variant="secondary" disabled={add.busy || view.cart.some((l) => l.excursionId === m.offer.item.id)} onClick={() => void pick(m.offer)}>{t('exc.addToCart')}<span className="visually-hidden"> {m.offer.item.name}</span></Button>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         )}
       </section>
 
