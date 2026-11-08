@@ -85,6 +85,15 @@ export function caseStatus(c: CaseTimes, now: number): CaseStatus {
 /** A case can be withdrawn until it is answered. */
 export const caseWithdrawable = (s: CaseStatus): boolean => s.stage === 'received' || s.stage === 'inReview'
 
+export type CaseStep = 'sent' | 'looked' | 'answered'
+/** The steps for a case: sent, being looked at, answered. A withdrawn case shows none. */
+export function caseSteps(stage: CaseStage): { id: CaseStep; state: 'done' | 'current' | 'todo' }[] {
+  if (stage === 'withdrawn') return []
+  if (stage === 'received') return [{ id: 'sent', state: 'current' }, { id: 'looked', state: 'todo' }, { id: 'answered', state: 'todo' }]
+  if (stage === 'inReview') return [{ id: 'sent', state: 'done' }, { id: 'looked', state: 'current' }, { id: 'answered', state: 'todo' }]
+  return [{ id: 'sent', state: 'done' }, { id: 'looked', state: 'done' }, { id: 'answered', state: 'done' }]
+}
+
 // ---- Feedback (POS-02, POS-11, POS-14) ----
 
 export const AREAS = ['ship', 'dining', 'entertainment', 'crew', 'excursions'] as const

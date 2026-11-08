@@ -213,3 +213,13 @@ describe('holding a cruise', () => {
     expect(holdDeposit(50_000, 2, true)).toBe(10_000)
   })
 })
+
+import { caseSteps as caseStepsX6h } from './postcruise'
+describe('caseSteps', () => {
+  it('moves from sent to answered and shows none once withdrawn', () => {
+    expect(caseStepsX6h('received').map((x) => x.state)).toEqual(['current', 'todo', 'todo'])
+    expect(caseStepsX6h('inReview').map((x) => x.state)).toEqual(['done', 'current', 'todo'])
+    expect(caseStepsX6h('resolved').every((x) => x.state === 'done')).toBe(true)
+    expect(caseStepsX6h('withdrawn')).toEqual([])
+  })
+})

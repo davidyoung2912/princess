@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CaseView, CasesView } from '../../api/finishTypes'
-import { CASE_PLACE_MAX, CASE_TEXT_MAX, CLAIM_MAX, type CaseKind } from '../../domain/postcruise'
+import { caseSteps, CASE_PLACE_MAX, CASE_TEXT_MAX, CLAIM_MAX, type CaseKind } from '../../domain/postcruise'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -9,6 +9,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { Stepper } from '../Stepper'
 import { Field } from '../Field'
 import { Load } from '../account/parts'
 import { ExtraError } from '../extras/common'
@@ -84,6 +85,7 @@ function Case({ c, reload }: { c: CaseView; reload: () => void }) {
     <li className="case">
       <h3 className="case__title">{th(`case.kind.${c.kind}` as StringKey)} · {c.number}</h3>
       <p role="status"><strong>{t(`case.stage.${c.stage}` as StringKey)}</strong>{c.stage !== 'resolved' && c.stage !== 'withdrawn' && <> · {t('case.due', { time: formatDateTime(c.dueAt) })}</>}</p>
+      <Stepper label={t('case.track')} steps={caseSteps(c.stage).map((x) => ({ id: x.id, state: x.state, label: t(`case.step.${x.id}` as StringKey) }))} />
       <p>{c.summary}</p>
       {c.place && <p className="muted">{t('case.lastSeen', { place: c.place })}</p>}
       {c.cents > 0 && <p className="muted">{t('case.amountAsked', { amount: formatMoney(c.cents) })}</p>}
