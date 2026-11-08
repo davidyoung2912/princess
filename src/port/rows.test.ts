@@ -16,7 +16,7 @@ const sample = (): PortState => {
   party = setAlertBefore(party, 60)
   party = addRendezvous(party, { place: 'Pier', at: 999, fallback: 'Gangway', members: ['daniel', 'priya'] }, 'daniel', 'm1')
   const poll = castVote(castVote(newPoll('p1', 'Where to eat?', ['Pizza', 'Tacos'])!, 'daniel', 'o1'), 'priya', 'o2')
-  const board = { polls: [poll], ideas: heartIdea(addIdea([], 'i1', 'Swim with rays'), 'i1', 'priya') }
+  const board = { polls: [poll], ideas: heartIdea(addIdea([], 'i1', 'Swim with rays'), 'i1', 'priya'), dates: { priya: ['sky-2027-04-01', 'sky-2027-05-01'] } }
   return { party, split, board }
 }
 
@@ -35,6 +35,10 @@ describe('the group poll and dream board as rows', () => {
     const gone = diffState(before, { ...before, board: { ...before.board, polls: [] } }, 600)
     expect(gone.every((o) => o.deleted)).toBe(true)
     expect(gone.map((o) => o.kind).sort()).toEqual(['poll', 'vote', 'vote'])
+  })
+  it('keeps each ticked sailing as its own row', () => {
+    const rows = [...valuesOf(sample()).values()].filter((r) => r.kind === 'date')
+    expect(rows.map((r) => r.key).sort()).toEqual(['priya|sky-2027-04-01', 'priya|sky-2027-05-01'])
   })
   it('rebuilds the board from the rows another phone sent', () => {
     const rows = [...valuesOf(sample()).values()].map((v) => ({ ...v, at: 10, deleted: false }))

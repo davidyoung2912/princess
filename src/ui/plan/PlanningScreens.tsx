@@ -7,7 +7,9 @@ import { clubById } from '../../domain/family'
 import { formatMoney } from '../../domain/money'
 import { PORTS } from '../../domain/sailings'
 import { addTradition, briefFor, carryOver, compareExcursion, difficultyConcerns, difficultyOf, normalizeBrief, rhythmPrefs, sharedDay, tasteInferences, withoutSurprises, type PlanningState, type Rhythm } from '../../domain/planning'
-import { addIdea, castVote, heartIdea, leader, newPoll, rankIdeas, tally, voteOf, type BoardState } from '../../domain/board'
+import { addIdea, castVote, findDates, heartIdea, leader, newPoll, rankIdeas, tally, toggleDate, voteOf, type BoardState } from '../../domain/board'
+import { browseSailingById } from '../../domain/catalogueBrowse'
+import { usePricedSailings } from '../../hooks/useShipCatalogue'
 import { guestStatus, normalizeLog, normalizeOrganiser, SHARING_FACETS } from '../../domain/partyShare'
 import { usePort, newPortId } from '../../hooks/usePort'
 import { useSharing } from '../../hooks/useSharing'
@@ -150,6 +152,7 @@ export function GroupPollScreen() {
           </Card>
         )
       })}
+      <DateFinderCard board={board} who={who} set={set} />
       <Card labelledBy="board-h">
         <h2 id="board-h" className="card__title">{th('board.title')}</h2>
         <p>{t('board.intro')}</p>
@@ -166,6 +169,39 @@ export function GroupPollScreen() {
         </ul>
       </Card>
     </Page>
+  )
+}
+
+/** Date finder (P49): each person ticks the sailings they can do; the card shows the dates everyone can make, then the cheapest of them. */
+function DateFinderCard({ board, who, set }: { board: BoardState; who: string; set: (change: (b: BoardState) => BoardState) => void }) {
+  const sailings = usePricedSailings()
+  const priceOf = (id: string) => browseSailingById(id)?.fromCents ?? null
+  const label = (id: string) => { const e = sailings.find((x) => x.id === id); return e ? `${e.departure} · ${e.title}` : id }
+  const f = findDates(board.dates, priceOf)
+  const mine = board.dates[who] ?? []
+  const price = (id: string) => { const p = priceOf(id); return p === null ? '' : ` (${t('dates.from', { amount: formatMoney(p) })})` }
+  return (
+    <Card labelledBy="dates-h">
+      <h2 id="dates-h" className="card__title">{th('dates.title')}</h2>
+      <p>{t('dates.intro')}</p>
+      <fieldset className="field">
+        <legend>{t('dates.legend')}</legend>
+        {sailings.slice(0, 12).map((e) => (
+          <label key={e.id} className="check-row">
+            <input type="checkbox" disabled={!who} checked={mine.includes(e.id)} onChange={() => set((b) => ({ ...b, dates: toggleDate(b.dates, who, e.id) }))} /> {label(e.id)}
+          </label>
+        ))}
+      </fieldset>
+      <div role="status">
+        {f.people < 2 ? <p>{t('dates.waiting', { count: f.people })}</p> : f.everyone.length > 0 ? (
+          <>
+            <p><strong>{t('dates.everyone', { count: f.people })}</strong></p>
+            <ul>{f.everyone.map((id) => <li key={id}>{label(id)}{price(id)}</li>)}</ul>
+            {f.cheapest && f.everyone.length > 1 && <p>{t('dates.cheapest', { sailing: label(f.cheapest) })}</p>}
+          </>
+        ) : <p>{t('dates.none', { sailing: f.best ? label(f.best.id) : '', count: f.best?.count ?? 0, people: f.people })}</p>}
+      </div>
+    </Card>
   )
 }
 

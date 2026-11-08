@@ -9,7 +9,7 @@ namespace Princess.Api.Domain;
 /// </summary>
 public static partial class PortRowRules
 {
-    public static readonly IReadOnlySet<string> Kinds = new HashSet<string> { "presence", "plan", "planB", "setting", "meet", "meetState", "party", "item", "poll", "vote", "idea", "heart" };
+    public static readonly IReadOnlySet<string> Kinds = new HashSet<string> { "presence", "plan", "planB", "setting", "meet", "meetState", "party", "item", "poll", "vote", "idea", "heart", "date" };
 
     public const int MaxOps = 100;
     public const int MaxRows = 1_000;
