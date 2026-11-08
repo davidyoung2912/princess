@@ -32,6 +32,17 @@ export interface DiaryLineSpec { day: number; at: number; kind: DiaryKind; key: 
 
 const dayStart = (d: ItineraryDay, hour: number, minute = 0): number => (Date.parse(`${d.date}T00:00:00Z`) || 0) + (hour * 60 + minute) * 60_000
 
+/** The diary key for a line the guest added from one photo; the photo's id keeps it written once. */
+export const photoDiaryKey = (photoId: string): string => `pic:${photoId}`.slice(0, 40)
+
+/** The diary line for one photo the guest chose to keep ("Add to Trip Diary"), on the day and at the time it was taken; null when its day is not on the sailing. */
+export function photoDiaryLine(photo: { id: string; day: number; time: string; title: string }, days: readonly ItineraryDay[]): DiaryLineSpec | null {
+  const d = days.find((x) => x.day === photo.day)
+  if (!d) return null
+  const [h, m] = photo.time.split(':').map(Number)
+  return { day: d.day, at: dayStart(d, Number.isFinite(h) ? h : 12, Number.isFinite(m) ? m : 0), kind: 'photo', key: photoDiaryKey(photo.id), text: t('diary.photo', { title: photo.title }) }
+}
+
 /** The lines to write now, in day order. */
 export function sourceLines(s: DiarySources): DiaryLineSpec[] {
   const out: DiaryLineSpec[] = []

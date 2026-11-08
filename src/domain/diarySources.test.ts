@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EXCURSIONS } from './excursions'
 import { VENUES } from './dining'
-import { clockMomentTimes, sourceLines, type DiarySources } from './diarySources'
+import { clockMomentTimes, photoDiaryKey, photoDiaryLine, sourceLines, type DiarySources } from './diarySources'
 import type { ItineraryDay } from './sailings'
 
 const day = (n: number, port: string): ItineraryDay => ({ day: n, date: `2027-03-0${6 + n}`, port } as ItineraryDay)
@@ -74,5 +74,18 @@ describe('clockMomentTimes', () => {
     expect(times!.lastNight!).toBeLessThan(times!.off)
     expect(times!.off).toBeLessThan(times!.home)
     expect(clockMomentTimes([])).toBeNull()
+  })
+})
+
+describe('photoDiaryLine', () => {
+  it('writes one line on the day and time the photo was taken', () => {
+    const l = photoDiaryLine({ id: 'pool-2', day: 2, time: '11:30', title: 'Lido pool, sea day' }, days)!
+    expect(l).toMatchObject({ day: 2, kind: 'photo', key: 'pic:pool-2' })
+    expect(l.at).toBe(Date.parse('2027-03-08T11:30:00Z'))
+    expect(l.text).toContain('Lido pool')
+  })
+  it('keeps the key within the diary limit and skips a day that is not on the sailing', () => {
+    expect(photoDiaryKey('x'.repeat(80)).length).toBeLessThanOrEqual(40)
+    expect(photoDiaryLine({ id: 'a', day: 9, time: '10:00', title: 'x' }, days)).toBeNull()
   })
 })

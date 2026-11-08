@@ -12,6 +12,10 @@ import { useAction } from '../../hooks/useAction'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
+import { Link } from 'react-router'
+import { addAuto } from '../../domain/tripDiary'
+import { photoDiaryKey, photoDiaryLine } from '../../domain/diarySources'
+import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -41,6 +45,13 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
   const set = (patch: Partial<PhotoFilter>) => setFilter({ ...filter, ...patch })
   const fav = useAction(async (id: string) => { await api.photos.toggleFavourite(id); reload() })
   const share = useAction(async (id: string) => { await api.photos.toggleAlbum(id); reload() })
+  const { state: memory, update } = useMemory()
+  const inDiary = (id: string) => memory.diary.entries.some((e) => e.sailingId === s.id && e.key === photoDiaryKey(id))
+  const toDiary = (p: PhotosView['photos'][number]) => {
+    const line = photoDiaryLine(p, days)
+    if (!line) return
+    update((m) => { const diary = addAuto(m.diary, { ...line, id: newMemoryId(), sailingId: s.id }); return diary === m.diary ? m : { ...m, diary } })
+  }
   const owned = new Set(v.owned)
   const inAlbum = (id: string) => v.album.some((a) => a.photoId === id && a.mine)
   return (
@@ -90,6 +101,9 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
                   <div className="button-row">
                     <Button variant="tertiary" aria-pressed={isFav} disabled={fav.busy || offline} onClick={() => void fav.run(p.id)}>{t('pho.fav')}<span className="visually-hidden"> {p.title}</span></Button>
                     {canBuy && <Button variant="tertiary" aria-pressed={inAlbum(p.id)} disabled={share.busy || offline} onClick={() => void share.run(p.id)}>{inAlbum(p.id) ? t('pho.album.shared') : t('pho.album.share')}<span className="visually-hidden"> {p.title}</span></Button>}
+                    {inDiary(p.id)
+                      ? <span role="status" className="tag">{t('pho.diary.added')} <Link to="/me/diary">{t('pho.diary.open')}</Link></span>
+                      : <Button variant="tertiary" onClick={() => toDiary(p)}>{t('pho.diary.add')}<span className="visually-hidden"> {p.title}</span></Button>}
                     {mine ? <span className="tag">{t('pho.owned')}</span> : canBuy && (
                       <label className="choice"><input type="checkbox" checked={picked.includes(p.id)} onChange={() => setPicked(picked.includes(p.id) ? picked.filter((x) => x !== p.id) : [...picked, p.id])} /><span>{t('pho.choose')}<span className="visually-hidden"> {p.title}</span></span></label>
                     )}
