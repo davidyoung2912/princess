@@ -5,7 +5,8 @@ import { familyView, normalizePublicFamily, POSTCARD_TEXT, tokenOwner, verifyLin
 import { delayVisibleToOthers } from '../../domain/delay'
 import { familyNotices } from '../../domain/disruptionHub'
 import { personFirstName } from '../../account/context'
-import { itinerary, portAt, PORTS } from '../../domain/sailings'
+import { arrivalPing } from '../../domain/arrivalPing'
+import { itinerary, portAt, PORTS, stageAt } from '../../domain/sailings'
 import { formatDate } from '../../domain/cruise'
 import { getHub } from '../../hub/store'
 import { useDemo, useNow, useSailing } from '../../hooks/useDemo'
@@ -52,6 +53,7 @@ export function AtSeaScreen() {
     itinerary: (tablesReady ? itinerary(sailing) : []).map((d) => ({ day: d.day, date: d.date, place: d.port === 'sea' ? t('plan.atSea') : PORTS[d.port].name })),
     shipAt: here.port === 'sea' ? null : PORTS[here.port].name,
   }
+  const ping = tablesReady ? arrivalPing(stageAt(sailing, now), shipFacts.shipAt) : null
   /** The page's facts, or why there is no page. */
   const found: { view: FamilyView } | { reason: LinkProblem } | 'loading' = (() => {
     if (served === 'loading') return 'loading'
@@ -79,6 +81,7 @@ export function AtSeaScreen() {
         <p>{t('home.public.intro', { name: view.guestFirst, ship: view.shipName })}</p>
         <section aria-labelledby="pub-status-h">
           <h2 id="pub-status-h">{th('home.public.status')}</h2>
+          {ping && <p role="status"><strong>{t(`home.public.ping.${ping}` as StringKey, { name: view.guestFirst })}</strong></p>}
           <p>{view.shipAt ? t('home.public.inPort', { port: view.shipAt }) : t('home.public.atSea')}</p>
           <p className="muted">{t('home.public.noLocation', { name: view.guestFirst })}</p>
         </section>
