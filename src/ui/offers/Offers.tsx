@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { compareDeals, dealVerdict, type Deal, type DealKind } from '../../domain/offerCompare'
+import { formatMoney, parseMoney } from '../../domain/money'
 import { marketingPaused, offersQuiet } from '../../domain/finishMore'
 import { useMemory } from '../../hooks/useMemory'
 import { homeOffer, offerModeOf, offerReasons, offerStageOf, offersFor, dismissedFor, MARKETING_WEEKLY_CAP, type OfferContext, type OfferDef } from '../../domain/offers'
@@ -11,6 +14,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { t, th, type StringKey } from '../../i18n'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
+import { Field } from '../Field'
 import { Load } from '../account/parts'
 import { Back } from '../ahead/common'
 
@@ -74,6 +78,71 @@ export function HomeOfferCard() {
   )
 }
 
+
+const DEAL_KINDS: readonly DealKind[] = ['percent', 'off', 'credit']
+
+/** One advert, as the guest reads it: what kind of offer and how much. */
+function DealFields({ name, kind, text, onKind, onText }: { name: string; kind: DealKind; text: string; onKind: (k: DealKind) => void; onText: (v: string) => void }) {
+  return (
+    <fieldset className="field">
+      <legend>{name}</legend>
+      <label>{t('offer.cmp.kind')}
+        <select className="field__input" value={kind} onChange={(e) => onKind(e.target.value as DealKind)}>
+          {DEAL_KINDS.map((k) => <option key={k} value={k}>{t(`offer.cmp.kind.${k}` as StringKey)}</option>)}
+        </select>
+      </label>
+      <Field label={kind === 'percent' ? t('offer.cmp.percent') : t('offer.cmp.dollars')} inputMode="decimal" value={text} onChange={(e) => onText(e.target.value)} />
+    </fieldset>
+  )
+}
+
+const dealOf = (kind: DealKind, text: string): Deal | null => {
+  if (kind === 'percent') { const n = Number(text); return text.trim() !== '' && Number.isFinite(n) && n >= 0 ? { kind, amount: n } : null }
+  const c = parseMoney(text)
+  return c !== null && c >= 0 ? { kind, amount: c } : null
+}
+
+/** Two offers turned into plain money for the guest's own party: "5% off now" against "$100 credit". */
+function OfferCompare() {
+  const [fareText, setFareText] = useState('')
+  const [guestsText, setGuestsText] = useState('2')
+  const [spendText, setSpendText] = useState('')
+  const [kindA, setKindA] = useState<DealKind>('percent')
+  const [kindB, setKindB] = useState<DealKind>('credit')
+  const [textA, setTextA] = useState('')
+  const [textB, setTextB] = useState('')
+  const fare = parseMoney(fareText)
+  const guests = Math.max(1, Math.min(12, Math.floor(Number(guestsText)) || 1))
+  const spend = spendText.trim() === '' ? 0 : parseMoney(spendText) ?? 0
+  const a = dealOf(kindA, textA)
+  const b = dealOf(kindB, textB)
+  const result = fare && fare > 0 && a && b ? compareDeals(a, b, fare, guests, spend) : null
+  return (
+    <section aria-labelledby="offer-cmp-h">
+      <h2 id="offer-cmp-h">{th('offer.cmp.title')}</h2>
+      <p>{t('offer.cmp.intro')}</p>
+      <Field label={t('offer.cmp.fare')} inputMode="decimal" value={fareText} onChange={(e) => setFareText(e.target.value)} error={fareText.trim() !== '' && fare === null ? t('decide.budgetBad') : undefined} />
+      <Field label={t('offer.cmp.guests')} inputMode="numeric" value={guestsText} onChange={(e) => setGuestsText(e.target.value)} />
+      <DealFields name={t('offer.cmp.a')} kind={kindA} text={textA} onKind={setKindA} onText={setTextA} />
+      <DealFields name={t('offer.cmp.b')} kind={kindB} text={textB} onKind={setKindB} onText={setTextB} />
+      {(kindA === 'credit' || kindB === 'credit') && <Field label={t('offer.cmp.spend')} hint={t('offer.cmp.spendHint')} inputMode="decimal" value={spendText} onChange={(e) => setSpendText(e.target.value)} />}
+      <div role="status">
+        {result ? (
+          <Card labelledBy="offer-cmp-r">
+            <h3 id="offer-cmp-r" className="card__title">{dealVerdict(result, guests)}</h3>
+            <ul className="plain-bullets">
+              <li>{t('offer.cmp.worthA', { value: formatMoney(result.a), net: formatMoney(result.netA) })}</li>
+              <li>{t('offer.cmp.worthB', { value: formatMoney(result.b), net: formatMoney(result.netB) })}</li>
+            </ul>
+            {result.creditTrimmed && <p className="muted">{t('offer.cmp.trimmed')}</p>}
+            <p className="muted">{t('offer.cmp.rules')}</p>
+          </Card>
+        ) : <p className="muted">{t('offer.cmp.waiting')}</p>}
+      </div>
+    </section>
+  )
+}
+
 /** All offers for this part of the trip in one place, with the ones set aside and the weekly cap on marketing messages (UX-02, CNT-02, NOT-04). */
 export function OffersScreen() {
   const trips = useMine(() => api.trips.list())
@@ -107,6 +176,7 @@ export function OffersScreen() {
           </>
         )}
       </Load>
+      <OfferCompare />
       <p className="muted">{t('offer.cap', { count: MARKETING_WEEKLY_CAP })} <Link to="/me/marketing">{t('route.marketing')}</Link></p>
       <p className="muted">{t('offer.restraint')}</p>
       <Back to="/" label={t('route.home')} />
