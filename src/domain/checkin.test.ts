@@ -3,7 +3,7 @@ import {
   boardingGroup, currentCompanion, decodePass, encodePass, laneFor, luggageStatus, musterStation, passName, terminalFor, trafficFor, windowFor, WAIT_MINUTES,
 } from './boarding'
 import {
-  checkinProgress, checkinWindow, guestProgress, judgePhoto, measurePhoto, normalizeGuestCheckin, SAMPLE_PHOTOS, stepDone, validateDocument, validateEmergency, validateHealth,
+  checkinProgress, checkinWindow, guestProgress, coachTip, judgePhoto, measurePhoto, normalizeGuestCheckin, SAMPLE_PHOTOS, stepDone, validateDocument, validateEmergency, validateHealth,
 } from './checkin'
 import { cacheGet, cachePut, cacheKey } from './offlineCache'
 
@@ -183,5 +183,14 @@ describe('offline copies', () => {
     expect(cacheGet(null, 'pass', 'a', asNumber)).toBeNull()
     const full = { setItem: () => { throw new Error('quota') } }
     expect(cachePut(full, 'pass', 'a', 1, 1)).toBe(false)
+  })
+})
+
+describe('photo coach', () => {
+  it('names the first thing to fix in a live frame', () => {
+    expect(coachTip({ brightness: 38, sharpness: 5 })).toBe('moreLight')
+    expect(coachTip({ brightness: 230, sharpness: 24 })).toBe('lessLight')
+    expect(coachTip({ brightness: 130, sharpness: 5 })).toBe('steady')
+    expect(coachTip(SAMPLE_PHOTOS.good)).toBe('good')
   })
 })

@@ -14,6 +14,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Field } from '../Field'
 import { CheckinError } from './CheckinError'
+import { PhotoCoach } from './PhotoCoach'
 import { pending, useChosenGuest } from './guests'
 import { ApplyTo, GuestChooser } from './parts'
 
@@ -134,6 +135,7 @@ export function PhotoStep({ view, save, busy, error }: StepProps) {
         <p className="field__hint">{t('checkin.photo.privacy')}</p>
         <input id="photo-file" ref={input} type="file" accept="image/*" capture="user" className="field__input" disabled={busy || reading} onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
       </div>
+      <PhotoCoach disabled={busy || reading} onTaken={(m) => void submit(m)} />
       {local.length > 0 && (
         <div role="alert" className="field__error"><span>{local.map((p) => t(`checkin.err.photo.${p}` as StringKey)).join(' ')}</span></div>
       )}

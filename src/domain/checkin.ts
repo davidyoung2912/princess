@@ -107,6 +107,20 @@ export function judgePhoto(m: PhotoMetrics): PhotoProblem[] {
   return problems
 }
 
+export type CoachTip = 'moreLight' | 'lessLight' | 'steady' | 'good'
+
+/**
+ * What the photo coach says about a live camera frame: the one thing to fix first, or "good" when the frame would pass.
+ * Only light and sharpness can be told from a small frame; size and shape are judged on the picture that is taken.
+ */
+export function coachTip(m: Pick<PhotoMetrics, 'brightness' | 'sharpness'>): CoachTip {
+  const L = PHOTO_LIMITS
+  if (m.brightness < L.minBrightness) return 'moreLight'
+  if (m.brightness > L.maxBrightness) return 'lessLight'
+  if (m.sharpness < L.minSharpness) return 'steady'
+  return 'good'
+}
+
 /** Sample measurements for the demo buttons, since a laptop may have no camera. */
 export const SAMPLE_PHOTOS: Record<'good' | 'dark' | 'blurry', PhotoMetrics> = {
   good: { width: 1200, height: 1500, brightness: 135, sharpness: 28 },
