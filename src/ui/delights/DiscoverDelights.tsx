@@ -9,6 +9,9 @@ import { itinerary, portById, SAILINGS, sailingNights, type Sailing } from '../.
 import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { Field } from '../Field'
+import { useMemory } from '../../hooks/useMemory'
+import { lastHolidayPerDay, normalizeLastHoliday } from '../../domain/rememberDelights'
 
 /** D1-2: one block per day (sea, home, dock, tender) with hours in port, so the shape of the trip is clear at a glance. Words carry the meaning, not colour. */
 export function DayStrip({ sailing }: { sailing: Sailing }) {
@@ -67,6 +70,7 @@ export function LandHolidayCompare({ sailing, total, guests }: { sailing: Sailin
       <h3 id="dl3-land-h" className="card__title">{th('dl3.land.title')}</h3>
       <p>{t('dl3.land.cruise', { amount: formatMoney(c.perDay), days: nights + 1 })}</p>
       <p>{t('dl3.land.range', { low: formatMoney(LAND_HOLIDAY_PER_DAY.low), high: formatMoney(LAND_HOLIDAY_PER_DAY.high) })} {t(`dl3.land.${c.position}` as StringKey)}</p>
+      <LastHolidayForm perDay={c.perDay} />
       <details><summary>{t('dl3.land.how')}</summary><p>{t('dl3.land.method')}</p></details>
     </Card>
   )
@@ -173,4 +177,42 @@ export function ReadAloud({ text }: { text: string }) {
     synth.speak(u)
   }
   return <Button variant="secondary" onClick={toggle}>{reading ? t('brief.stop') : t('brief.readAloud')}</Button>
+}
+
+/** X4e: the guest's own last holiday (people, nights, total), kept in the memory document, set beside this sailing's figure. */
+function LastHolidayForm({ perDay }: { perDay: number }) {
+  const { state, update } = useMemory()
+  const saved = state.remember.lastHoliday
+  const [editing, setEditing] = useState(false)
+  const [people, setPeople] = useState('')
+  const [nights, setNights] = useState('')
+  const [total, setTotal] = useState('')
+  const parsed = normalizeLastHoliday({ people: Number(people), nights: Number(nights), cents: Math.round(Number(total) * 100) })
+  const set = (lastHoliday: typeof saved) => update((m) => ({ ...m, remember: { ...m.remember, lastHoliday } }))
+  const last = lastHolidayPerDay(saved)
+  if (saved && last !== null && !editing) {
+    const diff = perDay - last
+    return (
+      <div>
+        <p>{t('dl3.last.yours', { amount: formatMoney(last), people: saved.people, nights: saved.nights })}</p>
+        <p role="status">{diff === 0 ? t('dl3.last.same') : t(diff < 0 ? 'dl3.last.less' : 'dl3.last.more', { amount: formatMoney(Math.abs(diff)) })}</p>
+        <div className="button-row">
+          <Button variant="tertiary" onClick={() => { setPeople(String(saved.people)); setNights(String(saved.nights)); setTotal(String(saved.cents / 100)); setEditing(true) }}>{t('dl3.last.change')}</Button>
+          <Button variant="tertiary" onClick={() => set(null)}>{t('dl3.last.clear')}</Button>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (parsed) { set(parsed); setEditing(false) } }}>
+      <h4>{t('dl3.last.title')}</h4>
+      <Field label={t('dl3.last.people')} type="number" inputMode="numeric" min={1} max={20} value={people} onChange={(e) => setPeople(e.target.value)} />
+      <Field label={t('dl3.last.nights')} type="number" inputMode="numeric" min={1} max={365} value={nights} onChange={(e) => setNights(e.target.value)} />
+      <Field label={t('dl3.last.total')} hint={t('dl3.last.hint')} type="number" inputMode="decimal" min={1} value={total} onChange={(e) => setTotal(e.target.value)} />
+      <div className="button-row">
+        <Button type="submit" disabled={!parsed}>{t('dl3.last.compare')}</Button>
+        {editing && <Button variant="tertiary" onClick={() => setEditing(false)}>{t('dl3.last.cancel')}</Button>}
+      </div>
+    </form>
+  )
 }

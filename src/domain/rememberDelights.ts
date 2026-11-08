@@ -160,8 +160,24 @@ export interface SavedNote { note: string; cents: number | null }
 export const SAVED_NOTE_MAX = 120
 export const SAVED_NOTES_MAX = 50
 
-export interface RememberState { postcards: Postcard[]; wants: string[]; saved: Record<string, SavedNote> }
-export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [], saved: {} }
+/** What the guest spent on their last holiday: people, nights and the total in cents. */
+export interface LastHoliday { people: number; nights: number; cents: number }
+
+/** The last holiday per person per day (cents), counting the nights plus one, as the cruise figure does. Null when the figures are unusable. */
+export function lastHolidayPerDay(h: LastHoliday | null | undefined): number | null {
+  if (!h || !(h.people >= 1) || !(h.nights >= 1) || !(h.cents > 0)) return null
+  return Math.round(h.cents / (Math.floor(h.people) * (Math.floor(h.nights) + 1)))
+}
+
+export function normalizeLastHoliday(raw: unknown): LastHoliday | null {
+  const o = rec(raw)
+  const people = Math.round(num(o.people)), nights = Math.round(num(o.nights)), cents = Math.round(num(o.cents))
+  const h = { people: Math.min(20, people), nights: Math.min(365, nights), cents: Math.min(100_000_000, cents) }
+  return lastHolidayPerDay(h) === null ? null : h
+}
+
+export interface RememberState { postcards: Postcard[]; wants: string[]; saved: Record<string, SavedNote>; lastHoliday: LastHoliday | null }
+export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [], saved: {}, lastHoliday: null }
 
 /** Sets the note on a saved sailing, keeping its first-seen price. An empty note with no price removes the entry. */
 export function setSavedNote(saved: Readonly<Record<string, SavedNote>>, id: string, note: string): Record<string, SavedNote> {
@@ -205,5 +221,5 @@ export function normalizeRemember(raw: unknown): RememberState {
     const cents = typeof o.cents === 'number' && Number.isFinite(o.cents) && o.cents > 0 ? Math.round(o.cents) : null
     if (id.length <= 60 && (note || cents !== null)) saved[id] = { note, cents }
   }
-  return { postcards, wants, saved }
+  return { postcards, wants, saved, lastHoliday: normalizeLastHoliday(r.lastHoliday) }
 }

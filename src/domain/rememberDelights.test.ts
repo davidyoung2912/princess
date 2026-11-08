@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SAILINGS } from './sailings'
 import {
-  addPostcard, addWant, callPlaces, EMPTY_REMEMBER, lifetime, MAP_MIN_SPAN, mapView, markPostcardRead, noteSavedPrice, normalizeRemember, priceChange, setSavedNote, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, sailedTrips, wantMatches, WANTS_MAX,
+  addPostcard, addWant, callPlaces, EMPTY_REMEMBER, lifetime, MAP_MIN_SPAN, mapView, lastHolidayPerDay, markPostcardRead, noteSavedPrice, normalizeLastHoliday, normalizeRemember, priceChange, setSavedNote, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, sailedTrips, wantMatches, WANTS_MAX,
 } from './rememberDelights'
 
 const sailing = SAILINGS[0]
@@ -144,5 +144,17 @@ describe('saved sailing notes', () => {
   })
   it('normalizes junk', () => {
     expect(normalizeRemember({ saved: { a: { note: 5, cents: -1 }, b: { note: 'hi', cents: 5000.4 } } }).saved).toEqual({ b: { note: 'hi', cents: 5000 } })
+  })
+})
+
+describe('last holiday', () => {
+  it('works out a figure per person per day', () => {
+    expect(lastHolidayPerDay({ people: 2, nights: 6, cents: 280000 })).toBe(20000)
+    expect(lastHolidayPerDay({ people: 0, nights: 6, cents: 280000 })).toBeNull()
+    expect(lastHolidayPerDay(null)).toBeNull()
+  })
+  it('normalizes junk to null', () => {
+    expect(normalizeLastHoliday({ people: 'x' })).toBeNull()
+    expect(normalizeLastHoliday({ people: 2, nights: 6, cents: 280000.4 })).toEqual({ people: 2, nights: 6, cents: 280000 })
   })
 })
