@@ -31,12 +31,13 @@ function useDiaryDays() {
   const today = dayFor(dates, now)
   // What the guest booked and kept: dinners, tours and photos. A failed load just means no extra lines for now.
   const source = useMine(async () => {
-    const [tours, dining, photos, docs] = await Promise.all([api.plan.excursions.list(), api.plan.dining.view(), api.photos.list(), api.documents.get().catch(() => null)])
+    const [tours, dining, photos, docs, muster] = await Promise.all([api.plan.excursions.list(), api.plan.dining.view(), api.photos.list(), api.documents.get().catch(() => null), api.onboard.muster().catch(() => null)])
     return {
       docsReady: !!docs && docs.guests.length > 0 && docs.guests.every((g) => g.blocking === 0),
       tours: tours.booked.filter((b) => b.status === 'booked').map((b) => b.excursionId),
       meals: dining.reservations.map((r) => ({ venueId: r.venueId, day: r.day, time: r.time })),
       photoDays: photos.photos.map((p) => p.day),
+      musterDoneAt: muster?.done ? muster.at : null,
     }
   }, [sailing.id])
   const sources = source.status === 'ready' ? source.data : null

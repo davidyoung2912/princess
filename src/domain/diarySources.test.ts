@@ -56,6 +56,16 @@ describe('steps and moments', () => {
   })
 })
 
+describe('muster line', () => {
+  const base: DiarySources = { days, today: 1, now: 0, steps: {}, docsReady: false, tours: [], meals: [], photoDays: [] }
+  it('is written on day 1 once the drill is done, and not before', () => {
+    expect(sourceLines({ ...base, musterDoneAt: null }).map((l) => l.key)).not.toContain('moment:muster')
+    const l = sourceLines({ ...base, musterDoneAt: 123 }).find((x) => x.key === 'moment:muster')
+    expect(l).toMatchObject({ day: days[0].day, at: 123, kind: 'moment' })
+    expect(sourceLines({ ...base, today: 0, musterDoneAt: 123 }).map((x) => x.key)).not.toContain('moment:muster')
+  })
+})
+
 describe('clockMomentTimes', () => {
   it('orders sail-away, the last night, leaving the ship and home', () => {
     const times = clockMomentTimes(days)

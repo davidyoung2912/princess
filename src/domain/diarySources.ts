@@ -24,6 +24,8 @@ export interface DiarySources {
   meals: readonly { venueId: string; day: number; time: string }[]
   /** The trip day of each photo in the gallery. */
   photoDays: readonly number[]
+  /** When the safety drill was done (ms), or null/absent while it is not. It is the one moment the app records as an event. */
+  musterDoneAt?: number | null
 }
 
 export interface DiaryLineSpec { day: number; at: number; kind: DiaryKind; key: string; text: string }
@@ -81,7 +83,7 @@ export function clockMomentTimes(days: readonly ItineraryDay[]): { sail: number;
 
 /**
  * The moments (docs/experience-extension-ideas.md 4.3) that write a line: documents ready, sail-away, the last night, leaving the ship and home.
- * Documents come from what the guest holds; the rest come with the itinerary and the clock. Muster, the medallion and each port stamp are not recorded anywhere,
+ * Documents come from what the guest holds; the rest come with the itinerary and the clock. The safety drill writes a line once it is done (day 1). The medallion and each port stamp are not recorded anywhere,
  * so they write a line only when the guest presses "Add to my diary" on the moment.
  */
 function momentLines(s: DiarySources): DiaryLineSpec[] {
@@ -94,6 +96,7 @@ function momentLines(s: DiarySources): DiaryLineSpec[] {
   // Documents are an event with no date of its own: the line is written the first time the diary sees them all ready, and it sits before the ship.
   if (s.docsReady && s.today === 0) out.push({ day: 0, at: s.now, kind: 'docs', key: 'moment:docs', text: t('diary.auto.docs') })
   if (s.docsReady && s.today > 0) out.push({ day: 0, at: (Date.parse(`${first.date}T00:00:00Z`) || 0) - 1, kind: 'docs', key: 'moment:docs', text: t('diary.auto.docs') })
+  if (s.musterDoneAt != null && s.today >= first.day) out.push({ day: first.day, at: s.musterDoneAt, kind: 'moment', key: 'moment:muster', text: t('diary.auto.muster') })
   add(first.day, times.sail, 'sail', t('diary.auto.sail'))
   const eve = s.days.length >= 3 ? s.days[s.days.length - 2] : undefined
   if (eve && times.lastNight !== null) add(eve.day, times.lastNight, 'lastNight', t('diary.auto.lastNight'))
