@@ -8,6 +8,7 @@ import { api } from '../runtime'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../settings/stanleySeen'
 import { buildJourney, windowOpensAt } from '../domain/journey'
 import { useTrip } from './useTrip'
+import { useRouteConditions } from './useRouteConditions'
 import { useNow, usePersona, useSailing } from './useDemo'
 import { useSavedCopy } from './useSavedCopy'
 import { usePulseEnv } from './useServedFeeds'
@@ -45,6 +46,8 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   const today = useOnboardToday()
   const me = usePersona()
   const { state: tripState } = useTrip()
+  /** Minutes to set off earlier for traffic and weather; none until the server's answer is here. */
+  const earlier = useRouteConditions(sailing.id, tripState.embark.window)?.leaveEarlierMinutes ?? 0
   const cruiseDay = pos.day?.kind === 'cruiseDay' ? pos.day.day : 1
   const program = useSavedCopy('program', `${me?.id ?? 'none'}:${cruiseDay}`, () => api.onboard.program(cruiseDay), asProgramView, [me?.id, cruiseDay])
   const { env, now: pulseNow } = usePulseEnv(sailing, now, cruiseDay)
@@ -58,7 +61,7 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   const facts: ModeFacts = {}
   if (mode === 'boardingDay') {
     const plan = { ...tripState.journey.plan, windowStart: tripState.embark.window }
-    facts.boardingDay = { checkinDone: trip?.checkin.state === 'done', leaveAt: buildJourney(plan, sailing.departure, 0).leaveBy, terminalAt: windowOpensAt(sailing.departure, plan.windowStart) }
+    facts.boardingDay = { checkinDone: trip?.checkin.state === 'done', leaveAt: (({ leaveBy }) => (leaveBy === null ? null : leaveBy - earlier * 60_000))(buildJourney(plan, sailing.departure, 0)), terminalAt: windowOpensAt(sailing.departure, plan.windowStart) }
   }
   const td = today.data
   if (mode === 'firstFour' && td) facts.firstFour = { musterAt: td.muster.at, musterDone: td.muster.done, sailAwayAt: td.sailAwayAt }
