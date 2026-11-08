@@ -65,3 +65,7 @@
 .screen-list__pin { position: absolute; inset-block-start: 0; inset-inline-end: 0; display: grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); background: none; border: 0; color: var(--text-muted); cursor: pointer; }
 .screen-list__pin[aria-pressed='true'] { color: var(--trip); }
 .screen-list__pin[aria-pressed='true'] svg { fill: currentColor; }
+
+.shortcut-bar { list-style: none; }
+.shortcut-bar__chip { text-decoration: none; }
+.shortcut-bar__chip svg { color: var(--trip); }

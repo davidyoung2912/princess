@@ -18,6 +18,7 @@ import { CompanionCard, ContinueBookingCard } from './PrepCards'
 import { Card } from '../Card'
 import { TabScreens } from '../TabScreens'
 import { NewTabsNote } from '../NewTabsNote'
+import { ShortcutBar } from '../ShortcutBar'
 import { JourneyStrip } from '../JourneyStrip'
 import { Explore } from '../discover/Landing'
 import { countdown } from '../account/format'
@@ -48,14 +49,14 @@ export function HomeScreen() {
   const today = useOnboardToday()
   const { stage } = useJourneyPosition()
   const now = useNow()
-  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><UpdatesBanner /><StageHome /></div>
+  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
     const counts = countdowns(trip, now)
     return (
       <div className="page">
         <StageHero stage={stage} />
         <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>
-        <NewTabsNote />
+        <NewTabsNote /><ShortcutBar />
         <UpdatesBanner />
         <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
         {counts.length > 0 && (
@@ -74,7 +75,7 @@ export function HomeScreen() {
     return (
       <div className="page">
         <StageHero stage={stage} />
-        <NewTabsNote />
+        <NewTabsNote /><ShortcutBar />
         <UpdatesBanner />
         <StageHome />
         {others.length > 0 && (
@@ -90,7 +91,7 @@ export function HomeScreen() {
     return (
       <div className="page">
         <StageHero stage={stage} />
-        <NewTabsNote />
+        <NewTabsNote /><ShortcutBar />
         {!ABOARD_STAGES.includes(stage) && <StageLanding />}
         <NudgeCards aboard />
         {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
@@ -103,7 +104,7 @@ export function HomeScreen() {
     <div className="page">
       <StageHero stage={stage} />
       {trip && <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>}
-      <NewTabsNote />
+      <NewTabsNote /><ShortcutBar />
       <StageLanding />
       <RecentCard />
       {trip && <JourneyStrip />}
