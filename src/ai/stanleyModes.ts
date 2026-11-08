@@ -34,7 +34,7 @@ export const SEA_EVENTS_SHOWN = 4
 
 /** Everything the steps are made from; each mode reads only its own part. All times are epoch milliseconds. */
 export interface ModeFacts {
-  boardingDay?: { checkinDone: boolean }
+  boardingDay?: { checkinDone: boolean; /** When to set off, from the travel plan; null when unknown. */ leaveAt?: number | null; /** When the guest's arrival window opens; null when unknown. */ terminalAt?: number | null }
   firstFour?: { musterAt: number; musterDone: boolean; sailAwayAt: number | null }
   portDay?: { allAboardAt: number; arriveAt: number; tender: boolean; skipped: boolean }
   seaDay?: { events: SeaEvent[] }
@@ -85,11 +85,11 @@ export function modeSteps(mode: ModeId, f: ModeFacts): ModeStep[] {
       return [
         { id: 'checkin', at: null, to: '/home/check-in', done: b.checkinDone },
         { id: 'pass', at: null, to: '/home/boarding-pass' },
-        { id: 'leave', at: null, to: '/plan/getting-there' },
+        { id: 'leave', at: b.leaveAt ?? null, to: '/plan/getting-there' },
         { id: 'bags', at: null, to: '/home/luggage' },
         { id: 'papers', at: null, to: '/home/clearance' },
         { id: 'photo', at: null, to: '/home/embarkation/steps' },
-        { id: 'gangway', at: null, to: '/home/embarkation' },
+        { id: 'gangway', at: b.terminalAt ?? null, to: '/home/embarkation' },
       ]
     }
     case 'firstFour': {

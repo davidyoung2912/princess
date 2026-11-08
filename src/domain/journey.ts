@@ -191,6 +191,9 @@ export const PICKUP_NOTES = ['journey.pickup.drop', 'journey.pickup.pick', 'jour
 
 export const DRIVE_STEPS = ['journey.drive.bags', 'journey.drive.park', 'journey.drive.fuel', 'journey.drive.directions'] as const satisfies readonly StringKey[]
 
+/** When the arrival window opens (or the terminal does, with no window chosen), as epoch milliseconds. */
+export const windowOpensAt = (departure: string, windowStart: string | null): number => at(departure, windowStart ?? EMBARK.terminalOpens)
+
 /** Minutes until the start of the arrival window; negative once it has begun. */
 export const minutesToWindow = (now: number, departure: string, windowStart: string | null): number =>
   Math.round((at(departure, windowStart ?? EMBARK.terminalOpens) - now) / MIN)

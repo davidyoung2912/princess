@@ -9368,6 +9368,8 @@ export const en = {
   'stanley.mode.boardingDay.pass.line': 'Your pass is saved on your phone and works with no signal. Open it once to be sure.',
   'stanley.mode.boardingDay.leave.title': 'Leave for the terminal',
   'stanley.mode.boardingDay.leave.line': 'Leave in time for your arrival window. Arriving at your slot usually means a shorter queue.',
+  'stanley.mode.boardingDay.leave.late': 'You were due to leave at {time}. Go now, and check the route for delays on the way.',
+  'stanley.mode.boardingDay.gangway.late': 'Your arrival window opened at {time}. Head to the terminal as soon as you can; queues are usually shorter than you fear.',
   'stanley.mode.boardingDay.bags.title': 'Hand over your bags',
   'stanley.mode.boardingDay.bags.line': 'Tag the large bags and give them to the porters. Keep passports, medicine and valuables with you.',
   'stanley.mode.boardingDay.papers.title': 'Passports and papers in hand',

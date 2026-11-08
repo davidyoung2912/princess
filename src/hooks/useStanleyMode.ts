@@ -6,6 +6,8 @@ import { disembarkTimes } from '../domain/disembark'
 import { shipZoneAt } from '../domain/sailings'
 import { api } from '../runtime'
 import { isSeen, markSeen, seenVersion, subscribeSeen } from '../settings/stanleySeen'
+import { buildJourney, windowOpensAt } from '../domain/journey'
+import { useTrip } from './useTrip'
 import { useNow, usePersona, useSailing } from './useDemo'
 import { useSavedCopy } from './useSavedCopy'
 import { usePulseEnv } from './useServedFeeds'
@@ -42,6 +44,7 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   const trips = useMine(() => api.trips.list())
   const today = useOnboardToday()
   const me = usePersona()
+  const { state: tripState } = useTrip()
   const cruiseDay = pos.day?.kind === 'cruiseDay' ? pos.day.day : 1
   const program = useSavedCopy('program', `${me?.id ?? 'none'}:${cruiseDay}`, () => api.onboard.program(cruiseDay), asProgramView, [me?.id, cruiseDay])
   const { env, now: pulseNow } = usePulseEnv(sailing, now, cruiseDay)
@@ -53,7 +56,10 @@ export function useStanleyMode(forced?: ModeId): StanleyModeState {
   const found = modeFor({ stage: pos.stage, daysToDeparture: trip?.daysToDeparture, lastFullDay, hour, aboard })
   const mode = forced ?? found
   const facts: ModeFacts = {}
-  if (mode === 'boardingDay') facts.boardingDay = { checkinDone: trip?.checkin.state === 'done' }
+  if (mode === 'boardingDay') {
+    const plan = { ...tripState.journey.plan, windowStart: tripState.embark.window }
+    facts.boardingDay = { checkinDone: trip?.checkin.state === 'done', leaveAt: buildJourney(plan, sailing.departure, 0).leaveBy, terminalAt: windowOpensAt(sailing.departure, plan.windowStart) }
+  }
   const td = today.data
   if (mode === 'firstFour' && td) facts.firstFour = { musterAt: td.muster.at, musterDone: td.muster.done, sailAwayAt: td.sailAwayAt }
   if (mode === 'portDay' && td?.portDay) facts.portDay = { allAboardAt: td.portDay.allAboardAt, arriveAt: td.portDay.arriveAt, tender: td.portDay.tender, skipped: false }

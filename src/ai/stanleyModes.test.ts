@@ -61,6 +61,10 @@ describe('mode steps', () => {
   it('marks boarding steps done from the data', () => {
     const done = modeSteps('boardingDay', { boardingDay: { checkinDone: true } })[0]
     expect(done.done).toBe(true)
+    const timed = modeSteps('boardingDay', { boardingDay: { checkinDone: false, leaveAt: 1000, terminalAt: 5000 } })
+    expect(timed.find((s) => s.id === 'leave')!.at).toBe(1000)
+    expect(timed.find((s) => s.id === 'gangway')!.at).toBe(5000)
+    expect(modeSteps('boardingDay', { boardingDay: { checkinDone: false } }).every((s) => s.at === null)).toBe(true)
     expect(modeSteps('firstFour', { firstFour: { ...facts.firstFour, musterDone: true } }).find((s) => s.id === 'muster')!.done).toBe(true)
   })
 })
