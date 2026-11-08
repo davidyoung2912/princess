@@ -7,6 +7,7 @@ import { Link } from 'react-router'
 import { useFareHistory } from '../../hooks/useServedFeeds'
 import { acknowledgedAt, allergySteps, ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
+import { nudgeText, readinessBoard } from '../../domain/readinessBoard'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
 import { daysBetween } from '../../domain/trip'
@@ -146,21 +147,7 @@ export function ReadinessScreen() {
           <Load state={docs}>
             {(d) => (
               <>
-                {d.guests.map((g) => {
-                  const r = personReadiness(c.entries, g.blocking)
-                  const label = t('ready.percent', { name: g.name, percent: r.percent })
-                  return (
-                    <Card key={g.id} labelledBy={`rd-${g.id}`}>
-                      <h2 id={`rd-${g.id}`} className="card__title">{g.name}</h2>
-                      <ReadyRing percent={r.percent} label={label} />
-                      <p><strong>{label}</strong></p>
-                      <progress className="meter" max={100} value={r.percent} aria-label={label} />
-                      {r.open.length === 0 ? <p>{t('ready.all')}</p> : (
-                        <ul>{r.open.slice(0, 5).map((o) => <li key={o.id}>{t(`plan.check.item.${o.id}` as StringKey)} <span className="muted">· {formatDate(o.due)}</span></li>)}</ul>
-                      )}
-                    </Card>
-                  )
-                })}
+                <ReadinessBoard people={d.guests.map((g) => ({ id: g.id, name: g.name, readiness: personReadiness(c.entries, g.blocking) }))} />
                 <p className="muted">{t('ready.how')} <Link to="/plan/checklist">{t('route.checklist')}</Link></p>
               </>
             )}
@@ -286,4 +273,41 @@ function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
           </div>
         </Card>
       )
+}
+
+/** The organiser's board (N-M2): everyone's ring, furthest behind first, what each still needs, and a Nudge that shares a pre-written message. */
+function ReadinessBoard({ people }: { people: { id: string; name: string; readiness: ReturnType<typeof personReadiness> }[] }) {
+  const [said, setSaid] = useState<{ id: string; how: string } | null>(null)
+  const rows = readinessBoard(people)
+  const behind = rows.filter((r) => r.behind).length
+  const nudge = async (r: (typeof rows)[number]) => {
+    const text = nudgeText(r.name.split(' ')[0] ?? r.name, r.open.map((o) => ({ label: t(`plan.check.item.${o.id}` as StringKey), due: formatDate(o.due) })))
+    let how = 'shared'
+    try {
+      if (navigator.share) await navigator.share({ title: t('ready.nudge.title'), text })
+      else { await navigator.clipboard.writeText(text); how = 'copied' }
+    } catch (e) { how = (e as Error).name === 'AbortError' ? '' : 'failed' }
+    setSaid(how === '' ? null : { id: r.id, how })
+  }
+  return (
+    <>
+      {rows.length > 1 && <p role="status">{behind === 0 ? t('ready.board.none') : t('ready.board.behind', { count: behind })}</p>}
+      {rows.map((r) => {
+        const label = t('ready.percent', { name: r.name, percent: r.percent })
+        return (
+          <Card key={r.id} labelledBy={`rd-${r.id}`}>
+            <h2 id={`rd-${r.id}`} className="card__title">{r.name}</h2>
+            <ReadyRing percent={r.percent} label={label} />
+            <p><strong>{label}</strong></p>
+            <progress className="meter" max={100} value={r.percent} aria-label={label} />
+            {r.open.length === 0 ? <p>{t('ready.all')}</p> : (
+              <ul>{r.open.slice(0, 5).map((o) => <li key={o.id}>{t(`plan.check.item.${o.id}` as StringKey)} <span className="muted">· {formatDate(o.due)}</span></li>)}</ul>
+            )}
+            {rows.length > 1 && r.open.length > 0 && <Button variant="secondary" onClick={() => void nudge(r)}>{t('ready.nudge')}<span className="visually-hidden"> {r.name}</span></Button>}
+            {said?.id === r.id && <p role="status">{t(`recap.shared.${said.how}` as StringKey)}</p>}
+          </Card>
+        )
+      })}
+    </>
+  )
 }
