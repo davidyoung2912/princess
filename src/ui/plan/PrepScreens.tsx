@@ -7,6 +7,7 @@ import { Link } from 'react-router'
 import { useFareHistory } from '../../hooks/useServedFeeds'
 import { acknowledgedAt, allergySteps, ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
+import { CHASE_TONES, chaseText, type ChaseTone } from '../../domain/chase'
 import { nudgeText, readinessBoard } from '../../domain/readinessBoard'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
@@ -200,12 +201,24 @@ export function ShareLedgerScreen() {
   const view = useMine(() => api.payments.get())
   const { state, update } = useMemory()
   const [name, setName] = useState('')
+  const [tone, setTone] = useState<ChaseTone>('friendly')
+  const [said, setSaid] = useState<{ id: string; how: string } | null>(null)
   const sum = ledgerSummary(state.shares)
   return (
     <Page intro="shares.intro">
       <SharingNote field="spending" />
       <Load state={view}>
-        {(v) => (
+        {(v) => {
+          const chase = async (sh: (typeof state.shares)[number]) => {
+            const text = chaseText(tone, sh.name.split(' ')[0] ?? sh.name, sh.amount, `${window.location.origin}/book/pay/${v.trip.number}`, formatDate(v.trip.plan.finalDue))
+            let how = 'shared'
+            try {
+              if (navigator.share) await navigator.share({ title: t('shares.chase.title'), text })
+              else { await navigator.clipboard.writeText(text); how = 'copied' }
+            } catch (e) { how = (e as Error).name === 'AbortError' ? '' : 'failed' }
+            setSaid(how === '' ? null : { id: sh.id, how })
+          }
+          return (
           <Card labelledBy="sh-t">
             <h2 id="sh-t" className="card__title">{th('shares.title', { total: formatMoney(v.trip.plan.total) })}</h2>
             <form onSubmit={(e) => { e.preventDefault(); const n = name.replace(/\s+/g, ' ').trim(); if (n) { const names = [...state.shares.map((s) => s.name), n]; const parts = splitEven(v.trip.plan.total, names); update((m) => ({ ...m, shares: parts.map((p, i) => ({ id: m.shares[i]?.id ?? newMemoryId(), name: p.name, amount: p.amount, paid: m.shares[i]?.paid ?? false })) })); setName('') } }}>
@@ -217,15 +230,25 @@ export function ShareLedgerScreen() {
                 {state.shares.map((s) => (
                   <li key={s.id}>
                     <label className="choice"><input type="checkbox" checked={s.paid} onChange={(e) => update((m) => ({ ...m, shares: m.shares.map((x) => (x.id === s.id ? { ...x, paid: e.target.checked } : x)) }))} /><span>{t('shares.row', { name: s.name, amount: formatMoney(s.amount) })}</span></label>
+                    {!s.paid && <Button variant="secondary" onClick={() => void chase(s)}>{t('shares.chase')}<span className="visually-hidden"> {s.name}</span></Button>}
                     <Button variant="tertiary" onClick={() => update((m) => ({ ...m, shares: m.shares.filter((x) => x.id !== s.id) }))}>{t('shares.remove')}<span className="visually-hidden"> {s.name}</span></Button>
+                    {said?.id === s.id && <p role="status">{t(`recap.shared.${said.how}` as StringKey)}</p>}
                   </li>
                 ))}
               </ul>
             )}
+            {state.shares.some((x) => !x.paid) && (
+              <fieldset>
+                <legend>{t('shares.chase.tone')}</legend>
+                {CHASE_TONES.map((x) => <label key={x} className="choice"><input type="radio" name="chase-tone" checked={tone === x} onChange={() => setTone(x)} /><span>{t(`shares.chase.tone.${x}` as StringKey)}</span></label>)}
+                <p className="muted">{t('shares.chase.note')}</p>
+              </fieldset>
+            )}
             <ShareSliders total={v.trip.plan.total} />
             <p role="status">{t('shares.sum', { paid: formatMoney(sum.paid), owed: formatMoney(sum.owed) })}</p>
           </Card>
-        )}
+          )
+        }}
       </Load>
       <p className="muted">{t('shares.note')}</p>
     </Page>
