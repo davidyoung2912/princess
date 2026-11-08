@@ -155,8 +155,39 @@ export function wantMatches(wants: readonly string[], places: readonly string[])
 
 // ---------------------------------------------------------------- state
 
-export interface RememberState { postcards: Postcard[]; wants: string[] }
-export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [] }
+/** What the guest keeps about one saved sailing: a short note, and the price (cents) first seen once it was saved. */
+export interface SavedNote { note: string; cents: number | null }
+export const SAVED_NOTE_MAX = 120
+export const SAVED_NOTES_MAX = 50
+
+export interface RememberState { postcards: Postcard[]; wants: string[]; saved: Record<string, SavedNote> }
+export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [], saved: {} }
+
+/** Sets the note on a saved sailing, keeping its first-seen price. An empty note with no price removes the entry. */
+export function setSavedNote(saved: Readonly<Record<string, SavedNote>>, id: string, note: string): Record<string, SavedNote> {
+  const prev = saved[id] ?? { note: '', cents: null }
+  return putSaved(saved, id, { ...prev, note: clean(note, SAVED_NOTE_MAX) })
+}
+
+/** Records the price seen when a sailing was first noticed as saved; it never overwrites an earlier one. */
+export function noteSavedPrice(saved: Readonly<Record<string, SavedNote>>, id: string, cents: number | null): Record<string, SavedNote> {
+  const prev = saved[id]
+  if (cents === null || cents <= 0 || prev?.cents != null) return { ...saved }
+  return putSaved(saved, id, { note: prev?.note ?? '', cents })
+}
+
+function putSaved(saved: Readonly<Record<string, SavedNote>>, id: string, entry: SavedNote): Record<string, SavedNote> {
+  const { [id]: _old, ...rest } = saved
+  if (!entry.note && entry.cents === null) return rest
+  if (!(id in saved) && Object.keys(saved).length >= SAVED_NOTES_MAX) return { ...saved }
+  return { ...rest, [id]: entry }
+}
+
+/** How the price has moved since it was first seen as saved: the difference in cents (negative is cheaper), or null when there is nothing to compare. */
+export function priceChange(baseline: number | null | undefined, now: number | null | undefined): number | null {
+  if (baseline == null || now == null || baseline <= 0 || now <= 0) return null
+  return now - baseline
+}
 
 export function normalizeRemember(raw: unknown): RememberState {
   const r = rec(raw)
@@ -167,5 +198,12 @@ export function normalizeRemember(raw: unknown): RememberState {
     return next.map((p) => (p.id === o.id && o.read === true ? { ...p, read: true } : p))
   }, [])
   const wants = arr(r.wants).reduce<string[]>((acc, x) => (typeof x === 'string' ? addWant(acc, x) : acc), [])
-  return { postcards, wants }
+  const saved: Record<string, SavedNote> = {}
+  for (const [id, v] of Object.entries(rec(r.saved)).slice(0, SAVED_NOTES_MAX)) {
+    const o = rec(v)
+    const note = clean(o.note, SAVED_NOTE_MAX)
+    const cents = typeof o.cents === 'number' && Number.isFinite(o.cents) && o.cents > 0 ? Math.round(o.cents) : null
+    if (id.length <= 60 && (note || cents !== null)) saved[id] = { note, cents }
+  }
+  return { postcards, wants, saved }
 }

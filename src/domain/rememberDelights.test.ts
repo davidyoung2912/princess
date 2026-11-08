@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SAILINGS } from './sailings'
 import {
-  addPostcard, addWant, callPlaces, EMPTY_REMEMBER, lifetime, MAP_MIN_SPAN, mapView, markPostcardRead, normalizeRemember, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, sailedTrips, wantMatches, WANTS_MAX,
+  addPostcard, addWant, callPlaces, EMPTY_REMEMBER, lifetime, MAP_MIN_SPAN, mapView, markPostcardRead, noteSavedPrice, normalizeRemember, priceChange, setSavedNote, POSTCARD_MAX, POSTCARDS_MAX, postcardsDue, rankedFavourites, removeWant, sailedSummary, sailedTrips, wantMatches, WANTS_MAX,
 } from './rememberDelights'
 
 const sailing = SAILINGS[0]
@@ -122,5 +122,27 @@ describe('normalizeRemember', () => {
     expect(n.postcards[0].read).toBe(true)
     expect(n).not.toHaveProperty('voyages')
     expect(n.wants).toEqual(['Lisbon'])
+  })
+})
+
+describe('saved sailing notes', () => {
+  it('keeps the first price seen and a trimmed note', () => {
+    let s = noteSavedPrice({}, 'a', 100000)
+    s = noteSavedPrice(s, 'a', 90000)
+    s = setSavedNote(s, 'a', '  Mum’s   birthday week ')
+    expect(s).toEqual({ a: { note: 'Mum’s birthday week', cents: 100000 } })
+  })
+  it('removes an entry with no note and no price, and ignores a missing price', () => {
+    expect(setSavedNote({}, 'a', '  ')).toEqual({})
+    expect(noteSavedPrice({}, 'a', null)).toEqual({})
+    expect(setSavedNote({ a: { note: 'x', cents: null } }, 'a', '')).toEqual({})
+  })
+  it('reports the price change', () => {
+    expect(priceChange(100000, 90000)).toBe(-10000)
+    expect(priceChange(null, 90000)).toBeNull()
+    expect(priceChange(100000, 100000)).toBe(0)
+  })
+  it('normalizes junk', () => {
+    expect(normalizeRemember({ saved: { a: { note: 5, cents: -1 }, b: { note: 'hi', cents: 5000.4 } } }).saved).toEqual({ b: { note: 'hi', cents: 5000 } })
   })
 })
