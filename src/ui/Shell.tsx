@@ -163,7 +163,7 @@ export function Shell() {
         {route && !route.public && !landing && <StanleyChips screenId={screen?.id} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
-      {helpOpen && <HelpSheet screenId={screen?.id} onClose={() => setHelpOpen(false)} />}
+      {helpOpen && <HelpSheet screenId={screen?.id} onAskStanley={() => setStanleyOpen(true)} onClose={() => setHelpOpen(false)} />}
       {stanleyOpen && <StanleyDialog prefill={prefill} onClose={() => { setStanleyOpen(false); setPrefill('') }} />}
     </div>
   )
