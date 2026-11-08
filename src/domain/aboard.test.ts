@@ -5,7 +5,7 @@ import { PLACES } from './deck'
 import { HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, normalizeGame, triviaScore } from './games'
 import { searchContent } from './searchIndex'
 import {
-  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, splitEvenly, systemStatus, topUpProblem,
+  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, requestProgress, splitEvenly, systemStatus, topUpProblem,
 } from './services'
 import { captainAnnouncement } from './shipInfo'
 import { CHANNELS, VOD, onNow, titleAllowed } from './tv'
@@ -256,5 +256,14 @@ describe('port day (POR-05, POR-07, POR-13) and TV (ENT-06)', () => {
     expect(VOD.filter((v) => titleAllowed(v.rating, 6)).every((v) => v.rating === 'G')).toBe(true)
     expect(titleAllowed('PG-13', 14)).toBe(true)
     expect(titleAllowed('PG-13', 12)).toBe(false)
+  })
+})
+
+describe('request progress steps', () => {
+  it('follows the stage and has none once cancelled', () => {
+    expect(requestProgress('received').map((x) => x.state)).toEqual(['current', 'todo', 'todo'])
+    expect(requestProgress('onTheWay').map((x) => x.state)).toEqual(['done', 'current', 'todo'])
+    expect(requestProgress('done').map((x) => x.state)).toEqual(['done', 'done', 'done'])
+    expect(requestProgress('cancelled')).toEqual([])
   })
 })

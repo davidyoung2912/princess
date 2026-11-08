@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calmestPlaces, cabinWords, challenge, dndNow, findCabin, HOLD_MINUTES, kidsReport, loungerBoard, matchFound, normalizeAboard, okStatus, seasickStatus, soloState, startSolo, takeLounger, teenComplete, EMPTY_TEEN, TEEN_RULES, LAP_STEPS, STEP_GOAL } from './aboardMore'
+import { calmestPlaces, cabinWords, challenge, dndNow, findCabin, HOLD_MINUTES, kidsReport, loungerBoard, lostSteps, matchFound, normalizeAboard, okStatus, seasickStatus, soloState, startSolo, takeLounger, teenComplete, EMPTY_TEEN, TEEN_RULES, LAP_STEPS, STEP_GOAL } from './aboardMore'
 import type { FoundItem, LoungerOther } from './aboardMore'
 import { cabinsFor } from './cabins'
 import { REFERENCE_SAILING } from './sailings'
@@ -92,5 +92,13 @@ describe('account quiet hours count as a do-not-disturb schedule', () => {
     expect(shown).toHaveLength(1)
     expect(held).toHaveLength(1)
     expect(splitHeld([{ category: 'offers' as never }], withQuietHours([], { on: false, from: '22:00', to: '07:00' }), '23:30').held).toHaveLength(0)
+  })
+})
+
+describe('lost report steps', () => {
+  it('waits for the found list, then checks it, then shows a match', () => {
+    expect(lostSteps(false, 0).map((x) => x.state)).toEqual(['current', 'todo', 'todo'])
+    expect(lostSteps(true, 0).map((x) => x.state)).toEqual(['done', 'done', 'current'])
+    expect(lostSteps(true, 2).map((x) => x.state)).toEqual(['done', 'done', 'done'])
   })
 })

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { QUICK_REQUESTS, REQUEST_ITEMS, type RequestGroup } from '../../domain/services'
+import { requestProgress, QUICK_REQUESTS, REQUEST_ITEMS, type RequestGroup } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -10,6 +10,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
+import { Stepper } from '../Stepper'
 import { Load } from '../account/parts'
 import { AboardError, Back, ChildNote } from './common'
 import { usePersona } from '../../hooks/useDemo'
@@ -78,6 +79,7 @@ export function RequestsScreen() {
                 <Card>
                   <h3 className="card__title">{r.qty > 1 ? `${r.qty} × ` : ''}{th(`req.i.${r.item}` as StringKey)}</h3>
                   <p><StatusBadge kind={r.stage === 'done' ? 'booked' : r.stage === 'cancelled' ? 'cancelled' : r.stage === 'onTheWay' ? 'ready' : 'waitlist'} label={t(`req.s.${r.stage}` as StringKey)} /></p>
+                  {r.stage !== 'cancelled' && <Stepper label={t('req.track')} steps={requestProgress(r.stage).map((x) => ({ id: x.id, state: x.state, label: t(`req.step.${x.id}` as StringKey) }))} />}
                   <p className="muted">{r.stage === 'done' || r.stage === 'cancelled' ? t('req.asked', { time: shipTime(r.placedAt) }) : t('req.eta', { time: shipTime(Math.max(r.etaAt, now)) })}</p>
                   {r.canCancel && <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run(r.id)}>{t('req.cancel')}</Button>}
                 </Card>

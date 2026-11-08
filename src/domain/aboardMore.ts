@@ -137,6 +137,13 @@ export function challenge(byDay: Record<string, number>, today: number): Challen
 export interface LostReport { id: string; what: string; where: string; at: number }
 export const LOST_MAX = 5
 export interface FoundItem { id: string; what: string; keywords: string[]; at: 'guest-services' | 'eatery' | 'lido-pool' }
+export type LostStep = 'reported' | 'checked' | 'match'
+/** The steps for a lost-item report: reported, checked against the found list, and a possible match when one turns up. Before the found list loads, it stays at reported. */
+export function lostSteps(loaded: boolean, matches: number): { id: LostStep; state: 'done' | 'current' | 'todo' }[] {
+  if (!loaded) return [{ id: 'reported', state: 'current' }, { id: 'checked', state: 'todo' }, { id: 'match', state: 'todo' }]
+  return [{ id: 'reported', state: 'done' }, { id: 'checked', state: 'done' }, { id: 'match', state: matches > 0 ? 'done' : 'current' }]
+}
+
 export const matchFound = (r: Pick<LostReport, 'what'>, items: readonly FoundItem[]): FoundItem[] => {
   const words = r.what.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2)
   return items.filter((f) => f.keywords.some((k) => words.includes(k)))

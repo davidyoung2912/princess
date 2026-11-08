@@ -39,6 +39,15 @@ export function requestStage(placedAt: number, etaMin: number, now: number, canc
   return waited >= (etaMin * MIN) / 2 ? 'onTheWay' : 'received'
 }
 
+export type RequestStep = 'received' | 'onTheWay' | 'done'
+/** The "what happened to this" steps for a ship request: received, on the way, done. A cancelled request has none. */
+export function requestProgress(stage: RequestStage): { id: RequestStep; state: 'done' | 'current' | 'todo' }[] {
+  if (stage === 'cancelled') return []
+  if (stage === 'done') return [{ id: 'received', state: 'done' }, { id: 'onTheWay', state: 'done' }, { id: 'done', state: 'done' }]
+  if (stage === 'onTheWay') return [{ id: 'received', state: 'done' }, { id: 'onTheWay', state: 'current' }, { id: 'done', state: 'todo' }]
+  return [{ id: 'received', state: 'current' }, { id: 'onTheWay', state: 'todo' }, { id: 'done', state: 'todo' }]
+}
+
 export let MAX_OPEN_REQUESTS = 6
 
 // ---- Security and man-overboard reporting (SAF-04) ----

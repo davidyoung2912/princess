@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { calmestPlaces, cabinWords, challenge, diningPlaces, DND_MAX, findCabin, HOLD_MINUTES, kidsReport, LAP_STEPS, loungerBoard, matchFound, OK_HOURS, okStatus, seasickStatus, SEASICK_DOCTOR, SEASICK_HELPS, SIGHTINGS_MAX, soloState, SOLO_MINUTES, SPECIES, startSolo, STEP_GOAL, takeLounger, teenComplete, TEEN_RULES, YOU_SAID, LOST_MAX, type AboardState } from '../../domain/aboardMore'
+import { calmestPlaces, cabinWords, challenge, diningPlaces, DND_MAX, findCabin, HOLD_MINUTES, kidsReport, LAP_STEPS, loungerBoard, lostSteps, matchFound, OK_HOURS, okStatus, seasickStatus, SEASICK_DOCTOR, SEASICK_HELPS, SIGHTINGS_MAX, soloState, SOLO_MINUTES, SPECIES, startSolo, STEP_GOAL, takeLounger, teenComplete, TEEN_RULES, YOU_SAID, LOST_MAX, type AboardState } from '../../domain/aboardMore'
 import { clubById, clubFor } from '../../domain/family'
 import { placeById } from '../../domain/deck'
 import { shipZoneAt } from '../../domain/sailings'
@@ -17,6 +17,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
+import { Stepper } from '../Stepper'
 import { FeedWaiting } from '../FeedWaiting'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
@@ -269,6 +270,7 @@ export function LostFoundScreen() {
           <Card key={r.id} labelledBy={`lost-${r.id}`}>
             <h2 id={`lost-${r.id}`} className="card__title">{r.what}</h2>
             {r.where && <p className="muted">{r.where}</p>}
+            <Stepper label={t('lost.track')} steps={lostSteps(!!found, m.length).map((x) => ({ id: x.id, state: x.state, label: t(`lost.step.${x.id}` as StringKey) }))} />
             <p role="status">{!found ? t('feed.waiting') : m.length > 0 ? t('lost.maybe', { what: m.map((f) => `${f.what} (${placeById(f.at)?.name ?? f.at})`).join('; ') }) : t('lost.none')}</p>
             <Button variant="tertiary" onClick={() => set((x) => ({ ...x, lost: x.lost.filter((y) => y.id !== r.id) }))}>{t('poll.remove')}</Button>
           </Card>
