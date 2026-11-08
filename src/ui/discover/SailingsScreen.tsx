@@ -17,6 +17,9 @@ import { Bookmark, BookmarkCheck } from '../icons'
 import { wantMatches } from '../../domain/rememberDelights'
 import { useMemory } from '../../hooks/useMemory'
 import { FromPriceBlock } from './parts'
+import { PriceCalendar } from './PriceCalendar'
+import { useNow } from '../../hooks/useDemo'
+import { localDate } from '../../domain/tileLive'
 import { CataloguePrice, DataStatusNote } from './catalogueParts'
 import { regionName, shipName } from './catalogueNames'
 
@@ -52,6 +55,9 @@ export function SailingsScreen() {
     setParams(next, { replace: true })
   }
   const filtered = Object.keys(filter).length > 0
+  const now = useNow()
+  const calendar = params.get('view') === 'calendar'
+  const priceOf = (id: string) => offers.data?.find((o) => o.id === id)?.from.allIn ?? all.find((x) => x.id === id)?.fromCents ?? null
   const savedSailings = favourites.keys.filter((k) => k.startsWith('sailing:')).length
   const select = (id: string, label: string, key: string, options: { value: string; label: string }[], any: StringKey) => (
     <div className="field">
@@ -76,12 +82,19 @@ export function SailingsScreen() {
           <input type="checkbox" checked={!!filter.bookable} onChange={(e) => set('bookable', e.target.checked ? '1' : '')} />
           {t('cat.bookableOnly')}
         </label>
-        {filtered && <Button variant="tertiary" onClick={() => setParams(sort === 'soonest' ? {} : { sort }, { replace: true })}>{t('cat.clear')}</Button>}
+        <fieldset className="field">
+          <legend>{t('pcal.view')}</legend>
+          {(['list', 'calendar'] as const).map((v) => (
+            <label key={v} className="choice"><input type="radio" name="view" checked={(v === 'calendar') === calendar} onChange={() => set('view', v === 'calendar' ? 'calendar' : '')} />{t(`pcal.view.${v}` as StringKey)}</label>
+          ))}
+        </fieldset>
+        {filtered && <Button variant="tertiary" onClick={() => setParams({ ...(sort === 'soonest' ? {} : { sort }), ...(calendar ? { view: 'calendar' } : {}) }, { replace: true })}>{t('cat.clear')}</Button>}
       </form>
       <p role="status" className="muted">{t('cat.count', { count: shown.length })}</p>
       {savedSailings >= 2 && <p><Link to="/home/saved/compare">{t('cat.compareSaved')}</Link></p>}
       {shown.length === 0 && <Card info><p>{t('cat.noMatch')}</p></Card>}
-      {groups.map((g) => (
+      {calendar && shown.length > 0 && <PriceCalendar sailings={shown} priceOf={priceOf} today={localDate(now)} />}
+      {!calendar && groups.map((g) => (
         <section key={g.month || 'all'} aria-labelledby={g.month ? `m-${g.month}` : undefined}>
           {g.month && <h2 id={`m-${g.month}`}>{monthLabel(g.month)}</h2>}
           <ul className="card-grid">

@@ -96,3 +96,10 @@ textarea.field__input { resize: vertical; }
   .reel__slide { animation: reel-in 400ms ease-out; }
   @keyframes reel-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
 }
+
+.price-cal { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.price-cal__row { padding: var(--space-3); border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); }
+.price-cal__row--storm { border-style: dashed; }
+.price-cal__row p { margin: 0 0 var(--space-2); }
+.price-cal__bar { height: 0.75rem; background: var(--surface-muted, transparent); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: var(--space-2); }
+.price-cal__bar span { display: block; height: 100%; background: var(--trip, var(--accent)); }
