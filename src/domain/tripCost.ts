@@ -92,3 +92,31 @@ export function tripCost(input: TripCostInput): TripCost | null {
 
 /** The name of a fare for the comparison table. */
 export const fareName = (fare: FareId): string => FARES[fare].name
+
+/** Lines a guest can choose to drop, least regret first. The fare itself, gratuities and the package are not offered, and a credit goes with the excursions it pays for. */
+export const DROP_ORDER: readonly CostKey[] = ['other', 'wifi', 'drinks', 'dining', 'excursions', 'hotel', 'flights']
+
+export interface GuardRail {
+  /** Lines to drop, in order, until the total is at or under the ceiling. */
+  drops: CostKey[]
+  /** The total once those lines are dropped. */
+  newTotal: Cents
+  /** True when the ceiling is met; false when even dropping every optional line is not enough. */
+  fits: boolean
+}
+
+/** Which lines to drop, least regret first, to bring an option under the guest's ceiling (H12). Null when no ceiling is set or the option already fits. */
+export function guardRail(option: CostOption, ceiling: Cents | null): GuardRail | null {
+  if (ceiling === null || ceiling <= 0 || option.total <= ceiling) return null
+  const drops: CostKey[] = []
+  let total = option.total
+  for (const key of DROP_ORDER) {
+    if (total <= ceiling) break
+    const cents = option.lines.filter((l) => l.key === key || (key === 'excursions' && l.key === 'excursionCredit')).reduce((sum, l) => sum + l.cents, 0)
+    const own = option.lines.find((l) => l.key === key)
+    if (!own || own.cents <= 0) continue
+    drops.push(key)
+    total -= cents
+  }
+  return { drops, newTotal: total, fits: total <= ceiling }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bookingQuote } from './fares'
-import { tripCost, type TripCostInput } from './tripCost'
+import { tripCost, guardRail, type TripCostInput } from './tripCost'
 
 const base: TripCostInput = { sailingId: 'sun-2027-03-21', category: 'balcony', guests: 2, adults: 2, daysToDeparture: 200, drinks: false, wifi: false, dinners: 0, excursionIds: [], flights: 0, hotel: 0, other: 0 }
 const totalOf = (c: ReturnType<typeof tripCost>, fare: string) => c!.options.find((o) => o.fare === fare)!.total
@@ -58,5 +58,18 @@ describe('whole-trip cost', () => {
     const c = tripCost({ ...base, adults: 9, dinners: 99, flights: -5, hotel: Number.NaN })!
     expect(c.options[0].lines.every((l) => Number.isFinite(l.cents))).toBe(true)
     expect(lineOf(c, 'standard', 'flights')).toBeUndefined()
+  })
+  it('lists what to drop, least regret first, to get under a ceiling', () => {
+    const c = tripCost({ ...base, drinks: true, wifi: true, other: 20_000, flights: 100_000 })!
+    const std = c.options.find((o) => o.fare === 'standard')!
+    expect(guardRail(std, null)).toBeNull()
+    expect(guardRail(std, std.total)).toBeNull()
+    const g = guardRail(std, std.total - 1)!
+    expect(g.drops).toEqual(['other'])
+    expect(g.fits).toBe(true)
+    expect(g.newTotal).toBe(std.total - 20_000)
+    const tight = guardRail(std, 1)!
+    expect(tight.fits).toBe(false)
+    expect(tight.drops).toEqual(['other', 'wifi', 'drinks', 'flights'])
   })
 })

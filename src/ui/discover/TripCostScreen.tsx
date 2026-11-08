@@ -5,7 +5,7 @@ import { useCatalogue } from '../../hooks/useCatalogue'
 import { parseMoney } from '../../domain/money'
 import { MAX_GUESTS } from '../../domain/priceShapes'
 import { formatMoney } from '../../domain/money'
-import { fareName, MAX_DINNERS, tripCost, type CostKey } from '../../domain/tripCost'
+import { fareName, guardRail, MAX_DINNERS, tripCost, type CostKey, type CostOption } from '../../domain/tripCost'
 import type { CategoryId } from '../../domain/ship'
 import { sailingFor } from '../../domain/shipCatalogue'
 import { zonedToEpoch } from '../../domain/timezones'
@@ -126,7 +126,7 @@ export function TripCostScreen() {
           <>
             <Card info>
               <p><strong>{t('cost.cheapest', { fare: fareName(cost.cheapest) })}</strong></p>
-              <BudgetNote total={cost.options.find((o) => o.fare === cost.cheapest)!.total} budget={memory.budget} text={budgetText} setText={setBudgetText} save={(v) => updateMemory((m) => ({ ...m, budget: v }))} />
+              <BudgetNote option={cost.options.find((o) => o.fare === cost.cheapest)!} budget={memory.budget} text={budgetText} setText={setBudgetText} save={(v) => updateMemory((m) => ({ ...m, budget: v }))} />
               <p>{cost.savingVsStandard > 0 ? t('cost.saving', { fare: fareName(cost.cheapest), amount: formatMoney(cost.savingVsStandard) }) : t('cost.noSaving')}</p>
             </Card>
             <table className="cost-table">
@@ -162,13 +162,21 @@ export function TripCostScreen() {
 }
 
 /** Notes at 80 and over 100 percent of the guest's own budget for the whole trip (S4-08). Words and a number, never a block. */
-function BudgetNote({ total, budget, text, setText, save }: { total: number; budget: number | null; text: string; setText: (v: string) => void; save: (v: number | null) => void }) {
+function BudgetNote({ option, budget, text, setText, save }: { option: CostOption; budget: number | null; text: string; setText: (v: string) => void; save: (v: number | null) => void }) {
   const typed = text.trim() === '' ? undefined : parseMoney(text)
-  const note = budgetNote(total, budget)
+  const note = budgetNote(option.total, budget)
+  const rail = guardRail(option, budget)
   return (
     <div>
       <Field label={t('cost.budget')} inputMode="decimal" value={text !== '' ? text : budget === null ? '' : String(budget / 100)} error={typed === null ? t('cost.invalid') : undefined}
         onChange={(e) => { setText(e.target.value); const v = e.target.value.trim() === '' ? null : parseMoney(e.target.value); if (v !== undefined && (v === null || v > 0)) save(e.target.value.trim() === '' ? null : v) }} />
+      {rail && (
+        <div>
+          <p>{t('cost.guard.title')}</p>
+          <ol>{rail.drops.map((k) => <li key={k}>{t(`cost.line.${k}` as StringKey)}</li>)}</ol>
+          <p>{rail.fits ? t('cost.guard.fits', { total: formatMoney(rail.newTotal) }) : t('cost.guard.short', { short: formatMoney(rail.newTotal - (budget ?? 0)) })}</p>
+        </div>
+      )}
       {note && <Banner kind={note.level === 100 ? 'warning' : 'info'} title={t(note.level === 100 ? 'cost.budget.100' : note.level === 80 ? 'cost.budget.80' : 'cost.budget.ok', { percent: note.percent, over: formatMoney(note.over) })} />}
     </div>
   )
