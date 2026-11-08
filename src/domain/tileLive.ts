@@ -8,6 +8,8 @@ export interface TileFacts {
   documents?: { missing: number; passportProblems: number } | null
   /** Time ("HH:MM") of tonight's dinner, if one is booked; null otherwise. */
   tonight?: string | null
+  /** Places to eat and drink open right now; null while unknown. */
+  venuesOpen?: number | null
 }
 
 /** The earliest dinner on the day whose date is `today` ("YYYY-MM-DD"), or null. */
@@ -23,7 +25,7 @@ export function localDate(ms: number): string {
 }
 
 /** Screen paths mapped to the words for their live value; a screen with nothing to say is left out. */
-export type TileWords = { checklist: (done: number, total: number) => string; packing: (ticked: number, total: number) => string; dinners: (count: number) => string; dinnersTonight: (count: number, time: string) => string; docsReady: string; docsMissing: (count: number) => string; docsPassport: (count: number) => string }
+export type TileWords = { checklist: (done: number, total: number) => string; packing: (ticked: number, total: number) => string; dinners: (count: number) => string; dinnersTonight: (count: number, time: string) => string; venuesOpen: (count: number) => string; docsReady: string; docsMissing: (count: number) => string; docsPassport: (count: number) => string }
 
 export function tileValues(facts: TileFacts, words: TileWords): Record<string, string> {
   const out: Record<string, string> = {}
@@ -34,5 +36,6 @@ export function tileValues(facts: TileFacts, words: TileWords): Record<string, s
   if (typeof facts.dinners === 'number') out['/plan/reservations'] = (facts.tonight ? words.dinnersTonight(facts.dinners, facts.tonight) : words.dinners(facts.dinners))
   const d = facts.documents
   if (d) out['/me/documents'] = d.passportProblems > 0 ? words.docsPassport(d.passportProblems) : d.missing > 0 ? words.docsMissing(d.missing) : words.docsReady
+  if (typeof facts.venuesOpen === 'number') out['/ship/venues'] = words.venuesOpen(facts.venuesOpen)
   return out
 }

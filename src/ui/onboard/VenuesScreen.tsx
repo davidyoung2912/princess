@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { DietaryId } from '../../domain/account'
 import { formatTime } from '../../domain/cruise'
-import { coverOf, DIRECTORY, directoryVenue, dishesFor, dishSuits, hoursText, NEEDS_ASKING, openAt, reservableVenue, type DayType, type DirectoryVenue } from '../../domain/menus'
+import { coverOf, DIRECTORY, directoryVenue, dishesFor, dishSuits, hoursText, NEEDS_ASKING, openAt, reservableVenue, type DirectoryVenue } from '../../domain/menus'
 import { DRESS_NOTES } from '../../domain/dining'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
-import { useNow, useSailing, usePersona } from '../../hooks/useDemo'
+import { usePersona } from '../../hooks/useDemo'
+import { useShipDay } from '../../hooks/useShipDay'
 import { useMine } from '../../hooks/useMine'
-import { portAt, shipZoneAt } from '../../domain/sailings'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
@@ -25,19 +25,11 @@ function usePartyDiets(): { diets: DietaryId[]; ready: boolean } {
   return { diets: profile.data?.profile.dietary ?? [], ready: profile.status === 'ready' }
 }
 
-/** Whether the ship is at a port or at sea decides which hours apply. */
-function useDayType(): { day: DayType; time: string } {
-  const sailing = useSailing()
-  const now = useNow()
-  const time = new Date(now).toLocaleTimeString('en-GB', { timeZone: shipZoneAt(sailing, now), hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-  return { day: portAt(sailing, now).port === 'sea' ? 'sea' : 'port', time }
-}
-
 /** Every place to eat and drink, with hours for today, price and dress code (DIN-01). */
 export function VenuesScreen() {
   const [openNow, setOpenNow] = useState(false)
   const [included, setIncluded] = useState(false)
-  const { day, time } = useDayType()
+  const { day, time } = useShipDay()
   const list = DIRECTORY.filter((v) => (!openNow || openAt(v, day, time)) && (!included || v.price !== 'specialty'))
   return (
     <div className="page">

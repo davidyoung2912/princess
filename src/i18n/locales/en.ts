@@ -1337,6 +1337,7 @@ export const en = {
   'tile.docsReady': 'All ready',
   'tile.docsMissing': '{count} missing',
   'tile.docsPassport': '{count} passport to check',
+  'tile.venuesOpen': '{count} open now',
   'tile.packing': '{done} of {total} packed',
   'plan.check.progress': '{done} of {total} checklist items done',
   'plan.check.next': 'Next: {item}.',

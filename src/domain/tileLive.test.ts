@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { localDate, tileValues, tonightsDinner } from './tileLive'
 
-const words = { checklist: (d: number, t: number) => `${d}/${t} done`, packing: (d: number, t: number) => `${d}/${t} packed`, dinners: (n: number) => `${n} dinners`, dinnersTonight: (n: number, t: string) => `${n} dinners, tonight ${t}`, docsReady: 'ready', docsMissing: (n: number) => `${n} missing`, docsPassport: (n: number) => `${n} passport` }
+const words = { checklist: (d: number, t: number) => `${d}/${t} done`, packing: (d: number, t: number) => `${d}/${t} packed`, venuesOpen: (n: number) => `${n} open`, dinners: (n: number) => `${n} dinners`, dinnersTonight: (n: number, t: string) => `${n} dinners, tonight ${t}`, docsReady: 'ready', docsMissing: (n: number) => `${n} missing`, docsPassport: (n: number) => `${n} passport` }
 
 describe('tileValues', () => {
   it('words the checklist and packing progress', () => {
@@ -33,5 +33,10 @@ describe('tileValues', () => {
   })
   it('formats a local date', () => {
     expect(localDate(new Date(2027, 0, 5, 12).getTime())).toBe('2027-01-05')
+  })
+  it('counts places open now, including none', () => {
+    expect(tileValues({ venuesOpen: 6 }, words)['/ship/venues']).toBe('6 open')
+    expect(tileValues({ venuesOpen: 0 }, words)['/ship/venues']).toBe('0 open')
+    expect(tileValues({ venuesOpen: null }, words)).toEqual({})
   })
 })
