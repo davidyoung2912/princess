@@ -19,6 +19,9 @@ import { Field, TextArea } from '../Field'
 import { WantMatchLine, WantNext } from '../delights/RememberDelights'
 import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
 import { EmailRecap, NicknameCard, RemindCard } from '../delights/PrepareDelights'
+import { callPlaces, wantMatches } from '../../domain/rememberDelights'
+import { shortlistCase, shortlistText } from '../../domain/shortlist'
+import { bookingQuote } from '../../domain/fares'
 import { NOT_INCLUDED, withNickname } from '../../domain/prepareDelights'
 
 async function send(text: string, title: string): Promise<'shared' | 'copied' | 'failed' | null> {
@@ -57,6 +60,18 @@ export function DecideScreen() {
   const nick = state.prepare.nickname
   const invite = withNickname(nick, inviteText(sailing, me?.firstName ?? '', inviteNote, inviteTrip(sailing.id)))
   const recap = withNickname(nick, decisionText(summary))
+  const chosenRoom = category && rooms.some((r) => r.id === category) ? category : null
+  const trip = inviteTrip(sailing.id)
+  const places = callPlaces(sailing)
+  const shortlist = shortlistCase({
+    departure: sailing.departure, title: trip?.title ?? sailings.find((s) => s.id === sailing.id)?.title ?? '', ship: trip?.ship ?? '', nights: trip?.nights ?? 0, from: trip?.from ?? '', ports: places,
+    categoryName: rooms.find((r) => r.id === chosenRoom)?.name ?? null, fareName: useFare ? FARES[useFare].name : null, guests,
+    total: chosenRoom && useFare ? (bookingQuote(sailing.id, chosenRoom, guests, useFare)?.total ?? null) : null,
+    budget: budget && budget > 0 ? budget : null,
+    fit: FIT_QUESTIONS.filter((q) => state.fit.includes(q.key)).map((q) => q.question),
+    wantedHere: [...new Set(wantMatches(state.remember.wants, places).map((h) => h.place))],
+  })
+  const shortlistRecap = withNickname(nick, shortlistText(shortlist))
   const say = async (text: string, title: string) => setShared(await send(text, title))
 
   return (
@@ -177,6 +192,20 @@ export function DecideScreen() {
         </div>
         <EmailRecap subject={withNickname(nick, t('decide.summary'))} body={`${recap}\n\n${t('dl5.mail.notIncluded')}\n${NOT_INCLUDED.map((x) => `- ${x}`).join('\n')}`} />
         <p><Link to="/home/cabins">{t('route.cabins')}</Link> · <Link to="/home/cruise/cost">{t('route.tripCost')}</Link></p>
+      </Card>
+
+      <Card labelledBy="dec-shortlist">
+        <h2 id="dec-shortlist" className="card__title">{th('decide.shortlist')}</h2>
+        <p>{t('decide.shortlistBody')}</p>
+        <h3>{shortlist.heading}</h3>
+        <dl>{shortlist.rows.map((r) => <div key={r.label}><dt><strong>{r.label}</strong></dt><dd>{r.value}</dd></div>)}</dl>
+        {shortlist.fit.length > 0 && <><h3>{th('decide.shortlistFit')}</h3><ul className="plain-bullets">{shortlist.fit.map((x) => <li key={x}>{x}</li>)}</ul></>}
+        <h3>{th('decide.shortlistOpen')}</h3>
+        <ul className="plain-bullets">{shortlist.open.map((x) => <li key={x}>{x}</li>)}</ul>
+        <div className="button-row">
+          <Button variant="secondary" onClick={() => void say(shortlistRecap, t('decide.shortlist'))}>{t('decide.shortlistSend')}</Button>
+          <Button variant="secondary" onClick={() => window.print()}>{t('decide.shortlistPrint')}</Button>
+        </div>
       </Card>
 
       <Card labelledBy="dec-invite">
