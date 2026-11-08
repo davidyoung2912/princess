@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { AssistanceView } from '../../api/types'
-import { ASSIST_KINDS, assistKind, type AssistId, type DeadlineState } from '../../domain/assistance'
+import { ASSIST_KINDS, assistKind, requestRef, requestSteps, type AssistId, type DeadlineState } from '../../domain/assistance'
 import { formatDate } from '../../domain/cruise'
 import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
@@ -13,6 +13,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { TextArea } from '../Field'
 import { StatusBadge, type BadgeKind } from '../StatusBadge'
+import { Stepper } from '../Stepper'
 import { Load } from '../account/parts'
 import { PlanError, ReadOnly, Back } from './common'
 import { firstName } from './people'
@@ -102,7 +103,9 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
                 <p>{firstName(r.guest)}</p>
                 {r.note && <p className="muted">{r.note}</p>}
                 <p>{r.status === 'confirmed' ? <StatusBadge kind="booked" label={t('assist.status.confirmed')} /> : r.status === 'late' ? <StatusBadge kind="changed" label={t('assist.status.late')} /> : <StatusBadge kind="waitlist" label={t('assist.status.received')} />}</p>
+                <Stepper label={t('assist.track')} steps={requestSteps(r.status).map((s) => ({ id: s.id, state: s.state, label: t(`assist.step.${s.id}` as never) }))} />
                 {r.status === 'late' && <p className="muted">{t('assist.status.lateBody')}</p>}
+                {r.status === 'confirmed' && <Card info><h4 className="card__title">{th('assist.show.title')}</h4><p>{t('assist.show.body', { kind: t(`assist.kind.${r.kind}` as never), name: firstName(r.guest), ref: requestRef(r.id) })}</p></Card>}
                 {view.canRequest && <Button variant="tertiary" disabled={withdraw.busy} onClick={() => void withdraw.run(r.id)}>{t('assist.withdraw')}<span className="visually-hidden"> {t(`assist.kind.${r.kind}` as never)}, {firstName(r.guest)}</span></Button>}
               </li>
             ))}

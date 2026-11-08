@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ASSIST_KINDS, deadline, requestStatus, assistKind } from './assistance'
+import { ASSIST_KINDS, deadline, requestStatus, assistKind, requestSteps, requestRef } from './assistance'
 import { buildChecklist, milestones, nextItem, progress, CHECKLIST, type AutoKey } from './checklist'
 import { diningWindow, mealCharge, slotsFor, tableClash, venueById, VENUES, DINNER_TIMES, planOf } from './dining'
 import { computeEntitlements } from './entitlements'
@@ -292,5 +292,16 @@ describe('the plan', () => {
     expect(plan[7].gaps).toEqual([])
     expect(plan[0].entries[0].kind).toBe('sail')
     expect(countBooked(plan)).toBe(2)
+  })
+})
+
+describe('assistance tracking steps', () => {
+  it('moves from sent to confirmed and stops a late request at seen', () => {
+    expect(requestSteps('received').map((s) => s.state)).toEqual(['done', 'current', 'todo'])
+    expect(requestSteps('confirmed').map((s) => s.state)).toEqual(['done', 'done', 'done'])
+    expect(requestSteps('late').map((s) => s.state)).toEqual(['done', 'current', 'todo'])
+  })
+  it('makes a short upper-case reference', () => {
+    expect(requestRef('ab-12cd34ef')).toBe('AB12CD')
   })
 })

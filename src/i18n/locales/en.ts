@@ -1698,6 +1698,12 @@ export const en = {
   'assist.status.late': 'Passed on, not guaranteed',
   'assist.status.lateBody': 'It came in after the notice date. Phone Guest Services to confirm.',
   'assist.withdraw': 'Withdraw',
+  'assist.track': 'Progress of this request',
+  'assist.step.sent': 'Sent to Guest Services',
+  'assist.step.seen': 'Seen by Guest Services',
+  'assist.step.done': 'Confirmed',
+  'assist.show.title': 'Show this to a crew member',
+  'assist.show.body': '{kind} for {name}. Reference {ref}. Confirmed by Guest Services.',
   'assist.profile': 'Needs saved in profiles',
 
   'plan.err.soldOut': 'That excursion is sold out.',

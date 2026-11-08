@@ -65,3 +65,16 @@ export function requestStatus(kind: AssistKind, departure: string, madeOn: strin
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('SOON_DAYS', (v) => { SOON_DAYS = v }, SOON_DAYS)
+
+export type TrackStep = 'sent' | 'seen' | 'done'
+export interface TrackState { id: TrackStep; state: 'done' | 'current' | 'todo' }
+
+/** The "what happened to this" steps for a request: sent, seen by Guest Services, confirmed. A late request stops at "seen": it is passed on but not promised. */
+export function requestSteps(status: RequestStatus): TrackState[] {
+  if (status === 'confirmed') return [{ id: 'sent', state: 'done' }, { id: 'seen', state: 'done' }, { id: 'done', state: 'done' }]
+  if (status === 'late') return [{ id: 'sent', state: 'done' }, { id: 'seen', state: 'current' }, { id: 'done', state: 'todo' }]
+  return [{ id: 'sent', state: 'done' }, { id: 'seen', state: 'current' }, { id: 'done', state: 'todo' }]
+}
+
+/** A short reference a crew member can read back: the first six characters of the request id, upper case. */
+export const requestRef = (id: string): string => id.replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase()
