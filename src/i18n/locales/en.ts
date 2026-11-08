@@ -9358,6 +9358,7 @@ export const en = {
   'stanley.mode.tick': 'Done, what is next?',
   'stanley.mode.finished': 'That is everything',
   'stanley.mode.card': 'Open my day',
+  'stanley.mode.portCall': 'Call the ship: {number}',
   'stanley.mode.portHelp': 'Something is wrong: help for a day ashore',
   'stanley.mode.hint': 'Ticking a step only changes this screen. It never tells the ship anything.',
   'stanley.mode.boardingDay.name': 'Boarding day',

@@ -8,6 +8,7 @@ import { t, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
 import { stanleyLevelFor } from '../../settings/settings'
 import { BUZZ, buzz } from '../../settings/haptics'
+import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { timeIn } from '../../domain/timezones'
 import { Button, LinkButton } from '../Button'
 import { BackLink } from '../onboard/common'
@@ -72,7 +73,12 @@ export function StanleyModeScreen() {
         </section>
       )}
       {mode === 'seaDay' && goodNow && <p className="stanley-mode__good">{t(goodNowKey(goodNow) as StringKey, { time: timeIn(goodNow.at, zone) })} <LinkButton to="/ship/pulse" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.seaDay.pulse')}</LinkButton></p>}
-      {mode === 'portDay' && <p><LinkButton to="/ship/safe-ashore" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.portHelp')}</LinkButton></p>}
+      {mode === 'portDay' && (
+        <p>
+          <LinkButton to="/ship/safe-ashore" variant="tertiary" state={openedFrom('blue')}>{t('stanley.mode.portHelp')}</LinkButton>{' '}
+          <a className="btn btn--secondary" href={`tel:${GUEST_SERVICES_NUMBER}`}>{t('stanley.mode.portCall', { number: GUEST_SERVICES_NUMBER })}</a>
+        </p>
+      )}
       <p className="muted">{t('stanley.mode.hint')}</p>
     </div>
   )
