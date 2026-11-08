@@ -14,6 +14,7 @@ import { DayCalendarButton, PlanExports } from '../delights/Exports'
 import { DayPolish, EntryNote, Guests, OccasionsCard, TravellerColours } from '../delights/PlanPolish'
 import { useTravellerColours } from '../delights/travellerColours'
 import { useMemory } from '../../hooks/useMemory'
+import { GroupBoard } from './GroupBoard'
 import { SpendForecastCard } from './SpendForecastCard'
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
@@ -50,6 +51,7 @@ export function PlanScreen() {
             <>
               <p className="muted">{countBooked(p.days) === 0 ? t('plan.nothingYet') : t('plan.booked', { count: countBooked(p.days) })}</p>
               <ol className="day-list">{p.days.map((d) => <DayCard key={d.day} day={d} days={p.days} />)}</ol>
+              <GroupBoard days={p.days} reload={plan.retry} />
               <TravellerColours days={p.days} />
               <PlanExports days={p.days} />
             </>

@@ -229,3 +229,13 @@ textarea { max-width: min(100%, 32rem); }
 .recent-row__text { flex: 1 1 12rem; min-width: 0; }
 .recent-row a:not(.btn) { min-height: var(--target-min); display: inline-flex; align-items: center; }
 .recent-foot { margin: 0; font-size: 0.875rem; }
+
+/* Group plan board: stacked days on a phone, side-by-side columns that scroll sideways on a wide screen. */
+.board-columns { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.board-column { border: var(--border-width) solid var(--border); border-radius: var(--radius, 8px); padding: var(--space-3); }
+.board-items { list-style: none; margin: 0; padding: 0; }
+.board-items > li { padding: var(--space-2) 0; border-top: var(--border-width) solid var(--border); }
+@media (min-width: 48rem) {
+  .board-columns { grid-auto-flow: column; grid-auto-columns: minmax(14rem, 1fr); overflow-x: auto; }
+}
+
