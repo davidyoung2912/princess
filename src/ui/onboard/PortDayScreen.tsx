@@ -63,6 +63,7 @@ function Body({ v }: { v: PortDayView }) {
       <Readiness tender={v.day.tender} />
       {v.day.port in PORT_CONTACTS && <ContactsAshore port={v.day.port} />}
       <TakeMeBack port={v.day.port} />
+      <p><LinkButton to="/ship/safe-ashore" variant="secondary">{t('port.help')}</LinkButton></p>
       <PinAndDayCard day={v.day} />
       <PortStamps />
       <p><Link to={`/home/ports/${v.day.port}`}>{t('port.guide', { port: port.name })}</Link> · <Link to="/ship/port/guide">{t('route.portGuide')}</Link> · <Link to="/plan/assistance">{t('route.assistance')}</Link></p>

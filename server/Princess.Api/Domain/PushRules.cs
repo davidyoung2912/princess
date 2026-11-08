@@ -30,8 +30,8 @@ public static class PushRules
 
     public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder"];
 
-    /// <summary>Hours before all-aboard at which the escalation speaks (the last hour only, then the final half hour and ten minutes).</summary>
-    public static readonly int[] AllAboardSteps = [60, 30, 10];
+    /// <summary>Minutes before all-aboard at which the escalation speaks (90, 60, 30 and 10).</summary>
+    public static readonly int[] AllAboardSteps = [90, 60, 30, 10];
 
     public static PushSettings NormalizeSettings(int? budget, bool? calm, IEnumerable<string>? watch) => new(
         budget is { } b && BudgetChoices.Contains(b) ? b : DefaultBudget,

@@ -2314,6 +2314,7 @@ export const en = {
   'port.tenderTour': 'You go ashore by tender boat',
   'port.qr': 'Tour ticket for {name}: {tour}',
   'port.guide': 'Guide to {port}',
+  'port.help': 'Help: I am late or lost ashore',
 
   'tender.title': 'Tender boats',
   'tender.mayTender': 'The ship may anchor and use tender boats',

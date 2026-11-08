@@ -65,9 +65,11 @@ public class PushRulesTests
     }
 
     [Fact]
-    public void AllAboardSpeaksOnlyInTheFinalHourAndEscalates()
+    public void AllAboardSpeaksInTheFinalNinetyMinutesAndEscalates()
     {
-        Assert.DoesNotContain(PushRules.Build(Input(PortDay(90))), n => n.Kind == "allAboard");
+        Assert.DoesNotContain(PushRules.Build(Input(PortDay(120))), n => n.Kind == "allAboard");
+        var at80 = PushRules.Build(Input(PortDay(80))).Single(n => n.Kind == "allAboard");
+        Assert.EndsWith(":90", at80.Key);
         var at50 = PushRules.Build(Input(PortDay(50))).Single(n => n.Kind == "allAboard");
         var at25 = PushRules.Build(Input(PortDay(25))).Single(n => n.Kind == "allAboard");
         var at5 = PushRules.Build(Input(PortDay(5))).Single(n => n.Kind == "allAboard");
