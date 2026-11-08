@@ -117,6 +117,7 @@ public sealed class Timeline
     /// <summary>The moment all guests must be back aboard on a port day, or null on a day with none (sea days and the first and last days).</summary>
     public DateTime? AllAboardAt(int day)
     {
+        if (day < 1 || day > Days.Count) return null;
         var d = Days[day - 1];
         return d.AllAboard is { } a && d.Port != "sea" && !Endpoint(d) ? Itinerary.LocalToUtc(d.Date, a, Itinerary.ZoneOf(d.Port)) : null;
     }

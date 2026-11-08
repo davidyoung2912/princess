@@ -45,7 +45,7 @@ public static class ShowRules
     /// <summary>The ticketed events on a day, in time order. A port-day event is listed only once the ship is back aboard.</summary>
     public static List<ShowEvent> On(Timeline timeline, int day, string? shipId = null)
     {
-        if (day is < 1 or > Itinerary.MaxDay) return [];
+        if (day < 1 || day > Itinerary.MaxDay || day > timeline.Days.Count) return [];
         var date = timeline.Departure.AddDays(day - 1);
         var zone = timeline.ShipZoneOnDate(date);
         var aboard = timeline.AllAboardAt(day);

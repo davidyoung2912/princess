@@ -53,7 +53,7 @@ public sealed class OnboardService(
     public async Task<ProgramViewDto> ProgramAsync(UserRecord actor, string? number, int day, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
-        if (day is < 1 or > Itinerary.MaxDay) throw ApiException.Invalid("day");
+        if (day < 1 || day > Itinerary.MaxDay || day > c.Timeline.Days.Count) throw ApiException.Invalid("day");
         var changes = (await ScenariosAsync(actor, ct)).Contains("planChange");
         var events = ProgramRules.On(c.Timeline, day, changes, programChanges.Current(), AboardPlans.ShipOfSailing(c.Booking.SailingId));
         var x = c.Timeline.Days[day - 1];
