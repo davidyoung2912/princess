@@ -2407,6 +2407,13 @@ CREATE TABLE dbo.PrintOrderItems (
 );
 END
 
+-- X8e: pictures kept with a case (a lost item, a receipt) are a fourth media purpose.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_GuestMedia_Purpose' AND definition NOT LIKE N'%case%')
+BEGIN
+ALTER TABLE dbo.GuestMedia DROP CONSTRAINT CK_GuestMedia_Purpose;
+ALTER TABLE dbo.GuestMedia ADD CONSTRAINT CK_GuestMedia_Purpose CHECK (Purpose IN ('cabin','book','postcard','case'));
+END
+
 -- X0l: photo spots come from the sailing's own days (PhotoRules.SpotsFor), so the global spot table and its keys are gone.
 IF OBJECT_ID(N'FK_PhotoSelections_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoSelections DROP CONSTRAINT FK_PhotoSelections_PhotoCatalogue;
 IF OBJECT_ID(N'FK_PhotoPurchaseItems_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoPurchaseItems DROP CONSTRAINT FK_PhotoPurchaseItems_PhotoCatalogue;

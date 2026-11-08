@@ -123,6 +123,9 @@ public class MediaRulesTests
     [InlineData("book", "03", false)]
     [InlineData("postcard", "", true)]
     [InlineData("postcard", "1", false)]
+    [InlineData("case", "LI-PC2-0001", true)]
+    [InlineData("case", "", false)]
+    [InlineData("case", "a b", false)]
     [InlineData("album", "x", false)]
     public void TheReferenceMustFitThePurpose(string purpose, string reference, bool ok) => Assert.Equal(ok, MediaRules.ValidRef(purpose, reference, out _));
 

@@ -12,8 +12,8 @@ public sealed record MediaUsageDto(int Count, long Bytes, int MaxCount, long Max
 /// </summary>
 public static class MediaRules
 {
-    /// <summary>cabin: a stateroom picture for the chooser; book: a picture on a day of the memory book; postcard: a picture on a family-at-home postcard.</summary>
-    public static readonly string[] Purposes = ["cabin", "book", "postcard"];
+    /// <summary>cabin: a stateroom picture for the chooser; book: a picture on a day of the memory book; postcard: a picture on a family-at-home postcard; case: a photo of a lost item or a receipt kept with one of the guest's own cases.</summary>
+    public static readonly string[] Purposes = ["cabin", "book", "postcard", "case"];
 
     /// <summary>What a cabin picture shows: the room, the view, something in the way, noise or the deck above and below.</summary>
     public static readonly string[] CabinKinds = ["room", "view", "obstruction", "noise"];
@@ -39,7 +39,7 @@ public static class MediaRules
     }
 
     /// <summary>
-    /// The reference a picture is kept under: a stateroom category for <c>cabin</c> (letters only), a cruise day 1 to 8 or <c>cover</c> for <c>book</c>, and nothing for <c>postcard</c>.
+    /// The reference a picture is kept under: a stateroom category for <c>cabin</c> (letters only), a cruise day 1 to 8 or <c>cover</c> for <c>book</c>, nothing for <c>postcard</c>, and a case number (letters, digits and dashes) for <c>case</c>.
     /// False when it does not fit the purpose.
     /// </summary>
     public static bool ValidRef(string purpose, string? reference, out string clean)
@@ -50,6 +50,7 @@ public static class MediaRules
             "cabin" => clean.Length is > 0 and <= MaxRef && clean.All(char.IsAsciiLetter),
             "book" => clean == "cover" || (int.TryParse(clean, out var day) && day is >= 1 and <= Itinerary.MaxDay && clean == day.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             "postcard" => clean.Length == 0,
+            "case" => clean.Length is > 0 and <= MaxRef && clean.All(c => char.IsAsciiLetterOrDigit(c) || c == '-'),
             _ => false,
         };
     }

@@ -18,7 +18,7 @@ export function MediaImage({ media, alt }: { media: Pick<Media, 'id' | 'width' |
  * Choose a picture, shrink it on the device and send it (N7.1). Says what happens to it before anything is sent, and why a picture was refused afterwards.
  * `needs` is anything the caller wants ticked or filled in first (a reason the button is off is always written next to it).
  */
-export function PicturePicker({ purpose, reference, kind, caption, ready, blockedWhy, onSaved }: {
+export function PicturePicker({ purpose, reference, kind, caption, ready, blockedWhy, camera, onSaved }: {
   purpose: MediaPurpose
   reference: string
   kind?: string
@@ -26,6 +26,8 @@ export function PicturePicker({ purpose, reference, kind, caption, ready, blocke
   /** False while the caller's own form is incomplete; `blockedWhy` says what is missing. */
   ready: boolean
   blockedWhy?: string
+  /** Open the phone's back camera first (a lost item, a receipt); a laptop still shows the file chooser. */
+  camera?: boolean
   onSaved: (saved: Media | null) => void
 }) {
   const id = useId()
@@ -50,7 +52,7 @@ export function PicturePicker({ purpose, reference, kind, caption, ready, blocke
     <div className="field">
       <label htmlFor={id}>{t('media.choose')}</label>
       <p className="field__hint">{t('media.hint')}</p>
-      <input ref={input} id={id} type="file" accept="image/jpeg,image/png" disabled={!ready || state === 'busy'} aria-describedby={`${id}-state`} onChange={(e) => void choose(e.target.files?.[0])} />
+      <input ref={input} id={id} type="file" accept="image/jpeg,image/png" capture={camera ? 'environment' : undefined} disabled={!ready || state === 'busy'} aria-describedby={`${id}-state`} onChange={(e) => void choose(e.target.files?.[0])} />
       {!ready && blockedWhy && <p className="muted">{blockedWhy}</p>}
       <p id={`${id}-state`} role={typeof state === 'string' ? 'status' : 'alert'} className={typeof state === 'string' ? undefined : 'field__error'}>
         {state === 'busy' ? t('media.sending') : state === 'saved' ? t('media.saved') : state === 'idle' ? '' : t(`media.err.${state.err}` as StringKey)}

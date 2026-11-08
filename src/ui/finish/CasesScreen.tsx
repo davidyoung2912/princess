@@ -15,6 +15,8 @@ import { Load } from '../account/parts'
 import { ExtraError } from '../extras/common'
 import { BackLink } from '../onboard/common'
 import { formatDateTime } from '../account/format'
+import { useMyMedia } from '../../hooks/useMedia'
+import { KeptPicture, PicturePicker } from '../media/Pictures'
 import { Human } from './common'
 
 const NEW_KINDS: readonly CaseKind[] = ['lostItem', 'claim', 'complaint']
@@ -91,8 +93,22 @@ function Case({ c, reload }: { c: CaseView; reload: () => void }) {
       {c.cents > 0 && <p className="muted">{t('case.amountAsked', { amount: formatMoney(c.cents) })}</p>}
       {c.outcome && <p><strong>{t(`case.outcome.${c.outcome}` as StringKey)}</strong></p>}
       {c.refund && <p>{c.refund.sent ? t('case.refundSent', { amount: formatMoney(c.refund.cents) }) : t('case.refundPending', { amount: formatMoney(c.refund.cents), time: formatDateTime(c.refund.expectedBy) })}</p>}
+      {(c.kind === 'lostItem' || c.kind === 'claim') && c.stage !== 'withdrawn' && <CasePictures number={c.number} kind={c.kind} />}
       <ExtraError error={withdraw.error} />
       {c.canWithdraw && <Button variant="tertiary" disabled={withdraw.busy} onClick={() => void withdraw.run()}>{t('case.withdraw')}</Button>}
     </li>
+  )
+}
+
+/** Photos kept with a case: a lost item, or the receipt for a claim. They are the guest's own and are only shown to them. */
+function CasePictures({ number, kind }: { number: string; kind: CaseKind }) {
+  const mine = useMyMedia('case')
+  const here = mine.list.filter((m) => m.ref === number)
+  return (
+    <div className="case__pictures">
+      <h4>{t(`case.pictures.${kind === 'claim' ? 'claim' : 'lostItem'}` as StringKey)}</h4>
+      {here.map((m) => <KeptPicture key={m.id} media={m} alt={t('case.pictures.alt', { number })} onDeleted={mine.reload} />)}
+      <PicturePicker purpose="case" reference={number} ready camera onSaved={mine.reload} />
+    </div>
   )
 }

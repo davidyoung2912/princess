@@ -12,7 +12,7 @@ export const MEDIA_CAPTION_MAX = 140
 /** The longest side the app sends. A phone photo is 4000 pixels or more; 1600 is plenty for a screen and a printed page, and keeps the upload small. */
 export const MEDIA_SEND_SIDE = 1600
 
-export type MediaPurpose = 'cabin' | 'book' | 'postcard'
+export type MediaPurpose = 'cabin' | 'book' | 'postcard' | 'case'
 export const CABIN_KINDS = ['room', 'view', 'obstruction', 'noise'] as const
 export type CabinKind = (typeof CABIN_KINDS)[number]
 export type MediaStatus = 'pending' | 'approved' | 'rejected'
@@ -40,7 +40,7 @@ export function normalizeMedia(raw: unknown): Media | null {
   if (!isRecord(raw)) return null
   const { id, purpose, ref, kind, caption, width, height, status, at, mine } = raw
   if (typeof id !== 'string' || !GUID.test(id)) return null
-  if (purpose !== 'cabin' && purpose !== 'book' && purpose !== 'postcard') return null
+  if (purpose !== 'cabin' && purpose !== 'book' && purpose !== 'postcard' && purpose !== 'case') return null
   if (typeof ref !== 'string' || ref.length > 40 || typeof kind !== 'string' || kind.length > 12) return null
   if (typeof caption !== 'string' || caption.length > MEDIA_CAPTION_MAX) return null
   if (typeof width !== 'number' || typeof height !== 'number' || !(width > 0) || !(height > 0)) return null
