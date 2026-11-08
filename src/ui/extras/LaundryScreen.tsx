@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { LaundryRequest, LaundryView } from '../../api/types'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
-import { LAUNDRY_NOTE_MAX, SERVICES, serviceById, type LaundryService } from '../../domain/laundry'
+import { laundrySteps, LAUNDRY_NOTE_MAX, SERVICES, serviceById, type LaundryService } from '../../domain/laundry'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -10,6 +10,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { Stepper } from '../Stepper'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 import { useShipTime } from '../onboard/shipTime'
@@ -90,6 +91,7 @@ function Request({ r, reload }: { r: LaundryRequest; reload: () => void }) {
     <li className="order">
       <h3 className="order__title">{r.qty} × {th(`lau.svc.${r.service}` as StringKey)}</h3>
       <p role="status"><strong>{t(`lau.stage.${r.stage}` as StringKey)}</strong></p>
+      {r.stage !== 'cancelled' && <Stepper label={t('lau.track')} steps={laundrySteps(r.stage).map((x) => ({ id: x.id, state: x.state, label: t(`lau.step.${x.id}` as StringKey) }))} />}
       <p>{t('lau.pickupAt', { time: shipTime(r.pickupAt) })} · {t('lau.returnBy', { time: shipTime(r.returnAt) })}</p>
       <p>{r.total === 0 ? t('x.free') : formatMoney(r.total)}{r.free > 0 && <> · {t('lau.freeApplied', { amount: formatMoney(r.free) })}</>}</p>
       {r.note && <p className="muted">{r.note}</p>}

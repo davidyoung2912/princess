@@ -2898,6 +2898,10 @@ export const en = {
   'lau.pickupAt': 'Pick-up {time}',
   'lau.returnBy': 'back by {time}',
   'lau.freeApplied': '{amount} free with your level',
+  'lau.track': 'Progress of this laundry request',
+  'lau.step.requested': 'Requested',
+  'lau.step.collected': 'Collected by your steward',
+  'lau.step.returned': 'Returned to your cabin',
   'lau.cancel': 'Cancel this request',
 
   'wifi.free': 'The app works without a Wi-Fi plan',

@@ -62,4 +62,13 @@ export function laundryStage(r: { pickupAt: number; hours: number; cancelledAt?:
 /** A request can be cancelled until the steward collects it. */
 export const laundryCancellable = (stage: LaundryStage): boolean => stage === 'requested'
 
+export type LaundryStep = 'requested' | 'collected' | 'returned'
+/** The "what happened to this" steps: requested, collected by the steward, returned. A cancelled request has none. */
+export function laundrySteps(stage: LaundryStage): { id: LaundryStep; state: 'done' | 'current' | 'todo' }[] {
+  if (stage === 'cancelled') return []
+  if (stage === 'returned') return [{ id: 'requested', state: 'done' }, { id: 'collected', state: 'done' }, { id: 'returned', state: 'done' }]
+  if (stage === 'cleaning') return [{ id: 'requested', state: 'done' }, { id: 'collected', state: 'done' }, { id: 'returned', state: 'current' }]
+  return [{ id: 'requested', state: 'done' }, { id: 'collected', state: 'current' }, { id: 'returned', state: 'todo' }]
+}
+
 registerContent('laundry', { SERVICES, WINDOWS })

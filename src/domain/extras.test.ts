@@ -3,7 +3,7 @@ import { checkInProblem, clubFor, defaultZones, kidStatus, lastSeen, normalizeAu
 import { isolating, medicalOpen, nextOpening, reportProblem } from './health'
 import { canCancel, breakfastMornings, itemById, orderFolioLines, orderProblem, orderProgress, priceOrder, MENU, menuFor, type GuestInfo, type OrderLine } from './orders'
 import { checksum, cheapest, filterPhotos, NO_PHOTO_FILTER, photoOptions, type Photo } from './photos'
-import { laundryPrice, laundryStage, pickupOptions, serviceById } from './laundry'
+import { laundryPrice, laundryStage, laundrySteps, pickupOptions, serviceById } from './laundry'
 import { devicesProblem, dndCheckDue, normalizeDevices, normalizeHousekeeping } from './room'
 import { addProblem, upgradeCost, planById, usedTodayMb } from './wifi'
 import { REFERENCE_SAILING } from './sailings'
@@ -260,5 +260,14 @@ describe('photos, laundry and Wi-Fi', () => {
     expect(upgradeCost(dev, planById('messaging')!, 0)).toBe(0)
     expect(usedTodayMb({ id: 'w', addedAt: 0 }, 0)).toBe(0)
     expect(usedTodayMb({ id: 'w', addedAt: 0 }, 3_600_000)).toBeGreaterThan(0)
+  })
+})
+
+describe('laundry steps', () => {
+  it('follows the stage and has none once cancelled', () => {
+    expect(laundrySteps('requested').map((x) => x.state)).toEqual(['done', 'current', 'todo'])
+    expect(laundrySteps('cleaning').map((x) => x.state)).toEqual(['done', 'done', 'current'])
+    expect(laundrySteps('returned').map((x) => x.state)).toEqual(['done', 'done', 'done'])
+    expect(laundrySteps('cancelled')).toEqual([])
   })
 })
