@@ -12,7 +12,7 @@ import { CircleDot } from 'lucide-react'
  * tab it was opened from, so the screen keeps that tab's colour. Screens that need an id the list cannot know (a particular sailing or port) are
  * reached from the list they open from, so they are left out here.
  */
-export function ScreenList({ ids, colour, badges = {}, heading, headingId }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; heading?: string; headingId: string }) {
+export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headingId }: { ids: readonly string[]; colour: TabColour; badges?: Record<string, ReactNode>; live?: Record<string, string>; heading?: string; headingId: string }) {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
   const items = listedScreens(ids, { sailingId: context?.focusSailingId ?? context?.sailingId ?? null, tripNumber: context?.booking?.number ?? null })
   if (items.length === 0) return null
@@ -25,7 +25,7 @@ export function ScreenList({ ids, colour, badges = {}, heading, headingId }: { i
           return (
             <li key={screen.id}>
               <Link to={to} state={openedFrom(colour)}><Icon className="screen-list__icon" size={20} aria-hidden="true" />{th(screen.titleKey)}{badges[screen.path]}</Link>
-              <span className="screen-list__subtext">{t(screen.subtextKey)}</span>
+              <span className="screen-list__subtext">{live[screen.path] && <strong className="screen-list__live">{live[screen.path]} · </strong>}{t(screen.subtextKey)}</span>
             </li>
           )
         })}

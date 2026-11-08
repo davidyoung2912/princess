@@ -58,3 +58,4 @@
 .badge--milestone { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-3); border-radius: 999px; background: var(--trip); color: var(--on-primary); font-weight: 700; }
 :root[data-contrast='high'] .card--ticket { -webkit-mask: none; mask: none; }
 :root[data-contrast='high'] .card--postcard::after { display: none; }
+.screen-list__live { color: var(--text); font-weight: 600; }
