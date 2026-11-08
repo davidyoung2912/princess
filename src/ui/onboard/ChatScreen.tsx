@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 import type { Message, ServiceThread } from '../../api/types'
 import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type ChannelId } from '../../domain/chat'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
+import { MAX_PLAN_DAY } from '../../domain/nightsRules'
+import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
+import { useMemory } from '../../hooks/useMemory'
 
 import { api } from '../../runtime'
 import type { OutboxItem } from '../../data/outbox'
@@ -78,7 +81,7 @@ function Party() {
                 {messages.map((m) => (
                   <li key={m.id} className={m.from === me?.id ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
                     <p className="chat-msg__meta"><strong>{name(m)}</strong> <span className="muted">{shipTime(m.at)}</span></p>
-                    {m.text && <p>{m.text}</p>}
+                    {m.text && (parsePlanCard(m.text) ? <PlanCardView card={parsePlanCard(m.text)!} /> : <p>{m.text}</p>)}
                     {m.photo && <ChatPhoto src={m.photo} name={name(m)} />}
                     {m.from !== me?.id && <MessageSafety messageId={m.id} from={m.from} onBlocked={() => { list.retry(); setBlockedVersion(blockedVersion + 1) }} />}
                     {m.seenBy && m.seenBy.length > 0 && <p className="muted">{t('chat.seenBy', { names: m.seenBy.map((id) => (personFirstName(id) || id)).join(', ') })}</p>}
@@ -103,6 +106,7 @@ function Party() {
         <Chip pressed={receiptsOn} onToggle={() => void flip.run(!receiptsOn)}>{t('chat.receipts')}</Chip>
       </div>
       <p className="muted">{t('chat.receiptsBody')}</p>
+      <PlanCardSender onSent={() => list.retry()} />
       <PhotoSender onSent={() => list.retry()} />
       <BlockedList version={blockedVersion} reload={list.retry} />
       <p className="muted">{t('chat.photos')}</p>
@@ -214,5 +218,46 @@ function Waiting({ items }: { items: readonly OutboxItem[] }) {
       <p><strong>{t('box.title', { count: items.length })}</strong> {t('box.body')}</p>
       <ul className="plain-bullets">{items.map((x) => <li key={x.id}>{x.payload.text}</li>)}</ul>
     </div>
+  )
+}
+
+/** A plan card in the chat, with a button that adds it to the guest's own plan day. */
+function PlanCardView({ card }: { card: PlanCard }) {
+  const { state, update } = useMemory()
+  const added = hasPlanCard(state.pasted, card)
+  const full = !added && addPlanCard(state.pasted, card).length === state.pasted.length
+  return (
+    <div className="plan-card">
+      <p><strong>{planCardSentence(card)}</strong></p>
+      <Button variant="secondary" disabled={added || full} onClick={() => update((m) => ({ ...m, pasted: addPlanCard(m.pasted, card) }))}>{added ? t('chat.card.added') : t('chat.card.add')}</Button>
+      {full && <p className="muted">{t('chat.card.full')}</p>}
+    </div>
+  )
+}
+
+/** Sends a meeting as a card instead of a line of text (C01). */
+function PlanCardSender({ onSent }: { onSent: () => void }) {
+  const [place, setPlace] = useState('')
+  const [day, setDay] = useState(1)
+  const [time, setTime] = useState('19:00')
+  const card = newPlanCard(day, time, place)
+  const send = useAction(async () => { if (card) { await api.messages.send(encodePlanCard(card)); setPlace(''); onSent() } })
+  return (
+    <details className="plan-card-form">
+      <summary>{t('chat.card.title')}</summary>
+      <p className="muted">{t('chat.card.hint')}</p>
+      <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
+        <Field label={t('chat.card.place')} value={place} maxLength={PLACE_MAX} onChange={(e) => setPlace(e.target.value)} autoComplete="off" />
+        <div className="field">
+          <label htmlFor="card-day">{t('chat.card.day')}</label>
+          <select id="card-day" value={day} onChange={(e) => setDay(Number(e.target.value))}>
+            {Array.from({ length: MAX_PLAN_DAY }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <Field label={t('chat.card.time')} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <ActionError error={send.error} />
+        <Button type="submit" disabled={send.busy || !card}>{t('chat.card.send')}</Button>
+      </form>
+    </details>
   )
 }
