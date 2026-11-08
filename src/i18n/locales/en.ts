@@ -1331,6 +1331,7 @@ export const en = {
   'plan.gap.tourGo': 'See excursions',
   'plan.gap.dinner': 'No restaurant booked for this evening.',
   'plan.gap.dinnerGo': 'Reserve dinner',
+  'pin.label': 'Pin {title} to the top',
   'tile.checklist': '{done} of {total} done',
   'tile.dinners': '{count} dinners booked',
   'tile.dinnersTonight': '{count} dinners booked, tonight at {time}',

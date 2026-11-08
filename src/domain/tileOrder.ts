@@ -20,3 +20,9 @@ export function orderForParty(ids: readonly string[], priority: readonly string[
   const here = priority.filter((p) => ids.includes(p))
   return [...here, ...ids.filter((id) => !here.includes(id))]
 }
+
+/** Pins after the guest taps the pin on `id`: unpinned if pinned, otherwise added, dropping the oldest pin when `max` would be passed. */
+export function togglePin(pins: readonly string[], id: string, max: number): string[] {
+  if (pins.includes(id)) return pins.filter((p) => p !== id)
+  return [...pins, id].slice(-max)
+}

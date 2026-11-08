@@ -8,12 +8,12 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true, stanleyLevel: 'chatty', tripColour: 'plum' }
+    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true, stanleyLevel: 'chatty', tripColour: 'plum', pins: ['S40', 'P10'] }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
   it('falls back field by field on bad data', () => {
-    expect(normalizeSettings({ textSize: 'huge', theme: 7, contrast: null, reduceMotion: 'yes', simple: 1, captions: 'no', dataLight: 'yes', units: 'miles', region: 'mars', tripColour: 'lime' })).toEqual(DEFAULT_SETTINGS)
+    expect(normalizeSettings({ textSize: 'huge', theme: 7, contrast: null, reduceMotion: 'yes', simple: 1, captions: 'no', dataLight: 'yes', units: 'miles', region: 'mars', tripColour: 'lime', pins: 'S40' })).toEqual(DEFAULT_SETTINGS)
     expect(normalizeSettings({ textSize: 'large' })).toEqual({ ...DEFAULT_SETTINGS, textSize: 'large' })
     expect(normalizeSettings(null)).toEqual(DEFAULT_SETTINGS)
     expect(normalizeSettings('text')).toEqual(DEFAULT_SETTINGS)
@@ -49,7 +49,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'coral' }, false)).toEqual({
+    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'coral', pins: [] }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-calm': 'off', 'data-captions': 'off', 'data-light': 'on', 'data-trip': 'coral',
     })
   })

@@ -43,7 +43,11 @@ export interface Settings {
   stanleyLevel: StanleyLevel
   /** The guest's own accent for the trip (X1b): tints the hero frame and the icons on lists. Chosen per device; "sea" is the app's own blue. */
   tripColour: TripColour
+  /** Screen ids the guest pinned to the top of their tab lists (X2f). Chosen per device; at most `MAX_PINS`. */
+  pins: string[]
 }
+
+export const MAX_PINS = 3
 
 export const TRIP_COLOURS = ['sea', 'teal', 'coral', 'gold', 'plum', 'green'] as const
 export type TripColour = (typeof TRIP_COLOURS)[number]
@@ -64,7 +68,7 @@ export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metr
 /** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
 export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea' }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -110,6 +114,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     syncPrivate: typeof o.syncPrivate === 'boolean' ? o.syncPrivate : defaults.syncPrivate,
     stanleyLevel: isStanleyLevel(o.stanleyLevel) ? o.stanleyLevel : defaults.stanleyLevel,
     tripColour: isTripColour(o.tripColour) ? o.tripColour : defaults.tripColour,
+    pins: Array.isArray(o.pins) ? [...new Set(o.pins.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length < 12))].slice(0, MAX_PINS) : defaults.pins,
   }
 }
 

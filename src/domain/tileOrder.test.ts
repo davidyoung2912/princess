@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { orderForParty, priorityIds } from './tileOrder'
+import { orderForParty, priorityIds, togglePin } from './tileOrder'
 
 describe('priorityIds', () => {
   it('is empty for adults without needs', () => expect(priorityIds({ ages: [40, 42], mobility: false })).toEqual([]))
@@ -17,5 +17,13 @@ describe('orderForParty', () => {
   it('never adds an id the list does not hold, and changes nothing without priorities', () => {
     expect(orderForParty(['A', 'B'], ['S40'])).toEqual(['A', 'B'])
     expect(orderForParty(['A', 'B'], [])).toEqual(['A', 'B'])
+  })
+})
+
+describe('togglePin', () => {
+  it('adds, removes, and drops the oldest past the limit', () => {
+    expect(togglePin([], 'A', 3)).toEqual(['A'])
+    expect(togglePin(['A', 'B'], 'A', 3)).toEqual(['B'])
+    expect(togglePin(['A', 'B', 'C'], 'D', 3)).toEqual(['B', 'C', 'D'])
   })
 })
