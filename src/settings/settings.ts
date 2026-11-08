@@ -41,7 +41,13 @@ export interface Settings {
   syncPrivate: boolean
   /** How much Stanley speaks up (Quiet Stanley). Chosen per device. Calm and simple mode cap it at "asked" (see `stanleyLevelFor`). */
   stanleyLevel: StanleyLevel
+  /** The guest's own accent for the trip (X1b): tints the hero frame and the icons on lists. Chosen per device; "sea" is the app's own blue. */
+  tripColour: TripColour
 }
+
+export const TRIP_COLOURS = ['sea', 'teal', 'coral', 'gold', 'plum', 'green'] as const
+export type TripColour = (typeof TRIP_COLOURS)[number]
+export const isTripColour = (v: unknown): v is TripColour => TRIP_COLOURS.includes(v as TripColour)
 
 /** Chatty: notes, chips and extra tips. Helpful: notes and chips. Asked: only the button. Off: no Stanley at all. */
 export const STANLEY_LEVELS = ['chatty', 'helpful', 'asked', 'off'] as const
@@ -58,7 +64,7 @@ export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metr
 /** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
 export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful' }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea' }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -103,6 +109,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     nudgesPerDay: isNudgeBudget(o.nudgesPerDay) ? o.nudgesPerDay : defaults.nudgesPerDay,
     syncPrivate: typeof o.syncPrivate === 'boolean' ? o.syncPrivate : defaults.syncPrivate,
     stanleyLevel: isStanleyLevel(o.stanleyLevel) ? o.stanleyLevel : defaults.stanleyLevel,
+    tripColour: isTripColour(o.tripColour) ? o.tripColour : defaults.tripColour,
   }
 }
 
@@ -144,7 +151,7 @@ function safeStorage(): Storage | null {
 }
 
 /** The attributes set on `<html>` for a set of settings; "auto" resolves against the device's colour preference. */
-export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-calm' | 'data-captions' | 'data-light', string> {
+export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-calm' | 'data-captions' | 'data-light' | 'data-trip', string> {
   return {
     'data-theme': s.theme === 'auto' ? (deviceIsDark ? 'dark' : 'light') : s.theme,
     'data-contrast': s.contrast,
@@ -154,5 +161,6 @@ export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record
     'data-calm': s.calm ? 'on' : 'off',
     'data-captions': s.captions ? 'on' : 'off',
     'data-light': s.dataLight ? 'on' : 'off',
+    'data-trip': s.tripColour,
   }
 }

@@ -79,7 +79,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
           {tiles.map(({ screen, to }) => {
             const Icon = SCREEN_ICONS[screen.id] ?? CircleDot
             return (
-            <li key={screen.id} className={`stage-tile${to === attention ? ' stage-tile--attention' : ''}`}>
+            <li key={screen.id} className={`stage-tile motion-lift${to === attention ? ' stage-tile--attention' : ''}`}>
               <Link to={to} state={openedFrom('blue')} className="stage-tile__link">
                 <Icon className="stage-tile__icon" aria-hidden="true" />
                 <span className="stage-tile__title">{th(screen.titleKey)}</span>

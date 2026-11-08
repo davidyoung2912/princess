@@ -19,3 +19,42 @@
 :root[data-calm='on'] .stage-hero img { filter: saturate(0.6) brightness(0.95); opacity: 0.85; }
 :root[data-contrast='high'] .stage-hero { display: none; }
 .stanley-pose { display: block; image-rendering: auto; object-fit: contain; }
+
+/* Trip colour (X1b): the guest's own accent. "sea" follows the area colour; the rest use the theme-aware accent tokens, so each theme's contrast already holds. */
+:root { --trip: var(--sec); }
+[data-trip='teal'] { --trip: var(--teal); }
+[data-trip='coral'] { --trip: var(--pink); }
+[data-trip='gold'] { --trip: var(--gold-text); }
+[data-trip='plum'] { --trip: var(--plum); }
+[data-trip='green'] { --trip: var(--success); }
+.trip-swatch { display: inline-block; flex: none; width: 1rem; height: 1rem; border-radius: 50%; border: var(--border-width) solid var(--border-strong); background: var(--sec); }
+.trip-swatch[data-trip='teal'] { background: var(--teal); }
+.trip-swatch[data-trip='coral'] { background: var(--pink); }
+.trip-swatch[data-trip='gold'] { background: var(--gold-text); }
+.trip-swatch[data-trip='plum'] { background: var(--plum); }
+.trip-swatch[data-trip='green'] { background: var(--success); }
+:root[data-trip] .stage-hero { box-shadow: inset 0 0 0 0 transparent, 0 0 0 0.2rem var(--trip); }
+:root[data-trip='sea'] .stage-hero { box-shadow: none; }
+.screen-list__icon, .stage-tile__icon { color: var(--trip); }
+
+/* Icons on list rows (X1b). The subtext lines up under the title. */
+.screen-list a { gap: var(--space-3); }
+.screen-list__icon { flex: none; }
+.screen-list li > .screen-list__subtext { padding-inline-start: calc(20px + var(--space-3)); }
+
+/* Motion vocabulary (X1b): three motions only. Lift: a card rises on hover or focus. Drift: a slow sideways sway for hero art. Land: a stamp or tick presses in. All stop under reduced motion (the rules above). */
+@keyframes drift { from { transform: translateX(-1.5%) scale(1.04); } to { transform: translateX(1.5%) scale(1.04); } }
+@keyframes land { 0% { opacity: 0; transform: scale(1.5) rotate(-6deg); } 70% { opacity: 1; transform: scale(0.94) rotate(1deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+.motion-lift { transition: transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease); }
+.motion-lift:hover, .motion-lift:focus-within { transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--sec) 50%, transparent); }
+.motion-land { animation: land var(--t-mid) var(--ease) both; }
+:root[data-motion='full'] .stage-hero img { animation: drift 24s ease-in-out infinite alternate; }
+:root[data-light='on'] .stage-hero img { animation: none !important; }
+
+/* Shapes (X1b): a ticket (notched sides) for passes and tours, a postcard (stamp corner) for memories, a badge for milestones. */
+.card--ticket { position: relative; border-radius: var(--radius-card); -webkit-mask: radial-gradient(circle 0.6rem at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 0.6rem at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat; mask: radial-gradient(circle 0.6rem at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 0.6rem at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat; }
+.card--postcard { position: relative; border-radius: var(--radius-card); }
+.card--postcard::after { content: ''; position: absolute; top: var(--space-2); right: var(--space-2); width: 2rem; height: 2.4rem; border: 0.2rem dashed var(--trip); border-radius: 2px; opacity: 0.7; pointer-events: none; }
+.badge--milestone { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-3); border-radius: 999px; background: var(--trip); color: var(--on-primary); font-weight: 700; }
+:root[data-contrast='high'] .card--ticket { -webkit-mask: none; mask: none; }
+:root[data-contrast='high'] .card--postcard::after { display: none; }

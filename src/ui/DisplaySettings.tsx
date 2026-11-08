@@ -5,7 +5,7 @@ import { CONSENT_REGIONS } from '../domain/ahead'
 import { UNITS } from '../domain/readiness'
 import { useSettings } from '../hooks/useSettings'
 import { LanguageSwitch } from './LanguageSwitch'
-import type { ContrastChoice, ThemeChoice } from '../settings/settings'
+import { TRIP_COLOURS, type ContrastChoice, type ThemeChoice } from '../settings/settings'
 
 const THEMES: readonly ThemeChoice[] = ['auto', 'light', 'dark', 'night']
 const CONTRASTS: readonly ContrastChoice[] = ['standard', 'high']
@@ -41,6 +41,17 @@ export function DisplaySettings() {
           <label key={contrast} className="choice">
             <input type="radio" name="contrast" checked={settings.contrast === contrast} onChange={() => update({ contrast })} />
             {t(`settings.contrast.${contrast}` as StringKey)}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset>
+        <legend>{t('settings.tripColour')}</legend>
+        <p className="field__hint">{t('settings.tripColourHint')}</p>
+        {TRIP_COLOURS.map((colour) => (
+          <label key={colour} className="choice">
+            <input type="radio" name="trip-colour" checked={settings.tripColour === colour} onChange={() => update({ tripColour: colour })} />
+            <span className="trip-swatch" data-trip={colour} aria-hidden="true" />
+            {t(`settings.tripColour.${colour}` as StringKey)}
           </label>
         ))}
       </fieldset>
