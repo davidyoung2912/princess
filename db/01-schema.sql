@@ -2369,6 +2369,18 @@ CREATE TABLE dbo.PhotoPurchaseItems (
 );
 END
 
+-- X8b: Our Album. A photo a guest has shared with the party; only the person who shared it can take it back.
+IF OBJECT_ID(N'dbo.PhotoAlbum', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.PhotoAlbum (
+  BookingId BIGINT NOT NULL, PhotoId NVARCHAR(40) NOT NULL, UserId BIGINT NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_PhotoAlbum_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_PhotoAlbum PRIMARY KEY (BookingId, PhotoId, UserId),
+  CONSTRAINT FK_PhotoAlbum_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_PhotoAlbum_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id)
+);
+END
+
 -- X0l: photo spots come from the sailing's own days (PhotoRules.SpotsFor), so the global spot table and its keys are gone.
 IF OBJECT_ID(N'FK_PhotoSelections_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoSelections DROP CONSTRAINT FK_PhotoSelections_PhotoCatalogue;
 IF OBJECT_ID(N'FK_PhotoPurchaseItems_PhotoCatalogue', N'F') IS NOT NULL ALTER TABLE dbo.PhotoPurchaseItems DROP CONSTRAINT FK_PhotoPurchaseItems_PhotoCatalogue;

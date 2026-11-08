@@ -39,6 +39,9 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         return unique;
     }
 
+    private static List<AlbumPhotoDto> AlbumView(Scope c, IEnumerable<AlbumEntry> entries) =>
+        [.. entries.Select(e => (e, who: c.Party.FirstOrDefault(p => p.UserId == e.UserId))).Where(x => x.who is not null).Select(x => new AlbumPhotoDto(x.e.PhotoId, x.who!.Id, x.e.UserId == c.Actor.Id))];
+
     public async Task<PhotosViewDto> ListAsync(UserRecord actor, string? number, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
@@ -46,7 +49,7 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         return new PhotosViewDto(
             AllPhotos(c), await store.ListFavouritesAsync(actor.Id, ct), [.. purchases.SelectMany(p => p.Items.Select(i => i.PhotoId)).Distinct()],
             [.. purchases.Select(Receipt).Reverse()], await IncludedLeftAsync(c, purchases, ct), PhotoRules.PhotographersFor(c.Timeline, AboardPlans.ShipOfSailing(c.Booking.SailingId)),
-            [.. c.Party.Select(p => new GuestDto(p.Id, p.Name))], ThroughDay(c));
+            [.. c.Party.Select(p => new GuestDto(p.Id, p.Name))], ThroughDay(c), AlbumView(c, await store.ListAlbumAsync(c.Booking.BookingId, ct)));
     }
 
     public async Task<List<string>> ToggleFavouriteAsync(UserRecord actor, string? number, string? photoId, CancellationToken ct)
@@ -54,6 +57,14 @@ public sealed class PhotoService(ScopeLoader scopes, IShipboardStore store, Plan
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         if (!AllPhotos(c).Any(p => p.Id == photoId)) throw ApiException.Invalid("unknownPhoto");
         return await store.ToggleFavouriteAsync(actor.Id, photoId!, ct);
+    }
+
+    /// <summary>Shares a photo with the party's album, or takes the caller's share back. Any adult on the booking may share; only the person who shared a photo can hide it.</summary>
+    public async Task<List<AlbumPhotoDto>> ToggleAlbumAsync(UserRecord actor, string? number, string? photoId, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: true, ct);
+        if (!AllPhotos(c).Any(p => p.Id == photoId)) throw ApiException.Invalid("unknownPhoto");
+        return AlbumView(c, await store.ToggleAlbumAsync(c.Booking.BookingId, actor.Id, photoId!, ct));
     }
 
     public async Task<PhotoQuoteDto> QuoteAsync(UserRecord actor, string? number, PhotoIdsRequest? body, CancellationToken ct)

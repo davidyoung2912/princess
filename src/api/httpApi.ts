@@ -162,6 +162,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   const photos: HttpGroups['photos'] = {
     list: () => inBooking('/photos'),
     toggleFavourite: (photoId) => inTrip('put', `/photos/${seg(photoId)}/favourite`),
+    toggleAlbum: (photoId) => inTrip('put', `/photos/${seg(photoId)}/album`),
     quote: (photoIds) => inTrip('post', '/photos/quote', { photoIds }),
     buy: (photoIds, option) => inTrip('post', '/photos/purchases', { photoIds, option }),
     download: (receiptId) => inTrip('post', `/photos/purchases/${seg(receiptId)}/download`),

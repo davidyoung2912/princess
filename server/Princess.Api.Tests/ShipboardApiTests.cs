@@ -613,6 +613,18 @@ public class ShipboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task SharingAPhotoPutsItInTheAlbumAndOnlyTheSharerCanTakeItBack()
+    {
+        var token = await DanielToken();
+        SetNow(SeaDay);
+        var shared = (await Put("photos/gangway/album", token)).Json.EnumerateArray().ToList();
+        Assert.Equal(("gangway", true), (shared[0].GetProperty("photoId").GetString(), shared[0].GetProperty("mine").GetBoolean()));
+        Assert.Single((await Read("photos", token)).Json.GetProperty("album").EnumerateArray());
+        Assert.Empty((await Put("photos/gangway/album", token)).Json.EnumerateArray());
+        Assert.Equal("unknownPhoto", (await Put("photos/roatan/album", token)).ProblemTitle);
+    }
+
+    [Fact]
     public async Task AQuotePricesEachWayOfBuyingAndChecksTheChoice()
     {
         var token = await DanielToken();

@@ -64,8 +64,11 @@ public sealed record RoomViewDto(
 
 public sealed record PhotoReceiptDto(Guid Id, long At, string Option, List<string> PhotoIds, long Paid, int Saved, bool Verified, long Until);
 
+/// <summary>A photo shared with the party: who shared it, and whether that is the caller (only they can take it back).</summary>
+public sealed record AlbumPhotoDto(string PhotoId, Guid By, bool Mine);
+
 public sealed record PhotosViewDto(
-    List<Photo> Photos, List<string> Favourites, List<string> Owned, List<PhotoReceiptDto> Receipts, int IncludedLeft, List<PhotographerSlot> Schedule, List<GuestDto> People, int ThroughDay);
+    List<Photo> Photos, List<string> Favourites, List<string> Owned, List<PhotoReceiptDto> Receipts, int IncludedLeft, List<PhotographerSlot> Schedule, List<GuestDto> People, int ThroughDay, List<AlbumPhotoDto> Album);
 
 public sealed record PhotoQuoteDto(int Included, int Paid, List<PhotoOption> Options, string Cheapest);
 

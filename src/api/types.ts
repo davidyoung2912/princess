@@ -1102,13 +1102,19 @@ export interface PhotosView {
   schedule: PhotographerSlot[]
   people: { id: PersonaId; name: string }[]
   throughDay: number
+  /** Photos shared with the party, each with who shared it; `mine` ones can be taken back. */
+  album: AlbumPhoto[]
 }
+
+export interface AlbumPhoto { photoId: string; by: string; mine: boolean }
 
 export interface PhotoQuote { included: number; paid: number; options: PhotoOption[]; cheapest: OptionId }
 
 export interface PhotosApi {
   list(): Promise<PhotosView>
   toggleFavourite(photoId: string): Promise<string[]>
+  /** Shares a photo with the party's album, or takes the caller's share back. Rejects `invalid` (`unknownPhoto`) or `forbidden`. */
+  toggleAlbum(photoId: string): Promise<AlbumPhoto[]>
   quote(photoIds: string[]): Promise<PhotoQuote>
   /** Rejects `invalid` (`empty`, `unknownPhoto`, `alreadyOwned`) or `forbidden`. */
   buy(photoIds: string[], option: OptionId): Promise<PhotoReceipt>

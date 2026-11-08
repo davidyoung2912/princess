@@ -92,7 +92,7 @@ export function asRoomView(raw: unknown): RoomView | null {
 
 export function asPhotosView(raw: unknown): PhotosView | null {
   const o = obj(raw)
-  return o && Array.isArray(o.photos) && Array.isArray(o.favourites) && Array.isArray(o.owned) && Array.isArray(o.receipts) && Array.isArray(o.people) ? (raw as PhotosView) : null
+  return o && Array.isArray(o.photos) && Array.isArray(o.favourites) && Array.isArray(o.owned) && Array.isArray(o.receipts) && Array.isArray(o.people) && Array.isArray(o.album) ? (raw as PhotosView) : null
 }
 
 export function asDisembarkView(raw: unknown): DisembarkView | null {

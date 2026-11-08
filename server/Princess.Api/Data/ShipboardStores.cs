@@ -93,6 +93,8 @@ public sealed class RoomSettingsRow
     public string Devices { get; set; } = "{}";
 }
 
+public sealed record AlbumEntry(string PhotoId, long UserId);
+
 public sealed class PhotoPurchaseRow
 {
     public long Id { get; set; }
@@ -179,6 +181,10 @@ public interface IShipboardStore
     Task<List<string>> ListFavouritesAsync(long userId, CancellationToken ct);
     /// <summary>Adds the photo to the person's favourites, or takes it off; returns the list.</summary>
     Task<List<string>> ToggleFavouriteAsync(long userId, string photoId, CancellationToken ct);
+    /// <summary>The photos shared with the party of a booking, each with the person who shared it.</summary>
+    Task<List<AlbumEntry>> ListAlbumAsync(long bookingId, CancellationToken ct);
+    /// <summary>Shares the photo with the party, or takes the caller's share back; returns the album.</summary>
+    Task<List<AlbumEntry>> ToggleAlbumAsync(long bookingId, long userId, string photoId, CancellationToken ct);
     Task<List<PhotoPurchaseRow>> ListPhotoPurchasesAsync(long bookingId, CancellationToken ct);
     Task<PhotoPurchaseRow> AddPhotoPurchaseAsync(long bookingId, PhotoPurchaseRow purchase, IReadOnlyList<FolioWrite> folio, CancellationToken ct);
     /// <summary>Marks the next batch of unsaved photos as saved; keeps what earlier attempts saved.</summary>

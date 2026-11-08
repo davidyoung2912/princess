@@ -256,6 +256,27 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         return (await c.QueryAsync<string>(Sql.Cmd("SELECT PhotoId FROM dbo.PhotoSelections WHERE UserId = @userId ORDER BY CreatedAt, PhotoId", new { userId }, null, ct))).ToList();
     }
 
+    private static async Task<List<AlbumEntry>> LoadAlbumAsync(DbConnection c, long bookingId, CancellationToken ct) =>
+        (await c.QueryAsync<AlbumEntry>(Sql.Cmd("SELECT PhotoId, UserId FROM dbo.PhotoAlbum WHERE BookingId = @bookingId ORDER BY CreatedAt, PhotoId, UserId", new { bookingId }, null, ct))).ToList();
+
+    public async Task<List<AlbumEntry>> ListAlbumAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await LoadAlbumAsync(c, bookingId, ct);
+    }
+
+    public async Task<List<AlbumEntry>> ToggleAlbumAsync(long bookingId, long userId, string photoId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            IF EXISTS (SELECT 1 FROM dbo.PhotoAlbum WHERE BookingId = @bookingId AND PhotoId = @photoId AND UserId = @userId)
+              DELETE FROM dbo.PhotoAlbum WHERE BookingId = @bookingId AND PhotoId = @photoId AND UserId = @userId;
+            ELSE
+              INSERT INTO dbo.PhotoAlbum (BookingId, PhotoId, UserId) VALUES (@bookingId, @photoId, @userId);
+            """, new { bookingId, userId, photoId }, null, ct));
+        return await LoadAlbumAsync(c, bookingId, ct);
+    }
+
     private static async Task<List<PhotoPurchaseRow>> LoadPurchasesAsync(DbConnection c, long bookingId, Guid? publicId, CancellationToken ct)
     {
         var rows = (await c.QueryAsync<PhotoPurchaseRow>(Sql.Cmd("""

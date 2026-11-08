@@ -163,6 +163,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'HealthReportGuests'),
   (N'dbo', N'HealthRequests'),
   (N'dbo', N'RoomSettings'),
+  (N'dbo', N'PhotoAlbum'),
   (N'dbo', N'PhotoSelections'),
   (N'dbo', N'PhotoPurchases'),
   (N'dbo', N'PhotoPurchaseItems'),

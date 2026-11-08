@@ -149,6 +149,17 @@ public sealed class InMemoryShipboardStore(InMemoryOnboardStore onboard) : IShip
         return Task.FromResult(new List<string>(l));
     }
 
+    public List<(long BookingId, AlbumEntry Entry)> Album { get; } = [];
+
+    public Task<List<AlbumEntry>> ListAlbumAsync(long bookingId, CancellationToken ct) => Task.FromResult(Album.Where(a => a.BookingId == bookingId).Select(a => a.Entry).ToList());
+
+    public Task<List<AlbumEntry>> ToggleAlbumAsync(long bookingId, long userId, string photoId, CancellationToken ct)
+    {
+        var entry = new AlbumEntry(photoId, userId);
+        if (Album.Remove((bookingId, entry)) == false) Album.Add((bookingId, entry));
+        return ListAlbumAsync(bookingId, ct);
+    }
+
     private static PhotoPurchaseRow Copy(PhotoPurchaseRow p) => new()
     {
         Id = p.Id, PublicId = p.PublicId, Option = p.Option, PaidCents = p.PaidCents, SavedCents = p.SavedCents, Until = p.Until, At = p.At, BuyerUserId = p.BuyerUserId, Items = [.. p.Items],

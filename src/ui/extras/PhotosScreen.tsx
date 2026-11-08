@@ -40,7 +40,9 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
   const shown = filterPhotos(v.photos, filter, v.favourites)
   const set = (patch: Partial<PhotoFilter>) => setFilter({ ...filter, ...patch })
   const fav = useAction(async (id: string) => { await api.photos.toggleFavourite(id); reload() })
+  const share = useAction(async (id: string) => { await api.photos.toggleAlbum(id); reload() })
   const owned = new Set(v.owned)
+  const inAlbum = (id: string) => v.album.some((a) => a.photoId === id && a.mine)
   return (
     <>
       {v.includedLeft > 0 && <Banner kind="success" title={t('pho.included', { count: v.includedLeft })}><p>{t('pho.includedBody')}</p></Banner>}
@@ -87,6 +89,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
                   <p className="muted">{t('plan.day', { n: p.day })}, {formatTime(p.time)} · {p.people.map((x) => v.people.find((y) => y.id === x)?.name.split(' ')[0]).join(', ')}</p>
                   <div className="button-row">
                     <Button variant="tertiary" aria-pressed={isFav} disabled={fav.busy || offline} onClick={() => void fav.run(p.id)}>{t('pho.fav')}<span className="visually-hidden"> {p.title}</span></Button>
+                    {canBuy && <Button variant="tertiary" aria-pressed={inAlbum(p.id)} disabled={share.busy || offline} onClick={() => void share.run(p.id)}>{inAlbum(p.id) ? t('pho.album.shared') : t('pho.album.share')}<span className="visually-hidden"> {p.title}</span></Button>}
                     {mine ? <span className="tag">{t('pho.owned')}</span> : canBuy && (
                       <label className="choice"><input type="checkbox" checked={picked.includes(p.id)} onChange={() => setPicked(picked.includes(p.id) ? picked.filter((x) => x !== p.id) : [...picked, p.id])} /><span>{t('pho.choose')}<span className="visually-hidden"> {p.title}</span></span></label>
                     )}
@@ -98,9 +101,36 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
         </section>
       )}
 
+      <ExtraError error={share.error} />
+      <Album v={v} share={(id) => void share.run(id)} busy={share.busy || offline} />
+
       {canBuy && !offline && picked.length > 0 && <Options picked={picked} done={() => { setPicked([]); reload() }} />}
       <Receipts receipts={v.receipts} reload={reload} offline={offline} />
     </>
+  )
+}
+
+/** Our Album: the photos anyone on the booking has shared; each person can take back only their own. */
+function Album({ v, share, busy }: { v: PhotosView; share: (id: string) => void; busy: boolean }) {
+  const name = (id: string) => v.people.find((x) => x.id === id)?.name.split(' ')[0] ?? ''
+  const photos = v.album.flatMap((a) => { const p = v.photos.find((x) => x.id === a.photoId); return p ? [{ a, p }] : [] })
+  return (
+    <section aria-labelledby="album-h">
+      <h2 id="album-h">{th('pho.album.title')}</h2>
+      <p>{t('pho.album.intro')}</p>
+      {photos.length === 0 ? <p className="muted">{t('pho.album.empty')}</p> : (
+        <ul className="photo-list">
+          {photos.map(({ a, p }) => (
+            <li key={`${a.photoId}-${a.by}`} className="photo">
+              {p.preview && <img className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} loading="lazy" />}
+              <p className="photo__title"><strong>{p.title}</strong></p>
+              <p className="muted">{t('pho.album.by', { name: name(a.by) })}</p>
+              {a.mine && <Button variant="tertiary" disabled={busy} onClick={() => share(p.id)}>{t('pho.album.hide')}<span className="visually-hidden"> {p.title}</span></Button>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

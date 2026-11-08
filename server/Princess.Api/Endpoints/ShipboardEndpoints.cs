@@ -63,6 +63,8 @@ public static class ShipboardEndpoints
             .WithSummary("Photos taken so far, the caller's favourites, what the booking owns, receipts and the photographers' schedule.");
         p.MapPut("/{photoId}/favourite", async (string number, string photoId, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.ToggleFavouriteAsync(await me.LoadAsync(ct), number, photoId, ct)))
             .WithSummary("Adds a photo to the caller's favourites, or takes it off, and returns the list. 400 unknownPhoto.");
+        p.MapPut("/{photoId}/album", async (string number, string photoId, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.ToggleAlbumAsync(await me.LoadAsync(ct), number, photoId, ct)))
+            .WithSummary("Shares a photo with the party's album, or takes the caller's share back, and returns the album. 400 unknownPhoto; 403 for a child account.");
         p.MapPost("/quote", async (string number, PhotoIdsRequest body, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.QuoteAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Prices each way of buying a choice of photos after any the package includes. 400 empty, unknownPhoto or alreadyOwned.");
         p.MapPost("/purchases", async (string number, BuyPhotosRequest body, ICurrentUser me, PhotoService svc, CancellationToken ct) => Results.Ok(await svc.BuyAsync(await me.LoadAsync(ct), number, body, ct)))
