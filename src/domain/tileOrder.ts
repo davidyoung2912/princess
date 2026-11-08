@@ -21,6 +21,11 @@ export function orderForParty(ids: readonly string[], priority: readonly string[
   return [...here, ...ids.filter((id) => !here.includes(id))]
 }
 
+/** The screens in `ids` that matter to this party, in priority order, at most `max`: these go in a "For you" list at the top of the tab. */
+export function forYouIds(ids: readonly string[], priority: readonly string[], max: number): string[] {
+  return priority.filter((p) => ids.includes(p)).slice(0, max)
+}
+
 /** Pins after the guest taps the pin on `id`: unpinned if pinned, otherwise added, dropping the oldest pin when `max` would be passed. */
 export function togglePin(pins: readonly string[], id: string, max: number): string[] {
   if (pins.includes(id)) return pins.filter((p) => p !== id)

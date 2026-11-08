@@ -13,7 +13,7 @@ export function TabScreens({ tabKey, badges }: { tabKey: string; badges?: Record
   const tab = navTabs(stage).find((x) => x.key === tabKey)
   const ids = tab ? tabScreenIds(tab, stage) : []
   const live = useTileLive(ids.map((id) => SCREEN_BY_ID.get(id)?.path ?? ''), tab !== undefined)
-  const order = usePartyOrder(tab !== undefined && tab.kind !== 'me')
+  const { order, forYou } = usePartyOrder(tab !== undefined && tab.kind !== 'me')
   if (!tab) return null
   if (tab.kind === 'me') {
     const { main, settings } = splitMe(ids)
@@ -24,8 +24,11 @@ export function TabScreens({ tabKey, badges }: { tabKey: string; badges?: Record
       </>
     )
   }
+  const mine = forYou(ids)
+  const rest = ids.filter((id) => !mine.includes(id))
+  const forYouList = mine.length > 0 ? <ScreenList ids={mine} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-foryou-h`} heading={th('tabs.forYou')} /> : null
   if (tab.key === 'ship') {
-    return <>{groupShip(ids).map((g) => <ScreenList key={g.group ?? 'rest'} ids={order(g.ids)} colour={tab.colour} badges={badges} live={live} headingId={`ship-${g.group ?? 'rest'}-h`} heading={g.group ? th(`tabs.ship.${g.group}`) : undefined} />)}</>
+    return <>{forYouList}{groupShip(rest).map((g) => <ScreenList key={g.group ?? 'rest'} ids={order(g.ids)} colour={tab.colour} badges={badges} live={live} headingId={`ship-${g.group ?? 'rest'}-h`} heading={g.group ? th(`tabs.ship.${g.group}`) : undefined} />)}</>
   }
-  return <ScreenList ids={order(ids)} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-list-h`} />
+  return <>{forYouList}<ScreenList ids={order(rest)} colour={tab.colour} badges={badges} live={live} headingId={`${tab.key}-list-h`} /></>
 }

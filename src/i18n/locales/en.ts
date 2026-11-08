@@ -53,6 +53,7 @@ export const en = {
   'tabs.new.title': 'New in your trip',
   'tabs.new.body': 'We’ve added {tabs}.',
   'tabs.new.dismiss': 'Got it',
+  'tabs.forYou': 'For you',
   'tabs.me.yours': 'You and your trip',
   'tabs.me.settings': 'Settings and help',
   'search.fromTrip': 'From your trip',
