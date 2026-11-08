@@ -2,6 +2,7 @@ import stanley from '../../assets/stanley-small.png'
 import { Check } from 'lucide-react'
 import { goodNowKey, lineKey, modeCanOpen, timingOf, titleKey, type ModeStep } from '../../ai/stanleyModes'
 import { useSettings } from '../../hooks/useSettings'
+import { useWakeLock } from '../../hooks/useWakeLock'
 import { useStanleyMode } from '../../hooks/useStanleyMode'
 import { t, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
@@ -20,6 +21,8 @@ export function StanleyModeScreen() {
   const [settings] = useSettings()
   const { mode, view, zone, tick, goodNow } = useStanleyMode()
   const level = stanleyLevelFor(settings)
+  // The two modes with a countdown keep the screen on while a timed step is showing (4.5.4).
+  useWakeLock((mode === 'boardingDay' || mode === 'portDay') && view.current?.at != null)
   const back = <BackLink to="/" label={t('route.home')} />
   if (!modeCanOpen(level)) return <div className="page">{back}<p>{t('stanley.mode.off')}</p></div>
   if (!mode || view.steps.length === 0) return <div className="page">{back}<p>{t('stanley.mode.none')}</p></div>
