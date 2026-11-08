@@ -120,7 +120,7 @@ export function TripDiary() {
         <Composer sailingId={sailing.id} today={today} now={now} id="diary-save" />
 
         {mine.length > 0 && <Field label={t('diary.search')} type="search" value={query} onChange={(e) => setQuery(e.target.value)} />}
-        {mine.length === 0 && <StanleyEmpty>{t('diary.empty')}</StanleyEmpty>}
+        {mine.length === 0 && <StanleyEmpty pose="camera">{t('diary.empty')}</StanleyEmpty>}
         {mine.length > 0 && shown.length === 0 && <p role="status">{t('diary.noMatch')}</p>}
         {groups.map((g) => (
           <section key={g.day} aria-labelledby={`diary-day-${g.day}`}>

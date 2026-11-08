@@ -15,7 +15,7 @@ export function ExploreScreen() {
   return (
     <div className="page">
       <p>{t('cat.explore.intro')}</p>
-      {grid.length === 0 ? <StanleyEmpty>{t('cat.explore.empty')}</StanleyEmpty> : (
+      {grid.length === 0 ? <StanleyEmpty pose="binoculars">{t('cat.explore.empty')}</StanleyEmpty> : (
         <div className="table-scroll">
           <table className="compare-table">
             <caption>{t('cat.explore.caption')}</caption>

@@ -9,6 +9,7 @@ import { useAction } from '../../hooks/useAction'
 import { useNow } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, th, type StringKey } from '../../i18n'
+import { SuccessLine } from '../ai/StanleyEmpty'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
@@ -81,7 +82,7 @@ export function ContactScreen() {
           <Button type="submit" variant="secondary" disabled={email.busy}>{email.busy ? t('account.saving') : t('contact.emailButton')}</Button>
         </form>
       </section>
-      <p role="status">{sent ? t(`contact.sent.${sent}` as StringKey) : ''}</p>
+      <SuccessLine>{sent ? t(`contact.sent.${sent}` as StringKey) : null}</SuccessLine>
 
       <section aria-labelledby="tk-h">
         <h2 id="tk-h">{th('contact.tickets')}</h2>

@@ -115,7 +115,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
 
       <Card hero labelledBy="cart-h">
         <h2 id="cart-h" className="card__title">{th('ord.yours')}</h2>
-        {lines.length === 0 ? <StanleyEmpty>{t('ord.empty')}</StanleyEmpty> : (
+        {lines.length === 0 ? <StanleyEmpty pose="tray">{t('ord.empty')}</StanleyEmpty> : (
           <ul className="plain-bullets">
             {priced.lines.map((l, i) => (
               <li key={i}>

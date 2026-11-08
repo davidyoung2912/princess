@@ -21,7 +21,7 @@ import { BackLink } from '../onboard/common'
 import { wishOf } from '../../domain/autopilot'
 import { itinerary } from '../../domain/sailings'
 import { StanleyDaily } from '../ai/StanleyDaily'
-import { StanleyEmpty } from '../ai/StanleyEmpty'
+import { StanleyEmpty, SuccessLine } from '../ai/StanleyEmpty'
 
 /** Morning briefing and evening preview (XA-04). It is made when the guest opens it, is short, shows where each line came from, and can be read aloud. Nothing is sent. */
 export function BriefingScreen() {
@@ -74,12 +74,12 @@ export function BriefingScreen() {
           <ul className="plain-list">
             {b.lines.map((l) => <li key={l.id}>{l.text}{l.path && <> <Link to={l.path}>{t('brief.open')}</Link></>}</li>)}
           </ul>
-        ) : <StanleyEmpty>{t('brief.empty')}</StanleyEmpty>}
+        ) : <StanleyEmpty pose="clipboard">{t('brief.empty')}</StanleyEmpty>}
         <div className="button-row">
           {canSpeak ? <Button variant="secondary" disabled={!dp.ready} onClick={read}>{reading ? t('brief.stop') : t('brief.readAloud')}</Button> : <p className="muted">{t('brief.noVoice')}</p>}
           <Button variant="tertiary" disabled={!dp.ready} onClick={() => void copy()}>{t('brief.copy')}</Button>
         </div>
-        <p role="status">{copied ? t('brief.copied') : ''}</p>
+        <SuccessLine>{copied ? t('brief.copied') : null}</SuccessLine>
       </Card>
     </div>
   )

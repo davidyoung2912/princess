@@ -204,7 +204,7 @@ export function TasteScreen() {
             <Button variant="tertiary" onClick={() => set((s) => ({ ...s, tasteRemoved: [...s.tasteRemoved, i.id] }))}>{t('taste.remove')}</Button></li>
         ))}
       </ul>
-      {!p.tasteOff && list.length === 0 && <StanleyEmpty>{t('taste.empty')}</StanleyEmpty>}
+      {!p.tasteOff && list.length === 0 && <StanleyEmpty pose="think">{t('taste.empty')}</StanleyEmpty>}
       {p.tasteRemoved.length > 0 && <Button variant="secondary" onClick={() => set((s) => ({ ...s, tasteRemoved: [] }))}>{t('taste.restore')}</Button>}
       <p className="muted">{t('taste.note')}</p>
     </Page>

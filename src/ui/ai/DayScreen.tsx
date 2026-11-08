@@ -63,7 +63,7 @@ export function DayScreen() {
       <Card hero labelledBy="day-plan-h">
         <h2 id="day-plan-h" className="card__title">{th('day.yours', { day })}</h2>
         {!plan && <FeedWaiting />}
-        {plan?.empty && <StanleyEmpty>{t('day.empty')}</StanleyEmpty>}
+        {plan?.empty && <StanleyEmpty pose="map">{t('day.empty')}</StanleyEmpty>}
         <ol className="build-list">
           {plan?.items.map((i) => (
             <li key={`${i.kind}-${i.id}`}>

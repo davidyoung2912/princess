@@ -97,7 +97,7 @@ export function AutopilotScreen() {
           ))}
         </ul>
         {!dp.ready && <FeedWaiting />}
-        {dp.ready && shown.length === 0 && <StanleyEmpty>{t('autopilot.empty')}</StanleyEmpty>}
+        {dp.ready && shown.length === 0 && <StanleyEmpty pose="clipboard">{t('autopilot.empty')}</StanleyEmpty>}
         <label className="choice"><input type="checkbox" checked={state.gentle} onChange={(e) => update((s) => ({ ...s, gentle: e.target.checked }))} /><span>{t('gentle.on')}<small>{t('gentle.hint')}</small></span></label>
         {notes.length > 0 && (
           <ul className="plain-list" aria-label={t('gentle.list')}>
