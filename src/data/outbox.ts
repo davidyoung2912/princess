@@ -58,7 +58,7 @@ export function nextWake(list: readonly OutboxItem[]): number | null {
   return waiting.length === 0 ? null : Math.min(...waiting.map((x) => x.nextAt))
 }
 
-const isItem = (v: unknown): v is OutboxItem => {
+export const isItem = (v: unknown): v is OutboxItem => {
   const o = v as OutboxItem
   return !!o && typeof o.id === 'string' && (o.kind === 'chat' || o.kind === 'service') && !!o.payload && typeof o.payload === 'object' && typeof o.queuedAt === 'number' && typeof o.attempts === 'number' && typeof o.nextAt === 'number'
 }
@@ -95,6 +95,21 @@ export function hasUnsent(store: Pick<Storage, 'length' | 'key'> | null): boolea
   return false
 }
 
+/** How many actions on this device are waiting to be sent, across every outbox. */
+export function countUnsent(store: Pick<Storage, 'length' | 'key' | 'getItem'> | null): number {
+  let n = 0
+  try {
+    if (!store) return 0
+    for (let i = 0; i < store.length; i++) {
+      const key = store.key(i)
+      if (!key?.startsWith('princess:outbox:')) continue
+      const parsed: unknown = JSON.parse(store.getItem(key) ?? '[]')
+      if (Array.isArray(parsed)) n += parsed.filter(isItem).length
+    }
+  } catch { /* storage blocked or unreadable: count what was read */ }
+  return n
+}
+
 const outboxListeners = new Set<() => void>()
 /** Tells the sync indicator that an outbox changed. */
 export const notifyOutbox = (): void => outboxListeners.forEach((l) => l())
@@ -102,3 +117,8 @@ export const subscribeOutbox = (l: () => void): (() => void) => { outboxListener
 
 /** Waits `ms` milliseconds. */
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Waiting actions on this device, read from the browser's storage; 0 where there is none. */
+export const readUnsent = (): number => {
+  try { return countUnsent(typeof localStorage === 'undefined' ? null : localStorage) } catch { return 0 }
+}

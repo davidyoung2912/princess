@@ -127,7 +127,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | BOK-16 | P0 | Built | F | `src/ui/book/ConfirmedScreen.tsx` | Confirmation only after server confirms: not read |
 | MNG-01 | P0 | Partial | F | `src/ui/account/TripsScreen.tsx`, `src/domain/account.ts` | Advisor and external channels: `/home/advisors` informs; linking external bookings unchecked |
 | MNG-02 | P0 | Built | F | `src/domain/readiness.ts`, `src/domain/readinessBoard.ts`, `src/domain/readinessBoard.test.ts` | None found |
-| MNG-03 | P0 | Partial | R | `src/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | Only three states exist (just now, updated at, offline). Pending, unavailable and not linked are not distinct. See section "Findings" |
+| MNG-03 | P0 | Built | R | `src/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | `SyncChip` shows current, stale, pending, unavailable, not linked (BM19); no screen passes `lookup` yet |
 | MNG-04 | P0 | Built | F | `src/domain/papersCheck.ts`, `src/domain/papersCheck.test.ts`, `src/ui/account/PapersCheck.tsx` | None found |
 | MNG-05 | P0 | Built | F | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | Server-held; scanning is out of reach |
 | MNG-06 | P1 | Built | F | `src/ui/plan/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
@@ -271,9 +271,9 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 |---|---|---|---|---|---|
 | MOB-01 | P0 | Built | F | `vite.config.ts`, `index.html`; install guidance in `src/ui/plan/PhoneScreen.tsx`, `src/domain/phoneSetup.ts` | Contextual install prompt text unchecked |
 | MOB-02 | P0 | Built | R | `src/runtime/update.ts`, `src/ui/UpdateBanner.tsx` | The guest chooses when to switch, so no forced reload anywhere; draft retention across deploys unchecked (`src/hooks/useDraft.ts`) |
-| MOB-03 | P0 | Partial | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.test.ts` | BM1 shows, ages and sizes copies; guest cannot yet choose which kinds to download, or run a "last test" |
-| MOB-04 | P0 | Partial | R | `src/data/outbox.ts`, `src/hooks/useDraft.ts`, `src/data/capsule.ts` | Deliberately `localStorage`, not IndexedDB (best-in-market-plan section 2); eviction surfaced by BM1. Export/recovery of local drafts not found |
-| MOB-05 | P0 | Partial | F | `src/data/outbox.ts`, `src/hooks/useAction.ts`, `src/api/bounded.ts` | Per-action label of "offline / queued / view-only / needs connection" before commit not seen on every control |
+| MOB-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.test.ts` | Guest chooses optional kinds and the last test is stored (BM19) |
+| MOB-04 | P0 | Built | R | `src/data/outbox.ts`, `src/hooks/useDraft.ts`, `src/data/capsule.ts` | Export/restore of waiting items and corrupt-list handling (BM19); drafts are server-side, `localStorage` kept by decision |
+| MOB-05 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useAction.ts`, `src/api/bounded.ts` | `src/domain/offlineContract.ts` and `OfflineNote` (BM19) |
 | MOB-06 | P1 | Built | F | `src/push/push.ts`, `src/push/push.test.ts`, `src/hooks/usePushState.ts`, `src/ui/account/PushPanels.tsx` | Delivery is simulated on the server |
 | MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | Deep link to exact object unchecked (COM-06) |
 | MOB-08 | P1 | Built | F | `src/ui/account/MemoryScreen.tsx`, `src/ui/delights/HighlightReel.tsx`, `src/ui/plan/AwayScreen.tsx` | Fallback when share unsupported unchecked |
@@ -291,7 +291,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-20 | P2 | Built | F | `src/ui/home/AskScreen.tsx` | `SpeechRecognition`; optional |
 | MOB-21 | P2 | Built | F | `src/settings/haptics.ts`, `src/settings/haptics.test.ts` | None found |
 | MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | Compass arrow from the deck graph; device orientation sensor not used (P2) |
-| MOB-23 | P0 | Partial | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | Background-safe reminders rely on push; no local scheduled fallback found |
+| MOB-23 | P0 | Built | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
 | MOB-24 | P1 | Built | R | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/data/battery.ts`, `refreshFactor`) |
 | MOB-25 | P1 | Partial | F | `src/ui/media/Pictures.tsx`, `src/domain/media.ts`, `src/domain/media.test.ts` | Local preview and delete unchecked |
 
@@ -304,7 +304,7 @@ Priority is not given per concept in the document.
 | QOL-01 | - | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/ui/plan/AutopilotScreen.tsx` | None found |
 | QOL-02 | - | Simulated | F | `src/domain/queue.ts`, `src/ui/onboard/Waits.tsx` | Queue adapters mocked; the document warns against faking |
 | QOL-03 | - | Built | F | `src/domain/trustLedger.ts`, `src/domain/trustLedger.test.ts`, `src/ui/account/LedgerScreen.tsx` | None found |
-| QOL-04 | - | Partial | R | `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.ts` | BM1: see MOB-03 |
+| QOL-04 | - | Built | R | `src/ui/plan/CapsuleCard.tsx`, `src/domain/offlineCapsule.ts` | BM19: see MOB-03 |
 | QOL-05 | - | Built | F | `src/ui/home/DisruptionHubScreen.tsx`, `src/routes/nav.ts`, `src/ui/HelpSheet.tsx` | Get-help button on every route asserted in `src/ui/render.test.tsx` |
 | QOL-06 | - | Simulated | F | `src/domain/portCrowd.ts`, `server/Princess.Api/Domain/EmbarkQueueRules.cs` | Crowd telemetry is a mock |
 | QOL-07 | - | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.ts`, `src/domain/portParty.ts` | None found |
@@ -358,7 +358,7 @@ Priority is not given per concept in the document.
 | COM-04 | P0 | Not built | R | `src/domain/delivery.ts` | Critical alerts are sent but have no acknowledged-delivery state or fallback channel rule |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
 | COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | Exact-object deep link unchecked |
-| OFF-01 | P0 | Partial | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Per-feature capability table not found (see MOB-05) |
+| OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
 | OFF-02 | P0 | Built | F | `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
 | OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
 | OFF-04 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useOutbox.ts` | Conflict resolution unchecked |

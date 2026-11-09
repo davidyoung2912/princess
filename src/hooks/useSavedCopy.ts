@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { shouldKeep } from '../data/capsule'
 import { demoNow } from '../demo/store'
 import { cacheGet, cachePut } from '../domain/offlineCache'
 import { useAsync } from './useAsync'
@@ -38,7 +39,7 @@ export function useSavedCopy<T>(kind: string, key: string, load: () => Promise<T
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- re-stamped only when the data changes
   const fetchedAt = useMemo(() => (fresh === null ? null : demoNow()), [fresh])
   useEffect(() => {
-    if (fresh !== null && fetchedAt !== null) cachePut(storage(), kind, key, fresh, fetchedAt)
+    if (fresh !== null && fetchedAt !== null && shouldKeep(kind)) cachePut(storage(), kind, key, fresh, fetchedAt)
   }, [fresh, fetchedAt, kind, key])
   if (state.status === 'ready') return { data: state.data, status: 'ready', fromCopy: false, at: fetchedAt, retry: state.retry }
   if (state.status === 'error') {

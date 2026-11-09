@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ageLabel, clockTime } from './syncAge'
+import { ageLabel, chipKind, clockTime } from './syncAge'
 
 const at = (iso: string) => new Date(iso)
 
@@ -30,5 +30,20 @@ describe('ageLabel', () => {
 
   it('says the copy is saved when offline, however recent', () => {
     expect(ageLabel(updated, at('2027-03-21T09:14:10Z'), 'offline', 'UTC')).toEqual({ kind: 'offlineSince', time: '9:14 am' })
+  })
+})
+
+describe('chipKind (MNG-03)', () => {
+  const base = { state: 'live' as const, updated: new Date(0), now: new Date(0), pending: 0 }
+  // proves: MNG-03#1, MNG-03#2
+  it('tells current, stale, pending, unavailable and not linked apart', () => {
+    expect(chipKind(base)).toBe('current')
+    expect(chipKind({ ...base, state: 'offline' })).toBe('stale')
+    expect(chipKind({ ...base, pending: 2 })).toBe('pending')
+    expect(chipKind({ ...base, lookup: 'unavailable' })).toBe('unavailable')
+    expect(chipKind({ ...base, lookup: 'notLinked' })).toBe('notLinked')
+  })
+  it('never shows a failed lookup as no cruise, even with changes waiting', () => {
+    expect(chipKind({ ...base, pending: 3, lookup: 'unavailable' })).toBe('unavailable')
   })
 })

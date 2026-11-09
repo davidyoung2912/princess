@@ -91,3 +91,17 @@ describe('offline capsule (MOB-03, QOL-04)', () => {
     expect(storageState({ usage: 90, quota: 100, persisted: true })).toBe('low')
   })
 })
+
+describe('capsule choices (MOB-03)', () => {
+  // proves: MOB-03#1, MOB-03#2
+  it('lets the guest switch off optional kinds but never an essential', async () => {
+    const { setKept, isKept, DEFAULT_PREFS, parsePrefs } = await import('./offlineCapsule')
+    const off = setKept(DEFAULT_PREFS, 'photos', false)
+    expect(isKept('photos', off)).toBe(false)
+    expect(isKept('program', off)).toBe(true)
+    expect(isKept('pass', setKept(off, 'pass', false))).toBe(true)
+    expect(setKept(off, 'photos', true).skipped).toEqual([])
+    expect(parsePrefs(JSON.stringify({ skipped: ['pass', 'photos', 'nonsense'], lastTest: { at: 5, result: 'warn' } }))).toEqual({ skipped: ['photos'], lastTest: { at: 5, result: 'warn' } })
+    expect(parsePrefs('garbage')).toEqual(DEFAULT_PREFS)
+  })
+})

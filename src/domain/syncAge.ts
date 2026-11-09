@@ -22,3 +22,15 @@ export function ageLabel(updated: Date, now: Date, state: SyncState, timeZone?: 
   if (now.getTime() - updated.getTime() <= 60_000) return { kind: 'justNow' }
   return { kind: 'updatedAt', time: clockTime(updated, timeZone) }
 }
+
+/** What the sync chip says (MNG-03): live copy, saved copy, changes waiting to send, a lookup that failed, or no cruise linked. */
+export type ChipKind = 'current' | 'stale' | 'pending' | 'unavailable' | 'notLinked'
+
+/** A lookup that failed is "unavailable", never "no cruise"; "not linked" is only for an account that really has none. Changes waiting to send show above the freshness of the copy. */
+export function chipKind(input: { state: SyncState; updated: Date; now: Date; pending: number; lookup?: 'unavailable' | 'notLinked' }): ChipKind {
+  if (input.lookup === 'notLinked') return 'notLinked'
+  if (input.lookup === 'unavailable') return 'unavailable'
+  if (input.pending > 0) return 'pending'
+  if (input.state === 'offline') return 'stale'
+  return 'current'
+}

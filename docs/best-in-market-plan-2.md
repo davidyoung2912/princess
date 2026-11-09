@@ -140,3 +140,8 @@ Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare 
 ## 5c. BM18 result (built, not committed)
 
 Closed with tests: MOB-14 (zone-change notice in `ThreeClocks`, `zoneChangeNear`), EMB-02 (crew-override line on the muster card), DEB-02 (preference-not-guarantee note), POR-04 (Princess excursion label on port-day tours), REM-01 (search on trip history, `matchTrips`). Their `it.fails` guards are now `it`. REM-01 and POR-04 came off the untagged list. Not done: POR-04 has no server-side operator flag, so every listed tour is labelled Princess-operated because it is booked through the ship; independent tours need a server contract change. Remaining `it.fails` gaps: DEB-05, PRE-18, EMB-01, DEB-04, BOK-05, MNG-05.
+
+## 5d. BM19 result (built, not committed)
+
+Built with tests: MNG-03 (`chipKind`: current, stale, pending, unavailable, not linked; `SyncChip` shows the pending count), MOB-05 and OFF-01 (`src/domain/offlineContract.ts` with a test that fails when a route has no entry; `OfflineNote` in the shell), MOB-03 (guest chooses optional kinds, last test stored in `princess:capsule-prefs`), MOB-04 (export and restore of waiting items, unreadable lists reported and clearable), MOB-23 (`LocalReminders`: pay, check-in and all-aboard while the app is open or on next open; never claims background delivery).
+Not done: the matrix rows and `requirements-verdicts.tsv` for these six are not yet updated to Built. No device test of the file download or restore. `lookup` on `SyncChip` is wired but no screen passes it yet. The contract classes were assigned by reading which screens use saved copies and the outbox; the rest default to needs-connection.

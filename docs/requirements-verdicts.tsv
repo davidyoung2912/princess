@@ -18,3 +18,9 @@ REM-01	OK	(BM18 closed) HistoryScreen has no search or filter; trips are listed,
 POR-04	OK	(BM18 closed) No Princess-operated versus independent label found in PortCard or excursions.ts.
 SEC-06	NEEDS-READ	ChatSafe has a photo minimum age. No age-aware message rule found in the client; check ChatService.cs.
 SEC-07	PARTIAL	See IDN-01.
+MNG-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+MOB-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+MOB-04	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+MOB-05	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+MOB-23	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+OFF-01	OK	(BM19 closed) see best-in-market-plan-2 section 5d

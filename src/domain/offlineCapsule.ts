@@ -150,3 +150,39 @@ export function formatWhen(at: number): string {
     .format(new Date(at))
     .replace(/\s?(AM|PM)$/i, (_, ap: string) => ` ${ap.toLowerCase()}`)
 }
+
+/** The guest's choice of which kinds to keep (MOB-03). Essentials are always kept; the rest can be switched off. */
+export interface CapsulePrefs {
+  skipped: CapsuleKind[]
+  /** The last "test" the guest ran: when (the demo clock) and how it came out. */
+  lastTest: { at: number; result: 'pass' | 'warn' | 'fail' } | null
+}
+
+export const DEFAULT_PREFS: CapsulePrefs = { skipped: [], lastTest: null }
+
+/** True when a copy of this kind should be saved. Essentials cannot be switched off. */
+export const isKept = (kind: string, prefs: Pick<CapsulePrefs, 'skipped'>): boolean => {
+  const def = CAPSULE_KINDS.find((d) => d.kind === kind)
+  return !def || def.essential || !prefs.skipped.includes(def.kind)
+}
+
+/** Reads stored preferences, ignoring anything unknown or an attempt to skip an essential. */
+export function parsePrefs(text: string | null | undefined): CapsulePrefs {
+  try {
+    const o = JSON.parse(text ?? 'null') as { skipped?: unknown; lastTest?: { at?: unknown; result?: unknown } | null } | null
+    const skipped = Array.isArray(o?.skipped) ? CAPSULE_KINDS.filter((d) => !d.essential && (o.skipped as unknown[]).includes(d.kind)).map((d) => d.kind) : []
+    const t = o?.lastTest
+    const lastTest: CapsulePrefs['lastTest'] = t && typeof t.at === 'number' && (t.result === 'pass' || t.result === 'warn' || t.result === 'fail') ? { at: t.at, result: t.result } : null
+    return { skipped, lastTest }
+  } catch {
+    return DEFAULT_PREFS
+  }
+}
+
+/** Switches a kind on or off; an essential is left on. */
+export function setKept(prefs: CapsulePrefs, kind: CapsuleKind, keep: boolean): CapsulePrefs {
+  const def = CAPSULE_KINDS.find((d) => d.kind === kind)
+  if (!def || def.essential) return prefs
+  const without = prefs.skipped.filter((k) => k !== kind)
+  return { ...prefs, skipped: keep ? without : [...without, kind] }
+}
