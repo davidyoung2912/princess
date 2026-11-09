@@ -374,3 +374,11 @@ Theme: TRU-05 and UX-02.
 - **UX-02:** `.page--wide` on the two catalogue compare screens, the excursion compare and the difficulty screen; `.workspace` side filter column on the whole-journey filter. CSS at 1280px and up only, so phones are unchanged.
 - **Also:** BM48 left `traceability.test.ts` failing (DRM-10, DSC-11 Built with no tag); tagged `journeyAccess.test.ts`.
 - **Not done:** no browser check, so UX-02 stays Partial; the planning day view has no wide layout.
+
+## 5ah. BM50 result (built, not committed)
+
+Theme: assistant and search (AST-02, SEA-04, SEA-05).
+- **AST-02:** the ship source now says "as of {time}"; the library source says it is written ahead of time and not live. Test `src/ai/answerFreshness.test.ts`. Row Built.
+- **SEA-04:** answer cards show scope and source with a time; results end with a source line. Row stays Partial: only three topics have direct answers.
+- **SEA-05:** `venueState` gives open, closed or temporarily unavailable (`unavailableSince`, set by the ship); venue list and page show it with a ship-time stamp. Row stays Partial until the server sends `unavailableSince`.
+- `npm run test`, `lint`, `tsc -b` per the working rules.

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { DietaryId } from '../../domain/account'
 import { formatTime } from '../../domain/cruise'
-import { coverOf, DIRECTORY, directoryVenue, dishesFor, dishSuits, hoursText, NEEDS_ASKING, openAt, reservableVenue, type DirectoryVenue } from '../../domain/menus'
+import { coverOf, DIRECTORY, directoryVenue, dishesFor, dishSuits, hoursText, NEEDS_ASKING, openAt, reservableVenue, venueState, type DirectoryVenue } from '../../domain/menus'
 import { DRESS_NOTES } from '../../domain/dining'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
@@ -45,7 +45,7 @@ export function VenuesScreen() {
           <li key={v.id} className="card">
             <h2 className="card__title"><Link to={`/ship/venues/${v.id}`}>{v.name}</Link></h2>
             <p>{v.blurb}</p>
-            <p className="muted">{v.deck} · <PriceText v={v} /> · {openAt(v, day, time) ? t('ven.open') : t('ven.closed')}</p>
+            <p className="muted">{v.deck} · <PriceText v={v} /> · <StateText v={v} day={day} time={time} /></p>
           </li>
         ))}
       </ul>
@@ -53,6 +53,12 @@ export function VenuesScreen() {
       <BackLink to="/ship" label={t('route.ship')} />
     </div>
   )
+}
+
+/** Open, closed or temporarily unavailable, with the ship time it was worked out for. */
+function StateText({ v, day, time }: { v: DirectoryVenue; day: 'sea' | 'port'; time: string }) {
+  const state = venueState(v, day, time)
+  return <>{t(`ven.state.${state}` as StringKey)} ({t('ven.asOf', { time: formatTime(time) })})</>
 }
 
 function PriceText({ v }: { v: DirectoryVenue }) {
@@ -65,6 +71,7 @@ export function VenueScreen() {
   const { id } = useParams()
   const v = directoryVenue(id)
   const { diets } = usePartyDiets()
+  const { day, time } = useShipDay()
   const [filtered, setFiltered] = useState(true)
   return (
     <div className="page">
@@ -79,6 +86,7 @@ export function VenueScreen() {
               <li>{v.deck}</li>
               <li><PriceText v={v} /></li>
               <li>{DRESS_NOTES[v.dress]}</li>
+              <li><StateText v={v} day={day} time={time} /></li>
             </ul>
             {reservableVenue(v) && <p><LinkButton to="/plan/dining" variant="secondary">{t('ven.reserve')}</LinkButton></p>}
           </Card>

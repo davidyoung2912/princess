@@ -1,0 +1,16 @@
+// proves: AST-02
+import { describe, expect, it } from 'vitest'
+import { t } from '../i18n'
+import type { StanleySource } from './stanleyRoute'
+
+const SOURCES: readonly StanleySource[] = ['library', 'ship', 'trip', 'before', 'model']
+
+describe('answer source and freshness labels', () => {
+  it('names the source of every kind of answer', () => {
+    for (const s of SOURCES) expect(t(`stanley.source.${s}` as never, { time: '9:00 AM' })).toMatch(/^From /)
+  })
+  it('gives a time for every answer that can change, and says when one is not live', () => {
+    for (const s of ['ship', 'trip', 'before', 'model'] as const) expect(t(`stanley.source.${s}` as never, { time: '9:00 AM' })).toContain('as of 9:00 AM')
+    expect(t('stanley.source.library' as never)).toContain('not live')
+  })
+})

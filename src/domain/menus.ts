@@ -24,6 +24,8 @@ export interface DirectoryVenue {
   price: 'included' | 'specialty' | 'casual'
   hours: Record<DayType, Hours>
   dishes: readonly Dish[]
+  /** Set by the ship when the venue is shut for now whatever its hours say (a fault, a private event): when that began, as an ISO time. */
+  unavailableSince?: string
 }
 
 const d = (name: string, ...contains: Contains[]): Dish => ({ name, contains })
@@ -102,8 +104,18 @@ export const NEEDS_ASKING: readonly DietaryId[] = ['halal', 'kosher']
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
 
-/** Whether the venue is open at a ship-time "HH:MM" on a type of day. */
+export type VenueState = 'open' | 'closed' | 'unavailable'
+
+/** Open or closed by the hours, or temporarily unavailable when the ship has said so (SEA-05). */
+export function venueState(v: DirectoryVenue, day: DayType, time: string): VenueState {
+  if (v.unavailableSince) return 'unavailable'
+  const at = mins(time)
+  return v.hours[day].some(([from, to]) => at >= mins(from) && at < mins(to)) ? 'open' : 'closed'
+}
+
+/** Whether the venue is open at a ship-time "HH:MM" on a type of day (never while it is temporarily unavailable). */
 export function openAt(v: DirectoryVenue, day: DayType, time: string): boolean {
+  if (v.unavailableSince) return false
   const at = mins(time)
   return v.hours[day].some(([from, to]) => at >= mins(from) && at < mins(to))
 }

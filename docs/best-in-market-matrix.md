@@ -195,8 +195,8 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | SEA-01 | P0 | Built | F | `src/ui/onboard/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
 | SEA-02 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/onboard/Planner.tsx`, `src/domain/plan.ts` | None found |
 | SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/offlineDay.test.ts` | BM1 |
-| SEA-04 | P1 | Partial | F | `src/domain/searchIndex.ts`, `src/ui/home/AskScreen.tsx`, `src/ui/onboard/` search route `/ship/search` | BM20: links only; no answers, source or freshness |
-| SEA-05 | P1 | Partial | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts` | BM20: no temporarily-unavailable state or timestamp |
+| SEA-04 | P1 | Partial | F | `src/domain/answerCards.ts`, `src/ui/aboard/InfoScreens.tsx`, search route `/ship/search` | BM50: the answer cards (Wi-Fi, dinner, late) carry a source, a scope (whole ship or today) and an "as of" time, and the results end with the ship-information source line; still only three topics have direct answers |
+| SEA-05 | P1 | Partial | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/menus.ts` | BM50: open, closed or temporarily unavailable with a ship-time stamp (`venueState`, `unavailableSince`); the server does not send `unavailableSince` yet, so nothing shows as unavailable until it does |
 | SEA-06 | P0 | Built | F | `src/ui/onboard/DeckMapScreen.tsx`, `src/domain/deckGraph.ts`, `src/domain/deckGraph.test.ts`, `src/ui/deckPlan.test.tsx` | None found |
 | SEA-07 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/ui/onboard/NavigationScreens.tsx` | Manual and landmark check-in; no Medallion location (out of reach) |
 | SEA-08 | P2 | Simulated | F | `src/domain/portCrowd.ts`, `src/ui/onboard/Waits.tsx` | Telemetry is a mock |
@@ -345,7 +345,7 @@ Priority is not given per concept in the document.
 | TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`, `Providers:ServiceStatus`); no incident feed with start time and message, and the runbook has no incident section (owner, who is told, how guests are told) |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
 | AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
-| AST-02 | P1 | Partial | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts` | BM20: no source or freshness label on answers |
+| AST-02 | P1 | Built | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts`, `src/ai/answerFreshness.test.ts` | BM50: every answer source has a label; all but the authored library say "as of" a time, and the library says it is not live |
 | AST-03 | P1 | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts` | None found |
 | AST-04 | P0 | Built | F | `src/ui/ai/StanleyConfirm.tsx` (confirmation); `src/ai/guard.ts` is the separate handoff screen | None found |
 | AST-05 | P0 | Built | F | `src/ai/guard.ts`, `src/domain/answerCards.ts` | Human routes are mocked |

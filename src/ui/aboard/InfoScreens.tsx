@@ -100,7 +100,9 @@ export function SearchScreen() {
   const enough = query.trim().length >= MIN_QUERY
   const wantDinner = enough && answerCards(query, { wifiFrom: null, dinnerTonight: null }).some((c) => c.id === 'dinner')
   const plan = useMine(() => (wantDinner ? api.plan.overview() : Promise.resolve(null)), [wantDinner])
-  const today = localDate(useNow())
+  const nowMs = useNow()
+  const today = localDate(nowMs)
+  const asOf = new Date(nowMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   const cards = answerCards(query, { wifiFrom: formatMoney(Math.min(...PLANS.map((p) => p.perDay))), dinnerTonight: plan.data ? tonightsDinner(plan.data.days, today) : null }, (to) => visibleAt(stage, to))
   return (
     <div className="page">
@@ -119,6 +121,7 @@ export function SearchScreen() {
       {cards.map((c) => (
         <Card key={c.id} labelledBy={`answer-${c.id}`}>
           <p id={`answer-${c.id}`}><strong>{c.id === 'wifi' ? (c.value ? t('search.answer.wifi', { value: c.value }) : t('search.answer.wifiNoPrice')) : c.id === 'dinner' ? (c.value ? t('search.answer.dinner', { value: c.value }) : t('search.answer.dinnerNone')) : t('search.answer.late')}</strong></p>
+          <p className="muted">{t(`search.scope.${c.scope}` as StringKey)} · {t(`search.source.${c.source}` as StringKey, { time: asOf })}</p>
           <Link to={c.to} onClick={() => remember({ to: c.to, title: t(`search.answer.${c.id}Go` as StringKey) })}>{t(`search.answer.${c.id}Go` as StringKey)}</Link>
         </Card>
       ))}
@@ -130,6 +133,7 @@ export function SearchScreen() {
           </li>
         ))}
       </ul>
+      {enough && hits.length > 0 && <p className="muted">{t('search.source.ship', { time: asOf })}</p>}
       <Back to="/ship" label={t('route.ship')} />
     </div>
   )
