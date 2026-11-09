@@ -15,10 +15,15 @@ describe('accessRows', () => {
   })
 
   it('shows an active helper with only the permissions given, and a requested one with none', () => {
-    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view', 'payments'] as const, status: 'active' as const, at: 1 }
-    expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions] } })[0]).toMatchObject({ kind: 'helper', status: 'active', items: ['view', 'payments'] })
+    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view', 'documents'] as const, status: 'active' as const, at: 1 }
+    expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions] } })[0]).toMatchObject({ kind: 'helper', status: 'active', items: ['view', 'documents'] })
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions], status: 'requested' } }).find((r) => r.kind === 'helper')).toMatchObject({ status: 'waiting', items: [] })
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions], status: 'revoked' } }).find((r) => r.kind === 'helper')).toMatchObject({ status: 'ended', items: [] })
+  })
+
+  it('leaves out a permission the server does not act on yet', () => {
+    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const], status: 'active' as const, at: 1 }
+    expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'documents'])
   })
 
   it('treats a family contact as active only while a link is live, and reports when it ends', () => {

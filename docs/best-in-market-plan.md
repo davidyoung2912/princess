@@ -1,6 +1,6 @@
 # Best-in-market plan (BM)
 
-Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 is built (view only; wider permissions need a BM6). BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 and BM6 are built. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
 
 ## 1. How this was done, and how far to trust it
 
@@ -100,6 +100,12 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Screen (IDN-07)**: a "Who can see what" card on `/me/helper` (`HelperScreen.tsx`), with a Change link per row. No new route, so the screen registry is unchanged.
 - **Finding kept**: the models are still three; they share no relationship type or permission set (IDN-04), and the helper still has only view, documents, payments and profile (IDN-05). Adding check-in, edit-booking, folio, message and location permissions changes the server contract and the `Helper` table, so it is its own phase (suggested BM6) and needs your approval.
 - **Not done**: no shipmate or household relationship type; IDN-03 (from the BM2 note) is not part of this phase.
+
+### BM6. Helper permissions, honestly (built, not committed)
+
+- **Finding**: only Documents and Profile are enforced on the server (`SubjectAccess`). `HelperPermission.Payments` is in the enum but no endpoint checks it, and `PaymentsAsync` / `PayBalanceAsync` (`TripService.cs`) require the caller to be a guest on the booking, so a helper cannot reach a guest's booking at all. There are no helper paths for check-in, edit-booking, folio or messages either.
+- **Change (front end only)**: `NOT_YET` / `permissionWorks` in `src/domain/account.ts`. On `/me/helper` the Payments choice is shown off and disabled with "Not available yet", is never saved, and is left out of the active helper card and the "who can see what" list. Test in `src/domain/access.test.ts`.
+- **Not done, needs a design and your approval (BM7)**: a server path for a helper onto a guest's booking: look up by grant, charge the guest's saved card, record who paid on the receipt and in history, a read-only folio permission, and C# tests. Check-in, booking and message permissions follow the same pattern. A shared relationship type (IDN-04) comes after that. Location is deliberately never a permission.
 
 ## 5. Decisions I need from you
 

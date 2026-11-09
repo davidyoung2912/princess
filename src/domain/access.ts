@@ -1,4 +1,4 @@
-import type { Helper, PermissionId } from './account'
+import { permissionWorks, type Helper, type PermissionId } from './account'
 import type { HomeState } from './homeLink'
 import { isLive } from './homeLink'
 import type { PartyState } from './party'
@@ -35,7 +35,7 @@ export function accessRows({ helper, home, party, sharing, now }: AccessInput): 
   const rows: AccessRow[] = []
   if (helper) {
     const status: AccessStatus = helper.status === 'active' ? 'active' : helper.status === 'requested' ? 'waiting' : 'ended'
-    rows.push({ id: 'helper', kind: 'helper', who: helper.name, status, items: status === 'active' ? helper.permissions : [], until: null, path: '/me/helper' })
+    rows.push({ id: 'helper', kind: 'helper', who: helper.name, status, items: status === 'active' ? helper.permissions.filter(permissionWorks) : [], until: null, path: '/me/helper' })
   }
   for (const c of home.contacts) {
     const live = home.links.filter((l) => l.contactId === c.id && isLive(l, now))

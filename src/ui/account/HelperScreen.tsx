@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { accessRows, activeCount, type AccessItem, type AccessRow } from '../../domain/access'
 import type { Helper, PermissionId } from '../../domain/account'
-import { PERMISSIONS } from '../../domain/account'
+import { NOT_YET, PERMISSIONS, permissionWorks } from '../../domain/account'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -45,8 +45,8 @@ function Permissions({ value, onChange }: { value: PermissionId[]; onChange: (ne
       <legend>{t('helper.mayDo')}</legend>
       {PERMISSIONS.map((x) => (
         <label key={x} className="choice">
-          <input type="checkbox" checked={value.includes(x)} disabled={x === 'view'} onChange={() => onChange(value.includes(x) ? value.filter((p) => p !== x) : [...value, x])} />
-          <span>{t(`helper.perm.${x}` as StringKey)}<small>{t(`helper.perm.${x}.hint` as StringKey)}</small></span>
+          <input type="checkbox" checked={value.includes(x) && permissionWorks(x)} disabled={x === 'view' || !permissionWorks(x)} onChange={() => onChange(value.includes(x) ? value.filter((p) => p !== x) : [...value, x])} />
+          <span>{t(`helper.perm.${x}` as StringKey)}<small>{NOT_YET.includes(x) ? t('helper.perm.notYet') : t(`helper.perm.${x}.hint` as StringKey)}</small></span>
         </label>
       ))}
     </fieldset>
@@ -59,7 +59,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
   const [permissions, setPermissions] = useState<PermissionId[]>(helper?.permissions.length ? helper.permissions : ['view'])
   const [needName, setNeedName] = useState(false)
   const [confirmStop, setConfirmStop] = useState(false)
-  const save = useAction((status: 'active' | 'requested') => api.account.saveHelper({ name, relationship, permissions: permissions.includes('view') ? permissions : ['view', ...permissions], status }))
+  const save = useAction((status: 'active' | 'requested') => api.account.saveHelper({ name, relationship, permissions: (permissions.includes('view') ? permissions : ['view' as PermissionId, ...permissions]).filter(permissionWorks), status }))
   const revoke = useAction(() => api.account.revokeHelper())
   const requested = helper?.status === 'requested'
   const active = helper?.status === 'active'
@@ -79,7 +79,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
         <Card labelledBy="active-h">
           <h2 id="active-h">{helper!.name}</h2>
           <p className="muted">{helper!.relationship}{helper!.relationship && ' · '}{t('helper.since', { date: formatMoment(helper!.at) })}</p>
-          <ul>{helper!.permissions.map((x) => <li key={x}>{t(`helper.perm.${x}` as StringKey)}</li>)}</ul>
+          <ul>{helper!.permissions.filter(permissionWorks).map((x) => <li key={x}>{t(`helper.perm.${x}` as StringKey)}</li>)}</ul>
           <p className="muted">{t('helper.visible')}</p>
           <Button variant="danger" onClick={() => setConfirmStop(true)}>{t('helper.stop')}</Button>
         </Card>

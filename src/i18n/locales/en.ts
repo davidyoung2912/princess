@@ -518,6 +518,7 @@ export const en = {
   'helper.perm.documents': 'Manage my documents',
   'helper.perm.documents.hint': 'Mark documents held and add expiry dates.',
   'helper.perm.payments': 'Pay for my booking',
+  'helper.perm.notYet': 'Not available yet. A helper cannot pay for you in the app; Guest Services can take payment by phone.',
   'helper.perm.payments.hint': 'Pay the balance with a card on file.',
   'helper.perm.profile': 'Change my details',
   'helper.perm.profile.hint': 'Edit contact details and preferences.',
