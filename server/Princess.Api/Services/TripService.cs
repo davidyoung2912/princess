@@ -89,6 +89,8 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
     public async Task<TripViewDto> LinkAsync(UserRecord actor, LinkTripRequest req, CancellationToken ct)
     {
         if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        // MNG-01: an account flagged as a possible duplicate links nothing until a person has settled it, so a booking is never shown to the wrong profile.
+        if (actor.ReviewReason is not null) throw ApiException.Forbidden("review");
         if (!TripRules.LinkFormatOk(req.Number, req.LastName, req.Departure, out var number)) throw ApiException.Invalid("format");
         var departure = DateOnly.ParseExact(req.Departure!, "yyyy-MM-dd").ToDateTime(TimeOnly.MinValue);
         var booking = await trips.FindAgentBookingAsync(number, req.LastName!.Trim(), departure, ct) ?? throw ApiException.NotFound("noMatch");
@@ -97,6 +99,16 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
         await trips.LinkAsync(actor.Id, booking.BookingId, now, ct);
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "trip", booking.Number, now, ct);
         return await BuildAsync(booking, current: false, now, ct);
+    }
+
+    /// <summary>Removes a booking the person linked (not one they are a guest on). 404 for anything else, so a number tells nothing.</summary>
+    public async Task UnlinkAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        var n = AccessRules.NormalizeBookingNumber(number) ?? throw ApiException.NotFound();
+        var hit = (await trips.ListForUserAsync(actor.Id, ct)).FirstOrDefault(b => b.Number == n && b.Kind == "agent") ?? throw ApiException.NotFound();
+        if (!await trips.UnlinkAsync(actor.Id, hit.BookingId, ct)) throw ApiException.NotFound();
+        await accounts.AddHistoryAsync(actor.Id, actor.Id, "tripUnlink", hit.Number, await clock.NowAsync(actor, ct), ct);
     }
 
     public async Task<BookingCoreDto> CoreAsync(UserRecord actor, string? number, CancellationToken ct)

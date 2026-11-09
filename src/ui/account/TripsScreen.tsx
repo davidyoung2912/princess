@@ -65,7 +65,8 @@ export function TripsScreen() {
           {code === 'notFound' && <Banner kind="warning" title={t('trips.link.noMatch')}><p>{t('trips.link.noMatchBody')}</p></Banner>}
           {code === 'conflict' && <Banner kind="info" title={t('trips.link.already')} />}
           {code === 'invalid' && <Banner kind="warning" title={t('trips.link.format')} />}
-          {code && !['notFound', 'conflict', 'invalid'].includes(code) && <ActionError error={link.error} />}
+          {code === 'forbidden' && link.error?.message === 'review' && <Banner kind="info" title={t('trips.link.review')}><p>{t('trips.link.reviewBody')}</p></Banner>}
+          {code && !(['notFound', 'conflict', 'invalid'].includes(code) || (code === 'forbidden' && link.error?.message === 'review')) && <ActionError error={link.error} />}
           <Field label={t('trips.link.number')} hint={t('trips.link.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" autoCapitalize="characters" />
           <Field label={t('trips.link.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
           <div className="field">

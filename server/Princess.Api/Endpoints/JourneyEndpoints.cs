@@ -73,6 +73,13 @@ public static class JourneyEndpoints
             .RequireRateLimiting(LinkLimiter)
             .WithTags("Trips").WithSummary("Links a travel-agent booking by number, lead guest's last name and sailing date. Rate limited.");
 
+        api.MapDelete("/trips/{number}/link", async (string number, ICurrentUser me, TripService svc, CancellationToken ct) =>
+            {
+                await svc.UnlinkAsync(await me.LoadAsync(ct), number, ct);
+                return Results.NoContent();
+            })
+            .WithTags("Trips").WithSummary("Removes a linked agent booking from My Trips. 404 unless you linked it; 403 supervised.");
+
         api.MapGet("/bookings/{number}", async (string number, ICurrentUser me, TripService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CoreAsync(await me.LoadAsync(ct), number, ct)))
             .WithTags("Trips").WithSummary("The booking's core facts: sailing, party, room type, fare.");

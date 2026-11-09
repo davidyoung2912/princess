@@ -34,6 +34,8 @@ public interface ITripStore
     Task<BookingRow?> FindAgentBookingAsync(string number, string lastName, DateTime departure, CancellationToken ct);
     Task<bool> IsLinkedOrMemberAsync(long userId, long bookingId, CancellationToken ct);
     Task LinkAsync(long userId, long bookingId, DateTime now, CancellationToken ct);
+    /// <summary>Drops the person's link to a booking; false when there was none. Guests on the booking are not affected.</summary>
+    Task<bool> UnlinkAsync(long userId, long bookingId, CancellationToken ct);
     Task<List<PaymentRow>> ListPaymentsAsync(long bookingId, CancellationToken ct);
     Task InsertPaymentAsync(NewPayment payment, CancellationToken ct);
     Task<List<CardRow>> ListCardsAsync(long userId, CancellationToken ct);

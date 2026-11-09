@@ -23,6 +23,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
+import { JourneyAccess } from './JourneyAccess'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 import { StanleyEmpty } from '../ai/StanleyEmpty'
@@ -48,6 +49,7 @@ export function DifficultyScreen() {
   const { memory } = usePlanning()
   return (
     <Page intro="diff.intro">
+      <JourneyAccess access={memory.access} />
       <ul className="card-grid">
         {EXCURSIONS.map((x) => {
           const d = difficultyOf(x.id)!

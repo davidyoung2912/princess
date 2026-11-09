@@ -789,8 +789,10 @@ export interface Api {
   trips: {
     list(): Promise<TripsView>
     get(number: string): Promise<TripView>
-    /** Rejects with `invalid` (typing slip), `notFound` (no match), or `conflict` (already linked). */
+    /** Rejects with `invalid` (typing slip), `notFound` (no match), or `conflict` (already linked) or `forbidden` with message `review` (the account is waiting for a person to settle a possible duplicate). */
     link(number: string, lastName: string, departure: string): Promise<TripView>
+    /** Removes a booking the person linked. Rejects with `notFound` for any other number. */
+    unlink(number: string): Promise<void>
   }
   payments: {
     get(): Promise<PaymentsView>

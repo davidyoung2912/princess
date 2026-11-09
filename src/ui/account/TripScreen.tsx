@@ -1,17 +1,18 @@
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { isApiError } from '../../api/errors'
 import { dateIn } from '../../domain/timezones'
 import { formatDate, sailingRange } from '../../domain/cruise'
 import { sailingById } from '../../domain/sailings'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
+import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
-import { LinkButton } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { ManageBooking } from '../book/ManageBooking'
-import { Load } from './parts'
+import { ActionError, Load } from './parts'
 import { countdown } from './format'
 import { NextStep, PaymentBadge } from './tripParts'
 
@@ -65,11 +66,25 @@ export function TripScreen() {
 
             {x.kind === 'current' && <Card info><p>{t('trip.planNote')} <Link to="/plan">{t('route.plan')}</Link></p></Card>}
             {x.kind === 'booked' && <ManageBooking number={x.number} onChanged={trip.retry} />}
+            {x.kind === 'linked' && <Unlink number={x.number} agent={x.agent ?? ''} />}
             <Card info><p>{t('trip.sailingNote')} <Link to={`/home/sailings/${x.sailingId}`}>{t('trip.sailingLink')}</Link></p></Card>
             <p><Link to="/me/trips">{t('route.trips')}</Link></p>
           </>
         )}
       </Load>
     </div>
+  )
+}
+
+/** A linked booking can be taken off the list again (MNG-01); the booking itself stays with the agent. */
+function Unlink({ number, agent }: { number: string; agent: string }) {
+  const navigate = useNavigate()
+  const unlink = useAction(async (n: string) => { await api.trips.unlink(n); return true })
+  return (
+    <Card info>
+      <p>{t('trip.unlinkBody', { agent })}</p>
+      <ActionError error={unlink.error} />
+      <Button variant="secondary" disabled={unlink.busy} onClick={() => void unlink.run(number).then((done) => { if (done) navigate('/me/trips') })}>{t('trip.unlink')}</Button>
+    </Card>
   )
 }

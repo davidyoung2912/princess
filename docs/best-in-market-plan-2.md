@@ -357,3 +357,12 @@ Theme: the Guest Services screen that settles a flagged duplicate account (IDN-0
 - **Front end:** `ReviewCard` on the account page, shown only when the signed-in role is `admin`. It lists each flagged account with its matches and two buttons. It is a card, not a route, so no route, offline-contract or screen-id entries were needed. The flagged guest's own note ("a person is checking") disappears on their next load.
 - **Tests:** `httpProvider.test.ts`; server `OnlyAnAdministratorSeesTheFlaggedAccountsAndSettlingOneClearsTheFlag` (written, not run; `dotnet` is not installed in this shell, so the C# was not even compiled).
 - **Not done:** "same guest" only records the decision, it does not join the accounts; the booking-link half of IDN-03; a staff sign-in separate from the guest app. IDN-03 stays Partial. No component test, no browser check.
+
+## 5af. BM48 result (built, not committed)
+
+Theme: linking a booking made elsewhere (MNG-01, IDN-08).
+- **Already there:** `POST /trips/link` matches an agent booking on number, lead guest's last name and sailing date, rate limited, with one `notFound` for any mismatch. Linked bookings show the agent and no documents.
+- **MNG-01#2:** an account with `ReviewReason` set (possible duplicate, IDN-03) gets 403 `review` on link, and the My Trips form says a person is checking the account. A booking is never attached to a profile that may belong to someone else.
+- **Unlink:** `DELETE /trips/{number}/link` (`TripService.UnlinkAsync`, `ITripStore.UnlinkAsync`) removes only a link the person made; any other number is 404; supervised accounts get 403. History records `tripUnlink`. The trip page shows "Remove from My Trips" for a linked booking.
+- **Tests:** server test `ALinkedBookingCanBeRemovedAndLinkedAgainButAnotherNumberIsNotFound` (written, not run, not compiled). `npm run test`, `lint`, `tsc -b` and `build` per the working rules.
+- **Not done:** external (non-agent) channels; no `external` booking kind exists. IDN-08 access for advisor-booked guests (a linked guest still gets no check-in or documents; the agent handles them). Both rows stay Partial.

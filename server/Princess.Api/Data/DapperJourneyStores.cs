@@ -263,6 +263,12 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
         await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.LinkedBookings (UserId, BookingId, LinkedAt) VALUES (@userId, @bookingId, @now)", new { userId, bookingId, now }, null, ct));
     }
 
+    public async Task<bool> UnlinkAsync(long userId, long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.LinkedBookings WHERE UserId = @userId AND BookingId = @bookingId", new { userId, bookingId }, null, ct)) > 0;
+    }
+
     public async Task<List<PaymentRow>> ListPaymentsAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

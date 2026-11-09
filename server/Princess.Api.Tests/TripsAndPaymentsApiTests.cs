@@ -110,6 +110,17 @@ public class TripsAndPaymentsApiTests : JourneyWorld
         Assert.Contains(F.Journey.History, h => h.UserId == Priya.Id && h.What == "trip");
     }
 
+    [Fact]
+    public async Task ALinkedBookingCanBeRemovedAndLinkedAgainButAnotherNumberIsNotFound()
+    {
+        var token = await SignIn(Priya);
+        await Call(HttpMethod.Post, "/api/v1/trips/link", token, new LinkTripRequest("ag7p-31bk", "whitfield", "2027-03-21"));
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, "/api/v1/trips/PC243902/link", token, null)).Status);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, "/api/v1/trips/AG7P31BK/link", token, null)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Get("/api/v1/trips/AG7P31BK", token)).Status);
+        Assert.Equal(HttpStatusCode.OK, (await Call(HttpMethod.Post, "/api/v1/trips/link", token, new LinkTripRequest("ag7p-31bk", "whitfield", "2027-03-21"))).Status);
+    }
+
     private const System.Text.Json.JsonValueKind JsonNull = System.Text.Json.JsonValueKind.Null;
 
     [Theory]

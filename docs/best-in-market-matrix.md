@@ -86,7 +86,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DRM-07 | P2 | Partial | F | `src/domain/catalogueBrowse.ts`, `src/domain/catalogueBrowse.test.ts` | BM34: sailings screen filters by holiday, summer break or a big trip (14+ nights), matched on date and length only and labelled so; no content-team occasion tags (anniversary, reunion), no optional-service matching; the choice is not saved or shared |
 | DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/ui/discover/ShipScreen.tsx` | Child-private rule not read |
 | DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
-| DRM-10 | P0 | Partial | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | Filter across ship, cabin, port and excursion in one search not found; "unknown shown as unknown" unchecked |
+| DRM-10 | P0 | Built | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | One filter across ship, cabin, port and excursion; unknown shown as unknown (`src/domain/journeyAccess.ts`) |
 | DRM-11 | P0 | Built | F | `src/domain/tripCost.ts`, `src/domain/tripCost.test.ts`, `src/ui/discover/TripCostScreen.tsx` | None found |
 | DRM-12 | P1 | Partial | F | `src/domain/route.ts`, `src/ui/discover/SailingScreen.tsx` | Interactive map not checked; text itinerary exists |
 | DRM-13 | P1 | Built | F | `src/domain/shipCatalogue.ts`, `src/domain/shipCatalogue.test.ts`, `src/ui/discover/CompareShipsScreen.tsx` | Effective dates unchecked |
@@ -103,7 +103,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DSC-08 | P0 | Built | F | `src/domain/pricing.ts`, `src/domain/pricingServed.test.ts`, `src/ui/book/FareStep.tsx` | None found |
 | DSC-09 | P1 | Built | F | `src/domain/packages.ts`, `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts` | None found |
 | DSC-10 | P2 | Built | F | `src/domain/cabinScore.ts`, `src/domain/shortlist.ts` | Explainability of ship/sailing fit score unchecked |
-| DSC-11 | P0 | Partial | F | `src/domain/accessReference.ts`, `src/ui/plan/AssistanceScreen.tsx` | One whole-journey comparison not found |
+| DSC-11 | P0 | Built | F | `src/domain/accessReference.ts`, `src/ui/plan/AssistanceScreen.tsx` | Whole-journey comparison table and checklist on the difficulty screen (`src/ui/plan/JourneyAccess.tsx`) |
 | DSC-12 | P1 | Partial | F | `src/domain/cabins.ts` | BM26: free staterooms close together shown for a party; connecting doors unknown; booking holds one stateroom only |
 | DSC-13 | P2 | Partial | R | `src/domain/discoverDelights.ts`, `src/ui/delights/DiscoverDelights.tsx` | BM25: walk times by deck or lift on each cabin; no stairs, closures or verified step-free route data |
 | DSC-14 | P1 | Built | F | `src/ui/discover/CompareShipsScreen.tsx` | Room-control capability is a flag only |

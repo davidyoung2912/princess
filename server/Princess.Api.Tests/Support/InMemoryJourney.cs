@@ -154,6 +154,8 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         return Task.CompletedTask;
     }
 
+    public Task<bool> UnlinkAsync(long userId, long bookingId, CancellationToken ct) => Task.FromResult(Linked.Remove((userId, bookingId)));
+
     public Task<List<PaymentRow>> ListPaymentsAsync(long bookingId, CancellationToken ct) =>
         Task.FromResult(Payments.Where(p => p.BookingId == bookingId).Select(p => p.Row).OrderBy(p => p.At).ToList());
 

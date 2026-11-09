@@ -314,6 +314,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       list: () => get('/trips'),
       get: (n) => get(`/trips/${seg(n)}`),
       link: (n, lastName, departure) => send('post', '/trips/link', { number: n, lastName, departure }),
+      unlink: async (n) => { await send('delete', `/trips/${seg(n)}/link`) },
     },
     payments: {
       get: () => inBooking('/payments'),
