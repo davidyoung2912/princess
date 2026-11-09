@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { accessRows, activeCount, type AccessItem, type AccessRow } from '../../domain/access'
+import { accessRows, activeCount, relationshipOf, type AccessItem, type AccessRow } from '../../domain/access'
 import type { Helper, PermissionId } from '../../domain/account'
 import { NOT_YET, PERMISSIONS, formatInviteCode, permissionWorks } from '../../domain/account'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { api } from '../../runtime'
+import { TASKS_NEVER_SHARED, TASKS_NOT_OFFERED } from '../../domain/relationships'
+import { liveLinkIds } from '../../domain/homeLink'
+import { api, familyHome } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
 import { useHub } from '../../hooks/useHub'
 import { useParty } from '../../hooks/useParty'
 import { useSharing } from '../../hooks/useSharing'
+import { SHARING_FACETS } from '../../domain/partyShare'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -32,7 +35,7 @@ export function HelperScreen() {
       </Load>
       <AcceptInvite />
       <HelpingCard />
-      <WhoCanSee helper={helper.data ?? null} />
+      <WhoCanSee helper={helper.data ?? null} refresh={helper.retry} />
       <Card info labelledBy="alt-h">
         <h2 id="alt-h">{th('helper.alt.title')}</h2>
         <p>{t('helper.alt.body', { number: GUEST_SERVICES_NUMBER })}</p>
@@ -165,32 +168,56 @@ const SHARE_KEY: Record<string, StringKey> = {
 }
 const ITEM_KEY = (x: AccessItem): StringKey => (x === 'shipFacts' ? 'access.item.shipFacts' : SHARE_KEY[x] ?? (`helper.perm.${x}` as StringKey))
 
-function Row({ row }: { row: AccessRow }) {
+function Row({ row, onStop, stopped }: { row: AccessRow; onStop: (row: AccessRow) => Promise<boolean>; stopped: boolean }) {
   const who = row.who ?? t('access.party')
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const stop = async () => { setBusy(true); setFailed(false); const ok = await onStop(row); setBusy(false); setFailed(!ok) }
   return (
     <li>
-      <strong>{who}</strong> <span className="muted">{t(`access.kind.${row.kind}` as StringKey)} · {t(`access.status.${row.status}` as StringKey)}</span>
+      <strong>{who}</strong> <span className="muted">{t(`relationship.${relationshipOf(row.kind)}` as StringKey)} · {t(`access.status.${row.status}` as StringKey)}</span>
       {row.items.length > 0 && <ul>{row.items.map((x) => <li key={x}>{t(ITEM_KEY(x))}</li>)}</ul>}
+      {row.tasks.length > 0 && <p className="muted">{t('access.tasks', { tasks: row.tasks.map((k) => t(`task.${k}` as StringKey)).join(', ') })}</p>}
       {row.until !== null && <p className="muted">{t('access.until', { date: formatMoment(row.until) })}</p>}
       {row.status === 'ended' && row.kind !== 'helper' && row.items.length === 0 && <p className="muted">{t('access.noneShared')}</p>}
       <Link to={row.path} aria-label={t('access.change', { who })}>{t('access.changeLink')}</Link>
+      {row.stoppable && <> <Button variant="danger" disabled={busy} aria-label={t(row.kind === 'invite' ? 'access.cancelFor' : 'access.stopFor', { who })} onClick={() => void stop()}>{t(row.kind === 'invite' ? 'access.cancel' : 'access.stop')}</Button></>}
+      {failed && <p role="alert" className="field__error">{t('access.stopFailed')}</p>}
+      <span role="status" className="visually-hidden">{stopped ? t('access.stopped', { who }) : ''}</span>
     </li>
   )
 }
 
 /** Who can see what (IDN-07): every way this guest has let someone in, in one list. Changing any of them happens on that feature's own screen. */
-function WhoCanSee({ helper }: { helper: Helper | null }) {
+function WhoCanSee({ helper, refresh }: { helper: Helper | null; refresh: () => void }) {
   const { state } = useHub()
-  const { state: party } = useParty()
-  const { sharing } = useSharing()
+  const { state: party, uninvite } = useParty()
+  const { sharing, set } = useSharing()
+  const { update } = useHub()
+  const [stopped, setStopped] = useState<string | null>(null)
   const now = useNow()
   const rows = accessRows({ helper, home: state.home, party, sharing, now })
+  /** Ends one row at once (IDN-07). False when the server could not be reached, so the row stays and the guest is told. */
+  const stop = async (row: AccessRow): Promise<boolean> => {
+    try {
+      if (row.kind === 'helper') { await api.account.revokeHelper(); refresh() }
+      else if (row.kind === 'home') {
+        const contactId = row.id.slice('home:'.length)
+        for (const id of liveLinkIds(state.home, now, contactId)) await familyHome.revoke(id)
+        update((s) => ({ ...s, home: { ...s.home, links: s.home.links.map((l) => (l.contactId === contactId ? { ...l, revoked: true } : l)) } }))
+      } else if (row.kind === 'invite') uninvite(row.id.slice('invite:'.length))
+      else for (const f of SHARING_FACETS) set(f, false)
+    } catch { return false }
+    setStopped(row.id)
+    return true
+  }
   return (
     <Card labelledBy="access-h">
       <h2 id="access-h">{th('access.title')}</h2>
       <p>{t('access.summary', { count: activeCount(rows) })}</p>
-      <ul>{rows.map((r) => <Row key={r.id} row={r} />)}</ul>
+      <ul>{rows.map((r) => <Row key={r.id} row={r} onStop={stop} stopped={stopped === r.id} />)}</ul>
       <p className="muted">{t('access.footnote')}</p>
+      <p className="muted">{t('access.notOffered', { tasks: TASKS_NOT_OFFERED.map((k) => t(`task.${k}` as StringKey)).join(', '), never: TASKS_NEVER_SHARED.map((k) => t(`task.${k}` as StringKey)).join(', ') })}</p>
     </Card>
   )
 }

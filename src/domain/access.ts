@@ -4,6 +4,7 @@ import { isLive } from './homeLink'
 import type { PartyState } from './party'
 import type { Sharing, SharingFacet } from './partyShare'
 import { SHARING_FACETS } from './partyShare'
+import { tasksFor, type RelationshipKind, type Task } from './relationships'
 
 /**
  * "Who can see what" (IDN-07): one list over the three separate ways a guest lets someone in: a family helper (account.ts), a
@@ -11,6 +12,8 @@ import { SHARING_FACETS } from './partyShare'
  * screen. Framework-free. The location of the guest is never an item here, because nothing in the app shares it.
  */
 export type AccessKind = 'helper' | 'home' | 'invite' | 'party'
+/** The shared name for each row's relationship (IDN-04): the family link is the household. */
+export const relationshipOf = (kind: AccessKind): RelationshipKind => (kind === 'home' ? 'household' : kind)
 export type AccessStatus = 'active' | 'waiting' | 'ended'
 export type AccessItem = PermissionId | 'shipFacts' | `share.${SharingFacet}`
 
@@ -22,6 +25,10 @@ export interface AccessRow {
   status: AccessStatus
   /** What they can see or do, in a fixed order. Empty when the row has ended or is waiting. */
   items: AccessItem[]
+  /** The tasks those items amount to (IDN-05), in a fixed order. */
+  tasks: Task[]
+  /** Whether the guest can end it from the list: it is on, or waiting for an answer. */
+  stoppable: boolean
   /** When it stops by itself, or null. */
   until: number | null
   /** The screen where it is changed. */
@@ -32,7 +39,7 @@ export interface AccessInput { helper: Helper | null; home: HomeState; party: Pa
 
 /** Every row the guest has set up, active ones first. Ended helper and expired links are kept so the guest can see they are off. */
 export function accessRows({ helper, home, party, sharing, now }: AccessInput): AccessRow[] {
-  const rows: AccessRow[] = []
+  const rows: Omit<AccessRow, 'tasks' | 'stoppable'>[] = []
   if (helper) {
     const status: AccessStatus = helper.status === 'active' ? 'active' : helper.status === 'requested' ? 'waiting' : 'ended'
     rows.push({ id: 'helper', kind: 'helper', who: helper.name, status, items: status === 'active' ? helper.permissions.filter(permissionWorks) : [], until: null, path: '/me/helper' })
@@ -46,7 +53,7 @@ export function accessRows({ helper, home, party, sharing, now }: AccessInput): 
   const shared = SHARING_FACETS.filter((f) => sharing[f]).map((f): AccessItem => `share.${f}`)
   rows.push({ id: 'party', kind: 'party', who: null, status: shared.length ? 'active' : 'ended', items: shared, until: null, path: '/plan/party' })
   const rank = { active: 0, waiting: 1, ended: 2 } as const
-  return rows.map((r, i) => ({ r, i })).sort((a, b) => rank[a.r.status] - rank[b.r.status] || a.i - b.i).map((x) => x.r)
+  return rows.map((r, i) => ({ r: { ...r, tasks: tasksFor(r.items), stoppable: r.status !== 'ended' }, i })).sort((a, b) => rank[a.r.status] - rank[b.r.status] || a.i - b.i).map((x) => x.r)
 }
 
 /** How many people or groups can see something right now. */

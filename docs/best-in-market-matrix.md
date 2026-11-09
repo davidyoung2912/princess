@@ -331,10 +331,10 @@ Priority is not given per concept in the document.
 | IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | No sign-out-everywhere, device list or step-up (BM16) |
 | IDN-02 | P0 | Built | F | `src/ui/boarding/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
 | IDN-03 | P0 | Not built | F | none | No duplicate-profile detection or reconciliation found in client or server (searched `duplicate`, `reconcil`) |
-| IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. No shared relationship type. BM5 |
-| IDN-05 | P0 | Partial | R | `src/domain/account.ts` (`PERMISSIONS`) | Helper now has view, documents, payments, profile, folio, checkin and trip (BM6 to BM12). Still no edit-booking, message or location permission |
+| IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. Shared vocabulary of relationships and tasks since BM37 (`src/domain/relationships.ts`); the stores are still three, and no cabin party, linked group or shipmate. BM5 |
+| IDN-05 | P0 | Partial | R | `src/domain/account.ts` (`PERMISSIONS`) | Helper now has view, documents, payments, profile, folio, checkin and trip (BM6 to BM12). BM37 maps each permission to the eight tasks. Still no edit-booking or message permission (server work); location is never shared |
 | IDN-06 | P0 | Built | F | `src/ui/plan/FamilyLinkScreen.tsx`, `src/domain/homeLink.ts`, `src/ui/ahead/ClubsScreen.tsx` | Authorised pickup unchecked |
-| IDN-07 | P1 | Partial | F | `src/ui/account/HelperScreen.tsx`, `src/ui/party/ShareScreens.tsx` | Revoke exists per feature; BM5 built the "who can see what" card on `/me/helper` (`src/domain/access.ts`); revoke is still per feature |
+| IDN-07 | P1 | Partial | F | `src/ui/account/HelperScreen.tsx`, `src/ui/party/ShareScreens.tsx` | Revoke exists per feature; BM5 built the "who can see what" card on `/me/helper` (`src/domain/access.ts`); BM37: every active or waiting row has an immediate Stop now / Cancel invitation |
 | IDN-08 | P1 | Partial | F | `src/ui/home/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
 | TRU-01 | P0 | Built | F | `src/ui/account/LedgerScreen.tsx`, `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/ActivityScreen.tsx` | None found |
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |
