@@ -24,3 +24,29 @@ MOB-04	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-05	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-23	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 OFF-01	OK	(BM19 closed) see best-in-market-plan-2 section 5d
+DRM-16	PARTIAL	(BM20) SlotWatch is a dinner/show/tour cancellation watch, not a sailing, fare or availability alert with a threshold and price context. priceCalendar has no alert. Stop exists; no pause.
+REM-07	PARTIAL	(BM20) LoyaltyScreen shows tier, days and perks; no last-sync time, stale flag or way to report a discrepancy.
+REM-10	PARTIAL	(BM20) Only a credit mention in PerksPanel; no credit wallet with source, expiry, eligibility or redemption history found in LoyaltyScreen or PerksPanel.
+PRE-07	PARTIAL	(BM20) excursions.ts has minAge and accessible, excursionFit has wheelchair; no exertion level and no "operator to confirm" flag found for uncertain accessibility.
+SEA-05	PARTIAL	(BM20) Venue directory shows open or closed from hours (openAt) only: no temporarily-unavailable state and no timestamp.
+AST-02	PARTIAL	(BM20) src/ai has no source or freshness label on answers.
+MNG-06	OK	(BM20) readinessBoard rows carry name, percent, open tasks and behind flag only; no document fields.
+BOK-10	PARTIAL	(BM20) ledgerSplit is a shared-expense settle-up between families, not invited-payer contributions to a booking with per-payer amount, deadline and paid, pending or failed status.
+GTS-10	PARTIAL	(BM20) arrivalPing derives a follower line from ship stage; meetingPoint has "I'm here" wording but no expiry after embarkation found. No one-time departed or arrived signal.
+SEA-04	PARTIAL	(BM20) searchIndex returns hits that link to screens (title, detail, to); no direct answers or actions and no source or freshness.
+QOL-15	PARTIAL	(BM20) storm.ts is a storm likelihood reading; neither it nor whatIf.ts lists impacted reservations or proposes alternatives.
+GTS-16	NEEDS-READ	(BM20) MedallionScreen has activate and lost; no order or delivery status found, but ReadyScreens.tsx was only skimmed.
+DRM-14	PARTIAL	(BM20) groupBoard.ts and GroupBoard.tsx have no close-voting step and no export of the result (the only "export" matches are the TypeScript keyword).
+MNG-15	PARTIAL	(BM20) countdowns.ts covers boarding, final payment and check-in opening only; no documents, excursions or special requests, and no event history when a deadline changes.
+PRE-15	PARTIAL	(BM20) entitlements.ts has balance and used; no usage window or expiry, and no history of expired items.
+PRE-10	PARTIAL	(BM20) tickets.ts and Tickets.tsx have no accessibility accommodation request or status.
+UX-04	OK	(BM20) sync.ts is a versioned per-key document store with conflict on a second device; which keys are bound was not checked.
+PRE-12	NEEDS-READ	(BM20) ClubsScreen has no guardian wording; ahead.ts has consent and age constants but they were not read in full.
+PRE-12	PARTIAL	(BM20) The only consent in ahead.ts is marketing double opt-in; ClubsScreen and ahead.ts have no guardian consent or sign-in/out authority wording.
+EMB-07	PARTIAL	(BM20) RequestsScreen shows status; no photo attachment, preferred-contact or duplicate-case guard found.
+REM-08	PARTIAL	(BM20) RebookScreen shows no reason for a recommendation and no editable inputs (search found none).
+QOL-20	PARTIAL	(BM20) AssistanceScreen and medicalCard have no recipient preview, revoke or acknowledgement.
+MNG-09	PARTIAL	(BM20) travel.ts has no provider, reference or contact fields found; only a "booked with" note.
+OFF-07	OK	(BM20) BM19 added export and restore of waiting items and unreadable-store handling (deviceBackup).
+DEB-10	OK	(BM20) Flight step exists in OnwardScreen; link targets and credential handling not read.
+DEB-15	OK	(BM20) A card exists in finishMore.ts; print and cache behaviour not read.

@@ -120,3 +120,123 @@ SEC-06	age-aware messaging	\bminor\b|guardian|under ?1[38]|childAge|age <	src/ui
 SEC-06	guardian controls	guardian|parent	src/ui/plan/FamilyLinkScreen.tsx
 UX-01	parity by shared code	route|ROUTES	src/routes/coverage.test.ts
 UX-03	large targets	44|48|min-height	src/styles
+# BM20: one search per remaining P1/P2/QOL Built row, for its most checkable clause
+DRM-02	filters combine; useful empty state with nearby alternatives	nearby|alternative|no (sailings|results)|emptyState	src
+DRM-04	price calendar labels lowest fare, currency, quote time	lowest|fareCalendar|priceCalendar|quotedAt	any
+DRM-05	finder may skip, revise, reset answers	reset|startOver|skip	src/domain/finder.ts,src/domain/cruiseFinder.ts,src/ui/discover
+DRM-06	first-cruise concepts explained (tender, muster, gratuities)	tender.*muster|firstCruise|glossary	src
+DRM-08	family discovery shows age suitability and adjoining cabins	adjoining|connecting|ageSuit|kidsClub|youth club	src
+DRM-13	ship profiles per ship with effective dates	effectiveFrom|effectiveDate|asOf	any
+DRM-14	group wish list votes; organiser closes and exports	closeVoting|closeVote|voteClosed|closedAt	any
+DRM-15	shortlist link read-only, expires, revocable	revoke|expiresAt.*share|shareLink|shortlistShare	any
+DRM-16	alert tied to exact sailing, pause or delete	pauseAlert|alert.*(pause|paused)|priceAlert|fareAlert	any
+DSC-03	tender expectation and local/ship time separately	tender.*(ship time|local)|tenderPort|dockOrTender|isTender	src
+DSC-09	package break-even, labelled estimate	break.?even|worth(while)?	src
+DSC-10	fit score weights changeable	weights|weight	src
+DSC-14	ship tech matrix Medallion, OceanNow	oceannow|medallion.*ship|techMatrix	src
+DSC-16	decision workspace persists across devices	shortlist|compareSet|decision workspace	any
+BOK-10	split payment payer sees own amount and deadline	contribution|splitPay|payerShare|invited payer	any
+BOK-11	payment failure never silently cancels	not cancel|won.t cancel|no cancel|failure.*recover|retryPayment	any
+BOK-13	no prechecked extras; exclusions and refund link	prechecked|exclusions|refund policy	any
+MNG-06	party readiness shows task status only	readiness.*(party|member)|partyReadiness	any
+MNG-07	helper scopes and expiry	expires.*helper|helper.*expires|expiresAt	src/domain/account.ts,server/Princess.Api
+MNG-08	packing list editable	packing	src
+MNG-09	travel-to-port external bookings not Princess-confirmed	not (booked|confirmed) (by|with) princess|external booking|externalBooking	any
+MNG-12	allergy sharing with crew acknowledgement not a safety guarantee	not a (safety )?guarantee|acknowledg	src
+MNG-13	itinerary change before/after with deadline	before.*after|itineraryChange|changeNotice	src
+MNG-14	notification centre categories; duplicates collapsed	dedupe|duplicate|collapse|category	src/domain/notifications.ts,src/domain/delivery.ts,src/ui
+MNG-15	deadline change creates new event	supersed|previousDeadline|deadlineHistory|rescheduled	src
+MNG-17	loyalty stale status identified	captain.?s circle|loyalty	src
+MNG-18	trip pack large-print and low-ink variants	largePrint|large-print|lowInk|low-ink|@media print	any
+PRE-07	excursion compare exertion, accessibility flagged for operator confirmation	exertion|operator confirm|confirm with operator	src
+PRE-09	port-day plan all-aboard buffer, not endorsement	not endorsed|independent|buffer	src
+PRE-10	show accommodation request status	accommodation.*(request|status)	src
+PRE-11	paid experience shows cancellation window before commit	cancellation window|cancelBy|freeCancel	src
+PRE-12	youth registration guardian consent; minors cannot bypass	guardian.*consent|guardianConsent|signOutAuthority|authorisedPickup|authorizedPickup	any
+PRE-13	group plan board accept decline propose alternative	propose|counterPropose|alternative	src/domain/party.ts,src/domain/groupPlan.ts,src/ui
+PRE-14	spend forecast editable; included vs prepaid vs discretionary	discretionary|prepaid	src
+PRE-15	entitlement wallet; expired remain in history	expired|history	src/domain/wallet.ts,src/domain/entitlements.ts
+GTS-06	leave-by only on request, not boarding guarantee	leave.?by	src
+GTS-10	one-time departed/arrived signals expire after embarkation	departed.*arrived|atMeetingPoint|arrivalSignal	src
+GTS-11	luggage tag printable	luggage ?tag|bagTag	src
+GTS-15	night-before checklist	nightBefore|night-before|night before	src
+GTS-16	Medallion order/delivery/activation, keycard fallback	medallion.*(delivery|activation|pickup)	src
+EMB-04	first four hours dismissable and revisit	firstFour|first four|first 4	src
+EMB-05	cabin arrival card steward and troubleshooting	steward|cabin arrival	src
+EMB-06	luggage delivered/in transit/expected, no fake tracking	in.?transit|luggageStatus	src
+EMB-07	cabin issue case id, no duplicate case	duplicate|caseId|referenceId	src/domain/cabinIssue.ts,src/ui
+EMB-08	Medallion status vs device action, keycard fallback	keycard	src
+EMB-09	self-guided tour short/long/step-free; pausable	step-free.*tour|tourMode|selfGuided|self-guided	src
+EMB-10	meeting-point card with I'm here expiry	i.?m here|meetingPoint	src
+EMB-12	first-day venue hours timestamped, unknown crowd omitted	crowd	src
+EMB-14	guardian handover plan, no child tracking	handover|reunion	src
+SEA-04	search returns answers and actions with source	searchAnswers|answerFor|globalSearch|search.*action	src
+SEA-05	venue open/closed/temporarily unavailable	temporarily unavailable|temporarilyClosed	src
+SEA-12	order tracking states only when source confirms	out.?for.?delivery|outForDelivery	src
+SEA-15	spend forecast posted/pending/predicted, budget alerts	posted.*pending|budget	src
+SEA-17	youth club check-in/out state timestamped	youth	src
+SEA-22	daily briefing suppresses marketing in calm mode	briefing|calm	src
+SEA-23	ship position, sunrise/sunset, sea state timestamped	sunrise|sea.?state	src
+SEA-24	medical centre not medical advice	not (a )?(medical advice|diagnosis)|medical.?cent	src
+POR-08	port day plan warns ship-return risk	return.*risk|allAboard|all-aboard	src
+POR-09	local emergency contacts: services vs ship agent	emergencyServices|shipAgent|ship agent|local emergency	src
+POR-10	currency converter indicative, not ATM rate	indicative|not.*(ATM|payment rate)|fxRate	src
+POR-11	offline phrasebook, text usable without audio	phrasebook|phrases	src
+POR-12	weather/tender advisory source, timestamp, horizon	advisor(y|ies)	src
+POR-13	one-time arrival signal, no background location	no background|one-time|oneTime	src
+POR-14	ashore board statuses expire, not manifest	aboard.*ashore|ashore.*aboard|expiresAt.*status|ashoreBoard	src
+DEB-06	cabin sweep checklist items editable dismissible	sweep	src
+DEB-07	departure-day venue hours	departure-day|disembark.*venue|breakfast	src
+DEB-09	onward travel workspace labelled estimates	onward	src
+DEB-10	airline deep link no credentials	airline.*(link|check.?in)|carrierLink	src
+DEB-11	lost property report case stays in My Trips	lostProperty|lost.?property	src
+DEB-12	post-cruise document pack retention info	retention|documentPack|document pack	src
+DEB-13	terminal exit directions accessible route	terminal.*(exit|directions)|exitRoute	src
+DEB-15	departure pocket card printable	pocket ?card|pocketCard	src
+REM-02	diary entries editable, sourced milestone labelled	diary	src
+REM-03	memory book preview and delete project	memoryBook|memory book	src
+REM-07	loyalty last sync and report discrepancy	discrepancy|reportMismatch	src
+REM-08	next-voyage reason shown, inputs editable	because|reason	src/domain/nextVoyage.ts,src/domain/recommend.ts
+REM-09	rebooking reuses consented details, revalidates	rebook|reuse	src
+REM-10	credits wallet source, expiry, redemption history	redemption|redeemed	src
+REM-11	progressive survey short first then expand	survey	src
+REM-12	crew thank-you with receipt, no rating	thank.?you|recogni[sz]e	src
+REM-13	recap preview, approve every share	recap	src
+MOB-06	push permission after explaining benefit; iOS home screen	home screen|add to home|Notification.requestPermission	src
+MOB-08	share sheet with copy-link fallback	navigator.share|clipboard	src
+MOB-11	wake lock released, unavailable shown	wakeLock	src
+MOB-15	calendar export with UID and zone	UID:|DTSTART|VTIMEZONE	src
+MOB-17	high-contrast boarding display, manual fallback	brightness	src
+MOB-18	tap-to-call links offline	tel:|sms:|mailto:	src
+MOB-19	read-aloud user initiated with pause and rate	speechSynthesis|SpeechSynthesis	src
+MOB-20	voice input explicit activation	SpeechRecognition	src
+MOB-21	vibration feature-detect with visual alternative	navigator.vibrate|vibrate	src
+MOB-24	data saver and battery aware	getBattery|saveData	src
+QOL-01	voyage autopilot modes with reasons	autopilot	src
+QOL-03	trust ledger receipts status source	ledger	src
+QOL-04	capsule manager stale and expiry	capsule	src
+QOL-05	rescue case with redaction preview	redact|diagnostics	src
+QOL-07	consensus poll close date and organiser controls	closesAt|closeDate|poll	src
+QOL-08	rendezvous one-time signal expiry	rendezvous|expiresAt	src
+QOL-09	allergy chain of custody no safety promise	chain|custody|allergen	src
+QOL-11	port return guardian doesn't guarantee vessel wait	not.*wait|return guardian|portReturn|returnPlan	src
+QOL-12	entitlement explainer consumed and cost	consumed|entitlement	src
+QOL-13	cabin comfort preference vs confirmed device	comfort|preference.*confirmed|not confirmed	src
+QOL-14	concierge order deterministic then search then LLM	deterministic|tier.*(rule|faq)|source order	src
+QOL-15	weather recomposer no auto cancel or rebook	recompos|replan|impacted	src
+QOL-16	no-surprise money view paid pending forecast separate	paid.*pending|forecast	src
+QOL-19	disruption command centre last update, human phone	disruption|rescue	src
+QOL-20	accessibility passport preview recipients, revoke	passport.*(recipient|revoke)|accessibilityPassport|accessPassport	src
+QOL-21	time service ship/port/home, deadline governing	governing|shipTime	src
+QOL-22	service promise target vs guarantee	not a guarantee|target.*guarantee|serviceTarget|sla	src
+TRU-08	policy failure plain message with next step	nextStep|policy.*(fail|reason)|why.*(declin|refus)	src
+AST-01	one front door Stanley	stanley	src
+AST-02	answers label source and freshness	freshness|asOf	src/ai,src/domain/stanley
+AST-03	deterministic answer cards before model	deterministic|answerCard	src
+AST-06	handoff summary with consent	handoff|handOff|hand-off	src
+AST-07	global search returns answers/actions	globalSearch|searchAll|SearchScreen|search	src
+AST-08	voice input and read-aloud	speechSynthesis|SpeechRecognition	src
+COM-05	categories, quiet hours, frequency; safety not disabled	quiet ?hours|quietHours	src
+OFF-07	storage eviction/quota guidance	QuotaExceeded|storage.persist|estimate\(\)	src
+UX-04	sync across devices plan, searches, prefs	savedSearch|savedSearches	src
+UX-05	printable views trip pack, folio, memory book	window.print|@media print	any

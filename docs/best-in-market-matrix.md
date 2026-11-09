@@ -90,9 +90,9 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DRM-11 | P0 | Built | F | `src/domain/tripCost.ts`, `src/domain/tripCost.test.ts`, `src/ui/discover/TripCostScreen.tsx` | None found |
 | DRM-12 | P1 | Partial | F | `src/domain/route.ts`, `src/ui/discover/SailingScreen.tsx` | Interactive map not checked; text itinerary exists |
 | DRM-13 | P1 | Built | F | `src/domain/shipCatalogue.ts`, `src/domain/shipCatalogue.test.ts`, `src/ui/discover/CompareShipsScreen.tsx` | Effective dates unchecked |
-| DRM-14 | P1 | Built | F | `src/domain/groupBoard.ts`, `src/domain/groupBoard.test.ts`, `src/ui/plan/GroupBoard.tsx` | Export of result unchecked |
+| DRM-14 | P1 | Partial | F | `src/domain/groupBoard.ts`, `src/domain/groupBoard.test.ts`, `src/ui/plan/GroupBoard.tsx` | BM20: no close-voting or export |
 | DRM-15 | P1 | Built | F | `src/ui/party/ShareScreens.tsx`, `src/domain/partyShare.ts` | Expiry and read-only rule unchecked |
-| DRM-16 | P2 | Built | F | `src/ui/plan/SlotWatch.tsx`, `src/domain/priceCalendar.ts` | Delivery by email/push is simulated |
+| DRM-16 | P2 | Partial | F | `src/ui/plan/SlotWatch.tsx`, `src/domain/priceCalendar.ts` | BM20: slot watch only; no sailing/fare alert with threshold |
 | DSC-01 | P0 | Built | F | `src/ui/discover/CompareSailingsScreen.tsx`, `src/domain/offerCompare.ts`, `src/domain/offerCompare.test.ts` | "At least four" not asserted |
 | DSC-02 | P0 | Built | F | `src/domain/portTier.ts`, `src/domain/portTier.test.ts`, `src/domain/nightsRules.ts` | None found |
 | DSC-03 | P1 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/domain/portPilot.ts` | None found |
@@ -118,7 +118,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | BOK-07 | P0 | Built | F | `src/ui/book/PayStep.tsx`, `src/domain/pricingServed.test.ts` | Revalidation is server side; not read |
 | BOK-08 | P0 | Simulated | F | `src/ui/book/PayPanel.tsx`, `src/ui/ConfirmCharge.tsx` | Card charging is a backend mock; raw numbers must not be stored locally (see SEC-02) |
 | BOK-09 | P0 | Built | F | `src/data/outbox.ts`, `src/ui/ConfirmCharge.tsx`, `src/domain/moneyShield.test.ts` | Server idempotency covered by C# tests, not run |
-| BOK-10 | P1 | Built | F | `src/ui/plan/SplitScreen.tsx`, `src/ui/book/InstalmentPlanner.tsx` | Invited payer contribution unchecked |
+| BOK-10 | P1 | Partial | F | `src/ui/plan/SplitScreen.tsx`, `src/ui/book/InstalmentPlanner.tsx` | BM20: settle-up ledger only; no invited-payer status |
 | BOK-11 | P1 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/book/InstalmentPlanner.tsx` | None found |
 | BOK-12 | P1 | Partial | F | `src/ui/book/PerksPanel.tsx`, `src/ui/finish/LoyaltyScreen.tsx` | Future cruise credit explained at booking unchecked |
 | BOK-13 | P1 | Built | F | `src/ui/book/DiningStep.tsx`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/ahead/UpgradesScreen.tsx` | Insurance and transfers wording unchecked |
@@ -133,13 +133,13 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-06 | P1 | Built | F | `src/ui/plan/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
 | MNG-07 | P1 | Built | R | `src/ui/account/HelperScreen.tsx`, `src/domain/account.ts` | Seven permissions now (BM6 to BM12). See IDN-05 |
 | MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/ui/plan/PackingScreen.tsx` | None found |
-| MNG-09 | P1 | Built | F | `src/ui/plan/TravelScreen.tsx`, `src/domain/travel.ts`, `src/ui/plan/` getting-there route | None found |
+| MNG-09 | P1 | Partial | F | `src/ui/plan/TravelScreen.tsx`, `src/domain/travel.ts`, `src/ui/plan/` getting-there route | BM20: no provider, reference or contact fields |
 | MNG-10 | P0 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/account/PaymentsScreen.tsx` | None found |
 | MNG-11 | P0 | Built | F | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | None found |
 | MNG-12 | P1 | Built | F | `src/domain/medicalCard.ts`, `src/domain/care.test.ts`, `src/domain/medicalCard.ts` | Audience-specific sharing unchecked |
 | MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
 | MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
-| MNG-15 | P1 | Built | F | `src/domain/countdowns.ts`, `src/domain/countdowns.test.ts` | None found |
+| MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/countdowns.test.ts` | BM20: three deadline kinds only; no history |
 | MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | Reusable cabin and dining preferences unchecked |
 | MNG-17 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | Status data is simulated by the server |
 | MNG-18 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
@@ -149,15 +149,15 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/ui/book/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
 | PRE-05 | P1 | Simulated | F | `src/ui/plan/SlotWatch.tsx`, `src/ui/onboard/Waits.tsx` | Position from source feed is simulated |
 | PRE-06 | P1 | Simulated | F | `src/ui/onboard/Waits.tsx`, `src/domain/queue.ts` | Queues are simulated; only integrated types may be shown |
-| PRE-07 | P1 | Built | F | `src/ui/plan/ExcursionsScreen.tsx`, `src/domain/excursions.ts`, `src/domain/excursionFit.ts` | None found |
+| PRE-07 | P1 | Partial | F | `src/ui/plan/ExcursionsScreen.tsx`, `src/domain/excursions.ts`, `src/domain/excursionFit.ts` | BM20: no exertion level or operator-confirm flag |
 | PRE-08 | P0 | Built | F | `src/domain/excursionFit.ts`, `src/domain/excursionFit.test.ts` | None found |
 | PRE-09 | P1 | Built | F | `src/ui/onboard/RouteFinder.tsx`, `src/domain/portDelights.ts`, `src/domain/landPath.ts` | None found |
-| PRE-10 | P1 | Built | F | `src/ui/onboard/Tickets.tsx`, `src/domain/tickets.ts` | Accessibility accommodation at booking unchecked |
+| PRE-10 | P1 | Partial | F | `src/ui/onboard/Tickets.tsx`, `src/domain/tickets.ts` | BM20: no accommodation request or status |
 | PRE-11 | P1 | Built | F | `src/ui/aboard/OrderExtras.tsx`, `src/domain/shopExtras.ts` | Spa booking: `/ship/spa` |
-| PRE-12 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/domain/ahead.ts` | None found |
+| PRE-12 | P1 | Partial | F | `src/ui/ahead/ClubsScreen.tsx`, `src/domain/ahead.ts` | BM20: no guardian consent or authority |
 | PRE-13 | P1 | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.test.ts` | None found |
 | PRE-14 | P1 | Built | F | `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts`, `src/ui/plan/SpendForecastCard.tsx` | None found |
-| PRE-15 | P1 | Built | F | `src/domain/entitlements.ts`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/account/` packages route | None found |
+| PRE-15 | P1 | Partial | F | `src/domain/entitlements.ts`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/account/` packages route | BM20: no expiry or expired history |
 | PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
 | PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx` | Group dining across linked cabins unchecked |
 | PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | Refund timing stated as fact, not labelled estimate (BM16) |
@@ -170,7 +170,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | GTS-07 | P1 | Simulated | F | `src/feeds/flight.ts`, `src/domain/delay.ts`, `src/domain/delay.test.ts` | Flight feed is a mock |
 | GTS-08 | P0 | Built | F | `src/ui/home/DelayedScreen.tsx`, `src/domain/delay.ts` | "One tap" not asserted |
 | GTS-09 | P1 | Partial | F | `src/domain/deckGraph.ts`, `src/ui/boarding/CompanionScreen.tsx` | Terminal map with step-free route unchecked |
-| GTS-10 | P1 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/arrivalPing.test.ts`, `src/domain/meetingPoint.ts` | None found |
+| GTS-10 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/domain/arrivalPing.test.ts`, `src/domain/meetingPoint.ts` | BM20: no one-time signals or expiry |
 | GTS-11 | P1 | Built | F | `src/ui/finish/` luggage route `/home/luggage`, `src/domain/embark.ts` | None found |
 | GTS-12 | P0 | Built | F | `src/ui/home/` clearance route `/home/clearance`, `src/domain/papersCheck.ts` | None found |
 | GTS-13 | P2 | Simulated | F | `src/domain/embark.ts`, `server/Princess.Api/Domain/EmbarkQueueRules.cs` | Only from a verified feed: the feed is a mock |
@@ -183,7 +183,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | EMB-04 | P1 | Built | F | `src/domain/embarkDelights.ts`, `src/domain/embarkDelights.test.ts` | None found |
 | EMB-05 | P1 | Built | F | `src/ui/extras/RoomScreen.tsx`, `src/domain/room.ts` | None found |
 | EMB-06 | P1 | Built | F | `src/ui/finish/` luggage route, `src/domain/embark.ts` | Source and certainty label unchecked |
-| EMB-07 | P1 | Built | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/extras/RoomScreen.tsx` | Optional photo unchecked |
+| EMB-07 | P1 | Partial | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/extras/RoomScreen.tsx` | BM20: no photo or duplicate-case guard |
 | EMB-08 | P1 | Built | F | `src/ui/home/` medallion route | Troubleshooting content unchecked |
 | EMB-09 | P1 | Built | F | `src/ui/onboard/NavigationScreens.tsx`, `src/domain/navigation.ts` | Short/long/step-free modes unchecked |
 | EMB-10 | P1 | Built | F | `src/domain/meetingPoint.ts`, `src/domain/meetingPoint.test.ts`, `src/ui/home/MeetingPointScreen.tsx` | None found |
@@ -195,8 +195,8 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | SEA-01 | P0 | Built | F | `src/ui/onboard/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
 | SEA-02 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/onboard/Planner.tsx`, `src/domain/plan.ts` | None found |
 | SEA-03 | P0 | Built | R | `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx`, `src/offlineDay.test.ts` | BM1 |
-| SEA-04 | P1 | Built | F | `src/domain/searchIndex.ts`, `src/ui/home/AskScreen.tsx`, `src/ui/onboard/` search route `/ship/search` | None found |
-| SEA-05 | P1 | Built | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts` | None found |
+| SEA-04 | P1 | Partial | F | `src/domain/searchIndex.ts`, `src/ui/home/AskScreen.tsx`, `src/ui/onboard/` search route `/ship/search` | BM20: links only; no answers, source or freshness |
+| SEA-05 | P1 | Partial | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts` | BM20: no temporarily-unavailable state or timestamp |
 | SEA-06 | P0 | Built | F | `src/ui/onboard/DeckMapScreen.tsx`, `src/domain/deckGraph.ts`, `src/domain/deckGraph.test.ts`, `src/ui/deckPlan.test.tsx` | None found |
 | SEA-07 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/ui/onboard/NavigationScreens.tsx` | Manual and landmark check-in; no Medallion location (out of reach) |
 | SEA-08 | P2 | Simulated | F | `src/domain/portCrowd.ts`, `src/ui/onboard/Waits.tsx` | Telemetry is a mock |
@@ -254,10 +254,10 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | REM-04 | P1 | Partial | F | `src/domain/photos.ts`, `src/ui/extras/PhotosScreen.tsx` | Per-photo ownership and consent unchecked |
 | REM-05 | P1 | Simulated | F | `src/ui/extras/PhotosScreen.tsx` | Photo archive purchase is a mock; resumable download unchecked |
 | REM-06 | P0 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Route to service recovery is server side: unchecked |
-| REM-07 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | None found |
-| REM-08 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx` | None found |
+| REM-07 | P1 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx` | BM20: no last-sync or discrepancy report |
+| REM-08 | P1 | Partial | F | `src/ui/finish/RebookScreen.tsx` | BM20: no reason shown or editable inputs |
 | REM-09 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx` | Consent for stored details unchecked |
-| REM-10 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx`, `src/ui/book/PerksPanel.tsx` | None found |
+| REM-10 | P1 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx`, `src/ui/book/PerksPanel.tsx` | BM20: no credit wallet with expiry or history |
 | REM-11 | P1 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Progressive survey unchecked |
 | REM-12 | P1 | Built | F | `src/domain/finishMore.ts`, `src/ui/onboard/FinishMoreScreens.tsx` | Receipt unchecked |
 | REM-13 | P2 | Built | F | `src/domain/wrapped.ts`, `src/domain/wrapped.test.ts`, `src/domain/recap.ts`, `src/ui/ai/RecapScreen.tsx` | None found |
@@ -315,12 +315,12 @@ Priority is not given per concept in the document.
 | QOL-12 | - | Built | F | `src/domain/entitlements.ts`, `src/domain/spendForecast.ts` | None found |
 | QOL-13 | - | Built | F | `src/domain/cabinScore.ts`, `src/ui/discover/CabinChooserScreen.tsx` | None found |
 | QOL-14 | - | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts`, `src/ai/stanley.ts` | None found |
-| QOL-15 | - | Built | F | `src/domain/storm.ts`, `src/ui/plan/StormScreen.tsx`, `src/domain/whatIf.ts` | None found |
+| QOL-15 | - | Partial | F | `src/domain/storm.ts`, `src/ui/plan/StormScreen.tsx`, `src/domain/whatIf.ts` | BM20: no impacted-reservation list or alternatives |
 | QOL-16 | - | Built | F | `src/domain/moneyShield.ts`, `src/domain/moneyShield.test.ts`, `src/domain/ledgerSplit.ts` | None found |
 | QOL-17 | - | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx` | Visual ship literacy (deck cutaways) is a single deck plan |
 | QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/ui/delights/HighlightReel.tsx` | Photo curation from guest photos unchecked |
 | QOL-19 | - | Built | F | `src/domain/disruptionHub.ts`, `src/domain/disruptionHub.test.ts` | None found |
-| QOL-20 | - | Built | F | `src/domain/accessReference.ts`, `src/domain/medicalCard.ts`, `src/ui/plan/AssistanceScreen.tsx` | Single passport screen not confirmed |
+| QOL-20 | - | Partial | F | `src/domain/accessReference.ts`, `src/domain/medicalCard.ts`, `src/ui/plan/AssistanceScreen.tsx` | BM20: no recipient preview or revoke |
 | QOL-21 | - | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
 | QOL-22 | - | Built | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/finish/CasesScreen.tsx` | None found |
 
@@ -345,7 +345,7 @@ Priority is not given per concept in the document.
 | TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | `/me/status` is built from client demo scenarios, not from a server health or incident feed |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
 | AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
-| AST-02 | P1 | Built | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts` | Freshness label unchecked |
+| AST-02 | P1 | Partial | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts` | BM20: no source or freshness label on answers |
 | AST-03 | P1 | Built | F | `src/domain/answerCards.ts`, `src/domain/answerCards.test.ts` | None found |
 | AST-04 | P0 | Built | F | `src/ui/ai/StanleyConfirm.tsx` (confirmation); `src/ai/guard.ts` is the separate handoff screen | None found |
 | AST-05 | P0 | Built | F | `src/ai/guard.ts`, `src/domain/answerCards.ts` | Human routes are mocked |
