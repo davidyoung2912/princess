@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// account, through <see cref="IEmailSender"/>. Every email carries a link that switches it off with no sign-in. Like the push check, it runs when the app asks and
 /// a scheduler calling <see cref="SendIfDueAsync"/> replaces that with no change to the rules.
 /// </summary>
-public sealed class ReminderEmailService(IStateStore state, IPushStore pushStore, IEmailSender email, ITripStore trips, IUserClock clock, IOptions<JwtOptions> jwt, IConfiguration config)
+public sealed class ReminderEmailService(IStateStore state, IPushStore pushStore, IEmailSender email, ITripStore trips, IUserClock clock, IOptions<JwtOptions> jwt, IConfiguration config, EmailCheckService emailCheck)
 {
     private byte[] Key => ReminderRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -28,9 +28,13 @@ public sealed class ReminderEmailService(IStateStore state, IPushStore pushStore
         var sent = (await pushStore.ListDeliveriesAsync(actor.Id, 200, ct)).Any(l => l.NoticeKey == key && l.Outcome == "sent");
         if (!ReminderRules.EmailDue(doc, TripRules.ToMs(now), actor.Email, sent)) return false;
 
+        // Like the notice emails, the reminder goes only to an address the guest has confirmed (it is tried again once they have).
+        if (!await emailCheck.IsVerifiedAsync(actor, ct)) return false;
+
         var departure = (await trips.ListSailingsAsync(ct)).FirstOrDefault(s => s.Id == doc.SailingId)?.Departure.ToString("yyyy-MM-dd");
-        var (subject, body) = ReminderRules.Compose(departure, UnsubscribeUrl(actor.Id, doc.At));
-        if (!await email.SendAsync(new(actor.Email!, subject, body), ct)) return false;   // not accepted: tried again at the next check
+        var link = UnsubscribeUrl(actor.Id, doc.At);
+        var (subject, body) = ReminderRules.Compose(departure, link);
+        if (!await email.SendAsync(new(actor.Email!, subject, body, link), ct)) return false;   // not accepted: tried again at the next check
         await pushStore.AddDeliveryAsync(actor.Id, new(key, "reminder", false, "sent", null, 0, "{}", now, true), now, ct);
         return true;
     }

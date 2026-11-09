@@ -35,6 +35,11 @@ public static class PushEndpoints
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
             .WithTags("Push").WithSummary("The link in the reminder email: switches that email off with no sign-in and answers a small page. A link that was not made here gets the same page saying it does not work. Rate-limited.");
 
+        api.MapPost("/public/reminder/unsubscribe/{token}", async (string token, ReminderEmailService svc, CancellationToken ct) =>
+                await svc.UnsubscribeAsync(token, ct) ? Results.Ok() : Results.NotFound())
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
+            .WithTags("Push").WithSummary("The one-click unsubscribe a mail app posts to (RFC 8058, from the List-Unsubscribe headers on the reminder email). Same link and effect as the page; 404 for a link that was not made here. Rate-limited.");
+
         api.MapGet("/public/notice/unsubscribe/{token}", async (string token, PushService svc, CancellationToken ct) =>
                 Results.Content(PushService.UnsubscribePage(await svc.UnsubscribeEmailAsync(token, ct)), "text/html"))
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
