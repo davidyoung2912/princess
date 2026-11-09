@@ -42,6 +42,8 @@ public sealed class StanleyOptions
     public int ChatCalls { get; set; } = 3;
     public int PlanningCalls { get; set; } = 5;
     public int DailyCeiling { get; set; } = 60;
+    /// <summary>The key that turns a guest id into the opaque reference in the context packet. Set it in user-secrets or the environment; the default only keeps a local run working.</summary>
+    public string PacketKey { get; set; } = "stanley-local-packet-key";
     public StanleySwitches Switches { get; set; } = new();
 
     public (string Model, int MaxTokens) For(ModelTier tier) => tier switch
@@ -61,6 +63,10 @@ public sealed class ModelMeter(IConciergeModel model, Func<CancellationToken, Ta
     public int Calls { get; private set; }
     public long InputTokens { get; private set; }
     public long OutputTokens { get; private set; }
+    /// <summary>Read tools the model called, and how many of them were refused (a traveller the guest may not read, bad input). Counts only.</summary>
+    public int ToolCalls { get; private set; }
+    public int ToolDenials { get; private set; }
+    public void CountTool(bool refused) { ToolCalls++; if (refused) ToolDenials++; }
     /// <summary>The largest tier used so far, or null when no call was made.</summary>
     public ModelTier? Highest { get; private set; }
 

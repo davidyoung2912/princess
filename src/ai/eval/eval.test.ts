@@ -53,6 +53,9 @@ describe('evaluation set: shape', () => {
   it('covers the kinds of question the plan lists', () => {
     for (const tag of ['must-handoff', 'abstain', 'injection', 'permission', 'time-zone', 'tender', 'muster', 'deadline', 'authored-question']) expect(tagged(tag).length, tag).toBeGreaterThanOrEqual(3)
     for (const tag of ['sailings', 'itinerary', 'port', 'excursions', 'restaurants', 'day']) expect(tagged(`concierge:${tag}`).length, `concierge:${tag}`).toBeGreaterThanOrEqual(2)
+    // Phase 4: questions that need the guest's own plan read through the typed tools, and two that ask for another traveller's data.
+    expect(tagged('plan-grounded').length).toBeGreaterThanOrEqual(8)
+    expect(tagged('plan-grounded').filter((c) => c.tags?.includes('permission')).length).toBeGreaterThanOrEqual(2)
   })
 })
 

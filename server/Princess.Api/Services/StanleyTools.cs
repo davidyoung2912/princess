@@ -9,7 +9,12 @@ namespace Princess.Api.Services;
 public interface IStanleyTools
 {
     Task<ConciergeContext> ContextAsync(UserRecord user, string? mobilityWish, List<string>? likeWishes, CancellationToken ct);
+    /// <summary>As above for the active voyage the gateway chose, so the tools never describe a different trip.</summary>
+    Task<ConciergeContext> ContextAsync(UserRecord user, string? mobilityWish, List<string>? likeWishes, string? sailingId, CancellationToken ct) => ContextAsync(user, mobilityWish, likeWishes, ct);
     Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, CancellationToken ct);
+    /// <summary>As above, with the context packet and the data the typed read tools may touch. A tool route without them keeps the older tools only.</summary>
+    Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct) =>
+        AskModelAsync(history, ctx, meter, tier, ct);
 }
 
 /// <summary>
@@ -17,20 +22,22 @@ public interface IStanleyTools
 /// It builds the facts the tools may use (the guest's own booking and the catalogue), runs the model's tool loop through a <see cref="ModelMeter"/> so the call caps apply,
 /// and holds the scripted answers used when no model can be called. It does not screen, limit or log; the gateway does.
 /// </summary>
-public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts, IUserClock clock) : IStanleyTools
+public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts, IUserClock clock, ILogger<StanleyToolService> log) : IStanleyTools
 {
     /// <summary>Public ship, port and excursion answers by content version, tool, input and sailing. Guest-specific tools are never cached.</summary>
     private static readonly ConcurrentDictionary<string, ToolOutcome> Cache = new();
     private static readonly HashSet<string> Cacheable = ["get_itinerary", "get_port", "search_excursions", "list_restaurants"];
     private const int MaxCached = 512;
 
-    public async Task<ConciergeContext> ContextAsync(UserRecord user, string? mobilityWish, List<string>? likeWishes, CancellationToken ct)
+    public Task<ConciergeContext> ContextAsync(UserRecord user, string? mobilityWish, List<string>? likeWishes, CancellationToken ct) => ContextAsync(user, mobilityWish, likeWishes, null, ct);
+
+    public async Task<ConciergeContext> ContextAsync(UserRecord user, string? mobilityWish, List<string>? likeWishes, string? sailingId, CancellationToken ct)
     {
         var now = await clock.NowAsync(user, ct);
         var today = DateOnly.FromDateTime(now);
         var sailings = (await trips.ListSailingsAsync(ct)).Where(s => s.BookingOpen && Pricing.HasPrice(s.Id) && DateOnly.FromDateTime(s.Departure) > today).OrderBy(s => s.Departure).ToList();
         var booking = (await trips.ListForUserAsync(user.Id, ct))
-            .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
+            .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today && (sailingId is null || b.SailingId == sailingId)).OrderBy(b => b.Departure).FirstOrDefault();
         var party = new List<PartyMember>();
         string? first = null;
         if (booking is not null)
@@ -51,16 +58,27 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
     /// <summary>The scripted answer, grounded on the same tools as the model, with <paramref name="fallback"/> saying why a model was not used.</summary>
     public static ConciergeReplyDto Scripted(string message, ConciergeContext ctx, string? fallback) => ConciergeRules.ScriptedReply(message, ctx) with { Fallback = fallback };
 
-    /// <summary>The Messages API loop: run the tools the model calls until it answers, at most <see cref="ConciergeRules.MaxTurns"/> times and never past the meter's call cap.</summary>
-    public async Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, CancellationToken ct)
+    private static readonly string AllTools = StanleyReadTools.AllToolsJson(ConciergeRules.ToolsJson);
+
+    public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, CancellationToken ct) =>
+        AskModelAsync(history, ctx, meter, tier, null, ct);
+
+    public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct) => AskAsync(history, ctx, meter, tier, read, ct);
+
+    /// <summary>
+    /// The Messages API loop: run the tools the model calls until it answers, at most <see cref="ConciergeRules.MaxTurns"/> times and never past the meter's call cap (each step is a model call, so a new tool
+    /// cannot push a request over its cap). A read tool is checked against the packet on every call and logged by name, outcome and the guest's opaque reference, never by its input or its answer.
+    /// </summary>
+    private async Task<ConciergeReplyDto> AskAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct)
     {
         var turns = new JsonArray();
         foreach (var m in history) turns.Add(new JsonObject { ["role"] = m.Role, ["content"] = m.Text });
-        var system = ConciergeRules.SystemPrompt(ctx);
+        var system = read is null ? ConciergeRules.SystemPrompt(ctx) : ConciergeRules.SystemPrompt(ctx) + "\n\n" + read.Packet.Block();
+        var toolsJson = read is null ? ConciergeRules.ToolsJson : AllTools;
         var citations = new List<CitationDto>();
         for (var n = 0; n < ConciergeRules.MaxTurns; n++)
         {
-            var body = await meter.CallAsync(system, ConciergeRules.ToolsJson, turns, tier, ct);
+            var body = await meter.CallAsync(system, toolsJson, turns, tier, ct);
             var blocks = body["content"] as JsonArray ?? new JsonArray();
             var uses = blocks.OfType<JsonObject>().Where(b => b["type"]?.GetValue<string>() == "tool_use").ToList();
             if (body["stop_reason"]?.GetValue<string>() != "tool_use" || uses.Count == 0)
@@ -73,7 +91,16 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
             var results = new JsonArray();
             foreach (var use in uses)
             {
-                var r = Run(use["name"]?.GetValue<string>() ?? "", use["input"] as JsonObject ?? new JsonObject(), ctx);
+                var name = use["name"]?.GetValue<string>() ?? "";
+                var input = use["input"] as JsonObject ?? new JsonObject();
+                ToolOutcome r;
+                if (read is not null && StanleyReadTools.Names.Contains(name))
+                {
+                    r = StanleyReadTools.Run(name, input, read);
+                    meter.CountTool(r.IsError);
+                    log.LogInformation("Stanley tool {Tool} {Outcome} for {Guest}", name, r.IsError ? "refused" : "ok", read.Packet.GuestRef);
+                }
+                else r = Run(name, input, ctx);
                 citations.AddRange(r.Citations);
                 var result = new JsonObject { ["type"] = "tool_result", ["tool_use_id"] = use["id"]?.GetValue<string>(), ["content"] = r.Content };
                 if (r.IsError) result["is_error"] = true;

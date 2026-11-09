@@ -139,6 +139,9 @@ public static class StanleyResolvers
         new Resolver("party", @"\bhow many (people|guests|travell?ers|of us)\b|\bwho('s| is) (travell?ing|sailing)\b", false, "Who is travelling", Party),
     ];
 
+    /// <summary>Whether any resolver takes the question, before any trip facts are known. Used to ask which trip when a guest has two.</summary>
+    public static bool Takes(string message) => All.Any(r => r.Matches(message));
+
     /// <summary>The card for a question one resolver takes, or null when none does. <paramref name="now"/> is the time the trip facts are judged against.</summary>
     public static StanleyCardDto? Resolve(string message, StanleyTrip trip, DateTime now)
     {

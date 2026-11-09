@@ -14,7 +14,7 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null)
 {
     public const string NoTools = "[]";
 
@@ -43,7 +43,12 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         if (ProfanityFilter.IsBlocked(turns.Message)) return await End(new StanleyReplyDto("blocked", "", null, "", null, "blocked"), "safety", "blocked");
         if (ConciergeRules.Screen(turns.Message) is { } handoff) return await End(new StanleyReplyDto("handoff", "", handoff, "", null, "handoff"), "safety", "handoff");
 
-        var trip = await trips.LoadAsync(user, ct);
+        // The active voyage: the one the device named, or the only one. With two possible and none named, Stanley asks and never picks (phase 4).
+        var packet = packets is null ? null : await packets.BuildAsync(user, context, ct);
+        var trip = await trips.LoadAsync(user, packet?.Choice.Chosen?.SailingId, ct);
+        if (packet is { Choice.MustAsk: true } && (StanleyResolvers.Takes(turns.Message) || StanleyRouter.Route(turns.Message, context.Stage, true).Route == StanleyRoute.Trip))
+            return await End(WhichTrip(packet.Choice.Options), "whichTrip", "asked");
+        if (packet is { Choice.MustAsk: true }) trip = null;
         if (StanleyRules.IsMuster(turns.Message))
             return await End(Answer(StanleyRules.MusterAnswer, "scripted", trip is null ? "before" : "trip", null, [new CitationDto("Muster", "/ship/muster")]), "safety", "ok");
         // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
@@ -56,13 +61,13 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         if (routing.Route != StanleyRoute.Open)
         {
             var tier = routing.Route == StanleyRoute.Trip ? "trip" : "before";
-            var ctx = await tools.ContextAsync(user, request.Mobility, request.Likes, ct);
+            var ctx = await tools.ContextAsync(user, request.Mobility, request.Likes, packet?.Choice.Chosen?.SailingId, ct);
             string? fallback = null;
             if (o.Switches.Tools && modelUsable)
             {
                 try
                 {
-                    var answered = await tools.AskModelAsync(turns.Messages, ctx, meter, routing.Planning ? ModelTier.Large : ModelTier.Default, ct);
+                    var answered = await tools.AskModelAsync(turns.Messages, ctx, meter, routing.Planning ? ModelTier.Large : ModelTier.Default, packet?.Data, ct);
                     return await End(Answer(answered.Text, "claude", tier, null, answered.Citations), routing.Topic, "ok", meter);
                 }
                 catch (ConciergeModelException e)
@@ -109,6 +114,15 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
 
     private static StanleyReplyDto Answer(string text, string source, string tier, string? fallback, List<CitationDto>? sources) =>
         new("answer", text, null, source, fallback, tier, [new StanleyBlockDto("text", text)], sources ?? []);
+
+    /// <summary>The question that comes back when two voyages are possible: a card that names them and sends the guest to My trips. It never guesses.</summary>
+    private static StanleyReplyDto WhichTrip(IReadOnlyList<StanleyVoyage> options)
+    {
+        var lines = options.Select(v => $"{v.Ship}, leaving {v.Departure:dddd d MMMM yyyy}").ToList();
+        lines.Add("Open the trip you mean on the My trips screen, then ask me again.");
+        var card = new StanleyCardDto("whichTrip", "Which trip do you mean?", lines, new StanleyProvenance([StanleyChips.Booking], "Your booking", null, "live", false, "You have more than one trip, so I will not choose for you."), false, [new CitationDto("My trips", "/me/trips")]);
+        return new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card);
+    }
 
     private static StanleyReplyDto Unavailable(string code) => new("unavailable", "", null, "", code, "unavailable");
 

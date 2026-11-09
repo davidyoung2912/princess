@@ -24,6 +24,8 @@ public sealed record StanleyTrip(
 public interface IStanleyTrips
 {
     Task<StanleyTrip?> LoadAsync(Data.UserRecord user, CancellationToken ct);
+    /// <summary>The trip on the named sailing (the guest's active voyage); the current or next one when none is named.</summary>
+    Task<StanleyTrip?> LoadAsync(Data.UserRecord user, string? sailingId, CancellationToken ct) => LoadAsync(user, ct);
 }
 
 /// <summary>Turns a <see cref="StanleyTrip"/> into the facts block for the model and into short personal answers for the scripted helper. Pure logic.</summary>

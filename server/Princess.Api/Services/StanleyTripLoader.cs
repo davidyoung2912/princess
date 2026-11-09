@@ -9,12 +9,14 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class StanleyTripLoader(ITripStore trips, IAccountStore accounts, IPlanStore plan, IUserClock clock) : IStanleyTrips
 {
-    public async Task<StanleyTrip?> LoadAsync(UserRecord user, CancellationToken ct)
+    public Task<StanleyTrip?> LoadAsync(UserRecord user, CancellationToken ct) => LoadAsync(user, null, ct);
+
+    public async Task<StanleyTrip?> LoadAsync(UserRecord user, string? sailingId, CancellationToken ct)
     {
         var asOf = await clock.NowAsync(user, ct);
         var today = DateOnly.FromDateTime(asOf);
         var booking = (await trips.ListForUserAsync(user.Id, ct))
-            .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
+            .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today && (sailingId is null || b.SailingId == sailingId)).OrderBy(b => b.Departure).FirstOrDefault();
         if (booking is null) return null;
 
         var ages = (await accounts.GetPartyAsync(booking.BookingId, ct)).Select(g =>
