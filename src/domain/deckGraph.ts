@@ -41,7 +41,7 @@ function allDecks(extra: readonly number[]): number[] {
 }
 
 /** The adjacency lists for the ship; `extra` adds decks that hold no listed place (cabin decks). */
-export function buildGraph(extra: readonly number[] = []): Map<string, Edge[]> {
+export function buildGraph(extra: readonly number[] = [], closed: ReadonlySet<string> = new Set()): Map<string, Edge[]> {
   const g = new Map<string, Edge[]>()
   const link = (a: string, b: string, cost: number) => {
     if (!g.has(a)) g.set(a, [])
@@ -54,6 +54,7 @@ export function buildGraph(extra: readonly number[] = []): Map<string, Edge[]> {
     const walk = 3 + 0.001 * (30 - deck)
     SECTION_ORDER.slice(1).forEach((s, i) => link(hallId(deck, SECTION_ORDER[i]), hallId(deck, s), walk))
     for (const e of ELEVATORS) {
+      if (closed.has(e.bank)) continue
       link(hallId(deck, e.section), liftId(e.bank, deck), 1)
       link(liftId(e.bank, deck), `shaft:${e.bank}`, 2 + deck / 3)
     }
@@ -83,9 +84,12 @@ function dijkstra(g: Map<string, Edge[]>, from: string, to: string): string[] | 
 }
 
 /** The halls and lifts to pass through between two places, in order (the places themselves are the ends). Null if there is no way. */
-export function wayBetween(a: Place, b: Place): Waypoint[] | null {
-  const g = buildGraph([a.deck, b.deck])
-  const path = dijkstra(g, hallId(a.deck, a.section), hallId(b.deck, b.section))
+export function wayBetween(a: Place, b: Place, closed: ReadonlySet<string> = new Set()): Waypoint[] | null {
+  const g = buildGraph([a.deck, b.deck], closed)
+  const from = hallId(a.deck, a.section)
+  const to = hallId(b.deck, b.section)
+  if (!g.has(from) || !g.has(to)) return null
+  const path = dijkstra(g, from, to)
   if (!path) return null
   const out: Waypoint[] = []
   for (const n of path) {

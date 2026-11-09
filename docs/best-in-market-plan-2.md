@@ -198,3 +198,10 @@ Theme: pick on a map and plan a party's staterooms (DSC-05, DSC-12). Both rows s
 1. **DSC-05:** `CabinMap` (`src/ui/book/CabinMap.tsx`, logic in `src/domain/cabinMap.ts`) draws each deck as a grid (port/starboard rows, forward/midship/aft cells) of real buttons; status is written (free, booked, chosen), and the existing radio list stays as the text alternative. Choosing a stateroom, from the map or the list, fetches the inventory again; if it was taken meanwhile or is no longer offered it is not kept and a plain message says so.
 2. **DSC-12:** when guests exceed one room's capacity, the room step says how many staterooms are needed and lists up to three sets of free staterooms on one deck within one part of the ship. It says close together does not mean connecting doors, and that the draft holds one stateroom only.
 Limits: there is no hold step on the server, so the recheck is a look, not a reservation; the booking's `cabinTaken` is still the final word. The map is a schematic of sample staterooms. Multi-stateroom booking, per-cabin guest counts and connecting-door data are not built (they need a draft and server change). Tests are node unit tests for `cabinMap.ts`; the UI recheck is not covered by a component test, and nothing was checked in a browser. Matrix totals not regenerated.
+
+## 5l. BM27 result (built, not committed)
+
+Theme: replan around a closed lift (QOL-10). Only this row was taken; GTS-09, POR-07 and EMB-13 are not started.
+`wayBetween` and `routeBetween` take a set of closed lift banks; the route finder has a "Lift X closed" toggle for each bank, says when the way was changed, and says plainly when no way exists without them. Tests in `src/domain/deckGraph.test.ts` (reroute, no way, unchanged).
+Limits: there is no closure feed (the server would have to serve one), so the guest's report is the only source; the other callers of `wayBetween` (cabin walks, embark delights, plan polish) ignore closures. No browser check. Matrix totals not regenerated; QOL-10 stays Partial.
+Next in group A: GTS-09, POR-07, EMB-13 (terminal and port step-free routes, sail-away viewpoints).

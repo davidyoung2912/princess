@@ -310,7 +310,7 @@ Priority is not given per concept in the document.
 | QOL-07 | - | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.ts`, `src/domain/portParty.ts` | None found |
 | QOL-08 | - | Built | F | `src/domain/arrivalPing.ts`, `src/domain/meetingPoint.ts`, `src/domain/arrivalPing.test.ts` | None found |
 | QOL-09 | - | Built | F | `src/domain/medicalCard.ts`, `src/ui/aboard/SafetyScreens.tsx` | Never says "safe"; venue acknowledgement is simulated |
-| QOL-10 | - | Partial | F | `src/domain/deckGraph.ts`, `src/domain/navigation.ts` | Step-free routing exists; live replan on closure unchecked |
+| QOL-10 | - | Partial | F | `src/domain/deckGraph.ts`, `src/domain/navigation.ts` | BM27: guest marks a lift bank closed and the route is worked out again without it; no closure feed, so it is the guest's report |
 | QOL-11 | - | Built | F | `src/domain/portPilot.ts`, `src/domain/allaboard.ts`, `src/domain/portPilot.test.ts` | None found |
 | QOL-12 | - | Built | F | `src/domain/entitlements.ts`, `src/domain/spendForecast.ts` | None found |
 | QOL-13 | - | Built | F | `src/domain/cabinScore.ts`, `src/ui/discover/CabinChooserScreen.tsx` | None found |

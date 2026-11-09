@@ -80,3 +80,20 @@ describe('plan geometry', () => {
     expect(placePlaces(6).find((p) => p.muster)?.muster).toBe('F')
   })
 })
+
+describe('lift closures (QOL-10)', () => {
+  it('avoids a closed bank and says it rerouted', () => {
+    const usual = routeBetween('medical', 'lido-pool', { stepFree: false })
+    const bank = usual.ok ? (usual.steps.find((s) => s.kind === 'lift') as { bank: string }).bank : ''
+    const r = routeBetween('medical', 'lido-pool', { stepFree: false, closed: new Set([bank]) })
+    expect(r.ok && r.rerouted).toBe(true)
+    expect(r.ok && r.steps.some((s) => s.kind === 'lift' && s.bank === bank)).toBe(false)
+  })
+  it('reports no way when every bank is closed between decks', () => {
+    const r = routeBetween('medical', 'lido-pool', { stepFree: false, closed: new Set(ELEVATORS.map((e) => e.bank)) })
+    expect(r).toMatchObject({ ok: false, reason: 'noWay' })
+  })
+  it('is not rerouted when nothing is closed', () => {
+    expect(routeBetween('medical', 'lido-pool', { stepFree: false })).toMatchObject({ ok: true, rerouted: false })
+  })
+})

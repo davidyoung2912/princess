@@ -10,8 +10,8 @@ export type RouteStep =
   | { kind: 'arrive'; place: string; note?: string }
 
 export type RouteResult =
-  | { ok: true; steps: RouteStep[]; minutes: number; stepFree: boolean; way: Waypoint[] }
-  | { ok: false; reason: 'unknown' | 'same' | 'notStepFree'; place?: Place; instead?: Place }
+  | { ok: true; steps: RouteStep[]; minutes: number; stepFree: boolean; way: Waypoint[]; rerouted: boolean }
+  | { ok: false; reason: 'unknown' | 'same' | 'notStepFree' | 'noWay'; place?: Place; instead?: Place }
 
 /** A step-free place of the same kind to suggest, nearest in deck first. */
 export function stepFreeInstead(p: Place): Place | undefined {
@@ -45,7 +45,7 @@ function stepsFor(way: Waypoint[], to: Place): RouteStep[] {
   return steps
 }
 
-export function routeBetween(fromId: string, toId: string, opts: { stepFree: boolean }): RouteResult {
+export function routeBetween(fromId: string, toId: string, opts: { stepFree: boolean; closed?: ReadonlySet<string> }): RouteResult {
   const a = locate(fromId)
   const b = locate(toId)
   if (!a || !b) return { ok: false, reason: 'unknown' }
@@ -54,9 +54,12 @@ export function routeBetween(fromId: string, toId: string, opts: { stepFree: boo
     const blocked = [a, b].find((p) => !p.stepFree)
     if (blocked) return { ok: false, reason: 'notStepFree', place: blocked, instead: stepFreeInstead(blocked) }
   }
-  const way = wayBetween(a, b)
-  if (!way) return { ok: false, reason: 'unknown' }
+  const closed = opts.closed ?? new Set<string>()
+  const way = wayBetween(a, b, closed)
+  if (!way) return { ok: false, reason: closed.size > 0 && wayBetween(a, b) ? 'noWay' : 'unknown' }
+  const usual = closed.size > 0 ? wayBetween(a, b) : way
+  const rerouted = closed.size > 0 && JSON.stringify(usual) !== JSON.stringify(way)
   const hop = Math.abs(ORDER.indexOf(a.section) - ORDER.indexOf(b.section))
   const minutes = a.deck === b.deck ? 2 + 3 * hop : 4 + Math.ceil(Math.abs(a.deck - b.deck) / 3) + 3 * hop
-  return { ok: true, steps: stepsFor(way, b), minutes, stepFree: a.stepFree && b.stepFree, way }
+  return { ok: true, steps: stepsFor(way, b), minutes, stepFree: a.stepFree && b.stepFree, way, rerouted }
 }

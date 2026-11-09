@@ -1,7 +1,7 @@
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { DECKS, placesOnDeck } from '../../domain/deck'
+import { DECKS, ELEVATORS, placesOnDeck } from '../../domain/deck'
 import { cabinPlace, locate } from '../../domain/deckGraph'
 import { decksOf, lineOnDeck } from '../../domain/deckPlan'
 import { routeBetween, type RouteStep } from '../../domain/route'
@@ -39,10 +39,13 @@ export function RouteFinder() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [stepFree, setStepFree] = useState(false)
+  // Lift banks the guest has seen out of service; the app has no closure feed, so this is the guest's report.
+  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set())
+  const toggleBank = (bank: string) => setClosed((c) => { const n = new Set(c); if (!n.delete(bank)) n.add(bank); return n })
   // The guest's own stateroom, from their booking; absent when they are not aboard or have none yet.
   const menu = useMine(() => api.orders.menu(), [])
   const cabin = menu.data && cabinPlace(menu.data.cabin) ? menu.data.cabin : null
-  const result = from && to ? routeBetween(from, to, { stepFree }) : null
+  const result = from && to ? routeBetween(from, to, { stepFree, closed }) : null
   const route = result && result.ok ? { a: locate(from)!, b: locate(to)! } : null
   return (
     <Card labelledBy="route-h">
@@ -58,16 +61,22 @@ export function RouteFinder() {
       </div>
       {cabin && <p><Button variant="secondary" onClick={() => setTo(`cabin:${cabin}`)}>{t('rt.toCabin')}</Button></p>}
       <div className="chip-row"><Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('rt.stepFree')}</Chip></div>
+      <fieldset className="field">
+        <legend>{t('rt.closedLegend')}</legend>
+        <div className="chip-row">{ELEVATORS.map((e) => <Chip key={e.bank} pressed={closed.has(e.bank)} onToggle={() => toggleBank(e.bank)}>{t('rt.closedBank', { bank: e.bank })}</Chip>)}</div>
+        <small className="muted">{t('rt.closedNote')}</small>
+      </fieldset>
       <div role="status" aria-live="polite">
         {result === null ? <p className="muted">{t('rt.pick')}</p> : result.ok ? (
           <>
             <h3>{th('rt.how', { minutes: result.minutes })}</h3>
             <ol>{result.steps.map((s, i) => <li key={i}>{stepText(s)}</li>)}</ol>
+            {result.rerouted && <p>{t('rt.rerouted')}</p>}
             {!result.stepFree && <p className="muted">{t('rt.hasSteps')}</p>}
             {route && decksOf(result.way, route.a, route.b).map((d) => <DeckPlan key={d} deck={d} line={lineOnDeck(result.way, route.a, route.b, d)} />)}
             <p className="muted">{t('rt.ports')} <Link to="/ship/port">{t('route.portDay')}</Link></p>
           </>
-        ) : result.reason === 'same' ? <p>{t('rt.same')}</p> : result.reason === 'unknown' ? <p>{t('rt.pick')}</p> : (
+        ) : result.reason === 'same' ? <p>{t('rt.same')}</p> : result.reason === 'noWay' ? <p>{t('rt.noWay')}</p> : result.reason === 'unknown' ? <p>{t('rt.pick')}</p> : (
           <p>{t('rt.notStepFree', { place: result.place?.name ?? '' })}{result.instead ? ` ${t('rt.instead', { place: result.instead.name, deck: result.instead.deck })}` : ''}</p>
         )}
       </div>
