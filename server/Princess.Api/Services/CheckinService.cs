@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// at 10:00 on sailing day, on the person's own clock (D4). The pass lookup is public and answers a uniform <c>notFound</c>.
 /// </summary>
 public sealed class CheckinService(
-    ScopeLoader scopes, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt, IOptions<PassOptions> passes, PassLookupGuard guard, IWalletPassIssuer wallet)
+    ScopeLoader scopes, SubjectAccess subjects, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt, IOptions<PassOptions> passes, PassLookupGuard guard, IWalletPassIssuer wallet)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
@@ -134,6 +134,15 @@ public sealed class CheckinService(
     {
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         return StatusOf(c.Departure, c.Now, await store.GetBookingAsync(c.Booking.BookingId, ct));
+    }
+
+    /// <summary>A helper the guest consented to, holding view and Checkin, sees only how far check-in has got. Read only, and no documents or answers: no grant is notFound, no Checkin is forbidden.</summary>
+    public async Task<CheckinStatusDto> StatusForGuestAsync(UserRecord helper, Guid guestId, string? number, CancellationToken ct)
+    {
+        if (helper.IsSupervised) throw ApiException.Forbidden("supervised");
+        var s = await subjects.ResolveAsync(helper, guestId, HelperPermission.Checkin, write: false, ct);
+        if (!s.ViaHelper || s.Target.Id == helper.Id) throw ApiException.Forbidden();
+        return await StatusAsync(s.Target, number, ct);
     }
 
     public async Task<CheckinViewDto> ViewAsync(UserRecord actor, string? number, CancellationToken ct) =>

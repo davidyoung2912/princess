@@ -138,6 +138,13 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Front end**: the guest can grant "See my onboard account"; on "People you help" the helper gets a button that shows the balance and the ten latest lines. Pay and folio buttons each depend on their own permission. `api.helping.folio`, test lines in `httpApi.test.ts` and `access.test.ts`.
 - **Not done**: check-in, booking and message permissions, IDN-04, code expiry and delivery.
 
+### BM11. Helper sees the guest's check-in progress (built, not committed)
+
+- **Choice (mine, not asked)**: a read-only `checkin` permission (`HelperPermission.Checkin`), the smallest safe check-in step. A helper sees only the state (not open, open, closed, done) and when it opens or closes. No documents, answers or boarding passes, and the helper cannot complete check-in; passports stay with the guest. No schema change beyond the comment.
+- **Server (written, not compiled or run)**: `GET /api/v1/guests/{guestId}/bookings/{number}/checkin/status` (`CheckinService.StatusForGuestAsync`) through `SubjectAccess`, read only. No grant is notFound, no Checkin is forbidden, supervised is refused. `me/helping` gives the booking number for payments, folio or checkin. One C# test and the swagger list were added; run them yourself.
+- **Front end**: guest can grant "See my check-in progress"; "People you help" gets a button showing the state and date. `api.helping.checkin`, test lines in `httpApi.test.ts` and `access.test.ts`.
+- **Not done**: helper completing check-in (needs a design for document handling), booking and message permissions, IDN-04, code expiry and delivery.
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?

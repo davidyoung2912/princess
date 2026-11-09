@@ -72,15 +72,18 @@ describe('REST account groups', () => {
       '/guests/g1/bookings/PC9/payments': { receipts: [] },
       '/guests/g1/bookings/PC9/payments/balance': { receipts: [] },
       '/guests/g1/bookings/PC9/folio': { lines: [] },
+      '/guests/g1/bookings/PC9/checkin/status': { state: 'open' },
     })
     const { helping } = createHttpGroups(http).groups
     await helping.list()
     await helping.payments('g1', 'PC9')
     await helping.payBalance('g1', 'PC9', 'card-1')
     await helping.folio('g1', 'PC9')
+    await helping.checkin('g1', 'PC9')
     expect(calls.find((c) => c.method === 'POST')).toMatchObject({ path: '/guests/g1/bookings/PC9/payments/balance', body: { cardId: 'card-1' } })
     expect(calls.map((c) => c.path)).toContain('/me/helping')
     expect(calls.map((c) => c.path)).toContain('/guests/g1/bookings/PC9/folio')
+    expect(calls.map((c) => c.path)).toContain('/guests/g1/bookings/PC9/checkin/status')
   })
 
   it('sends an invitation code to accept a helper grant (BM9)', async () => {

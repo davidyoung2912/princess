@@ -707,7 +707,7 @@ CREATE TABLE dbo.HelperLinks (
   HelperName NVARCHAR(80) NOT NULL,
   HelperUserId BIGINT NULL,
   Relationship NVARCHAR(40) NOT NULL,
-  Permissions NVARCHAR(60) NOT NULL,            -- csv of view, documents, payments, profile, folio
+  Permissions NVARCHAR(60) NOT NULL,            -- csv of view, documents, payments, profile, folio, checkin
   Status VARCHAR(9) NOT NULL CONSTRAINT DF_HelperLinks_Status DEFAULT 'requested',
   ChangedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HelperLinks_ChangedAt DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_HelperLinks_CreatedAt DEFAULT SYSUTCDATETIME(),

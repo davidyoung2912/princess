@@ -797,6 +797,8 @@ export interface Api {
     payBalance(guestId: string, booking: string, cardId: string): Promise<PaymentsView>
     /** The guest's onboard account, read only (needs their Folio permission). */
     folio(guestId: string, booking: string): Promise<FolioView>
+    /** How far the guest's check-in has got, read only (needs their Check-in permission). */
+    checkin(guestId: string, booking: string): Promise<CheckinStatus>
   }
   documents: {
     get(): Promise<DocumentsView>

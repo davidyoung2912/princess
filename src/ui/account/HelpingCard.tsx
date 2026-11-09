@@ -9,7 +9,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
-import { t, th } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -40,6 +40,8 @@ function Guest({ guest }: { guest: HelpedGuest }) {
   const [folio, setFolio] = useState(false)
   const canPay = guest.permissions.includes('payments')
   const canFolio = guest.permissions.includes('folio')
+  const canCheckin = guest.permissions.includes('checkin')
+  const [checkin, setCheckin] = useState(false)
   return (
     <>
       <strong>{guest.name}</strong> <span className="muted">{guest.relationship}</span>
@@ -47,9 +49,20 @@ function Guest({ guest }: { guest: HelpedGuest }) {
       {open && guest.booking && canPay && <GuestPayments guest={guest} booking={guest.booking} />}
       {guest.booking && canFolio && <div><Button variant="secondary" aria-expanded={folio} onClick={() => setFolio(!folio)}>{t(folio ? 'helping.folioHide' : 'helping.folioOpen', { name: guest.name })}</Button></div>}
       {folio && guest.booking && canFolio && <GuestFolio guest={guest} booking={guest.booking} />}
+      {guest.booking && canCheckin && <div><Button variant="secondary" aria-expanded={checkin} onClick={() => setCheckin(!checkin)}>{t(checkin ? 'helping.checkinHide' : 'helping.checkinOpen', { name: guest.name })}</Button></div>}
+      {checkin && guest.booking && canCheckin && <GuestCheckin guest={guest} booking={guest.booking} />}
       {!guest.booking && <p className="muted">{t('helping.noAccess', { name: guest.name })}</p>}
     </>
   )
+}
+
+/** How far the guest's check-in has got. Read only; no documents or answers. */
+function GuestCheckin({ guest, booking }: { guest: HelpedGuest; booking: string }) {
+  const view = useMine(() => api.helping.checkin(guest.guestId, booking), [guest.guestId, booking])
+  if (!view.data) return view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>
+  const c = view.data
+  const day = (ms: number) => formatDate(dateIn(ms, 'UTC'))
+  return <p>{t(`helping.checkin.${c.state}` as StringKey, { name: guest.name, date: day(c.state === 'notOpen' ? c.opensAt : c.closesAt) })}</p>
 }
 
 /** The guest's onboard account, read only: the balance and the latest lines. */

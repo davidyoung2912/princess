@@ -51,7 +51,7 @@ public sealed record PaymentsViewDto(TripViewDto Trip, List<ReceiptDto> Receipts
 
 public sealed record AddCardRequest(string? Brand, string? Last4, string? Expiry);
 
-/// <summary>A guest this person helps. <paramref name="Booking"/> is the guest's current booking, only when the grant holds view and either payments or folio.</summary>
+/// <summary>A guest this person helps. <paramref name="Booking"/> is the guest's current booking, only when the grant holds view and payments, folio or checkin.</summary>
 public sealed record HelpedGuestDto(Guid GuestId, string Name, string Relationship, string[] Permissions, long Since, string? Booking);
 
 public sealed record PayBalanceRequest(Guid? CardId);
