@@ -57,6 +57,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             ["Auth:LoginAttemptsPerMinute"] = LoginAttemptsPerMinute.ToString(),
             ["Auth:AllowAccountNumberLogin"] = AllowAccountNumberLogin.ToString(),
             ["Retention:IntervalMinutes"] = "0",
+            ["Scheduler:IntervalMinutes"] = "0",
             ["Swagger:Enabled"] = "true",
             ["Demo:Enabled"] = "true",
             ["RateLimit:RequestsPerMinute"] = "1000000",

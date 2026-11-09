@@ -76,6 +76,7 @@ services.AddScoped<InstalmentChargeService>();
 services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IPushStore, DapperPushStore>();
+services.AddScoped<IWatchTargetStore, DapperWatchTargetStore>();
 services.AddScoped<PushService>();
 services.AddScoped<ReminderEmailService>();
 services.AddScoped<CalendarFeedService>();
@@ -137,6 +138,8 @@ services.AddScoped<SeaService>();
 services.AddScoped<PostService>();
 services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.Section);
 services.AddHostedService<RetentionPurgeService>();
+services.AddOptions<SchedulerOptions>().BindConfiguration(SchedulerOptions.Section);
+services.AddHostedService<WatchSchedulerService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 
