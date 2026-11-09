@@ -87,8 +87,28 @@ export interface BrowseFilter {
   month?: string
   nights?: NightsBand
   port?: string
+  /** An occasion the guest is looking for (DRM-07), matched on date and length only. */
+  occasion?: OccasionId
   /** Only sailings that can be booked now. */
   bookable?: boolean
+}
+
+/**
+ * Occasion-led discovery (DRM-07). The catalogue holds no occasion tags, so an occasion is matched only from facts it does have: the departure date and the
+ * length. 'holiday' is the served holiday flag or a departure from 20 Dec to 3 Jan; 'summer' is a departure from 15 Jun to 31 Aug (school break in much of the
+ * northern hemisphere); 'milestone' is a voyage of 14 nights or more, long enough for a big trip. No tag is shared, saved or sent: the choice lives in the
+ * address of the page only. Optional services are not matched.
+ */
+export type OccasionId = 'holiday' | 'summer' | 'milestone'
+export const OCCASIONS: readonly OccasionId[] = ['holiday', 'summer', 'milestone']
+
+export function occasionsOf(s: Pick<SailingEntry, 'departure' | 'nights' | 'holiday'>): OccasionId[] {
+  const md = s.departure.slice(5)
+  const out: OccasionId[] = []
+  if (s.holiday || md >= '12-20' || md <= '01-03') out.push('holiday')
+  if (md >= '06-15' && md <= '08-31') out.push('summer')
+  if (s.nights >= 14) out.push('milestone')
+  return out
 }
 
 export const NO_FILTER: BrowseFilter = {}
@@ -100,6 +120,7 @@ export function filterSailings(list: readonly BrowseSailing[], f: BrowseFilter):
     if (f.month && s.month !== f.month) return false
     if (f.nights && nightsBand(s.nights) !== f.nights) return false
     if (f.bookable && !s.bookingOpen) return false
+    if (f.occasion && !occasionsOf(s).includes(f.occasion)) return false
     if (f.port && !portsOf(s).includes(f.port)) return false
     return true
   })

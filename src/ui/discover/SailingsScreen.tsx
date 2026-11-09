@@ -2,8 +2,8 @@ import { Link, useSearchParams } from 'react-router'
 import { t, th, type StringKey } from '../../i18n'
 import { favouriteKey } from '../../domain/favourites'
 import {
-  BROWSE_SORTS, NIGHTS_BANDS, browseSailings, filterSailings, groupByMonth, legBadge, monthLabel, monthsOf, portOptions, portsOf, rangeOf, sortSailings,
-  type BrowseFilter, type BrowseSort, type NightsBand,
+  BROWSE_SORTS, NIGHTS_BANDS, OCCASIONS, browseSailings, filterSailings, groupByMonth, legBadge, monthLabel, monthsOf, portOptions, portsOf, rangeOf, sortSailings,
+  type BrowseFilter, type BrowseSort, type NightsBand, type OccasionId,
 } from '../../domain/catalogueBrowse'
 import { portById } from '../../domain/sailings'
 import { catalogueRegions, catalogueShips } from '../../domain/shipCatalogue'
@@ -31,6 +31,8 @@ function readParams(p: URLSearchParams): { filter: BrowseFilter; sort: BrowseSor
   for (const k of ['ship', 'region', 'month', 'port'] as const) { const v = p.get(k); if (v) filter[k] = v }
   const nights = pick<NightsBand>(p.get('nights'), NIGHTS_BANDS)
   if (nights) filter.nights = nights
+  const occasion = pick<OccasionId>(p.get('occasion'), OCCASIONS)
+  if (occasion) filter.occasion = occasion
   if (p.get('bookable') === '1') filter.bookable = true
   return { filter, sort: pick<BrowseSort>(p.get('sort'), BROWSE_SORTS) ?? 'soonest' }
 }
@@ -77,6 +79,7 @@ export function SailingsScreen() {
         {select('f-month', t('cat.month'), 'month', monthsOf(all).map((m) => ({ value: m, label: monthLabel(m) })), 'cat.anyMonth')}
         {select('f-nights', t('cat.length'), 'nights', NIGHTS_BANDS.map((b) => ({ value: b, label: t(`cat.nights.${b}` as StringKey) })), 'cat.anyLength')}
         {all.length > 0 && portOptions(all).length > 1 && select('f-port', t('cat.port'), 'port', portOptions(all).map((p) => ({ value: p.id, label: p.name })), 'cat.anyPort')}
+        {select('f-occasion', t('cat.occasion'), 'occasion', OCCASIONS.map((o) => ({ value: o, label: t(`cat.occasion.${o}` as StringKey) })), 'cat.anyOccasion')}
         {select('f-sort', t('cat.sort'), 'sort', BROWSE_SORTS.filter((s) => s !== 'soonest').map((s) => ({ value: s, label: t(`cat.sort.${s}` as StringKey) })), 'cat.sort.soonest')}
         <label className="choice">
           <input type="checkbox" checked={!!filter.bookable} onChange={(e) => set('bookable', e.target.checked ? '1' : '')} />
@@ -91,6 +94,7 @@ export function SailingsScreen() {
         {filtered && <Button variant="tertiary" onClick={() => setParams({ ...(sort === 'soonest' ? {} : { sort }), ...(calendar ? { view: 'calendar' } : {}) }, { replace: true })}>{t('cat.clear')}</Button>}
       </form>
       <p role="status" className="muted">{t('cat.count', { count: shown.length })}</p>
+      {filter.occasion && <p className="muted">{t(`cat.occasion.note.${filter.occasion}` as StringKey)}</p>}
       {savedSailings >= 2 && <p><Link to="/home/saved/compare">{t('cat.compareSaved')}</Link></p>}
       {shown.length === 0 && <Card info><p>{t('cat.noMatch')}</p></Card>}
       {calendar && shown.length > 0 && <PriceCalendar sailings={shown} priceOf={priceOf} today={localDate(now)} />}

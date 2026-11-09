@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  browseSailings, compareHighlights, filterSailings, groupByMonth, legBadge, matchSailings, monthsOf, nightsBand, pricePerNight, regionMonthGrid, routeSketch,
+  browseSailings, compareHighlights, filterSailings, groupByMonth, legBadge, matchSailings, occasionsOf, monthsOf, nightsBand, pricePerNight, regionMonthGrid, routeSketch,
   savedSailingsToCompare, shipCompareRows, sailingFacts, sortSailings,
 } from './catalogueBrowse'
 import { applyPatterns, applyShips, setSailingEntries, normalizeEntries, normalizePatterns, normalizeShips } from './shipCatalogue'
@@ -91,5 +91,20 @@ describe('catalogueBrowse', () => {
   })
   it('sketches a route inside the canvas, and nothing for ports with no coordinates', () => {
     expect(routeSketch(['unknown'], 300, 200)).toEqual([])
+  })
+})
+
+describe('occasions (DRM-07)', () => {
+  it('matches only on date and length', () => {
+    expect(occasionsOf({ departure: '2027-12-27', nights: 7, holiday: true })).toEqual(['holiday'])
+    expect(occasionsOf({ departure: '2027-01-02', nights: 7, holiday: false })).toEqual(['holiday'])
+    expect(occasionsOf({ departure: '2027-07-10', nights: 14, holiday: false })).toEqual(['summer', 'milestone'])
+    expect(occasionsOf({ departure: '2027-03-01', nights: 7, holiday: false })).toEqual([])
+  })
+  it('filters the list by occasion', () => {
+    const l = browseSailings()
+    const got = filterSailings(l, { occasion: 'milestone' })
+    expect(got.length).toBeGreaterThan(0)
+    expect(got.every((s) => s.nights >= 14)).toBe(true)
   })
 })

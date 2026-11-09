@@ -250,3 +250,10 @@ Theme: photo-to-memory curation (QOL-18). Only this row was taken; DRM-07 is not
 `buildStory`, `applyOmissions` and `storyText` in `src/domain/memoryStory.ts` arrange the guest's favourite photos and their own (not app-written) diary notes by trip day; `MemoryStory` on the photos screen lets the guest leave out any photo or note and copy the result as text. Nothing is uploaded and no faces are matched. Test in `memoryStory.test.ts`.
 QOL-18 stays Partial: no memory-book or video renderer (Print It stays separate), no generative text, no completion or export measure. Limits: no component test, no browser check. Matrix totals not regenerated.
 Next in group A: DRM-07 (needs occasion tags on sailings, a content source).
+
+## 5s. BM34 result (built, not committed)
+
+Theme: occasion-led discovery (DRM-07). Last row of group A.
+`occasionsOf` and the `occasion` filter in `src/domain/catalogueBrowse.ts` match a sailing on facts the catalogue has: holiday (served flag or departure 20 Dec to 3 Jan), summer break (15 Jun to 31 Aug) and a big trip (14 nights or more). The sailings screen has an Occasion select (kept in the address only) and a note saying the match is by date or length, that Princess has not tagged sailings, and that optional services are not matched. Nothing is saved or shared. Test in `catalogueBrowse.test.ts`.
+DRM-07 stays Partial: real occasion tags (anniversary, reunion, celebration) and optional-service matching need a content source. Limits: no component test, no browser check. Matrix totals not regenerated.
+Group A is now done apart from rows moved to group C.

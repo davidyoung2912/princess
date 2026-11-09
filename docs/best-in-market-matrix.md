@@ -83,7 +83,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DRM-04 | P1 | Built | F | `src/domain/priceCalendar.ts`, `src/domain/priceCalendar.test.ts`, `src/ui/discover/PriceCalendar.tsx` | Quote time label unchecked |
 | DRM-05 | P1 | Built | F | `src/ui/discover/DecideScreen.tsx`, `src/ui/ahead/QuizScreen.tsx`, `src/domain/dream.ts` | One-question-at-a-time unchecked |
 | DRM-06 | P1 | Built | F | `src/ui/discover/TrialDayScreen.tsx`, `src/domain/discoverDelights.ts` | Ship-specific caveats unchecked |
-| DRM-07 | P2 | Partial | F | `src/domain/dream.ts`, `src/domain/dream.test.ts` | Occasion filters not found as a search filter |
+| DRM-07 | P2 | Partial | F | `src/domain/catalogueBrowse.ts`, `src/domain/catalogueBrowse.test.ts` | BM34: sailings screen filters by holiday, summer break or a big trip (14+ nights), matched on date and length only and labelled so; no content-team occasion tags (anniversary, reunion), no optional-service matching; the choice is not saved or shared |
 | DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/ui/discover/ShipScreen.tsx` | Child-private rule not read |
 | DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
 | DRM-10 | P0 | Partial | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | Filter across ship, cabin, port and excursion in one search not found; "unknown shown as unknown" unchecked |
