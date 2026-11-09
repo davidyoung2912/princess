@@ -28,8 +28,8 @@ Written 2026-11-08 for phase BM2 of `docs/best-in-market-plan.md`. Source: `docs
 
 | Status | All 292 | P0 only (see note) |
 |---|---|---|
-| Built | 197 | 95 |
-| Partial | 74 | 24 |
+| Built | 201 | 99 |
+| Partial | 70 | 20 |
 | Simulated | 13 | 2 |
 | Not built | 2 | 0 |
 | Out of reach | 6 | 1 |
@@ -83,7 +83,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DRM-04 | P1 | Built | F | `src/domain/priceCalendar.ts`, `src/domain/priceCalendar.test.ts`, `src/ui/discover/PriceCalendar.tsx` | Quote time label unchecked |
 | DRM-05 | P1 | Built | F | `src/ui/discover/DecideScreen.tsx`, `src/ui/ahead/QuizScreen.tsx`, `src/domain/dream.ts` | One-question-at-a-time unchecked |
 | DRM-06 | P1 | Built | F | `src/ui/discover/TrialDayScreen.tsx`, `src/domain/discoverDelights.ts` | Ship-specific caveats unchecked |
-| DRM-07 | P2 | Partial | F | `src/domain/catalogueBrowse.ts`, `src/domain/catalogueBrowse.test.ts` | BM34: sailings screen filters by holiday, summer break or a big trip (14+ nights), matched on date and length only and labelled so; no content-team occasion tags (anniversary, reunion), no optional-service matching; the choice is not saved or shared |
+| DRM-07 | P2 | Partial | F | `src/domain/catalogueBrowse.ts`, `src/domain/catalogueBrowse.test.ts` | BM34, BM54: the sailings screen filters by holiday, summer break, a big trip (14+ nights), spring break and a short getaway (5 nights or fewer), matched on date and length only and labelled so; no content-team occasion tags (anniversary, reunion), no optional-service matching; the choice is not saved or shared |
 | DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/ui/discover/ShipScreen.tsx` | Child-private rule not read |
 | DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
 | DRM-10 | P0 | Built | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | One filter across ship, cabin, port and excursion; unknown shown as unknown (`src/domain/journeyAccess.ts`) |
@@ -113,7 +113,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | BOK-02 | P0 | Built | F | `src/ui/book/GuestsStep.tsx`, `src/domain/signup.ts` | None found |
 | BOK-03 | P1 | Out of reach | F | none | Camera passport scan needs a device (`docs/gap-analysis-plan.md`) |
 | BOK-04 | P0 | Built | F | `src/ui/plan/` hold screen `/plan/hold`, `src/domain/booking.ts` | Server-issued hold id and expiry: server side not read |
-| BOK-05 | P0 | Partial | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | BM44: checkout stores the fare and terms versions accepted (`dbo.Bookings.AcceptedFareVersion`, `AcceptedTermsVersion`); no forced re-review on a fare or terms change beyond the price-changed check |
+| BOK-05 | P0 | Built | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | BM54: checkout stores the fare and terms versions accepted; the quote carries both versions and `book` sends them back, so a change since the quote is refused as `termsChanged` and nothing is charged until the guest reviews the new rules (`BookingConflict`). C# not compiled. |
 | BOK-06 | P0 | Built | F | `src/ui/book/ReviewStep.tsx`, `src/domain/pricing.ts` | None found |
 | BOK-07 | P0 | Built | F | `src/ui/book/PayStep.tsx`, `src/domain/pricingServed.test.ts` | Revalidation is server side; not read |
 | BOK-08 | P0 | Simulated | F | `src/ui/book/PayPanel.tsx`, `src/ui/ConfirmCharge.tsx` | Card charging is a backend mock; raw numbers must not be stored locally (see SEC-02) |
@@ -139,11 +139,11 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-12 | P1 | Built | F | `src/domain/medicalCard.ts`, `src/domain/care.test.ts`, `src/domain/medicalCard.ts` | Audience-specific sharing unchecked |
 | MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
 | MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
-| MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/deadlineLog.ts`, `src/ui/home/DeadlineNotes.tsx` | BM53: each deadline states its zone and source, and a moved date starts a new event with the old one kept ("earlier date, replaced"). Still three deadline kinds: no documents, excursions or special requests |
-| MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | BM31: profile lists where each saved preference is used and marks health and child data as never for marketing; no per-preference opt-out of later sailings, no cabin-location or message preferences (need a server field) |
+| MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/deadlineLog.ts`, `src/ui/home/DeadlineNotes.tsx` | BM54: a fourth kind, the next special-assistance cut-off not yet asked for, with its source ("the notice each request needs"). Excursions and documents have no cut-off date in the data, so they have no countdown |
+| MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | BM31, BM54: the profile lists where each saved preference is used; food and access needs can be kept out of later bookings (`Profile.keepOut`, `dbo.Profiles.KeepOut`, the booking prefill skips them). Bedding and requests are not carried into a booking, so they have no switch; no cabin-location or message preferences. C# and SQL not run |
 | MNG-17 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | Status data is simulated by the server |
 | MNG-18 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
-| PRE-01 | P0 | Partial | R | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | Reconciled: planner lists confirmed tours and dinners only; no planned-but-not-booked items shown differently |
+| PRE-01 | P0 | Built | R | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | BM54: the plan shows accepted planned items (week planner and assistant) under "Planned, not booked" with a badge, apart from confirmed tours and dinners; one already booked at the same time is left out (`plannedForDay`) |
 | PRE-02 | P0 | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/domain/planChange.ts` | None found |
 | PRE-03 | P0 | Built | F | `src/ui/plan/DiningScreen.tsx`, `src/domain/prebook.test.ts` | None found |
 | PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/ui/book/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
@@ -161,7 +161,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
 | PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx`, `src/domain/services.ts` | BM52: the table shows one shared time and the seats by cabin, and says when it is split across cabins. Friends are a name and cabin only, so there are no friend replies; no search for a shared time across linked bookings |
 | PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
-| GTS-01 | P0 | Partial | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | Reconciled: steps say saved; no submitted or accepted state per field |
+| GTS-01 | P0 | Built | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | BM54: each receipt line is draft, submitted (saved with us) or confirmed (saved and the check-in finished), from the server (`ReceiptItemDto.State`) with a client fallback; "confirmed" means accepted into the finished check-in, not verified by the terminal. C# not compiled. |
 | GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
 | GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
 | GTS-04 | P0 | Built | F | `src/ui/boarding/EmbarkPlanScreen.tsx`, `src/domain/embark.ts`, `src/domain/embark.test.ts` | None found |
@@ -237,7 +237,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DEB-02 | P0 | Built | R | `src/ui/finish/DisembarkScreen.tsx` | Closed in BM18 |
 | DEB-03 | P0 | Built | F | `src/ui/finish/` bags route `/home/disembark/bags` | None found |
 | DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | BM44: folio lines carry a state (posted, pending, disputed, refunded, adjusted); final bill lists refunds and adjustments apart. Nothing sets pending yet; no receipt export read |
-| DEB-05 | P0 | Partial | R | `src/ui/finish/CasesScreen.tsx` | BM42: submission says a case does not mean a reversal. Still open: no owner or response expectation shown |
+| DEB-05 | P0 | Built | R | `src/ui/finish/CasesScreen.tsx` | BM54: the case form says which team looks after it and the days to a first answer (same hours as the server); each case shows its team, and the answer due time as before |
 | DEB-06 | P1 | Built | F | `src/ui/finish/` sweep route `/home/disembark/sweep` | None found |
 | DEB-07 | P1 | Built | F | `src/ui/finish/FinalNightScreen.tsx`, `src/domain/shipVenues.ts` | Departure-day hours unchecked |
 | DEB-08 | P0 | Built | F | `src/ui/finish/CustomsScreen.tsx` | Official sources linked: unchecked |
@@ -275,7 +275,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-04 | P0 | Built | R | `src/data/outbox.ts`, `src/hooks/useDraft.ts`, `src/data/capsule.ts` | Export/restore of waiting items and corrupt-list handling (BM19); drafts are server-side, `localStorage` kept by decision |
 | MOB-05 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useAction.ts`, `src/api/bounded.ts` | `src/domain/offlineContract.ts` and `OfflineNote` (BM19) |
 | MOB-06 | P1 | Built | F | `src/push/push.ts`, `src/push/push.test.ts`, `src/hooks/usePushState.ts`, `src/ui/account/PushPanels.tsx` | Delivery is simulated on the server |
-| MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39: alert links carry the trip and the ship change; the screen says when either differs from now. Reservation, port-row and case links not built |
+| MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: alert links carry the trip and ship change, and now a reservation, a case and a port day (`reservation`, `case`, `port` and `date`); the screen says when the reservation is gone, the case closed or the port day passed. The server builds these links but has no reservation or case alert yet, so only the port-day one is sent today |
 | MOB-08 | P1 | Built | F | `src/ui/account/MemoryScreen.tsx`, `src/ui/delights/HighlightReel.tsx`, `src/ui/plan/AwayScreen.tsx` | Fallback when share unsupported unchecked |
 | MOB-09 | P1 | Partial | F | `src/ui/checkin/PhotoCoach.tsx`, `src/ui/media/Pictures.tsx` | Capture for pictures exists; passport scan and tag scan are out of reach |
 | MOB-10 | P1 | Partial | F | none | BM29: `CodeScanner` uses `BarcodeDetector` where present, typed-code fallback; code finds a place or own link only, never proof; no device check |
@@ -328,7 +328,7 @@ Priority is not given per concept in the document.
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere; BM46: device list with per-device sign-out (`src/ui/account/DevicesCard.tsx`); no step-up check yet |
+| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere; BM46: device list with per-device sign-out; BM54: new-device notice on the list. No step-up check yet |
 | IDN-02 | P0 | Built | F | `src/ui/boarding/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
 | IDN-03 | P0 | Partial | F | `server/Princess.Api/Auth/AuthService.cs` (`RegisterAsync`), `src/ui/SignInFlows.tsx` | BM38: sign-up asks when name and date of birth match an adult account and flags the new one for a person; BM47: admin card to settle a flag (`src/ui/account/ReviewCard.tsx`, `ReviewEndpoints.cs`); no merge and no booking-link matching |
 | IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. Shared vocabulary of relationships and tasks since BM37 (`src/domain/relationships.ts`); the stores are still three, and no cabin party, linked group or shipmate. BM5 |
@@ -338,11 +338,11 @@ Priority is not given per concept in the document.
 | IDN-08 | P1 | Partial | F | `src/ui/home/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
 | TRU-01 | P0 | Built | F | `src/ui/account/LedgerScreen.tsx`, `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/ActivityScreen.tsx` | None found |
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |
-| TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | Reconciled: `StatusBadge` has six kinds; no single type for draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed |
+| TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | BM54: one vocabulary of nine states (`src/domain/lifecycle.ts`, `LifecycleBadge`, move rules and old-word mapping) used on the check-in receipt. Other screens still use the older six badge kinds; moving them over is open |
 | TRU-04 | P0 | Built | F | `src/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
 | TRU-05 | P0 | Built | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts`, `src/ui/failedReschedule.test.tsx` | Failed dinner move on screen: original stays, plain message (table taken, or a retry note); the rule itself lives in the server, not read |
 | TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/offlineDay.test.ts` | Source label per item unchecked |
-| TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`, `Providers:ServiceStatus`); no incident feed with start time and message, and the runbook has no incident section (owner, who is told, how guests are told) |
+| TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`); BM54: an incident feed (`GET /help/incidents`, `Status:Incidents` in configuration) with start time, message and end, shown on the Status screen; the runbook says how to declare one. Still no paging of staff (PERF-07). C# not compiled |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
 | AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
 | AST-02 | P1 | Built | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts`, `src/ai/answerFreshness.test.ts` | BM50: every answer source has a label; all but the authored library say "as of" a time, and the library says it is not live |
@@ -357,7 +357,7 @@ Priority is not given per concept in the document.
 | COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/gap-analysis-plan.md`) |
 | COM-04 | P0 | Partial | R | `server/Princess.Api/Domain/PushRules.cs` (`FallbackDue`), `server/Princess.Api/Services/PushService.cs`, `server/Princess.Api/Services/PingramSender.cs` | BM40: safety alerts have an acknowledged state and fall back to text, then email, after 10 minutes. Pingram sender written, never run against the live service |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
-| COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39: trip and change in the link, with a note when they are not current; no reservation or case alerts exist |
+| COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39, BM54: as MOB-07; reservation and case alerts themselves do not exist on the server yet |
 | OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
 | OFF-02 | P0 | Built | F | `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
 | OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
@@ -379,7 +379,7 @@ Priority is not given per concept in the document.
 | SEC-04 | P0 | Built | R | `src/ui/account/PrivacyScreen.tsx`, `src/ui/DataSettings.tsx`, `src/sync/consent.ts` | None found |
 | SEC-05 | P0 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/homeLink.ts`, `src/sync/consent.ts` | None found |
 | SEC-06 | P0 | Built | R | `src/ui/plan/FamilyLinkScreen.tsx`, `src/ui/aboard/ChatSafe.tsx` | Reconciled: age rules enforced on the server (`ChatService`, no phone numbers, links or photos for under-18s); photo gate in `ChatSafe` |
-| SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | BM35: sign out everywhere (`POST /auth/logout-all`); no device list (needs a sessions table) or suspicious sign-in notice |
+| SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | BM35 sign out everywhere; BM46 device list; BM54 a "new device signed in" notice on the device list (devices not yet shown on this device, "That was me" to dismiss). No step-up check |
 | SEC-08 | P1 | Out of reach | F | `docs/security-performance-plan.md` | Pen test and vendor review are outside code |
 | UX-01 | P0 | Built | F | `src/routes/coverage.test.ts`, `src/routes/stageNav.test.ts` | Parity is by shared code |
 | UX-02 | P0 | Partial | F | `src/styles`, `src/ui/Shell.tsx` | BM49: from 1280px the comparison and difficulty screens use a wider page, sticky table headers and first column, and a side filter column (`.page--wide`, `.workspace` in `layout.css`); not looked at in a browser (project rule), so Partial |

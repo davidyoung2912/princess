@@ -3,21 +3,16 @@ MOB-14	OK	(BM18 closed) Clocks are shown and tested, but nothing detects that th
 EMB-02	OK	(BM18 closed) No statement that crew instructions and announcements override app content, on the muster card or anywhere else.
 EMB-01	PARTIAL	(BM45) Boarded comes from the server (EmbarkView.boarded, with a manifest or scan source; BoardedSource in src/domain/embark.ts). The manifest is simulated and nothing yet writes a scan; the guest's typed time is only a planning estimate.
 DEB-02	OK	(BM18 closed) No wording or state separating the guest's departure preference from the assignment made by operations.
-BOK-05	PARTIAL	(BM44) Checkout stores the fare table and terms versions accepted (dbo.Bookings.AcceptedFareVersion, AcceptedTermsVersion). Still open: no forced review when the fare or terms change between quote and payment beyond the price-changed check.
 PRE-18	PARTIAL	Refund timing is now worded as an estimate until the card company confirms it (BM42, hub.portSkipped.comp.arrives). Still open: no payment-provider confirmed state, other refund lines not read.
-DEB-05	PARTIAL	Submission now says a case does not mean the charge is reversed (BM42, case.noReversal). Still open: no owner or response expectation shown at submission.
 DEB-04	PARTIAL	(BM44) Folio lines carry a state (posted, pending, disputed, refunded, adjusted; FolioStates, dbo.FolioLines.State); the final bill lists refunded and adjusted lines apart and marks queried charges. Still open: nothing yet sets pending, and no official receipt export was read.
-IDN-01	PARTIAL	(Reconciled) Sign out everywhere built in BM35 (POST /auth/logout-all). Device list built in BM46 (POST /auth/sessions/list, DELETE /auth/sessions/{id}, from refresh-token families). Still no step-up check or suspicious sign-in notice.
+IDN-01	PARTIAL	(Reconciled) Sign out everywhere built in BM35 (POST /auth/logout-all). Device list built in BM46 (POST /auth/sessions/list, DELETE /auth/sessions/{id}, from refresh-token families). BM54 added a new-device notice on the device list. Still no step-up check.
 MNG-05	PARTIAL	(BM41) Documents are access-scoped on the server; push previews for payment, travel and schedule-change alerts are redacted by PushRules.Redact. Encryption at rest and export/delete not read.
 MNG-11	PARTIAL	(BM45) Aboard requests show a team, stage, ETA, the reason when there is no ETA, and an escalate action. The owner is a team, not a named person; escalation records a request only, nobody is paged.
 SEA-20	PARTIAL	(BM45) Aboard requests can be escalated, confirmed fixed or reopened, with the history kept (dbo.ServiceRequestEvents). No crew workflow writes the stage; it still follows the clock.
-PRE-01	PARTIAL	(Reconciled) plan.ts lists confirmed tours and dinners only; "gaps" are suggestions, not planned items, so planned and confirmed are not shown side by side.
-GTS-01	PARTIAL	(Reconciled) Document, photo and payment steps say "saved"; no per-field submitted or accepted state.
-TRU-03	PARTIAL	(Reconciled) StatusBadge has six kinds (booked, waitlist, soldOut, changed, cancelled, ready); no single type covers draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed.
 REM-01	OK	(BM18 closed) HistoryScreen has no search or filter; trips are listed, receipts shown.
 POR-04	OK	(BM18 closed) No Princess-operated versus independent label found in PortCard or excursions.ts.
 SEC-06	OK	(Reconciled) ChatService applies ServiceRules.ChildSafeProblem by age on the server (no phone numbers or links, no photos for under-18s); ChatSafe gates photos by PHOTO_MIN_AGE.
-SEC-07	PARTIAL	(Reconciled) Sign out everywhere built in BM35; device list and suspicious sign-in notice not built. See IDN-01.
+SEC-07	PARTIAL	(Reconciled) Sign out everywhere built in BM35; device list (BM46) and new-device notice (BM54) built; no step-up check. See IDN-01.
 MNG-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-04	OK	(BM19 closed) see best-in-market-plan-2 section 5d

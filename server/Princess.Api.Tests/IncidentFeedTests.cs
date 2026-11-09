@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Princess.Api.Services;
-using Xunit;
 
 namespace Princess.Api.Tests;
 

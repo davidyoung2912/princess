@@ -58,7 +58,7 @@ Checks: supervised ⇒ `BookerUserId NOT NULL AND PasswordHash IS NULL`; not sup
 Indexes: `UX_Users_Email` filtered; `UX_Users_AccountNumber`; `IX_Users_BookerUserId`.
 
 **Profiles** — account R/W (`account.profile`, `saveProfile`).
-`UserId ID* PK FK→Users` · `FirstName STR(60)*` · `LastName STR(60)*` · `Dob DATE*` · `Phone STR(30)?` · `Citizenship {us|other}*` · `Bedding {queen|twin|noPreference}*` · `SpecialRequests STR(500)*` · `EmergencyName STR(80)*` · `EmergencyPhone STR(30)*` · `EmergencyRelationship STR(40)*` · `Street/City/Region/Postcode/Country` (`STR`, lead contact address, nullable) · `RowVersion`.
+`UserId ID* PK FK→Users` · `FirstName STR(60)*` · `LastName STR(60)*` · `Dob DATE*` · `Phone STR(30)?` · `Citizenship {us|other}*` · `Bedding {queen|twin|noPreference}*` · `SpecialRequests STR(500)*` · `KeepOut VARCHAR(60)*` (comma list of dietary, needs: preferences kept out of later bookings) · `EmergencyName STR(80)*` · `EmergencyPhone STR(30)*` · `EmergencyRelationship STR(40)*` · `Street/City/Region/Postcode/Country` (`STR`, lead contact address, nullable) · `RowVersion`.
 Email lives on `Users`. `dietary` and `needs` lists are in `ProfileTags` (below) so the data is queryable ("who has a nut allergy" for the dining reservation pass-through).
 
 **ProfileTags** — `UserId ID* FK→Users` · `Kind {dietary|need}*` · `Code STR(20)*` · PK (`UserId, Kind, Code`). Codes are the `DietaryId` and `NeedId` unions.
@@ -327,6 +327,7 @@ Booking-scoped routes below are written without the `/bookings/{number}` prefix;
 | `calendar.status/create/revoke` | `GET/POST/DELETE /me/calendar-feed`; the address (`path`) is returned once, by POST. `GET /calendar/{token}.ics` serves the feed with no sign-in | U (the feed itself P) |
 | `support.tickets/callback/email` | `GET /me/support-tickets`; `POST /me/support-tickets` {kind:`callback`,phone} or {kind:`email`,message} | U |
 | `help.contacts` | `GET /help/contacts` | P |
+| `help.incidents` | `GET /help/incidents` | P (known problems declared by the operator under `Status:Incidents`; newest first; resolved ones stay a day) |
 | `privacy.view/setConsent` | `GET /bookings/{n}/privacy`; `PUT /users/{id}/consents/{consent}` {on}, optional `?booking={n}` | B / the adult themself or the child's booker |
 | `budget.get/save` | `GET/PUT /bookings/{n}/budget` | B / BA; a child's limit needs that child's booker |
 | `bookings.get` / `bookings.sailings` | `GET /bookings/{n}` (core: number, personaId, bookerId, sailingId, departure, party ids, category, stateroom, cabinNumber, tier, package), `GET /sailings` | B / P |

@@ -28,6 +28,7 @@ describe('one lifecycle vocabulary (TRU-03)', () => {
 })
 
 import { receiptState } from './checkin'
+// proves: GTS-01
 describe('check-in receipt states (GTS-01)', () => {
   it('uses the served state, else works it out', () => {
     expect(receiptState({ savedAt: 5, state: 'confirmed' })).toBe('confirmed')

@@ -91,7 +91,7 @@ public sealed class BookingService(
             var keep = p.KeepOut.Split(',', StringSplitOptions.RemoveEmptyEntries);
             people.Add(new GuestDraft
             {
-                FirstName = p.FirstName, LastName = p.LastName, Dob = D(p.Dob).ToString("yyyy-MM-dd"), Citizenship = p.Citizenship, Needs = keep.Contains("needs") ? [] : [.. p.Needs], Dietary = keep.Contains("dietary") ? [] : [.. p.Dietary],
+                FirstName = p.FirstName, LastName = p.LastName, Dob = D(p.Dob).ToString("yyyy-MM-dd"), Citizenship = p.Citizenship, Needs = [.. p.Needs.Where(_ => !keep.Contains("needs"))], Dietary = [.. p.Dietary.Where(_ => !keep.Contains("dietary"))],
                 DietaryStatus = !keep.Contains("dietary") && p.Dietary.Count > 0 ? "some" : "",
             });
             if (id == actor.Id) contact = new LeadContact { Email = p.Email ?? "", Phone = p.Phone ?? "" };

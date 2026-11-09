@@ -6,6 +6,7 @@ const day = (entries: PlanDay['entries'] = []): PlanDay => ({ day: 3, date: '202
 const add = (id: string, start: string, kind: 'tour' | 'dinner' | 'added' = 'added') => ({ op: 'add' as const, entry: { id, title: id, start, minutes: 60, kind, outdoor: false, path: '/plan' } })
 const change = (over: Partial<Change>): Change => ({ id: 'c', day: 3, source: 'autopilot', cause: '', title: '', why: '', edits: [], status: 'accepted', proposedAt: 1, undoUntil: 2, ...over })
 
+// proves: PRE-01
 describe('planned but not booked (PRE-01)', () => {
   it('lists entries added by accepted changes only, in time order', () => {
     const list = plannedForDay([change({ edits: [add('b', '15:00'), add('a', '09:00')] }), change({ id: 'p', status: 'proposed', edits: [add('x', '10:00')] }), change({ id: 'u', status: 'undone', edits: [add('y', '11:00')] })], day())
