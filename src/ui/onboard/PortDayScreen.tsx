@@ -22,6 +22,7 @@ import { PortCard } from './PortCard'
 import { PortParty } from './PortParty'
 import { PortPilot } from './PortPilot'
 import { PinAndDayCard, PocketStopwatch, PortStamps, SunNudge, TakeMeBack } from '../delights/PortDelights'
+import { TenderOutlook } from '../discover/TenderOutlook'
 import { StanleyMoment } from '../ai/StanleyMoment'
 
 /** The port day (POR-01 to POR-04, POR-11, POR-12): all-aboard, tender arrangements, and the day's tours with codes that work with no signal. */
@@ -58,6 +59,7 @@ function Body({ v }: { v: PortDayView }) {
       <PortPilot v={v} />
       <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
+      {v.day.tender && !v.skipped && <TenderOutlook port={v.day.port} date={v.day.date} headingId="tender-outlook-h" />}
       <Tours tours={v.tours} port={v.day.port} />
       <LastMinute />
       <Readiness tender={v.day.tender} />
