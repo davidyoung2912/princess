@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// at 10:00 on sailing day, on the person's own clock (D4). The pass lookup is public and answers a uniform <c>notFound</c>.
 /// </summary>
 public sealed class CheckinService(
-    ScopeLoader scopes, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt, IOptions<PassOptions> passes, PassLookupGuard guard)
+    ScopeLoader scopes, ICheckinStore store, IAccountStore accounts, ITripStore trips, IPlanStore plan, PlanService planService, IUserStore users, IUserClock clock, IOptions<JwtOptions> jwt, IOptions<PassOptions> passes, PassLookupGuard guard, IWalletPassIssuer wallet)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
@@ -358,6 +358,9 @@ public sealed class CheckinService(
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         if ((await store.GetBookingAsync(c.Booking.BookingId, ct))?.FinishedAt is null) throw ApiException.Conflict("notDone");
         await IssuePassesAsync(c.Actor, c.Booking, c.Now, ct);
+        var view = await BoardingAsync(c.Actor, c.Booking, c.Now, ct);
+        var inputs = view.Passes.Where(p => p.Ready).Select(p => new WalletPassInput($"{view.Number}-{p.Seq}", p.Name, p.Code, p.Cabin, p.Deck, p.Muster, p.Group)).ToList();
+        if (!wallet.Issue(view.Number, view.Departure, inputs).Accepted) throw ApiException.Conflict("walletUnavailable");
         await store.SetWalletAsync(c.Booking.BookingId, ct);
         return await BoardingAsync(c.Actor, c.Booking, c.Now, ct);
     }

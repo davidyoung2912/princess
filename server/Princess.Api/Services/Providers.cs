@@ -26,6 +26,24 @@ public interface IFlightStatusProvider
     FlightStatusDto Status(string normalizedNumber, string date);
 }
 
+/// <summary>One pass handed to the wallet issuer: what a signed Apple or Google Wallet pass would show and scan.</summary>
+public sealed record WalletPassInput(string Serial, string Name, string Code, string Cabin, int Deck, string Muster, string Group);
+
+/// <summary>Whether the wallet issuer accepted the passes. A real one signs them with the line's certificates; <see cref="Accepted"/> false means try again later.</summary>
+public sealed record WalletIssue(bool Accepted, string Reference);
+
+/// <summary>Makes the booking's boarding passes available in the phone wallet. The simulation accepts everything and signs nothing.</summary>
+public interface IWalletPassIssuer
+{
+    WalletIssue Issue(string bookingNumber, string departure, IReadOnlyList<WalletPassInput> passes);
+}
+
+public sealed class SimWalletPassIssuer : IWalletPassIssuer
+{
+    public WalletIssue Issue(string bookingNumber, string departure, IReadOnlyList<WalletPassInput> passes) =>
+        new(passes.Count > 0, $"WP-{bookingNumber}-{passes.Count}");
+}
+
 public interface IRouteConditionsProvider
 {
     /// <summary>Traffic and weather on the way to the port on the sailing date, given how busy the guest's arrival window is.</summary>

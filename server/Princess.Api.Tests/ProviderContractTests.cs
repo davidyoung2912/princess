@@ -130,6 +130,10 @@ public class ProviderContractTests
             case IFareFeed fare: Assert.NotNull(fare.History("B1", 500_000, "2027-01-01", "2027-02-01")); break;
             case IProgramChanges p: Assert.NotNull(p.Current()); break;
             case IStormOutlook s: Assert.NotNull(s.Outlook("2027-08-01", 30)); break;
+            case IWalletPassIssuer wp:
+                Assert.True(wp.Issue("PR1", "2027-03-20", [new("PR1-1", "Sam", "code", "8012", 8, "A", "3")]).Accepted);
+                Assert.False(wp.Issue("PR1", "2027-03-20", []).Accepted);
+                break;
             case ITenderOutlook t: Assert.NotNull(t.Outlook("belize", "2027-03-23")); break;
             case ILostProperty l: Assert.NotNull(l.Found()); break;
             case ISlotWatchFeed w: Assert.NotNull(w.Opening("w1", 1_000, 2_000)); break;

@@ -29,6 +29,7 @@ public static class ProviderRegistration
         "ShipNavigation" => "Navigation",
         "EmailSender" => "Email",
         "PrintProvider" => "Print",
+        "WalletPassIssuer" => "Wallet",
         _ => name,
     };
 
@@ -57,6 +58,7 @@ public static class ProviderRegistration
         S<IMediaScanner, SimMediaScanner>(),
         S<IEmailSender, SimEmailSender>(),
         S<IPrintProvider, SimPrintProvider>(),
+        S<IWalletPassIssuer, SimWalletPassIssuer>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)
