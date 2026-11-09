@@ -293,7 +293,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | Compass arrow from the deck graph; device orientation sensor not used (P2) |
 | MOB-23 | P0 | Built | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
 | MOB-24 | P1 | Built | R | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/data/battery.ts`, `refreshFactor`) |
-| MOB-25 | P1 | Partial | F | `src/ui/media/Pictures.tsx`, `src/domain/media.ts`, `src/domain/media.test.ts` | Local preview and delete unchecked |
+| MOB-25 | P1 | Partial | F | `src/ui/media/Pictures.tsx`, `src/media/shrink.ts`, `src/domain/media.ts` | Delete exists and location is stripped on redraw; no preview before sending |
 
 ## Quality-of-life concepts (QOL)
 
@@ -363,7 +363,7 @@ Priority is not given per concept in the document.
 | OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |
 | OFF-04 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useOutbox.ts` | Conflict resolution unchecked |
 | OFF-05 | P0 | Built | F | `src/api/bounded.ts`, `src/data/outbox.ts` | None found |
-| OFF-06 | P1 | Partial | F | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Image controls and battery-conscious refresh unchecked |
+| OFF-06 | P1 | Built | F | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts`, `src/ui/DeferredImage.tsx`, `src/ui/dataLightImages.test.tsx` | Photos wait for a tap in data-light mode; no autoplay (tested) |
 | OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/data/capsule.ts` | BM1 surfaces eviction and asks for persistence; export/backup guidance not found |
 | A11Y-01 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/ui/Dialog.tsx` | Audit is jsdom only |
 | A11Y-02 | P0 | Partial | F | `src/design/textSize.ts`, `src/design/textSize.test.ts` | Screen-reader and 320 px reflow by hand only |

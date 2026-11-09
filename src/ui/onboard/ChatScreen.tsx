@@ -17,6 +17,7 @@ import { useMine } from '../../hooks/useMine'
 import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
+import { DeferredImage } from '../DeferredImage'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { Field, TextArea } from '../Field'
@@ -119,10 +120,7 @@ function Party() {
 
 /** A photo in the chat. In data-light mode it waits to be asked for, so nothing is fetched on its own (NET-04, PERF-05). */
 function ChatPhoto({ src, name }: { src: string; name: string }) {
-  const light = typeof document !== 'undefined' && document.documentElement.getAttribute('data-light') === 'on'
-  const [shown, setShown] = useState(!light)
-  if (!shown) return <Button variant="secondary" onClick={() => setShown(true)}>{t('chat.showPhoto', { name })}</Button>
-  return <img className="chat-msg__photo" src={src} alt={t('chat.photoAlt', { name })} loading="lazy" decoding="async" />
+  return <DeferredImage name={name} className="chat-msg__photo" src={src} alt={t('chat.photoAlt', { name })} />
 }
 
 function Service() {

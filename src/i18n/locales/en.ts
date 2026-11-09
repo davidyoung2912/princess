@@ -4517,7 +4517,7 @@ export const en = {
   'safe.badType': 'That is not a JPEG, PNG or WebP photo.',
   'safe.badSize': 'That photo is over {mb} MB. Choose a smaller one.',
   'chat.photoAlt': 'A photo from {name}',
-  'chat.showPhoto': 'Show photo from {name}',
+  'img.show': 'Show photo: {name}',
 
   'stat.allOk': 'Everything is working',
   'stat.allOkBody': 'No known problems right now.',

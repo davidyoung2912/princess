@@ -171,3 +171,10 @@ Theme: no silent loss and safe retry. Closed three of the BM21 gate gaps in the 
 2. **Gate 2:** `RequestOptions.idempotent` sends an `Idempotency-Key` (one per call, the same on the resend after a silent refresh). Used for `book` and the three pay-balance posts.
 3. **Gate 8:** the privacy centre's "Delete my data" calls `deleteMyData` (`DELETE /me/state`, then the local wipe). If the server cannot be reached nothing is wiped and the error is shown.
 Limits: the key lasts one call, so a retry the guest makes by tapping again gets a new key (the server's draft de-duplication still covers `/bookings`; `payments/balance` has no server-side check of the header yet, so it is sent but not honoured). Booking documents shared with other guests are not deleted (server rule). Gate 10 (TRU-07 served status, runbook incident section and providers) is server and docs work, left for its own phase. Group A P1/P2 items (OFF-06 onward) are untouched.
+
+## 5h. BM23 result (built, not committed)
+
+Theme: images and data-light (OFF-06, MOB-25).
+1. **OFF-06:** new `DeferredImage` (`src/ui/DeferredImage.tsx`). In data-light mode a content photo is a "Show photo" button and no `<img>` or request exists until tapped. Used by ship photos (both lists) and chat photos; `MediaImage` (guest's kept pictures) defers the authenticated fetch the same way. `src/ui/dataLightImages.test.tsx` checks both modes, that the screens have no raw `<img>`, and that nothing autoplays (the only `.play()` is the camera preview after the guest taps start). Matrix row moved to Built.
+2. **MOB-25:** read `shrinkPicture`: the canvas redraw drops location and time, so the strip is real where the browser supports it (the server strips again). Delete exists. Still missing: a local preview before upload (the picker sends on choose), so the row stays Partial.
+Limits: decorative icons and the mascot still load in data-light mode (small, cached by the service worker). jsdom only, no device check. Next in group A: MOB-25/MOB-09 preview-before-send, then DSC-05/06/12/13.

@@ -20,6 +20,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
+import { DeferredImage } from '../DeferredImage'
 import { BackLink, Saved } from '../onboard/common'
 import { ExtraError } from './common'
 
@@ -95,7 +96,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
               const mine = owned.has(p.id)
               return (
                 <li key={p.id} className="photo">
-                  {p.preview && <img className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} loading="lazy" />}
+                  {p.preview && <DeferredImage name={p.title} className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} />}
                   <p className="photo__title"><strong>{p.title}</strong></p>
                   <p className="muted">{t('plan.day', { n: p.day })}, {formatTime(p.time)} · {p.people.map((x) => v.people.find((y) => y.id === x)?.name.split(' ')[0]).join(', ')}</p>
                   <div className="button-row">
@@ -137,7 +138,7 @@ function Album({ v, share, busy }: { v: PhotosView; share: (id: string) => void;
         <ul className="photo-list">
           {photos.map(({ a, p }) => (
             <li key={`${a.photoId}-${a.by}`} className="photo">
-              {p.preview && <img className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} loading="lazy" />}
+              {p.preview && <DeferredImage name={p.title} className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} />}
               <p className="photo__title"><strong>{p.title}</strong></p>
               <p className="muted">{t('pho.album.by', { name: name(a.by) })}</p>
               {a.mine && <Button variant="tertiary" disabled={busy} onClick={() => share(p.id)}>{t('pho.album.hide')}<span className="visually-hidden"> {p.title}</span></Button>}

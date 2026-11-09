@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { normalizeMedia, pickProblem, uploadErrorKey, type Media, type MediaPurpose } from '../../domain/media'
+import { useSettings } from '../../hooks/useSettings'
 import { useMediaUrl } from '../../hooks/useMedia'
 import { t, type StringKey } from '../../i18n'
 import { shrinkPicture } from '../../media/shrink'
@@ -8,6 +9,14 @@ import { Button } from '../Button'
 
 /** A picture the guest kept, fetched with their sign-in (an image tag cannot send it). `alt` is what a screen reader says: the guest's caption, or a plain description. */
 export function MediaImage({ media, alt }: { media: Pick<Media, 'id' | 'width' | 'height'>; alt: string }) {
+  const [settings] = useSettings()
+  const [asked, setAsked] = useState(false)
+  // Data-light mode (OFF-06): the file is not even requested until the guest asks.
+  if (settings.dataLight && !asked) return <Button variant="secondary" onClick={() => setAsked(true)}>{t('img.show', { name: alt })}</Button>
+  return <FetchedImage media={media} alt={alt} />
+}
+
+function FetchedImage({ media, alt }: { media: Pick<Media, 'id' | 'width' | 'height'>; alt: string }) {
   const { url, failed } = useMediaUrl(media.id)
   if (failed) return <p className="muted">{t('media.unavailable')}</p>
   if (!url) return <p className="muted" role="status">{t('media.loading')}</p>
