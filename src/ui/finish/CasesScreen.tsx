@@ -18,6 +18,7 @@ import { formatDateTime } from '../account/format'
 import { useMyMedia } from '../../hooks/useMedia'
 import { KeptPicture, PicturePicker } from '../media/Pictures'
 import { Human } from './common'
+import { HandoffCases } from '../ai/HandoffCases'
 
 const NEW_KINDS: readonly CaseKind[] = ['lostItem', 'claim', 'complaint']
 
@@ -28,6 +29,7 @@ export function CasesScreen() {
     <div className="page">
       <p>{t('case.intro')}</p>
       <Load state={view}>{(v) => <Cases v={v} reload={view.retry} />}</Load>
+      <HandoffCases />
       <Human />
       <BackLink to="/me" label={t('route.me')} />
     </div>
