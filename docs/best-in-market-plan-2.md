@@ -109,6 +109,13 @@ One phase at a time, each committed on its own, per `CLAUDE.md`. Order puts proo
 
 Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare version (BOK-05), assistance ownership (MNG-11/SEA-20) and push-preview redaction (MNG-05) become BM18 items if BM16 confirms them absent; some touch the server contract and would be split out.
 
+## 5a. BM16 result (built, not committed)
+
+- **Tool**: `scripts/requirements-register.mjs` reads the requirements document, the matrix, `docs/requirements-probes.tsv` (121 searches, one or more per P0 requirement) and `docs/requirements-verdicts.tsv` (a person's findings), and writes `docs/requirements-clauses.md`: all 502 clauses, 49 probes that found nothing, and the judged rows. Run `node scripts/requirements-register.mjs --explain` to see where the same words appear elsewhere, which is how a probe with the wrong scope is told apart from a real gap.
+- **Judged**: 19 requirements: **5 gaps** (MOB-14, EMB-02, EMB-01, DEB-02, BOK-05), **5 partial** (PRE-18, DEB-05, DEB-04, IDN-01, SEC-07), **9 still to read** (MNG-05, MNG-11, SEA-20, PRE-01, GTS-01, TRU-03, REM-01, POR-04, SEC-06). Nine P0 rows moved from Built to Partial in the matrix; MOB-24 and GTS-15 moved the other way (stale since BM3).
+- **Honest limits**: most of the 49 absent probes are my search being too narrow or in the wrong file, not missing features. They are a reading list, not a gap list. Of the 101 P0 rows, about 20 have been read; the other 80 have a search that found something, which proves only that the words exist. The remaining P0 reading carries into BM17 (as the tests are written) and the rest into BM20.
+- **Not done**: the pasted API key was not saved anywhere in the repo. It goes in user-secrets or an environment variable when COM-04 is built.
+
 ## 6. Decisions I need from you
 
 1. **Order.** Start with BM16 and BM17 (proof first), or go straight to closing known gaps (BM19 first)? I recommend proof first: the register tells BM18 and BM19 what to fix and prevents the same drift later.

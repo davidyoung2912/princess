@@ -1,0 +1,122 @@
+# id	clause (short)	regex (case-insensitive, JS) searched in src (non-test), src/i18n/locales/en.ts and server/Princess.Api (non-test)	scope: any|src|server
+DRM-01	search and open a sailing before sign-in	public: true	src
+DRM-03	three ships, no hard-coded routes	sailingsServed|catalogueParity	any
+DRM-11	uncertainty range visible	(range|between).*(low|high)|uncertain	src
+DSC-01	missing data not fabricated	not available|unknown|no data|missing	src
+DSC-02	score explainable, raw facts	rawFacts|raw facts|why this score|explain	src
+DSC-04	category vs exact cabin attributes	category.*exact|exact cabin|may differ	any
+DSC-08	cancellation terms per item	cancellation.*(terms|policy)	src
+BOK-01	draft expiry explained	draft.*(expire|expiry)|expiresAt.*draft	any
+BOK-02	exact field and format error	invalid.*(field|format)|expected format|badFormat	any
+BOK-02	legal name change does not alter confirmed booking	nameChange|name change|legal name	any
+BOK-04	countdown from server expiry	expiresAt|holdExpires	src
+BOK-05	accepted fare/terms version stored	acceptedVersion|fareVersion|termsVersion|quoteVersion|quoteId	any
+BOK-06	line has traveller, tax/fee, one-time/recurring, due	recurring|instalment.*due|taxes.*fees	src
+BOK-07	before/after impact on change	priceChanged|before.*after|wasNow|changedSince	src
+BOK-09	status checked before retry	idempotency-key|Idempotency|idempotencyKey	any
+BOK-14	guest affirms material details	affirm|I have checked|confirm.*details|agree.*terms	src
+BOK-15	contract version, locale, method stored	LegalDocs|Acceptances|acceptance.*version	server
+BOK-16	pending is not confirmation	not (yet )?confirmed|pending.*confirm|awaiting confirmation	src
+MNG-02	task owner and consequence	consequence|if you miss|owner	src
+MNG-04	last-verified date and official authority	last verified|verifiedOn|official (source|authority)|lastVerified	any
+MNG-05	sensitive data not in push previews	redact|sensitive.*(push|preview)|no personal details in	any
+MNG-10	paid due pending failed refunded distinct	refunded	src
+MNG-11	owner/team on request	owner|team|assignedTo	src/domain/assistance.ts
+MNG-11	expected response or reason no ETA	no (estimate|ETA)|expected (response|reply)|\beta\b	src/domain/assistance.ts
+PRE-01	planned vs confirmed visibly different	planned.*confirmed|confirmed.*planned	src
+PRE-02	user can override with warning	override|anyway	src/domain/autopilot.ts
+PRE-03	revalidated at commit; reference id	revalidat|reference id|confirmation number	any
+PRE-04	atomic replacement unsupported consent	atomic|replace.*(before|until)|keep.*old	any
+PRE-08	age and mobility check per traveller	excursionFit|mobility.*age|minAge	src
+PRE-16	never guarantees allergen-safe	not (a )?guarantee|never.*safe|cannot guarantee	any
+PRE-18	refund timing labelled estimate	estimate.*refund|refund.*estimate	any
+GTS-01	field saved/submitted/accepted state	submitted.*accepted|accepted.*submitted	src
+GTS-02	submitted not shown as approved	not approved|manual review|under review	any
+GTS-03	pass paper/terminal fallback	paper|print.*pass|terminal desk	src
+GTS-04	arrival-group change timestamped	changedAt|group.*changed	src
+GTS-05	never hides urgent help	urgent|help now|get help	src/ui/boarding/EmbarkScreen.tsx
+GTS-08	never promises ship will wait	ship does not wait|will not wait|not wait for	any
+GTS-12	required correction and human contact	correction|contact.*human|speak to	src/domain/papersCheck.ts
+EMB-01	boarded set by manifest/scan, not guest	boardedBy|boardedSource|scannedAt|manifestStatus|onManifest	src/domain,src/ui/boarding,server
+EMB-02	crew instructions override app	(crew|announcement)[^']*(overrid|take priority|come first|take precedence)	en
+EMB-11	never implies third-party internet free	captive|portal|free internet	any
+EMB-15	reachable in two taps without login	public: true|offline.*muster|muster.*offline	src
+SEA-01	live data labelled not inferred	labelled|source:|isLive|estimated|live data	src/domain/tileLive.ts
+SEA-02	cancelled/moved retained in history	cancelled.*history|history.*cancelled|moved	src/domain/plan.ts
+SEA-03	cache age and size visible	bytes|kb	src/domain/offlineCapsule.ts
+SEA-06	closures and restricted areas in routes	closed|closure|restricted|outage	src/domain/deckGraph.ts
+SEA-09	old reservation preserved until replaced	keep.*(old|original)|original.*(kept|stays)	any
+SEA-13	exclusions and validity per guest	exclusion|excluded|validUntil|valid until|expires	src/domain/entitlements.ts
+SEA-14	dispute path on charge	dispute	src/ui/onboard/BillScreen.tsx,src/ui/finish/FinalBillScreen.tsx,src/ui/finish/CasesScreen.tsx
+SEA-14	pending vs posted	pending|posted	src/domain/ledgerSplit.ts
+SEA-19	unresolved acknowledgement routes to staff	unresolved|escalat|staff	src/domain/medicalCard.ts
+SEA-20	ETA/confidence	eta|confidence|expected by	src/ui/aboard/RequestsScreen.tsx
+SEA-20	escalation	escalat	src/ui/aboard/RequestsScreen.tsx
+SEA-20	reopen keeps history	reopen	src/domain,src/ui/aboard,src/ui/account,server
+SEA-25	defer large images in data-light	saveData|dataLight|data-light	src
+POR-01	return buffer and meeting point	buffer|meeting	src/domain/portPilot.ts
+POR-02	DST and date-line tests	date.?line|dst|daylight	src/domain/timeIntelligence.test.ts
+POR-03	download completion tested before ashore	downloaded|saved for offline|ready offline	src
+POR-04	Princess-operated vs independent label	operatedBy|princess-operated|independent|ship tour	src/ui/onboard/PortCard.tsx,src/domain/excursions.ts
+POR-04	cancellation/contact route	cancel|contact	src/ui/onboard/PortCard.tsx
+POR-05	status timestamped, estimate not confirmed	updatedAt|asOf|at:|estimated	src/domain/tender.ts
+POR-06	assumptions and uncertainty shown	assum|uncertain|estimate	src/domain/portPilot.ts
+POR-15	impacted bookings and refund policy	refund|credit|impact	src/domain/disruptionHub.ts
+POR-16	port agent contacts offline	agent|shore support	any
+POR-16	never promises vessel will wait	will not wait|does not wait|not wait	any
+DEB-01	sailing-specific data	sailing|departure	src/domain/disembark.ts
+DEB-02	capacity and consequence	capacity|full\b|slots	src/domain/disembark.ts,src/ui/finish/DisembarkScreen.tsx
+DEB-02	preference vs final assignment	assignedBy|assigned by|final assignment|isPreference	src/domain/disembark.ts,src/ui/finish/DisembarkScreen.tsx
+DEB-03	tag group and lost-bag contact	tag|lost bag|lostBag|reclaim	src/ui/onboard/FinishMoreScreens.tsx
+DEB-03	offline/printable copy	print|saved copy|useSavedCopy	src/ui/onboard/FinishMoreScreens.tsx
+DEB-04	refunded/disputed/adjusted separate	refund|disput|adjust	src/domain/folio.ts,src/domain/ledgerSplit.ts,src/ui/finish/FinalBillScreen.tsx
+DEB-04	official receipt export	download|export|print	src/ui/finish/FinalBillScreen.tsx
+DEB-05	case links to transaction	folio|transaction|lineId	src/ui/finish/CasesScreen.tsx
+DEB-05	submission does not imply reversal	not (mean|imply)|does not (mean|reverse)|not a refund	any
+DEB-08	source and update date shown	updated|source|official	src/ui/finish/CustomsScreen.tsx
+DEB-08	no legal eligibility guarantee	not legal|no guarantee|cannot guarantee|check with	src/ui/finish/CustomsScreen.tsx
+DEB-14	case history carried to shore	history|carried|shore	src/ui/finish/CasesScreen.tsx
+REM-01	searchable past trips	search|filter|query	src/ui/finish/HistoryScreen.tsx
+REM-01	downloadable	download|export|print	src/ui/finish/HistoryScreen.tsx
+REM-06	survey only vs request follow-up	followUp|follow-up|follow up|wantsFollow	src/ui/finish/FeedbackScreen.tsx
+REM-06	follow-up creates owned case	case	src/ui/finish/FeedbackScreen.tsx
+REM-16	correction of data	correct	src/ui/account/PrivacyScreen.tsx
+REM-16	retention exceptions explained	exception|legal hold|must keep|required to keep	any
+MOB-01	continue in browser	standalone|display-mode|browser	src/domain/phoneSetup.ts
+MOB-02	drafts retained across deploys	useDraft	src/hooks/useDraft.ts
+MOB-02	no forced reload	reload	src/runtime/update.ts
+MOB-12	reachable-zone placement	bottom|thumb|reach	src/styles
+MOB-14	time-zone / date-line change detected and announced	time zone (has )?changed|zone (has )?changed|clocks? (have )?(moved|changed)|date line	en
+MOB-14	governing clock label	ship time|governing	src/ui/ThreeClocks.tsx
+IDN-01	step-up verification	stepUp|step-up|reauth|confirm your password	any
+IDN-01	session management / sign out everywhere	signOutEverywhere|sign out everywhere|sign-out-all|SessionsValidFrom	src
+IDN-02	guess-resistant linking	lockout|attempts|rate|FailedLogins|verify.*booking	server
+IDN-06	authorised pickup	pickup	src
+TRU-01	history includes consent changes	consent	src/domain/trustLedger.ts
+TRU-02	durable receipt id	receiptId|reference|ref	src/domain/trustLedger.ts
+TRU-03	all nine states	draft.*submitted.*pending.*confirmed.*declined.*cancelled.*refunded.*expired.*failed|declined	src/domain/trustLedger.ts
+TRU-04	reconcile after timeout	reconcil|status check|check.*status	src
+TRU-06	source/freshness label	source	src/hooks/useSavedCopy.ts
+AST-04	confirm before book/pay/cancel/change/share	confirm	src/ui/ai/StanleyConfirm.tsx
+AST-05	escalation channels	emergency|medical|legal	src/ai/guard.ts
+COM-01	inbox categories	safety|itinerary|service|transactional	src/domain/notifications.ts
+COM-02	marketing separate from critical	marketing	src/domain/delivery.ts
+OFF-02	cache essentials list	boarding|muster|emergency	src/domain/offlineCapsule.ts
+OFF-03	verify with crew fallback	verify with|crew	src/domain/offlineCapsule.ts
+OFF-04	queued/sending/sent/failed	queued.*sending|sending.*sent|failed	src/data/outbox.ts
+OFF-04	conflict resolution on reconnect	conflict	src/data/outbox.ts
+OFF-05	exponential backoff	backoff|Math\.pow|\*\* ?attempt|\* 2	src/api/bounded.ts
+A11Y-01	keyboard/focus/names tested	focus|aria|role	src/ui/a11y.test.tsx
+A11Y-03	not colour alone	not colour|colour alone|color alone	any
+A11Y-04	captions/transcripts	caption|transcript	src
+A11Y-05	non-app route documented	desk|paper|phone line	src/ui/aboard/SupportScreens.tsx
+A11Y-06	constraints before payment	accessib	src/ui/book/RoomStep.tsx
+SEC-01	audit log	audit	server
+SEC-02	no raw card numbers stored	cardNumber|pan	src/auditGate.test.ts
+SEC-03	retention schedule	retention|deleteOn	src/domain/dataRules.ts
+SEC-04	correction of data	correct	src/ui/account/PrivacyScreen.tsx
+SEC-05	location opt-in scoped, time-limited	expires|opt-in|stop sharing	src/domain/arrivalPing.ts
+SEC-06	age-aware messaging	\bminor\b|guardian|under ?1[38]|childAge|age <	src/ui/aboard/ChatSafe.tsx,src/domain/chat.ts,server/Princess.Api/Services/ChatService.cs
+SEC-06	guardian controls	guardian|parent	src/ui/plan/FamilyLinkScreen.tsx
+UX-01	parity by shared code	route|ROUTES	src/routes/coverage.test.ts
+UX-03	large targets	44|48|min-height	src/styles
