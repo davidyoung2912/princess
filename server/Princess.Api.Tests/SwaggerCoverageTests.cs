@@ -121,6 +121,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/me/support-tickets" },
         { "post", "/api/v1/me/support-tickets" },
         { "get", "/api/v1/help/contacts" },
+        { "get", "/api/v1/help/status" },
         { "get", "/api/v1/bookings/{number}/privacy" },
         { "put", "/api/v1/users/{id}/consents/{consent}" },
         { "get", "/api/v1/bookings/{number}/budget" },

@@ -366,7 +366,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       callback: (phone) => send('post', '/me/support-tickets', { kind: 'callback', phone }),
       email: (message) => send('post', '/me/support-tickets', { kind: 'email', message }),
     },
-    help: { contacts: () => get('/help/contacts') },
+    help: { contacts: () => get('/help/contacts'), status: () => get('/help/status') },
     budget: {
       get: () => inBooking('/budget'),
       save: async (budget) => send('put', `/bookings/${seg(await number())}/budget`, { ...budget, kids: budget.kids }),

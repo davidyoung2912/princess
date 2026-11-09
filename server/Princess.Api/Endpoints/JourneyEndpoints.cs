@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
 
@@ -168,6 +169,15 @@ public static class JourneyEndpoints
 
         api.MapGet("/help/contacts", () => Results.Ok(InboxService.Contacts()))
             .AllowAnonymous().WithTags("Help").WithSummary("Guest Services and emergency numbers.");
+
+        api.MapGet("/help/status", async (ICurrentUser me, IServiceStatus status, IDemoStore demo, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                // Only a demo account can switch faults on; everyone else sees the feed as it is.
+                var faults = user.IsDemo ? (await demo.GetStateAsync(user.Id, ct)).Scenarios : [];
+                return Results.Ok(status.Current(faults));
+            })
+            .WithTags("Help").WithSummary("What each part of the service is doing: `[{id, health}]` with health `ok`, `slow` or `down`, for booking, checkin, dining, ordering, chat, photos and account.");
 
         api.MapGet("/me/feedback", async (ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.FeedbackAsync(await me.LoadAsync(ct), ct)))

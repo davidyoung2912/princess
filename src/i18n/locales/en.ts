@@ -4615,7 +4615,6 @@ export const en = {
   'stat.issue.chat': 'Replies are taking longer than usual. For anything urgent, call Guest Services.',
   'stat.issue.photos': 'Photo downloads are failing. Try again later; your photos are safe.',
   'stat.issue.account': 'The account service is slow. Your bill is not lost.',
-  'stat.concept': 'This page reflects the demo controls in Me, Demo. A real service would show live status.',
 
   'bug.intro': 'Tell us what went wrong, what could be better, or what you liked. We read every note.',
   'bug.kind': 'What kind of note is it?',

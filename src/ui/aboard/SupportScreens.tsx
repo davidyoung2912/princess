@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { readLog } from '../../diagnostics/log'
-import { systemStatus } from '../../domain/services'
+import { statusRows, type StatusRow } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useDemo } from '../../hooks/useDemo'
@@ -19,10 +19,20 @@ import type { FeedbackKind } from '../../api/aboardTypes'
 /** What is working and what is not (SUP-04), with the known issues and what to do meanwhile. */
 export function StatusScreen() {
   const demo = useDemo()
-  const rows = systemStatus(demo.scenarios, demo.network.offline)
-  const issues = rows.filter((r) => r.issue)
+  const served = useMine(() => api.help.status())
+  const offline = demo.network.offline
   return (
     <div className="page">
+      {offline ? <StatusBody rows={statusRows([], true)} /> : <Load state={served}>{(list) => <StatusBody rows={statusRows(list, false)} />}</Load>}
+      <Back to="/me/help" label={t('route.helpCentre')} />
+    </div>
+  )
+}
+
+function StatusBody({ rows }: { rows: StatusRow[] }) {
+  const issues = rows.filter((r) => r.issue)
+  return (
+    <>
       {issues.length === 0 ? <Banner kind="success" title={t('stat.allOk')}><p>{t('stat.allOkBody')}</p></Banner> : <Banner kind="warning" title={t('stat.some', { count: issues.length })}><p>{t('stat.someBody')}</p></Banner>}
       <ul className="card-grid">
         {rows.map((r) => (
@@ -35,9 +45,7 @@ export function StatusScreen() {
           </li>
         ))}
       </ul>
-      <p className="muted">{t('stat.concept')}</p>
-      <Back to="/me/help" label={t('route.helpCentre')} />
-    </div>
+    </>
   )
 }
 

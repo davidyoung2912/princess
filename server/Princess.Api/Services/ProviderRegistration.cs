@@ -61,6 +61,7 @@ public static class ProviderRegistration
         S<ISmsSender, SimSmsSender>(),
         S<IPrintProvider, SimPrintProvider>(),
         S<IWalletPassIssuer, SimWalletPassIssuer>(),
+        S<IServiceStatus, SimServiceStatus>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)

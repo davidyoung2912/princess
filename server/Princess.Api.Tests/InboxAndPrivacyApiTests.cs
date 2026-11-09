@@ -1,3 +1,4 @@
+using Princess.Api.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text.Json.Nodes;
@@ -77,6 +78,26 @@ public class InboxApiTests : JourneyWorld
         Assert.Equal("resolved", (await Get("/api/v1/me/support-tickets", token)).Json[0].GetProperty("status").GetString());
         // Only your own.
         Assert.Empty((await Get("/api/v1/me/support-tickets", await SignIn(Daniel))).Json.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task StatusListsEveryPartAndNeedsASignIn()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Get("/api/v1/help/status", null)).Status);
+        var r = await Get("/api/v1/help/status", await SignIn(Daniel));
+        Assert.Equal(HttpStatusCode.OK, r.Status);
+        var rows = r.Json.EnumerateArray().ToList();
+        Assert.Equal(SimServiceStatus.Ids, rows.Select(x => x.GetProperty("id").GetString()).ToArray());
+        Assert.All(rows, x => Assert.Equal("ok", x.GetProperty("health").GetString()));
+    }
+
+    [Fact]
+    public void ADemoFaultShowsAsSlowOrDown()
+    {
+        var rows = new SimServiceStatus().Current(["chatSlow", "checkinDrop"]);
+        Assert.Equal("slow", rows.Single(x => x.Id == "chat").Health);
+        Assert.Equal("down", rows.Single(x => x.Id == "checkin").Health);
+        Assert.Equal("ok", rows.Single(x => x.Id == "booking").Health);
     }
 
     [Fact]

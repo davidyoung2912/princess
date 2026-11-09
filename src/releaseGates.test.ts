@@ -369,7 +369,7 @@ describe('gate 10: operational readiness', () => {
     expect(runbook).toMatch(/set the name to `sim`/i)
   })
 
-  it.fails('the status screen reads a served status and incident feed, not a client-side demo scenario', () => {
+  it('the status screen reads a served status and incident feed, not a client-side demo scenario', () => {
     expect(read('src/ui/aboard/SupportScreens.tsx')).not.toMatch(/scenario/i)
   })
 

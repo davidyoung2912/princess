@@ -69,6 +69,36 @@ public interface IShipNavigation
     AlongTheWayDto Along(Timeline timeline, long now);
 }
 
+/// <summary>What each part of the service is doing right now (TRU-07). A real status feed replaces the simulation and keeps the shape.
+/// <paramref name="injectedFaults"/> are the demo scenarios a demo account has switched on; a real feed ignores them.</summary>
+public interface IServiceStatus
+{
+    IReadOnlyList<ServiceHealthDto> Current(IReadOnlyCollection<string> injectedFaults);
+}
+
+public sealed record ServiceHealthDto(string Id, string Health);
+
+/// <summary>Everything works, except where a demo account has switched a fault on.</summary>
+public sealed class SimServiceStatus : IServiceStatus
+{
+    public static readonly string[] Ids = ["booking", "checkin", "dining", "ordering", "chat", "photos", "account"];
+
+    public IReadOnlyList<ServiceHealthDto> Current(IReadOnlyCollection<string> faults)
+    {
+        string H(string slow, string down = "") => down != "" && faults.Contains(down) ? "down" : slow != "" && faults.Contains(slow) ? "slow" : "ok";
+        return
+        [
+            new("booking", H("bookingLag")),
+            new("checkin", H("", "checkinDrop")),
+            new("dining", H("dinnerReschedule")),
+            new("ordering", H("orderStock")),
+            new("chat", H("chatSlow")),
+            new("photos", H("", "photoFail")),
+            new("account", "ok"),
+        ];
+    }
+}
+
 /// <summary>How likely a named storm is to touch a sailing's route, for the storm watch. Not a forecast.</summary>
 public interface IStormOutlook
 {

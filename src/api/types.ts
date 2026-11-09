@@ -885,7 +885,11 @@ export interface Api {
     cancel(number: string): Promise<BookingView>
   }
   plan: PlanApi
-  help: { contacts(): Promise<{ guestServices: string; emergency: string }> }
+  help: {
+    contacts(): Promise<{ guestServices: string; emergency: string }>
+    /** What each part of the service is doing, served by the backend (TRU-07). */
+    status(): Promise<{ id: string; health: 'ok' | 'slow' | 'down' }[]>
+  }
 }
 
 // ---- Onboard core (Phase 6) ----

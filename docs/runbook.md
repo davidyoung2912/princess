@@ -21,6 +21,7 @@ Fares are served per sailing: a sailing is offered when it has a fare for any ro
 Chosen under `Providers:*` in configuration; the default for each is `sim`. A name that is not registered stops the server at start-up and names the choices.
 
 - `Providers:Weather` = `openmeteo`: real sky forecast (UV, high, rain window) for the ports in its coordinates table (`OpenMeteoWeather.Ports`; any other port is simulated), up to 15 days ahead. Anything it cannot answer is simulated, and `source` in the answer says `forecast` or `sim`. After 3 failures in a row it stops calling for 2 minutes. Keys: `OpenMeteo:ApiKey` (user-secrets) for a paid plan.
+- `Providers:ServiceStatus`: the feed behind the Status screen (`GET /help/status`: booking, check-in, dining, ordering, chat, photos, account, each ok, slow or down). `sim` reports everything working, except for a demo account that has switched a fault on. A real feed replaces it and keeps the shape; if the feed fails, the screen says it could not check, not that all is well.
 - `Providers:Rates` = `http`: exchange rates. On failure it keeps the last table and shows its date.
 - `Providers:Concierge` = `anthropic`: needs `Concierge:ApiKey`.
 

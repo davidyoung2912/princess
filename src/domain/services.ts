@@ -1,6 +1,5 @@
 import type { Cents } from './money'
 import { GRATUITY_PER_NIGHT, GRATUITY_PER_NIGHT_SUITE, NIGHTS } from './pricing'
-import type { ScenarioId } from './scenarios'
 import { limit } from './limits'
 import { registerContent } from './content'
 
@@ -239,19 +238,15 @@ export type ChatReportReason = (typeof REPORT_REASONS)[number]
 export type Health = 'ok' | 'slow' | 'down'
 export interface StatusRow { id: string; health: Health; issue: boolean }
 
-/** What each part of the service is doing, from the demo's scenarios and network. */
-export function systemStatus(scenarios: readonly ScenarioId[], offline: boolean): StatusRow[] {
-  const on = (...ids: ScenarioId[]) => ids.some((i) => scenarios.includes(i))
-  const row = (id: string, health: Health): StatusRow => ({ id, health: offline ? 'down' : health, issue: (offline ? 'down' : health) !== 'ok' })
-  return [
-    row('booking', on('bookingLag') ? 'slow' : 'ok'),
-    row('checkin', on('checkinDrop') ? 'down' : 'ok'),
-    row('dining', on('dinnerReschedule') ? 'slow' : 'ok'),
-    row('ordering', on('orderStock') ? 'slow' : 'ok'),
-    row('chat', on('chatSlow') ? 'slow' : 'ok'),
-    row('photos', on('photoFail') ? 'down' : 'ok'),
-    row('account', 'ok'),
-  ]
+/** The parts of the service the status screen names; the server says how each is doing. */
+export const STATUS_PARTS = ['booking', 'checkin', 'dining', 'ordering', 'chat', 'photos', 'account'] as const
+
+export interface ServedStatus { id: string; health: Health }
+
+/** The rows to show: what the server served, or every part not working when this device is offline (nothing can be checked, and nothing will work). */
+export function statusRows(served: readonly ServedStatus[], offline: boolean): StatusRow[] {
+  const rows = offline ? STATUS_PARTS.map((id): ServedStatus => ({ id, health: 'down' })) : served
+  return rows.map((r) => ({ id: r.id, health: r.health, issue: r.health !== 'ok' }))
 }
 
 // ---- Port days (POR-05, POR-07, POR-13) ----

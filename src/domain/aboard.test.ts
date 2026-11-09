@@ -5,7 +5,7 @@ import { PLACES } from './deck'
 import { HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, normalizeGame, triviaScore } from './games'
 import { searchContent } from './searchIndex'
 import {
-  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, requestProgress, splitEvenly, systemStatus, topUpProblem,
+  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, requestProgress, splitEvenly, statusRows, topUpProblem,
 } from './services'
 import { captainAnnouncement } from './shipInfo'
 import { CHANNELS, VOD, onNow, titleAllowed } from './tv'
@@ -235,13 +235,19 @@ describe('chat safeguards (MSG-01, MSG-05)', () => {
   })
 })
 
-describe('status (SUP-04)', () => {
-  it('lists every part and flags what the demo scenarios break', () => {
-    const calm = systemStatus([], false)
-    expect(calm.every((r) => r.health === 'ok' && !r.issue)).toBe(true)
-    expect(systemStatus(['chatSlow'], false).find((r) => r.id === 'chat')).toMatchObject({ health: 'slow', issue: true })
-    expect(systemStatus(['checkinDrop'], false).find((r) => r.id === 'checkin')?.health).toBe('down')
-    expect(systemStatus([], true).every((r) => r.health === 'down')).toBe(true)
+describe('status (SUP-04, TRU-07)', () => {
+  const served = [{ id: 'booking', health: 'ok' as const }, { id: 'chat', health: 'slow' as const }, { id: 'checkin', health: 'down' as const }]
+  it('shows what the server served and flags what is not working', () => {
+    const rows = statusRows(served, false)
+    expect(rows.map((r) => r.id)).toEqual(['booking', 'chat', 'checkin'])
+    expect(rows.find((r) => r.id === 'booking')).toMatchObject({ health: 'ok', issue: false })
+    expect(rows.find((r) => r.id === 'chat')).toMatchObject({ health: 'slow', issue: true })
+    expect(rows.find((r) => r.id === 'checkin')).toMatchObject({ health: 'down', issue: true })
+  })
+  it('shows every part not working when this device is offline', () => {
+    const rows = statusRows(served, true)
+    expect(rows.length).toBeGreaterThan(3)
+    expect(rows.every((r) => r.health === 'down' && r.issue)).toBe(true)
   })
 })
 
