@@ -27,18 +27,42 @@ public sealed class DapperStaffTicketStore(IDbConnectionFactory db) : IStaffTick
     }
 }
 
-/// <summary>The hourly concierge limit kept in <c>dbo.ConciergeUses</c>, so it survives restarts and is shared by every instance.</summary>
+/// <summary>Stanley's model-call limit kept in <c>dbo.ConciergeUses</c> (one row per call), so it survives restarts and is shared by every instance.</summary>
 public sealed class DapperConciergeLimiter(IDbConnectionFactory db) : IConciergeLimiter
 {
-    public async Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct)
+    public Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct) => TryTakeAsync(userId, now, limit, TimeSpan.FromHours(1), ct);
+
+    public async Task<bool> TryTakeAsync(long userId, DateTime now, int limit, TimeSpan window, CancellationToken ct)
     {
-        var since = now.AddHours(-1);
+        var since = now - window;
         await using var c = await db.OpenAsync(ct);
-        // One batch: forget what is over an hour old, then record this question only if the person is under the limit (the lock hint stops two instances both slipping in).
+        // One batch: forget what is older than the window, then record this call only if the person is under the limit (the lock hint stops two instances both slipping in).
         var taken = await c.QuerySingleAsync<int>(Sql.Cmd(
             "DELETE FROM dbo.ConciergeUses WHERE UserId = @userId AND UsedAt <= @since; " +
             "INSERT INTO dbo.ConciergeUses (UserId, UsedAt) SELECT @userId, @now WHERE (SELECT COUNT(*) FROM dbo.ConciergeUses WITH (UPDLOCK, HOLDLOCK) WHERE UserId = @userId) < @limit; SELECT @@ROWCOUNT",
             new { userId, since, now, limit }, null, ct));
         return taken > 0;
+    }
+}
+
+/// <summary>The gateway's tier log in <c>dbo.StanleyTierLog</c>: one row per reply, counts and token use only, never message text.</summary>
+public sealed class DapperStanleyTierLog(IDbConnectionFactory db) : IStanleyTierLog
+{
+    public async Task RecordAsync(StanleyTierEntry e, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd(
+            "INSERT INTO dbo.StanleyTierLog (At, Tier, Source, Stage, Topic, Outcome, ModelTier, Calls, InputTokens, OutputTokens) VALUES (@At, @Tier, @Source, @Stage, @Topic, @Outcome, @ModelTier, @Calls, @InputTokens, @OutputTokens)",
+            e, null, ct));
+    }
+
+    public async Task<StanleyTierSummary> SummaryAsync(DateTime since, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = (await c.QueryAsync<StanleyTierRow>(Sql.Cmd(
+            "SELECT Tier, Source, Stage, Topic, Outcome, ModelTier, COUNT(*) AS Replies, SUM(Calls) AS Calls, SUM(CAST(InputTokens AS BIGINT)) AS InputTokens, SUM(CAST(OutputTokens AS BIGINT)) AS OutputTokens " +
+            "FROM dbo.StanleyTierLog WHERE At >= @since GROUP BY Tier, Source, Stage, Topic, Outcome, ModelTier ORDER BY Replies DESC",
+            new { since }, null, ct))).ToList();
+        return StanleyTierSummary.Of(since, rows);
     }
 }

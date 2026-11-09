@@ -8,7 +8,7 @@ There is one mode: the front end always talks to the REST API and keeps no data 
 
 Vite proxies `/api` to `VITE_API_PROXY` (default `http://localhost:5182`). A different API origin also needs adding to the CSP `connect-src` and the API's CORS origins.
 
-Still mocked, on the server, on purpose: live ship telemetry and weather, and card charging. The AI concierge runs on the server when a model key is set (`Concierge:ApiKey`, user-secrets); without one, a scripted helper on the server answers.
+Still mocked, on the server, on purpose: live ship telemetry and weather, and card charging. Stanley, the one chat helper, runs through a gateway on the server (`POST /me/stanley`) and calls a model when a key is set (`Concierge:ApiKey`, user-secrets); without one, scripted answers on the server reply. Models, call caps and kill switches are the `Stanley` configuration section.
 
 ## Running the back end
 

@@ -3,27 +3,21 @@ import { actPath, answerActions, groupable, groupPath, routeQuestion, shipFactFo
 
 describe('routeQuestion', () => {
   it('sends a change to Ask your cruise, never acting itself', () => {
-    expect(routeQuestion('Move dinner to 8pm', 'sea', true).kind).toBe('act')
-    expect(routeQuestion('I need extra towels please', 'sea', true).kind).toBe('act')
+    expect(routeQuestion('Move dinner to 8pm', true).kind).toBe('act')
+    expect(routeQuestion('I need extra towels please', true).kind).toBe('act')
   })
-  it('does not offer changes before there is a booking', () => {
-    expect(routeQuestion('Can I cancel later?', 'dream', false).kind).toBe('before')
+  it('does not offer changes before there is a booking, or when the server has switched actions off', () => {
+    expect(routeQuestion('Can I cancel later?', false).kind).toBe('server')
+    expect(routeQuestion('Move dinner to 8pm', true, false).kind).toBe('server')
   })
   it('answers a clear ship fact from ship data', () => {
-    expect(routeQuestion('How fast does the ship go?', 'sea', true)).toMatchObject({ kind: 'ship', fact: { id: 'speed' } })
+    expect(routeQuestion('How fast does the ship go?', true)).toMatchObject({ kind: 'ship', fact: { id: 'speed' } })
   })
   it('ignores a single loose keyword', () => {
     expect(shipFactFor('Is Cozumel good for a tour?')).toBeNull()
   })
-  it('uses the pre-booking source while choosing', () => {
-    expect(routeQuestion('Which cabin has the best view?', 'discover', false).kind).toBe('before')
-  })
-  it('uses the trip source for the guest\'s own booking and plan', () => {
-    expect(routeQuestion('What do I still need to do?', 'manage', true).kind).toBe('trip')
-    expect(routeQuestion('What is on my bill?', 'sea', true).kind).toBe('trip')
-  })
-  it('leaves open questions to the Stanley model', () => {
-    expect(routeQuestion('Is Roatán good for snorkelling?', 'sea', true).kind).toBe('model')
+  it('leaves every other question to the server, which picks the source (no word lists on the device)', () => {
+    for (const q of ['Which cabin has the best view?', 'What do I still need to do?', 'What is on my bill?', 'Is Roatán good for snorkelling?']) expect(routeQuestion(q, true)).toEqual({ kind: 'server' })
   })
 })
 

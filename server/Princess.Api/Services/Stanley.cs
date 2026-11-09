@@ -1,47 +1,111 @@
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Options;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
 /// <summary>
-/// Stanley, the cruise chat helper (docs/stanley-plan.md, S2). One turn, in this order, all on the server: the word filter (no model), the safety screen
-/// (emergency, medical, legal and "talk to a person" never reach a model), the hourly limit, a cheap topic prescan, then the answer. With no model set up a
-/// scripted reply answers cruising messages. Stanley has no tools; his only account knowledge is the PII-free trip facts the server builds (<see cref="StanleyTrip"/>). Message text is never logged.
+/// The Stanley gateway (docs/stanley-gap-analysis-and-plan.md, phase 1): the one server door for every conversational question, so policy, routing, budget, logging
+/// and kill switches live in one place. One turn, in this order: the word filter and the safety screen (neither ever reaches a model), the router
+/// (<see cref="StanleyRouter"/>: trip, before or open), the switches, then the answer from the tools or the open model, within the call caps and the guest's daily ceiling.
+/// When a model cannot be used (none set up, a switch, a cap, a failure) the scripted answers reply and say why. Every reply writes one tier log row with counts and
+/// tokens, never message text. Stanley's account knowledge is the PII-free trip facts the server builds (<see cref="StanleyTrip"/>) and, on the tool routes, the
+/// tools over the guest's own booking. Message text is never logged.
 /// </summary>
-public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, ILogger<StanleyService> log)
+public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log)
 {
     public const string NoTools = "[]";
 
     public async Task<StanleyReplyDto> AskAsync(UserRecord user, StanleyRequestDto request, CancellationToken ct)
     {
+        var o = options.Value;
         var turns = StanleyRules.Usable(request.History) ?? throw ApiException.Invalid("badStanley");
-        if (ProfanityFilter.IsBlocked(turns.Message)) return new StanleyReplyDto("blocked", "", null, "", null);
-        if (ConciergeRules.Screen(turns.Message) is { } handoff) return new StanleyReplyDto("handoff", "", handoff, "", null);
+        var context = StanleyRouter.Clean(request.Context);
+        var off = o.Switches.Off();
 
-        if (!model.Available)
+        async Task<StanleyReplyDto> End(StanleyReplyDto reply, string topicName, string outcome, ModelMeter? used = null)
+        {
+            reply = reply with { Degraded = off };
+            try
+            {
+                await tierLog.RecordAsync(new StanleyTierEntry
+                {
+                    At = clock.UtcNow, Tier = reply.Tier, Source = reply.Source, Stage = context.Stage, Topic = topicName, Outcome = outcome,
+                    ModelTier = used?.Highest?.ToString().ToLowerInvariant() ?? "", Calls = used?.Calls ?? 0, InputTokens = used?.InputTokens ?? 0, OutputTokens = used?.OutputTokens ?? 0,
+                }, ct);
+            }
+            catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Stanley tier log failed"); }
+            return reply;
+        }
+
+        if (ProfanityFilter.IsBlocked(turns.Message)) return await End(new StanleyReplyDto("blocked", "", null, "", null, "blocked"), "safety", "blocked");
+        if (ConciergeRules.Screen(turns.Message) is { } handoff) return await End(new StanleyReplyDto("handoff", "", handoff, "", null, "handoff"), "safety", "handoff");
+
+        var trip = await trips.LoadAsync(user, ct);
+        var routing = StanleyRouter.Route(turns.Message, context.Stage, trip is not null);
+        var modelUsable = model.Available && o.Switches.Model;
+        var meter = new ModelMeter(model, c => limiter.TryTakeAsync(user.Id, clock.UtcNow, o.DailyCeiling, TimeSpan.FromDays(1), c), routing.Planning ? o.PlanningCalls : o.ChatCalls);
+
+        if (routing.Route != StanleyRoute.Open)
+        {
+            var tier = routing.Route == StanleyRoute.Trip ? "trip" : "before";
+            var ctx = await tools.ContextAsync(user, request.Mobility, request.Likes, ct);
+            string? fallback = null;
+            if (o.Switches.Tools && modelUsable)
+            {
+                try
+                {
+                    var answered = await tools.AskModelAsync(turns.Messages, ctx, meter, routing.Planning ? ModelTier.Large : ModelTier.Default, ct);
+                    return await End(Answer(answered.Text, "claude", tier, null, answered.Citations), routing.Topic, "ok", meter);
+                }
+                catch (ConciergeModelException e)
+                {
+                    log.LogWarning("Stanley model failed on the {Tier} route: {Code}", tier, e.Code);
+                    fallback = e.Code;
+                }
+            }
+            if (!o.Switches.Resolver) return await End(Unavailable("off"), routing.Topic, "off", meter);
+            var scripted = StanleyToolService.Scripted(turns.Message, ctx, fallback);
+            return await End(Answer(scripted.Text, "scripted", tier, fallback, scripted.Citations), routing.Topic, fallback ?? "ok", meter);
+        }
+
+        if (!modelUsable)
+        {
+            if (!o.Switches.Resolver) return await End(Unavailable("off"), routing.Topic, "off");
             return StanleyRules.LooksOnTopic(turns.Message)
-                ? new StanleyReplyDto("answer", StanleyRules.ScriptedAnswerFor(turns.Message, await trips.LoadAsync(user, ct)), null, "scripted", null)
-                : new StanleyReplyDto("offtopic", "", null, "", null);
+                ? await End(Answer(StanleyRules.ScriptedAnswerFor(turns.Message, trip), "scripted", "model", null, null), routing.Topic, "ok")
+                : await End(new StanleyReplyDto("offtopic", "", null, "", null, "offtopic"), routing.Topic, "offtopic");
+        }
 
-        if (!await limiter.TryTakeAsync(user.Id, clock.UtcNow, ConciergeRules.HourlyLimit, ct)) return Unavailable("limit");
         try
         {
-            var topic = await model.CompleteAsync(StanleyRules.TopicSystem, NoTools, ToTurns(StanleyRules.TopicMessages(turns)), ct);
-            if (!StanleyRules.ReadTopic(TextOf(topic))) return new StanleyReplyDto("offtopic", "", null, "", null);
+            var topic = await meter.CallAsync(StanleyRules.TopicSystem, NoTools, ToTurns(StanleyRules.TopicMessages(turns)), ModelTier.Small, ct);
+            if (!StanleyRules.ReadTopic(TextOf(topic))) return await End(new StanleyReplyDto("offtopic", "", null, "", null, "offtopic"), routing.Topic, "offtopic", meter);
 
-            var answer = TextOf(await model.CompleteAsync(StanleyRules.AnswerSystemFor(await trips.LoadAsync(user, ct)), NoTools, ToTurns(turns.Messages), ct));
+            var answer = TextOf(await meter.CallAsync(StanleyRules.AnswerSystemFor(trip), NoTools, ToTurns(turns.Messages), ModelTier.Default, ct));
             if (answer.Length == 0) throw new ConciergeModelException("bad", "An empty answer.");
-            return new StanleyReplyDto("answer", answer, null, "claude", null);
+            return await End(Answer(answer, "claude", "model", null, null), routing.Topic, "ok", meter);
         }
         catch (ConciergeModelException e)
         {
             log.LogWarning("Stanley model failed: {Code} ({Reason})", e.Code, e.Message);
-            return Unavailable(e.Code);
+            return await End(Unavailable(e.Code), routing.Topic, e.Code, meter);
         }
     }
 
-    private static StanleyReplyDto Unavailable(string code) => new("unavailable", "", null, "", code);
+    private static StanleyReplyDto Answer(string text, string source, string tier, string? fallback, List<CitationDto>? sources) =>
+        new("answer", text, null, source, fallback, tier, [new StanleyBlockDto("text", text)], sources ?? []);
+
+    private static StanleyReplyDto Unavailable(string code) => new("unavailable", "", null, "", code, "unavailable");
+
+    /// <summary>What the device needs to know before the first question: which routes are off. The device carries out <c>library</c> and <c>actions</c> itself.</summary>
+    public StanleyStatusDto Status()
+    {
+        var s = options.Value.Switches;
+        return new StanleyStatusDto(s.Library, s.Actions, s.Off());
+    }
 
     private static JsonArray ToTurns(IEnumerable<ConciergeMessageDto> messages)
     {
@@ -53,3 +117,6 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
     private static string TextOf(JsonObject body) =>
         string.Concat((body["content"] as JsonArray ?? []).OfType<JsonObject>().Where(b => b["type"]?.GetValue<string>() == "text").Select(b => b["text"]?.GetValue<string>())).Trim();
 }
+
+/// <summary>The gateway's switches as the device reads them (<c>GET /me/stanley/status</c>).</summary>
+public sealed record StanleyStatusDto(bool Library, bool Actions, List<string> Degraded);

@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { askStanley, cooldownSeconds, revealSteps, getStanleyThread, historyToSend, normalizeStanley, setStanleyThread, stanleyProblem, type StanleyMessage } from './stanley'
+import { askStanley, cooldownSeconds, getStanleyStatus, loadStanleyStatus, normalizeStatus, revealSteps, getStanleyThread, historyToSend, normalizeStanley, setStanleyThread, stanleyProblem, type StanleyMessage } from './stanley'
 
 const u = (text: string, at = 1): StanleyMessage => ({ id: `u${at}`, role: 'user', text, at })
 const a = (text: string, kind: StanleyMessage['kind'] = 'answer', at = 2): StanleyMessage => ({ id: `a${at}`, role: 'assistant', text, at, kind })
 
 describe('normalizeStanley', () => {
   it('reads each kind and keeps text only for an answer', () => {
-    expect(normalizeStanley({ kind: 'answer', text: 'Hi', source: 'claude', handoff: null, fallback: null })).toEqual({ kind: 'answer', text: 'Hi', handoff: null, fallback: null })
+    expect(normalizeStanley({ kind: 'answer', text: 'Hi', source: 'claude', handoff: null, fallback: null })).toEqual({ kind: 'answer', text: 'Hi', handoff: null, fallback: null, tier: null, citations: [] })
     expect(normalizeStanley({ kind: 'blocked', text: 'ignored', handoff: null, fallback: null })?.text).toBe('')
     expect(normalizeStanley({ kind: 'unavailable', text: '', fallback: 'limit' })?.fallback).toBe('limit')
     expect(normalizeStanley({ kind: 'handoff', handoff: 'medical', text: '' })?.handoff).toBe('medical')
+  })
+  it('reads the gateway\'s tier and keeps only in-app sources', () => {
+    const turn = normalizeStanley({ kind: 'answer', text: 'Hi', tier: 'trip', sources: [{ label: 'A', path: 'https://evil' }, { label: 'B', path: '/ok' }], fallback: 'off' })
+    expect(turn).toMatchObject({ tier: 'trip', fallback: 'off', citations: [{ label: 'B', path: '/ok' }] })
+    expect(normalizeStanley({ kind: 'answer', text: 'Hi', tier: 'weird' })?.tier).toBeNull()
   })
   it('rejects a shape it does not know', () => {
     for (const bad of [null, 'x', {}, { kind: 'nope' }, { kind: 'answer', text: '  ' }, { kind: 'handoff', handoff: 'x', text: '' }]) expect(normalizeStanley(bad)).toBeNull()
@@ -44,6 +49,29 @@ describe('askStanley', () => {
     expect((await askStanley(async () => ({ kind: 'answer', text: 'Yes' }), [u('hi')])).text).toBe('Yes')
     expect((await askStanley(async () => { throw new Error('x') }, [u('hi')])).fallback).toBe('network')
     expect((await askStanley(async () => ({ nope: 1 }), [u('hi')])).kind).toBe('unreachable')
+  })
+})
+
+describe('where the guest is', () => {
+  it('sends the context packet and mobility with the thread', async () => {
+    const bodies: unknown[] = []
+    await askStanley(async (b) => { bodies.push(b); return { kind: 'answer', text: 'Yes' } }, [u('hi')], { context: { stage: 'sea', screen: 'S01', sailingId: 'S1', level: 'helpful' }, mobility: 'easy' })
+    expect(bodies[0]).toMatchObject({ history: [{ text: 'hi' }], context: { stage: 'sea', screen: 'S01', sailingId: 'S1', level: 'helpful' }, mobility: 'easy' })
+  })
+})
+
+describe('the server\'s switches', () => {
+  it('reads the status and treats anything unreadable as everything on', () => {
+    expect(normalizeStatus({ library: false, actions: true, degraded: ['library', 3, 'model'] })).toEqual({ library: false, actions: true, degraded: ['library', 'model'] })
+    expect(normalizeStatus(null)).toEqual({ library: true, actions: true, degraded: [] })
+  })
+  it('keeps what it last read, and a failed fetch changes nothing', async () => {
+    await loadStanleyStatus(async () => ({ library: false, actions: false, degraded: ['library', 'actions'] }))
+    expect(getStanleyStatus()).toMatchObject({ library: false, actions: false })
+    await loadStanleyStatus(async () => { throw new Error('offline') })
+    expect(getStanleyStatus().library).toBe(false)
+    await loadStanleyStatus(async () => ({}))
+    expect(getStanleyStatus()).toEqual({ library: true, actions: true, degraded: [] })
   })
 })
 

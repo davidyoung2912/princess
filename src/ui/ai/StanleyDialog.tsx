@@ -1,24 +1,25 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
 import { MAX_MESSAGE, screen } from '../../ai/guard'
 import { answerOf, LIBRARY, matchQuestion, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
 import { StanleyConfirm } from './StanleyConfirm'
-import { ask } from '../../ai/concierge'
 import { answerActions, routeQuestion, type StanleySource } from '../../ai/stanleyRoute'
-import type { Citation } from '../../ai/types'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { getContext, subscribeContext } from '../../account/context'
-import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
+import { useSailing } from '../../hooks/useDemo'
+import { useSettings } from '../../hooks/useSettings'
+import { stanleyLevelFor } from '../../settings/settings'
+import { screenForPath } from '../../routes/screens'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
-import { askStanley, cooldownSeconds, getStanleyThread, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
+import { askStanley, cooldownSeconds, getStanleyStatus, getStanleyThread, loadStanleyStatus, revealSteps, setStanleyThread, stanleyProblem, subscribeStanley, type StanleyMessage, type StanleyTurn } from '../../ai/stanley'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { t, type StringKey } from '../../i18n'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
-import { sendConcierge, sendStanley } from '../../runtime'
+import { fetchStanleyStatus, sendStanley } from '../../runtime'
 import { Button, LinkButton } from '../Button'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
@@ -52,9 +53,9 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const [draft, setDraft] = useState(prefill.slice(0, MAX_MESSAGE))
   const { stage } = useJourneyPosition()
   const hasBooking = !!useSyncExternalStore(subscribeContext, getContext, getContext)?.booking
-  const me = usePersona()
   const sailing = useSailing()
-  const demoNow = useNow()
+  const [settings] = useSettings()
+  const screenId = screenForPath(useLocation().pathname)?.id
   const { state: mem } = useMemory()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -62,6 +63,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const [now, setNow] = useState(() => Date.now())
   const end = useRef<HTMLLIElement>(null)
   const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
+  const status = useSyncExternalStore(subscribeStanley, getStanleyStatus, getStanleyStatus)
+  useEffect(() => { void loadStanleyStatus(fetchStanleyStatus) }, [])
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy, reveal?.i])
   const lastAnswer = [...messages].reverse().find((m) => m.role === 'assistant')
   const follow = lastAnswer && lastAnswer.kind === 'answer' && !lastAnswer.confirm && cooldownSeconds(messages, now) === 0
@@ -85,12 +88,12 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     setStanleyThread(withUser)
     setDraft('')
     setBusy(true)
-    // One front door: the authored library first (free), then the source that fits the question. The safety screen comes first, so an emergency is never answered from a library or a model.
+    // One front door: the authored library first (free, on the device), then a ship fact or an "Ask your cruise" change; everything else goes to the server's gateway, which picks the source.
+    // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switches can turn the library or the changes off.
     const blocked = screen(asked.text)
-    const known = blocked ? null : matchQuestion(asked.text, stage)
-    const route = blocked || known ? null : routeQuestion(asked.text, stage, hasBooking)
+    const known = blocked || !status.library ? null : matchQuestion(asked.text, stage)
+    const route = blocked || known ? null : routeQuestion(asked.text, hasBooking, status.actions)
     let source: StanleySource = 'model'
-    let citations: Citation[] = []
     let link: string | undefined
     let confirm: string | undefined
     let entryId: string | undefined
@@ -99,12 +102,11 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
     else if (route?.kind === 'act') { source = 'trip'; confirm = asked.text; turn = { kind: 'answer', text: t('stanley.act'), handoff: null, fallback: null } }
     else if (route?.kind === 'ship') { source = 'ship'; turn = { kind: 'answer', text: route.fact.a, handoff: null, fallback: null } }
-    else if (route && (route.kind === 'trip' || route.kind === 'before') && me) {
-      source = route.kind
-      const c = await ask(sendConcierge, [{ id: asked.id, role: 'user', text: asked.text, at }], { sailingId: sailing.id, personaId: me.id, now: demoNow, mobility: assistantMobility(mem.access) })
-      citations = c.reply.citations
-      turn = c.handoff ? { kind: 'handoff', text: '', handoff: c.handoff, fallback: null } : { kind: 'answer', text: c.reply.text, handoff: null, fallback: c.fallback }
-    } else turn = await askStanley(sendStanley, withUser)
+    else {
+      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access) })
+      if (turn.tier === 'trip' || turn.tier === 'before') source = turn.tier
+    }
+    const citations = turn.citations ?? []
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const actions = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
@@ -150,6 +152,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
             <li ref={end} aria-hidden="true" />
           </ol>
         )}
+        {status.degraded.length > 0 && <p role="status" className="muted stanley__note">{t('stanley.degraded')}</p>}
         {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
           <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />

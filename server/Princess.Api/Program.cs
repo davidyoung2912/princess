@@ -101,7 +101,7 @@ services.AddScoped<DemoService>();
 services.AddScoped<ContextService>();
 services.AddScoped<JourneyEventService>();
 services.AddScoped<AutopilotService>();
-services.AddScoped<ConciergeService>();
+services.AddScoped<IStanleyTools, StanleyToolService>();
 services.AddScoped<StanleyService>();
 services.AddScoped<IStanleyTrips, StanleyTripLoader>();
 services.AddScoped<PrivacyService>();

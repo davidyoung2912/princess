@@ -64,6 +64,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             ["Audit:Background"] = "false",   // tests read the trail straight after a request
             ["DataProtection:Store"] = "ephemeral",   // no database in these tests
             ["Providers:ConciergeLimit"] = "memory",
+            ["Providers:StanleyLog"] = "memory",
             ["Providers:Concierge"] = "sim",   // never the model, even when a key is set in the machine's environment
         }));
         builder.ConfigureServices(services =>

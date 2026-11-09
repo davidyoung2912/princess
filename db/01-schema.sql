@@ -1038,6 +1038,25 @@ CREATE TABLE dbo.ConciergeUses (
 CREATE INDEX IX_ConciergeUses_UserId_UsedAt ON dbo.ConciergeUses (UserId, UsedAt);
 END
 
+IF OBJECT_ID(N'dbo.StanleyTierLog', N'U') IS NULL
+BEGIN
+-- One row per Stanley reply (docs/stanley-gap-analysis-and-plan.md, phase 1): which route answered and what it cost. No message text and no person.
+CREATE TABLE dbo.StanleyTierLog (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyTierLog PRIMARY KEY,
+  At DATETIME2(0) NOT NULL,
+  Tier NVARCHAR(20) NOT NULL,
+  Source NVARCHAR(20) NOT NULL,
+  Stage NVARCHAR(20) NOT NULL,
+  Topic NVARCHAR(20) NOT NULL,
+  Outcome NVARCHAR(20) NOT NULL,
+  ModelTier NVARCHAR(10) NOT NULL,
+  Calls INT NOT NULL,
+  InputTokens BIGINT NOT NULL,
+  OutputTokens BIGINT NOT NULL
+);
+CREATE INDEX IX_StanleyTierLog_At ON dbo.StanleyTierLog (At);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

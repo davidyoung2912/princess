@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildRecap, recapText } from '../domain/recap'
 import { REFERENCE_SAILING } from '../domain/sailings'
-import { ask, askProblem, normalizeTurn } from './concierge'
-import { MAX_MESSAGE, screen } from './guard'
+import { screen } from './guard'
 import { applyRemoteThread, clearThread, getThread, KEEP, mergeThreads, normalizeThread, setThread, threadKeyFor } from './history'
 import type { ChatMessage, Context } from './types'
 
@@ -20,47 +19,6 @@ describe('guard', () => {
   })
   it('lets ordinary questions through', () => {
     for (const m of ['what is the price in March', 'plan my day in Cozumel', 'where can we eat']) expect(screen(m)).toBeNull()
-  })
-  it('checks the message length', () => {
-    expect(askProblem('  ')).toBe('empty')
-    expect(askProblem('a'.repeat(MAX_MESSAGE + 1))).toBe('long')
-    expect(askProblem('hello')).toBeNull()
-  })
-})
-
-describe('ask', () => {
-  const served = { text: 'From the model.', citations: [{ label: 'Dining', path: '/plan/dining' }], source: 'claude', handoff: null, fallback: null }
-
-  it('never sends a handoff message to the server', async () => {
-    let called = false
-    const send = async () => { called = true; return served }
-    const turn = await ask(send, [user('he is unconscious')], ctx)
-    expect(turn.handoff).toBe('emergency')
-    expect(called).toBe(false)
-  })
-  it('sends the latest messages and the guest’s preferences, and returns the server’s answer', async () => {
-    const bodies: unknown[] = []
-    const turn = await ask(async (b) => { bodies.push(b); return served }, Array.from({ length: 30 }, (_, i) => user(`m${i}`, i)), { ...ctx, mobility: 'easy', likes: ['quiet mornings'] })
-    expect(turn.reply).toEqual({ text: 'From the model.', citations: [{ label: 'Dining', path: '/plan/dining' }], source: 'claude' })
-    const body = bodies[0] as { history: { text: string }[]; mobility: string; likes: string[] }
-    expect(body.history).toHaveLength(12)
-    expect(body.history[11].text).toBe('m29')
-    expect(body).toMatchObject({ mobility: 'easy', likes: ['quiet mornings'] })
-  })
-  it('passes on the server’s own fallback and handoff', async () => {
-    expect(await ask(async () => ({ text: 'Script.', citations: [], source: 'scripted', handoff: null, fallback: 'limit' }), [user('hi')], ctx)).toMatchObject({ fallback: 'limit', reply: { source: 'scripted' } })
-  })
-  it('says so when the server cannot be reached or sends something unreadable, and answers nothing itself', async () => {
-    expect(await ask(async () => { throw new Error('offline') }, [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'network', reply: { citations: [] } })
-    expect(await ask(async () => ({ nonsense: true }), [user('where can we eat dinner')], ctx)).toMatchObject({ fallback: 'bad' })
-  })
-  it('reads only the agreed shape', () => {
-    expect(normalizeTurn(null)).toBeNull()
-    expect(normalizeTurn({ text: '', source: 'claude' })).toBeNull()
-    expect(normalizeTurn({ text: 'x', source: 'other' })).toBeNull()
-    expect(normalizeTurn({ text: '', source: 'handoff', handoff: 'nope' })).toBeNull()
-    expect(normalizeTurn({ text: '', source: 'handoff', handoff: 'medical' })).toMatchObject({ handoff: 'medical' })
-    expect(normalizeTurn({ text: 'x', source: 'claude', citations: [{ label: 'A', path: 'https://evil' }, { label: 'B', path: '/ok' }], fallback: 'weird' })).toMatchObject({ reply: { citations: [{ label: 'B', path: '/ok' }] }, fallback: null })
   })
 })
 

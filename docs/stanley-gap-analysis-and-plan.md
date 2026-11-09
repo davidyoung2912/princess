@@ -279,6 +279,7 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Cache for public ship and port content by version.
 - **Closes:** A1, A2, A3, 5.1, 8.3 cache, 8.5 (start), 10.4, AI-SEC-08.
 - **Acceptance.** Browser holds no regex routing; a request with the model switched off still answers from library and resolvers; a tier log row exists for every reply, including model tier and token cost; the Concierge screen works through the gateway and `/me/concierge` is gone; exceeding a call cap or the daily ceiling produces the deterministic fallback; tests cover each route, each switch and each cap.
+- **Status (2026-11-09): built; server tests written, not run here.** Carried over: the browser keeps the `act` word list until phase 5 and ship-fact keywords (authored content); the `handoff` kill switch arrives with phase 6; `actions` and `library` switches are read by the device from `GET /me/stanley/status`; the reply's `actions[]` and `receipt` fields arrive with phases 3 and 5; the tier log has no retention job yet.
 
 ### Phase 2: Evaluation and content governance foundation (M)
 

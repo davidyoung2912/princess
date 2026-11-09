@@ -5,7 +5,7 @@ using Princess.Api.Services;
 
 namespace Princess.Api.Endpoints;
 
-/// <summary>The AI concierge (multi-device plan 2, Phase 2). The model key never leaves the server.</summary>
+/// <summary>Guest services requests, the autopilot and the day plan. The AI concierge is gone: Stanley is the only conversational surface (<see cref="StanleyEndpoints"/>).</summary>
 public static class ConciergeEndpoints
 {
     public static void MapConciergeEndpoints(this IEndpointRouteBuilder api)
@@ -38,11 +38,6 @@ public static class ConciergeEndpoints
             })
             .WithTags("Concierge")
             .WithSummary("Cancels one of the caller's guest services requests. 404 when it is not theirs.");
-
-        api.MapPost("/me/concierge", async (ConciergeRequestDto body, ICurrentUser me, ConciergeService svc, CancellationToken ct) =>
-                Results.Ok(await svc.AskAsync(await me.LoadAsync(ct), body, ct)))
-            .WithTags("Concierge")
-            .WithSummary("Asks the concierge. Send the thread so far (newest last, ending with the guest's message, at most 60 messages, the guest's message at most 500 characters). Emergency, medical, legal and 'talk to a person' messages are never sent to a model: source handoff with the kind. Otherwise a model answers from the tools (source claude), or the scripted concierge does (source scripted, with fallback saying why: limit, auth, rate, network or bad). 400 badConcierge for a thread it cannot answer.");
 
         api.MapPost("/me/autopilot/plan", async (AutopilotPlanRequest body, AutopilotService svc, CancellationToken ct) => Results.Ok(await svc.PlanAsync(body, ct)))
             .WithTags("Concierge")

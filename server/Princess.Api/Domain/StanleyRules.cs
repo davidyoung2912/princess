@@ -2,15 +2,22 @@ using System.Text.RegularExpressions;
 
 namespace Princess.Api.Domain;
 
-/// <summary>What the guest sends Stanley: the thread so far, oldest first, ending with the guest's message. Blocked and rejected messages should not be sent; the server also drops them.</summary>
-public sealed record StanleyRequestDto(List<ConciergeMessageDto>? History);
+/// <summary>
+/// What the guest sends Stanley: the thread so far, oldest first, ending with the guest's message; the context packet (stage, screen, sailing, level); and the device's
+/// mobility and tour likes for building a day. Blocked and rejected messages should not be sent; the server also drops them.
+/// </summary>
+public sealed record StanleyRequestDto(List<ConciergeMessageDto>? History, StanleyContextDto? Context = null, string? Mobility = null, List<string>? Likes = null);
+
+/// <summary>One piece of an answer. Only <c>text</c> exists today; cards and tables arrive with the answer-card phase.</summary>
+public sealed record StanleyBlockDto(string Type, string Text);
 
 /// <summary>
 /// Stanley's answer. <c>Kind</c> is <c>answer</c>, <c>blocked</c> (word filter), <c>offtopic</c>, <c>handoff</c> (with <c>Handoff</c> saying which) or <c>unavailable</c>
-/// (with <c>Fallback</c>: limit, auth, rate, network or bad). <c>Text</c> is only set for <c>answer</c>; the front end words every other kind itself.
-/// <c>Source</c> is <c>claude</c> or <c>scripted</c> for an answer, else empty.
+/// (with <c>Fallback</c>: limit, auth, rate, network, bad or off). <c>Text</c> is only set for <c>answer</c>; the front end words every other kind itself.
+/// <c>Source</c> is <c>claude</c> or <c>scripted</c> for an answer, else empty. <c>Tier</c> says which route handled it (blocked, handoff, offtopic, unavailable, trip, before or model),
+/// <c>Blocks</c> is the answer in typed pieces, <c>Sources</c> the screens it used, and <c>Degraded</c> lists any route a switch has turned off.
 /// </summary>
-public sealed record StanleyReplyDto(string Kind, string Text, string? Handoff, string Source, string? Fallback);
+public sealed record StanleyReplyDto(string Kind, string Text, string? Handoff, string Source, string? Fallback, string Tier = "", List<StanleyBlockDto>? Blocks = null, List<CitationDto>? Sources = null, List<string>? Degraded = null);
 
 /// <summary>A cleaned thread: the guest's message and the earlier round trips that may be sent to a model, as Messages API turns.</summary>
 public sealed record StanleyTurns(string Message, List<ConciergeMessageDto> Messages);
@@ -22,6 +29,9 @@ public sealed record StanleyTurns(string Message, List<ConciergeMessageDto> Mess
 public static class StanleyRules
 {
     public const int MaxMessage = ConciergeRules.MaxMessage, MaxThread = 60, MaxRoundTrips = 10;
+
+    /// <summary>Bump when the public ship, port and excursion catalogue changes, so cached tool answers (<c>StanleyToolService</c>) are rebuilt.</summary>
+    public const string ContentVersion = "2026-11-09";
 
     /// <summary>
     /// Checks the thread and keeps the context. Null when it is not one Stanley can answer (empty, too long, bad roles, not ending with a clean guest message).
@@ -98,7 +108,7 @@ public static class StanleyRules
     /// <summary>Used when no model is set up and nothing below fits. It never introduces Stanley.</summary>
     public const string ScriptedAnswer =
         "I can only give short general answers right now. For the ports (Cozumel, Belize and Roatan) or the ship, have a look at the Ports and Ship screens, " +
-        "or ask the Concierge, which can use your trip. For anything urgent, call Guest Services.";
+        "or ask me about your trip. For anything urgent, call Guest Services.";
 
     private static readonly (Regex Match, string Answer)[] Scripted =
     [

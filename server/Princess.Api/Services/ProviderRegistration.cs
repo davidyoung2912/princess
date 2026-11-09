@@ -95,6 +95,7 @@ public static class ProviderRegistration
         }
 
         services.AddOptions<ConciergeOptions>().BindConfiguration(ConciergeOptions.Section);
+        services.AddOptions<StanleyOptions>().BindConfiguration(StanleyOptions.Section);
         var hasKey = !string.IsNullOrWhiteSpace(config[$"{ConciergeOptions.Section}:ApiKey"]);
         // Providers:Concierge is sim (the scripted concierge) or anthropic. Unset: anthropic when a key is present, else sim.
         var concierge = (config[$"{Section}:Concierge"] ?? (hasKey ? "anthropic" : Sim)).Trim().ToLowerInvariant();
@@ -134,6 +135,15 @@ public static class ProviderRegistration
             case "database": services.AddScoped<IConciergeLimiter, DapperConciergeLimiter>(); break;
             case "memory": services.AddSingleton<IConciergeLimiter, MemoryConciergeLimiter>(); break;
             default: throw new InvalidOperationException($"{Section}:ConciergeLimit is '{limit}', which is not registered. Choose one of: database, memory.");
+        }
+
+        // Providers:StanleyLog is database (the default, shared and kept across restarts) or memory (one instance, for tests and trials).
+        var tierLog = (config[$"{Section}:StanleyLog"] ?? "database").Trim().ToLowerInvariant();
+        switch (tierLog)
+        {
+            case "database": services.AddScoped<IStanleyTierLog, DapperStanleyTierLog>(); break;
+            case "memory": services.AddSingleton<IStanleyTierLog, MemoryStanleyTierLog>(); break;
+            default: throw new InvalidOperationException($"{Section}:StanleyLog is '{tierLog}', which is not registered. Choose one of: database, memory.");
         }
         return services;
     }

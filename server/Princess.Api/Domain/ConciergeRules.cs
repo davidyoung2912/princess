@@ -8,9 +8,6 @@ namespace Princess.Api.Domain;
 
 public sealed record ConciergeMessageDto(string Role, string Text, long At);
 
-/// <summary>The thread so far (newest last, ending with the guest's new message) and what the device knows about the guest's preferences.</summary>
-public sealed record ConciergeRequestDto(List<ConciergeMessageDto>? History, string? Mobility, List<string>? Likes);
-
 public sealed record CitationDto(string Label, string Path);
 
 /// <summary><c>Source</c> is claude, scripted or handoff; <c>Handoff</c> names the kind of person needed; <c>Fallback</c> says why a model was not used (auth, rate, network, bad, limit).</summary>
@@ -32,7 +29,7 @@ public sealed record ToolOutcome(string Content, List<CitationDto> Citations, bo
 /// </summary>
 public static class ConciergeRules
 {
-    public const int MaxMessage = 500, MaxContext = 12, MaxHistory = 60, MaxTurns = 5, HourlyLimit = 20;
+    public const int MaxMessage = 500, MaxContext = 12, MaxHistory = 60, MaxTurns = 5;
 
     private static readonly Regex Emergency = new(@"\b(fire|smoke|overboard|drown\w*|can'?t breathe|cannot breathe|not breathing|chest pain|heart attack|stroke|unconscious|bleeding|overdose|seizure|choking|collapsed|assault\w*|attack\w*|missing child|lost child|suicid\w*|help me now|emergency)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex Medical = new(@"\b(medic\w*|dose|dosage|prescription|doctor|diagnos\w*|symptom\w*|pregnan\w*|allerg\w* (reaction|shock)|infection|rash|fever|vomit\w*|norovirus|covid|seasick\w*|is it safe to (take|drink|eat))\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);

@@ -10,13 +10,12 @@ using Princess.Api.Domain;
 namespace Princess.Api.Services;
 
 /// <summary>Concierge settings. <c>ApiKey</c> is a secret: user-secrets or an environment variable, never a tracked file. Without one the scripted concierge answers.</summary>
+/// <summary>The model service's key and address. Which model answers, and how much it may spend, is <see cref="StanleyOptions"/>.</summary>
 public sealed class ConciergeOptions
 {
     public const string Section = "Concierge";
     public string ApiKey { get; set; } = "";
-    public string Model { get; set; } = "claude-sonnet-5-5";
     public string Endpoint { get; set; } = "https://api.anthropic.com/v1/messages";
-    public int MaxTokens { get; set; } = 900;
 }
 
 /// <summary>Why a model could not answer: auth, rate, network or bad. The service turns it into the scripted concierge plus a <c>fallback</c> code.</summary>
@@ -25,25 +24,28 @@ public sealed class ConciergeModelException(string code, string message) : Excep
     public string Code { get; } = code;
 }
 
-/// <summary>What a model must supply: one request with the tools, answered in the Messages API's shape (<c>content</c> blocks and <c>stop_reason</c>).</summary>
+/// <summary>Which model a call uses (decision 6 in docs/stanley-gap-analysis-and-plan.md): small for prescans, default for answers with tools, large only for planning.</summary>
+public enum ModelTier { Small, Default, Large }
+
+/// <summary>What a model must supply: one request with the tools, answered in the Messages API's shape (<c>content</c> blocks, <c>stop_reason</c> and <c>usage</c>).</summary>
 public interface IConciergeModel
 {
     /// <summary>False when no model is set up (no key); the service then answers from the script without counting against the hourly limit.</summary>
     bool Available { get; }
 
     /// <param name="messages">Messages API turns (<c>[{role, content}]</c>), ending with the guest's message or a tool result.</param>
-    Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, CancellationToken ct);
+    Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, ModelTier tier, CancellationToken ct);
 }
 
 public sealed class UnavailableConciergeModel : IConciergeModel
 {
     public bool Available => false;
-    public Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, CancellationToken ct) =>
+    public Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, ModelTier tier, CancellationToken ct) =>
         throw new ConciergeModelException("bad", "No concierge model is configured.");
 }
 
 /// <summary>The Anthropic Messages API. The key lives only here, on the server.</summary>
-public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeOptions> options) : IConciergeModel
+public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeOptions> options, IOptions<StanleyOptions> stanley) : IConciergeModel
 {
     public bool Available => true;
 
@@ -58,10 +60,11 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
         catch (Exception e) when (e is JsonException or InvalidOperationException) { return ""; }
     }
 
-    public async Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, CancellationToken ct)
+    public async Task<JsonObject> CompleteAsync(string system, string toolsJson, JsonArray messages, ModelTier tier, CancellationToken ct)
     {
         var o = options.Value;
-        var body = new JsonObject { ["model"] = o.Model, ["max_tokens"] = o.MaxTokens, ["system"] = system, ["messages"] = messages };
+        var (name, maxTokens) = stanley.Value.For(tier);
+        var body = new JsonObject { ["model"] = name, ["max_tokens"] = maxTokens, ["system"] = system, ["messages"] = messages };
         if (JsonNode.Parse(toolsJson) is JsonArray { Count: > 0 } tools) body["tools"] = tools;   // Stanley asks with no tools: the API refuses an empty list
         using var req = new HttpRequestMessage(HttpMethod.Post, o.Endpoint) { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") };
         req.Headers.Add("x-api-key", o.ApiKey);
@@ -85,11 +88,14 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
     }
 }
 
-/// <summary>At most <see cref="ConciergeRules.HourlyLimit"/> model questions an hour per person. Counted in the database by default so the limit holds across restarts and instances.</summary>
+/// <summary>A per-person count of model calls in a sliding window (the gateway's daily ceiling). Counted in the database by default so the limit holds across restarts and instances.</summary>
 public interface IConciergeLimiter
 {
-    /// <summary>Counts a question and returns true when the person is still within <paramref name="limit"/> in the last hour; false (and counts nothing) when not.</summary>
+    /// <summary>Counts one call and returns true when the person is still within <paramref name="limit"/> in the last hour; false (and counts nothing) when not.</summary>
     Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct);
+
+    /// <summary>The same over any <paramref name="window"/>.</summary>
+    Task<bool> TryTakeAsync(long userId, DateTime now, int limit, TimeSpan window, CancellationToken ct);
 }
 
 /// <summary>Counted in memory (a restart resets it, which only ever lets more through). For tests and a single-instance trial: <c>Providers:ConciergeLimit</c> = <c>memory</c>.</summary>
@@ -100,101 +106,18 @@ public sealed class MemoryConciergeLimiter : IConciergeLimiter
 
     public Task<bool> TryTakeAsync(long userId, DateTime now, int limit, CancellationToken ct) => Task.FromResult(TryTake(userId, now, limit));
 
-    public bool TryTake(long userId, DateTime now, int limit = ConciergeRules.HourlyLimit)
+    public Task<bool> TryTakeAsync(long userId, DateTime now, int limit, TimeSpan window, CancellationToken ct) => Task.FromResult(TryTake(userId, now, limit, window));
+
+    public bool TryTake(long userId, DateTime now, int limit = 20, TimeSpan? window = null)
     {
+        var span = window ?? Hour;
         var list = _asked.GetOrAdd(userId, _ => []);
         lock (list)
         {
-            list.RemoveAll(t => now - t >= Hour);
+            list.RemoveAll(t => now - t >= span);
             if (list.Count >= limit) return false;
             list.Add(now);
             return true;
         }
-    }
-}
-
-/// <summary>
-/// The AI concierge (multi-device plan 2, Phase 2). One turn: a message needing a person never reaches a model; otherwise the model answers (running the tools
-/// over the catalogue and the guest's booking) when one is set up and the hourly limit allows, and the scripted concierge answers when not or when the call fails.
-/// </summary>
-public sealed class ConciergeService(ITripStore trips, IAccountStore accounts, IUserClock clock, IClock realClock, IConciergeModel model, IConciergeLimiter limiter, ILogger<ConciergeService> log)
-{
-    public async Task<ConciergeReplyDto> AskAsync(UserRecord user, ConciergeRequestDto request, CancellationToken ct)
-    {
-        var history = ConciergeRules.Usable(request.History) ?? throw ApiException.Invalid("badConcierge");
-        var message = history[^1].Text.Trim();
-        if (ConciergeRules.Screen(message) is { } handoff) return new ConciergeReplyDto("", [], "handoff", handoff, null);
-
-        var ctx = await ContextAsync(user, request, ct);
-        if (!model.Available) return Scripted(message, ctx, null);
-        if (!await limiter.TryTakeAsync(user.Id, realClock.UtcNow, ConciergeRules.HourlyLimit, ct)) return Scripted(message, ctx, "limit");
-        try
-        {
-            return await AskModelAsync(history, ctx, ct);
-        }
-        catch (ConciergeModelException e)
-        {
-            log.LogWarning("Concierge model failed: {Code}", e.Code);
-            return Scripted(message, ctx, e.Code);
-        }
-    }
-
-    private static ConciergeReplyDto Scripted(string message, ConciergeContext ctx, string? fallback) => ConciergeRules.ScriptedReply(message, ctx) with { Fallback = fallback };
-
-    private async Task<ConciergeContext> ContextAsync(UserRecord user, ConciergeRequestDto request, CancellationToken ct)
-    {
-        var now = await clock.NowAsync(user, ct);
-        var today = DateOnly.FromDateTime(now);
-        var sailings = (await trips.ListSailingsAsync(ct)).Where(s => s.BookingOpen && Pricing.HasPrice(s.Id) && DateOnly.FromDateTime(s.Departure) > today).OrderBy(s => s.Departure).ToList();
-        var booking = (await trips.ListForUserAsync(user.Id, ct))
-            .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
-        var party = new List<PartyMember>();
-        string? first = null;
-        if (booking is not null)
-        {
-            foreach (var g in await accounts.GetPartyAsync(booking.BookingId, ct))
-            {
-                var dob = DateOnly.FromDateTime(g.Dob);
-                var age = today.Year - dob.Year - (today < dob.AddYears(today.Year - dob.Year) ? 1 : 0);
-                party.Add(new PartyMember(g.FirstName, age));
-                if (g.UserId == user.Id) first = g.FirstName;
-            }
-        }
-        var mobility = request.Mobility is "easy" or "wheelchair" ? request.Mobility : "any";
-        var likes = (request.Likes ?? []).Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l.Length > 160 ? l[..160] : l).Take(5).ToList();
-        return new ConciergeContext(now, booking?.SailingId, booking is null ? null : DateOnly.FromDateTime(booking.Departure), booking?.ShipName, booking?.CategoryName, first, party, sailings, mobility, likes);
-    }
-
-    /// <summary>The Messages API loop: run the tools the model calls until it answers, at most <see cref="ConciergeRules.MaxTurns"/> times.</summary>
-    private async Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, CancellationToken ct)
-    {
-        var turns = new JsonArray();
-        foreach (var m in history) turns.Add(new JsonObject { ["role"] = m.Role, ["content"] = m.Text });
-        var system = ConciergeRules.SystemPrompt(ctx);
-        var citations = new List<CitationDto>();
-        for (var n = 0; n < ConciergeRules.MaxTurns; n++)
-        {
-            var body = await model.CompleteAsync(system, ConciergeRules.ToolsJson, turns, ct);
-            var blocks = body["content"] as JsonArray ?? new JsonArray();
-            var uses = blocks.OfType<JsonObject>().Where(b => b["type"]?.GetValue<string>() == "tool_use").ToList();
-            if (body["stop_reason"]?.GetValue<string>() != "tool_use" || uses.Count == 0)
-            {
-                var text = string.Concat(blocks.OfType<JsonObject>().Where(b => b["type"]?.GetValue<string>() == "text").Select(b => b["text"]?.GetValue<string>())).Trim();
-                if (text.Length == 0) throw new ConciergeModelException("bad", "An empty answer.");
-                return new ConciergeReplyDto(text, [.. citations.GroupBy(c => c.Path).Select(g => g.First()).Take(5)], "claude", null, null);
-            }
-            turns.Add(new JsonObject { ["role"] = "assistant", ["content"] = blocks.DeepClone() });
-            var results = new JsonArray();
-            foreach (var use in uses)
-            {
-                var r = ConciergeRules.RunTool(use["name"]?.GetValue<string>() ?? "", use["input"] as JsonObject ?? new JsonObject(), ctx);
-                citations.AddRange(r.Citations);
-                var result = new JsonObject { ["type"] = "tool_result", ["tool_use_id"] = use["id"]?.GetValue<string>(), ["content"] = r.Content };
-                if (r.IsError) result["is_error"] = true;
-                results.Add(result);
-            }
-            turns.Add(new JsonObject { ["role"] = "user", ["content"] = results });
-        }
-        throw new ConciergeModelException("bad", "Too many steps.");
     }
 }

@@ -9,7 +9,7 @@ using Princess.Api.Tests.Support;
 
 namespace Princess.Api.Tests;
 
-/// <summary>The concierge's rules and service (multi-device plan 2, Phase 2), mirroring <c>src/ai/ai.test.ts</c> from before the model moved to the server.</summary>
+/// <summary>The tools' rules, the guard and the scripted answers that Stanley's gateway uses (multi-device plan 2, Phase 2), mirroring <c>src/ai/ai.test.ts</c> from before the model moved to the server.</summary>
 public class ConciergeRulesTests
 {
     private static readonly DateTime Now = new(2027, 1, 10, 12, 0, 0, DateTimeKind.Utc);
@@ -111,35 +111,6 @@ public class ConciergeRulesTests
         Assert.False(limiter.TryTake(me, Now.AddMinutes(30), 3));
         Assert.True(limiter.TryTake(2L, Now, 3));
         Assert.True(limiter.TryTake(me, Now.AddMinutes(61), 3));
-    }
-}
-
-public class ConciergeApiTests : JourneyWorld
-{
-    private static ConciergeRequestDto Ask(string text) => new([new("user", text, 1)], null, null);
-
-    [Fact]
-    public async Task WithNoModelSetUpTheScriptedConciergeAnswers()
-    {
-        var token = await SignIn(Daniel);
-        var r = await Call(HttpMethod.Post, "/api/v1/me/concierge", token, Ask("How much does a cruise cost?"));
-        Assert.Equal(HttpStatusCode.OK, r.Status);
-        Assert.Equal("scripted", r.Json.GetProperty("source").GetString());
-        Assert.Equal(JsonValueKind.Null, r.Json.GetProperty("fallback").ValueKind);
-    }
-
-    [Fact]
-    public async Task AnEmergencyIsHandedToPeopleAndABadThreadIsRefused()
-    {
-        var token = await SignIn(Daniel);
-        var h = await Call(HttpMethod.Post, "/api/v1/me/concierge", token, Ask("Someone is not breathing"));
-        Assert.Equal("handoff", h.Json.GetProperty("source").GetString());
-        Assert.Equal("emergency", h.Json.GetProperty("handoff").GetString());
-        var bad = await Call(HttpMethod.Post, "/api/v1/me/concierge", token, new ConciergeRequestDto([], null, null));
-        Assert.Equal(HttpStatusCode.BadRequest, bad.Status);
-        Assert.Equal("badConcierge", bad.ProblemTitle);
-        var signedOut = await Call(HttpMethod.Post, "/api/v1/me/concierge", null, Ask("hi"));
-        Assert.Equal(HttpStatusCode.Unauthorized, signedOut.Status);
     }
 }
 

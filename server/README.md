@@ -17,7 +17,7 @@ Secrets never go in git. Set them once with user-secrets (stored outside the rep
 cd server/Princess.Api
 dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost;Database=princess;Trusted_Connection=True;TrustServerCertificate=True;"
 dotnet user-secrets set "Jwt:SigningKey" "<random string, 32+ characters>"
-# Optional: turns the AI concierge on (the model is called from the server; without a key the scripted concierge answers)
+# Optional: turns Stanley's model on (the model is called from the server by the Stanley gateway; without a key the scripted answers reply)
 dotnet user-secrets set "Concierge:ApiKey" "<Anthropic API key>"
 ```
 
@@ -58,10 +58,13 @@ Every external source is behind an interface and chosen in one place, `Services/
 | `Telemetry` | `IShipTelemetry` | port crowd, venue pulse, loungers, sightings and the night sky, as in `Providers.cs`. Timeout 2 s | the call fails; the answer is cached by the front end |
 | `StaffQueue` | `IStaffQueue` | a ticket with a position and expected time; the ticket row is kept by `IStaffTicketStore` either way, so the desk can read `dbo.StaffTickets` | the desk is unreachable: still keep the ticket and answer `waiting` |
 | `Concierge` | `IConciergeModel` | `sim` (the scripted concierge) or `anthropic` (needs `Concierge:ApiKey`). Unset: `anthropic` when a key is present, else `sim` | the model fails: the scripted concierge answers with a `fallback` code |
-| `ConciergeLimit` | `IConciergeLimiter` | `database` (default; `dbo.ConciergeUses`, shared by every instance and kept over restarts) or `memory` (one instance; tests) | n/a |
+| `ConciergeLimit` | `IConciergeLimiter` | `database` (default; `dbo.ConciergeUses`, one row per model call, shared by every instance and kept over restarts) or `memory` (one instance; tests). Backs the per-guest daily ceiling | n/a |
+| `StanleyLog` | `IStanleyTierLog` | `database` (default; `dbo.StanleyTierLog`, counts and tokens only, no message text) or `memory` (tests) | a failed log write never fails an answer |
+
+The Stanley gateway is configured in the `Stanley` section (see `appsettings.json`): `SmallModel`, `DefaultModel`, `LargeModel`, a token cap per tier, `ChatCalls` and `PlanningCalls` per request, `DailyCeiling` per guest, and `Switches` (`Library`, `Resolver`, `Model`, `Tools`, `Actions`) that turn a route off without a code change. `GET /me/stanley/status` reports what is off; `GET /me/stanley/tiers` (administrators) summarises the tier log.
 | `FareFeed`, `ProgramChanges`, `StormOutlook`, `TenderOutlook`, `LostProperty`, `SlotWatchFeed`, `SailingQuality`, `EmbarkQueue`, `CabinGuide`, `FriendReply`, `PaymentGateway`, `TelemetrySink` | the interface of the same name | see the doc comment on each interface in `Services/Providers.cs` and `PaymentGateway.cs` | the call fails |
 
-After any server change run `dotnet build server/Princess.sln` yourself; this project's rule keeps `dotnet test` out of the assistant's hands. Apply the new table with `db/01-schema.sql` (it creates `dbo.ConciergeUses` if missing).
+After any server change run `dotnet build server/Princess.sln` yourself; this project's rule keeps `dotnet test` out of the assistant's hands. Apply the new table with `db/01-schema.sql` (it creates `dbo.ConciergeUses` and `dbo.StanleyTierLog` if missing).
 
 ## Auth model
 
