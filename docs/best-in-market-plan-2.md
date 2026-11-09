@@ -236,3 +236,10 @@ Theme: reusable preferences (MNG-16). Only this row was taken; DRM-07, QOL-17 an
 `preferenceUse` in `src/domain/preferenceUse.ts` turns the saved food, access, bedding and request answers into plain lines saying where each is used (dining, excursion flags, checklist reminders, room team); the profile shows them under "How these are used", marks health and child data as not used for marketing, and says there is no way yet to leave one out of a later sailing. Test in `preferenceUse.test.ts`.
 MNG-16 stays Partial: an opt-out per preference, and cabin-location and message preferences, need a server field. Limits: no component test, no browser check. Matrix totals not regenerated.
 Next in group A: DRM-07 (needs occasion tags, a content source), QOL-17, QOL-18.
+
+## 5q. BM32 result (built, not committed)
+
+Theme: visual ship literacy (QOL-17). Only this row was taken; DRM-07 and QOL-18 are not started.
+`shipLiteracy` and `cutaway` in `src/domain/shipLiteracy.ts` use the deck graph to say, for a typed cabin number, how many decks up or down, how many sections toward bow or stern and which lift banks lead to guest services, the Piazza, main dining, the Lido, medical and the gangway. `ShipLiteracy` on the deck-map screen shows four deck rules, those lines and a top-to-bottom deck list with the cabin deck marked, and says it is not navigation. Test in `shipLiteracy.test.ts`.
+QOL-17 stays Partial: there is no ship art or true layered cutaway (needs art), and no orientation-confidence or help-request measure. Limits: no component test, no browser check. Matrix totals not regenerated.
+Next in group A: DRM-07 (needs occasion tags, a content source), QOL-18.

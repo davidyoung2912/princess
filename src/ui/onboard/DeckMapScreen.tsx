@@ -9,6 +9,7 @@ import { BackLink } from './common'
 import { DeckPlan } from './DeckPlan'
 import { RouteFinder } from './RouteFinder'
 import { CodeScanner } from './DeviceTools'
+import { ShipLiteracy } from './ShipLiteracy'
 import { ParkMySpot } from '../delights/SeaDelights'
 import { useMemory } from '../../hooks/useMemory'
 
@@ -35,6 +36,7 @@ export function DeckMapScreen() {
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />
+      <ShipLiteracy />
       <ParkMySpot />
       <CodeScanner />
 
