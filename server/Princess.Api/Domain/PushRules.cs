@@ -59,6 +59,10 @@ public static class PushRules
         var query = new List<string>();
         if (Plain(trip)) query.Add($"trip={trip}");
         if (n.Kind == "disruption" && n.Params.TryGetValue("id", out var id) && id is string s && Plain(s)) query.Add($"update={s}");
+        // Other kinds of alert name what they are about: a dining reservation, a case, or a port and its day (MOB-07, COM-06).
+        foreach (var key in new[] { "reservation", "case", "port" })
+            if (n.Params.TryGetValue(key, out var v) && v is string text && Plain(text)) query.Add($"{key}={text}");
+        if (n.Params.ContainsKey("port") && n.Params.TryGetValue("date", out var d) && d is string day && DateOnly.TryParseExact(day, "yyyy-MM-dd", out _)) query.Add($"date={day}");
         return query.Count == 0 ? n : n with { Path = $"{n.Path}?{string.Join('&', query)}" };
     }
 

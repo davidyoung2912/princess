@@ -223,6 +223,13 @@ public class PushRulesTests
         Assert.Equal("/me/payments", PushRules.WithLink(Plain(), null).Path);
         Assert.Equal("/me/payments", PushRules.WithLink(Plain(), "a&b=c").Path);
         Assert.Equal("/home/updates?trip=PC1", PushRules.WithLink(change with { Params = new() { ["id"] = "x y" } }, "PC1").Path);
+
+        // Reservation, case and port-day alerts carry what they are about (MOB-07, COM-06); a port needs a real date to carry one.
+        var port = new PushNotice("tender:nassau", "travel", "checkin", false, 50, "/home/ports/nassau", "t", "b", new() { ["port"] = "nassau", ["date"] = "2027-03-24" });
+        Assert.Equal("/home/ports/nassau?trip=PC1&port=nassau&date=2027-03-24", PushRules.WithLink(port, "PC1").Path);
+        Assert.Equal("/home/ports/nassau?trip=PC1&port=nassau", PushRules.WithLink(port with { Params = new() { ["port"] = "nassau", ["date"] = "soon" } }, "PC1").Path);
+        var res = new PushNotice("res:r-12", "reminder", "checkin", false, 40, "/plan/dining", "t", "b", new() { ["reservation"] = "r-12", ["case"] = "CS 7" });
+        Assert.Equal("/plan/dining?trip=PC1&reservation=r-12", PushRules.WithLink(res, "PC1").Path);
     }
 
     [Fact]
