@@ -4,7 +4,7 @@ namespace Princess.Api.Data;
 
 public sealed class DapperPushStore(IDbConnectionFactory db) : IPushStore
 {
-    private sealed record DeliveryDb(string NoticeKey, string Kind, bool Bypass, string Outcome, string? Reason, int Devices, string Params, DateTime At, DateTime? ReadAt);
+    private sealed record DeliveryDb(string NoticeKey, string Kind, bool Bypass, string Outcome, string? Reason, int Devices, string Params, DateTime At, DateTime? ReadAt, DateTime? AckedAt);
 
     public async Task<List<PushSubscriptionRow>> ListSubscriptionsAsync(long userId, CancellationToken ct)
     {
@@ -47,10 +47,10 @@ public sealed class DapperPushStore(IDbConnectionFactory db) : IPushStore
     {
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<DeliveryDb>(Sql.Cmd("""
-            SELECT TOP (@max) NoticeKey, Kind, Bypass, Outcome, Reason, CAST(Devices AS INT) AS Devices, Params, [At], ReadAt
+            SELECT TOP (@max) NoticeKey, Kind, Bypass, Outcome, Reason, CAST(Devices AS INT) AS Devices, Params, [At], ReadAt, AckedAt
             FROM dbo.PushDeliveries WHERE UserId = @userId ORDER BY [At] DESC, Id DESC
             """, new { userId, max }, null, ct));
-        return [.. rows.Select(r => new PushDeliveryRow(r.NoticeKey, r.Kind, r.Bypass, r.Outcome, r.Reason, r.Devices, r.Params, r.At, r.ReadAt is not null))];
+        return [.. rows.Select(r => new PushDeliveryRow(r.NoticeKey, r.Kind, r.Bypass, r.Outcome, r.Reason, r.Devices, r.Params, r.At, r.ReadAt is not null, r.AckedAt is not null))];
     }
 
     public async Task AddDeliveryAsync(long userId, PushDeliveryRow row, DateTime now, CancellationToken ct)
@@ -70,6 +70,14 @@ public sealed class DapperPushStore(IDbConnectionFactory db) : IPushStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.PushDeliveries SET ReadAt = @now WHERE UserId = @userId AND ReadAt IS NULL AND Outcome = 'sent'", new { userId, now }, null, ct));
+    }
+
+    public async Task<bool> AckDeliveryAsync(long userId, string noticeKey, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd(
+            "UPDATE dbo.PushDeliveries SET AckedAt = @now WHERE UserId = @userId AND NoticeKey = @noticeKey AND Outcome = 'sent' AND AckedAt IS NULL",
+            new { userId, noticeKey, now }, null, ct)) > 0;
     }
 
     public async Task<string?> GetFeedHashAsync(long userId, CancellationToken ct)

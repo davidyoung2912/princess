@@ -78,8 +78,18 @@ public static class ProviderRegistration
                 services.AddSingleton<IWeatherService, OpenMeteoWeatherService>();
                 continue;
             }
+            // Providers:Email and Providers:Sms = pingram send through Pingram (PingramOptions). The key must be set, or the server stops at start-up and says so.
+            if (name == "pingram" && seam.Key is "Email" or "Sms")   // a named special case like openmeteo: it needs an HttpClient, so the contract test builds only the simulations
+            {
+                if (string.IsNullOrWhiteSpace(config[$"{PingramOptions.Section}:ApiKey"]))
+                    throw new InvalidOperationException($"{Section}:{seam.Key} is 'pingram' but {PingramOptions.Section}:ApiKey is not set (user-secrets or an environment variable).");
+                services.AddOptions<PingramOptions>().BindConfiguration(PingramOptions.Section);
+                services.AddHttpClient<PingramSender>();
+                services.AddSingleton(seam.Contract, sp => sp.GetRequiredService<PingramSender>());
+                continue;
+            }
             if (!seam.Implementations.TryGetValue(name, out var impl))
-                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}{(seam.Key == "Weather" ? ", openmeteo" : "")}.");
+                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}{(seam.Key == "Weather" ? ", openmeteo" : seam.Key is "Email" or "Sms" ? ", pingram" : "")}.");
             services.AddSingleton(seam.Contract, impl);
         }
 

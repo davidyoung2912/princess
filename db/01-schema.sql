@@ -818,6 +818,9 @@ CREATE TABLE dbo.PushDeliveries (
 CREATE INDEX IX_PushDeliveries_UserId_At ON dbo.PushDeliveries (UserId, [At] DESC);
 END
 
+-- BM40 (COM-04): when the guest acknowledged a critical alert (tapped it, or pressed Got it). An unacknowledged one falls back to text, then email.
+IF COL_LENGTH(N'dbo.PushDeliveries', N'AckedAt') IS NULL ALTER TABLE dbo.PushDeliveries ADD AckedAt DATETIME2(0) NULL;
+
 IF OBJECT_ID(N'dbo.CalendarFeeds', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.CalendarFeeds (

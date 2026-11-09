@@ -170,4 +170,30 @@ public class ProviderContractTests
         Assert.True(await limiter.TryTakeAsync(2, now, 3, CancellationToken.None));
         Assert.True(await limiter.TryTakeAsync(1, now.AddMinutes(61), 3, CancellationToken.None));
     }
+
+    [Fact]
+    public void PingramNeedsItsKeyAndThenServesBothEmailAndSms()
+    {
+        var e = Assert.Throws<InvalidOperationException>(() => Build(Config(("Providers:Email", "pingram"))));
+        Assert.Contains("Pingram:ApiKey", e.Message);
+        Assert.Throws<InvalidOperationException>(() => Build(Config(("Providers:Sms", "pingram"))));
+        using var sp = Build(Config(("Providers:Email", "pingram"), ("Providers:Sms", "pingram"), ("Pingram:ApiKey", "test-key")));
+        Assert.IsType<PingramSender>(sp.GetRequiredService<IEmailSender>());
+        Assert.IsType<PingramSender>(sp.GetRequiredService<ISmsSender>());
+    }
+
+    [Fact]
+    public void PingramBodiesCarryTheTypeTheRecipientAndEscapedHtml()
+    {
+        var o = new PingramOptions();
+        var mail = PingramSender.EmailBody(o, new EmailMessage("a@b.co", "Hi <you>", "Line one\nline two\n\nSecond & last"));
+        Assert.Equal("princess_notice_email", mail["type"]!.ToString());
+        Assert.Equal("a@b.co", mail["to"]!["email"]!.ToString());
+        Assert.Equal("Hi <you>", mail["email"]!["subject"]!.ToString());
+        Assert.Equal("<p>Line one<br>line two</p><p>Second &amp; last</p>", mail["email"]!["html"]!.ToString());
+        var text = PingramSender.SmsBody(o, new SmsMessage("+16175551212", "Not yet seen."));
+        Assert.Equal("princess_notice_sms", text["type"]!.ToString());
+        Assert.Equal("+16175551212", text["to"]!["number"]!.ToString());
+        Assert.Equal("Not yet seen.", text["sms"]!["message"]!.ToString());
+    }
 }

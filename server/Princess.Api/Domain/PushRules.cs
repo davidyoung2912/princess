@@ -190,6 +190,25 @@ public static class PushRules
     /// Whether a notice also goes by email or text (X14). Each follows the guest's own channel choice for the notice's category (critical cannot be turned off).
     /// Texts keep to quiet hours unless the notice is a safety one; email has no hours. Neither uses the phone budget, and calm mode (a phone setting) does not apply.
     /// </summary>
+    /// <summary>How long a safety alert may sit unacknowledged before it also goes by text, or by email when there is no confirmed phone (COM-04).</summary>
+    public static readonly TimeSpan FallbackAfter = TimeSpan.FromMinutes(10);
+    /// <summary>After this long an unacknowledged alert is stale, and a late text about it would mislead.</summary>
+    public static readonly TimeSpan FallbackExpires = TimeSpan.FromHours(3);
+
+    /// <summary>
+    /// The keys of safety alerts that reached a phone, have not been acknowledged, are between <see cref="FallbackAfter"/> and <see cref="FallbackExpires"/> old and have not
+    /// already been sent by text or email. The log is newest first; the other-channel rows are keyed "sms:" and "email:" plus the alert's key.
+    /// </summary>
+    public static List<string> FallbackDue(IReadOnlyList<Data.PushDeliveryRow> log, DateTime now)
+    {
+        var other = log.Select(l => l.NoticeKey).Where(k => k.StartsWith("sms:", StringComparison.Ordinal) || k.StartsWith("email:", StringComparison.Ordinal)).ToHashSet();
+        return [.. log
+            .Where(l => l.Outcome == "sent" && l.Bypass && !l.Acked && !l.NoticeKey.StartsWith("sms:", StringComparison.Ordinal) && !l.NoticeKey.StartsWith("email:", StringComparison.Ordinal))
+            .Where(l => now - l.At >= FallbackAfter && now - l.At <= FallbackExpires)
+            .Where(l => !other.Contains("sms:" + l.NoticeKey) && !other.Contains("email:" + l.NoticeKey))
+            .Select(l => l.NoticeKey).Distinct()];
+    }
+
     public static bool Reach(PushNotice n, JsonObject prefs, string channel, TimeOnly local)
     {
         if (channel is not ("email" or "sms")) return false;

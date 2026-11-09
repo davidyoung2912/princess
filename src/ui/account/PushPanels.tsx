@@ -39,7 +39,7 @@ export function PushSwitch({ question }: { question?: string }) {
 
 const stamp = (at: number) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
-function LogRow({ e }: { e: PushLogEntry }) {
+function LogRow({ e, onAck }: { e: PushLogEntry; onAck: (key: string) => void }) {
   const what = t(`push.kind.${e.kind}` as StringKey)
   const outcome = e.outcome === 'sent' ? t('push.log.sent') : t('push.log.held')
   return (
@@ -47,6 +47,9 @@ function LogRow({ e }: { e: PushLogEntry }) {
       <p><strong>{what}</strong> · {outcome} <span className="muted">· {stamp(e.at)}</span></p>
       {e.outcome === 'held' && e.reason && <p className="muted">{t(`push.reason.${e.reason}` as StringKey)}</p>}
       {e.outcome === 'sent' && e.critical && <p className="muted">{t('push.log.critical')}</p>}
+      {e.outcome === 'sent' && e.critical && (e.acked
+        ? <p className="muted">{t('push.log.acked')}</p>
+        : <Button variant="secondary" onClick={() => onAck(e.key)}>{t('push.log.gotIt')}</Button>)}
     </li>
   )
 }
@@ -54,16 +57,19 @@ function LogRow({ e }: { e: PushLogEntry }) {
 /** What was sent and what was held back, and why (N3.6). Opening it counts the alerts as seen and clears the badge. */
 export function DeliveryLog() {
   const log = useMine(() => api.push.status())
+  const ack = useAction((key: string) => api.push.ack(key))
+  const gotIt = async (key: string) => { if (await ack.run(key)) log.retry() }
   const unread = log.data?.unread ?? 0
   useEffect(() => { if (unread > 0) void api.push.markRead().then((s) => setBadge(s.unread)).catch(() => undefined) }, [unread])
   return (
     <section aria-labelledby="pushlog-h">
       <h2 id="pushlog-h">{th('push.log.title')}</h2>
       <p>{t('push.log.intro')}</p>
+      <p className="muted">{t('push.log.fallback')}</p>
       <Load state={log}>
         {(s) => (s.log.length === 0
           ? <p className="muted">{t('push.log.none')}</p>
-          : <ul className="plain-list">{s.log.map((e) => <LogRow key={`${e.key}-${e.outcome}-${e.at}`} e={e} />)}</ul>)}
+          : <ul className="plain-list">{s.log.map((e) => <LogRow key={`${e.key}-${e.outcome}-${e.at}`} e={e} onAck={(k) => void gotIt(k)} />)}</ul>)}
       </Load>
     </section>
   )

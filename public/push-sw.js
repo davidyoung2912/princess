@@ -11,7 +11,7 @@ self.addEventListener('push', (event) => {
       tag: typeof data.id === 'string' ? data.id : undefined,
       requireInteraction: data.critical === true,
       icon: '/icon-192.png',
-      data: { path },
+      data: { path, id: typeof data.id === 'string' ? data.id : null },
     }),
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const c of clients) c.postMessage({ type: 'princess-push', id: data.id, kind: data.kind })
@@ -22,9 +22,10 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const path = event.notification.data && event.notification.data.path ? event.notification.data.path : '/'
+  const id = event.notification.data && typeof event.notification.data.id === 'string' ? event.notification.data.id : null
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
     for (const c of clients) {
-      if ('focus' in c) { c.postMessage({ type: 'princess-open', path }); return c.focus() }
+      if ('focus' in c) { c.postMessage({ type: 'princess-open', path, id }); return c.focus() }
     }
     return self.clients.openWindow ? self.clients.openWindow(path) : undefined
   }))

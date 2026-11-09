@@ -355,7 +355,7 @@ describe('gate 10: operational readiness', () => {
     expect(names.filter((n) => !runbook.includes(`Providers:${n}`) && !new RegExp(n, 'i').test(runbook) && !['Email', 'Sms'].includes(n))).toEqual([])
   })
 
-  it.fails('the Email and Sms providers are named in the runbook, with their failure behaviour', () => {
+  it('the Email and Sms providers are named in the runbook, with their failure behaviour', () => {
     expect(runbook).toMatch(/Providers:Email/)
     expect(runbook).toMatch(/Providers:Sms/)
   })

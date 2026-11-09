@@ -224,4 +224,24 @@ public class PushRulesTests
         Assert.Equal("/me/payments", PushRules.WithLink(Plain(), "a&b=c").Path);
         Assert.Equal("/home/updates?trip=PC1", PushRules.WithLink(change with { Params = new() { ["id"] = "x y" } }, "PC1").Path);
     }
+
+    private static PushDeliveryRow Sent(string key, DateTime at, bool bypass = true, bool acked = false) => new(key, "allAboard", bypass, "sent", null, 1, "{}", at, false, acked);
+
+    [Fact]
+    public void ASafetyAlertNobodyAcknowledgedFallsBackOnceBetweenTenMinutesAndThreeHours()
+    {
+        var log = new List<PushDeliveryRow>
+        {
+            Sent("a", Now.AddMinutes(-11)),                    // due
+            Sent("young", Now.AddMinutes(-9)),                 // too soon
+            Sent("old", Now.AddHours(-4)),                     // stale
+            Sent("seen", Now.AddMinutes(-30), acked: true),    // acknowledged
+            Sent("plain", Now.AddMinutes(-30), bypass: false), // not a safety alert
+            Sent("done", Now.AddMinutes(-30)),                 // already texted
+            Sent("sms:done", Now.AddMinutes(-20), acked: true),
+            new("held", "allAboard", true, "held", "quiet", 0, "{}", Now.AddMinutes(-30), false),
+        };
+        Assert.Equal(["a"], PushRules.FallbackDue(log, Now));
+        Assert.Empty(PushRules.FallbackDue([Sent("a", Now.AddMinutes(-11)), Sent("email:a", Now.AddMinutes(-1))], Now));
+    }
 }

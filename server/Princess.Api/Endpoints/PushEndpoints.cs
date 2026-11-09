@@ -22,6 +22,10 @@ public static class PushEndpoints
                 Results.Ok(await svc.UnsubscribeAsync(await me.LoadAsync(ct), body, ct)))
             .WithTags("Push").WithSummary("Stops alerts to this phone.");
 
+        api.MapPost("/me/push/ack", async (PushAckRequest body, ICurrentUser me, PushService svc, CancellationToken ct) =>
+                Results.Ok(await svc.AckAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("Push").WithSummary("The guest acknowledged the safety alert with this `key` (tapped it, or pressed Got it). An alert not acknowledged within 10 minutes also goes by text to a confirmed phone, or by email to a confirmed address; acknowledging stops that. 400 badKey for no key.");
+
         api.MapPost("/me/push/dispatch", async (string? endpoint, ICurrentUser me, PushService svc, ReminderEmailService reminders, CancellationToken ct) =>
             {
                 var actor = await me.LoadAsync(ct);

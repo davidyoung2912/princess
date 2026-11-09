@@ -20,6 +20,8 @@ export interface PushLogEntry {
   params: Record<string, string | number>
   at: number
   read: boolean
+  /** The guest acknowledged it (tapped it or pressed Got it). A safety alert not acknowledged in 10 minutes also goes by text or email. */
+  acked: boolean
 }
 
 export interface PushStatus {
@@ -107,7 +109,7 @@ export function normalizeLogEntry(raw: unknown): PushLogEntry | null {
   return {
     key: o.key, kind: o.kind as PushKind, outcome: o.outcome,
     reason: (HELD_REASONS as readonly unknown[]).includes(o.reason) ? (o.reason as HeldReason) : null,
-    critical: o.critical === true, devices: typeof o.devices === 'number' ? o.devices : 0, params, at: typeof o.at === 'number' ? o.at : 0, read: o.read === true,
+    critical: o.critical === true, devices: typeof o.devices === 'number' ? o.devices : 0, params, at: typeof o.at === 'number' ? o.at : 0, read: o.read === true, acked: o.acked === true,
   }
 }
 

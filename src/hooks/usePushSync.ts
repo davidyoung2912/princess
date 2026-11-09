@@ -31,9 +31,13 @@ export function usePushSync(): void {
     }
     const onVisible = () => { if (document.visibilityState === 'visible') void check() }
     const onMessage = (e: MessageEvent) => {
-      const d = e.data as { type?: string; path?: unknown } | null
+      const d = e.data as { type?: string; path?: unknown; id?: unknown } | null
       if (d?.type === 'princess-push') { last.current = null; void check() }
-      else if (d?.type === 'princess-open' && typeof d.path === 'string' && d.path.startsWith('/') && !d.path.startsWith('//')) navigate(d.path)
+      else if (d?.type === 'princess-open' && typeof d.path === 'string' && d.path.startsWith('/') && !d.path.startsWith('//')) {
+        // Tapping the alert is the acknowledgement (COM-04): it stops the text or email that would follow.
+        if (typeof d.id === 'string' && d.id) void api.push.ack(d.id).catch(() => { /* offline: the fallback may still go, which is the safe side */ })
+        navigate(d.path)
+      }
     }
     void check()
     document.addEventListener('visibilitychange', onVisible)

@@ -824,6 +824,8 @@ export interface Api {
     /** Checks what the guest should hear now; the server sends it within their limits. */
     dispatch(endpoint?: string): Promise<PushStatus>
     markRead(): Promise<PushStatus>
+    /** The guest acknowledged the safety alert with this key (COM-04). */
+    ack(key: string): Promise<PushStatus>
   }
   /** The subscribable calendar (N3.4). The address comes back once, from `create`. */
   calendar: {

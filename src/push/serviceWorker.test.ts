@@ -71,10 +71,10 @@ describe('the service worker script', () => {
   it('on tap, brings the open app forward and sends it to the screen', async () => {
     const sw = load()
     const close = vi.fn()
-    await sw.run('notificationclick', { notification: { close, data: { path: '/ship/port' } } })
+    await sw.run('notificationclick', { notification: { close, data: { path: '/ship/port', id: 'allAboard:2027-03-24:30' } } })
     expect(close).toHaveBeenCalled()
     expect(sw.focused).toHaveBeenCalled()
-    expect(sw.posted).toContainEqual({ type: 'princess-open', path: '/ship/port' })
+    expect(sw.posted).toContainEqual({ type: 'princess-open', path: '/ship/port', id: 'allAboard:2027-03-24:30' })
   })
 
   it('on tap with the app closed, opens it at the screen', async () => {

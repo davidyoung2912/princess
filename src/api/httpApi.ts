@@ -340,6 +340,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       unsubscribe: (endpoint) => send('post', '/me/push/unsubscribe', { endpoint }),
       dispatch: (endpoint) => send('post', `/me/push/dispatch${endpoint ? `?endpoint=${seg(endpoint)}` : ''}`),
       markRead: () => send('post', '/me/push/read'),
+      ack: (key) => send('post', '/me/push/ack', { key }),
     },
     calendar: {
       status: () => get('/me/calendar-feed'),

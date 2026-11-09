@@ -355,7 +355,7 @@ Priority is not given per concept in the document.
 | COM-01 | P0 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | None found |
 | COM-02 | P0 | Built | F | `src/domain/delivery.ts`, `src/domain/delivery.test.ts` | Marketing consent vs critical separation visible in `delivery.ts` |
 | COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/gap-analysis-plan.md`) |
-| COM-04 | P0 | Not built | R | `src/domain/delivery.ts` | Critical alerts are sent but have no acknowledged-delivery state or fallback channel rule |
+| COM-04 | P0 | Partial | R | `server/Princess.Api/Domain/PushRules.cs` (`FallbackDue`), `server/Princess.Api/Services/PushService.cs`, `server/Princess.Api/Services/PingramSender.cs` | BM40: safety alerts have an acknowledged state and fall back to text, then email, after 10 minutes. Pingram sender written, never run against the live service |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
 | COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39: trip and change in the link, with a note when they are not current; no reservation or case alerts exist |
 | OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |

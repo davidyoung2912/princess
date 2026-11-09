@@ -39,7 +39,7 @@ public sealed class PushService(
         subs.SelectMany(s => s.Watch.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Distinct().Take(PushRules.MaxWatch);
 
     private static PushLogDto ToDto(PushDeliveryRow r) =>
-        new(r.NoticeKey, r.Kind, r.Outcome, r.Reason, r.Bypass, r.Devices, JsonNode.Parse(r.ParamsJson) ?? new JsonObject(), TripRules.ToMs(r.At), r.Read);
+        new(r.NoticeKey, r.Kind, r.Outcome, r.Reason, r.Bypass, r.Devices, JsonNode.Parse(r.ParamsJson) ?? new JsonObject(), TripRules.ToMs(r.At), r.Read, r.Acked);
 
     public async Task<PushStatusDto> SubscribeAsync(UserRecord actor, PushSubscribeRequest? body, CancellationToken ct)
     {
@@ -62,6 +62,14 @@ public sealed class PushService(
     public async Task<PushStatusDto> MarkReadAsync(UserRecord actor, CancellationToken ct)
     {
         await store.MarkDeliveriesReadAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        return await StatusAsync(actor, null, ct);
+    }
+
+    /// <summary>The guest acknowledged a safety alert (tapped it, or pressed Got it): it will not fall back to text or email.</summary>
+    public async Task<PushStatusDto> AckAsync(UserRecord actor, PushAckRequest? body, CancellationToken ct)
+    {
+        if (body?.Key is not { Length: > 0 and <= 120 } key) throw ApiException.Invalid("badKey");
+        await store.AckDeliveryAsync(actor.Id, key, await clock.NowAsync(actor, ct), ct);
         return await StatusAsync(actor, null, ct);
     }
 
@@ -91,6 +99,7 @@ public sealed class PushService(
         var log = await store.ListDeliveriesAsync(actor.Id, 200, ct);
         var sentKeys = log.Where(l => l.Outcome == "sent").Select(l => l.NoticeKey).ToHashSet();
         await ReachOtherChannelsAsync(actor, notices, prefs, TimeOnly.FromDateTime(local), sentKeys, now, ct);
+        await FallbackAsync(actor, notices, log, now, ct);
         if (subs.Count == 0 || sender.PublicKey is null) return;
         var sentToday = log.Count(l => l.Outcome == "sent" && !l.Bypass && !IsOtherChannel(l.NoticeKey) && InZone(l.At, zone).Date == local.Date);
 
@@ -137,6 +146,28 @@ public sealed class PushService(
             if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)
                 && await sms.SendAsync(new SmsMessage(phone, n.Title + ": " + n.Body), ct))
                 await store.AddDeliveryAsync(actor.Id, new("sms:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
+        }
+    }
+
+    /// <summary>
+    /// COM-04: a safety alert nobody acknowledged within <see cref="PushRules.FallbackAfter"/> goes once more by text to a confirmed phone, or by email to a confirmed address when
+    /// there is no such phone. It is only sent while the notice still applies (a built notice), and the log keeps an "sms:" or "email:" row so it is never repeated.
+    /// </summary>
+    private async Task FallbackAsync(UserRecord actor, List<PushNotice> notices, List<PushDeliveryRow> log, DateTime now, CancellationToken ct)
+    {
+        var due = PushRules.FallbackDue(log, now);
+        if (due.Count == 0) return;
+        var phone = (await profiles.GetProfileAsync(actor.Id, ct))?.Phone;
+        if (!await phoneCheck.IsVerifiedAsync(actor.Id, phone, ct)) phone = null;
+        var emailOk = !string.IsNullOrWhiteSpace(actor.Email) && await emailCheck.IsVerifiedAsync(actor, ct);
+        foreach (var n in notices.Where(n => due.Contains(n.Key)))
+        {
+            var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
+            var text = "Not yet seen. " + n.Title + ": " + n.Body;
+            if (!string.IsNullOrWhiteSpace(phone) && await sms.SendAsync(new SmsMessage(phone, text), ct))
+                await store.AddDeliveryAsync(actor.Id, new("sms:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
+            else if (emailOk && await email.SendAsync(NoticeEmail(actor, n with { Body = text }), ct))
+                await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
         }
     }
 
