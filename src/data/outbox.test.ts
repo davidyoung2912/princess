@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BASE_DELAY_MS, MAX_ATTEMPTS, MAX_DELAY_MS, MAX_QUEUED, backoffMs, due, enqueue, failed, gaveUp, isRetryable, loadOutbox, nextWake, outboxKey, saveOutbox, sent, TimeoutError, withTimeout } from './outbox'
+import { BASE_DELAY_MS, MAX_ATTEMPTS, MAX_DELAY_MS, MAX_QUEUED, backoffMs, due, enqueue, failed, gaveUp, hasRoom, isRetryable, loadOutbox, nextWake, outboxKey, saveOutbox, sent, TimeoutError, withTimeout } from './outbox'
 
 const item = (id: string) => ({ id, kind: 'chat' as const, payload: { text: id } })
 
@@ -34,7 +34,7 @@ describe('outbox list', () => {
     expect(nextWake([])).toBeNull()
   })
 
-  it('gives up after the limit and keeps only the newest', () => {
+  it('gives up after the limit and never drops a waiting action for a new one', () => {
     let list = enqueue([], item('a'), 0)
     for (let i = 0; i < MAX_ATTEMPTS; i++) list = failed(list, 'a', 0, () => 0)
     expect(due(list, 1e12)).toEqual([])
@@ -43,7 +43,8 @@ describe('outbox list', () => {
     let many: ReturnType<typeof enqueue> = []
     for (let i = 0; i < MAX_QUEUED + 5; i++) many = enqueue(many, item(`m${i}`), 0)
     expect(many).toHaveLength(MAX_QUEUED)
-    expect(many.at(-1)!.id).toBe(`m${MAX_QUEUED + 4}`)
+    expect(many.at(-1)!.id).toBe(`m${MAX_QUEUED - 1}`) // a full outbox refuses the new one; nothing waiting is pushed out
+    expect(hasRoom(many)).toBe(false)
   })
 })
 

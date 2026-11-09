@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isApiError } from '../api/errors'
-import { due, enqueue, failed, isRetryable, loadOutbox, nextWake, notifyOutbox, saveOutbox, sent, TimeoutError, withTimeout, type OutboxItem } from '../data/outbox'
+import { due, enqueue, failed, hasRoom, isRetryable, loadOutbox, nextWake, notifyOutbox, saveOutbox, sent, TimeoutError, withTimeout, type OutboxItem } from '../data/outbox'
 import { report } from '../diagnostics/watch'
 import { useLatest } from './useLatest'
 
@@ -35,8 +35,11 @@ export function useOutbox(owner: string, kind: OutboxItem['kind'], deliver: (pay
     notifyOutbox()
   }, [key])
 
-  const hold = useCallback((payload: Record<string, string>) => {
+  /** Keeps the action to send later. Returns false when the outbox is full, so the screen can keep what the guest typed and say so. */
+  const hold = useCallback((payload: Record<string, string>): boolean => {
+    if (!hasRoom(list.current)) return false
     commit(enqueue(list.current, { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, kind, payload }, Date.now()))
+    return true
   }, [commit, kind])
 
   const flush = useCallback(async () => {

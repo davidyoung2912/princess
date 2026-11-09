@@ -60,8 +60,8 @@ describe('gate 1: no silent loss', () => {
     await expect(createHttp({ baseUrl: '/api', token: () => 't', refresh: async () => false, online: () => false }).post('/x', {})).rejects.toMatchObject({ code: 'offline' })
   })
 
-  it.fails('the 21st waiting action does not push the oldest out unseen', () => {
-    // enqueue() keeps the newest MAX_QUEUED and drops the rest with no signal: a guest who queued 21 requests offline loses the first without being told.
+  it('the 21st waiting action does not push the oldest out unseen', () => {
+    // A full outbox refuses the new action (hasRoom is false, the screen keeps the text and says so) instead of dropping the oldest.
     let list: OutboxItem[] = []
     for (let i = 0; i <= MAX_QUEUED; i++) list = enqueue(list, item(`r${i}`), i)
     expect(list.map((x) => x.id)).toContain('r0')
@@ -102,9 +102,26 @@ describe('gate 2: safe retry', () => {
     expect(offenders).toEqual([])
   })
 
-  it.fails('the client sends an Idempotency-Key on booking and payment posts, so a retry after a lost reply cannot charge twice', () => {
+  it('the client sends an Idempotency-Key on booking and payment posts, so a retry after a lost reply cannot charge twice', () => {
     // The server accepts the header (BookingEndpoints.cs) and also treats the same draft twice as one booking, but pay-balance has no such draft and the client never sends a key.
     expect(read('src/api/httpApi.ts') + read('src/api/http.ts')).toMatch(/idempotency-key/i)
+  })
+
+  it('an idempotent post carries one key, and the resend after a silent refresh carries the same key', async () => {
+    const keys: (string | undefined)[] = []
+    let first = true
+    const f = (async (_u: string, init: RequestInit) => {
+      keys.push((init.headers as Record<string, string>)['idempotency-key'])
+      if (first) { first = false; return new Response('', { status: 401 }) }
+      return new Response('{}', { status: 200 })
+    }) as unknown as typeof fetch
+    const http = createHttp({ baseUrl: '/api', fetch: f, token: () => 't', refresh: async () => true, online: () => true })
+    await http.post('/bookings/X/pay-balance', {}, { idempotent: true })
+    expect(keys).toHaveLength(2)
+    expect(keys[0]).toMatch(/^[A-Za-z0-9_.:-]{8,80}$/)
+    expect(keys[1]).toBe(keys[0])
+    await http.post('/other', {})
+    expect(keys[2]).toBeUndefined()
   })
 
   it('the pay button is disabled while the payment runs', () => {
@@ -286,9 +303,9 @@ describe('gate 8: privacy', () => {
     expect(read('src/api/httpApi.ts')).toMatch(/me\/export/)
   })
 
-  it.fails('the privacy centre deletes the guest\'s server-held data, not only this device', () => {
+  it('the privacy centre deletes the guest\'s server-held data, not only this device', () => {
     // "Delete my data" runs wipeAll (this browser). DELETE /me/state exists on the server (docs/runbook.md) but no client call reaches it.
-    expect(read('src/api/httpApi.ts')).toMatch(/delete\([^)]*\/me\/state/)
+    expect(read('src/runtime/index.ts')).toMatch(/delete<void>\('\/me\/state'\)/)
   })
 })
 

@@ -36,9 +36,13 @@ export function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
   })
 }
 
+/** True when one more action can wait: nothing waiting is ever pushed out to make room (gate 1, no silent loss). */
+export const hasRoom = (list: readonly OutboxItem[]): boolean => list.length < MAX_QUEUED
+
+/** Adds an action. When the list is full it is returned unchanged: the caller checks `hasRoom` first and tells the guest, so nothing is dropped unseen. */
 export function enqueue(list: readonly OutboxItem[], item: Pick<OutboxItem, 'id' | 'kind' | 'payload'>, now: number): OutboxItem[] {
-  if (list.some((x) => x.id === item.id)) return [...list]
-  return [...list, { ...item, queuedAt: now, attempts: 0, nextAt: now }].slice(-MAX_QUEUED)
+  if (list.some((x) => x.id === item.id) || !hasRoom(list)) return [...list]
+  return [...list, { ...item, queuedAt: now, attempts: 0, nextAt: now }]
 }
 
 export const due = (list: readonly OutboxItem[], now: number): OutboxItem[] => list.filter((x) => x.nextAt <= now && x.attempts < MAX_ATTEMPTS)

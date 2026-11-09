@@ -8,7 +8,7 @@ import { parentDecidesIn, regionRules } from '../../domain/regions'
 import { setImproveConsent } from '../../diagnostics/watch'
 import { useSettings } from '../../hooks/useSettings'
 import type { StringKey } from '../../i18n'
-import { api, wipeAll } from '../../runtime'
+import { api, deleteMyData } from '../../runtime'
 import { setKeepPrivate } from '../../sync/consent'
 import { useAction } from '../../hooks/useAction'
 import { useAsync } from '../../hooks/useAsync'
@@ -34,6 +34,7 @@ export function PrivacyScreen() {
   const exporting = useAction(async () => { downloadText(`princess-my-data-${today}.json`, 'application/json', JSON.stringify(await api.account.exportData(), null, 2)) })
   const [keepPending, setKeepPending] = useState(false)
   const [confirm, setConfirm] = useState(false)
+  const erase = useAction(async () => { await deleteMyData() })
   const today = dateIn(useNow(), 'America/New_York')
   const shipTime = useShipTime()
   const [settings] = useSettings()
@@ -130,6 +131,7 @@ export function PrivacyScreen() {
             <p>{t('priv.deleteBody')}</p>
             <p>{t('priv.deleteExplain')}</p>
             <ActionError error={exporting.error} />
+            <ActionError error={erase.error} />
             <div className="button-row">
               <Button variant="danger" onClick={() => setConfirm(true)}>{t('data.wipe')}</Button>
               <Button variant="secondary" disabled={exporting.busy} onClick={() => void exporting.run()}>{t('priv.exportLink')}</Button>
@@ -142,7 +144,7 @@ export function PrivacyScreen() {
           <p>{t('data.wipe.body')}</p>
           <div className="button-row">
             <Button variant="secondary" onClick={() => setConfirm(false)}>{t('data.cancel')}</Button>
-            <Button variant="danger" onClick={() => { setConfirm(false); void wipeAll() }}>{t('data.wipe')}</Button>
+            <Button variant="danger" disabled={erase.busy} onClick={() => { setConfirm(false); void erase.run() }}>{t('data.wipe')}</Button>
           </div>
         </Dialog>
       )}

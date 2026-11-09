@@ -55,9 +55,11 @@ function Party() {
   const [text, setText] = useState('')
   const [blockedVersion, setBlockedVersion] = useState(0)
   const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => api.messages.send(p.text), () => list.retry())
+  const [full, setFull] = useState(false)
   const send = useAction(async () => {
+    setFull(false)
     try { await sendWithin(api.messages.send(text)); setText(''); list.retry() }
-    catch (e) { if (worthRetrying(e)) { outbox.hold({ text }); setText('') } else throw e }
+    catch (e) { if (worthRetrying(e)) { if (outbox.hold({ text })) setText(''); else setFull(true) } else throw e }
   })
   // The switch moves at once and goes back if saving fails (PERF-04).
   const [shownReceipts, setShownReceipts] = useState<boolean | null>(null)
@@ -96,6 +98,7 @@ function Party() {
         <Field label={t('chat.message')} value={text} maxLength={MAX_MESSAGE} onChange={(e) => setText(e.target.value)} autoComplete="off" />
         <ActionError error={send.error} />
         {send.error && <p className="muted">{t('chat.kept')}</p>}
+        {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
         <Waiting items={outbox.items} />
         <div className="button-row">
           <Button type="submit" disabled={send.busy || !text.trim()}>{t('chat.send')}</Button>
@@ -159,9 +162,11 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
   const [phone, setPhone] = useState('')
   const ownerId = useOwnerId()
   const outbox = useOutbox(ownerId ?? 'none', 'service', (p) => api.service.send(p.channel as ChannelId, p.text), reload)
+  const [full, setFull] = useState(false)
   const send = useAction(async () => {
+    setFull(false)
     try { await sendWithin(api.service.send(th.channel, text)); setText(''); reload() }
-    catch (e) { if (worthRetrying(e)) { outbox.hold({ channel: th.channel, text }); setText('') } else throw e }
+    catch (e) { if (worthRetrying(e)) { if (outbox.hold({ channel: th.channel, text })) setText(''); else setFull(true) } else throw e }
   })
   const call = useAction(async () => { await api.service.escalate(th.channel, phone); setPhone(''); reload() })
   const st = th.state
@@ -190,6 +195,7 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
             <TextArea label={t('chat.message')} value={text} maxLength={MAX_MESSAGE} onChange={(e) => setText(e.target.value)} />
             <ActionError error={send.error} />
             {send.error && <p className="muted">{t('chat.kept')}</p>}
+            {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
             <Waiting items={outbox.items.filter((x) => x.payload.channel === th.channel)} />
             <Button type="submit" disabled={send.busy || !text.trim()}>{t('chat.send')}</Button>
           </form>

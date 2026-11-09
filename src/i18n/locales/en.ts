@@ -1081,6 +1081,7 @@ export const en = {
   'data.wipe.hint': 'Removes the settings and sign-in kept on this device, then reloads. Your account keeps its data.',
   'data.wipe.confirm': 'Wipe everything from this device?',
   'data.wipe.body': 'This cannot be undone.',
+  'outbox.full': 'Too many messages are waiting to send. Your text is still here; try again when you are back online.',
   'diag.title': 'Problem log',
   'diag.intro': 'If something goes wrong, the app notes it here, on this device only. Nothing is sent. You can copy it for Guest Services.',
   'diag.none': 'No problems noted.',

@@ -1,5 +1,5 @@
 import { ApiError } from './errors'
-import type { Http } from './http'
+import type { Http, RequestOptions } from './http'
 import type { AheadApi } from './aheadTypes'
 import type { FeedbackApi } from './aboardTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, WaitsApi } from './careTypes'
@@ -89,8 +89,10 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   }
   const inBooking = async <T>(path: string): Promise<T> => (await http.get(`/bookings/${seg(await number())}${path}`)) as T
   const get = async <T>(path: string): Promise<T> => (await http.get(path)) as T
-  const send = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown): Promise<T> =>
-    (method === 'delete' ? await http.delete(path) : await http[method](path, body)) as T
+  const send = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown, o?: RequestOptions): Promise<T> =>
+    (method === 'delete' ? await http.delete(path, o) : await http[method](path, body, o)) as T
+  /** A money-moving post: carries an `Idempotency-Key` so a repeat of the same attempt is not charged twice. */
+  const once = <T>(path: string, body?: unknown): Promise<T> => send<T>('post', path, body, { idempotent: true })
   /** A write under the current trip: `/bookings/{number}{path}`. */
   const inTrip = async <T>(method: 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown): Promise<T> =>
     send<T>(method, `/bookings/${seg(await number())}${path}`, body)
@@ -314,13 +316,13 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       get: () => inBooking('/payments'),
       addCard: (brand, last4, expiry) => send('post', '/me/cards', { brand, last4, expiry }),
       removeCard: (id) => send('delete', `/me/cards/${seg(id)}`),
-      payBalance: async (cardId) => send('post', `/bookings/${seg(await number())}/payments/balance`, { cardId }),
+      payBalance: async (cardId) => once(`/bookings/${seg(await number())}/payments/balance`, { cardId }),
     },
     helping: {
       list: () => get('/me/helping'),
       stopHelping: (guestId) => send('delete', `/me/helping/${seg(guestId)}`),
       payments: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/payments`),
-      payBalance: (guestId, booking, cardId) => send('post', `/guests/${seg(guestId)}/bookings/${seg(booking)}/payments/balance`, { cardId }),
+      payBalance: (guestId, booking, cardId) => once(`/guests/${seg(guestId)}/bookings/${seg(booking)}/payments/balance`, { cardId }),
       folio: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/folio`),
       trip: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/trip`),
       checkin: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/checkin/status`),
@@ -396,9 +398,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       saveDraft: (draft) => send('put', '/me/draft', draft),
       discardDraft: async () => { await http.delete('/me/draft') },
       sendResumeLink: (via, to) => send('post', '/me/draft/resume-link', { via, to }),
-      book: (input) => send('post', '/bookings', input),
+      book: (input) => once('/bookings', input),
       get: (n) => get(`/bookings/${seg(n)}/detail`),
-      payBalance: (n, parts, challenge) => send('post', `/bookings/${seg(n)}/pay-balance`, { parts, challenge }),
+      payBalance: (n, parts, challenge) => once(`/bookings/${seg(n)}/pay-balance`, { parts, challenge }),
       instalments: (n) => get(`/bookings/${seg(n)}/instalments`),
       setInstalments: (n, count, auto) => send('put', `/bookings/${seg(n)}/instalments`, { count, auto: auto === true }),
       changePreview: (n, sailingId) => get(`/bookings/${seg(n)}/change?sailingId=${seg(sailingId)}`),

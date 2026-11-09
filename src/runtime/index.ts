@@ -427,6 +427,12 @@ export async function resetDemoData(): Promise<void> {
   resetDemoState()
 }
 
+/** "Delete my data" (privacy centre): the account's saved documents on the server first, then this device. If the server cannot be reached nothing is wiped, so the guest is never told it is gone when it is not. */
+export async function deleteMyData(): Promise<void> {
+  await http.delete<void>('/me/state')
+  await wipeAll()
+}
+
 /** "Wipe everything": every setting and the sign-in kept on this device; the page reloads to a clean first run. The account's data stays on the server. */
 export async function wipeAll(): Promise<void> {
   wipeEverything({ local: local(), session: session() })

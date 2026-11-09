@@ -27,6 +27,10 @@ export interface RequestOptions {
   raw?: Blob
   /** Answer with the response body as bytes instead of JSON. */
   asBlob?: boolean
+  /** Send an `Idempotency-Key` with this write, so the server treats a repeat of the same attempt as one (booking and payment). */
+  idempotent?: boolean
+  /** The key itself. Set by `request` once per call, so the resend after a silent refresh carries the same one. */
+  idempotencyKey?: string
 }
 
 export interface Http {
@@ -52,6 +56,10 @@ export function errorFor(status: number, body: unknown): ApiError {
   return new ApiError(code, named ?? code)
 }
 
+/** A fresh id for one attempt: letters, digits and dashes, 8 to 80 characters, as the server requires. */
+const newKey = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+
 /** A small fetch wrapper: bearer token, one silent refresh on 401, a timeout, and failures as `ApiError`. */
 export function createHttp(opts: HttpOptions): Http {
   const doFetch = opts.fetch ?? ((...a: Parameters<typeof fetch>) => fetch(...a))
@@ -68,6 +76,7 @@ export function createHttp(opts: HttpOptions): Http {
     const headers: Record<string, string> = { accept: o.asBlob ? '*/*' : 'application/json' }
     if (o.raw) headers['content-type'] = o.raw.type
     else if (o.body !== undefined) headers['content-type'] = 'application/json'
+    if (o.idempotencyKey) headers['idempotency-key'] = o.idempotencyKey
     const token = o.anonymous ? null : opts.token()
     if (token) headers.authorization = `Bearer ${token}`
     const timeout = new AbortController()
@@ -85,6 +94,7 @@ export function createHttp(opts: HttpOptions): Http {
   }
 
   const request = async <T>(method: string, path: string, o: RequestOptions = {}): Promise<T> => {
+    if (o.idempotent && !o.idempotencyKey) o = { ...o, idempotencyKey: newKey() }
     let res = await send(method, path, o)
     if (res.status === 401 && !o.anonymous) {
       if (await refreshOnce()) res = await send(method, path, o)

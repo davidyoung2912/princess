@@ -163,3 +163,11 @@ Gaps found (each becomes a BM22-on fix; turn its `it.fails` into `it` when close
 4. **Gate 10:** the status screen still uses a client demo scenario (TRU-07); the runbook has no incident section (owner, who is told, how guests are told); the `Email` and `Sms` providers are not in the runbook.
 
 Limits: gates 5, 6, 7 and 9 read strings and source, so they prove the route exists, not that it works on a device. Gate 9 cannot show a desktop and a phone each completing a task (needs a browser walk, scorecard B rows). Gate 8 does not test the server's permission checks (C# tests not run, per project rules).
+
+## 5g. BM22 result (built, not committed)
+
+Theme: no silent loss and safe retry. Closed three of the BM21 gate gaps in the front end, each `it.fails` now an `it`:
+1. **Gate 1:** `enqueue` no longer drops the oldest waiting action. A full outbox (`hasRoom` false) refuses the new one; `hold` returns false, the chat and service screens keep the typed text and show `outbox.full`.
+2. **Gate 2:** `RequestOptions.idempotent` sends an `Idempotency-Key` (one per call, the same on the resend after a silent refresh). Used for `book` and the three pay-balance posts.
+3. **Gate 8:** the privacy centre's "Delete my data" calls `deleteMyData` (`DELETE /me/state`, then the local wipe). If the server cannot be reached nothing is wiped and the error is shown.
+Limits: the key lasts one call, so a retry the guest makes by tapping again gets a new key (the server's draft de-duplication still covers `/bookings`; `payments/balance` has no server-side check of the header yet, so it is sent but not honoured). Booking documents shared with other guests are not deleted (server rule). Gate 10 (TRU-07 served status, runbook incident section and providers) is server and docs work, left for its own phase. Group A P1/P2 items (OFF-06 onward) are untouched.
