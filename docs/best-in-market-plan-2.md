@@ -303,3 +303,12 @@ Theme: acknowledged delivery of safety alerts, with a fallback channel (COM-04),
 - **Tests:** `PushRulesTests.ASafetyAlertNobodyAcknowledgedFallsBackOnceBetweenTenMinutesAndThreeHours`, `ProviderContractTests` (Pingram needs its key; request bodies), the service-worker test, and the existing npm suite. Server tests written, not run.
 - **Not verified:** nothing has been sent through Pingram. The request shape comes from their reference pages; in particular I did not confirm whether a notification type needs its email or SMS channel switched on in their dashboard, or whether a sender address or number must be registered first. Try one real send before relying on the fallback. The email carries no one-click unsubscribe headers (the endpoint has no custom-header field).
 - **Limits:** acknowledging while offline fails quietly, so the fallback may still go (the safe side). The fallback needs the check to run (the scheduler does that with the app closed). A guest with no confirmed phone or email gets no fallback. COM-04 moves to Partial.
+
+## 5z. Reconciliation after BM40 (not committed)
+
+Docs only, no code. Read the code for the seven rows that were still "needs a read" and corrected rows the later phases had moved.
+- **Read and moved to Partial:** TRU-03 (six badge kinds, not the nine states), PRE-01 (only confirmed items, no planned ones), GTS-01 (saved only), MNG-11 and SEA-20 (stage and ETA only: no owner, no reason without an ETA, no escalation, closure or reopen aboard), MNG-05 (no push-preview redaction). **SEC-06 confirmed Built** (age rules enforced on the server).
+- **Gap text corrected:** TRU-07 (BM36), SEC-07 and IDN-01 (BM35), OFF-07 (BM19).
+- **Totals now:** 197 Built, 74 Partial, 13 Simulated, 2 Not built, 6 Out of reach; 32 rows read, 260 found only. P0: 95 Built, 24 Partial, 2 Simulated, 1 Out of reach. The untagged list is 83.
+- **Still unread:** 83 P0 Built rows are "found by search" only, so more hidden gaps are possible there.
+- `npm run test`, `npm run lint` and `npx tsc -b` pass.

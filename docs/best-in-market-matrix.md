@@ -28,13 +28,13 @@ Written 2026-11-08 for phase BM2 of `docs/best-in-market-plan.md`. Source: `docs
 
 | Status | All 292 | P0 only (see note) |
 |---|---|---|
-| Built | 209 | 92 |
-| Partial | 58 | 25 |
+| Built | 197 | 95 |
+| Partial | 74 | 24 |
 | Simulated | 13 | 2 |
-| Not built | 6 | 2 |
+| Not built | 2 | 0 |
 | Out of reach | 6 | 1 |
 
-- Basis: **15 rows were read (R), 277 were found only (F).** So "Built" mostly means "a screen, module and usually a test exist", not "every acceptance clause was checked". Treat the 216 as an upper bound; the Gap column lists what I could see was unchecked.
+- Basis: **32 rows were read (R), 260 were found only (F)** (reconciled after BM40, 2026-11-08). So "Built" mostly means "a screen, module and usually a test exist", not "every acceptance clause was checked". Treat the 216 as an upper bound; the Gap column lists what I could see was unchecked.
 - P0 counts cover the 122 stage, phone and cross-stage rows the document marks P0 (QOL concepts carry no priority).
 - (Before BM16.) Of the 122 P0 rows, **21 were not plain Built**: DRM-10, DSC-11, BOK-08, MNG-01, MNG-03, GTS-14, EMB-03, MOB-03, MOB-04, MOB-05, MOB-23, IDN-03, IDN-04, IDN-05, TRU-05, TRU-07, COM-03, COM-04, OFF-01, A11Y-02, UX-02.
 
@@ -129,13 +129,13 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-02 | P0 | Built | F | `src/domain/readiness.ts`, `src/domain/readinessBoard.ts`, `src/domain/readinessBoard.test.ts` | None found |
 | MNG-03 | P0 | Built | R | `src/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | `SyncChip` shows current, stale, pending, unavailable, not linked (BM19); no screen passes `lookup` yet |
 | MNG-04 | P0 | Built | F | `src/domain/papersCheck.ts`, `src/domain/papersCheck.test.ts`, `src/ui/account/PapersCheck.tsx` | None found |
-| MNG-05 | P0 | Built | F | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | Server-held; scanning is out of reach |
+| MNG-05 | P0 | Partial | R | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | Reconciled: documents access-scoped; no rule keeping sensitive data out of push previews (BM17 `it.fails`) |
 | MNG-06 | P1 | Built | F | `src/ui/plan/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
 | MNG-07 | P1 | Built | R | `src/ui/account/HelperScreen.tsx`, `src/domain/account.ts` | Seven permissions now (BM6 to BM12). See IDN-05 |
 | MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/ui/plan/PackingScreen.tsx` | None found |
 | MNG-09 | P1 | Partial | F | `src/ui/plan/TravelScreen.tsx`, `src/domain/travel.ts`, `src/ui/plan/` getting-there route | BM20: no provider, reference or contact fields |
 | MNG-10 | P0 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/account/PaymentsScreen.tsx` | None found |
-| MNG-11 | P0 | Built | F | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | None found |
+| MNG-11 | P0 | Partial | R | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | Reconciled: aboard requests show stage and ETA; no owner or team, no reason when no ETA |
 | MNG-12 | P1 | Built | F | `src/domain/medicalCard.ts`, `src/domain/care.test.ts`, `src/domain/medicalCard.ts` | Audience-specific sharing unchecked |
 | MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
 | MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
@@ -143,7 +143,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | BM31: profile lists where each saved preference is used and marks health and child data as never for marketing; no per-preference opt-out of later sailings, no cabin-location or message preferences (need a server field) |
 | MNG-17 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | Status data is simulated by the server |
 | MNG-18 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
-| PRE-01 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | None found |
+| PRE-01 | P0 | Partial | R | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | Reconciled: planner lists confirmed tours and dinners only; no planned-but-not-booked items shown differently |
 | PRE-02 | P0 | Built | F | `src/domain/autopilot.ts`, `src/domain/autopilot.test.ts`, `src/domain/planChange.ts` | None found |
 | PRE-03 | P0 | Built | F | `src/ui/plan/DiningScreen.tsx`, `src/domain/prebook.test.ts` | None found |
 | PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/ui/book/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
@@ -161,7 +161,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
 | PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx` | Group dining across linked cabins unchecked |
 | PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | Refund timing stated as fact, not labelled estimate (BM16) |
-| GTS-01 | P0 | Built | F | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | None found |
+| GTS-01 | P0 | Partial | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | Reconciled: steps say saved; no submitted or accepted state per field |
 | GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
 | GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
 | GTS-04 | P0 | Built | F | `src/ui/boarding/EmbarkPlanScreen.tsx`, `src/domain/embark.ts`, `src/domain/embark.test.ts` | None found |
@@ -211,7 +211,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | SEA-17 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/ui/aboard/` teen route `/ship/teen` | Authorised pickup unchecked |
 | SEA-18 | P1 | Partial | F | `src/ui/aboard/` access route `/ship/access`, `src/ui/onboard/Tickets.tsx` | Accommodation requests per event unchecked |
 | SEA-19 | P0 | Built | F | `src/ui/aboard/SafetyScreens.tsx`, `src/domain/medicalCard.ts` (route `/ship/allergy-chain`) | Venue acknowledgement is simulated |
-| SEA-20 | P0 | Built | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/account/` cases route | None found |
+| SEA-20 | P0 | Partial | R | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/account/` cases route | Reconciled: no escalation, closure confirmation or reopen on aboard requests (pre-trip fix cases have escalate) |
 | SEA-21 | P2 | Out of reach | F | `src/ui/extras/RoomScreen.tsx` | Needs ship room-control integration |
 | SEA-22 | P1 | Built | F | `src/domain/briefing.ts`, `src/domain/briefing.test.ts`, `src/ui/home/BriefingScreen.tsx` | None found |
 | SEA-23 | P1 | Built | F | `src/domain/sky.ts`, `src/domain/sky.test.ts`, `src/ui/onboard/SkyScreen.tsx` | Telemetry simulated |
@@ -328,7 +328,7 @@ Priority is not given per concept in the document.
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | No sign-out-everywhere, device list or step-up (BM16) |
+| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere built; no device list or step-up check |
 | IDN-02 | P0 | Built | F | `src/ui/boarding/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
 | IDN-03 | P0 | Partial | F | `server/Princess.Api/Auth/AuthService.cs` (`RegisterAsync`), `src/ui/SignInFlows.tsx` | BM38: sign-up asks when name and date of birth match an adult account and flags the new one for a person; no staff screen to resolve it and no booking-link matching |
 | IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. Shared vocabulary of relationships and tasks since BM37 (`src/domain/relationships.ts`); the stores are still three, and no cabin party, linked group or shipmate. BM5 |
@@ -338,11 +338,11 @@ Priority is not given per concept in the document.
 | IDN-08 | P1 | Partial | F | `src/ui/home/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
 | TRU-01 | P0 | Built | F | `src/ui/account/LedgerScreen.tsx`, `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/ActivityScreen.tsx` | None found |
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |
-| TRU-03 | P0 | Built | F | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | All nine states unchecked |
+| TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | Reconciled: `StatusBadge` has six kinds; no single type for draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed |
 | TRU-04 | P0 | Built | F | `src/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
 | TRU-05 | P0 | Partial | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts` | Rule lives in the server; a failed reschedule on screen is untested (a-tier-matrix row 13) |
 | TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/offlineDay.test.ts` | Source label per item unchecked |
-| TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | `/me/status` is built from client demo scenarios, not from a server health or incident feed |
+| TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`, `Providers:ServiceStatus`); no incident feed with start time and message, and the runbook has no incident section (owner, who is told, how guests are told) |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
 | AST-01 | P1 | Built | F | `src/ai/stanley.ts`, `src/ai/stanleyRoute.ts`, `src/ai/stanleyRoute.test.ts` | None found |
 | AST-02 | P1 | Partial | F | `src/ai/guard.ts`, `src/ai/stanleyAsk.ts` | BM20: no source or freshness label on answers |
@@ -364,7 +364,7 @@ Priority is not given per concept in the document.
 | OFF-04 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useOutbox.ts` | Conflict resolution unchecked |
 | OFF-05 | P0 | Built | F | `src/api/bounded.ts`, `src/data/outbox.ts` | None found |
 | OFF-06 | P1 | Built | F | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts`, `src/ui/DeferredImage.tsx`, `src/ui/dataLightImages.test.tsx` | Photos wait for a tap in data-light mode; no autoplay (tested) |
-| OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/data/capsule.ts` | BM1 surfaces eviction and asks for persistence; export/backup guidance not found |
+| OFF-07 | P1 | Built | R | `src/domain/offlineCapsule.ts`, `src/data/capsule.ts` | BM19: export and restore of waiting items, unreadable-list handling; eviction surfaced since BM1 |
 | A11Y-01 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/ui/Dialog.tsx` | Audit is jsdom only |
 | A11Y-02 | P0 | Partial | F | `src/design/textSize.ts`, `src/design/textSize.test.ts` | Screen-reader and 320 px reflow by hand only |
 | A11Y-03 | P0 | Built | F | `src/ui/a11y.test.tsx`, `src/darkPatterns.test.ts` | None found |
@@ -378,8 +378,8 @@ Priority is not given per concept in the document.
 | SEC-03 | P0 | Built | F | `src/domain/dataRules.ts`, `src/domain/privacy.ts` | Purpose limitation in code unchecked |
 | SEC-04 | P0 | Built | R | `src/ui/account/PrivacyScreen.tsx`, `src/ui/DataSettings.tsx`, `src/sync/consent.ts` | None found |
 | SEC-05 | P0 | Built | F | `src/domain/arrivalPing.ts`, `src/domain/homeLink.ts`, `src/sync/consent.ts` | None found |
-| SEC-06 | P0 | Built | F | `src/ui/plan/FamilyLinkScreen.tsx`, `src/ui/aboard/ChatSafe.tsx` | None found |
-| SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | Sign out exists; device review and "sign out everywhere" not found |
+| SEC-06 | P0 | Built | R | `src/ui/plan/FamilyLinkScreen.tsx`, `src/ui/aboard/ChatSafe.tsx` | Reconciled: age rules enforced on the server (`ChatService`, no phone numbers, links or photos for under-18s); photo gate in `ChatSafe` |
+| SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | BM35: sign out everywhere (`POST /auth/logout-all`); no device list (needs a sessions table) or suspicious sign-in notice |
 | SEC-08 | P1 | Out of reach | F | `docs/security-performance-plan.md` | Pen test and vendor review are outside code |
 | UX-01 | P0 | Built | F | `src/routes/coverage.test.ts`, `src/routes/stageNav.test.ts` | Parity is by shared code |
 | UX-02 | P0 | Partial | F | `src/styles`, `src/ui/Shell.tsx` | Desktop is responsive layout; wide-screen comparison workspace unchecked |

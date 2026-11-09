@@ -7,17 +7,17 @@ BOK-05	GAP	No fare or terms version is stored at checkout. Only legal documents 
 PRE-18	PARTIAL	Refund timing appears as fact ("Refunds reach your card in 5 working days", hub.portSkipped.comp.arrives), not labelled as an estimate.
 DEB-05	PARTIAL	Outcomes are worded after a case is resolved (case.outcome.refunded). No wording at submission that opening a case does not mean the charge is reversed.
 DEB-04	PARTIAL	trustLedger has a refund kind, but folio.ts has no pending, disputed, refunded or adjusted line state; the final bill only adjusts the tip.
-IDN-01	PARTIAL	Sign-in, recovery and lockout exist. No sign-out-everywhere endpoint or device list; the server field Users.SessionsValidFrom is set only by a password reset. No step-up check found.
-MNG-05	NEEDS-READ	No redaction rule found for push title and body (PushNotice has Title and Body). Documents are access-scoped on the server.
-MNG-11	NEEDS-READ	src/domain/assistance.ts has no owner or team and no "reason no ETA". RequestsScreen may carry them; read it.
-SEA-20	NEEDS-READ	Escalation and reopen not found in the aboard request screen or domain; the /me/fix-cases endpoint has escalate. Read RequestsScreen and the server request model.
-PRE-01	NEEDS-READ	No wording distinguishing planned from confirmed items in plan.ts or WeekPlanner.tsx.
-GTS-01	NEEDS-READ	No per-field saved, submitted or accepted state found in the check-in steps.
-TRU-03	NEEDS-READ	LedgerKind lists payment, charge, credit, covered, refund. The nine states (draft to failed) are not found as one type; check StatusBadge.
+IDN-01	PARTIAL	(Reconciled) Sign out everywhere built in BM35 (POST /auth/logout-all). Still no device list (needs a sessions table), step-up check or suspicious sign-in notice.
+MNG-05	PARTIAL	(Reconciled BM41 prep) Documents are access-scoped on the server; no redaction rule for push title and body (PushRules builds Title and Body from the alert). Still a gap, pinned by it.fails.
+MNG-11	PARTIAL	(Reconciled) RequestsScreen shows stage and ETA; no owner or team, no reason when there is no ETA. Escalation exists only for pre-trip fix cases (FixItScreen).
+SEA-20	PARTIAL	(Reconciled) Aboard requests have stage and ETA only; no escalation, closure confirmation or reopen with history. Pre-trip fix cases have escalate.
+PRE-01	PARTIAL	(Reconciled) plan.ts lists confirmed tours and dinners only; "gaps" are suggestions, not planned items, so planned and confirmed are not shown side by side.
+GTS-01	PARTIAL	(Reconciled) Document, photo and payment steps say "saved"; no per-field submitted or accepted state.
+TRU-03	PARTIAL	(Reconciled) StatusBadge has six kinds (booked, waitlist, soldOut, changed, cancelled, ready); no single type covers draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed.
 REM-01	OK	(BM18 closed) HistoryScreen has no search or filter; trips are listed, receipts shown.
 POR-04	OK	(BM18 closed) No Princess-operated versus independent label found in PortCard or excursions.ts.
-SEC-06	NEEDS-READ	ChatSafe has a photo minimum age. No age-aware message rule found in the client; check ChatService.cs.
-SEC-07	PARTIAL	See IDN-01.
+SEC-06	OK	(Reconciled) ChatService applies ServiceRules.ChildSafeProblem by age on the server (no phone numbers or links, no photos for under-18s); ChatSafe gates photos by PHOTO_MIN_AGE.
+SEC-07	PARTIAL	(Reconciled) Sign out everywhere built in BM35; device list and suspicious sign-in notice not built. See IDN-01.
 MNG-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-03	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-04	OK	(BM19 closed) see best-in-market-plan-2 section 5d
