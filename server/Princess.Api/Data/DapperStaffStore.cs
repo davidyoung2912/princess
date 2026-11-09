@@ -113,3 +113,22 @@ public sealed class DapperStanleyActionStore(IDbConnectionFactory db) : IStanley
         return (await c.QueryAsync<StanleyActionRow>(Sql.Cmd($"SELECT TOP (@max) {Columns} FROM dbo.StanleyActions WHERE UserId = @userId ORDER BY CreatedAt DESC, Id DESC", new { userId, max }, null, ct))).ToList();
     }
 }
+
+/// <summary>Stanley's handoffs in <c>dbo.StanleyHandoffs</c> (phase 6): a case reference with the text the guest agreed to send.</summary>
+public sealed class DapperStanleyHandoffStore(IDbConnectionFactory db) : IStanleyHandoffStore
+{
+    public async Task AddAsync(StanleyHandoffRow r, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd(
+            "INSERT INTO dbo.StanleyHandoffs (PublicId, UserId, Topic, Reference, Issue, Outcome, BookingRef, Tried, Attachment, Role, OpenedAt, Source) VALUES (@PublicId, @UserId, @Topic, @Reference, @Issue, @Outcome, @BookingRef, @Tried, @Attachment, @Role, @OpenedAt, @Source)", r, null, ct));
+    }
+
+    public async Task<List<StanleyHandoffRow>> ListAsync(long userId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<StanleyHandoffRow>(Sql.Cmd(
+            "SELECT TOP (@max) Id, PublicId, UserId, Topic, Reference, Issue, Outcome, BookingRef, Tried, Attachment, Role, OpenedAt, Source FROM dbo.StanleyHandoffs WHERE UserId = @userId ORDER BY OpenedAt DESC, Id DESC",
+            new { userId, max }, null, ct))).ToList();
+    }
+}

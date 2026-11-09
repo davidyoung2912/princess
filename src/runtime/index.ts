@@ -90,6 +90,12 @@ export const stanleyActions = {
   receipts: () => http.get<unknown>('/me/stanley/receipts'),
 }
 
+/** Human handoff (phase 6): the server opens a case and answers with its reference, owner and status; the device lists them to show progress. */
+export const stanleyHandoffs = {
+  create: (body: unknown) => http.post<unknown>('/me/stanley/handoffs', body),
+  list: () => http.get<unknown>('/me/stanley/handoffs'),
+}
+
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 

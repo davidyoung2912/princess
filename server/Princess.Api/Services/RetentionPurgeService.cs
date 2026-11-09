@@ -16,17 +16,17 @@ public sealed class RetentionOptions
     public int StanleyDays { get; set; } = 180;
 }
 
-/// <summary>Deletes old Stanley rows in batches: receipts and tier log rows past their retention, and previews nobody confirmed.</summary>
+/// <summary>Deletes old Stanley rows in batches: receipts, handoffs and tier log rows past their retention, and previews nobody confirmed.</summary>
 public static class StanleyRetention
 {
     private const int Batch = 5000;
 
-    public static async Task<(int Actions, int TierLog)> DeleteOlderThanAsync(IDbConnectionFactory db, DateTime now, int days, CancellationToken ct)
+    public static async Task<(int Actions, int TierLog, int Handoffs)> DeleteOlderThanAsync(IDbConnectionFactory db, DateTime now, int days, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         var cutoff = now.AddDays(-days);
         var unconfirmed = now.AddDays(-1);
-        int actions = 0, tiers = 0, n;
+        int actions = 0, tiers = 0, handoffs = 0, n;
         do
         {
             n = await c.ExecuteAsync(Sql.Cmd("""
@@ -40,7 +40,12 @@ public static class StanleyRetention
             n = await c.ExecuteAsync(Sql.Cmd("DELETE TOP (@batch) FROM dbo.StanleyTierLog WHERE [At] < @cutoff", new { cutoff, batch = Batch }, null, ct));
             tiers += n;
         } while (n >= Batch && !ct.IsCancellationRequested);
-        return (actions, tiers);
+        do
+        {
+            n = await c.ExecuteAsync(Sql.Cmd("DELETE TOP (@batch) FROM dbo.StanleyHandoffs WHERE OpenedAt < @cutoff", new { cutoff, batch = Batch }, null, ct));
+            handoffs += n;
+        } while (n >= Batch && !ct.IsCancellationRequested);
+        return (actions, tiers, handoffs);
     }
 }
 
@@ -101,11 +106,11 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
                 }
                 if (options.Value.StanleyDays > 0)
                 {
-                    var (acts, tiers) = await StanleyRetention.DeleteOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, options.Value.StanleyDays, stoppingToken);
-                    if (acts + tiers > 0)
+                    var (acts, tiers, hands) = await StanleyRetention.DeleteOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, options.Value.StanleyDays, stoppingToken);
+                    if (acts + tiers + hands > 0)
                     {
-                        log.LogInformation("Deleted {Actions} Stanley action row(s) and {Tiers} tier log row(s)", acts, tiers);
-                        await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.stanley", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { actions = acts, tierLog = tiers }) }, stoppingToken);
+                        log.LogInformation("Deleted {Actions} Stanley action row(s), {Tiers} tier log row(s) and {Handoffs} handoff row(s)", acts, tiers, hands);
+                        await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.stanley", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { actions = acts, tierLog = tiers, handoffs = hands }) }, stoppingToken);
                     }
                 }
                 if (n > 0)

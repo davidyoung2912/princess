@@ -7,6 +7,9 @@ import { decideStanley } from '../../ai/stanleyDecide'
 import { answerOf, LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
 import { StanleyActionCard } from './StanleyActionCard'
+import { HandoffCard } from './HandoffCard'
+import { HandoffCases } from './HandoffCases'
+import { CrewCards } from './CrewCards'
 import { StanleyAnswerCard } from './StanleyAnswerCard'
 import { WhyThis } from './WhyThis'
 import { cardText, explainScreenCard } from '../../ai/stanleyCard'
@@ -70,6 +73,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const { state: mem } = useMemory()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [help, setHelp] = useState<'person' | 'crew' | null>(null)
   const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const end = useRef<HTMLLIElement>(null)
@@ -179,6 +183,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
                   <FollowChips items={follow} onPick={pick} />
                 )}
                 {m.kind === 'handoff' && <p className="ai-msg__cites"><Link to="/chat" onClick={onClose}>{t('route.chat')}</Link></p>}
+                {m.kind === 'handoff' && m.id === lastAnswer?.id && <HandoffCard messages={messages} />}
               </li>
             ))}
             <li ref={end} aria-hidden="true" />
@@ -186,7 +191,14 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         )}
         {status.degraded.length > 0 && <p role="status" className="muted stanley__note">{t('stanley.degraded')}</p>}
         {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
-        <p className="stanley__explain"><button type="button" className="link-button" onClick={explain} disabled={busy}>{t('stanley.explain.screen')}</button></p>
+        <p className="stanley__explain">
+          <button type="button" className="link-button" onClick={explain} disabled={busy}>{t('stanley.explain.screen')}</button>{' · '}
+          <button type="button" className="link-button" aria-expanded={help === 'person'} onClick={() => setHelp(help === 'person' ? null : 'person')}>{t('handoff.open')}</button>{' · '}
+          <button type="button" className="link-button" aria-expanded={help === 'crew'} onClick={() => setHelp(help === 'crew' ? null : 'crew')}>{t('crew.open')}</button>
+        </p>
+        {help === 'person' && !(lastAnswer?.kind === 'handoff') && <HandoffCard messages={messages} initialTopic="person" />}
+        {help === 'crew' && <CrewCards />}
+        <HandoffCases />
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
           <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>

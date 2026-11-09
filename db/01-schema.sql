@@ -1082,6 +1082,29 @@ CREATE INDEX IX_StanleyActions_UserId_CreatedAt ON dbo.StanleyActions (UserId, C
 CREATE INDEX IX_StanleyActions_UserId_IdemKey ON dbo.StanleyActions (UserId, IdemKey);
 END
 
+IF OBJECT_ID(N'dbo.StanleyHandoffs', N'U') IS NULL
+BEGIN
+-- Stanley's human handoffs (docs/stanley-gap-analysis-and-plan.md, phase 6): a case reference with the text the guest saw and agreed to send. Deleted by the retention job.
+CREATE TABLE dbo.StanleyHandoffs (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyHandoffs PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_StanleyHandoffs_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Topic NVARCHAR(14) NOT NULL,
+  Reference NVARCHAR(12) NOT NULL,
+  Issue NVARCHAR(1000) NOT NULL,
+  Outcome NVARCHAR(200) NOT NULL CONSTRAINT DF_StanleyHandoffs_Outcome DEFAULT N'',
+  BookingRef NVARCHAR(40) NOT NULL CONSTRAINT DF_StanleyHandoffs_BookingRef DEFAULT N'',
+  Tried NVARCHAR(300) NOT NULL CONSTRAINT DF_StanleyHandoffs_Tried DEFAULT N'',
+  Attachment NVARCHAR(120) NOT NULL CONSTRAINT DF_StanleyHandoffs_Attachment DEFAULT N'',
+  Role NVARCHAR(10) NOT NULL CONSTRAINT DF_StanleyHandoffs_Role DEFAULT N'',
+  OpenedAt DATETIME2(0) NOT NULL,
+  Source NVARCHAR(10) NOT NULL,
+  CONSTRAINT FK_StanleyHandoffs_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_StanleyHandoffs_Topic CHECK (Topic IN (N'person', N'cabin', N'lostProperty', N'billing', N'allergy', N'special', N'disruption', N'missedShip'))
+);
+CREATE INDEX IX_StanleyHandoffs_UserId_OpenedAt ON dbo.StanleyHandoffs (UserId, OpenedAt);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

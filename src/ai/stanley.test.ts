@@ -62,8 +62,8 @@ describe('where the guest is', () => {
 
 describe('the server\'s switches', () => {
   it('reads the status and treats anything unreadable as everything on', () => {
-    expect(normalizeStatus({ library: false, actions: true, degraded: ['library', 3, 'model'] })).toEqual({ library: false, actions: true, degraded: ['library', 'model'] })
-    expect(normalizeStatus(null)).toEqual({ library: true, actions: true, degraded: [] })
+    expect(normalizeStatus({ library: false, actions: true, degraded: ['library', 3, 'model'] })).toEqual({ library: false, actions: true, handoff: true, degraded: ['library', 'model'] })
+    expect(normalizeStatus(null)).toEqual({ library: true, actions: true, handoff: true, degraded: [] })
   })
   it('keeps what it last read, and a failed fetch changes nothing', async () => {
     await loadStanleyStatus(async () => ({ library: false, actions: false, degraded: ['library', 'actions'] }))
@@ -71,7 +71,7 @@ describe('the server\'s switches', () => {
     await loadStanleyStatus(async () => { throw new Error('offline') })
     expect(getStanleyStatus().library).toBe(false)
     await loadStanleyStatus(async () => ({}))
-    expect(getStanleyStatus()).toEqual({ library: true, actions: true, degraded: [] })
+    expect(getStanleyStatus()).toEqual({ library: true, actions: true, handoff: true, degraded: [] })
   })
 })
 

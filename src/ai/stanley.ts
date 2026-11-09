@@ -168,8 +168,8 @@ export function revealSteps(text: string, words = 3): string[] {
   return steps
 }
 
-/** Which routes the server has switched off. The device honours `library` (its authored answers) and `actions` (previews and confirms); the rest is applied on the server. */
-export interface StanleyStatus { library: boolean; actions: boolean; degraded: string[] }
+/** Which routes the server has switched off. The device honours `library` (its authored answers), `actions` (previews and confirms) and `handoff` (making a case); the rest is applied on the server. */
+export interface StanleyStatus { library: boolean; actions: boolean; handoff: boolean; degraded: string[] }
 
 /** Reads the status; anything unreadable means everything is on, so a missing status never silences Stanley. */
 export function normalizeStatus(raw: unknown): StanleyStatus {
@@ -177,11 +177,12 @@ export function normalizeStatus(raw: unknown): StanleyStatus {
   return {
     library: o.library !== false,
     actions: o.actions !== false,
+    handoff: o.handoff !== false,
     degraded: Array.isArray(o.degraded) ? o.degraded.filter((x): x is string => typeof x === 'string').slice(0, 8) : [],
   }
 }
 
-let status: StanleyStatus = { library: true, actions: true, degraded: [] }
+let status: StanleyStatus = { library: true, actions: true, handoff: true, degraded: [] }
 export const getStanleyStatus = (): StanleyStatus => status
 export function setStanleyStatus(next: StanleyStatus) {
   status = next

@@ -85,6 +85,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'StaffTickets'),
   (N'dbo', N'ConciergeUses'),
   (N'dbo', N'StanleyActions'),
+  (N'dbo', N'StanleyHandoffs'),
   (N'dbo', N'StanleyTierLog'),
   (N'dbo', N'DataProtectionKeys'),
   (N'demo', N'DemoState'),

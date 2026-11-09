@@ -20,9 +20,11 @@ public sealed class StanleySwitches
     public bool Tools { get; set; } = true;
     /// <summary>"Ask your cruise" previews and confirms.</summary>
     public bool Actions { get; set; } = true;
+    /// <summary>Handing a guest to a person with a case reference. Off, the guest still gets the phone number and the chat link; no case is made.</summary>
+    public bool Handoff { get; set; } = true;
 
     /// <summary>The names of the routes that are off, for the reply.</summary>
-    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions) }.Where(x => !x.On).Select(x => x.Name)];
+    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff) }.Where(x => !x.On).Select(x => x.Name)];
 }
 
 /// <summary>

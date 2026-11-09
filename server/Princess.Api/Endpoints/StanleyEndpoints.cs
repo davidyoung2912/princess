@@ -25,7 +25,7 @@ public static class StanleyEndpoints
 
         api.MapGet("/me/stanley/status", (ICurrentUser me, StanleyService svc) => Results.Ok(svc.Status()))
             .WithTags("Stanley")
-            .WithSummary("Which Stanley routes are switched off: { library, actions, degraded[] }. The device honours library (its authored answers) and actions (previews and confirms) itself; the other routes are applied on the server.");
+            .WithSummary("Which Stanley routes are switched off: { library, actions, handoff, degraded[] }. The device honours library (its authored answers), actions (previews and confirms) and handoff (making a case) itself; the other routes are applied on the server.");
 
         api.MapGet("/me/stanley/facts", async (ICurrentUser me, StanleyService svc, CancellationToken ct) => Results.Ok(await svc.FactsAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley")
@@ -60,6 +60,17 @@ public static class StanleyEndpoints
         api.MapGet("/me/stanley/receipts", async (ICurrentUser me, StanleyActionService svc, CancellationToken ct) => Results.Ok(await svc.ReceiptsAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Stanley")
             .WithSummary("The guest's receipts for what Stanley did, newest first (up to 50): done, failed, pending and undone actions with their receipt number and times. The Trust Ledger lists them.");
+
+        var handoffs = api.MapGroup("/me/stanley/handoffs").WithTags("Stanley");
+        handoffs.MapPost("", async (StanleyHandoffRequest body, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) =>
+                Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Hands the guest to a person and opens a case. Send { topic (person, cabin, lostProperty, billing, allergy, special, disruption or missedShip), issue (at most 1000 characters), outcome (what the guest wants, at most 200), reference (booking or order number, at most 40), tried (what was tried, at most 300), attachment (a note naming an attachment the guest approved, at most 120), role (guest, organiser or caregiver), consent (must be true: the guest saw the exact text) }. " +
+                "Answers { id, topic, reference (GS- and six characters), owner, status (submitted, acknowledged or fulfilled), openedAt, nextUpdateAt, overdue, escalated, issue, outcome, source }. The device says it has handed the guest over only from this answer. An emergency is not a topic: it only shows the numbers. " +
+                "400 consent, topic, issue, tooLong or role, 403 for a child account, 409 off when the handoff switch is off, 409 tooManyCases after ten in a day.");
+        handoffs.MapGet("", async (ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The guest's handoff cases, newest first (up to 50), each with its owner, status, next update time and whether it is overdue or escalated.");
+        handoffs.MapGet("/{id:guid}", async (Guid id, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("One handoff case as it stands now. 404 for one that is not yours.");
 
         api.MapGet("/me/stanley/tiers", async (ICurrentUser me, IStanleyTierLog tiers, IClock clock, int? days, CancellationToken ct) =>
             {

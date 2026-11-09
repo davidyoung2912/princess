@@ -156,7 +156,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
     public StanleyStatusDto Status()
     {
         var s = options.Value.Switches;
-        return new StanleyStatusDto(s.Library, s.Actions, s.Off());
+        return new StanleyStatusDto(s.Library, s.Actions, s.Handoff, s.Off());
     }
 
     private static JsonArray ToTurns(IEnumerable<ConciergeMessageDto> messages)
@@ -174,4 +174,4 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
 public sealed record StanleyFactsDto(List<StanleyCardDto> Cards);
 
 /// <summary>The gateway's switches as the device reads them (<c>GET /me/stanley/status</c>).</summary>
-public sealed record StanleyStatusDto(bool Library, bool Actions, List<string> Degraded);
+public sealed record StanleyStatusDto(bool Library, bool Actions, bool Handoff, List<string> Degraded);
