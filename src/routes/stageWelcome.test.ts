@@ -128,7 +128,7 @@ describe('welcome content', () => {
   })
 
   it('lists the locale keys each stage needs', () => {
-    expect(welcomeKeys('dream')).toEqual(['welcome.dream.title', 'welcome.dream.intro', 'welcome.dream.focus', 'welcome.dream.needIntro', 'welcome.dream.need.1', 'welcome.dream.need.2', 'welcome.dream.need.3', 'welcome.dream.lead', 'welcome.dream.step.1', 'welcome.dream.step.2', 'welcome.dream.step.3'])
+    expect(welcomeKeys('dream')).toEqual(['welcome.dream.title', 'welcome.dream.intro', 'welcome.dream.focus', 'welcome.dream.needIntro', 'welcome.dream.need.1', 'welcome.dream.need.2', 'welcome.dream.need.3', 'welcome.dream.lead', 'welcome.dream.moveOn', 'welcome.dream.step.1', 'welcome.dream.step.2', 'welcome.dream.step.3'])
     expect(welcomeKeys('port')).toContain('welcome.port.transition')
   })
 

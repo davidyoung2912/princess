@@ -61,11 +61,24 @@ export function markVisited(state: StageProgressState, key: string, now: number)
   return { visited: newest({ ...state.visited, [key]: now }) }
 }
 
+/**
+ * Addresses that count as visiting a step, where its link alone is not enough: a step whose link depends on the guest's data (resume the draft, pay this trip), or that
+ * can be reached two ways. A pattern matches itself and any screen under it; one ending in `$` matches only itself. A step not listed here counts for its own link.
+ */
+const STEP_ADDRESSES: Partial<Record<JourneyStage, readonly (readonly string[])[]>> = {
+  book: [['/book$', '/book/resume'], ['/book/pay'], ['/plan/party']],
+  manage: [['/book/pay', '/me/payments'], ['/me/documents'], ['/plan/readiness']],
+  getToShip: [['/home/check-in', '/home/boarding-pass'], ['/plan/getting-there'], ['/me/documents']],
+}
+
+const matches = (path: string, pattern: string): boolean => pattern.endsWith('$') ? path === pattern.slice(0, -1) : path === pattern || path.startsWith(`${pattern}/`)
+
 /** The steps (from 1) of a stage that the screen at this address is the way to. A step's screen counts for its own address and anything under it. */
 export function stepsAt(stage: JourneyStage, pathname: string): number[] {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const listed = STEP_ADDRESSES[stage]
   const out: number[] = []
-  welcomeContent(stage).steps.forEach((s, i) => { if (path === s.to || path.startsWith(`${s.to}/`)) out.push(i + 1) })
+  welcomeContent(stage).steps.forEach((s, i) => { if ((listed?.[i] ?? [s.to]).some((p) => matches(path, p))) out.push(i + 1) })
   return out.filter((n) => n <= MAX_PROGRESS_STEP)
 }
 

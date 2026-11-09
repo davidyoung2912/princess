@@ -103,7 +103,8 @@ export function StageWelcomeScreen() {
               : <li key={x.key} className="welcome__step"><Link to={x.to}>{text}</Link> <span className="muted">· {t('welcome.stepToDo')}</span></li>
           })}
         </ol>
-        <p>{remaining === 0 ? (c.next ? t('welcome.allDone', { stage: stageName(c.next) }) : t('welcome.allDoneEnd')) : (c.next ? t('welcome.toGo', { count: remaining, stage: stageName(c.next) }) : t('welcome.toGoEnd', { count: remaining }))}</p>
+        <p>{remaining === 0 ? t('welcome.allDone') : t('welcome.toGo', { count: remaining })}</p>
+        <p><strong>{t('welcome.moveOnLabel')}</strong> {words(stage, 'moveOn')}</p>
         <div className="button-row"><LinkButton to={back((state as { from?: unknown } | null)?.from)} replace>{t('welcome.go')}</LinkButton></div>
       </Card>
     </div>

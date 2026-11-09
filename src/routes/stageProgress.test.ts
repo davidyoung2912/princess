@@ -46,3 +46,19 @@ describe('which steps a screen is the way to', () => {
     expect(stepsAt('dream', '/')).toEqual([])
   })
 })
+
+describe('steps whose link depends on the guest\'s data', () => {
+  it('counts the booking screens for the right booking step', () => {
+    expect(stepsAt('book', '/book')).toEqual([1])
+    expect(stepsAt('book', '/book/resume/d1')).toEqual([1])
+    expect(stepsAt('book', '/book/pay/d1')).toEqual([2])
+    expect(stepsAt('book', '/plan/party')).toEqual([3])
+  })
+
+  it('counts either way into a step that can be reached two ways', () => {
+    expect(stepsAt('manage', '/book/pay/T123')).toEqual([1])
+    expect(stepsAt('manage', '/me/payments')).toEqual([1])
+    expect(stepsAt('getToShip', '/home/check-in/T123')).toEqual([1])
+    expect(stepsAt('getToShip', '/home/boarding-pass')).toEqual([1])
+  })
+})
