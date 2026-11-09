@@ -83,6 +83,7 @@ describe('REST discover and booking groups', () => {
       '/booking/quote': { total: 5 },
       '/bookings': { number: 'PC9' },
       '/bookings/PC9/detail': { number: 'PC9' },
+      '/bookings/PC9/instalments': { balance: 0, finalDue: '2027-01-15', plans: [] },
       '/bookings/PC9/pay-balance': { number: 'PC9' },
       '/bookings/PC9/change?sailingId=s2': { newTotal: 1 },
       '/bookings/PC9/change?sailingId=s2#post': { number: 'PC9' },
@@ -100,11 +101,13 @@ describe('REST discover and booking groups', () => {
     await b.booking.book({ draft: {}, expectedTotal: 5, option: 'full', parts: [{ method: 'wallet', cents: 5 }] } as never)
     await b.booking.get('PC9')
     await b.booking.payBalance('PC9', [{ method: 'wallet', cents: 1 }], '123456')
+    await b.booking.instalments('PC9')
     await b.booking.changePreview('PC9', 's2')
     await b.booking.cancel('PC9')
     await b.booking.sendResumeLink('email', 'a@b.example')
     expect(calls.find((c) => c.path === '/bookings')).toMatchObject({ method: 'POST', body: { expectedTotal: 5, option: 'full' } })
     expect(calls.find((c) => c.path === '/bookings/PC9/pay-balance')?.body).toEqual({ parts: [{ method: 'wallet', cents: 1 }], challenge: '123456' })
+    expect(calls.some((c) => c.method === 'GET' && c.path === '/bookings/PC9/instalments')).toBe(true)
     expect(calls.find((c) => c.path === '/me/draft/resume-link')?.body).toEqual({ via: 'email', to: 'a@b.example' })
   })
 })

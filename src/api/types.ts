@@ -291,6 +291,25 @@ export interface BookingView {
   cancelled: { at: number; fee: number; refund: number } | null
 }
 
+/** One payment in an instalment plan: a date and an amount in cents. */
+export interface InstalmentPayment {
+  date: string
+  cents: number
+}
+
+/** Equal monthly payments, the last on the final payment date. */
+export interface InstalmentPlan {
+  count: number
+  payments: InstalmentPayment[]
+}
+
+/** The ways to spread what is left; `plans` is empty when nothing is owed or there is no time for more than one payment. */
+export interface InstalmentOptions {
+  balance: number
+  finalDue: string
+  plans: InstalmentPlan[]
+}
+
 export interface ChangePreview {
   check: ChangeCheck
   newTotal: number
@@ -806,6 +825,8 @@ export interface Api {
     get(number: string): Promise<BookingView>
     /** Pays the rest of the balance; rejects `conflict` when nothing is owed. */
     payBalance(number: string, parts: PaymentPart[], challenge?: string): Promise<BookingView>
+    /** Plans that split the balance into monthly payments. A schedule to follow; each payment is made with `payBalance`. */
+    instalments(number: string): Promise<InstalmentOptions>
     changePreview(number: string, sailingId: string): Promise<ChangePreview>
     change(number: string, sailingId: string): Promise<BookingView>
     cancel(number: string): Promise<BookingView>

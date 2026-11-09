@@ -44,4 +44,6 @@ public sealed record BookingViewDto(
     List<BookingReceiptDto> Receipts, List<AcceptanceDto> Accepted, List<NotifiedDto> Notified, int DaysToDeparture, long CreatedAt,
     CancelTerms Cancel, bool CanCancel, bool CanChange, CancelledDto? Cancelled);
 
+public sealed record InstalmentOptionsDto(long Balance, string FinalDue, List<InstalmentPlan> Plans);
+
 public sealed record ChangePreviewDto(string Check, long NewTotal, long Difference, bool CabinKept);

@@ -375,6 +375,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       book: (input) => send('post', '/bookings', input),
       get: (n) => get(`/bookings/${seg(n)}/detail`),
       payBalance: (n, parts, challenge) => send('post', `/bookings/${seg(n)}/pay-balance`, { parts, challenge }),
+      instalments: (n) => get(`/bookings/${seg(n)}/instalments`),
       changePreview: (n, sailingId) => get(`/bookings/${seg(n)}/change?sailingId=${seg(sailingId)}`),
       change: (n, sailingId) => send('post', `/bookings/${seg(n)}/change?sailingId=${seg(sailingId)}`),
       cancel: (n) => send('post', `/bookings/${seg(n)}/cancel`),

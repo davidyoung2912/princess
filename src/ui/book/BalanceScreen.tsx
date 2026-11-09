@@ -10,6 +10,7 @@ import { t } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Load } from '../account/parts'
+import { InstalmentPlanner } from './InstalmentPlanner'
 import { PayPanel } from './PayPanel'
 
 /** Pay what is left on a booking made here (BOK-05, BOK-06). */
@@ -44,6 +45,7 @@ export function BalanceScreen() {
                   ? <Banner kind="danger" title={t('pay.overdue', { date: formatDate(b.finalDue) })}><p>{t('pay.overdueBody')}</p></Banner>
                   : <Banner kind="info" title={t('book.balance.due', { balance: formatMoney(b.balance), date: formatDate(b.finalDue) })} />}
                 {pay.error?.code === 'conflict' && <Banner kind="info" title={t('book.balance.nothing')} />}
+                <InstalmentPlanner number={b.number} />
                 <PayPanel due={b.balance} pay={pay} label={t('pay.payButton', { amount: formatMoney(b.balance) })} />
               </>
             )}

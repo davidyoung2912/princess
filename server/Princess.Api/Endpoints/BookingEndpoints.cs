@@ -109,6 +109,10 @@ public static partial class BookingEndpoints
                 Results.Ok(await svc.PayBalanceAsync(await me.LoadAsync(ct), number, body, KeyOf(http), ct)))
             .WithSummary("Pays the rest of the balance with one or two methods. 409 nothingDue; 402 challenge or declined. Supports Idempotency-Key.");
 
+        b.MapGet("/instalments", async (string number, ICurrentUser me, BookingService svc, CancellationToken ct) =>
+                Results.Ok(await svc.InstalmentsAsync(await me.LoadAsync(ct), number, ct)))
+            .WithSummary("Plans that split the balance into equal monthly payments, the last on the final payment date. Empty when none fits.");
+
         b.MapGet("/change", async (string number, string? sailingId, ICurrentUser me, BookingService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ChangePreviewAsync(await me.LoadAsync(ct), number, sailingId, ct)))
             .WithSummary("What moving to another sailing would cost. Booker only.");

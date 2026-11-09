@@ -303,6 +303,19 @@ public sealed class BookingService(
 
     // ---- After booking ----
 
+    /// <summary>The ways to spread what is left over monthly payments. Empty when nothing is owed or there is no time for a second payment.</summary>
+    public async Task<InstalmentOptionsDto> InstalmentsAsync(UserRecord actor, string? number, CancellationToken ct)
+    {
+        var m = await access.RequireMemberAsync(actor, number, ct);
+        var now = await clock.NowAsync(actor, ct);
+        var d = await DetailAsync(m.BookingId, ct);
+        var view = ViewOf(d, now);
+        var plans = d.Row.Status == "confirmed" && view.Payment != "overdue"
+            ? InstalmentRules.Plans(view.Balance, TripRules.Today(now), DateOnly.ParseExact(view.FinalDue, "yyyy-MM-dd"))
+            : [];
+        return new InstalmentOptionsDto(view.Balance, view.FinalDue, plans);
+    }
+
     /// <summary>Pays the rest of the balance with one or two methods. A repeated <paramref name="idempotencyKey"/> returns the booking without charging again.</summary>
     public async Task<BookingViewDto> PayBalanceAsync(UserRecord actor, string? number, PayBalancePartsRequest req, string? idempotencyKey, CancellationToken ct)
     {

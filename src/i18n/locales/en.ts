@@ -1283,6 +1283,12 @@ export const en = {
   'book.balance.receipt': 'See receipts',
   'book.balance.due': '{balance} due {date}',
   'book.balance.nothing': 'There is nothing left to pay on this booking.',
+  'book.instalments.title': 'Spread the cost',
+  'book.instalments.intro': 'See what it would look like to pay the balance in equal monthly payments, the last on the final payment date.',
+  'book.instalments.choose': 'Number of payments',
+  'book.instalments.option': '{count} payments',
+  'book.instalments.line': '{date}: {amount}',
+  'book.instalments.note': 'This is a plan to follow. Nothing is set up or charged for you, so pay each amount with the button below on or before its date.',
 
   'book.manage.title': 'Change or cancel',
   'book.manage.today': 'If you cancel today the fee is {fee} and you get back {refund}.',
