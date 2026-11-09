@@ -1,0 +1,94 @@
+# Best-in-market plan (BM)
+
+Status: **Written 2026-11-08. Phase BM1 is built; BM2 to BM5 are proposed and wait for approval.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+
+## 1. How this was done, and how far to trust it
+
+- The document was read in full. Its 187 stage requirements, 25 phone requirements, 22 quality-of-life concepts and cross-stage foundations were **not** checked one by one. I probed the highest-priority ones by searching `src`, `server` and `db` for the routes, modules and tables that would have to exist, and by reading the files found.
+- "Exists" below means a screen, module and test were found. It does not mean the screen was tried on a device (project rule: no browser testing) or that the server behind it is a real provider.
+- The document itself says (decision 12 and appendix C) that a verified implementation baseline is needed before backlog grooming. Section 3 is the start of one.
+
+## 2. What I recommend
+
+### Already built, so do not rebuild
+
+The document's five strategic bets and most of its P0 list match work this project has finished, in some cases under other names. Probed and found:
+
+| Document item | Where it is here |
+| --- | --- |
+| Trust ledger, receipts, states (QOL-03, TRU-01 to 03) | `/me/ledger`, `/me/history`, `/me/activity`, `src/domain/ledgerSplit.ts`, server audit trail (`docs/audit-trail.md`) |
+| Idempotent payments and safe retry (BOK-09, TRU-04) | server idempotency (8 files); client outbox `src/data/outbox.ts` |
+| Service request and case lifecycle (SEA-20, DEB-05, DEB-11, DEB-14, QOL-22) | `/ship/requests`, `/me/cases` (lost item, claim, billing dispute with the folio line), `/ship/lost-found`, `src/ui/finish/CasesScreen.tsx` |
+| Helper access (MNG-07) | `/me/helper` |
+| Three clocks, return time budget (POR-02, POR-06, QOL-11, QOL-21) | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `allaboard.ts`, `tender.ts`, `PortPilot` |
+| Allergy handoff, never "safe" (PRE-16, SEA-19, QOL-09) | `/plan/allergy`, allergy strings in 49 client and 22 server files |
+| Rendezvous without tracking (QOL-08, EMB-10, POR-13) | `src/domain/arrivalPing.ts`, `meetingPoint.ts` |
+| Voyage Autopilot, conflicts, what-if, storm replan (QOL-01, QOL-15, PRE-02) | `/plan/autopilot`, `/plan/what-if`, `/plan/storm`, `src/domain/autopilot.ts` |
+| Group board, poll, shares, revocable links (DRM-14, DRM-15, PRE-13, QOL-07) | `GroupBoard`, `/plan/group-poll`, `/plan/share-links`, `/shared/:token` |
+| Compare sailings and ships, cabin chooser, price watch (DSC-01, DSC-04, DRM-16) | `/home/saved/compare`, `/home/ships/compare`, `/home/cabins`, `/plan/price-watch` |
+| Wake lock, calm mode, quiet hours, notifications centre (MOB-11, COM-05) | `useWakeLock`, `domain/calm.ts`, `NotificationsScreen` |
+| Per-screen saved copies with age (OFF-03, TRU-06) | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, enforced by `src/offlineDay.test.ts` |
+| One assistant, deterministic answers first (QOL-14, AST-03) | `src/domain/answerCards.ts`, `src/ai/` (Stanley) |
+
+### Real gaps worth doing
+
+| # | Gap | Document IDs | Why it is worth it |
+| --- | --- | --- | --- |
+| 1 | No place that shows what is saved on the phone, how old, how big, when it stops being trusted, or whether the browser will keep it | MOB-03, MOB-04, OFF-07, QOL-04, GTS-15 | The document's second-ranked differentiator and a P0. Copies exist per screen; the guest cannot see or test them. **Built in BM1.** |
+| 2 | Night-before readiness test that goes beyond the roaming checklist (pass saved, login valid, battery advice, maps cached) | GTS-15, MOB-02 | BM1 supplies the data; the test is a small follow-on. |
+| 3 | Update never interrupts a critical task | MOB-02 | `UpdateBanner` exists; check that it is held back on pass, muster, pay. |
+| 4 | Ship Wi-Fi boundary and low-data mode | EMB-11, SEA-25, MOB-24 | Largely built: `saveDataRequested` in `src/settings/settings.ts` reads the browser's save-data signal (`docs/gap-analysis-plan.md` still lists NET-04 as open; that list is stale). Check battery-aware refresh only. |
+| 5 | Voyage Time Intelligence as one tested service with DST and date-line cases | QOL-21, POR-02 | Clocks exist; the document asks for explicit DST and date-line tests. Check coverage. |
+| 6 | Traceability: no ID-by-ID matrix against this document | Appendix B | Needed so later phases do not re-derive this table. |
+| 7 | Add-to-calendar with correct zone and cancel/update ids | MOB-15 | `src/domain/calendar.ts` exists; verify update and cancel semantics. |
+| 8 | Stage-aware Home tiles already exist; the document's "Right Now" card (SEA-01) should be checked for "labelled, not inferred" data | SEA-01 | Probably done; confirm. |
+
+### Deliberately not doing
+
+- **IndexedDB migration** (MOB-04). Saved copies are small keyed JSON in `localStorage`, and the real durability risk is eviction, which BM1 now surfaces and mitigates with a persistence request. Revisit only if copies grow past what `localStorage` holds (the capsule card shows the size).
+- **Wallet passes, Web NFC and Bluetooth, room controls, face grouping, AR, crowd prediction** (MOB-16, SEA-21, QOL-06): need providers or hardware this project cannot reach, or are gated by the document itself.
+- **Camera passport scan, OCR** (BOK-03): already listed as open and needing a device in `docs/gap-analysis-plan.md`.
+- **A second front-end data store or a mock mode.** Project rule.
+- **Anything the document labels P3 or "exploratory".**
+
+## 3. Baseline: what I could not confirm
+
+These are items the document marks P0 where I found no clear match and did not dig further. They are the first things to check in BM2:
+
+- IDN-04 and IDN-05: the distinct relationship types (household, booking party, cabin party, linked group, helper, shipmate) and per-task permissions. Party, family link and helper exist; whether they share one permission model is unchecked.
+- TRU-07: an operational status centre. `/me/status` exists; its content is unchecked.
+- MNG-03: sync state as current, stale, pending, unavailable or not linked. `SyncChip` and `useSyncStatus` exist; whether "not linked" is distinct from "no cruise" is unchecked.
+- COM-04: acknowledged delivery of critical alerts with a fallback channel. Email and SMS are still simulated (`docs/gap-analysis-plan.md` NOT-01).
+- A11Y-07, EMB-03, GTS-14: depend on research sessions and safety sign-off, not code.
+
+## 4. Phases
+
+Each phase is small enough to finish, check and commit on its own. Checks are only `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build`.
+
+### BM1. Offline Capsule on the phone screen (built, not committed)
+
+- **Logic**: `src/domain/offlineCapsule.ts` (what is kept, per kind: age, size, expiry, state fresh/ageing/expired; readiness ready/partial/empty from the three essentials: boarding pass, muster, emergency card; storage state protected/unprotected/low/unknown). Tests: `src/domain/offlineCapsule.test.ts` (11 cases).
+- **Storage access**: `src/data/capsule.ts` (kept in `src/data/` because `src/auditGate.test.ts` limits where `localStorage` may be read), `src/hooks/useCapsule.ts`.
+- **Screen**: `src/ui/plan/CapsuleCard.tsx` on `/plan/phone`: missing essentials with an "Open to save" link, one row per saved copy, "Check now", "Ask the browser to keep them", and the crew-override line (OFF-03). No new route, so the screen registry is unchanged.
+- **Not done**: no device test (rule); expiry uses the existing per-kind limits in `offlineCache.ts` and the phone's own time zone; the card reads copies but does not fetch them (a copy is saved when its screen is opened with a signal).
+
+### BM2. Verified baseline matrix
+
+Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-stage) as built, partial, mock, planned or not planned, with the file and test that prove it, in the style of `docs/a-tier-matrix.md`. Settle section 3 above. Doc only plus any one-line fixes found. This sets the real size of the remaining work.
+
+### BM3. Readiness and update safety
+
+Night-before test built on the capsule data (GTS-15), hold app updates during pass, muster and payment (MOB-02), battery-aware refresh (MOB-24; the save-data signal is already read).
+
+### BM4. Time and calendar proof
+
+DST and date-line tests for the three clocks (QOL-21, POR-02, MOB-14); calendar export update and cancel semantics (MOB-15).
+
+### BM5. Permissions model check
+
+Read the party, family, helper and share code against IDN-04 and IDN-05; add a "who can see what" view if the model supports it (IDN-07). Server changes only if BM2 finds a hole, and then only in a phase of their own.
+
+## 5. Decisions I need from you
+
+1. Approve BM2 next, or choose another from BM3 to BM5?
+2. The document's roadmap puts "real provider" work (email and SMS delivery, flights, tender feed) late. This project already mocks them behind interfaces, so I would not start them until you pick a sender.

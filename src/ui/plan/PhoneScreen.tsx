@@ -7,6 +7,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { BackLink } from '../onboard/common'
+import { CapsuleCard } from './CapsuleCard'
 
 /** Phone setup (XT-01, S3-07): the few steps that stop a phone roaming at sea, with a reminder that fits where the trip is. Guidance only; the app cannot see the phone's settings. */
 export function PhoneScreen() {
@@ -30,6 +31,7 @@ export function PhoneScreen() {
           ))}
         </ul>
       </Card>
+      <CapsuleCard />
       <p>{t('phone.wifiNote')} <Link to="/ship/wifi">{t('route.wifi')}</Link></p>
       <p className="muted">{t('phone.limits')}</p>
       <BackLink to="/plan" label={t('route.plan')} />
