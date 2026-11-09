@@ -42,6 +42,8 @@ function Guest({ guest }: { guest: HelpedGuest }) {
   const canFolio = guest.permissions.includes('folio')
   const canCheckin = guest.permissions.includes('checkin')
   const [checkin, setCheckin] = useState(false)
+  const canTrip = guest.permissions.includes('trip')
+  const [trip, setTrip] = useState(false)
   return (
     <>
       <strong>{guest.name}</strong> <span className="muted">{guest.relationship}</span>
@@ -51,9 +53,19 @@ function Guest({ guest }: { guest: HelpedGuest }) {
       {folio && guest.booking && canFolio && <GuestFolio guest={guest} booking={guest.booking} />}
       {guest.booking && canCheckin && <div><Button variant="secondary" aria-expanded={checkin} onClick={() => setCheckin(!checkin)}>{t(checkin ? 'helping.checkinHide' : 'helping.checkinOpen', { name: guest.name })}</Button></div>}
       {checkin && guest.booking && canCheckin && <GuestCheckin guest={guest} booking={guest.booking} />}
+      {guest.booking && canTrip && <div><Button variant="secondary" aria-expanded={trip} onClick={() => setTrip(!trip)}>{t(trip ? 'helping.tripHide' : 'helping.tripOpen', { name: guest.name })}</Button></div>}
+      {trip && guest.booking && canTrip && <GuestTrip guest={guest} booking={guest.booking} />}
       {!guest.booking && <p className="muted">{t('helping.noAccess', { name: guest.name })}</p>}
     </>
   )
+}
+
+/** Which sailing the guest is on. Read only; no prices, documents or check-in. */
+function GuestTrip({ guest, booking }: { guest: HelpedGuest; booking: string }) {
+  const view = useMine(() => api.helping.trip(guest.guestId, booking), [guest.guestId, booking])
+  if (!view.data) return view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>
+  const v = view.data
+  return <p>{t('helping.trip.summary', { name: guest.name, date: formatDate(v.departure), days: v.daysToDeparture, category: v.categoryName, guests: v.guests, number: v.number })}</p>
 }
 
 /** How far the guest's check-in has got. Read only; no documents or answers. */

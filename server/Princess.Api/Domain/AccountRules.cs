@@ -14,7 +14,7 @@ public static partial class AccountRules
     public static readonly string[] Needs = ["mobility", "hearing", "vision", "cpap", "oxygen", "serviceAnimal"];
     public static readonly string[] Bedding = ["queen", "twin", "noPreference"];
     public static readonly string[] CardBrands = ["visa", "mastercard", "amex", "discover"];
-    public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin"];
+    public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin", "trip"];
     public static readonly string[] HelperStatuses = ["active", "requested"];
 
     [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$")]

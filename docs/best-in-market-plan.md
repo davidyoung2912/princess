@@ -145,6 +145,13 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Front end**: guest can grant "See my check-in progress"; "People you help" gets a button showing the state and date. `api.helping.checkin`, test lines in `httpApi.test.ts` and `access.test.ts`.
 - **Not done**: helper completing check-in (needs a design for document handling), booking and message permissions, IDN-04, code expiry and delivery.
 
+### BM12. Helper sees the guest's sailing (built, not committed)
+
+- **Choice (mine, not asked)**: a read-only `trip` permission (`HelperPermission.Trip`), the same pattern as BM10 and BM11. The helper sees the sailing id, departure date, days to go, cabin category and party size. The payment plan, documents and check-in state are left out (a separate `HelperTripDto`, not `TripViewDto`). No schema change beyond the comment.
+- **Server (written, not compiled or run)**: `GET /api/v1/guests/{guestId}/bookings/{number}/trip` (`TripService.TripForGuestAsync`) through `SubjectAccess`, read only. No grant is notFound, no Trip is forbidden, supervised is refused. `me/helping` gives the booking number for payments, folio, checkin or trip. One C# test and the swagger list were added; run them yourself.
+- **Front end**: guest can grant "See my sailing"; "People you help" gets a button showing the summary. `api.helping.trip`, test lines in `httpApi.test.ts` and `access.test.ts`.
+- **Not done**: editing a booking and message permissions, IDN-04, code expiry and delivery.
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?

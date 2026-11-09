@@ -302,6 +302,22 @@ public class TripsAndPaymentsApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task AHelperWithTripSeesOnlyTheSailingAndOneWithoutItIsRefused()
+    {
+        var path = $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/trip";
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = "view,folio", Status = "active" }));
+        Assert.Equal(HttpStatusCode.Forbidden, (await Call(HttpMethod.Get, path, await SignIn(Paul))).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Get, path, await SignIn(Stranger))).Status);
+
+        F.Access.Helpers.Clear();
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = "view,trip", Status = "active" }));
+        var ok = await Call(HttpMethod.Get, path, await SignIn(Paul));
+        Assert.Equal(HttpStatusCode.OK, ok.Status);
+        Assert.False(ok.Json.TryGetProperty("plan", out _));
+        Assert.Equal(HttpStatusCode.Forbidden, (await Call(HttpMethod.Get, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments", await SignIn(Paul))).Status);
+    }
+
+    [Fact]
     public async Task AStrangerWithNoGrantGetsNotFoundOnTheHelperPayPath()
     {
         var card = F.Journey.Cards.Single(c => c.UserId == Daniel.Id).Card;

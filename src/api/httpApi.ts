@@ -320,6 +320,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       payments: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/payments`),
       payBalance: (guestId, booking, cardId) => send('post', `/guests/${seg(guestId)}/bookings/${seg(booking)}/payments/balance`, { cardId }),
       folio: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/folio`),
+      trip: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/trip`),
       checkin: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/checkin/status`),
     },
     documents: {

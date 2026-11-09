@@ -35,6 +35,9 @@ public sealed record TripViewDto(
     PlanDto Plan, string Payment, TripDocumentsDto? Documents, CheckinStatusDto Checkin, string Next,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Agent);
 
+/// <summary>What a helper with the Trip permission sees of a guest's sailing: no prices, documents or check-in.</summary>
+public sealed record HelperTripDto(string Number, string SailingId, string Departure, string CategoryName, int Guests, int DaysToDeparture);
+
 public sealed record PastTripDto(
     string Id, string Title, string Ship, string Departure, int Nights,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Cancelled);
@@ -51,7 +54,7 @@ public sealed record PaymentsViewDto(TripViewDto Trip, List<ReceiptDto> Receipts
 
 public sealed record AddCardRequest(string? Brand, string? Last4, string? Expiry);
 
-/// <summary>A guest this person helps. <paramref name="Booking"/> is the guest's current booking, only when the grant holds view and payments, folio or checkin.</summary>
+/// <summary>A guest this person helps. <paramref name="Booking"/> is the guest's current booking, only when the grant holds view and payments, folio, checkin or trip.</summary>
 public sealed record HelpedGuestDto(Guid GuestId, string Name, string Relationship, string[] Permissions, long Since, string? Booking);
 
 public sealed record PayBalanceRequest(Guid? CardId);

@@ -107,6 +107,10 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.PayBalanceForGuestAsync(await me.LoadAsync(ct), guestId, number, body, ct)))
             .WithTags("Payments").WithSummary("A helper with the Payments permission pays the guest's balance with one of the guest's saved cards. 404 without a live grant; 403 without Payments; 409 paid; 400 card.");
 
+        api.MapGet("/guests/{guestId:guid}/bookings/{number}/trip", async (Guid guestId, string number, ICurrentUser me, TripService svc, CancellationToken ct) =>
+                Results.Ok(await svc.TripForGuestAsync(await me.LoadAsync(ct), guestId, number, ct)))
+            .WithTags("Trips").WithSummary("A helper with view and Trip sees the guest's sailing, departure, cabin category and party size. Read only. 404 without a live grant; 403 without Trip.");
+
         api.MapGet("/guests/{guestId:guid}/bookings/{number}/folio", async (Guid guestId, string number, ICurrentUser me, OnboardService svc, CancellationToken ct) =>
                 Results.Ok(await svc.FolioForGuestAsync(await me.LoadAsync(ct), guestId, number, ct)))
             .WithTags("On board").WithSummary("A helper with view and Folio reads the guest's onboard account, read only. 404 without a live grant; 403 without Folio.");

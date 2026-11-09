@@ -71,6 +71,9 @@ export interface Sailing {
   departure: string
 }
 
+/** What a helper with the Trip permission sees of a guest's sailing. */
+export interface HelperTrip { number: string; sailingId: string; departure: string; categoryName: string; guests: number; daysToDeparture: number }
+
 export interface CheckinStatus {
   state: 'notOpen' | 'open' | 'closed' | 'done'
   /** When online check-in opens (three days before departure). */
@@ -797,6 +800,8 @@ export interface Api {
     payBalance(guestId: string, booking: string, cardId: string): Promise<PaymentsView>
     /** The guest's onboard account, read only (needs their Folio permission). */
     folio(guestId: string, booking: string): Promise<FolioView>
+    /** Which sailing the guest is on and when, read only (needs their Trip permission). */
+    trip(guestId: string, booking: string): Promise<HelperTrip>
     /** How far the guest's check-in has got, read only (needs their Check-in permission). */
     checkin(guestId: string, booking: string): Promise<CheckinStatus>
   }
