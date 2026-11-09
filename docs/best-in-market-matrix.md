@@ -113,7 +113,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | BOK-02 | P0 | Built | F | `src/ui/book/GuestsStep.tsx`, `src/domain/signup.ts` | None found |
 | BOK-03 | P1 | Out of reach | F | none | Camera passport scan needs a device (`docs/gap-analysis-plan.md`) |
 | BOK-04 | P0 | Built | F | `src/ui/plan/` hold screen `/plan/hold`, `src/domain/booking.ts` | Server-issued hold id and expiry: server side not read |
-| BOK-05 | P0 | Partial | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | No fare or terms version stored at checkout (BM16) |
+| BOK-05 | P0 | Partial | R | `src/ui/book/FareStep.tsx`, `src/domain/fares.ts` | BM44: checkout stores the fare and terms versions accepted (`dbo.Bookings.AcceptedFareVersion`, `AcceptedTermsVersion`); no forced re-review on a fare or terms change beyond the price-changed check |
 | BOK-06 | P0 | Built | F | `src/ui/book/ReviewStep.tsx`, `src/domain/pricing.ts` | None found |
 | BOK-07 | P0 | Built | F | `src/ui/book/PayStep.tsx`, `src/domain/pricingServed.test.ts` | Revalidation is server side; not read |
 | BOK-08 | P0 | Simulated | F | `src/ui/book/PayPanel.tsx`, `src/ui/ConfirmCharge.tsx` | Card charging is a backend mock; raw numbers must not be stored locally (see SEC-02) |
@@ -236,7 +236,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DEB-01 | P0 | Built | F | `src/ui/finish/DisembarkScreen.tsx`, `src/domain/disembark.ts` | None found |
 | DEB-02 | P0 | Built | R | `src/ui/finish/DisembarkScreen.tsx` | Closed in BM18 |
 | DEB-03 | P0 | Built | F | `src/ui/finish/` bags route `/home/disembark/bags` | None found |
-| DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | Folio has no pending, disputed, refunded or adjusted line state (BM16) |
+| DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | BM44: folio lines carry a state (posted, pending, disputed, refunded, adjusted); final bill lists refunds and adjustments apart. Nothing sets pending yet; no receipt export read |
 | DEB-05 | P0 | Partial | R | `src/ui/finish/CasesScreen.tsx` | BM42: submission says a case does not mean a reversal. Still open: no owner or response expectation shown |
 | DEB-06 | P1 | Built | F | `src/ui/finish/` sweep route `/home/disembark/sweep` | None found |
 | DEB-07 | P1 | Built | F | `src/ui/finish/FinalNightScreen.tsx`, `src/domain/shipVenues.ts` | Departure-day hours unchecked |

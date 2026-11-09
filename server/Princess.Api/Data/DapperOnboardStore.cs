@@ -49,7 +49,7 @@ public sealed class DapperOnboardStore(IDbConnectionFactory db) : IOnboardStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<FolioRow>(Sql.Cmd(
-            "SELECT PublicId, UserId, [Day], Category, Description, Cents, CoveredBy, [At] FROM dbo.FolioLines WHERE BookingId = @bookingId ORDER BY [At], Id", new { bookingId }, null, ct))).ToList();
+            "SELECT PublicId, UserId, [Day], Category, Description, Cents, CoveredBy, State, [At] FROM dbo.FolioLines WHERE BookingId = @bookingId ORDER BY [At], Id", new { bookingId }, null, ct))).ToList();
     }
 
     public async Task<List<ServiceThreadRow>> ListThreadsAsync(long bookingId, CancellationToken ct)

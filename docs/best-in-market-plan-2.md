@@ -334,3 +334,10 @@ Theme: the runbook incident section. BM43 was not defined in the plan; I took th
 - **Runbook:** new "Incidents" section in `docs/runbook.md`: owner, detect, contain (set the provider to `sim`), who staff are told, how guests are told (Status screen, push alerts and the COM-04 fallback, Disruption Hub), and after.
 - **Test:** the gate in `src/releaseGates.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
 - **Limits:** no incident owner is named and there is no paging or alert hook (PERF-07), so the section says so rather than inventing a process. The operator must fill in the owner and sign it off in the scorecard. No requirement row moves. Remaining `it.fails`: EMB-01, DEB-04, BOK-05 (server or domain work).
+
+## 5ab. BM44 result (built, not committed)
+
+Theme: bill states and accepted fare version (DEB-04, BOK-05).
+- **DEB-04:** `dbo.FolioLines.State` (posted, pending, disputed, refunded, adjusted) carried through `FolioWrite`, `FolioRow`, `FolioLine` and the client `FolioLine.state`. The gratuity adjustment line is written as adjusted and an order-cancel refund as refunded. `FolioTotals.pending` sums pending charges. The final bill labels each charge, shows a charge with an open query as being queried, lists refunded and adjusted lines in their own section, and notes any pending amount. Nothing writes `pending` yet.
+- **BOK-05:** `dbo.Bookings.AcceptedFareVersion` and `AcceptedTermsVersion` are set at checkout from `PolicyRules.FareVersion` and `PolicyRules.LegalVersion`. Both are null on bookings made before this. The fare version is a constant that must be bumped by hand when fares change.
+- **Tests:** the DEB-04 and BOK-05 guards are now `it`. No server test written; no `dotnet` run. The schema change needs `db/reset-db.ps1` on an existing database.

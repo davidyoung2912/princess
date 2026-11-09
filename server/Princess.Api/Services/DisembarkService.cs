@@ -218,7 +218,7 @@ public sealed class DisembarkService(ScopeLoader scopes, IFinishStore store, IAc
         var ent = await plan.PartyEntitlementsAsync(actor, c.Booking, ct);
         var suite = Pricing.Category(c.Booking.CategoryId)?.Suite == true;
         var credit = DisembarkRules.TipCredit(DisembarkRules.GratuityCharged(c.Party.Select(p => new GratuityGuest(suite, ent.TryGetValue(p.UserId, out var e) && e.GratuitiesIncluded)), c.Nights), body.KeepPercent);
-        FolioWrite[] folio = credit > 0 ? [new(c.Booking.BookerUserId, 7, "credit", $"Gratuity adjustment (keeping {body.KeepPercent}%)", -credit, null, c.Now)] : [];
+        FolioWrite[] folio = credit > 0 ? [new(c.Booking.BookerUserId, 7, "credit", $"Gratuity adjustment (keeping {body.KeepPercent}%)", -credit, null, c.Now, FolioStates.Adjusted)] : [];
         await store.SaveTipAsync(c.Booking.BookingId, body.KeepPercent, folio, ct);
         return await BillViewAsync(actor, c, ct);
     }

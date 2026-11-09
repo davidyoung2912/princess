@@ -5,7 +5,7 @@ import type { FinalBillView } from '../../api/finishTypes'
 import type { FolioView } from '../../api/types'
 import { TIP_KEEP, tipCredit } from '../../domain/disembark'
 import { CASE_TEXT_MAX } from '../../domain/postcruise'
-import { folioTotals } from '../../domain/folio'
+import { folioTotals, lineState } from '../../domain/folio'
 import { formatMoney } from '../../domain/money'
 
 import { api } from '../../runtime'
@@ -49,6 +49,8 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
   const adjust = useAction(async () => { await api.disembark.adjustTip(keep); reload() })
   const email = useAction(async () => { await api.disembark.emailReceipt(); reload() })
   const charges = f.lines.filter((l) => l.cents > 0)
+  const queried = new Set(b.queries.map((q) => q.lineId))
+  const changes = f.lines.filter((l) => ['refunded', 'adjusted'].includes(lineState(l, queried)))
   const [line, setLine] = useState('')
   const [why, setWhy] = useState('')
   const picked = charges.find((l) => l.id === line)
@@ -90,9 +92,18 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
         <h2 id="fb-explain-h">{th('fb.explain')}</h2>
         <p>{t('fb.explainBody')}</p>
         <ul className="plain-list">
-          {charges.map((l) => <li key={l.id}><span>{l.description}<ExplainLine line={l} questionTo="/me/bill/final" /></span><span className="num">{formatMoney(l.cents)}</span></li>)}
+          {charges.map((l) => <li key={l.id}><span>{l.description}<ExplainLine line={l} questionTo="/me/bill/final" /></span><span className="num">{formatMoney(l.cents)} · {t(`fb.state.${lineState(l, queried)}` as StringKey)}</span></li>)}
         </ul>
+        {total.pending > 0 && <p className="muted">{t('fb.pendingNote', { amount: formatMoney(total.pending) })}</p>}
       </section>
+
+      {changes.length > 0 && (
+        <section aria-labelledby="fb-changes-h">
+          <h2 id="fb-changes-h">{th('fb.changes')}</h2>
+          <p>{t('fb.changesBody')}</p>
+          <ul className="plain-list">{changes.map((l) => <li key={l.id}><span>{l.description}</span><span className="num">{formatMoney(l.cents)} · {t(`fb.state.${lineState(l, queried)}` as StringKey)}</span></li>)}</ul>
+        </section>
+      )}
 
       <section aria-labelledby="fb-query-h">
         <h2 id="fb-query-h">{th('fb.query')}</h2>

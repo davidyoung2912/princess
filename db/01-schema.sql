@@ -1137,6 +1137,7 @@ CREATE TABLE dbo.Bookings (
   DraftId NVARCHAR(40) NULL,                    -- the draft this came from; no FK, the draft is discarded after booking
   ContactEmail NVARCHAR(254) NULL, ContactPhone NVARCHAR(30) NULL,
   ConfirmedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_ConfirmedAt DEFAULT SYSUTCDATETIME(),
+  AcceptedFareVersion INT NULL, AcceptedTermsVersion INT NULL,   -- BOK-05: the fare table and terms the guest accepted at checkout; null on bookings made before this was kept
   CancelledAt DATETIME2(0) NULL, CancelFeeCents BIGINT NULL, CancelRefundCents BIGINT NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Bookings_UpdatedAt DEFAULT SYSUTCDATETIME(),
@@ -2701,11 +2702,13 @@ CREATE TABLE dbo.FolioLines (
   Category NVARCHAR(30) NOT NULL, Description NVARCHAR(200) NOT NULL,
   Cents BIGINT NOT NULL,                        -- negative = credit
   CoveredBy VARCHAR(7) NULL, SourceType NVARCHAR(20) NOT NULL, SourceId BIGINT NULL,
+  State VARCHAR(8) NOT NULL CONSTRAINT DF_FolioLines_State DEFAULT 'posted',   -- DEB-04: posted, pending, disputed, refunded or adjusted
   [At] DATETIME2(0) NOT NULL CONSTRAINT DF_FolioLines_At DEFAULT SYSUTCDATETIME(),
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_FolioLines_CreatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_FolioLines_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
   CONSTRAINT FK_FolioLines_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id),
-  CONSTRAINT CK_FolioLines_CoveredBy CHECK (CoveredBy IS NULL OR CoveredBy IN ('package','fare','credit'))
+  CONSTRAINT CK_FolioLines_CoveredBy CHECK (CoveredBy IS NULL OR CoveredBy IN ('package','fare','credit')),
+  CONSTRAINT CK_FolioLines_State CHECK (State IN ('posted','pending','disputed','refunded','adjusted'))
 );
 CREATE INDEX IX_FolioLines_BookingId_Day ON dbo.FolioLines (BookingId, [Day]);
 CREATE INDEX IX_FolioLines_UserId ON dbo.FolioLines (UserId) WHERE UserId IS NOT NULL;

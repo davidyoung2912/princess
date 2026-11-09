@@ -45,7 +45,7 @@ internal static class Shipboard
 
     /// <summary>Account lines for the store: the guest on each is the person's user, and an unknown guest falls back to the booker.</summary>
     public static List<FolioWrite> Writes(Scope c, IEnumerable<FolioLine> lines) =>
-        [.. lines.Select(l => new FolioWrite(c.PersonById(l.Guest)?.UserId ?? c.Booking.BookerUserId, l.Day, l.Category, l.Description, l.Cents, l.CoveredBy, FromMs(l.At)))];
+        [.. lines.Select(l => new FolioWrite(c.PersonById(l.Guest)?.UserId ?? c.Booking.BookerUserId, l.Day, l.Category, l.Description, l.Cents, l.CoveredBy, FromMs(l.At), l.State))];
 
     public static string FirstName(Scope c, long userId) => c.PersonByUser(userId)?.First ?? "";
 }

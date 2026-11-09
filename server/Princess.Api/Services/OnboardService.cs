@@ -182,7 +182,7 @@ public sealed class OnboardService(
         var generated = throughDay == 0 ? [] : FolioRules.Build(c.Booking.SailingId, c.Timeline, throughDay, guests, dining, welcome);
         var booker = c.PersonByUser(c.Booking.BookerUserId)?.Id ?? c.Party.FirstOrDefault()?.Id ?? Guid.Empty;
         var stored = (await store.ListFolioAsync(c.Booking.BookingId, ct)).Select(r => new FolioLine(
-            r.PublicId.ToString(), r.Day, Ms(r.At), r.Category, r.Description, r.UserId is { } u ? c.PersonByUser(u)?.Id ?? booker : booker, r.Cents, null, r.CoveredBy));
+            r.PublicId.ToString(), r.Day, Ms(r.At), r.Category, r.Description, r.UserId is { } u ? c.PersonByUser(u)?.Id ?? booker : booker, r.Cents, null, r.CoveredBy, r.State));
         var lines = FolioRules.Sorted(generated.Concat(stored).Where(l => l.At <= Ms(c.Now)));
         return new FolioViewDto(lines, FolioRules.Totals(lines), [.. c.Party.Select(p => new GuestDto(p.Id, p.Name))], throughDay);
     }

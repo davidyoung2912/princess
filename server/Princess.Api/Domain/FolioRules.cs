@@ -1,13 +1,19 @@
 namespace Princess.Api.Domain;
 
 /// <summary>One charge or credit on the onboard account. <see cref="Cents"/> is what was charged (negative is a credit); <see cref="Value"/> is what it would have cost when something else paid.</summary>
-public sealed record FolioLine(string Id, int Day, long At, string Category, string Description, Guid Guest, long Cents, long? Value, string? CoveredBy);
+public sealed record FolioLine(string Id, int Day, long At, string Category, string Description, Guid Guest, long Cents, long? Value, string? CoveredBy, string State = FolioStates.Posted);
+
+/// <summary>DEB-04: a line is final (posted), still to post (pending), questioned (disputed), paid back (refunded) or changed after posting (adjusted). The four non-posted states are kept apart from posted charges.</summary>
+public static class FolioStates
+{
+    public const string Posted = "posted", Pending = "pending", Disputed = "disputed", Refunded = "refunded", Adjusted = "adjusted";
+}
 
 public sealed record FolioGuest(Guid Id, string FirstName, int Age, Entitlements Entitlements, bool Suite);
 
 public sealed record DiningCharge(string Id, int Day, string Time, string Venue, IReadOnlyList<Guid> Guests, long Charge, IReadOnlyList<Guid> Covered);
 
-public sealed record FolioTotals(long Charges, long Credits, long Covered, long Balance);
+public sealed record FolioTotals(long Charges, long Credits, long Covered, long Balance, long Pending = 0);
 
 /// <summary>The onboard account (ACC-01), ported from <c>src/domain/folio.ts</c>. The same booking and sailing always give the same list of generated charges; real charges (orders, photos, laundry and so on) are stored lines that sit beside them.</summary>
 public static class FolioRules
@@ -122,7 +128,8 @@ public static class FolioRules
         var charges = lines.Where(l => l.Cents > 0).Sum(l => l.Cents);
         var credits = -lines.Where(l => l.Cents < 0).Sum(l => l.Cents);
         var covered = lines.Where(l => l.CoveredBy is not null).Sum(l => (l.Value ?? 0) - l.Cents);
-        return new FolioTotals(charges, credits, covered, charges - credits);
+        var pending = lines.Where(l => l.State == FolioStates.Pending && l.Cents > 0).Sum(l => l.Cents);
+        return new FolioTotals(charges, credits, covered, charges - credits, pending);
     }
 
     /// <summary>The cruise day for a moment in ship time; 0 before the first day and one past the last day after it.</summary>

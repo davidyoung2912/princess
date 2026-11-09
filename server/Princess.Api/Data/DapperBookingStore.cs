@@ -147,10 +147,10 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
         {
             id = await c.ExecuteScalarAsync<long>(Sql.Cmd("""
                 INSERT INTO dbo.Bookings (Number, Kind, BookerUserId, SailingId, CategoryId, CabinNumber, FareId, Status, Dining, Occasion, TotalCents, DepositCents, FinalDueDate, FinalPaymentDays,
-                                          LoyaltyNumber, DiscountCents, CreditUsedCents, DraftId, ContactEmail, ContactPhone, ConfirmedAt)
+                                          LoyaltyNumber, DiscountCents, CreditUsedCents, DraftId, ContactEmail, ContactPhone, ConfirmedAt, AcceptedFareVersion, AcceptedTermsVersion)
                 OUTPUT INSERTED.Id
                 VALUES (@Number, 'direct', @BookerUserId, @SailingId, @CategoryId, @CabinNumber, @FareId, 'confirmed', @Dining, @Occasion, @TotalCents, @DepositCents, @FinalDueDate, @FinalPaymentDays,
-                        @LoyaltyNumber, @DiscountCents, @CreditUsedCents, @DraftId, @ContactEmail, @ContactPhone, @ConfirmedAt)
+                        @LoyaltyNumber, @DiscountCents, @CreditUsedCents, @DraftId, @ContactEmail, @ContactPhone, @ConfirmedAt, @AcceptedFareVersion, @AcceptedTermsVersion)
                 """, b, tx, ct));
         }
         catch (SqlException e) when (IsDuplicate(e))

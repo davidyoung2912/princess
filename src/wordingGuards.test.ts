@@ -70,12 +70,12 @@ describe('known gaps (it.fails: a pass here means the gap is closed, so turn it 
   })
 
   // proves: DEB-04#1
-  it.fails('DEB-04: a folio line can be pending, disputed, refunded or adjusted', () => {
+  it('DEB-04: a folio line can be pending, disputed, refunded or adjusted', () => {
     expect(read('src/domain/folio.ts')).toMatch(/disputed|refunded|adjusted/i)
   })
 
   // proves: BOK-05#1
-  it.fails('BOK-05: the server stores the fare and terms version the guest accepted at checkout', () => {
+  it('BOK-05: the server stores the fare and terms version the guest accepted at checkout', () => {
     const server = walk('server/Princess.Api').map(read).join('\n')
     expect(server).toMatch(/FareVersion|TermsVersion|AcceptedFare/i)
   })

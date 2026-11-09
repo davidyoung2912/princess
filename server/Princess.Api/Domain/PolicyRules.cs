@@ -42,6 +42,9 @@ public static class PolicyRules
     /// <summary>The version recorded with each acceptance (<c>ref.LegalDocs.Version</c>); the screens show it as "2026-10".</summary>
     public const int LegalVersion = 202610;
 
+    /// <summary>BOK-05: the version of the fare table and its terms a booking was priced and sold under. Bumped whenever a fare's price or conditions change, so a booking says which it accepted.</summary>
+    public const int FareVersion = 202610;
+
     public static string VersionLabel(int version) => $"{version / 100}-{version % 100:00}";
 
     /// <summary>The ids accepted, in document order, for the log written when someone books.</summary>

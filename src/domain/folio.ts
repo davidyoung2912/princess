@@ -12,6 +12,17 @@ export const FOLIO_CATEGORIES: readonly FolioCategory[] = ['dining', 'drinks', '
 
 export type CoveredBy = 'package' | 'fare' | 'credit'
 
+/** DEB-04: a line is final (posted), still to post (pending), questioned (disputed), paid back (refunded) or changed after posting (adjusted). A line with no state is posted. */
+export type FolioState = 'posted' | 'pending' | 'disputed' | 'refunded' | 'adjusted'
+
+export const FOLIO_STATES: readonly FolioState[] = ['posted', 'pending', 'disputed', 'refunded', 'adjusted']
+
+/** The state of a line; a line the guest has an open query on shows as disputed until the case is closed. */
+export function lineState(l: FolioLine, queriedIds: ReadonlySet<string> = new Set()): FolioState {
+  const state = l.state ?? 'posted'
+  return state === 'posted' && queriedIds.has(l.id) ? 'disputed' : state
+}
+
 export interface FolioLine {
   id: string
   day: number
@@ -25,6 +36,7 @@ export interface FolioLine {
   /** What it would have cost, when something else paid for it. */
   value?: Cents
   coveredBy?: CoveredBy
+  state?: FolioState
 }
 
 export interface FolioGuest {
@@ -151,14 +163,15 @@ export function filterFolio(lines: readonly FolioLine[], f: FolioFilter): FolioL
   return lines.filter((l) => (!f.category || l.category === f.category) && (!f.guest || l.guest === f.guest) && (!f.coveredOnly || !!l.coveredBy) && (!q || l.description.toLowerCase().includes(q)))
 }
 
-export interface FolioTotals { charges: Cents; credits: Cents; covered: Cents; balance: Cents }
+export interface FolioTotals { charges: Cents; credits: Cents; covered: Cents; balance: Cents; /** Charges not yet posted; they are in `charges` and `balance` but can still change. */ pending: Cents }
 
 /** What was charged, what was credited, what packages paid for, and what is owed. `balance` is charges less credits. */
 export function folioTotals(lines: readonly FolioLine[]): FolioTotals {
   const charges = lines.filter((l) => l.cents > 0).reduce((n, l) => n + l.cents, 0)
   const credits = -lines.filter((l) => l.cents < 0).reduce((n, l) => n + l.cents, 0)
   const covered = lines.filter((l) => l.coveredBy).reduce((n, l) => n + ((l.value ?? 0) - l.cents), 0)
-  return { charges, credits, covered, balance: charges - credits }
+  const pending = lines.filter((l) => l.state === 'pending' && l.cents > 0).reduce((n, l) => n + l.cents, 0)
+  return { charges, credits, covered, balance: charges - credits, pending }
 }
 
 /** The running balance after each line, in the order given. */

@@ -273,7 +273,7 @@ public sealed class BookingService(
             SailingId = sailing.Id, CategoryId = draft.Category, CabinNumber = draft.CabinMode == "pick" ? draft.CabinNumber : null, FareId = draft.Fare,
             Dining = draft.Dining, Occasion = draft.Occasion, TotalCents = p.Sums.Total, DepositCents = plan.Deposit, FinalDueDate = departure.AddDays(-Pricing.DefaultFinalPaymentDays).ToDateTime(TimeOnly.MinValue),
             FinalPaymentDays = Pricing.DefaultFinalPaymentDays, LoyaltyNumber = p.NumberOk ? draft.LoyaltyNumber : null, DiscountCents = p.Sums.Discount, CreditUsedCents = p.Sums.Credit,
-            ContactEmail = draft.Contact.Email.Trim(), ContactPhone = draft.Contact.Phone.Trim(), ConfirmedAt = now,
+            ContactEmail = draft.Contact.Email.Trim(), ContactPhone = draft.Contact.Phone.Trim(), ConfirmedAt = now, AcceptedFareVersion = PolicyRules.FareVersion, AcceptedTermsVersion = PolicyRules.LegalVersion,
             Guests = [.. draft.People.Select((g, i) => new GuestDetailRow
             {
                 Seq = i + 1, FirstName = g.FirstName.Trim(), LastName = g.LastName.Trim(), Dob = DateOnly.ParseExact(g.Dob, "yyyy-MM-dd").ToDateTime(TimeOnly.MinValue), Gender = g.Gender,

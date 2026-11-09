@@ -16,9 +16,9 @@ public sealed class DapperShipboardStore(IDbConnectionFactory db) : IShipboardSt
         foreach (var l in folio)
         {
             await c.ExecuteAsync(Sql.Cmd("""
-                INSERT INTO dbo.FolioLines (BookingId, UserId, [Day], Category, Description, Cents, CoveredBy, SourceType, SourceId, [At])
-                VALUES (@bookingId, @UserId, @Day, @Category, @Description, @Cents, @CoveredBy, @sourceType, @sourceId, @At)
-                """, new { bookingId, l.UserId, l.Day, l.Category, l.Description, l.Cents, l.CoveredBy, sourceType, sourceId, l.At }, tx, ct));
+                INSERT INTO dbo.FolioLines (BookingId, UserId, [Day], Category, Description, Cents, CoveredBy, State, SourceType, SourceId, [At])
+                VALUES (@bookingId, @UserId, @Day, @Category, @Description, @Cents, @CoveredBy, @State, @sourceType, @sourceId, @At)
+                """, new { bookingId, l.UserId, l.Day, l.Category, l.Description, l.Cents, l.CoveredBy, l.State, sourceType, sourceId, l.At }, tx, ct));
         }
     }
 

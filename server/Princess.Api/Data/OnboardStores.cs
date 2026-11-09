@@ -16,6 +16,7 @@ public sealed class FolioRow
     public string Description { get; set; } = "";
     public long Cents { get; set; }
     public string? CoveredBy { get; set; }
+    public string State { get; set; } = "posted";
     public DateTime At { get; set; }
 }
 

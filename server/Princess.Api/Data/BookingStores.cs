@@ -107,6 +107,9 @@ public sealed class NewBooking
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public DateTime ConfirmedAt { get; set; }
+    /// <summary>BOK-05: the fare table and terms versions the guest accepted at checkout.</summary>
+    public int AcceptedFareVersion { get; set; }
+    public int AcceptedTermsVersion { get; set; }
     public List<GuestDetailRow> Guests { get; set; } = [];
     public List<AcceptanceRow> Acceptances { get; set; } = [];
     public List<NotifiedRow> Notified { get; set; } = [];

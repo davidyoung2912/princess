@@ -225,7 +225,7 @@ public static class OrderRules
         if (priced.Service > 0) lines.Add(new FolioLine("", day, at, "tips", "Bar service charge (order)", who, priced.Service, null, null));
         if (priced.Fee > 0) lines.Add(new FolioLine("", day, at, "dining", "Delivery fee (order)", who, priced.Fee, null, null));
         if (priced.Tip > 0) lines.Add(new FolioLine("", day, at, "tips", "Tip for the crew (order)", who, priced.Tip, null, null));
-        if (cancelledAt is { } c && priced.Total > 0) lines.Add(new FolioLine("", day, c, "credit", "Refund, order cancelled", who, -priced.Total, null, null));
+        if (cancelledAt is { } c && priced.Total > 0) lines.Add(new FolioLine("", day, c, "credit", "Refund, order cancelled", who, -priced.Total, null, null, FolioStates.Refunded));
         return lines;
     }
 }

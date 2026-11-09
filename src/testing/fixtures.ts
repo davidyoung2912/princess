@@ -65,7 +65,7 @@ export const FOLIO = {
     { id: 'f2', day: 3, at: NOW - 3_600_000, category: 'spa', description: 'Massage', guest: P, cents: 14_900 },
     { id: 'f3', day: 3, at: NOW - 7_200_000, category: 'dining', description: 'Dinner, Crown Grill', guest: P, cents: 0, value: 4_500, coveredBy: 'package' },
   ],
-  totals: { charges: 16_350, credits: 0, covered: 4_500, balance: 16_350 }, guests: [{ id: P, name: 'Tess Tester' }], throughDay: 3,
+  totals: { charges: 16_350, credits: 0, covered: 4_500, balance: 16_350, pending: 0 }, guests: [{ id: P, name: 'Tess Tester' }], throughDay: 3,
 } as unknown as FolioView
 
 

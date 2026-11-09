@@ -220,4 +220,4 @@ public interface IShipboardStore
 }
 
 /// <summary>A line to put on the onboard account. A line with no person is the booker's.</summary>
-public sealed record FolioWrite(long? UserId, int Day, string Category, string Description, long Cents, string? CoveredBy, DateTime At);
+public sealed record FolioWrite(long? UserId, int Day, string Category, string Description, long Cents, string? CoveredBy, DateTime At, string State = "posted");
