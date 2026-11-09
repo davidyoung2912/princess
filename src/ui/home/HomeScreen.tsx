@@ -1,3 +1,4 @@
+import { DeadlineNotes } from './DeadlineNotes'
 import { QuickDiary } from '../delights/TripDiary'
 import { EssentialsHome } from '../delights/EmbarkDelights'
 import { useSettings } from '../../hooks/useSettings'
@@ -143,6 +144,7 @@ function Journey({ trip }: { trip: TripView }) {
           {counts.map((c) => <li key={c.id}>{c.days === 0 ? t(`count.${c.id}.today` as StringKey) : t(`count.${c.id}` as StringKey, { count: c.days })}</li>)}
         </ul>
       )}
+      <DeadlineNotes counts={counts} />
       {done ? (
         <Card hero labelledBy="pass-h">
           <h3 id="pass-h" className="card__title">{th('home.passReady')}</h3>

@@ -6,7 +6,14 @@ const clean = (v: unknown, max: number): string => (typeof v === 'string' ? v.re
 
 export interface PollOption { id: string; label: string }
 /** `votes` is the voter's id to the option id: one vote each. */
-export interface Poll { id: string; question: string; options: PollOption[]; votes: Record<string, string> }
+export interface Poll {
+  id: string
+  question: string
+  options: PollOption[]
+  votes: Record<string, string>
+  /** When the organiser closed voting (DRM-14); absent while open. A closed poll takes no more votes. */
+  closedAt?: number
+}
 /** `hearts` holds the ids of the people who hearted it. */
 export interface Idea { id: string; text: string; hearts: string[] }
 /** `dates` is the person's id to the sailing ids they can do (the date finder). */
@@ -23,7 +30,7 @@ export function newPoll(id: string, question: string, labels: readonly string[])
 
 /** One vote per person: voting again changes it. */
 export function castVote(p: Poll, voter: string, optionId: string): Poll {
-  if (!voter || !p.options.some((o) => o.id === optionId)) return p
+  if (p.closedAt !== undefined || !voter || !p.options.some((o) => o.id === optionId)) return p
   if (!(voter in p.votes) && Object.keys(p.votes).length >= VOTERS_MAX) return p
   return { ...p, votes: { ...p.votes, [voter]: optionId } }
 }
@@ -60,7 +67,7 @@ export function normalizeBoard(raw: unknown): BoardState {
     if (typeof o.id !== 'string' || !clean(o.question, 80) || options.length < 2) return []
     const votes: Record<string, string> = {}
     for (const [k, v] of Object.entries(rec(o.votes))) if (typeof v === 'string' && options.some((p) => p.id === v) && k && Object.keys(votes).length < VOTERS_MAX) votes[k] = v
-    return [{ id: o.id, question: clean(o.question, 80), options, votes }]
+    return [{ id: o.id, question: clean(o.question, 80), options, votes, ...(typeof o.closedAt === 'number' ? { closedAt: o.closedAt } : {}) }]
   }).slice(0, POLLS_MAX)
   const ideas = arr(r.ideas).flatMap((x): Idea[] => {
     const o = rec(x)
@@ -105,4 +112,15 @@ export function findDates(dates: Record<string, string[]>, priceOf: (sailingId: 
   const everyone = people < 2 ? [] : [...counts].filter(([, n]) => n === people).map(([id]) => id).sort((a, b) => price(a) - price(b))
   const top = [...counts].sort((a, b) => b[1] - a[1] || price(a[0]) - price(b[0]))[0]
   return { people, everyone, cheapest: everyone[0] ?? null, best: people >= 2 && everyone.length === 0 && top ? { id: top[0], count: top[1] } : null }
+}
+
+/** Closes voting. The result stays; nobody can vote or change a vote after this. */
+export const closePoll = (p: Poll, now: number): Poll => (p.closedAt === undefined ? { ...p, closedAt: now } : p)
+
+/** The result of a poll as plain text for sharing: the question, each option with its votes, and the winner. Names of voters are not included. */
+export function pollResultText(p: Poll, labels: { winner: string; tie: string; none: string; votes: (n: number) => string }): string {
+  const win = leader(p)
+  const lines = [p.question, ...tally(p).map(({ option, votes }) => `- ${option.label}: ${labels.votes(votes)}`)]
+  lines.push(win ? labels.winner.replace('{label}', win.label) : Object.keys(p.votes).length === 0 ? labels.none : labels.tie)
+  return lines.join('\n')
 }

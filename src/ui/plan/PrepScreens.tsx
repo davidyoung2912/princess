@@ -5,6 +5,7 @@ import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useFareHistory } from '../../hooks/useServedFeeds'
+import { FareAlertCard } from './FareAlertCard'
 import { acknowledgedAt, allergySteps, ACCESS_FLAGS, accessNotes, needsWithAccess, ALLERGY_MAX, AREAS, cleanAllergy, cleanHoldLabel, contractText, galleyStatus, HOLD_HOURS, HOLD_LABEL_MAX, holdState, ledgerSummary, leftInWords, MOBILITY_DEVICES, personReadiness, priceWatch, splitEven, tripContract, type AccessFlag, type MobilityDevice } from '../../domain/bookingPrep'
 import { formatDate } from '../../domain/cruise'
 import { CHASE_TONES, chaseText, type ChaseTone } from '../../domain/chase'
@@ -278,6 +279,7 @@ function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
       const w = priceWatch(b, history)
       if (!w) return <p>{t('pwatch.none')}</p>
       return (
+        <>
         <Card labelledBy="pw-t">
           <h2 id="pw-t" className="card__title">{th('pwatch.title')}</h2>
           <dl className="facts">
@@ -295,6 +297,8 @@ function PriceWatchBody({ v, today }: { v: PaymentsView; today: string }) {
             ) : <p>{t(w.drop.reason === 'notLower' ? 'pwatch.notLower' : 'pwatch.afterFinal')}</p>}
           </div>
         </Card>
+        <FareAlertCard sailingId={v.trip.sailingId} category={v.trip.categoryName} latest={w.latest.total} />
+        </>
       )
 }
 

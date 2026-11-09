@@ -6,10 +6,24 @@ import { INTERESTS, type Interest } from '../domain/excursions'
 import { EVENT_INTERESTS, type EventInterest } from '../domain/program'
 import { isHhmm, type Change, type Edit, type PlanEntry } from '../domain/planChange'
 import { MAX_PLAN_DAY } from '../domain/nightsRules'
+import { normalizeAlerts, type FareAlert } from '../domain/fareAlert'
+import { normalizeShares, type PassportShare } from '../domain/passport'
+import { normalizeDeadlineLog, type DeadlineEvent } from '../domain/deadlineLog'
+import { normalizeSignals, type ArrivalSignal } from '../domain/arrivalSignal'
 
 /** Everything Phase H5 keeps on this device for one person: plan changes and their log, slot watches, week preferences, and the inclusion settings. */
-export interface PilotState { changes: Change[]; watches: Watch[]; prefs: WeekPrefs; gentle: boolean; calm: CalmState }
-export const EMPTY_PILOT: PilotState = { changes: [], watches: [], prefs: DEFAULT_PREFS, gentle: false, calm: EMPTY_CALM }
+export interface PilotState {
+  changes: Change[]; watches: Watch[]; prefs: WeekPrefs; gentle: boolean; calm: CalmState
+  /** Fare alerts (DRM-16). */
+  alerts: FareAlert[]
+  /** What the accessibility passport is shared with (QOL-20). */
+  passport: PassportShare[]
+  /** Earlier and current deadline dates (MNG-15). */
+  deadlines: DeadlineEvent[]
+  /** One-time arrival signals sent to the party (GTS-10). */
+  signals: ArrivalSignal[]
+}
+export const EMPTY_PILOT: PilotState = { changes: [], watches: [], prefs: DEFAULT_PREFS, gentle: false, calm: EMPTY_CALM, alerts: [], passport: [], deadlines: [], signals: [] }
 
 const KINDS = ['tour', 'event', 'dinner', 'added']
 const STATUSES = ['proposed', 'accepted', 'declined', 'undone']
@@ -64,7 +78,7 @@ export function normalizePrefs(raw: unknown): WeekPrefs {
 export const normalizePilot = (raw: unknown): PilotState => {
   if (typeof raw !== 'object' || raw === null) return EMPTY_PILOT
   const r = raw as Record<string, unknown>
-  return { changes: normalizeChanges(r.changes), watches: normalizeWatches(r.watches), prefs: normalizePrefs(r.prefs), gentle: r.gentle === true, calm: normalizeCalm(r.calm) }
+  return { changes: normalizeChanges(r.changes), watches: normalizeWatches(r.watches), prefs: normalizePrefs(r.prefs), gentle: r.gentle === true, calm: normalizeCalm(r.calm), alerts: normalizeAlerts(r.alerts), passport: normalizeShares(r.passport), deadlines: normalizeDeadlineLog(r.deadlines), signals: normalizeSignals(r.signals) }
 }
 
 export const pilotKeyFor = (personaId: string | null): string => `${APP_PREFIX}pilot:${personaId ?? ''}`

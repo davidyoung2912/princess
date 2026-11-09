@@ -1,4 +1,5 @@
 import type { StringKey } from '../i18n'
+import { normalizeContributions, type ContributionPlan } from './contributions'
 
 /**
  * The split ledger (XG-03, S6A-06): a running tally of who paid what for shared things across families, with a fair settle-up at the end.
@@ -27,8 +28,15 @@ export interface SplitItem {
   date: string | null
 }
 
-export interface SplitState { parties: SplitParty[]; items: SplitItem[]; /** When the guests last marked the tally settled. */ settledAt: number | null }
-export const EMPTY_SPLIT: SplitState = { parties: [], items: [], settledAt: null }
+export interface SplitState {
+  parties: SplitParty[]
+  items: SplitItem[]
+  /** When the guests last marked the tally settled. */
+  settledAt: number | null
+  /** The booking split among invited payers (BOK-10), if the organiser has set one up. */
+  contributions: ContributionPlan | null
+}
+export const EMPTY_SPLIT: SplitState = { parties: [], items: [], settledAt: null, contributions: null }
 
 export interface Transfer { from: string; to: string; cents: number }
 
@@ -144,5 +152,5 @@ export function normalizeSplit(raw: unknown): SplitState {
       mode: x.mode === 'byPeople' ? 'byPeople' : 'equal', at: typeof x.at === 'number' ? x.at : 0, date: typeof x.date === 'string' ? x.date : null,
     }]
   }).slice(0, MAX_ITEMS)
-  return { parties, items, settledAt: typeof raw.settledAt === 'number' ? raw.settledAt : null }
+  return { parties, items, settledAt: typeof raw.settledAt === 'number' ? raw.settledAt : null, contributions: normalizeContributions(raw.contributions) }
 }

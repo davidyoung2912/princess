@@ -1,3 +1,4 @@
+import { deliveryOf } from '../../domain/chat'
 import { optimistic } from '../../data/optimistic'
 import { useEffect, useState } from 'react'
 import type { Message, ServiceThread } from '../../api/types'
@@ -87,6 +88,7 @@ function Party() {
                     {m.text && (parsePlanCard(m.text) ? <PlanCardView card={parsePlanCard(m.text)!} /> : <p>{m.text}</p>)}
                     {m.photo && <ChatPhoto src={m.photo} name={name(m)} />}
                     {m.from !== me?.id && <MessageSafety messageId={m.id} from={m.from} onBlocked={() => { list.retry(); setBlockedVersion(blockedVersion + 1) }} />}
+                    {m.from === me?.id && <p className="muted">{t(`chat.delivery.${deliveryOf(m)}` as StringKey)}</p>}
                     {m.seenBy && m.seenBy.length > 0 && <p className="muted">{t('chat.seenBy', { names: m.seenBy.map((id) => (personFirstName(id) || id)).join(', ') })}</p>}
                   </li>
                 ))}
@@ -110,6 +112,7 @@ function Party() {
         <Chip pressed={receiptsOn} onToggle={() => void flip.run(!receiptsOn)}>{t('chat.receipts')}</Chip>
       </div>
       <p className="muted">{t('chat.receiptsBody')}</p>
+      <p className="muted">{t('chat.noPreview')}</p>
       <PlanCardSender onSent={() => list.retry()} />
       <PhotoSender onSent={() => list.retry()} />
       <BlockedList version={blockedVersion} reload={list.retry} />

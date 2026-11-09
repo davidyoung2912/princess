@@ -94,3 +94,39 @@ export function normalizePlan(raw: unknown, priority: boolean): TravelPlan {
 }
 
 export const planStarted = (p: TravelPlan): boolean => p.window !== null
+
+// ---- The travel-to-port workspace (MNG-09) ----
+/**
+ * What the guest has arranged to get to the port. These are arrangements with other companies: Princess does not confirm them, and says so. Each item names
+ * its provider, how to reach them, when it matters and what to do if it goes wrong. Authored concept values.
+ */
+export interface TravelItem {
+  id: string
+  kind: 'transport' | 'hotel' | 'parking' | 'terminal'
+  provider: string
+  contact: string
+  timing: string
+  ifDisrupted: string
+  /** Arranged with an outside company, not confirmed by Princess. */
+  external: boolean
+}
+
+const PROVIDERS: Record<ModeId, { provider: string; contact: string; ifDisrupted: string; external: boolean }> = {
+  drive: { provider: 'Port Everglades terminal garage', contact: 'The port parking office, listed on the port’s website', ifDisrupted: 'If the garage is full, ask a porter or the port’s parking office for the overflow lot.', external: true },
+  transfer: { provider: 'Princess cruise transfer', contact: 'The shore transfer desk, 24 hours before sailing', ifDisrupted: 'If your flight is late, ring the transfer desk before the coach leaves; a later coach can be arranged.', external: false },
+  rideshare: { provider: 'Your taxi or ride-share company', contact: 'The company’s own app or phone line', ifDisrupted: 'If the car does not come, book another and give the terminal number.', external: true },
+  shuttle: { provider: 'Your hotel’s shuttle', contact: 'The hotel front desk', ifDisrupted: 'If the shuttle is full or late, ask the hotel front desk for a taxi.', external: true },
+}
+
+/** The items for a saved plan, in the order they happen. Nothing the guest has not chosen is listed. */
+export function travelItems(plan: TravelPlan): TravelItem[] {
+  const items: TravelItem[] = []
+  const hotel = HOTELS.find((h) => h.id === plan.hotel)
+  if (hotel) items.push({ id: `hotel-${hotel.id}`, kind: 'hotel', provider: hotel.name, contact: 'The hotel front desk', timing: 'The night before you sail', ifDisrupted: 'If you arrive late, ring the hotel so the room is held.', external: true })
+  if (plan.mode) {
+    const p = PROVIDERS[plan.mode]
+    items.push({ id: `mode-${plan.mode}`, kind: plan.mode === 'drive' ? 'parking' : 'transport', provider: p.provider, contact: p.contact, timing: plan.window ? `Arrive at the terminal ${plan.window} (local)` : 'Choose an arrival window', ifDisrupted: p.ifDisrupted, external: p.external })
+  }
+  if (plan.window) items.push({ id: 'terminal', kind: 'terminal', provider: PORT_FACTS.name, contact: 'Your terminal is confirmed at check-in', timing: `Arrival window starts ${plan.window}`, ifDisrupted: 'If you will miss your window, you can still board until the gangway closes; ring the line’s port agent.', external: false })
+  return items
+}

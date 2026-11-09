@@ -78,3 +78,11 @@ export function cleanMessage(text: unknown): string {
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('SLOW_FACTOR', (v) => { SLOW_FACTOR = v }, SLOW_FACTOR)
 limit('ESCALATE_AFTER_MINUTES', (v) => { ESCALATE_AFTER_MINUTES = v }, ESCALATE_AFTER_MINUTES)
+
+/** Notifications about party chat (SEA-16): there is no push for chat at all, so a message's text can never appear on a lock screen. Kept as a named fact so a change shows up in a test. */
+export const CHAT_NOTIFICATION_PREVIEW = 'none' as const
+
+export type Delivery = 'sent' | 'seen'
+
+/** Where one of your own party-chat messages stands: sent to the group, or seen by someone when both of you have read receipts on. */
+export const deliveryOf = (m: { seenBy?: readonly string[] }): Delivery => (m.seenBy && m.seenBy.length > 0 ? 'seen' : 'sent')

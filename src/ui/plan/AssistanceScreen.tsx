@@ -17,6 +17,7 @@ import { Stepper } from '../Stepper'
 import { Load } from '../account/parts'
 import { PlanError, ReadOnly, Back } from './common'
 import { firstName } from './people'
+import { PassportCard } from './PassportCard'
 
 const BADGE: Record<DeadlineState, BadgeKind> = { open: 'ready', soon: 'waitlist', late: 'changed' }
 
@@ -119,6 +120,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
           </Card>
         )}
       </section>
+      <PassportCard view={view} />
     </>
   )
 }

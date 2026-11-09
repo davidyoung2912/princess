@@ -127,25 +127,25 @@ DRM-05	finder may skip, revise, reset answers	reset|startOver|skip	src/domain/fi
 DRM-06	first-cruise concepts explained (tender, muster, gratuities)	tender.*muster|firstCruise|glossary	src
 DRM-08	family discovery shows age suitability and adjoining cabins	adjoining|connecting|ageSuit|kidsClub|youth club	src
 DRM-13	ship profiles per ship with effective dates	effectiveFrom|effectiveDate|asOf	any
-DRM-14	group wish list votes; organiser closes and exports	closeVoting|closeVote|voteClosed|closedAt	any
+DRM-14	group wish list votes; organiser closes and exports	closePoll	any
 DRM-15	shortlist link read-only, expires, revocable	revoke|expiresAt.*share|shareLink|shortlistShare	any
-DRM-16	alert tied to exact sailing, pause or delete	pauseAlert|alert.*(pause|paused)|priceAlert|fareAlert	any
+DRM-16	alert tied to exact sailing, pause or delete	newAlert	any
 DSC-03	tender expectation and local/ship time separately	tender.*(ship time|local)|tenderPort|dockOrTender|isTender	src
 DSC-09	package break-even, labelled estimate	break.?even|worth(while)?	src
 DSC-10	fit score weights changeable	weights|weight	src
 DSC-14	ship tech matrix Medallion, OceanNow	oceannow|medallion.*ship|techMatrix	src
 DSC-16	decision workspace persists across devices	shortlist|compareSet|decision workspace	any
-BOK-10	split payment payer sees own amount and deadline	contribution|splitPay|payerShare|invited payer	any
+BOK-10	split payment payer sees own amount and deadline	planContributions	any
 BOK-11	payment failure never silently cancels	not cancel|won.t cancel|no cancel|failure.*recover|retryPayment	any
 BOK-13	no prechecked extras; exclusions and refund link	prechecked|exclusions|refund policy	any
 MNG-06	party readiness shows task status only	readiness.*(party|member)|partyReadiness	any
 MNG-07	helper scopes and expiry	expires.*helper|helper.*expires|expiresAt	src/domain/account.ts,server/Princess.Api
 MNG-08	packing list editable	packing	src
-MNG-09	travel-to-port external bookings not Princess-confirmed	not (booked|confirmed) (by|with) princess|external booking|externalBooking	any
+MNG-09	travel-to-port external bookings not Princess-confirmed	travelItems	any
 MNG-12	allergy sharing with crew acknowledgement not a safety guarantee	not a (safety )?guarantee|acknowledg	src
 MNG-13	itinerary change before/after with deadline	before.*after|itineraryChange|changeNotice	src
 MNG-14	notification centre categories; duplicates collapsed	dedupe|duplicate|collapse|category	src/domain/notifications.ts,src/domain/delivery.ts,src/ui
-MNG-15	deadline change creates new event	supersed|previousDeadline|deadlineHistory|rescheduled	src
+MNG-15	deadline change creates new event	noteDeadlines	src
 MNG-17	loyalty stale status identified	captain.?s circle|loyalty	src
 MNG-18	trip pack large-print and low-ink variants	largePrint|large-print|lowInk|low-ink|@media print	any
 PRE-07	excursion compare exertion, accessibility flagged for operator confirmation	confirmAccess	src
@@ -157,14 +157,14 @@ PRE-13	group plan board accept decline propose alternative	propose|counterPropos
 PRE-14	spend forecast editable; included vs prepaid vs discretionary	discretionary|prepaid	src
 PRE-15	entitlement wallet; expired remain in history	entitlementGroup	src/domain/entitlements.ts
 GTS-06	leave-by only on request, not boarding guarantee	leave.?by	src
-GTS-10	one-time departed/arrived signals expire after embarkation	departed.*arrived|atMeetingPoint|arrivalSignal	src
+GTS-10	one-time departed/arrived signals expire after embarkation	sendSignal	src
 GTS-11	luggage tag printable	luggage ?tag|bagTag	src
 GTS-15	night-before checklist	nightBefore|night-before|night before	src
 GTS-16	Medallion order/delivery/activation, keycard fallback	medallion.*(delivery|activation|pickup)	src
 EMB-04	first four hours dismissable and revisit	firstFour|first four|first 4	src
 EMB-05	cabin arrival card steward and troubleshooting	steward|cabin arrival	src
 EMB-06	luggage delivered/in transit/expected, no fake tracking	in.?transit|luggageStatus	src
-EMB-07	cabin issue case id, no duplicate case	duplicate|caseId|referenceId	src/domain/cabinIssue.ts,src/ui
+EMB-07	cabin issue case id, no duplicate case	openDuplicate	src
 EMB-08	Medallion status vs device action, keycard fallback	keycard	src
 EMB-09	self-guided tour short/long/step-free; pausable	step-free.*tour|tourMode|selfGuided|self-guided	src
 EMB-10	meeting-point card with I'm here expiry	i.?m here|meetingPoint	src
@@ -223,10 +223,10 @@ QOL-11	port return guardian doesn't guarantee vessel wait	not.*wait|return guard
 QOL-12	entitlement explainer consumed and cost	consumed|entitlement	src
 QOL-13	cabin comfort preference vs confirmed device	comfort|preference.*confirmed|not confirmed	src
 QOL-14	concierge order deterministic then search then LLM	deterministic|tier.*(rule|faq)|source order	src
-QOL-15	weather recomposer no auto cancel or rebook	recompos|replan|impacted	src
+QOL-15	weather recomposer no auto cancel or rebook	impactedOn	src
 QOL-16	no-surprise money view paid pending forecast separate	paid.*pending|forecast	src
 QOL-19	disruption command centre last update, human phone	disruption|rescue	src
-QOL-20	accessibility passport preview recipients, revoke	passport.*(recipient|revoke)|accessibilityPassport|accessPassport	src
+QOL-20	accessibility passport preview recipients, revoke	previewFor	src
 QOL-21	time service ship/port/home, deadline governing	governing|shipTime	src
 QOL-22	service promise target vs guarantee	not a guarantee|target.*guarantee|serviceTarget|sla	src
 TRU-08	policy failure plain message with next step	nextStep|policy.*(fail|reason)|why.*(declin|refus)	src

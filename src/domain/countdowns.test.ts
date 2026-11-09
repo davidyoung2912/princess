@@ -9,7 +9,9 @@ const trip = (over: Partial<CountdownInput> = {}): CountdownInput => ({
 describe('countdowns', () => {
   it('counts days to boarding, to the final payment and to check-in from now', () => {
     expect(countdowns(trip(), at('2027-01-10'))).toEqual([
-      { id: 'boarding', days: 40 }, { id: 'pay', days: 10 }, { id: 'checkin', days: 67 },
+      { id: 'boarding', days: 40, date: '2027-02-19', zone: 'America/New_York', source: 'sailing' },
+      { id: 'pay', days: 10, date: '2027-01-20', zone: 'America/New_York', source: 'booking' },
+      { id: 'checkin', days: 67, date: '2027-03-18', zone: 'America/New_York', source: 'schedule' },
     ])
   })
   it('moves with the date', () => {

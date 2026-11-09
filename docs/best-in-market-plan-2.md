@@ -404,3 +404,10 @@ Theme: pre-cruise (PRE-07, PRE-10, PRE-12, PRE-15, PRE-17).
 - **PRE-17:** `tableAllocation` and an allocation card (shared time, seats by cabin, split flag). Row stays Partial: no friend replies and no linked-booking time search.
 - **Tests:** `excursionFit.test.ts`, `ahead.test.ts`, `entitlements.test.ts`, `tickets.test.ts`, `aboard.test.ts`. `dotnet` is not installed, so the two C# changes (`ExcursionRules.cs`, `PlanService.cs`/`PlanContracts.cs`) were not compiled. Per the working rules only `npm run test`, `lint`, `tsc -b`, `build` were used; no browser check.
 
+
+## 5ak. BM53 result (built, not committed)
+
+Theme: management and requests, group features, safety and consent (MNG-09, MNG-15, EMB-07, GTS-10, BOK-10, DRM-14, DRM-16, QOL-15, QOL-20, SEA-16, SEA-18, BOK-12). Front end only; no server change. New per-person state (`alerts`, `passport`, `deadlines`, `signals`) rides in the existing `pilot` document; `contributions` in the shared split document and `closedAt` on a poll in the shared board.
+- **Built:** DRM-14 (close voting, copy result), QOL-15 (impacted reservations and alternatives, nothing changed for the guest), BOK-12 (credit source, amount, use, residual, reason).
+- **Partial, moved on:** MNG-09 (no held booking reference), MNG-15 (still three deadline kinds), EMB-07 (no photo, no add-detail), GTS-10 (signals not delivered to other members), BOK-10 (statuses set by the booker; no invitation or payment), DRM-16 (own booking's simulated fares; nothing sent), QOL-20 (no acknowledgement recorded), SEA-16 (delivery state and no previews; no guardian consent), SEA-18 (six events verified; requests booking-wide).
+- **Tests:** `src/domain/bm53.test.ts`; `countdowns.test.ts` updated for the new fields. Pilot documents sent to the server now carry four more fields; the server was not read for a strict schema and is not compiled here.

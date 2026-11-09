@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { requestProgress, QUICK_REQUESTS, REQUEST_ITEMS, type RequestGroup } from '../../domain/services'
+import { requestProgress, QUICK_REQUESTS, REQUEST_ITEMS, CONTACT_CHOICES, openDuplicate, withContact, type ContactChoice, type RequestGroup } from '../../domain/services'
+import { requestRef } from '../../domain/assistance'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -27,7 +28,16 @@ export function RequestsScreen() {
   const [qty, setQty] = useState<Record<string, number>>({})
   useVisibleInterval(list.retry, 60_000, true)
   const [sentItem, setSentItem] = useState('')
-  const ask = useAction(async (item: string) => { setSentItem(''); await api.aboard.requests.create(item, qty[item] ?? 1, ''); setSentItem(item); list.retry() })
+  const [contact, setContact] = useState<ContactChoice>('message')
+  const [already, setAlready] = useState('')
+  const ask = useAction(async (item: string) => {
+    setSentItem(''); setAlready('')
+    // One open case per item: a second tap points to the first instead of opening another.
+    const open = openDuplicate(list.data ?? [], item)
+    if (open) { setAlready(open.id); return }
+    await api.aboard.requests.create(item, qty[item] ?? 1, withContact(contact, ''))
+    setSentItem(item); list.retry()
+  })
   const escalate = useAction(async (id: string) => { await api.aboard.requests.escalate(id); list.retry() })
   const confirm = useAction(async (id: string) => { await api.aboard.requests.confirm(id); list.retry() })
   const reopen = useAction(async (id: string) => { await api.aboard.requests.reopen(id); list.retry() })
@@ -43,7 +53,11 @@ export function RequestsScreen() {
         <div className="button-row">
           {QUICK_REQUESTS.map((id) => <Button key={id} disabled={ask.busy || !!me?.child} onClick={() => void ask.run(id)}>{t(`req.i.${id}` as StringKey)}</Button>)}
         </div>
-        <p role="status">{sentItem && !ask.error ? t('req.sent', { item: t(`req.i.${sentItem}` as StringKey) }) : ''}</p>
+        <fieldset className="plain-fieldset">
+          <legend>{t('req.contact')}</legend>
+          {CONTACT_CHOICES.map((c) => <label key={c} className="choice"><input type="radio" name="req-contact" checked={contact === c} onChange={() => setContact(c)} /><span>{t(`req.contact.${c}` as StringKey)}</span></label>)}
+        </fieldset>
+        <p role="status">{already ? t('req.already', { ref: requestRef(already) }) : sentItem && !ask.error ? t('req.sent', { item: t(`req.i.${sentItem}` as StringKey) }) : ''}</p>
         <ul className="plain-list">
           <li><Link to="/ship/dnd">{t('req.dnd')}</Link> <span className="muted">{t('req.dndHint')}</span></li>
           <li><a href="#req-maintenance">{t('req.fixThis')}</a> <span className="muted">{t('req.fixThisHint')}</span></li>
@@ -83,7 +97,8 @@ export function RequestsScreen() {
                   <h3 className="card__title">{r.qty > 1 ? `${r.qty} × ` : ''}{th(`req.i.${r.item}` as StringKey)}</h3>
                   <p><StatusBadge kind={r.stage === 'done' ? 'booked' : r.stage === 'cancelled' ? 'cancelled' : r.stage === 'onTheWay' ? 'ready' : 'waitlist'} label={t(`req.s.${r.stage}` as StringKey)} /></p>
                   {r.stage !== 'cancelled' && <Stepper label={t('req.track')} steps={requestProgress(r.stage).map((x) => ({ id: x.id, state: x.state, label: t(`req.step.${x.id}` as StringKey) }))} />}
-                  <p className="muted">{t(`req.team.${r.team}` as StringKey)}</p>
+                  <p className="muted">{t('req.case', { ref: requestRef(r.id), time: shipTime(r.placedAt) })} · {t(`req.team.${r.team}` as StringKey)}</p>
+                  {r.note && <p className="muted">{r.note.replace(/^\[contact: (\w+)\]\s*/, (_m, c: string) => t('req.contactIs', { how: t(`req.contact.${c}` as StringKey) }) + ' ')}</p>}
                   <p className="muted">{r.stage === 'done' || r.stage === 'cancelled' ? t('req.asked', { time: shipTime(r.placedAt) }) : t('req.eta', { time: shipTime(Math.max(r.etaAt, now)) })}</p>
                   {(r.stage === 'done' || r.stage === 'cancelled') && !r.confirmed && <p className="muted">{t(`req.noEta.${r.stage}` as StringKey)}</p>}
                   {r.escalated && <p>{t('req.escalated')}</p>}

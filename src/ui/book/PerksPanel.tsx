@@ -1,4 +1,5 @@
 import { MEMBER_PERCENT } from '../../domain/ahead'
+import { creditLine } from '../../domain/creditLines'
 import { formatMoney } from '../../domain/money'
 import type { QuoteView } from '../../api/types'
 import { api } from '../../runtime'
@@ -37,6 +38,20 @@ export function PerksPanel({ draft, update, quote }: Pick<StepProps, 'draft' | '
         </label>
       )}
       {perks && perks.credit > 0 && <p role="status">{t('book.perks.creditApplied', { amount: formatMoney(perks.credit) })}</p>}
+      {mine.data && creditLine(mine.data.creditLeft, perks?.credit ?? 0, draft.useCredit) && <CreditDetail line={creditLine(mine.data.creditLeft, perks?.credit ?? 0, draft.useCredit)!} />}
     </section>
+  )
+}
+
+/** Where a credit comes from, how much there is, whether it can be used and what is left after (BOK-12). An unusable credit says why. */
+function CreditDetail({ line }: { line: NonNullable<ReturnType<typeof creditLine>> }) {
+  return (
+    <dl className="facts" aria-label={t('book.credit.label')}>
+      <div><dt>{t('book.credit.source')}</dt><dd>{t(`book.credit.src.${line.source}` as StringKey)}</dd></div>
+      <div><dt>{t('book.credit.amount')}</dt><dd>{formatMoney(line.amount)}</dd></div>
+      <div><dt>{t('book.credit.used')}</dt><dd>{formatMoney(line.applied)}</dd></div>
+      <div><dt>{t('book.credit.left')}</dt><dd>{formatMoney(line.residual)}</dd></div>
+      {line.why !== 'none' && <div><dt>{t('book.credit.why')}</dt><dd>{t(`book.credit.why.${line.why}` as StringKey)}</dd></div>}
+    </dl>
   )
 }

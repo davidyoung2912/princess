@@ -311,3 +311,17 @@ limit('TOPUP_TOTAL_MAX', (v) => { TOPUP_TOTAL_MAX = v }, TOPUP_TOTAL_MAX)
 limit('TOPUP_STEP', (v) => { TOPUP_STEP = v }, TOPUP_STEP)
 
 registerContent('services', { REQUEST_ITEMS, REPORT_KINDS, URGENT_REPORTS, BAR_MENU, CURRENCIES, PHOTO_TYPES, REPORT_REASONS, PORT_CONTACTS, PORT_READY })
+
+
+// ---- Cabin issue cases (EMB-07) ----
+export const CONTACT_CHOICES = ['message', 'phone', 'knock'] as const
+export type ContactChoice = (typeof CONTACT_CHOICES)[number]
+export const isContactChoice = (v: unknown): v is ContactChoice => CONTACT_CHOICES.some((c) => c === v)
+
+/** The note sent with a request: the guest's preferred way to be reached, ahead of anything they wrote. */
+export const withContact = (contact: ContactChoice, note: string): string => `[contact: ${contact}] ${note.trim()}`.trim().slice(0, 300)
+
+/** An open request for the same item (not done, not cancelled), or undefined. A second tap on the same item adds to this one instead of opening a duplicate. */
+export function openDuplicate<T extends { item: string; stage: string }>(rows: readonly T[], item: string): T | undefined {
+  return rows.find((r) => r.item === item && r.stage !== 'done' && r.stage !== 'cancelled')
+}

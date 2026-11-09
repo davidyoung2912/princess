@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
 import { BackLink } from '../onboard/common'
 import { Link } from 'react-router'
+import { RecomposerCard } from './RecomposerCard'
 
 /** Storm watch (S3-04): how likely a storm is to touch this sailing, what the line may do and what you can do. Calm, worked out, and never an alert. */
 export function StormScreen() {
@@ -45,6 +46,7 @@ export function StormScreen() {
         </Card>
       )}
       </>}
+      <RecomposerCard />
       <p><Link to="/plan/what-if">{t('route.whatIf')}</Link> · <Link to="/home/disruption">{t('route.disruption')}</Link></p>
     </div>
   )

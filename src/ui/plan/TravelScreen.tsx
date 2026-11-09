@@ -12,6 +12,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
 import { Back, PlanError, ReadOnly } from './common'
+import { TravelItems } from './TravelItems'
 
 /** Getting to the ship (MNG-10): the port, ways to get there, a hotel the night before, and an arrival window. */
 export function TravelScreen() {
@@ -89,6 +90,7 @@ function Planner({ view, onSaved }: { view: TravelView; onSaved: () => void }) {
         <Button type="submit" disabled={disabled || plan.window === null}>{save.busy ? t('account.saving') : t('travel.save')}</Button>
         {plan.window === null && view.canEdit && <p className="muted">{t('travel.chooseWindow')}</p>}
       </form>
+      <TravelItems plan={view.plan} />
     </>
   )
 }

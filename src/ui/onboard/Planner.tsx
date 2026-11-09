@@ -1,3 +1,4 @@
+import { EventAccess } from './EventAccess'
 import { useState } from 'react'
 import { asProgramView } from '../../api/guards'
 import type { OnboardToday, ProgramView } from '../../api/types'
@@ -160,6 +161,7 @@ function Event({ e, inPlan, canEdit, busy, info, onToggle }: { e: DatedEvent; in
         {p && !p.stepFree && <span className="tag">{t('onb.notStepFree')}</span>}
         {p?.note && <span className="muted">{p.note}</span>}
       </p>
+      <EventAccess eventId={e.id} />
       {info && <SeatControl e={e} info={info} canEdit={canEdit} />}
       {canEdit && !cancelled && (
         <>

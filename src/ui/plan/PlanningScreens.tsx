@@ -1,3 +1,4 @@
+import { useNow } from '../../hooks/useDemo'
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
@@ -7,7 +8,7 @@ import { clubById } from '../../domain/family'
 import { formatMoney } from '../../domain/money'
 import { PORTS } from '../../domain/sailings'
 import { addTradition, briefFor, carryOver, compareExcursion, difficultyConcerns, difficultyOf, normalizeBrief, rhythmPrefs, sharedDay, tasteInferences, withoutSurprises, type PlanningState, type Rhythm } from '../../domain/planning'
-import { addIdea, castVote, findDates, heartIdea, leader, newPoll, rankIdeas, tally, toggleDate, voteOf, type BoardState } from '../../domain/board'
+import { addIdea, castVote, closePoll, pollResultText, findDates, heartIdea, leader, newPoll, rankIdeas, tally, toggleDate, voteOf, type BoardState, type Poll } from '../../domain/board'
 import { browseSailingById } from '../../domain/catalogueBrowse'
 import { usePricedSailings } from '../../hooks/useShipCatalogue'
 import { guestStatus, normalizeLog, normalizeOrganiser, SHARING_FACETS } from '../../domain/partyShare'
@@ -121,6 +122,13 @@ export function GroupPollScreen() {
   const [options, setOptions] = useState('')
   const [idea, setIdea] = useState('')
   const [problem, setProblem] = useState(false)
+  const now = useNow()
+  const organiser = !!me && me.id === me.booker
+  const [exported, setExported] = useState('')
+  const exportPoll = async (poll: Poll) => {
+    const text = pollResultText(poll, { winner: t('poll.export.winner', { label: '{label}' }), tie: t('poll.export.tie'), none: t('poll.export.none'), votes: (n) => t('poll.votes', { count: n }) })
+    try { await navigator.clipboard.writeText(text); setExported(poll.id) } catch { setExported('') }
+  }
   const create = () => {
     const poll = newPoll(newPortId(), question, options.split(',').map((o) => o.trim()))
     setProblem(!poll)
@@ -144,13 +152,19 @@ export function GroupPollScreen() {
             <ul className="plain-list">
               {tally(poll).map(({ option, votes }) => (
                 <li key={option.id}>
-                  <Button variant={mine?.id === option.id ? 'primary' : 'secondary'} aria-pressed={mine?.id === option.id} disabled={!who} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? castVote(x, who, option.id) : x)) }))}>{option.label}</Button>{' '}
+                  <Button variant={mine?.id === option.id ? 'primary' : 'secondary'} aria-pressed={mine?.id === option.id} disabled={!who || poll.closedAt !== undefined} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? castVote(x, who, option.id) : x)) }))}>{option.label}</Button>{' '}
                   <span>{t('poll.votes', { count: votes })}</span>
                 </li>
               ))}
             </ul>
             <p role="status">{mine ? t('poll.yours', { label: mine.label }) : t('poll.notYet')} {win ? t('poll.leader', { label: win.label }) : t('poll.noLeader')}</p>
-            <Button variant="tertiary" onClick={() => set((b) => ({ ...b, polls: b.polls.filter((x) => x.id !== poll.id) }))}>{t('poll.remove')}</Button>
+            {poll.closedAt !== undefined && <p role="status">{t('poll.closed')}</p>}
+            <div className="button-row">
+              {organiser && poll.closedAt === undefined && <Button variant="secondary" onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? closePoll(x, now) : x)) }))}>{t('poll.close')}<span className="visually-hidden"> {poll.question}</span></Button>}
+              {poll.closedAt !== undefined && <Button variant="secondary" onClick={() => void exportPoll(poll)}>{t('poll.export')}<span className="visually-hidden"> {poll.question}</span></Button>}
+              {exported === poll.id && <span role="status">{t('poll.exported')}</span>}
+              <Button variant="tertiary" onClick={() => set((b) => ({ ...b, polls: b.polls.filter((x) => x.id !== poll.id) }))}>{t('poll.remove')}</Button>
+            </div>
           </Card>
         )
       })}

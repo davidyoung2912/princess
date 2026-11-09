@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
 import { partyPeople } from '../../account/context'
+import { ContributionsCard } from './ContributionsCard'
 
 /** The split ledger (XG-03, S6A-06): what each family paid for shared things, and a fair way to settle up. It never moves money. */
 export function SplitScreen() {
@@ -74,6 +75,8 @@ export function SplitScreen() {
           <Button type="submit" variant="secondary">{t('split.addFamily')}</Button>
         </form>
       </Card>
+
+      <ContributionsCard split={split} parties={parties} me={me?.booker ?? ''} organiser={!!me && me.id === me.booker} commit={commit} />
 
       <Card labelledBy="split-add">
         <h2 id="split-add" className="card__title">{th('split.add')}</h2>

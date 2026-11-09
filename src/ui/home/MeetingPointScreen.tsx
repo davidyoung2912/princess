@@ -4,6 +4,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
+import { ArrivalSignals } from '../plan/ArrivalSignals'
 
 /**
  * The meeting-point card (N6.4): a short written card for whoever drops the guest at the terminal or collects them. It is built on this device
@@ -26,6 +27,7 @@ export function MeetingPointScreen() {
   return (
     <div className="page">
       <p>{t('mp.intro')}</p>
+      <ArrivalSignals />
 
       <Card labelledBy="meet-form-h">
         <h2 id="meet-form-h" className="card__title">{th('mp.kind')}</h2>
