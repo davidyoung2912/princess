@@ -14,6 +14,8 @@ public interface IAuthService
     Task<SessionResponse> LoginAsync(LoginRequest request, string? userAgent, string? ip, CancellationToken ct);
     Task<SessionResponse> RefreshAsync(RefreshRequest request, string? userAgent, string? ip, CancellationToken ct);
     Task LogoutAsync(UserRecord user, LogoutRequest request, CancellationToken ct);
+    /// <summary>Ends every session this person has, on every device, this one included.</summary>
+    Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct);
     Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct);
     Task<SessionResponse> RegisterAsync(RegisterRequest request, string? userAgent, string? ip, CancellationToken ct);
     /// <summary>Always completes without saying whether the address has an account.</summary>
@@ -114,6 +116,12 @@ public sealed class AuthService(
         if (record is null || record.UserId != user.Id) return;
         await refreshTokens.RevokeFamilyAsync(record.UserId, record.FamilyId, clock.UtcNow, ct);
         await Audit("auth.logout", AuditOutcome.Success, user, null, ct);
+    }
+
+    public async Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct)
+    {
+        await signIn.EndAllSessionsAsync(user.Id, clock.UtcNow, ct);
+        await Audit("auth.logoutEverywhere", AuditOutcome.Success, user, null, ct);
     }
 
     public async Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct)

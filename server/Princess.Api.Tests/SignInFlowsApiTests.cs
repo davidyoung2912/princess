@@ -96,6 +96,19 @@ public class SignInFlowsApiTests : IDisposable
     }
 
     [Fact]
+    public async Task SignOutEverywhereEndsEverySessionButKeepsThePassword()
+    {
+        var one = (await (await Post("login", new LoginRequest(_gerald.Email, Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        var two = (await (await Post("login", new LoginRequest(_gerald.Email, Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout-all");
+        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", one.AccessToken);
+        Assert.Equal(HttpStatusCode.NoContent, (await _http.SendAsync(req)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post("refresh", new RefreshRequest(one.RefreshToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post("refresh", new RefreshRequest(two.RefreshToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("login", new LoginRequest(_gerald.Email, Password))).StatusCode);
+    }
+
+    [Fact]
     public async Task ACodeDiesAfterFiveWrongTriesAndAfterFifteenMinutes()
     {
         await Post("forgot", new CodeRequest(_gerald.Email));

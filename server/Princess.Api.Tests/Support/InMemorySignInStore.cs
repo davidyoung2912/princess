@@ -61,6 +61,13 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         return Task.CompletedTask;
     }
 
+    public Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        users.Users.Single(x => x.Id == userId).SessionsValidFrom = now;
+        foreach (var row in refresh.Rows.Where(r => r.Record.UserId == userId && r.Record.RevokedAt is null && r.Record.UsedAt is null)) row.Record.RevokedAt = now;
+        return Task.CompletedTask;
+    }
+
     public Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, byte[] salt, DateTime expiresAt, DateTime now, CancellationToken ct)
     {
         foreach (var c in Challenges.Where(c => c.Record.UserId == userId && c.Purpose == purpose && c.UsedAt is null)) c.UsedAt = now;

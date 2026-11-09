@@ -43,6 +43,8 @@ export interface AccountActions {
   /** Asks for a one-time code by email. Completes the same way whether or not the address has an account. */
   requestCode(purpose: CodePurpose, email: string): Promise<void>
   resetPassword(email: string, code: string, newPassword: string): Promise<void>
+  /** Ends every session this person has on every device (SEC-07), then clears this one. Fails, and keeps this device signed in, when the server cannot be reached. */
+  signOutEverywhere(): Promise<void>
 }
 
 export class AuthError extends Error {

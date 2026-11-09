@@ -401,6 +401,14 @@ export async function startRuntime(): Promise<void> {
 }
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */
+export async function signOutEverywhereSaving(): Promise<void> {
+  await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
+  // Unlike a plain sign out this must reach the server, or the other devices stay signed in; a failure throws and keeps this device signed in.
+  if (!auth.account) throw new Error('unsupported')
+  await auth.account.signOutEverywhere()
+  clearOwnCopies()
+}
+
 export async function signOutSaving(): Promise<void> {
   await Promise.all([sync.flush().catch(() => {}), portRows.flush().catch(() => {})])
   await auth.signOut()

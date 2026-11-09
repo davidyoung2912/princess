@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from 'react'
-import { auth, signOutSaving } from '../../runtime'
+import { useState, useSyncExternalStore } from 'react'
+import { auth, signOutEverywhereSaving, signOutSaving } from '../../runtime'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -8,6 +8,12 @@ import { Card } from '../Card'
 export function AccountScreen() {
   const user = useSyncExternalStore(auth.subscribe, auth.current, auth.current)?.user
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+  const [asking, setAsking] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const everywhere = async () => {
+    setFailed(false)
+    try { await signOutEverywhereSaving() } catch { setFailed(true) }
+  }
   return (
     <div className="page">
       <Card>
@@ -18,6 +24,16 @@ export function AccountScreen() {
         {user?.isDemo && <p className="muted">{t('account.demo')}</p>}
       </Card>
       <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
+      {auth.account && !user?.isDemo && (
+        <Card>
+          <h2>{t('signin.signOutEverywhere')}</h2>
+          <p className="muted">{t('signin.signOutEverywhereBody')}</p>
+          {failed && <p role="alert">{t('signin.signOutEverywhereFailed')}</p>}
+          {asking
+            ? <p><Button variant="secondary" onClick={() => void everywhere()}>{t('signin.signOutEverywhereConfirm')}</Button></p>
+            : <p><Button variant="secondary" onClick={() => setAsking(true)}>{t('signin.signOutEverywhere')}</Button></p>}
+        </Card>
+      )}
     </div>
   )
 }

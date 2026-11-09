@@ -28,6 +28,8 @@ public interface ISignInStore
     Task<long?> CreateAccountAsync(NewAccount account, DateTime now, CancellationToken ct);
     /// <summary>Sets a new password, clears any lock and revokes every refresh token and every access token issued before now.</summary>
     Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct);
+    /// <summary>Revokes every refresh token and every access token issued before now, leaving the password as it is.</summary>
+    Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct);
     /// <summary>Spends any open code for this purpose, then stores the new one.</summary>
     Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, byte[] salt, DateTime expiresAt, DateTime now, CancellationToken ct);
     /// <summary>Codes issued and wrong tries made for this purpose since <paramref name="since"/>, spent codes included.</summary>

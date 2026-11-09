@@ -73,6 +73,15 @@ public static class AuthEndpoints
             })
             .WithSummary("Revoke the session family of the given refresh token.");
 
+        auth.MapPost("/logout-all", async (ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+            {
+                // A booker viewing as a child must not end the child's own sessions.
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                await svc.LogoutEverywhereAsync(await me.LoadAsync(ct), ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Sign out everywhere: ends every session and access token this person has, on every device, this one included. 403 on a view-as token.");
+
         auth.MapGet("/demo-accounts", async (IUserStore users, IConfiguration config, CancellationToken ct) =>
             {
                 if (!config.GetValue("Demo:Enabled", false)) throw ApiException.NotFound();

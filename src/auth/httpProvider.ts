@@ -104,6 +104,12 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       async resetPassword(email, code, newPassword) {
         try { await raw.post('/auth/reset', { email: email.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
       },
+      async signOutEverywhere() {
+        try { await raw.post('/auth/logout-all', {}) } catch (e) { throw failure(e) }
+        clear()
+        notify()
+        opts.channel?.post({ type: 'session' })
+      },
     },
     async signIn(c: Credentials) {
       try {

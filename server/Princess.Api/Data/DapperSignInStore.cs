@@ -62,6 +62,20 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
         users.Invalidate();
     }
 
+    public async Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        await c.ExecuteAsync(new CommandDefinition(
+            "UPDATE dbo.Users SET SessionsValidFrom = @now, UpdatedAt = @now WHERE Id = @userId",
+            new { userId, now }, tx, cancellationToken: ct));
+        await c.ExecuteAsync(new CommandDefinition(
+            "UPDATE dbo.RefreshTokens SET RevokedAt = @now WHERE UserId = @userId AND RevokedAt IS NULL AND UsedAt IS NULL",
+            new { userId, now }, tx, cancellationToken: ct));
+        await tx.CommitAsync(ct);
+        users.Invalidate();
+    }
+
     public async Task ReplaceChallengeAsync(long userId, string purpose, byte[] codeHash, byte[] salt, DateTime expiresAt, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

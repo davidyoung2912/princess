@@ -118,6 +118,19 @@ describe('createHttpAuthProvider', () => {
     expect(down.auth.current()).toBeNull()
   })
 
+  it('signs out everywhere through the server, and stays signed in when it cannot', async () => {
+    const ok = make((c) => (c.url.endsWith('/logout-all') ? reply(204) : reply(200, session(1))))
+    await ok.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await ok.auth.account!.signOutEverywhere()
+    expect(ok.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/logout-all', auth: 'Bearer a1' })
+    expect(ok.auth.current()).toBeNull()
+    expect(ok.storage.m.has(REFRESH_KEY)).toBe(false)
+    const down = make((c) => (c.url.endsWith('/logout-all') ? reply(503) : reply(200, session(1))))
+    await down.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await expect(down.auth.account!.signOutEverywhere()).rejects.toBeDefined()
+    expect(down.auth.current()).not.toBeNull()
+  })
+
   describe('sign-up and recovery', () => {
     it('registers and signs in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))
