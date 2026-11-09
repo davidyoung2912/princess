@@ -20,10 +20,12 @@ export function JourneyAccess({ access }: { access: AccessProfile }) {
     <section aria-labelledby="jacc-h">
       <h2 id="jacc-h">{th('jacc.title')}</h2>
       <p>{t('jacc.intro')}</p>
-      <fieldset>
+      <div className="workspace">
+      <fieldset className="workspace__side">
         <legend>{t('jacc.need')}</legend>
         {FEATURES.map((f) => <label key={f} className="choice"><input type="checkbox" checked={chosen.includes(f)} onChange={() => toggle(f)} /><span>{t(`jacc.feature.${f}` as StringKey)}</span></label>)}
       </fieldset>
+      <div className="workspace__main">
       <table>
         <caption>{t('jacc.summary')}</caption>
         <thead><tr><th scope="col">{t('jacc.col.area')}</th><th scope="col">{t('jacc.col.yes')}</th><th scope="col">{t('jacc.col.unknown')}</th><th scope="col">{t('jacc.col.no')}</th></tr></thead>
@@ -48,6 +50,8 @@ export function JourneyAccess({ access }: { access: AccessProfile }) {
         )
       })}
       <p className="muted">{t('jacc.note')}</p>
+      </div>
+      </div>
     </section>
   )
 }

@@ -366,3 +366,11 @@ Theme: linking a booking made elsewhere (MNG-01, IDN-08).
 - **Unlink:** `DELETE /trips/{number}/link` (`TripService.UnlinkAsync`, `ITripStore.UnlinkAsync`) removes only a link the person made; any other number is 404; supervised accounts get 403. History records `tripUnlink`. The trip page shows "Remove from My Trips" for a linked booking.
 - **Tests:** server test `ALinkedBookingCanBeRemovedAndLinkedAgainButAnotherNumberIsNotFound` (written, not run, not compiled). `npm run test`, `lint`, `tsc -b` and `build` per the working rules.
 - **Not done:** external (non-agent) channels; no `external` booking kind exists. IDN-08 access for advisor-booked guests (a linked guest still gets no check-in or documents; the agent handles them). Both rows stay Partial.
+
+## 5ag. BM49 result (built, not committed)
+
+Theme: TRU-05 and UX-02.
+- **TRU-05:** `src/ui/failedReschedule.test.tsx` moves a dinner against a stubbed server that refuses (409 full, 500). The original time still shows with "Nothing was changed", the message is plain, no cancel call is made. Row now Built.
+- **UX-02:** `.page--wide` on the two catalogue compare screens, the excursion compare and the difficulty screen; `.workspace` side filter column on the whole-journey filter. CSS at 1280px and up only, so phones are unchanged.
+- **Also:** BM48 left `traceability.test.ts` failing (DRM-10, DSC-11 Built with no tag); tagged `journeyAccess.test.ts`.
+- **Not done:** no browser check, so UX-02 stays Partial; the planning day view has no wide layout.

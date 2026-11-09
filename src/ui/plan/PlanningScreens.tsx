@@ -28,8 +28,8 @@ import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
 import { StanleyEmpty } from '../ai/StanleyEmpty'
 
-const Page = ({ intro, children }: { intro: StringKey; children: React.ReactNode }) => (
-  <div className="page">
+const Page = ({ intro, wide, children }: { intro: StringKey; wide?: boolean; children: React.ReactNode }) => (
+  <div className={wide ? 'page page--wide' : 'page'}>
     <BackLink to="/plan" label={t('route.plan')} />
     <p>{t(intro)}</p>
     {children}
@@ -48,7 +48,7 @@ export function DifficultyScreen() {
   useCatalogue()
   const { memory } = usePlanning()
   return (
-    <Page intro="diff.intro">
+    <Page intro="diff.intro" wide>
       <JourneyAccess access={memory.access} />
       <ul className="card-grid">
         {EXCURSIONS.map((x) => {
@@ -93,7 +93,7 @@ export function CompareScreen() {
     ['cmp.refund', t('cmp.refund.cancel'), t('cmp.refund.varies')],
   ]
   return (
-    <Page intro="cmp.intro">
+    <Page intro="cmp.intro" wide>
       <label htmlFor="cmp-x">{t('cmp.pick')}</label>
       <select id="cmp-x" className="field__input" value={id} onChange={(e) => setId(e.target.value)}>
         {EXCURSIONS.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}

@@ -340,7 +340,7 @@ Priority is not given per concept in the document.
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |
 | TRU-03 | P0 | Partial | R | `src/domain/trustLedger.ts`, `src/ui/StatusBadge.tsx` | Reconciled: `StatusBadge` has six kinds; no single type for draft, submitted, pending, confirmed, declined, cancelled, refunded, expired and failed |
 | TRU-04 | P0 | Built | F | `src/data/outbox.ts`, `docs/audit-trail.md` | C# idempotency tests not run |
-| TRU-05 | P0 | Partial | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts` | Rule lives in the server; a failed reschedule on screen is untested (a-tier-matrix row 13) |
+| TRU-05 | P0 | Built | F | `src/ui/book/changes.ts`, `src/domain/prebook.test.ts`, `src/ui/failedReschedule.test.tsx` | Failed dinner move on screen: original stays, plain message (table taken, or a retry note); the rule itself lives in the server, not read |
 | TRU-06 | P0 | Built | F | `src/hooks/useSavedCopy.ts`, `src/domain/offlineCache.ts`, `src/offlineDay.test.ts` | Source label per item unchecked |
 | TRU-07 | P0 | Partial | R | `src/ui/aboard/SupportScreens.tsx`, `src/domain/aboardDepth.ts` | BM36: served health for seven service areas (`/help/status`, `Providers:ServiceStatus`); no incident feed with start time and message, and the runbook has no incident section (owner, who is told, how guests are told) |
 | TRU-08 | P1 | Built | F | `src/ui/book/ChoiceError.tsx`, `src/ui/book/problems.ts`, `src/ui/plan/refused.ts` | Plain-language refusals on key flows |
@@ -382,7 +382,7 @@ Priority is not given per concept in the document.
 | SEC-07 | P1 | Partial | F | `src/auth/httpProvider.ts` | BM35: sign out everywhere (`POST /auth/logout-all`); no device list (needs a sessions table) or suspicious sign-in notice |
 | SEC-08 | P1 | Out of reach | F | `docs/security-performance-plan.md` | Pen test and vendor review are outside code |
 | UX-01 | P0 | Built | F | `src/routes/coverage.test.ts`, `src/routes/stageNav.test.ts` | Parity is by shared code |
-| UX-02 | P0 | Partial | F | `src/styles`, `src/ui/Shell.tsx` | Desktop is responsive layout; wide-screen comparison workspace unchecked |
+| UX-02 | P0 | Partial | F | `src/styles`, `src/ui/Shell.tsx` | BM49: from 1280px the comparison and difficulty screens use a wider page, sticky table headers and first column, and a side filter column (`.page--wide`, `.workspace` in `layout.css`); not looked at in a browser (project rule), so Partial |
 | UX-03 | P0 | Built | F | `src/routes/nav.test.ts` | Reachable-zone placement is by hand |
 | UX-04 | P1 | Built | F | `src/sync/sync.ts`, `src/sync/sync.test.ts`, `src/ui/DataSettings.tsx` | Server-held; the project rule |
 | UX-05 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Folio and ticket printing unchecked |

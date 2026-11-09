@@ -46,7 +46,7 @@ export function CompareSailingsScreen() {
     { key: 'cat.sailingFact.status', cell: (f) => t(f.bookingOpen ? 'cat.status.open' : f.dataStatus === 'sample' ? 'cat.status.sample' : 'cat.status.browse') },
   ]
   return (
-    <div className="page">
+    <div className="page page--wide">
       <p>{t('cat.saved.intro')}</p>
       {!favourites.ready && <p role="status" className="muted">{t('discover.loading')}</p>}
       {favourites.ready && saved.length < 2 && (

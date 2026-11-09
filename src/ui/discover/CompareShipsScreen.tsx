@@ -41,7 +41,7 @@ export function CompareShipsScreen() {
     setParams(next, { replace: true })
   }
   return (
-    <div className="page">
+    <div className="page page--wide">
       <p>{t('cat.compare.intro')}</p>
       {ships.length < 2 ? <Card info><p>{t('cat.compare.needTwo')}</p></Card> : (
         <>

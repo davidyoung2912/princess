@@ -1,3 +1,4 @@
+// proves: DRM-10, DSC-11
 import { describe, expect, it } from 'vitest'
 import { answerOf, filterJourney, journeySummary, type JourneyItem } from './journeyAccess'
 

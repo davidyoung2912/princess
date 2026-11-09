@@ -196,3 +196,17 @@
 /* Stanley's speech dot: shown when he has something urgent to say. Position is relative to the button. */
 .topbar__stanley, .tabs__stanley { position: relative; }
 .stanley-dot { position: absolute; top: 0.1rem; right: 0.1rem; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--warning); border: 2px solid var(--bg); }
+
+/* Wide-screen workspace for comparison and planning (UX-02): from 1280px the page uses the width beside the rail, filters sit in a sticky side column
+   and comparison tables keep their header row and first column in view. Below that the single phone column is unchanged. */
+.workspace { display: grid; gap: var(--space-4); }
+.workspace__side { min-width: 0; }
+@media (min-width: 1280px) {
+  .page--wide { max-width: 90rem; }
+  .workspace { grid-template-columns: 16rem minmax(0, 1fr); align-items: start; gap: var(--space-5); }
+  .workspace__side { position: sticky; top: var(--space-4); }
+  .page--wide .table-scroll { max-height: 75dvh; overflow: auto; }
+  .page--wide .compare-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface, var(--bg)); }
+  .page--wide .compare-table tbody th { position: sticky; inset-inline-start: 0; z-index: 1; }
+  .page--wide .card-grid { grid-template-columns: repeat(4, 1fr); }
+}
