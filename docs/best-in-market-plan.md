@@ -1,6 +1,6 @@
 # Best-in-market plan (BM)
 
-Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 and BM6 are built. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+Status: **Written 2026-11-08. Phases BM1 to BM7 are built (BM7 server only, not compiled or run here). BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
 
 ## 1. How this was done, and how far to trust it
 
@@ -106,6 +106,14 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Finding**: only Documents and Profile are enforced on the server (`SubjectAccess`). `HelperPermission.Payments` is in the enum but no endpoint checks it, and `PaymentsAsync` / `PayBalanceAsync` (`TripService.cs`) require the caller to be a guest on the booking, so a helper cannot reach a guest's booking at all. There are no helper paths for check-in, edit-booking, folio or messages either.
 - **Change (front end only)**: `NOT_YET` / `permissionWorks` in `src/domain/account.ts`. On `/me/helper` the Payments choice is shown off and disabled with "Not available yet", is never saved, and is left out of the active helper card and the "who can see what" list. Test in `src/domain/access.test.ts`.
 - **Not done, needs a design and your approval (BM7)**: a server path for a helper onto a guest's booking: look up by grant, charge the guest's saved card, record who paid on the receipt and in history, a read-only folio permission, and C# tests. Check-in, booking and message permissions follow the same pattern. A shared relationship type (IDN-04) comes after that. Location is deliberately never a permission.
+
+### BM7. Helper pays a guest's balance (built server side, not committed, not compiled)
+
+- **Endpoint**: `POST /api/v1/guests/{guestId}/bookings/{number}/payments/balance` (`TripService.PayBalanceForGuestAsync`). Goes through `SubjectAccess.ResolveAsync(..., HelperPermission.Payments, write: true)`, so it needs a live grant with `view` and `payments`. No grant is notFound, a grant without Payments is forbidden. A booker or party member is refused here and uses the normal endpoint. Supervised helpers are refused.
+- **Money**: the guest's saved card is used (the helper names it by id and sees brand and last four only). The owner of the booking and card stays the guest; `Payments.UserId` is the helper (who paid) and `RelatedType = 'helper'` marks it, so no schema change. The charge logic is shared with the guest's own path (`PayAsync`).
+- **Record**: the receipt method reads "Visa ending 4242, paid by your helper"; history is written for the guest (by the helper) and for the helper.
+- **Tests written, not run** (rule: no dotnet test): three cases in `TripsAndPaymentsApiTests.cs` (helper pays and is recorded, missing payments or view is refused with nothing charged, stranger gets notFound), the swagger coverage list, and the in-memory fake carries `RelatedType`. Run them once yourself before relying on this.
+- **Front end deliberately unchanged**: Payments stays "Not available yet" on `/me/helper` because no screen lets a helper act on a guest's booking. That screen (BM8), then folio (read-only), check-in, booking and message permissions, then a shared relationship type (IDN-04). Location is never a permission.
 
 ## 5. Decisions I need from you
 

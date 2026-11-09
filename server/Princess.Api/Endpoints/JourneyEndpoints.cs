@@ -91,6 +91,10 @@ public static class JourneyEndpoints
         api.MapPost("/bookings/{number}/payments/balance", async (string number, PayBalanceRequest body, ICurrentUser me, TripService svc, CancellationToken ct) =>
                 Results.Ok(await svc.PayBalanceAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithTags("Payments").WithSummary("Pays the rest of the balance with a saved card. 409 paid when nothing is owed.");
+
+        api.MapPost("/guests/{guestId:guid}/bookings/{number}/payments/balance", async (Guid guestId, string number, PayBalanceRequest body, ICurrentUser me, TripService svc, CancellationToken ct) =>
+                Results.Ok(await svc.PayBalanceForGuestAsync(await me.LoadAsync(ct), guestId, number, body, ct)))
+            .WithTags("Payments").WithSummary("A helper with the Payments permission pays the guest's balance with one of the guest's saved cards. 404 without a live grant; 403 without Payments; 409 paid; 400 card.");
     }
 
     private static void MapDocuments(IEndpointRouteBuilder api)

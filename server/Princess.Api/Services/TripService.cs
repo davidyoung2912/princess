@@ -5,7 +5,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
-public sealed class TripService(AccessService access, ITripStore trips, IAccountStore accounts, IUserClock clock)
+public sealed class TripService(AccessService access, SubjectAccess subjects, ITripStore trips, IAccountStore accounts, IUserClock clock)
 {
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -135,7 +135,8 @@ public sealed class TripService(AccessService access, ITripStore trips, IAccount
     }
 
     private static string Method(PaymentRow p) =>
-        p.Method == "card" && p.CardBrand is not null && p.Last4 is not null ? $"{BrandName(p.CardBrand)} ending {p.Last4}" : "Wallet";
+        (p.Method == "card" && p.CardBrand is not null && p.Last4 is not null ? $"{BrandName(p.CardBrand)} ending {p.Last4}" : "Wallet")
+        + (p.RelatedType == "helper" ? ", paid by your helper" : "");
 
     private static CardDto CardOf(CardRow c) => new(c.PublicId, c.Brand, c.Last4, c.Expiry);
 
@@ -165,18 +166,40 @@ public sealed class TripService(AccessService access, ITripStore trips, IAccount
     public async Task<PaymentsViewDto> PayBalanceAsync(UserRecord actor, string? number, PayBalanceRequest req, CancellationToken ct)
     {
         var m = await access.RequireAdultMemberAsync(actor, number, ct);
-        var b = await trips.GetAsync(m.BookingId, ct) ?? throw ApiException.NotFound();
+        return await PayAsync(actor, actor, m.BookingId, req, helper: null, ct);
+    }
+
+    /// <summary>
+    /// A helper the guest consented to, with the Payments permission (and view), pays the guest's balance with one of the guest's saved cards. The guest
+    /// stays the owner of the booking and the card; the payment records the helper as payer and the history shows it on both people's accounts.
+    /// Someone with no live grant gets notFound; a grant without Payments gets forbidden. A booker or party member uses the normal endpoint, not this one.
+    /// </summary>
+    public async Task<PaymentsViewDto> PayBalanceForGuestAsync(UserRecord helper, Guid guestId, string? number, PayBalanceRequest req, CancellationToken ct)
+    {
+        if (helper.IsSupervised) throw ApiException.Forbidden("supervised");
+        var s = await subjects.ResolveAsync(helper, guestId, HelperPermission.Payments, write: true, ct);
+        if (!s.ViaHelper || s.Target.Id == helper.Id) throw ApiException.Forbidden();
+        var m = await access.RequireAdultMemberAsync(s.Target, number, ct);
+        return await PayAsync(helper, s.Target, m.BookingId, req, helper, ct);
+    }
+
+    /// <summary>The charge shared by both paths. <paramref name="owner"/> holds the booking and the card; <paramref name="payer"/> is who pressed pay.</summary>
+    private async Task<PaymentsViewDto> PayAsync(UserRecord payer, UserRecord owner, long bookingId, PayBalanceRequest req, UserRecord? helper, CancellationToken ct)
+    {
+        var b = await trips.GetAsync(bookingId, ct) ?? throw ApiException.NotFound();
         if (b.Status != "confirmed") throw ApiException.Conflict("cancelled");
         var owed = b.TotalCents - b.PaidCents;
         if (owed <= 0) throw ApiException.Conflict("paid");
 
-        var now = await clock.NowAsync(actor, ct);
-        var card = req.CardId is { } id ? (await trips.ListCardsAsync(actor.Id, ct)).FirstOrDefault(c => c.PublicId == id) : null;
+        var now = await clock.NowAsync(payer, ct);
+        var card = req.CardId is { } id ? (await trips.ListCardsAsync(owner.Id, ct)).FirstOrDefault(c => c.PublicId == id) : null;
         if (card is null || AccountRules.CardExpired(card.Expiry, TripRules.Today(now))) throw ApiException.Invalid("card");
 
-        await trips.InsertPaymentAsync(new NewPayment(b.BookingId, actor.Id, "balance", owed, $"PAY-{b.Number}-B-{now:yyyyMMddHHmmss}", card.Id, card.Brand, card.Last4, now), ct);
-        await accounts.AddHistoryAsync(actor.Id, actor.Id, "payment", $"{owed / 100m:0.00} paid by {BrandName(card.Brand)} ending {card.Last4}", now, ct);
-        return await PaymentsViewAsync(actor, b.BookingId, ct);
+        await trips.InsertPaymentAsync(new NewPayment(b.BookingId, payer.Id, "balance", owed, $"PAY-{b.Number}-B-{now:yyyyMMddHHmmss}", card.Id, card.Brand, card.Last4, now, helper?.Id), ct);
+        var detail = $"{owed / 100m:0.00} paid by {BrandName(card.Brand)} ending {card.Last4}";
+        await accounts.AddHistoryAsync(owner.Id, payer.Id, "payment", helper is null ? detail : detail + ", paid by your helper", now, ct);
+        if (helper is not null) await accounts.AddHistoryAsync(helper.Id, helper.Id, "payment", $"Paid {owed / 100m:0.00} for a guest you help", now, ct);
+        return await PaymentsViewAsync(owner, b.BookingId, ct);
     }
 
     /// <summary>The booking the app opens on for this person (as TripView.kind = current), or null.</summary>

@@ -106,9 +106,15 @@ public sealed class PaymentRow
     public string? CardBrand { get; set; }
     public string? Last4 { get; set; }
     public string? Reference { get; set; }
+    /// <summary>'helper' when a consented helper paid on the guest's behalf, else null.</summary>
+    public string? RelatedType { get; set; }
 }
 
-public sealed record NewPayment(long BookingId, long UserId, string Label, long AmountCents, string Reference, long? CardId, string CardBrand, string Last4, DateTime At);
+/// <summary><paramref name="UserId"/> is who paid. <paramref name="HelperUserId"/> is set when that person paid as the guest's helper (stored as RelatedType 'helper').</summary>
+public sealed record NewPayment(long BookingId, long UserId, string Label, long AmountCents, string Reference, long? CardId, string CardBrand, string Last4, DateTime At, long? HelperUserId = null)
+{
+    public string? RelatedType => HelperUserId is null ? null : "helper";
+}
 
 public sealed class CardRow
 {

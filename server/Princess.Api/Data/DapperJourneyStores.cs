@@ -237,7 +237,7 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<PaymentRow>(Sql.Cmd("""
-            SELECT p.PublicId, p.Label, p.AmountCents, p.[At], p.Status, p.Reference, pp.Method, pp.CardBrand, pp.Last4
+            SELECT p.PublicId, p.Label, p.AmountCents, p.[At], p.Status, p.Reference, p.RelatedType, pp.Method, pp.CardBrand, pp.Last4
             FROM dbo.Payments p
             OUTER APPLY (SELECT TOP 1 Method, CardBrand, Last4 FROM dbo.PaymentParts WHERE PaymentId = p.Id ORDER BY Seq) pp
             WHERE p.BookingId = @bookingId AND p.Label IN ('deposit', 'full', 'balance')
@@ -250,9 +250,9 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var id = await c.ExecuteScalarAsync<long>(Sql.Cmd("""
-            INSERT INTO dbo.Payments (BookingId, UserId, Label, AmountCents, [At], Reference, Status)
+            INSERT INTO dbo.Payments (BookingId, UserId, Label, AmountCents, [At], Reference, Status, RelatedType, RelatedId)
             OUTPUT INSERTED.Id
-            VALUES (@BookingId, @UserId, @Label, @AmountCents, @At, @Reference, 'captured')
+            VALUES (@BookingId, @UserId, @Label, @AmountCents, @At, @Reference, 'captured', @RelatedType, @HelperUserId)
             """, p, tx, ct));
         await c.ExecuteAsync(Sql.Cmd(
             "INSERT INTO dbo.PaymentParts (PaymentId, Seq, Method, CardId, CardBrand, Last4, Cents) VALUES (@id, 1, 'card', @CardId, @CardBrand, @Last4, @AmountCents)",

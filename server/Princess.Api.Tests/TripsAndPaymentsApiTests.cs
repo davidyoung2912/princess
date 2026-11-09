@@ -219,6 +219,41 @@ public class TripsAndPaymentsApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task AHelperWithPaymentsPermissionPaysWithTheGuestsCardAndTheReceiptSaysSo()
+    {
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = "view,payments", Status = "active" }));
+        var card = F.Journey.Cards.Single(c => c.UserId == Daniel.Id).Card;
+        var r = await Call(HttpMethod.Post, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments/balance", await SignIn(Paul), new PayBalanceRequest(card.PublicId));
+        Assert.Equal(HttpStatusCode.OK, r.Status);
+        var receipts = r.Json.GetProperty("receipts").EnumerateArray().ToList();
+        Assert.Equal("Visa ending 4242, paid by your helper", receipts[1].GetProperty("method").GetString());
+        var paid = Assert.Single(F.Journey.Payments, p => p.BookingId == 10 && p.Row.Label == "balance");
+        Assert.Equal(Paul.Id, paid.UserId);
+        Assert.Contains(F.Journey.History, h => h.UserId == Daniel.Id && h.What == "payment" && h.Detail.Contains("paid by your helper"));
+    }
+
+    [Theory]
+    [InlineData("view,documents")] // no payments
+    [InlineData("payments")] // no view
+    public async Task AHelperWithoutPaymentsAndViewCannotPayAndNothingIsCharged(string permissions)
+    {
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = permissions, Status = "active" }));
+        var card = F.Journey.Cards.Single(c => c.UserId == Daniel.Id).Card;
+        var r = await Call(HttpMethod.Post, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments/balance", await SignIn(Paul), new PayBalanceRequest(card.PublicId));
+        Assert.True(r.Status is HttpStatusCode.Forbidden or HttpStatusCode.NotFound);
+        Assert.DoesNotContain(F.Journey.Payments, p => p.Row.Label == "balance");
+    }
+
+    [Fact]
+    public async Task AStrangerWithNoGrantGetsNotFoundOnTheHelperPayPath()
+    {
+        var card = F.Journey.Cards.Single(c => c.UserId == Daniel.Id).Card;
+        var r = await Call(HttpMethod.Post, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments/balance", await SignIn(Stranger), new PayBalanceRequest(card.PublicId));
+        Assert.Equal(HttpStatusCode.NotFound, r.Status);
+        Assert.DoesNotContain(F.Journey.Payments, p => p.Row.Label == "balance");
+    }
+
+    [Fact]
     public async Task PayingNeedsAUsableCardAndAnAdultMember()
     {
         var token = await SignIn(Daniel);

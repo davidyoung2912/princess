@@ -124,7 +124,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
 
     public Task InsertPaymentAsync(NewPayment p, CancellationToken ct)
     {
-        Payments.Add((p.BookingId, new PaymentRow { PublicId = Guid.NewGuid(), Label = p.Label, AmountCents = p.AmountCents, At = p.At, Status = "captured", Method = "card", CardBrand = p.CardBrand, Last4 = p.Last4 }, p.UserId));
+        Payments.Add((p.BookingId, new PaymentRow { PublicId = Guid.NewGuid(), Label = p.Label, AmountCents = p.AmountCents, At = p.At, Status = "captured", Method = "card", CardBrand = p.CardBrand, Last4 = p.Last4, RelatedType = p.RelatedType }, p.UserId));
         Bookings.First(b => b.BookingId == p.BookingId).PaidCents += p.AmountCents;
         return Task.CompletedTask;
     }
