@@ -17,7 +17,7 @@ public sealed record ChallengeUsage(int Requests, int Attempts);
 /// <summary>Where one person's failed password tries from one address stand.</summary>
 public sealed record ThrottleState(int Failures, int Strikes, DateTime? LockedUntil);
 
-public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob);
+public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob, string? ReviewReason = null);
 
 public sealed record OutboxMessage(long? UserId, string Channel, string Category, string To, string Subject, string Body);
 
@@ -26,6 +26,8 @@ public interface ISignInStore
 {
     /// <summary>Creates the user and profile in one transaction with a fresh unused 10-digit account number. Returns null when the email is already taken.</summary>
     Task<long?> CreateAccountAsync(NewAccount account, DateTime now, CancellationToken ct);
+    /// <summary>The public id of an existing adult account with the same first and last name (ignoring case and accents) and date of birth, or null (IDN-03).</summary>
+    Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct);
     /// <summary>Sets a new password, clears any lock and revokes every refresh token and every access token issued before now.</summary>
     Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct);
     /// <summary>Revokes every refresh token and every access token issued before now, leaving the password as it is.</summary>

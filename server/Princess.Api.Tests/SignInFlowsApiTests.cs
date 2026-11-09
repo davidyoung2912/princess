@@ -70,6 +70,24 @@ public class SignInFlowsApiTests : IDisposable
     }
 
     [Fact]
+    public async Task ASecondSignUpWithTheSameNameAndBirthdayAsksFirstThenFlagsForAPerson()
+    {
+        var dob = Dob(40);
+        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë", "Marsh", dob))).StatusCode);
+        // Same name (ignoring case) and birthday, another address: asked, not created, and nobody is named.
+        var ask = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË", "marsh", dob));
+        Assert.Equal(HttpStatusCode.Conflict, ask.StatusCode);
+        Assert.Contains("possibleDuplicate", await ask.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post("login", new LoginRequest("two@example.com", "a-long-password"))).StatusCode);
+        // The person says they are different: created, and flagged for a person to check.
+        var ok = await Post("register", new RegisterRequest("two@example.com", "a-long-password", "ZOË", "marsh", dob, true));
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        Assert.True((await ok.Content.ReadFromJsonAsync<SessionResponse>(Json))!.User.NeedsReview);
+        // A different birthday is not a match.
+        Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("three@example.com", "a-long-password", "Zoë", "Marsh", Dob(41)))).StatusCode);
+    }
+
+    [Fact]
     public async Task ForgotAnswersTheSameForUnknownAddresses()
     {
         Assert.Equal(HttpStatusCode.NoContent, (await Post("forgot", new CodeRequest("ghost@example.com"))).StatusCode);

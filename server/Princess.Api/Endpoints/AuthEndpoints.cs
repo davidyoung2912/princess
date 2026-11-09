@@ -25,7 +25,7 @@ public static class AuthEndpoints
                 Results.Ok(await svc.RegisterAsync(body, UserAgent(http), Ip(http), ct)))
             .AllowAnonymous()
             .RequireRateLimiting(LoginLimiter)
-            .WithSummary("Create an account (adults only) and sign in. 409 emailTaken when the address has one.");
+            .WithSummary("Create an account (adults only) and sign in. 409 emailTaken when the address has one; 409 possibleDuplicate when an adult account has the same name and date of birth, unless `confirmedDifferent` is true, in which case the account is made and flagged for a person at Guest Services to check.");
 
         auth.MapPost("/forgot", async (CodeRequest body, IAuthService svc, CancellationToken ct) =>
             {

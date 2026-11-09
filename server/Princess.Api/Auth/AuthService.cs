@@ -151,10 +151,17 @@ public sealed class AuthService(
         if (!DateOnly.TryParseExact(request.Dob, "yyyy-MM-dd", out var dob) || !AdultOn(dob, DateOnly.FromDateTime(clock.UtcNow)))
             throw ApiException.Invalid("tooYoung");
 
-        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob), clock.UtcNow, ct)
+        // IDN-03: the same name and date of birth as an existing account. Never merged by machine and never said who: the person says whether it is them, and a person at Guest Services settles it.
+        var twin = await signIn.FindPossibleDuplicateAsync(first, last, dob, ct);
+        if (twin is not null && request.ConfirmedDifferent != true)
+        {
+            await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Auth, Action = "auth.register", Outcome = AuditOutcome.Denied, Detail = AuditContext.Json(new { reason = "possibleDuplicate", attempt = AuditContext.Fingerprint(email) }) }, ct);
+            throw ApiException.Conflict("possibleDuplicate");
+        }
+        var id = await signIn.CreateAccountAsync(new NewAccount(email, hasher.Hash(request.Password!), first, last, dob, twin is null ? null : "duplicate"), clock.UtcNow, ct)
             ?? await EmailTakenAsync(email, ct);
         var user = await users.FindByIdAsync(id, ct) ?? throw ApiException.Invalid();
-        await Audit("auth.register", AuditOutcome.Success, user, null, ct);
+        await Audit("auth.register", AuditOutcome.Success, user, twin is null ? null : new { review = "duplicate", matches = twin }, ct);
         return await IssueAsync(user, Random.Shared.NextInt64(1, long.MaxValue), refreshTokenId: null, userAgent, ip, ct);
     }
 
@@ -278,7 +285,7 @@ public sealed class AuthService(
 
     public static MeResponse Me(UserRecord u) => new(
         u.PublicId, u.AccountNumber, u.Email, u.FirstName, u.LastName, u.Role, u.Tier, u.IsDemo, u.IsSupervised,
-        u.BookerPublicId, u.TextSize, u.Locale, u.Currency);
+        u.BookerPublicId, u.TextSize, u.Locale, u.Currency, u.ReviewReason is not null);
 
     public static long Ms(DateTime utc) => new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
 

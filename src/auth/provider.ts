@@ -10,6 +10,8 @@ export interface SessionUser {
   role: string
   tier: string
   isDemo: boolean
+  /** True while a person at Guest Services is checking whether this account duplicates another (IDN-03). */
+  needsReview?: boolean
 }
 
 /** A signed-in person. */
@@ -30,10 +32,10 @@ export type Credentials =
   /** The one-time code emailed after `requestCode('magic', email)`. */
   | { method: 'code'; email: string; code: string }
 
-export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'invalid'
+export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
 
 /** What a new account needs. `dob` is "YYYY-MM-DD"; the account holder must be an adult. */
-export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string }
+export interface Registration { email: string; password: string; firstName: string; lastName: string; dob: string; /** Sent after a `possibleDuplicate` answer, when the person says it is not them. */ confirmedDifferent?: boolean }
 
 export type CodePurpose = 'reset' | 'magic'
 

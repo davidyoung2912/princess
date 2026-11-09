@@ -14,6 +14,7 @@ const failText = (err: unknown, taken: StringKey = 'signin.error.invalid'): stri
   if (err.code === 'offline') return t('signin.error.offline')
   if (err.code === 'unavailable') return t('signin.error.unavailable')
   if (err.code === 'emailTaken') return t('signin.signup.error.emailTaken')
+  if (err.code === 'possibleDuplicate') return t('signin.signup.twin.body')
   if (err.code === 'tooYoung') return t('signin.signup.problem.tooYoung')
   if (err.code === 'badCode') return t('signin.code.bad')
   return t(taken)
@@ -27,21 +28,42 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
   const [problems, setProblems] = useState<SignupProblem[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [twin, setTwin] = useState(false)
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV({ ...v, [k]: e.target.value })
   const msg = (p: SignupProblem) => t(`signin.signup.problem.${p}` as StringKey)
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (e: FormEvent, confirmedDifferent = false) => {
     e.preventDefault()
     const found = signupProblems(v, today())
     setProblems(found)
     setError('')
     if (found.length) return
     setBusy(true)
-    try { await actions()?.register({ ...v, email: v.email.trim(), firstName: v.firstName.trim(), lastName: v.lastName.trim() }) } catch (err) { setError(failText(err)) } finally { setBusy(false) }
+    try {
+      await actions()?.register({ ...v, email: v.email.trim(), firstName: v.firstName.trim(), lastName: v.lastName.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
+    } catch (err) {
+      if (err instanceof AuthError && err.code === 'possibleDuplicate') setTwin(true)
+      else setError(failText(err))
+    } finally { setBusy(false) }
   }
 
   const err = (p: SignupProblem) => (problems.includes(p) ? msg(p) : undefined)
   const summary = [...problems.map(msg), error].filter(Boolean)
+  if (twin) {
+    return (
+      <>
+        <h1>{th('signin.signup.twin.title')}</h1>
+        <Card>
+          <p role="alert">{t('signin.signup.twin.body')}</p>
+          <p>{t('signin.signup.twin.ifYou')}</p>
+          <p>{t('signin.signup.twin.ifNot')}</p>
+          <Button block disabled={busy} onClick={(e) => void submit(e, true)}>{t('signin.signup.twin.continue')}</Button>
+        </Card>
+        <p><Button variant="secondary" onClick={onBack}>{t('signin.signup.twin.signIn')}</Button></p>
+        <p><Button variant="secondary" onClick={() => setTwin(false)}>{t('signin.signup.twin.edit')}</Button></p>
+      </>
+    )
+  }
   return (
     <>
       <h1>{th('signin.signup.title')}</h1>

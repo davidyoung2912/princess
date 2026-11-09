@@ -591,6 +591,9 @@ CREATE UNIQUE INDEX UX_Users_Slug ON dbo.Users (Slug) WHERE Slug IS NOT NULL;
 CREATE INDEX IX_Users_BookerUserId ON dbo.Users (BookerUserId) WHERE BookerUserId IS NOT NULL;
 END
 
+-- BM38 (IDN-03): set when a sign-up matched another account's name and date of birth and the person said they are different; a person from Guest Services settles it. Never merged by machine.
+IF COL_LENGTH(N'dbo.Users', N'ReviewReason') IS NULL ALTER TABLE dbo.Users ADD ReviewReason VARCHAR(16) NULL;
+
 IF OBJECT_ID(N'dbo.Profiles', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.Profiles (

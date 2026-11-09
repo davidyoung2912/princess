@@ -34,10 +34,10 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
             var exists = await c.ExecuteScalarAsync<int>(new CommandDefinition("SELECT COUNT(1) FROM dbo.Users WHERE AccountNumber = @number", new { number }, tx, cancellationToken: ct));
             if (exists > 0) continue;
             var id = await c.ExecuteScalarAsync<long>(new CommandDefinition("""
-                INSERT INTO dbo.Users (AccountNumber, Email, PasswordHash, CreatedAt, UpdatedAt)
+                INSERT INTO dbo.Users (AccountNumber, Email, PasswordHash, ReviewReason, CreatedAt, UpdatedAt)
                 OUTPUT INSERTED.Id
-                VALUES (@number, @Email, @PasswordHash, @now, @now)
-                """, new { number, a.Email, a.PasswordHash, now }, tx, cancellationToken: ct));
+                VALUES (@number, @Email, @PasswordHash, @ReviewReason, @now, @now)
+                """, new { number, a.Email, a.PasswordHash, a.ReviewReason, now }, tx, cancellationToken: ct));
             await c.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO dbo.Profiles (UserId, FirstName, LastName, Dob, CreatedAt, UpdatedAt) VALUES (@id, @FirstName, @LastName, @Dob, @now, @now)",
                 new { id, a.FirstName, a.LastName, Dob = a.Dob.ToDateTime(TimeOnly.MinValue), now }, tx, cancellationToken: ct));
@@ -60,6 +60,18 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
         await c.ExecuteAsync(new CommandDefinition("DELETE FROM dbo.LoginThrottle WHERE UserId = @userId", new { userId }, tx, cancellationToken: ct));
         await tx.CommitAsync(ct);
         users.Invalidate();
+    }
+
+    public async Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<Guid?>(new CommandDefinition("""
+            SELECT TOP 1 u.PublicId FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
+            WHERE u.IsSupervised = 0 AND u.IsDemo = 0 AND p.Dob = @dob
+              AND p.FirstName COLLATE Latin1_General_CI_AI = @firstName COLLATE Latin1_General_CI_AI
+              AND p.LastName COLLATE Latin1_General_CI_AI = @lastName COLLATE Latin1_General_CI_AI
+            ORDER BY u.Id
+            """, new { firstName, lastName, dob = dob.ToDateTime(TimeOnly.MinValue) }, cancellationToken: ct));
     }
 
     public async Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct)

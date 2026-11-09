@@ -40,12 +40,19 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
         return Task.CompletedTask;
     }
 
+    public List<(Guid Id, string First, string Last, DateOnly Dob)> People { get; } = [];
+
+    public Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct) =>
+        Task.FromResult(People.Where(p => p.Dob == dob && string.Equals(p.First, firstName, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Last, lastName, StringComparison.OrdinalIgnoreCase)).Select(p => (Guid?)p.Id).FirstOrDefault());
+
     public Task<long?> CreateAccountAsync(NewAccount a, DateTime now, CancellationToken ct)
     {
         if (users.Users.Any(u => string.Equals(u.Email, a.Email, StringComparison.OrdinalIgnoreCase))) return Task.FromResult<long?>(null);
         var user = users.Add(a.Email, null, first: a.FirstName);
         user.PasswordHash = a.PasswordHash;
         user.LastName = a.LastName;
+        user.ReviewReason = a.ReviewReason;
+        People.Add((user.PublicId, a.FirstName, a.LastName, a.Dob));
         return Task.FromResult<long?>(user.Id);
     }
 

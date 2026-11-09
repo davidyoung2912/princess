@@ -21,6 +21,8 @@ public sealed class UserRecord
     public DateTime? SessionsValidFrom { get; set; }
     /// <summary>The last successful sign-in before this one (shown in the activity report as "previous sign-in").</summary>
     public DateTime? LastLoginAt { get; set; }
+    /// <summary>Why a person must look at this account ('duplicate'), or null.</summary>
+    public string? ReviewReason { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public Guid? BookerPublicId { get; set; }

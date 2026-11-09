@@ -21,6 +21,7 @@ export function AccountScreen() {
         {name && <p className="me-name">{name}</p>}
         {user?.email && <p>{t('account.email')}: {user.email}</p>}
         {user?.accountNumber && <p>{t('account.number')}: {user.accountNumber}</p>}
+        {user?.needsReview && <p role="status">{t('account.review')}</p>}
         {user?.isDemo && <p className="muted">{t('account.demo')}</p>}
       </Card>
       <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>

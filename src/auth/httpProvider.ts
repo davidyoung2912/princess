@@ -19,7 +19,7 @@ export interface HttpAuthOptions {
 }
 
 interface WireUser {
-  id: string; accountNumber: string; email: string | null; firstName: string | null; lastName: string | null; role: string; tier: string; isDemo: boolean
+  id: string; accountNumber: string; email: string | null; firstName: string | null; lastName: string | null; role: string; tier: string; isDemo: boolean; needsReview?: boolean
 }
 interface WireSession { accessToken: string; expiresAt: number; refreshToken: string; refreshExpiresAt: number; user: WireUser }
 
@@ -44,7 +44,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
   const take = (w: WireSession, method: AuthMethod = 'password'): Session => {
     access = w.accessToken
     store(w.refreshToken)
-    const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo }
+    const user: SessionUser = { id: w.user.id, accountNumber: w.user.accountNumber, email: w.user.email, firstName: w.user.firstName, lastName: w.user.lastName, role: w.user.role, tier: w.user.tier, isDemo: w.user.isDemo, ...(w.user.needsReview ? { needsReview: true } : {}) }
     current = { signedInAt: now(), method, user }
     return current
   }
@@ -77,7 +77,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     if (!isApiError(e)) return e
     if (e.code === 'offline') return new AuthError('offline')
     if (e.retryable) return new AuthError('unavailable')
-    const named: AuthError['code'][] = ['emailTaken', 'tooYoung', 'badCode']
+    const named: AuthError['code'][] = ['emailTaken', 'tooYoung', 'badCode', 'possibleDuplicate']
     return new AuthError(named.find((n) => n === e.message) ?? fallback)
   }
 
