@@ -35,7 +35,8 @@ public sealed record CheckinSaveRequest(
     List<Guid>? Guests, Guid? Guest, string? Kind, string? Country, string? Number, string? Expires, PhotoMetrics? Metrics, string? Name, string? Phone, string? Relationship,
     Dictionary<string, JsonElement>? Answers, Guid? CardId, string? Window);
 
-public sealed record ReceiptItemDto(string Step, string? Detail, long? SavedAt);
+/// <summary>State is "draft" (nothing saved yet), "submitted" (saved with us) or "confirmed" (saved, and the guest's online check-in has been finished and accepted) (GTS-01).</summary>
+public sealed record ReceiptItemDto(string Step, string? Detail, long? SavedAt, string State = "draft");
 
 public sealed record ReceiptGuestDto(Guid Id, string Name, List<ReceiptItemDto> Items);
 

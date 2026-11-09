@@ -36,7 +36,7 @@ import { RecentCard } from './RecentCard'
 import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
-import { countdowns } from '../../domain/countdowns'
+import { useCountdowns } from './useCountdowns'
 import { useNow } from '../../hooks/useDemo'
 
 /** The trip the guest is on, from the trips list: their own booking first. */
@@ -50,9 +50,9 @@ export function HomeScreen() {
   const today = useOnboardToday()
   const { stage } = useJourneyPosition()
   const now = useNow()
+  const counts = useCountdowns(trip, now)
   if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
-    const counts = countdowns(trip, now)
     return (
       <div className="page">
         <StageHero stage={stage} />
@@ -134,7 +134,7 @@ function Journey({ trip }: { trip: TripView }) {
   const done = trip.checkin.state === 'done'
   const closed = trip.checkin.state === 'closed' && !done
   const near = trip.daysToDeparture <= 3 && trip.daysToDeparture >= 0
-  const counts = countdowns(trip, useNow())
+  const counts = useCountdowns(trip, useNow())
   return (
     <section aria-labelledby="next-h">
       <h2 id="next-h">{th('home.next')}</h2>

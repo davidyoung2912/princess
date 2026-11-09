@@ -270,7 +270,9 @@ public sealed class CheckinService(
         var c = await scopes.LoadAsync(actor, number, write: false, ct);
         var v = await BuildViewAsync(c, ct);
         var bk = await store.GetBookingAsync(c.Booking.BookingId, ct);
-        static ReceiptItemDto Item(string step, long? at, string? detail) => new(step, at is null ? null : detail, at);
+        var finished = bk?.FinishedAt is not null;
+        string StateOf(long? at) => at is null ? "draft" : finished ? "confirmed" : "submitted";
+        ReceiptItemDto Item(string step, long? at, string? detail) => new(step, at is null ? null : detail, at, StateOf(at));
         var guests = v.Guests.Select(g =>
         {
             var r = g.Record;
@@ -285,7 +287,7 @@ public sealed class CheckinService(
             ]);
         }).ToList();
         // The window may have been chosen on the travel screen, which keeps no time of its own, so the detail is shown with no time when there is none.
-        var arrival = new ReceiptItemDto("arrival", v.Arrival is null ? null : $"Arrive {v.Arrival}", bk?.ArrivalAt is { } a ? Ms(Utc(a)) : null);
+        var arrival = new ReceiptItemDto("arrival", v.Arrival is null ? null : $"Arrive {v.Arrival}", bk?.ArrivalAt is { } a ? Ms(Utc(a)) : null, StateOf(bk?.ArrivalAt is { } a2 ? Ms(Utc(a2)) : null));
         return new ReceiptViewDto(c.Booking.Number, guests, [Item("payment", v.Payment?.At, v.Payment?.Label), arrival], v.Progress.Complete, v.FinishedAt);
     }
 

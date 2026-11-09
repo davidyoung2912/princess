@@ -24,6 +24,11 @@ export type CaseKind = 'lostItem' | 'billing' | 'claim' | 'complaint' | 'recover
 export const OPEN_KINDS: readonly CaseKind[] = ['lostItem', 'billing', 'claim', 'complaint']
 
 /** Hours the team has to reply with an answer. */
+/** Who looks after each kind of case and how long they aim to take, in plain words for the form (DEB-05). The hours are the same as the server's. */
+export const CASE_OWNER: Record<'lostItem' | 'claim' | 'complaint', 'lostFound' | 'guestRelations'> = { lostItem: 'lostFound', claim: 'guestRelations', complaint: 'guestRelations' }
+/** Whole days, rounded up, in which a first answer is aimed for. */
+export const answerDays = (kind: CaseKind): number => Math.ceil(SLA_HOURS[kind] / 24)
+
 export const SLA_HOURS: Record<CaseKind, number> = { lostItem: 72, billing: 120, claim: 240, complaint: 72, recovery: 48 }
 const CODES: Record<CaseKind, string> = { lostItem: 'LF', billing: 'BD', claim: 'CL', complaint: 'CP', recovery: 'SR' }
 

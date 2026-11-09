@@ -94,6 +94,21 @@ public class BookApiTests : BookingWorld
     }
 
     [Fact]
+    public async Task RefusesWhenTheFareOrTermsVersionHasMovedSinceTheQuote()
+    {
+        var token = await SignIn(Daniel);
+        var draft = GoodDraft();
+        var total = await TotalOf(token, draft);
+        var deposit = Pricing.PayPlanFor(total, new DateOnly(2027, 3, 21), 143).Deposit;
+        var stale = await Send(HttpMethod.Post, $"{Api}/bookings", token,
+            new { draft, expectedTotal = total, option = "deposit", parts = new object[] { Card(DefaultCard, deposit) }, expectedFareVersion = PolicyRules.FareVersion - 1, expectedTermsVersion = PolicyRules.LegalVersion }, null);
+        Assert.Equal((HttpStatusCode.Conflict, "termsChanged"), (stale.Status, stale.ProblemTitle));
+        var current = await Send(HttpMethod.Post, $"{Api}/bookings", token,
+            new { draft, expectedTotal = total, option = "deposit", parts = new object[] { Card(DefaultCard, deposit) }, expectedFareVersion = PolicyRules.FareVersion, expectedTermsVersion = PolicyRules.LegalVersion }, null);
+        Assert.Equal(HttpStatusCode.OK, current.Status);
+    }
+
+    [Fact]
     public async Task RefusesWhenThePriceHasMovedAnswersAreMissingOrTheSailingIsClosed()
     {
         var token = await SignIn(Daniel);

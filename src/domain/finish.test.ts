@@ -223,3 +223,14 @@ describe('caseSteps', () => {
     expect(caseStepsX6h('withdrawn')).toEqual([])
   })
 })
+
+import { answerDays, CASE_OWNER } from './postcruise'
+describe('who owns a case and when to expect an answer (DEB-05)', () => {
+  it('names a team for each kind a guest can open and a whole number of days that matches the answer time', () => {
+    expect(CASE_OWNER.lostItem).toBe('lostFound')
+    expect(CASE_OWNER.claim).toBe('guestRelations')
+    expect(answerDays('lostItem')).toBe(3)
+    expect(answerDays('claim')).toBe(10)
+    expect(answerDays('billing')).toBe(5)
+  })
+})

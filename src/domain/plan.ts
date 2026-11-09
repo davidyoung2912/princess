@@ -51,3 +51,24 @@ export function buildPlan(s: Sailing, tours: readonly PlanTour[], tables: readon
 }
 
 export const countBooked = (plan: readonly PlanDay[]): number => plan.reduce((n, d) => n + d.entries.filter((e) => e.kind === 'tour' || e.kind === 'dinner').length, 0)
+
+/** An item the guest has planned for a day (an accepted change from the week planner or assistant) that is not a booking (PRE-01). It is shown apart from confirmed ones. */
+export interface PlannedEntry { id: string; time: string; title: string; kind: 'tour' | 'event' | 'dinner' | 'added' }
+
+/**
+ * What is planned for one day but not booked: the entries added by accepted changes, less any a later accepted change dropped. Proposed, declined and undone
+ * changes are not plans. Anything at the same time and kind as a confirmed entry is a booking already, so it is left out.
+ */
+export function plannedForDay(changes: readonly import('./planChange').Change[], day: PlanDay): PlannedEntry[] {
+  const accepted = changes.filter((c) => c.status === 'accepted' && c.day === day.day).sort((a, b) => (a.decidedAt ?? a.proposedAt) - (b.decidedAt ?? b.proposedAt))
+  const map = new Map<string, PlannedEntry>()
+  for (const c of accepted) {
+    for (const e of c.edits) {
+      if (e.op === 'add') map.set(e.entry.id, { id: e.entry.id, time: e.entry.start, title: e.entry.title, kind: e.entry.kind })
+      else if (e.op === 'drop') map.delete(e.id)
+      else { const cur = map.get(e.id); if (cur) map.set(e.id, { ...cur, time: e.to }) }
+    }
+  }
+  const booked = (p: PlannedEntry) => day.entries.some((x) => (x.kind === 'tour' || x.kind === 'dinner') && x.kind === p.kind && x.time === p.time)
+  return [...map.values()].filter((p) => !booked(p)).sort((a, b) => a.time.localeCompare(b.time))
+}

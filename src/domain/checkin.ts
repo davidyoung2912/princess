@@ -233,3 +233,9 @@ export function normalizeGuestCheckin(raw: unknown): GuestCheckin {
 
 // Served limits (`GET /reference/limits`) replace these defaults in place.
 limit('OPEN_DAYS_BEFORE', (v) => { OPEN_DAYS_BEFORE = v }, OPEN_DAYS_BEFORE)
+
+/** The state of one receipt line (GTS-01): not saved, sent (saved with us) or confirmed (saved and the check-in finished). Older copies carry no state, so it is worked out from the saved time and whether the check-in is finished. */
+export function receiptState(item: { savedAt: number | null; state?: 'draft' | 'submitted' | 'confirmed' }, finished = false): 'draft' | 'submitted' | 'confirmed' {
+  if (item.state) return item.state
+  return item.savedAt === null ? 'draft' : finished ? 'confirmed' : 'submitted'
+}

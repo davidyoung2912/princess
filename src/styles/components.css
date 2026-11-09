@@ -84,6 +84,10 @@
 .badge--changed { color: var(--warning); background: var(--warning-tint); }
 .badge--cancelled { color: var(--danger); background: var(--danger-tint); }
 .badge--ready { color: var(--link); background: var(--sky-tint); }
+.badge--draft, .badge--expired { color: var(--text-muted); }
+.badge--submitted, .badge--pending, .badge--refunded { color: var(--link); background: var(--sky-tint); }
+.badge--confirmed { color: var(--success); background: var(--success-tint); }
+.badge--declined, .badge--failed { color: var(--danger); background: var(--danger-tint); }
 
 /* Filter chip */
 .chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target-min); padding: 0 var(--space-4); background: var(--sky-tint); color: var(--text); border: 2px solid var(--primary); border-radius: var(--radius-pill); font-weight: 500; cursor: pointer; }

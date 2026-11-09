@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CaseView, CasesView } from '../../api/finishTypes'
-import { caseSteps, CASE_PLACE_MAX, CASE_TEXT_MAX, CLAIM_MAX, type CaseKind } from '../../domain/postcruise'
+import { answerDays, CASE_OWNER, caseSteps, CASE_PLACE_MAX, CASE_TEXT_MAX, CLAIM_MAX, type CaseKind } from '../../domain/postcruise'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -69,6 +69,7 @@ function Cases({ v, reload }: { v: CasesView; reload: () => void }) {
             {kind === 'lostItem' && <Field label={t('case.place')} maxLength={CASE_PLACE_MAX} value={place} onChange={(e) => setPlace(e.target.value)} />}
             {needsAmount && <Field label={t('case.amount')} hint={t('case.amountHint')} type="number" inputMode="decimal" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} error={amountBad && amount !== '' ? t('case.amountBad') : undefined} />}
             <ExtraError error={open.error} />
+            <p className="muted">{t('case.owner', { team: t(`case.team.${CASE_OWNER[kind as 'lostItem' | 'claim' | 'complaint']}` as StringKey), days: answerDays(kind) })}</p>
             <p className="muted">{t('case.noReversal')}</p>
             <Button type="submit" disabled={open.busy || bad}>{open.busy ? t('account.saving') : t('case.send')}</Button>
           </form>
@@ -87,6 +88,7 @@ function Case({ c, reload }: { c: CaseView; reload: () => void }) {
   return (
     <li className="case">
       <h3 className="case__title">{th(`case.kind.${c.kind}` as StringKey)} · {c.number}</h3>
+      {(c.kind === 'lostItem' || c.kind === 'claim' || c.kind === 'complaint') && <p className="muted">{t('case.ownedBy', { team: t(`case.team.${CASE_OWNER[c.kind]}` as StringKey) })}</p>}
       <p role="status"><strong>{t(`case.stage.${c.stage}` as StringKey)}</strong>{c.stage !== 'resolved' && c.stage !== 'withdrawn' && <> · {t('case.due', { time: formatDateTime(c.dueAt) })}</>}</p>
       <Stepper label={t('case.track')} steps={caseSteps(c.stage).map((x) => ({ id: x.id, state: x.state, label: t(`case.step.${x.id}` as StringKey) }))} />
       <p>{c.summary}</p>

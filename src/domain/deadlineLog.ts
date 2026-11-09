@@ -32,7 +32,7 @@ export function noteDeadlines(log: readonly DeadlineEvent[], current: readonly D
 export const earlierDates = (log: readonly DeadlineEvent[], id: CountdownId): DeadlineEvent[] =>
   log.filter((e) => e.id === id && e.supersededAt !== null).sort((a, b) => b.seenAt - a.seenAt)
 
-const IDS: readonly string[] = ['boarding', 'pay', 'checkin']
+const IDS: readonly string[] = ['boarding', 'pay', 'checkin', 'special']
 
 export function normalizeDeadlineLog(raw: unknown): DeadlineEvent[] {
   if (!Array.isArray(raw)) return []

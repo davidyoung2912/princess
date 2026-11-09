@@ -248,6 +248,9 @@ export interface QuoteView {
   /** What the guest pays after the Captain's Circle discount and any future cruise credit; the price to send back with `book`. */
   total: number
   perks: { numberOk: boolean; tier: Tier; discount: number; credit: number; creditLeft: number }
+  /** The versions of the fare table and the terms this quote was priced under (BOK-05); sent back with `book` so a change in between is caught. */
+  fareVersion: number
+  termsVersion: number
 }
 
 export interface PrefillView {
@@ -344,6 +347,9 @@ export interface BookInput {
   draft: Draft
   /** The total the guest saw; if the price has moved, the booking is refused so nothing is charged unseen. */
   expectedTotal: number
+  /** The fare and terms versions the guest reviewed; if either has moved the booking is refused (`termsChanged`) and they review again. */
+  expectedFareVersion?: number
+  expectedTermsVersion?: number
   option: PayOption
   parts: PaymentPart[]
   /** The bank's one-time code, when the bank asks. */
@@ -647,6 +653,8 @@ export interface ReceiptItem {
   /** What was saved, in words, never the whole number: "Passport ending 4821". */
   detail: string | null
   savedAt: number | null
+  /** Nothing saved yet (`draft`), saved with us (`submitted`), or saved and the online check-in finished (`confirmed`) (GTS-01). Absent from older copies: derive it from `savedAt`. */
+  state?: 'draft' | 'submitted' | 'confirmed'
 }
 
 export interface ReceiptView {

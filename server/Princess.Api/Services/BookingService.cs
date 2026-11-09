@@ -70,7 +70,7 @@ public sealed class BookingService(
         var days = TripRules.DaysBetween(today, D(sailing.Departure));
         var p = await PerksAsync(actor, draft, q.Total, today, ct);
         return new QuoteViewDto(q, Pricing.PromotionsFor(category, days), TripRules.ToMs(now.AddHours(Pricing.PriceLockHours)), Pricing.PayPlanFor(p.Sums.Total, D(sailing.Departure), days), days,
-            p.Sums.Total, new PerksDto(p.NumberOk, p.Tier, p.Sums.Discount, p.Sums.Credit, p.CreditLeft));
+            p.Sums.Total, new PerksDto(p.NumberOk, p.Tier, p.Sums.Discount, p.Sums.Credit, p.CreditLeft), PolicyRules.FareVersion, PolicyRules.LegalVersion);
     }
 
     /// <summary>The person first, then the others on their current booking, up to four, filled from their profiles (ACT-03).</summary>
@@ -221,7 +221,7 @@ public sealed class BookingService(
 
     /// <summary>
     /// Books and charges. Booking the same draft twice, or the same <paramref name="idempotencyKey"/> twice, returns the first booking and charges nothing.
-    /// Failures: invalid (incomplete answers, bad payment), conflict (priceChanged, cabinTaken, closed), challenge, declined.
+    /// Failures: invalid (incomplete answers, bad payment), conflict (priceChanged, termsChanged, cabinTaken, closed), challenge, declined.
     /// </summary>
     public async Task<BookingViewDto> BookAsync(UserRecord actor, BookRequest req, string? idempotencyKey, CancellationToken ct)
     {
@@ -247,6 +247,8 @@ public sealed class BookingService(
         var q = Pricing.BookingQuote(sailing.Id, draft.Category, draft.Guests, draft.Fare) ?? throw ApiException.Invalid("combination");
         var p = await PerksAsync(actor, draft, q.Total, today, ct);
         if (p.Sums.Total != req.ExpectedTotal) throw ApiException.Conflict("priceChanged");
+        // BOK-05: the guest reviewed one version of the fare table and terms; if either has moved since the quote, they review again before anything is charged.
+        if ((req.ExpectedFareVersion is { } fv && fv != PolicyRules.FareVersion) || (req.ExpectedTermsVersion is { } tv && tv != PolicyRules.LegalVersion)) throw ApiException.Conflict("termsChanged");
 
         if (draft.CabinMode == "pick")
         {

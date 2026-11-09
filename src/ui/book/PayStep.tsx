@@ -19,6 +19,7 @@ import { StanleyExplain } from '../ai/StanleyExplain'
 /** Why a booking was refused when the answer is not about the payment itself. */
 export function BookingConflict({ message, onRefresh }: { message: string; onRefresh: () => void }) {
   if (message === 'priceChanged') return <Banner kind="warning" title={t('book.conflict.price')} action={<Button variant="secondary" onClick={onRefresh}>{t('book.conflict.showPrice')}</Button>}><p>{t('book.conflict.priceBody')}</p></Banner>
+  if (message === 'termsChanged') return <Banner kind="warning" title={t('book.conflict.terms')} action={<Button variant="secondary" onClick={onRefresh}>{t('book.conflict.reviewTerms')}</Button>}><p>{t('book.conflict.termsBody')}</p></Banner>
   if (message === 'cabinTaken') return <Banner kind="warning" title={t('book.conflict.cabin')}><p>{t('book.conflict.cabinBody')} <Link to="/book/room">{t('book.conflict.chooseRoom')}</Link></p></Banner>
   if (message === 'closed') return <Banner kind="warning" title={t('book.conflict.closed')}><p><Link to="/book/sailing">{t('book.conflict.chooseDate')}</Link></p></Banner>
   return <Banner kind="warning" title={t('book.conflict.other')} />
@@ -32,7 +33,7 @@ export function PayStep({ draft, onBooked }: { draft: Draft; onBooked: (booking:
   const option: PayOption = plan && plan.options.includes(choice) ? choice : (plan?.options[0] ?? 'full')
   const due = plan ? dueNow(plan, option) : 0
   const book = useAction(async (parts: PaymentPart[], challenge: string | undefined) => {
-    const booking = await api.booking.book({ draft, expectedTotal: quote.data!.total, option, parts, challenge })
+    const booking = await api.booking.book({ draft, expectedTotal: quote.data!.total, expectedFareVersion: quote.data!.fareVersion, expectedTermsVersion: quote.data!.termsVersion, option, parts, challenge })
     onBooked(booking)
     return booking
   })

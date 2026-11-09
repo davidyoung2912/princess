@@ -8,11 +8,11 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
-import { StatusBadge } from '../StatusBadge'
+import { LifecycleBadge, StatusBadge } from '../StatusBadge'
 import { SyncChip } from '../SyncChip'
 import { LoadError } from '../discover/parts'
 import { formatDateTime } from '../account/format'
-import type { StepId } from '../../domain/checkin'
+import { receiptState, type StepId } from '../../domain/checkin'
 
 const FIX: Record<StepId, string> = {
   confirm: '/me/profile', document: '/home/check-in/document', photo: '/home/check-in/photo', emergency: '/home/check-in/emergency',
@@ -43,6 +43,7 @@ export function ReceiptScreen() {
             <h2 className="card__title">{th('receipt.booking')}</h2>
             <Items items={receipt.data.booking} />
           </Card>
+          <p className="muted">{t('receipt.states')}</p>
           <p className="muted">{t('receipt.safe')}</p>
         </>
       ) : receipt.status === 'error' ? <LoadError retry={receipt.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>}
@@ -61,7 +62,7 @@ function Items({ items, guest }: { items: ReceiptItem[]; guest?: string }) {
             <br /><span className="muted">{i.savedAt === null ? t('receipt.notSaved') : `${i.detail ? `${i.detail} · ` : ''}${t('receipt.savedAt', { when: formatDateTime(i.savedAt) })}`}</span>
           </span>
           <span>
-            {i.savedAt === null ? <StatusBadge kind="changed" label={t('receipt.notSavedBadge')} /> : <StatusBadge kind="booked" label={t('receipt.savedBadge')} />}{' '}
+            {i.savedAt === null ? <StatusBadge kind="changed" label={t('receipt.notSavedBadge')} /> : <LifecycleBadge state={receiptState(i)} />}{' '}
             <Link to={`${FIX[i.step]}${guest && i.step !== 'confirm' ? `?guest=${guest}` : ''}`}>{i.savedAt === null ? t('receipt.add') : t('receipt.correct')}<span className="visually-hidden"> {t(`checkin.step.${i.step}` as StringKey)}</span></Link>
           </span>
         </li>

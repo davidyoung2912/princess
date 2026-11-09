@@ -27,3 +27,14 @@ describe('countdowns', () => {
     expect(countdowns(trip({ daysToDeparture: -1 }), at('2027-03-22')).some((c) => c.id === 'boarding')).toBe(false)
   })
 })
+
+import { nearestSpecialBy } from './countdowns'
+describe('special-assistance cut-off countdown (MNG-15)', () => {
+  const dl = (kind: string, by: string, daysLeft: number) => ({ kind, deadline: { by, daysLeft } })
+  it('picks the nearest cut-off still ahead that has not been asked for', () => {
+    const d = [dl('wheelchair', '2027-01-10', -2), dl('cpap', '2027-02-01', 5), dl('dietary', '2027-02-03', 7), dl('tender', '2027-03-01', 30)]
+    expect(nearestSpecialBy(d, [])).toBe('2027-02-01')
+    expect(nearestSpecialBy(d, ['cpap'])).toBe('2027-02-03')
+    expect(nearestSpecialBy(d, ['cpap', 'dietary', 'tender'])).toBeNull()
+  })
+})

@@ -17,7 +17,7 @@ public sealed record FareOptionDto(string Id, long Total, long Difference, bool 
 
 public sealed record PerksDto(bool NumberOk, string Tier, long Discount, long Credit, long CreditLeft);
 
-public sealed record QuoteViewDto(QuoteResult Quote, List<Promotion> Promotions, long LockedUntil, PayPlan Pay, int DaysToDeparture, long Total, PerksDto Perks);
+public sealed record QuoteViewDto(QuoteResult Quote, List<Promotion> Promotions, long LockedUntil, PayPlan Pay, int DaysToDeparture, long Total, PerksDto Perks, int FareVersion, int TermsVersion);
 
 public sealed record PrefillDto(List<GuestDraft> People, LeadContact Contact);
 
@@ -28,7 +28,7 @@ public sealed record ResumeSentDto(string Via, string To, string Link, long At);
 /// <summary><c>cardId</c> is the public id of a saved card (<c>GET /me/payments</c>); a device wallet has none.</summary>
 public sealed record PaymentPartDto(string? Method, Guid? CardId, long Cents);
 
-public sealed record BookRequest(Draft? Draft, long ExpectedTotal, string? Option, List<PaymentPartDto>? Parts, string? Challenge);
+public sealed record BookRequest(Draft? Draft, long ExpectedTotal, string? Option, List<PaymentPartDto>? Parts, string? Challenge, int? ExpectedFareVersion = null, int? ExpectedTermsVersion = null);
 
 public sealed record PayBalancePartsRequest(List<PaymentPartDto>? Parts, string? Challenge);
 
