@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { budgetSearch, decisionSummary, decisionText, FEARS, fitNotes, GLOSSARY, inviteText } from './dream'
+import { budgetSearch, soloView, decisionSummary, decisionText, FEARS, fitNotes, GLOSSARY, inviteText } from './dream'
 import { REFERENCE_SAILING as S } from './sailings'
 
 describe('dream and decide', () => {
@@ -21,6 +21,11 @@ describe('dream and decide', () => {
     expect(none.nearMiss.length).toBeGreaterThan(0)
     expect(budgetSearch(S, 1000, 9).cheapest).toBeNull()
     expect(budgetSearch(S, -1, 2).fitting).toEqual([])
+  })
+  it('shows the solo supplement on its own line, cheapest first', () => {
+    const rows = soloView(S)
+    for (const r of rows) expect(r.supplement).toBe(r.fare)
+    expect(rows.map((r) => r.total)).toEqual([...rows.map((r) => r.total)].sort((a, b) => a - b))
   })
   it('summarises what is decided, what is left and what could change', () => {
     const empty = decisionSummary({ sailing: null, category: null, fare: null, guests: 2, fitsChecked: false, budget: null })

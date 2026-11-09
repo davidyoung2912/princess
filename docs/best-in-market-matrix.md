@@ -85,7 +85,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DRM-06 | P1 | Built | F | `src/ui/discover/TrialDayScreen.tsx`, `src/domain/discoverDelights.ts` | Ship-specific caveats unchecked |
 | DRM-07 | P2 | Partial | F | `src/domain/dream.ts`, `src/domain/dream.test.ts` | Occasion filters not found as a search filter |
 | DRM-08 | P1 | Built | F | `src/domain/family.ts`, `src/ui/discover/ShipScreen.tsx` | Child-private rule not read |
-| DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | Solo supplement shown in fares; solo cabin inventory unchecked |
+| DRM-09 | P1 | Partial | F | `src/domain/fares.ts`, `src/ui/aboard/Parties.tsx` | BM30: decide screen lists each room type for one guest with the solo supplement on its own line; no solo-only inventory or hosted social events exist, and the page says so; no roommate matching |
 | DRM-10 | P0 | Partial | F | `src/domain/accessReference.ts`, `src/domain/accessReference.test.ts`, `src/ui/AccessAreaNote.tsx` | Filter across ship, cabin, port and excursion in one search not found; "unknown shown as unknown" unchecked |
 | DRM-11 | P0 | Built | F | `src/domain/tripCost.ts`, `src/domain/tripCost.test.ts`, `src/ui/discover/TripCostScreen.tsx` | None found |
 | DRM-12 | P1 | Partial | F | `src/domain/route.ts`, `src/ui/discover/SailingScreen.tsx` | Interactive map not checked; text itinerary exists |

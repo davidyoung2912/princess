@@ -222,3 +222,10 @@ Theme: device sensors, started by the guest (MOB-13, MOB-22, MOB-10). All three 
 Maths and code reading are in `deviceSense.ts` and `scanCode.ts` with node tests. Limits: no component test for the UI, no device or browser check of geolocation, compass or camera; the port point is a rough centre, not the pier; ship-side positioning (GPS aboard) is not attempted. Matrix totals not regenerated.
 Next in group A: DRM-07, DRM-09, MNG-16, QOL-17, QOL-18 (occasion filters, solo inventory, reusable preferences, deck cutaway, photo curation).
 Guard changes: `DeviceTools.tsx` is allowed one guest-started `.play()` (scan preview, stopped on cleanup) and one polling `setTimeout` (ended by the effect cleanup flag, not `clearTimeout`).
+
+## 5o. BM30 result (built, not committed)
+
+Theme: solo cruiser view (DRM-09). Only this row was taken; DRM-07, MNG-16, QOL-17 and QOL-18 are not started.
+`soloView` in `src/domain/dream.ts` lists each room type for one guest with fare, solo supplement and all-in total, cheapest first; the decide screen shows it when the party is one and says plainly that staterooms are not set aside for solo guests, that no hosted social events are listed, and that nobody is matched as a roommate. Test in `dream.test.ts`. DRM-09 stays Partial: single-occupancy inventory and hosted social options need a source.
+Limits: no component test, no browser check. Matrix totals not regenerated.
+Next in group A: DRM-07 (needs occasion tags on sailings, a content source), MNG-16, QOL-17, QOL-18.

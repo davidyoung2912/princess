@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { budgetSearch, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, inviteTrip, NOT_FOR, SUITS, type FitKey } from '../../domain/dream'
+import { budgetSearch, soloView, decisionSummary, decisionText, FEARS, FIT_QUESTIONS, fitNotes, GLOSSARY, inviteText, inviteTrip, NOT_FOR, SUITS, type FitKey } from '../../domain/dream'
 import { FARES, fareOptions, type FareId } from '../../domain/fares'
 import { parseMoney } from '../../domain/money'
 import { formatMoney } from '../../domain/money'
@@ -144,6 +144,17 @@ export function DecideScreen() {
               </>
             )}
             <p className="muted">{t('decide.budgetNote')}</p>
+          </>
+        )}
+        {guests === 1 && (
+          <>
+            <h3>{th('decide.solo')}</h3>
+            <ul className="plain-list">
+              {soloView(sailing, rooms).map((o) => (
+                <li key={o.category}><strong>{rooms.find((r) => r.id === o.category)?.name}</strong> · {t('decide.soloRow', { fare: formatMoney(o.fare), supplement: formatMoney(o.supplement), total: formatMoney(o.total) })}</li>
+              ))}
+            </ul>
+            <p className="muted">{t('decide.soloNote')}</p>
           </>
         )}
       </Card>

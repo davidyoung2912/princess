@@ -1,6 +1,6 @@
 import { bookingQuote, fareOptions, FARES, type FareId } from './fares'
 import { formatDate } from './cruise'
-import { nightsOf } from './pricing'
+import { nightsOf, quote } from './pricing'
 import { formatMoney, type Cents } from './money'
 import type { Sailing } from './sailings'
 import { cruiseOf, shipOf } from './shipCatalogue'
@@ -97,6 +97,25 @@ export function budgetSearch(sailing: Sailing, budget: Cents, guests: number, ro
   all.sort((x, y) => x.total - y.total)
   const fitting = all.filter((o) => o.fits).sort((x, y) => y.total - x.total)
   return { fitting, nearMiss: all.filter((o) => !o.fits).slice(0, 3), cheapest: all[0]?.total ?? null }
+}
+
+// ---- DRM-09: solo cruiser view ----
+
+export interface SoloRow { category: CategoryId; fare: Cents; supplement: Cents; total: Cents }
+
+/**
+ * What one guest pays in each room type, with the solo supplement on its own line (DRM-09). The stateroom stock is shared: no room is held back for solo guests,
+ * so nothing here is single-occupancy inventory, and no roommate is matched.
+ */
+export function soloView(sailing: Sailing, rooms: readonly { id: CategoryId }[] = CATEGORIES): SoloRow[] {
+  const out: SoloRow[] = []
+  for (const r of rooms) {
+    const q = quote(sailing.id, r.id, 1)
+    if (!q) continue
+    const line = (key: string) => q.lines.find((l) => l.key === key)?.cents ?? 0
+    out.push({ category: r.id, fare: line('fare'), supplement: line('soloSupplement'), total: q.total })
+  }
+  return out.sort((a, b) => a.total - b.total)
 }
 
 // ---- S0-04: sailing quality ----
