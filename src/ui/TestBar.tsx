@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useState, useSyncExternalStore, type FormEvent } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
@@ -21,41 +21,49 @@ function dayText(stage: string, day: DayOfStage | null): string {
 }
 
 /**
- * For testers: the ship date with the guest's stage under it, and the time with whose clock it is under that. Either opens a
+ * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a
  * picker that moves the testing date, which changes the guest's stage and what every screen shows. Demo accounts only.
  */
 export function TestBar() {
   const context = useSyncExternalStore(subscribeContext, getContext, getContext)
-  if (!context?.isDemo) return null
-  return <TestBarBody />
+  if (!context) return null
+  return <TestBarBody isDemo={context.isDemo === true} />
 }
 
-function TestBarBody() {
+function TestBarBody({ isDemo }: { isDemo: boolean }) {
   const position = useJourneyPosition()
   const now = useNow()
+  const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const stage = t(`journey.stage.${position.stage}`)
   const at = JOURNEY_STAGES.indexOf(position.stage)
   const previous = JOURNEY_STAGES[at - 1]
   const next = JOURNEY_STAGES[at + 1]
+  const dateWords = (
+    <>
+      <span className="testbar__short">{dayLabel(now, position.zone)}</span>
+      <span className="testbar__long">{dayLabelLong(now, position.zone)}</span>
+    </>
+  )
   return (
     <div className="testbar no-print" role="group" aria-label={t('testbar.label')}>
-      <button type="button" className="testbar__item" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}, ${dayText(stage, position.day)}`}>
-        <span className="testbar__main">
-          <span className="testbar__short">{dayLabel(now, position.zone)}</span>
-          <span className="testbar__long">{dayLabelLong(now, position.zone)}</span>
-        </span>
-        <span className="testbar__stages" title={position.stageReason ?? undefined}>
+      <div className="testbar__item testbar__item--date">
+        {isDemo
+          ? <button type="button" className="testbar__main testbar__pick" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}`}>{dateWords}</button>
+          : <span className="testbar__main">{dateWords}</span>}
+        <span className="testbar__stages" title={isDemo ? position.stageReason ?? undefined : undefined}>
           {previous && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${previous}`)}</span>}
-          <span className="testbar__stage testbar__stage--current" aria-current="step">{dayText(stage, position.day)}</span>
+          <Link to="/welcome" state={{ from: pathname }} className="testbar__stage testbar__stage--current" aria-current="step" aria-label={`${t('testbar.stage')}: ${dayText(stage, position.day)}`}>{dayText(stage, position.day)}</Link>
           {next && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${next}`)}</span>}
         </span>
-      </button>
-      <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
-        <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
-        <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
-      </button>
-      {open && <PickerDialog now={now} zone={position.zone} onClose={() => setOpen(false)} />}
+      </div>
+      {isDemo && (
+        <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
+          <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
+          <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
+        </button>
+      )}
+      {isDemo && open && <PickerDialog now={now} zone={position.zone} onClose={() => setOpen(false)} />}
     </div>
   )
 }

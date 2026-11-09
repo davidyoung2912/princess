@@ -15,6 +15,8 @@ import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRem
 import { mergeRecent, EMPTY_RECENT } from '../routes/recent'
 import { applyRemoteRecent, getRecent } from '../recent/store'
 import { mergeWelcome, EMPTY_WELCOME } from '../routes/stageWelcome'
+import { mergeProgress, EMPTY_PROGRESS } from '../routes/stageProgress'
+import { applyRemoteProgress, getProgress } from '../stageProgress/store'
 import { applyRemoteWelcome, getWelcome, markWelcomeLoaded } from '../stageWelcome/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
@@ -200,10 +202,19 @@ const stageWelcome: Binding = {
   pulled: (id) => markWelcomeLoaded(id),
 }
 
+/** The steps of each stage's welcome the guest has opened, so progress made on one device shows on another. */
+const stageProgress: Binding = {
+  key: 'stageProgress',
+  read: (id) => getProgress(id),
+  apply: (id, raw) => applyRemoteProgress(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_PROGRESS),
+  merge: mergeProgress,
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, recent, stageWelcome, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, recent, stageWelcome, stageProgress, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

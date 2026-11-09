@@ -1,8 +1,7 @@
 import { Link } from 'react-router'
 import { Check, CircleDot } from 'lucide-react'
 import type { OnboardToday, TripView } from '../../api/types'
-import { api } from '../../runtime'
-import { useMine } from '../../hooks/useMine'
+import { useStageFacts } from '../../hooks/useStageFacts'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { t, th, type StringKey } from '../../i18n'
 import { openedFrom } from '../../routes/screens'
@@ -11,34 +10,21 @@ import { StanleyNext } from '../ai/StanleyNext'
 import { StanleyModeCard } from '../ai/StanleyModeCard'
 import { LinkButton } from '../Button'
 import { SCREEN_ICONS } from '../screenIcons'
-import { useNow } from '../../hooks/useDemo'
-import { daysBetween } from '../../domain/trip'
-import { dateIn } from '../../domain/timezones'
 import { useEffect } from 'react'
 import { dotReason, publishDot } from '../../ai/stanleyDot'
 import { stanleyLevelFor } from '../../settings/settings'
 import { useSettings } from '../../hooks/useSettings'
-import { nextSteps, stageTiles, urgentStep, type HomeFacts } from '../../routes/stageHome'
+import { nextSteps, stageTiles, urgentStep } from '../../routes/stageHome'
 
 /** Home for Dream, Discover and Book: three Next steps, then six tiles with one line of state each (plan section 8). */
 export function StageHome({ trip = null, today = null }: { trip?: TripView | null; today?: OnboardToday | null }) {
-  const { stage, focusSailingId, day } = useJourneyPosition()
-  const favourites = useMine(() => api.discover.favourites())
-  const draft = useMine(() => api.booking.draft())
-  const d = draft.data
-  const now = useNow()
-  const facts: HomeFacts = {
-    savedSailings: (favourites.data ?? []).filter((k) => k.startsWith('sailing:')).length,
-    draft: d ? { id: d.id, categoryChosen: d.category !== '', started: d.category !== '' || d.people.some((p) => p.firstName !== '' || p.lastName !== '') } : null,
-    trip: trip && { number: trip.number, paid: trip.payment === 'paid', documentsOk: !!trip.documents && trip.documents.missing === 0 && trip.documents.passportProblems === 0, checkinDone: trip.checkin.state === 'done', agent: trip.kind !== 'booked',
-      daysToFinal: daysBetween(dateIn(now, 'America/New_York'), trip.plan.finalDue), daysToDeparture: trip.daysToDeparture, checkinOpen: trip.checkin.state === 'open' },
-    aboard: today?.aboard ? { musterDone: today.muster.done, lastFullDay: day?.kind === 'cruiseDay' && day.day >= day.of - 1 } : null,
-  }
+  const { stage, focusSailingId } = useJourneyPosition()
+  const { facts, draftId } = useStageFacts(trip, today)
   const [settings] = useSettings()
   const reason = dotReason(stage, facts, stanleyLevelFor(settings))
   useEffect(() => { publishDot(reason); return () => publishDot(null) }, [reason])
   const steps = nextSteps(stage, facts)
-  const tiles = stageTiles(stage, { sailingId: focusSailingId, draftId: d?.id ?? null })
+  const tiles = stageTiles(stage, { sailingId: focusSailingId, draftId })
   const stateOf = (id: string): string | null => {
     if (id === 'H11') return facts.savedSailings > 0 ? t('stage.tile.saved', { count: facts.savedSailings }) : t('stage.tile.savedNone')
     if ((id === 'H17' || id === 'H18') && !facts.draft?.started) return t('stage.tile.noDraft')

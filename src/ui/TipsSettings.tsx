@@ -4,6 +4,7 @@ import { t, th } from '../i18n'
 import { resetTips } from '../settings/tips'
 import { resetSeen } from '../settings/stanleySeen'
 import { resetWelcomes } from '../stageWelcome/store'
+import { resetProgress } from '../stageProgress/store'
 import { resetTicks } from '../settings/welcomeNeeds'
 import { Button } from './Button'
 
@@ -23,7 +24,7 @@ export function TipsSettings() {
       <section aria-labelledby="welcome-settings-h" className="settings-tips">
         <h2 id="welcome-settings-h">{th('settings.welcome.title')}</h2>
         <p>{t('settings.welcome.intro')}</p>
-        <Button variant="secondary" onClick={() => { resetWelcomes(personId); resetTicks(); setWelcomeDone(true) }}>{t('settings.welcome.reset')}</Button>
+        <Button variant="secondary" onClick={() => { resetWelcomes(personId); resetProgress(personId); resetTicks(); setWelcomeDone(true) }}>{t('settings.welcome.reset')}</Button>
         {welcomeDone && <p role="status">{t('settings.welcome.done')}</p>}
       </section>
     </>

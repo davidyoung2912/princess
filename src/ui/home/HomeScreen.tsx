@@ -26,6 +26,7 @@ import { countdown } from '../account/format'
 import { NextStep } from '../account/tripParts'
 import { Saved } from '../onboard/common'
 import { OnboardHome } from '../onboard/OnboardHome'
+import { pickTrip } from '../../hooks/useStageFacts'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 import { AfterCruiseCard } from '../finish/HomeCards'
 import { HomeOfferCard } from '../offers/Offers'
@@ -38,9 +39,6 @@ import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { useCountdowns } from './useCountdowns'
 import { useNow } from '../../hooks/useDemo'
-
-/** The trip the guest is on, from the trips list: their own booking first. */
-const pickTrip = (upcoming: readonly TripView[]): TripView | null => upcoming.find((x) => x.kind === 'current') ?? upcoming[0] ?? null
 
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {

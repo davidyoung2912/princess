@@ -37,6 +37,8 @@ import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
 import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } from '../stageWelcome/store'
+import { recordVisit as recordStepVisit } from '../stageProgress/store'
+import { progressKey, stepsAt } from '../routes/stageProgress'
 import { hasWelcomeCopy, shouldShowWelcome, welcomeKey } from '../routes/stageWelcome'
 
 
@@ -99,6 +101,11 @@ export function Shell() {
     if (isDemo && lastStage.current !== null && lastStage.current !== key) unmarkSeen(personId, key)
     lastStage.current = key
   }, [known, welcomeReady, isDemo, stage, focusSailingId, personId])
+  // Going to the screen a stage's step points at counts that step as done (some steps have no other sign), once the stage is known.
+  useEffect(() => {
+    if (!known || stale || !route || route.public) return
+    for (const n of stepsAt(stage, pathname)) recordStepVisit(personId, progressKey(stage, focusSailingId, n), Date.now())
+  }, [known, stale, route, stage, focusSailingId, pathname, personId])
   useEffect(() => {
     if (!welcomeDue) return
     markSeen(personId, welcomeKey(stage, focusSailingId), Date.now())

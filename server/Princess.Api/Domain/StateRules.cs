@@ -29,6 +29,7 @@ public static class StateRules
         ["postcards"] = 2_000,
         ["recent"] = 2_000,
         ["stageWelcome"] = 8_000,
+        ["stageProgress"] = 12_000,
     };
 
     /// <summary>The most stage welcomes <c>stageWelcome</c> remembers, and the longest sailing id in an entry's key.</summary>
@@ -43,14 +44,39 @@ public static class StateRules
         if (data["seen"] is not JsonObject seen || seen.Count > StageWelcomeMaxEntries) return "badData";
         foreach (var (key, node) in seen)
         {
-            var colon = key.IndexOf(':');
-            var stage = colon < 0 ? key : key[..colon];
-            if (!StageRules.All.Contains(stage)) return "badData";
-            if (colon >= 0)
-            {
-                var sailing = key[(colon + 1)..];
-                if (sailing.Length is 0 or > StageWelcomeMaxSailingId || !sailing.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_')) return "badData";
-            }
+            if (!StageKeyOk(key)) return "badData";
+            if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
+        }
+        return null;
+    }
+
+    /// <summary>A stage, or a stage and sailing id joined by a colon: the stage is one of the eleven; the sailing id is plain letters, digits, dot, dash or underscore.</summary>
+    private static bool StageKeyOk(string key)
+    {
+        var colon = key.IndexOf(':');
+        var stage = colon < 0 ? key : key[..colon];
+        if (!StageRules.All.Contains(stage)) return false;
+        if (colon < 0) return true;
+        var sailing = key[(colon + 1)..];
+        return sailing.Length is > 0 and <= StageWelcomeMaxSailingId && sailing.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
+    }
+
+    /// <summary>The most steps <c>stageProgress</c> remembers, and the most steps one stage has.</summary>
+    public const int StageProgressMaxEntries = 300, StageProgressMaxStep = 9;
+
+    /// <summary>
+    /// The problem for a <c>stageProgress</c> document: <c>{ visited: { "&lt;stage key&gt;#&lt;step&gt;": visitedAtMs } }</c>, the steps of a stage's welcome page the guest has opened.
+    /// The stage key is as in <c>stageWelcome</c>; the step is a single digit from 1.
+    /// </summary>
+    private static string? StageProgressProblem(JsonObject data)
+    {
+        if (data["visited"] is not JsonObject visited || visited.Count > StageProgressMaxEntries) return "badData";
+        foreach (var (key, node) in visited)
+        {
+            var hash = key.LastIndexOf('#');
+            if (hash < 0 || !StageKeyOk(key[..hash])) return "badData";
+            var step = key[(hash + 1)..];
+            if (step.Length != 1 || step[0] < '1' || step[0] > '0' + StageProgressMaxStep) return "badData";
             if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
         }
         return null;
@@ -108,6 +134,7 @@ public static class StateRules
         {
             "recent" => RecentProblem(obj),
             "stageWelcome" => StageWelcomeProblem(obj),
+            "stageProgress" => StageProgressProblem(obj),
             _ => null,
         };
     }

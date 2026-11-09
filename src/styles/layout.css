@@ -147,7 +147,7 @@
 .journey-strip__now { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 700; }
 .journey__next { margin: 0 0 var(--space-4); font-weight: 600; }
 
-/* Tester bar (docs/testing-date-plan.md): the testing date and time, shown for demo accounts only. */
+/* Date and stage bar (docs/testing-date-plan.md): shown to everyone; only demo accounts can change the date and time. */
 .testbar {
   display: flex; align-items: stretch; justify-content: space-between; gap: var(--space-3);
   padding: var(--space-2) calc(env(safe-area-inset-right) + var(--gutter)) var(--space-2) calc(env(safe-area-inset-left) + var(--gutter));
@@ -161,6 +161,10 @@
 .testbar__item:hover { border-color: var(--primary); }
 .testbar__item--time { align-items: flex-end; text-align: end; }
 .testbar__main { font-weight: 700; }
+.testbar__item--date { cursor: default; border-color: transparent; }
+.testbar__pick { background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: start; border: 2px solid transparent; border-radius: var(--radius-md, 0.5rem); min-height: var(--target-min); padding: 0 var(--space-1); cursor: pointer; }
+.testbar__pick:hover { border-color: var(--primary); }
+a.testbar__stage { text-decoration: none; display: inline-flex; align-items: center; min-height: 1.5rem; }
 .testbar__sub { font-size: var(--fs-small, 0.875rem); }
 .testbar__long, .testbar__stage--side { display: none; }
 .testbar__stages { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); font-size: var(--fs-small, 0.875rem); }
@@ -221,6 +225,8 @@
 .welcome__tag { font-size: var(--fs-small, 0.875rem); font-weight: 400; opacity: 0.85; }
 .welcome__steps { margin: 0 0 var(--space-4); padding-left: var(--space-5); }
 .welcome__steps li { margin: 0 0 var(--space-2); }
+.welcome__step--done { list-style: none; margin-left: calc(-1 * var(--space-4)); }
+.welcome__step--done svg { vertical-align: text-bottom; color: var(--primary); }
 
 .welcome__needs { margin: 0 0 var(--space-3); padding: 0; list-style: none; }
 .welcome__need { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
