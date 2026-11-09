@@ -4,13 +4,11 @@ import { CircleDot } from 'lucide-react'
 import { SCREEN_BY_ID } from '../../routes/screens'
 import { SCREEN_ICONS } from '../screenIcons'
 import stanley from '../../assets/stanley-small.png'
-import { rateAnswer } from '../../ai/stanleyFeedback'
 import { answerOf, chipsFor, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import type { JourneyStage } from '../../routes/hubs'
 import { stanleyLevelFor } from '../../settings/settings'
 import { t, th } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
-import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 
 /**
@@ -36,13 +34,8 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
   )
 }
 
-/** The bottom sheet that answers a chip: the question, the authored words, a link when there is one, and "Was that helpful?". */
+/** The bottom sheet that answers a chip: the question, the authored words, a link when there is one. */
 export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; onClose: () => void; onAsk: () => void }) {
-  const [rated, setRated] = useState(false)
-  const rate = (helpful: boolean) => {
-    rateAnswer(entry.id, helpful)
-    setRated(true)
-  }
   return (
     <Dialog title={t('stanley.sheet.title')} onClose={onClose}>
       <div className="stanley-answer">
@@ -52,15 +45,6 @@ export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; 
           <p>{answerOf(entry)}</p>
           {entry.link && <p><Link to={entry.link} onClick={onClose}>{t('stanley.chips.show')}</Link></p>}
           <RelatedPages ids={entry.related} onClose={onClose} />
-          {rated
-            ? <p role="status" className="muted">{t('stanley.sheet.thanks')}</p>
-            : (
-              <div className="stanley-answer__rate" role="group" aria-label={t('stanley.sheet.helpful')}>
-                <span>{t('stanley.sheet.helpful')}</span>
-                <Button variant="secondary" onClick={() => rate(true)}>{t('stanley.sheet.yes')}</Button>
-                <Button variant="secondary" onClick={() => rate(false)}>{t('stanley.sheet.no')}</Button>
-              </div>
-            )}
           <p><button type="button" className="link-button" onClick={onAsk}>{t('stanley.chips.more')}</button></p>
         </div>
       </div>

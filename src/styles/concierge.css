@@ -64,7 +64,6 @@
 .stanley-answer p { margin: 0 0 var(--space-2); }
 .stanley-answer__q { font-weight: 600; }
 .stanley-answer__face { width: 2.75rem; height: 2.75rem; border-radius: 50%; flex: none; }
-.stanley-answer__rate { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-2); }
 .stanley-answer__related { margin-bottom: var(--space-2); }
 .stanley-answer__related-title { font-weight: 600; margin-bottom: var(--space-1); }
 .stanley-answer__links { margin-bottom: 0; }
