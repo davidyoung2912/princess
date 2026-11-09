@@ -275,7 +275,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-04 | P0 | Built | R | `src/data/outbox.ts`, `src/hooks/useDraft.ts`, `src/data/capsule.ts` | Export/restore of waiting items and corrupt-list handling (BM19); drafts are server-side, `localStorage` kept by decision |
 | MOB-05 | P0 | Built | F | `src/data/outbox.ts`, `src/hooks/useAction.ts`, `src/api/bounded.ts` | `src/domain/offlineContract.ts` and `OfflineNote` (BM19) |
 | MOB-06 | P1 | Built | F | `src/push/push.ts`, `src/push/push.test.ts`, `src/hooks/usePushState.ts`, `src/ui/account/PushPanels.tsx` | Delivery is simulated on the server |
-| MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | Deep link to exact object unchecked (COM-06) |
+| MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39: alert links carry the trip and the ship change; the screen says when either differs from now. Reservation, port-row and case links not built |
 | MOB-08 | P1 | Built | F | `src/ui/account/MemoryScreen.tsx`, `src/ui/delights/HighlightReel.tsx`, `src/ui/plan/AwayScreen.tsx` | Fallback when share unsupported unchecked |
 | MOB-09 | P1 | Partial | F | `src/ui/checkin/PhotoCoach.tsx`, `src/ui/media/Pictures.tsx` | Capture for pictures exists; passport scan and tag scan are out of reach |
 | MOB-10 | P1 | Partial | F | none | BM29: `CodeScanner` uses `BarcodeDetector` where present, typed-code fallback; code finds a place or own link only, never proof; no device check |
@@ -357,7 +357,7 @@ Priority is not given per concept in the document.
 | COM-03 | P0 | Simulated | F | `src/domain/delivery.ts`, `src/push/push.ts` | Email and SMS delivery simulated (NOT-01 in `docs/gap-analysis-plan.md`) |
 | COM-04 | P0 | Not built | R | `src/domain/delivery.ts` | Critical alerts are sent but have no acknowledged-delivery state or fallback channel rule |
 | COM-05 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/calm.ts` | None found |
-| COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | Exact-object deep link unchecked |
+| COM-06 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | BM39: trip and change in the link, with a note when they are not current; no reservation or case alerts exist |
 | OFF-01 | P0 | Built | F | `src/data/outbox.ts`, `src/offlineDay.test.ts` | Offline contract table with a route-coverage test (BM19) |
 | OFF-02 | P0 | Built | F | `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts`, `src/domain/offlineCapsule.ts` | None found |
 | OFF-03 | P0 | Built | F | `src/domain/offlineCache.ts`, `src/domain/offlineCapsule.ts`, `src/offlineDay.test.ts` | "Verify with crew" shown on the capsule card |

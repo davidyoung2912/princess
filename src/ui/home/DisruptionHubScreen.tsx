@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
+import { deepLinkNotes, parseDeepLink } from '../../push/deepLink'
 import { disruptionById, validOption } from '../../domain/disruption'
 import { formatDate } from '../../domain/cruise'
 import { CALLBACK_LIFETIME_MS, awaitingDebrief, callbackStatus, hubFor, normalizeCallbacks, hubItems, knockOnCounts, needsHumanReview, addDebrief, orderedGuides, OUTAGE_WORKS, RATINGS, type CallbackRequest, type Rating } from '../../domain/disruptionHub'
@@ -27,8 +28,11 @@ const REASONS: readonly CallbackRequest['reason'][] = ['urgent', 'changes', 'hea
 export function DisruptionHubScreen() {
   const demo = useDemo()
   const updates = useMine(() => api.updates.list())
+  const { search } = useLocation()
+  const ended = deepLinkNotes(parseDeepLink(search), { currentTrip: null, activeUpdates: updates.data ? updates.data.filter((u) => u.active).map((u) => u.id) : null }).includes('updateEnded')
   return (
     <div className="page">
+      {ended && <Banner kind="info" title={t('deeplink.ended.title')}><p>{t('deeplink.ended.body')}</p></Banner>}
       <p>{t('hub.intro')}</p>
       {demo.network.offline && (
         <Banner kind="offline" title={t('hub.outage.title')}>

@@ -82,7 +82,7 @@ public sealed class PushService(
         var zone = departure is { } d ? Itinerary.ShipZoneAt(d, now) : Itinerary.ShipHomeZone;
         var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(now, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
 
-        var notices = PushRules.Build(await InputAsync(actor, booking, departure, now, [.. Watch(subs)], ct));
+        var notices = PushRules.Build(await InputAsync(actor, booking, departure, now, [.. Watch(subs)], ct)).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
         if (notices.Count == 0) return;
 
         var prefs = await PrefsAsync(actor.Id, ct);

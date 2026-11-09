@@ -50,6 +50,20 @@ public static class PushRules
 
     public static bool ValidKey(string? key) => key is { Length: > 0 and <= 200 } && key.All(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '=');
 
+    /// <summary>
+    /// The link a tap opens (MOB-07, COM-06): the screen, the trip the alert was built for, and for a ship change which one. The screen compares these with what is current
+    /// and says so when they differ; the trip is a booking number, never anything secret. Only plain characters go in, so a stray id cannot make a malformed address.
+    /// </summary>
+    public static PushNotice WithLink(PushNotice n, string? trip)
+    {
+        var query = new List<string>();
+        if (Plain(trip)) query.Add($"trip={trip}");
+        if (n.Kind == "disruption" && n.Params.TryGetValue("id", out var id) && id is string s && Plain(s)) query.Add($"update={s}");
+        return query.Count == 0 ? n : n with { Path = $"{n.Path}?{string.Join('&', query)}" };
+    }
+
+    private static bool Plain(string? v) => v is { Length: > 0 and <= 40 } && v.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
+
     /// <summary>The notices that apply now, most worth saying first. A notice that has not come true yet (for example all-aboard in three hours) is not built.</summary>
     public static List<PushNotice> Build(PushInput i)
     {

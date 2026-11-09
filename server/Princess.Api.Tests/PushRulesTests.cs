@@ -212,4 +212,16 @@ public class PushRulesTests
         Assert.Empty(PushRules.Build(Input() with { ReminderAt = later }));
         Assert.Empty(PushRules.Build(Input()));
     }
+
+    [Fact]
+    public void ALinkNamesTheTripAndForAShipChangeWhichOne()
+    {
+        Assert.Equal("/me/payments?trip=PC243902", PushRules.WithLink(Plain(), "PC243902").Path);
+        var change = new PushNotice("disruption:chatSlow", "disruption", "critical", false, 70, "/home/updates", "t", "b", new() { ["id"] = "chatSlow" });
+        Assert.Equal("/home/updates?trip=PC1&update=chatSlow", PushRules.WithLink(change, "PC1").Path);
+        // No trip known, or anything that is not plain letters and digits: the screen alone.
+        Assert.Equal("/me/payments", PushRules.WithLink(Plain(), null).Path);
+        Assert.Equal("/me/payments", PushRules.WithLink(Plain(), "a&b=c").Path);
+        Assert.Equal("/home/updates?trip=PC1", PushRules.WithLink(change with { Params = new() { ["id"] = "x y" } }, "PC1").Path);
+    }
 }
