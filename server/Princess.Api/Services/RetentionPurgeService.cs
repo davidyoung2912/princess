@@ -12,6 +12,36 @@ public sealed class RetentionOptions
     public int IntervalMinutes { get; set; } = 360;
     /// <summary>Days an audit row or sign-in session keeps the address and device it came from, and an audit row its stack trace. After that they are blanked (the row stays). 0 keeps them for ever.</summary>
     public int NetworkDataDays { get; set; } = 60;
+    /// <summary>Days Stanley's finished actions and receipts, and its tier log rows, are kept before they are deleted. Prepared actions that never ran go after a day. 0 keeps them for ever.</summary>
+    public int StanleyDays { get; set; } = 180;
+}
+
+/// <summary>Deletes old Stanley rows in batches: receipts and tier log rows past their retention, and previews nobody confirmed.</summary>
+public static class StanleyRetention
+{
+    private const int Batch = 5000;
+
+    public static async Task<(int Actions, int TierLog)> DeleteOlderThanAsync(IDbConnectionFactory db, DateTime now, int days, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var cutoff = now.AddDays(-days);
+        var unconfirmed = now.AddDays(-1);
+        int actions = 0, tiers = 0, n;
+        do
+        {
+            n = await c.ExecuteAsync(Sql.Cmd("""
+                DELETE TOP (@batch) FROM dbo.StanleyActions
+                WHERE CreatedAt < @cutoff OR (Status IN (N'prepared', N'expired', N'changed') AND CreatedAt < @unconfirmed)
+                """, new { cutoff, unconfirmed, batch = Batch }, null, ct));
+            actions += n;
+        } while (n >= Batch && !ct.IsCancellationRequested);
+        do
+        {
+            n = await c.ExecuteAsync(Sql.Cmd("DELETE TOP (@batch) FROM dbo.StanleyTierLog WHERE [At] < @cutoff", new { cutoff, batch = Batch }, null, ct));
+            tiers += n;
+        } while (n >= Batch && !ct.IsCancellationRequested);
+        return (actions, tiers);
+    }
 }
 
 /// <summary>Blanks the address and device of old audit rows and refresh-token rows, in batches so no run holds a long lock.</summary>
@@ -67,6 +97,15 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
                     {
                         log.LogInformation("Blanked the address and device of {Audit} audit row(s) and {Sessions} session(s)", a, r);
                         await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.network", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { audit = a, sessions = r }) }, stoppingToken);
+                    }
+                }
+                if (options.Value.StanleyDays > 0)
+                {
+                    var (acts, tiers) = await StanleyRetention.DeleteOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, options.Value.StanleyDays, stoppingToken);
+                    if (acts + tiers > 0)
+                    {
+                        log.LogInformation("Deleted {Actions} Stanley action row(s) and {Tiers} tier log row(s)", acts, tiers);
+                        await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.stanley", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { actions = acts, tierLog = tiers }) }, stoppingToken);
                     }
                 }
                 if (n > 0)
