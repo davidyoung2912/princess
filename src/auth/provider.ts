@@ -51,7 +51,20 @@ export interface AccountActions {
   listDevices(): Promise<DeviceSession[]>
   /** Signs one other device out. Fails, changing nothing, when the server cannot be reached. */
   signOutDevice(id: string): Promise<void>
+  /** Administrators only: the accounts flagged as a possible duplicate, oldest first (IDN-03). Rejects for anyone else. */
+  listReviews(): Promise<ReviewItem[]>
+  /** Administrators only: settles a flagged account. Fails, changing nothing, when the server cannot be reached. */
+  resolveReview(id: string, decision: ReviewDecision): Promise<void>
 }
+
+/** `different`: two people who share a name and birthday. `same`: one guest with two accounts, which Guest Services joins outside this screen. */
+export type ReviewDecision = 'different' | 'same'
+
+/** An account another account may duplicate. Never carries an email address. Instants are epoch milliseconds. */
+export interface ReviewMatch { id: string; accountNumber: string; createdAt: number }
+
+/** A flagged account waiting for a person to check it (IDN-03). `dob` is "YYYY-MM-DD". */
+export interface ReviewItem { id: string; accountNumber: string; firstName: string; lastName: string; dob: string; createdAt: number; matches: ReviewMatch[] }
 
 /** One device this person is signed in on (IDN-01). Instants are epoch milliseconds. */
 export interface DeviceSession { id: string; device: string; signedInAt: number; lastActiveAt: number; current: boolean }

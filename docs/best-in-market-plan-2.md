@@ -349,3 +349,11 @@ Theme: boarded source and request ownership (EMB-01, MNG-11, SEA-20).
 - **MNG-11 and SEA-20:** requests carry a team (housekeeping or maintenance), escalate (after 10 open minutes, once per round), confirm and reopen (up to twice, clock restarts, history kept) through new `POST /requests/{id}/escalate|confirm|reopen` and `dbo.ServiceRequestEvents`. The screen shows the team, why there is no time once a request is done or cancelled, the actions and a history list.
 - **Tests:** three server rule tests (written, not run). `npm run test`, `npm run lint` and `npx tsc -b` pass.
 - **Limits:** no scan or manifest writer exists, so a recorded boarded time can only be set in the database. The owner is a team, not a person; an escalation pages nobody. Stage still follows the clock. The schema change needs `db/reset-db.ps1`. English only; no browser check. All three rows stay Partial.
+
+## 5ae. BM47 result (built, not committed)
+
+Theme: the Guest Services screen that settles a flagged duplicate account (IDN-03).
+- **Server:** `GET /admin/reviews` lists accounts with `ReviewReason` set, oldest first, each with the accounts that share its name and birthday (account number and date opened; never an email address). `POST /admin/reviews/{id}/resolve` takes `different` or `same`, clears the flag, and audits `account.review.resolve` with the administrator as actor. Administrators only (403 for anyone else, including a booker viewing as a child); 404 when the account is not flagged; 400 for any other decision. Nothing is merged.
+- **Front end:** `ReviewCard` on the account page, shown only when the signed-in role is `admin`. It lists each flagged account with its matches and two buttons. It is a card, not a route, so no route, offline-contract or screen-id entries were needed. The flagged guest's own note ("a person is checking") disappears on their next load.
+- **Tests:** `httpProvider.test.ts`; server `OnlyAnAdministratorSeesTheFlaggedAccountsAndSettlingOneClearsTheFlag` (written, not run; `dotnet` is not installed in this shell, so the C# was not even compiled).
+- **Not done:** "same guest" only records the decision, it does not join the accounts; the booking-link half of IDN-03; a staff sign-in separate from the guest app. IDN-03 stays Partial. No component test, no browser check.

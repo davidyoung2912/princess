@@ -145,6 +145,19 @@ describe('createHttpAuthProvider', () => {
     await expect(down.auth.account!.listDevices()).rejects.toBeDefined()
   })
 
+  it('lists the accounts to check and settles one by id', async () => {
+    const queue = [{ id: 'g1', accountNumber: '4000000001', firstName: 'Zoë', lastName: 'Marsh', dob: '1980-01-02', createdAt: 5, matches: [{ id: 'g0', accountNumber: '4000000000', createdAt: 1 }] }]
+    const a = make((c) => (c.url.endsWith('/admin/reviews') ? reply(200, queue) : c.url.endsWith('/resolve') ? reply(204) : reply(200, session(1))))
+    await a.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    expect(await a.auth.account!.listReviews()).toEqual(queue)
+    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/admin/reviews', method: 'GET' })
+    await a.auth.account!.resolveReview('g1', 'different')
+    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/admin/reviews/g1/resolve', method: 'POST', body: '{"decision":"different"}' })
+    const guest = make((c) => (c.url.endsWith('/admin/reviews') ? reply(403) : reply(200, session(1))))
+    await guest.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await expect(guest.auth.account!.listReviews()).rejects.toBeDefined()
+  })
+
   describe('sign-up and recovery', () => {
     it('registers and signs in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))

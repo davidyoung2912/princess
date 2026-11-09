@@ -1,7 +1,7 @@
 import type { Channel } from '../data/sync'
 import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
-import { AuthError, type AuthMethod, type DeviceSession, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
+import { AuthError, type AuthMethod, type DeviceSession, type ReviewItem, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
 
 /** Per-tab storage for the refresh token (see the token decision in docs/backend-plan.md, Phase 12). */
 export const REFRESH_KEY = 'princess:refresh'
@@ -111,6 +111,12 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       },
       async signOutDevice(id) {
         try { await raw.delete(`/auth/sessions/${encodeURIComponent(id)}`) } catch (e) { throw failure(e) }
+      },
+      async listReviews() {
+        try { return await raw.get<ReviewItem[]>('/admin/reviews') } catch (e) { throw failure(e) }
+      },
+      async resolveReview(id, decision) {
+        try { await raw.post(`/admin/reviews/${encodeURIComponent(id)}/resolve`, { decision }) } catch (e) { throw failure(e) }
       },
       async signOutEverywhere() {
         try { await raw.post('/auth/logout-all', {}) } catch (e) { throw failure(e) }

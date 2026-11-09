@@ -74,6 +74,44 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
             """, new { firstName, lastName, dob = dob.ToDateTime(TimeOnly.MinValue) }, cancellationToken: ct));
     }
 
+    private sealed record ReviewRow(Guid Id, string AccountNumber, string FirstName, string LastName, DateTime Dob, DateTime CreatedAt);
+    private sealed record MatchRow(Guid Id, string AccountNumber, DateTime CreatedAt);
+
+    public async Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = (await c.QueryAsync<ReviewRow>(new CommandDefinition("""
+            SELECT TOP 100 u.PublicId AS Id, u.AccountNumber, p.FirstName, p.LastName, p.Dob, u.CreatedAt
+            FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
+            WHERE u.ReviewReason IS NOT NULL
+            ORDER BY u.Id
+            """, cancellationToken: ct))).ToList();
+        var items = new List<ReviewItem>(rows.Count);
+        foreach (var r in rows)
+        {
+            var matches = (await c.QueryAsync<MatchRow>(new CommandDefinition("""
+                SELECT u.PublicId AS Id, u.AccountNumber, u.CreatedAt
+                FROM dbo.Users u JOIN dbo.Profiles p ON p.UserId = u.Id
+                WHERE u.IsSupervised = 0 AND u.IsDemo = 0 AND u.PublicId <> @Id AND p.Dob = @Dob
+                  AND p.FirstName COLLATE Latin1_General_CI_AI = @FirstName COLLATE Latin1_General_CI_AI
+                  AND p.LastName COLLATE Latin1_General_CI_AI = @LastName COLLATE Latin1_General_CI_AI
+                ORDER BY u.Id
+                """, new { r.Id, r.Dob, r.FirstName, r.LastName }, cancellationToken: ct))).Select(m => new ReviewMatch(m.Id, m.AccountNumber, m.CreatedAt)).ToList();
+            items.Add(new ReviewItem(r.Id, r.AccountNumber, r.FirstName, r.LastName, DateOnly.FromDateTime(r.Dob), r.CreatedAt, matches));
+        }
+        return items;
+    }
+
+    public async Task<bool> ClearReviewAsync(Guid publicId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var changed = await c.ExecuteAsync(new CommandDefinition(
+            "UPDATE dbo.Users SET ReviewReason = NULL, UpdatedAt = @now WHERE PublicId = @publicId AND ReviewReason IS NOT NULL",
+            new { publicId, now }, cancellationToken: ct));
+        if (changed > 0) users.Invalidate();
+        return changed > 0;
+    }
+
     public async Task EndAllSessionsAsync(long userId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

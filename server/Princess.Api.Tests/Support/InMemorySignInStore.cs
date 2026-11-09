@@ -45,6 +45,26 @@ public sealed class InMemorySignInStore(InMemoryUserStore users, InMemoryRefresh
     public Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct) =>
         Task.FromResult(People.Where(p => p.Dob == dob && string.Equals(p.First, firstName, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Last, lastName, StringComparison.OrdinalIgnoreCase)).Select(p => (Guid?)p.Id).FirstOrDefault());
 
+    public Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct)
+    {
+        var items = users.Users.Where(u => u.ReviewReason is not null).Select(u =>
+        {
+            var me = People.First(p => p.Id == u.PublicId);
+            var matches = People.Where(p => p.Id != me.Id && p.Dob == me.Dob && string.Equals(p.First, me.First, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Last, me.Last, StringComparison.OrdinalIgnoreCase))
+                .Select(p => new ReviewMatch(p.Id, users.Users.First(x => x.PublicId == p.Id).AccountNumber, DateTime.UtcNow)).ToList();
+            return new ReviewItem(u.PublicId, u.AccountNumber, me.First, me.Last, me.Dob, DateTime.UtcNow, matches);
+        }).ToList();
+        return Task.FromResult<IReadOnlyList<ReviewItem>>(items);
+    }
+
+    public Task<bool> ClearReviewAsync(Guid publicId, DateTime now, CancellationToken ct)
+    {
+        var user = users.Users.FirstOrDefault(u => u.PublicId == publicId && u.ReviewReason is not null);
+        if (user is null) return Task.FromResult(false);
+        user.ReviewReason = null;
+        return Task.FromResult(true);
+    }
+
     public Task<long?> CreateAccountAsync(NewAccount a, DateTime now, CancellationToken ct)
     {
         if (users.Users.Any(u => string.Equals(u.Email, a.Email, StringComparison.OrdinalIgnoreCase))) return Task.FromResult<long?>(null);

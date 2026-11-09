@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
+using Princess.Api.Endpoints;
 using Princess.Api.Tests.Support;
 
 namespace Princess.Api.Tests;
@@ -85,6 +86,33 @@ public class SignInFlowsApiTests : IDisposable
         Assert.True((await ok.Content.ReadFromJsonAsync<SessionResponse>(Json))!.User.NeedsReview);
         // A different birthday is not a match.
         Assert.Equal(HttpStatusCode.OK, (await Post("register", new RegisterRequest("three@example.com", "a-long-password", "Zoë", "Marsh", Dob(41)))).StatusCode);
+    }
+
+    [Fact]
+    public async Task OnlyAnAdministratorSeesTheFlaggedAccountsAndSettlingOneClearsTheFlag()
+    {
+        var dob = Dob(40);
+        await Post("register", new RegisterRequest("one@example.com", "a-long-password", "Zoë", "Marsh", dob));
+        var flagged = (await (await Post("register", new RegisterRequest("two@example.com", "a-long-password", "Zoë", "Marsh", dob, true))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        var staff = _f.Users.Add("staff@example.com", Password, first: "Sam");
+        staff.Role = "admin";
+        var admin = (await (await Post("login", new LoginRequest("staff@example.com", Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+
+        // A guest, even the flagged one, is refused.
+        Assert.Equal(HttpStatusCode.Forbidden, (await _http.SendAsync(Authed(HttpMethod.Get, "/api/v1/admin/reviews", flagged.AccessToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _http.SendAsync(Authed(HttpMethod.Post, $"/api/v1/admin/reviews/{flagged.User.Id}/resolve", flagged.AccessToken, new ResolveReviewRequest("different")))).StatusCode);
+
+        var queue = (await (await _http.SendAsync(Authed(HttpMethod.Get, "/api/v1/admin/reviews", admin.AccessToken))).Content.ReadFromJsonAsync<List<ReviewDto>>(Json))!;
+        var item = Assert.Single(queue);
+        Assert.Equal(flagged.User.Id, item.Id);
+        Assert.Single(item.Matches);
+
+        // Only the two named decisions are accepted.
+        Assert.Equal(HttpStatusCode.BadRequest, (await _http.SendAsync(Authed(HttpMethod.Post, $"/api/v1/admin/reviews/{item.Id}/resolve", admin.AccessToken, new ResolveReviewRequest("merge")))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _http.SendAsync(Authed(HttpMethod.Post, $"/api/v1/admin/reviews/{item.Id}/resolve", admin.AccessToken, new ResolveReviewRequest("different")))).StatusCode);
+        Assert.Empty((await (await _http.SendAsync(Authed(HttpMethod.Get, "/api/v1/admin/reviews", admin.AccessToken))).Content.ReadFromJsonAsync<List<ReviewDto>>(Json))!);
+        // Settled once: a second answer finds nothing to settle.
+        Assert.Equal(HttpStatusCode.NotFound, (await _http.SendAsync(Authed(HttpMethod.Post, $"/api/v1/admin/reviews/{item.Id}/resolve", admin.AccessToken, new ResolveReviewRequest("same")))).StatusCode);
     }
 
     [Fact]

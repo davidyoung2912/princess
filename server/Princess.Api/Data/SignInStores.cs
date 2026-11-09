@@ -19,6 +19,12 @@ public sealed record ThrottleState(int Failures, int Strikes, DateTime? LockedUn
 
 public sealed record NewAccount(string Email, string PasswordHash, string FirstName, string LastName, DateOnly Dob, string? ReviewReason = null);
 
+/// <summary>Another adult account with the same name and date of birth as a flagged one (IDN-03). Never an email address.</summary>
+public sealed record ReviewMatch(Guid Id, string AccountNumber, DateTime CreatedAt);
+
+/// <summary>An account waiting for a person at Guest Services to say whether it duplicates another (IDN-03).</summary>
+public sealed record ReviewItem(Guid Id, string AccountNumber, string FirstName, string LastName, DateOnly Dob, DateTime CreatedAt, IReadOnlyList<ReviewMatch> Matches);
+
 public sealed record OutboxMessage(long? UserId, string Channel, string Category, string To, string Subject, string Body);
 
 /// <summary>Sign-up, one-time codes and the outbox (Phase G4). Kept apart from <see cref="IUserStore"/> so sign-in itself is unchanged.</summary>
@@ -28,6 +34,10 @@ public interface ISignInStore
     Task<long?> CreateAccountAsync(NewAccount account, DateTime now, CancellationToken ct);
     /// <summary>The public id of an existing adult account with the same first and last name (ignoring case and accents) and date of birth, or null (IDN-03).</summary>
     Task<Guid?> FindPossibleDuplicateAsync(string firstName, string lastName, DateOnly dob, CancellationToken ct);
+    /// <summary>The accounts flagged for a person to check, oldest first, each with the accounts it may duplicate (IDN-03).</summary>
+    Task<IReadOnlyList<ReviewItem>> ListReviewsAsync(CancellationToken ct);
+    /// <summary>Clears the flag on this account. False when it is not flagged (already settled, or no such account).</summary>
+    Task<bool> ClearReviewAsync(Guid publicId, DateTime now, CancellationToken ct);
     /// <summary>Sets a new password, clears any lock and revokes every refresh token and every access token issued before now.</summary>
     Task SetPasswordAsync(long userId, string passwordHash, DateTime now, CancellationToken ct);
     /// <summary>Revokes every refresh token and every access token issued before now, leaving the password as it is.</summary>
