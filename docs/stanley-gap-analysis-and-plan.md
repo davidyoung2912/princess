@@ -461,6 +461,29 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 
 ---
 
+### Open carry-over items (kept here so none is lost)
+
+The per-phase status notes above give the detail; this is the running list of what was deliberately left, with where it is expected to land. Tick an item off (and say which commit) when it is done.
+
+| Item | From | Expected in |
+|---|---|---|
+| Group poll as a prepare/confirm action (needs a server poll service; a poll is a device document today) | 5 | 6 or 7 |
+| Reminders as push, not only shown when the app is open | 5 | 15, with push |
+| In-room order with a price (stateroom requests are free today) | 5 | when an order service exists |
+| "Change my dining time to late seating" is a library explainer; no dining-plan service | 5 | 9 |
+| Plan change is checked only against the plan snapshot the device sends | 5 | 11 |
+| Receipts listed beside the ledger, not as money rows (by design while no action moves money) | 5 | revisit with any paid action |
+| Helper path: the device cannot yet name a guest to act for, so only the guest's own booking is loaded | 4 | 7 |
+| `get_route` is an outline; the server holds no corridor graph | 4 | 10 |
+| Bill read tool with the money permission, so the bill and readiness resolvers stop abstaining | 4 | 12 |
+| Eleven of the 25 to 40 planned resolvers (bill split, open cases, per-traveller readiness, document tasks, boarding-pass state, return brief) need data the trip facts lack | 3 | 6, 10, 12 |
+| "What changed" resolver is a stub | 3 | 11 |
+| Diagnostics tier mix is per device; the server's `GET /me/stanley/tiers` has no screen | 2 | 14 |
+| `handoff` kill switch | 1 | 6 |
+| Server tests (phases 1 to 5) written but never run or compiled here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand | 1 to 5 | before release |
+
+Done since first noted: the browser's `act` word list (phase 5, `06dc128`), retention for the tier log and actions (phase 5 follow-up, `1266e9b`).
+
 ## 6. Additional ideas from the review (beyond the strategy document)
 
 Ordered by value to the guest. All except idea 9 are now built into the phases shown in brackets, and each phase lists them by idea number. Idea 9 is parked (decision 7).
