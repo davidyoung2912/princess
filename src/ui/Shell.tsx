@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'rea
 import type { CSSProperties } from 'react'
 import logo from '../assets/princess.webp'
 import stanley from '../assets/stanley-small.png'
-import { Link, Navigate, Outlet, useLocation, useNavigationType } from 'react-router'
+import { Link, Navigate, Outlet, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { getContext, subscribeContext } from '../account/context'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
 import { track } from '../diagnostics/watch'
@@ -36,6 +36,8 @@ import { tipIdFor } from '../settings/tips'
 import { tabText } from './tabText'
 import { TestBar } from './TestBar'
 import { UpdateBanner } from './UpdateBanner'
+import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } from '../stageWelcome/store'
+import { hasWelcomeCopy, shouldShowWelcome, welcomeKey } from '../routes/stageWelcome'
 
 
 /**
@@ -46,7 +48,8 @@ import { UpdateBanner } from './UpdateBanner'
 export function Shell() {
   const { pathname, search, state } = useLocation()
   const navigationType = useNavigationType()
-  const { stage } = useJourneyPosition()
+  const { stage, focusSailingId } = useJourneyPosition()
+  const navigate = useNavigate()
   useActiveDeck()
   const known = useSyncExternalStore(subscribeContext, getContext, getContext) !== null
   const [seen, setSeen] = useState<{ path: string; area: TabColour; previous: TabColour | null } | null>(null)
@@ -81,6 +84,26 @@ export function Shell() {
 
   const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
   useRecentVisit(personId, pathname, navigationType, stale)
+
+  // On entering a stage the guest has not been welcomed to, show its welcome page once. It is recorded as seen as it opens, so leaving it any way at all
+  // (a tab, Back, the button) never brings it back, and Settings never shows it (so its reset button can say it is done); "Stage overview" opens it again. Nothing happens until the server's copy of what was seen has arrived.
+  const welcomed = useSyncExternalStore(subscribeWelcome, () => getWelcome(personId), () => getWelcome(personId))
+  const welcomeReady = useSyncExternalStore(subscribeWelcome, () => welcomeLoaded(personId), () => false)
+  const welcomeDue = known && !stale && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings' && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
+  // A tester who moves the date back to a stage they have seen sees its welcome again: with a demo account the stage changing is the point of the exercise.
+  const isDemo = useSyncExternalStore(subscribeContext, getContext, getContext)?.isDemo === true
+  const lastStage = useRef<string | null>(null)
+  useEffect(() => {
+    if (!known || !welcomeReady) return
+    const key = welcomeKey(stage, focusSailingId)
+    if (isDemo && lastStage.current !== null && lastStage.current !== key) unmarkSeen(personId, key)
+    lastStage.current = key
+  }, [known, welcomeReady, isDemo, stage, focusSailingId, personId])
+  useEffect(() => {
+    if (!welcomeDue) return
+    markSeen(personId, welcomeKey(stage, focusSailingId), Date.now())
+    navigate('/welcome', { replace: true, state: { from: pathname + search } })
+  }, [welcomeDue, personId, stage, focusSailingId, navigate, pathname, search])
 
   useEffect(() => {
     const seo = seoFor(route?.path)

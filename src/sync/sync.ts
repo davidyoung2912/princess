@@ -40,6 +40,8 @@ export interface Binding {
   enabled?(): boolean
   /** The document with the parts this binding no longer keeps there removed (an older copy on the server may still hold them); a pulled copy that changes is sent back cleaned. */
   clean?(raw: unknown): unknown
+  /** Called when the server's answer for this key has been dealt with (a saved copy applied, or none saved), so a store can tell "nothing there" from "not asked yet". */
+  pulled?(localId: string | null): void
 }
 
 export type SyncStatus = 'idle' | 'syncing' | 'error'
@@ -158,11 +160,13 @@ export function createSync(opts: SyncOptions) {
       // before this first answer arrived (dirty), and a document kept back until the guest agreed to keep it there.
       if (s.dirty || (importable.has(key) && !b.isEmpty(b.read(idOf(b))))) { importable.delete(key); s.dirty = true; await run(key) }
       else b.apply(idOf(b), null)
+      b.pulled?.(idOf(b))
       return
     }
     s.version = doc.version
-    if (s.dirty) { await run(key); return }   // the guest changed it before the first pull finished: theirs wins
+    if (s.dirty) { await run(key); b.pulled?.(idOf(b)); return }   // the guest changed it before the first pull finished: theirs wins
     if (!same(doc.data, b.read(idOf(b)))) b.apply(idOf(b), doc.data)
+    b.pulled?.(idOf(b))
     if (b.clean && !same(b.clean(doc.data), doc.data)) { s.dirty = true; await run(key) }   // sensitive parts an older version left there
   }
 

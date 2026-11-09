@@ -55,6 +55,36 @@ public class RecentStateRulesTests
     }
 }
 
+public class StageWelcomeStateRulesTests
+{
+    private static JsonObject Doc(params string[] keys) => new() { ["seen"] = new JsonObject(keys.Select(k => KeyValuePair.Create(k, (JsonNode?)JsonValue.Create(1762128000000)))) };
+
+    [Fact]
+    public void StageAndStagePlusSailingKeysAreAccepted()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc()));
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc("dream", "discover", "manage:sun-1", "sea:alaska_2027.06")));
+    }
+
+    [Theory]
+    [InlineData("nonsense")]
+    [InlineData("manage:")]
+    [InlineData("manage:has space")]
+    [InlineData("manage:a/b")]
+    [InlineData(":sun-1")]
+    public void UnknownStagesAndOddSailingIdsAreRefused(string key) =>
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc(key)));
+
+    [Fact]
+    public void ABadShapeOrTooManyEntriesIsRefused()
+    {
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "stageWelcome", new JsonObject()));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "stageWelcome", new JsonObject { ["seen"] = new JsonObject { ["dream"] = "yes" } }));
+        var many = Doc([.. Enumerable.Range(0, StateRules.StageWelcomeMaxEntries + 1).Select(i => $"manage:s{i}")]);
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "stageWelcome", many));
+    }
+}
+
 public class StateApiTests : JourneyWorld
 {
     private static SaveStateRequest Doc(string field, int baseVersion) => new(new JsonObject { [field] = true }, baseVersion);

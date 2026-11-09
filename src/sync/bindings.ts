@@ -14,6 +14,8 @@ import { EMPTY_EXTRAS, normalizeExtras } from '../domain/shopExtras'
 import { applyRemoteHealth, applyRemoteMemoryRest, applyRemoteReminder, applyRemoteTravellers, cleanRest, EMPTY_MEMORY, getMemory, healthOf, postcardsOf, reminderOf, restOf, travellersOf } from '../memory/store'
 import { mergeRecent, EMPTY_RECENT } from '../routes/recent'
 import { applyRemoteRecent, getRecent } from '../recent/store'
+import { mergeWelcome, EMPTY_WELCOME } from '../routes/stageWelcome'
+import { applyRemoteWelcome, getWelcome, markWelcomeLoaded } from '../stageWelcome/store'
 import { applyRemoteOffers, getOfferState } from '../offers/store'
 import { applyRemotePhone, getPhone } from '../phone/store'
 import { applySyncedSettings, getSettings, getSyncedSettings, syncedSettingsAreDefault } from '../settings/store'
@@ -188,10 +190,20 @@ const recent: Binding = {
   merge: mergeRecent,
 }
 
+/** The stage welcomes the guest has seen, so a welcome shown on one device is not shown again on another. */
+const stageWelcome: Binding = {
+  key: 'stageWelcome',
+  read: (id) => getWelcome(id),
+  apply: (id, raw) => applyRemoteWelcome(id, raw),
+  isEmpty: (raw) => json(raw) === json(EMPTY_WELCOME),
+  merge: mergeWelcome,
+  pulled: (id) => markWelcomeLoaded(id),
+}
+
 let registered = false
 /** Connects the stores to the sync module. Safe to call more than once. */
 export function registerSyncBindings(): void {
   if (registered) return
   registered = true
-  for (const b of [settings, offers, recent, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
+  for (const b of [settings, offers, recent, stageWelcome, shop, phone, memory, health, travellers, reminder, postcards, concierge, trip, pilot, calm, hub, family, party, sharing]) sync.register(b)
 }

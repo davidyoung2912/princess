@@ -21,6 +21,8 @@ export {
   OctagonAlert,
   CircleAlert,
   Circle,
+  Square,
+  SquareCheck,
   Clock,
   Check,
   Ban,

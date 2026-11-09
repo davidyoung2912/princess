@@ -207,5 +207,6 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/me/settings': screen(() => import('./ui/SettingsScreen'), 'SettingsScreen'),
   '/me/demo': screen(() => import('./ui/DemoScreen'), 'DemoScreen'),
   '/account': screen(() => import('./ui/account/AccountScreen'), 'AccountScreen'),
+  '/welcome': screen(() => import('./ui/welcome/StageWelcomeScreen'), 'StageWelcomeScreen'),
   '/kit': screen(() => import('./ui/Kit'), 'Kit'),
 }

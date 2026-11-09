@@ -28,7 +28,33 @@ public static class StateRules
         ["reminder"] = 500,
         ["postcards"] = 2_000,
         ["recent"] = 2_000,
+        ["stageWelcome"] = 8_000,
     };
+
+    /// <summary>The most stage welcomes <c>stageWelcome</c> remembers, and the longest sailing id in an entry's key.</summary>
+    public const int StageWelcomeMaxEntries = 100, StageWelcomeMaxSailingId = 64;
+
+    /// <summary>
+    /// The problem for a <c>stageWelcome</c> document: <c>{ seen: { "&lt;stage&gt;" or "&lt;stage&gt;:&lt;sailingId&gt;": seenAtMs } }</c>.
+    /// The stage must be one of the eleven; the sailing id is plain letters, digits, dot, dash or underscore. The value is the time the welcome was dismissed.
+    /// </summary>
+    private static string? StageWelcomeProblem(JsonObject data)
+    {
+        if (data["seen"] is not JsonObject seen || seen.Count > StageWelcomeMaxEntries) return "badData";
+        foreach (var (key, node) in seen)
+        {
+            var colon = key.IndexOf(':');
+            var stage = colon < 0 ? key : key[..colon];
+            if (!StageRules.All.Contains(stage)) return "badData";
+            if (colon >= 0)
+            {
+                var sailing = key[(colon + 1)..];
+                if (sailing.Length is 0 or > StageWelcomeMaxSailingId || !sailing.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_')) return "badData";
+            }
+            if (node is not JsonValue at || !at.TryGetValue<double>(out _)) return "badData";
+        }
+        return null;
+    }
 
     /// <summary>The most screens <c>recent</c> keeps, and the longest address it accepts.</summary>
     public const int RecentMaxItems = 3, RecentMaxPath = 200;
@@ -78,6 +104,11 @@ public static class StateRules
         if (key is null || !keys.TryGetValue(key, out var max)) return "badKey";
         if (data is not JsonObject obj) return "badData";
         if (data.ToJsonString().Length > max) return "tooLarge";
-        return key == "recent" ? RecentProblem(obj) : null;
+        return key switch
+        {
+            "recent" => RecentProblem(obj),
+            "stageWelcome" => StageWelcomeProblem(obj),
+            _ => null,
+        };
     }
 }

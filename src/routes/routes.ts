@@ -218,6 +218,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/me/demo', titleKey: 'route.demo', tab: 'me', phase: 0 },
   { path: '/kit', titleKey: 'route.kit', tab: null, phase: 0 },
   { path: '/account', titleKey: 'route.account', tab: 'me', phase: 0 },
+  { path: '/welcome', titleKey: 'route.welcome', tab: null, phase: 0 },
   { path: '/trial-day', titleKey: 'route.trialDay', tab: null, phase: 28, public: true },
   { path: '/at-sea/:token', titleKey: 'route.atSea', tab: null, phase: 22, public: true },
   { path: '/shared/:token', titleKey: 'route.shared', tab: null, phase: 28, public: true },

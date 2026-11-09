@@ -25,6 +25,9 @@ public static class StageRules
     public const string Dream = "dream", Discover = "discover", Book = "book", Manage = "manage", Prebook = "prebook", GetToShip = "getToShip",
         Embark = "embark", Sea = "sea", Port = "port", Disembark = "disembark", Remember = "remember";
 
+    /// <summary>The eleven stages, in journey order.</summary>
+    public static readonly string[] All = [Dream, Discover, Book, Manage, Prebook, GetToShip, Embark, Sea, Port, Disembark, Remember];
+
     /// <summary>Intent kinds a guest can report. Looking (browsing, reading a port, the quiz) is not among them: only a deliberate "this one" counts.</summary>
     public static readonly string[] IntentKinds = ["lookCloser", "priceView", "cabinView", "sharedAccepted", "planImported"];
 

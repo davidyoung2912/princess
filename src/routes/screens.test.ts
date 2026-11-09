@@ -12,7 +12,7 @@ describe('screen registry (P2)', () => {
     const entries = new Set(SCREEN_LIST.map((s) => s.path))
     expect(ROUTES.filter((r) => !TAB_FRONT_PATHS.includes(r.path) && !entries.has(r.path)).map((r) => r.path)).toEqual([])
     expect(SCREEN_LIST.filter((s) => !routes.has(s.path)).map((s) => s.path)).toEqual([])
-    expect(SCREEN_LIST).toHaveLength(199)
+    expect(SCREEN_LIST).toHaveLength(200)
   })
 
   it('has unique ids, paths and titles, each with a title and a subtext', () => {
@@ -86,9 +86,9 @@ describe('screen registry (P2)', () => {
     }
   })
 
-  it('leaves exactly the developer page, the account page and the two link-only pages outside every stage', () => {
+  it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage', () => {
     const outside = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(outside.sort()).toEqual(['X01', 'X03', 'X04', 'X05', 'X06'])
+    expect(outside.sort()).toEqual(['X01', 'X03', 'X04', 'X05', 'X06', 'X07'])
   })
 
   it('counts the screens each stage uses as the plan lists them', () => {

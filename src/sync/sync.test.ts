@@ -61,6 +61,20 @@ const setup = (store = fakeStore()) => {
 }
 
 describe('pull', () => {
+  it('tells a store when the server has answered, whether or not a copy was saved', async () => {
+    for (const saved of [true, false]) {
+      const store = fakeStore()
+      const told: (string | null)[] = []
+      store.binding.pulled = (id) => { told.push(id) }
+      const t = setup(store)
+      if (saved) t.server.docs.set('k', { version: 1, data: { n: 0 } })   // same as the device copy: nothing is applied, yet the answer has come
+      t.sync.setOwner('u1', 'p1')
+      expect(told).toEqual([])
+      await t.sync.pull()
+      expect(told).toEqual(['p1'])
+    }
+  })
+
   it('takes the server copy on a new device', async () => {
     const t = setup()
     t.server.docs.set('k', { version: 3, data: { n: 7 } })

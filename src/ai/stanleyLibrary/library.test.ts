@@ -57,7 +57,8 @@ describe('Stanley library', () => {
 })
 
 describe('Stanley page questions', () => {
-  const publicIds = ['X01', 'X02', 'X03', 'X04']
+  // X07 is the one-time stage welcome, which is itself the guidance.
+  const publicIds = ['X01', 'X02', 'X03', 'X04', 'X07']
   const pages = [...SCREEN_LIST.map((s) => s.id).filter((id) => !publicIds.includes(id)), ...ALL_TAB_KEYS.filter((k) => k !== 'home').map((k) => `tab.${k}`)]
 
   it('gives every page that shows the shell at least four questions of its own, except the Home front page, which has the stage\'s general ones', () => {
