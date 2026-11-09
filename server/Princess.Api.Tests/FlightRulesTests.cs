@@ -62,4 +62,11 @@ public class FlightRulesTests
         var ids = NotificationRules.BuildNotices(new("ok", "2027-05-01", 0, 0, "done", "2027-03-18", "2027-03-20", 50_000, "2027-03-20", InstalmentAutoFailed: true)).Select(n => n.Id);
         Assert.Equal(["instalmentAutoFailed"], ids);
     }
+
+    [Fact]
+    public void TakenInstalmentShowsAsPaid()
+    {
+        var ids = NotificationRules.BuildNotices(new("ok", "2027-05-01", 0, 0, "done", "2027-03-18", InstalmentTakenDate: "2027-03-20", InstalmentTakenCents: 50_000)).Select(n => n.Id);
+        Assert.Equal(["instalmentTaken"], ids);
+    }
 }

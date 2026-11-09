@@ -14,7 +14,8 @@ public sealed record PushDecision(bool Send, string? Reason);
 public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
     IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
-    InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null);
+    InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
+    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -97,9 +98,21 @@ public static class PushRules
         // An instalment from the guest's kept plan, from a week before its date (the same window as the notice in the centre).
         if (i.Instalment is { } inst && string.CompareOrdinal(inst.Date, DateOnly.FromDateTime(i.Now).AddDays(InstalmentRules.RemindDays).ToString("yyyy-MM-dd")) <= 0)
         {
-            list.Add(new($"instalment:{inst.Date}", "payment", "payments", false, 55, "/me/payments",
-                "Stanley: an instalment is coming up", $"Your instalment is due {inst.Date}. It is on the Pay Your Balance screen.",
-                new() { ["date"] = inst.Date, ["amount"] = inst.Cents }));
+            // When the automatic payment could not be taken, say so instead of the reminder (as the centre does).
+            if (i.InstalmentFailed)
+                list.Add(new($"instalmentFailed:{inst.Date}", "payment", "payments", false, 70, "/me/payments",
+                    "Stanley: an instalment could not be taken", $"We could not take your instalment due {inst.Date}. Please pay it on the Pay Your Balance screen.",
+                    new() { ["date"] = inst.Date, ["amount"] = inst.Cents }));
+            else
+                list.Add(new($"instalment:{inst.Date}", "payment", "payments", false, 55, "/me/payments",
+                    "Stanley: an instalment is coming up", $"Your instalment is due {inst.Date}. It is on the Pay Your Balance screen.",
+                    new() { ["date"] = inst.Date, ["amount"] = inst.Cents }));
+        }
+        if (i.InstalmentTaken is { } taken)
+        {
+            list.Add(new($"instalmentTaken:{taken.Date}", "payment", "payments", false, 45, "/me/payments",
+                "Stanley: your instalment was paid", $"Your instalment due {taken.Date} was taken from your card.",
+                new() { ["date"] = taken.Date, ["amount"] = taken.Cents }));
         }
 
         // Tender boats that may run late, and an onward flight that is late or cancelled: a plain heads-up, within the guest's own limits.

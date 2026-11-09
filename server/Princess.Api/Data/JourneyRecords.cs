@@ -105,6 +105,7 @@ public sealed class PaymentRow
     public string? Method { get; set; }
     public string? CardBrand { get; set; }
     public string? Last4 { get; set; }
+    public string? Reference { get; set; }
 }
 
 public sealed record NewPayment(long BookingId, long UserId, string Label, long AmountCents, string Reference, long? CardId, string CardBrand, string Last4, DateTime At);

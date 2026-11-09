@@ -39,7 +39,7 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
                 trip.Payment, trip.Plan.FinalDue, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State,
                 TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd"),
                 next?.Date, next?.Cents ?? 0, today.ToString("yyyy-MM-dd"), watch?.Port, watch?.Date ?? "", watch?.Band ?? "", watch?.Percent ?? 0,
-                flight?.Flight, flight?.Date ?? "", flight?.State ?? "", flight?.DelayMinutes ?? 0, instalmentFailed));
+                flight?.Flight, flight?.Date ?? "", flight?.State ?? "", flight?.DelayMinutes ?? 0, instalmentFailed, watches.InstalmentTaken?.Date, watches.InstalmentTaken?.Cents ?? 0));
             notices = built.Select(n => new NoticeDto(n.Id, n.Category, n.Params, read.Contains(n.Id))).ToList();
         }
         return new NotificationsDto(notices, await PrefsAsync(actor.Id, ct));

@@ -237,7 +237,7 @@ public sealed class DapperTripStore(IDbConnectionFactory db, SailingCache sailin
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<PaymentRow>(Sql.Cmd("""
-            SELECT p.PublicId, p.Label, p.AmountCents, p.[At], p.Status, pp.Method, pp.CardBrand, pp.Last4
+            SELECT p.PublicId, p.Label, p.AmountCents, p.[At], p.Status, p.Reference, pp.Method, pp.CardBrand, pp.Last4
             FROM dbo.Payments p
             OUTER APPLY (SELECT TOP 1 Method, CardBrand, Last4 FROM dbo.PaymentParts WHERE PaymentId = p.Id ORDER BY Seq) pp
             WHERE p.BookingId = @bookingId AND p.Label IN ('deposit', 'full', 'balance')

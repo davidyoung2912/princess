@@ -62,4 +62,6 @@ public static class InstalmentRules
 
     /// <summary>A reminder shows from this many days before a payment is due, and stays until it is paid.</summary>
     public const int RemindDays = 7;
+    /// <summary>How long after an automatic payment the guest is still told it was taken.</summary>
+    public const int TakenDays = 3;
 }
