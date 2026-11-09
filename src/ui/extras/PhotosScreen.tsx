@@ -13,7 +13,7 @@ import { usePersona, useSailing } from '../../hooks/useDemo'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Link } from 'react-router'
-import { addAuto } from '../../domain/tripDiary'
+import { addAuto, entriesFor } from '../../domain/tripDiary'
 import { photoDiaryKey, photoDiaryLine } from '../../domain/diarySources'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { Banner } from '../Banner'
@@ -23,6 +23,8 @@ import { Chip } from '../Chip'
 import { DeferredImage } from '../DeferredImage'
 import { BackLink, Saved } from '../onboard/common'
 import { ExtraError } from './common'
+import { MemoryStory } from './MemoryStory'
+import { buildStory } from '../../domain/memoryStory'
 
 /** Ship photos (SHP-02, SHP-07): browse, favourite, choose, see options priced against the choice, buy, and download in checked batches. */
 export function PhotosScreen() {
@@ -115,6 +117,8 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
           </ul>
         </section>
       )}
+
+      <MemoryStory story={buildStory(v.photos.filter((p) => v.favourites.includes(p.id)), entriesFor(memory.diary, s.id), days)} />
 
       <ExtraError error={share.error} />
       <Album v={v} share={(id) => void share.run(id)} busy={share.busy || offline} />

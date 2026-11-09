@@ -318,7 +318,7 @@ Priority is not given per concept in the document.
 | QOL-15 | - | Partial | F | `src/domain/storm.ts`, `src/ui/plan/StormScreen.tsx`, `src/domain/whatIf.ts` | BM20: no impacted-reservation list or alternatives |
 | QOL-16 | - | Built | F | `src/domain/moneyShield.ts`, `src/domain/moneyShield.test.ts`, `src/domain/ledgerSplit.ts` | None found |
 | QOL-17 | - | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx` | BM32: deck-map screen teaches four deck rules and, for a typed cabin number (not saved), lists decks up/down, ends and lift banks to six common places plus a side-on deck list; no ship art or illustrated cutaway, no confidence or help-request measure |
-| QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/ui/delights/HighlightReel.tsx` | Photo curation from guest photos unchecked |
+| QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/ui/delights/HighlightReel.tsx` | BM33: photos screen proposes a day-by-day story from the guest's favourites and own diary notes, each can be left out, then copied as text; no book or video renderer, no generative text, no export or completion measure |
 | QOL-19 | - | Built | F | `src/domain/disruptionHub.ts`, `src/domain/disruptionHub.test.ts` | None found |
 | QOL-20 | - | Partial | F | `src/domain/accessReference.ts`, `src/domain/medicalCard.ts`, `src/ui/plan/AssistanceScreen.tsx` | BM20: no recipient preview or revoke |
 | QOL-21 | - | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |

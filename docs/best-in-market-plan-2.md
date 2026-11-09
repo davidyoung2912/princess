@@ -243,3 +243,10 @@ Theme: visual ship literacy (QOL-17). Only this row was taken; DRM-07 and QOL-18
 `shipLiteracy` and `cutaway` in `src/domain/shipLiteracy.ts` use the deck graph to say, for a typed cabin number, how many decks up or down, how many sections toward bow or stern and which lift banks lead to guest services, the Piazza, main dining, the Lido, medical and the gangway. `ShipLiteracy` on the deck-map screen shows four deck rules, those lines and a top-to-bottom deck list with the cabin deck marked, and says it is not navigation. Test in `shipLiteracy.test.ts`.
 QOL-17 stays Partial: there is no ship art or true layered cutaway (needs art), and no orientation-confidence or help-request measure. Limits: no component test, no browser check. Matrix totals not regenerated.
 Next in group A: DRM-07 (needs occasion tags, a content source), QOL-18.
+
+## 5r. BM33 result (built, not committed)
+
+Theme: photo-to-memory curation (QOL-18). Only this row was taken; DRM-07 is not started.
+`buildStory`, `applyOmissions` and `storyText` in `src/domain/memoryStory.ts` arrange the guest's favourite photos and their own (not app-written) diary notes by trip day; `MemoryStory` on the photos screen lets the guest leave out any photo or note and copy the result as text. Nothing is uploaded and no faces are matched. Test in `memoryStory.test.ts`.
+QOL-18 stays Partial: no memory-book or video renderer (Print It stays separate), no generative text, no completion or export measure. Limits: no component test, no browser check. Matrix totals not regenerated.
+Next in group A: DRM-07 (needs occasion tags on sailings, a content source).
