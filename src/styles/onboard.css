@@ -130,3 +130,20 @@
 .naut-jump a { display: inline-flex; align-items: center; min-height: var(--target-min); padding: 0 var(--space-3); border: 2px solid var(--border); border-radius: var(--radius-pill); text-decoration: none; }
 .naut-jump a:hover { border-color: var(--primary); }
 section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
+
+/* L7: side-view deck switcher, zoom, animated route and the two-pane deck map. */
+.deck-map__view { display: grid; gap: var(--space-3); grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+.deck-elev__stack { list-style: none; margin: 0; padding: var(--space-2); display: grid; gap: 2px; border: 2px solid var(--border-strong); border-radius: 0.5rem 0.5rem 2rem 2rem; background: var(--surface-info); }
+.deck-elev__deck { width: 3rem; min-height: var(--target-min, 2.75rem); border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-weight: 700; cursor: pointer; }
+.deck-elev__deck[aria-pressed='true'] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.deck-plan__zoom { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
+.deck-plan__route { stroke-dasharray: 2 8; animation: deck-route 1.2s linear infinite; }
+@keyframes deck-route { to { stroke-dashoffset: -20; } }
+@media (prefers-reduced-motion: reduce) { .deck-plan__route { animation: none; } }
+@media (min-width: 1280px) {
+  .workspace--map { grid-template-columns: 20rem minmax(0, 1fr); }
+}
+@media print {
+  .deck-elev, .deck-plan__zoom { display: none; }
+  .deck-map__view { display: block; }
+}

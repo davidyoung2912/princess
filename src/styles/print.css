@@ -26,3 +26,13 @@
   body[data-print-card] .print-card--active, body[data-print-card] .print-card--active * { visibility: visible; }
   body[data-print-card] .print-card--active { position: absolute; inset: 0 auto auto 0; width: 100%; border-color: #000; }
 }
+
+/* L7 keepsake print: a serif title with a brass rule, clean margins, no app chrome. */
+@media print {
+  @page { margin: 1.5cm; }
+  body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.45; }
+  h1 { font-size: 1.8rem; border-bottom: 3px double #000; padding-bottom: 0.25rem; }
+  .tabs, .topbar, .rail, .shortcut-bar, button:not(.print-keep) { display: none !important; }
+  .page, .page--wide { max-width: none; padding: 0; }
+  a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 0.8em; }
+}

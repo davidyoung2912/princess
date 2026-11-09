@@ -347,6 +347,8 @@ My recommendation: do **L1 and L2 first**. They are cheap, they change the feel 
 
 **Build status (2026-11-09): L1 and L2 are built** (not yet committed). Sounds default to on with a toggle in Settings; tabular numerals are on. Done: elevation scale, brass divider on Home, wave edge under page headers, lighter Home tiles (attention shown as a dot), confirmation sounds (`src/sound/cues.ts`, played from `useAction`, quiet on payment and muster screens), `Celebrate` (shown once after check-in finishes), tick-draw on Home steps, ticket cards on the receipt, postcard cards on Memories, and the stage mood map with Stanley on the landing card. Not built: the "Fun level" group (L6), Stanley pose changes on other screens.
 
+**L7 built (2026-11-09):** deck map is two-pane from 1280px (controls left, plan right), with a side-view ship deck switcher (`DeckElevation`), zoom in/out buttons on the plan, a dotted animated route (still under reduced motion) and keepsake print styles. Not built: pinch and momentum, walk time, category filters, itinerary planning table, hover previews, dashboard hero, two-pane Trip/Bill/Port.
+
 ---
 
 ## 12. Open questions for you

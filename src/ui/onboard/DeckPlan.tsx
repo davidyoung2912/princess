@@ -1,5 +1,5 @@
 import { useCatalogue } from '../../hooks/useCatalogue'
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { ELEVATORS, type Place } from '../../domain/deck'
 import { HULL_PATH, PLAN_H, PLAN_W, SECTION_DIVIDERS, SECTION_LABEL_X, placeLifts, placePlaces, type Point } from '../../domain/deckPlan'
 import { t, type StringKey } from '../../i18n'
@@ -26,14 +26,19 @@ interface Props {
 export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [] }: Props) {
   useCatalogue()
   const id = useId()
+  const [zoom, setZoom] = useState(1)
   const placed = placePlaces(deck)
   const lifts = placeLifts()
   const quietCount = placed.filter((p) => p.quiet).length
   return (
     <figure className="deck-plan">
+      <div className="deck-plan__zoom" role="group" aria-label={t('l7.zoom')}>
+        <button type="button" className="btn btn--secondary" disabled={zoom <= 1} onClick={() => setZoom(Math.max(1, zoom - 0.5))}>{t('l7.zoomOut')}</button>
+        <button type="button" className="btn btn--secondary" disabled={zoom >= 3} onClick={() => setZoom(Math.min(3, zoom + 0.5))}>{t('l7.zoomIn')}</button>
+      </div>
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a region that scrolls sideways must be reachable by keyboard (WCAG 2.1.1) */}
       <div className="deck-plan__scroll" tabIndex={0} role="group" aria-label={t('plan2.scroll')}>
-        <svg viewBox={`0 0 ${PLAN_W} ${PLAN_H}`} className="deck-plan__svg" role="img" aria-labelledby={`${id}-t ${id}-d`}>
+        <svg viewBox={`0 0 ${PLAN_W} ${PLAN_H}`} className="deck-plan__svg" style={{ minWidth: `${36 * zoom}rem` }} role="img" aria-labelledby={`${id}-t ${id}-d`}>
           <title id={`${id}-t`}>{t('map.deck', { deck })}</title>
           <desc id={`${id}-d`}>{t('plan2.desc', { count: placed.length, lifts: lifts.length })}</desc>
           <path d={HULL_PATH} className="deck-plan__hull" />

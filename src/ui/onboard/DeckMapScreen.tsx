@@ -7,6 +7,7 @@ import { Card } from '../Card'
 import { Chip } from '../Chip'
 import { BackLink } from './common'
 import { DeckPlan } from './DeckPlan'
+import { DeckElevation } from './DeckElevation'
 import { RouteFinder } from './RouteFinder'
 import { CodeScanner } from './DeviceTools'
 import { ShipLiteracy } from './ShipLiteracy'
@@ -32,7 +33,7 @@ export function DeckMapScreen() {
   const found = searchPlaces(query).filter((p) => !stepFree || p.stepFree)
   const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
   return (
-    <div className="page">
+    <div className="page page--wide">
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
 
       <RouteFinder />
@@ -40,6 +41,8 @@ export function DeckMapScreen() {
       <ParkMySpot />
       <CodeScanner />
 
+      <div className="workspace workspace--map">
+      <div className="workspace__side">
       <div className="field">
         <label htmlFor="map-search">{t('map.search')}</label>
         <p className="field__hint">{t('map.searchHint')}</p>
@@ -58,6 +61,8 @@ export function DeckMapScreen() {
         </select>
       </div>
 
+      </div>
+      <div className="workspace__main">
       {query.trim() !== '' && (
         <section aria-labelledby="found-h">
           <h2 id="found-h">{th('map.results')}</h2>
@@ -71,7 +76,10 @@ export function DeckMapScreen() {
         <div className="chip-row" role="group" aria-label={t('map.pickDeck')}>
           {DECKS.map((d) => <Chip key={d} pressed={d === deck} onToggle={() => setDeck(d)}>{t('map.deckShort', { deck: d })}</Chip>)}
         </div>
-        <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} />
+        <div className="deck-map__view">
+          <DeckElevation deck={deck} onPick={setDeck} />
+          <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} />
+        </div>
         <div className="table-wrap">
           <table className="deck-table">
             <caption>{t('map.deck', { deck })}</caption>
@@ -93,6 +101,8 @@ export function DeckMapScreen() {
           </table>
         </div>
       </section>
+      </div>
+      </div>
 
       <Card labelledBy="legend-h">
         <h2 id="legend-h" className="card__title">{th('map.legend')}</h2>
