@@ -116,6 +116,12 @@ Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare 
 - **Honest limits**: most of the 49 absent probes are my search being too narrow or in the wrong file, not missing features. They are a reading list, not a gap list. Of the 101 P0 rows, about 20 have been read; the other 80 have a search that found something, which proves only that the words exist. The remaining P0 reading carries into BM17 (as the tests are written) and the rest into BM20.
 - **Not done**: the pasted API key was not saved anywhere in the repo. It goes in user-secrets or an environment variable when COM-04 is built.
 
+## 5b. BM17 result (built, not committed)
+
+- **Convention**: a test names what it proves with a `proves: ID#n` comment. `src/traceability.test.ts` checks every tag points at a real requirement and clause, that every P0 requirement the matrix calls Built is tagged or on `docs/requirements-untagged.txt` (89 today, down from 101 P0 Built rows as BM17 tags two), that the list only shrinks, and that every requirement judged a GAP has a pinning test.
+- **Wording guards**: `src/wordingGuards.test.ts` reads `en.ts` and the source. Two guards pass today (DEB-08 "not legal advice", OFF-03 saved-copy wording). Nine confirmed gaps are written as `it.fails` (EMB-02, MOB-14, DEB-02, DEB-05, PRE-18, EMB-01, DEB-04, BOK-05, MNG-05): they pass while the gap exists and fail when it is closed, which is the cue to turn them into `it`. BM18 does exactly that.
+- **Limit**: the 89 untagged rows are still only "found by search"; tagging them is the work of BM18, BM19 and BM20 as each is read.
+
 ## 6. Decisions I need from you
 
 1. **Order.** Start with BM16 and BM17 (proof first), or go straight to closing known gaps (BM19 first)? I recommend proof first: the register tells BM18 and BM19 what to fix and prevents the same drift later.
