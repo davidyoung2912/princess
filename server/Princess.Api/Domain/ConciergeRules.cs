@@ -31,9 +31,9 @@ public static class ConciergeRules
 {
     public const int MaxMessage = 500, MaxContext = 12, MaxHistory = 60, MaxTurns = 5;
 
-    private static readonly Regex Emergency = new(@"\b(fire|smoke|overboard|drown\w*|can'?t breathe|cannot breathe|not breathing|chest pain|heart attack|stroke|unconscious|bleeding|overdose|seizure|choking|collapsed|assault\w*|attack\w*|missing child|lost child|suicid\w*|help me now|emergency)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex Emergency = new(@"\b(fire|smoke|overboard|drown\w*|can'?t breathe|cannot breathe|not breathing|chest pain|heart attack|stroke|unconscious|bleeding|overdose|seizure|choking|collapsed|assault\w*|attack\w*|missing child|lost child|(child|kid|baby|son|daughter|toddler|boy|girl) (is |has gone |went )?(missing|lost)|suicid\w*|help me now|emergency(?! (muster|drill|exit|station|procedure|plan|instruction)))\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex Medical = new(@"\b(medic\w*|dose|dosage|prescription|doctor|diagnos\w*|symptom\w*|pregnan\w*|allerg\w* (reaction|shock)|infection|rash|fever|vomit\w*|norovirus|covid|seasick\w*|is it safe to (take|drink|eat))\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex Legal = new(@"\b(lawyer|attorney|sue|lawsuit|legal advice|liability|compensation claim|injur\w+ claim|insurance claim|contract dispute)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex Legal = new(@"\b(lawyer|attorney|sue|lawsuit|legal advice|liability|liable|compensation claim|injur\w+ claim|insurance claim|contract dispute)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex Person = new(@"\b(talk to (a )?(person|human|agent|someone)|speak to (a )?(person|human|agent|someone)|real person|human agent|guest services|customer service|supervisor|manager)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>Which kind of handoff a message needs (emergency, medical, legal, person), or null when the concierge may answer. Emergency wins over the rest.</summary>

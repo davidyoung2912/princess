@@ -1,3 +1,4 @@
+import { redactCardData } from './cardData'
 import { MAX_MESSAGE, screen, type Handoff } from './guard'
 import type { AnswerAction, StanleySource } from './stanleyRoute'
 import type { Citation } from './types'
@@ -86,7 +87,7 @@ export function normalizeStanley(raw: unknown): StanleyTurn | null {
 
 /**
  * What is sent: the latest clean round trips (a guest message followed by an answer) and then the new message. Blocked, off-topic, handed-off and
- * failed exchanges are left out, as the server's own plan asks, so they never reach a prompt. `thread` ends with the guest's new message.
+ * failed exchanges are left out, as the server's own plan asks, so they never reach a prompt. Card numbers and codes are replaced by a mask. `thread` ends with the guest's new message.
  */
 export function historyToSend(thread: readonly StanleyMessage[]): { role: 'user' | 'assistant'; text: string; at: number }[] {
   const last = thread[thread.length - 1]
@@ -96,7 +97,7 @@ export function historyToSend(thread: readonly StanleyMessage[]): { role: 'user'
     const b = thread[i + 1]
     if (a.role === 'user' && b.role === 'assistant' && b.kind === 'answer') { trips.push([a, b]); i++ }
   }
-  return [...trips.slice(-MAX_TRIPS).flat(), ...(last ? [last] : [])].map((m) => ({ role: m.role, text: m.text, at: m.at }))
+  return [...trips.slice(-MAX_TRIPS).flat(), ...(last ? [last] : [])].map((m) => ({ role: m.role, text: redactCardData(m.text), at: m.at }))
 }
 
 /**

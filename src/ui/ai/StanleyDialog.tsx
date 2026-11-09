@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { Link, useLocation } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
-import { MAX_MESSAGE, screen } from '../../ai/guard'
-import { answerOf, LIBRARY, matchQuestion, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
+import { MAX_MESSAGE } from '../../ai/guard'
+import { decideStanley } from '../../ai/stanleyDecide'
+import { answerOf, LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
 import { StanleyConfirm } from './StanleyConfirm'
-import { answerActions, routeQuestion, type StanleySource } from '../../ai/stanleyRoute'
+import { answerActions, type StanleySource } from '../../ai/stanleyRoute'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
@@ -90,9 +91,9 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     setBusy(true)
     // One front door: the authored library first (free, on the device), then a ship fact or an "Ask your cruise" change; everything else goes to the server's gateway, which picks the source.
     // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switches can turn the library or the changes off.
-    const blocked = screen(asked.text)
-    const known = blocked || !status.library ? null : matchQuestion(asked.text, stage)
-    const route = blocked || known ? null : routeQuestion(asked.text, hasBooking, status.actions)
+    const decision = decideStanley(asked.text, { stage, hasBooking, libraryOn: status.library, actionsOn: status.actions })
+    const known = decision.kind === 'library' ? decision.entry : null
+    const route = decision.kind === 'act' || decision.kind === 'ship' ? decision : null
     let source: StanleySource = 'model'
     let link: string | undefined
     let confirm: string | undefined
@@ -110,7 +111,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const actions = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
-    countTier(tier)
+    countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
     const reply: StanleyMessage = { id, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, actions, confirm, entryId }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())

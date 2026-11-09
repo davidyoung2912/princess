@@ -43,17 +43,17 @@ public static class StanleyRules
         if (history is not { Count: > 0 and <= MaxThread }) return null;
         if (history.Any(m => m is null || (m.Role != "user" && m.Role != "assistant") || m.Text is null || m.Text.Length > 4_000)) return null;
         var last = history[^1];
-        var message = last.Text.Trim();
+        var message = CardData.Redact(last.Text.Trim());
         if (last.Role != "user" || message.Length is 0 or > MaxMessage) return null;
 
         var trips = new List<(ConciergeMessageDto Ask, ConciergeMessageDto Reply)>();
         for (var i = 0; i + 1 < history.Count - 1; i++)
         {
             if (history[i].Role != "user" || history[i + 1].Role != "assistant") continue;
-            var ask = history[i];
+            var ask = history[i] with { Text = CardData.Redact(history[i].Text) };
             if (ask.Text.Trim().Length is 0 or > MaxMessage || ProfanityFilter.IsBlocked(ask.Text) || ConciergeRules.Screen(ask.Text) is not null) { i++; continue; }
             if (history[i + 1].Text.Trim().Length == 0) { i++; continue; }
-            trips.Add((ask, history[i + 1]));
+            trips.Add((ask, history[i + 1] with { Text = CardData.Redact(history[i + 1].Text) }));
             i++;
         }
         var messages = new List<ConciergeMessageDto>();
@@ -61,6 +61,16 @@ public static class StanleyRules
         messages.Add(new ConciergeMessageDto("user", message, last.At));
         return new StanleyTurns(message, messages);
     }
+
+    private static readonly Regex Muster = new(@"\b(muster\w*|safety drill|assembly station|life ?jackets?|lifeboats?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>A question about the muster drill or the life-saving equipment. It is answered by <see cref="MusterAnswer"/>, never by a model (strategy 5.6), the same rule as the device's authored answer.</summary>
+    public static bool IsMuster(string message) => Muster.IsMatch(message);
+
+    /// <summary>The fixed answer to a muster question. It sends the guest to the Muster screen and to the crew, and states nothing that depends on the sailing.</summary>
+    public const string MusterAnswer =
+        "The safety drill is required for everyone on board, and it happens before the ship sails. Your station and the time are on the Muster screen, and the crew will call it on the ship's announcements. " +
+        "Follow the crew's directions, and ask Guest Services if you are unsure.";
 
     public const string TopicSystem =
         "You decide whether a message to a cruise helper is on topic. On topic: cruising, cruise ships and life on board, this ship (a 7-night Western Caribbean sailing on Sun Princess from Fort Lauderdale), " +

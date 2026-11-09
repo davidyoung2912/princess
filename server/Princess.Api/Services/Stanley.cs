@@ -7,7 +7,7 @@ namespace Princess.Api.Services;
 
 /// <summary>
 /// The Stanley gateway (docs/stanley-gap-analysis-and-plan.md, phase 1): the one server door for every conversational question, so policy, routing, budget, logging
-/// and kill switches live in one place. One turn, in this order: the word filter and the safety screen (neither ever reaches a model), the router
+/// and kill switches live in one place. One turn, in this order: the word filter and the safety screen (neither ever reaches a model), the muster question (a fixed answer, no model), the router
 /// (<see cref="StanleyRouter"/>: trip, before or open), the switches, then the answer from the tools or the open model, within the call caps and the guest's daily ceiling.
 /// When a model cannot be used (none set up, a switch, a cap, a failure) the scripted answers reply and say why. Every reply writes one tier log row with counts and
 /// tokens, never message text. Stanley's account knowledge is the PII-free trip facts the server builds (<see cref="StanleyTrip"/>) and, on the tool routes, the
@@ -44,6 +44,8 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         if (ConciergeRules.Screen(turns.Message) is { } handoff) return await End(new StanleyReplyDto("handoff", "", handoff, "", null, "handoff"), "safety", "handoff");
 
         var trip = await trips.LoadAsync(user, ct);
+        if (StanleyRules.IsMuster(turns.Message))
+            return await End(Answer(StanleyRules.MusterAnswer, "scripted", trip is null ? "before" : "trip", null, [new CitationDto("Muster", "/ship/muster")]), "safety", "ok");
         var routing = StanleyRouter.Route(turns.Message, context.Stage, trip is not null);
         var modelUsable = model.Available && o.Switches.Model;
         var meter = new ModelMeter(model, c => limiter.TryTakeAsync(user.Id, clock.UtcNow, o.DailyCeiling, TimeSpan.FromDays(1), c), routing.Planning ? o.PlanningCalls : o.ChatCalls);

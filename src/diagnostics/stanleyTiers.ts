@@ -41,7 +41,60 @@ export function freeShare(c: TierCounts): number | null {
   return total === 0 ? null : Math.round((free / total) * 100)
 }
 
-/** Counts one reply on this device. Safe where there is no storage. */
-export function countTier(tier: Tier): void {
-  try { recordTier(typeof window === 'undefined' ? null : window.localStorage, tier) } catch { /* storage blocked */ }
+/** The share of answered questions that reached a paid call, as a whole percent; null before anything was answered. */
+export function modelShare(c: TierCounts): number | null {
+  const free = freeShare(c)
+  return free === null ? null : 100 - free
+}
+
+/** Each tier's share of every reply, as whole percents in the order of {@link TIERS}; all zero before anything is counted. */
+export function tierMix(c: TierCounts): { tier: Tier; count: number; percent: number }[] {
+  const total = TIERS.reduce((n, k) => n + c[k], 0)
+  return TIERS.map((tier) => ({ tier, count: c[tier], percent: total === 0 ? 0 : Math.round((c[tier] / total) * 100) }))
+}
+
+/**
+ * How often each written answer was given on this device, for the repeat-question view: which authored questions guests keep asking, so the library can be tuned.
+ * The keys are a closed set (`library:<entry id>` or `ship:<fact id>`), never the words typed, and nothing is sent anywhere.
+ */
+export const ASKED_KEY = 'princess:diagnostics:stanley:asked'
+const ASKED_ID = /^(library|ship):[A-Za-z0-9.]{1,60}$/
+/** Entries kept; when there are more, the least asked go first. */
+export const MAX_ASKED = 200
+export type AskedCounts = Record<string, number>
+
+export function readAsked(store: Store | null): AskedCounts {
+  const counts: AskedCounts = {}
+  try {
+    const raw: unknown = JSON.parse(store?.getItem(ASKED_KEY) ?? '{}')
+    if (raw && typeof raw === 'object') for (const [k, n] of Object.entries(raw)) if (ASKED_ID.test(k) && typeof n === 'number' && Number.isFinite(n) && n > 0) counts[k] = Math.floor(n)
+  } catch { /* unreadable counts start again from zero */ }
+  return counts
+}
+
+/** Adds one to a written answer. Never throws, and refuses anything that is not an entry or fact id. */
+export function recordAsked(store: Store | null, id: string): void {
+  if (!store || !ASKED_ID.test(id)) return
+  try {
+    const counts = readAsked(store)
+    counts[id] = (counts[id] ?? 0) + 1
+    const kept = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, MAX_ASKED)
+    store.setItem(ASKED_KEY, JSON.stringify(Object.fromEntries(kept)))
+  } catch { /* nothing to do */ }
+}
+
+export const clearAsked = (store: Store | null): void => { try { store?.removeItem(ASKED_KEY) } catch { /* nothing to do */ } }
+
+/** The answers given more than once, most often first, then by id so the order is steady. */
+export function repeated(counts: AskedCounts, limit = 5): { id: string; count: number }[] {
+  return Object.entries(counts).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit).map(([id, count]) => ({ id, count }))
+}
+
+/** Counts one reply on this device, and the written answer behind it when there was one. Safe where there is no storage. */
+export function countTier(tier: Tier, asked?: string): void {
+  try {
+    const store = typeof window === 'undefined' ? null : window.localStorage
+    recordTier(store, tier)
+    if (asked) recordAsked(store, asked)
+  } catch { /* storage blocked */ }
 }

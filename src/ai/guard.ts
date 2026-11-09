@@ -5,9 +5,9 @@
  */
 export type Handoff = 'emergency' | 'medical' | 'legal' | 'person'
 
-const EMERGENCY = /\b(fire|smoke|overboard|drown\w*|can'?t breathe|cannot breathe|not breathing|chest pain|heart attack|stroke|unconscious|bleeding|overdose|seizure|choking|collapsed|assault\w*|attack\w*|missing child|lost child|suicid\w*|help me now|emergency)\b/i
+const EMERGENCY = /\b(fire|smoke|overboard|drown\w*|can'?t breathe|cannot breathe|not breathing|chest pain|heart attack|stroke|unconscious|bleeding|overdose|seizure|choking|collapsed|assault\w*|attack\w*|missing child|lost child|(child|kid|baby|son|daughter|toddler|boy|girl) (is |has gone |went )?(missing|lost)|suicid\w*|help me now|emergency(?! (muster|drill|exit|station|procedure|plan|instruction)))\b/i
 const MEDICAL = /\b(medic\w*|dose|dosage|prescription|doctor|diagnos\w*|symptom\w*|pregnan\w*|allerg\w* (reaction|shock)|infection|rash|fever|vomit\w*|norovirus|covid|seasick\w*|is it safe to (take|drink|eat))\b/i
-const LEGAL = /\b(lawyer|attorney|sue|lawsuit|legal advice|liability|compensation claim|injur\w+ claim|insurance claim|contract dispute)\b/i
+const LEGAL = /\b(lawyer|attorney|sue|lawsuit|legal advice|liability|liable|compensation claim|injur\w+ claim|insurance claim|contract dispute)\b/i
 const PERSON = /\b(talk to (a )?(person|human|agent|someone)|speak to (a )?(person|human|agent|someone)|real person|human agent|guest services|customer service|supervisor|manager)\b/i
 
 /** Which kind of handoff a message needs, or null when the concierge may answer. Emergency wins over the rest. */
@@ -18,6 +18,10 @@ export function screen(message: string): Handoff | null {
   if (PERSON.test(message)) return 'person'
   return null
 }
+
+const MUSTER = /\b(muster\w*|safety drill|assembly station|life ?jackets?|lifeboats?)\b/i
+/** A question about the muster drill or the life-saving equipment. It is answered only from the authored safety entry, never by a model (strategy 5.6). */
+export const isMuster = (message: string): boolean => MUSTER.test(message)
 
 /** The longest message accepted, so one paste cannot run up a large request. */
 export const MAX_MESSAGE = 500

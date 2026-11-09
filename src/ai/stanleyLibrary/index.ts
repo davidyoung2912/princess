@@ -47,10 +47,10 @@ export function chipsFor(screenId: string | undefined, stage: JourneyStage, max 
   return LIBRARY.filter((e) => e.stages.includes(stage)).slice(0, max)
 }
 
-const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'do', 'does', 'did', 'i', 'my', 'me', 'we', 'you', 'it', 'to', 'of', 'in', 'on', 'for', 'and', 'or', 'can', 'what', 'how', 'when', 'why', 'which', 'if', 'at', 'be', 'there', 'this', 'that', 'with', 'will', 'should', 'about', 'get', 'have', 'has', 'mean', 'means', 'work', 'works'])
+const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'do', 'does', 'did', 'i', 'my', 'me', 'we', 'you', 'it', 'to', 'of', 'in', 'on', 'for', 'and', 'or', 'can', 'what', 'how', 'when', 'why', 'which', 'if', 'at', 'be', 'there', 'this', 'that', 'with', 'will', 'should', 'about', 'get', 'have', 'has', 'mean', 'means', 'work', 'works', 'tell', 'please', 'show', 'go'])
 
 const tokens = (text: string): string[] =>
-  (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w)).filter((w) => w.length > 1 && !STOP.has(w))
+  (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter((w) => !STOP.has(w)).map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w)).filter((w) => w.length > 1 && !STOP.has(w))
 
 /** The share of a question's own words found in what was typed, and how many words matched. */
 export function scoreEntry(typed: readonly string[], entry: LibraryEntry, question: string): { score: number; shared: number } {
@@ -60,17 +60,19 @@ export function scoreEntry(typed: readonly string[], entry: LibraryEntry, questi
   let shared = 0
   for (const w of own) if (have.has(w)) shared++
   let hints = 0
-  for (const w of extra) if (have.has(w)) hints++
+  for (const w of extra) if (have.has(w) && !own.has(w)) hints++
   if (own.size === 0) return { score: 0, shared: 0 }
   return { score: Math.min(1, (shared + hints * 0.5) / own.size), shared: shared + hints }
 }
 
 /** A weak match goes to the model; a strong one is answered from the library for free. */
 export const STRONG_MATCH = 0.6
+/** The share of what was typed (its content words) that a matching entry must account for, so a long, specific question is not answered by an entry that fits one word of it. */
+export const MIN_COVER = 0.6
 
 /**
  * The library entry a typed question matches strongly, or null. Entries for the guest's own stage win a tie; a match needs at least two matching words,
- * or the one word of a one-word question, so a stray word never answers for a whole sentence.
+ * or the one word of a one-word question, and the match must cover {@link MIN_COVER} of the typed words, so a stray word never answers for a whole sentence.
  */
 export function matchQuestion(text: string, stage?: JourneyStage, entries: readonly LibraryEntry[] = LIBRARY): LibraryEntry | null {
   const typed = tokens(text)
@@ -80,7 +82,7 @@ export function matchQuestion(text: string, stage?: JourneyStage, entries: reado
     const q = questionOf(entry)
     const { score, shared } = scoreEntry(typed, entry, q)
     const needed = Math.min(2, tokens(q).length)
-    if (score < STRONG_MATCH || shared < needed) continue
+    if (score < STRONG_MATCH || shared < needed || shared / typed.length < MIN_COVER) continue
     const adjusted = score + (stage && entry.stages.includes(stage) ? 0.05 : 0)
     if (!best || adjusted > best.score) best = { entry, score: adjusted }
   }
