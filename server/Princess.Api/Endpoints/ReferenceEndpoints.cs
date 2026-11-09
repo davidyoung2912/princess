@@ -188,6 +188,22 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("The sea zone the ship is in (habitat and the wildlife to look for) and the landmarks it is passing, has just passed and will pass next, with the side they lie on and when. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
+        api.MapGet("/feeds/ship-weather", async (string sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
+            {
+                var departure = await DepartureOfAsync(sailing, trips, ct);
+                if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(nav.Weather(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now));
+            })
+            .WithTags("Reference").WithSummary("The weather at the ship at a moment (condition, air temperature, wind, pressure, visibility, UV, cloud and chance of rain) and a day-by-day forecast for the rest of the sailing, up to seven days, each day at the place the ship is at midday. Metric. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
+
+        api.MapGet("/feeds/ship-nautical", async (string sailing, long now, IShipNavigation nav, ITripStore trips, CancellationToken ct) =>
+            {
+                var departure = await DepartureOfAsync(sailing, trips, ct);
+                if (!NavigationRules.ValidQuery(departure, now)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(nav.Nautical(TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd")), now, AboardPlans.ShipOfSailing(sailing)));
+            })
+            .WithTags("Reference").WithSummary("What the bridge and engine room would report at a moment: the ship's particulars, heading true and magnetic, course and speed over the ground and through the water, the current, the nearest land and the water under the keel, the next port and its pilot, the tide, the noon run, power, fuel, stabilisers and motion, the bridge watch, and other vessels on the radar. Metric and nautical units. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
+
         api.MapGet("/feeds/loungers", (long now, IShipTelemetry ship) =>
             {
                 if (!OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");

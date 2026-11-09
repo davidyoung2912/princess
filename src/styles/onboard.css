@@ -94,3 +94,39 @@
 .ship-lit__deck { display: flex; gap: var(--space-3); padding: var(--space-1) var(--space-2); border: var(--border-width) solid var(--border); border-radius: 4px; }
 .ship-lit__deck--cabin { border-width: 3px; font-weight: 700; }
 .ship-lit__deck-n { min-width: 4.5rem; }
+
+/* Entertainment today: what is on now and what is next stand out; finished items recede. */
+.event--next { border-color: var(--primary); border-width: 3px; background: var(--sky-tint); }
+.event--now { border-color: var(--success, var(--primary)); border-width: 3px; }
+.event--over:not(.event--cancelled) { opacity: 0.75; }
+.event:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+/* Weather at sea. */
+.wx-hero { display: flex; align-items: center; gap: var(--space-3); margin: 0; }
+.wx-hero__icon { width: 4rem; height: 4rem; color: var(--primary); }
+.wx-hero__temp { font-size: 3rem; font-weight: 700; line-height: 1; }
+.wx-big { font-size: var(--fs-lead, 1.25rem); font-weight: 600; margin: var(--space-1) 0; }
+.wx-facts dt .lucide { vertical-align: -0.2em; }
+.wx-chart { margin: 0 0 var(--space-3); }
+.wx-chart svg { width: 100%; height: auto; max-height: 14rem; }
+.wx-chart__high, .wx-chart__low { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.wx-chart__high { stroke: var(--warning, #b45309); }
+.wx-chart__low { stroke: var(--primary); }
+.wx-chart__dot--high { fill: var(--warning, #b45309); }
+.wx-chart__dot--low { fill: var(--primary); }
+.wx-chart__t { font-size: 10px; fill: currentColor; }
+.wx-chart__key { display: flex; gap: var(--space-4); font-size: var(--fs-small, 0.875rem); }
+.wx-key::before { content: ''; display: inline-block; width: 1.25rem; height: 0.25rem; margin-inline-end: var(--space-1); vertical-align: middle; border-radius: 2px; }
+.wx-key--high::before { background: var(--warning, #b45309); }
+.wx-key--low::before { background: var(--primary); }
+.wx-days { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; gap: var(--space-3); }
+.wx-day { padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.wx-day p { margin: 0 0 var(--space-1); }
+.wx-day__head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.wx-day__icon { width: 1.75rem; height: 1.75rem; color: var(--primary); }
+
+/* Nautical details: a row of jumps to the parts of the page. */
+.naut-jump { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.naut-jump a { display: inline-flex; align-items: center; min-height: var(--target-min); padding: 0 var(--space-3); border: 2px solid var(--border); border-radius: var(--radius-pill); text-decoration: none; }
+.naut-jump a:hover { border-color: var(--primary); }
+section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }

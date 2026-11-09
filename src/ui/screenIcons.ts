@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Accessibility,
   Compass,
+  Drama,
   Activity,
   AlarmClock,
   Ambulance,
@@ -182,5 +183,5 @@ export const SCREEN_ICONS: Record<string, LucideIcon> = {
   M10: Receipt, M11: ScrollText, M12: Banknote, M13: ReceiptText, M14: HeartHandshake, M15: History, M16: Images, M17: BookHeart, M18: Sparkles,
   M19: Star, M20: Smile, M21: HeartPulse, M22: CalendarPlus, M23: Leaf, M24: PackageSearch, M25: Lock, M26: Mail, M27: Printer, M28: Bell,
   M29: Vibrate, M30: Feather, M31: Flower, M32: Wind, M33: Settings, M34: Activity, M35: LifeBuoy, M36: Phone, M37: Wrench, M38: HandHelping,
-  M39: Signal, M40: Bug, M41: FlaskConical, X01: Blocks, X02: Sun, X03: Radar, X04: Share2, X05: UserRound, X06: Compass, X07: Sparkles,
+  M39: Signal, M40: Bug, M41: FlaskConical, X01: Blocks, X02: Sun, X03: Radar, X04: Share2, X05: UserRound, X06: Compass, X07: Sparkles, X08: Drama, X09: CloudSun, X10: Compass,
 }

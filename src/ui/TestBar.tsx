@@ -11,7 +11,14 @@ import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
+import { CloudSun, Compass, Drama } from './icons'
 import { Field } from './Field'
+
+const AT_LINKS = [
+  { to: '/entertainment', Icon: Drama, label: 'testbar.at.entertainment' },
+  { to: '/weather', Icon: CloudSun, label: 'testbar.at.weather' },
+  { to: '/nautical', Icon: Compass, label: 'testbar.at.nautical' },
+] as const
 
 function dayText(stage: string, day: DayOfStage | null): string {
   if (!day) return stage
@@ -57,6 +64,13 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
           {next && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${next}`)}</span>}
         </span>
       </div>
+      <nav className="testbar__at" aria-label={t('testbar.at.label')}>
+        {AT_LINKS.map(({ to, Icon, label }) => (
+          <Link key={to} to={to} className="testbar__at-link" aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined}>
+            <Icon aria-hidden="true" />
+          </Link>
+        ))}
+      </nav>
       {isDemo && (
         <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
           <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>

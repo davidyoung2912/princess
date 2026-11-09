@@ -27,7 +27,7 @@ function wallTime(at: number, offsetMinutes: number): string {
 }
 
 /** The compass rose with an arrow turned to the heading. The words beside it carry the same meaning, so the picture is hidden from a screen reader. */
-function Compass({ degreesTrue }: { degreesTrue: number }) {
+export function Compass({ degreesTrue }: { degreesTrue: number }) {
   return (
     <svg className="nav-compass" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false">
       <circle className="nav-compass__ring" r="50" />
@@ -42,7 +42,7 @@ function Compass({ degreesTrue }: { degreesTrue: number }) {
 }
 
 /** Ship time beside the time at the nearest port, and the next change of the ship's clock. */
-function TimeCard({ clock }: { clock: ShipClock }) {
+export function TimeCard({ clock }: { clock: ShipClock }) {
   const diff = differenceHours(clock.differenceMinutes)
   const change = clock.nextChange
   return (
@@ -165,7 +165,7 @@ export function SeaScreen() {
   )
 }
 
-function LandmarkList({ id, items }: { id: string; items: Landmark[] }) {
+export function LandmarkList({ id, items }: { id: string; items: Landmark[] }) {
   return (
     <ul className="nav-landmarks" aria-labelledby={id}>
       {items.map((l) => (

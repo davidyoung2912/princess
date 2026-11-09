@@ -47,7 +47,7 @@ public static class NavigationRules
 
     // ---------- geometry ----------
 
-    private static double Nm(double lat1, double lon1, double lat2, double lon2)
+    internal static double Nm(double lat1, double lon1, double lat2, double lon2)
     {
         var dLat = (lat2 - lat1) * Rad;
         var dLon = (lon2 - lon1) * Rad;
@@ -55,7 +55,7 @@ public static class NavigationRules
         return 2 * EarthNm * Math.Asin(Math.Min(1, Math.Sqrt(a)));
     }
 
-    private static double Bearing(double lat1, double lon1, double lat2, double lon2)
+    internal static double Bearing(double lat1, double lon1, double lat2, double lon2)
     {
         var dLon = (lon2 - lon1) * Rad;
         var y = Math.Sin(dLon) * Math.Cos(lat2 * Rad);
@@ -252,9 +252,9 @@ public static class NavigationRules
 
     // ---------- the sea ----------
 
-    private static readonly double[] MonthlyWaterC = [26, 25.5, 26, 27, 28.3, 29.2, 29.8, 30.2, 30.2, 29.5, 28.3, 27];
+    internal static readonly double[] MonthlyWaterC = [26, 25.5, 26, 27, 28.3, 29.2, 29.8, 30.2, 30.2, 29.5, 28.3, 27];
 
-    private static readonly int[] WindFromDegrees = [45, 68, 90, 113];
+    internal static readonly int[] WindFromDegrees = [45, 68, 90, 113];
 
     private static double Lerp(Func<long, double> at, long ms, long span)
     {
@@ -264,7 +264,7 @@ public static class NavigationRules
         return a + (at(k + 1) - a) * f;
     }
 
-    private static double WindAt(long ms) => Lerp(k => 8 + OnboardFeedRules.Hash31($"wind{k}") % 11, ms, 6 * Hour);
+    internal static double WindAt(long ms) => Lerp(k => 8 + OnboardFeedRules.Hash31($"wind{k}") % 11, ms, 6 * Hour);
 
     public static int BeaufortOf(double knots) => knots switch
     {

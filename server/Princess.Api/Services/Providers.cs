@@ -67,6 +67,8 @@ public interface IShipNavigation
     ShipPositionDto Position(Timeline timeline, long now);
     SeaConditionsDto Sea(Timeline timeline, long now);
     AlongTheWayDto Along(Timeline timeline, long now);
+    ShipWeatherDto Weather(Timeline timeline, long now);
+    NauticalDto Nautical(Timeline timeline, long now, string shipId);
 }
 
 /// <summary>What each part of the service is doing right now (TRU-07). A real status feed replaces the simulation and keeps the shape.
@@ -168,6 +170,8 @@ public sealed class SimShipNavigation : IShipNavigation
     public ShipPositionDto Position(Timeline timeline, long now) => NavigationRules.Position(timeline, now);
     public SeaConditionsDto Sea(Timeline timeline, long now) => NavigationRules.Sea(timeline, now);
     public AlongTheWayDto Along(Timeline timeline, long now) => NavigationRules.Along(timeline, now);
+    public ShipWeatherDto Weather(Timeline timeline, long now) => ShipWeatherRules.Weather(timeline, now);
+    public NauticalDto Nautical(Timeline timeline, long now, string shipId) => NauticalRules.Nautical(timeline, now, shipId);
 }
 
 public sealed class SimStormOutlook : IStormOutlook

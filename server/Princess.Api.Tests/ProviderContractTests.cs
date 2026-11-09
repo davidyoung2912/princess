@@ -119,6 +119,8 @@ public class ProviderContractTests
                 Assert.NotNull(nav.Position(Day, navAt));
                 Assert.NotNull(nav.Sea(Day, navAt));
                 Assert.NotNull(nav.Along(Day, navAt));
+                Assert.NotNull(nav.Weather(Day, navAt));
+                Assert.NotNull(nav.Nautical(Day, navAt, "sun-princess"));
                 break;
             case IStaffQueue q:
                 var now = new DateTime(2027, 1, 10, 12, 0, 0, DateTimeKind.Utc);

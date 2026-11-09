@@ -58,6 +58,8 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/feeds/ship-position" },
         { "get", "/api/v1/feeds/sea-conditions" },
         { "get", "/api/v1/feeds/along-the-way" },
+        { "get", "/api/v1/feeds/ship-weather" },
+        { "get", "/api/v1/feeds/ship-nautical" },
         { "get", "/api/v1/feeds/loungers" },
         { "get", "/api/v1/feeds/sightings" },
         { "get", "/api/v1/feeds/found" },

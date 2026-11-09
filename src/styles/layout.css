@@ -237,3 +237,13 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .welcome__tick:has(input:focus-visible) { outline: 3px solid var(--focus, currentColor); outline-offset: 2px; border-radius: var(--radius-card); }
 .welcome__need--done .welcome__tick span { text-decoration: line-through; opacity: 0.75; }
 .welcome__open { white-space: nowrap; }
+
+/* Ship information icons beside the clock: entertainment, weather, nautical. */
+.testbar__at { display: flex; align-items: center; gap: var(--space-1); margin-inline-start: auto; }
+.testbar__at-link {
+  display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min);
+  border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); color: var(--primary); text-decoration: none; background: transparent;
+}
+.testbar__at-link:hover { border-color: var(--primary); }
+.testbar__at-link[aria-current='page'] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.testbar__at-link .lucide { width: 1.5rem; height: 1.5rem; }
