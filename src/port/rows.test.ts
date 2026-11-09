@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addItem, addParty, EMPTY_SPLIT, removeItem, removeParty } from '../domain/ledgerSplit'
-import { addIdea, castVote, heartIdea, newPoll } from '../domain/board'
+import { addIdea, castVote, heartIdea, markOption, newPoll } from '../domain/board'
 import { addRendezvous, EMPTY_PORT_PARTY, removeRendezvous, setAlertBefore, setMeetState, setPresence, proposePlan } from '../domain/portParty'
 import { diffState, layer, legacyRows, normalizeRows, rowId, stateOfRows, valuesOf, winner, type PortRow } from './rows'
 import { EMPTY_PORT, type PortState } from './store'
@@ -120,5 +120,16 @@ describe('port state as rows', () => {
     const rows = normalizeRows({ rows: [{ kind: 'item', key: 'i', data: { a: 1 }, at: 3, deleted: false }, { kind: 'nope', key: 'x', at: 1 }, { kind: 'item', key: 'y' }, 7] })
     expect(rows.map(rowId)).toEqual(['item/i'])
     expect(normalizeRows(null)).toEqual([])
+  })
+})
+
+describe('poll marks and times as rows', () => {
+  it('keeps each maybe or no as its own row and the times on the poll row', () => {
+    const before = sample()
+    const timed = { ...before.board.polls[0], createdAt: 10, closesAt: 99 }
+    const poll = markOption(timed, 'cy', 'o2', 'no')
+    const rows = [...valuesOf({ ...before, board: { ...before.board, polls: [poll] } }).values()]
+    expect(rows.find((r) => r.kind === 'answer')).toMatchObject({ key: 'p1|cy|o2', data: 'no' })
+    expect(rows.find((r) => r.kind === 'poll')?.data).toMatchObject({ createdAt: 10, closesAt: 99 })
   })
 })

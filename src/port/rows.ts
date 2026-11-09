@@ -8,11 +8,11 @@ import { normalizePort, type PortState } from './store'
  * that each person's "I'm back", each expense and each meeting place is saved on its own, with the time it was changed. A delete is a row that stays
  * (`deleted`), so a device that still has the old copy cannot bring it back. Framework-free; the server keeps the later change of each row.
  */
-export type RowKind = 'presence' | 'plan' | 'planB' | 'setting' | 'meet' | 'meetState' | 'party' | 'item' | 'poll' | 'vote' | 'idea' | 'heart' | 'date'
+export type RowKind = 'presence' | 'plan' | 'planB' | 'setting' | 'meet' | 'meetState' | 'party' | 'item' | 'poll' | 'vote' | 'answer' | 'idea' | 'heart' | 'date'
 
 export interface PortRow { kind: RowKind; key: string; data: unknown; /** Milliseconds, from the device that made the change. */ at: number; deleted: boolean }
 
-const KINDS: readonly RowKind[] = ['presence', 'plan', 'planB', 'setting', 'meet', 'meetState', 'party', 'item', 'poll', 'vote', 'idea', 'heart', 'date']
+const KINDS: readonly RowKind[] = ['presence', 'plan', 'planB', 'setting', 'meet', 'meetState', 'party', 'item', 'poll', 'vote', 'answer', 'idea', 'heart', 'date']
 const MAX_KEY = 90
 
 export const rowId = (r: Pick<PortRow, 'kind' | 'key'>): string => `${r.kind}/${r.key}`
@@ -43,14 +43,22 @@ export function valuesOf(state: PortState): Map<string, { kind: RowKind; key: st
   if (state.split.settledAt !== null) put('setting', 'settledAt', state.split.settledAt)
   // The group poll and dream board: one row for each poll, idea, vote and heart, so two people acting at once never overwrite each other.
   for (const p of state.board.polls) {
-    put('poll', enc(p.id), { question: p.question, options: p.options })
+    put('poll', enc(p.id), { question: p.question, options: p.options, ...(p.createdAt !== undefined ? { createdAt: p.createdAt } : {}), ...(p.closesAt !== undefined ? { closesAt: p.closesAt } : {}), ...(p.closedAt !== undefined ? { closedAt: p.closedAt } : {}) })
     for (const [who, option] of Object.entries(p.votes)) put('vote', `${enc(p.id)}|${enc(who)}`, option)
+    for (const [who, marks] of Object.entries(p.answers ?? {})) for (const [option, mark] of Object.entries(marks)) put('answer', `${enc(p.id)}|${enc(who)}|${enc(option)}`, mark)
   }
   for (const i of state.board.ideas) {
     put('idea', enc(i.id), { text: i.text })
     for (const who of i.hearts) put('heart', `${enc(i.id)}|${enc(who)}`, true)
   }
   for (const [who, ids] of Object.entries(state.board.dates)) for (const id of ids) put('date', `${enc(who)}|${enc(id)}`, true)
+  return out
+}
+
+/** One person's marks as { who: { option: mark } }, from the rows of one poll. */
+function answersOf(rows: { who: string; option: string; mark: unknown }[]): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {}
+  for (const r of rows) (out[r.who] ??= {})[r.option] = r.mark
   return out
 }
 
@@ -112,6 +120,7 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
   const items: { at: number; id: string; data: Record<string, unknown> }[] = []
   const polls: { at: number; id: string; data: Record<string, unknown> }[] = []
   const votes: { poll: string; who: string; option: unknown }[] = []
+  const answers: { poll: string; who: string; option: string; mark: unknown }[] = []
   const ideas: { at: number; id: string; data: Record<string, unknown> }[] = []
   const hearts: { idea: string; who: string }[] = []
   const dates: Record<string, string[]> = {}
@@ -128,6 +137,7 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
     else if (r.kind === 'item' && isObj(r.data)) items.push({ at: r.at, id: dec(r.key), data: r.data })
     else if (r.kind === 'poll' && isObj(r.data)) polls.push({ at: r.at, id: dec(r.key), data: r.data })
     else if (r.kind === 'vote' && parts.length === 2) votes.push({ poll: dec(parts[0]), who: dec(parts[1]), option: r.data })
+    else if (r.kind === 'answer' && parts.length === 3) answers.push({ poll: dec(parts[0]), who: dec(parts[1]), option: dec(parts[2]), mark: r.data })
     else if (r.kind === 'idea' && isObj(r.data)) ideas.push({ at: r.at, id: dec(r.key), data: r.data })
     else if (r.kind === 'heart' && parts.length === 2) hearts.push({ idea: dec(parts[0]), who: dec(parts[1]) })
     else if (r.kind === 'date' && parts.length === 2) { const who = dec(parts[0]); if (who in dates || Object.keys(dates).length < VOTERS_MAX) dates[who] = [...(dates[who] ?? []), dec(parts[1])].slice(0, DATES_MAX) }
@@ -145,7 +155,7 @@ export function stateOfRows(rows: readonly PortRow[]): PortState {
       settledAt,
     },
     board: {
-      polls: byAge(polls).slice(0, POLLS_MAX).map((p) => ({ ...p.data, id: p.id, votes: Object.fromEntries(votes.filter((v) => v.poll === p.id).map((v) => [v.who, v.option])) })),
+      polls: byAge(polls).slice(0, POLLS_MAX).map((p) => ({ ...p.data, id: p.id, votes: Object.fromEntries(votes.filter((v) => v.poll === p.id).map((v) => [v.who, v.option])), answers: answersOf(answers.filter((a) => a.poll === p.id)) })),
       ideas: byAge(ideas).slice(0, IDEAS_MAX).map((i) => ({ ...i.data, id: i.id, hearts: hearts.filter((h) => h.idea === i.id).map((h) => h.who) })),
       dates,
     },

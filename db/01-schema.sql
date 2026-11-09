@@ -1146,6 +1146,17 @@ CREATE TABLE dbo.StanleyBriefs (
 );
 END
 
+IF OBJECT_ID(N'dbo.StanleyTravellers', N'U') IS NULL
+BEGIN
+-- The travellers a guest plans for (docs/stanley-gap-analysis-and-plan.md, phase 9): one JSON row per guest with each traveller's access and pace as a sourced, dated record. Deleted with the account.
+CREATE TABLE dbo.StanleyTravellers (
+  UserId BIGINT NOT NULL CONSTRAINT PK_StanleyTravellers PRIMARY KEY,
+  Json NVARCHAR(MAX) NOT NULL,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyTravellers_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

@@ -1,8 +1,8 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 import {
-  PACES, SCENARIOS, SOURCES, cleanNote, hardConflicts, isReady, normalizeDay, normalizeEvening, normalizeHour, normalizeMeeting,
-  type Evening, type Meeting, type Pace, type PlannedDay, type PlannedHour, type AccessSource, type Scenario,
+  PACES, SCENARIOS, SOURCES, TRAVELLER_NOTE_MAX, cleanNote, hardConflicts, isReady, newTravellerId, normalizeDay, normalizeEvening, normalizeHour, normalizeMeeting, normalizeTravellers, travellerBody,
+  type Evening, type Meeting, type Pace, type PlannedDay, type PlannedHour, type AccessSource, type PlannerMobility, type Scenario, type Traveller,
 } from '../../ai/stanleyPlanner'
 import { PLACES } from '../../domain/deck'
 import type { Mobility } from '../../domain/day'
@@ -22,10 +22,10 @@ type Busy = '' | 'shape' | 'hour' | 'evening' | 'meeting'
 export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: string; day: number; mobility: Mobility }) {
   const ids = useId()
   const [scenario, setScenario] = useState<Scenario>('mixed')
-  const [who, setWho] = useState(false)
-  const [name, setName] = useState('')
-  const [pace, setPace] = useState<Pace>('steady')
-  const [source, setSource] = useState<AccessSource>('unknown')
+  const [today] = useState(() => new Date().toISOString().slice(0, 10))
+  const [saved, setSaved] = useState<Traveller[]>([])
+  const [pick, setPick] = useState('')
+  const [editing, setEditing] = useState<{ id: string; name: string; mobility: PlannerMobility; pace: Pace; source: AccessSource; checkedOn: string; note: string } | null>(null)
   const [large, setLarge] = useState(false)
   const [planned, setPlanned] = useState<PlannedDay | null>(null)
   const [at, setAt] = useState('10:00')
@@ -39,13 +39,28 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
   const [busy, setBusy] = useState<Busy>('')
   const [failed, setFailed] = useState(false)
 
+  useEffect(() => {
+    let live = true
+    stanleyPlanner.travellers().then((raw) => { if (live) setSaved(normalizeTravellers(raw).travellers) }, () => undefined)
+    return () => { live = false }
+  }, [])
+  const saveEditing = async () => {
+    if (!editing) return
+    setFailed(false)
+    try { setSaved(normalizeTravellers(await stanleyPlanner.saveTraveller(editing.id, travellerBody(editing))).travellers); setPick(editing.id); setEditing(null) } catch { setFailed(true) }
+  }
+  const forget = async (id: string) => {
+    setFailed(false)
+    try { setSaved(normalizeTravellers(await stanleyPlanner.forgetTraveller(id)).travellers); if (pick === id) setPick('') } catch { setFailed(true) }
+  }
+  const mine = saved.find((x) => x.id === pick)
+
   const run = async (kind: Busy, work: () => Promise<void>) => {
     setBusy(kind); setFailed(false)
     try { await work() } catch { setFailed(true) } finally { setBusy('') }
   }
   const shape = () => run('shape', async () => {
-    const traveller = who ? { name: name.trim().slice(0, 30), mobility, pace, source } : undefined
-    setPlanned(normalizeDay(await stanleyPlanner.shape({ sailingId, day, scenario, mobility, traveller })))
+    setPlanned(normalizeDay(await stanleyPlanner.shape({ sailingId, day, scenario, mobility, travellerId: pick || undefined })))
   })
   const askHour = () => run('hour', async () => setHour(normalizeHour(await stanleyPlanner.hour({ sailingId, day, from: at, mobility }))))
   const askEvening = () => run('evening', async () => setEvening(normalizeEvening(await stanleyPlanner.evening({ sailingId, day, mobility }))))
@@ -60,19 +75,49 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
         <legend>{t('plan9.scenario')}</legend>
         {SCENARIOS.map((s) => <Chip key={s} pressed={scenario === s} onToggle={() => setScenario(s)}>{t(`plan9.scenario.${s}` as StringKey)}</Chip>)}
       </fieldset>
-      <label className="choice"><input type="checkbox" checked={who} onChange={(e) => setWho(e.target.checked)} /><span>{t('plan9.who')}</span></label>
-      {who && (
+      <div className="field">
+        <label htmlFor={`${ids}-who`}>{t('plan9.who')}</label>
+        <select id={`${ids}-who`} className="field__input" value={pick} onChange={(e) => setPick(e.target.value)}>
+          <option value="">{t('plan9.whoNobody')}</option>
+          {saved.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+        {mine && (
+          <p className="muted">{t(`plan9.source.${mine.source}` as StringKey)} · {t(`plan9.confidence.${mine.confidence}` as StringKey)}{mine.checkedOn ? ` · ${t('plan9.checkedOn', { date: mine.checkedOn })}` : ''}{mine.stale ? ` · ${t('plan9.stale')}` : ''}</p>
+        )}
+        <div className="button-row">
+          <Button variant="tertiary" onClick={() => setEditing({ id: newTravellerId(Date.now(), Math.random()), name: '', mobility, pace: 'steady', source: 'unknown', checkedOn: '', note: '' })}>{t('plan9.whoAdd')}</Button>
+          {mine && <Button variant="tertiary" onClick={() => setEditing({ id: mine.id, name: mine.name, mobility: mine.mobility, pace: mine.pace, source: mine.source, checkedOn: mine.checkedOn ?? '', note: mine.note })}>{t('plan9.whoEdit')}</Button>}
+          {mine && <Button variant="tertiary" onClick={() => void forget(mine.id)}>{t('plan9.whoForget')}<span className="visually-hidden"> {mine.name}</span></Button>}
+        </div>
+      </div>
+      {editing && (
         <div className="field">
           <label htmlFor={`${ids}-name`}>{t('plan9.whoName')}</label>
-          <input id={`${ids}-name`} className="field__input" value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
+          <input id={`${ids}-name`} className="field__input" value={editing.name} maxLength={30} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+          <fieldset className="rate">
+            <legend>{t('day.mobility')}</legend>
+            {(['any', 'easy', 'wheelchair'] as const).map((m) => <label key={m} className="choice"><input type="radio" name={`${ids}-mob`} checked={editing.mobility === m} onChange={() => setEditing({ ...editing, mobility: m })} /><span>{t(`day.mobility.${m}` as StringKey)}</span></label>)}
+          </fieldset>
           <fieldset className="rate">
             <legend>{t('plan9.whoPace')}</legend>
-            {PACES.map((p) => <label key={p} className="choice"><input type="radio" name={`${ids}-pace`} checked={pace === p} onChange={() => setPace(p)} /><span>{t(`plan9.pace.${p}` as StringKey)}</span></label>)}
+            {PACES.map((p) => <label key={p} className="choice"><input type="radio" name={`${ids}-pace`} checked={editing.pace === p} onChange={() => setEditing({ ...editing, pace: p })} /><span>{t(`plan9.pace.${p}` as StringKey)}</span></label>)}
           </fieldset>
           <fieldset className="rate">
             <legend>{t('plan9.whoSource')}</legend>
-            {SOURCES.map((s) => <label key={s} className="choice"><input type="radio" name={`${ids}-src`} checked={source === s} onChange={() => setSource(s)} /><span>{t(`plan9.source.${s}` as StringKey)}</span></label>)}
+            {SOURCES.map((x) => <label key={x} className="choice"><input type="radio" name={`${ids}-src`} checked={editing.source === x} onChange={() => setEditing({ ...editing, source: x })} /><span>{t(`plan9.source.${x}` as StringKey)}</span></label>)}
           </fieldset>
+          {editing.source === 'verified' && (
+            <>
+              <label htmlFor={`${ids}-date`}>{t('plan9.whoDate')}</label>
+              <input id={`${ids}-date`} type="date" className="field__input" value={editing.checkedOn} max={today} onChange={(e) => setEditing({ ...editing, checkedOn: e.target.value })} />
+            </>
+          )}
+          <label htmlFor={`${ids}-wnote`}>{t('plan9.whoNote')}</label>
+          <input id={`${ids}-wnote`} className="field__input" value={editing.note} maxLength={TRAVELLER_NOTE_MAX} onChange={(e) => setEditing({ ...editing, note: e.target.value })} />
+          <div className="button-row">
+            <Button onClick={() => void saveEditing()} disabled={editing.name.trim() === '' || (editing.source === 'verified' && editing.checkedOn === '')}>{t('plan9.whoSave')}</Button>
+            <Button variant="tertiary" onClick={() => setEditing(null)}>{t('plan9.whoCancel')}</Button>
+          </div>
         </div>
       )}
       <Button onClick={() => void shape()} disabled={busy !== ''}>{t('plan9.shape')}</Button>
@@ -104,7 +149,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
           {planned.notes.length > 0 && <ul className="muted">{planned.notes.map((n) => <li key={n}>{n}</li>)}</ul>}
           {planned.traveller && (
             <div>
-              <h3>{planned.traveller.name}</h3>
+              <h3>{planned.traveller.name} <span className="muted">· {t(`plan9.confidence.${planned.traveller.confidence}` as StringKey)}</span></h3>
               <ul>{planned.traveller.changes.map((c) => <li key={c.id + c.text}><strong>{t(c.severity === 'change' ? 'plan9.change' : 'plan9.check')}:</strong> {c.text}</li>)}</ul>
               <p className="muted">{planned.traveller.note}</p>
             </div>
@@ -147,6 +192,7 @@ export function StanleyPlannerPanel({ sailingId, day, mobility }: { sailingId: s
                 <div>
                   <p><strong>{s.title}</strong> <span className="muted">· {s.place ?? ''}{s.walkFromPrevious > 0 ? ` · ${t('plan9.walk', { n: s.walkFromPrevious })}` : ''}</span></p>
                   {s.route && <p><Link to={s.route}>{t('plan9.eveningBook')}</Link></p>}
+                  {s.kind === 'dinner' && s.source === 'suggested' && <p><Link to={`/home/ask?q=${encodeURIComponent(`Book dinner on night ${day} at ${s.start}`)}`}>{t('plan9.eveningAsk')}</Link></p>}
                 </div>
               </li>
             ))}

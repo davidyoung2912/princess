@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanNote, groupRequest, hardConflicts, isReady, normalizeDay, normalizeEvening, normalizeGroupStatus, normalizeHour, normalizeMeeting, normalizePreview, normalizeTourCompare } from './stanleyPlanner'
+import { newTravellerId, normalizeTravellers, travellerBody, cleanNote, groupRequest, hardConflicts, isReady, normalizeDay, normalizeEvening, normalizeGroupStatus, normalizeHour, normalizeMeeting, normalizePreview, normalizeTourCompare } from './stanleyPlanner'
 
 describe('Stanley planner (device side)', () => {
   it('reads a day defensively and never trusts ready over a hard conflict', () => {
@@ -49,13 +49,29 @@ describe('Stanley planner (device side)', () => {
   })
 
   it('turns a poll into a request where a vote is a yes and silence is an empty answer', () => {
-    const r = groupRequest({ question: 'Q', options: [{ id: 'o1', label: 'A' }, { id: 'o2', label: 'B' }], votes: { p1: 'o2', p3: 'gone' }, closedAt: undefined }, [{ id: 'p1', name: 'Ann' }, { id: 'p2', name: 'Bo' }, { id: 'p3', name: 'Cy' }], true)
-    expect(r.members).toEqual([{ name: 'Ann', answers: { o2: 'yes' } }, { name: 'Bo', answers: {} }, { name: 'Cy', answers: {} }])
+    const r = groupRequest({ question: 'Q', options: [{ id: 'o1', label: 'A' }, { id: 'o2', label: 'B' }], votes: { p1: 'o2', p3: 'gone' }, answers: { p1: { o1: 'no', zzz: 'maybe' }, p2: { o1: 'maybe', o2: 'because' } }, closesAt: 9000, createdAt: 100 }, [{ id: 'p1', name: 'Ann' }, { id: 'p2', name: 'Bo' }, { id: 'p3', name: 'Cy' }], true)
+    expect(r.members).toEqual([{ name: 'Ann', answers: { o1: 'no', o2: 'yes' } }, { name: 'Bo', answers: { o1: 'maybe' } }, { name: 'Cy', answers: {} }])
+    expect([r.createdAt, r.closesAt]).toEqual([100, 9000])
     expect(r.closed).toBe(false)
     expect(JSON.stringify(r)).not.toContain('reason')
   })
 
   it('cuts a meeting note to the limit', () => {
     expect(cleanNote('  ' + 'x'.repeat(300))).toHaveLength(100)
+  })
+
+  it('reads saved travellers and leaves out any without an id or a name', () => {
+    const l = normalizeTravellers({ travellers: [{ id: 'a', name: 'Dad', mobility: 'wheelchair', pace: 'relaxed', source: 'verified', checkedOn: '2027-02-01', note: 'n', asOf: '2027-03-01', confidence: 'high', stale: false }, { id: '', name: 'x' }, { id: 'b', name: 'Mum', mobility: 'odd', pace: 'odd', source: 'odd', confidence: 'odd' }], staleAfterDays: 180 })
+    expect(l.travellers).toHaveLength(2)
+    expect(l.travellers[0]).toMatchObject({ source: 'verified', confidence: 'high', stale: false })
+    expect(l.travellers[1]).toMatchObject({ mobility: 'any', pace: 'steady', source: 'unknown', confidence: 'low' })
+    expect(normalizeTravellers(null)).toEqual({ travellers: [], staleAfterDays: 180, max: 8 })
+  })
+
+  it('sends a date only with a verified source and makes ids the server accepts', () => {
+    const base = { id: 'a', name: ' Dad ', mobility: 'easy' as const, pace: 'relaxed' as const, checkedOn: '2027-02-01', note: ' ' }
+    expect(travellerBody({ ...base, source: 'verified' })).toMatchObject({ name: 'Dad', checkedOn: '2027-02-01', note: null })
+    expect(travellerBody({ ...base, source: 'reported' }).checkedOn).toBeNull()
+    expect(newTravellerId(1_800_000_000_000, 0.123456)).toMatch(/^[A-Za-z0-9_-]{1,40}$/)
   })
 })

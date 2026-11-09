@@ -103,7 +103,7 @@ public class PartyRulesTests
     [Fact]
     public void ThePartyBoardKindsAreAcceptedAsPortRows()
     {
-        foreach (var k in new[] { "poll", "vote", "idea", "heart", "date" }) Assert.Null(PortRowRules.Problem(k, "k1", Json("1"), false, 1));
+        foreach (var k in new[] { "poll", "vote", "answer", "idea", "heart", "date" }) Assert.Null(PortRowRules.Problem(k, "k1", Json("1"), false, 1));
         Assert.Equal("badPortRow", PortRowRules.Problem("nonsense", "k1", Json("1"), false, 1));
     }
 

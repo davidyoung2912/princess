@@ -9,7 +9,7 @@ import { clubById } from '../../domain/family'
 import { formatMoney } from '../../domain/money'
 import { PORTS } from '../../domain/sailings'
 import { addTradition, briefFor, carryOver, compareExcursion, difficultyConcerns, difficultyOf, normalizeBrief, rhythmPrefs, sharedDay, tasteInferences, withoutSurprises, type PlanningState, type Rhythm } from '../../domain/planning'
-import { addIdea, castVote, closePoll, pollResultText, findDates, heartIdea, leader, newPoll, rankIdeas, tally, toggleDate, voteOf, type BoardState, type Poll } from '../../domain/board'
+import { CLOSE_CHOICES_DAYS, addIdea, answerOf, castVote, closePoll, extendPoll, isExpired, markOption, pollResultText, findDates, heartIdea, leader, newPoll, rankIdeas, tally, toggleDate, voteOf, type BoardState, type Poll } from '../../domain/board'
 import { browseSailingById } from '../../domain/catalogueBrowse'
 import { usePricedSailings } from '../../hooks/useShipCatalogue'
 import { guestStatus, normalizeLog, normalizeOrganiser, SHARING_FACETS } from '../../domain/partyShare'
@@ -126,6 +126,7 @@ export function GroupPollScreen() {
   const [options, setOptions] = useState('')
   const [idea, setIdea] = useState('')
   const [problem, setProblem] = useState(false)
+  const [closeDays, setCloseDays] = useState(0)
   const now = useNow()
   const organiser = !!me && me.id === me.booker
   const [exported, setExported] = useState('')
@@ -134,7 +135,7 @@ export function GroupPollScreen() {
     try { await navigator.clipboard.writeText(text); setExported(poll.id) } catch { setExported('') }
   }
   const create = () => {
-    const poll = newPoll(newPortId(), question, options.split(',').map((o) => o.trim()))
+    const poll = newPoll(newPortId(), question, options.split(',').map((o) => o.trim()), now, closeDays || undefined)
     setProblem(!poll)
     if (poll) { set((b) => ({ ...b, polls: [...b.polls, poll].slice(-6) })); setQuestion(''); setOptions('') }
   }
@@ -145,6 +146,13 @@ export function GroupPollScreen() {
         <h2 id="poll-new" className="card__title">{th('poll.new')}</h2>
         <Field label={t('poll.question')} value={question} maxLength={80} onChange={(e) => setQuestion(e.target.value)} />
         <Field label={t('poll.options')} hint={t('poll.optionsHint')} value={options} maxLength={200} onChange={(e) => setOptions(e.target.value)} error={problem ? t('poll.problem') : undefined} />
+        <div className="field">
+          <label htmlFor="poll-closes">{t('poll9.closes')}</label>
+          <select id="poll-closes" className="field__input" value={closeDays} onChange={(e) => setCloseDays(Number(e.target.value))}>
+            <option value={0}>{t('poll9.closes.none')}</option>
+            {CLOSE_CHOICES_DAYS.map((d) => <option key={d} value={d}>{t('poll9.closes.days', { count: d })}</option>)}
+          </select>
+        </div>
         <Button onClick={create}>{t('poll.create')}</Button>
       </Card>
       {board.polls.map((poll) => {
@@ -156,16 +164,21 @@ export function GroupPollScreen() {
             <ul className="plain-list">
               {tally(poll).map(({ option, votes }) => (
                 <li key={option.id}>
-                  <Button variant={mine?.id === option.id ? 'primary' : 'secondary'} aria-pressed={mine?.id === option.id} disabled={!who || poll.closedAt !== undefined} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? castVote(x, who, option.id) : x)) }))}>{option.label}</Button>{' '}
+                  <Button variant={mine?.id === option.id ? 'primary' : 'secondary'} aria-pressed={mine?.id === option.id} disabled={!who || poll.closedAt !== undefined || isExpired(poll, now)} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? castVote(x, who, option.id, now) : x)) }))}>{option.label}</Button>{' '}
+                  {(['maybe', 'no'] as const).map((m) => (
+                    <Button key={m} variant="tertiary" aria-pressed={answerOf(poll, who, option.id) === m} disabled={!who || poll.closedAt !== undefined || isExpired(poll, now)} onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? markOption(x, who, option.id, answerOf(x, who, option.id) === m ? null : m, now) : x)) }))}>{t(`poll9.${m}`)}<span className="visually-hidden"> {option.label}</span></Button>
+                  ))}{' '}
                   <span>{t('poll.votes', { count: votes })}</span>
                 </li>
               ))}
             </ul>
             <p role="status">{mine ? t('poll.yours', { label: mine.label }) : t('poll.notYet')} {win ? t('poll.leader', { label: win.label }) : t('poll.noLeader')}</p>
             {poll.closedAt !== undefined && <p role="status">{t('poll.closed')}</p>}
+            {poll.closedAt === undefined && poll.closesAt !== undefined && <p role="status">{isExpired(poll, now) ? t('poll9.expired') : t('poll9.closesAt', { when: new Date(poll.closesAt).toLocaleString() })}</p>}
             <StanleyGroupCard poll={poll} members={partyPeople(me?.id ?? '').map((p) => ({ id: p.id, name: firstName(p.id) }))} organiser={organiser} />
             <div className="button-row">
               {organiser && poll.closedAt === undefined && <Button variant="secondary" onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? closePoll(x, now) : x)) }))}>{t('poll.close')}<span className="visually-hidden"> {poll.question}</span></Button>}
+              {organiser && poll.closedAt === undefined && poll.closesAt !== undefined && <Button variant="secondary" onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? extendPoll(x, now) : x)) }))}>{t('poll9.extend')}<span className="visually-hidden"> {poll.question}</span></Button>}
               {poll.closedAt !== undefined && <Button variant="secondary" onClick={() => void exportPoll(poll)}>{t('poll.export')}<span className="visually-hidden"> {poll.question}</span></Button>}
               {exported === poll.id && <span role="status">{t('poll.exported')}</span>}
               <Button variant="tertiary" onClick={() => set((b) => ({ ...b, polls: b.polls.filter((x) => x.id !== poll.id) }))}>{t('poll.remove')}</Button>

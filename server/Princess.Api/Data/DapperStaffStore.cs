@@ -213,3 +213,22 @@ public sealed class DapperStanleyBriefStore(IDbConnectionFactory db) : IStanleyB
         await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.StanleyBriefs WHERE UserId = @userId", new { userId }, null, ct));
     }
 }
+
+public sealed class DapperStanleyTravellerStore(IDbConnectionFactory db) : IStanleyTravellerStore
+{
+    public async Task<string?> GetAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QueryFirstOrDefaultAsync<string>(Sql.Cmd("SELECT Json FROM dbo.StanleyTravellers WHERE UserId = @userId", new { userId }, null, ct));
+    }
+
+    public async Task PutAsync(long userId, string json, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyTravellers AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @at
+            WHEN NOT MATCHED THEN INSERT (UserId, Json, UpdatedAt) VALUES (@userId, @json, @at);
+            """, new { userId, json, at }, null, ct));
+    }
+}

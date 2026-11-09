@@ -7,7 +7,7 @@ namespace Princess.Api.Services;
 /// Stanley's planner and sea-time intelligence (docs/stanley-gap-analysis-and-plan.md, phase 9) for the signed-in guest's own trip. It reads the guest's booked tours and dinner tables and the sailing's days,
 /// and hands them to <see cref="StanleyPlannerRules"/>; nothing is booked, moved or paid here, and nothing is stored. The group status needs no sign-in and keeps nothing.
 /// </summary>
-public sealed class StanleyPlannerService(IStanleyTrips trips, ITripStore tripStore, IPlanStore plan, IProgramChanges programChanges, IUserClock clock, IClock serverClock)
+public sealed class StanleyPlannerService(IStanleyTrips trips, ITripStore tripStore, IPlanStore plan, IProgramChanges programChanges, IUserClock clock, IClock serverClock, StanleyTravellerService travellers)
 {
     private sealed record Ctx(StanleyTrip Trip, Timeline Timeline, string ShipId, string SailingId, bool Kids, List<PlannerReserved> Reserved);
 
@@ -47,7 +47,11 @@ public sealed class StanleyPlannerService(IStanleyTrips trips, ITripStore tripSt
         var scenario = Scenario(body.Scenario);
         var c = await LoadAsync(user, body.SailingId, ct);
         CheckDay(c, body.Day);
-        return StanleyPlannerRules.Shape(c.Timeline, body.Day, scenario, mobility, c.Kids, c.Reserved, programChanges.Current(), c.ShipId, c.SailingId, body.Traveller);
+        var who = body.Traveller;
+        if (body.TravellerId is { } tid)
+            who = (await travellers.ReadAsync(user.Id, ct)).FirstOrDefault(r => r.Id == tid) is { } saved ? StanleyTravellerRules.Profile(saved) : throw ApiException.Invalid("traveller");
+        var today = DateOnly.FromDateTime(await clock.NowAsync(user, ct));
+        return StanleyPlannerRules.Shape(c.Timeline, body.Day, scenario, mobility, c.Kids, c.Reserved, programChanges.Current(), c.ShipId, c.SailingId, who, today);
     }
 
     public async Task<PlannerHourDto> HourAsync(UserRecord user, PlannerHourRequest? body, CancellationToken ct)

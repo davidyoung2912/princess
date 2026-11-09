@@ -6,8 +6,8 @@ namespace Princess.Api.Domain;
 /// <summary>The things Stanley may do for a guest, once they have seen a preview and confirmed it (docs/stanley-gap-analysis-and-plan.md, phase 5). Nothing else, ever.</summary>
 public static class StanleyActionKinds
 {
-    public const string OrderItem = "order_item", AddExcursion = "add_excursion", MoveDinner = "move_dinner", DraftCase = "draft_case", PlanChange = "plan_change", RemindMe = "remind_me";
-    public static readonly string[] All = [OrderItem, AddExcursion, MoveDinner, DraftCase, PlanChange, RemindMe];
+    public const string OrderItem = "order_item", AddExcursion = "add_excursion", MoveDinner = "move_dinner", ReserveDinner = "reserve_dinner", DraftCase = "draft_case", PlanChange = "plan_change", RemindMe = "remind_me";
+    public static readonly string[] All = [OrderItem, AddExcursion, MoveDinner, ReserveDinner, DraftCase, PlanChange, RemindMe];
     /// <summary>These change only what the device keeps (the day plan, a reminder), so the server prepares, checks and confirms them and the device applies them from the receipt.</summary>
     public static readonly HashSet<string> OnDevice = [PlanChange, RemindMe];
     /// <summary>The kinds the server carries out through the plan, orders, excursion, dining and case services.</summary>
@@ -108,7 +108,7 @@ public static partial class StanleyIntents
     public const string ToolName = "propose_action";
 
     public static readonly string ToolJson = """
-        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder on the guest's device: at as HH:MM and text). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","draft_case","plan_change","remind_me"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"}},"required":["kind"]}}
+        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), reserve_dinner (book a main dining table, with day, time and who: all, me or a first name), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder on the guest's device: at as HH:MM and text). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","reserve_dinner","draft_case","plan_change","remind_me"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, all, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"}},"required":["kind"]}}
         """;
 
     /// <summary>The tool list with <see cref="ToolName"/> added, for a request that may prepare an action.</summary>
@@ -139,7 +139,7 @@ public static partial class StanleyIntents
     public static IntentResult Validate(JsonObject input, StanleyActionContext ctx)
     {
         var kind = input["kind"]?.GetValue<string>() ?? "";
-        if (!StanleyActionKinds.All.Contains(kind)) return IntentResult.Ask("I can't do that from here. I can order a stateroom item, add an excursion to your cart, move a dinner, draft a service case, change your day plan or set a reminder.");
+        if (!StanleyActionKinds.All.Contains(kind)) return IntentResult.Ask("I can't do that from here. I can order a stateroom item, add an excursion to your cart, book or move a dinner, draft a service case, change your day plan or set a reminder.");
         string S(string name) => input[name] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
         int N(string name) => input[name] is JsonValue v ? (v.TryGetValue<int>(out var n) ? n : v.TryGetValue<string>(out var t) && int.TryParse(t, out var m) ? m : 0) : 0;
         var who = Clean(S("who"), 40);
@@ -165,6 +165,13 @@ public static partial class StanleyIntents
                 var args = new Dictionary<string, string> { ["time"] = time };
                 if (N("day") > 0) args["day"] = N("day").ToString();
                 return IntentResult.Of(new StanleyIntent(kind, args));
+            }
+            case StanleyActionKinds.ReserveDinner:
+            {
+                var time = Hm(S("time"));
+                if (!DiningRules.DinnerTimes.Contains(time)) return IntentResult.Ask("What time would you like? Dinner is at " + string.Join(", ", DiningRules.DinnerTimes) + ".");
+                if (N("day") < 1) return IntentResult.Ask("Which night? For example: book dinner on night 3 at 7pm.");
+                return IntentResult.Of(new StanleyIntent(kind, new() { ["time"] = time, ["day"] = N("day").ToString(), ["who"] = who.Length == 0 ? "all" : who }));
             }
             case StanleyActionKinds.DraftCase:
             {
@@ -256,6 +263,16 @@ public static partial class StanleyIntents
             var what = Regex.Match(lower, @"\b(?:to|that)\s+(?<t>(?!\d).+)$");
             var text = what.Success ? Clean(what.Groups["t"].Value, 80) : "Reminder";
             return IntentResult.Of(new StanleyIntent(StanleyActionKinds.RemindMe, new() { ["at"] = at, ["text"] = text.Length == 0 ? "Reminder" : text }));
+        }
+
+        // Booking a table: "book dinner on night 3 at 7pm". Moving a table is read below.
+        if (Regex.IsMatch(lower, @"\b(book|reserve|make)\b") && Regex.IsMatch(lower, @"\b(dinner|table|reservation)\b") && !Regex.IsMatch(lower, @"\b(move|change|shift|push|cancel)\b"))
+        {
+            var nightMatch = Regex.Match(lower, @"\b(?:night|day)\s+(?<n>\d{1,2})\b");
+            var at = TimeIn(Regex.Replace(lower, @"\b(?:night|day)\s+\d{1,2}\b", " "));
+            if (at is null || !DiningRules.DinnerTimes.Contains(at)) return IntentResult.Ask("What time would you like dinner? It is at " + string.Join(", ", DiningRules.DinnerTimes) + ".");
+            if (!nightMatch.Success) return IntentResult.Ask("Which night? For example: book dinner on night 3 at 7pm.");
+            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.ReserveDinner, new() { ["time"] = at, ["day"] = nightMatch.Groups["n"].Value, ["who"] = "all" }));
         }
 
         // A stateroom item: needs a wanting word and one of the items.
@@ -356,6 +373,11 @@ public static class StanleyActionText
         "forbidden" => "A child account can't make changes. Please ask a parent or guardian.",
         "full" => "That time is full. Tell me another time and I will check again.",
         "unchanged" => "Your dinner is already at that time.",
+        "clash" => "Someone in the group already has a table at that time.",
+        "fixedSeating" => "Your main dinner is a fixed seating, so I can't book another main dining table.",
+        "notOpen" => "Dining reservations are not open for this booking yet.",
+        "age" => "A table needs an adult in the group.",
+        "partySize" => "That is more people than one table takes.",
         "closed" => "That time has already passed.",
         "slot" => "That isn't a time I can book dinner for.",
         "whichDinner" => "You have more than one dinner booked. Tell me the night, for example: move my dinner on night 3 to 8pm.",

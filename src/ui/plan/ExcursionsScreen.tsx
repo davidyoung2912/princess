@@ -27,6 +27,8 @@ import { PayPanel } from '../book/PayPanel'
 import { Back, GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
 import { StanleyExplain } from '../ai/StanleyExplain'
+import { StanleyTourCompare } from './StanleyTourCompare'
+import { useSailing } from '../../hooks/useDemo'
 
 /** A port's short name: its guide's, else the catalogue's. */
 const portLabel = (id: string): string => PORT_GUIDES[id]?.short ?? portById(id)?.name ?? id
@@ -52,6 +54,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
   const [suits, setSuits] = useState(false)
   const [fit, setFit] = useState<FitAnswers | null>(null)
   const [adding, setAdding] = useState<ExcursionOffer | null>(null)
+  const sailing = useSailing()
   const [changing, setChanging] = useState<TourBooking | null>(null)
   const [cancelling, setCancelling] = useState<TourBooking | null>(null)
   const add = useAction(async (id: string, guests: PersonaId[]) => { const v = await api.plan.excursions.addToCart(id, guests); reload(); return v })
@@ -77,6 +80,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
       <ReadOnly canDo={view.canBook} />
       {view.creditLeft > 0 && <Banner kind="info" title={t('exc.credit', { amount: formatMoney(view.creditLeft) })}><p>{t('exc.creditBody')}</p></Banner>}
       <PlanError error={add.error ?? remove.error} />
+      <StanleyTourCompare sailingId={sailing.id} />
 
       {view.cart.length > 0 && (
         <section aria-labelledby="cart-h">

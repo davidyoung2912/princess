@@ -15,11 +15,11 @@ public sealed record PlannerConflict(string Severity, string Code, IReadOnlyList
 public sealed record PlannerWindow(string Start, string End, int Minutes, long StartAt, long EndAt);
 
 /// <summary>What is known about a traveller's access and pace. <see cref="Source"/> is verified, reported or unknown; a name is only for wording.</summary>
-public sealed record TravellerProfile(string? Name, string Mobility, string Pace, string Source);
+public sealed record TravellerProfile(string? Name, string Mobility, string Pace, string Source, string? CheckedOn = null);
 
 public sealed record TravellerChange(string Id, string Severity, string Text);
 
-public sealed record TravellerCheckDto(string Name, string Source, IReadOnlyList<TravellerChange> Changes, bool HumanCheck, string Note);
+public sealed record TravellerCheckDto(string Name, string Source, string Confidence, IReadOnlyList<TravellerChange> Changes, bool HumanCheck, string Note);
 
 public sealed record PlannerDayDto(int Day, string Scenario, IReadOnlyList<PlannerSegment> Segments, IReadOnlyList<PlannerConflict> Conflicts, bool Ready, string? BackBy, IReadOnlyList<PlannerWindow> Windows, IReadOnlyList<string> Notes, TravellerCheckDto? Traveller);
 
@@ -39,7 +39,7 @@ public sealed record TourCompareRow(string Key, string A, string B, bool Differs
 
 public sealed record TourCompareDto(string NameA, string NameB, IReadOnlyList<TourCompareRow> Rows, IReadOnlyList<string> Risks, IReadOnlyList<string> Missing);
 
-public sealed record PlannerShapeRequest(string? SailingId, int Day, string? Scenario, string? Mobility, TravellerProfile? Traveller);
+public sealed record PlannerShapeRequest(string? SailingId, int Day, string? Scenario, string? Mobility, TravellerProfile? Traveller, string? TravellerId = null);
 public sealed record PlannerHourRequest(string? SailingId, int Day, string? From, string? PlaceId, string? Mobility);
 public sealed record PlannerEveningRequest(string? SailingId, int Day, string? Mobility);
 public sealed record PlannerPreviewRequest(string? SailingId, string? ExcursionId, string? Scenario, string? Mobility);
@@ -221,7 +221,7 @@ public static partial class StanleyPlannerRules
     /// The day for a scenario on top of what the guest already holds. A suggestion is dropped (and the reason noted) when it is the same as something held, overlaps it, has no places left, or would create a hard conflict;
     /// what the guest holds is never moved. The day is ready when it has something in it and no hard conflict.
     /// </summary>
-    public static PlannerDayDto Shape(Timeline t, int day, string scenario, string mobility, bool kids, IReadOnlyList<PlannerReserved> reserved, IReadOnlyList<PlanChange> feed, string? shipId, string? sailingId, TravellerProfile? traveller = null)
+    public static PlannerDayDto Shape(Timeline t, int day, string scenario, string mobility, bool kids, IReadOnlyList<PlannerReserved> reserved, IReadOnlyList<PlanChange> feed, string? shipId, string? sailingId, TravellerProfile? traveller = null, DateOnly? today = null)
     {
         var date = t.Departure.AddDays(day - 1);
         var wish = WishFor(scenario, mobility, kids);
@@ -241,7 +241,7 @@ public static partial class StanleyPlannerRules
         }
         segments = [.. segments.OrderBy(s => s.StartAt).ThenBy(s => s.Id, StringComparer.Ordinal)];
         var conflicts = Check(t, day, segments, shipId, mobility);
-        TravellerCheckDto? check = traveller is null ? null : CheckTraveller(t, day, segments, traveller, shipId, conflicts);
+        TravellerCheckDto? check = traveller is null ? null : CheckTraveller(t, day, segments, traveller, shipId, conflicts, today);
         return new(day, scenario, segments, conflicts, segments.Count > 0 && conflicts.All(c => c.Severity != "hard"), backBy, Windows(t, day, segments), notes, check);
     }
 
@@ -374,7 +374,7 @@ public static partial class StanleyPlannerRules
 
     // ---- How does this day work for a named traveller ----
 
-    public static TravellerCheckDto CheckTraveller(Timeline t, int day, IReadOnlyList<PlannerSegment> segments, TravellerProfile p, string? shipId, IReadOnlyList<PlannerConflict>? baseConflicts = null)
+    public static TravellerCheckDto CheckTraveller(Timeline t, int day, IReadOnlyList<PlannerSegment> segments, TravellerProfile p, string? shipId, IReadOnlyList<PlannerConflict>? baseConflicts = null, DateOnly? today = null)
     {
         var name = string.IsNullOrWhiteSpace(p.Name) ? "this traveller" : p.Name.Trim();
         var changes = new List<TravellerChange>();
@@ -406,11 +406,16 @@ public static partial class StanleyPlannerRules
         var busy = segments.Count(s => s.Kind is "tour" or "event");
         if (p.Pace == "relaxed" && busy >= 3) changes.Add(new(segments[0].Id, "check", $"{busy} things in one day is full for a relaxed pace. Consider dropping one."));
 
-        human |= p.Mobility != "any" && p.Source != "verified";
+        // A verification older than the window counts as a report: a person is asked to check again.
+        var record = new TravellerRecord("x", name, p.Mobility, p.Pace, p.Source, p.CheckedOn, null, null);
+        var stale = today is { } day0 && StanleyTravellerRules.Stale(record, day0);
+        var confidence = today is { } day1 ? StanleyTravellerRules.Confidence(record, day1) : p.Source == "verified" ? "high" : p.Source == "reported" ? "medium" : "low";
+        human |= p.Mobility != "any" && (p.Source != "verified" || stale);
         var note = p.Mobility == "any" ? "No access needs were given, so only pace was checked."
-            : p.Source == "verified" ? "Access details are marked verified."
+            : p.Source == "verified" && !stale ? $"Access details were verified{(p.CheckedOn is null ? "" : " on " + p.CheckedOn)}."
+            : p.Source == "verified" ? $"Access details were verified on {p.CheckedOn ?? "an unknown date"}, more than {StanleyTravellerRules.StaleDays} days ago. Have a person check the route again."
             : $"Access details are {(p.Source == "reported" ? "guest-reported" : "unknown")}, not verified. Have a person check the route before you rely on it.";
-        return new(name, p.Source, changes, human, note);
+        return new(name, p.Source, confidence, changes, human, note);
     }
 
     // ---- Compare two excursions ----

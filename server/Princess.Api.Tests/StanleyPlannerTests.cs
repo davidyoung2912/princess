@@ -348,4 +348,62 @@ public class StanleyPlannerTests
         Assert.Equal("times", StanleyPlannerRules.GroupProblem(Req([M("Ann")], created: -1)));
         Assert.Equal("question", StanleyPlannerRules.GroupProblem(null));
     }
+
+    // ---- Access records ----
+
+    private static readonly DateOnly Today = new(2027, 3, 1);
+    private static TravellerRecord Rec(string source = "reported", string? checkedOn = null, string mobility = "wheelchair") => new("dad", "Dad", mobility, "relaxed", source, checkedOn, null, null);
+
+    [Fact]
+    public void ARecordNeedsAShapeAndAVerifiedOneNeedsADateThatIsNotInTheFuture()
+    {
+        Assert.Null(StanleyTravellerRules.Problem(Rec(), Today));
+        Assert.Null(StanleyTravellerRules.Problem(Rec("verified", "2027-02-01"), Today));
+        Assert.Equal("checkedOn", StanleyTravellerRules.Problem(Rec("verified"), Today));
+        Assert.Equal("checkedOn", StanleyTravellerRules.Problem(Rec("verified", "2027-03-02"), Today));
+        Assert.Equal("checkedOn", StanleyTravellerRules.Problem(Rec("verified", "March"), Today));
+        Assert.Equal("id", StanleyTravellerRules.Problem(Rec() with { Id = "bad id!" }, Today));
+        Assert.Equal("name", StanleyTravellerRules.Problem(Rec() with { Name = " " }, Today));
+        Assert.Equal("mobility", StanleyTravellerRules.Problem(Rec(mobility: "flying"), Today));
+        Assert.Equal("source", StanleyTravellerRules.Problem(Rec("rumour"), Today));
+        Assert.Equal("note", StanleyTravellerRules.Problem(Rec() with { Note = new string('x', 101) }, Today));
+        Assert.Equal("id", StanleyTravellerRules.Problem(null, Today));
+    }
+
+    [Fact]
+    public void TheServerStampsTheDateWhenARecordIsNewOrChangedAndKeepsItWhenNothingChanged()
+    {
+        var first = StanleyTravellerRules.Clean(Rec("reported", "2020-01-01") with { Name = " Dad " }, null, Today);
+        Assert.Equal(("Dad", null, "2027-03-01"), (first.Name, first.CheckedOn, first.AsOf));
+        var later = new DateOnly(2027, 3, 9);
+        Assert.Equal("2027-03-01", StanleyTravellerRules.Clean(Rec(), first, later).AsOf);
+        Assert.Equal("2027-03-09", StanleyTravellerRules.Clean(Rec() with { Pace = "active" }, first, later).AsOf);
+    }
+
+    [Fact]
+    public void ConfidenceIsHighOnlyForARecentVerificationAndAStaleOneCountsAsAReport()
+    {
+        Assert.Equal("high", StanleyTravellerRules.Confidence(Rec("verified", "2027-01-15"), Today));
+        Assert.Equal("medium", StanleyTravellerRules.Confidence(Rec("verified", "2026-08-01"), Today));
+        Assert.True(StanleyTravellerRules.Stale(Rec("verified", "2026-08-01"), Today));
+        Assert.Equal("medium", StanleyTravellerRules.Confidence(Rec("reported"), Today));
+        Assert.Equal("low", StanleyTravellerRules.Confidence(Rec("unknown"), Today));
+        Assert.False(StanleyTravellerRules.Stale(Rec("reported"), Today));
+        var view = StanleyTravellerRules.View(Rec("verified", "2026-08-01"), Today);
+        Assert.Equal(("medium", true), (view.Confidence, view.Stale));
+    }
+
+    [Fact]
+    public void AFreshVerificationNeedsNoPersonButAStaleOneDoes()
+    {
+        var fresh = StanleyPlannerRules.CheckTraveller(T, 2, [], StanleyTravellerRules.Profile(Rec("verified", "2027-02-20")), null, null, Today);
+        Assert.False(fresh.HumanCheck);
+        Assert.Equal("high", fresh.Confidence);
+        Assert.Contains("verified on 2027-02-20", fresh.Note);
+        var stale = StanleyPlannerRules.CheckTraveller(T, 2, [], StanleyTravellerRules.Profile(Rec("verified", "2026-06-01")), null, null, Today);
+        Assert.True(stale.HumanCheck);
+        Assert.Equal("medium", stale.Confidence);
+        Assert.Contains("check the route again", stale.Note);
+        Assert.Equal("low", StanleyPlannerRules.CheckTraveller(T, 2, [], StanleyTravellerRules.Profile(Rec("unknown")), null, null, Today).Confidence);
+    }
 }

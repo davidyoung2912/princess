@@ -120,13 +120,16 @@ export const stanleyDiscover = {
 
 /** Planner, group diplomat and sea-time intelligence (phase 9): the server shapes the day on the real calendar, finds the free hour, plans the evening, drafts the meeting message and reads a group's answers. Nothing is booked from these. */
 export const stanleyPlanner = {
-  shape: (body: { sailingId?: string; day: number; scenario: string; mobility: string; traveller?: unknown }) => http.post<unknown>('/me/stanley/plan/shape', body),
+  shape: (body: { sailingId?: string; day: number; scenario: string; mobility: string; traveller?: unknown; travellerId?: string }) => http.post<unknown>('/me/stanley/plan/shape', body),
   hour: (body: { sailingId?: string; day: number; from: string; placeId?: string; mobility: string }) => http.post<unknown>('/me/stanley/plan/hour', body),
   evening: (body: { sailingId?: string; day: number; mobility: string }) => http.post<unknown>('/me/stanley/plan/evening', body),
   preview: (body: { sailingId?: string; excursionId: string; scenario?: string; mobility: string }) => http.post<unknown>('/me/stanley/plan/preview', body),
   meeting: (body: { sailingId?: string; day?: number; placeId: string; time: string; note?: string }) => http.post<unknown>('/me/stanley/plan/meeting', body),
   compareTours: (body: { sailingId?: string; a: string; b: string }) => http.post<unknown>('/me/stanley/plan/compare-tours', body),
   groupStatus: (body: unknown) => http.post<unknown>('/stanley/group/status', body),
+  travellers: () => http.get<unknown>('/me/stanley/travellers'),
+  saveTraveller: (id: string, record: unknown) => http.put<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`, record),
+  forgetTraveller: (id: string) => http.delete<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`),
 }
 
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */

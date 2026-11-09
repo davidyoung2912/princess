@@ -116,6 +116,24 @@ public class StanleyActionTests
     }
 
     [Fact]
+    public void ReservingATableNeedsTheNightAndATimeFromTheDinnerList()
+    {
+        var ok = StanleyIntents.Parse("Book dinner on night 3 at 7pm", WithPlan)!.Intent!;
+        Assert.Equal(StanleyActionKinds.ReserveDinner, ok.Kind);
+        Assert.Equal(("19:00", "3", "all"), (ok.Arg("time"), ok.Arg("day"), ok.Arg("who")));
+        Assert.Contains("Which night", StanleyIntents.Parse("book dinner at 7pm", WithPlan)!.Clarify);
+        Assert.Contains("What time", StanleyIntents.Parse("reserve a table on night 2", WithPlan)!.Clarify);
+        Assert.Contains("What time", StanleyIntents.Parse("book dinner on night 3 at 9:45pm", WithPlan)!.Clarify);
+        Assert.Equal(StanleyActionKinds.MoveDinner, StanleyIntents.Parse("Move dinner to 8pm", WithPlan)!.Intent!.Kind);
+        Assert.NotNull(StanleyIntents.Validate(Input("""{"kind":"reserve_dinner","time":"19:00"}"""), WithPlan).Clarify);
+        Assert.NotNull(StanleyIntents.Validate(Input("""{"kind":"reserve_dinner","day":3,"time":"21:45"}"""), WithPlan).Clarify);
+        var model = StanleyIntents.Validate(Input("""{"kind":"reserve_dinner","day":3,"time":"19:00"}"""), WithPlan).Intent!;
+        Assert.Equal(("3", "all"), (model.Arg("day"), model.Arg("who")));
+        Assert.Contains("fixed seating", StanleyActionRules.Problem("fixedSeating"));
+        Assert.Contains("already has a table", StanleyActionRules.Problem("clash"));
+    }
+
+    [Fact]
     public void ThereIsNoToolOrKindForPayingCancellingOrSharing()
     {
         var tool = JsonNode.Parse(StanleyIntents.ToolJson)!;

@@ -376,6 +376,29 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 return new StanleyPreviewFacts($"Move {venue.Name} to night {toDay}, {toTime}", [$"{venue.Name}: night {table.Day}, {table.Time} → night {toDay}, {toTime}", "Your current table is kept until the new time is confirmed; it is moved in one step, so you are never left without one."],
                     who, null, "No charge to move a table.", $"dinner|{table.PublicId}|{toDay}|{toTime}|{left}", new Dictionary<string, string> { ["tableId"] = table.PublicId.ToString(), ["day"] = toDay.ToString(), ["fromDay"] = table.Day.ToString(), ["fromTime"] = table.Time });
             }
+            case StanleyActionKinds.ReserveDinner:
+            {
+                var ship = AboardPlans.ShipOfSailing(booking.SailingId);
+                var venue = ShipDining.VenuesOf(ship).FirstOrDefault(v => v.Kind == "main" && !v.WalkIn) ?? throw ApiException.Invalid("slot");
+                if (booking.Dining != "anytime") throw ApiException.Conflict("fixedSeating");
+                var day = int.TryParse(intent.Arg("day"), out var dd) ? dd : 0;
+                var time = intent.Arg("time");
+                if (!DiningRules.IsDinnerDay(scope.Timeline, day) || !DiningRules.DinnerTimes.Contains(time)) throw ApiException.Invalid("slot");
+                if (DiningRules.DinnerPast(scope.Timeline, day, time, scope.Now)) throw ApiException.Conflict("closed");
+                var people = WhoForDinner(user, booking, scope, intent.Arg("who"));
+                if (people.Count > DiningRules.MaxParty) throw ApiException.Invalid("partySize");
+                if (!people.Any(p => p.Age >= ExcursionRules.AdultAge)) throw ApiException.Conflict("age");
+                var grid = DiningRules.SlotsFor(venue.Id, booking.SailingId, day).First(s => s.Time == time);
+                var left = grid.Tables - await plan.CountTablesAsync(booking.SailingId, venue.Id, day, time, null, ct);
+                if (left <= 0) throw ApiException.Conflict("full");
+                var held = (await plan.ListTablesAsync(booking.BookingId, ct)).Select(t => new ReservedTable(t.VenueId, t.Day, t.Time, scope.Ids(t.GuestIds))).ToList();
+                var ids = people.Select(p => p.Id).ToList();
+                if (DiningRules.TableClash(held, day, time, ids).Count > 0) throw ApiException.Conflict("clash");
+                return new StanleyPreviewFacts($"Reserve a table in the {venue.Name}, night {day}, {time}",
+                    [$"{venue.Name}: night {day}, {time}", $"{people.Count} {(people.Count == 1 ? "guest" : "guests")}: {string.Join(", ", people.Select(p => p.First))}", $"{left} {(left == 1 ? "table is" : "tables are")} left at that time.", "Main dining is included in your fare."],
+                    [.. people.Select(p => p.First)], null, "No charge. You can move or cancel the table on the dining screen.", $"dinner-new|{venue.Id}|{day}|{time}|{left}",
+                    new Dictionary<string, string> { ["venueId"] = venue.Id, ["day"] = day.ToString(), ["guests"] = string.Join(",", ids) });
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var kind = intent.Arg("caseKind");
@@ -402,6 +425,14 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
         people = [.. people.Where(p => StanleyActionRules.MayActFor(user.Id, booking.BookerUserId, p.UserId))];
         if (people.Count == 0) throw ApiException.Invalid("guests");
         return people;
+    }
+
+    /// <summary>Who a table is for: "all" is everyone the guest may act for, otherwise as for an excursion.</summary>
+    private static List<ScopePerson> WhoForDinner(UserRecord user, BookingRow booking, Scope scope, string who)
+    {
+        if (!who.Trim().Equals("all", StringComparison.OrdinalIgnoreCase)) return WhoFor(user, booking, scope, who);
+        var people = scope.Party.Where(p => StanleyActionRules.MayActFor(user.Id, booking.BookerUserId, p.UserId)).ToList();
+        return people.Count == 0 ? throw ApiException.Invalid("guests") : people;
     }
 
     private async Task<TableRow> TableAsync(Scope scope, BookingRow booking, StanleyIntent intent, CancellationToken ct)
@@ -439,6 +470,16 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 await planService.MoveTableAsync(user, booking.Number, id, new MoveRequest(int.Parse(intent.Arg("day")), intent.Arg("time")), ct);
                 return new StanleyEffectResult($"{id}|{intent.Arg("fromDay")}|{intent.Arg("fromTime")}");
             }
+            case StanleyActionKinds.ReserveDinner:
+            {
+                var venueId = intent.Arg("venueId");
+                var day = int.Parse(intent.Arg("day"));
+                var time = intent.Arg("time");
+                var guests = intent.Arg("guests").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(Guid.Parse).ToList();
+                var view = await planService.ReserveAsync(user, booking.Number, new ReserveRequest(venueId, day, time, guests, null), ct);
+                var made = view.Reservations.First(r => r.VenueId == venueId && r.Day == day && r.Time == time);
+                return new StanleyEffectResult(made.Id.ToString());
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var view = await cases.OpenAsync(user, booking.Number, new OpenCaseRequest(intent.Arg("caseKind"), intent.Arg("summary"), intent.Arg("place"), null, 0), ct);
@@ -462,6 +503,8 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 return (await planService.ExcursionsAsync(user, booking.Number, ct)).Cart.Any(l => l.ExcursionId == intent.Arg("excursionId"));
             case StanleyActionKinds.MoveDinner:
                 return (await plan.ListTablesAsync(booking.BookingId, ct)).Any(t => t.PublicId.ToString() == intent.Arg("tableId") && t.Day.ToString() == intent.Arg("day") && t.Time == intent.Arg("time"));
+            case StanleyActionKinds.ReserveDinner:
+                return (await plan.ListTablesAsync(booking.BookingId, ct)).Any(t => t.VenueId == intent.Arg("venueId") && t.Day.ToString() == intent.Arg("day") && t.Time == intent.Arg("time"));
             default:
                 return (await cases.ListAsync(user, booking.Number, ct)).Cases.Any(c => c.Kind == intent.Arg("caseKind") && c.Summary == intent.Arg("summary") && c.CanWithdraw);
         }
@@ -485,6 +528,9 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 await planService.MoveTableAsync(user, booking.Number, Guid.Parse(parts[0]), new MoveRequest(int.Parse(parts[1]), parts[2]), ct);
                 break;
             }
+            case StanleyActionKinds.ReserveDinner:
+                await planService.CancelTableAsync(user, booking.Number, Guid.Parse(effectRef), ct);
+                break;
             default:
                 await cases.WithdrawAsync(user, booking.Number, Guid.Parse(effectRef), ct);
                 break;

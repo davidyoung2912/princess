@@ -141,8 +141,8 @@ public static class ProviderRegistration
         var tierLog = (config[$"{Section}:StanleyLog"] ?? "database").Trim().ToLowerInvariant();
         switch (tierLog)
         {
-            case "database": services.AddScoped<IStanleyTierLog, DapperStanleyTierLog>(); services.AddScoped<IStanleyActionStore, DapperStanleyActionStore>(); services.AddScoped<IStanleyHandoffStore, DapperStanleyHandoffStore>(); services.AddScoped<IStanleyMemoryStore, DapperStanleyMemoryStore>(); services.AddScoped<IStanleyBriefStore, DapperStanleyBriefStore>(); break;
-            case "memory": services.AddSingleton<IStanleyTierLog, MemoryStanleyTierLog>(); services.AddSingleton<IStanleyActionStore, MemoryStanleyActionStore>(); services.AddSingleton<IStanleyHandoffStore, MemoryStanleyHandoffStore>(); services.AddSingleton<IStanleyMemoryStore, MemoryStanleyMemoryStore>(); services.AddSingleton<IStanleyBriefStore, MemoryStanleyBriefStore>(); break;
+            case "database": services.AddScoped<IStanleyTierLog, DapperStanleyTierLog>(); services.AddScoped<IStanleyActionStore, DapperStanleyActionStore>(); services.AddScoped<IStanleyHandoffStore, DapperStanleyHandoffStore>(); services.AddScoped<IStanleyMemoryStore, DapperStanleyMemoryStore>(); services.AddScoped<IStanleyBriefStore, DapperStanleyBriefStore>(); services.AddScoped<IStanleyTravellerStore, DapperStanleyTravellerStore>(); break;
+            case "memory": services.AddSingleton<IStanleyTierLog, MemoryStanleyTierLog>(); services.AddSingleton<IStanleyActionStore, MemoryStanleyActionStore>(); services.AddSingleton<IStanleyHandoffStore, MemoryStanleyHandoffStore>(); services.AddSingleton<IStanleyMemoryStore, MemoryStanleyMemoryStore>(); services.AddSingleton<IStanleyBriefStore, MemoryStanleyBriefStore>(); services.AddSingleton<IStanleyTravellerStore, MemoryStanleyTravellerStore>(); break;
             default: throw new InvalidOperationException($"{Section}:StanleyLog is '{tierLog}', which is not registered. Choose one of: database, memory.");
         }
         return services;

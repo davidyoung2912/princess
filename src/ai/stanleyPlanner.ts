@@ -14,7 +14,7 @@ export interface Segment { id: string; title: string; kind: string; source: 'res
 export interface Conflict { severity: 'hard' | 'soft'; code: string; ids: string[]; text: string }
 export interface Window { start: string; end: string; minutes: number }
 export interface TravellerChange { id: string; severity: 'change' | 'check'; text: string }
-export interface TravellerCheck { name: string; source: AccessSource; changes: TravellerChange[]; humanCheck: boolean; note: string }
+export interface TravellerCheck { name: string; source: AccessSource; confidence: 'high' | 'medium' | 'low'; changes: TravellerChange[]; humanCheck: boolean; note: string }
 export interface PlannedDay { day: number; scenario: string; segments: Segment[]; conflicts: Conflict[]; ready: boolean; backBy: string | null; windows: Window[]; notes: string[]; traveller: TravellerCheck | null }
 export interface HourOption { kind: 'event' | 'place'; id: string; title: string; start: string; minutes: number; place: string | null; cost: 'free' | 'included' | 'paid'; cents: number; walk: number; meets: string[]; why: string }
 export interface PlannedHour { from: string; to: string; options: HourOption[]; occupancy: string }
@@ -62,7 +62,7 @@ function traveller(v: unknown): TravellerCheck | null {
   if (!v || typeof v !== 'object') return null
   const o = rec(v)
   const changes = arr(o.changes).flatMap((c): TravellerChange[] => { const x = rec(c); return typeof x.text === 'string' ? [{ id: str(x.id, 40), severity: x.severity === 'change' ? 'change' : 'check', text: x.text.slice(0, 300) }] : [] }).slice(0, 20)
-  return { name: str(o.name, NAME_MAX), source: oneOf(o.source, SOURCES, 'unknown'), changes, humanCheck: o.humanCheck === true, note: str(o.note, 300) }
+  return { name: str(o.name, NAME_MAX), source: oneOf(o.source, SOURCES, 'unknown'), confidence: oneOf(o.confidence, ['high', 'medium', 'low'] as const, 'low'), changes, humanCheck: o.humanCheck === true, note: str(o.note, 300) }
 }
 
 export function normalizeDay(raw: unknown): PlannedDay | null {
@@ -147,24 +147,68 @@ export function normalizeGroupStatus(raw: unknown): GroupStatus | null {
   }
 }
 
-/** A poll with single votes becomes the server's request: a vote is a yes for that option, and no vote is an empty answer, never a yes. No reason is ever sent. */
+/** A poll becomes the server's request: a person's pick is a yes, their marks are maybe or no, and nothing said is an empty answer, never a yes. No reason is ever sent. */
 export function groupRequest(
-  poll: { question: string; options: { id: string; label: string }[]; votes: Record<string, string>; closedAt?: number },
+  poll: { question: string; options: { id: string; label: string }[]; votes: Record<string, string>; answers?: Record<string, Record<string, string>>; closedAt?: number; createdAt?: number; closesAt?: number },
   members: readonly { id: string; name: string }[],
   organiser: boolean,
-): { question: string; options: { id: string; label: string }[]; members: { name: string; answers: Record<string, string> }[]; closed: boolean; organiser: boolean } {
+): { question: string; options: { id: string; label: string }[]; members: { name: string; answers: Record<string, string> }[]; closed: boolean; organiser: boolean; createdAt?: number; closesAt?: number } {
   const ids = new Set(poll.options.map((o) => o.id))
   return {
     question: poll.question,
     options: poll.options,
     members: members.slice(0, 20).map((m) => {
+      const answers: Record<string, string> = {}
+      for (const [opt, mark] of Object.entries(poll.answers?.[m.id] ?? {})) if (ids.has(opt) && (mark === 'maybe' || mark === 'no')) answers[opt] = mark
       const v = poll.votes[m.id]
-      return { name: m.name.slice(0, NAME_MAX) || '?', answers: v !== undefined && ids.has(v) ? { [v]: 'yes' } : {} }
+      if (v !== undefined && ids.has(v)) answers[v] = 'yes'
+      return { name: m.name.slice(0, NAME_MAX) || '?', answers }
     }),
     closed: poll.closedAt !== undefined,
     organiser,
+    ...(poll.createdAt !== undefined ? { createdAt: poll.createdAt } : {}),
+    ...(poll.closesAt !== undefined ? { closesAt: poll.closesAt } : {}),
   }
 }
 
 /** The meeting note cut to the limit, so the request is never refused for length. */
 export const cleanNote = (s: string): string => s.trim().slice(0, NOTE_MAX)
+
+/** A traveller the guest plans for, with access and pace as a sourced, dated record. The server sets `asOf`, `confidence` and `stale`. */
+export interface Traveller {
+  id: string
+  name: string
+  mobility: PlannerMobility
+  pace: Pace
+  source: AccessSource
+  checkedOn: string | null
+  note: string
+  asOf: string | null
+  confidence: 'high' | 'medium' | 'low'
+  stale: boolean
+}
+export interface TravellerList { travellers: Traveller[]; staleAfterDays: number; max: number }
+export const TRAVELLER_NOTE_MAX = 100
+const MOBILITIES: readonly PlannerMobility[] = ['any', 'easy', 'wheelchair']
+
+export function normalizeTravellers(raw: unknown): TravellerList {
+  const o = rec(raw)
+  const travellers = arr(o.travellers).flatMap((r): Traveller[] => {
+    const x = rec(r)
+    if (typeof x.id !== 'string' || !x.id || typeof x.name !== 'string' || !x.name) return []
+    return [{
+      id: x.id.slice(0, 40), name: x.name.slice(0, NAME_MAX), mobility: oneOf(x.mobility, MOBILITIES, 'any'), pace: oneOf(x.pace, PACES, 'steady'), source: oneOf(x.source, SOURCES, 'unknown'),
+      checkedOn: typeof x.checkedOn === 'string' ? x.checkedOn.slice(0, 10) : null, note: str(x.note, TRAVELLER_NOTE_MAX), asOf: typeof x.asOf === 'string' ? x.asOf.slice(0, 10) : null,
+      confidence: oneOf(x.confidence, ['high', 'medium', 'low'] as const, 'low'), stale: x.stale === true,
+    }]
+  }).slice(0, 8)
+  return { travellers, staleAfterDays: num(o.staleAfterDays) || 180, max: num(o.max) || 8 }
+}
+
+/** What is sent to save a traveller. A date goes only with a verified source, and is never in the future (the server checks again). */
+export function travellerBody(t: { id: string; name: string; mobility: PlannerMobility; pace: Pace; source: AccessSource; checkedOn: string; note: string }): { id: string; name: string; mobility: string; pace: string; source: string; checkedOn: string | null; note: string | null } {
+  return { id: t.id, name: t.name.trim().slice(0, NAME_MAX), mobility: t.mobility, pace: t.pace, source: t.source, checkedOn: t.source === 'verified' && t.checkedOn ? t.checkedOn : null, note: t.note.trim().slice(0, TRAVELLER_NOTE_MAX) || null }
+}
+
+/** A new id for a traveller: letters, digits and dashes only, as the server accepts. */
+export const newTravellerId = (now: number, salt: number): string => `t${now.toString(36)}${Math.floor(salt * 1e6).toString(36)}`.slice(0, 40)

@@ -25,6 +25,7 @@ const WHERE: Partial<Record<StanleyAction['kind'], { path: string; label: String
   order_item: { path: '/ship/requests', label: 'action.go.requests' },
   add_excursion: { path: '/plan/excursions', label: 'action.go.excursions' },
   move_dinner: { path: '/plan/dining', label: 'action.go.dining' },
+  reserve_dinner: { path: '/plan/dining', label: 'action.go.dining' },
   draft_case: { path: '/me/cases', label: 'action.go.cases' },
   plan_change: { path: '/plan/autopilot', label: 'action.go.changes' },
 }

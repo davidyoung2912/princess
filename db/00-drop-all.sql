@@ -89,6 +89,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'StanleyMemory'),
   (N'dbo', N'StanleyMemorySettings'),
   (N'dbo', N'StanleyBriefs'),
+  (N'dbo', N'StanleyTravellers'),
   (N'dbo', N'StanleyTierLog'),
   (N'dbo', N'DataProtectionKeys'),
   (N'demo', N'DemoState'),
