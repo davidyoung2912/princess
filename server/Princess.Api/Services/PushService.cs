@@ -13,12 +13,13 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
-    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments)
+    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
+    IEmailSender email, ISmsSender sms, ITripStore profiles)
 {
     public async Task<PushStatusDto> StatusAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
         var subs = await store.ListSubscriptionsAsync(actor.Id, ct);
-        var log = await store.ListDeliveriesAsync(actor.Id, PushRules.MaxLog, ct);
+        var log = (await store.ListDeliveriesAsync(actor.Id, PushRules.MaxLog, ct)).Where(l => !IsOtherChannel(l.NoticeKey)).ToList();
         var mine = endpoint is null ? null : subs.FirstOrDefault(s => s.Endpoint == endpoint);
         var shown = mine ?? subs.FirstOrDefault();
         return new PushStatusDto(
@@ -26,6 +27,9 @@ public sealed class PushService(
             shown?.Budget ?? PushRules.DefaultBudget, shown?.Calm ?? false, [.. Watch(subs)],
             log.Count(l => l.Outcome == "sent" && !l.Read), [.. log.Select(ToDto)]);
     }
+
+    // Email and text deliveries are kept in the same log under "email:" and "sms:" keys so each is sent once; they are not shown as phone alerts.
+    private static bool IsOtherChannel(string key) => key.StartsWith("email:", StringComparison.Ordinal) || key.StartsWith("sms:", StringComparison.Ordinal);
 
     private static IEnumerable<string> Watch(IEnumerable<PushSubscriptionRow> subs) =>
         subs.SelectMany(s => s.Watch.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Distinct().Take(PushRules.MaxWatch);
@@ -62,7 +66,7 @@ public sealed class PushService(
     {
         await instalments.ChargeDueAsync(actor, await clock.NowAsync(actor, ct), ct);
         var subs = await store.ListSubscriptionsAsync(actor.Id, ct);
-        if (subs.Count > 0 && sender.PublicKey is not null) await RunAsync(actor, subs, ct);
+        await RunAsync(actor, subs, ct);
         return await StatusAsync(actor, endpoint, ct);
     }
 
@@ -82,7 +86,9 @@ public sealed class PushService(
         var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), [.. Watch(subs)]);
         var log = await store.ListDeliveriesAsync(actor.Id, 200, ct);
         var sentKeys = log.Where(l => l.Outcome == "sent").Select(l => l.NoticeKey).ToHashSet();
-        var sentToday = log.Count(l => l.Outcome == "sent" && !l.Bypass && InZone(l.At, zone).Date == local.Date);
+        await ReachOtherChannelsAsync(actor, notices, prefs, TimeOnly.FromDateTime(local), sentKeys, now, ct);
+        if (subs.Count == 0 || sender.PublicKey is null) return;
+        var sentToday = log.Count(l => l.Outcome == "sent" && !l.Bypass && !IsOtherChannel(l.NoticeKey) && InZone(l.At, zone).Date == local.Date);
 
         foreach (var n in notices.Where(n => !sentKeys.Contains(n.Key)))
         {
@@ -106,6 +112,23 @@ public sealed class PushService(
             if (delivered == 0) continue; // nothing reached a phone: try again at the next check rather than log a send
             await store.AddDeliveryAsync(actor.Id, new(n.Key, n.Kind, n.Bypass, "sent", null, delivered, paramsJson, now, false), now, ct);
             if (!n.Bypass) sentToday++;
+        }
+    }
+
+    /// <summary>Sends the notice by email and by text where the guest chose those channels, once each (the log keeps an "email:" or "sms:" row). A refused send is tried again at the next check.</summary>
+    private async Task ReachOtherChannelsAsync(UserRecord actor, List<PushNotice> notices, JsonObject prefs, TimeOnly local, HashSet<string> sentKeys, DateTime now, CancellationToken ct)
+    {
+        var phone = (await profiles.GetProfileAsync(actor.Id, ct))?.Phone;
+        // Only the payment and travel notices (instalments, tender, flight) go beyond the phone; the on-board and port-day ones are for the phone alone.
+        foreach (var n in notices.Where(n => n.Kind is "payment" or "travel"))
+        {
+            var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
+            if (!string.IsNullOrWhiteSpace(actor.Email) && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
+                && await email.SendAsync(new EmailMessage(actor.Email, n.Title, n.Body), ct))
+                await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
+            if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)
+                && await sms.SendAsync(new SmsMessage(phone, n.Title + ": " + n.Body), ct))
+                await store.AddDeliveryAsync(actor.Id, new("sms:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
         }
     }
 

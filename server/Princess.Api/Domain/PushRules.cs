@@ -172,6 +172,20 @@ public static class PushRules
         return new(true, null);
     }
 
+    /// <summary>
+    /// Whether a notice also goes by email or text (X14). Each follows the guest's own channel choice for the notice's category (critical cannot be turned off).
+    /// Texts keep to quiet hours unless the notice is a safety one; email has no hours. Neither uses the phone budget, and calm mode (a phone setting) does not apply.
+    /// </summary>
+    public static bool Reach(PushNotice n, JsonObject prefs, string channel, TimeOnly local)
+    {
+        if (channel is not ("email" or "sms")) return false;
+        if (n.Bypass) return true;
+        var row = (prefs["channels"] as JsonObject)?[n.Category] as JsonObject;
+        if (!(row?[channel] is JsonValue v && v.TryGetValue<bool>(out var on) && on)) return false;
+        var quiet = prefs["quiet"] as JsonObject;
+        return !(channel == "sms" && InQuiet(local, Flag(quiet?["on"]), Text(quiet?["from"], "22:00"), Text(quiet?["to"], "07:00")));
+    }
+
     private static bool Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
     private static string Text(JsonNode? n, string fallback) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : fallback;
 }

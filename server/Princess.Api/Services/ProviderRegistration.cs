@@ -28,6 +28,7 @@ public static class ProviderRegistration
         "ShipTelemetry" => "Telemetry",
         "ShipNavigation" => "Navigation",
         "EmailSender" => "Email",
+        "SmsSender" => "Sms",
         "PrintProvider" => "Print",
         "WalletPassIssuer" => "Wallet",
         _ => name,
@@ -57,6 +58,7 @@ public static class ProviderRegistration
         S<IPushSender, SimPushSender>(),
         S<IMediaScanner, SimMediaScanner>(),
         S<IEmailSender, SimEmailSender>(),
+        S<ISmsSender, SimSmsSender>(),
         S<IPrintProvider, SimPrintProvider>(),
         S<IWalletPassIssuer, SimWalletPassIssuer>(),
     ];

@@ -69,4 +69,21 @@ public class FlightRulesTests
         var ids = NotificationRules.BuildNotices(new("ok", "2027-05-01", 0, 0, "done", "2027-03-18", InstalmentTakenDate: "2027-03-20", InstalmentTakenCents: 50_000)).Select(n => n.Id);
         Assert.Equal(["instalmentTaken"], ids);
     }
+
+    [Fact]
+    public void EmailAndTextFollowTheGuestsChannelsAndTextKeepsQuietHours()
+    {
+        var notice = new PushNotice("k", "payment", "payments", false, 55, "/me/payments", "t", "b", []);
+        var prefs = NotificationRules.NormalizePrefs(null);
+        var noon = new TimeOnly(12, 0);
+        Assert.True(PushRules.Reach(notice, prefs, "email", noon));
+        Assert.False(PushRules.Reach(notice, prefs, "sms", noon));   // text is off for payments by default
+        prefs["channels"]!["payments"]!["sms"] = true;
+        Assert.True(PushRules.Reach(notice, prefs, "sms", noon));
+        prefs["quiet"] = new System.Text.Json.Nodes.JsonObject { ["on"] = true, ["from"] = "22:00", ["to"] = "07:00" };
+        Assert.False(PushRules.Reach(notice, prefs, "sms", new TimeOnly(23, 0)));
+        Assert.True(PushRules.Reach(notice, prefs, "email", new TimeOnly(23, 0)));
+        Assert.True(PushRules.Reach(notice with { Bypass = true }, prefs, "sms", new TimeOnly(23, 0)));
+        Assert.False(PushRules.Reach(notice, prefs, "fax", noon));
+    }
 }
