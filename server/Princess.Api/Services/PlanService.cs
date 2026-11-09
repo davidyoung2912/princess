@@ -688,6 +688,10 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         foreach (var r in await RequestsAsync(c, ct)) if (PlanRules.AssistKindOf(r.Kind)?.Need is { } n) needs.Add(n);
         var tours = (await plan.ListToursAsync(c.Booking.BookingId, ct)).Where(t => t.Status == "booked").Select(t => t.ExcursionId);
         var items = PlanRules.BuildPackingList(c.Departure, c.Nights, tours, [.. c.Party.Select(g => g.Age)], needs, true, PlanRules.ElegantNights(c.Nights), weather.Climate(c.Departure));
+        // Stanley's itinerary and forecast items (phase 10) sit in the same list, so ticking them works the same way.
+        var have = items.Select(i => i.Id).ToHashSet();
+        var tourNames = tours.Select(ExcursionRules.ById).OfType<Excursion>().Select(x => x.Name).ToList();
+        items.AddRange(StanleyTravelRules.PackingExtras(c.Timeline, weather.Sky, tourNames).Where(i => !have.Contains(i.Id)));
         var known = items.Select(i => i.Id).ToHashSet();
         return (items, [.. (await plan.GetTicksAsync(c.Booking.BookingId, "packing", ct)).Where(known.Contains)]);
     }

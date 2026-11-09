@@ -132,6 +132,17 @@ export const stanleyPlanner = {
   forgetTraveller: (id: string) => http.delete<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`),
 }
 
+/** Travel-day, port and onward-travel help (phase 10): the flight rechecked, traffic, a shore plan, reviewed phrases, the offline port pack, an embark tour and the official entry sources. Nothing is booked or sent from here. */
+export const stanleyTravel = {
+  flight: (sailingId?: string) => http.get<unknown>(`/me/stanley/travel/flight${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),
+  traffic: (body: { sailingId?: string; crowd: string }) => http.post<unknown>('/me/stanley/travel/traffic', body),
+  port: (body: { sailingId?: string; day: number; interests: string[]; mode: string; minutes: number; distance: string; mobility: string }) => http.post<unknown>('/me/stanley/travel/port', body),
+  phrases: (body: { sailingId?: string; day: number; query?: string }) => http.post<unknown>('/me/stanley/travel/phrases', body),
+  pack: (body: { sailingId?: string; day: number }) => http.post<unknown>('/me/stanley/travel/port-pack', body),
+  embark: (body: { sailingId?: string; goals: string[]; mobility: string }) => http.post<unknown>('/me/stanley/travel/embark-tour', body),
+  entry: (sailingId?: string) => http.get<unknown>(`/me/stanley/travel/entry${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),
+}
+
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 

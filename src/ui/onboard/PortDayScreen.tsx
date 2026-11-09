@@ -7,7 +7,8 @@ import { formatTime } from '../../domain/cruise'
 import { PORTS } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { api } from '../../runtime'
-import { useNow, usePersona } from '../../hooks/useDemo'
+import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
+import { StanleyShoreCard } from '../ai/StanleyTravel'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -46,6 +47,8 @@ export function PortDayScreen() {
 function Body({ v }: { v: PortDayView }) {
   const port = PORTS[v.day.port]
   const now = useNow()
+  const me = usePersona()
+  const sailing = useSailing()
   return (
     <>
       {!v.skipped && now >= v.day.arriveAt && <StanleyMoment id="port" subject={String(v.day.day)} params={{ port: port.name }} />}
@@ -58,6 +61,7 @@ function Body({ v }: { v: PortDayView }) {
       <PocketStopwatch day={v.day} />
       <SunNudge day={v.day} />
       <PortPilot v={v} />
+      {me && !v.skipped && <StanleyShoreCard sailingId={sailing.id} day={v.day.day} />}
       <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
       {v.day.tender && !v.skipped && <TenderOutlook port={v.day.port} date={v.day.date} headingId="tender-outlook-h" />}

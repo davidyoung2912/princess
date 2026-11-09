@@ -4,7 +4,8 @@ import type { CustomsView } from '../../api/finishTypes'
 import { ALLOWANCE_USD, CASH_LIMIT_USD, CUSTOMS_CARRY, CUSTOMS_DECLARE, CUSTOMS_NOTE_MAX, GOODS_MAX } from '../../domain/disembark'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
+import { StanleyEntrySources } from '../ai/StanleyTravel'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -20,10 +21,12 @@ import { AllowanceLeft } from '../delights/PortDelights'
 export function CustomsScreen() {
   const me = usePersona()
   const copy = useSavedCopy('customs', me?.booker ?? 'none', () => api.disembark.customs(), asCustomsView, [me?.id])
+  const sailing = useSailing()
   return (
     <div className="page">
       <p>{t('cus.intro')}</p>
       <Saved copy={copy}>{(v) => <Customs v={v} reload={copy.retry} />}</Saved>
+      {me && <StanleyEntrySources sailingId={sailing.id} />}
       <BackLink to="/home/disembark" label={t('route.disembark')} />
     </div>
   )

@@ -111,6 +111,7 @@ services.AddScoped<StanleyHandoffService>();
 services.AddScoped<StanleyMemoryService>();
 services.AddScoped<StanleyDiscoverService>();
 services.AddScoped<StanleyPlannerService>();
+services.AddScoped<StanleyTravelService>();
 services.AddScoped<StanleyTravellerService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();

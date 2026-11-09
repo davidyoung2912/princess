@@ -7,7 +7,8 @@ import { formatMoney } from '../../domain/money'
 import { formatTime } from '../../domain/cruise'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { usePersona } from '../../hooks/useDemo'
+import { usePersona, useSailing } from '../../hooks/useDemo'
+import { StanleyFlightCard } from '../ai/StanleyTravel'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -22,10 +23,12 @@ import { useShipTime } from '../onboard/shipTime'
 export function OnwardScreen() {
   const me = usePersona()
   const copy = useSavedCopy('onward', me?.booker ?? 'none', () => api.disembark.onward(), asOnwardView, [me?.id])
+  const sailing = useSailing()
   return (
     <div className="page">
       <p>{t('onw.intro')}</p>
       <Saved copy={copy}>{(v) => <Onward v={v} reload={copy.retry} />}</Saved>
+      {me && <StanleyFlightCard sailingId={sailing.id} />}
       <RideCard />
       <BackLink to="/home/disembark" label={t('route.disembark')} />
     </div>

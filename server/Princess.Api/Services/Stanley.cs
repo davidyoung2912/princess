@@ -76,6 +76,12 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
         if (trip is not null && o.Switches.Resolver && StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow) is { } card)
             return await End(new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card), card.Id, card.Abstained ? "abstained" : "ok");
+        // Entry, visa, immigration and customs rules are never answered by Stanley or a model (phase 10): the guest gets the official sources for each country on the sailing.
+        if (StanleyTravelRules.IsEntryQuestion(turns.Message))
+        {
+            var entry = StanleyTravelRules.Entry(trip?.Timeline ?? Timeline.Legacy(DateOnly.FromDateTime(clock.UtcNow)));
+            return await End(Answer(StanleyTravelRules.EntryAnswer(entry), "scripted", "entry", null, [new CitationDto("Customs", "/home/disembark/customs")]), "entry", "ok");
+        }
         var routing = StanleyRouter.Route(turns.Message, context.Stage, trip is not null);
         var modelUsable = model.Available && o.Switches.Model;
         var meter = new ModelMeter(model, c => limiter.TryTakeAsync(user.Id, clock.UtcNow, o.DailyCeiling, TimeSpan.FromDays(1), c), routing.Planning ? o.PlanningCalls : o.ChatCalls);

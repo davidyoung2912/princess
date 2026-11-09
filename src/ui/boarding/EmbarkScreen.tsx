@@ -6,7 +6,8 @@ import { formatTime } from '../../domain/cruise'
 import { PORT_FACTS } from '../../domain/travel'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { useNow, usePersona } from '../../hooks/useDemo'
+import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
+import { StanleyEmbarkTour, StanleyTrafficCard } from '../ai/StanleyTravel'
 import { useTrip } from '../../hooks/useTrip'
 import { setIn } from '../../domain/journey'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
@@ -46,6 +47,7 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
   const { boarding } = view
   const bags = useAction(async (dropped: boolean) => { await api.boarding.setBags(dropped); reload() })
   const trip = useTrip()
+  const sailing = useSailing()
   // The packing list on the journey screen has the same carry-on items; a tick here counts there too.
   const carry = useAction(async (item: EmbarkView['carryOn'][number]['id'], done: boolean) => {
     await api.boarding.setCarryOn(item, done)
@@ -89,6 +91,8 @@ function Body({ view, offline, reload }: { view: EmbarkView; offline: boolean; r
 
       <CabinReadyCard cabin={mine?.cabin ?? ''} ready={view.stateroomReady} />
       {mine && view.stateroomReady && <LandmarksCard cabin={mine.cabin} muster={mine.muster} />}
+      {me && <StanleyTrafficCard sailingId={sailing.id} />}
+      {me && <StanleyEmbarkTour sailingId={sailing.id} />}
 
       <section aria-labelledby="bags-h">
         <h2 id="bags-h">{th('embark.bags')}</h2>
