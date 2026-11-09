@@ -225,6 +225,20 @@ public class PushRulesTests
         Assert.Equal("/home/updates?trip=PC1", PushRules.WithLink(change with { Params = new() { ["id"] = "x y" } }, "PC1").Path);
     }
 
+    [Fact]
+    public void PreviewsOfMoneyFlightsAndShipReasonsAreRedactedAndSafetyOnesAreNot()
+    {
+        var pay = new PushNotice("p", "payment", "payments", true, 92, "/me/payments", "Stanley: your payment is overdue", "The final payment date is 2027-01-20.", new() { ["date"] = "2027-01-20" });
+        var red = PushRules.Redact(pay);
+        Assert.DoesNotContain("payment", red.Title + red.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(pay.Path, red.Path);
+        Assert.Equal(pay.Params, red.Params);
+        foreach (var kind in new[] { "travel", "scheduleChange" })
+            Assert.Equal("Open the app to see the details.", PushRules.Redact(pay with { Kind = kind }).Body);
+        var safety = new PushNotice("a", "allAboard", "critical", true, 100, "/ship/port", "Stanley: time to head back", "All aboard is at 4:30 pm.", []);
+        Assert.Equal(safety, PushRules.Redact(safety));
+    }
+
     private static PushDeliveryRow Sent(string key, DateTime at, bool bypass = true, bool acked = false) => new(key, "allAboard", bypass, "sent", null, 1, "{}", at, false, acked);
 
     [Fact]

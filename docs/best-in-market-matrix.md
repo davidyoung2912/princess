@@ -129,7 +129,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-02 | P0 | Built | F | `src/domain/readiness.ts`, `src/domain/readinessBoard.ts`, `src/domain/readinessBoard.test.ts` | None found |
 | MNG-03 | P0 | Built | R | `src/ui/SyncChip.tsx`, `src/domain/syncAge.ts`, `src/domain/syncAge.test.ts` | `SyncChip` shows current, stale, pending, unavailable, not linked (BM19); no screen passes `lookup` yet |
 | MNG-04 | P0 | Built | F | `src/domain/papersCheck.ts`, `src/domain/papersCheck.test.ts`, `src/ui/account/PapersCheck.tsx` | None found |
-| MNG-05 | P0 | Partial | R | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | Reconciled: documents access-scoped; no rule keeping sensitive data out of push previews (BM17 `it.fails`) |
+| MNG-05 | P0 | Partial | R | `src/ui/account/DocumentsScreen.tsx`, `src/domain/documents.ts` | BM41: push previews of payment, travel and schedule-change alerts are redacted (`PushRules.Redact`); documents access-scoped. Still open: no encryption-at-rest or export/delete evidence read |
 | MNG-06 | P1 | Built | F | `src/ui/plan/PlanScreen.tsx`, `src/domain/readinessBoard.ts` | Private documents hidden: not read |
 | MNG-07 | P1 | Built | R | `src/ui/account/HelperScreen.tsx`, `src/domain/account.ts` | Seven permissions now (BM6 to BM12). See IDN-05 |
 | MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/ui/plan/PackingScreen.tsx` | None found |

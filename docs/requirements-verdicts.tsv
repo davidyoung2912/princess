@@ -8,7 +8,7 @@ PRE-18	PARTIAL	Refund timing appears as fact ("Refunds reach your card in 5 work
 DEB-05	PARTIAL	Outcomes are worded after a case is resolved (case.outcome.refunded). No wording at submission that opening a case does not mean the charge is reversed.
 DEB-04	PARTIAL	trustLedger has a refund kind, but folio.ts has no pending, disputed, refunded or adjusted line state; the final bill only adjusts the tip.
 IDN-01	PARTIAL	(Reconciled) Sign out everywhere built in BM35 (POST /auth/logout-all). Still no device list (needs a sessions table), step-up check or suspicious sign-in notice.
-MNG-05	PARTIAL	(Reconciled BM41 prep) Documents are access-scoped on the server; no redaction rule for push title and body (PushRules builds Title and Body from the alert). Still a gap, pinned by it.fails.
+MNG-05	PARTIAL	(BM41) Documents are access-scoped on the server; push previews for payment, travel and schedule-change alerts are redacted by PushRules.Redact. Encryption at rest and export/delete not read.
 MNG-11	PARTIAL	(Reconciled) RequestsScreen shows stage and ETA; no owner or team, no reason when there is no ETA. Escalation exists only for pre-trip fix cases (FixItScreen).
 SEA-20	PARTIAL	(Reconciled) Aboard requests have stage and ETA only; no escalation, closure confirmation or reopen with history. Pre-trip fix cases have escalate.
 PRE-01	PARTIAL	(Reconciled) plan.ts lists confirmed tours and dinners only; "gaps" are suggestions, not planned items, so planned and confirmed are not shown side by side.

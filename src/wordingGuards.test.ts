@@ -81,7 +81,7 @@ describe('known gaps (it.fails: a pass here means the gap is closed, so turn it 
   })
 
   // proves: MNG-05#1
-  it.fails('MNG-05: push previews have a rule that keeps sensitive details out of the title and body', () => {
+  it('MNG-05: push previews have a rule that keeps sensitive details out of the title and body', () => {
     const server = walk('server/Princess.Api').map(read).join('\n')
     expect(server).toMatch(/Redact|PreviewSafe|SensitivePreview/i)
   })

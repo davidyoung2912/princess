@@ -62,6 +62,17 @@ public static class PushRules
         return query.Count == 0 ? n : n with { Path = $"{n.Path}?{string.Join('&', query)}" };
     }
 
+    /// <summary>
+    /// Push previews show on a locked screen, so the title and body of a notice that would name money, a flight or a reason the ship gave
+    /// (free text) are swapped for a plain line; the app shows the detail once opened (MNG-05). Safety, port and plain reminder notices carry
+    /// nothing private and are left as they are. The kind, path and params are untouched, so the link and the alert log still work.
+    /// </summary>
+    public static PushNotice Redact(PushNotice n) => n.Kind switch
+    {
+        "payment" or "travel" or "scheduleChange" => n with { Title = "Stanley: something to look at", Body = "Open the app to see the details." },
+        _ => n,
+    };
+
     private static bool Plain(string? v) => v is { Length: > 0 and <= 40 } && v.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
 
     /// <summary>The notices that apply now, most worth saying first. A notice that has not come true yet (for example all-aboard in three hours) is not built.</summary>

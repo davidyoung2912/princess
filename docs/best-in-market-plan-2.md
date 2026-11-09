@@ -312,3 +312,10 @@ Docs only, no code. Read the code for the seven rows that were still "needs a re
 - **Totals now:** 197 Built, 74 Partial, 13 Simulated, 2 Not built, 6 Out of reach; 32 rows read, 260 found only. P0: 95 Built, 24 Partial, 2 Simulated, 1 Out of reach. The untagged list is 83.
 - **Still unread:** 83 P0 Built rows are "found by search" only, so more hidden gaps are possible there.
 - `npm run test`, `npm run lint` and `npx tsc -b` pass.
+
+## 5aa. BM41 result (built, not committed)
+
+Theme: push-preview redaction (MNG-05). BM41 was not defined in the plan; I took the row the BM40b reconciliation labelled "BM41 prep".
+- **Server:** `PushRules.Redact` replaces the title and body of payment, travel (flight, tender) and schedule-change notices with "Stanley: something to look at" / "Open the app to see the details." Safety, port, disruption and reminder notices are unchanged. Applied in `PushService` after `WithLink`, so the SMS and email fallback text is covered too; kind, path and params are untouched.
+- **Tests:** server `PreviewsOfMoneyFlightsAndShipReasonsAreRedactedAndSafetyOnesAreNot` (written, not run); the MNG-05 wording guard is now `it` instead of `it.fails`. `npm run test`, `npm run lint`, `npx tsc -b` pass.
+- **Limits:** params (dates, amounts) still travel in the encrypted push payload and the in-app log; only the visible preview is redacted. There is no per-guest "show details" switch. Encryption at rest and export/delete for documents were not read, so MNG-05 stays Partial. No browser check.
