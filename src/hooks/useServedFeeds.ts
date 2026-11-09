@@ -10,6 +10,8 @@ import { faresFeed } from '../feeds/fares'
 import { openingArgs, openingFeed } from '../feeds/onboard'
 import { minuteOf, pulseDayFeed, pulseFeed, withServed } from '../feeds/pulse'
 import { crowdFeed } from '../feeds/portCrowd'
+import { tenderFeed } from '../feeds/tender'
+import type { TenderOutlook } from '../domain/tender'
 
 /**
  * Any feed from `src/feeds`: the server's answer, else the last one kept on this device, else null (loading). `args` must be plain values (they key the
@@ -83,4 +85,9 @@ export function useOpenings(watches: readonly WatchTimes[]): (w: WatchTimes) => 
   }, [k])
   // oxlint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => (w) => openingFeed.now(...openingArgs(w))?.opensAt ?? null, [tick])
+}
+
+/** How likely the tender boats are to run late at a port on a date; null until the server's answer (or the last one kept) is here. */
+export function useTenderOutlook(port: string, date: string): TenderOutlook | null {
+  return useServedFeed(!!date, tenderFeed, [port, date])
 }

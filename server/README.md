@@ -58,7 +58,7 @@ Every external source is behind an interface and chosen in one place, `Services/
 | `StaffQueue` | `IStaffQueue` | a ticket with a position and expected time; the ticket row is kept by `IStaffTicketStore` either way, so the desk can read `dbo.StaffTickets` | the desk is unreachable: still keep the ticket and answer `waiting` |
 | `Concierge` | `IConciergeModel` | `sim` (the scripted concierge) or `anthropic` (needs `Concierge:ApiKey`). Unset: `anthropic` when a key is present, else `sim` | the model fails: the scripted concierge answers with a `fallback` code |
 | `ConciergeLimit` | `IConciergeLimiter` | `database` (default; `dbo.ConciergeUses`, shared by every instance and kept over restarts) or `memory` (one instance; tests) | n/a |
-| `FareFeed`, `ProgramChanges`, `StormOutlook`, `LostProperty`, `SlotWatchFeed`, `SailingQuality`, `EmbarkQueue`, `CabinGuide`, `FriendReply`, `PaymentGateway`, `TelemetrySink` | the interface of the same name | see the doc comment on each interface in `Services/Providers.cs` and `PaymentGateway.cs` | the call fails |
+| `FareFeed`, `ProgramChanges`, `StormOutlook`, `TenderOutlook`, `LostProperty`, `SlotWatchFeed`, `SailingQuality`, `EmbarkQueue`, `CabinGuide`, `FriendReply`, `PaymentGateway`, `TelemetrySink` | the interface of the same name | see the doc comment on each interface in `Services/Providers.cs` and `PaymentGateway.cs` | the call fails |
 
 After any server change run `dotnet build server/Princess.sln` yourself; this project's rule keeps `dotnet test` out of the assistant's hands. Apply the new table with `db/01-schema.sql` (it creates `dbo.ConciergeUses` if missing).
 

@@ -11,6 +11,7 @@ import { LinkButton } from '../Button'
 import { Anchor } from '../icons'
 import { SaveShare } from './parts'
 import { StanleyExplain } from '../ai/StanleyExplain'
+import { TenderOutlook } from './TenderOutlook'
 
 /** A port guide: how you get ashore and how accessible it is come first, then things to do and sample excursions (DIS-05). */
 export function PortScreen() {
@@ -35,6 +36,8 @@ export function PortScreen() {
       <h2>{name}</h2>
       <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{tender && <StanleyExplain term="tender" />}{day && <> <span className="muted">{t('discover.visitedDay', { day: day.day })}</span></>}</p>
       <SaveShare kind="port" id={guide.id} name={name} favourites={favourites} />
+
+      {tender && day && <TenderOutlook port={guide.id} date={day.date} />}
 
       <section aria-labelledby="access-h">
         <Card info labelledBy="access-h">

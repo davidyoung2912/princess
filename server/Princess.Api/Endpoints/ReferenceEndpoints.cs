@@ -149,6 +149,13 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("How likely a named storm is to touch a sailing's route, from authored chances by month, with what the line may do and what a guest can do. Not a forecast; `source` says so. Name the sailing with `sailing` (an id).");
 
+        api.MapGet("/feeds/tender", (string port, string date, ITenderOutlook tender) =>
+            {
+                if (!TenderRules.ValidQuery(port, date)) throw ApiException.Invalid("badFeedQuery");
+                return Results.Ok(tender.Outlook(port, date));
+            })
+            .WithTags("Reference").WithSummary("How likely the tender boats at a port are to run late or be called off on a date (good, mixed or rough), with what a guest can do. Not a forecast; `source` says so.");
+
         api.MapGet("/feeds/sky-night", async (string sailing, int day, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
             {
                 var departure = await DepartureOfAsync(sailing, trips, ct);

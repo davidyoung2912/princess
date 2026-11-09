@@ -57,6 +57,17 @@ public interface IStormOutlook
     StormDto Outlook(string departure, int daysToDeparture);
 }
 
+/// <summary>How likely the tender boats at a port are to run late or be called off on a date. Not a forecast.</summary>
+public interface ITenderOutlook
+{
+    TenderOutlookDto Outlook(string port, string date);
+}
+
+public sealed class SimTenderOutlook : ITenderOutlook
+{
+    public TenderOutlookDto Outlook(string port, string date) => TenderRules.Outlook(port, date);
+}
+
 /// <summary>What the lost-property desk has handed in.</summary>
 public interface ILostProperty
 {

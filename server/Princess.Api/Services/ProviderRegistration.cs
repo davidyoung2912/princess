@@ -44,6 +44,7 @@ public static class ProviderRegistration
         S<IFareFeed, SimFareFeed>(),
         S<IProgramChanges, SimProgramChanges>(),
         S<IStormOutlook, SimStormOutlook>(),
+        S<ITenderOutlook, SimTenderOutlook>(),
         S<ILostProperty, SimLostProperty>(),
         S<ISlotWatchFeed, SimSlotWatchFeed>(),
         S<ISailingQuality, SimSailingQuality>(),

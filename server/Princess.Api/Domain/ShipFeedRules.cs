@@ -25,7 +25,7 @@ public static class ShipFeedRules
     public static bool ValidPort(string? port) => port is not null && port != "sea" && PortId.IsMatch(port);
     public static bool ValidDate(string? date) => date is not null && IsoDate.IsMatch(date) && DateOnly.TryParseExact(date, "yyyy-MM-dd", out _);
 
-    private static uint Fnv(string text)
+    internal static uint Fnv(string text)
     {
         unchecked
         {
