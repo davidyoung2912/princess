@@ -10,7 +10,7 @@ import { formatDate, sailingRange } from '../../domain/cruise'
 import { sailingById } from '../../domain/sailings'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
-import { useMine } from '../../hooks/useMine'
+import { useSharedMine } from '../../hooks/useSharedMine'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { UpdatesBanner } from '../onboard/Updates'
@@ -43,7 +43,7 @@ import { useNow } from '../../hooks/useDemo'
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {
   const [settings] = useSettings()
-  const trips = useMine(() => api.trips.list())
+  const trips = useSharedMine('trips.list', () => api.trips.list())
   const trip = trips.data ? pickTrip(trips.data.upcoming) : null
   const today = useOnboardToday()
   const { stage } = useJourneyPosition()

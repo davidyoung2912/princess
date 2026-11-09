@@ -1,5 +1,6 @@
 // Test support only (nothing in the app imports src/testing). Renders the real app, in jsdom, against a stubbed network: the real API client, guards, stores and
 // screens run, and only `fetch` is replaced by a table of fixture answers. A path with no fixture answers 404 and is recorded, so a test can say what a screen asked for.
+import { forgetSharedLoads } from '../hooks/useSharedMine'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { vi } from 'vitest'
@@ -70,6 +71,7 @@ export async function renderAt(path: string) {
 
 export function teardown(): void {
   cleanup()
+  forgetSharedLoads()
   vi.unstubAllGlobals()
   try { localStorage.clear(); sessionStorage.clear() } catch { /* none */ }
 }

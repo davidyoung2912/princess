@@ -57,6 +57,8 @@
   border-top: 4px solid transparent;
   --tab: var(--primary);
 }
+.tabs__item { position: relative; }
+.tabs__dot { position: absolute; top: var(--space-2); inset-inline-start: calc(50% + 0.5rem); width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg); box-sizing: content-box; }
 .tabs { --rail-bg: color-mix(in srgb, var(--primary) 8%, var(--bg)); --rail-bg-end: color-mix(in srgb, var(--primary) 30%, var(--bg)); }
 /* The active tab is filled with its own colour and its text and icon use the on-colour (white in the light themes), which every theme's tab colour is checked against. */
 .tabs__item { --tab-tint: var(--sky-tint); }

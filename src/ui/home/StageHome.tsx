@@ -15,6 +15,9 @@ import { dotReason, publishDot } from '../../ai/stanleyDot'
 import { stanleyLevelFor } from '../../settings/settings'
 import { useSettings } from '../../hooks/useSettings'
 import { nextSteps, stageTiles, urgentStep } from '../../routes/stageHome'
+import { useTileLive } from '../../hooks/useTileLive'
+import { needsAttention, type TileLine } from '../../domain/tileLive'
+import { TileLiveLine } from '../TileLiveLine'
 
 /** Home for Dream, Discover and Book: three Next steps, then six tiles with one line of state each (plan section 8). */
 export function StageHome({ trip = null, today = null }: { trip?: TripView | null; today?: OnboardToday | null }) {
@@ -25,10 +28,11 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
   useEffect(() => { publishDot(reason); return () => publishDot(null) }, [reason])
   const steps = nextSteps(stage, facts)
   const tiles = stageTiles(stage, { sailingId: focusSailingId, draftId })
-  const stateOf = (id: string): string | null => {
-    if (id === 'H11') return facts.savedSailings > 0 ? t('stage.tile.saved', { count: facts.savedSailings }) : t('stage.tile.savedNone')
-    if ((id === 'H17' || id === 'H18') && !facts.draft?.started) return t('stage.tile.noDraft')
-    return null
+  const live = useTileLive(tiles.map((x) => x.screen.path), true)
+  const stateOf = (id: string, path: string): TileLine | null => {
+    if (id === 'H11') return { text: facts.savedSailings > 0 ? t('stage.tile.saved', { count: facts.savedSailings }) : t('stage.tile.savedNone'), tone: 'neutral' }
+    if ((id === 'H17' || id === 'H18') && !facts.draft?.started) return { text: t('stage.tile.noDraft'), tone: 'neutral' }
+    return live[path] ?? null
   }
   const urgent = urgentStep(stage, facts) !== null
   const firstUndone = steps.find((x) => !x.done)
@@ -64,13 +68,15 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
         <ul className="stage-tiles">
           {tiles.map(({ screen, to }) => {
             const Icon = SCREEN_ICONS[screen.id] ?? CircleDot
+            const state = stateOf(screen.id, screen.path)
+            const flagged = to === attention || needsAttention(state ?? undefined)
             return (
-            <li key={screen.id} className={`stage-tile motion-lift${to === attention ? ' stage-tile--attention' : ''}`}>
+            <li key={screen.id} className={`stage-tile motion-lift${flagged ? ' stage-tile--attention' : ''}`}>
               <Link to={to} state={openedFrom('blue')} className="stage-tile__link">
                 <Icon className="stage-tile__icon" aria-hidden="true" />
                 <span className="stage-tile__title">{th(screen.titleKey)}</span>
-                <span className="screen-list__subtext">{stateOf(screen.id) ?? t(screen.subtextKey)}</span>
-                {to === attention && <span className="stage-tile__badge"><CircleDot size={14} aria-hidden="true" /> {t('stage.tile.attention')}</span>}
+                <span className="screen-list__subtext">{state ? <TileLiveLine line={state} /> : t(screen.subtextKey)}</span>
+                {flagged && <span className="stage-tile__badge"><CircleDot size={14} aria-hidden="true" /> {t('stage.tile.attention')}</span>}
               </Link>
             </li>
             )

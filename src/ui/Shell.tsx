@@ -12,6 +12,7 @@ import { routeForPath } from '../routes/nav'
 import { recordVisit } from '../routes/trail'
 import { useRecentVisit } from '../hooks/useRecentVisit'
 import { screenForPath, type TabColour } from '../routes/screens'
+import { useTabAlerts } from '../hooks/useTabAlerts'
 import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
 import { Help, Search } from './icons'
@@ -70,6 +71,7 @@ export function Shell() {
   const screen = route && !route.public ? screenForPath(route.path) : undefined
   const landing = tabAtPath(pathname, stage)
   const tabs = navTabs(stage)
+  const alerts = useTabAlerts(stage, !!route && !route.public)
   // Until the server has said which stage the guest is in, the stage is a guess; a stale address is only judged once it is known.
   // A screen of an earlier stage opens when the guest chose it from a search result ("From your trip"); typed or refreshed, it is stale.
   const fromSearch = (state as { earlier?: unknown } | null)?.earlier === true && !!route && earlierAt(route.path, stage)
@@ -165,6 +167,7 @@ export function Shell() {
             <Link key={tab.key} to={tab.path} data-colour={tab.colour} className="tabs__item" aria-current={active ? 'page' : undefined}>
               <Icon aria-hidden="true" />
               <span>{tabText(tab, stage).label}</span>
+              {alerts.has(tab.key) && <><span className="tabs__dot" aria-hidden="true" /><span className="visually-hidden">{t('stage.tile.attention')}</span></>}
             </Link>
           )
         })}
