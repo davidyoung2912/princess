@@ -456,6 +456,8 @@ export const en = {
   'notices.documentsMissing_one': '{count} travel document is still needed',
   'notices.documentsMissing_other': '{count} travel documents are still needed',
   'notices.tenderWatch': '{band} at {port} on {date}',
+  'notices.flightWatch.delayed': 'Flight {flight} on {date} is running about {minutes} minutes late',
+  'notices.flightWatch.cancelled': 'Flight {flight} on {date} has been cancelled',
   'notices.checkinOpens': 'Online check-in opens {date}',
   'notices.checkinOpen': 'Online check-in is open',
   'notices.cat.critical': 'Critical notices',

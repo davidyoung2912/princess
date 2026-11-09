@@ -43,7 +43,7 @@ export function inQuietHours(q: QuietHours, at: string, category: Category): boo
   return q.from <= q.to ? at >= q.from && at < q.to : at >= q.from || at < q.to
 }
 
-export type NoticeId = 'payOverdue' | 'payDue' | 'instalmentDue' | 'passportProblem' | 'documentsMissing' | 'tenderWatch' | 'checkinOpens'
+export type NoticeId = 'payOverdue' | 'payDue' | 'instalmentDue' | 'passportProblem' | 'documentsMissing' | 'tenderWatch' | 'flightWatch' | 'checkinOpens'
 export interface Notice { id: NoticeId; category: Category; params: Record<string, string | number> }
 
 export interface NoticeInput {

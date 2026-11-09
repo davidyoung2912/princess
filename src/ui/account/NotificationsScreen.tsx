@@ -20,7 +20,7 @@ import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
 import { CalendarFeed, DeliveryLog, PushSwitch } from './PushPanels'
 
-const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', checkinOpens: '/me/trips' } as const
+const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', flightWatch: '/home/disembark/onward', checkinOpens: '/me/trips' } as const
 
 /** Notifications centre and preferences (MNG-14): what needs attention, and how and when to be told. */
 export function NotificationsScreen() {
@@ -38,9 +38,9 @@ export function NotificationsScreen() {
           const unread = shown.filter((n) => !n.read)
           const row = (n: (typeof notices)[number]) => {
             const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'
-            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0), amount: formatMoney(Number(n.params.amount ?? 0)), band: t(`tenderOutlook.band.${String(n.params.band ?? 'mixed')}` as StringKey), port: PORTS[String(n.params.port) as keyof typeof PORTS]?.name ?? String(n.params.port ?? '') }
+            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0), amount: formatMoney(Number(n.params.amount ?? 0)), band: t(`tenderOutlook.band.${String(n.params.band ?? 'mixed')}` as StringKey), flight: String(n.params.flight ?? ''), minutes: Number(n.params.minutes ?? 0), port: PORTS[String(n.params.port) as keyof typeof PORTS]?.name ?? String(n.params.port ?? '') }
             return (
-              <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id}` as StringKey, params)} action={<LinkButton to={n.id === 'tenderWatch' ? `/home/ports/${String(n.params.port)}` : LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
+              <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id === 'flightWatch' ? `flightWatch.${String(n.params.state)}` : n.id}` as StringKey, params)} action={<LinkButton to={n.id === 'tenderWatch' ? `/home/ports/${String(n.params.port)}` : LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
                 <p className="muted">{t(`notices.cat.${n.category}` as StringKey)}{n.read ? ` · ${t('notices.read')}` : ''}</p>
               </Banner>
             )
