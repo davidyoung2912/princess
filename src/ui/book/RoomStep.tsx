@@ -14,6 +14,8 @@ import { ChoiceError } from './ChoiceError'
 import { withCategory } from './changes'
 import { StepSection, type StepProps } from './common'
 import { StanleyExplain } from '../ai/StanleyExplain'
+import { CabinMap } from './CabinMap'
+import { cabinsNeeded, nearbyGroups, recheck } from '../../domain/cabinMap'
 
 /** Step 2: room type, how many guests, and a guaranteed room or a chosen one (BOK-03). */
 export function RoomStep({ draft, update, error }: StepProps) {
@@ -58,18 +60,36 @@ export function RoomStep({ draft, update, error }: StepProps) {
         <ChoiceError text={error('guests')} />
       </div>
 
-      {draft.category && <CabinChoice draft={draft} update={update} error={error} stepFreeNeeded={stepFreeNeeded} />}
+      {draft.category && <CabinChoice draft={draft} update={update} error={error} stepFreeNeeded={stepFreeNeeded} capacity={cap} />}
     </StepSection>
   )
 }
 
 /** Guaranteed room (assigned later, at no price difference) or a particular stateroom from a list with where it is and what the view is like. */
-function CabinChoice({ draft, update, error, stepFreeNeeded }: Pick<StepProps, 'draft' | 'update' | 'error'> & { stepFreeNeeded: boolean }) {
+function CabinChoice({ draft, update, error, stepFreeNeeded, capacity }: Pick<StepProps, 'draft' | 'update' | 'error'> & { stepFreeNeeded: boolean; capacity: number }) {
   const [stepFree, setStepFree] = useState(stepFreeNeeded)
+  const [recheckNote, setRecheckNote] = useState('')
+  const [lost, setLost] = useState<string[]>([])
   const category = draft.category as CategoryId
   const cabins = useAsync(() => (draft.cabinMode === 'pick' ? api.booking.cabins(draft.sailingId, category) : Promise.resolve([])), [draft.sailingId, category, draft.cabinMode])
-  const shown = (cabins.data ?? []).filter((c) => !stepFree || c.accessible)
+  const shown = (cabins.data ?? []).filter((c) => !stepFree || c.accessible).map((c) => (lost.includes(c.number) ? { ...c, available: false } : c))
   const decks = [...new Set(shown.map((c) => c.deck))].sort((a, b) => a - b)
+  const needed = cabinsNeeded(draft.guests, capacity)
+  const groups = nearbyGroups(shown, needed).slice(0, 3)
+  /** Looks at the inventory again before the number is kept (DSC-05); a number taken meanwhile is not kept. */
+  const choose = async (number: string) => {
+    setRecheckNote('')
+    try {
+      const fresh = await api.booking.cabins(draft.sailingId, category)
+      const r = recheck(fresh, number)
+      if (r === 'free') update((d) => ({ ...d, cabinNumber: number }))
+      else {
+        update((d) => (d.cabinNumber === number ? { ...d, cabinNumber: '' } : d))
+        setRecheckNote(t(r === 'taken' ? 'book.map.nowTaken' : 'book.map.gone', { number }))
+        setLost((l) => [...l, number])
+      }
+    } catch { setRecheckNote(t('book.map.cannotCheck', { number })) }
+  }
   return (
     <fieldset>
       <legend>{t('book.cabin.legend')}</legend>
@@ -89,13 +109,22 @@ function CabinChoice({ draft, update, error, stepFreeNeeded }: Pick<StepProps, '
             <span>{t('book.cabin.stepFree')}</span>
           </label>
           <PriceState state={cabins}>
+            {shown.length > 0 && <CabinMap cabins={shown} selected={draft.cabinNumber} onPick={(n) => void choose(n)} />}
+            <p role="status" className="muted">{recheckNote}</p>
+            {needed > 1 && (
+              <div>
+                <p>{t('book.map.party', { guests: draft.guests, rooms: needed })}</p>
+                {groups.length === 0 ? <p className="muted">{t('book.map.noGroup')}</p> : <ul>{groups.map((g) => <li key={g.map((c) => c.number).join()}>{t('book.map.group', { numbers: g.map((c) => c.number).join(', '), deck: g[0].deck })}</li>)}</ul>}
+                <p className="muted">{t('book.map.notConnecting')}</p>
+              </div>
+            )}
             {decks.length === 0 && <p className="muted">{t('book.cabin.none')}</p>}
             {decks.map((deck) => (
               <fieldset key={deck}>
                 <legend>{t('book.cabin.deck', { deck })}</legend>
                 {shown.filter((c) => c.deck === deck).map((c) => (
                   <label key={c.number} className="choice choice--top">
-                    <input type="radio" name="cabin" value={c.number} checked={draft.cabinNumber === c.number} disabled={!c.available} onChange={() => update((d) => ({ ...d, cabinNumber: c.number }))} />
+                    <input type="radio" name="cabin" value={c.number} checked={draft.cabinNumber === c.number} disabled={!c.available} onChange={() => void choose(c.number)} />
                     <span>
                       {t('book.cabin.number', { number: c.number })} <span className="muted">{t(`book.cabin.position.${c.position}`)}, {t(`book.cabin.side.${c.side}`)}</span>
                       <small>{c.available ? c.notes.join('. ') : t('book.cabin.taken')}</small>
