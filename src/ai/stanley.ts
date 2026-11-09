@@ -1,13 +1,14 @@
 import { redactCardData } from './cardData'
 import { MAX_MESSAGE, screen, type Handoff } from './guard'
 import type { AnswerAction, StanleySource } from './stanleyRoute'
+import { normalizeCard, type StanleyCard } from './stanleyCard'
 import type { Citation } from './types'
 
 /** What Stanley's reply was, as the server names it. The front end words everything but an answer from its own strings. */
 export type StanleyKind = 'answer' | 'blocked' | 'offtopic' | 'handoff' | 'unavailable'
 export type StanleyFallback = 'limit' | 'auth' | 'rate' | 'network' | 'bad' | 'off'
-/** Which route of the server's gateway handled a reply: the guest's own booking (`trip`), someone still choosing (`before`) or open chat (`model`), or why there was no answer. */
-export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'trip' | 'before' | 'model'
+/** Which route of the server's gateway handled a reply: a question answered with no model as a card (`resolver`), the guest's own booking (`trip`), someone still choosing (`before`) or open chat (`model`), or why there was no answer. */
+export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'resolver' | 'trip' | 'before' | 'model'
 
 export interface StanleyMessage {
   id: string
@@ -22,6 +23,8 @@ export interface StanleyMessage {
   source?: StanleySource
   /** The screens an answer used, shown as links. */
   citations?: Citation[]
+  /** A structured answer with where it came from, when the server made one. */
+  card?: StanleyCard
   /** Buttons under the answer: a way on, the screens used, the group. */
   actions?: AnswerAction[]
   /** The words of a request to change something, shown with a preview and a Confirm button under the answer. */
@@ -39,6 +42,8 @@ export interface StanleyTurn {
   tier?: StanleyTier | null
   /** The screens an answer used, as the server names them. */
   citations?: Citation[]
+  /** The structured answer with its provenance, when the server made one. */
+  card?: StanleyCard | null
 }
 
 /** Where the guest is, for the server's routing and log: the journey stage, the screen id, the sailing and Stanley's level. A hint, never a fact. */
@@ -61,7 +66,7 @@ export const MAX_SENT = 60
 const KINDS: readonly StanleyKind[] = ['answer', 'blocked', 'offtopic', 'handoff', 'unavailable']
 const HANDOFFS: readonly Handoff[] = ['emergency', 'medical', 'legal', 'person']
 const FALLBACKS: readonly StanleyFallback[] = ['limit', 'auth', 'rate', 'network', 'bad', 'off']
-const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'trip', 'before', 'model']
+const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'resolver', 'trip', 'before', 'model']
 
 export type StanleyProblem = 'empty' | 'long'
 export const stanleyProblem = (message: string): StanleyProblem | null => (!message.trim() ? 'empty' : message.trim().length > MAX_MESSAGE ? 'long' : null)
@@ -82,7 +87,7 @@ export function normalizeStanley(raw: unknown): StanleyTurn | null {
         return x && typeof x.label === 'string' && typeof x.path === 'string' && x.path.startsWith('/') ? [{ label: x.label.slice(0, 120), path: x.path.slice(0, 200) }] : []
       }).slice(0, 5)
     : []
-  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, citations }
+  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, citations, card: kind === 'answer' ? normalizeCard(o.card) : null }
 }
 
 /**

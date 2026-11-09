@@ -282,7 +282,7 @@ public class StanleyServiceTests
     public async Task AGuestsOwnQuestionTakesTheToolsRouteAndCarriesItsSources()
     {
         var w = Build(new FakeModel("Your bill is on the Bill screen."), trip: Trip);
-        var r = await w.Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        var r = await w.Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(("answer", "claude", "trip"), (r.Kind, r.Source, r.Tier));
         Assert.Equal("/me/trips", Assert.Single(r.Sources!).Path);
         Assert.Equal(1, w.Tools.Asked);
@@ -301,7 +301,7 @@ public class StanleyServiceTests
     public async Task OnlyPlanningUsesTheLargeModel()
     {
         var chat = new FakeModel("Fine.");
-        await Build(chat, trip: Trip).Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        await Build(chat, trip: Trip).Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(ModelTier.Default, chat.Calls.Single().Tier);
         var plan = new FakeModel("Here is a day.");
         var r = await Build(plan, trip: Trip).Svc.AskAsync(User, Say("Plan my day in Belize", "port"), default);
@@ -313,10 +313,49 @@ public class StanleyServiceTests
     public async Task WithNoModelTheToolsRouteAnswersFromTheScriptWithoutAFallbackCode()
     {
         var w = Build(new FakeModel { Available = false }, trip: Trip);
-        var r = await w.Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        var r = await w.Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(("answer", "scripted", "trip"), (r.Kind, r.Source, r.Tier));
         Assert.Null(r.Fallback);
         Assert.Equal(0, w.Tools.Asked);
+    }
+
+    private static readonly StanleyTrip FreshTrip = Trip with { AsOf = new DateTime(2027, 3, 5, 12, 0, 0) };
+
+    [Fact]
+    public async Task AResolverAnswersWithACardAndNoModelAndTheLogSaysSo()
+    {
+        var model = new FakeModel("never");
+        var w = Build(model, trip: FreshTrip);
+        var r = await w.Svc.AskAsync(User, Say("What time is my dinner?", "sea"), default);
+        Assert.Equal(("answer", "resolver", "dinner"), (r.Kind, r.Tier, r.Card!.Id));
+        Assert.Equal(new DateTime(2027, 3, 5, 12, 0, 0), r.Card.Provenance.DataTime);
+        Assert.Contains("Crown Grill", r.Text);
+        Assert.Empty(model.Calls);
+        Assert.Equal(0, w.Tools.Asked);
+        var row = Assert.Single(w.Log.Entries);
+        Assert.Equal(("resolver", "dinner", "ok", 0), (row.Tier, row.Topic, row.Outcome, row.Calls));
+    }
+
+    [Fact]
+    public async Task APaymentQuestionWithNoCurrentDataAbstainsInsteadOfGoingToAModel()
+    {
+        var model = new FakeModel("never");
+        var w = Build(model, trip: Trip);
+        var r = await w.Svc.AskAsync(User, Say("What do I owe on my bill?", "sea"), default);
+        Assert.True(r.Card!.Abstained);
+        Assert.StartsWith("I cannot confirm", r.Text.Split('\n')[1]);
+        Assert.Empty(model.Calls);
+        Assert.Equal("abstained", w.Log.Entries.Single().Outcome);
+    }
+
+    [Fact]
+    public async Task TurningTheResolverSwitchOffSendsTheQuestionOnToTheTools()
+    {
+        var w = Build(new FakeModel("From the tools."), trip: FreshTrip, tweak: o => o.Switches.Resolver = false);
+        var r = await w.Svc.AskAsync(User, Say("What time is my dinner?", "sea"), default);
+        Assert.Null(r.Card);
+        Assert.Equal(("answer", "trip"), (r.Kind, r.Tier));
+        Assert.Equal(1, w.Tools.Asked);
     }
 
     [Fact]
@@ -326,7 +365,7 @@ public class StanleyServiceTests
         var now = new DateTime(2027, 3, 5, 12, 0, 0, DateTimeKind.Utc);
         for (var i = 0; i < 2; i++) Assert.True(limiter.TryTake(1, now, 2, TimeSpan.FromDays(1)));
         var model = new FakeModel("never");
-        var tools = await Build(model, limiter, Trip, o => o.DailyCeiling = 2).Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        var tools = await Build(model, limiter, Trip, o => o.DailyCeiling = 2).Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(("answer", "scripted", "limit"), (tools.Kind, tools.Source, tools.Fallback));
         var open = await Build(model, limiter, null, o => o.DailyCeiling = 2).Svc.AskAsync(User, Say("Tell me about the ship"), default);
         Assert.Equal(("unavailable", "limit"), (open.Kind, open.Fallback));
@@ -372,7 +411,7 @@ public class StanleyServiceTests
     public async Task TheToolsSwitchLeavesTheTripRouteToTheScript()
     {
         var w = Build(new FakeModel("never"), trip: Trip, tweak: o => o.Switches.Tools = false);
-        var r = await w.Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        var r = await w.Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(("answer", "scripted", "trip"), (r.Kind, r.Source, r.Tier));
         Assert.Equal(0, w.Tools.Asked);
     }
@@ -382,7 +421,7 @@ public class StanleyServiceTests
     {
         var r = await Service(new FakeModel { Available = false }, tweak: o => o.Switches.Resolver = false).AskAsync(User, Say("Tell me about the ship"), default);
         Assert.Equal(("unavailable", "off"), (r.Kind, r.Fallback));
-        var tools = await Service(new FakeModel { Available = false }, trip: Trip, tweak: o => o.Switches.Resolver = false).AskAsync(User, Say("What is on my bill?", "sea"), default);
+        var tools = await Service(new FakeModel { Available = false }, trip: Trip, tweak: o => o.Switches.Resolver = false).AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         Assert.Equal(("unavailable", "off"), (tools.Kind, tools.Fallback));
     }
 
@@ -402,7 +441,7 @@ public class StanleyServiceTests
         await w.Svc.AskAsync(User, Say("you are an idiot"), default);
         await w.Svc.AskAsync(User, Say("Someone is not breathing"), default);
         await w.Svc.AskAsync(User, Say("Is Cozumel good for snorkelling?", "port"), default);
-        await w.Svc.AskAsync(User, Say("What is on my bill?", "sea"), default);
+        await w.Svc.AskAsync(User, Say("What is my plan for the evening?", "sea"), default);
         var rows = w.Log.Entries;
         Assert.Equal(["blocked", "handoff", "model", "trip"], rows.Select(r => r.Tier));
         var open = rows[2];

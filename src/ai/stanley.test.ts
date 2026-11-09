@@ -6,7 +6,7 @@ const a = (text: string, kind: StanleyMessage['kind'] = 'answer', at = 2): Stanl
 
 describe('normalizeStanley', () => {
   it('reads each kind and keeps text only for an answer', () => {
-    expect(normalizeStanley({ kind: 'answer', text: 'Hi', source: 'claude', handoff: null, fallback: null })).toEqual({ kind: 'answer', text: 'Hi', handoff: null, fallback: null, tier: null, citations: [] })
+    expect(normalizeStanley({ kind: 'answer', text: 'Hi', source: 'claude', handoff: null, fallback: null })).toEqual({ kind: 'answer', text: 'Hi', handoff: null, fallback: null, tier: null, citations: [], card: null })
     expect(normalizeStanley({ kind: 'blocked', text: 'ignored', handoff: null, fallback: null })?.text).toBe('')
     expect(normalizeStanley({ kind: 'unavailable', text: '', fallback: 'limit' })?.fallback).toBe('limit')
     expect(normalizeStanley({ kind: 'handoff', handoff: 'medical', text: '' })?.handoff).toBe('medical')

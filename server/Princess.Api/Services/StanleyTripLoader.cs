@@ -11,7 +11,8 @@ public sealed class StanleyTripLoader(ITripStore trips, IAccountStore accounts, 
 {
     public async Task<StanleyTrip?> LoadAsync(UserRecord user, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(await clock.NowAsync(user, ct));
+        var asOf = await clock.NowAsync(user, ct);
+        var today = DateOnly.FromDateTime(asOf);
         var booking = (await trips.ListForUserAsync(user.Id, ct))
             .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
         if (booking is null) return null;
@@ -26,6 +27,6 @@ public sealed class StanleyTripLoader(ITripStore trips, IAccountStore accounts, 
         var meals = (await plan.ListTablesAsync(booking.BookingId, ct)).Select(x => new StanleyItem(x.Day, DiningRules.VenueById(x.VenueId)?.Name ?? "Dinner", x.Time)).ToList();
         var packages = (await plan.ListPurchasesAsync(booking.BookingId, ct)).Where(x => x.Status == "active")
             .Select(x => PackageRules.NameOf(x.ItemId)).OfType<string>().Distinct().ToList();
-        return new StanleyTrip(today, DateOnly.FromDateTime(booking.Departure), booking.Nights, booking.ShipName, booking.CategoryName, booking.Dining, ages, tours, meals, packages, booking.SailingId);
+        return new StanleyTrip(today, DateOnly.FromDateTime(booking.Departure), booking.Nights, booking.ShipName, booking.CategoryName, booking.Dining, ages, tours, meals, packages, booking.SailingId, asOf);
     }
 }

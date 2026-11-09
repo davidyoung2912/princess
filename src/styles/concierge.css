@@ -144,3 +144,20 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .success-line:empty { display: none; }
 .success-line__body { display: flex; gap: var(--space-3); align-items: center; }
 .success-line__body p { margin: 0; font-weight: 600; }
+
+/* Answer cards and provenance (Stanley phase 3): a card with chips for where it came from and a "Based on" panel. Meaning is in words, never only colour. */
+.stanley-card2 { margin-top: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--surface-info); border-radius: var(--radius-card); border-inline-start: 4px solid var(--primary); }
+.stanley-card2--abstained { background: var(--warning-tint); border-inline-start-color: var(--warning, var(--primary)); }
+.stanley-card2__title { margin: 0 0 var(--space-1); font-size: 1.0625rem; }
+.stanley-card2__flag, .stanley-card2__line { margin: 0 0 var(--space-1); }
+.stanley-card2__chips { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0; padding: 0; }
+.stanley-card2__chip { padding: 0 var(--space-2); border: 1px solid currentColor; border-radius: 999px; font-size: var(--fs-caption); font-weight: 600; }
+.stanley-card2__based { margin: var(--space-1) 0; }
+.stanley-card2__based summary { min-height: var(--target-min); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.stanley-card2__facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0 0 var(--space-1); }
+.stanley-card2__facts dt { font-weight: 600; }
+.stanley-card2__facts dd { margin: 0; }
+.why-btn { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; border-radius: 999px; }
+.why-btn:hover { background: var(--sky-tint); }
+.stanley__follow li, .stanley-chips__list li { display: inline-flex; align-items: center; }
+.stanley__explain { margin: var(--space-1) 0 0; }

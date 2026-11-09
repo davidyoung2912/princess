@@ -6,6 +6,9 @@ import { decideStanley } from '../../ai/stanleyDecide'
 import { answerOf, LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
 import { StanleyConfirm } from './StanleyConfirm'
+import { StanleyAnswerCard } from './StanleyAnswerCard'
+import { WhyThis } from './WhyThis'
+import { cardText, explainScreenCard } from '../../ai/stanleyCard'
 import { answerActions, type StanleySource } from '../../ai/stanleyRoute'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
@@ -41,7 +44,7 @@ function wording(turn: StanleyTurn): string {
 function FollowChips({ items, onPick }: { items: readonly LibraryEntry[]; onPick: (question: string) => void }) {
   return (
     <ul className="stanley__follow" aria-label={t('stanley.follow')}>
-      {items.map((e) => <li key={e.id}><button type="button" className="stanley__chip" onClick={() => onPick(questionOf(e))}>{questionOf(e)}</button></li>)}
+      {items.map((e) => <li key={e.id}><button type="button" className="stanley__chip" onClick={() => onPick(questionOf(e))}>{questionOf(e)}</button><WhyThis kind="chip" fact={t('stanley.why.fact.follow')} what={questionOf(e)} /></li>)}
     </ul>
   )
 }
@@ -106,23 +109,37 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     else {
       turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access) })
       if (turn.tier === 'trip' || turn.tier === 'before') source = turn.tier
+      else if (turn.tier === 'resolver') source = 'trip'
     }
     const citations = turn.citations ?? []
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
     const actions = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
     countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
-    const reply: StanleyMessage = { id, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, actions, confirm, entryId }
+    const reply: StanleyMessage = { id, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, actions, confirm, entryId }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())
     setBusy(false)
     // An answer appears a few words at a time, as if it were arriving; with reduced motion it simply appears.
-    if (turn.kind !== 'answer' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    if (turn.kind !== 'answer' || turn.card || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     setReveal({ id: reply.id, steps: revealSteps(reply.text), i: 0 })
   }
 
 
   const pick = (question: string) => { void submit(null, question) }
+
+  // "Explain this screen": answered on the device from the page's id and its authored description, so it works offline and costs nothing. It is added to the thread like any answer.
+  const explain = () => {
+    if (busy) return
+    const at = Date.now()
+    const card = explainScreenCard(screenId)
+    const asked: StanleyMessage = { id: `u-${at}-x`, role: 'user', text: t('stanley.explain.screen'), at }
+    const reply: StanleyMessage = card
+      ? { id: `a-${at}-x`, role: 'assistant', text: cardText(card), at, kind: 'answer', card }
+      : { id: `a-${at}-x`, role: 'assistant', text: t('stanley.explain.screen.none'), at, kind: 'answer' }
+    setStanleyThread([...getStanleyThread(), asked, reply])
+    countTier('library', `explain:${screenId ?? 'none'}`)
+  }
 
   return (
     <Dialog title={t('stanley.title')} onClose={onClose} header={(titleId) => (
@@ -133,15 +150,15 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         {messages.length === 0 ? (
           <div className="stanley__empty">
             <p>{t('stanley.empty')}</p>
-            <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button></li>)}</ul>
+            <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button><WhyThis kind="suggestion" fact={t('stanley.why.fact.suggestion')} what={t(k)} /></li>)}</ul>
           </div>
         ) : (
           <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
             {messages.map((m) => (
               <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
                 <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
-                <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>
-                {m.source && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
+                {m.card ? <StanleyAnswerCard card={m.card} onNavigate={onClose} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
+                {m.source && !m.card && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
                 {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path} onClick={onClose}>{a.label}</LinkButton>)}</p>}
                 {m.confirm && <StanleyConfirm question={m.confirm} onNavigate={onClose} />}
                 {m.id === lastAnswer?.id && !busy && follow.length > 0 && (
@@ -155,6 +172,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         )}
         {status.degraded.length > 0 && <p role="status" className="muted stanley__note">{t('stanley.degraded')}</p>}
         {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
+        <p className="stanley__explain"><button type="button" className="link-button" onClick={explain} disabled={busy}>{t('stanley.explain.screen')}</button></p>
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
           <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>

@@ -8,6 +8,7 @@ import { openedFrom } from '../../routes/screens'
 import type { HomeFacts } from '../../routes/stageHome'
 import { stanleyLevelFor } from '../../settings/settings'
 import { LinkButton } from '../Button'
+import { WhyThis } from './WhyThis'
 
 /**
  * "What should I do next?" at the top of Home, at every stage: one rules-based sentence and a button, from the facts Home already has. No model is called.
@@ -25,6 +26,7 @@ export function StanleyNext({ stage, facts }: { stage: JourneyStage; facts: Home
     <aside className="stanley-next no-print" aria-label={t('stanley.next.label')}>
       <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
       <p className="tip__text">{text}</p>
+      <WhyThis kind="tip" fact={t('stanley.why.fact.tip')} what={text} />
       {a.to && <LinkButton to={a.to} state={openedFrom('blue')} variant="secondary" aria-label={`${t('stanley.next.go')}: ${text}`}>{t('stanley.next.go')}</LinkButton>}
     </aside>
   )

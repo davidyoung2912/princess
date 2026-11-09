@@ -8,7 +8,7 @@ namespace Princess.Api.Services;
 /// <summary>
 /// The Stanley gateway (docs/stanley-gap-analysis-and-plan.md, phase 1): the one server door for every conversational question, so policy, routing, budget, logging
 /// and kill switches live in one place. One turn, in this order: the word filter and the safety screen (neither ever reaches a model), the muster question (a fixed answer, no model), the router
-/// (<see cref="StanleyRouter"/>: trip, before or open), the switches, then the answer from the tools or the open model, within the call caps and the guest's daily ceiling.
+/// (<see cref="StanleyRouter"/>: trip, before or open; first the resolvers, <see cref="StanleyResolvers"/>, answer what they can with a card and no model), the switches, then the answer from the tools or the open model, within the call caps and the guest's daily ceiling.
 /// When a model cannot be used (none set up, a switch, a cap, a failure) the scripted answers reply and say why. Every reply writes one tier log row with counts and
 /// tokens, never message text. Stanley's account knowledge is the PII-free trip facts the server builds (<see cref="StanleyTrip"/>) and, on the tool routes, the
 /// tools over the guest's own booking. Message text is never logged.
@@ -46,6 +46,9 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         var trip = await trips.LoadAsync(user, ct);
         if (StanleyRules.IsMuster(turns.Message))
             return await End(Answer(StanleyRules.MusterAnswer, "scripted", trip is null ? "before" : "trip", null, [new CitationDto("Muster", "/ship/muster")]), "safety", "ok");
+        // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
+        if (trip is not null && o.Switches.Resolver && StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow) is { } card)
+            return await End(new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card), card.Id, card.Abstained ? "abstained" : "ok");
         var routing = StanleyRouter.Route(turns.Message, context.Stage, trip is not null);
         var modelUsable = model.Available && o.Switches.Model;
         var meter = new ModelMeter(model, c => limiter.TryTakeAsync(user.Id, clock.UtcNow, o.DailyCeiling, TimeSpan.FromDays(1), c), routing.Planning ? o.PlanningCalls : o.ChatCalls);

@@ -9,8 +9,8 @@ describe('answer source and freshness labels', () => {
   it('names the source of every kind of answer', () => {
     for (const s of SOURCES) expect(t(`stanley.source.${s}` as never, { time: '9:00 AM' })).toMatch(/^From /)
   })
-  it('gives a time for every answer that can change, and says when one is not live', () => {
-    for (const s of ['ship', 'trip', 'before', 'model'] as const) expect(t(`stanley.source.${s}` as never, { time: '9:00 AM' })).toContain('as of 9:00 AM')
+  it('never words a source line with the time of the reply, and says when one is not live', () => {
+    for (const s of SOURCES) expect(t(`stanley.source.${s}` as never, { time: '9:00 AM' })).not.toMatch(/as of|9:00/)
     expect(t('stanley.source.library' as never)).toContain('not live')
   })
 })

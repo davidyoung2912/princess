@@ -1,0 +1,257 @@
+using System.Globalization;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+
+namespace Princess.Api.Domain;
+
+/// <summary>
+/// Where an answer came from (docs/stanley-gap-analysis-and-plan.md, phase 3). <c>Chips</c> are the short labels on the card (<see cref="StanleyChips"/>); <c>Owner</c> is who keeps the data;
+/// <c>DataTime</c> is when the data was read or published, never when the reply was made; <c>Freshness</c> is <c>live</c>, <c>cached</c>, <c>estimated</c> or <c>provisional</c> (published and liable to change);
+/// <c>CheckWithPerson</c> shows the route to a person; <c>Note</c> says how to read it.
+/// </summary>
+public sealed record StanleyProvenance(List<string> Chips, string Owner, DateTime? DataTime, string Freshness, bool CheckWithPerson, string Note);
+
+/// <summary>A structured answer. <c>Id</c> is the resolver that made it (a short closed word, also the tier log topic); <c>Abstained</c> is true when the card says "I cannot confirm".</summary>
+public sealed record StanleyCardDto(string Id, string Title, List<string> Lines, StanleyProvenance Provenance, bool Abstained, List<CitationDto>? Links = null)
+{
+    /// <summary>The card as plain text, for the thread and for a client that does not draw cards.</summary>
+    [JsonIgnore]
+    public string Text => string.Join("\n", [Title, .. Lines]);
+}
+
+public static class StanleyChips
+{
+    public const string Booking = "Your booking", Schedule = "Ship schedule", Policy = "Princess policy", Estimated = "Estimated", Cached = "Cached";
+}
+
+/// <summary>What a resolver sees: the question, the guest's trip facts and the time the facts were read against.</summary>
+public sealed record ResolverInput(string Message, StanleyTrip Trip, DateTime Now)
+{
+    /// <summary>Facts that were never stamped, or were read long before <see cref="Now"/>, are stale.</summary>
+    public bool Stale => Trip.AsOf is not { } at || (Now - at).Duration() > StanleyResolvers.MaxAge;
+    /// <summary>The day of the sailing today is (1 is departure day; 0 or less is before the cruise).</summary>
+    public int Day => Trip.Today.DayNumber - Trip.Departure.DayNumber + 1;
+}
+
+/// <summary>One deterministic answer: it knows the questions it takes, and builds a card from the guest's trip facts with no model.</summary>
+public interface IStanleyResolver
+{
+    string Id { get; }
+    bool Matches(string message);
+    StanleyCardDto Resolve(ResolverInput input);
+}
+
+/// <summary>
+/// The resolvers: the questions about the guest's own trip that need no model (Tier 0). Pure logic over <see cref="StanleyTrip"/>, so each is unit tested. Topics where a wrong answer costs
+/// a guest something (deadlines, tender, payment, access, safety) never guess: with stale or missing data the card says "I cannot confirm" and shows the way to a person. Bill, case and
+/// readiness figures are not in the trip facts, so those resolvers say what they cannot confirm and open the right screen until the read tools of phase 4 give them the data.
+/// </summary>
+public static class StanleyResolvers
+{
+    public static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(30);
+    /// <summary>When the published ship schedule and policy text was last reviewed.</summary>
+    public static readonly DateTime PublishedAt = DateTime.ParseExact(StanleyRules.ContentVersion, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private sealed class Resolver(string id, string pattern, bool risky, string title, Func<ResolverInput, StanleyCardDto> run) : IStanleyResolver
+    {
+        private readonly Regex _re = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public string Id => id;
+        public bool Matches(string message) => _re.IsMatch(message);
+        public StanleyCardDto Resolve(ResolverInput input) =>
+            risky && input.Stale ? Cannot(id, title, "The facts I would use are missing or out of date, so I will not guess.", input) : run(input);
+    }
+
+    private static readonly CitationDto Trips = new("My trips", "/me/trips"), Bill = new("Bill", "/me/bill"), Cases = new("Cases", "/me/cases"), Documents = new("Documents", "/me/documents"),
+        Pass = new("Boarding pass", "/home/boarding-pass"), Checklist = new("Checklist", "/plan/checklist"), Tours = new("Excursions", "/plan/excursions"), Dining = new("Dining", "/plan/dining"),
+        Packages = new("Packages", "/me/packages");
+
+    public static IReadOnlyList<IStanleyResolver> All { get; } =
+    [
+        new Resolver("tender", @"\btender(s|ing|ed)?\b", true, "Tender", Tender),
+        new Resolver("checkin", @"\bcheck-?in\b.*\b(close|closes|closing|deadline|cut-?off|last chance|by when|until)\b|\b(close|closes|deadline|cut-?off)\b.*\bcheck-?in\b", true, "Online check-in", CheckIn),
+        new Resolver("allAboard", @"\ball aboard\b|\bback on (the )?(ship|boat)\b|\bwhen (do|must|should|shall) (i|we) (need to |have to )?be back\b|\bbe back (on|at|by)\b", true, "All aboard", AllAboard),
+        new Resolver("bill", @"\b(my|our) (bill|balance|account|folio|charges)\b|\b(what|how much) do (i|we) owe\b", true, "Your bill", BillStatus),
+        new Resolver("cases", @"\b(my|our) (cases?|complaints?|claims?|refunds?)\b|\bstatus of (my|our) (case|complaint|claim|refund)\b", true, "Your cases", OpenCases),
+        new Resolver("readiness", @"\bboarding pass\b|\b(my|our) (documents?|passports?|visas?)\b|\bready to (sail|board|go)\b|\bwhat (do|must|should) (i|we) still (need|have) to do\b|\bwhat('s| is) (still )?left to do\b", true, "Are you ready to sail", Readiness),
+        new Resolver("changed", @"\bwhat('s| has| have)? changed\b|\bany changes\b|\banything (new|changed)\b", false, "What changed", Changed),
+        new Resolver("nextEvent", @"\bwhat('s| is) next\b|\bwhats next\b|\bnext (thing|event|booking|reservation|tour|dinner)\b|\bcoming up\b|\bwhat do (i|we) have (next|on)\b", false, "Next on your plan", NextEvent),
+        new Resolver("tours", @"\b(my|our) (tours?|excursions?)\b|\b(tours?|excursions?) (do )?(i|we) (have )?(booked|got)\b|\bwhat (tours?|excursions?) (have|did) (i|we) book", false, "Your tours", TourList),
+        new Resolver("dinner", @"\b(my|our) (dinners?|dining|table|reservations?)\b|\bwhat time is (my |our )?dinner\b|\bwhere (am i|are we) eating\b", false, "Your dinners", DinnerList),
+        new Resolver("packages", @"\b(my|our) (packages?|drinks? package|wi-?fi package)\b|\bwhat (does|do) (my|our) .{0,30}package.{0,20} include\b|\bpackages? (do )?(i|we) have\b", false, "Your packages", PackageList),
+        new Resolver("itinerary", @"\bitinerary\b|\bwhich ports\b|\bports? (of call|are we|do we)\b|\bwhere (are we|do we) (go|stop|sail)\b", false, "Your ports", Ports),
+        new Resolver("portToday", @"\bwhere is the ship\b|\b(where|which port)\b.*\b(today|tomorrow|now)\b|\b(today|tomorrow)'?s port\b", false, "Where the ship is", PortToday),
+        new Resolver("countdown", @"\bcountdown\b|\bhow (many|long)\b.*\b(days?|sleeps?)\b.*\b(sail|cruise|trip|go|left|until|before)\b|\bwhen (do|does) (we|the (cruise|ship|trip)) (sail|leave|depart|start)\b", false, "When you sail", Countdown),
+        new Resolver("stateroom", @"\b(my|our) (cabin|stateroom|room) (category|type|grade)\b|\bwhich (cabin|stateroom) (category|type)\b|\bwhat (kind|type) of (cabin|stateroom)\b", false, "Your stateroom", Stateroom),
+        new Resolver("party", @"\bhow many (people|guests|travell?ers|of us)\b|\bwho('s| is) (travell?ing|sailing)\b", false, "Who is travelling", Party),
+    ];
+
+    /// <summary>The card for a question one resolver takes, or null when none does. <paramref name="now"/> is the time the trip facts are judged against.</summary>
+    public static StanleyCardDto? Resolve(string message, StanleyTrip trip, DateTime now)
+    {
+        var input = new ResolverInput(message, trip, now);
+        return All.FirstOrDefault(r => r.Matches(message))?.Resolve(input);
+    }
+
+    // ---- card builders ---------------------------------------------------------------------------------------------------------------------
+
+    private static string Date(DateOnly d) => d.ToString("dddd d MMMM", CultureInfo.InvariantCulture);
+    private static string Hm(TimeOnly t) => t.ToString("HH:mm", CultureInfo.InvariantCulture);
+    private static string PortName(string id) => Itinerary.PortOf(id)?.Name ?? "At sea";
+    private static string Plural(int n, string one, string many) => $"{n} {(n == 1 ? one : many)}";
+
+    /// <summary>A card from the guest's own booking. Stale facts are marked cached rather than live, with the time they were read.</summary>
+    private static StanleyCardDto FromBooking(string id, string title, List<string> lines, ResolverInput i, params CitationDto[] links) =>
+        new(id, title, lines, i.Stale
+            ? new StanleyProvenance([StanleyChips.Booking, StanleyChips.Cached], "Your Princess booking", i.Trip.AsOf, "cached", true, "These facts were read earlier and may have changed. Check the screen or a person before you rely on them.")
+            : new StanleyProvenance([StanleyChips.Booking], "Your Princess booking", i.Trip.AsOf, "live", false, "Read from your booking when you asked."), false, [.. links]);
+
+    /// <summary>A card from the published ship schedule or policy. It is published text, so it is provisional: the ship's own notice on the day wins.</summary>
+    private static StanleyCardDto FromPublished(string id, string title, List<string> lines, string chip, string owner, string note, bool person, params CitationDto[] links) =>
+        new(id, title, lines, new StanleyProvenance([chip], owner, PublishedAt, "provisional", person, note), false, [.. links]);
+
+    /// <summary>"I cannot confirm": a deadline, tender, payment, access or safety answer with no usable data. It never falls to a guess.</summary>
+    public static StanleyCardDto Cannot(string id, string title, string reason, ResolverInput i, params CitationDto[] links) =>
+        new(id, title, [$"I cannot confirm this. {reason}", "Please check with a person at Guest Services, or on the screen shown."],
+            new StanleyProvenance([], "Your Princess booking", i.Trip.AsOf, i.Trip.AsOf is null ? "provisional" : "cached", true, "I did not have current data for this, so I did not answer from memory."), true, [.. links]);
+
+    private sealed record Booked(int Day, string Name, string? Time, string Kind);
+
+    private static List<Booked> Items(StanleyTrip t) =>
+        [.. t.Tours.Select(x => new Booked(x.Day, x.Name, x.Time, "tour")), .. t.Meals.Select(x => new Booked(x.Day, x.Name, x.Time, "dinner"))];
+
+    private static DateOnly DayDate(StanleyTrip t, int day) => t.Departure.AddDays(day - 1);
+    private static string Describe(StanleyTrip t, Booked b) => $"{b.Name} on day {b.Day} ({DayDate(t, b.Day).ToString("ddd d MMM", CultureInfo.InvariantCulture)}){(b.Time is null ? "" : " at " + b.Time)}";
+
+    // ---- the resolvers ---------------------------------------------------------------------------------------------------------------------
+
+    private static StanleyCardDto NextEvent(ResolverInput i)
+    {
+        var t = i.Trip;
+        var all = Items(t).OrderBy(b => b.Day).ThenBy(b => b.Time ?? "99:99", StringComparer.Ordinal).ToList();
+        if (i.Day < 1)
+        {
+            var left = -i.Day + 1;
+            var lines = new List<string> { $"You sail on {Date(t.Departure)}, in {Plural(left, "day", "days")}. Nothing happens on board before then." };
+            if (all.Count > 0) lines.Add($"Your first booking is {Describe(t, all[0])}.");
+            return FromBooking("nextEvent", "Next on your plan", lines, i, Trips);
+        }
+        var nowTime = t.AsOf is { } at ? Hm(TimeOnly.FromDateTime(at)) : "00:00";
+        var next = all.FirstOrDefault(b => b.Day > i.Day || (b.Day == i.Day && string.CompareOrdinal(b.Time ?? "99:99", nowTime) >= 0));
+        return next is null
+            ? FromBooking("nextEvent", "Next on your plan", ["You have no more tours or dinners booked. The Plan tab shows what you can add."], i, Tours, Dining)
+            : FromBooking("nextEvent", "Next on your plan", [$"{Describe(t, next)}.", "Times are local to where the ship is on that day."], i, next.Kind == "tour" ? Tours : Dining);
+    }
+
+    private static StanleyCardDto AllAboard(ResolverInput i)
+    {
+        var t = i.Trip;
+        var stop = t.Timeline.Days.Where(d => d.AllAboard is not null && d.Day >= Math.Max(1, i.Day)).OrderBy(d => d.Day).FirstOrDefault();
+        if (stop is null) return Cannot("allAboard", "All aboard", "There is no port day left on your sailing in the schedule I have.", i);
+        var when = stop.Day == i.Day ? "Today" : stop.Day == i.Day + 1 ? "Tomorrow" : $"On day {stop.Day}";
+        return FromPublished("allAboard", "All aboard",
+            [$"{when} in {PortName(stop.Port)} ({Date(stop.Date)}): all aboard at {Hm(stop.AllAboard!.Value)}, local time in port.",
+             stop.Arrive is { } arr && stop.Depart is { } dep ? $"The ship arrives at {Hm(arr)} and sails at {Hm(dep)}." : "The ship sails soon after.",
+             "That is the time on the clocks in port, which may differ from your phone's. The ship leaves on time, so aim to be back well before it."],
+            StanleyChips.Schedule, "Princess ship schedule", "The published schedule can change. The ship's notice on the day is the last word.", true);
+    }
+
+    private static StanleyCardDto Tender(ResolverInput i)
+    {
+        var t = i.Trip;
+        var upcoming = t.Timeline.Days.Where(d => d.Day >= Math.Max(1, i.Day) && Itinerary.PortOf(d.Port)?.Tender == true).OrderBy(d => d.Day).ToList();
+        var lines = new List<string>();
+        if (upcoming.Count == 0) lines.Add("None of the ports left on your sailing is a tender port, so you should walk or be driven off at a pier.");
+        else
+            foreach (var d in upcoming)
+            {
+                var o = TenderRules.Outlook(d.Port, d.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                lines.Add($"{PortName(d.Port)}, day {d.Day} ({d.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture)}): a tender port. Outlook {o.Band}, about {o.Percent}% chance of delays or a cancelled tender.");
+            }
+        lines.Add("I cannot confirm whether tenders will run. The captain decides on the day, and the ship's notice is the last word.");
+        var estimated = upcoming.Count > 0;
+        return new StanleyCardDto("tender", "Tender", lines,
+            new StanleyProvenance(estimated ? [StanleyChips.Schedule, StanleyChips.Estimated] : [StanleyChips.Schedule], "Princess ship schedule and a simulated sea-state outlook", PublishedAt, estimated ? "estimated" : "provisional", true,
+                "The ports come from the published schedule. The outlook is an estimate, not a forecast."), false);
+    }
+
+    private static StanleyCardDto CheckIn(ResolverInput i)
+    {
+        var t = i.Trip;
+        var closeLocal = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(TripRules.CheckinClosesAt(t.Departure), TripRules.HomeZone);
+        var openLocal = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(TripRules.CheckinOpensAt(t.Departure), TripRules.HomeZone);
+        var at = t.AsOf!.Value;
+        if (at >= closeLocal) return Cannot("checkin", "Online check-in", "By my information online check-in has closed. Please go to the terminal or ask a person.", i, Pass);
+        var closes = $"{Hm(TimeOnly.FromDateTime(closeLocal))} on {Date(DateOnly.FromDateTime(closeLocal))}, Fort Lauderdale time";
+        var lines = new List<string> { at < openLocal ? $"Online check-in opens on {Date(DateOnly.FromDateTime(openLocal))} and closes at {closes}." : $"Online check-in is open and closes at {closes}." };
+        return FromPublished("checkin", "Online check-in", lines, StanleyChips.Policy, "Princess check-in policy", "The cut-off is Princess policy. Allow time before it: do not wait for the last minute.", true, Pass, Checklist);
+    }
+
+    private static StanleyCardDto BillStatus(ResolverInput i) =>
+        Cannot("bill", "Your bill", "Your balance and its posted, pending, disputed and estimated parts are not in what I can read in chat yet. The Bill screen shows each charge with its state.", i, Bill);
+
+    private static StanleyCardDto OpenCases(ResolverInput i) =>
+        Cannot("cases", "Your cases", "I cannot read the state of your cases here. The Cases screen lists each one with its status.", i, Cases);
+
+    private static StanleyCardDto Readiness(ResolverInput i) =>
+        Cannot("readiness", "Are you ready to sail", "Your documents, boarding pass and checklist are not in what I can read in chat yet. The checklist shows each task, who it is for and the date.", i, Checklist, Documents, Pass);
+
+    private static StanleyCardDto Changed(ResolverInput i) =>
+        new("changed", "What changed", ["I do not keep a record of changes to your booking yet, so I cannot say what changed. Check Notices on Home, or ask a person."],
+            new StanleyProvenance([], "Your Princess booking", i.Trip.AsOf, "provisional", true, "No change log exists yet."), true);
+
+    private static StanleyCardDto TourList(ResolverInput i)
+    {
+        var lines = i.Trip.Tours.Count == 0
+            ? new List<string> { "You have no tours booked yet. The Excursions screen lists what is on offer in each port." }
+            : i.Trip.Tours.OrderBy(x => x.Day).Select(x => Describe(i.Trip, new Booked(x.Day, x.Name, x.Time, "tour")) + ".").ToList();
+        return FromBooking("tours", "Your tours", lines, i, Tours);
+    }
+
+    private static StanleyCardDto DinnerList(ResolverInput i)
+    {
+        var lines = i.Trip.Meals.Count == 0
+            ? new List<string> { "You have no dinners booked yet." }
+            : i.Trip.Meals.OrderBy(x => x.Day).Select(x => Describe(i.Trip, new Booked(x.Day, x.Name, x.Time, "dinner")) + ".").ToList();
+        lines.Add($"Your main dinner is set to {i.Trip.Dining}.");
+        return FromBooking("dinner", "Your dinners", lines, i, Dining);
+    }
+
+    private static StanleyCardDto PackageList(ResolverInput i)
+    {
+        var lines = i.Trip.Packages.Count == 0
+            ? new List<string> { "You have no packages yet. The Packages screen shows drinks, Wi-Fi, dining and more." }
+            : new List<string> { $"Active: {string.Join(", ", i.Trip.Packages)}.", "The Packages screen shows what each one covers and what it has saved you." };
+        return FromBooking("packages", "Your packages", lines, i, Packages);
+    }
+
+    private static StanleyCardDto Ports(ResolverInput i)
+    {
+        var days = i.Trip.Timeline.Days.Where(d => d.Arrive is not null).ToList();
+        return FromPublished("itinerary", "Your ports", [.. days.Select(d => $"Day {d.Day}, {Date(d.Date)}: {PortName(d.Port)}, arriving {Hm(d.Arrive!.Value)}.")],
+            StanleyChips.Schedule, "Princess ship schedule", "The published schedule can change. The ship's notice on the day is the last word.", false, Trips);
+    }
+
+    private static StanleyCardDto PortToday(ResolverInput i)
+    {
+        var tomorrow = Regex.IsMatch(i.Message, "tomorrow", RegexOptions.IgnoreCase);
+        var day = i.Day + (tomorrow ? 1 : 0);
+        var d = i.Trip.Timeline.Days.FirstOrDefault(x => x.Day == day);
+        if (d is null) return FromPublished("portToday", "Where the ship is", [$"Your sailing has no day {day}. You sail on {Date(i.Trip.Departure)}."], StanleyChips.Schedule, "Princess ship schedule", "From the published schedule.", false);
+        var word = tomorrow ? "Tomorrow" : "Today";
+        var line = d.Arrive is { } a ? $"{word} (day {d.Day}) the ship is in {PortName(d.Port)}, arriving {Hm(a)}{(d.AllAboard is { } b ? $" with all aboard at {Hm(b)}" : "")}, local time." : $"{word} (day {d.Day}) the ship is {(d.Port == "sea" ? "at sea" : "in " + PortName(d.Port))}.";
+        return FromPublished("portToday", "Where the ship is", [line], StanleyChips.Schedule, "Princess ship schedule", "The published schedule can change. The ship's notice on the day is the last word.", false);
+    }
+
+    private static StanleyCardDto Countdown(ResolverInput i)
+    {
+        var left = -i.Day + 1;
+        return FromBooking("countdown", "When you sail",
+            [left > 0 ? $"You sail on {Date(i.Trip.Departure)}, {Plural(left, "day", "days")} from now." : $"You sailed on {Date(i.Trip.Departure)} and today is day {i.Day} of {i.Trip.Nights + 1}."], i, Trips);
+    }
+
+    private static StanleyCardDto Stateroom(ResolverInput i) =>
+        FromBooking("stateroom", "Your stateroom", [$"You booked a {i.Trip.Stateroom} stateroom on {i.Trip.Ship}. Your cabin number is on the Me tab."], i, Trips);
+
+    private static StanleyCardDto Party(ResolverInput i) =>
+        FromBooking("party", "Who is travelling", [$"{Plural(i.Trip.Ages.Count, "traveller is", "travellers are")} on your booking. Names and details are on the Me tab."], i, Trips);
+}

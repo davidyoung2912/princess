@@ -14,7 +14,7 @@ public sealed record StanleyItem(int Day, string Name, string? Time);
 /// </summary>
 public sealed record StanleyTrip(
     DateOnly Today, DateOnly Departure, int Nights, string Ship, string Stateroom, string Dining,
-    IReadOnlyList<int> Ages, IReadOnlyList<StanleyItem> Tours, IReadOnlyList<StanleyItem> Meals, IReadOnlyList<string> Packages, string? SailingId = null)
+    IReadOnlyList<int> Ages, IReadOnlyList<StanleyItem> Tours, IReadOnlyList<StanleyItem> Meals, IReadOnlyList<string> Packages, string? SailingId = null, DateTime? AsOf = null)
 {
     /// <summary>The booked sailing's days; the older route when the sailing is not known.</summary>
     public Timeline Timeline => TimelineBook.For(SailingId, Departure);
