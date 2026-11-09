@@ -1,3 +1,5 @@
+using Princess.Api.Domain;
+
 namespace Princess.Api.Data;
 
 /// <summary>The saved booking draft (<c>dbo.BookingDrafts</c>). People, contact and acceptances are JSON, read whole.</summary>
