@@ -140,7 +140,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
 | MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
 | MNG-15 | P1 | Partial | F | `src/domain/countdowns.ts`, `src/domain/countdowns.test.ts` | BM20: three deadline kinds only; no history |
-| MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | Reusable cabin and dining preferences unchecked |
+| MNG-16 | P2 | Partial | F | `src/ui/account/ProfileScreen.tsx`, `src/ui/DisplaySettings.tsx` | BM31: profile lists where each saved preference is used and marks health and child data as never for marketing; no per-preference opt-out of later sailings, no cabin-location or message preferences (need a server field) |
 | MNG-17 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx` | Status data is simulated by the server |
 | MNG-18 | P1 | Built | F | `src/ui/account/PrintScreen.tsx`, `src/domain/export.ts`, `src/domain/export.test.ts` | Large-print and low-ink variants unchecked |
 | PRE-01 | P0 | Built | F | `src/ui/plan/WeekPlanner.tsx`, `src/ui/plan/PlanScreen.tsx`, `src/domain/plan.ts` | None found |

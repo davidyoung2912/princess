@@ -229,3 +229,10 @@ Theme: solo cruiser view (DRM-09). Only this row was taken; DRM-07, MNG-16, QOL-
 `soloView` in `src/domain/dream.ts` lists each room type for one guest with fare, solo supplement and all-in total, cheapest first; the decide screen shows it when the party is one and says plainly that staterooms are not set aside for solo guests, that no hosted social events are listed, and that nobody is matched as a roommate. Test in `dream.test.ts`. DRM-09 stays Partial: single-occupancy inventory and hosted social options need a source.
 Limits: no component test, no browser check. Matrix totals not regenerated.
 Next in group A: DRM-07 (needs occasion tags on sailings, a content source), MNG-16, QOL-17, QOL-18.
+
+## 5p. BM31 result (built, not committed)
+
+Theme: reusable preferences (MNG-16). Only this row was taken; DRM-07, QOL-17 and QOL-18 are not started.
+`preferenceUse` in `src/domain/preferenceUse.ts` turns the saved food, access, bedding and request answers into plain lines saying where each is used (dining, excursion flags, checklist reminders, room team); the profile shows them under "How these are used", marks health and child data as not used for marketing, and says there is no way yet to leave one out of a later sailing. Test in `preferenceUse.test.ts`.
+MNG-16 stays Partial: an opt-out per preference, and cabin-location and message preferences, need a server field. Limits: no component test, no browser check. Matrix totals not regenerated.
+Next in group A: DRM-07 (needs occasion tags, a content source), QOL-17, QOL-18.

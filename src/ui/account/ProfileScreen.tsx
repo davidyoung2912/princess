@@ -6,6 +6,7 @@ import { BEDDING, DIETARY, NEEDS, nameChange, validateProfile, type Bedding, typ
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
+import { preferenceUse } from '../../domain/preferenceUse'
 import { accessWithNeeds } from '../../domain/bookingPrep'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
@@ -78,6 +79,7 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
   const { me, update: updateMem } = useMemory()
   const save = useAction((next: Profile) => api.account.saveProfile(view.id, next))
   const set = (patch: Partial<Profile>) => { setP({ ...p, ...patch }); setSaved(false) }
+  const uses = preferenceUse(p, child)
   const err = (field: ProfileField) => (errors[field] ? t(`profile.err.${errors[field]}` as StringKey) : undefined)
 
   const submit = async (e: FormEvent) => {
@@ -136,6 +138,19 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
           </select>
         </div>
         <TextArea label={t('profile.requests')} hint={t('profile.requestsHint')} value={p.specialRequests} maxLength={500} onChange={(e) => set({ specialRequests: e.target.value })} />
+
+        <h2>{th('profile.use')}</h2>
+        {uses.length === 0 ? <p className="muted">{t('profile.use.none')}</p> : (
+          <ul className="plain-list">
+            {uses.map((u) => (
+              <li key={u.group}>
+                <strong>{t(`profile.use.${u.group}` as StringKey, { count: u.count })}</strong>: {u.uses.map((x) => t(`profile.use.${x}` as StringKey)).join('; ')}.
+                {u.sensitive && <span className="muted"> {t('profile.use.sensitive')}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="muted">{t('profile.use.limit')}</p>
 
         <h2>{th('profile.emergency')}</h2>
         <p className="muted">{t('profile.emergencyHint')}</p>
