@@ -86,10 +86,10 @@ export function CabinExtras({ cabin, sailing }: { cabin: Cabin; sailing: Sailing
     <details>
       <summary>{t('dl3.walk.title')}</summary>
       <ul className="plain-bullets">
-        {walks.walks.map((w) => <li key={w.id}>{t('dl3.walk.to', { count: w.minutes, place: w.name })}</li>)}
+        {walks.walks.map((w) => <li key={w.id}>{t('dl3.walk.to', { count: w.minutes, place: w.name })} ({t(w.by === 'deck' ? 'dl3.walk.byDeck' : 'dl3.walk.byLift')})</li>)}
         <li>{t('dl3.walk.lift', { minutes: walks.lift.minutes, bank: walks.lift.bank })}</li>
       </ul>
-      <p className="muted">{t('dl3.walk.note')}</p>
+      <p className="muted">{t('dl3.walk.note')} {t('dl3.walk.closures')}</p>
       <h4>{t('dl3.near.title')}</h4>
       <ul className="plain-bullets">
         <li>{t('dl3.near.above', { deck: cabin.deck + 1, places: names(near.above) })}</li>

@@ -9,6 +9,7 @@ import { useSailing } from '../../hooks/useDemo'
 import { usePricedSailings, useRoomChoices } from '../../hooks/useShipCatalogue'
 import { useJourneyEvent } from '../../hooks/useJourneyEvent'
 import { t, th, type StringKey } from '../../i18n'
+import { comfortIndicators, GUEST_REPORTS_NOTE } from '../../domain/cabinComfort'
 import { cabinRegrets } from '../../domain/regret'
 import { Card } from '../Card'
 import { RegretCards } from './RegretCards'
@@ -178,6 +179,9 @@ export function CabinChooserScreen() {
             <div><dt>{t('cabins.motion')}</dt><dd>{stars(c.motion)}</dd></div>
             <div><dt>{t('cabins.noise')}</dt><dd>{stars(c.noise)}</dd></div>
           </dl>
+          <h4>{t('cabins.comfort')}</h4>
+          <ul className="plain-bullets">{comfortIndicators(c).map((i) => <li key={i.key}><strong>{t(`cabins.basis.${i.basis}` as StringKey)}:</strong> {i.text}</li>)}</ul>
+          <p className="muted">{GUEST_REPORTS_NOTE}</p>
           {c.warnings.length > 0 && <ul className="plain-bullets">{c.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
           <RegretCards cards={cabinRegrets(c)} heading={t('regret.cabin')} headingId={`regret-${c.cabin.number}`} />
           <details>

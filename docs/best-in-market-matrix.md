@@ -98,14 +98,14 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DSC-03 | P1 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/domain/portPilot.ts` | None found |
 | DSC-04 | P0 | Built | F | `src/ui/discover/CabinChooserScreen.tsx`, `src/domain/cabinScore.ts`, `src/domain/cabinScore.test.ts` | None found |
 | DSC-05 | P1 | Partial | F | `src/domain/deckPlan.ts`, `src/ui/onboard/DeckPlan.tsx`, `src/ui/book/RoomStep.tsx` | Exact available cabin picked on the deck plan in booking unchecked |
-| DSC-06 | P1 | Partial | F | `src/domain/cabinScore.ts`, `src/domain/shipRooms.ts` | Noise, motion, lift proximity, connecting door: which are covered not read |
+| DSC-06 | P1 | Partial | F | `src/domain/cabinScore.ts`, `src/domain/shipRooms.ts` | BM25: indicators tagged typical or unknown; none confirmed (no source); no guest reports collected |
 | DSC-07 | P1 | Partial | F | `src/ui/discover/CabinPhotos.tsx` | Photos missing (S1-06 in `docs/gap-analysis-plan.md`) |
 | DSC-08 | P0 | Built | F | `src/domain/pricing.ts`, `src/domain/pricingServed.test.ts`, `src/ui/book/FareStep.tsx` | None found |
 | DSC-09 | P1 | Built | F | `src/domain/packages.ts`, `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts` | None found |
 | DSC-10 | P2 | Built | F | `src/domain/cabinScore.ts`, `src/domain/shortlist.ts` | Explainability of ship/sailing fit score unchecked |
 | DSC-11 | P0 | Partial | F | `src/domain/accessReference.ts`, `src/ui/plan/AssistanceScreen.tsx` | One whole-journey comparison not found |
 | DSC-12 | P1 | Partial | F | `src/domain/cabins.ts` | Connecting-cabin planning for a party unchecked |
-| DSC-13 | P2 | Not built | F | `src/domain/deckGraph.ts` | Deck graph and route finder exist; cabin-to-venue overlay on the chooser not found |
+| DSC-13 | P2 | Partial | R | `src/domain/discoverDelights.ts`, `src/ui/delights/DiscoverDelights.tsx` | BM25: walk times by deck or lift on each cabin; no stairs, closures or verified step-free route data |
 | DSC-14 | P1 | Built | F | `src/ui/discover/CompareShipsScreen.tsx` | Room-control capability is a flag only |
 | DSC-15 | P1 | Not built | F | none | No guest reviews by ship, sailing, cabin or port; needs a source |
 | DSC-16 | P1 | Built | F | `src/ui/discover/SavedScreen.tsx`, `src/domain/shortlist.ts`, `src/domain/shortlist.test.ts` | Server-held, so phone and desktop agree |

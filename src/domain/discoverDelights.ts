@@ -69,7 +69,7 @@ export function sunByDay(days: readonly Pick<ItineraryDay, 'day' | 'port'>[], co
 
 // ---------------------------------------------------------------- D1-5: walk time from a cabin
 
-export interface Walk { id: string; name: string; minutes: number }
+export interface Walk { id: string; name: string; minutes: number; /** How the way goes: on the cabin's own deck, or by lift (the deck graph has lifts only, no stairs). */ by: 'deck' | 'lift'; /** The place is marked step-free in the deck data; this is not a verified route. */ placeStepFree: boolean }
 
 const cabinSpot = (c: Pick<Cabin, 'deck' | 'position'>): Place => ({ id: 'cabin', name: 'Cabin', deck: c.deck, section: c.position, kind: 'service', stepFree: true })
 
@@ -95,7 +95,7 @@ export function cabinWalks(c: Pick<Cabin, 'deck' | 'position'>): { walks: Walk[]
   const walks = WALK_TARGETS.flatMap((id): Walk[] => {
     const p = placeById(roomId(id) ?? '')
     const minutes = p ? walkMinutes(from, p) : null
-    return p && minutes !== null ? [{ id, name: p.name, minutes }] : []
+    return p && minutes !== null ? [{ id, name: p.name, minutes, by: p.deck === c.deck ? 'deck' : 'lift', placeStepFree: p.stepFree }] : []
   })
   const bank = ELEVATORS.find((e) => e.section === c.position) ?? ELEVATORS[0]
   return { walks, lift: { bank: bank.bank, minutes: 1 } }

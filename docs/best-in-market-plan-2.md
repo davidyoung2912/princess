@@ -183,3 +183,11 @@ Limits: decorative icons and the mascot still load in data-light mode (small, ca
 
 Theme: preview before sending (MOB-25). `PicturePicker` now shrinks the chosen picture, shows it with "Nothing has been sent yet", and uploads only when the guest taps "Send this picture"; "Choose another" discards it and revokes the preview URL. `src/ui/picturePreview.test.tsx` checks nothing is uploaded before the tap. Used by every picker (cabin, book, family link, cases). MOB-25 moved to Built.
 Limits: jsdom only, no device check; MOB-09 (passport and tag scan) stays Partial. The matrix Built/Partial totals were not regenerated. Next in group A: DSC-05/06/12/13.
+
+## 5j. BM25 result (built, not committed)
+
+Theme: cabin chooser honesty (DSC-06, DSC-13). Partly done; DSC-05 and DSC-12 are not started.
+1. **DSC-06:** `src/domain/cabinComfort.ts` gives each cabin noise, motion, lift proximity, connecting door and obstruction indicators, each tagged Confirmed, Typical, Guest-reported or Unknown and shown on the chooser. Nothing is Confirmed or Guest-reported unless a source passes it in (none does yet); connecting door is Unknown. A line says no guest reports exist and that they would not be a guarantee. Test: `src/domain/cabinComfort.test.ts`.
+2. **DSC-13:** the existing cabin walk times (`cabinWalks`) now say whether the way is on the cabin's deck or by lift, and the note says closures and lift outages are not known and the time is not a verified step-free route. The row moved Not built to Partial: the overlay already existed (the matrix was wrong), but there are no stairs, no closure data and no verified route data.
+Limits: the tags describe modelled sample data, not a real deck plan; the server does not serve per-indicator provenance or a connecting-door fact, so a real source would add `ConfirmedFacts`. jsdom and unit tests only. Matrix totals not regenerated.
+Not started: DSC-05 (pick an exact cabin on the deck plan, recheck inventory before hold) and DSC-12 (connecting or nearby cabins for a party) both need cabin adjacency and a hold step that the front end does not have; they are the next phase.
