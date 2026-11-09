@@ -3,7 +3,7 @@ using Dapper;
 
 namespace Princess.Api.Data;
 
-/// <summary>Who the background scheduler should look after: people with a phone signed up for alerts, or an automatic instalment switched on.</summary>
+/// <summary>Who the background scheduler should look after: people with a phone signed up for alerts, an automatic instalment switched on, or an email address or phone number and a confirmed booking (so email and text notices reach them with no phone subscribed).</summary>
 public interface IWatchTargetStore
 {
     Task<List<long>> ListUserIdsAsync(int max, CancellationToken ct);
@@ -19,6 +19,13 @@ public sealed class DapperWatchTargetStore(IDbConnectionFactory db) : IWatchTarg
               SELECT UserId FROM dbo.PushSubscriptions
               UNION
               SELECT AutoUserId FROM dbo.InstalmentPlans WHERE AutoUserId IS NOT NULL
+              UNION
+              SELECT u.Id FROM dbo.Users u
+                JOIN dbo.BookingGuests g ON g.UserId = u.Id
+                JOIN dbo.Bookings b ON b.Id = g.BookingId AND b.Status = 'confirmed'
+                LEFT JOIN dbo.Profiles p ON p.UserId = u.Id
+               WHERE u.Role = 'guest' AND u.IsDemo = 0
+                 AND (NULLIF(u.Email, N'') IS NOT NULL OR NULLIF(p.Phone, N'') IS NOT NULL)
             ) t ORDER BY UserId
             """, new { max }, null, ct))).ToList();
     }
