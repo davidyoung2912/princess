@@ -91,6 +91,17 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         return Task.FromResult<HelperRecord?>(link);
     }
 
+    public Task<HelperRecord?> EndHelpingAsync(long helperUserId, long guestUserId, DateTime now, CancellationToken ct)
+    {
+        var live = Helpers.FirstOrDefault(h => h.GuestId == guestUserId && h.Helper.HelperUserId == helperUserId && h.Helper.Status == "active").Helper;
+        if (live is null) return Task.FromResult<HelperRecord?>(null);
+        live.Status = "revoked";
+        live.InviteCode = null;
+        live.InviteExpiresAt = null;
+        live.ChangedAt = now;
+        return Task.FromResult<HelperRecord?>(live);
+    }
+
     public Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct)
     {
         var live = Helpers.FirstOrDefault(h => h.GuestId == guestUserId && h.Helper.Status != "revoked");

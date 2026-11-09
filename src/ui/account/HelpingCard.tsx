@@ -44,6 +44,11 @@ function Guest({ guest }: { guest: HelpedGuest }) {
   const [checkin, setCheckin] = useState(false)
   const canTrip = guest.permissions.includes('trip')
   const [trip, setTrip] = useState(false)
+  const [stopping, setStopping] = useState(false)
+  const stop = useAction(async () => { await api.helping.stopHelping(guest.guestId); return true })
+  const leave = async () => {
+    if (await stop.run()) window.dispatchEvent(new Event('princess:helping-changed'))
+  }
   return (
     <>
       <strong>{guest.name}</strong> <span className="muted">{guest.relationship}</span>
@@ -56,6 +61,17 @@ function Guest({ guest }: { guest: HelpedGuest }) {
       {guest.booking && canTrip && <div><Button variant="secondary" aria-expanded={trip} onClick={() => setTrip(!trip)}>{t(trip ? 'helping.tripHide' : 'helping.tripOpen', { name: guest.name })}</Button></div>}
       {trip && guest.booking && canTrip && <GuestTrip guest={guest} booking={guest.booking} />}
       {!guest.booking && <p className="muted">{t('helping.noAccess', { name: guest.name })}</p>}
+      <div><Button variant="secondary" onClick={() => setStopping(true)}>{t('helping.stop', { name: guest.name })}</Button></div>
+      {stopping && (
+        <Dialog title={t('helping.stopTitle')} onClose={() => setStopping(false)}>
+          <p>{t('helping.stopBody', { name: guest.name })}</p>
+          <ActionError error={stop.error} />
+          <div className="button-row">
+            <Button disabled={stop.busy} onClick={() => void leave()}>{t('helping.stop', { name: guest.name })}</Button>
+            <Button variant="secondary" onClick={() => setStopping(false)}>{t('data.cancel')}</Button>
+          </div>
+        </Dialog>
+      )}
     </>
   )
 }

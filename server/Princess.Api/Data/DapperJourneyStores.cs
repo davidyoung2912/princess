@@ -141,6 +141,15 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
         return guestId is null ? null : await c.QueryFirstOrDefaultAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId = guestId.Value }, null, ct));
     }
 
+    public async Task<HelperRecord?> EndHelpingAsync(long helperUserId, long guestUserId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var changed = await c.ExecuteAsync(Sql.Cmd(
+            "UPDATE dbo.HelperLinks SET Status = 'revoked', InviteCode = NULL, InviteExpiresAt = NULL, ChangedAt = @now, UpdatedAt = @now WHERE GuestUserId = @guestUserId AND HelperUserId = @helperUserId AND Status = 'active'",
+            new { helperUserId, guestUserId, now }, null, ct));
+        return changed == 0 ? null : await c.QueryFirstOrDefaultAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId }, null, ct));
+    }
+
     public async Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

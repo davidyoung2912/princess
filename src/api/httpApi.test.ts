@@ -69,6 +69,7 @@ describe('REST account groups', () => {
   it('reads who a helper helps and pays a guest balance on the guest routes (BM8)', async () => {
     const { http, calls } = fake({
       '/me/helping': [],
+      '/me/helping/g1': undefined,
       '/guests/g1/bookings/PC9/payments': { receipts: [] },
       '/guests/g1/bookings/PC9/payments/balance': { receipts: [] },
       '/guests/g1/bookings/PC9/folio': { lines: [] },
@@ -82,6 +83,8 @@ describe('REST account groups', () => {
     await helping.folio('g1', 'PC9')
     await helping.checkin('g1', 'PC9')
     await helping.trip('g1', 'PC9')
+    await helping.stopHelping('g1')
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/me/helping/g1')).toBe(true)
     expect(calls.find((c) => c.method === 'POST')).toMatchObject({ path: '/guests/g1/bookings/PC9/payments/balance', body: { cardId: 'card-1' } })
     expect(calls.map((c) => c.path)).toContain('/me/helping')
     expect(calls.map((c) => c.path)).toContain('/guests/g1/bookings/PC9/folio')

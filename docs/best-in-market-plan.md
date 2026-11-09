@@ -167,6 +167,13 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Front end**: a "Make a new code" button under the code, and under the "ran out" note. `api.account.renewHelperCode`, one test.
 - **Not done**: C# tests for expiry and renewal, email/SMS delivery, editing a booking and message permissions, IDN-04.
 
+### BM15. Helper can step down (built, not committed)
+
+- **Choice (mine, not asked)**: until now only the guest could end a helper grant. The helper can now leave.
+- **Server (written, not compiled or run)**: `DELETE /api/v1/me/helping/{guestId}` (`TripService.StopHelpingAsync`, `IAccountStore.EndHelpingAsync`) ends a live grant that names the caller as helper: status `revoked`, code cleared. 204 on success; 404 for an unknown guest or no live grant naming you, so a stranger learns nothing. History is written for both people ("stepped down", "Stopped helping …"). No schema change. One C# test and the swagger list were added; run them yourself.
+- **Front end**: a "Stop helping {name}" button on each guest in "People you help", with a confirm dialog; the list refreshes afterwards. `api.helping.stopHelping`, test lines in `httpApi.test.ts`.
+- **Not done**: telling the guest by notification (they see it in history only), email/SMS delivery of codes, editing a booking and message permissions, IDN-04.
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?

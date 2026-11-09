@@ -102,6 +102,13 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.HelpedGuestsAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Payments").WithSummary("The guests who have made you their helper (live grants only), with the current booking you may pay for.");
 
+        api.MapDelete("/me/helping/{guestId:guid}", async (Guid guestId, ICurrentUser me, TripService svc, CancellationToken ct) =>
+            {
+                await svc.StopHelpingAsync(await me.LoadAsync(ct), guestId, ct);
+                return Results.NoContent();
+            })
+            .WithTags("Payments").WithSummary("The helper steps down from one guest; their access ends at once. 404 without a live grant that names you.");
+
         api.MapGet("/guests/{guestId:guid}/bookings/{number}/payments", async (Guid guestId, string number, ICurrentUser me, TripService svc, CancellationToken ct) =>
                 Results.Ok(await svc.PaymentsForGuestAsync(await me.LoadAsync(ct), guestId, number, ct)))
             .WithTags("Payments").WithSummary("A helper with view and Payments reads the guest's trip, receipts and saved cards (brand and last four). 404 without a live grant; 403 without Payments.");

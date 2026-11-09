@@ -185,6 +185,22 @@ public class AccountApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task AHelperCanStepDownButOnlyFromAGuestWhoNamedThem()
+    {
+        var guest = await SignIn(Priya);
+        var code = (await Call(HttpMethod.Put, "/api/v1/me/helper", guest, new SaveHelperRequest("Paul Abernathy", "Son", ["view"], "active"))).Json.GetProperty("inviteCode").GetString()!;
+        var paul = await SignIn(Paul);
+        await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest(code));
+
+        // Someone the guest never named learns nothing.
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/helping/{Priya.PublicId}", await SignIn(Daniel))).Status);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(HttpMethod.Delete, $"/api/v1/me/helping/{Priya.PublicId}", paul)).Status);
+        Assert.Equal("revoked", (await Get("/api/v1/me/helper", guest)).Json.GetProperty("status").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/helping/{Priya.PublicId}", paul)).Status);
+    }
+
+    [Fact]
     public async Task AGuestsCodeTiesTheHelpersAccountToTheGrantOnce()
     {
         var guest = await SignIn(Priya);

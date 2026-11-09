@@ -318,6 +318,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     },
     helping: {
       list: () => get('/me/helping'),
+      stopHelping: (guestId) => send('delete', `/me/helping/${seg(guestId)}`),
       payments: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/payments`),
       payBalance: (guestId, booking, cardId) => send('post', `/guests/${seg(guestId)}/bookings/${seg(booking)}/payments/balance`, { cardId }),
       folio: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/folio`),

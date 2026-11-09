@@ -187,6 +187,16 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
         return list;
     }
 
+    /// <summary>The helper steps down (BM15). Only a live grant that names this helper counts; anything else is notFound, so a stranger learns nothing.</summary>
+    public async Task StopHelpingAsync(UserRecord helper, Guid guestId, CancellationToken ct)
+    {
+        var guest = await users.FindByPublicIdAsync(guestId, ct) ?? throw ApiException.NotFound();
+        var now = await clock.NowAsync(helper, ct);
+        var ended = await accounts.EndHelpingAsync(helper.Id, guest.Id, now, ct) ?? throw ApiException.NotFound();
+        await accounts.AddHistoryAsync(guest.Id, helper.Id, "helper", $"{ended.Name}: stepped down", now, ct);
+        await accounts.AddHistoryAsync(helper.Id, helper.Id, "helper", $"Stopped helping {guest.FirstName} {guest.LastName}".Trim(), now, ct);
+    }
+
     /// <summary>A helper with view and Trip sees which sailing the guest is on and when. Read only; the payment plan, documents and check-in stay private.</summary>
     public async Task<HelperTripDto> TripForGuestAsync(UserRecord helper, Guid guestId, string? number, CancellationToken ct)
     {

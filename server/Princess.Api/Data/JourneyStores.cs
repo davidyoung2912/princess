@@ -16,6 +16,8 @@ public interface IAccountStore
     Task<HelperRecord?> RenewHelperCodeAsync(long guestUserId, string inviteCode, DateTime inviteExpiresAt, DateTime now, CancellationToken ct);
     Task<HelperRecord?> AcceptHelperInviteAsync(long helperUserId, string code, DateTime now, CancellationToken ct);
     Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct);
+    /// <summary>The helper steps down (BM15): ends a live grant that names this helper. Null when there is none.</summary>
+    Task<HelperRecord?> EndHelpingAsync(long helperUserId, long guestUserId, DateTime now, CancellationToken ct);
     /// <summary>History of the person and of the supervised children they book for, newest first.</summary>
     Task<List<HistoryRecord>> ListHistoryAsync(long userId, CancellationToken ct);
     Task AddHistoryAsync(long userId, long byUserId, string what, string detail, DateTime now, CancellationToken ct);

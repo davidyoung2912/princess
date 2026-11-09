@@ -806,6 +806,8 @@ export interface Api {
     trip(guestId: string, booking: string): Promise<HelperTrip>
     /** How far the guest's check-in has got, read only (needs their Check-in permission). */
     checkin(guestId: string, booking: string): Promise<CheckinStatus>
+    /** The helper steps down from this guest (BM15); their access ends at once. */
+    stopHelping(guestId: string): Promise<void>
   }
   documents: {
     get(): Promise<DocumentsView>
