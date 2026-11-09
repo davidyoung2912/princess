@@ -10,6 +10,7 @@ import { stanleyLevelFor } from '../../settings/settings'
 import { t, th } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
 import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
 
 /**
  * Question chips at the foot of a page (docs/experience-extension-ideas.md 13.2). A tap opens the authored answer in a small sheet, which costs nothing:
@@ -42,16 +43,16 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
 /** The bottom sheet that answers a chip: the question, the authored words, a link when there is one. */
 export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; onClose: () => void; onAsk: () => void }) {
   return (
-    <Dialog title={t('stanley.sheet.title')} onClose={onClose}>
+    <Dialog title={t('stanley.sheet.title')} onClose={onClose} header={(titleId) => (
+      <DialogHeader titleId={titleId} title={t('stanley.sheet.title')} subtext={t('stanley.sheet.sub')} onClose={onClose}
+        image={<img className="stanley__avatar" src={stanley} alt="" width="192" height="192" />} />
+    )}>
       <div className="stanley-answer">
-        <img className="stanley-answer__face" src={stanley} alt="" width="192" height="192" />
-        <div>
-          <p className="stanley-answer__q">{questionOf(entry)}</p>
-          <p>{answerOf(entry)}</p>
-          {entry.link && <p><Link to={entry.link} onClick={onClose}>{t('stanley.chips.show')}</Link></p>}
-          <RelatedPages ids={entry.related} onClose={onClose} />
-          <p><button type="button" className="link-button" onClick={onAsk}>{t('stanley.chips.more')}</button></p>
-        </div>
+        <p className="stanley-answer__q">{questionOf(entry)}</p>
+        <p>{answerOf(entry)}</p>
+        {entry.link && <p><Link to={entry.link} onClick={onClose}>{t('stanley.chips.show')}</Link></p>}
+        <RelatedPages ids={entry.related} onClose={onClose} />
+        <p><button type="button" className="link-button" onClick={onAsk}>{t('stanley.chips.more')}</button></p>
       </div>
     </Dialog>
   )
