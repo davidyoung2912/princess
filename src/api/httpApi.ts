@@ -14,6 +14,7 @@ export interface HttpGroups {
   account: Api['account']
   trips: Api['trips']
   payments: Api['payments']
+  helping: Api['helping']
   documents: Api['documents']
   notifications: Api['notifications']
   push: Api['push']
@@ -313,6 +314,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       removeCard: (id) => send('delete', `/me/cards/${seg(id)}`),
       payBalance: async (cardId) => send('post', `/bookings/${seg(await number())}/payments/balance`, { cardId }),
     },
+    helping: {
+      list: () => get('/me/helping'),
+      payments: (guestId, booking) => get(`/guests/${seg(guestId)}/bookings/${seg(booking)}/payments`),
+      payBalance: (guestId, booking, cardId) => send('post', `/guests/${seg(guestId)}/bookings/${seg(booking)}/payments/balance`, { cardId }),
+    },
     documents: {
       get: () => inBooking('/documents'),
       set: async (guest, doc, held) => {
@@ -555,6 +561,7 @@ export function toApi(g: HttpGroups): Api {
     account: g.account,
     trips: g.trips,
     payments: g.payments,
+    helping: g.helping,
     documents: g.documents,
     notifications: g.notifications,
     push: g.push,

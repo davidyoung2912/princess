@@ -108,8 +108,8 @@ export function validateCard(last4: string, expiry: string, today: string): Card
 
 export type PermissionId = 'view' | 'documents' | 'payments' | 'profile'
 export const PERMISSIONS: readonly PermissionId[] = ['view', 'documents', 'payments', 'profile']
-/** Permissions the server does not act on yet: a helper cannot reach a guest's booking to pay (see `docs/best-in-market-plan.md`, BM6). They are shown as unavailable and are not saved. */
-export const NOT_YET: readonly PermissionId[] = ['payments']
+/** Permissions the server does not act on yet. They are shown as unavailable and are not saved. Empty since BM8: a helper can now pay from "People you help" (BM7 server path). */
+export const NOT_YET: readonly PermissionId[] = []
 export const permissionWorks = (p: PermissionId): boolean => !NOT_YET.includes(p)
 
 export type HelperStatus = 'requested' | 'active' | 'revoked'

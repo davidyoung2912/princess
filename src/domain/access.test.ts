@@ -21,9 +21,9 @@ describe('accessRows', () => {
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions], status: 'revoked' } }).find((r) => r.kind === 'helper')).toMatchObject({ status: 'ended', items: [] })
   })
 
-  it('leaves out a permission the server does not act on yet', () => {
+  it('lists Payments now that a helper can pay (BM8)', () => {
     const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const], status: 'active' as const, at: 1 }
-    expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'documents'])
+    expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'payments', 'documents'])
   })
 
   it('treats a family contact as active only while a link is live, and reports when it ends', () => {

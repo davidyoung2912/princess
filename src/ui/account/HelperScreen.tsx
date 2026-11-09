@@ -18,6 +18,7 @@ import { Card } from '../Card'
 import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { formatMoment } from './format'
+import { HelpingCard } from './HelpingCard'
 import { ActionError, Load } from './parts'
 
 /** Family helper (INC-01, ACT-05): someone who can manage the booking for a guest, only with that guest's consent and only for what they allow. */
@@ -29,6 +30,7 @@ export function HelperScreen() {
       <Load state={helper}>
         {(h) => <HelperBody key={h?.status ?? 'none'} helper={h} refresh={helper.retry} />}
       </Load>
+      <HelpingCard />
       <WhoCanSee helper={helper.data ?? null} />
       <Card info labelledBy="alt-h">
         <h2 id="alt-h">{th('helper.alt.title')}</h2>

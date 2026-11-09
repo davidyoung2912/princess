@@ -66,6 +66,20 @@ describe('REST account groups', () => {
     expect(calls.find((c) => c.path.includes('consents'))?.body).toEqual({ on: true })
   })
 
+  it('reads who a helper helps and pays a guest balance on the guest routes (BM8)', async () => {
+    const { http, calls } = fake({
+      '/me/helping': [],
+      '/guests/g1/bookings/PC9/payments': { receipts: [] },
+      '/guests/g1/bookings/PC9/payments/balance': { receipts: [] },
+    })
+    const { helping } = createHttpGroups(http).groups
+    await helping.list()
+    await helping.payments('g1', 'PC9')
+    await helping.payBalance('g1', 'PC9', 'card-1')
+    expect(calls.find((c) => c.method === 'POST')).toMatchObject({ path: '/guests/g1/bookings/PC9/payments/balance', body: { cardId: 'card-1' } })
+    expect(calls.map((c) => c.path)).toContain('/me/helping')
+  })
+
   it('has no current trip to act on when the person has none', async () => {
     const { http } = fake({ '/trips': { upcoming: [], past: [] } })
     await expect(createHttpGroups(http).groups.payments.get()).rejects.toMatchObject({ code: 'notFound' })

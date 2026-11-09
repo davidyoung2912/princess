@@ -135,4 +135,12 @@ public sealed class DapperAccessStore(IDbConnectionFactory db) : IAccessStore
             "SELECT Permissions, Status FROM dbo.HelperLinks WHERE HelperUserId = @helperUserId AND GuestUserId = @guestUserId AND Status = 'active'",
             new { helperUserId, guestUserId }, cancellationToken: ct));
     }
+
+    public async Task<IReadOnlyList<HelpedGuest>> ListHelpedGuestsAsync(long helperUserId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<HelpedGuest>(new CommandDefinition(
+            "SELECT GuestUserId, Relationship, Permissions, ChangedAt FROM dbo.HelperLinks WHERE HelperUserId = @helperUserId AND Status = 'active' ORDER BY ChangedAt, Id",
+            new { helperUserId }, cancellationToken: ct))).ToList();
+    }
 }

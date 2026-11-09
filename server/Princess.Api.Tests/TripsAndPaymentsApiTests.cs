@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Tests.Support;
@@ -242,6 +243,33 @@ public class TripsAndPaymentsApiTests : JourneyWorld
         var r = await Call(HttpMethod.Post, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments/balance", await SignIn(Paul), new PayBalanceRequest(card.PublicId));
         Assert.True(r.Status is HttpStatusCode.Forbidden or HttpStatusCode.NotFound);
         Assert.DoesNotContain(F.Journey.Payments, p => p.Row.Label == "balance");
+    }
+
+    [Fact]
+    public async Task AHelperSeesWhoTheyHelpAndReadsTheGuestsPaymentsButNeverFullCardNumbers()
+    {
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = "view,payments", Status = "active" }));
+        var list = await Call(HttpMethod.Get, "/api/v1/me/helping", await SignIn(Paul));
+        Assert.Equal(HttpStatusCode.OK, list.Status);
+        var one = Assert.Single(list.Json.EnumerateArray());
+        Assert.Equal(Daniel.PublicId, one.GetProperty("guestId").GetGuid());
+        Assert.Equal("PC243902", one.GetProperty("booking").GetString());
+
+        var r = await Call(HttpMethod.Get, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments", await SignIn(Paul));
+        Assert.Equal(HttpStatusCode.OK, r.Status);
+        Assert.Equal(["id", "brand", "last4", "expiry"], r.Json.GetProperty("cards")[0].EnumerateObject().Select(p => p.Name));
+    }
+
+    [Fact]
+    public async Task AHelperWithoutPaymentsGetsNoBookingAndCannotReadPayments()
+    {
+        F.Access.Helpers.Add((Paul.Id, Daniel.Id, new HelperGrant { Permissions = "view,documents", Status = "active" }));
+        var list = await Call(HttpMethod.Get, "/api/v1/me/helping", await SignIn(Paul));
+        Assert.Equal(JsonValueKind.Null, Assert.Single(list.Json.EnumerateArray()).GetProperty("booking").ValueKind);
+        var r = await Call(HttpMethod.Get, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments", await SignIn(Paul));
+        Assert.True(r.Status is HttpStatusCode.Forbidden or HttpStatusCode.NotFound);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Get, $"/api/v1/guests/{Daniel.PublicId}/bookings/PC243902/payments", await SignIn(Stranger))).Status);
+        Assert.Empty((await Call(HttpMethod.Get, "/api/v1/me/helping", await SignIn(Stranger))).Json.EnumerateArray());
     }
 
     [Fact]

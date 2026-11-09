@@ -115,6 +115,14 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Tests written, not run** (rule: no dotnet test): three cases in `TripsAndPaymentsApiTests.cs` (helper pays and is recorded, missing payments or view is refused with nothing charged, stranger gets notFound), the swagger coverage list, and the in-memory fake carries `RelatedType`. Run them once yourself before relying on this.
 - **Front end deliberately unchanged**: Payments stays "Not available yet" on `/me/helper` because no screen lets a helper act on a guest's booking. That screen (BM8), then folio (read-only), check-in, booking and message permissions, then a shared relationship type (IDN-04). Location is never a permission.
 
+### BM8. Helper acts on a guest's booking (built, not committed)
+
+- **Server (written, not compiled or run)**: `GET /api/v1/me/helping` lists the guests whose live grant names you (`TripService.HelpedGuestsAsync`, `IAccessStore.ListHelpedGuestsAsync`); it gives the guest's current booking number only when the grant holds view and payments. `GET /api/v1/guests/{guestId}/bookings/{number}/payments` (`PaymentsForGuestAsync`) returns the guest's trip, receipts and cards (brand and last four). Same rules as BM7: no grant is notFound, no Payments is forbidden, a supervised helper or a party member is refused. Two C# tests and the swagger list were added; run them yourself.
+- **Front end**: a "People you help" card on `/me/helper` (`HelpingCard.tsx`, shown only when someone has named you). Pick a guest, see what they owe, choose one of their cards, confirm, and the receipt says it was paid by their helper. `api.helping` (types, `httpApi.ts`, one test). No new route, so the screen registry is unchanged.
+- **Payments is switched on**: `NOT_YET` in `account.ts` is now empty, so the guest can grant Payments again and it appears on the helper card and in "Who can see what". The BM6 test now expects it.
+- **Gap found, not fixed**: nothing ever sets `HelperLinks.HelperUserId`. The guest types the helper's name only (`UpsertHelperAsync` inserts no user id), so a helper's own account is never tied to the grant. Only the seeded link (Paul Abernathy for Ruth) works end to end. Documents and Profile helper access has the same limit. It needs a way to link the grant to a real account (the guest enters the helper's email or account number, or the helper accepts an invite code). That is a design choice for you and should be BM9.
+- **Still not done**: read-only folio, check-in, booking and message permissions, the shared relationship type (IDN-04).
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?

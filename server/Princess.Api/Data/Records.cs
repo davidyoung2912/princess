@@ -49,6 +49,9 @@ public sealed class BookingMembership
     public bool IsLead { get; set; }
 }
 
+/// <summary>A guest who named this user as a live helper.</summary>
+public sealed record HelpedGuest(long GuestUserId, string Relationship, string Permissions, DateTime ChangedAt);
+
 public sealed class HelperGrant
 {
     public string Permissions { get; set; } = "";

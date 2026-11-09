@@ -92,6 +92,14 @@ public static class JourneyEndpoints
                 Results.Ok(await svc.PayBalanceAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithTags("Payments").WithSummary("Pays the rest of the balance with a saved card. 409 paid when nothing is owed.");
 
+        api.MapGet("/me/helping", async (ICurrentUser me, TripService svc, CancellationToken ct) =>
+                Results.Ok(await svc.HelpedGuestsAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Payments").WithSummary("The guests who have made you their helper (live grants only), with the current booking you may pay for.");
+
+        api.MapGet("/guests/{guestId:guid}/bookings/{number}/payments", async (Guid guestId, string number, ICurrentUser me, TripService svc, CancellationToken ct) =>
+                Results.Ok(await svc.PaymentsForGuestAsync(await me.LoadAsync(ct), guestId, number, ct)))
+            .WithTags("Payments").WithSummary("A helper with view and Payments reads the guest's trip, receipts and saved cards (brand and last four). 404 without a live grant; 403 without Payments.");
+
         api.MapPost("/guests/{guestId:guid}/bookings/{number}/payments/balance", async (Guid guestId, string number, PayBalanceRequest body, ICurrentUser me, TripService svc, CancellationToken ct) =>
                 Results.Ok(await svc.PayBalanceForGuestAsync(await me.LoadAsync(ct), guestId, number, body, ct)))
             .WithTags("Payments").WithSummary("A helper with the Payments permission pays the guest's balance with one of the guest's saved cards. 404 without a live grant; 403 without Payments; 409 paid; 400 card.");

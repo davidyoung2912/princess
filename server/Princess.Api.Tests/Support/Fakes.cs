@@ -131,6 +131,10 @@ public sealed class InMemoryAccessStore : IAccessStore
 
     public Task<HelperGrant?> FindLiveHelperGrantAsync(long helperUserId, long guestUserId, CancellationToken ct) =>
         Task.FromResult(Helpers.Where(h => h.HelperId == helperUserId && h.GuestId == guestUserId && h.Grant.Status == "active").Select(h => h.Grant).FirstOrDefault());
+
+    public Task<IReadOnlyList<HelpedGuest>> ListHelpedGuestsAsync(long helperUserId, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<HelpedGuest>>(Helpers.Where(h => h.HelperId == helperUserId && h.Grant.Status == "active")
+            .Select(h => new HelpedGuest(h.GuestId, "Family", h.Grant.Permissions, DateTime.UtcNow)).ToList());
 }
 
 public static class TestHashes

@@ -156,6 +156,16 @@ export interface PaymentsView {
   canPay: boolean
 }
 
+/** A guest who made the signed-in person their helper. `booking` is the guest's current booking, only when the grant holds view and payments. */
+export interface HelpedGuest {
+  guestId: string
+  name: string
+  relationship: string
+  permissions: PermissionId[]
+  since: number
+  booking: string | null
+}
+
 export interface GuestDocumentsView {
   id: PersonaId
   name: string
@@ -777,6 +787,12 @@ export interface Api {
     addCard(brand: CardBrand, last4: string, expiry: string): Promise<Card[]>
     removeCard(id: string): Promise<Card[]>
     payBalance(cardId: string): Promise<PaymentsView>
+  }
+  /** What a helper does for a guest who consented: the guests they help, one guest's payments, and paying that guest's balance with the guest's own card. */
+  helping: {
+    list(): Promise<HelpedGuest[]>
+    payments(guestId: string, booking: string): Promise<PaymentsView>
+    payBalance(guestId: string, booking: string, cardId: string): Promise<PaymentsView>
   }
   documents: {
     get(): Promise<DocumentsView>

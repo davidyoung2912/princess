@@ -30,4 +30,6 @@ public interface IAccessStore
     /// <summary>The booking if the user is a guest on it (D1: membership is one join). Null for no such booking or not a member.</summary>
     Task<BookingMembership?> FindMembershipAsync(long userId, string bookingNumber, CancellationToken ct);
     Task<HelperGrant?> FindLiveHelperGrantAsync(long helperUserId, long guestUserId, CancellationToken ct);
+    /// <summary>The guests whose live (active) grant names this user as helper, oldest grant first.</summary>
+    Task<IReadOnlyList<HelpedGuest>> ListHelpedGuestsAsync(long helperUserId, CancellationToken ct);
 }

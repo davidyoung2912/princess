@@ -5,7 +5,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
-public sealed class TripService(AccessService access, SubjectAccess subjects, ITripStore trips, IAccountStore accounts, IUserClock clock)
+public sealed class TripService(AccessService access, SubjectAccess subjects, ITripStore trips, IAccountStore accounts, IAccessStore grants, IUserStore users, IUserClock clock)
 {
     private static DateOnly D(DateTime d) => DateOnly.FromDateTime(d);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -167,6 +167,33 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
     {
         var m = await access.RequireAdultMemberAsync(actor, number, ct);
         return await PayAsync(actor, actor, m.BookingId, req, helper: null, ct);
+    }
+
+    /// <summary>The guests who have made this person a live helper, with the current booking of each one this helper may pay for.</summary>
+    public async Task<List<HelpedGuestDto>> HelpedGuestsAsync(UserRecord helper, CancellationToken ct)
+    {
+        var now = await clock.NowAsync(helper, ct);
+        var list = new List<HelpedGuestDto>();
+        foreach (var g in await grants.ListHelpedGuestsAsync(helper.Id, ct))
+        {
+            var guest = await users.FindByIdAsync(g.GuestUserId, ct);
+            if (guest is null) continue;
+            var held = g.Permissions.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var canPay = AccessRules.HelperAllows(new HelperGrant { Permissions = g.Permissions, Status = "active" }, HelperPermission.Payments);
+            var booking = canPay && !helper.IsSupervised ? (await CurrentAsync(guest, now, ct))?.Number : null;
+            list.Add(new HelpedGuestDto(guest.PublicId, $"{guest.FirstName} {guest.LastName}".Trim(), g.Relationship, held, TripRules.ToMs(g.ChangedAt), booking));
+        }
+        return list;
+    }
+
+    /// <summary>What a helper with view and Payments sees of a guest's booking: the trip, receipts and the guest's cards (brand and last four only).</summary>
+    public async Task<PaymentsViewDto> PaymentsForGuestAsync(UserRecord helper, Guid guestId, string? number, CancellationToken ct)
+    {
+        if (helper.IsSupervised) throw ApiException.Forbidden("supervised");
+        var s = await subjects.ResolveAsync(helper, guestId, HelperPermission.Payments, write: false, ct);
+        if (!s.ViaHelper || s.Target.Id == helper.Id) throw ApiException.Forbidden();
+        var m = await access.RequireAdultMemberAsync(s.Target, number, ct);
+        return await PaymentsViewAsync(s.Target, m.BookingId, ct);
     }
 
     /// <summary>
