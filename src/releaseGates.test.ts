@@ -373,7 +373,7 @@ describe('gate 10: operational readiness', () => {
     expect(read('src/ui/aboard/SupportScreens.tsx')).not.toMatch(/scenario/i)
   })
 
-  it.fails('the runbook has an incident section: who owns it, who is told, and how guests are told', () => {
+  it('the runbook has an incident section: who owns it, who is told, and how guests are told', () => {
     expect(runbook).toMatch(/^## .*(incident|on-call|escalat)/im)
   })
 })

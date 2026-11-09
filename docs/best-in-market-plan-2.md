@@ -327,3 +327,10 @@ Theme: two wording gaps on money screens (PRE-18, DEB-05). BM42 was not defined 
 - **DEB-05:** the report form shows `case.noReversal` above the send button: sending a case does not mean a charge is reversed, and the outcome is told in the app.
 - **Tests:** both guards in `src/wordingGuards.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
 - **Limits:** both rows stay Partial. There is no provider-confirmed refund state, and a case shows no owner or response expectation at submission. English only. No browser check. Remaining `it.fails` wording gaps: EMB-01, DEB-04, BOK-05 (all need server or domain work).
+
+## 5ac. BM43 result (built, not committed)
+
+Theme: the runbook incident section. BM43 was not defined in the plan; I took the one `it.fails` release gate that needs only docs.
+- **Runbook:** new "Incidents" section in `docs/runbook.md`: owner, detect, contain (set the provider to `sim`), who staff are told, how guests are told (Status screen, push alerts and the COM-04 fallback, Disruption Hub), and after.
+- **Test:** the gate in `src/releaseGates.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
+- **Limits:** no incident owner is named and there is no paging or alert hook (PERF-07), so the section says so rather than inventing a process. The operator must fill in the owner and sign it off in the scorecard. No requirement row moves. Remaining `it.fails`: EMB-01, DEB-04, BOK-05 (server or domain work).

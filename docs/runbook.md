@@ -40,6 +40,17 @@ Console logs from ASP.NET Core. Provider problems log as a warning with the prov
 
 `GET /api/v1/me/export` returns the guest's whole history: their trips, their saved documents and the documents of each booking they are on. `DELETE /api/v1/me/state` removes their own documents; deleting the account removes the rest by cascade. Pictures are removed with the account.
 
+## Incidents
+
+What exists today, and what the operator must fill in. Nothing here is a staffed process yet: no person or rota is named in the repository, and inventing one would be wrong.
+
+- **Owner:** the operator names an incident owner and a deputy before a pilot, and writes them in the release scorecard (section D) with the sign-off. Until then there is no owner.
+- **Detect:** `GET $B/health`, `/health/db` and `/health/providers` (see "Is it up?"); provider warnings in the logs; the audit trail for account and sign-up events.
+- **Contain:** set the failing provider's name back to `sim` and restart (no data changes). A real email or text provider that misbehaves is stopped the same way, which also stops the safety-alert fallback to text and email; in-app alerts and push continue.
+- **Who is told (staff):** not built. There is no paging or alert hook (PERF-07). The owner watches the health checks and logs.
+- **How guests are told:** the Status screen reads `Providers:ServiceStatus` through `GET /help/status` (a failed feed says it could not check, never that all is well); ship-change and safety notices go out as push alerts, with the fallback in COM-04; the Disruption Hub shows active changes.
+- **After:** write down what happened, what guests saw and what changed. Refund or charge questions from guests go through the in-app case form, which does not promise a reversal.
+
 ## Not built yet
 
 An error-reporting hook (PERF-07), structured JSON logs, a staff view of the moderation queue and a retention report. Add them before a pilot.
