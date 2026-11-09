@@ -247,3 +247,28 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .testbar__at-link:hover { border-color: var(--primary); }
 .testbar__at-link[aria-current='page'] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .testbar__at-link .lucide { width: 1.5rem; height: 1.5rem; }
+
+/* L7: desktop and tablet. */
+.deck-plan__place--dim { opacity: 0.25; }
+.week-grid, .home-hero > * { min-width: 0; }
+.week-grid { display: none; }
+@media (min-width: 1024px) {
+  .week-grid { display: block; }
+  .week-grid table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .week-grid caption { text-align: left; font-weight: 700; padding-bottom: var(--space-2); }
+  .week-grid th, .week-grid td { padding: var(--space-2); border: 1px solid var(--border); vertical-align: top; text-align: left; }
+  .week-list { display: none; }
+}
+@media (min-width: 1280px) {
+  .workspace--bill { grid-template-columns: 22rem minmax(0, 1fr); }
+  /* Dashboard hero: the stage picture beside the Moment card instead of a thin banner. */
+  .home-hero { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-4); align-items: stretch; }
+  .home-hero > :first-child { grid-row: 1 / span 4; }
+  .home-hero .stage-hero { aspect-ratio: auto; max-height: none; height: 100%; min-height: 18rem; }
+}
+
+/* Hover preview: on a wide screen with a pointer, a tile's description opens as a small card on hover or keyboard focus. It stays in the page for screen readers. */
+@media (min-width: 1024px) and (hover: hover) {
+  .screen-list__more { position: absolute; z-index: 5; inset-inline: 0; top: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-card); background: var(--bg); box-shadow: var(--elev-2, 0 4px 12px rgba(0, 0, 0, 0.2)); clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; }
+  .screen-list li:hover .screen-list__more, .screen-list li:focus-within .screen-list__more { clip-path: none; width: auto; height: auto; overflow: visible; white-space: normal; }
+}

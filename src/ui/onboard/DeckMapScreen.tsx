@@ -12,6 +12,7 @@ import { RouteFinder } from './RouteFinder'
 import { CodeScanner } from './DeviceTools'
 import { ShipLiteracy } from './ShipLiteracy'
 import { ParkMySpot } from '../delights/SeaDelights'
+import { DECK_CATEGORIES, inCategories, walkMinutes, type DeckCategory } from '../../domain/deckFilter'
 import { useMemory } from '../../hooks/useMemory'
 
 const SECTIONS: readonly Section[] = ['forward', 'midship', 'aft']
@@ -26,12 +27,14 @@ export function DeckMapScreen() {
   const [deck, setDeck] = useState(7)
   const [stepFree, setStepFree] = useState(false)
   const [quiet, setQuiet] = useState(false)
+  const [categories, setCategories] = useState<ReadonlySet<DeckCategory>>(new Set())
+  const toggleCategory = (c: DeckCategory) => setCategories((s) => { const n = new Set(s); if (!n.delete(c)) n.add(c); return n })
   const [hereId, setHereId] = useState('')
   const here = placeById(hereId) ?? null
   const parked = useMemory().state.sea.spot
   const pin = (parked && placeById(parked.placeId)) || null
-  const found = searchPlaces(query).filter((p) => !stepFree || p.stepFree)
-  const onDeck = placesOnDeck(deck).filter((p) => !stepFree || p.stepFree)
+  const found = searchPlaces(query).filter((p) => (!stepFree || p.stepFree) && inCategories(p, categories))
+  const onDeck = placesOnDeck(deck).filter((p) => (!stepFree || p.stepFree) && inCategories(p, categories))
   return (
     <div className="page page--wide">
       <Banner kind="info" title={t('map.noLocation')}><p>{t('map.noLocationBody')}</p></Banner>
@@ -52,6 +55,9 @@ export function DeckMapScreen() {
         <Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('map.stepFree')}</Chip>
         <Chip pressed={quiet} onToggle={() => setQuiet(!quiet)}>{t('plan2.quietLayer')}</Chip>
       </div>
+      <div className="chip-row" role="group" aria-label={t('l7.cats')}>
+        {DECK_CATEGORIES.map((c) => <Chip key={c} pressed={categories.has(c)} onToggle={() => toggleCategory(c)}>{t(`l7.cat.${c}` as StringKey)}</Chip>)}
+      </div>
       <div className="field">
         <label htmlFor="map-here">{t('plan2.hereLabel')}</label>
         <p className="field__hint">{t('plan2.hereHint')}</p>
@@ -67,7 +73,7 @@ export function DeckMapScreen() {
         <section aria-labelledby="found-h">
           <h2 id="found-h">{th('map.results')}</h2>
           <p role="status">{t('map.found', { count: found.length })}</p>
-          <ul className="plain-bullets">{found.map((p) => <li key={p.id}><PlaceLine p={p} /></li>)}</ul>
+          <ul className="plain-bullets">{found.map((p) => <li key={p.id}><PlaceLine p={p} from={here} stepFree={stepFree} /></li>)}</ul>
         </section>
       )}
 
@@ -78,7 +84,7 @@ export function DeckMapScreen() {
         </div>
         <div className="deck-map__view">
           <DeckElevation deck={deck} onPick={setDeck} />
-          <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} />
+          <DeckPlan deck={deck} stepFree={stepFree} quiet={quiet} here={here} pin={pin} categories={categories} />
         </div>
         <div className="table-wrap">
           <table className="deck-table">
@@ -116,7 +122,8 @@ export function DeckMapScreen() {
   )
 }
 
-function PlaceLine({ p }: { p: Place }) {
+function PlaceLine({ p, from, stepFree }: { p: Place; from: Place | null; stepFree: boolean }) {
   const banks = elevatorsNear(p).map((e) => e.bank).join(', ')
-  return <>{t('map.place', { name: p.name, deck: p.deck, section: t(`map.section.${p.section}` as StringKey), banks })}{!p.stepFree && ` ${t('map.notStepFree')}`}</>
+  const walk = from && from.id !== p.id ? walkMinutes(from.id, p.id, stepFree) : null
+  return <>{walk !== null && <strong>{t('l7.walk', { count: walk })} </strong>}{t('map.place', { name: p.name, deck: p.deck, section: t(`map.section.${p.section}` as StringKey), banks })}{!p.stepFree && ` ${t('map.notStepFree')}`}</>
 }

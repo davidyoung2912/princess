@@ -25,7 +25,7 @@ export function BillScreen() {
   const me = usePersona()
   const copy = useSavedCopy('folio', me?.booker ?? 'none', () => api.onboard.folio(), asFolioView, [me?.id])
   return (
-    <div className="page">
+    <div className="page page--wide">
       {me?.child ? <SupervisedNote booker={personFirstName(me.booker)} /> : <Saved copy={copy}>{(f) => <Folio f={f} />}</Saved>}
       <BackLink to="/me" label={t('route.me')} />
     </div>
@@ -42,7 +42,8 @@ function Folio({ f }: { f: FolioView }) {
   const name = (id: string) => f.guests.find((g) => g.id === id)?.name.split(' ')[0] ?? id
   const set = (patch: Partial<FolioFilter>) => setFilter({ ...filter, ...patch })
   return (
-    <>
+    <div className="workspace workspace--bill">
+      <div className="workspace__side">
       <Card hero labelledBy="total-h">
         <h2 id="total-h" className="card__title">{th('bill.total')}</h2>
         <p className="bill__big">{total.balance < 0 ? t('bill.credit', { amount: formatMoney(-total.balance) }) : formatMoney(total.balance)}</p>
@@ -55,7 +56,8 @@ function Folio({ f }: { f: FolioView }) {
         <p className="muted">{f.throughDay === 0 ? t('bill.notYet') : t('bill.through', { day: f.throughDay })}</p>
         <p className="muted">{t('bill.how')} <Link to="/me/payments">{t('route.payments')}</Link></p>
       </Card>
-
+      </div>
+      <div className="workspace__main">
       <BudgetAlert lines={f.lines} />
       <BudgetCard lines={f.lines} />
       <SpendCoachCard lines={f.lines} throughDay={f.throughDay} />
@@ -105,6 +107,7 @@ function Folio({ f }: { f: FolioView }) {
         )}
         <p className="muted">{t('bill.taxes')}</p>
       </section>
-    </>
+      </div>
+    </div>
   )
 }

@@ -1,5 +1,7 @@
 import { useCatalogue } from '../../hooks/useCatalogue'
-import { useId, useState } from 'react'
+import { useId } from 'react'
+import { usePanZoom } from './usePanZoom'
+import { inCategories, type DeckCategory } from '../../domain/deckFilter'
 import { ELEVATORS, type Place } from '../../domain/deck'
 import { HULL_PATH, PLAN_H, PLAN_W, SECTION_DIVIDERS, SECTION_LABEL_X, placeLifts, placePlaces, type Point } from '../../domain/deckPlan'
 import { t, type StringKey } from '../../i18n'
@@ -16,28 +18,32 @@ interface Props {
   pin?: Place | null
   /** A route to draw on this deck. */
   line?: Point[]
+  /** Category filter: places outside the chosen categories are dimmed (an empty set shows all). */
+  categories?: ReadonlySet<DeckCategory>
 }
+
+const NO_CATEGORIES: ReadonlySet<DeckCategory> = new Set()
 
 /**
  * The graphic deck plan (N5.1): an inline SVG drawn from the places, lift banks and muster stations the text list uses, so the two always agree.
  * The picture is for sighted use; every fact on it is also in the numbered key under it and in the deck table, and the plan itself is
  * described as one image. Marks never rely on colour alone: a muster station has a letter, a quiet space a ring and a step a dashed outline.
  */
-export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [] }: Props) {
+export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, pin = null, line = [], categories = NO_CATEGORIES }: Props) {
   useCatalogue()
   const id = useId()
-  const [zoom, setZoom] = useState(1)
+  const { box, zoom, setZoom, handlers } = usePanZoom()
   const placed = placePlaces(deck)
   const lifts = placeLifts()
   const quietCount = placed.filter((p) => p.quiet).length
   return (
     <figure className="deck-plan">
       <div className="deck-plan__zoom" role="group" aria-label={t('l7.zoom')}>
-        <button type="button" className="btn btn--secondary" disabled={zoom <= 1} onClick={() => setZoom(Math.max(1, zoom - 0.5))}>{t('l7.zoomOut')}</button>
-        <button type="button" className="btn btn--secondary" disabled={zoom >= 3} onClick={() => setZoom(Math.min(3, zoom + 0.5))}>{t('l7.zoomIn')}</button>
+        <button type="button" className="btn btn--secondary" disabled={zoom <= 1} onClick={() => setZoom(zoom - 0.5)}>{t('l7.zoomOut')}</button>
+        <button type="button" className="btn btn--secondary" disabled={zoom >= 3} onClick={() => setZoom(zoom + 0.5)}>{t('l7.zoomIn')}</button>
       </div>
       {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a region that scrolls sideways must be reachable by keyboard (WCAG 2.1.1) */}
-      <div className="deck-plan__scroll" tabIndex={0} role="group" aria-label={t('plan2.scroll')}>
+      <div ref={box} {...handlers} className="deck-plan__scroll" tabIndex={0} role="group" aria-label={t('plan2.scroll')}>
         <svg viewBox={`0 0 ${PLAN_W} ${PLAN_H}`} className="deck-plan__svg" style={{ minWidth: `${36 * zoom}rem` }} role="img" aria-labelledby={`${id}-t ${id}-d`}>
           <title id={`${id}-t`}>{t('map.deck', { deck })}</title>
           <desc id={`${id}-d`}>{t('plan2.desc', { count: placed.length, lifts: lifts.length })}</desc>
@@ -53,7 +59,7 @@ export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, p
           ))}
           {line.length > 1 && <polyline points={line.map((p) => `${p.x},${p.y}`).join(' ')} className="deck-plan__route" />}
           {placed.map((p, i) => (
-            <g key={p.place.id} className={`deck-plan__place${quiet && p.quiet ? ' deck-plan__place--quiet' : ''}${stepFree && !p.place.stepFree ? ' deck-plan__place--steps' : ''}`}>
+            <g key={p.place.id} className={`deck-plan__place${quiet && p.quiet ? ' deck-plan__place--quiet' : ''}${stepFree && !p.place.stepFree ? ' deck-plan__place--steps' : ''}${inCategories(p.place, categories) ? '' : ' deck-plan__place--dim'}`}>
               {quiet && p.quiet && <circle cx={p.at.x} cy={p.at.y} r={17} className="deck-plan__quiet-ring" />}
               <circle cx={p.at.x} cy={p.at.y} r={12} className="deck-plan__dot" />
               <text x={p.at.x} y={p.at.y + 4} textAnchor="middle" className="deck-plan__num">{i + 1}</text>
@@ -72,7 +78,7 @@ export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, p
       </div>
       <figcaption>
         <ol className="deck-plan__key">
-          {placed.map((p) => (
+          {placed.filter((p) => inCategories(p.place, categories)).map((p) => (
             <li key={p.place.id} value={placed.indexOf(p) + 1}>
               {p.place.name}
               {p.muster ? ` · ${t('map.station', { letter: p.muster })}` : ''}

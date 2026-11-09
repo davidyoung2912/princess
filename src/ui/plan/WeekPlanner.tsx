@@ -52,7 +52,19 @@ export function WeekPlanner() {
 
       {!week && <FeedWaiting />}
       {memory.state.polish.rest.length > 0 && <p className="muted">{t('dl4.rest.weekNote', { days: memory.state.polish.rest.map((r) => r.day).join(', ') })}</p>}
-      {week && <ol className="plain-list">
+      {week && (
+        <div className="week-grid table-wrap">
+          <table>
+            <caption>{t('l7.week.title')}</caption>
+            <thead><tr>{week.days.map((d) => <th key={d.day} scope="col">{t('l7.week.day', { n: d.day })}<small className="muted"><br />{d.port === 'sea' ? t('week.atSea') : PORTS[d.port].name}</small></th>)}</tr></thead>
+            <tbody><tr>{week.days.map((d) => {
+              const items = d.items.filter((i) => !inRest(memory.state.polish.rest, d.day, i.start))
+              return <td key={d.day}>{items.length === 0 ? <span className="muted">{t('l7.week.empty')}</span> : <ul className="plain-list">{items.map((i) => <li key={i.id}>{i.start} {i.title}</li>)}</ul>}</td>
+            })}</tr></tbody>
+          </table>
+        </div>
+      )}
+      {week && <ol className="plain-list week-list">
         {week.days.map((d) => (
           <li key={d.day}>
             <strong>{t('week.day', { n: d.day, place: d.port === 'sea' ? t('week.atSea') : PORTS[d.port].name })}</strong>

@@ -32,7 +32,7 @@ export function ScreenList({ ids, colour, badges = {}, live = {}, heading, headi
             <li key={screen.id}>
               <button type="button" className="screen-list__pin" aria-pressed={pins.includes(screen.id)} aria-label={t('pin.label', { title: th(screen.titleKey) })} onClick={() => update({ pins: togglePin(pins, screen.id, MAX_PINS) })}><Pin size={16} aria-hidden="true" /></button>
               <Link to={to} state={openedFrom(colour)}><Icon className="screen-list__icon" size={20} aria-hidden="true" />{th(screen.titleKey)}{badges[screen.path]}</Link>
-              <span className="screen-list__subtext">{live[screen.path] && <><TileLiveLine line={live[screen.path]!} /> · </>}{t(screen.subtextKey)}</span>
+              <span className="screen-list__subtext">{live[screen.path] && <><TileLiveLine line={live[screen.path]!} /> · </>}<span className="screen-list__more">{t(screen.subtextKey)}</span></span>
             </li>
           )
         })}

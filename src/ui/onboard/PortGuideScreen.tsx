@@ -30,17 +30,21 @@ export function PortGuideScreen() {
   const crowd = day && day.port === port ? served : null
 
   return (
-    <div className="page">
+    <div className="page page--wide">
       <p>{t('guide.intro')}</p>
       <Banner kind="info" title={t('guide.verify')}><p>{t('guide.verifyBody')}</p></Banner>
-      <fieldset>
+      <div className="workspace">
+      <fieldset className="workspace__side">
         <legend>{t('guide.port')}</legend>
         {ports.map((p) => <label key={p} className="choice"><input type="radio" name="guide-port" checked={port === p} onChange={() => setPort(p)} /><span>{portById(p)?.name ?? p}</span></label>)}
       </fieldset>
 
+      <div className="workspace__main">
       <PortDirection port={port} />
       {!k && <ShortGuide port={port} />}
       {k && <FullGuide port={port} k={k} crowd={crowd} />}
+      </div>
+      </div>
       <BackLink to="/ship/port" label={t('route.portDay')} />
     </div>
   )

@@ -5,6 +5,7 @@ import { locate } from '../domain/deckGraph'
 import { QUIET_PLACE_IDS } from '../domain/deckPlan'
 import { LanguageSwitch } from './LanguageSwitch'
 import { DeckPlan } from './onboard/DeckPlan'
+import { DeckElevation } from './onboard/DeckElevation'
 
 describe('graphic deck plan', () => {
   it('is one labelled image whose every fact is also in a numbered list', () => {
@@ -44,5 +45,19 @@ describe('language switch', () => {
     expect(html).toContain('>Language</label>')
     expect(html).toContain('lang="es">Español<')
     expect(html).toContain('>English<')
+  })
+})
+
+describe('deck plan L7', () => {
+  it('has zoom buttons and the side-view deck switcher', () => {
+    const html = renderToString(<DeckPlan deck={7} />)
+    expect(html).toContain('Zoom in')
+    expect(html).toContain('Zoom out')
+    expect(renderToString(<DeckElevation deck={7} onPick={() => {}} />)).toContain('aria-pressed="true"')
+  })
+  it('dims places outside the chosen category and drops them from the key', () => {
+    const html = renderToString(<DeckPlan deck={7} categories={new Set(['shows'] as const)} />)
+    expect(html).toContain('deck-plan__place--dim')
+    expect(html).toContain('Princess Arena')
   })
 })

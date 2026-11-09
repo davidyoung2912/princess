@@ -98,10 +98,12 @@ export function HomeScreen() {
   if (settings.essentials && !today.data?.aboard) return <EssentialsHome />
   if (today.data?.aboard) {
     return (
-      <div className="page">
-        <AtmosphereHero stage={stage} today={today.data} />
-        <NewTabsNote /><ShortcutBar />
-        {moment && <MomentCard moment={moment} />}
+      <div className="page page--wide">
+        <div className="home-hero">
+          <AtmosphereHero stage={stage} today={today.data} />
+          <NewTabsNote /><ShortcutBar />
+          {moment && <MomentCard moment={moment} />}
+        </div>
         <SailAwayCard today={today.data} />
         <DayHeader today={today.data} />
         <TodayStrip />
