@@ -1,4 +1,5 @@
 using Princess.Api.Domain;
+using Xunit;
 
 namespace Princess.Api.Tests;
 
@@ -32,5 +33,16 @@ public class FlightRulesTests
     {
         var ids = NotificationRules.BuildNotices(new("paid", "2027-03-11", 0, 0, "open", "2027-03-18", null, 0, "2027-03-20", null, "", "", 0, "AA123", "2027-03-22", "delayed", 50)).Select(n => n.Id);
         Assert.Equal(["flightWatch", "checkinOpens"], ids);
+    }
+
+    [Fact]
+    public void PushBuildsTenderFlightAndInstalmentNotices()
+    {
+        var now = new DateTime(2027, 3, 20, 12, 0, 0, DateTimeKind.Utc);
+        var input = new PushInput(now, "ok", "", null, false, 45, false, [], [], 0, [],
+            Instalment: new InstalmentPayment("2027-03-25", 50_000), Tender: ("belize", "2027-03-22", "mixed", 14), Flight: ("AA123", "2027-03-22", "delayed", 50));
+        var kinds = PushRules.Build(input).Select(n => n.Kind).OrderBy(k => k).ToList();
+        Assert.Equal(["payment", "travel", "travel"], kinds);
+        Assert.Empty(PushRules.Build(input with { Instalment = new InstalmentPayment("2027-04-25", 50_000), Tender = null, Flight = null }));
     }
 }

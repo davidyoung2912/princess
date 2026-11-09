@@ -4,7 +4,7 @@
  */
 import { isNudgeBudget, type NudgeBudget } from '../domain/nudges'
 
-export const PUSH_KINDS = ['allAboard', 'backAboard', 'scheduleChange', 'disruption', 'payment', 'reminder'] as const
+export const PUSH_KINDS = ['allAboard', 'backAboard', 'scheduleChange', 'disruption', 'payment', 'reminder', 'travel'] as const
 export type PushKind = (typeof PUSH_KINDS)[number]
 export type HeldReason = 'channelOff' | 'calm' | 'quiet' | 'budget'
 export const HELD_REASONS: readonly HeldReason[] = ['channelOff', 'calm', 'quiet', 'budget']

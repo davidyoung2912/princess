@@ -71,6 +71,7 @@ services.AddScoped<IUserClock, UserClock>();
 services.AddScoped<SubjectAccess>();
 services.AddScoped<AccountService>();
 services.AddScoped<TripService>();
+services.AddScoped<TripWatchService>();
 services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IPushStore, DapperPushStore>();

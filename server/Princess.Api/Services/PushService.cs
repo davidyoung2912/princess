@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
-    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state)
+    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService)
 {
     public async Task<PushStatusDto> StatusAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
@@ -137,7 +137,8 @@ public sealed class PushService(
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;
         var buffer = port is null ? null : PlanBuffer(rows.FirstOrDefault(r => r.Kind == "plan" && r.Key == port.Date)?.Json);
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer);
+        var watches = await watchService.WatchAsync(booking, trip, TripRules.Today(now), ct);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight);
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>

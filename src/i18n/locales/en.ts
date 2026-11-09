@@ -6911,6 +6911,7 @@ export const en = {
   'push.kind.disruption': 'A change to your trip',
   'push.kind.payment': 'Payment',
   'push.kind.reminder': 'Your reminder',
+  'push.kind.travel': 'A change on your way home or ashore',
   'push.log.title': 'What we sent you',
   'push.log.intro': 'Every alert, and every one we held back with the reason, so nothing is hidden.',
   'push.log.none': 'Nothing yet.',

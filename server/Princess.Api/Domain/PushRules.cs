@@ -13,7 +13,8 @@ public sealed record PushDecision(bool Send, string? Reason);
 /// <summary>What the first five notices are built from. Everything here is already known to the server.</summary>
 public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
-    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null);
+    IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
+    InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -28,7 +29,7 @@ public static class PushRules
     public const int MaxLog = 50;
     public const int MaxEndpoint = 450;
 
-    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder"];
+    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder", "travel"];
 
     /// <summary>Minutes before all-aboard at which the escalation speaks (90, 60, 30 and 10).</summary>
     public static readonly int[] AllAboardSteps = [90, 60, 30, 10];
@@ -91,6 +92,29 @@ public static class PushRules
             list.Add(new($"payment:{i.Payment}:{i.FinalDue}", "payment", "payments", overdue, overdue ? 92 : 60, "/me/payments",
                 overdue ? "Stanley: your payment is overdue" : "Stanley: your payment is due soon", $"The final payment date is {i.FinalDue}. I would pay what is due first.",
                 new() { ["date"] = i.FinalDue, ["overdue"] = overdue ? 1 : 0 }));
+        }
+
+        // An instalment from the guest's kept plan, from a week before its date (the same window as the notice in the centre).
+        if (i.Instalment is { } inst && string.CompareOrdinal(inst.Date, DateOnly.FromDateTime(i.Now).AddDays(InstalmentRules.RemindDays).ToString("yyyy-MM-dd")) <= 0)
+        {
+            list.Add(new($"instalment:{inst.Date}", "payment", "payments", false, 55, "/me/payments",
+                "Stanley: an instalment is coming up", $"Your instalment is due {inst.Date}. It is on the Pay Your Balance screen.",
+                new() { ["date"] = inst.Date, ["amount"] = inst.Cents }));
+        }
+
+        // Tender boats that may run late, and an onward flight that is late or cancelled: a plain heads-up, within the guest's own limits.
+        if (i.Tender is { } t)
+        {
+            list.Add(new($"tender:{t.Port}:{t.Date}:{t.Band}", "travel", "checkin", false, 50, $"/home/ports/{t.Port}",
+                "Stanley: tender boats may be affected", $"The tender boats at {t.Port} on {t.Date} look {t.Band}. Open the port page for what to do.",
+                new() { ["port"] = t.Port, ["date"] = t.Date, ["band"] = t.Band }));
+        }
+        if (i.Flight is { } f)
+        {
+            list.Add(new($"flight:{f.Flight}:{f.Date}:{f.State}:{f.DelayMinutes}", "travel", "checkin", false, 65, "/home/disembark/onward",
+                f.State == "cancelled" ? "Stanley: your flight is cancelled" : "Stanley: your flight is running late",
+                f.State == "cancelled" ? $"Flight {f.Flight} on {f.Date} has been cancelled." : $"Flight {f.Flight} on {f.Date} is about {f.DelayMinutes} minutes late.",
+                new() { ["flight"] = f.Flight, ["date"] = f.Date, ["state"] = f.State, ["minutes"] = f.DelayMinutes }));
         }
 
         // "Remind me in a week": one plain note once the time the guest chose has passed. It is a suggestion, so it keeps to the budget, quiet hours and calm mode.

@@ -6,7 +6,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
-public sealed partial class InboxService(IInboxStore inbox, TripService trips, IBookingStore bookings, IUserClock clock, ITenderOutlook tender, IFinishStore finish, IFlightStatusProvider flights)
+public sealed partial class InboxService(IInboxStore inbox, TripService trips, IUserClock clock, TripWatchService watchService)
 {
     public const string GuestServicesNumber = "555-0100";
     public const string EmergencyNumber = "555-0111";
@@ -28,15 +28,11 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
         if (await trips.CurrentAsync(actor, now, ct) is { } current)
         {
             var trip = await trips.BuildAsync(current, current: true, now, ct);
-            var choice = current.PaidCents < current.TotalCents ? await bookings.GetInstalmentChoiceAsync(current.BookingId, ct) : null;
-            var next = choice is null ? null : InstalmentRules.Next(choice, DateOnly.ParseExact(trip.Plan.FinalDue, "yyyy-MM-dd"), current.TotalCents - current.PaidCents);
             var today = TripRules.Today(now);
-            var timeline = TimelineBook.For(current.SailingId, DateOnly.FromDateTime(current.Departure));
-            var days = timeline.Days;
-            var watch = TenderRules.Watch(days.Select(d => (d.Port, d.Date)), today, tender.Outlook);
-            // The onward flight (saved on the disembark screens) leaves on the last day of the sailing.
-            var onward = await finish.GetOnwardAsync(current.BookingId, ct);
-            var flight = onward is null ? null : FlightRules.Watch(onward.Flight, timeline.LastDay, today, flights.Status);
+            var watches = await watchService.WatchAsync(current, trip, today, ct);
+            var next = watches.Instalment;
+            var watch = watches.Tender;
+            var flight = watches.Flight;
             var built = NotificationRules.BuildNotices(new NotificationRules.NoticeInput(
                 trip.Payment, trip.Plan.FinalDue, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State,
                 TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd"),
