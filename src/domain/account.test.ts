@@ -155,6 +155,8 @@ describe('profile', () => {
     const open = normalizeHelper({ name: 'Paul', status: 'active', inviteCode: 'ABCD2345' })!
     expect(open.linked).toBe(false)
     expect(open.inviteCode).toBe('ABCD2345')
+    expect(normalizeHelper({ name: 'Paul', inviteExpires: 5 })!.inviteExpires).toBe(5)
+    expect(normalizeHelper({ name: 'Paul' })!.inviteExpires).toBeNull()
     expect(normalizeHelper({ name: 'Paul', linked: true, inviteCode: null })).toMatchObject({ linked: true, inviteCode: null })
     expect(formatInviteCode('abcd 2345')).toBe('ABCD-2345')
   })

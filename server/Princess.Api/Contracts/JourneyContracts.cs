@@ -18,7 +18,7 @@ public sealed record ProfileViewDto(ProfileDto Profile, Guid Id, bool CanEdit, i
 public sealed record SaveHelperRequest(string? Name, string? Relationship, string[]? Permissions, string? Status);
 
 /// <summary><paramref name="Linked"/> is true once the helper has accepted with their own account; until then <paramref name="InviteCode"/> is the code to give them (BM9).</summary>
-public sealed record HelperDto(string Name, string Relationship, string[] Permissions, string Status, long At, bool Linked, string? InviteCode);
+public sealed record HelperDto(string Name, string Relationship, string[] Permissions, string Status, long At, bool Linked, string? InviteCode, long? InviteExpires);
 public sealed record AcceptHelperRequest(string? Code);
 public sealed record AcceptedHelperDto(string GuestName, string Relationship);
 

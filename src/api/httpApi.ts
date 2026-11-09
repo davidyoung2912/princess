@@ -300,6 +300,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       saveHelper: (input) => send('put', '/me/helper', input),
       revokeHelper: () => send('delete', '/me/helper'),
       acceptHelperInvite: (code) => send('post', '/me/helper/accept', { code }),
+      renewHelperCode: () => send('post', '/me/helper/code'),
       history: () => get('/me/history'),
       activity: (q) => get(`/me/audit${activityQuery(q)}`),
       exportData: () => get('/me/export'),

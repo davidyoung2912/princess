@@ -57,14 +57,19 @@ function Permissions({ value, onChange }: { value: PermissionId[]; onChange: (ne
 }
 
 /** BM9: until the helper accepts with their own account the grant is only a name, so the guest hands over a one-time code. */
-function InviteCode({ helper }: { helper: Helper }) {
+function InviteCode({ helper, refresh }: { helper: Helper; refresh: () => void }) {
+  const renew = useAction(() => api.account.renewHelperCode())
+  const again = async () => { if (await renew.run()) refresh() }
   if (helper.linked) return <p className="muted">{t('helper.linked', { name: helper.name })}</p>
-  if (!helper.inviteCode) return null
+  if (!helper.inviteCode) return helper.inviteExpires !== null ? <><p className="muted">{t('helper.code.expired', { name: helper.name })}</p><Button onClick={again} disabled={renew.busy}>{t('helper.code.renew')}</Button></> : null
   return (
     <Card labelledBy="code-h">
       <h2 id="code-h">{th('helper.code.title')}</h2>
       <p>{t('helper.code.body', { name: helper.name })}</p>
       <p><strong aria-label={t('helper.code.label', { name: helper.name })} style={{ fontSize: '1.5rem', letterSpacing: '0.15em' }}>{formatInviteCode(helper.inviteCode)}</strong></p>
+      {helper.inviteExpires !== null && <p className="muted">{t('helper.code.until', { when: formatMoment(helper.inviteExpires) })}</p>}
+      <Button variant="secondary" onClick={again} disabled={renew.busy}>{t('helper.code.renew')}</Button>
+      <ActionError error={renew.error} />
     </Card>
   )
 }
@@ -116,7 +121,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
     <>
       {helper?.status === 'revoked' && <Banner kind="info" title={t('helper.revoked', { name: helper.name, date: formatMoment(helper.at) })} />}
       {requested && <Banner kind="warning" title={t('helper.requested', { name: helper!.name, relationship: helper!.relationship.toLowerCase() })}><p>{t('helper.requestedBody')}</p></Banner>}
-      {helper && helper.status !== 'revoked' && <InviteCode helper={helper} />}
+      {helper && helper.status !== 'revoked' && <InviteCode helper={helper} refresh={refresh} />}
       {active && (
         <Card labelledBy="active-h">
           <h2 id="active-h">{helper!.name}</h2>

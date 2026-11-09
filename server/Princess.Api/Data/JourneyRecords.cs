@@ -51,6 +51,8 @@ public sealed class HelperRecord
     public long? HelperUserId { get; set; }
     /// <summary>Set until the helper accepts it with their own account (BM9).</summary>
     public string? InviteCode { get; set; }
+    /// <summary>When <see cref="InviteCode"/> stops working (BM13); null for a code issued before expiry existed, which counts as expired.</summary>
+    public DateTime? InviteExpiresAt { get; set; }
     public string Name { get; set; } = "";
     public string Relationship { get; set; } = "";
     public string Permissions { get; set; } = "";

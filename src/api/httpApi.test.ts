@@ -96,6 +96,12 @@ describe('REST account groups', () => {
     expect(calls[0]).toMatchObject({ method: 'POST', path: '/me/helper/accept', body: { code: 'ABCD2345' } })
   })
 
+  it('asks for a new helper code', async () => {
+    const { http, calls } = fake({ '/me/helper/code': { name: 'Paul', inviteCode: 'ABCD2345' } })
+    await createHttpGroups(http).groups.account.renewHelperCode()
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/me/helper/code' })
+  })
+
   it('has no current trip to act on when the person has none', async () => {
     const { http } = fake({ '/trips': { upcoming: [], past: [] } })
     await expect(createHttpGroups(http).groups.payments.get()).rejects.toMatchObject({ code: 'notFound' })

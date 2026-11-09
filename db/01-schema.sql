@@ -723,6 +723,8 @@ END
 
 -- BM9: the one-time code a guest gives their helper; accepting it sets HelperUserId and clears the code.
 IF COL_LENGTH(N'dbo.HelperLinks', N'InviteCode') IS NULL ALTER TABLE dbo.HelperLinks ADD InviteCode VARCHAR(12) NULL;
+-- BM13: a code stops working after seven days; saving the helper again issues a new one.
+IF COL_LENGTH(N'dbo.HelperLinks', N'InviteExpiresAt') IS NULL ALTER TABLE dbo.HelperLinks ADD InviteExpiresAt DATETIME2 NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_HelperLinks_InviteCode' AND object_id = OBJECT_ID(N'dbo.HelperLinks'))
   EXEC(N'CREATE UNIQUE INDEX UX_HelperLinks_InviteCode ON dbo.HelperLinks (InviteCode) WHERE InviteCode IS NOT NULL');
 

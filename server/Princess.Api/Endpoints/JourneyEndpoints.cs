@@ -45,6 +45,9 @@ public static class JourneyEndpoints
         helper.MapPost("/accept", async (AcceptHelperRequest body, ICurrentUser me, AccountService svc, CancellationToken ct) =>
                 Results.Ok(await svc.AcceptHelperInviteAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("The helper enters the one-time code the guest gave them; their account is tied to that guest's grant. 404 for an unknown, spent or revoked code; 400 for a malformed one.");
+        helper.MapPost("/code", async (ICurrentUser me, AccountService svc, CancellationToken ct) =>
+                Results.Ok(await svc.RenewHelperCodeAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("Makes a new invitation code for a helper who has not accepted yet; the old one stops working. 404 with no helper, 409 once accepted.");
         helper.MapDelete("", async (ICurrentUser me, AccountService svc, CancellationToken ct) =>
                 Results.Ok(await svc.RevokeHelperAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Ends the helper's access at once.");

@@ -15,14 +15,14 @@ describe('accessRows', () => {
   })
 
   it('shows an active helper with only the permissions given, and a requested one with none', () => {
-    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view', 'documents'] as const, status: 'active' as const, at: 1, linked: false, inviteCode: null }
+    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view', 'documents'] as const, status: 'active' as const, at: 1, linked: false, inviteCode: null, inviteExpires: null }
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions] } })[0]).toMatchObject({ kind: 'helper', status: 'active', items: ['view', 'documents'] })
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions], status: 'requested' } }).find((r) => r.kind === 'helper')).toMatchObject({ status: 'waiting', items: [] })
     expect(accessRows({ ...base, helper: { ...helper, permissions: [...helper.permissions], status: 'revoked' } }).find((r) => r.kind === 'helper')).toMatchObject({ status: 'ended', items: [] })
   })
 
   it('lists Payments now that a helper can pay (BM8)', () => {
-    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const, 'folio' as const, 'checkin' as const, 'trip' as const], status: 'active' as const, at: 1, linked: false, inviteCode: null }
+    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const, 'folio' as const, 'checkin' as const, 'trip' as const], status: 'active' as const, at: 1, linked: false, inviteCode: null, inviteExpires: null }
     expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'payments', 'documents', 'folio', 'checkin', 'trip'])
   })
 

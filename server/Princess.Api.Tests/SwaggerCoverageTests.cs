@@ -29,6 +29,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/me/helper" },
         { "put", "/api/v1/me/helper" },
         { "post", "/api/v1/me/helper/accept" },
+        { "post", "/api/v1/me/helper/code" },
         { "delete", "/api/v1/me/helper" },
         { "get", "/api/v1/me/history" },
         { "get", "/api/v1/me/export" },

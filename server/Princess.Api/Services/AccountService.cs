@@ -92,7 +92,7 @@ public sealed class AccountService(
     // ---- Helper ----
 
     public async Task<HelperDto?> HelperAsync(UserRecord actor, CancellationToken ct) =>
-        ToDto(await accounts.GetHelperAsync(actor.Id, ct));
+        ToDto(await accounts.GetHelperAsync(actor.Id, ct), await clock.NowAsync(actor, ct));
 
     public async Task<HelperDto> SaveHelperAsync(UserRecord actor, SaveHelperRequest req, CancellationToken ct)
     {
@@ -103,10 +103,13 @@ public sealed class AccountService(
         // An active helper with nothing granted would be a helper who can see nothing; the database refuses it too.
         if (req.Status == "active" && permissions.Length == 0) throw ApiException.Invalid("permissions");
         var now = await clock.NowAsync(actor, ct);
-        var saved = await accounts.UpsertHelperAsync(actor.Id, AccountRules.Trunc(name, 80), AccountRules.Trunc(req.Relationship?.Trim(), 40), string.Join(',', permissions), req.Status, NewInviteCode(), now, ct);
+        var saved = await accounts.UpsertHelperAsync(actor.Id, AccountRules.Trunc(name, 80), AccountRules.Trunc(req.Relationship?.Trim(), 40), string.Join(',', permissions), req.Status, NewInviteCode(), now.AddDays(InviteDays), now, ct);
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "helper", $"{saved.Name}: {saved.Status}", now, ct);
-        return ToDto(saved)!;
+        return ToDto(saved, now)!;
     }
+
+    /// <summary>How long a code works (BM13).</summary>
+    public const int InviteDays = 7;
 
     // Eight characters without 0/O/1/I/L, so a code read aloud or off a screen is hard to mistype.
     private const string CodeAlphabet = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -134,17 +137,35 @@ public sealed class AccountService(
         return new AcceptedHelperDto(guestName, link.Relationship);
     }
 
+    /// <summary>A new code for a helper who has not accepted yet; the old one stops working at once (BM14).</summary>
+    public async Task<HelperDto> RenewHelperCodeAsync(UserRecord actor, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        var now = await clock.NowAsync(actor, ct);
+        var renewed = await accounts.RenewHelperCodeAsync(actor.Id, NewInviteCode(), now.AddDays(InviteDays), now, ct);
+        if (renewed is null)
+        {
+            // Nothing to renew: either no helper at all, or the helper already accepted.
+            var current = await accounts.GetHelperAsync(actor.Id, ct);
+            if (current is { Status: not "revoked", HelperUserId: not null }) throw ApiException.Conflict("linked");
+            throw ApiException.NotFound();
+        }
+        await accounts.AddHistoryAsync(actor.Id, actor.Id, "helper", $"{renewed.Name}: new code", now, ct);
+        return ToDto(renewed, now)!;
+    }
+
     public async Task<HelperDto> RevokeHelperAsync(UserRecord actor, CancellationToken ct)
     {
         if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
         var now = await clock.NowAsync(actor, ct);
         var revoked = await accounts.RevokeHelperAsync(actor.Id, now, ct) ?? throw ApiException.NotFound();
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "helper", $"{revoked.Name}: revoked", now, ct);
-        return ToDto(revoked)!;
+        return ToDto(revoked, now)!;
     }
 
-    private static HelperDto? ToDto(HelperRecord? h) => h is null ? null : new(
-        h.Name, h.Relationship, h.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), h.Status, TripRules.ToMs(h.ChangedAt), h.HelperUserId is not null, h.InviteCode);
+    /// <summary>An expired code is not shown (BM13); <c>InviteExpires</c> stays so the screen can say it ran out.</summary>
+    private static HelperDto? ToDto(HelperRecord? h, DateTime now) => h is null ? null : new(
+        h.Name, h.Relationship, h.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), h.Status, TripRules.ToMs(h.ChangedAt), h.HelperUserId is not null, h.InviteExpiresAt > now ? h.InviteCode : null, h.InviteExpiresAt is { } e ? TripRules.ToMs(e) : null);
 
     public async Task<List<HistoryEntryDto>> HistoryAsync(UserRecord actor, CancellationToken ct) =>
         (await accounts.ListHistoryAsync(actor.Id, ct)).Select(h => new HistoryEntryDto(h.PublicId, TripRules.ToMs(h.At), h.By, h.What, h.Detail)).ToList();

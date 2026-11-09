@@ -775,6 +775,8 @@ export interface Api {
     revokeHelper(): Promise<Helper>
     /** The helper enters the code a guest gave them; their account is tied to that guest's grant (BM9). */
     acceptHelperInvite(code: string): Promise<{ guestName: string; relationship: string }>
+    /** A new invitation code for a helper who has not accepted yet; the old one stops working (BM14). */
+    renewHelperCode(): Promise<Helper>
     history(): Promise<HistoryEntry[]>
     /** The signed-in person's own audit trail, newest first. Page back with `before` (the oldest id seen). */
     activity(query?: { before?: number; max?: number }): Promise<ActivityEvent[]>

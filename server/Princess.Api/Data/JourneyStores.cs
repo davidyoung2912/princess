@@ -10,8 +10,10 @@ public interface IAccountStore
     /// <summary>Saves the profile and its tags. The email is written to <c>Users</c> only when <paramref name="updateEmail"/> is set. Throws a conflict when the email is taken.</summary>
     Task SaveProfileAsync(ProfileRecord profile, bool updateEmail, DateTime now, CancellationToken ct);
     Task<HelperRecord?> GetHelperAsync(long guestUserId, CancellationToken ct);
-    Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, string inviteCode, DateTime now, CancellationToken ct);
+    Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, string inviteCode, DateTime inviteExpiresAt, DateTime now, CancellationToken ct);
     /// <summary>Links the helper's account to the live grant that holds this code, and spends the code. Null when no live grant holds it (or it is the guest's own).</summary>
+    /// <summary>Replaces the code on a live grant the helper has not yet accepted; null when there is no such grant (BM14).</summary>
+    Task<HelperRecord?> RenewHelperCodeAsync(long guestUserId, string inviteCode, DateTime inviteExpiresAt, DateTime now, CancellationToken ct);
     Task<HelperRecord?> AcceptHelperInviteAsync(long helperUserId, string code, DateTime now, CancellationToken ct);
     Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct);
     /// <summary>History of the person and of the supervised children they book for, newest first.</summary>
