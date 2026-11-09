@@ -5,6 +5,9 @@ namespace Princess.Api.Domain;
 
 public sealed record StateroomAssignment(string Number, int Deck, bool Accessible, string Muster);
 
+/// <summary>A pass already in the wallet, as it was issued: the guest's seat in the party and the code on it.</summary>
+public sealed record WalletCopy(int Seq, string Code);
+
 public sealed record TerminalInfo(string Name, string? ChangedFrom);
 
 /// <summary>What a boarding pass QR code carries. <see cref="Version"/> is always 1.</summary>
@@ -126,4 +129,11 @@ public static class BoardingRules
     public static string? CurrentCompanion(IReadOnlySet<string> done) => Companion.FirstOrDefault(s => !done.Contains(s));
 
     public static readonly (string Id, string Time)[] Afternoon = [("lunch", "12:00"), ("stateroom", Staterooms), ("muster", "14:00"), ("sailAway", SailAway)];
+
+    /// <summary>
+    /// Whether the copy in the phone wallet no longer matches the pass: a guest's code now differs from the one that was put in the wallet
+    /// (a new group, cabin or window), or a guest has no copy. False when nothing was ever added.
+    /// </summary>
+    public static bool WalletOutdated(IReadOnlyCollection<WalletCopy> inWallet, IReadOnlyCollection<WalletCopy> current) =>
+        inWallet.Count > 0 && current.Any(c => !inWallet.Any(w => w.Seq == c.Seq && w.Code == c.Code));
 }

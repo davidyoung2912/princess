@@ -45,4 +45,14 @@ public class FlightRulesTests
         Assert.Equal(["payment", "travel", "travel"], kinds);
         Assert.Empty(PushRules.Build(input with { Instalment = new InstalmentPayment("2027-04-25", 50_000), Tender = null, Flight = null }));
     }
+
+    [Fact]
+    public void WalletCopyIsOutdatedOnlyWhenACodeNoLongerMatches()
+    {
+        WalletCopy[] now = [new(1, "a"), new(2, "b")];
+        Assert.False(BoardingRules.WalletOutdated([], now));
+        Assert.False(BoardingRules.WalletOutdated(now, now));
+        Assert.True(BoardingRules.WalletOutdated([new(1, "a"), new(2, "old")], now));
+        Assert.True(BoardingRules.WalletOutdated([new(1, "a")], now));
+    }
 }

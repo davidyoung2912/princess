@@ -1976,6 +1976,8 @@ export const en = {
   'pass.inWallet': 'In your wallet.',
   'pass.inWalletBody': 'Pretend wallet for this concept: the pass is also saved here.',
   'pass.print': 'Print or save as PDF',
+  'pass.walletOutdated': 'The pass in your wallet is out of date.',
+  'pass.walletOutdatedBody': 'Your boarding details changed. Add it again to update it.',
   'pass.walletNote': 'The pass is also saved on this phone, so it opens with no signal.',
   'pass.next': 'Getting there?',
   'pass.failsafe': 'What if my phone dies or has no signal?',

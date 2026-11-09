@@ -72,6 +72,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
           <h2 id="keep-h">{th('pass.keep')}</h2>
           <KeepStub pass={pass} />
           <div className="button-row">
+            {pass.walletOutdated && <p role="status"><strong>{t('pass.walletOutdated')}</strong> {t('pass.walletOutdatedBody')}</p>}
             {pass.inWallet ? <p role="status"><strong>{t('pass.inWallet')}</strong> {t('pass.inWalletBody')}</p> : <Button onClick={() => void wallet.run()} disabled={wallet.busy || offline}>{t('pass.addWallet')}</Button>}
             <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('pass.print')}</Button>
           </div>

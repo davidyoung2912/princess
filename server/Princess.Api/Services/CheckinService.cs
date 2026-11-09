@@ -312,9 +312,10 @@ public sealed class CheckinService(
         var window = BoardingRules.WindowFor(travel.Window, priority);
         var stored = await store.ListPassesAsync(booking.BookingId, ct);
         var embark = await store.GetEmbarkAsync(booking.BookingId, ct);
+        var outdated = done && BoardingRules.WalletOutdated([.. stored.Where(p => p.InWallet).Select(p => new WalletCopy(p.Seq, p.Code))], [.. passes.Select(p => new WalletCopy(p.Seq, p.Code))]);
         return new BoardingViewDto(
             booking.Number, departure, done, BoardingRules.LaneFor(done), BoardingRules.TerminalFor(embark?.Terminal), window, window is null ? null : BoardingRules.WaitMinutes(window.Crowd), passes,
-            stored.Count > 0 && stored.All(p => p.InWallet), Ms(now));
+            stored.Count > 0 && stored.All(p => p.InWallet) && !outdated, Ms(now), outdated);
     }
 
     public async Task<BoardingViewDto> PassAsync(UserRecord actor, string? number, CancellationToken ct)

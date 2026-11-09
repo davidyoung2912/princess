@@ -44,7 +44,7 @@ public sealed record ReceiptViewDto(string Number, List<ReceiptGuestDto> Guests,
 public sealed record GuestPassDto(Guid Id, string Name, string Printed, int Seq, bool Ready, string Code, string Cabin, int Deck, string Muster, string Group);
 
 public sealed record BoardingViewDto(
-    string Number, string Departure, bool CheckinDone, string Lane, TerminalInfo Terminal, ArrivalWindow? Arrival, int? WaitMinutes, List<GuestPassDto> Passes, bool InWallet, long IssuedAt);
+    string Number, string Departure, bool CheckinDone, string Lane, TerminalInfo Terminal, ArrivalWindow? Arrival, int? WaitMinutes, List<GuestPassDto> Passes, bool InWallet, long IssuedAt, bool WalletOutdated = false);
 
 public sealed record LuggageDto(string Status, long? DroppedAt);
 

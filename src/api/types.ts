@@ -663,6 +663,8 @@ export interface BoardingView {
   waitMinutes: number | null
   passes: GuestPass[]
   inWallet: boolean
+  /** A pass in the wallet no longer matches (new group, cabin or window); adding it again updates it. */
+  walletOutdated?: boolean
   /** When this copy was made. */
   issuedAt: number
 }
