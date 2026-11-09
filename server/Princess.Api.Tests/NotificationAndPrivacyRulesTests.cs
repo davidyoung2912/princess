@@ -29,6 +29,13 @@ public class NotificationRulesTests
     }
 
     [Fact]
+    public void TenderWatchComesBeforeCheckinWhenSet()
+    {
+        var ids = NotificationRules.BuildNotices(new("paid", "2027-03-11", 0, 0, "open", "2027-03-18", null, 0, "2027-03-20", "belize", "2027-03-22", "mixed", 14)).Select(n => n.Id);
+        Assert.Equal(["tenderWatch", "checkinOpens"], ids);
+    }
+
+    [Fact]
     public void NoticesAreDerivedMostUrgentFirst()
     {
         var ids = NotificationRules.BuildNotices(new("overdue", "2027-03-11", 2, 1, "notOpen", "2027-03-18")).Select(n => n.Id);

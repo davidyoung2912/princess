@@ -22,4 +22,22 @@ public static class TenderRules
         var band = percent < 10 ? "good" : percent < 16 ? "mixed" : "rough";
         return new TenderOutlookDto(FeedRules.Sim, port, date, band, percent, band == "good" ? Advice.Take(1).ToArray() : Advice);
     }
+
+    /// <summary>How many days ahead a tender port's rough outlook is worth a notice.</summary>
+    public const int WatchDays = 3;
+
+    /// <summary>
+    /// The first tender port in the next <see cref="WatchDays"/> days (today included) whose outlook is not good, or null. Ports that need no tender and
+    /// outlooks that are good give nothing, so the notice only appears when there is something to plan for.
+    /// </summary>
+    public static (string Port, string Date, string Band, int Percent)? Watch(IEnumerable<(string Port, DateOnly Date)> days, DateOnly today, Func<string, string, TenderOutlookDto> outlook)
+    {
+        foreach (var (port, date) in days.OrderBy(d => d.Date))
+        {
+            if (date < today || date > today.AddDays(WatchDays) || Itinerary.PortOf(port)?.Tender != true) continue;
+            var o = outlook(port, date.ToString("yyyy-MM-dd"));
+            if (o.Band != "good") return (port, o.Date, o.Band, o.Percent);
+        }
+        return null;
+    }
 }

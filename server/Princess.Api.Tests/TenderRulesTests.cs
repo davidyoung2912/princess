@@ -28,4 +28,17 @@ public class TenderRulesTests
         Assert.False(TenderRules.ValidQuery("belize", "2027-13-01"));
         Assert.True(TenderRules.ValidQuery("belize", "2027-03-23"));
     }
+
+    [Fact]
+    public void WatchSkipsDockPortsPastAndFarDaysAndGoodOutlooks()
+    {
+        var today = new DateOnly(2027, 3, 20);
+        TenderOutlookDto Rough(string port, string date) => new("sim", port, date, "rough", 20, []);
+        TenderOutlookDto Good(string port, string date) => new("sim", port, date, "good", 6, []);
+        Assert.Null(TenderRules.Watch([("cozumel", today)], today, Rough));
+        Assert.Null(TenderRules.Watch([("belize", today.AddDays(-1)), ("belize", today.AddDays(4))], today, Rough));
+        Assert.Null(TenderRules.Watch([("belize", today.AddDays(2))], today, Good));
+        var hit = TenderRules.Watch([("belize", today.AddDays(2))], today, Rough)!.Value;
+        Assert.Equal(("belize", "2027-03-22", "rough", 20), (hit.Port, hit.Date, hit.Band, hit.Percent));
+    }
 }

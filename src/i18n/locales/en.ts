@@ -455,6 +455,7 @@ export const en = {
   'notices.passportProblem_other': '{count} passports will not be valid long enough',
   'notices.documentsMissing_one': '{count} travel document is still needed',
   'notices.documentsMissing_other': '{count} travel documents are still needed',
+  'notices.tenderWatch': '{band} at {port} on {date}',
   'notices.checkinOpens': 'Online check-in opens {date}',
   'notices.checkinOpen': 'Online check-in is open',
   'notices.cat.critical': 'Critical notices',

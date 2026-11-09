@@ -56,7 +56,7 @@ public static partial class NotificationRules
 
     public sealed record Notice(string Id, string Category, Dictionary<string, object> Params);
 
-    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens, string? InstalmentDate = null, long InstalmentCents = 0, string Today = "");
+    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens, string? InstalmentDate = null, long InstalmentCents = 0, string Today = "", string? TenderPort = null, string TenderDate = "", string TenderBand = "", int TenderPercent = 0);
 
     /// <summary>What the guest should hear about now, most urgent first. Derived from their trip, so it can never disagree with it.</summary>
     public static List<Notice> BuildNotices(NoticeInput i)
@@ -68,11 +68,12 @@ public static partial class NotificationRules
         if (i.InstalmentDate is not null && string.CompareOrdinal(i.InstalmentDate, DateOnly.ParseExact(i.Today, "yyyy-MM-dd").AddDays(InstalmentRules.RemindDays).ToString("yyyy-MM-dd")) <= 0)
             list.Add(new("instalmentDue", "payments", new() { ["date"] = i.InstalmentDate, ["amount"] = i.InstalmentCents }));
         if (i.DocumentsMissing > 0) list.Add(new("documentsMissing", "documents", new() { ["count"] = i.DocumentsMissing }));
+        if (i.TenderPort is not null) list.Add(new("tenderWatch", "checkin", new() { ["port"] = i.TenderPort, ["date"] = i.TenderDate, ["band"] = i.TenderBand, ["percent"] = i.TenderPercent }));
         if (i.CheckinState != "done") list.Add(new("checkinOpens", "checkin", new() { ["date"] = i.CheckinOpens, ["open"] = i.CheckinState == "open" ? 1 : 0 }));
         return list;
     }
 
-    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "instalmentDue", "passportProblem", "documentsMissing", "checkinOpens"];
+    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "instalmentDue", "passportProblem", "documentsMissing", "tenderWatch", "checkinOpens"];
 
     public static readonly TimeSpan TicketReceived = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan TicketInProgress = TimeSpan.FromMinutes(60);
