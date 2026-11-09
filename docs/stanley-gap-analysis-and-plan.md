@@ -272,12 +272,13 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 **Goal.** One server door for Stanley, so policy, tiering, logging and kill switches live in one place.
 - `POST /me/stanley/v2` (or evolve `/me/stanley`): accepts message, thread, **context packet** (stage, screen id, selected sailing id, level), returns a typed reply: `{ tier, kind, blocks[], actions[], sources[], handoff?, receipt? }`. Old reply shape stays readable.
 - Move the routing now in `stanleyRoute.ts` to the server as `StanleyRouter`: safety, word filter, library lookup id, resolver, structured search, grounded model, action, handoff. The browser keeps the offline library, the on-device safety screen and rendering.
-- Merge the concierge's tools behind the same door (the concierge endpoint stays for the Concierge screen).
+- Retire the concierge as a separate AI (decision 4): move its seven tools behind the same door, switch the Concierge screen to call the gateway, then delete `/me/concierge` and its separate rules and limits once nothing calls it. The old reply shape stays readable until that switch is done.
+- Model tiers and budget from decision 6, in server configuration: small, default and large model names, per-request call caps, per-tier token caps, the per-guest daily ceiling, and the order of attempts (deterministic first). When a cap is hit the reply says so and comes from the deterministic tiers.
 - Server tier log: counts by tier, stage, topic, outcome and token cost, **no message text** (AI-SEC-08). Aggregate endpoint for the diagnostics page.
 - Per-route kill switches in configuration (library, resolver, model, actions, handoff) and a visible degraded state.
 - Cache for public ship and port content by version.
 - **Closes:** A1, A2, A3, 5.1, 8.3 cache, 8.5 (start), 10.4, AI-SEC-08.
-- **Acceptance.** Browser holds no regex routing; a request with the model switched off still answers from library and resolvers; a tier log row exists for every reply; tests cover each route and each switch.
+- **Acceptance.** Browser holds no regex routing; a request with the model switched off still answers from library and resolvers; a tier log row exists for every reply, including model tier and token cost; the Concierge screen works through the gateway and `/me/concierge` is gone; exceeding a call cap or the daily ceiling produces the deterministic fallback; tests cover each route, each switch and each cap.
 
 ### Phase 2: Evaluation and content governance foundation (M)
 
@@ -287,7 +288,8 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Content metadata on every library entry: owner, review date, expiry, risk level, ship/sailing scope, fallback. A test fails when an entry is past expiry.
 - Prompt-injection corpus (guest text, port descriptions, menu text) and a test that retrieved content never changes tools or policy.
 - Tests that muster and emergency text never route through a model; that no PAN/CVV pattern reaches a prompt or log.
-- Tier and helpfulness view on the Diagnostics page (aggregate from phase 1).
+- Tier mix, model-call share and repeat-question view on the Diagnostics page (aggregate from phase 1). No per-answer thumb (decision 2).
+- Eval cases for the retired concierge's questions (sailings, itinerary, port, excursions, restaurants, build a day) so the merge in phase 1 cannot lose capability.
 - **Closes:** 10.1, 10.3, AI-SEC-03, AI-SEC-06, STN-EMB-02 check, STN-DRM-03.
 - **Acceptance.** `npm run test` fails on a regression in any eval case; library coverage report shows entries missing metadata = 0.
 
@@ -298,6 +300,8 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Abstention rules by topic: deadlines, tender, payment, access, entry rules and safety always show "I cannot confirm" language when data is stale or missing; they never fall to a model guess.
 - 25 to 40 resolvers behind one interface (`IStanleyResolver`): next task, next event, all aboard (ship/local/device time labelled), reservation lookup, venue hours, package inclusion, bill status split posted/pending/disputed/estimated, open cases, readiness per traveller, document tasks with source and date, boarding-pass state, "what changed" (stub until phase 11), return brief.
 - Cached trip facts with a cached-at time for offline answers.
+- **"Explain this screen"** (idea 2): one tap from any page, answered from the screen id and the library with the plain-words next step. Mostly authored; no model call.
+- **"Why am I seeing this?"** (idea 3): a button on every suggestion, tip and chip that opens the fact and rule behind it, using the same Based on panel. This is a provenance explainer, not an AI label (decision 1).
 - **Closes:** A7, 5.5, 5.6, STN-SEA-01/02, STN-MNG-01/02, STN-GTS-02, STN-POR-01/02, STN-BOK-03/05 (read side), 9.7.
 - **Acceptance.** For the resolver list, a question returns a card with a correct data time and no model call; stale-source fixtures produce the abstention wording.
 
@@ -307,7 +311,7 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Minimal context packet builder (strategy 9.4): opaque guest id, role, active voyage, stage, screen, allowed facts, allowed tools. Active voyage chosen explicitly; Stanley asks when two voyages are possible and never switches silently.
 - Tool gateway with permission checks at *execution* time (AI-SEC-01). Read tools: `get_guest_visible_plan`, `check_plan_conflicts`, `search_ship_venues`, `get_venue_hours_and_menu`, `calculate_package_value`, `get_case_status`, `get_verified_all_aboard_details`, `get_route` (deck graph), plus the existing seven.
 - Party and child permission model applied to every tool; cross-party tests (family, guardian, helper, revoked) as automated fixtures.
-- Model routing: small model for prescan and classification, larger only for multi-constraint planning; cost budget per tier.
+- Model routing per decision 6: the small tier prescans and classifies, the default tier answers with tools, the large tier only when the router flags a multi-constraint request. Tool calls count against the phase 1 caps; each new tool ships with a test that it cannot push a request over its cap.
 - Written data inventory (purpose, field, provider, retention).
 - **Closes:** A3, A4, 9.3, 9.4, AI-SEC-01/02/04, STN-MNG-03, STN-EMB-03, STN-PRE-01/04 (read side), STN-DSC-01.
 - **Acceptance.** The model cannot obtain another traveller's data even if told to; every tool call is logged without content; eval set grows with plan-grounded questions.
@@ -320,6 +324,7 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - `confirm` takes the preview id plus an idempotency key and re-checks permissions; server executes through existing services (plan, orders, excursions, dining), reconciles unknown outcomes before any retry, and returns a **receipt** that is written to the Trust Ledger and audit trail.
 - Action set (strategy 8.4): add/remove plan item, move a dinner, order an item, add an excursion, create a group poll, draft a service case. Never: pay, cancel a booking, change a cabin, share data.
 - Existing 2-hour undo kept; the original reservation stays until the replacement is confirmed.
+- **Remind me** (idea 7): "remind me at 4:15 to be back" creates a local reminder through `localReminders.ts` as a prepare/confirm action, showing the all-aboard time it is based on.
 - Remove `CHANGE_WORDS` regex routing (and the false "add to packing list" trigger).
 - **Closes:** A5, 5.3, STN-BOK-04, STN-PRE-06, STN-SEA-07, Wave 3 exit gate.
 - **Acceptance.** Test matrix: expired preview, changed availability, duplicate confirm, wrong party, child account, pending outcome. No mutating call runs without a valid preview token.
@@ -340,11 +345,11 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 **Goal.** Give the guest a visible, controllable Stanley memory.
 - **What Stanley remembers** screen: each remembered preference with its reason, scope (this trip / future trips), edit, forget, and an opt-out; booking facts shown separately and read-only.
 - Server-held preference store, consolidating the scattered ones (pilot prefs, fit, likes, access profile) behind one API; per-traveller privacy (one cabin member's data never personalises another's answers).
-- Persisted Stanley thread (optional, retention-limited, deletable) so a guest can continue on another device; default off until you decide (section 7).
-- Proactivity setting with the strategy's three plain choices layered on the four levels: "Tell me only what affects my trip", "Offer suggestions", "Guide me through everything".
+- The chat thread stays on the device (decision 3); nothing about it is added to the server in this phase.
+- Proactivity setting (decision 5): the strategy's three plain choices layered over the four existing levels, which remain the mechanism: "Tell me only what affects my trip", "Offer suggestions", "Guide me through everything".
 - Carry-forward chooser at Remember (STN-REM-07).
 - Decision record for provider retention and training terms (AI-SEC-07).
-- **Closes:** A6, A12, 5.4, STN-REM-07, AI-SEC-05, 7.6 setting.
+- **Closes:** A6, 5.4, STN-REM-07, 7.6 setting. A12 and AI-SEC-05 are accepted gaps (decisions 1 and 3). Child and teen Stanley is out of scope (decision 7).
 - **Acceptance.** Forget removes the item from every device and from the model context; tests prove a deleted preference is not used.
 
 ### Phase 8: Dream and Discover intelligence (L)
@@ -366,6 +371,10 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Whole-plan consequence preview: new conflicts, lost options, price change, cancellation deadline.
 - Free-window suggestions and "three ways to spend the next hour", each open, reachable in time and labelled free/included/paid; venue discovery for quiet, nearby, child-friendly using explicit definitions, saying "no live occupancy" when none exists.
 - Group Trip Diplomat: poll expiry, reminders and owner controls, aggregate availability without private reasons, compromise suggestions, silence never counted as consent; organiser "what remains" at task level.
+- **Plan my evening in one tap** (idea 4): show, dinner and a quiet last drink in order, with walk times and a reserve step through phase 5 actions.
+- **Meeting-point messages** (idea 5): Stanley drafts "meet at the atrium at 5:10, deck 5" from the existing meeting-point and sharing code; the guest sends it.
+- **"How does this day work for Dad?"** (idea 10): run the day through a named traveller's access and pace profile and list what to change.
+- **Compare two excursions in chat** (idea 11): table of duration, exertion, transport, return arrangement, price and inclusions.
 - Accessibility-aware planning: access attributes recorded as sourced data (verified / guest-reported / unknown, with date and confidence); a plan for a named traveller; unverified routes trigger a human check; printable large-text plan.
 - Excursion fit and risk trade-offs with age, exertion, return arrangement and accessible-service evidence.
 - **Closes:** STN-PRE-01/02/03/05/08/09, STN-SEA-05/08/09, STN-MNG-07, STN-DSC-07, STN-POR-06, 7.3, 7.4.
@@ -391,8 +400,10 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - One card: **What changed / Why it affects you / Recommended option / Other options / Confirm** (confirm uses phase 5 actions). Nothing cancels, rebooks or pays automatically.
 - "Explain this change" answers the six questions from the event, not from chat history.
 - Delivery rules: critical alerts separate from suggestions, quiet hours, one proactive element per screen, three per session, a dismissed tip stays dismissed unless facts change.
+- **"What did I miss?"** (idea 1): on opening after a port day or time offline, the changes since last open ranked by the same consequence order, from the change events.
+- **Rough-seas companion** (idea 8): when the nautical feed shows rough seas, a quiet non-medical tip (stay midship, lower decks, where the reviewed information is) linking to the seasickness page; it obeys the delivery rules above.
 - Push integration for reservation and case alerts (noted as missing in MOB-07 and COM-06).
-- **Closes:** A8, 7.1, 7.2, STN-SEA-06, STN-POR-07, 7.6.
+- **Closes:** A8, 7.1, 7.2, STN-SEA-06, STN-POR-07, 7.6 (delivery rules; the setting is in phase 7).
 - **Acceptance.** Replay test: scenario fixtures produce expected alerts with no false positives on unrelated changes.
 
 ### Phase 12: Entitlement, spend and loyalty coach (M)
@@ -400,6 +411,7 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 **Goal.** Money questions answered precisely and kindly.
 - Entitlement service for per-traveller inclusion ("is this cocktail included for me?"), used by resolvers and tools.
 - Spend coach: "if we book this, what will the family total be?" and pace versus budget, with scenarios labelled illustrative.
+- **Spend pace alerts** (idea 6): a gentle mid-week "at this pace you will be around X" against the budget the guest set, delivered under the phase 11 rules and the guest's proactivity choice.
 - Folio explanation with posted, pending, disputed and estimated kept distinct; final folio explainer; dispute opens a tracked case (phase 6) and never marks it resolved.
 - Package value comparison from the family's chosen likely use.
 - Captain's Circle progress, credits and expiry from a mocked loyalty service behind an interface; no predicted guaranteed status.
@@ -412,6 +424,8 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Optional model-written drafts from guest-selected facts, with the current template as fallback and the same never-overwrite rule.
 - Recap and Voyage Story: each milestone sourced; preview, remove, correct, export; private, family-share and public-export versions; tone control.
 - Organise selected photos and notes; no face recognition, no use of another guest's media.
+- **Compliment or feedback drafter** (idea 12): helps write a thank-you for a crew member or a survey answer; the guest edits, approves and sends.
+- **Photo caption helper** (idea 13): guest-selected photos only; suggests a caption from the diary day; no face recognition.
 - Daily recap in chat from approved events; port memory asks what to keep.
 - Carry unresolved cases forward; **suppress or soften rebooking prompts while a serious case is open**.
 - Explainable next-voyage suggestions from preferences the guest chose to keep, with total-cost range.
@@ -424,12 +438,16 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - Incident playbook in `docs/runbook.md` for the eight incident classes in strategy 10.4; tested kill switches.
 - Release gates for AI added to `releaseGates.test.ts`: no unconfirmed mutating action, no cross-party leak, no unsupported critical claim.
 - Content review workflow (owner, due date) surfaced to authors; stale-entry report.
+- **Crew-side content console** (idea 15): a small internal screen listing library entries due for review and the questions with high repeat or abstain rates (no thumb signal, decision 2).
+- **Stale-tip expiry** (idea 16): tips and chips time out when their screen or fact changes, so nothing nags; builds on the "dismissed stays dismissed" rule in phase 11.
+- Cost per resolved task is measured against the decision 6 targets (60% no model call, under 10% large tier).
 - Accessibility audit of every Stanley surface.
 
 ### Phase 15: Voice, accessibility and polish (S to M)
 
 - Voice input in the Stanley dialog (the Ask screen already uses SpeechRecognition); read-aloud for answers.
 - True streaming (SSE) once the gateway exists, replacing the device-side reveal.
+- **Stanley pocket card** (idea 14): one printable or offline page with boarding, contacts, key times and the dietary and mobility cards from phase 6.
 - Printable and large-text plan; departure pocket card; ship-literacy mini tour with text map.
 - Reduced-motion and screen-reader pass.
 - Multilingual remains deferred (English only per `CLAUDE.md`).
@@ -438,7 +456,7 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 
 ## 6. Additional ideas from the review (beyond the strategy document)
 
-Ordered by value to the guest. None is required; they are candidates to add to a phase or to run as small stand-alone phases.
+Ordered by value to the guest. All except idea 9 are now built into the phases shown in brackets, and each phase lists them by idea number. Idea 9 is parked (decision 7).
 
 1. **"What did I miss?" catch-up.** On opening after a port day or time offline: changes since last open, ranked by consequence. (Pairs with phase 11.)
 2. **"Explain this screen."** One tap from any page that uses the screen id and library to explain the page in plain words, with the next step. (Cheap, mostly authored; phase 3.)
@@ -448,28 +466,34 @@ Ordered by value to the guest. None is required; they are candidates to add to a
 6. **Spend pace alerts.** A gentle mid-week "at this pace you will be around X" with the budget the guest set. (Phase 12.)
 7. **Remind me.** "Remind me at 4:15 to be back" creating a local reminder from `localReminders.ts`; shows the all-aboard time it is based on. (Phase 5.)
 8. **Rough-seas companion.** When the nautical feed shows rough seas, a quiet, non-medical tip (stay midship, lower decks, where the reviewed info is) linked to the existing seasickness page. (Phase 11.)
-9. **Teen and child Stanley.** A restricted Stanley for children on the booking: kids' activities and the meeting point only, no actions, guardian-visible settings. (Phase 7; needs a policy call.)
+9. **Teen and child Stanley. OUT OF SCOPE for now (decided 2026-11-09).** A restricted Stanley for children on the booking: kids' activities and the meeting point only, no actions, guardian-visible settings. Parked.
 10. **"How does this day work for Dad?"** Run the day plan through a named traveller's access and pace profile and show what to change. (Phase 9.)
 11. **Compare two excursions in chat.** Table: duration, exertion, transport, return arrangement, price, what is included. (Phase 9.)
 12. **Compliment or feedback drafter.** At Remember, help the guest write a thank-you for a crew member or a survey answer, guest approves and sends. (Phase 13.)
 13. **Photo caption helper.** Guest-selected photos only; Stanley suggests a caption from the diary day. (Phase 13.)
 14. **Stanley pocket card.** One printable or offline page with boarding, contacts, key times, dietary and mobility cards. (Phase 15.)
-15. **Crew-side content console.** A small internal screen for authors to see library entries due for review and low-helpfulness answers. (Phase 14.)
+15. **Crew-side content console.** A small internal screen for authors to see library entries due for review and questions with high repeat or abstain rates. (Phase 14.)
 16. **Stale-tip expiry.** Tips and chips that time out when their screen or fact changes, so nothing nags. (Phase 14.)
 
 ---
 
 ## 7. Decisions
 
-**Decided (2026-11-09):** items 1, 2, 3 and 8 below. The rest are still open.
+**Decided (2026-11-09):** all eight items below are decided. No open questions remain.
 
 1. **AI disclosure. DECIDED: no "AI helper" wording for now.** The strategy (4.1, AI-SEC-05) would label AI answers; we accept that gap. Do not add AI labels in any phase; revisit later.
 2. **Outcome feedback. DECIDED: no thumb on model answers for now.** The quality loop relies on server tier counts and repeat-question rate (phases 1, 2, 14).
 3. **Where the chat thread lives. DECIDED: stays on the device.** Phase 7 drops the server-persisted thread; only the preference memory moves server-side.
-4. **Retire the concierge as a separate AI?** Recommended: Stanley becomes the only conversational surface; the Concierge screen keeps its page but calls the same gateway (phase 1).
-5. **Proactivity naming.** Layer the strategy's three plain choices over the existing four levels (recommended), or rename.
-6. **Model use and budget.** Which provider and tier names for small and large calls, and a cost budget per resolved task for the gateway to enforce.
-7. **Child and teen Stanley.** In scope for a later phase or not at all.
+4. **Retire the concierge as a separate AI. DECIDED: yes.** Stanley becomes the only conversational surface. The Concierge screen keeps its page but calls the same gateway (phase 1); the concierge's seven tools move behind the gateway and its separate rules, limits and endpoint behaviour are removed once the screen has moved over (keep the old reply shape until then, per section 8).
+5. **Proactivity naming. DECIDED: layer, do not rename.** The strategy's three plain choices ("Tell me only what affects my trip", "Offer suggestions", "Guide me through everything") sit over the existing four levels, which stay as the underlying mechanism (phase 7).
+6. **Model use and budget. DECIDED (my judgement; tune with real tier logs):**
+   - **Provider.** Anthropic only, behind the existing model interface, so a provider can be swapped with no front-end change. Model names live in server configuration, never in the client.
+   - **Small tier** (prescan, classification, routing, short rephrasing): a Haiku-class model, currently `claude-haiku-5-5`.
+   - **Default tier** (grounded answers with tools): a Sonnet-class model, currently `claude-sonnet-5-5` (today's configured default).
+   - **Large tier** (multi-constraint planning, group diplomacy, Autopilot explanations): an Opus-class model, currently `claude-opus-5-5`, only when the router flags a multi-constraint request. Never the default.
+   - **Order of attempts.** Deterministic resolver or library first (no model), then small, then default, then large. A call escalates only when the cheaper tier reports low confidence or the request needs more tools.
+   - **Budget.** The gateway enforces a per-request cap of model calls (3 for chat, 5 for planning) and a token cap per tier, plus a per-guest daily ceiling. Starting values: small 300 output tokens, default 900 (today's `MaxTokens`), large 1,500; daily ceiling 60 model calls per guest. When a cap is hit, Stanley answers from the deterministic tiers and says so plainly. Target mix to aim for: at least 60% of questions resolved with no model call; under 10% reaching the large tier. These are starting numbers, set in configuration and revisited after phase 2's tier counts show real use.
+7. **Child and teen Stanley. DECIDED: out of scope for now.** Idea 9 in section 6 is parked, not scheduled in phase 7 or any other phase. The existing `child` checks in confirm and the cross-party tests (AI-SEC-04) still apply.
 8. **Server verification. DECIDED:** the user runs targeted `dotnet test` themselves; server phases still land with tests written, and I do not run dotnet.
 
 ## 8. Risks
