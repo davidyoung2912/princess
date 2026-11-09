@@ -8,7 +8,7 @@ public sealed class SchedulerOptions
     public const string Section = "Scheduler";
     /// <summary>Minutes between runs. 0 switches the scheduler off.</summary>
     public int IntervalMinutes { get; set; } = 15;
-    /// <summary>The most people looked after in one run.</summary>
+    /// <summary>The most people looked after in one run. When more are signed up, the next run carries on after the last one checked and wraps round at the end.</summary>
     public int MaxPeople { get; set; } = 500;
 }
 
@@ -19,6 +19,8 @@ public sealed class SchedulerOptions
 /// </summary>
 public sealed class WatchSchedulerService(IServiceScopeFactory scopes, IOptions<SchedulerOptions> options, ILogger<WatchSchedulerService> log) : BackgroundService
 {
+    private long _after;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var minutes = options.Value.IntervalMinutes;
@@ -39,8 +41,11 @@ public sealed class WatchSchedulerService(IServiceScopeFactory scopes, IOptions<
         await using var scopeForLock = scopes.CreateAsyncScope();
         await using var held = await scopeForLock.ServiceProvider.GetRequiredService<IWatchLock>().TryAcquireAsync(ct);
         if (held is null) return 0;
+        var max = Math.Max(1, options.Value.MaxPeople);
         await using (var scope = scopes.CreateAsyncScope())
-            ids = await scope.ServiceProvider.GetRequiredService<IWatchTargetStore>().ListUserIdsAsync(Math.Max(1, options.Value.MaxPeople), ct);
+            ids = await scope.ServiceProvider.GetRequiredService<IWatchTargetStore>().ListUserIdsAsync(max, _after, ct);
+        // A full page means there may be more: carry on after the last id next time. A short page is the end, so start again from the top.
+        _after = ids.Count >= max ? ids[^1] : 0;
         var checkedCount = 0;
         foreach (var id in ids)
         {

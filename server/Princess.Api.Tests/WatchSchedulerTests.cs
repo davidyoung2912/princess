@@ -18,13 +18,19 @@ public class WatchSchedulerTests
     private sealed class Targets(List<long> ids) : IWatchTargetStore
     {
         public int Calls;
-        public Task<List<long>> ListUserIdsAsync(int max, CancellationToken ct) { Calls++; return Task.FromResult(ids); }
+        public readonly List<long> Afters = [];
+        public Task<List<long>> ListUserIdsAsync(int max, long afterId, CancellationToken ct)
+        {
+            Calls++;
+            Afters.Add(afterId);
+            return Task.FromResult(ids.Where(i => i > afterId).Take(max).ToList());
+        }
     }
 
-    private static WatchSchedulerService Make(Lock l, Targets t)
+    private static WatchSchedulerService Make(Lock l, Targets t, int max = 500)
     {
         var services = new ServiceCollection().AddSingleton<IWatchLock>(l).AddSingleton<IWatchTargetStore>(t).BuildServiceProvider();
-        return new(services.GetRequiredService<IServiceScopeFactory>(), Options.Create(new SchedulerOptions()), NullLogger<WatchSchedulerService>.Instance);
+        return new(services.GetRequiredService<IServiceScopeFactory>(), Options.Create(new SchedulerOptions { MaxPeople = max }), NullLogger<WatchSchedulerService>.Instance);
     }
 
     [Fact]
@@ -43,5 +49,16 @@ public class WatchSchedulerTests
         Assert.Equal(0, await Make(l, targets).RunOnceAsync(CancellationToken.None));
         Assert.Equal(1, targets.Calls);
         Assert.Equal(1, l.Released);
+    }
+
+    [Fact]
+    public async Task CarriesOnAfterAFullPageAndWrapsRoundAtTheEnd()
+    {
+        var targets = new Targets([1, 2, 3]);
+        var svc = Make(new Lock(true), targets, 2);
+        await svc.RunOnceAsync(CancellationToken.None);
+        await svc.RunOnceAsync(CancellationToken.None);
+        await svc.RunOnceAsync(CancellationToken.None);
+        Assert.Equal([0L, 2L, 0L], targets.Afters);
     }
 }

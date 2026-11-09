@@ -6,12 +6,13 @@ namespace Princess.Api.Data;
 /// <summary>Who the background scheduler should look after: people with a phone signed up for alerts, an automatic instalment switched on, or an email address or phone number and a confirmed booking (so email and text notices reach them with no phone subscribed).</summary>
 public interface IWatchTargetStore
 {
-    Task<List<long>> ListUserIdsAsync(int max, CancellationToken ct);
+    /// <summary>Up to <paramref name="max"/> user ids above <paramref name="afterId"/>, lowest first.</summary>
+    Task<List<long>> ListUserIdsAsync(int max, long afterId, CancellationToken ct);
 }
 
 public sealed class DapperWatchTargetStore(IDbConnectionFactory db) : IWatchTargetStore
 {
-    public async Task<List<long>> ListUserIdsAsync(int max, CancellationToken ct)
+    public async Task<List<long>> ListUserIdsAsync(int max, long afterId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<long>(Sql.Cmd("""
@@ -26,8 +27,8 @@ public sealed class DapperWatchTargetStore(IDbConnectionFactory db) : IWatchTarg
                 LEFT JOIN dbo.Profiles p ON p.UserId = u.Id
                WHERE u.Role = 'guest' AND u.IsDemo = 0
                  AND (NULLIF(u.Email, N'') IS NOT NULL OR NULLIF(p.Phone, N'') IS NOT NULL)
-            ) t ORDER BY UserId
-            """, new { max }, null, ct))).ToList();
+            ) t WHERE UserId > @afterId ORDER BY UserId
+            """, new { max, afterId }, null, ct))).ToList();
     }
 }
 
