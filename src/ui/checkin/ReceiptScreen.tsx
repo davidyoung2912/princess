@@ -34,12 +34,12 @@ export function ReceiptScreen() {
           {!receipt.data.complete && <Banner kind="warning" title={t('receipt.notComplete')} action={<LinkButton to="/home/check-in" variant="secondary">{t('route.checkin')}</LinkButton>} />}
           <p className="muted">{t('trip.booking', { number: receipt.data.number })}{receipt.data.finishedAt ? ` · ${t('checkin.finishedAt', { when: formatDateTime(receipt.data.finishedAt) })}` : ''}</p>
           {receipt.data.guests.map((g) => (
-            <Card key={g.id}>
+            <Card key={g.id} ticket>
               <h2 className="card__title">{g.name}</h2>
               <Items items={g.items} guest={g.id} />
             </Card>
           ))}
-          <Card>
+          <Card ticket>
             <h2 className="card__title">{th('receipt.booking')}</h2>
             <Items items={receipt.data.booking} />
           </Card>

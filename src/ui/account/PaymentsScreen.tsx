@@ -28,8 +28,8 @@ export function PaymentsScreen() {
   const [confirming, setConfirming] = useState(false)
   const [cardId, setCardId] = useState('')
   const [paidNote, setPaidNote] = useState(false)
-  const pay = useAction((id: string) => api.payments.payBalance(id))
-  const remove = useAction((id: string) => api.payments.removeCard(id))
+  const pay = useAction((id: string) => api.payments.payBalance(id), { quiet: true })
+  const remove = useAction((id: string) => api.payments.removeCard(id), { quiet: true })
 
   return (
     <div className="page">
@@ -129,7 +129,7 @@ function AddCard({ today, onAdded }: { today: string; onAdded: () => void }) {
   const [expiry, setExpiry] = useState('')
   const [problem, setProblem] = useState<CardProblem | null>(null)
   const [done, setDone] = useState(false)
-  const add = useAction((b: CardBrand, l: string, e: string) => api.payments.addCard(b, l, e))
+  const add = useAction((b: CardBrand, l: string, e: string) => api.payments.addCard(b, l, e), { quiet: true })
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setDone(false)

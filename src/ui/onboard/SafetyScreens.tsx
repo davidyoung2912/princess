@@ -41,7 +41,7 @@ export function MusterScreen() {
 function Station({ m, reload }: { m: MusterView; reload: () => void }) {
   const shipTime = useShipTime()
   const [picked, setPicked] = useState<PersonaId[]>([])
-  const confirm = useAction(async () => { await api.onboard.confirmMuster(picked); setPicked([]); reload() })
+  const confirm = useAction(async () => { await api.onboard.confirmMuster(picked); setPicked([]); reload() }, { quiet: true })
   const waiting = m.guests.filter((g) => g.confirmedAt === null)
   const err = confirm.error
   return (

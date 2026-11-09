@@ -72,7 +72,7 @@
 .tabs__item .lucide { color: var(--tab); }
 .tabs__item .lucide { width: 1.5rem; height: 1.5rem; }
 .tabs__item[aria-current='page'] { font-weight: 700; border-top-color: var(--tab); background: linear-gradient(135deg, color-mix(in srgb, var(--tab) 84%, var(--on-primary)), color-mix(in srgb, var(--tab) 63%, var(--text))); }
-.tabs__item[aria-current='page'] { box-shadow: 0 8px 18px -4px color-mix(in srgb, var(--tab) 85%, transparent), 0 3px 6px color-mix(in srgb, var(--tab) 45%, transparent); }
+.tabs__item[aria-current='page'] { --elev-tint: var(--tab); box-shadow: var(--elev-3); }
 .tabs__item[aria-current='page'], .tabs__item[aria-current='page']:hover, .tabs__item[aria-current='page'] .lucide { color: var(--on-primary); }
 .tabs__item[aria-current='page'] svg { color: var(--on-primary); stroke: currentColor; }
 /* Hover previews the selected look, ghosted: the tab's colour as a soft fill and edge, with normal text so it stays readable. */
@@ -192,7 +192,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .stage-step__done { color: var(--text-muted); }
 .stage-tiles { list-style: none; padding: 0; margin: 0 0 var(--space-4); display: grid; gap: var(--space-3); grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 48rem) { .stage-tiles { grid-template-columns: repeat(3, 1fr); } }
-.stage-tile { position: relative; box-shadow: 0 7px 16px -3px color-mix(in srgb, var(--sec) 45%, transparent), 0 2px 5px color-mix(in srgb, var(--sec) 25%, transparent); border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 0.5rem); }
+.stage-tile { position: relative; box-shadow: var(--elev-1); border: 1px solid var(--border, currentColor); border-radius: var(--radius-md, 0.5rem); }
 .stage-tile__link { display: grid; gap: var(--space-1); align-content: start; min-height: var(--target-min); padding: var(--space-3); height: 100%; text-decoration: none; color: inherit; border-radius: inherit; }
 .stage-tile__icon { width: 1.75rem; height: 1.75rem; color: var(--sec); }
 .stage-tile__title { font-size: 1.125rem; font-weight: 700; }

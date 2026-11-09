@@ -8,7 +8,7 @@ const memory = (initial?: string) => {
 
 describe('normalizeSettings', () => {
   it('keeps valid values', () => {
-    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true, stanleyLevel: 'chatty', tripColour: 'plum', pins: ['S40', 'P10'] }
+    const s = { language: 'es', unitsChosen: true, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, sounds: true, captions: false, dataLight: true, essentials: true, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: true, stanleyLevel: 'chatty', tripColour: 'plum', pins: ['S40', 'P10'] }
     expect(normalizeSettings(s)).toEqual(s)
   })
 
@@ -49,7 +49,7 @@ describe('settingsToAttributes', () => {
   })
 
   it('maps the other settings', () => {
-    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'coral', pins: [] }, false)).toEqual({
+    expect(settingsToAttributes({ language: 'en', unitsChosen: false, textSize: 'large', theme: 'dark', contrast: 'high', reduceMotion: true, simple: true, calm: false, sounds: true, captions: false, dataLight: true, essentials: false, units: 'metric', region: 'uk', chargeCheck: 'always', nudgesPerDay: 0, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'coral', pins: [] }, false)).toEqual({
       'data-theme': 'dark', 'data-contrast': 'high', 'data-motion': 'reduced', 'data-text-size': 'large', 'data-simple': 'on', 'data-calm': 'off', 'data-captions': 'off', 'data-light': 'on', 'data-trip': 'coral',
     })
   })
@@ -118,5 +118,13 @@ describe('units follow the language', () => {
     expect(unitsAfterLanguageChange('en', false, 'metric')).toBe('imperial')
     expect(unitsAfterLanguageChange('es', true, 'imperial')).toBe('imperial')
     expect(unitsAfterLanguageChange('xx', false, 'imperial')).toBe('imperial')
+  })
+})
+
+describe('confirmation sounds setting', () => {
+  it('is on by default and ignores a non-boolean', () => {
+    expect(DEFAULT_SETTINGS.sounds).toBe(true)
+    expect(normalizeSettings({ sounds: false }).sounds).toBe(false)
+    expect(normalizeSettings({ sounds: 'no' }).sounds).toBe(true)
   })
 })

@@ -36,7 +36,7 @@ export function PayStep({ draft, onBooked }: { draft: Draft; onBooked: (booking:
     const booking = await api.booking.book({ draft, expectedTotal: quote.data!.total, expectedFareVersion: quote.data!.fareVersion, expectedTermsVersion: quote.data!.termsVersion, option, parts, challenge })
     onBooked(booking)
     return booking
-  })
+  }, { quiet: true })
   return (
     <StepSection title={t('book.pay.title')} intro={t('book.pay.intro')}>
       <PriceState state={quote}>

@@ -2,7 +2,9 @@ import { useWakeLock } from '../../hooks/useWakeLock'
 import { StanleyMoment } from '../ai/StanleyMoment'
 import { useDiaryLine } from '../../hooks/useDiary'
 import { useSailing } from '../../hooks/useDemo'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { clearCelebration, peekCelebration } from '../../celebrate/pending'
+import { Celebrate } from '../Celebrate'
 import { Link } from 'react-router'
 import { asBoardingView } from '../../api/guards'
 import type { BoardingView, GuestPass } from '../../api/types'
@@ -45,10 +47,13 @@ export function PassScreen() {
 export function PassBody({ pass, offline, reload, signedIn = true }: { pass: BoardingView; offline: boolean; reload: () => void; signedIn?: boolean }) {
   const [bright, setBright] = useState<GuestPass | null>(null)
   useDiaryLine(useSailing().id, 'pass', 'pass', t('diary.auto.pass'), pass.checkinDone)
+  const [justCheckedIn] = useState(() => peekCelebration() === 'checkedIn')
+  useEffect(() => { clearCelebration() }, [])
   const wallet = useAction(async () => { await api.boarding.addToWallet(); reload() })
   return (
     <>
       {offline && <Banner kind="offline" title={t('pass.offline')}><p>{t('pass.offlineBody')}</p></Banner>}
+      {pass.checkinDone && justCheckedIn && <Celebrate level="moment" pose="cheer">{t('celebrate.checkedIn')}</Celebrate>}
       {pass.checkinDone && <StanleyMoment id="passReady" subject={pass.number} />}
       {pass.terminal.changedFrom && <Banner kind="warning" title={t('pass.terminalChanged', { from: pass.terminal.changedFrom, to: pass.terminal.name })}><p>{t('pass.terminalChangedBody')}</p></Banner>}
       {!pass.checkinDone && (

@@ -216,7 +216,7 @@ textarea { max-width: min(100%, 32rem); }
   .card-grid > li > .card:hover, .card-grid > li.card:hover, .fare-grid > li.card:hover, .stage-tile:hover {
     transform: translateY(-5px) scale(1.02);
     z-index: 1;
-    box-shadow: 0 14px 28px -6px color-mix(in srgb, var(--sec) 55%, transparent), 0 4px 10px color-mix(in srgb, var(--sec) 28%, transparent);
+    box-shadow: var(--elev-2);
   }
 }
 

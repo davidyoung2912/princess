@@ -1,3 +1,4 @@
+import { queueCelebration } from '../../celebrate/pending'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { CheckinSave, CheckinView } from '../../api/types'
@@ -163,7 +164,7 @@ function StepPage({ view, step, reload }: { view: CheckinView; step: StepId | ty
 function ReviewStep({ view }: { view: CheckinView }) {
   const navigate = useNavigate()
   const [done, setDone] = useState(view.status.state === 'done')
-  const finish = useAction(async () => { await api.checkin.submit(); setDone(true); navigate('/home/boarding-pass') })
+  const finish = useAction(async () => { await api.checkin.submit(); setDone(true); queueCelebration('checkedIn'); navigate('/home/boarding-pass') }, { quiet: true })
   const { progress } = view
   return (
     <>

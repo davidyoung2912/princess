@@ -149,7 +149,7 @@ function AddCard({ onClose, onAdded, today }: { onClose: () => void; onAdded: (i
   const [last4, setLast4] = useState('')
   const [expiry, setExpiry] = useState('')
   const [problem, setProblem] = useState('')
-  const add = useAction((b: CardBrand, l: string, e: string) => api.payments.addCard(b, l, e))
+  const add = useAction((b: CardBrand, l: string, e: string) => api.payments.addCard(b, l, e), { quiet: true })
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     e.stopPropagation()

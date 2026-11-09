@@ -51,7 +51,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
             const first = s === firstUndone
             return (
               <li key={s.key} className={`stage-step${s.done ? ' stage-steps__done' : ''}${first ? ' stage-step--first' : ''}`}>
-                <span className="stage-step__num" aria-hidden="true">{s.done ? <Check size={16} /> : i + 1}</span>
+                <span className="stage-step__num" aria-hidden="true">{s.done ? <Check size={16} className="tick-draw" /> : i + 1}</span>
                 <span className="stage-step__body">
                   <Link to={s.to} state={openedFrom('blue')}>{t(s.key as StringKey)}</Link>
                   {s.done && <span className="stage-step__done"> · {t('stage.next.done')}</span>}
@@ -63,6 +63,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
         </ol>
       </section>
       {urgent && <RecentCard />}
+      <hr className="brass-rule" aria-hidden="true" />
       <nav aria-labelledby="stage-tiles-h">
         <h2 id="stage-tiles-h">{th('stage.tiles.title')}</h2>
         <ul className="stage-tiles">
@@ -76,7 +77,7 @@ export function StageHome({ trip = null, today = null }: { trip?: TripView | nul
                 <Icon className="stage-tile__icon" aria-hidden="true" />
                 <span className="stage-tile__title">{th(screen.titleKey)}</span>
                 <span className="screen-list__subtext">{state ? <TileLiveLine line={state} /> : t(screen.subtextKey)}</span>
-                {flagged && <span className="stage-tile__badge"><CircleDot size={14} aria-hidden="true" /> {t('stage.tile.attention')}</span>}
+                {flagged && <><span className="stage-tile__dot" aria-hidden="true"><CircleDot /></span><span className="visually-hidden">{t('stage.tile.attention')}</span></>}
               </Link>
             </li>
             )

@@ -95,7 +95,7 @@ export function MemoryScreen() {
       <StubsCard />
       <SailedMap />
       <FavouritesRanked />
-      <Card labelledBy="mem-diary">
+      <Card labelledBy="mem-diary" postcard>
         <h2 id="mem-diary" className="card__title">{th('diary.title')}</h2>
         <p>{t('diary.screenBody')}</p>
         <LinkButton to="/me/diary" variant="secondary">{t('diary.open')}</LinkButton>
@@ -127,7 +127,7 @@ export function MemoryScreen() {
           const group = sailAgainGroup(state.contacts, next)
           return (
             <>
-              <Card labelledBy="mem-book">
+              <Card labelledBy="mem-book" postcard>
                 <h2 id="mem-book" className="card__title">{th('memory.book')}</h2>
                 <p className="no-print">{t('memory.bookBody')}</p>
                 <label className="choice no-print"><input type="checkbox" checked={includeChange} onChange={(e) => setIncludeChange(e.target.checked)} /><span>{t('memory.bookChange')}</span></label>
