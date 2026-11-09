@@ -1,6 +1,6 @@
 # Best-in-market plan (BM)
 
-Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 is proposed and wait for approval. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 is built (view only; wider permissions need a BM6). BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
 
 ## 1. How this was done, and how far to trust it
 
@@ -94,9 +94,12 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Calendar (MOB-15)**: `IcsEvent` gains `sequence` (written as `SEQUENCE`, default 0) and `cancelled` (`STATUS:CANCELLED`; a file of only cancelled events is `METHOD:CANCEL`). Uids were already stable per booking item. Tests: `src/domain/calendar.test.ts`.
 - **Not done**: no caller sends a higher sequence or a cancel yet; that needs the booking-change flow to know the previous version.
 
-### BM5. Permissions model check
+### BM5. Permissions model check (built, not committed)
 
-Read the party, family, helper and share code against IDN-04 and IDN-05; add a "who can see what" view if the model supports it (IDN-07). Server changes only if BM2 finds a hole, and then only in a phase of their own.
+- **Logic**: `src/domain/access.ts` reads the three separate models (helper, family-at-home links, travel party invitations and sharing switches) into one list of rows: who, kind, on/waiting/off, what they can see or do, when it stops by itself, and the screen that changes it. Tests: `src/domain/access.test.ts`.
+- **Screen (IDN-07)**: a "Who can see what" card on `/me/helper` (`HelperScreen.tsx`), with a Change link per row. No new route, so the screen registry is unchanged.
+- **Finding kept**: the models are still three; they share no relationship type or permission set (IDN-04), and the helper still has only view, documents, payments and profile (IDN-05). Adding check-in, edit-booking, folio, message and location permissions changes the server contract and the `Helper` table, so it is its own phase (suggested BM6) and needs your approval.
+- **Not done**: no shipmate or household relationship type; IDN-03 (from the BM2 note) is not part of this phase.
 
 ## 5. Decisions I need from you
 

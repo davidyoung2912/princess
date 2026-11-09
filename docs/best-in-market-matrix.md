@@ -324,7 +324,7 @@ Priority is not given per concept in the document.
 | IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. No shared relationship type. BM5 |
 | IDN-05 | P0 | Partial | R | `src/domain/account.ts` (`PERMISSIONS`) | Helper has four permissions: view, documents, payments, profile. No check-in, edit-booking, folio, message or location permission. BM5 |
 | IDN-06 | P0 | Built | F | `src/ui/plan/FamilyLinkScreen.tsx`, `src/domain/homeLink.ts`, `src/ui/ahead/ClubsScreen.tsx` | Authorised pickup unchecked |
-| IDN-07 | P1 | Partial | F | `src/ui/account/HelperScreen.tsx`, `src/ui/party/ShareScreens.tsx` | Revoke exists per feature; no single "who can see what". BM5 |
+| IDN-07 | P1 | Partial | F | `src/ui/account/HelperScreen.tsx`, `src/ui/party/ShareScreens.tsx` | Revoke exists per feature; BM5 built the "who can see what" card on `/me/helper` (`src/domain/access.ts`); revoke is still per feature |
 | IDN-08 | P1 | Partial | F | `src/ui/home/` advisors route `/home/advisors` | Access for advisor-booked guests unchecked |
 | TRU-01 | P0 | Built | F | `src/ui/account/LedgerScreen.tsx`, `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/ActivityScreen.tsx` | None found |
 | TRU-02 | P0 | Built | F | `src/domain/trustLedger.ts`, `docs/audit-trail.md` | None found |

@@ -1,10 +1,16 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
+import { accessRows, activeCount, type AccessItem, type AccessRow } from '../../domain/access'
 import type { Helper, PermissionId } from '../../domain/account'
 import { PERMISSIONS } from '../../domain/account'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
+import { useNow } from '../../hooks/useDemo'
+import { useHub } from '../../hooks/useHub'
+import { useParty } from '../../hooks/useParty'
+import { useSharing } from '../../hooks/useSharing'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
@@ -23,6 +29,7 @@ export function HelperScreen() {
       <Load state={helper}>
         {(h) => <HelperBody key={h?.status ?? 'none'} helper={h} refresh={helper.retry} />}
       </Load>
+      <WhoCanSee helper={helper.data ?? null} />
       <Card info labelledBy="alt-h">
         <h2 id="alt-h">{th('helper.alt.title')}</h2>
         <p>{t('helper.alt.body', { number: GUEST_SERVICES_NUMBER })}</p>
@@ -102,5 +109,41 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
         </Dialog>
       )}
     </>
+  )
+}
+
+const SHARE_KEY: Record<string, StringKey> = {
+  'share.plans': 'access.item.share.plans', 'share.status': 'access.item.share.status',
+  'share.spending': 'access.item.share.spending', 'share.photos': 'access.item.share.photos',
+}
+const ITEM_KEY = (x: AccessItem): StringKey => (x === 'shipFacts' ? 'access.item.shipFacts' : SHARE_KEY[x] ?? (`helper.perm.${x}` as StringKey))
+
+function Row({ row }: { row: AccessRow }) {
+  const who = row.who ?? t('access.party')
+  return (
+    <li>
+      <strong>{who}</strong> <span className="muted">{t(`access.kind.${row.kind}` as StringKey)} · {t(`access.status.${row.status}` as StringKey)}</span>
+      {row.items.length > 0 && <ul>{row.items.map((x) => <li key={x}>{t(ITEM_KEY(x))}</li>)}</ul>}
+      {row.until !== null && <p className="muted">{t('access.until', { date: formatMoment(row.until) })}</p>}
+      {row.status === 'ended' && row.kind !== 'helper' && row.items.length === 0 && <p className="muted">{t('access.noneShared')}</p>}
+      <Link to={row.path} aria-label={t('access.change', { who })}>{t('access.changeLink')}</Link>
+    </li>
+  )
+}
+
+/** Who can see what (IDN-07): every way this guest has let someone in, in one list. Changing any of them happens on that feature's own screen. */
+function WhoCanSee({ helper }: { helper: Helper | null }) {
+  const { state } = useHub()
+  const { state: party } = useParty()
+  const { sharing } = useSharing()
+  const now = useNow()
+  const rows = accessRows({ helper, home: state.home, party, sharing, now })
+  return (
+    <Card labelledBy="access-h">
+      <h2 id="access-h">{th('access.title')}</h2>
+      <p>{t('access.summary', { count: activeCount(rows) })}</p>
+      <ul>{rows.map((r) => <Row key={r.id} row={r} />)}</ul>
+      <p className="muted">{t('access.footnote')}</p>
+    </Card>
   )
 }
