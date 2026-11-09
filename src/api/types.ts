@@ -526,6 +526,8 @@ export interface PackingView {
   weather: Weather
   nights: number
   daysToDeparture: number
+  /** Suggested items the guest hid; they can bring them back. */
+  hidden?: PackItem[]
 }
 
 export interface TravelView {
@@ -598,7 +600,16 @@ export interface PlanApi {
   wishes: { get(): Promise<WishesView>; add(celebrationId: string, text: string): Promise<WishesView> }
   celebrations: { get(): Promise<CelebrationsView>; save(items: readonly Pick<PlanOccasion, 'id' | 'label' | 'date' | 'surprise'>[]): Promise<CelebrationsView> }
   checklist: { get(): Promise<ChecklistView>; tick(id: string, done: boolean): Promise<ChecklistView> }
-  packing: { get(): Promise<PackingView>; tick(id: string, done: boolean): Promise<PackingView> }
+  packing: {
+    get(): Promise<PackingView>
+    tick(id: string, done: boolean): Promise<PackingView>
+    /** Adds an item of the guest's own. */
+    add(label: string): Promise<PackingView>
+    /** Removes an item the guest added. */
+    remove(id: string): Promise<PackingView>
+    /** Hides a suggested item the guest does not need (true), or brings it back (false). */
+    hide(id: string, hidden: boolean): Promise<PackingView>
+  }
   travel: { get(): Promise<TravelView>; save(plan: TravelPlan): Promise<TravelView> }
   assistance: {
     get(): Promise<AssistanceView>

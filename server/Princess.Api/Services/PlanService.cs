@@ -681,7 +681,12 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         return await ChecklistViewAsync(c, ct);
     }
 
-    private async Task<(List<PackItem> Items, HashSet<string> Ticked)> PackingAsync(Ctx c, CancellationToken ct)
+    private sealed record PackState(List<PackItem> Items, HashSet<string> Ticked, List<PackItem> Hidden, Dictionary<string, long> OwnTickers);
+
+    private const int OwnPackMax = 20;
+    private const int OwnPackLabelMax = 60;
+
+    private async Task<PackState> PackingAsync(Ctx c, CancellationToken ct)
     {
         var needs = new HashSet<string>();
         foreach (var g in c.Party) foreach (var n in (await accounts.GetProfileAsync(g.UserId, ct))?.Needs ?? []) needs.Add(n);
@@ -693,33 +698,87 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         var tourNames = tours.Select(ExcursionRules.ById).OfType<Excursion>().Select(x => x.Name).ToList();
         items.AddRange(StanleyTravelRules.PackingExtras(c.Timeline, weather.Sky, tourNames).Where(i => !have.Contains(i.Id)));
         var known = items.Select(i => i.Id).ToHashSet();
-        return (items, [.. (await plan.GetTicksAsync(c.Booking.BookingId, "packing", ct)).Where(known.Contains)]);
+        var ticked = (await plan.GetTicksAsync(c.Booking.BookingId, "packing", ct)).Where(known.Contains).ToHashSet();
+
+        // The guest's own edits: what they hid (never the documents) and what they added, each with its own tick.
+        var edits = await plan.ListPackingEditsAsync(c.Booking.BookingId, ct);
+        var hiddenIds = edits.Where(e => e.Kind == "hidden").Select(e => e.ItemId).ToHashSet();
+        var hidden = items.Where(i => hiddenIds.Contains(i.Id) && i.Group != "documents").ToList();
+        var hideSet = hidden.Select(i => i.Id).ToHashSet();
+        items = [.. items.Where(i => !hideSet.Contains(i.Id))];
+        ticked.ExceptWith(hideSet);
+        var ownTickers = new Dictionary<string, long>();
+        foreach (var e in edits.Where(e => e.Kind == "own" && e.Label is not null))
+        {
+            items.Add(new(e.ItemId, "mine", e.Label!, "Added by you."));
+            if (e.Done) { ticked.Add(e.ItemId); if (e.TickedBy is { } u) ownTickers[e.ItemId] = u; }
+        }
+        return new(items, ticked, hidden, ownTickers);
     }
 
-    public async Task<PackingViewDto> PackingAsync(UserRecord actor, string? number, CancellationToken ct)
+    private async Task<PackingViewDto> PackingViewAsync(Ctx c, CancellationToken ct)
     {
-        var c = await LoadAsync(actor, number, false, ct);
-        var (items, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(items, [.. ticked], weather.Climate(c.Departure), c.Nights, c.Days, await TickedByAsync(c, ticked, ct));
+        var s = await PackingAsync(c, ct);
+        return new PackingViewDto(s.Items, [.. s.Ticked], weather.Climate(c.Departure), c.Nights, c.Days, await TickedByAsync(c, s, ct), s.Hidden);
     }
+
+    public async Task<PackingViewDto> PackingAsync(UserRecord actor, string? number, CancellationToken ct) =>
+        await PackingViewAsync(await LoadAsync(actor, number, false, ct), ct);
 
     public async Task<PackingViewDto> TickPackingAsync(UserRecord actor, string? number, string? id, TickRequest? body, CancellationToken ct)
     {
         var c = await LoadAsync(actor, number, true, ct);
-        var (items, _) = await PackingAsync(c, ct);
-        if (id is null || items.All(i => i.Id != id)) throw ApiException.Invalid("item");
-        await plan.SetTickAsync(c.Booking.BookingId, "packing", id, body?.Done ?? true, c.Now, actor.Id, ct);
-        var (after, ticked) = await PackingAsync(c, ct);
-        return new PackingViewDto(after, [.. ticked], weather.Climate(c.Departure), c.Nights, c.Days, await TickedByAsync(c, ticked, ct));
+        var s = await PackingAsync(c, ct);
+        if (id is null || s.Items.All(i => i.Id != id)) throw ApiException.Invalid("item");
+        var done = body?.Done ?? true;
+        var own = (await plan.ListPackingEditsAsync(c.Booking.BookingId, ct)).FirstOrDefault(e => e.ItemId == id && e.Kind == "own");
+        if (own is not null) await plan.SavePackingEditAsync(c.Booking.BookingId, own with { Done = done, TickedBy = actor.Id }, c.Now, ct);
+        else await plan.SetTickAsync(c.Booking.BookingId, "packing", id, done, c.Now, actor.Id, ct);
+        return await PackingViewAsync(c, ct);
+    }
+
+    /// <summary>Adds an item of the guest's own to the packing list (at most 20, 60 characters each, no duplicates of the same words).</summary>
+    public async Task<PackingViewDto> AddOwnPackingAsync(UserRecord actor, string? number, OwnPackRequest? body, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var label = string.Join(' ', (body?.Label ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (label.Length == 0 || label.Length > OwnPackLabelMax || label.Any(char.IsControl)) throw ApiException.Invalid("label");
+        var mine = (await plan.ListPackingEditsAsync(c.Booking.BookingId, ct)).Where(e => e.Kind == "own").ToList();
+        if (mine.Count >= OwnPackMax) throw ApiException.Conflict("tooMany");
+        if (mine.Any(e => string.Equals(e.Label, label, StringComparison.OrdinalIgnoreCase))) throw ApiException.Conflict("duplicate");
+        await plan.SavePackingEditAsync(c.Booking.BookingId, new("c" + Guid.NewGuid().ToString("N")[..12], "own", label, false, null), c.Now, ct);
+        return await PackingViewAsync(c, ct);
+    }
+
+    /// <summary>Removes an item the guest added. A suggested item is hidden instead (<see cref="HidePackingAsync"/>).</summary>
+    public async Task<PackingViewDto> RemoveOwnPackingAsync(UserRecord actor, string? number, string? id, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var own = (await plan.ListPackingEditsAsync(c.Booking.BookingId, ct)).FirstOrDefault(e => e.ItemId == id && e.Kind == "own");
+        if (own is null) throw ApiException.Invalid("item");
+        await plan.DeletePackingEditAsync(c.Booking.BookingId, own.ItemId, ct);
+        return await PackingViewAsync(c, ct);
+    }
+
+    /// <summary>Hides a suggested item the guest does not need, or brings it back. The documents cannot be hidden.</summary>
+    public async Task<PackingViewDto> HidePackingAsync(UserRecord actor, string? number, string? id, TickRequest? body, CancellationToken ct)
+    {
+        var c = await LoadAsync(actor, number, true, ct);
+        var s = await PackingAsync(c, ct);
+        var item = s.Items.Concat(s.Hidden).FirstOrDefault(i => i.Id == id && i.Group is not ("mine" or "documents")) ?? throw ApiException.Invalid("item");
+        if (body?.Done ?? true) await plan.SavePackingEditAsync(c.Booking.BookingId, new(item.Id, "hidden", null, false, null), c.Now, ct);
+        else await plan.DeletePackingEditAsync(c.Booking.BookingId, item.Id, ct);
+        return await PackingViewAsync(c, ct);
     }
 
     /// <summary>The first name of whoever on this booking ticked each ticked item; items ticked before the list recorded it, or by someone no longer on the booking, have none.</summary>
-    private async Task<Dictionary<string, string>> TickedByAsync(Ctx c, HashSet<string> ticked, CancellationToken ct)
+    private async Task<Dictionary<string, string>> TickedByAsync(Ctx c, PackState s, CancellationToken ct)
     {
         var by = await plan.GetTickersAsync(c.Booking.BookingId, "packing", ct);
+        foreach (var (k, v) in s.OwnTickers) by[k] = v;
         var names = new Dictionary<string, string>();
         foreach (var (item, user) in by)
-            if (ticked.Contains(item) && c.PersonByUser(user) is { } p) names[item] = PlanRules.FirstName(p.Name);
+            if (s.Ticked.Contains(item) && c.PersonByUser(user) is { } p) names[item] = PlanRules.FirstName(p.Name);
         return names;
     }
 }

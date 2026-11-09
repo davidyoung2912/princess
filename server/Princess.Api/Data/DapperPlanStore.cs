@@ -321,6 +321,33 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         return rows.ToDictionary(r => r.ItemId, r => r.TickedBy);
     }
 
+    // ---- The guest's own packing changes ----
+
+    public async Task<List<PackingEditRow>> ListPackingEditsAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<(string ItemId, string Kind, string? Label, bool Done, long? TickedBy)>(Sql.Cmd(
+            "SELECT ItemId, Kind, Label, Done, TickedBy FROM dbo.PackingEdits WHERE BookingId = @bookingId ORDER BY [At], ItemId", new { bookingId }, null, ct));
+        return [.. rows.Select(r => new PackingEditRow(r.ItemId, r.Kind, r.Label, r.Done, r.TickedBy))];
+    }
+
+    public async Task SavePackingEditAsync(long bookingId, PackingEditRow row, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.PackingEdits AS t
+            USING (SELECT @bookingId AS BookingId, @ItemId AS ItemId) AS s ON t.BookingId = s.BookingId AND t.ItemId = s.ItemId
+            WHEN MATCHED THEN UPDATE SET Kind = @Kind, Label = @Label, Done = @Done, TickedBy = @TickedBy, [At] = @at
+            WHEN NOT MATCHED THEN INSERT (BookingId, ItemId, Kind, Label, Done, TickedBy, [At]) VALUES (@bookingId, @ItemId, @Kind, @Label, @Done, @TickedBy, @at);
+            """, new { bookingId, row.ItemId, row.Kind, row.Label, row.Done, row.TickedBy, at }, null, ct));
+    }
+
+    public async Task DeletePackingEditAsync(long bookingId, string itemId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.PackingEdits WHERE BookingId = @bookingId AND ItemId = @itemId", new { bookingId, itemId }, null, ct));
+    }
+
     // ---- Travel ----
 
     public async Task<TravelRow?> GetTravelAsync(long bookingId, CancellationToken ct)

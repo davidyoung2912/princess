@@ -7,7 +7,7 @@ namespace Princess.Api.Services;
 /// Stanley's travel-day, port and onward-travel help (docs/stanley-gap-analysis-and-plan.md, phase 10) for the signed-in guest's own trip. The flight and traffic answers come from the provider interfaces
 /// (a real feed can replace the simulation with no change here); the port plan, phrases, pack, embark tour and entry sources come from authored reference data. Nothing is booked, sent or stored.
 /// </summary>
-public sealed class StanleyTravelService(IStanleyTrips trips, ITripStore tripStore, IFinishStore finish, IFlightStatusProvider flights, IRouteConditionsProvider routes, PlanService plan, IClock clock)
+public sealed class StanleyTravelService(IStanleyTrips trips, ITripStore tripStore, IFinishStore finish, IFlightStatusProvider flights, IRouteConditionsProvider routes, ITranslationProvider translator, IImageTextReader reader, PlanService plan, IClock clock)
 {
     private sealed record Ctx(StanleyTrip Trip, BookingRow Booking, Timeline Timeline, string ShipId);
 
@@ -19,6 +19,13 @@ public sealed class StanleyTravelService(IStanleyTrips trips, ITripStore tripSto
         return new(trip, booking, trip.Timeline, AboardPlans.ShipOfSailing(sailing));
     }
 
+    private async Task<TagGroup> GroupAsync(UserRecord user, Ctx c, CancellationToken ct)
+    {
+        var ent = await plan.PartyEntitlementsAsync(user, c.Booking, ct);
+        var priority = ent.TryGetValue(c.Booking.BookerUserId, out var e) && e.Perks.Contains("priorityDisembarkation");
+        return DisembarkRules.GroupFor($"{c.Booking.Number}|{c.Booking.SailingId}", priority);
+    }
+
     private static string Mobility(string? m) => StanleyPlannerRules.CleanMobility(m) ?? throw ApiException.Invalid("mobility");
 
     /// <summary>The saved onward flight rechecked against the flight status feed, with the walk-off choice the guest made.</summary>
@@ -28,9 +35,7 @@ public sealed class StanleyTravelService(IStanleyTrips trips, ITripStore tripSto
         var onward = await finish.GetOnwardAsync(c.Booking.BookingId, ct);
         var plan0 = onward is null ? new OnwardPlan("", "", "", "") : new OnwardPlan(onward.Mode, onward.FlightAt, onward.Flight, onward.Note);
         var choice = await finish.GetChoiceAsync(c.Booking.BookingId, ct);
-        var ent = await plan.PartyEntitlementsAsync(user, c.Booking, ct);
-        var priority = ent.TryGetValue(c.Booking.BookerUserId, out var e) && e.Perks.Contains("priorityDisembarkation");
-        var group = DisembarkRules.GroupFor($"{c.Booking.Number}|{c.Booking.SailingId}", priority);
+        var group = await GroupAsync(user, c, ct);
         FlightStatusDto? status = null;
         var number = FeedRules.NormalizeFlight(plan0.Flight);
         if (FeedRules.ValidFlightNumber(number))
@@ -68,7 +73,41 @@ public sealed class StanleyTravelService(IStanleyTrips trips, ITripStore tripSto
     {
         if (body is null || body.Query is { Length: > 200 }) throw ApiException.Invalid("badTravel");
         var c = await LoadAsync(user, body.SailingId, ct);
-        return StanleyTravelRules.Phrases(c.Timeline, body.Day, body.Query) ?? throw ApiException.Invalid("day");
+        return StanleyTravelRules.Phrases(c.Timeline, body.Day, body.Query, translator.Translate) ?? throw ApiException.Invalid("day");
+    }
+
+    private const int MaxImageChars = 2_800_000;
+
+    private static bool LooksLikeImage(byte[] b, string contentType) => contentType switch
+    {
+        "image/jpeg" => b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF,
+        "image/png" => b.Length > 4 && b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47,
+        "image/webp" => b.Length > 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P',
+        _ => false,
+    };
+
+    /// <summary>Reads a sign or menu from a photo the guest chose to send. Documents are refused. The photo is used for this call only: it is not stored, logged or kept.</summary>
+    public async Task<TravelReadingDto> ReadAsync(UserRecord user, TravelReadRequest? body, CancellationToken ct)
+    {
+        if (body?.Image is not { Length: > 0 } image || image.Length > MaxImageChars || body.ContentType is null) throw ApiException.Invalid("image");
+        var bytes = new byte[image.Length * 3 / 4 + 3];
+        if (!Convert.TryFromBase64String(image, bytes, out var written)) throw ApiException.Invalid("image");
+        bytes = bytes[..written];
+        if (!LooksLikeImage(bytes, body.ContentType)) throw ApiException.Invalid("image");
+        var c = await LoadAsync(user, body.SailingId, ct);
+        if (body.Day < 1 || body.Day > c.Timeline.Days.Count) throw ApiException.Invalid("day");
+        return StanleyTravelRules.Reading(reader.Read(bytes, body.ContentType, StanleyTravelRules.PortLanguage(c.Timeline, body.Day)));
+    }
+
+    /// <summary>Whether a train, ferry or flight at a typed time can be made from the guest's walk-off choice (or the one named) and way of getting there.</summary>
+    public async Task<TravelConnectionDto> ConnectionAsync(UserRecord user, TravelConnectionRequest? body, CancellationToken ct)
+    {
+        if (body is null) throw ApiException.Invalid("badTravel");
+        var c = await LoadAsync(user, body.SailingId, ct);
+        var choice = await finish.GetChoiceAsync(c.Booking.BookingId, ct);
+        var option = body.OffOption ?? (choice?.Option is { Length: > 0 } o && DisembarkRules.WalkOffIds.Contains(o) ? o : "tagged");
+        var group = await GroupAsync(user, c, ct);
+        return StanleyTravelRules.Connection(c.Timeline, body.Kind ?? "", body.DepartAt ?? "", body.Mode ?? "", option, group) ?? throw ApiException.Invalid("connection");
     }
 
     public async Task<TravelPortPackDto> PackAsync(UserRecord user, TravelPackRequest? body, CancellationToken ct)

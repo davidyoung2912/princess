@@ -1829,6 +1829,19 @@ END
 
 IF COL_LENGTH(N'dbo.PackingTicks', N'TickedBy') IS NULL ALTER TABLE dbo.PackingTicks ADD TickedBy BIGINT NULL;
 
+IF OBJECT_ID(N'dbo.PackingEdits', N'U') IS NULL
+BEGIN
+-- The guest's own changes to the packing list: an item they added (Kind own, with a Label and its own tick) or a suggested item they do not need (Kind hidden).
+CREATE TABLE dbo.PackingEdits (
+  BookingId BIGINT NOT NULL, ItemId NVARCHAR(40) NOT NULL, Kind NVARCHAR(8) NOT NULL, Label NVARCHAR(60) NULL,
+  Done BIT NOT NULL CONSTRAINT DF_PackingEdits_Done DEFAULT 0, TickedBy BIGINT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_PackingEdits_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_PackingEdits PRIMARY KEY (BookingId, ItemId),
+  CONSTRAINT CK_PackingEdits_Kind CHECK (Kind IN (N'own', N'hidden')),
+  CONSTRAINT FK_PackingEdits_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.PrepTicks', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.PrepTicks (

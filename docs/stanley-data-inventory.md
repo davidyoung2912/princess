@@ -46,3 +46,5 @@ Decided 2026-11-09 for phase 7. Stanley uses one provider, Anthropic, through th
 ## Travel-day help (phase 10)
 
 Nothing new is stored on the server. The flight, traffic, shore-plan, phrase, port-pack, embark-tour and entry answers are worked out from the guest's saved onward plan and walk-off choice, the provider interfaces and the authored port reference, and are not kept. The only copy is the offline port pack, which the device keeps through the saved-copy loader (the last good answer for that port day) so it opens with no signal. A phrase request the guest types (at most 200 characters) is used to find a reviewed phrase and is not logged or stored.
+
+Phase 10 follow-up: `dbo.PackingEdits` holds the guest's own packing changes per booking: items they added (label of at most 60 characters, and a tick with who ticked) and suggested items they hid. A photo sent for reading is held in memory for the one call and is never stored or logged; a phrase the guest types is used to look for a phrase and is not kept.

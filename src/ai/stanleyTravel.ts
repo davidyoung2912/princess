@@ -36,13 +36,23 @@ export interface TrafficReplan { traffic: string; sky: string; leaveEarlierMinut
 export interface ShoreStop { id: string; kind: string; title: string; start: string; end: string; mode: 'walk' | 'taxi'; travelMinutes: number; cost: 'free' | 'paid'; cents: number; opens: string; closes: string; why: string }
 export interface ReturnBrief { backBy: string; allAboard: string; bufferMinutes: number; clock: string; leaveLastStopBy: string; text: string }
 export interface ShorePlan { port: string; portName: string; day: number; clock: string; ashoreFrom: string; stops: ShoreStop[]; returnBrief: ReturnBrief; notes: string[]; complete: boolean }
-export interface Phrase { id: string; say: string; means: string; sounds: string; label: 'reviewed' | 'machine'; language: string }
+export interface Phrase { id: string; say: string; means: string; sounds: string; label: 'reviewed' | 'machine'; language: string; confidence: 'low' | 'medium' | 'high' | null }
 export interface PersonCard { text: string; language: string; label: string }
 export interface Phrases { port: string; language: string; phrases: Phrase[]; showPerson: PersonCard | null; note: string }
 export interface PortPack {
   version: string; port: string; portName: string; day: number; clock: string; allAboard: string | null; backBy: string | null; tender: boolean
   contacts: string[]; takeMeBack: PersonCard | null; phrases: Phrase[]; notes: string[]; laws: string[]; basis: string
 }
+export type Level = 'low' | 'medium' | 'high'
+export interface ReadLine { original: string; english: string; confidence: Level }
+export interface Reading { state: 'read' | 'unclear' | 'refused'; kind: string; lines: ReadLine[]; label: string; note: string; cautions: string[] }
+export const CONNECTION_KINDS = ['train', 'ferry', 'flight'] as const
+export type ConnectionKind = (typeof CONNECTION_KINDS)[number]
+export const WAYS_THERE = ['airportTransfer', 'rideshare', 'hotelShuttle', 'parking'] as const
+export const WAYS_OFF = ['tagged', 'selfAssist', 'earlyWalkOff'] as const
+export interface Connection { kind: string; departAt: string; clock: string; bufferMinutes: number; verdict: 'ok' | 'tight' | 'tooEarly'; spare: number; leaveBy: string; offAt: string; earliestDeparture: string; message: string; notes: string[] }
+/** The biggest photo sent, as base64 characters; the server refuses more. */
+export const MAX_PHOTO_BYTES = 1_500_000
 export interface EmbarkStep { placeId: string; name: string; deck: number; section: string; goal: Goal; why: string; walkFromPrevious: number; stepFree: boolean; note: string | null }
 export interface EmbarkTour { goals: Goal[]; steps: EmbarkStep[]; notes: string[] }
 export interface EntrySource { jurisdiction: string; authority: string; role: string; links: { label: string; url: string }[]; note: string }
@@ -98,7 +108,7 @@ export function normalizePort(raw: unknown): ShorePlan | null {
 
 const phrase = (p: unknown): Phrase[] => {
   const x = rec(p)
-  return typeof x.say === 'string' && typeof x.means === 'string' ? [{ id: str(x.id, 12), say: x.say.slice(0, 200), means: x.means.slice(0, 200), sounds: str(x.sounds, 200), label: x.label === 'reviewed' ? 'reviewed' : 'machine', language: str(x.language, 30) }] : []
+  return typeof x.say === 'string' && typeof x.means === 'string' ? [{ id: str(x.id, 12), say: x.say.slice(0, 200), means: x.means.slice(0, 200), sounds: str(x.sounds, 200), label: x.label === 'reviewed' ? 'reviewed' : 'machine', language: str(x.language, 30), confidence: x.confidence === 'low' || x.confidence === 'medium' || x.confidence === 'high' ? x.confidence : null }] : []
 }
 
 const card = (v: unknown): PersonCard | null => {
@@ -123,6 +133,26 @@ export function normalizePack(raw: unknown): PortPack | null {
     contacts: list(o.contacts, 6, 200), takeMeBack: card(o.takeMeBack), phrases: arr(o.phrases).flatMap(phrase).slice(0, 12), notes: list(o.notes, 12, 300), laws: list(o.laws, 8, 300), basis: str(o.basis, 300),
   }
 }
+
+const level = (v: unknown): Level => (v === 'high' || v === 'medium' ? v : 'low')
+
+export function normalizeReading(raw: unknown): Reading | null {
+  const o = rec(raw)
+  if (o.state !== 'read' && o.state !== 'unclear' && o.state !== 'refused') return null
+  // A refused or unclear reading never shows lines, even if the answer carried some.
+  const lines = o.state === 'read' ? arr(o.lines).flatMap((l): ReadLine[] => { const x = rec(l); return typeof x.original === 'string' ? [{ original: x.original.slice(0, 120), english: str(x.english, 120), confidence: level(x.confidence) }] : [] }).slice(0, 12) : []
+  return { state: o.state, kind: str(o.kind, 12), lines, label: str(o.label, 80), note: str(o.note, 300), cautions: list(o.cautions, 4, 200) }
+}
+
+export function normalizeConnection(raw: unknown): Connection | null {
+  const o = rec(raw)
+  if (o.verdict !== 'ok' && o.verdict !== 'tight' && o.verdict !== 'tooEarly') return null
+  return { kind: str(o.kind, 8), departAt: str(o.departAt, 5), clock: str(o.clock, 20), bufferMinutes: num(o.bufferMinutes), verdict: o.verdict, spare: num(o.spare), leaveBy: str(o.leaveBy, 5), offAt: str(o.offAt, 5), earliestDeparture: str(o.earliestDeparture, 5), message: str(o.message, 400), notes: list(o.notes, 4, 300) }
+}
+
+/** Whether a chosen photo may be sent: an image type the server reads, and small enough. */
+export const photoProblem = (file: { type: string; size: number }): 'type' | 'size' | null =>
+  !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ? 'type' : file.size > MAX_PHOTO_BYTES ? 'size' : null
 
 export function normalizeEmbark(raw: unknown): EmbarkTour | null {
   const o = rec(raw)

@@ -3,8 +3,9 @@ import type { NeedId } from './account'
 import { elegantCount, medicationSupplyDays, packCounts } from './nightsRules'
 
 /** The packing list generator (MNG-08): built from the itinerary, the season, the dress codes, the ship and what the party has booked. */
-export type PackGroup = 'documents' | 'clothes' | 'beach' | 'health' | 'tech' | 'kids'
-export const PACK_GROUPS: readonly PackGroup[] = ['documents', 'clothes', 'beach', 'health', 'tech', 'kids']
+/** `mine` is the guest's own additions. */
+export type PackGroup = 'documents' | 'clothes' | 'beach' | 'health' | 'tech' | 'kids' | 'mine'
+export const PACK_GROUPS: readonly PackGroup[] = ['documents', 'clothes', 'beach', 'health', 'tech', 'kids', 'mine']
 
 export interface PackItem {
   id: string

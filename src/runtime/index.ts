@@ -139,6 +139,8 @@ export const stanleyTravel = {
   port: (body: { sailingId?: string; day: number; interests: string[]; mode: string; minutes: number; distance: string; mobility: string }) => http.post<unknown>('/me/stanley/travel/port', body),
   phrases: (body: { sailingId?: string; day: number; query?: string }) => http.post<unknown>('/me/stanley/travel/phrases', body),
   pack: (body: { sailingId?: string; day: number }) => http.post<unknown>('/me/stanley/travel/port-pack', body),
+  read: (body: { sailingId?: string; day: number; image: string; contentType: string }) => http.post<unknown>('/me/stanley/travel/read', body),
+  connection: (body: { sailingId?: string; kind: string; departAt: string; mode: string; offOption?: string }) => http.post<unknown>('/me/stanley/travel/connection', body),
   embark: (body: { sailingId?: string; goals: string[]; mobility: string }) => http.post<unknown>('/me/stanley/travel/embark-tour', body),
   entry: (sailingId?: string) => http.get<unknown>(`/me/stanley/travel/entry${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),
 }

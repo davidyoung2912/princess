@@ -128,6 +128,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'PurchaseGuests'),
   (N'dbo', N'ChecklistTicks'),
   (N'dbo', N'PackingTicks'),
+  (N'dbo', N'PackingEdits'),
   (N'dbo', N'PrepTicks'),
   (N'dbo', N'ReadyTicks'),
   (N'dbo', N'NightTicks'),

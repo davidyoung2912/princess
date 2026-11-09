@@ -273,7 +273,16 @@ export function buildTables(): Table[] {
   const always = new Set(buildPackingList(nothing).map((i) => i.id))
   // The rain jacket only appears in the wetter months, so the reference (March) sailing never lists it; its tick row needs the item to exist.
   const rainy = buildPackingList({ ...everything, departure: '2026-11-08' }).find((i) => i.id === 'rain')
-  const packing = [...buildPackingList(everything), ...(rainy ? [rainy] : [])]
+  // Stanley's itinerary and forecast items (the server adds them to the list, StanleyTravelRules.PackingExtras), so their tick rows need the items to exist.
+  const forecast = [
+    { id: 'fcRain', group: 'clothes', label: 'A compact rain jacket in your day bag', why: 'Rain is expected at a port on your itinerary.' },
+    { id: 'fcSun', group: 'beach', label: 'A UV-protective shirt or cover-up', why: 'The sun index is very high at a port on your itinerary.' },
+    { id: 'fcHeat', group: 'health', label: 'A refillable water bottle and a cooling towel', why: 'Highs of 88 degrees F or more are expected at a port on your itinerary.' },
+    { id: 'fcCool', group: 'clothes', label: 'A warm layer for the day ashore', why: 'It is likely to be 60 degrees F or cooler at a port on your itinerary.' },
+    { id: 'fcTender', group: 'beach', label: 'Shoes with grip for the tender step', why: 'The ship tenders at a port on your itinerary.' },
+    { id: 'fcSwimTour', group: 'beach', label: 'Swimwear under your clothes on tour days', why: 'You have a water or beach tour booked.' },
+  ]
+  const packing = [...buildPackingList(everything), ...(rainy ? [rainy] : []), ...forecast]
   add('09-lists', 'ref.PackingItems', ['Id'],
     [t('Id', 'str'), t('Label', 'str'), t('RuleJson', 'json')],
     packing.map((i) => [i.id, i.label, { group: i.group, why: i.why, always: always.has(i.id) }]))

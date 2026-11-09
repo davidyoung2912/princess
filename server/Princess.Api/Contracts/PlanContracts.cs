@@ -72,7 +72,9 @@ public sealed record ProgressDto(int Done, int Total);
 public sealed record TickRequest(bool Done);
 
 /// <summary><c>TickedBy</c> maps a ticked item to the first name of the guest who ticked it (only for items ticked by someone on this booking).</summary>
-public sealed record PackingViewDto(List<PackItem> Items, List<string> Ticked, Weather Weather, int Nights, int DaysToDeparture, Dictionary<string, string> TickedBy);
+public sealed record PackingViewDto(List<PackItem> Items, List<string> Ticked, Weather Weather, int Nights, int DaysToDeparture, Dictionary<string, string> TickedBy, List<PackItem>? Hidden = null);
+
+public sealed record OwnPackRequest(string? Label);
 
 public sealed record TravelViewDto(TravelPlan Plan, List<ArrivalWindow> Windows, bool Priority, string Suggested, bool CanEdit);
 

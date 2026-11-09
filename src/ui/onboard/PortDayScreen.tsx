@@ -8,7 +8,7 @@ import { PORTS } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { api } from '../../runtime'
 import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
-import { StanleyShoreCard } from '../ai/StanleyTravel'
+import { StanleyReadCard, StanleyShoreCard } from '../ai/StanleyTravel'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -62,6 +62,7 @@ function Body({ v }: { v: PortDayView }) {
       <SunNudge day={v.day} />
       <PortPilot v={v} />
       {me && !v.skipped && <StanleyShoreCard sailingId={sailing.id} day={v.day.day} />}
+      {me && !v.skipped && <StanleyReadCard sailingId={sailing.id} day={v.day.day} />}
       <PortParty v={v} />
       {v.tender && <Tender v={v} tender={v.tender} />}
       {v.day.tender && !v.skipped && <TenderOutlook port={v.day.port} date={v.day.date} headingId="tender-outlook-h" />}

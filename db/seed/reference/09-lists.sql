@@ -64,7 +64,7 @@ WHEN MATCHED THEN UPDATE SET t.[Phase] = s.[Phase], t.[DueDaysBefore] = s.[DueDa
 WHEN NOT MATCHED THEN INSERT ([Id], [Phase], [DueDaysBefore], [Label]) VALUES (s.[Id], s.[Phase], s.[DueDaysBefore], s.[Label]);
 GO
 
--- ref.PackingItems: 29 rows
+-- ref.PackingItems: 35 rows
 MERGE ref.PackingItems AS t
 USING (VALUES
   (N'passport', N'Passports for everyone', N'{"group":"documents","why":"Needed to board and to come home. Keep them in your hand luggage.","always":true}'),
@@ -95,7 +95,13 @@ USING (VALUES
   (N'swimDiapers', N'Swim nappies and baby supplies', N'{"group":"kids","why":"The pools require swim nappies for babies and toddlers.","always":false}'),
   (N'games', N'Cards, small games and books', N'{"group":"kids","why":"For quiet time in the cabin and long days at sea.","always":false}'),
   (N'teenClothes', N'Clothes for the Underground and the pool deck', N'{"group":"kids","why":"Teen club nights have their own dress ideas.","always":false}'),
-  (N'rain', N'A light rain jacket or compact umbrella', N'{"group":"clothes","why":"Showers are possible at this time of year.","always":false}')
+  (N'rain', N'A light rain jacket or compact umbrella', N'{"group":"clothes","why":"Showers are possible at this time of year.","always":false}'),
+  (N'fcRain', N'A compact rain jacket in your day bag', N'{"group":"clothes","why":"Rain is expected at a port on your itinerary.","always":false}'),
+  (N'fcSun', N'A UV-protective shirt or cover-up', N'{"group":"beach","why":"The sun index is very high at a port on your itinerary.","always":false}'),
+  (N'fcHeat', N'A refillable water bottle and a cooling towel', N'{"group":"health","why":"Highs of 88 degrees F or more are expected at a port on your itinerary.","always":false}'),
+  (N'fcCool', N'A warm layer for the day ashore', N'{"group":"clothes","why":"It is likely to be 60 degrees F or cooler at a port on your itinerary.","always":false}'),
+  (N'fcTender', N'Shoes with grip for the tender step', N'{"group":"beach","why":"The ship tenders at a port on your itinerary.","always":false}'),
+  (N'fcSwimTour', N'Swimwear under your clothes on tour days', N'{"group":"beach","why":"You have a water or beach tour booked.","always":false}')
 ) AS s ([Id], [Label], [RuleJson])
 ON t.[Id] = s.[Id]
 WHEN MATCHED THEN UPDATE SET t.[Label] = s.[Label], t.[RuleJson] = s.[RuleJson]

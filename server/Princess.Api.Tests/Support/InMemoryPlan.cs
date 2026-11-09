@@ -153,6 +153,23 @@ public sealed class InMemoryPlanStore(InMemoryJourney world) : IPlanStore
     public Task<Dictionary<string, long>> GetTickersAsync(long bookingId, string list, CancellationToken ct) =>
         Task.FromResult(Tickers.Where(t => t.Key.Item1 == bookingId && t.Key.Item2 == list && Ticks.GetValueOrDefault(t.Key)).ToDictionary(t => t.Key.Item3, t => t.Value));
 
+    public Dictionary<(long, string), (PackingEditRow Row, DateTime At)> PackingEdits { get; } = [];
+
+    public Task<List<PackingEditRow>> ListPackingEditsAsync(long bookingId, CancellationToken ct) =>
+        Task.FromResult(PackingEdits.Where(e => e.Key.Item1 == bookingId).OrderBy(e => e.Value.At).Select(e => e.Value.Row).ToList());
+
+    public Task SavePackingEditAsync(long bookingId, PackingEditRow row, DateTime at, CancellationToken ct)
+    {
+        PackingEdits[(bookingId, row.ItemId)] = (row, at);
+        return Task.CompletedTask;
+    }
+
+    public Task DeletePackingEditAsync(long bookingId, string itemId, CancellationToken ct)
+    {
+        PackingEdits.Remove((bookingId, itemId));
+        return Task.CompletedTask;
+    }
+
     public Task<TravelRow?> GetTravelAsync(long bookingId, CancellationToken ct) => Task.FromResult(Travel.GetValueOrDefault(bookingId));
 
     public Task SaveTravelAsync(long bookingId, TravelRow plan, CancellationToken ct)

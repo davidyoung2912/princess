@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import {
-  BUDGETS, CROWDS, GOALS, INTERESTS, flightNeedsAttention, isReviewed, normalizeEmbark, normalizeEntry, normalizeFlight, normalizePack, normalizePhrases, normalizePort, normalizeTraffic, packText, planIsSafe,
-  type Crowd, type EmbarkTour, type EntryInfo, type FlightReplan, type Goal, type Interest, type Phrases, type PortPack, type ShorePlan, type TrafficReplan, type TravelMode,
+  BUDGETS, CONNECTION_KINDS, CROWDS, GOALS, INTERESTS, WAYS_OFF, WAYS_THERE, flightNeedsAttention, isReviewed, normalizeConnection, normalizeReading, photoProblem, normalizeEmbark, normalizeEntry, normalizeFlight, normalizePack, normalizePhrases, normalizePort, normalizeTraffic, packText, planIsSafe,
+  type ConnectionKind, type Connection, type Reading, type Crowd, type EmbarkTour, type EntryInfo, type FlightReplan, type Goal, type Interest, type Phrases, type PortPack, type ShorePlan, type TrafficReplan, type TravelMode,
 } from '../../ai/stanleyTravel'
 import type { Mobility } from '../../domain/day'
 import { formatMoney } from '../../domain/money'
@@ -205,7 +205,7 @@ export function StanleyShoreCard({ sailingId, day }: { sailingId: string; day: n
             <p className="muted">{phrases.note}</p>
             <ul>
               {phrases.phrases.map((p) => (
-                <li key={p.id}><strong lang={p.language === 'Spanish' ? 'es' : undefined}>{p.say}</strong> {p.means} <small>({p.sounds})</small> <span className="tag">{isReviewed(p) ? t('tr10.phrase.reviewed') : t('tr10.phrase.machine')}</span></li>
+                <li key={p.id}><strong lang={p.language === 'Spanish' ? 'es' : undefined}>{p.say}</strong> {p.means} <small>({p.sounds})</small> <span className="tag">{isReviewed(p) ? t('tr10.phrase.reviewed') : t('tr10.phrase.machine')}</span>{!isReviewed(p) && p.confidence && <small> {t('tr10.confidence', { level: t(`tr10.level.${p.confidence}` as StringKey) })}</small>}</li>
               ))}
             </ul>
             {phrases.showPerson && (
@@ -298,6 +298,112 @@ export function StanleyEntrySources({ sailingId }: { sailingId: string }) {
               ))}
             </ul>
             <p className="muted">{t('tr10.entry.reviewed', { date: info.reviewedOn })}</p>
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+const toBase64 = async (file: File): Promise<string> => {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(binary)
+}
+
+/**
+ * Read a sign or a menu from a photo (phase 10, guest-initiated). The guest chooses the photo; documents are refused by the server and nothing is kept. Every line shows how sure the reader is, and low lines are
+ * marked as guesses.
+ */
+export function StanleyReadCard({ sailingId, day }: { sailingId: string; day: number }) {
+  const id = useId()
+  const [result, setResult] = useState<Reading | null>(null)
+  const [problem, setProblem] = useState<'' | 'type' | 'size' | 'failed'>('')
+  const [busy, setBusy] = useState(false)
+  const choose = async (file: File | undefined) => {
+    if (!file) return
+    setResult(null); setProblem('')
+    const bad = photoProblem(file)
+    if (bad) { setProblem(bad); return }
+    setBusy(true)
+    try {
+      const r = normalizeReading(await stanleyTravel.read({ sailingId, day, image: await toBase64(file), contentType: file.type }))
+      setResult(r); if (!r) setProblem('failed')
+    } catch { setProblem('failed') } finally { setBusy(false) }
+  }
+  return (
+    <Card labelledBy={`${id}-h`}>
+      <h2 id={`${id}-h`} className="card__title">{th('tr10.read.title')}</h2>
+      <p>{t('tr10.read.intro')}</p>
+      <div className="field">
+        <label htmlFor={`${id}-f`}>{t('tr10.read.choose')}</label>
+        <input id={`${id}-f`} className="field__input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={(e) => { void choose(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+      <div role="status">
+        {busy && <p className="muted">{t('tr10.read.reading')}</p>}
+        {problem && <p>{t(`tr10.read.problem.${problem}` as StringKey)}</p>}
+        {result && (
+          <>
+            <p className="muted">{result.label}</p>
+            <p>{result.note}</p>
+            {result.lines.length > 0 && (
+              <table className="compare-table">
+                <caption className="visually-hidden">{t('tr10.read.title')}</caption>
+                <thead><tr><th scope="col">{t('tr10.read.original')}</th><th scope="col">{t('tr10.read.english')}</th><th scope="col">{t('tr10.read.sure')}</th></tr></thead>
+                <tbody>{result.lines.map((l, i) => <tr key={i}><td>{l.original}</td><td>{l.english}</td><td>{t(`tr10.level.${l.confidence}` as StringKey)}</td></tr>)}</tbody>
+              </table>
+            )}
+            <ul>{result.cautions.map((c) => <li key={c}>{c}</li>)}</ul>
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+/** A train, a ferry or a flight after the ship (phase 10): can it be made from the way off you chose and the way there? */
+export function StanleyConnectionCard({ sailingId }: { sailingId: string }) {
+  const id = useId()
+  const [kind, setKind] = useState<ConnectionKind>('train')
+  const [departAt, setDepartAt] = useState('')
+  const [mode, setMode] = useState<string>('airportTransfer')
+  const [off, setOff] = useState('')
+  const [result, setResult] = useState<Connection | null>(null)
+  const [failed, setFailed] = useState(false)
+  const go = async () => {
+    setFailed(false)
+    try { const r = normalizeConnection(await stanleyTravel.connection({ sailingId, kind, departAt, mode, offOption: off || undefined })); setResult(r); setFailed(r === null) } catch { setFailed(true) }
+  }
+  return (
+    <Card labelledBy={`${id}-h`}>
+      <h2 id={`${id}-h`} className="card__title">{th('tr10.conn.title')}</h2>
+      <p>{t('tr10.conn.intro')}</p>
+      <div className="field">
+        <label htmlFor={`${id}-k`}>{t('tr10.conn.kind')}</label>
+        <select id={`${id}-k`} className="field__input" value={kind} onChange={(e) => setKind(e.target.value as ConnectionKind)}>
+          {CONNECTION_KINDS.map((k) => <option key={k} value={k}>{t(`tr10.conn.kind.${k}` as StringKey)}</option>)}
+        </select>
+        <label htmlFor={`${id}-t`}>{t('tr10.conn.at')}</label>
+        <input id={`${id}-t`} className="field__input" type="time" value={departAt} onChange={(e) => setDepartAt(e.target.value)} />
+        <label htmlFor={`${id}-m`}>{t('tr10.conn.mode')}</label>
+        <select id={`${id}-m`} className="field__input" value={mode} onChange={(e) => setMode(e.target.value)}>
+          {WAYS_THERE.map((m) => <option key={m} value={m}>{t(`onw.mode.${m}` as StringKey)}</option>)}
+        </select>
+        <label htmlFor={`${id}-o`}>{t('tr10.conn.off')}</label>
+        <select id={`${id}-o`} className="field__input" value={off} onChange={(e) => setOff(e.target.value)}>
+          <option value="">{t('tr10.conn.off.mine')}</option>
+          {WAYS_OFF.map((o) => <option key={o} value={o}>{t(`tr10.conn.off.${o}` as StringKey)}</option>)}
+        </select>
+      </div>
+      <Button variant="secondary" onClick={() => void go()} disabled={!departAt}>{t('tr10.conn.go')}</Button>
+      <div role="status">
+        {failed && <p>{t('tr10.failed')}</p>}
+        {result && (
+          <>
+            <p className={result.verdict === 'ok' ? 'tag tag--good' : 'tag tag--warn'}>{t(`tr10.conn.verdict.${result.verdict}` as StringKey)}</p>
+            <p>{result.message}</p>
+            <ul>{result.notes.map((n) => <li key={n}>{n}</li>)}</ul>
           </>
         )}
       </div>

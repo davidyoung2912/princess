@@ -19,6 +19,10 @@ export function PackingScreen() {
   const list = useMine(() => api.plan.packing.get())
   const tick = useAction(async (id: string, done: boolean) => { await api.plan.packing.tick(id, done); list.retry() })
   const [note, setNote] = useState('')
+  const [own, setOwn] = useState('')
+  const add = useAction(async (label: string) => { await api.plan.packing.add(label); setOwn(''); list.retry() })
+  const remove = useAction(async (id: string) => { await api.plan.packing.remove(id); list.retry() })
+  const hide = useAction(async (id: string, hidden: boolean) => { await api.plan.packing.hide(id, hidden); list.retry() })
 
   return (
     <div className="page">
@@ -49,7 +53,15 @@ export function PackingScreen() {
                 <Button variant="tertiary" onClick={() => window.print()}><Printer aria-hidden="true" /> {t('pack.print')}</Button>
               </div>
               <p className="muted" role="status">{note}</p>
-              <PlanError error={tick.error} />
+              <PlanError error={tick.error ?? remove.error ?? hide.error} />
+              <form onSubmit={(e) => { e.preventDefault(); if (own.trim()) void add.run(own) }}>
+                <div className="field">
+                  <label htmlFor="pack-own">{t('pack.add.label')}</label>
+                  <input id="pack-own" className="field__input" maxLength={60} value={own} onChange={(e) => setOwn(e.target.value)} />
+                </div>
+                <Button type="submit" variant="secondary" disabled={add.busy || !own.trim()}>{t('pack.add.go')}</Button>
+                {add.error && <p role="alert">{t('pack.add.failed')}</p>}
+              </form>
               {PACK_GROUPS.map((g) => {
                 const items = p.items.filter((i) => i.group === g)
                 if (items.length === 0) return null
@@ -60,11 +72,25 @@ export function PackingScreen() {
                       <div key={i.id} className="check-row">
                         <input type="checkbox" id={`p-${i.id}`} checked={p.ticked.includes(i.id)} disabled={tick.busy} onChange={() => void tick.run(i.id, !p.ticked.includes(i.id))} />
                         <div className="check-row__text"><label htmlFor={`p-${i.id}`}><strong>{i.label}</strong></label><small>{i.why}</small>{p.tickedBy?.[i.id] && p.ticked.includes(i.id) && <small className="muted">{t('dl5.pack.by', { name: p.tickedBy[i.id] })}</small>}</div>
+                        {i.group === 'mine'
+                          ? <Button variant="tertiary" disabled={remove.busy} onClick={() => void remove.run(i.id)}>{t('pack.remove', { item: i.label })}</Button>
+                          : i.group !== 'documents' && <Button variant="tertiary" disabled={hide.busy} onClick={() => void hide.run(i.id, true)}>{t('pack.hide', { item: i.label })}</Button>}
                       </div>
                     ))}
                   </section>
                 )
               })}
+              {p.hidden && p.hidden.length > 0 && (
+                <section aria-labelledby="pg-hidden">
+                  <h2 id="pg-hidden">{th('pack.hidden')}</h2>
+                  {p.hidden.map((i) => (
+                    <div key={i.id} className="check-row">
+                      <div className="check-row__text"><strong>{i.label}</strong></div>
+                      <Button variant="tertiary" disabled={hide.busy} onClick={() => void hide.run(i.id, false)}>{t('pack.unhide', { item: i.label })}</Button>
+                    </div>
+                  ))}
+                </section>
+              )}
               <p className="muted">{t('pack.note', { nights: p.nights })}</p>
             </>
           )

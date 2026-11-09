@@ -31,6 +31,8 @@ public static class ProviderRegistration
         "SmsSender" => "Sms",
         "PrintProvider" => "Print",
         "WalletPassIssuer" => "Wallet",
+        "TranslationProvider" => "Translation",
+        "ImageTextReader" => "ImageText",
         _ => name,
     };
 
@@ -62,6 +64,8 @@ public static class ProviderRegistration
         S<IPrintProvider, SimPrintProvider>(),
         S<IWalletPassIssuer, SimWalletPassIssuer>(),
         S<IServiceStatus, SimServiceStatus>(),
+        S<ITranslationProvider, SimTranslationProvider>(),
+        S<IImageTextReader, SimImageTextReader>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)

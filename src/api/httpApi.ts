@@ -464,6 +464,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       packing: {
         get: () => inBooking('/packing'),
         tick: (id, done) => inTrip('put', `/packing/${seg(id)}`, { done }),
+        add: (label) => inTrip('post', '/packing', { label }),
+        remove: (id) => inTrip('delete', `/packing/${seg(id)}`),
+        hide: (id, hidden) => inTrip('put', `/packing/${seg(id)}/hidden`, { done: hidden }),
       },
       travel: {
         get: () => inBooking('/travel'),

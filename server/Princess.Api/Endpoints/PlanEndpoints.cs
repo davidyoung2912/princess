@@ -99,6 +99,15 @@ public static class PlanEndpoints
         plan.MapPut("/packing/{id}", async (string number, string id, TickRequest body, ICurrentUser me, PlanService svc, CancellationToken ct) =>
                 Results.Ok(await svc.TickPackingAsync(await me.LoadAsync(ct), number, id, body, ct)))
             .WithTags("Plan: lists").WithSummary("Ticks or unticks a packing item.");
+        plan.MapPost("/packing", async (string number, OwnPackRequest body, ICurrentUser me, PlanService svc, CancellationToken ct) =>
+                Results.Ok(await svc.AddOwnPackingAsync(await me.LoadAsync(ct), number, body, ct)))
+            .WithTags("Plan: lists").WithSummary("Adds an item of the guest's own to the packing list (group mine; at most 20 of up to 60 characters). 400 label, 409 tooMany or duplicate. Answers the list.");
+        plan.MapDelete("/packing/{id}", async (string number, string id, ICurrentUser me, PlanService svc, CancellationToken ct) =>
+                Results.Ok(await svc.RemoveOwnPackingAsync(await me.LoadAsync(ct), number, id, ct)))
+            .WithTags("Plan: lists").WithSummary("Removes an item the guest added. 400 item for a suggested item (hide it instead). Answers the list.");
+        plan.MapPut("/packing/{id}/hidden", async (string number, string id, TickRequest body, ICurrentUser me, PlanService svc, CancellationToken ct) =>
+                Results.Ok(await svc.HidePackingAsync(await me.LoadAsync(ct), number, id, body, ct)))
+            .WithTags("Plan: lists").WithSummary("Hides a suggested packing item the guest does not need (done true) or brings it back (done false); hidden items come back as hidden[]. The documents cannot be hidden (400 item).");
         plan.MapGet("/travel", async (string number, ICurrentUser me, PlanService svc, CancellationToken ct) =>
                 Results.Ok(await svc.TravelAsync(await me.LoadAsync(ct), number, ct)))
             .WithTags("Plan: lists").WithSummary("The arrival plan with the windows open to this booking.");

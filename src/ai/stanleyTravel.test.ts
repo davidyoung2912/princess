@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  flightNeedsAttention, isReviewed, minutesBetween, normalizeEmbark, normalizeEntry, normalizeFlight, normalizePack, normalizePhrases, normalizePort, normalizeTraffic, packText, planIsSafe, safeLink,
+  flightNeedsAttention, isReviewed, minutesBetween, normalizeConnection, normalizeReading, photoProblem, normalizeEmbark, normalizeEntry, normalizeFlight, normalizePack, normalizePhrases, normalizePort, normalizeTraffic, packText, planIsSafe, safeLink,
 } from './stanleyTravel'
 
 describe('flight and traffic', () => {
@@ -53,6 +53,29 @@ describe('phrases', () => {
   it('keeps the show-a-person card', () => {
     const p = normalizePhrases({ port: 'x', phrases: [], showPerson: { text: 'Help me', language: 'English', label: 'Not translated' } })!
     expect(p.showPerson?.label).toBe('Not translated')
+  })
+})
+
+describe('machine phrases, photo reading and connections', () => {
+  it('keeps a machine phrase marked machine with its confidence', () => {
+    const p = normalizePhrases({ port: 'x', phrases: [{ id: 'm0', say: '¿Dónde está el muelle?', means: 'where is the pier', label: 'machine', confidence: 'medium' }, { say: 'a', means: 'b', label: 'reviewed', confidence: 'bogus' }], showPerson: null })!
+    expect(p.phrases.map((x) => [isReviewed(x), x.confidence])).toEqual([[false, 'medium'], [true, null]])
+  })
+  it('never shows lines for a refused or unclear reading', () => {
+    const lines = [{ original: 'PASSPORT', english: 'PASSPORT', confidence: 'high' }]
+    expect(normalizeReading({ state: 'refused', lines })!.lines).toEqual([])
+    expect(normalizeReading({ state: 'unclear', lines })!.lines).toEqual([])
+    expect(normalizeReading({ state: 'read', lines: [{ original: 'Salida', english: 'Exit', confidence: 'weird' }] })!.lines[0].confidence).toBe('low')
+    expect(normalizeReading({ state: 'nope' })).toBeNull()
+  })
+  it('checks a photo before it is sent', () => {
+    expect(photoProblem({ type: 'image/jpeg', size: 1000 })).toBeNull()
+    expect(photoProblem({ type: 'application/pdf', size: 1000 })).toBe('type')
+    expect(photoProblem({ type: 'image/png', size: 5_000_000 })).toBe('size')
+  })
+  it('reads a connection and rejects an unknown verdict', () => {
+    expect(normalizeConnection({ verdict: 'tooEarly', spare: -20, earliestDeparture: '12:00' })!.earliestDeparture).toBe('12:00')
+    expect(normalizeConnection({ verdict: 'maybe' })).toBeNull()
   })
 })
 

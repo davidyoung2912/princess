@@ -84,6 +84,9 @@ public sealed record NewPurchase(string Kind, string ItemId, IReadOnlyList<long>
 public sealed record TourChange(long TourId, IReadOnlyList<long> GuestIds, long TotalCents, long CreditCents, string Status, long FeeCents, long RefundCents, DateTime At);
 
 /// <summary>Phase 8 store: excursions, dining, packages, ticks, travel plan and assistance. A booking is always an internal id; the service has already checked who may see it.</summary>
+/// <summary>One of the guest's own packing changes: <see cref="Kind"/> is own (an item they added, with a label and a tick) or hidden (a suggested item they do not need).</summary>
+public sealed record PackingEditRow(string ItemId, string Kind, string? Label, bool Done, long? TickedBy);
+
 public interface IPlanStore
 {
     // Excursions
@@ -121,6 +124,11 @@ public interface IPlanStore
     Task SetTickAsync(long bookingId, string list, string itemId, bool done, DateTime at, long? by, CancellationToken ct);
     /// <summary>Who last ticked each ticked item (user id), for items ticked since the list began to record it.</summary>
     Task<Dictionary<string, long>> GetTickersAsync(long bookingId, string list, CancellationToken ct);
+
+    // The guest's own packing changes: items they added (kind own) and suggested items they hid (kind hidden)
+    Task<List<PackingEditRow>> ListPackingEditsAsync(long bookingId, CancellationToken ct);
+    Task SavePackingEditAsync(long bookingId, PackingEditRow row, DateTime at, CancellationToken ct);
+    Task DeletePackingEditAsync(long bookingId, string itemId, CancellationToken ct);
 
     // Travel
     Task<TravelRow?> GetTravelAsync(long bookingId, CancellationToken ct);

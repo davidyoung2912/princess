@@ -1,4 +1,5 @@
 using Princess.Api.Domain;
+using Princess.Api.Services;
 using Xunit;
 
 namespace Princess.Api.Tests;
@@ -132,12 +133,25 @@ public class StanleyTravelTests
     }
 
     [Fact]
-    public void FoodIsNeverInventedForAPortWithNoFoodStops()
+    public void FoodIsPlannedOnlyFromListedStopsInsideTheirHours()
     {
-        var call = Enumerable.Range(1, T.Days.Count).First(d => T.IsCall(T.Days[d - 1]));
-        var plan = StanleyTravelRules.PortPlan(T, call, ["food"], "walk", 240, false, "any")!;
-        Assert.DoesNotContain(plan.Stops, s => s.Kind == "food");
-        Assert.Contains(plan.Notes, n => n.Contains("no food stops"));
+        foreach (var day in Enumerable.Range(1, T.Days.Count).Where(d => T.IsCall(T.Days[d - 1])))
+        {
+            var plan = StanleyTravelRules.PortPlan(T, day, ["food"], "taxi", 480, false, "any")!;
+            var foods = plan.Stops.Where(s => s.Kind == "food").ToList();
+            Assert.NotEmpty(foods);
+            Assert.All(foods, f => { Assert.True(Min(f.Start) >= Min(f.Opens) && Min(f.End) <= Min(f.Closes)); Assert.Equal("authored", f.Hours); });
+        }
+    }
+
+    [Fact]
+    public void AuthoredHoursReplaceTheTypicalOnesWhereTheyExist()
+    {
+        var call = Enumerable.Range(1, T.Days.Count).First(d => T.Days[d - 1].Port == "cozumel");
+        var plan = StanleyTravelRules.PortPlan(T, call, ["shopping"], "walk", 480, false, "any")!;
+        var market = plan.Stops.Single(s => s.Id == "shop-mercado-municipal-stalls");
+        Assert.Equal("08:00", market.Opens);
+        Assert.Equal("authored", market.Hours);
     }
 
     // ---- Phrases ----
@@ -154,6 +168,105 @@ public class StanleyTravelTests
         Assert.Equal("Not translated", odd.ShowPerson!.Label);
         Assert.Equal("my hovercraft is full of eels", odd.ShowPerson.Text);
         Assert.Null(StanleyTravelRules.Phrases(T, 2, null));
+    }
+
+    [Fact]
+    public void AMachineTranslationIsLabelledCarriesAConfidenceAndTheShowPersonCard()
+    {
+        var call = Enumerable.Range(1, T.Days.Count).First(d => T.Days[d - 1].Port == "cozumel");
+        var r = StanleyTravelRules.Phrases(T, call, "where is the pier", new SimTranslationProvider().Translate)!;
+        var m = Assert.Single(r.Phrases);
+        Assert.Equal("machine", m.Label);
+        Assert.Equal("medium", m.Confidence);
+        Assert.Contains("muelle", m.Say);
+        Assert.Equal("Not translated", r.ShowPerson!.Label);
+    }
+
+    [Theory]
+    [InlineData("I am allergic to nuts")]
+    [InlineData("I need a doctor")]
+    [InlineData("call the police")]
+    [InlineData("where is the hospital")]
+    public void SensitiveWordsAreNeverMachineTranslated(string query)
+    {
+        var call = Enumerable.Range(1, T.Days.Count).First(d => T.Days[d - 1].Port == "cozumel");
+        var r = StanleyTravelRules.Phrases(T, call, query, (_, _) => new MachineTranslation("x", "high"))!;
+        Assert.DoesNotContain(r.Phrases, p => p.Label == "machine");
+        Assert.NotNull(r.ShowPerson);
+    }
+
+    [Fact]
+    public void ATranslatorThatCannotAnswerLeavesOnlyTheFallback()
+    {
+        var call = Enumerable.Range(1, T.Days.Count).First(d => T.Days[d - 1].Port == "cozumel");
+        var r = StanleyTravelRules.Phrases(T, call, "my hovercraft is full of eels", new SimTranslationProvider().Translate)!;
+        Assert.Empty(r.Phrases);
+        Assert.NotNull(r.ShowPerson);
+    }
+
+    // ---- Reading a sign or menu ----
+
+    [Fact]
+    public void ADocumentIsRefusedAndNothingOfItIsShown()
+    {
+        var r = StanleyTravelRules.Reading(new ImageReading("document", [new("PASSPORT 123", "PASSPORT 123", 0.99)]));
+        Assert.Equal("refused", r.State);
+        Assert.Empty(r.Lines);
+    }
+
+    [Fact]
+    public void ReadingsShowConfidenceAndAMenuAlwaysCautionsAboutAllergies()
+    {
+        var menu = StanleyTravelRules.Reading(new ImageReading("menu", [new("Pollo", "Chicken", 0.91), new("Algo", "Something", 0.65), new("???", "?", 0.2)]));
+        Assert.Equal("read", menu.State);
+        Assert.Equal(["high", "medium", "low"], menu.Lines.Select(l => l.Confidence));
+        Assert.Contains(menu.Cautions, c => c.Contains("allergy"));
+        Assert.Equal("unclear", StanleyTravelRules.Reading(new ImageReading("sign", [new("x", "y", 0.3)])).State);
+        Assert.Equal("unclear", StanleyTravelRules.Reading(new ImageReading("unknown", [])).State);
+        Assert.DoesNotContain(StanleyTravelRules.Reading(new ImageReading("sign", [new("Salida", "Exit", 0.9)])).Cautions, c => c.Contains("allergy"));
+    }
+
+    [Fact]
+    public void TheSimulatedReaderGivesTheSameReadingForTheSamePhoto()
+    {
+        var reader = new SimImageTextReader();
+        var photo = new byte[] { 1, 2, 3, 4 };
+        Assert.Equal(reader.Read(photo, "image/png", "Spanish").Kind, reader.Read(photo, "image/png", "Spanish").Kind);
+    }
+
+    // ---- Train, ferry or flight connection ----
+
+    [Fact]
+    public void AConnectionCountsTheBufferForItsKindAndSaysTooEarlyWhenItCannotBeMade()
+    {
+        Assert.Equal(180, StanleyTravelRules.ArriveBefore("flight"));
+        Assert.Equal(60, StanleyTravelRules.ArriveBefore("ferry"));
+        Assert.Equal(45, StanleyTravelRules.ArriveBefore("train"));
+        var early = StanleyTravelRules.Connection(T, "train", "07:30", "rideshare", "selfAssist", Group)!;
+        Assert.Equal("tooEarly", early.Verdict);
+        var late = StanleyTravelRules.Connection(T, "train", "14:00", "rideshare", "selfAssist", Group)!;
+        Assert.Equal("ok", late.Verdict);
+        Assert.True(late.Spare >= DisembarkRules.TightMinutes);
+        Assert.Contains("port time", late.Clock);
+        Assert.Contains(late.Notes, n => n.Contains("no live status") || n.Contains("No live status") || n.Contains("Stanley has no live status"));
+    }
+
+    [Fact]
+    public void ATrainNeedsLessTimeThanAFlightForTheSameDeparture()
+    {
+        var flight = StanleyTravelRules.Connection(T, "flight", "11:00", "rideshare", "selfAssist", Group)!;
+        var train = StanleyTravelRules.Connection(T, "train", "11:00", "rideshare", "selfAssist", Group)!;
+        Assert.True(train.Spare > flight.Spare);
+        Assert.Equal(flight.Spare + 135, train.Spare);
+    }
+
+    [Fact]
+    public void ABadConnectionRequestIsRefused()
+    {
+        Assert.Null(StanleyTravelRules.Connection(T, "rocket", "11:00", "rideshare", "selfAssist", Group));
+        Assert.Null(StanleyTravelRules.Connection(T, "train", "25:00", "rideshare", "selfAssist", Group));
+        Assert.Null(StanleyTravelRules.Connection(T, "train", "11:00", "unicycle", "selfAssist", Group));
+        Assert.Null(StanleyTravelRules.Connection(T, "train", "11:00", "rideshare", "nope", Group));
     }
 
     // ---- Port pack ----
@@ -225,6 +338,7 @@ public class StanleyTravelTests
         Assert.NotEmpty(entry.Sources);
         Assert.All(entry.Sources, s => Assert.False(string.IsNullOrWhiteSpace(s.Jurisdiction)));
         Assert.All(entry.Sources.SelectMany(s => s.Links), l => Assert.StartsWith("https://", l.Url));
+        Assert.NotEmpty(StanleyTravelRules.Entry(Timeline.Legacy(Departure)).Sources.Where(s => s.Jurisdiction == "Mexico").SelectMany(s => s.Links));
         var answer = StanleyTravelRules.EntryAnswer(entry);
         Assert.Contains("can't answer", answer);
         Assert.DoesNotContain("six months", answer);

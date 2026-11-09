@@ -12,6 +12,8 @@ public sealed record TravelTrafficRequest(string? SailingId, string? Crowd);
 public sealed record TravelPortRequest(string? SailingId, int Day, List<string>? Interests, string? Mode, int? Minutes, string? Distance, string? Mobility);
 public sealed record TravelPhraseRequest(string? SailingId, int Day, string? Query);
 public sealed record TravelPackRequest(string? SailingId, int Day);
+public sealed record TravelReadRequest(string? SailingId, int Day, string? Image, string? ContentType);
+public sealed record TravelConnectionRequest(string? SailingId, string? Kind, string? DepartAt, string? Mode, string? OffOption);
 public sealed record TravelEmbarkRequest(string? SailingId, List<string>? Goals, string? Mobility);
 
 // ---- Answers. Every time names its clock; every fact names where it came from and when. ----
@@ -31,7 +33,7 @@ public sealed record TravelReturn(string BackBy, string AllAboard, int BufferMin
 
 public sealed record TravelPortDto(string Port, string PortName, int Day, string Clock, string AshoreFrom, IReadOnlyList<TravelStop> Stops, TravelReturn Return, IReadOnlyList<string> Notes, bool Complete);
 
-public sealed record TravelPhrase(string Id, string Say, string Means, string Sounds, string Label, string Language);
+public sealed record TravelPhrase(string Id, string Say, string Means, string Sounds, string Label, string Language, string? Confidence = null);
 
 public sealed record TravelPersonCard(string Text, string Language, string Label);
 
@@ -48,6 +50,13 @@ public sealed record TravelPortPackDto(string Version, string Port, string PortN
 public sealed record TravelEmbarkStep(string PlaceId, string Name, int Deck, string Section, string Goal, string Why, int WalkFromPrevious, bool StepFree, string? Note);
 
 public sealed record TravelEmbarkDto(IReadOnlyList<string> Goals, IReadOnlyList<TravelEmbarkStep> Steps, IReadOnlyList<string> Notes);
+
+public sealed record TravelReadLine(string Original, string English, string Confidence);
+
+/// <summary><see cref="State"/> is read, unclear (too uncertain to rely on) or refused (a document: never read).</summary>
+public sealed record TravelReadingDto(string State, string Kind, IReadOnlyList<TravelReadLine> Lines, string Label, string Note, IReadOnlyList<string> Cautions);
+
+public sealed record TravelConnectionDto(string Kind, string DepartAt, string Clock, int BufferMinutes, string Verdict, int Spare, string LeaveBy, string OffAt, string EarliestDeparture, string Message, IReadOnlyList<string> Notes);
 
 public sealed record TravelPackDto(IReadOnlyList<PackItem> Extras, string Basis);
 
@@ -130,6 +139,63 @@ public static class StanleyTravelRules
         return new("ok", number, status.State, delay, FlightProvider, asOf, "provider", plan.FlightAt, delay > 0 ? newAt : null, AirportClock, verdict, check.Spare, leaveBy, offAt, alternatives, message, notes);
     }
 
+    // ---- Onward connection: a train, a ferry or a flight, from a time the guest types ----
+
+    public static readonly IReadOnlyList<string> ConnectionKinds = ["flight", "train", "ferry"];
+
+    /// <summary>How long before departure to be at the station, quay or airport.</summary>
+    public static int ArriveBefore(string kind) => kind switch { "train" => 45, "ferry" => 60, _ => DisembarkRules.AirportMinutes };
+
+    /// <summary>
+    /// Whether a train, ferry or flight at a typed time (the port's clock on the last morning) can be made from when the guest leaves the ship: off the ship, through customs, the ride, then the buffer for that kind of journey.
+    /// There is no live status for these, so the answer says so; for a flight with a number, the flight check uses the status feed.
+    /// </summary>
+    public static TravelConnectionDto? Connection(Timeline timeline, string kind, string departAt, string modeId, string optionId, TagGroup group)
+    {
+        if (!ConnectionKinds.Contains(kind) || !TimeText(departAt) || DisembarkRules.OnwardMode(modeId) is not { } mode || !DisembarkRules.WalkOffIds.Contains(optionId)) return null;
+        var last = timeline.Days[^1];
+        var zone = Itinerary.ZoneOf(last.Port);
+        var baseline = Itinerary.LocalToUtc(last.Date, new TimeOnly(0, 0), zone);
+        var off = DisembarkRules.OffAt(timeline, optionId, group);
+        var readyMin = (int)Math.Ceiling((off.AddMinutes(DisembarkRules.ClearanceMinutes + mode.Minutes) - baseline).TotalMinutes);
+        var buffer = ArriveBefore(kind);
+        var depart = Min(departAt);
+        var spare = depart - buffer - readyMin;
+        var earliest = readyMin + buffer;
+        var verdict = spare < 0 ? "tooEarly" : spare < DisembarkRules.TightMinutes ? "tight" : "ok";
+        var offAt = Itinerary.LocalAt(off, zone).Time.ToString("HH:mm", CultureInfo.InvariantCulture);
+        var notes = new List<string> { $"Be there {buffer} minutes before departure. All times are {PortClock}." };
+        if (kind != "flight") notes.Add("Stanley has no live status for trains and ferries: check the operator's own board or app on the day.");
+        if (verdict == "tooEarly") notes.Add($"The earliest departure this way off the ship allows is about {Hm(earliest)}.");
+        var message = verdict == "tooEarly"
+            ? $"This connection is too early for leaving the ship at {offAt}. Choose a departure at {Hm(earliest)} or later, or a quicker way off."
+            : $"Leaving the ship about {offAt}, you have {spare} minutes to spare for the {departAt} {kind}. Set off by {Hm(depart - buffer - mode.Minutes)}.";
+        return new(kind, departAt, PortClock, buffer, verdict, spare, Hm(depart - buffer - mode.Minutes), offAt, Hm(earliest), message, notes);
+    }
+
+    // ---- Reading a sign or a menu from a photo the guest takes ----
+
+    public const int ReadingFloor = 60;
+
+    private static string Level(double c) => c >= 0.85 ? "high" : c >= 0.6 ? "medium" : "low";
+
+    /// <summary>
+    /// The result of reading a photo, for a sign or a menu only. A document (a passport, ticket or ID) is refused whatever was asked, and nothing of it is shown. Every line carries a confidence; when none reaches
+    /// medium the whole result is "unclear" and the guest is sent to a person. Menus always carry a caution that Stanley cannot say what is in a dish.
+    /// </summary>
+    public static TravelReadingDto Reading(ImageReading r)
+    {
+        const string label = "Read and translated by a machine";
+        if (r.Kind == "document")
+            return new("refused", "document", [], label, "That looks like a document (a passport, ticket or ID). Stanley does not read documents, and nothing from the photo was kept.", []);
+        var lines = r.Lines.Where(l => l.Original.Length > 0).Take(12).Select(l => new TravelReadLine(l.Original.Length > 120 ? l.Original[..120] : l.Original, l.English.Length > 120 ? l.English[..120] : l.English, Level(l.Confidence))).ToList();
+        var cautions = new List<string> { "A machine may misread or mistranslate. Check anything important with a person." };
+        if (r.Kind == "menu") cautions.Add("Stanley cannot say what is in a dish or whether it is safe for an allergy: always ask the staff.");
+        if (lines.Count == 0 || lines.All(l => l.Confidence == "low"))
+            return new("unclear", r.Kind == "menu" ? "menu" : r.Kind == "sign" ? "sign" : "unknown", [], label, "Stanley could not read that clearly enough to rely on. Try again closer and in better light, or ask a person.", cautions);
+        return new("read", r.Kind == "menu" ? "menu" : "sign", lines, label, "Lines marked low are guesses.", cautions);
+    }
+
     // ---- Traffic replan ----
 
     public static TravelTrafficDto Traffic(RouteConditionsDto r, DateTime asOfUtc)
@@ -146,7 +212,7 @@ public static class StanleyTravelRules
 
     // ---- Independent port itinerary and return brief ----
 
-    private sealed record Candidate(string Id, string Kind, string Title, string[] Tags, bool Taxi, int Travel, int Stay, string Cost, long Cents, int Opens, int Closes, string Why, bool Rough);
+    private sealed record Candidate(string Id, string Kind, string Title, string[] Tags, bool Taxi, int Travel, int Stay, string Cost, long Cents, int Opens, int Closes, string Why, bool Rough, bool Authored = false);
 
     private static readonly Regex TaxiMinutes = new(@"(\d+)\s*minutes?", RegexOptions.Compiled);
 
@@ -158,9 +224,29 @@ public static class StanleyTravelRules
         _ => (8 * 60, 18 * 60),
     };
 
-    private static List<Candidate> Candidates(JsonNode? knowledge)
+    private static int T(string hhmm) => Min(hhmm);
+
+    // Authored sample hours by stop id (the port guide holds none), and the food stops the guide does not list. Samples, not live: the answer says to check at the door.
+    private static readonly IReadOnlyDictionary<string, (string Opens, string Closes)> Hours = new Dictionary<string, (string, string)>
+    {
+        ["shop-mercado-municipal-stalls"] = ("08:00", "19:00"), ["shop-artisan-co-op-near-the-square"] = ("10:00", "18:00"), ["coz-mia"] = ("09:00", "18:00"), ["coz-sunset"] = ("10:00", "17:00"),
+        ["shop-tourism-village-craft-stalls"] = ("09:00", "17:00"), ["shop-garifuna-drum-makers"] = ("10:00", "16:00"), ["bze-cay"] = ("09:00", "16:00"), ["bze-river"] = ("08:00", "15:00"),
+        ["shop-pier-artisan-market"] = ("08:00", "17:00"), ["shop-local-coffee-roasters"] = ("07:00", "15:00"), ["rtb-westbay"] = ("09:00", "17:00"), ["rtb-quiet"] = ("09:00", "17:00"),
+    };
+
+    private static readonly IReadOnlyDictionary<string, Candidate[]> Food = new Dictionary<string, Candidate[]>
+    {
+        ["cozumel"] = [
+            new("coz-lunch-pier", "food", "Lunch at the pier restaurants", ["food"], false, 0, 60, "paid", 0, T("11:00"), T("21:00"), "Simple meals within sight of the ship. Typically $12 to $25 a person.", false, true),
+            new("coz-lunch-town", "food", "Lunch in San Miguel town", ["food", "culture"], true, 10, 75, "paid", 0, T("11:00"), T("22:00"), "A short taxi ride to the town's restaurants. Typically $12 to $25 a person.", false, true)],
+        ["belize"] = [new("bze-lunch-village", "food", "Lunch in the Tourism Village", ["food"], false, 0, 60, "paid", 0, T("11:00"), T("20:00"), "Cafes in the village by the landing. Typically $10 to $20 a person.", false, true)],
+        ["roatan"] = [new("rtb-lunch-pier", "food", "Lunch at the pier restaurants", ["food"], false, 0, 60, "paid", 0, T("11:00"), T("20:00"), "Meals beside the pier. Typically $10 to $22 a person.", false, true)],
+    };
+
+    private static List<Candidate> Candidates(string portId, JsonNode? knowledge)
     {
         var list = new List<Candidate>();
+        if (Food.TryGetValue(portId, out var food)) list.AddRange(food);
         if (knowledge is null) return list;
         foreach (var w in knowledge["walks"]?.AsArray() ?? new JsonArray())
         {
@@ -188,6 +274,8 @@ public static class StanleyTravelRules
             var name = (string?)v["name"] ?? "Local stalls";
             list.Add(new("shop-" + Slug(name), "shopping", name, ["shopping", "culture"], false, 0, 45, "free", 0, o, c, $"{(string?)v["what"] ?? ""}.", false));
         }
+        for (var i = 0; i < list.Count; i++)
+            if (Hours.TryGetValue(list[i].Id, out var h)) list[i] = list[i] with { Opens = T(h.Opens), Closes = T(h.Closes), Authored = true };
         return list;
     }
 
@@ -214,9 +302,9 @@ public static class StanleyTravelRules
             $"Be back at the landing by {Hm(backBy)} ({PortClock}). All aboard is {Hm(Min(allAboard))}, and the {landBack}-minute buffer covers {(port.Tender ? "the tender queue" : "the walk and the gangway")}.",
         };
         var knowledge = PortsReference.Get()["knowledge"]?[d.Port];
-        var all = Candidates(knowledge);
+        var all = Candidates(d.Port, knowledge);
         var wanted = interests.Where(ValidInterest).Distinct().ToList();
-        if (wanted.Contains("food")) notes.Add("The guide for this port has no food stops, so food is not planned. Ask at Guest Services or the pier information desk.");
+        if (wanted.Contains("food") && !all.Any(c => c.Tags.Contains("food"))) notes.Add("The guide for this port has no food stops, so food is not planned. Ask at Guest Services or the pier information desk.");
         var open = Math.Min(Math.Max(budgetMinutes, MinBudget), MaxBudget);
         var pool = all.Where(c => !(nearOnly && c.Taxi) && !(mode == "walk" && c.Taxi)).ToList();
         if (mode == "walk" && all.Any(c => c.Taxi)) notes.Add("Beach clubs need a taxi, so they are left out of a walking plan.");
@@ -240,7 +328,7 @@ public static class StanleyTravelRules
             if (start >= c.Closes || end > c.Closes) { notes.Add($"{c.Title} is left out: it would not fit inside its typical opening hours."); continue; }
             // A taxi stop needs the ride back counted, so it must still leave room to return before the limit.
             if (end + (c.Taxi ? c.Travel : 0) > limit) continue;
-            stops.Add(new(c.Id, c.Kind, c.Title, Hm(start), Hm(end), c.Taxi ? "taxi" : "walk", c.Travel, c.Cost, c.Cents, Hm(c.Opens), Hm(c.Closes), "typical", c.Why));
+            stops.Add(new(c.Id, c.Kind, c.Title, Hm(start), Hm(end), c.Taxi ? "taxi" : "walk", c.Travel, c.Cost, c.Cents, Hm(c.Opens), Hm(c.Closes), c.Authored ? "authored" : "typical", c.Why));
             clock = end + (c.Taxi ? c.Travel : 0);
         }
         if (ranked.Count > 0 && stops.Count == 0) notes.Add("Nothing fits your time budget today. Try a longer time or a nearer plan.");
@@ -251,12 +339,18 @@ public static class StanleyTravelRules
 
     // ---- Phrases ----
 
+    private static readonly Regex Sensitive = new(@"allerg|medic|drug|pill|pregnan|doctor|hospital|ambulance|police|arrest|lawyer|emergency|sick|injur|bleed|asthma|epipen|insulin|diabet", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly Regex Words = new(@"[a-z']+", RegexOptions.Compiled);
     private static readonly HashSet<string> Stop = ["the", "a", "an", "to", "is", "i", "me", "my", "do", "you", "and", "of", "for", "please", "can", "where", "how", "what", "where's", "it", "this", "that"];
 
     private static TravelPhrase[] PhrasesOf(JsonNode? knowledge, string language) =>
         [.. (knowledge?["phrases"]?.AsArray() ?? new JsonArray()).Where(p => p is not null).Select((p, i) =>
             new TravelPhrase($"p{i}", (string?)p!["say"] ?? "", (string?)p["means"] ?? "", (string?)p["sounds"] ?? "", "reviewed", language))];
+
+    /// <summary>The language of a port day's reviewed phrases, for the image reader.</summary>
+    public static string PortLanguage(Timeline timeline, int day) =>
+        day < 1 || day > timeline.Days.Count || timeline.Days[day - 1].Port == "sea" ? "the local language" : LanguageOf(PortsReference.Get()["knowledge"]?[timeline.Days[day - 1].Port]);
 
     private static string LanguageOf(JsonNode? knowledge) =>
         (knowledge?["allergy"]?.AsArray().FirstOrDefault()?["language"] is { } l ? (string?)l : null) ?? "the local language";
@@ -265,7 +359,7 @@ public static class StanleyTravelRules
     /// Phrases for a port from the authored list. Each one is labelled <c>reviewed</c>. A request that matches nothing is not translated by a machine: the guest gets the exact English words in large type to show to a
     /// person, labelled as not translated.
     /// </summary>
-    public static TravelPhrasesDto? Phrases(Timeline timeline, int day, string? query)
+    public static TravelPhrasesDto? Phrases(Timeline timeline, int day, string? query, Func<string, string, MachineTranslation?>? translate = null)
     {
         if (day < 1 || day > timeline.Days.Count) return null;
         var port = timeline.Days[day - 1].Port;
@@ -278,8 +372,12 @@ public static class StanleyTravelRules
         var words = Words.Matches(q.ToLowerInvariant()).Select(m => m.Value).Where(w => !Stop.Contains(w) && w.Length > 2).ToHashSet();
         var hits = all.Where(p => Words.Matches(p.Means.ToLowerInvariant()).Any(m => words.Contains(m.Value))).ToList();
         if (hits.Count > 0) return new(port, language, hits, null, "Reviewed phrases that match your words.");
-        return new(port, language, [], new(q.Length > 200 ? q[..200] : q, "English", "Not translated"),
-            "Stanley has no reviewed phrase for that and will not make one up. Show these words to a person, or ask Guest Services.");
+        var shown = new TravelPersonCard(q.Length > 200 ? q[..200] : q, "English", "Not translated");
+        // A machine translation is offered only for plain everyday words, never for health, allergy, legal or emergency ones, and it always carries the show-a-person fallback.
+        if (translate is not null && !Sensitive.IsMatch(q) && translate(q, language) is { } m)
+            return new(port, language, [new("m0", m.Text, q, "", "machine", language, m.Confidence)], shown,
+                "Machine-made and not checked by a person: it may be wrong. For anything that matters, show the English words below to a person instead.");
+        return new(port, language, [], shown, "Stanley has no reviewed phrase for that and will not make one up. Show these words to a person, or ask Guest Services.");
     }
 
     // ---- Offline port pack ----
@@ -419,8 +517,12 @@ public static class StanleyTravelRules
     {
         ["United States"] = new("United States", "U.S. Customs and Border Protection (CBP) and the U.S. Department of State", [new("CBP: travel", "https://www.cbp.gov/travel"), new("State Department: travel", "https://travel.state.gov")], "Entry rules depend on your citizenship. Check both before you pay the balance."),
         ["Mexico"] = new("Mexico", "Instituto Nacional de Migración (INM)", [new("INM", "https://www.inm.gob.mx")], "Rules depend on your nationality. Your own government's travel advice also lists them."),
+        ["Spain"] = EuCountry("Spain"), ["France"] = EuCountry("France"), ["Italy"] = EuCountry("Italy"), ["Greece"] = EuCountry("Greece"),
         ["United Kingdom"] = new("United Kingdom", "GOV.UK", [new("Foreign travel advice", "https://www.gov.uk/foreign-travel-advice"), new("Check if you need a UK visa", "https://www.gov.uk/check-uk-visa")], "Rules depend on your nationality."),
     };
+
+    private static Authority EuCountry(string country) =>
+        new(country, "The European Union's travel information for the Schengen area (ETIAS and entry rules)", [new("EU travel information", "https://travel-europe.europa.eu/etias_en")], "Rules depend on your nationality and on the country: also check that country's own foreign ministry.");
 
     private static string CountryOf(string portId) => (string?)PortsReference.Get()["ashore"]?[portId]?["clearance"]?["country"] ?? "";
 
