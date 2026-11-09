@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { itinerary, PORTS } from '../../domain/sailings'
 import { bestSpot } from '../../domain/sky'
+import { sailAwayViews } from '../../domain/sailAwayViews'
+import { Link } from 'react-router'
+import { Chip } from '../Chip'
 import { skyNightFeed } from '../../feeds/skyNight'
 import { useFeed } from '../../hooks/useServedFeeds'
 import { useCurrentDay } from '../../hooks/useDayPlan'
@@ -16,6 +19,7 @@ export function SkyScreen() {
   const sailing = useSailing()
   const current = useCurrentDay()
   const [day, setDay] = useState(current)
+  const [stepFree, setStepFree] = useState(false)
   const n = useFeed(skyNightFeed, sailing.id, day)
   const days = itinerary(sailing)
   return (
@@ -47,6 +51,14 @@ export function SkyScreen() {
         <ul className="plain-list">{n.stars.map((s) => <li key={s}>{s}</li>)}</ul>
       </Card>
       </>}
+      <Card labelledBy="sky-views">
+        <h2 id="sky-views" className="card__title">{th('sky.views')}</h2>
+        <div className="chip-row"><Chip pressed={stepFree} onToggle={() => setStepFree(!stepFree)}>{t('rt.stepFree')}</Chip></div>
+        <ul className="plain-list">
+          {sailAwayViews({ stepFreeOnly: stepFree }).map((p) => <li key={p.id}>{t('sky.viewItem', { name: p.name, deck: p.deck })}{p.stepFree ? '' : ` (${t('onb.notStepFree')})`}{p.note ? <small className="muted"><br />{p.note}</small> : null}</li>)}
+        </ul>
+        <p className="muted">{t('sky.viewsNote')} <Link to="/ship/map">{t('sky.viewsRoute')}</Link></p>
+      </Card>
     </div>
   )
 }

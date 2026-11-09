@@ -205,3 +205,10 @@ Theme: replan around a closed lift (QOL-10). Only this row was taken; GTS-09, PO
 `wayBetween` and `routeBetween` take a set of closed lift banks; the route finder has a "Lift X closed" toggle for each bank, says when the way was changed, and says plainly when no way exists without them. Tests in `src/domain/deckGraph.test.ts` (reroute, no way, unchanged).
 Limits: there is no closure feed (the server would have to serve one), so the guest's report is the only source; the other callers of `wayBetween` (cabin walks, embark delights, plan polish) ignore closures. No browser check. Matrix totals not regenerated; QOL-10 stays Partial.
 Next in group A: GTS-09, POR-07, EMB-13 (terminal and port step-free routes, sail-away viewpoints).
+
+## 5m. BM28 result (built, not committed)
+
+Theme: step-free sail-away (EMB-13). Only EMB-13 was built.
+`src/domain/sailAwayViews.ts` lists the deck plan's open-deck places, step-free first, with a step-free filter on the sky screen and a link to the route finder. Test: `sailAwayViews.test.ts`. It does not claim a best spot, because the plan has no pier side or sight lines.
+Not built: GTS-09 (terminal map and step-free route) and POR-07 (per-port return routes). I read the code and found no terminal or pier data anywhere, so building them would mean inventing it; they move to group C (need a source). Matrix totals not regenerated; EMB-13 stays Partial. No browser check.
+Next in group A: MOB-13, MOB-22, MOB-10 (foreground location, compass, QR scan).

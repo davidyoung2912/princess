@@ -169,7 +169,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | GTS-06 | P1 | Built | F | `src/domain/journey.ts`, `src/domain/journey.test.ts`, `src/ui/plan/JourneyScreen.tsx` | Location only on request: unchecked |
 | GTS-07 | P1 | Simulated | F | `src/feeds/flight.ts`, `src/domain/delay.ts`, `src/domain/delay.test.ts` | Flight feed is a mock |
 | GTS-08 | P0 | Built | F | `src/ui/home/DelayedScreen.tsx`, `src/domain/delay.ts` | "One tap" not asserted |
-| GTS-09 | P1 | Partial | F | `src/domain/deckGraph.ts`, `src/ui/boarding/CompanionScreen.tsx` | Terminal map with step-free route unchecked |
+| GTS-09 | P1 | Partial | F | `src/domain/deckGraph.ts`, `src/ui/boarding/CompanionScreen.tsx` | BM28 checked: no terminal map or route data exists in the app or server; needs a source |
 | GTS-10 | P1 | Partial | F | `src/domain/arrivalPing.ts`, `src/domain/arrivalPing.test.ts`, `src/domain/meetingPoint.ts` | BM20: no one-time signals or expiry |
 | GTS-11 | P1 | Built | F | `src/ui/finish/` luggage route `/home/luggage`, `src/domain/embark.ts` | None found |
 | GTS-12 | P0 | Built | F | `src/ui/home/` clearance route `/home/clearance`, `src/domain/papersCheck.ts` | None found |
@@ -189,7 +189,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | EMB-10 | P1 | Built | F | `src/domain/meetingPoint.ts`, `src/domain/meetingPoint.test.ts`, `src/ui/home/MeetingPointScreen.tsx` | None found |
 | EMB-11 | P0 | Built | F | `src/ui/extras/WifiScreen.tsx`, `src/domain/wifi.ts`, `src/settings/settings.ts` | Save-data signal read; battery not (MOB-24) |
 | EMB-12 | P1 | Built | F | `src/ui/onboard/VenuesScreen.tsx`, `src/domain/shipVenues.ts`, `src/domain/shipVenues.test.ts` | None found |
-| EMB-13 | P2 | Partial | F | `src/ui/onboard/SkyScreen.tsx` | Accessible sail-away guide and viewpoint finder unchecked |
+| EMB-13 | P2 | Partial | F | `src/ui/onboard/SkyScreen.tsx` | BM28: open-deck viewpoints with step-free filter on the sky screen; no pier-side or sight-line data, so none called best |
 | EMB-14 | P1 | Built | F | `src/domain/family.ts`, `src/ui/extras/FamilyScreen.tsx` | None found |
 | EMB-15 | P0 | Built | F | `src/ui/onboard/SafetyScreens.tsx`, `src/offlineDay.test.ts`, `src/hooks/useSavedCopy.ts` | None found |
 | SEA-01 | P0 | Built | F | `src/ui/onboard/OnboardHome.tsx`, `src/domain/tileLive.ts`, `src/domain/tileLive.test.ts` | "Labelled, not inferred" unchecked |
@@ -223,7 +223,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | POR-04 | P0 | Built | F | `src/ui/onboard/PortCard.tsx`, `src/domain/excursions.ts` | None found |
 | POR-05 | P0 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/ui/onboard/PortDayScreen.tsx` | Feed simulated |
 | POR-06 | P0 | Built | F | `src/domain/allaboard.ts`, `src/domain/portPilot.test.ts` | None found |
-| POR-07 | P1 | Partial | F | `src/domain/accessReference.ts`, `src/ui/onboard/PortGuideScreen.tsx` | Per-port return routes unchecked |
+| POR-07 | P1 | Partial | F | `src/domain/accessReference.ts`, `src/ui/onboard/PortGuideScreen.tsx` | BM28 checked: no per-port pier-to-ship route data exists; needs a source |
 | POR-08 | P1 | Built | F | `src/ui/onboard/RouteFinder.tsx`, `src/domain/landPath.ts` | None found |
 | POR-09 | P1 | Built | F | `src/ui/aboard/` safe-ashore route `/ship/safe-ashore`, `src/domain/portContent.ts` | Contacts verified by operator: out of reach |
 | POR-10 | P1 | Built | F | `src/domain/rates.ts`, `src/rates` | Cached reference rate shown with age: unchecked |
