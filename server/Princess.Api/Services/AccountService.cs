@@ -49,6 +49,8 @@ public sealed class AccountService(
             Citizenship = input.Citizenship == "other" ? "other" : "us",
             Bedding = input.Bedding is not null && AccountRules.Bedding.Contains(input.Bedding) ? input.Bedding : before.Bedding,
             SpecialRequests = AccountRules.Trunc(input.SpecialRequests, 500),
+            // MNG-16: which saved preferences stay out of later bookings. Left alone when the request does not say.
+            KeepOut = input.KeepOut is null ? before.KeepOut : string.Join(',', AccountRules.KeepOutGroups.Where(input.KeepOut.Contains)),
             EmergencyName = AccountRules.Trunc(input.Emergency?.Name?.Trim(), 80),
             EmergencyPhone = AccountRules.Trunc(input.Emergency?.Phone?.Trim(), 30),
             EmergencyRelationship = AccountRules.Trunc(input.Emergency?.Relationship?.Trim(), 40),
@@ -85,7 +87,8 @@ public sealed class AccountService(
 
     public static ProfileDto ToDto(ProfileRecord p) => new(
         p.FirstName, p.LastName, D(p.Dob).ToString("yyyy-MM-dd"), p.Email ?? "", p.Phone ?? "", p.Citizenship,
-        p.Dietary.ToArray(), p.Needs.ToArray(), p.Bedding, p.SpecialRequests, new EmergencyDto(p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship));
+        p.Dietary.ToArray(), p.Needs.ToArray(), p.Bedding, p.SpecialRequests, new EmergencyDto(p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship),
+        p.KeepOut.Split(',', StringSplitOptions.RemoveEmptyEntries));
 
     private static List<string> Pick(string[] known, string[]? given) => (given ?? []).Where(known.Contains).Distinct().ToList();
 

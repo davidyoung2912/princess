@@ -38,6 +38,8 @@ public sealed class ProfileRecord
     public string Citizenship { get; set; } = "us";
     public string Bedding { get; set; } = "noPreference";
     public string SpecialRequests { get; set; } = "";
+    /// <summary>Comma-separated preference groups (dietary, needs, bedding, requests) the guest keeps out of later bookings (MNG-16).</summary>
+    public string KeepOut { get; set; } = "";
     public string EmergencyName { get; set; } = "";
     public string EmergencyPhone { get; set; } = "";
     public string EmergencyRelationship { get; set; } = "";

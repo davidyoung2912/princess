@@ -13,6 +13,8 @@ public static partial class AccountRules
     public static readonly string[] Dietary = ["vegetarian", "vegan", "glutenFree", "nutAllergy", "shellfishAllergy", "dairyFree", "halal", "kosher"];
     public static readonly string[] Needs = ["mobility", "hearing", "vision", "cpap", "oxygen", "serviceAnimal"];
     public static readonly string[] Bedding = ["queen", "twin", "noPreference"];
+    /// <summary>The preference groups a guest can keep out of later bookings (MNG-16). Only these two are carried into a new booking, so only these two can be left out.</summary>
+    public static readonly string[] KeepOutGroups = ["dietary", "needs"];
     public static readonly string[] CardBrands = ["visa", "mastercard", "amex", "discover"];
     public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin", "trip"];
     public static readonly string[] HelperStatuses = ["active", "requested"];
@@ -122,4 +124,5 @@ public sealed record ProfileInput(
     string[]? Needs,
     string? Bedding,
     string? SpecialRequests,
-    EmergencyInput? Emergency);
+    EmergencyInput? Emergency,
+    string[]? KeepOut = null);

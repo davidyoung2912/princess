@@ -87,10 +87,12 @@ public sealed class BookingService(
         {
             var p = await accounts.GetProfileAsync(id, ct);
             if (p is null) continue;
+            // MNG-16: a preference the guest keeps out of later bookings is not carried into a new one.
+            var keep = p.KeepOut.Split(',', StringSplitOptions.RemoveEmptyEntries);
             people.Add(new GuestDraft
             {
-                FirstName = p.FirstName, LastName = p.LastName, Dob = D(p.Dob).ToString("yyyy-MM-dd"), Citizenship = p.Citizenship, Needs = [.. p.Needs], Dietary = [.. p.Dietary],
-                DietaryStatus = p.Dietary.Count > 0 ? "some" : "",
+                FirstName = p.FirstName, LastName = p.LastName, Dob = D(p.Dob).ToString("yyyy-MM-dd"), Citizenship = p.Citizenship, Needs = keep.Contains("needs") ? [] : [.. p.Needs], Dietary = keep.Contains("dietary") ? [] : [.. p.Dietary],
+                DietaryStatus = !keep.Contains("dietary") && p.Dietary.Count > 0 ? "some" : "",
             });
             if (id == actor.Id) contact = new LeadContact { Email = p.Email ?? "", Phone = p.Phone ?? "" };
         }

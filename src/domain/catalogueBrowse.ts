@@ -96,17 +96,19 @@ export interface BrowseFilter {
 /**
  * Occasion-led discovery (DRM-07). The catalogue holds no occasion tags, so an occasion is matched only from facts it does have: the departure date and the
  * length. 'holiday' is the served holiday flag or a departure from 20 Dec to 3 Jan; 'summer' is a departure from 15 Jun to 31 Aug (school break in much of the
- * northern hemisphere); 'milestone' is a voyage of 14 nights or more, long enough for a big trip. No tag is shared, saved or sent: the choice lives in the
+ * northern hemisphere); 'milestone' is a voyage of 14 nights or more, long enough for a big trip; 'spring' is a departure from 1 Mar to 20 Apr (spring break); 'getaway' is 5 nights or fewer. No tag is shared, saved or sent: the choice lives in the
  * address of the page only. Optional services are not matched.
  */
-export type OccasionId = 'holiday' | 'summer' | 'milestone'
-export const OCCASIONS: readonly OccasionId[] = ['holiday', 'summer', 'milestone']
+export type OccasionId = 'holiday' | 'summer' | 'milestone' | 'spring' | 'getaway'
+export const OCCASIONS: readonly OccasionId[] = ['holiday', 'summer', 'milestone', 'spring', 'getaway']
 
 export function occasionsOf(s: Pick<SailingEntry, 'departure' | 'nights' | 'holiday'>): OccasionId[] {
   const md = s.departure.slice(5)
   const out: OccasionId[] = []
   if (s.holiday || md >= '12-20' || md <= '01-03') out.push('holiday')
   if (md >= '06-15' && md <= '08-31') out.push('summer')
+  if (md >= '03-01' && md <= '04-20') out.push('spring')
+  if (s.nights <= 5) out.push('getaway')
   if (s.nights >= 14) out.push('milestone')
   return out
 }

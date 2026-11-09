@@ -55,7 +55,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
     {
         await using var c = await db.OpenAsync(ct);
         var p = await c.QuerySingleOrDefaultAsync<ProfileRecord>(Sql.Cmd("""
-            SELECT p.UserId, p.FirstName, p.LastName, p.Dob, u.Email, p.Phone, p.Citizenship, p.Bedding, p.SpecialRequests,
+            SELECT p.UserId, p.FirstName, p.LastName, p.Dob, u.Email, p.Phone, p.Citizenship, p.Bedding, p.SpecialRequests, p.KeepOut,
                    p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship
             FROM dbo.Profiles p JOIN dbo.Users u ON u.Id = p.UserId
             WHERE p.UserId = @userId
@@ -74,10 +74,10 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
         {
             await c.ExecuteAsync(Sql.Cmd("""
                 UPDATE dbo.Profiles SET FirstName = @FirstName, LastName = @LastName, Dob = @Dob, Phone = @Phone, Citizenship = @Citizenship,
-                  Bedding = @Bedding, SpecialRequests = @SpecialRequests, EmergencyName = @EmergencyName, EmergencyPhone = @EmergencyPhone,
+                  Bedding = @Bedding, SpecialRequests = @SpecialRequests, KeepOut = @KeepOut, EmergencyName = @EmergencyName, EmergencyPhone = @EmergencyPhone,
                   EmergencyRelationship = @EmergencyRelationship, UpdatedAt = @now
                 WHERE UserId = @UserId
-                """, new { p.UserId, p.FirstName, p.LastName, p.Dob, Phone = NullIfEmpty(p.Phone), p.Citizenship, p.Bedding, p.SpecialRequests, p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship, now }, tx, ct));
+                """, new { p.UserId, p.FirstName, p.LastName, p.Dob, Phone = NullIfEmpty(p.Phone), p.Citizenship, p.Bedding, p.SpecialRequests, p.KeepOut, p.EmergencyName, p.EmergencyPhone, p.EmergencyRelationship, now }, tx, ct));
             if (updateEmail)
                 await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.Users SET Email = @email, UpdatedAt = @now WHERE Id = @UserId", new { p.UserId, email = NullIfEmpty(p.Email), now }, tx, ct));
             await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ProfileTags WHERE UserId = @UserId", new { p.UserId }, tx, ct));

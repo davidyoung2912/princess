@@ -12,6 +12,8 @@ export const BEDDING: readonly Bedding[] = ['queen', 'twin', 'noPreference']
 
 export interface EmergencyContact { name: string; phone: string; relationship: string }
 
+import type { KeepOutGroup } from './preferenceUse'
+
 export interface Profile {
   firstName: string
   lastName: string
@@ -25,6 +27,8 @@ export interface Profile {
   bedding: Bedding
   specialRequests: string
   emergency: EmergencyContact
+  /** Preference groups kept out of later bookings (MNG-16). Absent means none. */
+  keepOut?: KeepOutGroup[]
 }
 
 const str = (v: unknown, fallback: string, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : fallback)

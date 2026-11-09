@@ -614,6 +614,7 @@ CREATE TABLE dbo.Profiles (
   CONSTRAINT CK_Profiles_Bedding CHECK (Bedding IN ('queen','twin','noPreference'))
 );
 END
+IF COL_LENGTH(N'dbo.Profiles', N'KeepOut') IS NULL ALTER TABLE dbo.Profiles ADD KeepOut VARCHAR(60) NOT NULL CONSTRAINT DF_Profiles_KeepOut DEFAULT '';
 
 IF OBJECT_ID(N'dbo.ProfileTags', N'U') IS NULL
 BEGIN

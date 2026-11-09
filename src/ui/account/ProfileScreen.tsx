@@ -6,7 +6,7 @@ import { BEDDING, DIETARY, NEEDS, nameChange, validateProfile, type Bedding, typ
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { preferenceUse } from '../../domain/preferenceUse'
+import { canKeepOut, preferenceUse, toggleKeepOut, type KeepOutGroup } from '../../domain/preferenceUse'
 import { accessWithNeeds } from '../../domain/bookingPrep'
 import { useNow, usePersona } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
@@ -146,6 +146,9 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
               <li key={u.group}>
                 <strong>{t(`profile.use.${u.group}` as StringKey, { count: u.count })}</strong>: {u.uses.map((x) => t(`profile.use.${x}` as StringKey)).join('; ')}.
                 {u.sensitive && <span className="muted"> {t('profile.use.sensitive')}</span>}
+                {canKeepOut(u.group) && (
+                  <label className="choice"><input type="checkbox" checked={u.keptOut} onChange={() => set({ keepOut: toggleKeepOut(p.keepOut, u.group as KeepOutGroup) })} /><span>{t('profile.use.keepOut')}<span className="visually-hidden"> {t(`profile.use.${u.group}` as StringKey, { count: u.count })}</span></span></label>
+                )}
               </li>
             ))}
           </ul>

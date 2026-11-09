@@ -99,7 +99,8 @@ describe('occasions (DRM-07)', () => {
     expect(occasionsOf({ departure: '2027-12-27', nights: 7, holiday: true })).toEqual(['holiday'])
     expect(occasionsOf({ departure: '2027-01-02', nights: 7, holiday: false })).toEqual(['holiday'])
     expect(occasionsOf({ departure: '2027-07-10', nights: 14, holiday: false })).toEqual(['summer', 'milestone'])
-    expect(occasionsOf({ departure: '2027-03-01', nights: 7, holiday: false })).toEqual([])
+    expect(occasionsOf({ departure: '2027-03-30', nights: 4, holiday: false })).toEqual(['spring', 'getaway'])
+    expect(occasionsOf({ departure: '2027-05-01', nights: 7, holiday: false })).toEqual([])
   })
   it('filters the list by occasion', () => {
     const l = browseSailings()

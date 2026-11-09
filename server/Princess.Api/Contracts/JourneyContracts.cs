@@ -11,7 +11,7 @@ public sealed record EmergencyDto(string Name, string Phone, string Relationship
 
 public sealed record ProfileDto(
     string FirstName, string LastName, string Dob, string Email, string Phone, string Citizenship,
-    string[] Dietary, string[] Needs, string Bedding, string SpecialRequests, EmergencyDto Emergency);
+    string[] Dietary, string[] Needs, string Bedding, string SpecialRequests, EmergencyDto Emergency, string[] KeepOut);
 
 public sealed record ProfileViewDto(ProfileDto Profile, Guid Id, bool CanEdit, int DaysToDeparture);
 
