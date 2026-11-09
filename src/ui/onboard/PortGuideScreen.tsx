@@ -13,6 +13,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { BackLink } from './common'
+import { PortDirection } from './DeviceTools'
 import { TippingCard } from '../delights/Delights'
 
 /** Port know-how (S6A-03, S6A-07 to S6A-13): fair prices and scam alerts, safety and local rules, phrases and allergy cards, walks, day passes, family notes and local vendors. Authored concept content (verify before real use). */
@@ -37,6 +38,7 @@ export function PortGuideScreen() {
         {ports.map((p) => <label key={p} className="choice"><input type="radio" name="guide-port" checked={port === p} onChange={() => setPort(p)} /><span>{portById(p)?.name ?? p}</span></label>)}
       </fieldset>
 
+      <PortDirection port={port} />
       {!k && <ShortGuide port={port} />}
       {k && <FullGuide port={port} k={k} crowd={crowd} />}
       <BackLink to="/ship/port" label={t('route.portDay')} />

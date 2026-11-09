@@ -278,10 +278,10 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-07 | P1 | Partial | F | `src/push/push.ts`, `src/ui/pushScreens.test.tsx` | Deep link to exact object unchecked (COM-06) |
 | MOB-08 | P1 | Built | F | `src/ui/account/MemoryScreen.tsx`, `src/ui/delights/HighlightReel.tsx`, `src/ui/plan/AwayScreen.tsx` | Fallback when share unsupported unchecked |
 | MOB-09 | P1 | Partial | F | `src/ui/checkin/PhotoCoach.tsx`, `src/ui/media/Pictures.tsx` | Capture for pictures exists; passport scan and tag scan are out of reach |
-| MOB-10 | P1 | Not built | F | none | No QR/barcode scanner found; `BarcodeDetector` is not used |
+| MOB-10 | P1 | Partial | F | none | BM29: `CodeScanner` uses `BarcodeDetector` where present, typed-code fallback; code finds a place or own link only, never proof; no device check |
 | MOB-11 | P1 | Built | F | `src/hooks/useWakeLock.ts`, `src/hooks/useWakeLock.test.tsx`, `src/ui/boarding/PassScreen.tsx` | Muster card and map route use unchecked |
 | MOB-12 | P0 | Built | F | `src/styles`, `src/ui/a11y.test.tsx` | Touch target size asserted only by the audit |
-| MOB-13 | P1 | Partial | F | `src/ui/delights/PortDelights.tsx`, `src/domain/landPath.ts` | `geolocation` appears only in a headers file; port navigation is manual |
+| MOB-13 | P1 | Partial | F | `src/ui/delights/PortDelights.tsx`, `src/domain/landPath.ts` | BM29: guest-started one-shot location on the port guide shows distance and direction to the approximate port point; nothing stored; no device check |
 | MOB-14 | P0 | Built | R | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | Closed in BM18 |
 | MOB-15 | P1 | Built | F | `src/domain/calendar.ts`, `calendar.test.ts` | Zoned times in UTC, SEQUENCE and cancel tested (BM4); no caller sends an update or cancel yet |
 | MOB-16 | P2 | Out of reach | F | `server/Princess.Api/Services/Providers.cs` | Wallet passes are simulated on the server only; the document marks P2 |
@@ -290,7 +290,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-19 | P1 | Built | F | `src/ui/home/SummaryScreen.tsx`, `src/ui/home/BriefingScreen.tsx`, `src/ui/delights/DiscoverDelights.tsx` | `speechSynthesis`; user-initiated |
 | MOB-20 | P2 | Built | F | `src/ui/home/AskScreen.tsx` | `SpeechRecognition`; optional |
 | MOB-21 | P2 | Built | F | `src/settings/haptics.ts`, `src/settings/haptics.test.ts` | None found |
-| MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | Compass arrow from the deck graph; device orientation sensor not used (P2) |
+| MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | BM29: optional device compass turns the port arrow, north-up fallback; no device check |
 | MOB-23 | P0 | Built | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
 | MOB-24 | P1 | Built | R | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/data/battery.ts`, `refreshFactor`) |
 | MOB-25 | P1 | Built | F | `src/ui/media/Pictures.tsx`, `src/media/shrink.ts`, `src/domain/media.ts` | Preview before sending, delete, and location stripped on redraw |

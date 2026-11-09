@@ -212,3 +212,13 @@ Theme: step-free sail-away (EMB-13). Only EMB-13 was built.
 `src/domain/sailAwayViews.ts` lists the deck plan's open-deck places, step-free first, with a step-free filter on the sky screen and a link to the route finder. Test: `sailAwayViews.test.ts`. It does not claim a best spot, because the plan has no pier side or sight lines.
 Not built: GTS-09 (terminal map and step-free route) and POR-07 (per-port return routes). I read the code and found no terminal or pier data anywhere, so building them would mean inventing it; they move to group C (need a source). Matrix totals not regenerated; EMB-13 stays Partial. No browser check.
 Next in group A: MOB-13, MOB-22, MOB-10 (foreground location, compass, QR scan).
+
+## 5n. BM29 result (built, not committed)
+
+Theme: device sensors, started by the guest (MOB-13, MOB-22, MOB-10). All three rows stay Partial.
+1. **MOB-13:** `PortDirection` on the port guide: one tap reads the position once (no watch, nothing stored or sent), then gives distance and direction to the approximate port point from `PORT_COORDS`. A poor fix (over 500 m) is called too rough. Denied or unavailable is said plainly.
+2. **MOB-22:** after a fix, a second tap starts the device compass (asks iOS permission); an arrow turns toward the port and words say left or right. With no reading the answer stays north-up.
+3. **MOB-10:** `CodeScanner` on the deck map: camera scan through `BarcodeDetector` where the browser has it, typed code always. A code finds a ship place or opens this app's own page; other addresses are shown as text and never opened. A note says it is not proof of boarding, check-in or payment.
+Maths and code reading are in `deviceSense.ts` and `scanCode.ts` with node tests. Limits: no component test for the UI, no device or browser check of geolocation, compass or camera; the port point is a rough centre, not the pier; ship-side positioning (GPS aboard) is not attempted. Matrix totals not regenerated.
+Next in group A: DRM-07, DRM-09, MNG-16, QOL-17, QOL-18 (occasion filters, solo inventory, reusable preferences, deck cutaway, photo curation).
+Guard changes: `DeviceTools.tsx` is allowed one guest-started `.play()` (scan preview, stopped on cleanup) and one polling `setTimeout` (ended by the effect cleanup flag, not `clearTimeout`).

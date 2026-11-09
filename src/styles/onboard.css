@@ -88,3 +88,4 @@
 .nav-landmarks > li { padding: var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); }
 .nav-landmarks h3 { margin: 0 0 var(--space-1); }
 .nav-landmarks p { margin: 0 0 var(--space-1); }
+.qr-video { display: block; width: 100%; max-width: 24rem; margin: 0 auto var(--space-3); border-radius: var(--radius, 0.5rem); }

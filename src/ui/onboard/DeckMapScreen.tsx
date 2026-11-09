@@ -8,6 +8,7 @@ import { Chip } from '../Chip'
 import { BackLink } from './common'
 import { DeckPlan } from './DeckPlan'
 import { RouteFinder } from './RouteFinder'
+import { CodeScanner } from './DeviceTools'
 import { ParkMySpot } from '../delights/SeaDelights'
 import { useMemory } from '../../hooks/useMemory'
 
@@ -35,6 +36,7 @@ export function DeckMapScreen() {
 
       <RouteFinder />
       <ParkMySpot />
+      <CodeScanner />
 
       <div className="field">
         <label htmlFor="map-search">{t('map.search')}</label>

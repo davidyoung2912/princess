@@ -35,8 +35,8 @@ describe('OFF-06 image loading control', () => {
     for (const f of files('src')) {
       const src = readFileSync(f, 'utf8')
       expect(src, f).not.toMatch(/autoPlay/i)
-      // The one .play() is the camera preview, which only runs after the guest taps to start the coach.
-      if (!f.endsWith('PhotoCoach.tsx')) expect(src, f).not.toMatch(/\.play\(\)/)
+      // The only .play() calls are camera previews, which run after the guest taps to start the coach or the code scan.
+      if (!f.endsWith('PhotoCoach.tsx') && !f.endsWith('DeviceTools.tsx')) expect(src, f).not.toMatch(/\.play\(\)/)
     }
   })
 })
