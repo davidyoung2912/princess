@@ -212,6 +212,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       list: () => inBooking('/requests'),
       create: (item, qty, note) => inTrip('post', '/requests', { item, qty, note }),
       cancel: (id) => inTrip('delete', `/requests/${seg(id)}`),
+      escalate: (id) => inTrip('post', `/requests/${seg(id)}/escalate`),
+      confirm: (id) => inTrip('post', `/requests/${seg(id)}/confirm`),
+      reopen: (id) => inTrip('post', `/requests/${seg(id)}/reopen`),
     },
     reports: {
       list: () => inBooking('/safety-reports'),

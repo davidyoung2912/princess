@@ -94,7 +94,7 @@ public sealed class DapperCheckinStore(IDbConnectionFactory db) : ICheckinStore
     {
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<EmbarkRow>(Sql.Cmd(
-            "SELECT LuggageDroppedAt, Terminal FROM dbo.EmbarkProgress WHERE BookingId = @bookingId", new { bookingId }, null, ct));
+            "SELECT LuggageDroppedAt, Terminal, BoardedAt, ISNULL(BoardedSource, N'') AS BoardedSource FROM dbo.EmbarkProgress WHERE BookingId = @bookingId", new { bookingId }, null, ct));
     }
 
     public async Task<HashSet<string>> ListTicksAsync(long bookingId, string kind, CancellationToken ct)

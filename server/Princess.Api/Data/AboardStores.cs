@@ -23,6 +23,15 @@ public sealed class ServiceRequestRow
     public DateTime PlacedAt { get; set; }
     /// <summary><c>received</c> until the guest cancels it (<c>cancelled</c>); the rest of the stages are worked out from the clock.</summary>
     public string Stage { get; set; } = "received";
+    /// <summary>Escalations, confirmations and reopens, oldest first. A reopen never removes the earlier ones.</summary>
+    public List<ServiceRequestEventRow> Events { get; set; } = [];
+}
+
+public sealed class ServiceRequestEventRow
+{
+    /// <summary><c>escalated</c>, <c>confirmed</c> or <c>reopened</c>.</summary>
+    public string Kind { get; set; } = "";
+    public DateTime At { get; set; }
 }
 
 public sealed class SafetyReportRow
@@ -114,6 +123,8 @@ public interface IAboardStore
     Task<List<ServiceRequestRow>> ListRequestsAsync(long bookingId, CancellationToken ct);
     Task AddRequestAsync(long bookingId, ServiceRequestRow request, CancellationToken ct);
     Task<bool> CancelRequestAsync(long bookingId, Guid publicId, CancellationToken ct);
+    /// <summary>Records an escalation, closure confirmation or reopen on the booking's request; false when it is not theirs.</summary>
+    Task<bool> AddRequestEventAsync(long bookingId, Guid publicId, string kind, DateTime at, CancellationToken ct);
 
     Task<List<SafetyReportRow>> ListReportsAsync(long bookingId, CancellationToken ct);
     Task AddReportAsync(long bookingId, SafetyReportRow report, CancellationToken ct);

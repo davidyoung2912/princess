@@ -1974,10 +1974,13 @@ CREATE TABLE dbo.EmbarkProgress (
   BookingId BIGINT NOT NULL CONSTRAINT PK_EmbarkProgress PRIMARY KEY,
   LuggageStatus VARCHAR(10) NOT NULL CONSTRAINT DF_EmbarkProgress_LuggageStatus DEFAULT 'notDropped', LuggageDroppedAt DATETIME2(0) NULL,
   Terminal NVARCHAR(60) NOT NULL CONSTRAINT DF_EmbarkProgress_Terminal DEFAULT N'',
+  -- Set by the ship, never by the guest: the manifest or an authorised scan (EMB-01).
+  BoardedAt DATETIME2(0) NULL, BoardedSource VARCHAR(8) NULL,
   CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_EmbarkProgress_CreatedAt DEFAULT SYSUTCDATETIME(),
   UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_EmbarkProgress_UpdatedAt DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_EmbarkProgress_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE,
-  CONSTRAINT CK_EmbarkProgress_LuggageStatus CHECK (LuggageStatus IN ('notDropped','dropped','delivered'))
+  CONSTRAINT CK_EmbarkProgress_LuggageStatus CHECK (LuggageStatus IN ('notDropped','dropped','delivered')),
+  CONSTRAINT CK_EmbarkProgress_BoardedSource CHECK ((BoardedAt IS NULL AND BoardedSource IS NULL) OR (BoardedAt IS NOT NULL AND BoardedSource IN ('manifest','scan')))
 );
 END
 
@@ -2571,6 +2574,18 @@ CREATE TABLE dbo.ServiceRequests (
   CONSTRAINT CK_ServiceRequests_Qty CHECK (Qty > 0)
 );
 CREATE INDEX IX_ServiceRequests_BookingId ON dbo.ServiceRequests (BookingId);
+END
+
+-- What happened to a request after it was placed, kept for good: a reopen never erases the earlier rounds (SEA-20).
+IF OBJECT_ID(N'dbo.ServiceRequestEvents', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ServiceRequestEvents (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ServiceRequestEvents PRIMARY KEY,
+  RequestId BIGINT NOT NULL, Kind VARCHAR(9) NOT NULL, [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ServiceRequestEvents_ServiceRequests FOREIGN KEY (RequestId) REFERENCES dbo.ServiceRequests (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_ServiceRequestEvents_Kind CHECK (Kind IN ('escalated','confirmed','reopened'))
+);
+CREATE INDEX IX_ServiceRequestEvents_RequestId ON dbo.ServiceRequestEvents (RequestId);
 END
 
 IF OBJECT_ID(N'dbo.SafetyReports', N'U') IS NULL

@@ -400,7 +400,8 @@ public sealed class CheckinService(
             [.. party.Select(g => new DocumentReadyDto(g.PublicId, AccountService.FullName(g), DocumentService.Check(g, c.Booking.Departure, c.Booking.Nights).Blocking == 0))],
             [.. BoardingRules.Afternoon.Select(a => new AfternoonDto(a.Id, Ms(BoardingRules.DepartureAt(c.Departure, a.Time))))],
             [.. party.Where(g => RecordOf(steps.GetValueOrDefault(g.UserId)).Health?.Flagged == true).Select(AccountService.FullName)],
-            !c.Actor.IsSupervised);
+            !c.Actor.IsSupervised,
+            BoardingRules.Boarded(embark?.BoardedAt is { } b ? Utc(b) : null, embark?.BoardedSource, (await store.GetBookingAsync(bookingId, ct))?.FinishedAt is not null, c.Departure, c.Now) is { } bd ? new BoardedDto(Ms(bd.At), bd.Source) : null);
     }
 
     public async Task<EmbarkViewDto> EmbarkAsync(UserRecord actor, string? number, CancellationToken ct) =>

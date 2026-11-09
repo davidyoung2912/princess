@@ -28,12 +28,15 @@ export function RequestsScreen() {
   useVisibleInterval(list.retry, 60_000, true)
   const [sentItem, setSentItem] = useState('')
   const ask = useAction(async (item: string) => { setSentItem(''); await api.aboard.requests.create(item, qty[item] ?? 1, ''); setSentItem(item); list.retry() })
+  const escalate = useAction(async (id: string) => { await api.aboard.requests.escalate(id); list.retry() })
+  const confirm = useAction(async (id: string) => { await api.aboard.requests.confirm(id); list.retry() })
+  const reopen = useAction(async (id: string) => { await api.aboard.requests.reopen(id); list.retry() })
   const cancel = useAction(async (id: string) => { await api.aboard.requests.cancel(id); list.retry() })
   return (
     <div className="page">
       <p>{t('req.intro')}</p>
       <ChildNote />
-      <AboardError error={ask.error ?? cancel.error} />
+      <AboardError error={ask.error ?? cancel.error ?? escalate.error ?? confirm.error ?? reopen.error} />
       <section aria-labelledby="req-quick">
         <h2 id="req-quick">{th('req.quick')}</h2>
         <p className="muted">{t('req.quickHint')}</p>
@@ -80,7 +83,25 @@ export function RequestsScreen() {
                   <h3 className="card__title">{r.qty > 1 ? `${r.qty} × ` : ''}{th(`req.i.${r.item}` as StringKey)}</h3>
                   <p><StatusBadge kind={r.stage === 'done' ? 'booked' : r.stage === 'cancelled' ? 'cancelled' : r.stage === 'onTheWay' ? 'ready' : 'waitlist'} label={t(`req.s.${r.stage}` as StringKey)} /></p>
                   {r.stage !== 'cancelled' && <Stepper label={t('req.track')} steps={requestProgress(r.stage).map((x) => ({ id: x.id, state: x.state, label: t(`req.step.${x.id}` as StringKey) }))} />}
+                  <p className="muted">{t(`req.team.${r.team}` as StringKey)}</p>
                   <p className="muted">{r.stage === 'done' || r.stage === 'cancelled' ? t('req.asked', { time: shipTime(r.placedAt) }) : t('req.eta', { time: shipTime(Math.max(r.etaAt, now)) })}</p>
+                  {(r.stage === 'done' || r.stage === 'cancelled') && !r.confirmed && <p className="muted">{t(`req.noEta.${r.stage}` as StringKey)}</p>}
+                  {r.escalated && <p>{t('req.escalated')}</p>}
+                  {r.confirmed && <p>{t('req.closed')}</p>}
+                  {(r.stage === 'received' || r.stage === 'onTheWay') && !r.escalated && !r.canEscalate && <p className="muted">{t('req.escalateHint', { minutes: 10 })}</p>}
+                  {r.canEscalate && <Button variant="secondary" disabled={escalate.busy} onClick={() => void escalate.run(r.id)}>{t('req.escalate')}</Button>}
+                  {r.canConfirm && (
+                    <div role="group" aria-label={t('req.confirmQ')} className="button-row">
+                      <Button disabled={confirm.busy} onClick={() => void confirm.run(r.id)}>{t('req.fixed')}</Button>
+                      {r.canReopen && <Button variant="secondary" disabled={reopen.busy} onClick={() => void reopen.run(r.id)}>{t('req.reopen')}</Button>}
+                    </div>
+                  )}
+                  {r.history.length > 0 && (
+                    <details>
+                      <summary>{t('req.history')}</summary>
+                      <ul className="plain-list">{r.history.map((h) => <li key={`${h.kind}-${h.at}`}>{t(`req.h.${h.kind}` as StringKey, { time: shipTime(h.at) })}</li>)}</ul>
+                    </details>
+                  )}
                   {r.canCancel && <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run(r.id)}>{t('req.cancel')}</Button>}
                 </Card>
               </li>

@@ -103,6 +103,12 @@ export const EMPTY_WELCOME: Welcome = { share: [], occasion: '', pronunciation: 
 /** Only fields the guest chose to share, and only if they have text. Nothing is shared until a field is ticked. */
 export const sharedWelcome = (w: Welcome): { field: WelcomeField; text: string }[] => WELCOME_FIELDS.flatMap((f) => (w.share.includes(f) && w[f].trim() ? [{ field: f, text: w[f].trim() }] : []))
 
+/**
+ * Who says a guest boarded (EMB-01): the ship's manifest or an authorised scan, both set on the server (`EmbarkView.boarded`).
+ * `EmbarkState.boardedAt` is only the guest's own estimate for planning the first hours; it never means boarded.
+ */
+export type BoardedSource = 'manifest' | 'scan'
+
 export interface EmbarkState { needs: EmbarkNeeds; window: string | null; boardedAt: string; family: FamilyBoarding; welcome: Welcome }
 export const EMPTY_EMBARK: EmbarkState = { needs: EMPTY_NEEDS, window: null, boardedAt: '12:00', family: EMPTY_FAMILY, welcome: EMPTY_WELCOME }
 

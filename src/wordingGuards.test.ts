@@ -65,7 +65,7 @@ describe('known gaps (it.fails: a pass here means the gap is closed, so turn it 
   })
 
   // proves: EMB-01#1
-  it.fails('EMB-01: the boarded state records who set it (manifest or authorised scan), not only a time the guest types', () => {
+  it('EMB-01: the boarded state records who set it (manifest or authorised scan), not only a time the guest types', () => {
     expect(read('src/domain/embark.ts')).toMatch(/boardedSource|boardedBy|manifest/i)
   })
 

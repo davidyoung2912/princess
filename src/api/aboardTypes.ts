@@ -1,7 +1,7 @@
 import type { Cents } from '../domain/money'
 import type { Selection } from '../domain/catalogue'
 import type { GameState } from '../domain/games'
-import type { Friend, ChatReportReason, GratuityChoice, PartyInput, ReportKind, RequestStage } from '../domain/services'
+import type { Friend, ChatReportReason, GratuityChoice, PartyInput, ReportKind, RequestGroup, RequestStage } from '../domain/services'
 import type { PersonaId } from '../domain/people'
 import type { PinReset } from '../domain/pinReset'
 
@@ -28,6 +28,15 @@ export interface RequestRow {
   etaAt: number
   stage: RequestStage
   canCancel: boolean
+  /** The team that owns it: `housekeeping` or `maintenance`. No named person. */
+  team: RequestGroup
+  escalated: boolean
+  confirmed: boolean
+  canEscalate: boolean
+  canConfirm: boolean
+  canReopen: boolean
+  /** Escalations, confirmations and reopens, oldest first. A reopen keeps the earlier ones. */
+  history: { kind: 'escalated' | 'confirmed' | 'reopened'; at: number }[]
 }
 
 export interface RequestsApi {
@@ -36,6 +45,12 @@ export interface RequestsApi {
   create(item: string, qty: number, note: string): Promise<RequestRow[]>
   /** Rejects `conflict` (`tooLate`) once the crew is on the way. */
   cancel(id: string): Promise<RequestRow[]>
+  /** Rejects `conflict` (`notYet`) while the request is within its expected time or already escalated. */
+  escalate(id: string): Promise<RequestRow[]>
+  /** Rejects `conflict` (`notDone`). */
+  confirm(id: string): Promise<RequestRow[]>
+  /** Rejects `conflict` (`cannotReopen`) once confirmed or after two reopens. */
+  reopen(id: string): Promise<RequestRow[]>
 }
 
 export interface ReportRow { id: string; kind: ReportKind; where: string; note: string; anonymous: boolean; at: number; reference: string }

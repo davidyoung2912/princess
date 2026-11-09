@@ -15,7 +15,12 @@ public sealed record SelectionRequest(string? Item, int Day, string? Time, int Q
 
 // ---- One-tap requests ----
 
-public sealed record ServiceRequestDto(Guid Id, string Item, int Qty, string Note, long PlacedAt, long EtaAt, string Stage, bool CanCancel);
+public sealed record RequestEventDto(string Kind, long At);
+
+/// <summary>A request with its team, its expected time (restarted by a reopen) and what has happened to it. <c>Team</c> is the group (housekeeping or maintenance); no named person.</summary>
+public sealed record ServiceRequestDto(
+    Guid Id, string Item, int Qty, string Note, long PlacedAt, long EtaAt, string Stage, bool CanCancel,
+    string Team, bool Escalated, bool Confirmed, bool CanEscalate, bool CanConfirm, bool CanReopen, List<RequestEventDto> History);
 
 public sealed record CreateServiceRequest(string? Item, int Qty, string? Note);
 

@@ -135,7 +135,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MNG-08 | P1 | Built | F | `src/domain/packing.ts`, `src/ui/plan/PackingScreen.tsx` | None found |
 | MNG-09 | P1 | Partial | F | `src/ui/plan/TravelScreen.tsx`, `src/domain/travel.ts`, `src/ui/plan/` getting-there route | BM20: no provider, reference or contact fields |
 | MNG-10 | P0 | Built | F | `src/ui/book/BalanceScreen.tsx`, `src/ui/account/PaymentsScreen.tsx` | None found |
-| MNG-11 | P0 | Partial | R | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | Reconciled: aboard requests show stage and ETA; no owner or team, no reason when no ETA |
+| MNG-11 | P0 | Partial | R | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | BM45: team, ETA, reason when none, escalate; owner is a team and nobody is paged |
 | MNG-12 | P1 | Built | F | `src/domain/medicalCard.ts`, `src/domain/care.test.ts`, `src/domain/medicalCard.ts` | Audience-specific sharing unchecked |
 | MNG-13 | P1 | Built | F | `src/ui/book/changes.ts`, `src/domain/planChange.ts`, `src/domain/planChange.test.ts` | None found |
 | MNG-14 | P1 | Built | F | `src/ui/account/NotificationsScreen.tsx`, `src/domain/notifications.ts` | Category filters unchecked |
@@ -177,7 +177,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | GTS-14 | P0 | Partial | F | `src/ui/plan/AssistanceScreen.tsx`, `src/domain/assistance.ts` | Assistance confirmation needs operator sign-off (doc says safety review) |
 | GTS-15 | P1 | Built | R | `src/domain/phoneSetup.ts`, `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx` | Night-before test built in BM3 (`src/domain/nightBefore.ts`) |
 | GTS-16 | P1 | Built | F | `src/ui/home/` medallion route `/home/medallion` | None found |
-| EMB-01 | P0 | Partial | R | `src/domain/boarding.ts`, `src/ui/boarding/EmbarkScreen.tsx` | Boarded is a guest-typed time; no manifest or scan source (BM16) |
+| EMB-01 | P0 | Partial | R | `src/domain/boarding.ts`, `src/ui/boarding/EmbarkScreen.tsx` | Boarded comes from the server with a manifest or scan source (BM45); manifest simulated, no scan writer |
 | EMB-02 | P0 | Built | R | `src/ui/onboard/SafetyScreens.tsx`, `src/domain/safety.ts` | Closed in BM18 |
 | EMB-03 | P0 | Out of reach | F | `src/ui/onboard/SafetyScreens.tsx` | Needs verified accessible alternative from the safety owner |
 | EMB-04 | P1 | Built | F | `src/domain/embarkDelights.ts`, `src/domain/embarkDelights.test.ts` | None found |
@@ -211,7 +211,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | SEA-17 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/ui/aboard/` teen route `/ship/teen` | Authorised pickup unchecked |
 | SEA-18 | P1 | Partial | F | `src/ui/aboard/` access route `/ship/access`, `src/ui/onboard/Tickets.tsx` | Accommodation requests per event unchecked |
 | SEA-19 | P0 | Built | F | `src/ui/aboard/SafetyScreens.tsx`, `src/domain/medicalCard.ts` (route `/ship/allergy-chain`) | Venue acknowledgement is simulated |
-| SEA-20 | P0 | Partial | R | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/account/` cases route | Reconciled: no escalation, closure confirmation or reopen on aboard requests (pre-trip fix cases have escalate) |
+| SEA-20 | P0 | Partial | R | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/account/` cases route | BM45: escalate, confirm and reopen with history; stage still follows the clock, no crew workflow |
 | SEA-21 | P2 | Out of reach | F | `src/ui/extras/RoomScreen.tsx` | Needs ship room-control integration |
 | SEA-22 | P1 | Built | F | `src/domain/briefing.ts`, `src/domain/briefing.test.ts`, `src/ui/home/BriefingScreen.tsx` | None found |
 | SEA-23 | P1 | Built | F | `src/domain/sky.ts`, `src/domain/sky.test.ts`, `src/ui/onboard/SkyScreen.tsx` | Telemetry simulated |

@@ -26,6 +26,12 @@ public static class AboardEndpoints
             .WithSummary("Asks for an item or a repair. 400 badItem or badQuantity; 403 for a child account; 409 closed before boarding, tooMany open requests or duplicate of one still open.");
         r.MapDelete("/{id:guid}", async (string number, Guid id, ICurrentUser me, ServiceRequestService svc, CancellationToken ct) => Results.Ok(await svc.CancelAsync(await me.LoadAsync(ct), number, id, ct)))
             .WithSummary("Cancels a request. 409 tooLate once the crew is on the way.");
+        r.MapPost("/{id:guid}/escalate", async (string number, Guid id, ICurrentUser me, ServiceRequestService svc, CancellationToken ct) => Results.Ok(await svc.EscalateAsync(await me.LoadAsync(ct), number, id, ct)))
+            .WithSummary("Asks a supervisor to take up a request that is late. 409 notYet while it is still within its expected time or already escalated.");
+        r.MapPost("/{id:guid}/confirm", async (string number, Guid id, ICurrentUser me, ServiceRequestService svc, CancellationToken ct) => Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), number, id, ct)))
+            .WithSummary("Confirms that a finished request is fixed. 409 notDone.");
+        r.MapPost("/{id:guid}/reopen", async (string number, Guid id, ICurrentUser me, ServiceRequestService svc, CancellationToken ct) => Results.Ok(await svc.ReopenAsync(await me.LoadAsync(ct), number, id, ct)))
+            .WithSummary("Says a finished request is not fixed and starts it again, keeping its history. 409 cannotReopen once confirmed or after two reopens.");
 
         var sr = b.MapGroup("/safety-reports").WithTags("Safety reports");
         sr.MapGet("", async (string number, ICurrentUser me, SafetyReportService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), number, ct)))

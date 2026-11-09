@@ -59,6 +59,14 @@ public sealed class InMemoryAboardStore(InMemoryShipboardStore shipboard, InMemo
         return Task.CompletedTask;
     }
 
+    public Task<bool> AddRequestEventAsync(long bookingId, Guid publicId, string kind, DateTime at, CancellationToken ct)
+    {
+        var r = Requests.FirstOrDefault(x => x.BookingId == bookingId && x.Row.PublicId == publicId).Row;
+        if (r is null) return Task.FromResult(false);
+        r.Events.Add(new ServiceRequestEventRow { Kind = kind, At = at });
+        return Task.FromResult(true);
+    }
+
     public Task<bool> CancelRequestAsync(long bookingId, Guid publicId, CancellationToken ct)
     {
         var r = Requests.FirstOrDefault(x => x.BookingId == bookingId && x.Row.PublicId == publicId).Row;

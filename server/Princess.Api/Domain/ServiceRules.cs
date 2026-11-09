@@ -35,6 +35,33 @@ public static partial class ServiceRules
 
     public const int MaxOpenRequests = 6;
 
+    /// <summary>Minutes a request must have been open before the guest may ask for it to be escalated (a reopened one may be escalated at once).</summary>
+    public const int EscalateAfterMin = 10;
+    public const int MaxReopens = 2;
+
+    /// <summary>The team that owns a request: its group. No named person is promised.</summary>
+    public static string TeamFor(string group) => group;
+
+    /// <summary>
+    /// Where a request stands once its history is read (SEA-20). The clock starts again at the latest reopen; a confirmation or an escalation counts only
+    /// for the current round. A request that is done can be confirmed or reopened, until it is confirmed.
+    /// </summary>
+    public sealed record RequestState(string Stage, long StartedAtMs, bool Escalated, bool Confirmed, bool CanEscalate, bool CanConfirm, bool CanReopen);
+
+    public static RequestState StateOf(long placedAtMs, int etaMin, long nowMs, bool cancelled, IReadOnlyList<(string Kind, long AtMs)> events)
+    {
+        var reopens = events.Where(e => e.Kind == "reopened").Select(e => e.AtMs).DefaultIfEmpty().Max();
+        var started = reopens > 0 ? reopens : placedAtMs;
+        var round = events.Where(e => e.AtMs >= started && e.Kind != "reopened").ToList();
+        var stage = RequestStage(started, etaMin, nowMs, cancelled);
+        var escalated = round.Any(e => e.Kind == "escalated");
+        var confirmed = round.Any(e => e.Kind == "confirmed");
+        var open = stage is "received" or "onTheWay";
+        var canEscalate = open && !escalated && (reopens > 0 || nowMs - started >= EscalateAfterMin * Min);
+        var done = stage == "done" && !confirmed;
+        return new RequestState(stage, started, escalated, confirmed, canEscalate, done, done && events.Count(e => e.Kind == "reopened") < MaxReopens);
+    }
+
     /// <summary>Received, on the way after half the usual time, done after all of it. Cancelled stays cancelled.</summary>
     public static string RequestStage(long placedAtMs, int etaMin, long nowMs, bool cancelled)
     {

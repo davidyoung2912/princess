@@ -54,8 +54,11 @@ public sealed record DocumentReadyDto(Guid Id, string Name, bool Ready);
 
 public sealed record AfternoonDto(string Id, long At);
 
+/// <summary>Boarded as the ship records it: <c>Source</c> is <c>manifest</c> or <c>scan</c>. Showing a pass never produces one.</summary>
+public sealed record BoardedDto(long At, string Source);
+
 public sealed record EmbarkViewDto(
     BoardingViewDto Boarding, long OpensAt, long GangwayClosesAt, long StateroomReadyAt, bool StateroomReady, string? Traffic, LuggageDto Luggage, List<TickDto> CarryOn,
-    List<TickDto> Companion, string? Current, List<DocumentReadyDto> Documents, List<AfternoonDto> Afternoon, List<string> NurseCheck, bool CanEdit);
+    List<TickDto> Companion, string? Current, List<DocumentReadyDto> Documents, List<AfternoonDto> Afternoon, List<string> NurseCheck, bool CanEdit, BoardedDto? Boarded);
 
 public sealed record BagsRequest(bool Dropped);

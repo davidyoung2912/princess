@@ -8,6 +8,7 @@ import {
 import { isTime, toggleIn } from '../../domain/journey'
 
 import { formatTime } from '../../domain/cruise'
+import { useShipTime } from '../onboard/shipTime'
 import { api } from '../../runtime'
 import { useMine } from '../../hooks/useMine'
 import { useTrip } from '../../hooks/useTrip'
@@ -26,6 +27,9 @@ import { partyPeople } from '../../account/context'
 export function EmbarkPlanScreen() {
   const { state, update, me } = useTrip()
   const status = useMine(() => api.checkin.status())
+  const shipEmbark = useMine(() => api.boarding.embark())
+  const shipTime = useShipTime()
+  const shipBoarded = shipEmbark.data?.boarded ?? null
   const { embark } = state
   const needs = embark.needs
   const setNeeds = (change: Partial<EmbarkNeeds>) => update((s) => ({ ...s, embark: { ...s.embark, needs: { ...s.embark.needs, ...change } } }))
@@ -94,6 +98,7 @@ export function EmbarkPlanScreen() {
 
       <section aria-labelledby="e-hours">
         <h2 id="e-hours">{th('embarkPlan.hours')}</h2>
+        <p role="status">{shipBoarded ? t('embarkPlan.boardedConfirmed', { time: shipTime(shipBoarded.at), source: t(`embarkPlan.source.${shipBoarded.source}` as StringKey) }) : t('embarkPlan.boardedNot')}</p>
         <Field label={t('embarkPlan.boarded')} type="time" value={embark.boardedAt} onChange={(e) => isTime(e.target.value) && update((s) => ({ ...s, embark: { ...s.embark, boardedAt: e.target.value } }))} />
         <p>{t(hours.cabinReady ? 'embarkPlan.cabinReady' : 'embarkPlan.cabinNotReady', { time: formatTime(EMBARK.staterooms) })}</p>
         <ol>{hours.items.map((i) => <li key={i.id}>{formatTime(hourClock(i.at))}: {t(`embarkPlan.hour.${i.id}` as StringKey)}</li>)}</ol>

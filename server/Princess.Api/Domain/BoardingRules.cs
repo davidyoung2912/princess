@@ -100,6 +100,20 @@ public static class BoardingRules
     /// <summary>Ship local time on sailing day (Eastern).</summary>
     public const string TerminalOpens = "11:00", PriorityOpens = "10:30", Staterooms = "13:00", GangwayCloses = "13:30", SailAway = "15:00";
 
+    public sealed record BoardedStatus(DateTime At, string Source);
+
+    /// <summary>
+    /// Boarded only as the ship says so (EMB-01): a recorded manifest or scan time wins. With no record, the simulated manifest lists a checked-in guest as
+    /// boarded 90 minutes after the terminal opens, once that moment has passed. Showing a pass, or anything the guest types, never counts.
+    /// </summary>
+    public static BoardedStatus? Boarded(DateTime? recordedAt, string? recordedSource, bool checkedIn, DateOnly departure, DateTime now)
+    {
+        if (recordedAt is { } at && recordedSource is "manifest" or "scan") return at <= now ? new BoardedStatus(at, recordedSource!) : null;
+        if (!checkedIn) return null;
+        var simulated = DepartureAt(departure, TerminalOpens).AddMinutes(90);
+        return simulated <= now ? new BoardedStatus(simulated, "manifest") : null;
+    }
+
     public static DateTime DepartureAt(DateOnly departure, string hhmm) => Itinerary.LocalToUtc(departure, TimeOnly.ParseExact(hhmm, "HH:mm"), Itinerary.ShipHomeZone);
 
     /// <summary>The wait to get through the terminal, a guide from how busy the arrival window usually is.</summary>

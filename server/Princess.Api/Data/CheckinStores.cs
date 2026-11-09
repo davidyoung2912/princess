@@ -32,6 +32,10 @@ public sealed class EmbarkRow
     public DateTime? LuggageDroppedAt { get; set; }
     /// <summary>A terminal other than the usual one, set by operations; empty when none.</summary>
     public string Terminal { get; set; } = "";
+    /// <summary>When the ship's manifest or an authorised scan says the guest boarded; null until then. The guest cannot set it (EMB-01).</summary>
+    public DateTime? BoardedAt { get; set; }
+    /// <summary><c>manifest</c> or <c>scan</c> when <see cref="BoardedAt"/> is set; otherwise empty.</summary>
+    public string BoardedSource { get; set; } = "";
 }
 
 /// <summary>Phase 9 store: check-in answers, the boarding passes and embarkation progress. A booking is always an internal id; the service has already checked who may see it.</summary>

@@ -64,8 +64,10 @@ public sealed class ServiceRequestService(ScopeLoader scopes, IAboardStore store
     {
         var item = ServiceRules.RequestItemById(r.ItemId)!;
         var placed = Shipboard.Ms(r.PlacedAt);
-        var stage = ServiceRules.RequestStage(placed, item.EtaMin, now, r.Stage == "cancelled");
-        return new ServiceRequestDto(r.PublicId, r.ItemId, r.Qty, r.Note, placed, placed + item.EtaMin * 60_000L, stage, stage == "received");
+        var events = r.Events.Select(e => (e.Kind, Shipboard.Ms(e.At))).ToList();
+        var s = ServiceRules.StateOf(placed, item.EtaMin, now, r.Stage == "cancelled", events);
+        return new ServiceRequestDto(r.PublicId, r.ItemId, r.Qty, r.Note, placed, s.StartedAtMs + item.EtaMin * 60_000L, s.Stage, s.Stage == "received",
+            ServiceRules.TeamFor(item.Group), s.Escalated, s.Confirmed, s.CanEscalate, s.CanConfirm, s.CanReopen, [.. events.Select(e => new RequestEventDto(e.Kind, e.Item2))]);
     }
 
     private async Task<List<ServiceRequestDto>> ListAsync(Scope c, CancellationToken ct) =>
@@ -95,6 +97,27 @@ public sealed class ServiceRequestService(ScopeLoader scopes, IAboardStore store
         var row = (await ListAsync(c, ct)).FirstOrDefault(r => r.Id == id) ?? throw ApiException.NotFound();
         if (!row.CanCancel) throw ApiException.Conflict("tooLate");
         await store.CancelRequestAsync(c.Booking.BookingId, id, ct);
+        return await ListAsync(c, ct);
+    }
+
+    /// <summary>Asks for a late request to be taken up by a supervisor (MNG-11).</summary>
+    public Task<List<ServiceRequestDto>> EscalateAsync(UserRecord actor, string? number, Guid id, CancellationToken ct) =>
+        RecordAsync(actor, number, id, "escalated", r => r.CanEscalate, "notYet", ct);
+
+    /// <summary>The guest says it is fixed; the request closes (SEA-20).</summary>
+    public Task<List<ServiceRequestDto>> ConfirmAsync(UserRecord actor, string? number, Guid id, CancellationToken ct) =>
+        RecordAsync(actor, number, id, "confirmed", r => r.CanConfirm, "notDone", ct);
+
+    /// <summary>The guest says it is not fixed; the request starts a new round and keeps its earlier history.</summary>
+    public Task<List<ServiceRequestDto>> ReopenAsync(UserRecord actor, string? number, Guid id, CancellationToken ct) =>
+        RecordAsync(actor, number, id, "reopened", r => r.CanReopen, "cannotReopen", ct);
+
+    private async Task<List<ServiceRequestDto>> RecordAsync(UserRecord actor, string? number, Guid id, string kind, Func<ServiceRequestDto, bool> allowed, string refusal, CancellationToken ct)
+    {
+        var c = await scopes.LoadAsync(actor, number, write: true, ct);
+        var row = (await ListAsync(c, ct)).FirstOrDefault(r => r.Id == id) ?? throw ApiException.NotFound();
+        if (!allowed(row)) throw ApiException.Conflict(refusal);
+        await store.AddRequestEventAsync(c.Booking.BookingId, id, kind, c.Now, ct);
         return await ListAsync(c, ct);
     }
 }

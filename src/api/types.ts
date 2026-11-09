@@ -2,6 +2,7 @@ import type { AboardApi } from './aboardTypes'
 import type { AheadApi } from './aheadTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
+import type { BoardedSource } from '../domain/embark'
 import type { PackageId, PersonaId, StateroomKind, Tier } from '../domain/people'
 import type { PortId } from '../domain/sailings'
 import type { FromPrice, Quote } from '../domain/pricing'
@@ -700,6 +701,8 @@ export interface EmbarkView {
   /** Anyone's health answer that will be passed to the terminal nurse. */
   nurseCheck: string[]
   canEdit: boolean
+  /** Set only when the ship's manifest or an authorised scan says the guest boarded; null otherwise. Showing a pass never sets it (EMB-01). */
+  boarded: { at: number; source: BoardedSource } | null
 }
 
 export interface Api {

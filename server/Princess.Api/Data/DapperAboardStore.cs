@@ -64,8 +64,19 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
     public async Task<List<ServiceRequestRow>> ListRequestsAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        return (await c.QueryAsync<ServiceRequestRow>(Sql.Cmd(
+        var rows = (await c.QueryAsync<ServiceRequestRow>(Sql.Cmd(
             "SELECT PublicId, ItemId, Qty, ISNULL(Note, N'') AS Note, PlacedAt, Stage FROM dbo.ServiceRequests WHERE BookingId = @bookingId ORDER BY PlacedAt DESC, Id DESC", new { bookingId }, null, ct))).ToList();
+        var events = (await c.QueryAsync<(Guid PublicId, string Kind, DateTime At)>(Sql.Cmd(
+            "SELECT r.PublicId, e.Kind, e.[At] AS [At] FROM dbo.ServiceRequestEvents e JOIN dbo.ServiceRequests r ON r.Id = e.RequestId WHERE r.BookingId = @bookingId ORDER BY e.[At], e.Id", new { bookingId }, null, ct))).ToList();
+        foreach (var r in rows) r.Events = [.. events.Where(e => e.PublicId == r.PublicId).Select(e => new ServiceRequestEventRow { Kind = e.Kind, At = e.At })];
+        return rows;
+    }
+
+    public async Task<bool> AddRequestEventAsync(long bookingId, Guid publicId, string kind, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd(
+            "INSERT INTO dbo.ServiceRequestEvents (RequestId, Kind, [At]) SELECT Id, @kind, @at FROM dbo.ServiceRequests WHERE BookingId = @bookingId AND PublicId = @publicId", new { bookingId, publicId, kind, at }, null, ct)) > 0;
     }
 
     public async Task AddRequestAsync(long bookingId, ServiceRequestRow r, CancellationToken ct)

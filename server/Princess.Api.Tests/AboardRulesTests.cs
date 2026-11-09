@@ -23,6 +23,39 @@ public class AboardRulesTests
     [Fact]
     public void ACancelledRequestStaysCancelled() => Assert.Equal("cancelled", ServiceRules.RequestStage(0, 20, 99 * Min, true));
 
+    private static (string, long)[] Ev(params (string, int)[] e) => [.. e.Select(x => (x.Item1, x.Item2 * Min))];
+
+    [Fact]
+    public void ARequestCanBeEscalatedOnceItHasBeenOpenTenMinutesAndOnlyOnce()
+    {
+        Assert.False(ServiceRules.StateOf(0, 45, 9 * Min, false, []).CanEscalate);
+        Assert.True(ServiceRules.StateOf(0, 45, 10 * Min, false, []).CanEscalate);
+        Assert.False(ServiceRules.StateOf(0, 45, 12 * Min, false, Ev(("escalated", 11))).CanEscalate);
+    }
+
+    [Fact]
+    public void ADoneRequestCanBeConfirmedOrReopenedAndReopeningStartsAgainAndKeepsHistory()
+    {
+        var done = ServiceRules.StateOf(0, 20, 25 * Min, false, []);
+        Assert.True(done.CanConfirm);
+        Assert.True(done.CanReopen);
+        var reopened = ServiceRules.StateOf(0, 20, 30 * Min, false, Ev(("reopened", 26)));
+        Assert.Equal("received", reopened.Stage);
+        Assert.Equal(26 * Min, reopened.StartedAtMs);
+        Assert.True(reopened.CanEscalate);
+        Assert.True(ServiceRules.StateOf(0, 20, 50 * Min, false, Ev(("reopened", 26))).CanConfirm);
+    }
+
+    [Fact]
+    public void AConfirmedRequestIsClosedAndAThirdReopenIsRefused()
+    {
+        var closed = ServiceRules.StateOf(0, 20, 25 * Min, false, Ev(("confirmed", 22)));
+        Assert.True(closed.Confirmed);
+        Assert.False(closed.CanConfirm);
+        Assert.False(closed.CanReopen);
+        Assert.False(ServiceRules.StateOf(0, 20, 99 * Min, false, Ev(("reopened", 21), ("reopened", 50))).CanReopen);
+    }
+
     // ---- Reports ----
 
     [Theory]
