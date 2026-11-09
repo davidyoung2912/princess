@@ -22,6 +22,9 @@ import { useParty } from '../../hooks/useParty'
 import { t, th, type StringKey } from '../../i18n'
 import { api, partyShare } from '../../runtime'
 import { Banner } from '../Banner'
+import { StanleyGroupCard } from './StanleyGroupCard'
+import { partyPeople } from '../../account/context'
+import { firstName } from './people'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field } from '../Field'
@@ -160,6 +163,7 @@ export function GroupPollScreen() {
             </ul>
             <p role="status">{mine ? t('poll.yours', { label: mine.label }) : t('poll.notYet')} {win ? t('poll.leader', { label: win.label }) : t('poll.noLeader')}</p>
             {poll.closedAt !== undefined && <p role="status">{t('poll.closed')}</p>}
+            <StanleyGroupCard poll={poll} members={partyPeople(me?.id ?? '').map((p) => ({ id: p.id, name: firstName(p.id) }))} organiser={organiser} />
             <div className="button-row">
               {organiser && poll.closedAt === undefined && <Button variant="secondary" onClick={() => set((b) => ({ ...b, polls: b.polls.map((x) => (x.id === poll.id ? closePoll(x, now) : x)) }))}>{t('poll.close')}<span className="visually-hidden"> {poll.question}</span></Button>}
               {poll.closedAt !== undefined && <Button variant="secondary" onClick={() => void exportPoll(poll)}>{t('poll.export')}<span className="visually-hidden"> {poll.question}</span></Button>}

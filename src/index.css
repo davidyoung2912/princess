@@ -16,3 +16,7 @@
 @import './styles/care.css';
 @import './styles/aboard.css';
 @import './styles/print.css';
+
+/* Stanley planner (phase 9): large-print plan, and only the plan on paper. */
+.plan9--large { font-size: 1.4rem; line-height: 1.5; }
+@media print { .plan9--large { font-size: 18pt; } }

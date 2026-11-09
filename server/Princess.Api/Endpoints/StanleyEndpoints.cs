@@ -99,6 +99,29 @@ public static class StanleyEndpoints
         brief.MapGet("/share", async (bool? includeNeeds, ICurrentUser me, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(new { text = await svc.ShareAsync(await me.LoadAsync(ct), includeNeeds == true, ct) }))
             .WithSummary("The \"our ideal cruise\" text of the saved brief { text } for sharing. Needs such as access or diet are left out unless includeNeeds is true. 404 when no brief is saved.");
 
+        var planner = api.MapGroup("/me/stanley/plan").WithTags("Stanley");
+        planner.MapPost("/shape", async (PlannerShapeRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.ShapeAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Shapes one day of the guest's own trip for a scenario (relaxed, active, family, culture, food, mixed) on top of the tours and dinner tables already booked: { day, scenario, segments[{ id, title, kind (tour, event, dinner), source (reserved, suggested), start, end, clock (port or ship), startAt, endAt, placeId, cost (free, included, paid), cents }], " +
+                "conflicts[{ severity (hard, soft), code, ids[], text }], ready, backBy, windows[{ start, end, minutes }], notes[], traveller? }. Everything is placed in time on the right clock (a tour on the port's, the rest on the ship's); tender and landing buffers and walking times are counted. " +
+                "A suggestion that overlaps, has no places left, is off, or would cause a hard conflict is left out and noted; what the guest holds is never moved; ready is false while any hard conflict stands. " +
+                "Send mobility (any, easy, wheelchair) and optionally traveller { name, mobility, pace (relaxed, steady, active), source (verified, reported, unknown) } to get traveller { changes[{ id, severity (change, check), text }], humanCheck, note }. Nothing is booked. 400 day, scenario, mobility or traveller, 404 without a confirmed trip.");
+        planner.MapPost("/hour", async (PlannerHourRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.HourAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Up to three ways to spend the hour from a ship-time HH:mm: { from, to, options[{ kind (event, place), id, title, start, minutes, place, cost (free, included, paid), cents, walk, meets[] (quiet, nearby, childFriendly), why }], occupancy }. " +
+                "Events are only those on and starting in time to walk there; places are only those with no event during the hour. Quiet means exactly that: there is no live crowd data and the answer says so. 400 badPlanner, day or mobility.");
+        planner.MapPost("/evening", async (PlannerEveningRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.EveningAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Plan my evening: dinner (the guest's own table when booked), then a show, then a quiet last drink, in order with the walk between each: { steps[{ kind, title, start, end, place, walkFromPrevious, cost, source (reserved, suggested), route }], notes[], complete }. Booking dinner is done on the dining screen; nothing is booked here.");
+        planner.MapPost("/preview", async (PlannerPreviewRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.PreviewAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("What adding a tour does to its whole day, before the guest adds it: { day, excursion, problem (alreadyBooked, soldOut, closed or null), readyBefore, readyAfter, newConflicts[], lost[] (suggestions it displaces), priceChangeCents (for the party), freeCancelUntil, freeCancelOpen }. 400 excursion.");
+        planner.MapPost("/meeting", async (PlannerMeetingRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.MeetingAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Drafts the message \"meet at the atrium at 5:10, deck 5\" for a deck-plan place id and a ship-time HH:mm, with an optional note (100 characters) and, for a port day, the all-aboard reminder: { text, placeName, deck, section }. The guest sends it. 400 meeting.");
+        planner.MapPost("/compare-tours", async (PlannerCompareRequest body, ICurrentUser me, StanleyPlannerService svc, CancellationToken ct) => Results.Ok(await svc.CompareAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Compares two excursions side by side for the guest's own party: { nameA, nameB, rows[{ key, a, b, differs }] (when, start, duration, exertion, transport, return, price, included, stepFree, places), risks[] (age, adult, timing, tender, sold out), missing[] (what the listing does not say) }. 400 excursion.");
+
+        api.MapPost("/stanley/group/status", (GroupStatusRequest body, StanleyPlannerService svc) => Results.Ok(svc.GroupStatus(body)))
+            .WithTags("Stanley").AllowAnonymous()
+            .WithSummary("The state of a group poll from the answers sent (2 to 6 options, 1 to 20 members, each answer yes, maybe or no; no reasons are accepted): { state (open, expired, closed), answered, silent, tally[], suggestion { kind (clear, leading, tie, compromise, none), optionIds[], text }, reminderDue, reminderText, remains[], controls[], note }. " +
+                "Silence is never counted as a yes. Nothing is stored. 400 question, options, members, answers or times.");
+
         var handoffs = api.MapGroup("/me/stanley/handoffs").WithTags("Stanley");
         handoffs.MapPost("", async (StanleyHandoffRequest body, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))

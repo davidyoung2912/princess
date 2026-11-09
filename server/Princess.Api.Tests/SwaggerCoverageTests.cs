@@ -91,6 +91,13 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/stanley/discover/directions" },
         { "post", "/api/v1/stanley/discover/compare" },
         { "post", "/api/v1/stanley/discover/booking-check" },
+        { "post", "/api/v1/me/stanley/plan/shape" },
+        { "post", "/api/v1/me/stanley/plan/hour" },
+        { "post", "/api/v1/me/stanley/plan/evening" },
+        { "post", "/api/v1/me/stanley/plan/preview" },
+        { "post", "/api/v1/me/stanley/plan/meeting" },
+        { "post", "/api/v1/me/stanley/plan/compare-tours" },
+        { "post", "/api/v1/stanley/group/status" },
         { "get", "/api/v1/me/stanley/discover/brief" },
         { "put", "/api/v1/me/stanley/discover/brief" },
         { "delete", "/api/v1/me/stanley/discover/brief" },
@@ -635,7 +642,7 @@ public class SwaggerCoverageTests : IDisposable
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/sailings")).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/help/contacts")).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/auth/demo-accounts")).StatusCode);   // lists the seeded demo accounts outside production
-        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts" or "/api/v1/auth/demo-accounts" or "/api/v1/stanley/discover/interview" or "/api/v1/stanley/discover/directions" or "/api/v1/stanley/discover/compare" or "/api/v1/stanley/discover/booking-check")))
+        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts" or "/api/v1/auth/demo-accounts" or "/api/v1/stanley/discover/interview" or "/api/v1/stanley/discover/directions" or "/api/v1/stanley/discover/compare" or "/api/v1/stanley/discover/booking-check" or "/api/v1/stanley/group/status")))
         {
             var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{doc}", "passport").Replace("{consent}", "improve");
             var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));

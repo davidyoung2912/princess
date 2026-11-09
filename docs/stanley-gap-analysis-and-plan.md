@@ -393,6 +393,9 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - **Closes:** STN-PRE-01/02/03/05/08/09, STN-SEA-05/08/09, STN-MNG-07, STN-DSC-07, STN-POR-06, 7.3, 7.4.
 - **Acceptance.** Planner cannot create an opening that does not exist; conflict engine tests cover tender buffers and time zones.
 
+- **Status (2026-11-09): built; server tests written, not run or compiled here (no dotnet in this environment).** Server: `StanleyPlannerRules` in `Domain/StanleyPlanner.cs` and `StanleyPlannerService` in `Services/StanleyPlanner.cs`. Signed-in `POST /me/stanley/plan/shape` (six scenarios on top of the booked tours and dinner tables; every time becomes a UTC moment using the port's clock for a tour and the ship's for the rest; tender and landing buffers, walking times, hard and soft conflicts, a ready flag blocked by any hard conflict, free windows, an optional named-traveller check), `hour` (three ways to spend the next hour, each free, included or paid, with explicit meanings of quiet, nearby and child-friendly and a statement that there is no live crowd data), `evening` (dinner, show, quiet last drink with walks), `preview` (new conflicts, suggestions displaced, price for the party, last free-cancel date), `meeting` (the message text) and `compare-tours` (side-by-side rows, risks by the party's ages, what the listing does not say). Anonymous `POST /stanley/group/status` (tally, silence never a yes, leading, tie or compromise without naming anyone, reminder due, what remains, owner controls only for the organiser; no reasons accepted, nothing stored). Device: `StanleyPlannerPanel` at the foot of the Build my day screen (mood, plan, clashes, windows, traveller check, large-print and print, hour, evening, meeting message to copy) and `StanleyGroupCard` on each poll. Tests: `StanleyPlannerTests.cs` (time-zone overlap at Cozumel, tender buffer at Belize, held items never moved), `stanleyPlanner.test.ts`.
+  Carried over: compare-two-excursions is an endpoint only, with no screen or chat answer yet; "food" is a culture tour plus an evening out because the programme has no food interest; the evening has no reserve-dinner action (phase 5 has only move-dinner), so its step opens the dining screen; polls are single-vote, so a vote is a yes and the compromise path needs yes/maybe/no answers the screen does not collect; poll expiry and reminders are computed from times the poll does not store yet, so the device sends none; access attributes are what the guest says (verified, reported or unknown), not a stored sourced record with a date; walking time is a deck-and-end rule, not measured routes; mid-day ship changes come from `IProgramChanges`.
+
 ### Phase 10: Travel-day, port and onward-travel intelligence (M)
 
 **Goal.** Make the days that need the most care calm.
@@ -485,10 +488,25 @@ The per-phase status notes above give the detail; this is the running list of wh
 | Eleven of the 25 to 40 planned resolvers (bill split, open cases, per-traveller readiness, document tasks, boarding-pass state, return brief) need data the trip facts lack | 3 | 6, 10, 12 |
 | "What changed" resolver is a stub | 3 | 11 |
 | Diagnostics tier mix is per device; the server's `GET /me/stanley/tiers` has no screen | 2 | 14 |
-| `handoff` kill switch | 1 | 6 |
-| Server tests (phases 1 to 5) written but never run or compiled here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand | 1 to 5 | before release |
+| `dream.seasick` is unreachable as a chip because the medical screen takes it first (listed in the eval test) | 2 | 14 |
+| Eval expected sources and `abstain` wording are checked only for library answers, not yet for resolver answers | 2 | 14 |
+| The library still answers some generic deadline and all-aboard questions from authored text before a resolver sees them (for example "when does check-in close") | 3 | 11 |
+| Staff side of a handoff is simulated (`Source` is `sim`); a real desk replaces `StatusOf`, not the shape | 6 | when a real service desk exists |
+| Handoff cabin photo: the request has an `attachment` note field but nothing uploads | 6 | 15 |
+| Handoff intent flows are one topic chooser, not separate drafts per topic; handoff cases and post-cruise cases are still two services listed on one screen | 6 | 14 |
+| No folio screen has a dispute button; when one is added it should open a `billing` handoff | 6 | 12 |
+| Missed-ship phone numbers are those in `domain/contacts.ts`, not verified per port | 6 | 10 |
+| No diet source on the device (diet is added by hand only); the pilot week settings, quiz, access profile and daily rhythm are offered as "Stanley noticed", never moved silently | 7 | 13 |
+| Proactivity stays per device (`stanleyLevel`), not held by the server | 7 | 14 |
+| Wish reading is by plain rules, not a model, so unusual phrasings give fewer chips | 8 | 14, if a model-backed reading is wanted |
+| Weighted comparison lives only in the Discover panel; the saved-sailings compare screen has no weights | 8 | 9 |
+| Warmth is an authored region-and-month table, not a forecast; cabin evidence is at room-type level because the catalogue holds no per-cabin data | 8 | when forecast or per-cabin data exist |
+| The wish text is stored in the brief as typed (500 characters); no retention job covers `dbo.StanleyBriefs` (it is kept until the guest deletes it or the account goes) | 8 | 14 |
+| Compare two excursions has no screen or chat answer; poll expiry and reminders are not stored on polls; access attributes are not stored as dated sourced records | 9 | 14 |
+| Reserve-dinner action does not exist (phase 5 has only move-dinner); the evening plan links to the dining screen | 5, 9 | 12 |
+| Server tests (phases 1 to 9) written but never run or compiled by the assistant here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand (phase 8 compiled and its warnings were fixed on the user's machine, not run; phase 9 not yet compiled anywhere) | 1 to 9 | before release |
 
-Done since first noted: the browser's `act` word list (phase 5, `06dc128`), retention for the tier log and actions (phase 5 follow-up, `1266e9b`).
+Done since first noted: the browser's `act` word list (phase 5, `06dc128`), retention for the tier log and actions (phase 5 follow-up, `1266e9b`), the `handoff` kill switch (phase 6, `ef3de6b`).
 
 ## 6. Additional ideas from the review (beyond the strategy document)
 

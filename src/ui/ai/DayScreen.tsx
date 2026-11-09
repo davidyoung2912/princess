@@ -18,6 +18,7 @@ import { Chip } from '../Chip'
 import { BackLink } from '../onboard/common'
 import { partyPeople } from '../../account/context'
 import { StanleyEmpty } from './StanleyEmpty'
+import { StanleyPlannerPanel } from './StanleyPlannerPanel'
 
 const MOBILITY: readonly Mobility[] = ['any', 'easy', 'wheelchair']
 const toggle = <T,>(list: readonly T[], x: T): T[] => (list.includes(x) ? list.filter((y) => y !== x) : [...list, x])
@@ -79,6 +80,7 @@ export function DayScreen() {
         <p className="muted">{t('day.note')}</p>
         <LinkButton to="/home/concierge" variant="secondary">{t('day.askConcierge')}</LinkButton>
       </Card>
+      {me && <StanleyPlannerPanel sailingId={sailing.id} day={day} mobility={wish.mobility} />}
       <BackLink to="/plan" label={t('route.plan')} />
     </div>
   )
