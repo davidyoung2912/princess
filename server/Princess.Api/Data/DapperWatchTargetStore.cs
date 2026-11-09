@@ -48,11 +48,11 @@ public sealed class DapperWatchLock(IDbConnectionFactory db) : IWatchLock
         var c = await db.OpenAsync(ct);
         try
         {
-            var p = new DynamicParameters();
-            p.Add("r", Resource);
-            p.Add("code", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.ReturnValue);
-            await c.ExecuteAsync(Sql.Cmd("EXEC @code = sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = 0", p, null, ct));
-            if (p.Get<int>("code") >= 0) return new Handle(c);
+            // A return-value parameter only works with CommandType.StoredProcedure, so declare the variable in the batch and select it.
+            var code = await c.ExecuteScalarAsync<int>(Sql.Cmd(
+                "DECLARE @code int; EXEC @code = sp_getapplock @Resource = @r, @LockMode = 'Exclusive', @LockOwner = 'Session', @LockTimeout = 0; SELECT @code;",
+                new { r = Resource }, null, ct));
+            if (code >= 0) return new Handle(c);
         }
         catch { await c.DisposeAsync(); throw; }
         await c.DisposeAsync();
