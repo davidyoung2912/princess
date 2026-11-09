@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// Checking the guest's phone number by text (see <see cref="PhoneRules"/>). Until the number on the profile is confirmed, text notices are not sent to it.
 /// The waiting code and the confirmed number are kept in the guest's own state under a key the client cannot read or write.
 /// </summary>
-public sealed class PhoneCheckService(IStateStore state, ITripStore profiles, ISmsSender sms, IUserClock clock, IOptions<JwtOptions> jwt)
+public sealed class PhoneCheckService(IStateStore state, IAccountStore profiles, ISmsSender sms, IUserClock clock, IOptions<JwtOptions> jwt)
 {
     private byte[] Key => PhoneRules.KeyFrom(jwt.Value.SigningKey);
 
