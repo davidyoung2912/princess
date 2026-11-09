@@ -23,6 +23,8 @@ export interface Settings {
   calm: boolean
   /** Short, quiet confirmation clicks after an action the guest takes. On by default; calm mode silences them whatever this says. Chosen per device. */
   sounds: boolean
+  /** How playful the app is: Quiet (no sound, buzz or celebrations), Gentle (quiet clicks and small stamps) or Lively (everything, including the extra moments and captions). Lively by default; calm mode always counts as Quiet. Chosen per device. */
+  fun: FunLevel
   /** Show captions or a transcript wherever sound or video has one (ACS-01). */
   captions: boolean
   /** Save data: nothing loads until asked for, no animation, and refreshes come less often (NET-04). */
@@ -70,7 +72,14 @@ export const LANGUAGE_UNITS: Record<string, Units> = { en: 'imperial', es: 'metr
 /** The units to show after the language changes: those of the new language, unless the guest has chosen units themselves. */
 export const unitsAfterLanguageChange = (to: string, chosen: boolean, units: Units): Units => (chosen ? units : LANGUAGE_UNITS[to] ?? units)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
+export const FUN_LEVELS = ['quiet', 'gentle', 'lively'] as const
+export type FunLevel = (typeof FUN_LEVELS)[number]
+const isFunLevel = (v: unknown): v is FunLevel => (FUN_LEVELS as readonly unknown[]).includes(v)
+
+/** The fun level that applies: calm mode is always Quiet, whatever was chosen. */
+export const funLevelFor = (s: Pick<Settings, 'fun' | 'calm'>): FunLevel => (s.calm ? 'quiet' : s.fun)
+
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, fun: 'lively', captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -106,6 +115,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,
     calm: typeof o.calm === 'boolean' ? o.calm : defaults.calm,
     sounds: typeof o.sounds === 'boolean' ? o.sounds : defaults.sounds,
+    fun: isFunLevel(o.fun) ? o.fun : defaults.fun,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
     essentials: typeof o.essentials === 'boolean' ? o.essentials : defaults.essentials,
@@ -159,7 +169,7 @@ function safeStorage(): Storage | null {
 }
 
 /** The attributes set on `<html>` for a set of settings; "auto" resolves against the device's colour preference. */
-export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-calm' | 'data-captions' | 'data-light' | 'data-trip', string> {
+export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record<'data-theme' | 'data-contrast' | 'data-motion' | 'data-text-size' | 'data-simple' | 'data-calm' | 'data-fun' | 'data-captions' | 'data-light' | 'data-trip', string> {
   return {
     'data-theme': s.theme === 'auto' ? (deviceIsDark ? 'dark' : 'light') : s.theme,
     'data-contrast': s.contrast,
@@ -167,6 +177,7 @@ export function settingsToAttributes(s: Settings, deviceIsDark: boolean): Record
     'data-text-size': s.textSize,
     'data-simple': s.simple ? 'on' : 'off',
     'data-calm': s.calm ? 'on' : 'off',
+    'data-fun': funLevelFor(s),
     'data-captions': s.captions ? 'on' : 'off',
     'data-light': s.dataLight ? 'on' : 'off',
     'data-trip': s.tripColour,

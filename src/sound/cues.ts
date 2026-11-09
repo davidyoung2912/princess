@@ -1,5 +1,5 @@
 import { getSettings } from '../settings/store'
-import type { Settings } from '../settings/settings'
+import { funLevelFor, type Settings } from '../settings/settings'
 
 /** The three confirmation sounds (docs/look-and-feel-recommendations.md, S1). Each is a couple of soft notes, under 150 ms, made with the Web Audio API so there are no files to download. */
 export type CueName = 'confirm' | 'success' | 'no'
@@ -13,13 +13,13 @@ export const CUES: Record<CueName, readonly Note[]> = {
   no: [{ freq: 220, start: 0, dur: 0.09, gain: 0.04 }],
 }
 
-/** True when a cue may play: the guest has sounds on and calm mode is off. Sound is never the only signal, so nothing depends on this. */
-export const cuesAllowed = (s: Pick<Settings, 'sounds' | 'calm'>): boolean => s.sounds && !s.calm
+/** True when a cue may play: the guest has sounds on and the fun level is not Quiet (calm mode counts as Quiet). Sound is never the only signal, so nothing depends on this. */
+export const cuesAllowed = (s: Pick<Settings, 'sounds' | 'calm' | 'fun'>): boolean => s.sounds && funLevelFor(s) !== 'quiet'
 
 let context: AudioContext | null = null
 
 /** Plays a cue if the settings allow it. Call only from a guest's own action (browsers refuse audio before a tap, so the context is made on first use). Returns whether it played. */
-export function playCue(name: CueName, s: Pick<Settings, 'sounds' | 'calm'> = getSettings()): boolean {
+export function playCue(name: CueName, s: Pick<Settings, 'sounds' | 'calm' | 'fun'> = getSettings()): boolean {
   if (!cuesAllowed(s) || typeof window === 'undefined') return false
   const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!Ctx) return false

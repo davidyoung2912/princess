@@ -3,9 +3,10 @@ import { CUES, cuesAllowed, playCue } from './cues'
 
 describe('confirmation cues', () => {
   it('play only when sounds are on and calm mode is off', () => {
-    expect(cuesAllowed({ sounds: true, calm: false })).toBe(true)
-    expect(cuesAllowed({ sounds: false, calm: false })).toBe(false)
-    expect(cuesAllowed({ sounds: true, calm: true })).toBe(false)
+    expect(cuesAllowed({ sounds: true, calm: false, fun: 'lively' })).toBe(true)
+    expect(cuesAllowed({ sounds: false, calm: false, fun: 'lively' })).toBe(false)
+    expect(cuesAllowed({ sounds: true, calm: true, fun: 'lively' })).toBe(false)
+    expect(cuesAllowed({ sounds: true, calm: false, fun: 'quiet' })).toBe(false)
   })
   it('stay short and quiet', () => {
     for (const notes of Object.values(CUES)) {
@@ -14,6 +15,6 @@ describe('confirmation cues', () => {
     }
   })
   it('do nothing where there is no audio', () => {
-    expect(playCue('confirm', { sounds: true, calm: false })).toBe(false)
+    expect(playCue('confirm', { sounds: true, calm: false, fun: 'lively' })).toBe(false)
   })
 })

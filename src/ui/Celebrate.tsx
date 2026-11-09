@@ -8,8 +8,10 @@ import type { PoseId } from '../art/manifest'
 
 /** A small, quiet celebration for something the guest finished (docs/look-and-feel-recommendations.md, 5.6). `stamp` presses a mark in; `moment` adds Stanley and a medallion. There is never confetti, a score or a streak.
  * The words are always on screen (a polite status for screen readers). Calm mode hides the picture and the stamp animation, and turns off the sound and buzz. Mount it only right after the guest finishes something (see `src/celebrate/pending.ts`), never on a plain visit. */
-export function Celebrate({ level = 'stamp', pose = 'cheer', children }: { level?: 'stamp' | 'moment'; pose?: PoseId; children: ReactNode }) {
+export function Celebrate({ level: wanted = 'stamp', pose = 'cheer', children }: { level?: 'stamp' | 'moment'; pose?: PoseId; children: ReactNode }) {
   const [settings] = useSettings()
+  // Gentle keeps the small stamp; the Stanley moment is for Lively only.
+  const level = settings.fun === 'lively' ? wanted : 'stamp'
   const played = useRef(false)
   useEffect(() => {
     if (played.current) return

@@ -15,8 +15,8 @@ const text = (facts: Parameters<typeof tileLines>[0], path: string) => tileLines
 describe('tileLines', () => {
   it('words the checklist and packing progress, and calls a finished one ok', () => {
     const l = tileLines({ checklist: { done: 2, total: 9 }, packing: { ticked: 40, total: 40 } }, say)
-    expect(l['/plan/checklist']).toEqual({ text: '2 of 9 done', tone: 'neutral' })
-    expect(l['/plan/packing']).toEqual({ text: '40 of 40 packed', tone: 'ok' })
+    expect(l['/plan/checklist']).toEqual({ text: '2 of 9 done', tone: 'neutral', ring: { done: 2, total: 9 } })
+    expect(l['/plan/packing']).toEqual({ text: '40 of 40 packed', tone: 'ok', ring: { done: 40, total: 40 } })
   })
   it('says nothing for missing or empty facts, and never more done than total', () => {
     expect(tileLines({}, say)).toEqual({})

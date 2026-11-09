@@ -39,6 +39,10 @@ import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
 import { useCountdowns } from './useCountdowns'
 import { useNow } from '../../hooks/useDemo'
+import { useMoment } from '../../hooks/useMoment'
+import { MomentCard } from '../MomentCard'
+import { TodayStrip } from '../TodayStrip'
+import { HeroCount } from '../HeroCount'
 
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {
@@ -49,6 +53,7 @@ export function HomeScreen() {
   const { stage } = useJourneyPosition()
   const now = useNow()
   const counts = useCountdowns(trip, now)
+  const moment = useMoment(!!today.data?.aboard)
   if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
     return (
@@ -57,7 +62,9 @@ export function HomeScreen() {
         <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>
         <NewTabsNote /><ShortcutBar />
         <UpdatesBanner />
-        <p className="muted">{t('trip.booking', { number: trip.number })} <strong className="calm-hide">· {countdown(trip.daysToDeparture)}</strong></p>
+        <p className="muted">{t('trip.booking', { number: trip.number })}</p>
+        <HeroCount days={trip.daysToDeparture} />
+        {moment && <MomentCard moment={moment} />}
         {counts.length > 0 && (
           <ul className="muted calm-hide" aria-label={t('count.label')}>
             {counts.map((c) => <li key={c.id}>{c.days === 0 ? t(`count.${c.id}.today` as StringKey) : t(`count.${c.id}` as StringKey, { count: c.days })}</li>)}
@@ -91,7 +98,9 @@ export function HomeScreen() {
       <div className="page">
         <StageHero stage={stage} />
         <NewTabsNote /><ShortcutBar />
-        {!ABOARD_STAGES.includes(stage) && <StageLanding />}
+        {moment && <MomentCard moment={moment} />}
+        <TodayStrip />
+        {!ABOARD_STAGES.includes(stage) && !moment && <StageLanding />}
         <NudgeCards aboard />
         {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
         <QuickDiary />
@@ -104,7 +113,8 @@ export function HomeScreen() {
       <StageHero stage={stage} />
       {trip && <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>}
       <NewTabsNote /><ShortcutBar />
-      <StageLanding />
+      {moment ? <MomentCard moment={moment} /> : <StageLanding />}
+      {trip && <HeroCount days={trip.daysToDeparture} />}
       <RecentCard />
       {trip && <JourneyStrip />}
       <UpdatesBanner />

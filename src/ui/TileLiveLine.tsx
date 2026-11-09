@@ -1,5 +1,6 @@
 import { CircleCheck, OctagonAlert, TriangleAlert } from './icons'
 import { t } from '../i18n'
+import { ProgressRing } from './ProgressRing'
 import type { TileLine } from '../domain/tileLive'
 
 const ICONS = { ok: CircleCheck, warn: TriangleAlert, urgent: OctagonAlert } as const
@@ -9,6 +10,7 @@ export function TileLiveLine({ line }: { line: TileLine }) {
   const Icon = line.tone === 'neutral' ? null : ICONS[line.tone]
   return (
     <strong className={`tile-live tile-live--${line.tone}`}>
+      {line.ring && <ProgressRing done={line.ring.done} total={line.ring.total} size={20} />}
       {Icon && <Icon className="tile-live__icon" size={14} aria-hidden="true" />}
       {(line.tone === 'warn' || line.tone === 'urgent') && <span className="visually-hidden">{t('stage.tile.attention')}: </span>}
       {line.text}

@@ -6,7 +6,7 @@ import { CONSENT_REGIONS } from '../domain/ahead'
 import { UNITS } from '../domain/readiness'
 import { useSettings } from '../hooks/useSettings'
 import { LanguageSwitch } from './LanguageSwitch'
-import { TRIP_COLOURS, type ContrastChoice, type ThemeChoice } from '../settings/settings'
+import { FUN_LEVELS, TRIP_COLOURS, type ContrastChoice, type ThemeChoice } from '../settings/settings'
 
 const THEMES: readonly ThemeChoice[] = ['auto', 'light', 'dark', 'night']
 const CONTRASTS: readonly ContrastChoice[] = ['standard', 'high']
@@ -79,6 +79,16 @@ export function DisplaySettings() {
           <small>{t('settings.calmHint')}</small>
         </span>
       </label>
+      <fieldset>
+        <legend>{t('settings.fun')}</legend>
+        <p className="field__hint">{t('settings.funHint')}</p>
+        {FUN_LEVELS.map((fun) => (
+          <label key={fun} className="choice">
+            <input type="radio" name="fun-level" checked={settings.fun === fun} onChange={() => update({ fun })} />
+            <span>{t(`settings.fun.${fun}` as StringKey)}<small>{t(`settings.fun.${fun}.hint` as StringKey)}</small></span>
+          </label>
+        ))}
+      </fieldset>
       <label className="choice">
         <input type="checkbox" checked={settings.sounds} onChange={(e) => update({ sounds: e.target.checked })} />
         <span>

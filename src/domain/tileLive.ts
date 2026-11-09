@@ -9,7 +9,7 @@ import { STEPS, firstIncomplete, type Draft, type StepContext } from './booking'
 export type Tone = 'neutral' | 'ok' | 'warn' | 'urgent'
 
 /** The short line shown on a tile ("14 of 40 packed") and how it should be dressed. */
-export interface TileLine { text: string; tone: Tone }
+export interface TileLine { text: string; tone: Tone; /** Set for a checklist-style line, so the tile can draw a progress ring beside the words. */ ring?: { done: number; total: number } }
 
 /** Words for a line: the text for a `tile.*` key with `{name}` values filled in. */
 export type TileKey = Extract<StringKey, `tile.${string}`>
@@ -83,7 +83,7 @@ const line = (text: string, tone: Tone = 'neutral'): TileLine => ({ text, tone }
 function progress(key: TileKey, done: number, total: number, say: Say): TileLine | null {
   if (total <= 0) return null
   const d = Math.min(done, total)
-  return line(say(key, { done: d, total }), d === total ? 'ok' : 'neutral')
+  return { ...line(say(key, { done: d, total }), d === total ? 'ok' : 'neutral'), ring: { done: d, total } }
 }
 
 /** A request cut-off this close is worth a nudge; further off, the tile stays quiet. */

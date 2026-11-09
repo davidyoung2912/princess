@@ -370,3 +370,7 @@ Settled: fonts unchanged, gradients kept, sound limited to confirmation clicks.
 - Anything that makes a required task (check-in, safety, payment) slower, or hides it behind a game.
 - Clip-art or stock cartoon sets that clash with Stanley.
 - Locking the look to one season or promotion.
+
+**Fun level (2026-11-09):** built as a per-device setting `fun` (Quiet, Gentle, Lively), **Lively by default** as the owner asked; guests can lower it in Settings. Calm mode always counts as Quiet (`funLevelFor`). It sets `data-fun` on `<html>`; use `.fun-only` (hidden at Quiet) and `.lively-only` (shown only at Lively) in CSS. **Games are planned for later and must follow this setting** (hidden or toned down at Quiet).
+
+**Build status (2026-11-09): L3 is built** (not yet committed). Moment card (`useMoment`, `pickMoment` in `src/domain/homeLook.ts`, `MomentCard`) leads Home when something is pressing (muster, all-aboard, final payment, check-in), otherwise the stage landing card stays. "Today so far" strip (`TodayStrip`) on board. Voyage line with a ship marker in `JourneyStrip`. Progress rings on checklist and packing tile lines (`TileLine.ring`). Hero countdown (`HeroCount`, "sleeps to go", weekly caption at Lively only). Clock pill in `ThreeClocks` and "In 25 min" labels on the all-aboard Moment. Server work: none needed, the moment is derived from existing trip and today data.

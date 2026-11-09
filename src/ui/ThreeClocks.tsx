@@ -1,3 +1,4 @@
+import { clockPill } from '../domain/homeLook'
 import { clockView, zoneChangeNear } from '../domain/clockView'
 import type { Sailing } from '../domain/sailings'
 import { t, type StringKey } from '../i18n'
@@ -16,6 +17,7 @@ export function ThreeClocks({ sailing, at, phoneZone }: { sailing: Sailing; at: 
   return (
     <>
     {change && change.hours !== 0 && <p role="status" className="clocks__notice"><strong>{t(change.upcoming ? 'clock.changeSoon' : 'clock.changed', { hours: Math.abs(change.hours), dir: t(change.hours > 0 ? 'clock.fwd' : 'clock.back') })}</strong></p>}
+    <p className={`clock-pill clock-pill--${clockPill(view.phoneVsShip).tone}`} role="status">{view.phoneVsShip === 0 ? t('clock.pill.same') : t(view.phoneVsShip < 0 ? 'clock.pill.ahead' : 'clock.pill.behind', { count: Math.abs(view.phoneVsShip) })}</p>
     <dl className="clocks">
       {view.readings.map((r) => {
         const diff = r.kind === 'ship' ? null : difference(r.kind === 'port' ? view.portVsShip! : view.phoneVsShip)
