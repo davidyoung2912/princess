@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useCapsule } from '../../hooks/useCapsule'
+import { batteryNow, watchBattery } from '../../data/battery'
+import { nightBeforeTest, type ReadinessReport } from '../../domain/nightBefore'
 import { CAPSULE_KINDS, formatBytes, formatWhen, storageState } from '../../domain/offlineCapsule'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -12,6 +14,13 @@ export function CapsuleCard() {
   const { capsule, storage, checkedAt, check, protect } = useCapsule()
   const [answer, setAnswer] = useState<'granted' | 'declined' | null>(null)
   const state = storageState(storage)
+  const [report, setReport] = useState<{ at: number; r: ReadinessReport } | null>(null)
+  const runTest = () => {
+    watchBattery()
+    check()
+    const notifications = typeof Notification === 'undefined' ? null : Notification.permission
+    setReport({ at: checkedAt, r: nightBeforeTest({ capsule, storage: state, notifications, battery: batteryNow() }) })
+  }
   const essentials = CAPSULE_KINDS.filter((k) => k.essential)
   const saved = new Map(capsule.rows.map((r) => [r.kind, r]))
   return (
@@ -48,6 +57,15 @@ export function CapsuleCard() {
         <Button variant="secondary" onClick={() => { void protect().then((ok) => setAnswer(ok ? 'granted' : 'declined')) }}>{t('capsule.protect')}</Button>
       )}
       {answer && <p role="status">{t(`capsule.protect.${answer}` as StringKey)}</p>}
+      <Button onClick={runTest}>{t('ready.run')}</Button>
+      {report && (
+        <div role="status">
+          <p><strong>{t(`ready.result.${report.r.result}` as StringKey)}</strong> <small className="muted">{t('ready.ran', { time: formatWhen(report.at) })}</small></p>
+          <ul className="plain-list">
+            {report.r.checks.map((c) => <li key={c.id}>{t(`ready.${c.id}.${c.result}` as StringKey)}</li>)}
+          </ul>
+        </div>
+      )}
       <Button variant="secondary" onClick={check}>{t('capsule.check')}</Button>
       <p role="status" className="muted">{t('capsule.checked', { time: formatWhen(checkedAt) })}</p>
       <p className="muted">{t('capsule.crew')}</p>

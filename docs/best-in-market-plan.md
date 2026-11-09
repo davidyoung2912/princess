@@ -80,9 +80,12 @@ Original scope:
 
 Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-stage) as built, partial, mock, planned or not planned, with the file and test that prove it, in the style of `docs/a-tier-matrix.md`. Settle section 3 above. Doc only plus any one-line fixes found. This sets the real size of the remaining work.
 
-### BM3. Readiness and update safety
+### BM3. Readiness (built, not committed)
 
-Night-before test built on the capsule data (GTS-15), hold app updates during pass, muster and payment (MOB-02), battery-aware refresh (MOB-24; the save-data signal is already read).
+- **Night-before test (GTS-15)**: `src/domain/nightBefore.ts` (`nightBeforeTest`: essentials saved, copies fresh, storage protected, notifications on, battery; worst result wins). Button "Run the night-before test" on the Offline Capsule card. Tests: `src/domain/nightBefore.test.ts`.
+- **Battery-aware refresh (MOB-24)**: `refreshFactor` doubles the wait between refreshes on a low battery that is not charging (stacks with data-light's x4); `src/data/battery.ts` follows `getBattery` where the browser has it (Chromium only); applied in `useVisibleInterval`. The battery is read when an interval starts, so a change mid-screen applies from the next screen.
+- **Dropped**: update-hold (MOB-02 is met by design, see the matrix).
+- **Not done, moved on**: guest-chosen capsule download (MOB-03) and local reminder fallback (MOB-23). Both need a fetch/schedule design and are proposed for a later phase. The test result is not stored (the audit gate limits `localStorage`), so "last test" shows only for the visit.
 
 ### BM4. Time and calendar proof
 
