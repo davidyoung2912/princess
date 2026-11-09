@@ -166,7 +166,7 @@ export function Shell() {
         <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
           <Outlet />
         </Suspense>
-        {route && !route.public && !landing && <StanleyChips screenId={screen?.id} stage={stage} onAsk={() => setStanleyOpen(true)} />}
+        {route && !route.public && <StanleyChips screenId={landing ? (landing.key === 'home' ? undefined : `tab.${landing.key}`) : screen?.id ?? 'none'} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
       {helpOpen && <HelpSheet screenId={screen?.id} onAskStanley={() => setStanleyOpen(true)} onClose={() => setHelpOpen(false)} />}

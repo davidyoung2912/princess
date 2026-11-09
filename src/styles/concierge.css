@@ -65,6 +65,10 @@
 .stanley-answer__q { font-weight: 600; }
 .stanley-answer__face { width: 2.75rem; height: 2.75rem; border-radius: 50%; flex: none; }
 .stanley-answer__rate { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-2); }
+.stanley-answer__related { margin-bottom: var(--space-2); }
+.stanley-answer__related-title { font-weight: 600; margin-bottom: var(--space-1); }
+.stanley-answer__links { margin-bottom: 0; }
+.stanley-answer__links a { gap: var(--space-3); min-height: var(--target-min); font-weight: 600; }
 .stanley-empty { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); }
 .stanley-empty p { margin: 0 0 var(--space-2); }
 .stanley-empty p:last-child { margin: 0; }

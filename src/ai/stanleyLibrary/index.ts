@@ -1,4 +1,5 @@
 import { t, type StringKey } from '../../i18n'
+import { en } from '../../i18n/locales/en'
 import type { JourneyStage } from '../../routes/hubs'
 import { BOOK } from './book'
 import { DISCOVER } from './discover'
@@ -21,18 +22,29 @@ export const LIBRARY: readonly LibraryEntry[] = [...DREAM, ...DISCOVER, ...BOOK,
 export const questionOf = (e: LibraryEntry): string => t(`stanley.q.${e.id}` as StringKey)
 export const answerOf = (e: LibraryEntry): string => t(`stanley.a.${e.id}` as StringKey)
 
+/**
+ * Questions written for one page only, found from the locale file: `stanley.q.pg.<page>.<n>` and `stanley.a.pg.<page>.<n>` (and `stanley.r.pg.<page>.<n>`, the screen ids of related pages, separated by spaces), where the page is a screen id
+ * (`H02`) or a tab landing page (`tab.plan`). They name no stage, so they show on their page at every point in the journey, and they are kept out of
+ * {@link LIBRARY} so that typed questions are only ever matched against the general library.
+ */
+export const PAGE_QA: readonly LibraryEntry[] = Object.keys(en).flatMap((k) => {
+  const m = /^stanley\.q\.(pg\.(.+)\.\d+)$/.exec(k)
+  if (!m) return []
+  const related = `stanley.r.${m[1]}` in en ? t(`stanley.r.${m[1]}` as StringKey).split(' ').filter(Boolean) : []
+  return [{ id: m[1]!, stages: [], screens: [m[2]!], ...(related.length ? { related } : {}) }]
+})
+
 /** Most chips shown at the foot of a page. */
-export const MAX_CHIPS = 3
+export const MAX_CHIPS = 4
 
 /**
- * The question chips for a page: the entries written for this screen first, then the stage's other entries, up to {@link MAX_CHIPS}.
- * A stage with no library yet gives none. The order is the order of writing, so a page does not shuffle between visits.
+ * The question chips for a page. On a page (`screenId`) they are only questions about that page: the general entries written for it at this stage,
+ * then the ones written for the page alone, up to {@link MAX_CHIPS}. With no page, which is the Home tab's front page, they are the stage's general
+ * questions. The order is the order of writing, so a page does not shuffle between visits.
  */
 export function chipsFor(screenId: string | undefined, stage: JourneyStage, max = MAX_CHIPS): LibraryEntry[] {
-  const ofStage = LIBRARY.filter((e) => e.stages.includes(stage))
-  const here = screenId ? ofStage.filter((e) => e.screens.includes(screenId)) : []
-  const rest = ofStage.filter((e) => !here.includes(e))
-  return [...here, ...rest].slice(0, max)
+  if (screenId) return [...LIBRARY.filter((e) => e.stages.includes(stage) && e.screens.includes(screenId)), ...PAGE_QA.filter((e) => e.screens.includes(screenId))].slice(0, max)
+  return LIBRARY.filter((e) => e.stages.includes(stage)).slice(0, max)
 }
 
 const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'do', 'does', 'did', 'i', 'my', 'me', 'we', 'you', 'it', 'to', 'of', 'in', 'on', 'for', 'and', 'or', 'can', 'what', 'how', 'when', 'why', 'which', 'if', 'at', 'be', 'there', 'this', 'that', 'with', 'will', 'should', 'about', 'get', 'have', 'has', 'mean', 'means', 'work', 'works'])

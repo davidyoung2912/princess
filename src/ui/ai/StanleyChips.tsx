@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { CircleDot } from 'lucide-react'
+import { SCREEN_BY_ID } from '../../routes/screens'
+import { SCREEN_ICONS } from '../screenIcons'
 import stanley from '../../assets/stanley-small.png'
 import { rateAnswer } from '../../ai/stanleyFeedback'
 import { answerOf, chipsFor, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import type { JourneyStage } from '../../routes/hubs'
 import { stanleyLevelFor } from '../../settings/settings'
-import { t } from '../../i18n'
+import { t, th } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
@@ -48,6 +51,7 @@ export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; 
           <p className="stanley-answer__q">{questionOf(entry)}</p>
           <p>{answerOf(entry)}</p>
           {entry.link && <p><Link to={entry.link} onClick={onClose}>{t('stanley.chips.show')}</Link></p>}
+          <RelatedPages ids={entry.related} onClose={onClose} />
           {rated
             ? <p role="status" className="muted">{t('stanley.sheet.thanks')}</p>
             : (
@@ -61,5 +65,22 @@ export function StanleyAnswer({ entry, onClose, onAsk }: { entry: LibraryEntry; 
         </div>
       </div>
     </Dialog>
+  )
+}
+
+/** "Related pages": where else in the app to read more. Screens that need an id in their address, or are not known, are left out. */
+function RelatedPages({ ids, onClose }: { ids: readonly string[] | undefined; onClose: () => void }) {
+  const screens = (ids ?? []).flatMap((id) => { const s = SCREEN_BY_ID.get(id); return s && !s.path.includes(':') ? [s] : [] })
+  if (screens.length === 0) return null
+  return (
+    <div className="stanley-answer__related">
+      <p className="stanley-answer__related-title">{t('stanley.sheet.related')}</p>
+      <ul className="link-list stanley-answer__links">
+        {screens.map((s) => {
+          const Icon = SCREEN_ICONS[s.id] ?? CircleDot
+          return <li key={s.id}><Link to={s.path} onClick={onClose}><Icon className="screen-list__icon" size={20} aria-hidden="true" />{th(s.titleKey)}</Link></li>
+        })}
+      </ul>
+    </div>
   )
 }

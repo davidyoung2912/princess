@@ -12,6 +12,8 @@ export interface LibraryEntry {
   screens: readonly string[]
   /** A static path the answer can point to ("Show me"), when there is a good one. */
   link?: string
+  /** Screen ids of related pages, offered as links under the answer so the guest can see where else in the app to look. */
+  related?: readonly string[]
   /** Extra words a guest might type for this question, used only to match free text. */
   words?: string
 }
