@@ -77,6 +77,8 @@ services.AddScoped<DocumentService>();
 services.AddScoped<InboxService>();
 services.AddScoped<IPushStore, DapperPushStore>();
 services.AddScoped<IWatchTargetStore, DapperWatchTargetStore>();
+services.AddScoped<IPhoneLookupStore, DapperPhoneLookupStore>();
+services.AddScoped<SmsReplyService>();
 services.AddScoped<IWatchLock, DapperWatchLock>();
 services.AddScoped<PushService>();
 services.AddScoped<PhoneCheckService>();

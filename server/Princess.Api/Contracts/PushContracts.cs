@@ -21,4 +21,7 @@ public sealed record PhoneCheckDto(bool HasPhone, bool Verified, bool Pending);
 /// <summary>Whether the account has an email address, whether it has been confirmed by an emailed code, and whether a code is waiting.</summary>
 public sealed record EmailCheckDto(bool HasEmail, bool Verified, bool Pending);
 
+/// <summary>A text sent back to the notice number, as the text provider's adapter passes it on.</summary>
+public sealed record InboundSmsRequest(string? From, string? Body);
+
 public sealed record PhoneCodeRequest(string? Code);

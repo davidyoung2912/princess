@@ -1,5 +1,6 @@
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
+using Princess.Api.Domain;
 using Princess.Api.Services;
 
 namespace Princess.Api.Endpoints;
@@ -43,6 +44,16 @@ public static class PushEndpoints
                 await svc.UnsubscribeEmailAsync(token, ct) ? Results.Ok() : Results.NotFound())
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
             .WithTags("Push").WithSummary("The one-click unsubscribe a mail app posts to (RFC 8058, from the List-Unsubscribe headers on notice emails). Same link and effect as the page; 404 for a link that was not made here. Rate-limited.");
+
+        api.MapPost("/public/sms/inbound", async (InboundSmsRequest body, HttpRequest req, IConfiguration config, SmsReplyService svc, CancellationToken ct) =>
+            {
+                // Off unless a shared secret is configured (Sms:InboundSecret); the text provider's adapter sends it in X-Inbound-Secret.
+                if (string.IsNullOrEmpty(config["Sms:InboundSecret"])) return Results.NotFound();
+                if (!SmsReplyRules.SecretOk(config["Sms:InboundSecret"], req.Headers["X-Inbound-Secret"].ToString())) return Results.Unauthorized();
+                return Results.Ok(new { stopped = await svc.HandleAsync(body.From, body.Body, ct) });
+            })
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
+            .WithTags("Push").WithSummary("A text sent back to the notice number. A STOP reply from a guest's confirmed phone number switches text notices off for them. 404 unless Sms:InboundSecret is set; 401 for a wrong secret. Rate-limited.");
 
         api.MapPost("/me/push/read", async (ICurrentUser me, PushService svc, CancellationToken ct) =>
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
