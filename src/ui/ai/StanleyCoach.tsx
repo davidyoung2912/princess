@@ -72,6 +72,7 @@ function Spotlight({ screenId, onFinish }: { screenId: CoachScreen; onFinish: ()
           <img className="stanley-next__face" src={stanley} alt="" width="192" height="192" />
           <div className="stanley-coach__text">
             <p className="muted" aria-live="polite">{t('stanley.coach.count', { n: step + 1, total })}</p>
+            {step === 0 && <p className="muted">{t('stanley.why.coach')}</p>}
             <h2 id={titleId} className="stanley-coach__title">{t(`stanley.coach.${screenId}.${step + 1}.title` as StringKey)}</h2>
             <p>{t(`stanley.coach.${screenId}.${step + 1}.body` as StringKey)}</p>
             <div className="stanley-coach__actions">

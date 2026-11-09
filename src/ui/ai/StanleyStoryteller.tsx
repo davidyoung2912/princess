@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { WhyThis } from './WhyThis'
 import stanley from '../../assets/stanley-small.png'
 import { BITS, bitLabel, draftDayNote, emptyDays, nextEmptyDay, saveDraft, storyShows, type Bit } from '../../ai/stanleyStory'
 import { PORTS, type ItineraryDay } from '../../domain/sailings'
@@ -37,7 +38,7 @@ export function StanleyStoryteller({ days, journal, onSave, diary = [] }: { days
       <div className="stanley-ask__bubble">
         <img className="stanley-answer__face" src={stanley} alt="" width="192" height="192" />
         <div>
-          <h2 className="stanley-ask__q">{t('stanley.story.title')}</h2>
+          <h2 className="stanley-ask__q">{t('stanley.story.title')} <WhyThis kind="story" fact={t('stanley.why.fact.story')} what={t('stanley.story.title')} /></h2>
           {day === null ? <p>{t('stanley.story.done')}</p> : <>
             <p className="muted">{t('stanley.story.intro')}</p>
             <p>{t('stanley.story.ask', { day, place: place ?? t('stanley.story.seaPlace') })}</p>

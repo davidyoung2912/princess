@@ -13,6 +13,7 @@ import { isSeen, markSeen, seenVersion, subscribeSeen } from '../../settings/sta
 import { BUZZ, buzz } from '../../settings/haptics'
 import { stanleyLevelFor } from '../../settings/settings'
 import { Button, LinkButton } from '../Button'
+import { WhyThis } from './WhyThis'
 
 const STAMPS: Record<StampIcon, typeof Ticket> = { ticket: Ticket, clipboard: ClipboardCheck, anchor: Anchor, fileCheck: FileCheck, medallion: CircleDot, megaphone: Megaphone, sunset: Sunset, pin: MapPin, moon: Moon, logOut: LogOut, house: House }
 
@@ -61,6 +62,7 @@ export function StanleyMoment({ id, subject, params = {} }: { id: MomentId; subj
           <LinkButton to={def.to} variant="secondary" onClick={() => markSeen(key)}>{t(`stanley.moment.${id}.go` as StringKey)}</LinkButton>
           <AddToDiary id={id} subject={subject} params={params} />
           <Button variant="secondary" onClick={() => markSeen(key)}>{t('stanley.moment.done')}</Button>
+          <WhyThis kind="moment" fact={t('stanley.why.fact.moment')} what={t(`stanley.moment.${id}.title` as StringKey, params)} />
         </div>
       </div>
     </aside>

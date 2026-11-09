@@ -61,13 +61,66 @@ public static class StanleyResolvers
             risky && input.Stale ? Cannot(id, title, "The facts I would use are missing or out of date, so I will not guess.", input) : run(input);
     }
 
+    /// <summary>The resolvers whose answer does not depend on the time of day, which the device may keep to show with no signal (the ones that could mislead when old, such as tender and all aboard, are left out).</summary>
+    public static readonly IReadOnlyList<string> SavedIds = ["tours", "dinner", "packages", "itinerary", "countdown", "stateroom", "party"];
+
+    /// <summary>The cards the device keeps for offline use: each saved resolver's answer, with the time the booking was read.</summary>
+    public static List<StanleyCardDto> SavedFacts(StanleyTrip trip, DateTime now)
+    {
+        var input = new ResolverInput("", trip, now);
+        return [.. SavedIds.Select(id => All.First(r => r.Id == id).Resolve(input))];
+    }
+
+    private static string Key(string s) => string.Concat(s.ToLowerInvariant().Where(char.IsLetterOrDigit));
+
+    private static IEnumerable<string> VenueKeys(Venue v)
+    {
+        var by = v.Name.IndexOf(" by ", StringComparison.OrdinalIgnoreCase);
+        var core = by > 0 ? v.Name[..by] : v.Name;
+        if (core.StartsWith("The ", StringComparison.OrdinalIgnoreCase)) core = core[4..];
+        return new[] { Key(v.Name), Key(core) }.Where(k => k.Length >= 5).Distinct();
+    }
+
+    private static Venue? FindVenue(string message, IEnumerable<Venue> venues)
+    {
+        var m = Key(message);
+        return venues.FirstOrDefault(v => VenueKeys(v).Any(k => m.Contains(k, StringComparison.Ordinal)));
+    }
+
+    /// <summary>"When is Sabatini's open?": a dining room's hours from the ship's published directory (ship time, a sea day and a port day), or its dinner seatings for a room that takes reservations. It takes only a question that names a room.</summary>
+    private sealed class VenueHours : IStanleyResolver
+    {
+        private static readonly Regex Asks = new(@"\b(open|opens|opening|close|closes|closing|hours)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        public string Id => "venueHours";
+        public bool Matches(string message) => Asks.IsMatch(message) && FindVenue(message, ShipDining.Ships.SelectMany(s => ShipDining.VenuesOf(s)).DistinctBy(v => v.Id)) is not null;
+
+        private static string Ranges(string[][] r) => r.Length == 0 ? "closed" : string.Join(", ", r.Select(x => $"{x[0]} to {x[1]}"));
+
+        public StanleyCardDto Resolve(ResolverInput i)
+        {
+            var shipId = i.Trip.Ship.ToLowerInvariant().Replace(' ', '-');
+            var venue = FindVenue(i.Message, ShipDining.VenuesOf(shipId));
+            if (venue is null) return FromPublished(Id, "Opening hours", [$"That place is not on {i.Trip.Ship}. The Dining screen lists the rooms on your ship."], StanleyChips.Schedule, "Princess ship directory", "From the published directory.", false, Dining);
+            var lines = new List<string>();
+            if (ShipDining.QueueOf(shipId).FirstOrDefault(q => q.Id == venue.Id) is { } q)
+            {
+                var today = i.Trip.Timeline.Days.FirstOrDefault(d => d.Day == i.Day);
+                if (today is null) lines.Add($"{venue.Name} ({venue.Deck}): on a sea day {Ranges(q.Sea)}; on a port day {Ranges(q.Port)}.");
+                else lines.Add($"{venue.Name} ({venue.Deck}) today: {Ranges(today.Port == "sea" ? q.Sea : q.Port)}.");
+            }
+            else lines.Add($"{venue.Name} ({venue.Deck}) takes reservations for dinner, with seatings from {DiningRules.DinnerTimes[0]} to {DiningRules.DinnerTimes[^1]}. The Dining screen shows what is free.");
+            lines.Add("Hours are ship time and can change; the ship's daily programme has the last word.");
+            return FromPublished(Id, "Opening hours", lines, StanleyChips.Schedule, "Princess ship directory", "The published hours can change. The ship's notice on the day is the last word.", false, Dining);
+        }
+    }
+
     private static readonly CitationDto Trips = new("My trips", "/me/trips"), Bill = new("Bill", "/me/bill"), Cases = new("Cases", "/me/cases"), Documents = new("Documents", "/me/documents"),
         Pass = new("Boarding pass", "/home/boarding-pass"), Checklist = new("Checklist", "/plan/checklist"), Tours = new("Excursions", "/plan/excursions"), Dining = new("Dining", "/plan/dining"),
         Packages = new("Packages", "/me/packages");
 
     public static IReadOnlyList<IStanleyResolver> All { get; } =
     [
-        new Resolver("tender", @"\btender(s|ing|ed)?\b", true, "Tender", Tender),
+        new Resolver("tender", @"\b(tender|tenders|tendering)\b.*\b(run|running|today|tomorrow|cancel\w*|late|delay\w*|operat\w*|called off|suspend\w*)\b|\b(today|tomorrow)\b.*\btender\b|\bwill we tender\b|\bis .{0,25}\btender port\b", true, "Tender", Tender),
         new Resolver("checkin", @"\bcheck-?in\b.*\b(close|closes|closing|deadline|cut-?off|last chance|by when|until)\b|\b(close|closes|deadline|cut-?off)\b.*\bcheck-?in\b", true, "Online check-in", CheckIn),
         new Resolver("allAboard", @"\ball aboard\b|\bback on (the )?(ship|boat)\b|\bwhen (do|must|should|shall) (i|we) (need to |have to )?be back\b|\bbe back (on|at|by)\b", true, "All aboard", AllAboard),
         new Resolver("bill", @"\b(my|our) (bill|balance|account|folio|charges)\b|\b(what|how much) do (i|we) owe\b", true, "Your bill", BillStatus),
@@ -76,9 +129,10 @@ public static class StanleyResolvers
         new Resolver("changed", @"\bwhat('s| has| have)? changed\b|\bany changes\b|\banything (new|changed)\b", false, "What changed", Changed),
         new Resolver("nextEvent", @"\bwhat('s| is) next\b|\bwhats next\b|\bnext (thing|event|booking|reservation|tour|dinner)\b|\bcoming up\b|\bwhat do (i|we) have (next|on)\b", false, "Next on your plan", NextEvent),
         new Resolver("tours", @"\b(my|our) (tours?|excursions?)\b|\b(tours?|excursions?) (do )?(i|we) (have )?(booked|got)\b|\bwhat (tours?|excursions?) (have|did) (i|we) book", false, "Your tours", TourList),
-        new Resolver("dinner", @"\b(my|our) (dinners?|dining|table|reservations?)\b|\bwhat time is (my |our )?dinner\b|\bwhere (am i|are we) eating\b", false, "Your dinners", DinnerList),
+        new Resolver("dinner", @"\b(my|our) (dinners?|dining|table)\b|\bdinner reservations?\b|\bwhat time is (my |our )?dinner\b|\bwhere (am i|are we) eating\b", false, "Your dinners", DinnerList),
         new Resolver("packages", @"\b(my|our) (packages?|drinks? package|wi-?fi package)\b|\bwhat (does|do) (my|our) .{0,30}package.{0,20} include\b|\bpackages? (do )?(i|we) have\b", false, "Your packages", PackageList),
-        new Resolver("itinerary", @"\bitinerary\b|\bwhich ports\b|\bports? (of call|are we|do we)\b|\bwhere (are we|do we) (go|stop|sail)\b", false, "Your ports", Ports),
+        new VenueHours(),
+        new Resolver("itinerary", @"\bitinerary\b(?! for\b)|\bwhich ports\b|\bports? of call\b|\bports? (are we|do we) (go|visit|stop|call)|\bwhere (are we|do we) (go|stop|sail)\b", false, "Your ports", Ports),
         new Resolver("portToday", @"\bwhere is the ship\b|\b(where|which port)\b.*\b(today|tomorrow|now)\b|\b(today|tomorrow)'?s port\b", false, "Where the ship is", PortToday),
         new Resolver("countdown", @"\bcountdown\b|\bhow (many|long)\b.*\b(days?|sleeps?)\b.*\b(sail|cruise|trip|go|left|until|before)\b|\bwhen (do|does) (we|the (cruise|ship|trip)) (sail|leave|depart|start)\b", false, "When you sail", Countdown),
         new Resolver("stateroom", @"\b(my|our) (cabin|stateroom|room) (category|type|grade)\b|\bwhich (cabin|stateroom) (category|type)\b|\bwhat (kind|type) of (cabin|stateroom)\b", false, "Your stateroom", Stateroom),
@@ -88,6 +142,8 @@ public static class StanleyResolvers
     /// <summary>The card for a question one resolver takes, or null when none does. <paramref name="now"/> is the time the trip facts are judged against.</summary>
     public static StanleyCardDto? Resolve(string message, StanleyTrip trip, DateTime now)
     {
+        // A request to build a day, week or itinerary is planning for the model, never a lookup.
+        if (StanleyRouter.Route(message, "unknown", true).Planning) return null;
         var input = new ResolverInput(message, trip, now);
         return All.FirstOrDefault(r => r.Matches(message))?.Resolve(input);
     }

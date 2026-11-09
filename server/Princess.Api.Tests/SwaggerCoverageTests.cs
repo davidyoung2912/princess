@@ -71,6 +71,7 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/telemetry" },
         { "post", "/api/v1/me/stanley" },
         { "get", "/api/v1/me/stanley/status" },
+        { "get", "/api/v1/me/stanley/facts" },
         { "get", "/api/v1/me/stanley/tiers" },
         { "post", "/api/v1/me/staff-requests" },
         { "get", "/api/v1/me/staff-requests" },

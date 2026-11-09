@@ -25,6 +25,8 @@ export interface StanleyMessage {
   citations?: Citation[]
   /** A structured answer with where it came from, when the server made one. */
   card?: StanleyCard
+  /** With no signal: the trip facts saved on this device, shown as cached cards under the reply. */
+  saved?: StanleyCard[]
   /** Buttons under the answer: a way on, the screens used, the group. */
   actions?: AnswerAction[]
   /** The words of a request to change something, shown with a preview and a Confirm button under the answer. */

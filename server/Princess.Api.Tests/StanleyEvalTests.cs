@@ -14,7 +14,8 @@ namespace Princess.Api.Tests;
 public class StanleyEvalTests
 {
     public sealed record EvalServer(string Route, bool? Planning);
-    public sealed record EvalCase(string Id, string Stage, bool Booked, string Text, string Client, string Tier, EvalServer? Server, List<string>? Tags);
+    public sealed record EvalCard(string Id, bool Abstain, List<string> Chips, string? Stale);
+    public sealed record EvalCase(string Id, string Stage, bool Booked, string Text, string Client, string Tier, EvalServer? Server, List<string>? Tags, EvalCard? Card = null);
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
 
@@ -66,6 +67,29 @@ public class StanleyEvalTests
             var handoff = ConciergeRules.Screen(c.Text);
             if (c.Client.StartsWith("handoff:") != (handoff is not null)) wrong.Add($"{c.Id}: device {c.Client}, server {handoff ?? "none"}");
             if (c.Server?.Route != "blocked" && ProfanityFilter.IsBlocked(c.Text)) wrong.Add($"{c.Id}: blocked by the word filter");
+        }
+        Assert.Empty(wrong);
+    }
+
+    /// <summary>A guest ten days before sailing, with the booking read at noon: check-in is open and the schedule is ahead.</summary>
+    private static StanleyTrip Booked(DateTime? asOf) => new(new DateOnly(2027, 3, 15), new DateOnly(2027, 3, 20), 7, "Sun Princess", "Balcony", "late", [41, 39, 9],
+        [new(3, "Cozumel Reef Snorkel", "09:00")], [new(4, "Crown Grill", "19:30")], ["Drinks package"], null, asOf);
+
+    [Fact]
+    public void ABookedGuestsQuestionIsTakenByTheResolverTheSetNamesAndByNoOther()
+    {
+        var at = new DateTime(2027, 3, 15, 12, 0, 0);
+        var ids = StanleyResolvers.All.Select(r => r.Id).ToHashSet();
+        var wrong = new List<string>();
+        foreach (var c in Cases().Where(c => c.Client == "server" && c.Booked))
+        {
+            var card = StanleyResolvers.Resolve(c.Text, Booked(at), at);
+            if (card?.Id != c.Card?.Id) { wrong.Add($"{c.Id} \"{c.Text}\": expected resolver {c.Card?.Id ?? "none"}, got {card?.Id ?? "none"}"); continue; }
+            if (c.Card is not { } want) continue;
+            if (!ids.Contains(want.Id)) wrong.Add($"{c.Id}: unknown resolver {want.Id}");
+            if (card!.Abstained != want.Abstain) wrong.Add($"{c.Id}: abstained {card.Abstained}, expected {want.Abstain}");
+            foreach (var chip in want.Chips) if (!card.Provenance.Chips.Contains(chip)) wrong.Add($"{c.Id}: missing chip {chip}");
+            if (want.Stale == "abstain" && StanleyResolvers.Resolve(c.Text, Booked(null), at) is not { Abstained: true }) wrong.Add($"{c.Id}: stale data did not make it abstain");
         }
         Assert.Empty(wrong);
     }

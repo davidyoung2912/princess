@@ -5,6 +5,7 @@ import { hasCardData, redactCardData } from '../cardData'
 import { screen } from '../guard'
 import { askStanley, historyToSend, type StanleyMessage } from '../stanley'
 import { decideStanley, MUSTER_ENTRY } from '../stanleyDecide'
+import { CHIPS } from '../stanleyCard'
 import { LIBRARY, questionOf } from '../stanleyLibrary'
 import { metaOf } from '../stanleyLibrary/governance'
 import cases from './cases.json'
@@ -17,7 +18,9 @@ import injection from './injection.json'
  * answers fails here until the case, or the change, is argued over. Tags mark what a case is for: `must-handoff`, `abstain`, `injection`, `permission`, `time-zone`, `tender`,
  * `muster`, `deadline`, `concierge:*` (the retired concierge's questions) and `authored-question` (every library entry asked in its own words).
  */
-interface EvalCase { id: string; stage: string; booked: boolean; text: string; client: string; tier: string; server?: { route: string; planning?: boolean }; tags?: string[] }
+/** `card` is what the server's resolver must answer with for a guest who has a booking: the resolver id, whether it abstains, the chips it must carry and whether stale data must make it abstain. */
+interface EvalCard { id: string; abstain: boolean; chips: string[]; stale?: 'abstain' }
+interface EvalCase { id: string; stage: string; booked: boolean; text: string; client: string; tier: string; server?: { route: string; planning?: boolean }; tags?: string[]; card?: EvalCard }
 const all = cases as EvalCase[]
 const NOW = Date.parse('2026-11-10')
 const STAGES = ['dream', 'discover', 'book', 'manage', 'prebook', 'getToShip', 'embark', 'sea', 'port', 'disembark', 'remember']
@@ -197,5 +200,29 @@ describe('prompt injection', () => {
   it('finds no such instruction in any written word of the app, so retrieved content stays plain facts', () => {
     const texts = [...Object.values(en), ...SHIP_FACTS.flatMap((f) => [f.q, f.a])]
     expect(texts.filter((x) => typeof x === 'string' && AIMED.test(x))).toEqual([])
+  })
+})
+
+describe('evaluation set: answer cards', () => {
+  const carded = all.filter((c) => c.card)
+
+  it('names a resolver card only for a booked guest whose question goes to the server, and only for known chips', () => {
+    expect(carded.length).toBeGreaterThanOrEqual(20)
+    for (const c of carded) {
+      expect(c.booked, c.id).toBe(true)
+      expect(c.client, c.id).toBe('server')
+      expect(c.tags, c.id).toContain('resolver')
+      for (const chip of c.card!.chips) expect(CHIPS as readonly string[], c.id).toContain(chip)
+    }
+  })
+
+  it('tags every card that abstains, so the abstention cases stay countable', () => {
+    for (const c of carded.filter((x) => x.card!.abstain)) expect(c.tags, c.id).toContain('abstain')
+  })
+
+  it('has every risk topic abstain on stale data', () => {
+    const risky = new Set(['tender', 'checkin', 'allAboard', 'bill', 'cases', 'readiness'])
+    for (const c of carded.filter((x) => risky.has(x.card!.id))) expect(c.card!.stale, c.id).toBe('abstain')
+    for (const id of risky) expect(carded.some((c) => c.card!.id === id), id).toBe(true)
   })
 })

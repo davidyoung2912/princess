@@ -86,8 +86,8 @@ export function explainScreenCard(screenId: string | undefined): StanleyCard | n
   }
 }
 
-/** What put a suggestion in front of the guest: `chip` (a question under a page or an answer), `tip` (a line from Stanley on Home) or `suggestion` (a prompt in the empty chat). */
-export type WhyKind = 'chip' | 'tip' | 'suggestion'
+/** What put a suggestion in front of the guest: `chip` (a question under a page or an answer), `tip` (a line from Stanley on Home) `suggestion` (a prompt in the empty chat), `moment` (a card that marks something that just happened) or `story` (the diary prompt). */
+export type WhyKind = 'chip' | 'tip' | 'suggestion' | 'moment' | 'story'
 
 /**
  * "Why am I seeing this?": the fact and the rule behind a suggestion, in the same card as an answer. It is a provenance explainer, not an AI label. `fact` is what the app

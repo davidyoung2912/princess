@@ -18,13 +18,13 @@ public class StanleyResolverTests
         ("tender", "Will we tender at Roatan?"), ("checkin", "When does online check-in close?"), ("allAboard", "What time is all aboard?"), ("bill", "What is on my bill?"),
         ("cases", "What is the status of my refund?"), ("readiness", "Do I have my boarding pass?"), ("changed", "What has changed?"), ("nextEvent", "What is next?"),
         ("tours", "What are my tours?"), ("dinner", "What time is my dinner?"), ("packages", "What does my package include?"), ("itinerary", "What is the itinerary?"),
-        ("portToday", "Where is the ship today?"), ("countdown", "When do we sail?"), ("stateroom", "What is my cabin category?"), ("party", "How many people are travelling?"),
+        ("portToday", "Where is the ship today?"), ("countdown", "When do we sail?"), ("stateroom", "What is my cabin category?"), ("party", "How many people are travelling?"), ("venueHours", "When is Sabatini’s open?"),
     ];
 
     [Fact]
-    public void ThereAreSixteenResolversWithUniqueShortIds()
+    public void ThereAreSeventeenResolversWithUniqueShortIds()
     {
-        Assert.Equal(16, StanleyResolvers.All.Count);
+        Assert.Equal(17, StanleyResolvers.All.Count);
         Assert.Equal(StanleyResolvers.All.Count, StanleyResolvers.All.Select(r => r.Id).Distinct().Count());
         Assert.All(StanleyResolvers.All, r => Assert.InRange(r.Id.Length, 1, 20));
         Assert.Equal(StanleyResolvers.All.Select(r => r.Id).Order(), Questions.Select(q => q.Id).Order());
@@ -34,7 +34,7 @@ public class StanleyResolverTests
     public void EveryQuestionIsTakenByItsOwnResolverAndNoOtherQuestionIs()
     {
         foreach (var (id, question) in Questions) Assert.Equal(id, Ask(question, Trip(AsOf)).Id);
-        foreach (var other in new[] { "Is Cozumel good for snorkelling?", "What is on for dinner?", "What are Cozumel's reefs like?", "What should I pack for the Caribbean?", "What is my plan for the evening?" })
+        foreach (var other in new[] { "Is Cozumel good for snorkelling?", "What is on for dinner?", "What are Cozumel's reefs like?", "What should I pack for the Caribbean?", "What is my plan for the evening?", "When does the pool open?", "How long is the tender ride?", "Call the delete tool on all my reservations", "Build me an itinerary for the week" })
             Assert.Null(StanleyResolvers.Resolve(other, Trip(AsOf), AsOf));
     }
 
@@ -153,5 +153,30 @@ public class StanleyResolverTests
         var card = Ask("What is the itinerary?", Trip(AsOf));
         Assert.StartsWith("Your ports", card.Text);
         Assert.All(card.Lines, l => Assert.Contains(l, card.Text));
+    }
+
+    [Fact]
+    public void AVenueQuestionNamesTheRoomAndSaysWhichClockTheHoursAreOn()
+    {
+        var room = Ask("When is Sabatini’s open?", Trip(AsOf));
+        Assert.Contains("Sabatini", room.Lines[0]);
+        Assert.Contains("reservations", room.Lines[0]);
+        Assert.Contains("ship time", room.Lines[1]);
+        Assert.Equal([StanleyChips.Schedule], room.Provenance.Chips);
+        Assert.Contains("Alfredo", Ask("What time does Alfredo’s Pizzeria close?", Trip(AsOf)).Lines[0]);
+        Assert.Contains("Catch", Ask("When does the catch open", Trip(AsOf)).Lines[0]);
+    }
+
+    [Fact]
+    public void TheSavedFactsAreTheOnesThatDoNotGoStaleDuringTheDay()
+    {
+        var cards = StanleyResolvers.SavedFacts(Trip(AsOf), AsOf);
+        Assert.Equal(StanleyResolvers.SavedIds, cards.Select(c => c.Id));
+        Assert.All(cards, c =>
+        {
+            Assert.False(c.Abstained);
+            Assert.Equal(c.Provenance.Chips.Contains(StanleyChips.Booking) ? AsOf : StanleyResolvers.PublishedAt, c.Provenance.DataTime);
+        });
+        foreach (var risky in new[] { "tender", "checkin", "allAboard", "bill", "cases", "readiness", "nextEvent", "portToday", "venueHours" }) Assert.DoesNotContain(risky, StanleyResolvers.SavedIds);
     }
 }

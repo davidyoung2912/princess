@@ -26,6 +26,11 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("Which Stanley routes are switched off: { library, actions, degraded[] }. The device honours library (its authored answers) and actions (previews and confirms) itself; the other routes are applied on the server.");
 
+        api.MapGet("/me/stanley/facts", async (ICurrentUser me, StanleyService svc, CancellationToken ct) => Results.Ok(await svc.FactsAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley")
+            .WithSummary("The guest's own trip facts as cards the device may keep to show with no signal: { cards[] } (tours, dinners, packages, ports, countdown, stateroom, party), each with its provenance and the time the booking was read. " +
+                "Nothing that goes stale within a day (tender, all aboard, deadlines, bill) is included. Empty when there is no current trip or the resolver switch is off.");
+
         api.MapGet("/me/stanley/tiers", async (ICurrentUser me, IStanleyTierLog tiers, IClock clock, int? days, CancellationToken ct) =>
             {
                 var user = await me.LoadAsync(ct);

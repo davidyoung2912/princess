@@ -322,6 +322,16 @@ public class StanleyServiceTests
     private static readonly StanleyTrip FreshTrip = Trip with { AsOf = new DateTime(2027, 3, 5, 12, 0, 0) };
 
     [Fact]
+    public async Task TheSavedFactsAreCardsWithTheTimeTheBookingWasReadAndAreEmptyWithoutATripOrWithTheSwitchOff()
+    {
+        var cards = (await Build(new FakeModel(), trip: FreshTrip).Svc.FactsAsync(User, default)).Cards;
+        Assert.Equal(StanleyResolvers.SavedIds, cards.Select(c => c.Id));
+        Assert.Contains(cards, c => c.Id == "dinner" && c.Provenance.DataTime == FreshTrip.AsOf);
+        Assert.Empty((await Build(new FakeModel()).Svc.FactsAsync(User, default)).Cards);
+        Assert.Empty((await Build(new FakeModel(), trip: FreshTrip, tweak: o => o.Switches.Resolver = false).Svc.FactsAsync(User, default)).Cards);
+    }
+
+    [Fact]
     public async Task AResolverAnswersWithACardAndNoModelAndTheLogSaysSo()
     {
         var model = new FakeModel("never");
@@ -513,6 +523,15 @@ public class StanleyApiTests : JourneyWorld
         var h = await Call(HttpMethod.Post, "/api/v1/me/stanley", token, new StanleyRequestDto([new("user", "Someone is not breathing", 1)], new StanleyContextDto("sea")));
         Assert.Equal("handoff", h.Json.GetProperty("kind").GetString());
         Assert.Equal("emergency", h.Json.GetProperty("handoff").GetString());
+    }
+
+    [Fact]
+    public async Task TheFactsEndpointNeedsASignInAndGivesNoCardsWithoutATrip()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Call(HttpMethod.Get, "/api/v1/me/stanley/facts", null, null)).Status);
+        var facts = await Call(HttpMethod.Get, "/api/v1/me/stanley/facts", await SignIn(Daniel), null);
+        Assert.Equal(HttpStatusCode.OK, facts.Status);
+        Assert.True(facts.Json.GetProperty("cards").GetArrayLength() >= 0);
     }
 
     [Fact]

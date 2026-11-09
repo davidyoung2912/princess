@@ -9,6 +9,7 @@ import { StanleyConfirm } from './StanleyConfirm'
 import { StanleyAnswerCard } from './StanleyAnswerCard'
 import { WhyThis } from './WhyThis'
 import { cardText, explainScreenCard } from '../../ai/stanleyCard'
+import { asSaved, savedFacts } from '../../feeds/stanleyFacts'
 import { answerActions, type StanleySource } from '../../ai/stanleyRoute'
 import { assistantMobility } from '../../domain/bookingPrep'
 import { useMemory } from '../../hooks/useMemory'
@@ -69,6 +70,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const messages = useSyncExternalStore(subscribeStanley, getStanleyThread, getStanleyThread)
   const status = useSyncExternalStore(subscribeStanley, getStanleyStatus, getStanleyStatus)
   useEffect(() => { void loadStanleyStatus(fetchStanleyStatus) }, [])
+  // Keep the trip facts on this phone while there is a signal, so they can be shown when there is none.
+  useEffect(() => { if (hasBooking) void savedFacts.load() }, [hasBooking])
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy, reveal?.i])
   const lastAnswer = [...messages].reverse().find((m) => m.role === 'assistant')
   const follow = lastAnswer && lastAnswer.kind === 'answer' && !lastAnswer.confirm && cooldownSeconds(messages, now) === 0
@@ -116,7 +119,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     const actions = [...answerActions({ source, link, citations, answered, question: asked.text }, { open: (name) => t('stanley.open', { name }), show: t('stanley.show'), group: t('stanley.group') })].slice(0, 3)
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
     countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
-    const reply: StanleyMessage = { id, role: 'assistant', text: wording(turn), at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, actions, confirm, entryId }
+    const saved = turn.kind === 'unreachable' && turn.fallback === 'network' && hasBooking ? savedFacts.now() ?? [] : []
+    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(turn), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, actions, confirm, entryId }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())
     setBusy(false)
@@ -158,6 +162,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
               <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
                 <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
                 {m.card ? <StanleyAnswerCard card={m.card} onNavigate={onClose} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
+                {m.saved?.map((c) => <StanleyAnswerCard key={c.id} card={asSaved(c, t('stanley.offline.note'))} onNavigate={onClose} />)}
                 {m.source && !m.card && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
                 {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path} onClick={onClose}>{a.label}</LinkButton>)}</p>}
                 {m.confirm && <StanleyConfirm question={m.confirm} onNavigate={onClose} />}

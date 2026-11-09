@@ -100,6 +100,13 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         }
     }
 
+    /// <summary>The trip facts the device may keep for use with no signal: <see cref="StanleyResolvers.SavedIds"/>, each with the time the booking was read. Empty when the guest has no current trip.</summary>
+    public async Task<StanleyFactsDto> FactsAsync(UserRecord user, CancellationToken ct)
+    {
+        var trip = await trips.LoadAsync(user, ct);
+        return new StanleyFactsDto(trip is null || !options.Value.Switches.Resolver ? [] : StanleyResolvers.SavedFacts(trip, trip.AsOf ?? clock.UtcNow));
+    }
+
     private static StanleyReplyDto Answer(string text, string source, string tier, string? fallback, List<CitationDto>? sources) =>
         new("answer", text, null, source, fallback, tier, [new StanleyBlockDto("text", text)], sources ?? []);
 
@@ -122,6 +129,9 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
     private static string TextOf(JsonObject body) =>
         string.Concat((body["content"] as JsonArray ?? []).OfType<JsonObject>().Where(b => b["type"]?.GetValue<string>() == "text").Select(b => b["text"]?.GetValue<string>())).Trim();
 }
+
+/// <summary>Cards for the device to keep (<c>GET /me/stanley/facts</c>).</summary>
+public sealed record StanleyFactsDto(List<StanleyCardDto> Cards);
 
 /// <summary>The gateway's switches as the device reads them (<c>GET /me/stanley/status</c>).</summary>
 public sealed record StanleyStatusDto(bool Library, bool Actions, List<string> Degraded);
