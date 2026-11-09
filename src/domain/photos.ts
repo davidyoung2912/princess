@@ -56,6 +56,12 @@ export function checksum(id: string): string {
   return (h >>> 0).toString(16).padStart(8, '0')
 }
 
+/** How many photos across all purchases are still to be saved to the device, and in how many purchases. */
+export function unsavedPhotos(receipts: readonly { photoIds: readonly unknown[]; saved: number }[]): { photos: number; purchases: number } {
+  const left = receipts.map((r) => Math.max(0, r.photoIds.length - r.saved)).filter((n) => n > 0)
+  return { photos: left.reduce((a, b) => a + b, 0), purchases: left.length }
+}
+
 export let REDOWNLOAD_DAYS = 14
 
 /** Photographers' posted sessions, served with the photos for the sailing. */

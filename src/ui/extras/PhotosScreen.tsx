@@ -4,7 +4,7 @@ import { asPhotosView, asPrintView } from '../../api/guards'
 import type { PhotoQuote, PhotoReceipt, PhotosView, PrintProductId, PrintView } from '../../api/types'
 import { formatDate, formatTime } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
-import { NO_PHOTO_FILTER, PHOTO_VENUES, filterPhotos, type OptionId, type PhotoFilter, type PhotoVenue } from '../../domain/photos'
+import { NO_PHOTO_FILTER, PHOTO_VENUES, filterPhotos, unsavedPhotos, type OptionId, type PhotoFilter, type PhotoVenue } from '../../domain/photos'
 import { itinerary } from '../../domain/sailings'
 import { placeName } from '../../domain/family'
 import { api } from '../../runtime'
@@ -252,16 +252,56 @@ function Options({ picked, done }: { picked: string[]; done: () => void }) {
 }
 
 function Receipts({ receipts, reload, offline }: { receipts: PhotoReceipt[]; reload: () => void; offline: boolean }) {
+  const left = unsavedPhotos(receipts)
+  const [now, setNow] = useState<number | null>(null)
+  const all = useAction(async () => {
+    let done = 0
+    for (const r of receipts) {
+      if (r.saved >= r.photoIds.length) continue
+      await saveReceipt(r, (n) => setNow(done + n - r.saved), () => undefined)
+      done += r.photoIds.length - r.saved
+    }
+    setNow(null)
+    reload()
+  })
   if (receipts.length === 0) return null
+  const until = Math.max(...receipts.map((r) => r.until))
   return (
     <section aria-labelledby="rcpt-h">
       <h2 id="rcpt-h">{th('pho.receipts')}</h2>
-      <ul className="order-list">{receipts.map((r) => <Receipt key={r.id} r={r} reload={reload} offline={offline} />)}</ul>
+      <p>{t('pho.availableUntil', { date: new Date(until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }) })}</p>
+      {left.photos > 0 && (
+        <>
+          <Button disabled={all.busy || offline} onClick={() => void all.run()}>{all.busy ? t('pho.saving') : t('pho.downloadAll', { count: left.photos })}</Button>
+          <p role="status" className="muted">{all.busy && now !== null ? t('pho.downloadAllProgress', { saved: now, total: left.photos }) : ''}</p>
+          <ExtraError error={all.error} />
+        </>
+      )}
+      <ul className="order-list">{receipts.map((r) => <Receipt key={`${r.id}-${r.saved}`} r={r} reload={reload} offline={offline} />)}</ul>
     </section>
   )
 }
 
 const TRIES = 3
+
+/** Saves every batch of one purchase, trying again after a failed attempt and keeping what was saved; throws once it has failed `TRIES` times in a row. */
+async function saveReceipt(r: PhotoReceipt, onSaved: (n: number) => void, onRetry: (n: number) => void): Promise<void> {
+  let tries = 0
+  let have = r.saved
+  const total = r.photoIds.length
+  while (have < total) {
+    try {
+      have = (await api.photos.download(r.id)).saved
+      onSaved(have)
+      tries = 0
+    } catch (e) {
+      tries += 1
+      onRetry(tries)
+      if (tries >= TRIES) throw e
+    }
+  }
+  onRetry(0)
+}
 
 function Receipt({ r, reload, offline }: { r: PhotoReceipt; reload: () => void; offline: boolean }) {
   const [saved, setSaved] = useState(r.saved)
@@ -270,20 +310,7 @@ function Receipt({ r, reload, offline }: { r: PhotoReceipt; reload: () => void; 
   const done = saved >= total
   /** Saves batch after batch, trying again by itself after a failed attempt and keeping what was already saved. */
   const run = useAction(async () => {
-    let tries = 0
-    let have = saved
-    while (have < total) {
-      try {
-        have = (await api.photos.download(r.id)).saved
-        setSaved(have)
-        tries = 0
-      } catch (e) {
-        tries += 1
-        setRetrying(tries)
-        if (tries >= TRIES) throw e
-      }
-    }
-    setRetrying(0)
+    await saveReceipt({ ...r, saved }, setSaved, setRetrying)
     reload()
   })
   return (

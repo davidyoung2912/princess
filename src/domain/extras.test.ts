@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { checkInProblem, clubFor, defaultZones, kidStatus, lastSeen, normalizeAuth, normalizeReunion, CLUBS } from './family'
 import { isolating, medicalOpen, nextOpening, reportProblem } from './health'
 import { canCancel, breakfastMornings, itemById, orderFolioLines, orderProblem, orderProgress, priceOrder, MENU, menuFor, type GuestInfo, type OrderLine } from './orders'
-import { checksum, cheapest, filterPhotos, NO_PHOTO_FILTER, photoOptions, type Photo } from './photos'
+import { checksum, cheapest, filterPhotos, NO_PHOTO_FILTER, photoOptions, unsavedPhotos, type Photo } from './photos'
 import { laundryPrice, laundryStage, laundrySteps, pickupOptions, serviceById } from './laundry'
 import { devicesProblem, dndCheckDue, normalizeDevices, normalizeHousekeeping } from './room'
 import { addProblem, upgradeCost, planById, usedTodayMb } from './wifi'
@@ -269,5 +269,12 @@ describe('laundry steps', () => {
     expect(laundrySteps('cleaning').map((x) => x.state)).toEqual(['done', 'done', 'current'])
     expect(laundrySteps('returned').map((x) => x.state)).toEqual(['done', 'done', 'done'])
     expect(laundrySteps('cancelled')).toEqual([])
+  })
+})
+
+describe('unsavedPhotos', () => {
+  it('counts what is still to be saved across purchases', () => {
+    expect(unsavedPhotos([])).toEqual({ photos: 0, purchases: 0 })
+    expect(unsavedPhotos([{ photoIds: ['a', 'b', 'c'], saved: 3 }, { photoIds: ['d', 'e', 'f', 'g'], saved: 1 }, { photoIds: ['h'], saved: 0 }])).toEqual({ photos: 4, purchases: 2 })
   })
 })
