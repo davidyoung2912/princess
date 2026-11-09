@@ -17,7 +17,7 @@ public interface IStanleyPackets
 /// possible and none named, nothing is chosen and Stanley asks. The access to each traveller is worked out here from the booking, the supervised flag and who booked, never from the request. Only data from the active
 /// voyage is loaded, and only for travellers the guest may read at all.
 /// </summary>
-public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore accounts, IPlanStore plan, IFinishStore finish, IUserClock clock, Microsoft.Extensions.Options.IOptions<StanleyOptions> options) : IStanleyPackets
+public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore accounts, IPlanStore plan, IFinishStore finish, StanleyMemoryService memory, IUserClock clock, Microsoft.Extensions.Options.IOptions<StanleyOptions> options) : IStanleyPackets
 {
     public async Task<StanleyPacketResult> BuildAsync(UserRecord user, StanleyContext context, CancellationToken ct)
     {
@@ -47,7 +47,8 @@ public sealed class StanleyPacketBuilder(ITripStore trips, IAccountStore account
         travellers = [.. travellers.Where(t => t.Access != TravellerAccess.None)];
 
         var packet = new StanleyPacket(StanleyPacket.RefFor(user.PublicId, options.Value.PacketKey), user.Role, voyage, context.Stage, context.Screen,
-            ["trip", "party first names and ages", "tours", "dinners", "packages", "cases (stage only)", "published schedule"], StanleyReadTools.Names, travellers, user.IsSupervised);
+            ["trip", "party first names and ages", "tours", "dinners", "packages", "cases (stage only)", "published schedule"], StanleyReadTools.Names, travellers, user.IsSupervised,
+            await memory.ForAnswersAsync(user, voyage.SailingId, ct));
 
         List<string> Who(IEnumerable<long> ids) => [.. ids.Where(refs.ContainsKey).Select(id => refs[id])];
         var tours = (await plan.ListToursAsync(booking.BookingId, ct)).Where(x => x.Status == "booked").Select(x => new StanleyTourFact(x.ExcursionId, x.Day, Who(x.GuestIds))).ToList();

@@ -96,6 +96,16 @@ export const stanleyHandoffs = {
   list: () => http.get<unknown>('/me/stanley/handoffs'),
 }
 
+/** What Stanley remembers (phase 7): the guest's own preferences, kept by the server so every device shows the same list. Forgetting deletes the row. */
+export const stanleyMemory = {
+  get: () => http.get<unknown>('/me/stanley/memory'),
+  remember: (body: unknown) => http.put<unknown>('/me/stanley/memory/items', body),
+  update: (id: string, body: unknown) => http.patch<unknown>(`/me/stanley/memory/items/${encodeURIComponent(id)}`, body),
+  forget: (id: string) => http.delete<void>(`/me/stanley/memory/items/${encodeURIComponent(id)}`),
+  forgetAll: () => http.delete<void>('/me/stanley/memory'),
+  setEnabled: (enabled: boolean) => http.put<void>('/me/stanley/memory/settings', { enabled }),
+}
+
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 

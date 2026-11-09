@@ -1,3 +1,4 @@
+import { assistantMobility } from '../../domain/bookingPrep'
 import { useNow } from '../../hooks/useDemo'
 import { SharingNote } from '../SharingNote'
 import { useState } from 'react'
@@ -27,7 +28,7 @@ import { Field } from '../Field'
 import { JourneyAccess } from './JourneyAccess'
 import { Load } from '../account/parts'
 import { BackLink } from '../onboard/common'
-import { StanleyEmpty } from '../ai/StanleyEmpty'
+import { StanleyMemoryPanel } from '../ai/StanleyMemoryPanel'
 
 const Page = ({ intro, wide, children }: { intro: StringKey; wide?: boolean; children: React.ReactNode }) => (
   <div className={wide ? 'page page--wide' : 'page'}>
@@ -241,24 +242,14 @@ export function SurprisesScreen() {
   )
 }
 
-/** One taste profile and "visible brain" (S4-07, XA-07): every guess listed with why, each removable, one switch for all. */
+/** What Stanley remembers (phase 7, S4-07, XA-07): the server's list with each item's reason and scope, forget, carry forward and an opt-out, plus what the device noticed but has not saved, and the booking facts apart. */
 export function TasteScreen() {
   const { p, set, memory } = usePlanning()
   const { state: pilot } = usePilot()
-  const list = tasteInferences({ fit: memory.fit, pasted: memory.pasted, pace: pilot.prefs.pace, rhythm: p.rhythm }, p.tasteOff, p.tasteRemoved)
+  const noticed = tasteInferences({ fit: memory.fit, pasted: memory.pasted, pace: pilot.prefs.pace, rhythm: p.rhythm }, false, p.tasteRemoved)
   return (
-    <Page intro="taste.intro">
-      <label className="choice"><input type="checkbox" checked={p.tasteOff} onChange={(e) => set((s) => ({ ...s, tasteOff: e.target.checked }))} /><span>{t('taste.off')}</span></label>
-      {p.tasteOff && <p role="status">{t('taste.isOff')}</p>}
-      <ul className="plain-list">
-        {list.map((i) => (
-          <li key={i.id}>{i.text} <span className="muted">({t(`taste.from.${i.source}` as StringKey)})</span>{' '}
-            <Button variant="tertiary" onClick={() => set((s) => ({ ...s, tasteRemoved: [...s.tasteRemoved, i.id] }))}>{t('taste.remove')}</Button></li>
-        ))}
-      </ul>
-      {!p.tasteOff && list.length === 0 && <StanleyEmpty pose="think">{t('taste.empty')}</StanleyEmpty>}
-      {p.tasteRemoved.length > 0 && <Button variant="secondary" onClick={() => set((s) => ({ ...s, tasteRemoved: [] }))}>{t('taste.restore')}</Button>}
-      <p className="muted">{t('taste.note')}</p>
+    <Page intro="memory7.intro">
+      <StanleyMemoryPanel noticed={noticed} mobility={assistantMobility(memory.access)} onDismiss={(id) => set((s) => ({ ...s, tasteRemoved: [...s.tasteRemoved, id] }))} />
     </Page>
   )
 }

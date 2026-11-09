@@ -60,7 +60,7 @@ public sealed record StanleyVoyage(string SailingId, DateOnly Departure, string 
 /// the tools it may call and the travellers it may speak about. It carries no account number, email, surname, booking number, cabin number or payment data.
 /// </summary>
 public sealed record StanleyPacket(string GuestRef, string Role, StanleyVoyage? Voyage, string Stage, string Screen, IReadOnlyList<string> AllowedFacts, IReadOnlyList<string> AllowedTools,
-    IReadOnlyList<StanleyTraveller> Travellers, bool ActorSupervised = false)
+    IReadOnlyList<StanleyTraveller> Travellers, bool ActorSupervised = false, IReadOnlyList<string>? Preferences = null)
 {
     public StanleyTraveller? Self => Travellers.FirstOrDefault(t => t.IsSelf);
 
@@ -95,6 +95,7 @@ public sealed record StanleyPacket(string GuestRef, string Role, StanleyVoyage? 
         sb.AppendLine($"• Guest reference {GuestRef}, role {Role}, stage {Stage}{(Screen.Length == 0 ? "" : ", screen " + Screen)}.");
         sb.AppendLine(Voyage is null ? "• No voyage is active." : $"• Active voyage: {Voyage.Nights}-night sailing on {Voyage.Ship} leaving {Voyage.Departure:yyyy-MM-dd}.");
         if (Travellers.Count > 0) sb.AppendLine("• Travellers: " + string.Join("; ", Travellers.Select(t => $"{t.Ref} {t.FirstName}{(t.IsSelf ? " (the guest)" : "")}")) + ".");
+        if (StanleyMemoryRules.Block(Preferences ?? []) is { Length: > 0 } prefs) sb.AppendLine(prefs);
         sb.Append("The tools check, on every call, which travellers the guest may read. Never try to read anyone else, and never repeat a traveller's details to another traveller.");
         return sb.ToString();
     }

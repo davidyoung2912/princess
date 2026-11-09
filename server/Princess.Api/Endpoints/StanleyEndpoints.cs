@@ -61,6 +61,21 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("The guest's receipts for what Stanley did, newest first (up to 50): done, failed, pending and undone actions with their receipt number and times. The Trust Ledger lists them.");
 
+        var memory = api.MapGroup("/me/stanley/memory").WithTags("Stanley");
+        memory.MapGet("", async (ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("What Stanley remembers about the signed-in guest: { enabled, items[{ id, kind, value, text, reason, scope (trip or future), sailingId, sensitive, shared, updatedAt }], kinds[{ kind, values[], multiple, sensitive }] }. Only the guest's own items; booking facts are not here.");
+        memory.MapPut("/items", async (StanleyMemoryItemRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => Results.Ok(await svc.RememberAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Remembers one thing { kind, value, scope, sailingId (for trip), source (told, quiz, plan or carried), share (for the sensitive kinds) }. The same thing twice is one item; a single-valued kind such as pace is replaced. " +
+                "400 kind, value, scope, sailing or source, 403 for a child account, 409 tooMany after 40 items.");
+        memory.MapPatch("/items/{id:guid}", async (Guid id, StanleyMemoryUpdateRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => Results.Ok(await svc.UpdateAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Carries an item forward to future trips ({ scope: future }) or switches a sensitive item's use in answers ({ share }). 404 for one that is not yours.");
+        memory.MapDelete("/items/{id:guid}", async (Guid id, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.ForgetAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("Forgets one item. It is gone from every device and from the next answer. 404 for one that is not yours.");
+        memory.MapDelete("", async (ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.ForgetAllAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
+            .WithSummary("Forgets everything Stanley remembers about the guest.");
+        memory.MapPut("/settings", async (StanleyMemorySettingsRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.SetEnabledAsync(await me.LoadAsync(ct), body.Enabled, ct); return Results.NoContent(); })
+            .WithSummary("Switches Stanley's memory on or off { enabled }. Off, no remembered item is used in an answer; items stay listed until forgotten.");
+
         var handoffs = api.MapGroup("/me/stanley/handoffs").WithTags("Stanley");
         handoffs.MapPost("", async (StanleyHandoffRequest body, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))

@@ -361,6 +361,8 @@ The order follows the strategy's own sequencing principle ("earn trust before au
 - **Closes:** A6, 5.4, STN-REM-07, 7.6 setting. A12 and AI-SEC-05 are accepted gaps (decisions 1 and 3). Child and teen Stanley is out of scope (decision 7).
 - **Acceptance.** Forget removes the item from every device and from the model context; tests prove a deleted preference is not used.
 
+- **Status (2026-11-09): built; server tests written, not run here.** Server: `StanleyMemory.cs` in `Domain` (`StanleyMemoryRules`: six kinds with fixed values, each with the words the guest reads, a reason by source, trip or future scope, sensitive kinds mobility and diet, `ForAnswers` which decides what a model may be told) and in `Services` (`StanleyMemoryService`: remember, carry forward, forget one or all, memory on or off, all for the signed-in guest's own rows; a child account keeps none; forty items at most; audit by kind never value). Tables `dbo.StanleyMemory` and `dbo.StanleyMemorySettings`. Endpoints under `/me/stanley/memory` (get, `PUT items`, `PATCH items/{id}`, `DELETE items/{id}`, `DELETE`, `PUT settings`). The packet builder reads the store on every request and adds a preferences line to the model's instructions, so a forgotten item is gone from the next answer on every device. Device: `/plan/taste` is now **What Stanley remembers** (`StanleyMemoryPanel`: kept items with reason and scope, keep for future trips, forget, forget everything, the memory switch, what the device noticed with Remember buttons that save nothing until tapped, and the booking facts shown apart and read-only); `StanleyCarryForward` on the Remember memories screen is the carry-forward chooser; Settings shows the three plain proactivity choices over the four levels (`levelOfProactivity`), with Off apart. Decision record on provider retention and training: `docs/stanley-data-inventory.md`. Tests: `StanleyMemoryTests.cs`, `stanleyMemory.test.ts`. Carried over: the chat thread was never on the server, so nothing was dropped (decision 3 stands); the pilot week settings, the quiz, the access profile and the daily rhythm are not moved silently, the device offers them as "Stanley noticed" and the guest chooses; the memory screen now has an add-by-hand form and a change-in-place choice for single-valued kinds, and offers the mobility from the access page with its switch off (diet is added by hand only, there is no diet source on the device); a guest with no voyage is told their future-trip preferences only (`ConciergeContext.Preferences`, put in the instructions once; a trip's own items are never told without its voyage), so Dream and Discover have them now; proactivity stays per device (`stanleyLevel`), as the layer sits over the existing setting; the memory is guest-scoped, so a helper acting for someone never reads the guest's items (the helper path is still unbuilt, see the carry-over table).
+
 ### Phase 8: Dream and Discover intelligence (L)
 
 **Goal.** Conversational discovery that produces editable filters, not paragraphs.
@@ -469,13 +471,13 @@ The per-phase status notes above give the detail; this is the running list of wh
 
 | Item | From | Expected in |
 |---|---|---|
-| Group poll as a prepare/confirm action (needs a server poll service; a poll is a device document today) | 5 | 6 or 7 |
+| Group poll as a prepare/confirm action (needs a server poll service; a poll is a device document today) | 5 | 9, with the Group Trip Diplomat |
 | Reminders as push, not only shown when the app is open | 5 | 15, with push |
 | In-room order with a price (stateroom requests are free today) | 5 | when an order service exists |
 | "Change my dining time to late seating" is a library explainer; no dining-plan service | 5 | 9 |
 | Plan change is checked only against the plan snapshot the device sends | 5 | 11 |
 | Receipts listed beside the ledger, not as money rows (by design while no action moves money) | 5 | revisit with any paid action |
-| Helper path: the device cannot yet name a guest to act for, so only the guest's own booking is loaded | 4 | 7 |
+| Helper path: the device cannot yet name a guest to act for, so only the guest's own booking is loaded (not built in phase 7 either; needs a helper-session design) | 4 | 9 |
 | `get_route` is an outline; the server holds no corridor graph | 4 | 10 |
 | Bill read tool with the money permission, so the bill and readiness resolvers stop abstaining | 4 | 12 |
 | Eleven of the 25 to 40 planned resolvers (bill split, open cases, per-traveller readiness, document tasks, boarding-pass state, return brief) need data the trip facts lack | 3 | 6, 10, 12 |

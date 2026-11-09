@@ -18,7 +18,7 @@ public sealed record PartyMember(string Name, int Age);
 /// <summary>Who is asking and what the concierge may know: the guest's own booking (first names only), the bookable sailings and the device's preferences.</summary>
 public sealed record ConciergeContext(
     DateTime Now, string? SailingId, DateOnly? Departure, string? Ship, string? Stateroom, string? GuestFirstName, IReadOnlyList<PartyMember> Party,
-    IReadOnlyList<SailingRow> Sailings, string Mobility, IReadOnlyList<string> Likes);
+    IReadOnlyList<SailingRow> Sailings, string Mobility, IReadOnlyList<string> Likes, IReadOnlyList<string>? Preferences = null);
 
 public sealed record ToolOutcome(string Content, List<CitationDto> Citations, bool IsError = false);
 

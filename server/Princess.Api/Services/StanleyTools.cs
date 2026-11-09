@@ -90,7 +90,10 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
     {
         var turns = new JsonArray();
         foreach (var m in history) turns.Add(new JsonObject { ["role"] = m.Role, ["content"] = m.Text });
-        var system = read is null ? ConciergeRules.SystemPrompt(ctx) : ConciergeRules.SystemPrompt(ctx) + "\n\n" + read.Packet.Block();
+        // With no voyage there is no packet; the guest's future-trip preferences (never a trip's, never a switched-off or forgotten one) still go in, once.
+        var system = read is null
+            ? ConciergeRules.SystemPrompt(ctx) + (StanleyMemoryRules.Block(ctx.Preferences ?? []) is { Length: > 0 } prefs ? "\n\n" + prefs : "")
+            : ConciergeRules.SystemPrompt(ctx) + "\n\n" + read.Packet.Block();
         if (actions is not null) system += "\n\n" + StanleyIntents.Instructions;
         var toolsJson = actions is not null ? AllToolsWithActions : read is null ? ConciergeRules.ToolsJson : AllTools;
         var citations = new List<CitationDto>();

@@ -14,7 +14,7 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null)
 {
     public const string NoTools = "[]";
 
@@ -84,6 +84,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         {
             var tier = routing.Route == StanleyRoute.Trip ? "trip" : "before";
             var ctx = await tools.ContextAsync(user, request.Mobility, request.Likes, packet?.Choice.Chosen?.SailingId, ct);
+            if (packet?.Data is null && memory is not null) ctx = ctx with { Preferences = await memory.ForAnswersAsync(user, null, ct) };
             string? fallback = null;
             if (o.Switches.Tools && modelUsable)
             {

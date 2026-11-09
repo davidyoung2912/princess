@@ -1105,6 +1105,36 @@ CREATE TABLE dbo.StanleyHandoffs (
 CREATE INDEX IX_StanleyHandoffs_UserId_OpenedAt ON dbo.StanleyHandoffs (UserId, OpenedAt);
 END
 
+IF OBJECT_ID(N'dbo.StanleyMemory', N'U') IS NULL
+BEGIN
+-- What Stanley remembers (docs/stanley-gap-analysis-and-plan.md, phase 7): one row per kept preference, owned by one guest. Kept until the guest forgets it or the account is deleted; not aged out.
+CREATE TABLE dbo.StanleyMemory (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyMemory PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_StanleyMemory_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Kind NVARCHAR(12) NOT NULL,
+  Value NVARCHAR(20) NOT NULL,
+  Scope NVARCHAR(6) NOT NULL,
+  SailingId NVARCHAR(40) NOT NULL CONSTRAINT DF_StanleyMemory_SailingId DEFAULT N'',
+  Source NVARCHAR(10) NOT NULL CONSTRAINT DF_StanleyMemory_Source DEFAULT N'told',
+  Share BIT NOT NULL CONSTRAINT DF_StanleyMemory_Share DEFAULT 1,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyMemory_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_StanleyMemory_Scope CHECK (Scope IN (N'trip', N'future'))
+);
+CREATE INDEX IX_StanleyMemory_UserId ON dbo.StanleyMemory (UserId);
+END
+
+IF OBJECT_ID(N'dbo.StanleyMemorySettings', N'U') IS NULL
+BEGIN
+-- A row exists only for a guest who has switched Stanley's memory off or on by hand; no row means on.
+CREATE TABLE dbo.StanleyMemorySettings (
+  UserId BIGINT NOT NULL CONSTRAINT PK_StanleyMemorySettings PRIMARY KEY,
+  Enabled BIT NOT NULL,
+  CONSTRAINT FK_StanleyMemorySettings_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

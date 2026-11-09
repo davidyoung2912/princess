@@ -132,3 +132,55 @@ public sealed class DapperStanleyHandoffStore(IDbConnectionFactory db) : IStanle
             new { userId, max }, null, ct))).ToList();
     }
 }
+
+/// <summary>What Stanley remembers, in <c>dbo.StanleyMemory</c> and <c>dbo.StanleyMemorySettings</c> (phase 7). Every statement is scoped to one user id.</summary>
+public sealed class DapperStanleyMemoryStore(IDbConnectionFactory db) : IStanleyMemoryStore
+{
+    private const string Columns = "Id, PublicId, UserId, Kind, Value, Scope, SailingId, Source, Share, UpdatedAt";
+
+    public async Task<List<StanleyMemoryRow>> ListAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<StanleyMemoryRow>(Sql.Cmd($"SELECT {Columns} FROM dbo.StanleyMemory WHERE UserId = @userId ORDER BY Id", new { userId }, null, ct))).ToList();
+    }
+
+    public async Task AddAsync(StanleyMemoryRow r, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.StanleyMemory (PublicId, UserId, Kind, Value, Scope, SailingId, Source, Share, UpdatedAt) VALUES (@PublicId, @UserId, @Kind, @Value, @Scope, @SailingId, @Source, @Share, @UpdatedAt)", r, null, ct));
+    }
+
+    public async Task UpdateAsync(StanleyMemoryRow r, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.StanleyMemory SET Kind = @Kind, Value = @Value, Scope = @Scope, SailingId = @SailingId, Source = @Source, Share = @Share, UpdatedAt = @UpdatedAt WHERE Id = @Id AND UserId = @UserId", r, null, ct));
+    }
+
+    public async Task<bool> DeleteAsync(long userId, Guid publicId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.StanleyMemory WHERE UserId = @userId AND PublicId = @publicId", new { userId, publicId }, null, ct)) > 0;
+    }
+
+    public async Task DeleteAllAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.StanleyMemory WHERE UserId = @userId", new { userId }, null, ct));
+    }
+
+    public async Task<bool> GetEnabledAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<bool?>(Sql.Cmd("SELECT Enabled FROM dbo.StanleyMemorySettings WHERE UserId = @userId", new { userId }, null, ct)) ?? true;
+    }
+
+    public async Task SetEnabledAsync(long userId, bool enabled, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyMemorySettings AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET Enabled = @enabled
+            WHEN NOT MATCHED THEN INSERT (UserId, Enabled) VALUES (@userId, @enabled);
+            """, new { userId, enabled }, null, ct));
+    }
+}

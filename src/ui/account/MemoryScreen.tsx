@@ -23,6 +23,7 @@ import { BookPagePictures, DayPictureEditor } from './BookPictures'
 import { useMyMedia } from '../../hooks/useMedia'
 import { partyPeople } from '../../account/context'
 import { StanleyStoryteller } from '../ai/StanleyStoryteller'
+import { StanleyCarryForward } from '../ai/StanleyMemoryPanel'
 import { Keepsakes } from '../delights/Exports'
 import { StubsCard } from '../delights/EmbarkDelights'
 import { FavouritesRanked, PostcardWriter, SailedMap, WantNext } from '../delights/RememberDelights'
@@ -95,6 +96,7 @@ export function MemoryScreen() {
       <StubsCard />
       <SailedMap />
       <FavouritesRanked />
+      <StanleyCarryForward />
       <Card labelledBy="mem-diary" postcard>
         <h2 id="mem-diary" className="card__title">{th('diary.title')}</h2>
         <p>{t('diary.screenBody')}</p>
