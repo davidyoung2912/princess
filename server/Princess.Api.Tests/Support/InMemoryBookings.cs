@@ -137,6 +137,17 @@ public sealed class InMemoryBookingStore(InMemoryJourney world, InMemoryAccessSt
         return Task.CompletedTask;
     }
 
+    private readonly Dictionary<long, InstalmentChoice> instalments = [];
+
+    public Task<InstalmentChoice?> GetInstalmentChoiceAsync(long bookingId, CancellationToken ct) =>
+        Task.FromResult(instalments.TryGetValue(bookingId, out var c) ? c : null);
+
+    public Task SetInstalmentChoiceAsync(long bookingId, InstalmentChoice? choice, DateTime now, CancellationToken ct)
+    {
+        if (choice is null) instalments.Remove(bookingId); else instalments[bookingId] = choice;
+        return Task.CompletedTask;
+    }
+
     public Task<string?> FindIdempotentAsync(string key, long userId, string route, CancellationToken ct)
     {
         if (!Keys.TryGetValue(key, out var k)) return Task.FromResult<string?>(null);

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CATEGORIES, CHANNELS, type Category, type Channel, type NotificationPrefs } from '../../domain/notifications'
 import { formatDate } from '../../domain/cruise'
+import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -18,7 +19,7 @@ import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
 import { CalendarFeed, DeliveryLog, PushSwitch } from './PushPanels'
 
-const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', checkinOpens: '/me/trips' } as const
+const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', checkinOpens: '/me/trips' } as const
 
 /** Notifications centre and preferences (MNG-14): what needs attention, and how and when to be told. */
 export function NotificationsScreen() {
@@ -36,7 +37,7 @@ export function NotificationsScreen() {
           const unread = shown.filter((n) => !n.read)
           const row = (n: (typeof notices)[number]) => {
             const kind: BannerKind = n.category === 'critical' ? 'danger' : n.read ? 'info' : 'warning'
-            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0) }
+            const params = { date: n.params.date ? formatDate(String(n.params.date)) : '', count: Number(n.params.count ?? 0), amount: formatMoney(Number(n.params.amount ?? 0)) }
             return (
               <Banner key={n.id} kind={kind} title={n.id === 'checkinOpens' && n.params.open ? t('notices.checkinOpen') : t(`notices.${n.id}` as StringKey, params)} action={<LinkButton to={LINKS[n.id]} variant="secondary">{t('notices.open')}</LinkButton>}>
                 <p className="muted">{t(`notices.cat.${n.category}` as StringKey)}{n.read ? ` · ${t('notices.read')}` : ''}</p>

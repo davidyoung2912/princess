@@ -119,6 +119,11 @@ public sealed record Cancellation(long BookingId, DateTime At, long FeeCents, lo
 /// <summary>Phase 7 store: the booking draft, booking creation, and the changes a booking can go through. Takes internal ids; services resolve public ids first.</summary>
 public interface IBookingStore
 {
+    /// <summary>The instalment plan chosen for a booking, else null.</summary>
+    Task<InstalmentChoice?> GetInstalmentChoiceAsync(long bookingId, CancellationToken ct);
+    /// <summary>Keeps the chosen plan, or clears it when <paramref name="choice"/> is null.</summary>
+    Task SetInstalmentChoiceAsync(long bookingId, InstalmentChoice? choice, DateTime now, CancellationToken ct);
+
     Task<DraftRecord?> GetDraftAsync(long userId, CancellationToken ct);
     /// <summary>Saves the person's one live draft. An existing draft keeps its id (it is the resume-link secret); a new one gets <paramref name="newId"/>. Returns what is stored.</summary>
     Task<DraftRecord> SaveDraftAsync(long userId, DraftRecord draft, string newId, DateTime now, CancellationToken ct);

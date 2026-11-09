@@ -83,7 +83,8 @@ describe('REST discover and booking groups', () => {
       '/booking/quote': { total: 5 },
       '/bookings': { number: 'PC9' },
       '/bookings/PC9/detail': { number: 'PC9' },
-      '/bookings/PC9/instalments': { balance: 0, finalDue: '2027-01-15', plans: [] },
+      '/bookings/PC9/instalments': { balance: 0, finalDue: '2027-01-15', plans: [], chosen: null, next: null },
+      '/bookings/PC9/instalments#put': { balance: 0, finalDue: '2027-01-15', plans: [], chosen: 3, next: null },
       '/bookings/PC9/pay-balance': { number: 'PC9' },
       '/bookings/PC9/change?sailingId=s2': { newTotal: 1 },
       '/bookings/PC9/change?sailingId=s2#post': { number: 'PC9' },
@@ -102,6 +103,7 @@ describe('REST discover and booking groups', () => {
     await b.booking.get('PC9')
     await b.booking.payBalance('PC9', [{ method: 'wallet', cents: 1 }], '123456')
     await b.booking.instalments('PC9')
+    await b.booking.setInstalments('PC9', 3)
     await b.booking.changePreview('PC9', 's2')
     await b.booking.cancel('PC9')
     await b.booking.sendResumeLink('email', 'a@b.example')

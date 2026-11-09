@@ -32,4 +32,24 @@ public class InstalmentRulesTests
         Assert.Empty(InstalmentRules.Plans(100_000, new DateOnly(2026, 12, 20), Final));
         Assert.Empty(InstalmentRules.Plans(0, new DateOnly(2026, 6, 1), Final));
     }
+
+    [Fact]
+    public void TheNextPaymentIsTheFirstNotYetCovered()
+    {
+        var choice = new InstalmentChoice(3, 90_000);
+        Assert.Equal(new InstalmentPayment("2026-11-15", 30_000), InstalmentRules.Next(choice, Final, 90_000));
+        Assert.Equal(new InstalmentPayment("2026-11-15", 10_000), InstalmentRules.Next(choice, Final, 70_000));
+        Assert.Equal(new InstalmentPayment("2026-12-15", 30_000), InstalmentRules.Next(choice, Final, 60_000));
+        Assert.Equal(new InstalmentPayment("2027-01-15", 30_000), InstalmentRules.Next(choice, Final, 30_000));
+        Assert.Null(InstalmentRules.Next(choice, Final, 0));
+    }
+
+    [Fact]
+    public void AReminderShowsOnlyWithinAWeekOfThePaymentDate()
+    {
+        static List<string> Ids(string today) => NotificationRules.BuildNotices(new("paid", "2027-01-15", 0, 0, "done", "2027-01-01", "2026-11-15", 30_000, today)).Select(n => n.Id).ToList();
+        Assert.Equal(["instalmentDue"], Ids("2026-11-08"));
+        Assert.Equal(["instalmentDue"], Ids("2026-11-20"));
+        Assert.Empty(Ids("2026-11-07"));
+    }
 }

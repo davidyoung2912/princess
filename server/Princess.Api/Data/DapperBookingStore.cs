@@ -296,6 +296,30 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
 
     // ---- Idempotency ----
 
+    private sealed record InstalmentRow(int PaymentCount, long BalanceCents);
+
+    public async Task<InstalmentChoice?> GetInstalmentChoiceAsync(long bookingId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var row = await c.QuerySingleOrDefaultAsync<InstalmentRow>(Sql.Cmd("SELECT CAST(PaymentCount AS INT) AS PaymentCount, BalanceCents FROM dbo.InstalmentPlans WHERE BookingId = @bookingId", new { bookingId }, null, ct));
+        return row is null ? null : new InstalmentChoice(row.PaymentCount, row.BalanceCents);
+    }
+
+    public async Task SetInstalmentChoiceAsync(long bookingId, InstalmentChoice? choice, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        if (choice is null)
+        {
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.InstalmentPlans WHERE BookingId = @bookingId", new { bookingId }, null, ct));
+            return;
+        }
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.InstalmentPlans AS t USING (SELECT @bookingId AS BookingId) AS s ON t.BookingId = s.BookingId
+            WHEN MATCHED THEN UPDATE SET PaymentCount = @count, BalanceCents = @balance, CreatedAt = @now
+            WHEN NOT MATCHED THEN INSERT (BookingId, PaymentCount, BalanceCents, CreatedAt) VALUES (@bookingId, @count, @balance, @now);
+            """, new { bookingId, count = choice.Count, balance = choice.BalanceCents, now }, null, ct));
+    }
+
     public async Task<string?> FindIdempotentAsync(string key, long userId, string route, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

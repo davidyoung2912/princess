@@ -113,6 +113,10 @@ public static partial class BookingEndpoints
                 Results.Ok(await svc.InstalmentsAsync(await me.LoadAsync(ct), number, ct)))
             .WithSummary("Plans that split the balance into equal monthly payments, the last on the final payment date. Empty when none fits.");
 
+        b.MapPut("/instalments", async (string number, SetInstalmentsRequest body, ICurrentUser me, BookingService svc, CancellationToken ct) =>
+                Results.Ok(await svc.SetInstalmentsAsync(await me.LoadAsync(ct), number, body, ct)))
+            .WithSummary("Keeps the instalment plan with `count` payments (or clears it when null) so the app can remind the guest. 400 invalid when no such plan fits. Adults only.");
+
         b.MapGet("/change", async (string number, string? sailingId, ICurrentUser me, BookingService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ChangePreviewAsync(await me.LoadAsync(ct), number, sailingId, ct)))
             .WithSummary("What moving to another sailing would cost. Booker only.");

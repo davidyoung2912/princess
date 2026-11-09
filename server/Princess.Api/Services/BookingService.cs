@@ -303,17 +303,37 @@ public sealed class BookingService(
 
     // ---- After booking ----
 
-    /// <summary>The ways to spread what is left over monthly payments. Empty when nothing is owed or there is no time for a second payment.</summary>
+    /// <summary>The ways to spread what is left over monthly payments, and the plan the guest chose with its next payment. Empty when nothing is owed or no second payment fits.</summary>
     public async Task<InstalmentOptionsDto> InstalmentsAsync(UserRecord actor, string? number, CancellationToken ct)
     {
         var m = await access.RequireMemberAsync(actor, number, ct);
+        return await InstalmentViewAsync(m.BookingId, await clock.NowAsync(actor, ct), ct);
+    }
+
+    /// <summary>Keeps the plan with this many payments (or clears it when the count is null) so the app can remind the guest of each payment. Adults only.</summary>
+    public async Task<InstalmentOptionsDto> SetInstalmentsAsync(UserRecord actor, string? number, SetInstalmentsRequest req, CancellationToken ct)
+    {
+        var m = await access.RequireAdultMemberAsync(actor, number, ct);
         var now = await clock.NowAsync(actor, ct);
-        var d = await DetailAsync(m.BookingId, ct);
+        if (req.Count is null) await bookings.SetInstalmentChoiceAsync(m.BookingId, null, now, ct);
+        else
+        {
+            var view = await InstalmentViewAsync(m.BookingId, now, ct);
+            if (view.Plans.All(p => p.Count != req.Count)) throw ApiException.Invalid("count");
+            await bookings.SetInstalmentChoiceAsync(m.BookingId, new InstalmentChoice(req.Count.Value, view.Balance), now, ct);
+        }
+        return await InstalmentViewAsync(m.BookingId, now, ct);
+    }
+
+    private async Task<InstalmentOptionsDto> InstalmentViewAsync(long bookingId, DateTime now, CancellationToken ct)
+    {
+        var d = await DetailAsync(bookingId, ct);
         var view = ViewOf(d, now);
-        var plans = d.Row.Status == "confirmed" && view.Payment != "overdue"
-            ? InstalmentRules.Plans(view.Balance, TripRules.Today(now), DateOnly.ParseExact(view.FinalDue, "yyyy-MM-dd"))
-            : [];
-        return new InstalmentOptionsDto(view.Balance, view.FinalDue, plans);
+        var finalDue = DateOnly.ParseExact(view.FinalDue, "yyyy-MM-dd");
+        var open = d.Row.Status == "confirmed" && view.Balance > 0;
+        var plans = open && view.Payment != "overdue" ? InstalmentRules.Plans(view.Balance, TripRules.Today(now), finalDue) : [];
+        var choice = open ? await bookings.GetInstalmentChoiceAsync(bookingId, ct) : null;
+        return new InstalmentOptionsDto(view.Balance, view.FinalDue, plans, choice?.Count, choice is null ? null : InstalmentRules.Next(choice, finalDue, view.Balance));
     }
 
     /// <summary>Pays the rest of the balance with one or two methods. A repeated <paramref name="idempotencyKey"/> returns the booking without charging again.</summary>

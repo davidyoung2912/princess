@@ -308,6 +308,10 @@ export interface InstalmentOptions {
   balance: number
   finalDue: string
   plans: InstalmentPlan[]
+  /** The number of payments in the plan the guest keeps, else null. */
+  chosen: number | null
+  /** The next payment on that plan (what is still due on it), else null. */
+  next: InstalmentPayment | null
 }
 
 export interface ChangePreview {
@@ -827,6 +831,8 @@ export interface Api {
     payBalance(number: string, parts: PaymentPart[], challenge?: string): Promise<BookingView>
     /** Plans that split the balance into monthly payments. A schedule to follow; each payment is made with `payBalance`. */
     instalments(number: string): Promise<InstalmentOptions>
+    /** Keeps the plan with this many payments so the app reminds the guest, or clears it with null. */
+    setInstalments(number: string, count: number | null): Promise<InstalmentOptions>
     changePreview(number: string, sailingId: string): Promise<ChangePreview>
     change(number: string, sailingId: string): Promise<BookingView>
     cancel(number: string): Promise<BookingView>

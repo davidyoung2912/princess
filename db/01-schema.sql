@@ -2381,6 +2381,18 @@ CREATE TABLE dbo.PhotoAlbum (
 );
 END
 
+-- X10c: the instalment plan a guest chose for a booking (a schedule to follow; the balance when chosen is kept so the next payment can be worked out).
+IF OBJECT_ID(N'dbo.InstalmentPlans', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.InstalmentPlans (
+  BookingId BIGINT NOT NULL CONSTRAINT PK_InstalmentPlans PRIMARY KEY,
+  PaymentCount TINYINT NOT NULL, BalanceCents BIGINT NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_InstalmentPlans_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT CK_InstalmentPlans_Count CHECK (PaymentCount BETWEEN 2 AND 6),
+  CONSTRAINT FK_InstalmentPlans_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings (Id) ON DELETE CASCADE
+);
+END
+
 -- X8b: Print It. A printed book or postcard set made from owned photos; the print shop's reference and promised delivery are kept.
 IF OBJECT_ID(N'dbo.PrintOrders', N'U') IS NULL
 BEGIN

@@ -56,7 +56,7 @@ public static partial class NotificationRules
 
     public sealed record Notice(string Id, string Category, Dictionary<string, object> Params);
 
-    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens);
+    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens, string? InstalmentDate = null, long InstalmentCents = 0, string Today = "");
 
     /// <summary>What the guest should hear about now, most urgent first. Derived from their trip, so it can never disagree with it.</summary>
     public static List<Notice> BuildNotices(NoticeInput i)
@@ -65,12 +65,14 @@ public static partial class NotificationRules
         if (i.Payment == "overdue") list.Add(new("payOverdue", "critical", new() { ["date"] = i.FinalDue }));
         if (i.PassportProblems > 0) list.Add(new("passportProblem", "critical", new() { ["count"] = i.PassportProblems }));
         if (i.Payment == "dueSoon") list.Add(new("payDue", "payments", new() { ["date"] = i.FinalDue }));
+        if (i.InstalmentDate is not null && string.CompareOrdinal(i.InstalmentDate, DateOnly.ParseExact(i.Today, "yyyy-MM-dd").AddDays(InstalmentRules.RemindDays).ToString("yyyy-MM-dd")) <= 0)
+            list.Add(new("instalmentDue", "payments", new() { ["date"] = i.InstalmentDate, ["amount"] = i.InstalmentCents }));
         if (i.DocumentsMissing > 0) list.Add(new("documentsMissing", "documents", new() { ["count"] = i.DocumentsMissing }));
         if (i.CheckinState != "done") list.Add(new("checkinOpens", "checkin", new() { ["date"] = i.CheckinOpens, ["open"] = i.CheckinState == "open" ? 1 : 0 }));
         return list;
     }
 
-    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "passportProblem", "documentsMissing", "checkinOpens"];
+    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "instalmentDue", "passportProblem", "documentsMissing", "checkinOpens"];
 
     public static readonly TimeSpan TicketReceived = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan TicketInProgress = TimeSpan.FromMinutes(60);

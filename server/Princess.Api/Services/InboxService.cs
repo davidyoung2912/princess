@@ -6,7 +6,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
-public sealed partial class InboxService(IInboxStore inbox, TripService trips, IUserClock clock)
+public sealed partial class InboxService(IInboxStore inbox, TripService trips, IBookingStore bookings, IUserClock clock)
 {
     public const string GuestServicesNumber = "555-0100";
     public const string EmergencyNumber = "555-0111";
@@ -28,9 +28,12 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
         if (await trips.CurrentAsync(actor, now, ct) is { } current)
         {
             var trip = await trips.BuildAsync(current, current: true, now, ct);
+            var choice = current.PaidCents < current.TotalCents ? await bookings.GetInstalmentChoiceAsync(current.BookingId, ct) : null;
+            var next = choice is null ? null : InstalmentRules.Next(choice, DateOnly.ParseExact(trip.Plan.FinalDue, "yyyy-MM-dd"), current.TotalCents - current.PaidCents);
             var built = NotificationRules.BuildNotices(new NotificationRules.NoticeInput(
                 trip.Payment, trip.Plan.FinalDue, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State,
-                TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd")));
+                TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd"),
+                next?.Date, next?.Cents ?? 0, TripRules.Today(now).ToString("yyyy-MM-dd")));
             notices = built.Select(n => new NoticeDto(n.Id, n.Category, n.Params, read.Contains(n.Id))).ToList();
         }
         return new NotificationsDto(notices, await PrefsAsync(actor.Id, ct));
