@@ -1,0 +1,125 @@
+# Best-in-market plan 2: proving "Built" and closing the gaps
+
+Status: **Written 2026-11-08 for your review. Nothing in this plan is built yet.** It follows `docs/best-in-market-plan.md` (BM1 to BM15) and uses `docs/best-in-market-matrix.md` as its starting point. Source requirements: `docs/princess_cruises_expanded_best_in_market_requirements.md`.
+
+## 1. The question, and the short answer
+
+The matrix says 216 of 292 requirements are "Built", but only 15 rows were read against their acceptance wording (basis R). The other 277 were found by file name or search (basis F). You asked whether there is a better way to confirm what is still outstanding inside "Built".
+
+**Yes, and a first version of it was run for this plan.** Three findings:
+
+1. **Every requirement has testable acceptance wording** (502 clauses across 292 IDs; the 58 cross-stage rows have one clause each, no separate acceptance column). The matrix judged each *row*, not each *clause*. Clause-level checking is the missing step.
+2. **"Built" is weakly proved.** By a script that checks for a test file beside each cited source file: **87 of 217 Built rows (41 of 101 P0 rows) cite no test at all.** A test beside the file is not proof either, so the real figure is worse.
+3. **Spot checks found real misses inside P0 "Built" rows.** I checked about 30 distinctive clauses by hand-written searches of `src` (including `src/i18n/locales/en.ts`, because screens keep their wording there). Section 3 lists what the checks found. Roughly one clause in four that I probed was absent. That is a small, biased sample, not a rate to quote, but it is enough to say the 216 is an upper bound by a margin, and that a systematic pass is worth doing.
+
+## 2. How to confirm outstanding gaps: a five-layer method
+
+Each layer catches something the layer above it cannot. All run under the project rules (no browser, no `dotnet test`; checks are `npm run test`, `lint`, `npx tsc -b`, `build`).
+
+| Layer | What it is | Catches | Cost |
+| --- | --- | --- | --- |
+| **L1 Clause register** | `docs/requirements-clauses.md`, generated from the requirements document by a script kept in `scripts/`. One row per acceptance clause (about 500), with a verdict (`proved`, `gap`, `not code`, `server only`), the proof (a test name or `file:line`), and the date checked. | Rows judged Built because the screen exists while one clause is missing. | Medium. The script is small; the reading is the work. |
+| **L2 ID-tagged tests with a ratchet** | A convention: a test names the clauses it proves (`it('DEB-02#1 ...')` or a `// proves: DEB-02#1` comment). `src/traceability.test.ts` reads the register and fails if a clause marked `proved` has no tag, or a tag points at no clause. The allow-list of untagged clauses may only shrink. | "Built" with no test; claims that drift as code changes. | Low once L1 exists. |
+| **L3 Wording guards** | Tests that read `src/i18n/locales/en.ts` for required statements (for example "crew instructions override this app"). Some acceptance clauses are sentences the guest must be able to read. | Missing or edited safety and trust wording, which no behaviour test sees. | Low. |
+| **L4 Release-gate scenarios** | The document's 10 P0 release gates (section 9.1) written as node tests that drive the domain modules and the `httpApi` client with the test double: double tap does not duplicate a charge, stale value shows age and next step, every critical error has a human route, and so on. | Cross-feature failures that no single row shows. | Medium. |
+| **L5 Server and human lists** | A short checklist of C# tests written but never run (BM7 to BM15), and a device/screen-reader checklist for what only a person can check (320 px reflow, brightness, wake lock, install prompts). | The parts this environment cannot prove. | You run them; I only write the list. |
+
+Why a register and not a smarter script: a keyword probe over the cited files flagged 175 of 217 Built rows as having some clause with little keyword overlap. That is far too noisy to act on, and it also misses wording that lives in the i18n file. It is useful only to *order* the reading (P0 first, no test first), which is how L1 uses it.
+
+## 3. Hidden gaps found so far inside "Built" rows
+
+Checked by search this session. "Absent" means no match in the cited files or the English strings. "Needs a read" means the cited file had no match but the feature may sit elsewhere.
+
+| ID | Pri | Clause | Result |
+| --- | --- | --- | --- |
+| MOB-14 | P0 | "detect time-zone/date-line changes" | **Absent.** Clocks are shown and tested (BM4), but nothing notices that the phone's zone or the ship's zone changed and says so. |
+| EMB-02 | P0 | "app states that crew instructions and announcements override app content" | **Absent** from the muster card wording. |
+| DEB-02 | P0 | "final assignment comes from operations and is distinguished from preference" | **Absent.** No wording or state separating the guest's preference from the assigned group. |
+| DEB-04 / SEA-14 | P0 | "final, pending, disputed, refunded and adjusted charges are separate" | **Needs a read.** `src/domain/folio.ts` has no refund, dispute or adjusted state; `ledgerSplit.ts` covers pending and posted only. |
+| EMB-01 | P0 | "boarded only by manifest or authorised scan; local QR never means boarded" | **Needs a read.** `src/domain/boarding.ts` has no source field for the boarded state. |
+| BOK-05 | P0 | "audit record stores the accepted version" of fare and terms | **Needs a read.** No fare-version token found. (BOK-15's versioned legal acceptance is confirmed: table `dbo.Acceptances` has `Version`.) |
+| MNG-11 / SEA-20 | P0 | owner or team, ETA or reason for none, escalation, reopen keeps history | **Needs a read.** `assistance.ts` has no owner or team. |
+| MNG-05 | P0 | "sensitive data is not included in push previews" | **Needs a read.** No redaction rule found. |
+| SEC-06 / SEA-16 | P0 | age-aware messaging controls | **Partial at most.** `ChatSafe.tsx` has a photo minimum age; no age-aware message rule found. |
+| SEC-07 | P1 | "sign out everywhere" | **Cheaper than the matrix says.** The server already has `Users.SessionsValidFrom`, honoured in `ConfigureJwtBearer.cs`, but only a password reset sets it. An endpoint that sets it is small. A device list needs a sessions table. |
+| REM-01 | P0 | "past trips remain searchable and downloadable" | **Needs a read.** `HistoryScreen.tsx` has no search or filter. |
+| POR-04 | P0 | "distinguishes Princess-operated from independent activity" | **Needs a read.** `PortCard.tsx` has no such label. |
+
+Matrix housekeeping found at the same time:
+
+- **Stale rows:** MOB-24, GTS-15 and MOB-15 were closed by BM3 and BM4 but the matrix still says Partial or lists them as open. IDN-05 and MNG-07 still say four permissions; BM6 to BM12 added documents, payments, folio, check-in and trip.
+- **Misattributed evidence:** AST-04 cites `src/ai/guard.ts` (the handoff screen, not confirmation); the confirmation component is `src/ui/ai/StanleyConfirm.tsx`. Six Built rows cite no file at all (GTS-16, EMB-08, DEB-03, DEB-06, DEB-10, DEB-13); they name a route instead.
+- **Count:** the matrix says 216 Built; the script counts 217. To be reconciled when the register is built.
+
+## 4. The 57 known gaps (51 Partial, 6 Not built), sorted by what closes them
+
+Counts are from the matrix. "FE" is front end only; "Server" needs C# and a schema change I cannot compile or run here (so each lands as written-not-run, like BM7 to BM15).
+
+### A. Closable in the front end, no new decisions (do first)
+
+| IDs | Pri | Work |
+| --- | --- | --- |
+| MNG-03 | P0 | Sync chip shows pending (outbox has items), unavailable and not linked as distinct states, using `useOutbox` and the session. |
+| MOB-05, OFF-01 | P0 | One `src/domain/offlineContract.ts`: every action and screen declares `offline`, `queued`, `view-only` or `needs-connection`; a test fails when a registered route has no entry; controls show the label before commit. |
+| MOB-03, QOL-04 | P0 | Guest chooses which kinds the capsule keeps; "last test" is stored (needs an allowed place under `src/data/`, see the audit gate). |
+| MOB-04 | P0 | Export and recover local drafts and outbox as a file; corrupt-store handling with a plain message. IndexedDB stays out (decided in the first plan). |
+| MOB-23 | P0 | In-app due-reminder fallback while the app is open or on next open. Never claims background delivery. |
+| DRM-10, DSC-11 | P0 | One accessibility filter across ship, cabin, port and excursion; "unknown" shown as unknown; one whole-journey comparison. |
+| OFF-06 | P1 | Image loading control (off in data-light mode), no autoplay, confirmed by a test. |
+| DSC-05, 06, 12, DSC-13 | P1/P2 | Pick an exact cabin on the deck plan; noise, motion and lift indicators; connecting cabins for a party; cabin-to-venue walking overlay using `deckGraph.ts`. |
+| GTS-09, POR-07, EMB-13, QOL-10 | P1/P2 | Terminal and port step-free routes; sail-away viewpoints; live route recalculation when a lift is marked closed. |
+| MOB-13, MOB-22, MOB-10 | P1/P2 | Foreground geolocation started by the guest only; compass from device orientation (north-up fallback); QR scan with `BarcodeDetector` where the browser has it, typed-code fallback, and never treated as boarding proof. |
+| MOB-25, MOB-09 | P1 | Local preview, delete, and location-metadata strip on shared photos. |
+| DRM-07, DRM-09, MNG-16, QOL-17, QOL-18 | P1/P2 | Occasion filters, solo inventory view, reusable cabin and dining preferences, layered deck cutaway, photo curation. |
+| TRU-05 | P0 | Test the failed-reschedule screen: original stays, message is plain. |
+
+### B. Needs server work (written, not compiled or run)
+
+| IDs | Pri | Work |
+| --- | --- | --- |
+| IDN-04, IDN-05, IDN-07 | P0 | One relationship type and one permission set across helper, family link and party; remaining permissions (edit booking, message); leave-group on every row of "who can see what". The helper sees check-in, folio, payments, trip and documents today. |
+| IDN-03 | P0 | Duplicate-profile detection on sign-up and booking link, with a "needs a person" state. |
+| IDN-08, MNG-01 | P0/P1 | Advisor-booked and external bookings in My Trips; linking by verified booking data. |
+| TRU-07 | P0 | `/me/status` reads a served status and incident feed instead of client demo scenarios. |
+| COM-04 | P0 | Acknowledged state for critical alerts, with a fallback rule. Can only be tested against the simulated senders. |
+| MOB-07, COM-06 | P1 | Deep link resolves to the exact object and shows its current state. |
+| SEC-07 | P1 | "Sign out everywhere" (small), then a device list (needs a sessions table), then suspicious sign-in notice. |
+
+### C. Needs content or a source (data, not code)
+
+DSC-07 cabin photos with provenance (S1-06), DSC-15 reviews by ship, sailing, cabin and port (no source), BOK-12 future cruise credit wording, REM-04 per-photo consent, REM-14 referral, SEA-18 per-event accommodation requests, DRM-12 interactive map (text itinerary exists).
+
+### D. Not code, or blocked by a decision
+
+GTS-14 (operator sign-off), SEA-07 (Medallion location), A11Y-07, EMB-03, SEC-08 (research and safety owners), A11Y-08 (English only by project rule, so closed as "not planned"). MOB-16 wallet passes stay out.
+
+## 5. Phases
+
+One phase at a time, each committed on its own, per `CLAUDE.md`. Order puts proof first so every later fix is checked by the register.
+
+| Phase | Work | Output |
+| --- | --- | --- |
+| **BM16** | L1 for the 101 P0 Built rows plus the 12 hidden-gap candidates in section 3: script, register, verdict per clause. Includes the matrix corrections. | `scripts/` generator, `docs/requirements-clauses.md`, updated matrix. |
+| **BM17** | L2 and L3: tag convention, `src/traceability.test.ts` with a shrinking allow-list, and wording guards for the safety and trust sentences. | Failing-then-passing tests for the P0 gaps found. |
+| **BM18** | Close the confirmed P0 gaps from section 3 that need only the front end: MOB-14 zone-change notice, EMB-02 crew-override line, DEB-02 preference vs assigned, POR-04 label, REM-01 search, plus any "needs a read" item that proves absent. | Small fixes with tests. |
+| **BM19** | Group A P0 items: MNG-03, MOB-05 and OFF-01 together, then MOB-03, MOB-04, MOB-23. | Offline contract table and its gate. |
+| **BM20** | L1 for the remaining 116 Built rows (P1 and P2 and QOL), same method. | Register complete. |
+| **BM21** | L4: the 10 release-gate scenarios as node tests. | Gate tests; failures become BM-numbered fixes. |
+| **BM22 on** | Group A P1 and P2, then group B in the order: SEC-07 sign-out, TRU-07, IDN-04/05/07, IDN-03, MOB-07/COM-06, COM-04. | One theme per phase. |
+
+Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare version (BOK-05), assistance ownership (MNG-11/SEA-20) and push-preview redaction (MNG-05) become BM18 items if BM16 confirms them absent; some touch the server contract and would be split out.
+
+## 6. Decisions I need from you
+
+1. **Order.** Start with BM16 and BM17 (proof first), or go straight to closing known gaps (BM19 first)? I recommend proof first: the register tells BM18 and BM19 what to fix and prevents the same drift later.
+2. **Clause-level reading.** BM16 and BM20 mean reading about 500 clauses against code. Acceptable as slow, careful work, or limit it to P0?
+3. **COM-04 and email/SMS.** Needs a sender decision before it can be more than a simulated test.
+4. **IDN-04.** Unifying helper, family link and party into one relationship model touches three server areas and the `Helper` table. Approve the design before BM22+ reaches it.
+5. **Camera and location features** (MOB-10, MOB-13, MOB-22). Both are permission-gated and device-dependent, and I cannot test them on a device. OK to build with feature detection and manual fallbacks, flagged "untested on device"?
+6. **C# tests.** BM7 to BM15 added about ten server tests I never ran. Please run them once yourself before relying on helper features.
+
+## 7. What I did not do
+
+- I did not build any of the gaps. You asked for a plan to review, and `CLAUDE.md` says to stop after each phase, so BM16 onward waits.
+- I did not read the C# endpoints behind the rows; server-side clauses stay unconfirmed until L5.
+- The spot checks in section 3 are searches, not proof. A match means the wording or state exists, not that the behaviour is correct.
