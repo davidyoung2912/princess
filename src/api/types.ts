@@ -805,6 +805,12 @@ export interface Api {
     markRead(ids: string[]): Promise<void>
     savePrefs(prefs: NotificationPrefs): Promise<NotificationPrefs>
   }
+  /** Confirming the phone number on the profile by a texted code; text notices go only to a confirmed number. */
+  phoneCheck: {
+    status(): Promise<PhoneCheck>
+    sendCode(): Promise<PhoneCheck>
+    confirm(code: string): Promise<PhoneCheck>
+  }
   support: {
     tickets(): Promise<Ticket[]>
     callback(phone: string): Promise<Ticket>
@@ -1207,3 +1213,6 @@ export interface WifiApi {
   upgrade(id: string, plan: WifiPlan): Promise<WifiView>
   remove(id: string): Promise<WifiView>
 }
+
+/** Whether the profile has a phone number, whether it has been confirmed by text, and whether a code is waiting. */
+export interface PhoneCheck { hasPhone: boolean; verified: boolean; pending: boolean }

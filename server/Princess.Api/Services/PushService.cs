@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, ITripStore profiles, IOptions<JwtOptions> jwt, IConfiguration config)
+    IEmailSender email, ISmsSender sms, ITripStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -123,6 +123,8 @@ public sealed class PushService(
     private async Task ReachOtherChannelsAsync(UserRecord actor, List<PushNotice> notices, JsonObject prefs, TimeOnly local, HashSet<string> sentKeys, DateTime now, CancellationToken ct)
     {
         var phone = (await profiles.GetProfileAsync(actor.Id, ct))?.Phone;
+        // Texts go only to a number the guest has confirmed with a code.
+        if (!await phoneCheck.IsVerifiedAsync(actor.Id, phone, ct)) phone = null;
         // Only the payment and travel notices (instalments, tender, flight) go beyond the phone; the on-board and port-day ones are for the phone alone.
         foreach (var n in notices.Where(n => n.Kind is "payment" or "travel"))
         {

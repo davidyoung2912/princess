@@ -18,6 +18,7 @@ export interface HttpGroups {
   notifications: Api['notifications']
   push: Api['push']
   calendar: Api['calendar']
+  phoneCheck: Api['phoneCheck']
   support: Api['support']
   help: Api['help']
   budget: BudgetApi
@@ -335,6 +336,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       markRead: async (ids) => { await http.post('/me/notifications/read', { ids }) },
       savePrefs: (prefs) => send('put', '/me/notification-prefs', prefs),
     },
+    phoneCheck: {
+      status: () => get('/me/phone-check'),
+      sendCode: () => send('post', '/me/phone-check/code'),
+      confirm: (code) => send('post', '/me/phone-check/confirm', { code }),
+    },
     support: {
       tickets: () => get('/me/support-tickets'),
       callback: (phone) => send('post', '/me/support-tickets', { kind: 'callback', phone }),
@@ -547,6 +553,7 @@ export function toApi(g: HttpGroups): Api {
     notifications: g.notifications,
     push: g.push,
     calendar: g.calendar,
+    phoneCheck: g.phoneCheck,
     support: g.support,
     help: g.help,
     budget: g.budget,

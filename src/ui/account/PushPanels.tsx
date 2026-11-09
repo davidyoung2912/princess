@@ -109,3 +109,41 @@ export function CalendarFeed() {
     </section>
   )
 }
+
+/** Texts go only to a phone number the guest has confirmed: a six-digit code is texted to the number on the profile and typed back here. */
+export function PhoneCheck() {
+  const status = useMine(() => api.phoneCheck.status())
+  const [code, setCode] = useState('')
+  const send = useAction(() => api.phoneCheck.sendCode())
+  const confirm = useAction((c: string) => api.phoneCheck.confirm(c))
+  return (
+    <section aria-labelledby="phone-h">
+      <h2 id="phone-h">{th('phoneCheck.title')}</h2>
+      <p>{t('phoneCheck.intro')}</p>
+      <Load state={status}>
+        {(s) => !s.hasPhone
+          ? <p className="muted">{t('phoneCheck.none')}</p>
+          : s.verified
+            ? <p role="status">{t('phoneCheck.verified')}</p>
+            : (
+              <>
+                <p>{t('phoneCheck.not')}</p>
+                <Button variant={s.pending ? 'secondary' : 'primary'} disabled={send.busy} onClick={async () => { if (await send.run()) { setCode(''); status.retry() } }}>{s.pending ? t('phoneCheck.resend') : t('phoneCheck.send')}</Button>
+                {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('phoneCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('phoneCheck.err.phone')}</p> : <ActionError error={send.error} />}
+                {s.pending && (
+                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry() } }}>
+                    <div className="field">
+                      <label htmlFor="phone-code">{t('phoneCheck.code')}</label>
+                      <input id="phone-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
+                      <p className="field__hint">{t('phoneCheck.codeHint')}</p>
+                    </div>
+                    {confirm.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('phoneCheck.err.code')}</p> : <ActionError error={confirm.error} />}
+                    <Button type="submit" disabled={confirm.busy || code.trim().length !== 6}>{t('phoneCheck.confirm')}</Button>
+                  </form>
+                )}
+              </>
+            )}
+      </Load>
+    </section>
+  )
+}

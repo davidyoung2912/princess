@@ -43,6 +43,18 @@ public static class PushEndpoints
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Push").WithSummary("Marks the sent alerts as seen (clears the unread count).");
 
+        api.MapGet("/me/phone-check", async (ICurrentUser me, PhoneCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.StatusAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Push").WithSummary("Whether the phone number on the profile has been confirmed by text.");
+
+        api.MapPost("/me/phone-check/code", async (ICurrentUser me, PhoneCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.SendCodeAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Push").WithSummary("Texts a six-digit code to the number on the profile (400 phone when there is none; 409 tooSoon within a minute of the last).");
+
+        api.MapPost("/me/phone-check/confirm", async (PhoneCodeRequest body, ICurrentUser me, PhoneCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), body.Code, ct)))
+            .WithTags("Push").WithSummary("Confirms the number with the code (400 wrongCode, expiredCode, tooManyTries or noCode). Text notices go only to a confirmed number.");
+
         api.MapGet("/me/calendar-feed", async (ICurrentUser me, CalendarFeedService svc, CancellationToken ct) =>
                 Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Calendar").WithSummary("Whether the guest has a calendar feed.");

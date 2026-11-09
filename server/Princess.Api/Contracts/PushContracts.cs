@@ -14,3 +14,8 @@ public sealed record PushLogDto(string Key, string Kind, string Outcome, string?
 public sealed record PushStatusDto(bool Available, string? PublicKey, bool Subscribed, int Devices, int Budget, bool Calm, List<string> Watch, int Unread, List<PushLogDto> Log);
 
 public sealed record CalendarFeedDto(bool On, string? Path);
+
+/// <summary>Whether the guest has a phone number on the profile, whether it has been confirmed by text, and whether a code is waiting.</summary>
+public sealed record PhoneCheckDto(bool HasPhone, bool Verified, bool Pending);
+
+public sealed record PhoneCodeRequest(string? Code);
