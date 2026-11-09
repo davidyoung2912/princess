@@ -312,6 +312,8 @@ export interface InstalmentOptions {
   chosen: number | null
   /** The next payment on that plan (what is still due on it), else null. */
   next: InstalmentPayment | null
+  /** Each payment is taken automatically from the guest's default card on its date (when the app next checks). */
+  auto?: boolean
 }
 
 export interface ChangePreview {
@@ -834,7 +836,7 @@ export interface Api {
     /** Plans that split the balance into monthly payments. A schedule to follow; each payment is made with `payBalance`. */
     instalments(number: string): Promise<InstalmentOptions>
     /** Keeps the plan with this many payments so the app reminds the guest, or clears it with null. */
-    setInstalments(number: string, count: number | null): Promise<InstalmentOptions>
+    setInstalments(number: string, count: number | null, auto?: boolean): Promise<InstalmentOptions>
     changePreview(number: string, sailingId: string): Promise<ChangePreview>
     change(number: string, sailingId: string): Promise<BookingView>
     cancel(number: string): Promise<BookingView>

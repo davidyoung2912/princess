@@ -13,7 +13,7 @@ namespace Princess.Api.Services;
 /// </summary>
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
-    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService)
+    IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments)
 {
     public async Task<PushStatusDto> StatusAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
@@ -60,6 +60,7 @@ public sealed class PushService(
     /// <summary>Checks what the guest should hear now, sends it within their limits and logs the outcome. Safe to call often: a notice is sent once.</summary>
     public async Task<PushStatusDto> DispatchAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
+        await instalments.ChargeDueAsync(actor, await clock.NowAsync(actor, ct), ct);
         var subs = await store.ListSubscriptionsAsync(actor.Id, ct);
         if (subs.Count > 0 && sender.PublicKey is not null) await RunAsync(actor, subs, ct);
         return await StatusAsync(actor, endpoint, ct);

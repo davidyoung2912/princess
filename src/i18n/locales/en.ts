@@ -1295,6 +1295,8 @@ export const en = {
   'book.instalments.note': 'This is a plan to follow. Nothing is charged for you, so pay each amount with the button below on or before its date. If you keep a plan, we remind you a week before each payment.',
   'book.instalments.next': 'Next payment: {amount} by {date}',
   'book.instalments.keep': 'Keep this plan and remind me',
+  'book.instalments.auto': 'Take each payment from my default card',
+  'book.instalments.autoNote': 'We take a payment on its date, the next time you open the app, from your default saved card. If the card is declined or needs a code, nothing is taken and we remind you to pay by hand. You can stop at any time.',
   'book.instalments.stop': 'Stop the reminders',
 
   'book.manage.title': 'Change or cancel',

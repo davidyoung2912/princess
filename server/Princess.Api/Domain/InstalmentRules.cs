@@ -5,7 +5,8 @@ public sealed record InstalmentPayment(string Date, long Cents);
 public sealed record InstalmentPlan(int Count, List<InstalmentPayment> Payments);
 
 /// <summary>The plan a guest chose: how many payments, and what was left to pay when they chose.</summary>
-public sealed record InstalmentChoice(int Count, long BalanceCents);
+/// <summary><see cref="AutoCard"/> (the public id of a saved card) and <see cref="AutoUserId"/> (whose card it is) are set when the guest asked for each payment to be taken automatically.</summary>
+public sealed record InstalmentChoice(int Count, long BalanceCents, Guid? AutoCard = null, long? AutoUserId = null);
 
 /// <summary>
 /// Pay in instalments (H19): a plan that splits what is left into equal monthly payments, the last on the final payment date.

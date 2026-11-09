@@ -2393,6 +2393,10 @@ CREATE TABLE dbo.InstalmentPlans (
 );
 END
 
+-- X10j: take each instalment automatically from a saved card (its public id) belonging to this user; null means pay by hand.
+IF COL_LENGTH(N'dbo.InstalmentPlans', N'AutoCard') IS NULL
+  ALTER TABLE dbo.InstalmentPlans ADD AutoCard UNIQUEIDENTIFIER NULL, AutoUserId BIGINT NULL;
+
 -- X8b: Print It. A printed book or postcard set made from owned photos; the print shop's reference and promised delivery are kept.
 IF OBJECT_ID(N'dbo.PrintOrders', N'U') IS NULL
 BEGIN

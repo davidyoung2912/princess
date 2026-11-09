@@ -6,7 +6,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
-public sealed partial class InboxService(IInboxStore inbox, TripService trips, IUserClock clock, TripWatchService watchService)
+public sealed partial class InboxService(IInboxStore inbox, TripService trips, IUserClock clock, TripWatchService watchService, InstalmentChargeService instalments)
 {
     public const string GuestServicesNumber = "555-0100";
     public const string EmergencyNumber = "555-0111";
@@ -22,6 +22,7 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
     public async Task<NotificationsDto> NotificationsAsync(UserRecord actor, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);
+        await instalments.ChargeDueAsync(actor, now, ct);
         var read = await inbox.ReadNoticeKindsAsync(actor.Id, ct);
         var notices = new List<NoticeDto>();
         // Notices come from the trip the app opens on, so they can never disagree with it.

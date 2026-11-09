@@ -320,7 +320,15 @@ public sealed class BookingService(
         {
             var view = await InstalmentViewAsync(m.BookingId, now, ct);
             if (view.Plans.All(p => p.Count != req.Count)) throw ApiException.Invalid("count");
-            await bookings.SetInstalmentChoiceAsync(m.BookingId, new InstalmentChoice(req.Count.Value, view.Balance), now, ct);
+            Guid? auto = null;
+            if (req.Auto == true)
+            {
+                // Taken from the default saved card, which must be in date; anything else needs the guest at the screen (a code) so it cannot run by itself.
+                var card = (await trips.ListCardsAsync(actor.Id, ct)).FirstOrDefault(c => c.IsDefault);
+                if (card is null || AccountRules.CardExpired(card.Expiry, TripRules.Today(now))) throw ApiException.Invalid("card");
+                auto = card.PublicId;
+            }
+            await bookings.SetInstalmentChoiceAsync(m.BookingId, new InstalmentChoice(req.Count.Value, view.Balance, auto, auto is null ? null : actor.Id), now, ct);
         }
         return await InstalmentViewAsync(m.BookingId, now, ct);
     }
@@ -333,7 +341,7 @@ public sealed class BookingService(
         var open = d.Row.Status == "confirmed" && view.Balance > 0;
         var plans = open && view.Payment != "overdue" ? InstalmentRules.Plans(view.Balance, TripRules.Today(now), finalDue) : [];
         var choice = open ? await bookings.GetInstalmentChoiceAsync(bookingId, ct) : null;
-        return new InstalmentOptionsDto(view.Balance, view.FinalDue, plans, choice?.Count, choice is null ? null : InstalmentRules.Next(choice, finalDue, view.Balance));
+        return new InstalmentOptionsDto(view.Balance, view.FinalDue, plans, choice?.Count, choice is null ? null : InstalmentRules.Next(choice, finalDue, view.Balance), choice?.AutoCard is not null);
     }
 
     /// <summary>Pays the rest of the balance with one or two methods. A repeated <paramref name="idempotencyKey"/> returns the booking without charging again.</summary>
