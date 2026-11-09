@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import type { Reservation } from '../../api/types'
+import { formatTime } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
-import { MAX_TABLE, splitEvenly } from '../../domain/services'
+import { MAX_TABLE, splitEvenly, tableAllocation } from '../../domain/services'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -45,6 +46,20 @@ export function GroupTable({ r, canEdit }: { r: Reservation; canEdit: boolean })
                   <Button type="submit" variant="secondary" disabled={add.busy || !name.trim() || !cabin.trim()}>{t('group.add')}</Button>
                 </form>
               )}
+              {(() => {
+                const alloc = tableAllocation(r.guests.length, g.friends)
+                return (
+                  <Card info>
+                    <h3 className="card__title">{th('group.allocation')}</h3>
+                    <p>{t('group.seatedTogether', { day: r.day, time: formatTime(r.time) })}</p>
+                    <ul className="plain-bullets">
+                      {alloc.seats.map((s) => <li key={s.cabin ?? 'mine'}>{s.cabin === null ? t('group.seatsYours', { count: s.seats }) : t('group.seatsCabin', { cabin: s.cabin, count: s.seats })}</li>)}
+                    </ul>
+                    {alloc.splitCabins && <p>{t('group.splitCabins', { count: alloc.seats.length })}</p>}
+                    <p className="muted">{t('group.noReplies')}</p>
+                  </Card>
+                )
+              })()}
               <Card>
                 <h3 className="card__title">{th('group.split')}</h3>
                 {r.charge === 0 ? <p>{t('group.nothing')}</p> : (

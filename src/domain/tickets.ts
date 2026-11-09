@@ -19,6 +19,16 @@ export const TICKETED: Readonly<Record<string, { capacity: number }>> = {
 
 export let MAX_SEATS = 8
 
+/** The assistance requests that matter at a show or class (PRE-10). Requests belong to the booking, not to one ticket. */
+export const SEAT_ACCOMMODATIONS: readonly string[] = ['wheelchair', 'assistiveListening', 'largePrint']
+
+export interface AccommodationRequest { kind: string; guest: string; status: string }
+
+/** The accommodation request status for each guest on a ticket: what they asked for and where it stands. Guests with no such request are left out. */
+export function accommodationStatus<G extends { id: string }>(guests: readonly G[], requests: readonly AccommodationRequest[]): { guest: G; kind: string; status: string }[] {
+  return guests.flatMap((guest) => requests.filter((r) => r.guest === guest.id && SEAT_ACCOMMODATIONS.includes(r.kind)).map((r) => ({ guest, kind: r.kind, status: r.status })))
+}
+
 export const isTicketed = (eventId: string): boolean => eventId in TICKETED
 
 const hash = (text: string): number => {

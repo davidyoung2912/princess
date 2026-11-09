@@ -2,12 +2,13 @@ import { useState } from 'react'
 import type { ShowSeats, TicketView } from '../../api/careTypes'
 import type { PartyMember } from '../../api/types'
 import { placeById } from '../../domain/deck'
-import { MAX_SEATS } from '../../domain/tickets'
+import { accommodationStatus, MAX_SEATS } from '../../domain/tickets'
 import type { DatedEvent } from '../../domain/program'
 import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { t, th } from '../../i18n'
+import { useMine } from '../../hooks/useMine'
+import { t, th, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { StatusBadge } from '../StatusBadge'
@@ -68,13 +69,18 @@ function Reserve({ e, info, left, onClose }: { e: DatedEvent; info: SeatsInfo; l
 /** The guest's own tickets, in time order. */
 export function MyTickets({ tickets }: { tickets: readonly TicketView[] }) {
   const shipTime = useShipTime()
+  const help = useMine(() => api.plan.assistance.get())
   if (tickets.length === 0) return null
+  const requests = help.data?.requests ?? []
   return (
     <section aria-labelledby="tickets-h">
       <h3 id="tickets-h">{th('tix.mine')}</h3>
       <ul className="plain-bullets">
         {tickets.map((x) => (
-          <li key={x.id}><strong>{t('plan.day', { n: x.day })}, {shipTime(x.startAt)}</strong> {x.title}: {x.guests.map((g) => g.name.split(' ')[0]).join(', ')}{x.status === 'cancelled' ? ` (${t('onb.cancelled')})` : x.status === 'moved' ? ` (${t('onb.moved', { time: shipTime(x.startAt) })})` : ''}</li>
+          <li key={x.id}><strong>{t('plan.day', { n: x.day })}, {shipTime(x.startAt)}</strong> {x.title}: {x.guests.map((g) => g.name.split(' ')[0]).join(', ')}{x.status === 'cancelled' ? ` (${t('onb.cancelled')})` : x.status === 'moved' ? ` (${t('onb.moved', { time: shipTime(x.startAt) })})` : ''}
+            {x.status !== 'cancelled' && accommodationStatus(x.guests, requests).map((a) => (
+              <span key={`${a.guest.id}-${a.kind}`} className="muted"> {t('tix.access', { name: a.guest.name.split(' ')[0], kind: t(`assist.kind.${a.kind}` as StringKey), status: t(`assist.status.${a.status}` as StringKey) })}</span>
+            ))}</li>
         ))}
       </ul>
     </section>

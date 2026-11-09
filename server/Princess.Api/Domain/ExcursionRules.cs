@@ -2,7 +2,13 @@ namespace Princess.Api.Domain;
 
 public sealed record Excursion(
     string Id, string Port, string Name, string Summary, double Hours, long Price, string Activity, bool Wheelchair, bool Family, string[] Interests,
-    double Rating, int Reviews, string Meeting, string Start, int Capacity);
+    double Rating, int Reviews, string Meeting, string Start, int Capacity)
+{
+    /// <summary>True when the step-free claim depends on a boat, van or tender landing, so the guest should confirm it with the operator (PRE-07).</summary>
+    public bool ConfirmAccess => Wheelchair && ConfirmAccessIds.Contains(Id);
+
+    private static readonly HashSet<string> ConfirmAccessIds = ["coz-beach", "coz-glass", "bze-walk", "rtb-drive"];
+}
 
 public sealed record TourRefund(long Fee, long Refund, bool Free);
 

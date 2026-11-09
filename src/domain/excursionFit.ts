@@ -51,7 +51,7 @@ export function fitTours<T extends FitOffer>(offers: readonly T[], a: FitAnswers
     .map((offer) => {
       const x = offer.item
       const reasons = [LEVEL_WORD[x.activity], formatHours(x.hours), `back by ${formatTime(offer.backBy)}`]
-      if (x.wheelchair) reasons.push('step-free')
+      if (x.wheelchair) reasons.push(x.confirmAccess ? 'step-free (confirm with the operator)' : 'step-free')
       if (a.who === 'children') reasons.push('suits families')
       reasons.push(`${formatMoney(x.price)} an adult`)
       return { offer, reasons }

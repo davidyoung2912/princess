@@ -148,14 +148,14 @@ MNG-14	notification centre categories; duplicates collapsed	dedupe|duplicate|col
 MNG-15	deadline change creates new event	supersed|previousDeadline|deadlineHistory|rescheduled	src
 MNG-17	loyalty stale status identified	captain.?s circle|loyalty	src
 MNG-18	trip pack large-print and low-ink variants	largePrint|large-print|lowInk|low-ink|@media print	any
-PRE-07	excursion compare exertion, accessibility flagged for operator confirmation	exertion|operator confirm|confirm with operator	src
+PRE-07	excursion compare exertion, accessibility flagged for operator confirmation	confirmAccess	src
 PRE-09	port-day plan all-aboard buffer, not endorsement	not endorsed|independent|buffer	src
-PRE-10	show accommodation request status	accommodation.*(request|status)	src
+PRE-10	show accommodation request status	accommodationStatus	src
 PRE-11	paid experience shows cancellation window before commit	cancellation window|cancelBy|freeCancel	src
-PRE-12	youth registration guardian consent; minors cannot bypass	guardian.*consent|guardianConsent|signOutAuthority|authorisedPickup|authorizedPickup	any
+PRE-12	youth registration guardian consent; minors cannot bypass	signOutAuthority	any
 PRE-13	group plan board accept decline propose alternative	propose|counterPropose|alternative	src/domain/party.ts,src/domain/groupPlan.ts,src/ui
 PRE-14	spend forecast editable; included vs prepaid vs discretionary	discretionary|prepaid	src
-PRE-15	entitlement wallet; expired remain in history	expired|history	src/domain/wallet.ts,src/domain/entitlements.ts
+PRE-15	entitlement wallet; expired remain in history	entitlementGroup	src/domain/entitlements.ts
 GTS-06	leave-by only on request, not boarding guarantee	leave.?by	src
 GTS-10	one-time departed/arrived signals expire after embarkation	departed.*arrived|atMeetingPoint|arrivalSignal	src
 GTS-11	luggage tag printable	luggage ?tag|bagTag	src

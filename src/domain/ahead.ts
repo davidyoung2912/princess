@@ -281,6 +281,11 @@ export function clubProblem(r: ClubRegistration, age: number): ClubProblem | nul
   return null
 }
 
+/** Who may sign a child out of the club (PRE-12): the named pick-up people, and the teen alone only when a guardian allowed it. A child under 13 never signs out alone, whatever the form says. */
+export function signOutAuthority(r: Pick<ClubRegistration, 'pickups' | 'selfSignOut'>, age: number): { people: string[]; self: boolean } {
+  return { people: r.pickups.map((p) => p.name.trim()).filter(Boolean), self: r.selfSignOut && age >= 13 }
+}
+
 // ---- Medallion (CHK-06) ----
 export type MedallionStage = 'preparing' | 'shipped' | 'delivered' | 'collect'
 export interface MedallionStatus {

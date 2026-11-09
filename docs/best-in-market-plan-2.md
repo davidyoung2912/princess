@@ -393,3 +393,14 @@ Theme: loyalty and rebook (REM-04, REM-07, REM-08, REM-10, REM-14).
 - **REM-14:** `POST /me/referrals` (first name only, ten open, needs a loyalty record) and `DELETE /me/referrals/{id}` (only while `invited`); incentive and payment timing stated. Row stays Partial: no reunion tool.
 - **Tests:** `wallet.test.ts`, `albumRules.test.ts`, `httpApi.test.ts`; server tests in `FinishApiTests.cs` (written, not run). `dotnet` is not installed here, so none of the C# was compiled; `InMemoryFinish.cs` was updated for the new store methods. Run `npm run test`, `lint`, `tsc -b` per the working rules; no browser check.
 - **Not done:** the front end does not yet show the "who can use it" text for any code other than `booker`; selecting a new stateroom reloads the dates with no focus management.
+
+## 5aj. BM52 result (built, not committed)
+
+Theme: pre-cruise (PRE-07, PRE-10, PRE-12, PRE-15, PRE-17).
+- **PRE-07:** `Excursion.ConfirmAccess` (server, four authored tours) reaches the front end as `confirmAccess`; the tour card shows "Exertion: ..." and the confirm-with-operator line, and the fit finder's reason says so. Row Built.
+- **PRE-10:** `accommodationStatus` lists each ticket guest's wheelchair, listening or large-print request and its status under "Your seats". Row Built; requests stay booking-wide.
+- **PRE-12:** guardian-consent wording and state, `signOutAuthority` list, guardian-only note for a child's own account. No server change: `confirmed` was already required and `Manages` already restricts saving to the booker. Row Built.
+- **PRE-15:** `UsageWindowDto` on `PackagesViewDto`; the screen states the window and keeps an expired sailing's list as history. Row Built.
+- **PRE-17:** `tableAllocation` and an allocation card (shared time, seats by cabin, split flag). Row stays Partial: no friend replies and no linked-booking time search.
+- **Tests:** `excursionFit.test.ts`, `ahead.test.ts`, `entitlements.test.ts`, `tickets.test.ts`, `aboard.test.ts`. `dotnet` is not installed, so the two C# changes (`ExcursionRules.cs`, `PlanService.cs`/`PlanContracts.cs`) were not compiled. Per the working rules only `npm run test`, `lint`, `tsc -b`, `build` were used; no browser check.
+

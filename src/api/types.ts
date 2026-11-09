@@ -19,6 +19,7 @@ import type { Cabin } from '../domain/cabins'
 import type { BookingQuote, FareId, PayOption, PayPlan, PaymentPart, Promotion } from '../domain/fares'
 import type { Acceptance, CancelTerms, ChangeCheck } from '../domain/policy'
 import type { DietaryId, NeedId } from '../domain/account'
+import type { UsageWindow } from '../domain/entitlements'
 import type { ExcursionItem, TimingProblem, TourRefund } from '../domain/excursions'
 import type { DiningPlan, Slot, Window as DiningWindow } from '../domain/dining'
 import type { AddOnId, PriceState, Unit } from '../domain/packages'
@@ -491,6 +492,8 @@ export interface PackagesView {
   party: PartyMember[]
   daysToDeparture: number
   canBuy: boolean
+  /** When what is included can be used; once `expired` it stays in the guest's history (PRE-15). */
+  window: UsageWindow
 }
 
 export type BuyInput = { kind: 'addOn'; item: AddOnId; guests: PersonaId[] } | { kind: 'upgrade'; to: Exclude<PackageId, 'none'>; guests: PersonaId[] }

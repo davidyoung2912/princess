@@ -5,7 +5,7 @@ import { PLACES } from './deck'
 import { HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, normalizeGame, triviaScore } from './games'
 import { searchContent } from './searchIndex'
 import {
-  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, requestProgress, splitEvenly, statusRows, topUpProblem,
+  BAR_MENU, ALERT_AFTER, STOP_AFTER, childSafeProblem, drinkSummary, friendProblem, gratuityDue, inCurrency, partyProblem, photoProblem, pinDigest, pinProblem, readyFor, reportProblem, requestStage, requestProgress, splitEvenly, tableAllocation, statusRows, topUpProblem,
 } from './services'
 import { captainAnnouncement } from './shipInfo'
 import { CHANNELS, VOD, onNow, titleAllowed } from './tv'
@@ -271,5 +271,15 @@ describe('request progress steps', () => {
     expect(requestProgress('onTheWay').map((x) => x.state)).toEqual(['done', 'current', 'todo'])
     expect(requestProgress('done').map((x) => x.state)).toEqual(['done', 'done', 'done'])
     expect(requestProgress('cancelled')).toEqual([])
+  })
+})
+
+describe('table allocation across cabins (PRE-17)', () => {
+  it('groups friends by cabin and flags a table split across cabins', () => {
+    const a = tableAllocation(2, [{ name: 'A', cabin: '9012' }, { name: 'B', cabin: '9012' }, { name: 'C', cabin: '8100' }])
+    expect(a.seats).toEqual([{ cabin: null, seats: 2 }, { cabin: '8100', seats: 1 }, { cabin: '9012', seats: 2 }])
+    expect(a.total).toBe(5)
+    expect(a.splitCabins).toBe(true)
+    expect(tableAllocation(3, []).splitCabins).toBe(false)
   })
 })

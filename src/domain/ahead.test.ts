@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ADVISORS, CLUBS, DEFAULT_QUIZ, GIFTS_FOR, MIN_PAID, advisorProblem, advisorsFor, applyPerks, assistProblem, assistStage, bagStage, bidProblem, bidWins, blankRegistration, clubForAge,
-  clubProblem, compassionTerms, consentCode, consentState, contactProblem, doubleOptInFor, loyaltyNumberOf, loyaltyNumberOk, medallionStatus, recommend, tagProblem, tierForNumber, upgradeOffers,
+  clubProblem, signOutAuthority, compassionTerms, consentCode, consentState, contactProblem, doubleOptInFor, loyaltyNumberOf, loyaltyNumberOk, medallionStatus, recommend, tagProblem, tierForNumber, upgradeOffers,
 } from './ahead'
 import { DATA_RULES, dataRuleProblems } from './dataRules'
 import { CLEARANCE, CLIMATE, FIX_FLOWS, PREP, clearanceFor, formatTemp, isHurricaneSeason, outlook, prepDue, toCelsius, uvBand } from './readiness'
@@ -294,5 +294,16 @@ describe('health and children’s data rules (SEC-07, SEC-08)', () => {
     const out = recommend(base, ['reef', 'market']).picks
     expect(out.find((p) => p.category === 'interior')!.reasons).toContain('mood.out')
     expect(recommend(base, ['reef']).picks.some((p) => p.reasons.includes('mood.slow'))).toBe(false)
+  })
+})
+
+describe('club sign-out authority and guardian consent (PRE-12)', () => {
+  const reg = { ...blankRegistration('p' as never), pickups: [{ name: ' Dana ', relation: 'aunt', phone: '5551234567' }], selfSignOut: true }
+  it('lists the named people and lets only a teen sign out alone', () => {
+    expect(signOutAuthority(reg, 15)).toEqual({ people: ['Dana'], self: true })
+    expect(signOutAuthority(reg, 12)).toEqual({ people: ['Dana'], self: false })
+  })
+  it('does not accept a registration the guardian has not confirmed', () => {
+    expect(clubProblem({ ...reg, emergencyPhone: '5551234567', confirmed: false }, 15)).toBe('confirm')
   })
 })

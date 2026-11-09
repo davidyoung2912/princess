@@ -22,6 +22,8 @@ export interface ExcursionItem {
   activity: Activity
   /** Whether a wheelchair user can take part with the help the operator describes. */
   wheelchair: boolean
+  /** The step-free claim depends on a boat, van or tender landing: confirm it with the operator before booking (PRE-07). Absent when nothing needs confirming. */
+  confirmAccess?: boolean
   family: boolean
   interests: Interest[]
   /** Out of 5, one decimal, from authored sample reviews. */

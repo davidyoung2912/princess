@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CLUBS, MAX_PICKUPS, blankRegistration, clubProblem, type ClubRegistration, type Pickup } from '../../domain/ahead'
+import { CLUBS, MAX_PICKUPS, blankRegistration, clubProblem, signOutAuthority, type ClubRegistration, type Pickup } from '../../domain/ahead'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -32,6 +32,17 @@ function Registration({ child, canEdit, reload }: { child: ClubChild; canEdit: b
         <>
           <p>{t('club.goes', { club: club.name, deck: club.deck })}</p>
           {child.registered && <p><StatusBadge kind="booked" label={t('club.registered')} /></p>}
+          {child.registered && child.registration && (() => {
+            const auth = signOutAuthority(child.registration, child.age)
+            return (
+              <ul className="tour__facts">
+                <li>{t('club.consentGiven')}</li>
+                <li>{auth.people.length > 0 ? t('club.signOut', { names: auth.people.join(', ') }) : auth.self ? null : t('club.signOutNone')}</li>
+                {auth.self && <li>{t('club.signOutSelf')}</li>}
+              </ul>
+            )
+          })()}
+          {!canEdit && <p className="muted">{t('club.guardianOnly')}</p>}
           {child.registered && !open && canEdit && (
             <div className="button-row">
               <Button variant="secondary" onClick={() => setOpen(true)}>{t('club.edit')}<span className="visually-hidden"> {child.name}</span></Button>

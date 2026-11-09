@@ -461,7 +461,8 @@ public sealed class PlanService(AccessService access, ITripStore trips, IAccount
         }).ToList();
         var credit = CreditOf(c, all, tours);
         return new PackagesViewDto(addOns, upgrades, [.. all.Select(p => p.View).OrderByDescending(p => p.At)], people, new PooledDto(credit.Total, credit.Used, credit.Remaining), [.. c.Members],
-            c.Days, !c.Actor.IsSupervised && c.Days >= 1 && c.Booking.Status == "confirmed");
+            c.Days, !c.Actor.IsSupervised && c.Days >= 1 && c.Booking.Status == "confirmed",
+            new UsageWindowDto(PlanRules.Iso(c.Departure), PlanRules.Iso(c.LastDay), c.Today > c.LastDay ? "expired" : c.Today < c.Departure ? "notStarted" : "active"));
     }
 
     public async Task<PackagesViewDto> PackagesAsync(UserRecord actor, string? number, CancellationToken ct) =>

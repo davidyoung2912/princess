@@ -3,12 +3,13 @@ import type { AddOnOffer, BuyInput, PackagesView, PersonEntitlements, PurchaseVi
 import { formatDate } from '../../domain/cruise'
 import type { PaymentPart } from '../../domain/fares'
 import { ADD_ONS, AVG_DRINK, breakEvenDrinks, DEFAULT_USAGE, drinksWorth, packageWorth, units, type Usage } from '../../domain/packages'
+import { entitlementGroup } from '../../domain/entitlements'
 import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
-import { t, th } from '../../i18n'
+import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
@@ -46,8 +47,9 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
     <>
       <ReadOnly canDo={view.canBuy} />
       <section aria-labelledby="incl-h">
-        <h2 id="incl-h">{th('pk.included')}</h2>
+        <h2 id="incl-h">{entitlementGroup(view.window) === 'history' ? th('pk.history') : th('pk.included')}</h2>
         <p className="muted">{t('pk.includedHint')}</p>
+        <p role="status">{t(`pk.window.${view.window.status}` as StringKey, { from: formatDate(view.window.from), until: formatDate(view.window.until) })}</p>
         <ul className="card-grid">{view.people.map((p) => <Included key={p.id} p={p} />)}</ul>
         {view.credit.total > 0 && (
           <Card info>

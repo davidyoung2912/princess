@@ -86,3 +86,14 @@ export function balances(e: Entitlements, used: Partial<Usage> = {}): Record<Bal
     excursionCreditUsd: one(e.excursionCreditUsd, used.excursionCreditUsd),
   }
 }
+
+/** When what a package includes can be used: from departure to the last day of the sailing. The server works out the status. */
+export interface UsageWindow {
+  /** YYYY-MM-DD. */
+  from: string
+  until: string
+  status: 'notStarted' | 'active' | 'expired'
+}
+
+/** Which heading the entitlements sit under: current ones are listed as included, expired ones are kept as history, never dropped. */
+export const entitlementGroup = (w: UsageWindow): 'included' | 'history' => (w.status === 'expired' ? 'history' : 'included')

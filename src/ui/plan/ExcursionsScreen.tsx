@@ -269,7 +269,8 @@ function Tour({ offer, view, busy, onAdd, concerns }: { offer: ExcursionOffer; v
       <ul className="tour__facts">
         <li>{formatDate(offer.date)} · {t('exc.start', { time: formatTime(x.start) })} · {formatHours(x.hours)}</li>
         <li>{t('exc.backBy', { time: formatTime(offer.backBy) })}</li>
-        <li>{t(`exc.level.${x.activity}` as never)}{x.wheelchair ? ` · ${t('exc.wheelchair')}` : ` · ${t('exc.noWheelchair')}`}</li>
+        <li>{t('exc.exertion', { level: t(`exc.level.${x.activity}` as never) })}{x.wheelchair ? ` · ${t('exc.wheelchair')}` : ` · ${t('exc.noWheelchair')}`}</li>
+        {x.wheelchair && x.confirmAccess && <li>{t('exc.confirmAccess')}</li>}
         <li>{t('exc.rating', { rating: x.rating.toFixed(1), reviews: x.reviews.toLocaleString('en-US') })}</li>
         <li>{x.meeting}</li>
       </ul>

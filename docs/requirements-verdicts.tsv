@@ -25,7 +25,6 @@ MOB-05	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-23	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 OFF-01	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 DRM-16	PARTIAL	(BM20) SlotWatch is a dinner/show/tour cancellation watch, not a sailing, fare or availability alert with a threshold and price context. priceCalendar has no alert. Stop exists; no pause.
-PRE-07	PARTIAL	(BM20) excursions.ts has minAge and accessible, excursionFit has wheelchair; no exertion level and no "operator to confirm" flag found for uncertain accessibility.
 SEA-05	PARTIAL	(BM20) Venue directory shows open or closed from hours (openAt) only: no temporarily-unavailable state and no timestamp.
 AST-02	PARTIAL	(BM20) src/ai has no source or freshness label on answers.
 MNG-06	OK	(BM20) readinessBoard rows carry name, percent, open tasks and behind flag only; no document fields.
@@ -36,11 +35,7 @@ QOL-15	PARTIAL	(BM20) storm.ts is a storm likelihood reading; neither it nor wha
 GTS-16	NEEDS-READ	(BM20) MedallionScreen has activate and lost; no order or delivery status found, but ReadyScreens.tsx was only skimmed.
 DRM-14	PARTIAL	(BM20) groupBoard.ts and GroupBoard.tsx have no close-voting step and no export of the result (the only "export" matches are the TypeScript keyword).
 MNG-15	PARTIAL	(BM20) countdowns.ts covers boarding, final payment and check-in opening only; no documents, excursions or special requests, and no event history when a deadline changes.
-PRE-15	PARTIAL	(BM20) entitlements.ts has balance and used; no usage window or expiry, and no history of expired items.
-PRE-10	PARTIAL	(BM20) tickets.ts and Tickets.tsx have no accessibility accommodation request or status.
 UX-04	OK	(BM20) sync.ts is a versioned per-key document store with conflict on a second device; which keys are bound was not checked.
-PRE-12	NEEDS-READ	(BM20) ClubsScreen has no guardian wording; ahead.ts has consent and age constants but they were not read in full.
-PRE-12	PARTIAL	(BM20) The only consent in ahead.ts is marketing double opt-in; ClubsScreen and ahead.ts have no guardian consent or sign-in/out authority wording.
 EMB-07	PARTIAL	(BM20) RequestsScreen shows status; no photo attachment, preferred-contact or duplicate-case guard found.
 QOL-20	PARTIAL	(BM20) AssistanceScreen and medicalCard have no recipient preview, revoke or acknowledgement.
 MNG-09	PARTIAL	(BM20) travel.ts has no provider, reference or contact fields found; only a "booked with" note.

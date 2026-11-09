@@ -57,7 +57,10 @@ public sealed record PooledDto(long Total, long Used, long Remaining);
 
 public sealed record PackagesViewDto(
     List<AddOnOfferDto> AddOns, List<UpgradeOfferDto> Upgrades, List<PurchaseViewDto> Purchases, List<PersonEntitlementsDto> People, PooledDto Credit,
-    List<PartyMemberDto> Party, int DaysToDeparture, bool CanBuy);
+    List<PartyMemberDto> Party, int DaysToDeparture, bool CanBuy, UsageWindowDto Window);
+
+/// <summary>When what a package includes can be used (PRE-15): from departure to the last day of the sailing. <c>Status</c> is <c>notStarted</c>, <c>active</c> or <c>expired</c>; expired items stay in the guest's history.</summary>
+public sealed record UsageWindowDto(string From, string Until, string Status);
 
 /// <summary><c>kind</c> is <c>addOn</c> (with <c>item</c>) or <c>upgrade</c> (with <c>to</c>).</summary>
 public sealed record BuyRequest(string? Kind, string? Item, string? To, List<Guid>? Guests, List<PaymentPartDto>? Parts, string? Challenge);

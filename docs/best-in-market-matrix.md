@@ -149,17 +149,17 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-04 | P0 | Built | F | `src/domain/prebook.test.ts`, `src/ui/book/changes.ts` | Original kept until new confirmed: server side not read (see TRU-05) |
 | PRE-05 | P1 | Simulated | F | `src/ui/plan/SlotWatch.tsx`, `src/ui/onboard/Waits.tsx` | Position from source feed is simulated |
 | PRE-06 | P1 | Simulated | F | `src/ui/onboard/Waits.tsx`, `src/domain/queue.ts` | Queues are simulated; only integrated types may be shown |
-| PRE-07 | P1 | Partial | F | `src/ui/plan/ExcursionsScreen.tsx`, `src/domain/excursions.ts`, `src/domain/excursionFit.ts` | BM20: no exertion level or operator-confirm flag |
+| PRE-07 | P1 | Built | F | `src/ui/plan/ExcursionsScreen.tsx`, `src/domain/excursionFit.ts`, `server/Princess.Api/Domain/ExcursionRules.cs` | BM52: each tour shows its exertion level, and a step-free tour whose access depends on a boat, van or tender landing carries `confirmAccess` ("confirm with the operator before you book"), also in the fit finder. The flag is authored for four tours; the server is not compiled |
 | PRE-08 | P0 | Built | F | `src/domain/excursionFit.ts`, `src/domain/excursionFit.test.ts` | None found |
 | PRE-09 | P1 | Built | F | `src/ui/onboard/RouteFinder.tsx`, `src/domain/portDelights.ts`, `src/domain/landPath.ts` | None found |
-| PRE-10 | P1 | Partial | F | `src/ui/onboard/Tickets.tsx`, `src/domain/tickets.ts` | BM20: no accommodation request or status |
+| PRE-10 | P1 | Built | F | `src/ui/onboard/Tickets.tsx`, `src/domain/tickets.ts`, `src/domain/tickets.test.ts` | BM52: each ticket lists the guests' wheelchair, listening or large-print requests with their status (received, confirmed, passed on). Requests belong to the booking, not to one show, and are made on the assistance screen; no per-show request |
 | PRE-11 | P1 | Built | F | `src/ui/aboard/OrderExtras.tsx`, `src/domain/shopExtras.ts` | Spa booking: `/ship/spa` |
-| PRE-12 | P1 | Partial | F | `src/ui/ahead/ClubsScreen.tsx`, `src/domain/ahead.ts` | BM20: no guardian consent or authority |
+| PRE-12 | P1 | Built | F | `src/ui/ahead/ClubsScreen.tsx`, `src/domain/ahead.ts` | BM52: the confirmation is worded as parent or guardian consent and shown as a state; who may sign the child out (named people, or the teen alone only if allowed, never under 13) is listed; only the child's booker can register (server `Manages`) and a child's own account sees a guardian-only note |
 | PRE-13 | P1 | Built | F | `src/ui/plan/GroupBoard.tsx`, `src/domain/groupBoard.test.ts` | None found |
 | PRE-14 | P1 | Built | F | `src/domain/spendForecast.ts`, `src/domain/spendForecast.test.ts`, `src/ui/plan/SpendForecastCard.tsx` | None found |
-| PRE-15 | P1 | Partial | F | `src/domain/entitlements.ts`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/account/` packages route | BM20: no expiry or expired history |
+| PRE-15 | P1 | Built | F | `src/domain/entitlements.ts`, `src/domain/entitlements.test.ts`, `src/ui/plan/PackagesScreen.tsx`, `server/Princess.Api/Services/PlanService.cs` | BM52: `PackagesView.window` (from departure to the last day, status notStarted, active or expired); the screen states the window and, once expired, keeps the list under an "expired" heading as a record. The window is the whole sailing for every item; no per-item expiry |
 | PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
-| PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx` | Group dining across linked cabins unchecked |
+| PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx`, `src/domain/services.ts` | BM52: the table shows one shared time and the seats by cabin, and says when it is split across cabins. Friends are a name and cabin only, so there are no friend replies; no search for a shared time across linked bookings |
 | PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
 | GTS-01 | P0 | Partial | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | Reconciled: steps say saved; no submitted or accepted state per field |
 | GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |

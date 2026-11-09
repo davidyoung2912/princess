@@ -78,7 +78,7 @@ export const EXCURSIONS = {
 export const PACKAGES = {
   addOns: [{ id: 'drinks', unit: 'personNight', price: 6_500, base: 6_500, changeOn: '2027-02-20', changesTo: 6_500, eligible: [{ id: P, name: 'Tess Tester', age: 40, child: false }] }, { id: 'wifi', unit: 'personNight', price: 1_800, base: 1_800, changeOn: '2027-02-20', changesTo: 1_800, eligible: [{ id: P, name: 'Tess Tester', age: 40, child: false }] }],
   upgrades: [{ guest: P, name: 'Tess Tester', from: 'plus', options: [{ to: 'premier', price: 3_500, changeOn: '2027-02-20', changesTo: 3_500 }] }],
-  purchases: [], credit: { total: 30_000, used: 0, remaining: 30_000 }, party: [{ id: P, name: 'Tess Tester', age: 40, child: false }], daysToDeparture: -2, canBuy: true,
+  purchases: [], credit: { total: 30_000, used: 0, remaining: 30_000 }, party: [{ id: P, name: 'Tess Tester', age: 40, child: false }], daysToDeparture: -2, canBuy: true, window: { from: '2027-03-01', until: '2027-03-08', status: 'active' },
   people: [{ id: P, name: 'Tess Tester', package: 'plus', entitlements: { drinkCapUsd: 15, wifiDevices: 1, specialtyMeals: 4, excursionCreditUsd: 0, gratuitiesIncluded: true, diningWindow: 'afterFullPayment', perks: [] },
     balances: { specialtyMeals: { total: 4, used: 1, remaining: 3 }, wifiDevices: { total: 1, used: 0, remaining: 1 }, excursionCreditUsd: { total: 0, used: 0, remaining: 0 } } }],
 } as unknown as PackagesView

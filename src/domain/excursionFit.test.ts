@@ -22,4 +22,9 @@ describe('fitTours', () => {
     expect(first.reasons.slice(0, 2)).toEqual(['Easy', '3 hours'])
     expect(first.reasons).toContain('step-free')
   })
+  it('asks for operator confirmation where step-free access depends on a boat or van (PRE-07)', () => {
+    const [m] = fitTours([offer('boat', { confirmAccess: true })], { ...NO_FIT, who: 'wheelchair' })
+    expect(m.reasons).toContain('step-free (confirm with the operator)')
+    expect(m.reasons).not.toContain('step-free')
+  })
 })

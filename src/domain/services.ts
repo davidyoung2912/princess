@@ -123,6 +123,16 @@ export function splitEvenly(total: Cents, people: number): Cents[] {
   return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0))
 }
 
+export interface TableSeats { cabin: string | null; seats: number }
+
+/** Who sits at the table, by cabin (PRE-17): your party first (cabin `null`), then each friend's cabin with its head count. `splitCabins` is true when the table spans more than one cabin. */
+export function tableAllocation(partySize: number, friends: readonly Friend[]): { seats: TableSeats[]; total: number; splitCabins: boolean } {
+  const byCabin = new Map<string, number>()
+  for (const f of friends) byCabin.set(f.cabin, (byCabin.get(f.cabin) ?? 0) + 1)
+  const seats: TableSeats[] = [{ cabin: null, seats: partySize }, ...[...byCabin].sort(([a], [b]) => a.localeCompare(b)).map(([cabin, n]) => ({ cabin, seats: n }))]
+  return { seats, total: partySize + friends.length, splitCabins: byCabin.size > 0 }
+}
+
 export type FriendProblem = 'noName' | 'badCabin' | 'full' | 'duplicate'
 export function friendProblem(f: Friend, existing: readonly Friend[], partySize: number): FriendProblem | null {
   if (f.name.trim().length < 2 || f.name.length > 40) return 'noName'
