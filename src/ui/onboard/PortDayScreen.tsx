@@ -103,6 +103,7 @@ function Tours({ tours, port }: { tours: TourToday[]; port: string }) {
           {tours.map((x) => (
             <li key={x.id} className="card">
               <h3 className="card__title">{x.name}</h3>
+              <p className="muted">{t('port.tourOperated')}</p>
               <ul className="tour__facts">
                 <li>{t('port.meet', { time: formatTime(x.start) })}</li>
                 <li>{x.meeting}</li>

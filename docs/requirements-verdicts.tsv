@@ -1,8 +1,8 @@
 # id	verdict (GAP | PARTIAL | NEEDS-READ | OK)	what a person found when reading (BM16, 2026-11-08). Edit here, then re-run node scripts/requirements-register.mjs
-MOB-14	GAP	Clocks are shown and tested, but nothing detects that the phone's or the ship's zone changed and tells the guest. No such wording anywhere in src or the strings file.
-EMB-02	GAP	No statement that crew instructions and announcements override app content, on the muster card or anywhere else.
+MOB-14	OK	(BM18 closed) Clocks are shown and tested, but nothing detects that the phone's or the ship's zone changed and tells the guest. No such wording anywhere in src or the strings file.
+EMB-02	OK	(BM18 closed) No statement that crew instructions and announcements override app content, on the muster card or anywhere else.
 EMB-01	GAP	"Boarded" is a time the guest types (EmbarkState.boardedAt in src/domain/embark.ts). No source field, no manifest or scan status from the server.
-DEB-02	GAP	No wording or state separating the guest's departure preference from the assignment made by operations.
+DEB-02	OK	(BM18 closed) No wording or state separating the guest's departure preference from the assignment made by operations.
 BOK-05	GAP	No fare or terms version is stored at checkout. Only legal documents are versioned (dbo.Acceptances has Version).
 PRE-18	PARTIAL	Refund timing appears as fact ("Refunds reach your card in 5 working days", hub.portSkipped.comp.arrives), not labelled as an estimate.
 DEB-05	PARTIAL	Outcomes are worded after a case is resolved (case.outcome.refunded). No wording at submission that opening a case does not mean the charge is reversed.
@@ -14,7 +14,7 @@ SEA-20	NEEDS-READ	Escalation and reopen not found in the aboard request screen o
 PRE-01	NEEDS-READ	No wording distinguishing planned from confirmed items in plan.ts or WeekPlanner.tsx.
 GTS-01	NEEDS-READ	No per-field saved, submitted or accepted state found in the check-in steps.
 TRU-03	NEEDS-READ	LedgerKind lists payment, charge, credit, covered, refund. The nine states (draft to failed) are not found as one type; check StatusBadge.
-REM-01	NEEDS-READ	HistoryScreen has no search or filter; trips are listed, receipts shown.
-POR-04	NEEDS-READ	No Princess-operated versus independent label found in PortCard or excursions.ts.
+REM-01	OK	(BM18 closed) HistoryScreen has no search or filter; trips are listed, receipts shown.
+POR-04	OK	(BM18 closed) No Princess-operated versus independent label found in PortCard or excursions.ts.
 SEC-06	NEEDS-READ	ChatSafe has a photo minimum age. No age-aware message rule found in the client; check ChatService.cs.
 SEC-07	PARTIAL	See IDN-01.

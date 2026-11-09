@@ -178,7 +178,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | GTS-15 | P1 | Built | R | `src/domain/phoneSetup.ts`, `src/domain/offlineCapsule.ts`, `src/ui/plan/CapsuleCard.tsx` | Night-before test built in BM3 (`src/domain/nightBefore.ts`) |
 | GTS-16 | P1 | Built | F | `src/ui/home/` medallion route `/home/medallion` | None found |
 | EMB-01 | P0 | Partial | R | `src/domain/boarding.ts`, `src/ui/boarding/EmbarkScreen.tsx` | Boarded is a guest-typed time; no manifest or scan source (BM16) |
-| EMB-02 | P0 | Partial | R | `src/ui/onboard/SafetyScreens.tsx`, `src/domain/safety.ts` | No "crew instructions override the app" statement (BM16) |
+| EMB-02 | P0 | Built | R | `src/ui/onboard/SafetyScreens.tsx`, `src/domain/safety.ts` | Closed in BM18 |
 | EMB-03 | P0 | Out of reach | F | `src/ui/onboard/SafetyScreens.tsx` | Needs verified accessible alternative from the safety owner |
 | EMB-04 | P1 | Built | F | `src/domain/embarkDelights.ts`, `src/domain/embarkDelights.test.ts` | None found |
 | EMB-05 | P1 | Built | F | `src/ui/extras/RoomScreen.tsx`, `src/domain/room.ts` | None found |
@@ -234,7 +234,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | POR-15 | P0 | Built | F | `src/domain/disruption.ts`, `src/domain/disruptionHub.ts`, `src/ui/home/DisruptionHubScreen.tsx` | Hub text is authored in the client |
 | POR-16 | P0 | Built | F | `src/ui/home/DisruptionHubScreen.tsx`, `src/ui/onboard/SafetyScreens.tsx` | Contacts verified by operator: out of reach |
 | DEB-01 | P0 | Built | F | `src/ui/finish/DisembarkScreen.tsx`, `src/domain/disembark.ts` | None found |
-| DEB-02 | P0 | Partial | R | `src/ui/finish/DisembarkScreen.tsx` | Preference not distinguished from operations assignment (BM16) |
+| DEB-02 | P0 | Built | R | `src/ui/finish/DisembarkScreen.tsx` | Closed in BM18 |
 | DEB-03 | P0 | Built | F | `src/ui/finish/` bags route `/home/disembark/bags` | None found |
 | DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | Folio has no pending, disputed, refunded or adjusted line state (BM16) |
 | DEB-05 | P0 | Partial | R | `src/ui/finish/CasesScreen.tsx` | No "opening a case does not reverse the charge" wording at submission (BM16) |
@@ -282,7 +282,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-11 | P1 | Built | F | `src/hooks/useWakeLock.ts`, `src/hooks/useWakeLock.test.tsx`, `src/ui/boarding/PassScreen.tsx` | Muster card and map route use unchecked |
 | MOB-12 | P0 | Built | F | `src/styles`, `src/ui/a11y.test.tsx` | Touch target size asserted only by the audit |
 | MOB-13 | P1 | Partial | F | `src/ui/delights/PortDelights.tsx`, `src/domain/landPath.ts` | `geolocation` appears only in a headers file; port navigation is manual |
-| MOB-14 | P0 | Partial | R | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | No detection of a phone or ship zone change (BM16) |
+| MOB-14 | P0 | Built | R | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | Closed in BM18 |
 | MOB-15 | P1 | Built | F | `src/domain/calendar.ts`, `calendar.test.ts` | Zoned times in UTC, SEQUENCE and cancel tested (BM4); no caller sends an update or cancel yet |
 | MOB-16 | P2 | Out of reach | F | `server/Princess.Api/Services/Providers.cs` | Wallet passes are simulated on the server only; the document marks P2 |
 | MOB-17 | P1 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/ui/onboard/SafetyScreens.tsx`, `src/domain/calm.ts` | High-contrast full-screen check unchecked |

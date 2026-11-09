@@ -75,6 +75,7 @@ function Station({ m, reload }: { m: MusterView; reload: () => void }) {
         {m.canConfirm && waiting.length > 0 && <Button disabled={confirm.busy || picked.length === 0} onClick={() => void confirm.run()}>{t('muster.confirm')}</Button>}
         {!m.canConfirm && <p className="muted">{t('muster.supervised')}</p>}
         <p className="muted">{t('muster.crew')}</p>
+        <p><strong>{t('muster.override')}</strong></p>
       </section>
     </>
   )

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import type { HistoryTrip, HistoryView } from '../../api/finishTypes'
 import { formatDate } from '../../domain/cruise'
@@ -11,6 +12,7 @@ import { Load } from '../account/parts'
 import { formatDateTime } from '../account/format'
 import { BackLink } from '../onboard/common'
 import { Human } from './common'
+import { matchTrips } from '../../domain/historySearch'
 
 /** Trip history (POS-01, POS-04): every cruise sailed, its receipts and tax summaries, and the photo download window. */
 export function HistoryScreen() {
@@ -25,6 +27,8 @@ export function HistoryScreen() {
 }
 
 function History({ v }: { v: HistoryView }) {
+  const [q, setQ] = useState('')
+  const trips = matchTrips(v.trips, q)
   return (
     <>
       {v.photosUntil !== null && (
@@ -33,7 +37,13 @@ function History({ v }: { v: HistoryView }) {
         </Banner>
       )}
       {v.sailed && <p><Link to="/me/feedback">{t('route.feedback')}</Link> · <Link to="/me/loyalty">{t('route.loyalty')}</Link> · <Link to="/me/rebook">{t('route.rebook')}</Link></p>}
-      {v.trips.length === 0 ? <p className="muted">{t('hist.none')}</p> : <div>{v.trips.map((trip) => <Trip key={trip.id} trip={trip} />)}</div>}
+      {v.trips.length > 1 && (
+        <div className="field">
+          <label htmlFor="hist-q">{t('hist.search')}</label>
+          <input id="hist-q" type="search" className="field__input" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+      )}
+      {v.trips.length === 0 ? <p className="muted">{t('hist.none')}</p> : trips.length === 0 ? <p role="status" className="muted">{t('hist.noMatch')}</p> : <div>{trips.map((trip) => <Trip key={trip.id} trip={trip} />)}</div>}
       <p className="muted">{t('hist.memories')}</p>
       <Human />
     </>

@@ -29,20 +29,28 @@ describe('wording the guest must be able to read: present today', () => {
   })
 })
 
+describe('wording closed in BM18', () => {
+  // proves: POR-04#1
+  it('POR-04: a port-day tour is labelled as a Princess excursion, apart from independent tours', () => {
+    expect(en['port.tourOperated']).toMatch(/Princess excursion/)
+    expect(en['port.tourOperated']).toMatch(/independent/)
+  })
+})
+
 describe('known gaps (it.fails: a pass here means the gap is closed, so turn it into it)', () => {
   // proves: EMB-02#1
-  it.fails('EMB-02: says crew instructions and announcements override the app', () => {
+  it('EMB-02: says crew instructions and announcements override the app', () => {
     expect(say(/crew (instructions|announcements).*(override|take priority|come first|come before)/i)).toBe(true)
   })
 
   // proves: MOB-14#1
-  it.fails('MOB-14: tells the guest when the time zone or date line changes', () => {
+  it('MOB-14: tells the guest when the time zone or date line changes', () => {
     // (the 'tip.' advice is general guidance, not a notice that the zone changed)
     expect(strings.some(([k, v]) => !k.startsWith('tip.') && /(time ?zone|date line).*(changed|change|crossed)/i.test(v))).toBe(true)
   })
 
   // proves: DEB-02#2
-  it.fails('DEB-02: separates the departure preference from the assignment made by operations', () => {
+  it('DEB-02: separates the departure preference from the assignment made by operations', () => {
     expect(say(/(preference|request).*(not|isn.t).*(guarantee|final|assigned)|assigned (by|to).*(ship|operations|crew)/i)).toBe(true)
   })
 

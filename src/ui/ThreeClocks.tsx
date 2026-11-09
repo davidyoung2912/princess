@@ -1,4 +1,4 @@
-import { clockView } from '../domain/clockView'
+import { clockView, zoneChangeNear } from '../domain/clockView'
 import type { Sailing } from '../domain/sailings'
 import { t, type StringKey } from '../i18n'
 
@@ -12,7 +12,10 @@ function difference(hours: number): string {
 /** Ship time, local port time and phone time side by side, each labelled in words (POR-11). */
 export function ThreeClocks({ sailing, at, phoneZone }: { sailing: Sailing; at: number; phoneZone: string }) {
   const view = clockView(sailing, at, phoneZone)
+  const change = zoneChangeNear(sailing, at)
   return (
+    <>
+    {change && change.hours !== 0 && <p role="status" className="clocks__notice"><strong>{t(change.upcoming ? 'clock.changeSoon' : 'clock.changed', { hours: Math.abs(change.hours), dir: t(change.hours > 0 ? 'clock.fwd' : 'clock.back') })}</strong></p>}
     <dl className="clocks">
       {view.readings.map((r) => {
         const diff = r.kind === 'ship' ? null : difference(r.kind === 'port' ? view.portVsShip! : view.phoneVsShip)
@@ -27,5 +30,7 @@ export function ThreeClocks({ sailing, at, phoneZone }: { sailing: Sailing; at: 
         )
       })}
     </dl>
+    {view.phoneVsShip !== 0 && <p className="muted">{t('clock.phoneRule')}</p>}
+    </>
   )
 }

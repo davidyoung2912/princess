@@ -136,3 +136,7 @@ Folio states (DEB-04, SEA-14), boarded-source semantics (EMB-01), accepted fare 
 - I did not build any of the gaps. You asked for a plan to review, and `CLAUDE.md` says to stop after each phase, so BM16 onward waits.
 - I did not read the C# endpoints behind the rows; server-side clauses stay unconfirmed until L5.
 - The spot checks in section 3 are searches, not proof. A match means the wording or state exists, not that the behaviour is correct.
+
+## 5c. BM18 result (built, not committed)
+
+Closed with tests: MOB-14 (zone-change notice in `ThreeClocks`, `zoneChangeNear`), EMB-02 (crew-override line on the muster card), DEB-02 (preference-not-guarantee note), POR-04 (Princess excursion label on port-day tours), REM-01 (search on trip history, `matchTrips`). Their `it.fails` guards are now `it`. REM-01 and POR-04 came off the untagged list. Not done: POR-04 has no server-side operator flag, so every listed tour is labelled Princess-operated because it is booked through the ship; independent tours need a server contract change. Remaining `it.fails` gaps: DEB-05, PRE-18, EMB-01, DEB-04, BOK-05, MNG-05.

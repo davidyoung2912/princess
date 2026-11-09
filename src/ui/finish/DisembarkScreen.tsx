@@ -71,6 +71,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
         <Card labelledBy="dis-mine-h">
           <h2 id="dis-mine-h" className="card__title">{th('dis.mine')}</h2>
           <p role="status"><strong>{t(`dis.opt.${chosen}` as StringKey)}</strong></p>
+          <p className="muted">{t('dis.prefNote')}</p>
           {chosen === 'tagged' ? (
             <>
               <p className="dis__group">{t('dis.group', { color: t(`dis.color.${v.group.color}` as StringKey), number: v.group.number, time: shipTime(v.offAt.tagged) })}</p>
@@ -89,6 +90,7 @@ function Disembark({ v, reload }: { v: DisembarkView; reload: () => void }) {
       {v.canChoose && !v.closed && (
         <form onSubmit={(e) => { e.preventDefault(); void choose.run() }}>
           <h2>{chosen ? th('dis.change') : th('dis.choose')}</h2>
+          <p className="field__hint">{t('dis.prefNote')}</p>
           <fieldset>
             <legend>{t('dis.how')}</legend>
             {WALKOFF_IDS.map((o) => (
