@@ -12,12 +12,14 @@ Written for phase 4 of `docs/stanley-gap-analysis-and-plan.md`. It lists every f
 | Published facts | venue directory and hours, itinerary, all-aboard times, package prices | Venue, schedule, route and value answers | Server content files | Versioned with `StanleyRules.ContentVersion` |
 | Message text | the guest's messages in the current thread (the latest 10 clean round trips) | The answer itself | Sent to the model provider (Anthropic) for the request | Not stored on the server. The thread stays on the device. The tier log keeps counts, tiers and tokens only |
 | Tier log | time, tier, source, stage, topic word, outcome, model tier, call and token counts | Quality and cost | Server database | Counts only, no message text, no guest |
+| Prepared actions and receipts | the typed intent (item and quantity, excursion id, table and new time, a drafted case's text, a plan change's item id, a reminder's time and text), the preview text, status, expiry, idempotency key, effect reference, receipt number, times | Show a preview, confirm it once, undo it for two hours, list receipts in the ledger | Server database (`dbo.StanleyActions`), owned by the guest; deleted with the account | No retention job yet; trim old rows by hand. Never the chat messages. The audit trail keeps only action name, kind and outcome |
 | Tool log | tool name, refused or ok, opaque guest reference | Prove every tool call happened and was checked | Server application log | Follows the application log retention; never the input or the answer |
 
 ## Rules the tools keep
 
 - A tool that reads a traveller checks the guest's access to that traveller on every call (`StanleyPacket.Resolve`), from facts the server read, never from the request. A traveller who may not be read and one who does not exist get the same answer.
 - A supervised child sees only their own plan. A guardian sees the child they booked. The booker sees the party's plans and cases. Another adult sees the shared plan only. A helper sees the plan with the trip permission and cases with the folio permission, and only while the grant is live. Revoked, pending and expired grants reach nothing.
-- All tools are read-only. None books, pays, cancels, sends or changes anything.
+- All read tools are read-only. None books, pays, cancels, sends or changes anything.
+- The one tool that can lead to a change, `propose_action`, only makes a stored preview. The server changes something only on a confirm for a preview it made, from the same guest, not expired, with the price and availability unchanged, through the same service the screen uses. Paying, cancelling a booking, changing a cabin and sharing data are not actions and are refused with where the guest can do them.
 - A tool call is one step of the model loop, so it counts against the per-request call cap and the daily ceiling.
 - With two possible voyages and none named by the device, Stanley asks which trip. It never picks one.

@@ -66,3 +66,50 @@ public sealed class DapperStanleyTierLog(IDbConnectionFactory db) : IStanleyTier
         return StanleyTierSummary.Of(since, rows);
     }
 }
+
+/// <summary>Stanley's prepared and confirmed actions in <c>dbo.StanleyActions</c> (phase 5). A row is the preview, then the receipt; it holds the typed intent, never the guest's chat messages.</summary>
+public sealed class DapperStanleyActionStore(IDbConnectionFactory db) : IStanleyActionStore
+{
+    private const string Columns = "Id, PublicId, UserId, Kind, Status, CreatedAt, ExpiresAt, UpdatedAt, Fingerprint, IdemKey, Data, Ref, Reason, DoneAt, UndoUntil";
+
+    public async Task AddAsync(StanleyActionRow r, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd(
+            "INSERT INTO dbo.StanleyActions (PublicId, UserId, Kind, Status, CreatedAt, ExpiresAt, UpdatedAt, Fingerprint, IdemKey, Data, Ref, Reason, DoneAt, UndoUntil) " +
+            "VALUES (@PublicId, @UserId, @Kind, @Status, @CreatedAt, @ExpiresAt, @UpdatedAt, @Fingerprint, @IdemKey, @Data, @Ref, @Reason, @DoneAt, @UndoUntil)", r, null, ct));
+    }
+
+    public async Task<StanleyActionRow?> GetAsync(Guid publicId, long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<StanleyActionRow>(Sql.Cmd($"SELECT {Columns} FROM dbo.StanleyActions WHERE PublicId = @publicId AND UserId = @userId", new { publicId, userId }, null, ct));
+    }
+
+    public async Task<StanleyActionRow?> FindByKeyAsync(long userId, string key, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QueryFirstOrDefaultAsync<StanleyActionRow>(Sql.Cmd($"SELECT TOP 1 {Columns} FROM dbo.StanleyActions WHERE UserId = @userId AND IdemKey = @key", new { userId, key }, null, ct));
+    }
+
+    public async Task<bool> TryBeginAsync(Guid publicId, long userId, string key, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd(
+            "UPDATE dbo.StanleyActions SET Status = N'executing', IdemKey = @key, UpdatedAt = @now WHERE PublicId = @publicId AND UserId = @userId AND Status = N'prepared'",
+            new { publicId, userId, key, now }, null, ct)) > 0;
+    }
+
+    public async Task UpdateAsync(StanleyActionRow r, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd(
+            "UPDATE dbo.StanleyActions SET Status = @Status, UpdatedAt = @UpdatedAt, IdemKey = @IdemKey, Ref = @Ref, Reason = @Reason, DoneAt = @DoneAt, UndoUntil = @UndoUntil WHERE PublicId = @PublicId AND UserId = @UserId", r, null, ct));
+    }
+
+    public async Task<List<StanleyActionRow>> ListAsync(long userId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<StanleyActionRow>(Sql.Cmd($"SELECT TOP (@max) {Columns} FROM dbo.StanleyActions WHERE UserId = @userId ORDER BY CreatedAt DESC, Id DESC", new { userId, max }, null, ct))).ToList();
+    }
+}

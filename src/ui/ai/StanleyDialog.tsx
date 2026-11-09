@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } fro
 import { Link, useLocation } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
 import { MAX_MESSAGE } from '../../ai/guard'
+import { clockHhmm, planSnapshot, type ActionContext, type StanleyAction } from '../../ai/stanleyAction'
 import { decideStanley } from '../../ai/stanleyDecide'
 import { answerOf, LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
 import { followUps } from '../../ai/stanleyFollow'
-import { StanleyConfirm } from './StanleyConfirm'
+import { StanleyActionCard } from './StanleyActionCard'
 import { StanleyAnswerCard } from './StanleyAnswerCard'
 import { WhyThis } from './WhyThis'
 import { cardText, explainScreenCard } from '../../ai/stanleyCard'
@@ -16,6 +17,9 @@ import { useMemory } from '../../hooks/useMemory'
 import { countTier, type Tier } from '../../diagnostics/stanleyTiers'
 import { getContext, subscribeContext } from '../../account/context'
 import { useSailing } from '../../hooks/useDemo'
+import { useCurrentDay, useDayPlan } from '../../hooks/useDayPlan'
+import { useOnboardToday } from '../../hooks/useOnboardToday'
+import { shipZoneAt } from '../../domain/sailings'
 import { useSettings } from '../../hooks/useSettings'
 import { stanleyLevelFor } from '../../settings/settings'
 import { screenForPath } from '../../routes/screens'
@@ -59,6 +63,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const { stage } = useJourneyPosition()
   const hasBooking = !!useSyncExternalStore(subscribeContext, getContext, getContext)?.booking
   const sailing = useSailing()
+  const dayPlan = useDayPlan(useCurrentDay())
+  const allAboardAt = useOnboardToday(hasBooking).data?.portDay?.state.at ?? null
   const [settings] = useSettings()
   const screenId = screenForPath(useLocation().pathname)?.id
   const { state: mem } = useMemory()
@@ -74,7 +80,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   useEffect(() => { if (hasBooking) void savedFacts.load() }, [hasBooking])
   useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }) }, [messages.length, busy, reveal?.i])
   const lastAnswer = [...messages].reverse().find((m) => m.role === 'assistant')
-  const follow = lastAnswer && lastAnswer.kind === 'answer' && !lastAnswer.confirm && cooldownSeconds(messages, now) === 0
+  const follow = lastAnswer && lastAnswer.kind === 'answer' && !lastAnswer.action && cooldownSeconds(messages, now) === 0
     ? followUps(stage, messages.filter((m) => m.role === 'user').map((m) => m.text), LIBRARY.find((e) => e.id === lastAnswer.entryId))
     : []
   const cooldown = cooldownSeconds(messages, now)
@@ -95,24 +101,25 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     setStanleyThread(withUser)
     setDraft('')
     setBusy(true)
-    // One front door: the authored library first (free, on the device), then a ship fact or an "Ask your cruise" change; everything else goes to the server's gateway, which picks the source.
-    // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switches can turn the library or the changes off.
-    const decision = decideStanley(asked.text, { stage, hasBooking, libraryOn: status.library, actionsOn: status.actions })
+    // One front door: the authored library first (free, on the device), then a ship fact; everything else, including a request to change something, goes to the server's gateway, which picks the source or prepares a preview.
+    // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switch can turn the library off.
+    const decision = decideStanley(asked.text, { stage, libraryOn: status.library })
     const known = decision.kind === 'library' ? decision.entry : null
-    const route = decision.kind === 'act' || decision.kind === 'ship' ? decision : null
+    const route = decision.kind === 'ship' ? decision : null
     let source: StanleySource = 'model'
     let link: string | undefined
-    let confirm: string | undefined
     let entryId: string | undefined
     let turn: StanleyTurn
     const id = `a-${at}-${withUser.length}`
     if (known) { source = 'library'; link = known.link; entryId = known.id; turn = { kind: 'answer', text: answerOf(known), handoff: null, fallback: null } }
-    else if (route?.kind === 'act') { source = 'trip'; confirm = asked.text; turn = { kind: 'answer', text: t('stanley.act'), handoff: null, fallback: null } }
     else if (route?.kind === 'ship') { source = 'ship'; turn = { kind: 'answer', text: route.fact.a, handoff: null, fallback: null } }
     else {
-      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access) })
+      // The server turns a request to change something into a typed preview; it needs today's plan and the all-aboard time to name an item or a reminder's basis.
+      const actionContext: ActionContext = { plan: hasBooking && dayPlan.ready ? planSnapshot(dayPlan.rows, dayPlan.alternatives, dayPlan.day) : [], sailingId: sailing.id }
+      if (allAboardAt !== null) actionContext.allAboard = { at: clockHhmm(allAboardAt, shipZoneAt(sailing, allAboardAt)), label: 'ship time' }
+      turn = await askStanley(sendStanley, withUser, { context: { stage, screen: screenId, sailingId: sailing.id, level: stanleyLevelFor(settings) }, mobility: assistantMobility(mem.access), actionContext })
       if (turn.tier === 'trip' || turn.tier === 'before') source = turn.tier
-      else if (turn.tier === 'resolver') source = 'trip'
+      else if (turn.tier === 'resolver' || turn.tier === 'action') source = 'trip'
     }
     const citations = turn.citations ?? []
     const answered = turn.kind === 'answer' && !(turn.fallback && source !== 'model')
@@ -120,7 +127,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     const tier: Tier = turn.kind === 'handoff' ? 'handoff' : turn.kind === 'answer' && answered ? source : 'unanswered'
     countTier(tier, known ? `library:${known.id}` : route?.kind === 'ship' ? `ship:${route.fact.id}` : undefined)
     const saved = turn.kind === 'unreachable' && turn.fallback === 'network' && hasBooking ? savedFacts.now() ?? [] : []
-    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(turn), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, actions, confirm, entryId }
+    const reply: StanleyMessage = { id, role: 'assistant', text: saved.length > 0 ? t('stanley.offline.saved') : wording(turn), saved: saved.length > 0 ? saved : undefined, at: Date.now(), kind: turn.kind, handoff: turn.handoff, fallback: turn.fallback, source: turn.kind === 'answer' ? source : undefined, citations, card: turn.card ?? undefined, action: turn.action ?? undefined, actions, entryId }
     setStanleyThread([...getStanleyThread(), reply])
     setNow(Date.now())
     setBusy(false)
@@ -129,6 +136,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     setReveal({ id: reply.id, steps: revealSteps(reply.text), i: 0 })
   }
 
+
+  const updateAction = (id: string, next: StanleyAction) => setStanleyThread(getStanleyThread().map((m) => (m.id === id ? { ...m, action: next } : m)))
 
   const pick = (question: string) => { void submit(null, question) }
 
@@ -165,7 +174,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
                 {m.saved?.map((c) => <StanleyAnswerCard key={c.id} card={asSaved(c, t('stanley.offline.note'))} onNavigate={onClose} />)}
                 {m.source && !m.card && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
                 {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path} onClick={onClose}>{a.label}</LinkButton>)}</p>}
-                {m.confirm && <StanleyConfirm question={m.confirm} onNavigate={onClose} />}
+                {m.action && <StanleyActionCard action={m.action} onChange={(next) => updateAction(m.id, next)} onNavigate={onClose} />}
                 {m.id === lastAnswer?.id && !busy && follow.length > 0 && (
                   <FollowChips items={follow} onPick={pick} />
                 )}

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Princess.Api.Auth;
 using Princess.Api.Domain;
 using Princess.Api.Services;
@@ -31,6 +32,35 @@ public static class StanleyEndpoints
             .WithSummary("The guest's own trip facts as cards the device may keep to show with no signal: { cards[] } (tours, dinners, packages, ports, countdown, stateroom, party), each with its provenance and the time the booking was read. " +
                 "Nothing that goes stale within a day (tender, all aboard, deadlines, bill) is included. Empty when there is no current trip or the resolver switch is off.");
 
+        var actions = api.MapGroup("/me/stanley/actions").WithTags("Stanley");
+        actions.MapPost("/prepare", async (StanleyPrepareRequest body, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
+            {
+                var ctx = (body.Context ?? new StanleyActionContext()).Clean(body.Context?.SailingId);
+                var input = new JsonObject { ["kind"] = body.Kind ?? "" };
+                foreach (var (k, v) in (body.Args ?? new Dictionary<string, string>()).Take(20)) if (k != "kind") input[k] = v;
+                var read = StanleyIntents.Validate(input, ctx);
+                if (read.Intent is null) throw ApiException.Invalid("badAction");
+                return Results.Ok(await svc.PrepareAsync(await me.LoadAsync(ct), read.Intent, ctx, ct));
+            })
+            .WithSummary("Prepares a change as a preview and does nothing else. Send { kind (order_item, add_excursion, move_dinner, draft_case, plan_change or remind_me), args (plain strings, for example item and qty), context { plan[{ id, title, start, day, listed }], allAboard { at, label }, sailingId } }. " +
+                "Answers the action { id, kind, status (prepared), title, lines[], who[], cents, terms, expiresAt, onDevice, params }: the exact items, who is affected, any price, the cancellation terms and an expiry ten minutes ahead. " +
+                "400 badAction for a kind or detail that is not allowed, 403 for a child account, 409 off when the actions switch is off, and the same 400, 404 and 409 codes the service behind the action gives.");
+        actions.MapPost("/{id:guid}/confirm", async (Guid id, StanleyConfirmRequest body, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), id, body.Key, body.Context, ct)))
+            .WithSummary("Confirms a prepared action. Send { key (an idempotency key of 8 to 64 letters, digits, dash or underscore), context (as for prepare, needed for plan_change and remind_me) }. " +
+                "Checks again that the preview has not expired, that the guest may still do it and that the price and availability are what was shown, then carries it out through the existing service and answers the action with status done and a receipt number, " +
+                "failed with a reason (the service refused; nothing was done) or pending (the outcome is not known yet; ask again later and it is settled before anything is retried). The same key and preview always give the same answer. " +
+                "404 for a preview that is not yours, 409 expired, 409 changed (the preview is void; ask again), 409 keyUsed for a key already used for another preview, 400 badKey, 403 for a child account.");
+        actions.MapGet("/{id:guid}", async (Guid id, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
+                Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), id, null, ct)))
+            .WithSummary("One action as it stands now, settling an outcome that was not known. 404 for one that is not yours.");
+        actions.MapPost("/{id:guid}/undo", async (Guid id, StanleyConfirmRequest? body, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
+                Results.Ok(await svc.UndoAsync(await me.LoadAsync(ct), id, body?.Context, ct)))
+            .WithSummary("Undoes a done action for two hours after it was confirmed: the request is cancelled, the tour leaves the cart, the dinner goes back to its old time, the case is withdrawn. A device action is only marked here; the device undoes it. 409 tooLate afterwards.");
+        api.MapGet("/me/stanley/receipts", async (ICurrentUser me, StanleyActionService svc, CancellationToken ct) => Results.Ok(await svc.ReceiptsAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Stanley")
+            .WithSummary("The guest's receipts for what Stanley did, newest first (up to 50): done, failed, pending and undone actions with their receipt number and times. The Trust Ledger lists them.");
+
         api.MapGet("/me/stanley/tiers", async (ICurrentUser me, IStanleyTierLog tiers, IClock clock, int? days, CancellationToken ct) =>
             {
                 var user = await me.LoadAsync(ct);
@@ -41,3 +71,9 @@ public static class StanleyEndpoints
             .WithSummary("Administrators only (403 otherwise): Stanley's replies over the last days (default 7, 1 to 90), counted by tier, source, stage, topic, outcome and model tier, with model calls and tokens. Counts only: no message text and no guest.");
     }
 }
+
+/// <summary>Body of <c>POST /me/stanley/actions/prepare</c>.</summary>
+public sealed record StanleyPrepareRequest(string? Kind, Dictionary<string, string>? Args, StanleyActionContext? Context);
+
+/// <summary>Body of confirm and undo: the idempotency key (confirm only) and what the device knows of its own plan.</summary>
+public sealed record StanleyConfirmRequest(string? Key, StanleyActionContext? Context);

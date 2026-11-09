@@ -7,7 +7,7 @@ const read = (f: string): string => readFileSync(f, 'utf8')
 /** The promises of Phase H5 (S6-02, S4-02, XA-02, XI-05), checked in the source and the text so a later edit cannot quietly break them. */
 describe('Phase H5 promises', () => {
   it('never changes the plan, books or accepts anything from an effect: only from a handler the guest triggers', () => {
-    for (const f of ['src/ui/plan/AutopilotScreen.tsx', 'src/ui/plan/SlotWatch.tsx', 'src/ui/home/AskScreen.tsx', 'src/ui/ai/StanleyConfirm.tsx', 'src/hooks/useDayPlan.ts']) {
+    for (const f of ['src/ui/plan/AutopilotScreen.tsx', 'src/ui/plan/SlotWatch.tsx', 'src/ui/home/AskScreen.tsx', 'src/ui/ai/StanleyActionCard.tsx', 'src/hooks/useDayPlan.ts']) {
       expect(read(f), f).not.toMatch(/useEffect|useLayoutEffect|setInterval|setTimeout/)
     }
   })
@@ -32,7 +32,7 @@ describe('Phase H5 promises', () => {
   })
 
   it('does not blame the guest for a delay or a conflict', () => {
-    for (const k of ['autopilot.refused.conflict', 'autopilot.refused.closed', 'watch.err.time', 'ask.unclear'] as const) expect(en[k], k).not.toMatch(/\byou (failed|forgot|should have|must have|were too)\b|\byour fault\b/i)
+    for (const k of ['autopilot.refused.conflict', 'autopilot.refused.closed', 'watch.err.time', 'action.changed'] as const) expect(en[k], k).not.toMatch(/\byou (failed|forgot|should have|must have|were too)\b|\byour fault\b/i)
   })
 
   it('keeps the caregiver view to consent and never offers a location', () => {

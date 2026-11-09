@@ -50,12 +50,27 @@ public class StanleyEvalTests
         {
             var route = c.Server!.Route;
             if (route == "blocked") { if (!ProfanityFilter.IsBlocked(c.Text)) wrong.Add($"{c.Id}: expected the word filter to block it"); continue; }
+            if (route == "action") continue;   // taken before the router; OnlyTheActionCasesAreTakenByTheActionStep checks it
             if (route.StartsWith("handoff:")) { if (ConciergeRules.Screen(c.Text) != route["handoff:".Length..]) wrong.Add($"{c.Id}: expected {route}, got {ConciergeRules.Screen(c.Text) ?? "no handoff"}"); continue; }
             var got = StanleyRouter.Route(c.Text, c.Stage, c.Booked);
             var want = route switch { "trip" => StanleyRoute.Trip, "before" => StanleyRoute.Before, _ => StanleyRoute.Open };
             if (got.Route != want || got.Planning != (c.Server.Planning ?? false)) wrong.Add($"{c.Id}: expected {route} (planning {c.Server.Planning}), got {got.Route} (planning {got.Planning})");
         }
         Assert.Empty(wrong);
+    }
+
+    [Fact]
+    public void OnlyTheActionCasesAreTakenByTheActionStep()
+    {
+        // Phase 5: a request to change something is a typed intent or a refusal on the server, ahead of the resolvers and the router, and nothing else is.
+        var wrong = new List<string>();
+        foreach (var c in Cases().Where(c => c.Client == "server"))
+        {
+            var taken = StanleyIntents.Refusal(c.Text) is not null || (c.Booked && StanleyIntents.Parse(c.Text, new StanleyActionContext()) is not null);
+            if (taken != (c.Server?.Route == "action")) wrong.Add($"{c.Id} \"{c.Text}\": action step {(taken ? "takes" : "does not take")} it, the set says {c.Server?.Route}");
+        }
+        Assert.Empty(wrong);
+        Assert.All(Injections(), i => Assert.Null(StanleyIntents.Parse(i.Text, new StanleyActionContext())));
     }
 
     [Fact]

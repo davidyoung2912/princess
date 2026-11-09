@@ -24,11 +24,11 @@ interface EvalCase { id: string; stage: string; booked: boolean; text: string; c
 const all = cases as EvalCase[]
 const NOW = Date.parse('2026-11-10')
 const STAGES = ['dream', 'discover', 'book', 'manage', 'prebook', 'getToShip', 'embark', 'sea', 'port', 'disembark', 'remember']
-const TIERS = ['safety', 'library', 'ship', 'act', 'trip', 'before', 'model']
+const TIERS = ['safety', 'library', 'ship', 'action', 'trip', 'before', 'model']
 const tagged = (tag: string) => all.filter((c) => c.tags?.includes(tag))
 
 const decide = (c: EvalCase) => {
-  const d = decideStanley(c.text, { stage: c.stage as never, hasBooking: c.booked, now: NOW })
+  const d = decideStanley(c.text, { stage: c.stage as never, now: NOW })
   return d.kind === 'handoff' ? `handoff:${d.handoff}` : d.kind === 'library' ? `library:${d.entry.id}` : d.kind === 'ship' ? `ship:${d.fact.id}` : d.kind
 }
 
@@ -45,7 +45,7 @@ describe('evaluation set: shape', () => {
       expect(TIERS, c.id).toContain(c.tier)
       expect(c.text.trim().length, c.id).toBeGreaterThan(0)
       expect(c.text.length, c.id).toBeLessThanOrEqual(500)
-      if (c.client === 'server') expect(['trip', 'before', 'open', 'blocked'], c.id).toContain(c.server?.route)
+      if (c.client === 'server') expect(['trip', 'before', 'open', 'blocked', 'action'], c.id).toContain(c.server?.route)
       if (c.client.startsWith('handoff:')) expect(c.server?.route, c.id).toBe(c.client)
     }
   })
@@ -68,7 +68,7 @@ describe('evaluation set: the device', () => {
   it('agrees with each case about which tier answers it', () => {
     for (const c of all) {
       const d = decide(c)
-      const tier = d.startsWith('handoff') ? 'safety' : d.startsWith('library') ? 'library' : d.startsWith('ship') ? 'ship' : d === 'act' ? 'act' : c.server?.route === 'blocked' ? 'safety' : c.server?.route === 'open' ? 'model' : c.server?.route
+      const tier = d.startsWith('handoff') ? 'safety' : d.startsWith('library') ? 'library' : d.startsWith('ship') ? 'ship' : c.server?.route === 'action' ? 'action' : c.server?.route === 'blocked' ? 'safety' : c.server?.route === 'open' ? 'model' : c.server?.route
       expect(tier, c.id).toBe(c.tier)
     }
   })
@@ -80,8 +80,9 @@ describe('evaluation set: the device', () => {
     }
   })
 
-  it('never answers an action request, or a question for the server, from the library when the guest has no booking to act on', () => {
-    for (const c of all.filter((x) => !x.booked)) expect(decide(c), c.id).not.toBe('act')
+  it('holds no word list for changes: a request to change something is decided as a question for the server, never as an action on the device', () => {
+    for (const c of tagged('action')) expect(decide(c), c.id).toBe('server')
+    expect(tagged('action').length).toBeGreaterThanOrEqual(10)
   })
 
   it('answers a deadline, tender, payment, access, entry or safety question from the library only with a high-risk entry that has a person to ask', () => {
@@ -124,15 +125,15 @@ describe('muster and emergency text never reach a model', () => {
   it('does not take the word emergency in "emergency muster drill" for an emergency, and answers every muster question from the one authored entry', () => {
     expect(screen('Is there an emergency muster drill')).toBeNull()
     for (const text of ['Where is my muster station?', 'Do I need my life jacket for the drill?', 'What happens at the safety drill', 'Is the muster drill compulsory for children', 'when is the muster']) {
-      const d = decideStanley(text, { stage: 'embark', hasBooking: true, now: NOW })
+      const d = decideStanley(text, { stage: 'embark', now: NOW })
       expect(d, text).toMatchObject({ kind: 'library', entry: { id: MUSTER_ENTRY } })
     }
     for (const c of tagged('muster')) expect(decide(c), c.id).toBe(`library:${MUSTER_ENTRY}`)
   })
 
   it('sends a muster question to the server, which answers it itself, when the library is off or the entry has expired', () => {
-    expect(decideStanley('Where is my muster station?', { stage: 'embark', hasBooking: true, libraryOn: false, now: NOW }).kind).toBe('server')
-    expect(decideStanley('Where is my muster station?', { stage: 'embark', hasBooking: true, now: Date.parse('2030-01-01') }).kind).toBe('server')
+    expect(decideStanley('Where is my muster station?', { stage: 'embark', libraryOn: false, now: NOW }).kind).toBe('server')
+    expect(decideStanley('Where is my muster station?', { stage: 'embark', now: Date.parse('2030-01-01') }).kind).toBe('server')
   })
 
   it('catches the emergencies a guest actually types, in more than one wording', () => {
@@ -178,13 +179,10 @@ describe('prompt injection', () => {
     expect(injection.length).toBeGreaterThanOrEqual(20)
   })
 
-  it('treats every injection as an ordinary question: never an authored answer, never a change without a booking, never a silent action', () => {
+  it('treats every injection as an ordinary question: never an authored answer, never an action on the device (a change is only ever a preview from the server)', () => {
     for (const i of injection) {
-      for (const booked of [false, true]) {
-        const d = decideStanley(i.text, { stage: 'sea', hasBooking: booked, now: NOW })
-        expect(['handoff', 'server', 'act', 'ship'], i.id).toContain(d.kind)
-        if (!booked) expect(d.kind, i.id).not.toBe('act')
-      }
+      const d = decideStanley(i.text, { stage: 'sea', now: NOW })
+      expect(['handoff', 'server', 'ship'], i.id).toContain(d.kind)
     }
   })
 

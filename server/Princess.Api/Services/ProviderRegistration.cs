@@ -141,8 +141,8 @@ public static class ProviderRegistration
         var tierLog = (config[$"{Section}:StanleyLog"] ?? "database").Trim().ToLowerInvariant();
         switch (tierLog)
         {
-            case "database": services.AddScoped<IStanleyTierLog, DapperStanleyTierLog>(); break;
-            case "memory": services.AddSingleton<IStanleyTierLog, MemoryStanleyTierLog>(); break;
+            case "database": services.AddScoped<IStanleyTierLog, DapperStanleyTierLog>(); services.AddScoped<IStanleyActionStore, DapperStanleyActionStore>(); break;
+            case "memory": services.AddSingleton<IStanleyTierLog, MemoryStanleyTierLog>(); services.AddSingleton<IStanleyActionStore, MemoryStanleyActionStore>(); break;
             default: throw new InvalidOperationException($"{Section}:StanleyLog is '{tierLog}', which is not registered. Choose one of: database, memory.");
         }
         return services;

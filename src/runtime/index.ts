@@ -79,6 +79,17 @@ export const fetchRates = async (): Promise<RateTable> => normalizeRates(await h
 /** Stanley, the one chat helper, is answered by the server's gateway (word filter, safety screen, routing, model, tools, budget and log all stay there). */
 export const sendStanley: StanleySender = (body) => http.post<unknown>('/me/stanley', body)
 
+/**
+ * Stanley's actions (phase 5). The server prepares a preview with the reply; the device confirms it with an idempotency key, asks how it stands, undoes it within two hours and lists the receipts.
+ * Nothing changes on the server without a confirm for a preview the server itself made.
+ */
+export const stanleyActions = {
+  confirm: (id: string, key: string, context?: unknown) => http.post<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}/confirm`, { key, context }),
+  get: (id: string) => http.get<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}`),
+  undo: (id: string, context?: unknown) => http.post<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}/undo`, { context }),
+  receipts: () => http.get<unknown>('/me/stanley/receipts'),
+}
+
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 

@@ -1,29 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { actPath, answerActions, groupable, groupPath, routeQuestion, shipFactFor } from './stanleyRoute'
+import { answerActions, groupable, groupPath, routeQuestion, shipFactFor } from './stanleyRoute'
 
 describe('routeQuestion', () => {
-  it('sends a change to Ask your cruise, never acting itself', () => {
-    expect(routeQuestion('Move dinner to 8pm', true).kind).toBe('act')
-    expect(routeQuestion('I need extra towels please', true).kind).toBe('act')
-  })
-  it('does not offer changes before there is a booking, or when the server has switched actions off', () => {
-    expect(routeQuestion('Can I cancel later?', false).kind).toBe('server')
-    expect(routeQuestion('Move dinner to 8pm', true, false).kind).toBe('server')
+  it('holds no word list for changes: a request to change something goes to the server, which prepares a preview', () => {
+    for (const q of ['Move dinner to 8pm', 'I need extra towels please', 'Add the reef snorkel to my cart', 'Cancel my booking', 'should I add sunscreen to the packing list']) expect(routeQuestion(q)).toEqual({ kind: 'server' })
   })
   it('answers a clear ship fact from ship data', () => {
-    expect(routeQuestion('How fast does the ship go?', true)).toMatchObject({ kind: 'ship', fact: { id: 'speed' } })
+    expect(routeQuestion('How fast does the ship go?')).toMatchObject({ kind: 'ship', fact: { id: 'speed' } })
   })
   it('ignores a single loose keyword', () => {
     expect(shipFactFor('Is Cozumel good for a tour?')).toBeNull()
   })
   it('leaves every other question to the server, which picks the source (no word lists on the device)', () => {
-    for (const q of ['Which cabin has the best view?', 'What do I still need to do?', 'What is on my bill?', 'Is Roatán good for snorkelling?']) expect(routeQuestion(q, true)).toEqual({ kind: 'server' })
-  })
-})
-
-describe('actPath', () => {
-  it('carries the question, trimmed and encoded', () => {
-    expect(actPath(' move dinner & show ')).toBe('/home/ask?q=move%20dinner%20%26%20show')
+    for (const q of ['Which cabin has the best view?', 'What do I still need to do?', 'What is on my bill?', 'Is Roatán good for snorkelling?']) expect(routeQuestion(q)).toEqual({ kind: 'server' })
   })
 })
 

@@ -6,7 +6,7 @@ import { REMINDER_THRESHOLDS } from './allaboard'
  * reminders are due *now*, so they show while the app is open or the next time it opens. It never claims background delivery: a reminder that was due
  * while the app was closed shows on next open, saying so.
  */
-export type ReminderKind = 'pay' | 'checkin' | 'allAboard'
+export type ReminderKind = 'pay' | 'checkin' | 'allAboard' | 'custom'
 
 export interface LocalReminder {
   /** Stable for the same reminder, so dismissing it once keeps it dismissed. */
@@ -16,6 +16,8 @@ export interface LocalReminder {
   amount: number
   /** Past due means the reminder time passed while the app was closed or the user was elsewhere. */
   urgent: boolean
+  /** What a reminder the guest asked Stanley for says. */
+  text?: string
 }
 
 /** Payment reminders start this many days before the final payment date, check-in on the day it opens and the day before. */
@@ -48,3 +50,8 @@ export function dueReminders(input: ReminderInput, now: number): LocalReminder[]
 
 /** Reminders not yet dismissed. */
 export const undismissed = (list: readonly LocalReminder[], dismissed: readonly string[]): LocalReminder[] => list.filter((r) => !dismissed.includes(r.key))
+
+/** Reminders the guest asked Stanley for that are due now and not yet dismissed. A reminder due while the app was closed shows on the next open; it is never claimed as a background alert. */
+export function dueCustom(list: readonly { id: string; at: number; text: string }[], now: number): LocalReminder[] {
+  return list.filter((r) => r.at <= now).map((r) => ({ key: `custom:${r.id}`, kind: 'custom' as const, amount: 0, urgent: false, text: r.text }))
+}

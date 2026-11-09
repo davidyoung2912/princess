@@ -1,14 +1,15 @@
 import { redactCardData } from './cardData'
 import { MAX_MESSAGE, screen, type Handoff } from './guard'
 import type { AnswerAction, StanleySource } from './stanleyRoute'
+import { normalizeAction, type ActionContext, type StanleyAction } from './stanleyAction'
 import { normalizeCard, type StanleyCard } from './stanleyCard'
 import type { Citation } from './types'
 
 /** What Stanley's reply was, as the server names it. The front end words everything but an answer from its own strings. */
 export type StanleyKind = 'answer' | 'blocked' | 'offtopic' | 'handoff' | 'unavailable'
 export type StanleyFallback = 'limit' | 'auth' | 'rate' | 'network' | 'bad' | 'off'
-/** Which route of the server's gateway handled a reply: a question answered with no model as a card (`resolver`), the guest's own booking (`trip`), someone still choosing (`before`) or open chat (`model`), or why there was no answer. */
-export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'resolver' | 'trip' | 'before' | 'model'
+/** Which route of the server's gateway handled a reply: a question answered with no model as a card (`resolver`), a preview of a change to confirm (`action`), the guest's own booking (`trip`), someone still choosing (`before`) or open chat (`model`), or why there was no answer. */
+export type StanleyTier = 'blocked' | 'handoff' | 'offtopic' | 'unavailable' | 'resolver' | 'action' | 'trip' | 'before' | 'model'
 
 export interface StanleyMessage {
   id: string
@@ -29,8 +30,8 @@ export interface StanleyMessage {
   saved?: StanleyCard[]
   /** Buttons under the answer: a way on, the screens used, the group. */
   actions?: AnswerAction[]
-  /** The words of a request to change something, shown with a preview and a Confirm button under the answer. */
-  confirm?: string
+  /** A change the server has prepared, shown as a preview with a Confirm button under the answer. Nothing has happened until the guest confirms. */
+  action?: StanleyAction
   /** The library entry that answered, so follow-up chips can follow on from it. */
   entryId?: string
 }
@@ -46,6 +47,8 @@ export interface StanleyTurn {
   citations?: Citation[]
   /** The structured answer with its provenance, when the server made one. */
   card?: StanleyCard | null
+  /** A prepared change to preview and confirm, when the guest asked for one. */
+  action?: StanleyAction | null
 }
 
 /** Where the guest is, for the server's routing and log: the journey stage, the screen id, the sailing and Stanley's level. A hint, never a fact. */
@@ -56,6 +59,8 @@ export interface StanleyBody {
   history: { role: 'user' | 'assistant'; text: string; at: number }[]
   context?: StanleyContext
   mobility?: 'any' | 'easy' | 'wheelchair'
+  /** Today's plan and the all-aboard time, so the server can name a plan item or a reminder's basis. Titles and times only. */
+  actionContext?: ActionContext
 }
 
 /** Sends one turn to `POST /me/stanley`. Set by the runtime. */
@@ -68,7 +73,7 @@ export const MAX_SENT = 60
 const KINDS: readonly StanleyKind[] = ['answer', 'blocked', 'offtopic', 'handoff', 'unavailable']
 const HANDOFFS: readonly Handoff[] = ['emergency', 'medical', 'legal', 'person']
 const FALLBACKS: readonly StanleyFallback[] = ['limit', 'auth', 'rate', 'network', 'bad', 'off']
-const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'resolver', 'trip', 'before', 'model']
+const TIERS: readonly StanleyTier[] = ['blocked', 'handoff', 'offtopic', 'unavailable', 'resolver', 'action', 'trip', 'before', 'model']
 
 export type StanleyProblem = 'empty' | 'long'
 export const stanleyProblem = (message: string): StanleyProblem | null => (!message.trim() ? 'empty' : message.trim().length > MAX_MESSAGE ? 'long' : null)
@@ -89,7 +94,7 @@ export function normalizeStanley(raw: unknown): StanleyTurn | null {
         return x && typeof x.label === 'string' && typeof x.path === 'string' && x.path.startsWith('/') ? [{ label: x.label.slice(0, 120), path: x.path.slice(0, 200) }] : []
       }).slice(0, 5)
     : []
-  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, citations, card: kind === 'answer' ? normalizeCard(o.card) : null }
+  return { kind, text: kind === 'answer' ? text : '', handoff: kind === 'handoff' ? handoff : null, fallback: FALLBACKS.find((f) => f === o.fallback) ?? null, tier: TIERS.find((x) => x === o.tier) ?? null, citations, card: kind === 'answer' ? normalizeCard(o.card) : null, action: kind === 'answer' ? normalizeAction(o.action) : null }
 }
 
 /**
@@ -111,7 +116,7 @@ export function historyToSend(thread: readonly StanleyMessage[]): { role: 'user'
  * One turn. The server's gateway decides everything (word filter, safety screen, which source answers, model, tools, budget). The one check kept on the device is the
  * safety screen, so an emergency message shows the numbers to call even with no signal. When the server cannot be reached the guest is told so.
  */
-export async function askStanley(send: StanleySender, thread: readonly StanleyMessage[], where: Pick<StanleyBody, 'context' | 'mobility'> = {}): Promise<StanleyTurn> {
+export async function askStanley(send: StanleySender, thread: readonly StanleyMessage[], where: Pick<StanleyBody, 'context' | 'mobility' | 'actionContext'> = {}): Promise<StanleyTurn> {
   const message = thread[thread.length - 1]?.text ?? ''
   const handoff = screen(message)
   if (handoff) return { kind: 'handoff', text: '', handoff, fallback: null }

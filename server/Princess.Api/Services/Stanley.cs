@@ -14,7 +14,7 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null)
 {
     public const string NoTools = "[]";
 
@@ -51,6 +51,28 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
         if (packet is { Choice.MustAsk: true }) trip = null;
         if (StanleyRules.IsMuster(turns.Message))
             return await End(Answer(StanleyRules.MusterAnswer, "scripted", trip is null ? "before" : "trip", null, [new CitationDto("Muster", "/ship/muster")]), "safety", "ok");
+        // Things Stanley never does (pay, cancel a booking, change a cabin, share data) are refused here, with where the guest can do them, whatever else is switched on.
+        if (StanleyIntents.Refusal(turns.Message) is { } refused)
+        {
+            var (words, label, path) = StanleyIntents.RefusalText(refused);
+            return await End(Answer(words, "scripted", "action", null, [new CitationDto(label, path)]), "action", "refused");
+        }
+        // Actions (phase 5): a request to change something becomes a typed intent and a stored preview. Nothing is done here: the guest confirms the preview, and only then does the server act.
+        var actionCtx = (request.ActionContext ?? new StanleyActionContext()).Clean(packet?.Choice.Chosen?.SailingId ?? context.SailingId);
+        var mayAct = o.Switches.Actions && actions is not null && trip is not null;
+        if (mayAct && StanleyIntents.Parse(turns.Message, actionCtx) is { } parsed)
+        {
+            if (parsed.Intent is null) return await End(Answer(parsed.Clarify!, "scripted", "action", null, null), "action", "asked");
+            try
+            {
+                var preview = await actions!.PrepareAsync(user, parsed.Intent, actionCtx, ct);
+                return await End(new StanleyReplyDto("answer", StanleyActionText.Ready, null, "scripted", null, "action", [new StanleyBlockDto("text", StanleyActionText.Ready)], [], null, null, preview), "action", "prepared");
+            }
+            catch (ApiException e)
+            {
+                return await End(Answer(StanleyActionText.Problem(e.Title), "scripted", "action", null, null), "action", "refused");
+            }
+        }
         // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
         if (trip is not null && o.Switches.Resolver && StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow) is { } card)
             return await End(new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card), card.Id, card.Abstained ? "abstained" : "ok");
@@ -67,8 +89,12 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
             {
                 try
                 {
-                    var answered = await tools.AskModelAsync(turns.Messages, ctx, meter, routing.Planning ? ModelTier.Large : ModelTier.Default, packet?.Data, ct);
-                    return await End(Answer(answered.Text, "claude", tier, null, answered.Citations), routing.Topic, "ok", meter);
+                    // The model may ask for a preview of one change; it never changes anything itself.
+                    var hook = mayAct && !user.IsSupervised ? new StanleyActionHook(i => actions!.PrepareAsync(user, i, actionCtx, ct), actionCtx) : null;
+                    var answered = await tools.AskModelAsync(turns.Messages, ctx, meter, routing.Planning ? ModelTier.Large : ModelTier.Default, packet?.Data, hook, ct);
+                    var reply = Answer(answered.Text, "claude", tier, null, answered.Citations);
+                    if (hook?.Prepared is { } prepared) reply = reply with { Tier = "action", Action = prepared };
+                    return await End(reply, hook?.Prepared is null ? routing.Topic : "action", hook?.Prepared is null ? "ok" : "prepared", meter);
                 }
                 catch (ConciergeModelException e)
                 {

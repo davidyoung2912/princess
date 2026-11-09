@@ -1,4 +1,3 @@
-import { EXCURSIONS } from './excursions'
 import { diningPlaces } from './aboardMore'
 import { type AllergyFlag, galleyStatus, type GalleyStatus, splitEven, type Share } from './bookingPrep'
 import { offAt, onwardCheck, WALKOFF_IDS, type OnwardPlan, type TagGroup, type WalkOffId } from './disembark'
@@ -6,7 +5,6 @@ import { FARE_IDS, type FareId } from './fares'
 import { rankNudges, type Nudge, type NudgeBudget } from './nudges'
 import { perPerson } from './portContent'
 import { knowledgeOf, shortSnapshot } from './portTier'
-import { REQUEST_ITEMS } from './services'
 import type { StormBand, StormPhase } from './storm'
 import { fareFor } from './pricing'
 import { type Cents } from './money'
@@ -234,40 +232,6 @@ export function homeNudges(i: HomeNudgeInput): HomeNudge[] {
   if (i.proposals > 0) items.push({ id: 'proposals', priority: 3, path: '/plan/autopilot', params: { n: i.proposals } })
   if (i.briefing) items.push({ id: 'briefing', priority: 1, path: '/home/briefing', params: {} })
   return rankNudges(items, i.quiet ? 0 : i.budget)
-}
-
-const ITEM_WORDS: Record<string, readonly string[]> = {
-  towels: ['towel', 'towels'], pillows: ['pillow', 'pillows'], bedding: ['blanket', 'blankets', 'bedding', 'sheets', 'duvet'],
-  toiletries: ['toiletries', 'shampoo', 'soap', 'conditioner'], ice: ['ice'], turndown: ['turndown'],
-  light: ['bulb', 'lamp'], aircon: ['aircon', 'air-con', 'airconditioning'], plumbing: ['toilet', 'sink', 'shower', 'plumbing', 'leak'], tv: ['tv', 'television', 'remote'],
-}
-const NUMBERS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4 }
-export interface ItemRequest { id: string; qty: number }
-/** "Can I have two more towels" becomes an item and a quantity (never above the usual limit); anything else is null. It is only a proposal until the guest confirms. */
-export function parseItemRequest(q: string): ItemRequest | null {
-  const w = q.toLowerCase().split(/[^a-z0-9-]+/).filter(Boolean)
-  if (!w.some((x) => ['need', 'request', 'bring', 'send', 'get', 'want', 'have', 'more', 'extra', 'please', 'fix', 'broken'].includes(x))) return null
-  const hit = REQUEST_ITEMS.find((r) => (ITEM_WORDS[r.id] ?? []).some((k) => w.includes(k)))
-  if (!hit) return null
-  const n = w.map((x) => NUMBERS[x] ?? (/^\d$/.test(x) ? Number(x) : 0)).find((x) => x > 0) ?? 1
-  return { id: hit.id, qty: Math.min(Math.max(1, n), hit.maxQty) }
-}
-
-export interface ExcursionRequest { id: string; name: string }
-const FILLER = new Set(['the', 'a', 'an', 'to', 'my', 'in', 'on', 'of', 'by', 'day', 'pass', 'and', 'for', 'at', 'me', 'cart', 'trip', 'tour', 'excursion'])
-const tokens = (s: string): string[] => s.toLowerCase().split(/[^a-z0-9]+/).filter((x) => x.length > 2 && !FILLER.has(x))
-/**
- * "Add the reef snorkel to my cart" becomes one named excursion, or null when it is not clearly one. It only goes in the cart on confirm;
- * paying is a separate step on the excursions screen.
- */
-export function parseExcursionRequest(q: string, list: readonly { id: string; name: string }[] = EXCURSIONS): ExcursionRequest | null {
-  const w = q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
-  if (!w.some((x) => ['add', 'book', 'put', 'reserve'].includes(x)) || !(w.includes('cart') || w.includes('excursion') || w.includes('tour') || list.some((e) => q.toLowerCase().includes(e.name.toLowerCase())))) return null
-  const asked = new Set(tokens(q))
-  const scored = list.map((e) => ({ e, hits: tokens(e.name).filter((x) => asked.has(x)).length })).filter((x) => x.hits >= 2 || (x.hits >= 1 && tokens(x.e.name).length === 1))
-  scored.sort((a, b) => b.hits - a.hits)
-  if (scored.length === 0 || (scored.length > 1 && scored[0].hits === scored[1].hits)) return null
-  return { id: scored[0].e.id, name: scored[0].e.name }
 }
 
 /** The browser's speech recognition, where there is one. Voice only fills the question box; sending and confirming stay a tap. */

@@ -6,7 +6,7 @@ namespace Princess.Api.Domain;
 /// What the guest sends Stanley: the thread so far, oldest first, ending with the guest's message; the context packet (stage, screen, sailing, level); and the device's
 /// mobility and tour likes for building a day. Blocked and rejected messages should not be sent; the server also drops them.
 /// </summary>
-public sealed record StanleyRequestDto(List<ConciergeMessageDto>? History, StanleyContextDto? Context = null, string? Mobility = null, List<string>? Likes = null);
+public sealed record StanleyRequestDto(List<ConciergeMessageDto>? History, StanleyContextDto? Context = null, string? Mobility = null, List<string>? Likes = null, StanleyActionContext? ActionContext = null);
 
 /// <summary>One piece of an answer. Only <c>text</c> exists today; a resolver's structured answer is the reply's <c>Card</c>.</summary>
 public sealed record StanleyBlockDto(string Type, string Text);
@@ -15,9 +15,9 @@ public sealed record StanleyBlockDto(string Type, string Text);
 /// Stanley's answer. <c>Kind</c> is <c>answer</c>, <c>blocked</c> (word filter), <c>offtopic</c>, <c>handoff</c> (with <c>Handoff</c> saying which) or <c>unavailable</c>
 /// (with <c>Fallback</c>: limit, auth, rate, network, bad or off). <c>Text</c> is only set for <c>answer</c>; the front end words every other kind itself.
 /// <c>Source</c> is <c>claude</c> or <c>scripted</c> for an answer, else empty. <c>Tier</c> says which route handled it (blocked, handoff, offtopic, unavailable, trip, before or model),
-/// <c>Blocks</c> is the answer in typed pieces, <c>Card</c> the structured answer with its provenance when a resolver made it (tier <c>resolver</c>), <c>Sources</c> the screens it used, and <c>Degraded</c> lists any route a switch has turned off.
+/// <c>Action</c> is a preview of a change the guest may confirm (tier <c>action</c>), <c>Blocks</c> is the answer in typed pieces, <c>Card</c> the structured answer with its provenance when a resolver made it (tier <c>resolver</c>), <c>Sources</c> the screens it used, and <c>Degraded</c> lists any route a switch has turned off.
 /// </summary>
-public sealed record StanleyReplyDto(string Kind, string Text, string? Handoff, string Source, string? Fallback, string Tier = "", List<StanleyBlockDto>? Blocks = null, List<CitationDto>? Sources = null, List<string>? Degraded = null, StanleyCardDto? Card = null);
+public sealed record StanleyReplyDto(string Kind, string Text, string? Handoff, string Source, string? Fallback, string Tier = "", List<StanleyBlockDto>? Blocks = null, List<CitationDto>? Sources = null, List<string>? Degraded = null, StanleyCardDto? Card = null, StanleyActionDto? Action = null);
 
 /// <summary>A cleaned thread: the guest's message and the earlier round trips that may be sent to a model, as Messages API turns.</summary>
 public sealed record StanleyTurns(string Message, List<ConciergeMessageDto> Messages);

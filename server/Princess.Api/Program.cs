@@ -105,6 +105,8 @@ services.AddScoped<IStanleyTools, StanleyToolService>();
 services.AddScoped<StanleyService>();
 services.AddScoped<IStanleyTrips, StanleyTripLoader>();
 services.AddScoped<IStanleyPackets, StanleyPacketBuilder>();
+services.AddScoped<IStanleyEffects, StanleyEffects>();
+services.AddScoped<StanleyActionService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();

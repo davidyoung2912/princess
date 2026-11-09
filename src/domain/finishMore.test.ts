@@ -102,7 +102,7 @@ describe('normalizeFinish', () => {
   })
 })
 
-import { homeNudges, offersQuiet, parseItemRequest, planSpeech, portSnapshot, speechRecognitionOf, VIBRATION } from './finishMore'
+import { homeNudges, offersQuiet, planSpeech, portSnapshot, speechRecognitionOf, VIBRATION } from './finishMore'
 
 describe('part 2: Home nudges', () => {
   const base = { budget: 3 as const, quiet: false, backAboardMin: null, storm: 'none' as const, stormPhase: 'far' as const, proposals: 0, briefing: false }
@@ -125,14 +125,7 @@ describe('part 2: Home nudges', () => {
   })
 })
 
-describe('part 2: item requests, voice, alerts, speech, snapshot', () => {
-  it('turns a plain request into an item and a limited quantity', () => {
-    expect(parseItemRequest('Can I have two more towels please')).toEqual({ id: 'towels', qty: 2 })
-    expect(parseItemRequest('I need 9 pillows')).toEqual({ id: 'pillows', qty: 4 })
-    expect(parseItemRequest('send ice')).toEqual({ id: 'ice', qty: 1 })
-    expect(parseItemRequest('towels are soft')).toBeNull()
-    expect(parseItemRequest('what is for dinner')).toBeNull()
-  })
+describe('part 2: voice, alerts, speech, snapshot', () => {
   it('finds speech recognition only where it exists', () => {
     expect(speechRecognitionOf(undefined)).toBeNull()
     expect(speechRecognitionOf({})).toBeNull()

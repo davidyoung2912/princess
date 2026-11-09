@@ -1057,6 +1057,31 @@ CREATE TABLE dbo.StanleyTierLog (
 CREATE INDEX IX_StanleyTierLog_At ON dbo.StanleyTierLog (At);
 END
 
+IF OBJECT_ID(N'dbo.StanleyActions', N'U') IS NULL
+BEGIN
+-- Stanley's actions (docs/stanley-gap-analysis-and-plan.md, phase 5): a stored preview that becomes a receipt. Data holds the typed intent and the preview text, never the chat messages.
+CREATE TABLE dbo.StanleyActions (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyActions PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT UQ_StanleyActions_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  Kind NVARCHAR(20) NOT NULL,
+  Status NVARCHAR(12) NOT NULL CONSTRAINT CK_StanleyActions_Status CHECK (Status IN (N'prepared', N'executing', N'done', N'failed', N'pending', N'expired', N'changed', N'undone')),
+  CreatedAt DATETIME2(0) NOT NULL,
+  ExpiresAt DATETIME2(0) NOT NULL,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  Fingerprint NVARCHAR(16) NOT NULL,
+  IdemKey NVARCHAR(64) NULL,
+  Data NVARCHAR(MAX) NOT NULL,
+  Ref NVARCHAR(100) NOT NULL CONSTRAINT DF_StanleyActions_Ref DEFAULT N'',
+  Reason NVARCHAR(40) NOT NULL CONSTRAINT DF_StanleyActions_Reason DEFAULT N'',
+  DoneAt DATETIME2(0) NULL,
+  UndoUntil DATETIME2(0) NULL,
+  CONSTRAINT FK_StanleyActions_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_StanleyActions_UserId_CreatedAt ON dbo.StanleyActions (UserId, CreatedAt);
+CREATE INDEX IX_StanleyActions_UserId_IdemKey ON dbo.StanleyActions (UserId, IdemKey);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

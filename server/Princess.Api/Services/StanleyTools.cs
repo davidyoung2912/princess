@@ -5,6 +5,17 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
 
+/// <summary>
+/// Lets the model ask for a preview inside the tool loop (phase 5). <see cref="Prepare"/> turns a validated intent into a stored preview; at most one is made per request, and it is kept here so the gateway can put it in the reply.
+/// </summary>
+public sealed class StanleyActionHook(Func<StanleyIntent, Task<StanleyActionDto>> prepare, StanleyActionContext context)
+{
+    public StanleyActionContext Context { get; } = context;
+    public StanleyActionDto? Prepared { get; private set; }
+    public Task<StanleyActionDto> Prepare(StanleyIntent intent) => prepare(intent);
+    public void Keep(StanleyActionDto action) => Prepared = action;
+}
+
 /// <summary>What the gateway needs from the tools route, so it can be tested without the stores.</summary>
 public interface IStanleyTools
 {
@@ -15,6 +26,9 @@ public interface IStanleyTools
     /// <summary>As above, with the context packet and the data the typed read tools may touch. A tool route without them keeps the older tools only.</summary>
     Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct) =>
         AskModelAsync(history, ctx, meter, tier, ct);
+    /// <summary>As above, and the model may also ask for a preview of one change through <paramref name="actions"/>. Nothing is done: the guest confirms the preview on their screen.</summary>
+    Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, StanleyActionHook? actions, CancellationToken ct) =>
+        AskModelAsync(history, ctx, meter, tier, read, ct);
 }
 
 /// <summary>
@@ -59,22 +73,26 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
     public static ConciergeReplyDto Scripted(string message, ConciergeContext ctx, string? fallback) => ConciergeRules.ScriptedReply(message, ctx) with { Fallback = fallback };
 
     private static readonly string AllTools = StanleyReadTools.AllToolsJson(ConciergeRules.ToolsJson);
+    private static readonly string AllToolsWithActions = StanleyIntents.WithTool(AllTools);
 
     public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, CancellationToken ct) =>
         AskModelAsync(history, ctx, meter, tier, null, ct);
 
-    public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct) => AskAsync(history, ctx, meter, tier, read, ct);
+    public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct) => AskAsync(history, ctx, meter, tier, read, null, ct);
+
+    public Task<ConciergeReplyDto> AskModelAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, StanleyActionHook? actions, CancellationToken ct) => AskAsync(history, ctx, meter, tier, read, actions, ct);
 
     /// <summary>
     /// The Messages API loop: run the tools the model calls until it answers, at most <see cref="ConciergeRules.MaxTurns"/> times and never past the meter's call cap (each step is a model call, so a new tool
     /// cannot push a request over its cap). A read tool is checked against the packet on every call and logged by name, outcome and the guest's opaque reference, never by its input or its answer.
     /// </summary>
-    private async Task<ConciergeReplyDto> AskAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, CancellationToken ct)
+    private async Task<ConciergeReplyDto> AskAsync(List<ConciergeMessageDto> history, ConciergeContext ctx, ModelMeter meter, ModelTier tier, StanleyReadData? read, StanleyActionHook? actions, CancellationToken ct)
     {
         var turns = new JsonArray();
         foreach (var m in history) turns.Add(new JsonObject { ["role"] = m.Role, ["content"] = m.Text });
         var system = read is null ? ConciergeRules.SystemPrompt(ctx) : ConciergeRules.SystemPrompt(ctx) + "\n\n" + read.Packet.Block();
-        var toolsJson = read is null ? ConciergeRules.ToolsJson : AllTools;
+        if (actions is not null) system += "\n\n" + StanleyIntents.Instructions;
+        var toolsJson = actions is not null ? AllToolsWithActions : read is null ? ConciergeRules.ToolsJson : AllTools;
         var citations = new List<CitationDto>();
         for (var n = 0; n < ConciergeRules.MaxTurns; n++)
         {
@@ -94,7 +112,13 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
                 var name = use["name"]?.GetValue<string>() ?? "";
                 var input = use["input"] as JsonObject ?? new JsonObject();
                 ToolOutcome r;
-                if (read is not null && StanleyReadTools.Names.Contains(name))
+                if (actions is not null && name == StanleyIntents.ToolName)
+                {
+                    r = await ProposeAsync(input, actions);
+                    meter.CountTool(r.IsError);
+                    log.LogInformation("Stanley tool {Tool} {Outcome}", name, r.IsError ? "refused" : "ok");
+                }
+                else if (read is not null && StanleyReadTools.Names.Contains(name))
                 {
                     r = StanleyReadTools.Run(name, input, read);
                     meter.CountTool(r.IsError);
@@ -109,6 +133,26 @@ public sealed class StanleyToolService(ITripStore trips, IAccountStore accounts,
             turns.Add(new JsonObject { ["role"] = "user", ["content"] = results });
         }
         throw new ConciergeModelException("bad", "Too many steps.");
+    }
+
+    /// <summary>
+    /// The model's typed intent, checked against the closed lists, then turned into a stored preview. The model is told only that a preview is ready for the guest to confirm, never that anything was done;
+    /// a missing detail comes back as the question to ask. A second request in the same turn is refused.
+    /// </summary>
+    private static async Task<ToolOutcome> ProposeAsync(JsonObject input, StanleyActionHook hook)
+    {
+        if (hook.Prepared is not null) return new ToolOutcome("One change at a time. The guest has a preview to confirm first.", [], true);
+        var result = StanleyIntents.Validate(input, hook.Context);
+        if (result.Intent is null) return new ToolOutcome("Ask the guest: " + result.Clarify, [], false);
+        try
+        {
+            hook.Keep(await hook.Prepare(result.Intent));
+            return new ToolOutcome("A preview is ready on the guest's screen with a Confirm button. Nothing has been done yet. Tell the guest to check it and confirm.", [], false);
+        }
+        catch (ApiException e)
+        {
+            return new ToolOutcome(StanleyActionText.Problem(e.Title == "forbidden" ? "forbidden" : e.Title), [], true);
+        }
     }
 
     /// <summary>Runs one tool, answering the public catalogue tools from the cache when the content version, tool, input and sailing are the same.</summary>

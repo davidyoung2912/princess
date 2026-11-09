@@ -4,7 +4,8 @@ import { formatDayMonth } from '../../domain/cruise'
 
 import { formatMoney } from '../../domain/money'
 import { buildLedger, groupByDay, ledgerNet, type PaymentRecord } from '../../domain/trustLedger'
-import { api } from '../../runtime'
+import { normalizeReceipts, type StanleyAction } from '../../ai/stanleyAction'
+import { api, stanleyActions } from '../../runtime'
 import { usePersona } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
@@ -35,10 +36,34 @@ export function LedgerScreen() {
           )}
         </Saved>
       )}
+      {!me?.child && <StanleyReceipts />}
       <p className="muted">{t('ledger.covers')}</p>
       <p><Link to="/me/bill">{t('route.bill')}</Link></p>
       <BackLink to="/me" label={t('route.me')} />
     </div>
+  )
+}
+
+/** What Stanley did on the guest's say-so, with each receipt number: they belong in the ledger beside the money, because some of them (a tour in the cart) lead to a charge later. */
+function StanleyReceipts() {
+  const receipts = useMine(async () => normalizeReceipts(await stanleyActions.receipts()))
+  const shipTime = useShipTime()
+  return (
+    <section aria-labelledby="led-stanley">
+      <h2 id="led-stanley">{t('ledger.stanley.title')}</h2>
+      <Load state={receipts}>
+        {(list: StanleyAction[]) => list.length === 0 ? <Card info><p>{t('ledger.stanley.none')}</p></Card> : (
+          <ul className="plain-list">
+            {list.map((a) => (
+              <li key={a.id}>
+                <span>{t('ledger.stanley.row', { title: a.title, status: t(`ledger.stanley.status.${a.status === 'done' || a.status === 'failed' || a.status === 'undone' ? a.status : 'pending'}` as StringKey), receipt: a.receipt ?? '-' })}<small className="muted"> · {shipTime(a.doneAt ?? a.expiresAt)}</small></span>
+                {a.cents !== null && <span className="num">{formatMoney(a.cents)}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Load>
+    </section>
   )
 }
 

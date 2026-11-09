@@ -1,20 +1,15 @@
-import { parseExcursionRequest, parseItemRequest, SHIP_FACTS, type ShipFact } from '../domain/finishMore'
+import { SHIP_FACTS, type ShipFact } from '../domain/finishMore'
 
 /**
  * One front door (SG7, theme 3.10). Stanley is the only assistant a guest has to find. The device decides only what it can without a server:
- *  - `act`: the guest asks for something to be changed, ordered or added. Stanley never does it in the chat: it opens "Ask your cruise", which shows a preview and acts only on confirm.
- *    (This word list goes in phase 5, when the server prepares and confirms actions.)
  *  - `ship`: a ship fact from authored content, free and instant.
- *  - `server`: everything else. The server's gateway picks the source (the guest's own booking, the facts for someone still choosing, or the open model).
+ *  - `server`: everything else, including a request to change something. The server's gateway picks the source (the guest's own booking, the facts for someone still choosing, or the open model), or turns the
+ *    request into a typed intent and a preview the guest confirms. The device holds no word list for changes.
  */
-export type StanleyRoute = { kind: 'act' } | { kind: 'ship'; fact: ShipFact } | { kind: 'server' }
+export type StanleyRoute = { kind: 'ship'; fact: ShipFact } | { kind: 'server' }
 
 /** Where an answer came from, shown under it. `library` is the authored Q&A, which costs nothing. `trip`, `before` and `model` are the server's routes. */
 export type StanleySource = 'library' | 'ship' | 'trip' | 'before' | 'model'
-
-const CHANGE_WORDS = /\b(move|change|shift|push|skip|drop|cancel|remove|add)\b/i
-/** A request that would change, order or add something: always previewed and confirmed, never done from the chat. */
-export const isActionRequest = (q: string): boolean => CHANGE_WORDS.test(q) || !!parseItemRequest(q) || !!parseExcursionRequest(q)
 
 const words = (q: string): string[] => q.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2)
 
@@ -27,16 +22,10 @@ export function shipFactFor(question: string): ShipFact | null {
 }
 
 /** Picks what the device can answer or hand on for a question the authored library did not answer. The safety screen has already run. */
-export function routeQuestion(question: string, hasBooking: boolean, actionsOn = true): StanleyRoute {
-  const q = question.trim()
-  if (actionsOn && hasBooking && isActionRequest(q)) return { kind: 'act' }
-  const fact = shipFactFor(q)
-  if (fact) return { kind: 'ship', fact }
-  return { kind: 'server' }
+export function routeQuestion(question: string): StanleyRoute {
+  const fact = shipFactFor(question.trim())
+  return fact ? { kind: 'ship', fact } : { kind: 'server' }
 }
-
-/** The path that carries a question to "Ask your cruise" so the guest can confirm it there. */
-export const actPath = (question: string): string => `/home/ask?q=${encodeURIComponent(question.trim().slice(0, 200))}`
 
 /** Questions that are really for the people on the booking: who, shall we, everyone. */
 const GROUP_WORDS = /\b(who (is|will|are|'s)|shall we|should we|do we|are we|everyone|everybody|all of us|the group|who wants)\b/i

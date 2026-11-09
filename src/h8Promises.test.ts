@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS } from './domain/autopilot'
 import { dndNow, splitHeld } from './domain/aboardMore'
 import { OFFERS, offersFor, offerModeOf, type OfferContext } from './domain/offers'
-import { giftsFor, homeNudges, parseExcursionRequest } from './domain/finishMore'
+import { giftsFor, homeNudges } from './domain/finishMore'
 import { cabinsFor, hasAccessibleCabins } from './domain/cabins'
 import { assistantMobility, needsStepFree, EMPTY_ACCESS, accessNotes } from './domain/bookingPrep'
 import { fixtureWeek } from './domain/weekFixture'
@@ -113,9 +113,9 @@ describe('H8 slice D promises', () => {
   })
   it('keeps the budget and the safety exception on Home, and the confirm rule on voice and item requests', () => {
     expect(homeNudges({ budget: 0, quiet: true, backAboardMin: 30, storm: 'higher', stormPhase: 'near', proposals: 3, briefing: true }).map((n) => n.id)).toEqual(['backAboard'])
-    const ask = read('src/ui/ai/StanleyConfirm.tsx')
-    expect(ask).toMatch(/onClick=\{\(\) => void confirmItem\(\)\}/)
-    expect(ask).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
+    // Phase 5: every change is a preview from the server, and only the Confirm button sends it. Voice only fills the box.
+    expect(read('src/ui/ai/StanleyActionCard.tsx')).toMatch(/onClick=\{\(\) => void confirm\(\)\}/)
+    expect(read('src/ui/home/AskScreen.tsx')).not.toMatch(/r\.onresult[^\n]*(submit|confirm)/)
     expect(en['ask.speakNote']).toMatch(/nothing happens until you confirm/)
   })
 })
@@ -194,15 +194,13 @@ describe('H8 wire-through promises', () => {
     expect(STYLES).toContain(DEFAULT_STYLE)
     expect(read('src/ui/onboard/AboardMoreScreens.tsx')).toMatch(/api\.family\.view\(\)/)
   })
-  it('the assistant adds a named excursion to the cart only after a confirm tap, and never guesses', () => {
-    expect(parseExcursionRequest('add the San Gervasio ruins to my cart')?.id).toBe('coz-ruins')
-    expect(parseExcursionRequest('add the reef snorkel to my cart')).toBeNull() // two tours match: ask, do not guess
-    expect(parseExcursionRequest('please add an excursion')).toBeNull()
-    expect(parseExcursionRequest('what is the reef snorkel like')).toBeNull()
-    const ask = read('src/ui/ai/StanleyConfirm.tsx')
-    expect(ask).toMatch(/onClick=\{\(\) => void confirmExcursion\(\)\}/)
-    expect(ask).not.toMatch(/excursions\.(checkout|pay)/)
-    expect(en['ask.excNote']).toMatch(/Nothing is booked or charged/)
+  it('the assistant adds a named excursion to the cart only after a confirm tap, and never pays', () => {
+    const effects = read('server/Princess.Api/Services/StanleyActions.cs')
+    expect(effects).toMatch(/AddToCartAsync/)
+    expect(effects).not.toMatch(/CheckoutAsync|BuyAsync|IPaymentGateway|ChargeAsync/)
+    expect(effects).toMatch(/Nothing is charged until you check out/)
+    // The excursion is only named from the closed catalogue, and two equally good matches are a question, not a guess.
+    expect(read('server/Princess.Api/Domain/StanleyActions.cs')).toMatch(/Which excursion do you mean\?/)
   })
   it('a higher storm chance shows a Home card aboard that points to route changes, but never after the cruise', () => {
     const base = { budget: 3 as const, quiet: false, backAboardMin: null, storm: 'higher' as const, proposals: 0, briefing: false }

@@ -46,8 +46,8 @@ describe('library governance', () => {
     const later = Date.parse('2032-01-01')
     expect(liveLibrary(now)).toHaveLength(LIBRARY.length)
     expect(liveLibrary(later)).toHaveLength(0)
-    expect(decideStanley(questionOf(e), { stage: 'manage', hasBooking: true, now }).kind).toBe('library')
-    expect(decideStanley(questionOf(e), { stage: 'manage', hasBooking: true, now: later }).kind).toBe('server')
+    expect(decideStanley(questionOf(e), { stage: 'manage', now }).kind).toBe('library')
+    expect(decideStanley(questionOf(e), { stage: 'manage', now: later }).kind).toBe('server')
   })
 })
 
@@ -58,7 +58,7 @@ describe('risk topics', () => {
   })
 
   it('keeps a question about now or about the guest\'s own booking off the written answers when it is on a risk topic', () => {
-    const asked = (text: string) => decideStanley(text, { stage: 'port', hasBooking: true, now: Date.parse('2026-11-10') }).kind
+    const asked = (text: string) => decideStanley(text, { stage: 'port', now: Date.parse('2026-11-10') }).kind
     expect(asked('Is today a tender port')).toBe('server')
     expect(asked('Is the tender running late today')).toBe('server')
     expect(asked('What does tender mean')).toBe('library')

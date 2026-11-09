@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { readCustom } from '../data/customReminders'
 import { dismiss, readDismissed } from '../data/reminders'
-import { dueReminders, undismissed } from '../domain/localReminders'
+import { dueCustom, dueReminders, undismissed } from '../domain/localReminders'
 import { useMine } from '../hooks/useMine'
 import { useNow } from '../hooks/useDemo'
 import { useOnboardToday } from '../hooks/useOnboardToday'
@@ -17,12 +18,12 @@ export function LocalReminders() {
   const [dismissed, setDismissed] = useState(readDismissed)
   const trip = trips.data?.upcoming.find((x) => x.kind === 'current') ?? trips.data?.upcoming[0] ?? null
   const allAboardAt = today.data?.portDay?.state.at ?? null
-  const due = undismissed(dueReminders({ trip, allAboardAt }, now), dismissed)
+  const due = undismissed([...dueReminders({ trip, allAboardAt }, now), ...dueCustom(readCustom(), now)], dismissed)
   if (due.length === 0) return null
   return (
     <section aria-label={t('reminders.label')} className="local-reminders">
       {due.map((r) => (
-        <Banner key={r.key} kind={r.urgent ? 'warning' : 'info'} title={t(`reminders.${r.kind}` as StringKey, { count: r.amount })} action={<Button variant="secondary" onClick={() => setDismissed(dismiss(r.key))}>{t('reminders.dismiss')}</Button>}>
+        <Banner key={r.key} kind={r.urgent ? 'warning' : 'info'} title={r.kind === 'custom' ? r.text ?? t('reminders.custom') : t(`reminders.${r.kind}` as StringKey, { count: r.amount })} action={<Button variant="secondary" onClick={() => setDismissed(dismiss(r.key))}>{t('reminders.dismiss')}</Button>}>
           <p>{t('reminders.note')}</p>
         </Banner>
       ))}

@@ -1,23 +1,20 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
-import { isActionRequest } from '../../ai/stanleyRoute'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { speechRecognitionOf } from '../../domain/finishMore'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Field } from '../Field'
 import { BackLink } from '../onboard/common'
-import { StanleyConfirm } from '../ai/StanleyConfirm'
 
 /** Suggested questions; Stanley answers them from the guest's own plan, checklist and bill. */
 const EXAMPLES: readonly string[] = ['What time is dinner?', 'What is next?', 'What do I still need to do?', 'When must I be back on the ship?', 'Summarise my day']
 
-/** Ask your cruise (XA-01, XA-02): the page for changes. A request to move, add or order something is shown as a preview here (the same card Stanley shows in his chat) and only happens when the guest confirms; any other question goes to Stanley. */
+/** Ask your cruise (XA-01, XA-02): a question box that hands every request to Stanley. A request to move, add or order something comes back in his chat as a preview, and only happens when the guest confirms. */
 export function AskScreen() {
   const [params] = useSearchParams()
-  // Stanley hands a request here so it is previewed and confirmed before anything happens; the words are filled in but not sent.
+  // The words are filled in from the link but not sent.
   const [text, setText] = useState(() => (params.get('q') ?? '').slice(0, 200))
-  const [acting, setActing] = useState<{ id: number; question: string } | null>(null)
   const Recognition = typeof window === 'undefined' ? null : speechRecognitionOf(window)
   const listen = () => {
     if (!Recognition) return
@@ -32,8 +29,7 @@ export function AskScreen() {
     const q = text.trim()
     if (!q) return
     setText('')
-    if (isActionRequest(q)) setActing((a) => ({ id: (a?.id ?? 0) + 1, question: q }))
-    else { setActing(null); requestStanley(q) }
+    requestStanley(q)
   }
 
   return (
@@ -50,7 +46,6 @@ export function AskScreen() {
       <ul className="plain-list" aria-label={t('ask.examples')}>
         {EXAMPLES.map((q) => <li key={q}><Button variant="tertiary" onClick={() => requestStanley(q)}>{q}</Button></li>)}
       </ul>
-      {acting && <StanleyConfirm key={acting.id} question={acting.question} />}
       <BackLink to="/" label={t('route.home')} />
     </div>
   )
