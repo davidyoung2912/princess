@@ -151,3 +151,15 @@ Not done: the matrix rows and `requirements-verdicts.tsv` for these six are not 
 Added 119 probes to `docs/requirements-probes.tsv`, one per remaining Built P1, P2 and QOL row (register now 240 probes). Absent probes were checked by reading the named files, not by search alone. Eleven more were read in a second pass (BOK-10, GTS-10, SEA-04, QOL-15 moved to Partial; GTS-16 still to read), so ten rows were Partial. A third pass moved DRM-14, MNG-15, PRE-15 and PRE-10 as well (14), and a fourth moved PRE-12, EMB-07, REM-08, QOL-20 and MNG-09 (19 in all; OFF-07, DEB-10 and DEB-15 judged OK, the last two unread beyond existence), confirmed UX-04 OK and left GTS-16 to read. First pass: seven judged: **6 moved Built to Partial** (DRM-16 no fare alert, REM-07 no last-sync or discrepancy report, REM-10 no credit wallet, PRE-07 no exertion or operator-confirm flag, SEA-05 no temporarily-unavailable state, AST-02 no source or freshness label) and MNG-06 confirmed OK.
 Honest limit: only the probes that came back absent were read; the other rows have a search hit, which proves the words exist, not that each clause is met. Matrix totals were hand-adjusted (-6 Built, +6 Partial), not regenerated. These six are candidates for BM22 onward.
 Still unread after BM20: the other absent probes (the ones that found a hit). Every Partial above rests on a negative search of the named files, so it is a lead for BM22 to confirm by reading, not a proven gap; several returned nothing because the named file path or my wording was wrong.
+
+## 5f. BM21 result (built, not committed)
+
+`src/releaseGates.test.ts`: the 10 P0 release gates (document section 9.1) as 56 node tests, 50 passing and 6 `it.fails` that each name a gap. They drive the outbox, `createHttp`, the offline cache, the offline contract, sync labels, sharing and retention rules, and read the source where the behaviour lives in a React screen. No requirement tags (`proves:`) were added: these are scenarios, not clause readings.
+
+Gaps found (each becomes a BM22-on fix; turn its `it.fails` into `it` when closed):
+1. **Gate 1:** `enqueue` keeps the newest 20 and silently drops the oldest; a guest who queues 21 requests offline loses the first unseen.
+2. **Gate 2:** the client never sends an `Idempotency-Key`. The server accepts one and treats the same booking draft twice as one booking, but `pay-balance` has no draft, so a retry after a lost reply is not protected.
+3. **Gate 8:** "Delete my data" wipes this browser only; `DELETE /me/state` exists on the server but no client call reaches it.
+4. **Gate 10:** the status screen still uses a client demo scenario (TRU-07); the runbook has no incident section (owner, who is told, how guests are told); the `Email` and `Sms` providers are not in the runbook.
+
+Limits: gates 5, 6, 7 and 9 read strings and source, so they prove the route exists, not that it works on a device. Gate 9 cannot show a desktop and a phone each completing a task (needs a browser walk, scorecard B rows). Gate 8 does not test the server's permission checks (C# tests not run, per project rules).
