@@ -24,11 +24,16 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
   if (chips.length === 0) return null
   return (
     <aside className="page stanley-chips no-print" aria-labelledby="stanley-chips-h">
-      <h2 id="stanley-chips-h" className="stanley-chips__title">{t('stanley.chips.intro')}</h2>
-      <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>
-        {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}>{questionOf(e)}</button></li>)}
-        <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}>{t('stanley.chips.more')}</button></li>
-      </ul>
+      <div className="stanley-card">
+        <div className="stanley-card__head">
+          <img className="stanley-card__face" src={stanley} alt="" width="192" height="192" />
+          <h2 id="stanley-chips-h" className="stanley-card__title">{t('stanley.chips.intro')}</h2>
+        </div>
+        <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>
+          {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}>{questionOf(e)}</button></li>)}
+          <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}>{t('stanley.chips.more')}</button></li>
+        </ul>
+      </div>
       {open && <StanleyAnswer entry={open} onClose={() => setOpen(null)} onAsk={() => { setOpen(null); onAsk() }} />}
     </aside>
   )

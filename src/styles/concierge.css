@@ -55,6 +55,12 @@
 
 /* Stanley's question chips, answer sheet and empty states (SG1). */
 .stanley-chips { margin-top: var(--space-4); }
+.stanley-card { display: grid; gap: var(--space-3); padding: var(--space-4); background: color-mix(in srgb, var(--warning-tint) 45%, var(--surface, var(--bg))); border: var(--border-width) solid var(--warning); border-radius: var(--radius-card); color: var(--text); box-shadow: var(--shadow-card); }
+.stanley-card__head { display: flex; align-items: center; gap: var(--space-3); }
+.stanley-card__face { width: 3rem; height: 3rem; border-radius: 50%; flex: none; background: var(--bg); }
+.stanley-card__title { margin: 0; font-size: var(--fs-body, 1rem); }
+.stanley-card .chip-q { background: var(--bg); }
+.stanley-card .chip-q:hover { background: var(--warning-tint); }
 .stanley-chips__title { font-size: var(--fs-caption); margin: 0 0 var(--space-2); color: var(--text-muted); }
 .stanley-chips__list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip-q { min-height: var(--target-min); padding: var(--space-1) var(--space-3); font: inherit; font-size: var(--fs-caption); color: var(--text); background: var(--surface-info); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-pill); cursor: pointer; text-align: left; }

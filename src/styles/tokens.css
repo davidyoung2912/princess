@@ -37,6 +37,7 @@
 
   /* One soft shadow, for sheets and dialogs only. */
   --shadow-sheet: 0 8px 24px rgba(2, 2, 21, 0.18);
+  --shadow-card: 0 2px 4px rgba(2, 2, 21, 0.10), 0 6px 16px -2px rgba(2, 2, 21, 0.16);
 
   /* Motion: one curve, three durations. */
   --ease: cubic-bezier(0.3, 0, 0.2, 1);
