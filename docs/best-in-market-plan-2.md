@@ -178,3 +178,8 @@ Theme: images and data-light (OFF-06, MOB-25).
 1. **OFF-06:** new `DeferredImage` (`src/ui/DeferredImage.tsx`). In data-light mode a content photo is a "Show photo" button and no `<img>` or request exists until tapped. Used by ship photos (both lists) and chat photos; `MediaImage` (guest's kept pictures) defers the authenticated fetch the same way. `src/ui/dataLightImages.test.tsx` checks both modes, that the screens have no raw `<img>`, and that nothing autoplays (the only `.play()` is the camera preview after the guest taps start). Matrix row moved to Built.
 2. **MOB-25:** read `shrinkPicture`: the canvas redraw drops location and time, so the strip is real where the browser supports it (the server strips again). Delete exists. Still missing: a local preview before upload (the picker sends on choose), so the row stays Partial.
 Limits: decorative icons and the mascot still load in data-light mode (small, cached by the service worker). jsdom only, no device check. Next in group A: MOB-25/MOB-09 preview-before-send, then DSC-05/06/12/13.
+
+## 5i. BM24 result (built, not committed)
+
+Theme: preview before sending (MOB-25). `PicturePicker` now shrinks the chosen picture, shows it with "Nothing has been sent yet", and uploads only when the guest taps "Send this picture"; "Choose another" discards it and revokes the preview URL. `src/ui/picturePreview.test.tsx` checks nothing is uploaded before the tap. Used by every picker (cabin, book, family link, cases). MOB-25 moved to Built.
+Limits: jsdom only, no device check; MOB-09 (passport and tag scan) stays Partial. The matrix Built/Partial totals were not regenerated. Next in group A: DSC-05/06/12/13.

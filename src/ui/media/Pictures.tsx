@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { normalizeMedia, pickProblem, uploadErrorKey, type Media, type MediaPurpose } from '../../domain/media'
 import { useSettings } from '../../hooks/useSettings'
 import { useMediaUrl } from '../../hooks/useMedia'
@@ -42,6 +42,10 @@ export function PicturePicker({ purpose, reference, kind, caption, ready, blocke
   const id = useId()
   const input = useRef<HTMLInputElement>(null)
   const [state, setState] = useState<'idle' | 'busy' | 'saved' | { err: string }>('idle')
+  // The shrunk picture waits here, shown to the guest, until they choose to send it (MOB-25).
+  const [preview, setPreview] = useState<{ body: Blob; url: string } | null>(null)
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url) }, [preview])
+  const reset = () => { if (input.current) input.current.value = '' }
   const choose = async (file: File | undefined) => {
     if (!file) return
     const problem = pickProblem(file.type, file.size, caption ?? '', null)
@@ -49,20 +53,43 @@ export function PicturePicker({ purpose, reference, kind, caption, ready, blocke
     setState('busy')
     try {
       const body = await shrinkPicture(file)
-      const saved = normalizeMedia(await guestMedia.upload(body, { purpose, ref: reference, kind, caption: (caption ?? '').trim() }))
+      setPreview({ body, url: URL.createObjectURL(body) })
+      setState('idle')
+    } catch (e) {
+      setState({ err: uploadErrorKey(e instanceof Error ? e.message : undefined) })
+      reset()
+    }
+  }
+  const send = async () => {
+    if (!preview) return
+    setState('busy')
+    try {
+      const saved = normalizeMedia(await guestMedia.upload(preview.body, { purpose, ref: reference, kind, caption: (caption ?? '').trim() }))
+      setPreview(null)
+      reset()
       setState('saved')
       onSaved(saved)
     } catch (e) {
       setState({ err: uploadErrorKey(e instanceof Error ? e.message : undefined) })
     }
-    if (input.current) input.current.value = ''
   }
+  const discard = () => { setPreview(null); reset(); setState('idle') }
   return (
     <div className="field">
       <label htmlFor={id}>{t('media.choose')}</label>
       <p className="field__hint">{t('media.hint')}</p>
       <input ref={input} id={id} type="file" accept="image/jpeg,image/png" capture={camera ? 'environment' : undefined} disabled={!ready || state === 'busy'} aria-describedby={`${id}-state`} onChange={(e) => void choose(e.target.files?.[0])} />
       {!ready && blockedWhy && <p className="muted">{blockedWhy}</p>}
+      {preview && (
+        <div>
+          <img className="guest-picture" src={preview.url} alt={t('media.preview.alt')} />
+          <p className="muted">{t('media.preview.note')}</p>
+          <div className="button-row">
+            <Button disabled={!ready || state === 'busy'} onClick={() => void send()}>{t('media.preview.send')}</Button>
+            <Button variant="tertiary" disabled={state === 'busy'} onClick={discard}>{t('media.preview.discard')}</Button>
+          </div>
+        </div>
+      )}
       <p id={`${id}-state`} role={typeof state === 'string' ? 'status' : 'alert'} className={typeof state === 'string' ? undefined : 'field__error'}>
         {state === 'busy' ? t('media.sending') : state === 'saved' ? t('media.saved') : state === 'idle' ? '' : t(`media.err.${state.err}` as StringKey)}
       </p>

@@ -293,7 +293,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-22 | P2 | Partial | F | `src/domain/navigation.ts`, `src/ui/onboard/NavigationScreens.tsx` | Compass arrow from the deck graph; device orientation sensor not used (P2) |
 | MOB-23 | P0 | Built | F | `src/push/push.ts`, `src/domain/delivery.ts`, `src/domain/countdowns.ts` | `LocalReminders` shows due reminders while open or on next open (BM19) |
 | MOB-24 | P1 | Built | R | `src/settings/settings.ts`, `src/hooks/visibleInterval.ts` | Battery-aware refresh built in BM3 (`src/data/battery.ts`, `refreshFactor`) |
-| MOB-25 | P1 | Partial | F | `src/ui/media/Pictures.tsx`, `src/media/shrink.ts`, `src/domain/media.ts` | Delete exists and location is stripped on redraw; no preview before sending |
+| MOB-25 | P1 | Built | F | `src/ui/media/Pictures.tsx`, `src/media/shrink.ts`, `src/domain/media.ts` | Preview before sending, delete, and location stripped on redraw |
 
 ## Quality-of-life concepts (QOL)
 
