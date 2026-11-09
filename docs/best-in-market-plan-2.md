@@ -319,3 +319,11 @@ Theme: push-preview redaction (MNG-05). BM41 was not defined in the plan; I took
 - **Server:** `PushRules.Redact` replaces the title and body of payment, travel (flight, tender) and schedule-change notices with "Stanley: something to look at" / "Open the app to see the details." Safety, port, disruption and reminder notices are unchanged. Applied in `PushService` after `WithLink`, so the SMS and email fallback text is covered too; kind, path and params are untouched.
 - **Tests:** server `PreviewsOfMoneyFlightsAndShipReasonsAreRedactedAndSafetyOnesAreNot` (written, not run); the MNG-05 wording guard is now `it` instead of `it.fails`. `npm run test`, `npm run lint`, `npx tsc -b` pass.
 - **Limits:** params (dates, amounts) still travel in the encrypted push payload and the in-app log; only the visible preview is redacted. There is no per-guest "show details" switch. Encryption at rest and export/delete for documents were not read, so MNG-05 stays Partial. No browser check.
+
+## 5ab. BM42 result (built, not committed)
+
+Theme: two wording gaps on money screens (PRE-18, DEB-05). BM42 was not defined in the plan; I took the two `it.fails` wording guards that need only the front end.
+- **PRE-18:** `hub.portSkipped.comp.arrives` now says refunds "usually reach your card in about 5 working days" and that this is an estimate until the card company confirms it.
+- **DEB-05:** the report form shows `case.noReversal` above the send button: sending a case does not mean a charge is reversed, and the outcome is told in the app.
+- **Tests:** both guards in `src/wordingGuards.test.ts` changed from `it.fails` to `it`. `npm run test`, `npm run lint`, `npx tsc -b` and `npm run build` pass.
+- **Limits:** both rows stay Partial. There is no provider-confirmed refund state, and a case shows no owner or response expectation at submission. English only. No browser check. Remaining `it.fails` wording gaps: EMB-01, DEB-04, BOK-05 (all need server or domain work).

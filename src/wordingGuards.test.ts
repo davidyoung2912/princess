@@ -55,12 +55,12 @@ describe('known gaps (it.fails: a pass here means the gap is closed, so turn it 
   })
 
   // proves: DEB-05#1
-  it.fails('DEB-05: says that opening a case does not mean the charge is reversed', () => {
+  it('DEB-05: says that opening a case does not mean the charge is reversed', () => {
     expect(say(/(opening|sending|submitting) (a|the) (case|request).*(not|n.t).*(reverse|refund)/i)).toBe(true)
   })
 
   // proves: PRE-18#1
-  it.fails('PRE-18: labels refund timing as an estimate', () => {
+  it('PRE-18: labels refund timing as an estimate', () => {
     expect(en['hub.portSkipped.comp.arrives']).toMatch(/estimate|expect|usually|about|typically/i)
   })
 

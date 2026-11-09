@@ -160,7 +160,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | PRE-15 | P1 | Partial | F | `src/domain/entitlements.ts`, `src/ui/plan/PackagesScreen.tsx`, `src/ui/account/` packages route | BM20: no expiry or expired history |
 | PRE-16 | P0 | Built | F | `src/domain/medicalCard.ts`, `src/ui/plan/MedicalScreen.tsx`, `src/ui/aboard/SafetyScreens.tsx` | Venue acknowledgement is simulated |
 | PRE-17 | P1 | Partial | F | `src/ui/aboard/GroupTable.tsx` | Group dining across linked cabins unchecked |
-| PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | Refund timing stated as fact, not labelled estimate (BM16) |
+| PRE-18 | P0 | Partial | R | `src/ui/book/Policy.tsx`, `src/domain/policy.ts` | BM42: refund timing now labelled an estimate. Still open: no provider-confirmed state |
 | GTS-01 | P0 | Partial | R | `src/domain/checkin.ts`, `src/domain/checkin.test.ts`, `src/ui/checkin/steps.tsx` | Reconciled: steps say saved; no submitted or accepted state per field |
 | GTS-02 | P0 | Built | F | `src/ui/checkin/` receipt route `/home/check-in/receipt`, `src/domain/checkin.ts` | None found |
 | GTS-03 | P0 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/hooks/useSavedCopy.ts`, `src/offlineDay.test.ts` | Printable pass and dead-phone card unchecked |
@@ -237,7 +237,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | DEB-02 | P0 | Built | R | `src/ui/finish/DisembarkScreen.tsx` | Closed in BM18 |
 | DEB-03 | P0 | Built | F | `src/ui/finish/` bags route `/home/disembark/bags` | None found |
 | DEB-04 | P0 | Partial | R | `src/ui/finish/FinalBillScreen.tsx`, `src/domain/folio.ts` | Folio has no pending, disputed, refunded or adjusted line state (BM16) |
-| DEB-05 | P0 | Partial | R | `src/ui/finish/CasesScreen.tsx` | No "opening a case does not reverse the charge" wording at submission (BM16) |
+| DEB-05 | P0 | Partial | R | `src/ui/finish/CasesScreen.tsx` | BM42: submission says a case does not mean a reversal. Still open: no owner or response expectation shown |
 | DEB-06 | P1 | Built | F | `src/ui/finish/` sweep route `/home/disembark/sweep` | None found |
 | DEB-07 | P1 | Built | F | `src/ui/finish/FinalNightScreen.tsx`, `src/domain/shipVenues.ts` | Departure-day hours unchecked |
 | DEB-08 | P0 | Built | F | `src/ui/finish/CustomsScreen.tsx` | Official sources linked: unchecked |

@@ -69,6 +69,7 @@ function Cases({ v, reload }: { v: CasesView; reload: () => void }) {
             {kind === 'lostItem' && <Field label={t('case.place')} maxLength={CASE_PLACE_MAX} value={place} onChange={(e) => setPlace(e.target.value)} />}
             {needsAmount && <Field label={t('case.amount')} hint={t('case.amountHint')} type="number" inputMode="decimal" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} error={amountBad && amount !== '' ? t('case.amountBad') : undefined} />}
             <ExtraError error={open.error} />
+            <p className="muted">{t('case.noReversal')}</p>
             <Button type="submit" disabled={open.busy || bad}>{open.busy ? t('account.saving') : t('case.send')}</Button>
           </form>
         </Card>

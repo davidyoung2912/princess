@@ -92,8 +92,8 @@ Totals: 292 requirements, 502 clauses, 240 probes (170 found, 70 absent).
 | EMB-01 | P0 | Partial | **GAP** | "Boarded" is a time the guest types (EmbarkState.boardedAt in src/domain/embark.ts). No source field, no manifest or scan status from the server. |
 | DEB-02 | P0 | Built | **OK** | (BM18 closed) No wording or state separating the guest's departure preference from the assignment made by operations. |
 | BOK-05 | P0 | Partial | **GAP** | No fare or terms version is stored at checkout. Only legal documents are versioned (dbo.Acceptances has Version). |
-| PRE-18 | P0 | Partial | **PARTIAL** | Refund timing appears as fact ("Refunds reach your card in 5 working days", hub.portSkipped.comp.arrives), not labelled as an estimate. |
-| DEB-05 | P0 | Partial | **PARTIAL** | Outcomes are worded after a case is resolved (case.outcome.refunded). No wording at submission that opening a case does not mean the charge is reversed. |
+| PRE-18 | P0 | Partial | **PARTIAL** | Refund timing is now worded as an estimate until the card company confirms it (BM42, hub.portSkipped.comp.arrives). Still open: no payment-provider confirmed state, other refund lines not read. |
+| DEB-05 | P0 | Partial | **PARTIAL** | Submission now says a case does not mean the charge is reversed (BM42, case.noReversal). Still open: no owner or response expectation shown at submission. |
 | DEB-04 | P0 | Partial | **PARTIAL** | trustLedger has a refund kind, but folio.ts has no pending, disputed, refunded or adjusted line state; the final bill only adjusts the tip. |
 | IDN-01 | P0 | Partial | **PARTIAL** | (Reconciled) Sign out everywhere built in BM35 (POST /auth/logout-all). Still no device list (needs a sessions table), step-up check or suspicious sign-in notice. |
 | MNG-05 | P0 | Partial | **PARTIAL** | (BM41) Documents are access-scoped on the server; push previews for payment, travel and schedule-change alerts are redacted by PushRules.Redact. Encryption at rest and export/delete not read. |
