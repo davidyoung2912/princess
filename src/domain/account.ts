@@ -115,13 +115,17 @@ export const permissionWorks = (p: PermissionId): boolean => !NOT_YET.includes(p
 export type HelperStatus = 'requested' | 'active' | 'revoked'
 
 /** A family member or friend who can manage the booking for a guest, only with that guest's consent (INC-01). */
-export interface Helper { name: string; relationship: string; permissions: PermissionId[]; status: HelperStatus; /** When the guest last changed it. */ at: number }
+export interface Helper { name: string; relationship: string; permissions: PermissionId[]; status: HelperStatus; /** When the guest last changed it. */ at: number; /** True once the helper accepted with their own account. */ linked: boolean; /** The one-time code to give the helper, until they accept it. */ inviteCode: string | null }
 
 export function normalizeHelper(raw: unknown): Helper | null {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null
   if (!o || typeof o.name !== 'string' || !o.name.trim()) return null
   const status: HelperStatus = o.status === 'active' || o.status === 'revoked' ? o.status : 'requested'
-  return { name: o.name.slice(0, 80), relationship: str(o.relationship, '', 40), permissions: pick(PERMISSIONS, o.permissions), status, at: typeof o.at === 'number' ? o.at : 0 }
+  return { name: o.name.slice(0, 80), relationship: str(o.relationship, '', 40), permissions: pick(PERMISSIONS, o.permissions), status, at: typeof o.at === 'number' ? o.at : 0, linked: o.linked === true, inviteCode: typeof o.inviteCode === 'string' && o.inviteCode ? o.inviteCode : null }
+}
+
+/** The code as shown: two groups of four, easier to read out. Accepts any case and separators. */
+export const formatInviteCode = (code: string): string => { const c = code.replace(/[^a-z0-9]/gi, '').toUpperCase(); return c.length > 4 ? `${c.slice(0, 4)}-${c.slice(4)}` : c
 }
 
 /** Whether a helper may do something: only while active, and view is needed for everything. */

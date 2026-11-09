@@ -96,7 +96,7 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 
     private const string LatestHelper = """
-        SELECT TOP 1 HelperName AS Name, Relationship, Permissions, Status, ChangedAt
+        SELECT TOP 1 GuestUserId, HelperUserId, InviteCode, HelperName AS Name, Relationship, Permissions, Status, ChangedAt
         FROM dbo.HelperLinks WHERE GuestUserId = @guestUserId
         ORDER BY CASE WHEN Status <> 'revoked' THEN 0 ELSE 1 END, ChangedAt DESC, Id DESC
         """;
@@ -107,24 +107,35 @@ public sealed class DapperAccountStore(IDbConnectionFactory db, UserCache users,
         return await c.QueryFirstOrDefaultAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId }, null, ct));
     }
 
-    public async Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, DateTime now, CancellationToken ct)
+    public async Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, string inviteCode, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
-            UPDATE dbo.HelperLinks SET HelperName = @name, Relationship = @relationship, Permissions = @permissions, Status = @status, ChangedAt = @now, UpdatedAt = @now
+            UPDATE dbo.HelperLinks SET InviteCode = CASE WHEN HelperUserId IS NULL THEN ISNULL(InviteCode, @inviteCode) END, HelperName = @name, Relationship = @relationship, Permissions = @permissions, Status = @status, ChangedAt = @now, UpdatedAt = @now
             WHERE GuestUserId = @guestUserId AND Status <> 'revoked';
             IF @@ROWCOUNT = 0
-              INSERT INTO dbo.HelperLinks (GuestUserId, HelperName, Relationship, Permissions, Status, ChangedAt)
-              VALUES (@guestUserId, @name, @relationship, @permissions, @status, @now);
-            """, new { guestUserId, name, relationship, permissions, status, now }, null, ct));
+              INSERT INTO dbo.HelperLinks (GuestUserId, HelperName, Relationship, Permissions, Status, ChangedAt, InviteCode)
+              VALUES (@guestUserId, @name, @relationship, @permissions, @status, @now, @inviteCode);
+            """, new { guestUserId, name, relationship, permissions, status, inviteCode, now }, null, ct));
         return (await c.QueryFirstAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId }, null, ct)));
+    }
+
+    public async Task<HelperRecord?> AcceptHelperInviteAsync(long helperUserId, string code, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var guestId = await c.QuerySingleOrDefaultAsync<long?>(Sql.Cmd("""
+            UPDATE dbo.HelperLinks SET HelperUserId = @helperUserId, InviteCode = NULL, ChangedAt = @now, UpdatedAt = @now
+            OUTPUT inserted.GuestUserId
+            WHERE InviteCode = @code AND Status <> 'revoked' AND GuestUserId <> @helperUserId
+            """, new { helperUserId, code, now }, null, ct));
+        return guestId is null ? null : await c.QueryFirstOrDefaultAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId = guestId.Value }, null, ct));
     }
 
     public async Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         var changed = await c.ExecuteAsync(Sql.Cmd(
-            "UPDATE dbo.HelperLinks SET Status = 'revoked', ChangedAt = @now, UpdatedAt = @now WHERE GuestUserId = @guestUserId AND Status <> 'revoked'",
+            "UPDATE dbo.HelperLinks SET Status = 'revoked', InviteCode = NULL, ChangedAt = @now, UpdatedAt = @now WHERE GuestUserId = @guestUserId AND Status <> 'revoked'",
             new { guestUserId, now }, null, ct));
         return changed == 0 ? null : await c.QueryFirstOrDefaultAsync<HelperRecord>(Sql.Cmd(LatestHelper, new { guestUserId }, null, ct));
     }

@@ -164,6 +164,49 @@ public class AccountApiTests : JourneyWorld
         Assert.Equal(["helper", "helper"], F.Journey.History.Where(h => h.UserId == Priya.Id).Select(h => h.What));
     }
 
+    [Fact]
+    public async Task ABadCodeOrASpentOrRevokedOneLinksNothing()
+    {
+        var guest = await SignIn(Priya);
+        var saved = await Call(HttpMethod.Put, "/api/v1/me/helper", guest, new SaveHelperRequest("Paul Abernathy", "Son", ["view"], "active"));
+        var code = saved.Json.GetProperty("inviteCode").GetString()!;
+        Assert.Equal(8, code.Length);
+        Assert.False(saved.Json.GetProperty("linked").GetBoolean());
+
+        var paul = await SignIn(Paul);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest("123"))).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest("ZZZZZZZZ"))).Status);
+        // The guest cannot accept their own code.
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Post, "/api/v1/me/helper/accept", guest, new AcceptHelperRequest(code))).Status);
+
+        // Revoking spends the code.
+        await Call(HttpMethod.Delete, "/api/v1/me/helper", guest);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest(code))).Status);
+    }
+
+    [Fact]
+    public async Task AGuestsCodeTiesTheHelpersAccountToTheGrantOnce()
+    {
+        var guest = await SignIn(Priya);
+        var saved = await Call(HttpMethod.Put, "/api/v1/me/helper", guest, new SaveHelperRequest("Paul Abernathy", "Son", ["view"], "active"));
+        var code = saved.Json.GetProperty("inviteCode").GetString()!;
+        // Saving again keeps the same code until it is used.
+        Assert.Equal(code, (await Call(HttpMethod.Put, "/api/v1/me/helper", guest, new SaveHelperRequest("Paul Abernathy", "Son", ["view", "payments"], "active"))).Json.GetProperty("inviteCode").GetString());
+
+        var paul = await SignIn(Paul);
+        var spaced = $"{code[..4].ToLowerInvariant()}-{code[4..]}";
+        var accepted = await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest(spaced));
+        Assert.Equal(HttpStatusCode.OK, accepted.Status);
+        Assert.Equal("Son", accepted.Json.GetProperty("relationship").GetString());
+        Assert.Equal(Paul.Id, F.Journey.Helpers.Single(h => h.GuestId == Priya.Id).Helper.HelperUserId);
+
+        var after = await Get("/api/v1/me/helper", guest);
+        Assert.True(after.Json.GetProperty("linked").GetBoolean());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, after.Json.GetProperty("inviteCode").ValueKind);
+        // A code works once.
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Post, "/api/v1/me/helper/accept", paul, new AcceptHelperRequest(code))).Status);
+    }
+
     [Theory]
     [InlineData("", "active")]
     [InlineData("Paul", "revoked")]

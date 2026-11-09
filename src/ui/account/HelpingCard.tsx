@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { HelpedGuest } from '../../api/types'
 import { BRAND_NAMES, validateCard } from '../../domain/account'
 import { formatDate } from '../../domain/cruise'
@@ -19,6 +19,11 @@ import { ActionError } from './parts'
 /** People you help (BM8): the guests who made you their helper, and, with their Payments permission, paying their balance with their own saved card. Shown only when someone has. */
 export function HelpingCard() {
   const list = useMine(() => api.helping.list())
+  const { retry } = list
+  useEffect(() => {
+    window.addEventListener('princess:helping-changed', retry)
+    return () => window.removeEventListener('princess:helping-changed', retry)
+  }, [retry])
   if (!list.data || list.data.length === 0) return null
   return (
     <Card labelledBy="helping-h">

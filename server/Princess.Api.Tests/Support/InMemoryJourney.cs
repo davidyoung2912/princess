@@ -61,12 +61,23 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
     public Task<HelperRecord?> GetHelperAsync(long guestUserId, CancellationToken ct) =>
         Task.FromResult(Helpers.Where(h => h.GuestId == guestUserId).Select(h => h.Helper).OrderBy(h => h.Status == "revoked" ? 1 : 0).ThenByDescending(h => h.ChangedAt).FirstOrDefault());
 
-    public Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, DateTime now, CancellationToken ct)
+    public Task<HelperRecord> UpsertHelperAsync(long guestUserId, string name, string relationship, string permissions, string status, string inviteCode, DateTime now, CancellationToken ct)
     {
+        var before = Helpers.FirstOrDefault(h => h.GuestId == guestUserId && h.Helper.Status != "revoked").Helper;
         Helpers.RemoveAll(h => h.GuestId == guestUserId && h.Helper.Status != "revoked");
-        var helper = new HelperRecord { Name = name, Relationship = relationship, Permissions = permissions, Status = status, ChangedAt = now };
+        var helper = new HelperRecord { GuestUserId = guestUserId, HelperUserId = before?.HelperUserId, InviteCode = before?.HelperUserId is null ? before?.InviteCode ?? inviteCode : null, Name = name, Relationship = relationship, Permissions = permissions, Status = status, ChangedAt = now };
         Helpers.Add((guestUserId, helper));
         return Task.FromResult(helper);
+    }
+
+    public Task<HelperRecord?> AcceptHelperInviteAsync(long helperUserId, string code, DateTime now, CancellationToken ct)
+    {
+        var link = Helpers.FirstOrDefault(h => h.Helper.InviteCode == code && h.Helper.Status != "revoked" && h.GuestId != helperUserId).Helper;
+        if (link is null) return Task.FromResult<HelperRecord?>(null);
+        link.HelperUserId = helperUserId;
+        link.InviteCode = null;
+        link.ChangedAt = now;
+        return Task.FromResult<HelperRecord?>(link);
     }
 
     public Task<HelperRecord?> RevokeHelperAsync(long guestUserId, DateTime now, CancellationToken ct)
@@ -74,6 +85,7 @@ public sealed class InMemoryJourney : IAccountStore, ITripStore, IInboxStore, IP
         var live = Helpers.FirstOrDefault(h => h.GuestId == guestUserId && h.Helper.Status != "revoked");
         if (live.Helper is null) return Task.FromResult<HelperRecord?>(null);
         live.Helper.Status = "revoked";
+        live.Helper.InviteCode = null;
         live.Helper.ChangedAt = now;
         return Task.FromResult<HelperRecord?>(live.Helper);
     }

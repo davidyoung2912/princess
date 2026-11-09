@@ -103,9 +103,35 @@ public sealed class AccountService(
         // An active helper with nothing granted would be a helper who can see nothing; the database refuses it too.
         if (req.Status == "active" && permissions.Length == 0) throw ApiException.Invalid("permissions");
         var now = await clock.NowAsync(actor, ct);
-        var saved = await accounts.UpsertHelperAsync(actor.Id, AccountRules.Trunc(name, 80), AccountRules.Trunc(req.Relationship?.Trim(), 40), string.Join(',', permissions), req.Status, now, ct);
+        var saved = await accounts.UpsertHelperAsync(actor.Id, AccountRules.Trunc(name, 80), AccountRules.Trunc(req.Relationship?.Trim(), 40), string.Join(',', permissions), req.Status, NewInviteCode(), now, ct);
         await accounts.AddHistoryAsync(actor.Id, actor.Id, "helper", $"{saved.Name}: {saved.Status}", now, ct);
         return ToDto(saved)!;
+    }
+
+    // Eight characters without 0/O/1/I/L, so a code read aloud or off a screen is hard to mistype.
+    private const string CodeAlphabet = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+    public static string NewInviteCode() => string.Create(8, 0, (span, _) =>
+    {
+        for (var i = 0; i < span.Length; i++) span[i] = CodeAlphabet[System.Security.Cryptography.RandomNumberGenerator.GetInt32(CodeAlphabet.Length)];
+    });
+
+    /// <summary>Upper case with spaces and dashes removed, so "abcd-2345" and "ABCD2345" are the same code.</summary>
+    public static string NormalizeInviteCode(string? raw) => new((raw ?? "").Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
+
+    /// <summary>The helper, signed in as themself, accepts a guest's code: the grant is tied to their account and the code is spent.</summary>
+    public async Task<AcceptedHelperDto> AcceptHelperInviteAsync(UserRecord actor, AcceptHelperRequest req, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        var code = NormalizeInviteCode(req.Code);
+        if (code.Length != 8) throw ApiException.Invalid("code");
+        var now = await clock.NowAsync(actor, ct);
+        var link = await accounts.AcceptHelperInviteAsync(actor.Id, code, now, ct) ?? throw ApiException.NotFound();
+        var guest = await accounts.GetProfileAsync(link.GuestUserId, ct);
+        var guestName = $"{guest?.FirstName} {guest?.LastName}".Trim();
+        await accounts.AddHistoryAsync(link.GuestUserId, actor.Id, "helper", $"{link.Name}: linked", now, ct);
+        await accounts.AddHistoryAsync(actor.Id, actor.Id, "helper", $"Helping {guestName}", now, ct);
+        return new AcceptedHelperDto(guestName, link.Relationship);
     }
 
     public async Task<HelperDto> RevokeHelperAsync(UserRecord actor, CancellationToken ct)
@@ -118,7 +144,7 @@ public sealed class AccountService(
     }
 
     private static HelperDto? ToDto(HelperRecord? h) => h is null ? null : new(
-        h.Name, h.Relationship, h.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), h.Status, TripRules.ToMs(h.ChangedAt));
+        h.Name, h.Relationship, h.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), h.Status, TripRules.ToMs(h.ChangedAt), h.HelperUserId is not null, h.InviteCode);
 
     public async Task<List<HistoryEntryDto>> HistoryAsync(UserRecord actor, CancellationToken ct) =>
         (await accounts.ListHistoryAsync(actor.Id, ct)).Select(h => new HistoryEntryDto(h.PublicId, TripRules.ToMs(h.At), h.By, h.What, h.Detail)).ToList();

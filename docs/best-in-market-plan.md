@@ -123,6 +123,14 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Gap found, not fixed**: nothing ever sets `HelperLinks.HelperUserId`. The guest types the helper's name only (`UpsertHelperAsync` inserts no user id), so a helper's own account is never tied to the grant. Only the seeded link (Paul Abernathy for Ruth) works end to end. Documents and Profile helper access has the same limit. It needs a way to link the grant to a real account (the guest enters the helper's email or account number, or the helper accepts an invite code). That is a design choice for you and should be BM9.
 - **Still not done**: read-only folio, check-in, booking and message permissions, the shared relationship type (IDN-04).
 
+### BM9. Helper accepts an invitation code (built, not committed)
+
+- **Choice (yours)**: invite code, not the helper's email, so the helper consents and the guest never learns whether an email has an account.
+- **Schema**: `HelperLinks.InviteCode VARCHAR(12) NULL` with a filtered unique index (added idempotently in `db/01-schema.sql`; re-run the schema script).
+- **Server (written, not compiled or run)**: saving a helper makes an 8-character code (no 0/O/1/I/L) while the grant has no `HelperUserId`; saving again keeps it. `POST /api/v1/me/helper/accept { code }` (`AccountService.AcceptHelperInviteAsync`) ties the signed-in account to the grant, spends the code and writes history for both people. Case, spaces and dashes are ignored. 400 malformed, 404 unknown, spent, revoked or your own code, 403 supervised. Revoking clears the code. `GET /me/helper` now returns `linked` and `inviteCode`. Two C# tests and the swagger list were added; run them yourself.
+- **Front end**: the guest sees the code (as `ABCD-2345`) on `/me/helper` until it is accepted, then "has accepted"; an "Accept an invitation" card on the same screen for the helper, which refreshes "People you help". `api.account.acceptHelperInvite`, `formatInviteCode`, three tests.
+- **Not done**: no rate limit specific to guessing codes (32^8 space, and the normal limits apply), no code expiry or regenerate button (revoke and add again), email/SMS delivery of the code, read-only folio, check-in, booking and message permissions, IDN-04.
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?

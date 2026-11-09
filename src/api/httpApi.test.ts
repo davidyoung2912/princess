@@ -80,6 +80,13 @@ describe('REST account groups', () => {
     expect(calls.map((c) => c.path)).toContain('/me/helping')
   })
 
+  it('sends an invitation code to accept a helper grant (BM9)', async () => {
+    const { http, calls } = fake({ '/me/helper/accept': { guestName: 'Ruth', relationship: 'Mother' } })
+    const r = await createHttpGroups(http).groups.account.acceptHelperInvite('ABCD2345')
+    expect(r.guestName).toBe('Ruth')
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/me/helper/accept', body: { code: 'ABCD2345' } })
+  })
+
   it('has no current trip to act on when the person has none', async () => {
     const { http } = fake({ '/trips': { upcoming: [], past: [] } })
     await expect(createHttpGroups(http).groups.payments.get()).rejects.toMatchObject({ code: 'notFound' })

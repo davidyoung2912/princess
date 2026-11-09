@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { accessRows, activeCount, type AccessItem, type AccessRow } from '../../domain/access'
 import type { Helper, PermissionId } from '../../domain/account'
-import { NOT_YET, PERMISSIONS, permissionWorks } from '../../domain/account'
+import { NOT_YET, PERMISSIONS, formatInviteCode, permissionWorks } from '../../domain/account'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -30,6 +30,7 @@ export function HelperScreen() {
       <Load state={helper}>
         {(h) => <HelperBody key={h?.status ?? 'none'} helper={h} refresh={helper.retry} />}
       </Load>
+      <AcceptInvite />
       <HelpingCard />
       <WhoCanSee helper={helper.data ?? null} />
       <Card info labelledBy="alt-h">
@@ -55,6 +56,44 @@ function Permissions({ value, onChange }: { value: PermissionId[]; onChange: (ne
   )
 }
 
+/** BM9: until the helper accepts with their own account the grant is only a name, so the guest hands over a one-time code. */
+function InviteCode({ helper }: { helper: Helper }) {
+  if (helper.linked) return <p className="muted">{t('helper.linked', { name: helper.name })}</p>
+  if (!helper.inviteCode) return null
+  return (
+    <Card labelledBy="code-h">
+      <h2 id="code-h">{th('helper.code.title')}</h2>
+      <p>{t('helper.code.body', { name: helper.name })}</p>
+      <p><strong aria-label={t('helper.code.label', { name: helper.name })} style={{ fontSize: '1.5rem', letterSpacing: '0.15em' }}>{formatInviteCode(helper.inviteCode)}</strong></p>
+    </Card>
+  )
+}
+
+/** BM9: the helper enters the code a guest gave them. */
+function AcceptInvite() {
+  const [code, setCode] = useState('')
+  const [bad, setBad] = useState(false)
+  const [done, setDone] = useState<string | null>(null)
+  const accept = useAction((c: string) => api.account.acceptHelperInvite(c))
+  const go = async () => {
+    const clean = code.replace(/[^a-z0-9]/gi, '')
+    setBad(clean.length !== 8)
+    if (clean.length !== 8) return
+    const r = await accept.run(clean)
+    if (r) { setDone(r.guestName); setCode(''); window.dispatchEvent(new Event('princess:helping-changed')) }
+  }
+  return (
+    <Card labelledBy="accept-h">
+      <h2 id="accept-h">{th('helper.accept.title')}</h2>
+      <p>{t('helper.accept.body')}</p>
+      <Field label={t('helper.accept.label')} value={code} onChange={(e) => setCode(e.target.value)} error={bad ? t('helper.accept.bad') : undefined} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
+      {accept.error?.code === 'notFound' ? <p role="alert" className="field__error">{t('helper.accept.notFound')}</p> : <ActionError error={accept.error} />}
+      <p role="status">{done ? t('helper.accept.done', { name: done }) : ''}</p>
+      <Button disabled={accept.busy} onClick={() => void go()}>{t('helper.accept.button')}</Button>
+    </Card>
+  )
+}
+
 function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () => void }) {
   const [name, setName] = useState(helper?.name ?? '')
   const [relationship, setRelationship] = useState(helper?.relationship ?? '')
@@ -77,6 +116,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
     <>
       {helper?.status === 'revoked' && <Banner kind="info" title={t('helper.revoked', { name: helper.name, date: formatMoment(helper.at) })} />}
       {requested && <Banner kind="warning" title={t('helper.requested', { name: helper!.name, relationship: helper!.relationship.toLowerCase() })}><p>{t('helper.requestedBody')}</p></Banner>}
+      {helper && helper.status !== 'revoked' && <InviteCode helper={helper} />}
       {active && (
         <Card labelledBy="active-h">
           <h2 id="active-h">{helper!.name}</h2>

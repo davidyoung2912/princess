@@ -47,6 +47,10 @@ public sealed class ProfileRecord
 
 public sealed class HelperRecord
 {
+    public long GuestUserId { get; set; }
+    public long? HelperUserId { get; set; }
+    /// <summary>Set until the helper accepts it with their own account (BM9).</summary>
+    public string? InviteCode { get; set; }
     public string Name { get; set; } = "";
     public string Relationship { get; set; } = "";
     public string Permissions { get; set; } = "";

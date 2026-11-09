@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ageOn, helperMay, nameChange, normalizeHelper, validateCard, validateProfile, type Profile } from './account'
+import { ageOn, formatInviteCode, helperMay, nameChange, normalizeHelper, validateCard, validateProfile, type Profile } from './account'
 import { DEFAULT_HELD, docStatus, guestDocuments, normalizeHeld, passportValidUntil, requirementsFor } from './documents'
 import { CONTACT_OPTIONS, contactStatus, FAQS, searchFaqs, ticketStatus } from './help'
 import { buildNotices, DEFAULT_PREFS, inQuietHours, normalizePrefs } from './notifications'
@@ -149,6 +149,14 @@ describe('profile', () => {
     expect(helperMay({ ...h, permissions: ['payments'] }, 'payments')).toBe(false)
     expect(helperMay(null, 'view')).toBe(false)
     expect(normalizeHelper({ name: ' ' })).toBeNull()
+  })
+
+  it('reads the invitation state and shows the code in two groups (BM9)', () => {
+    const open = normalizeHelper({ name: 'Paul', status: 'active', inviteCode: 'ABCD2345' })!
+    expect(open.linked).toBe(false)
+    expect(open.inviteCode).toBe('ABCD2345')
+    expect(normalizeHelper({ name: 'Paul', linked: true, inviteCode: null })).toMatchObject({ linked: true, inviteCode: null })
+    expect(formatInviteCode('abcd 2345')).toBe('ABCD-2345')
   })
 })
 

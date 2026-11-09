@@ -42,6 +42,9 @@ public static class JourneyEndpoints
         helper.MapPut("", async (SaveHelperRequest body, ICurrentUser me, AccountService svc, CancellationToken ct) =>
                 Results.Ok(await svc.SaveHelperAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Names a helper and what they may do; nothing is shared until status is active.");
+        helper.MapPost("/accept", async (AcceptHelperRequest body, ICurrentUser me, AccountService svc, CancellationToken ct) =>
+                Results.Ok(await svc.AcceptHelperInviteAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("The helper enters the one-time code the guest gave them; their account is tied to that guest's grant. 404 for an unknown, spent or revoked code; 400 for a malformed one.");
         helper.MapDelete("", async (ICurrentUser me, AccountService svc, CancellationToken ct) =>
                 Results.Ok(await svc.RevokeHelperAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Ends the helper's access at once.");
