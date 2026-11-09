@@ -6,6 +6,7 @@ import { useSettings } from '../hooks/useSettings'
 import { th, t } from '../i18n'
 import { listedScreens } from '../routes/stageNav'
 import { SCREEN_ICONS } from './screenIcons'
+import { EditFavourites } from './EditFavourites'
 
 /** The screens the guest pinned, as a row of chips at the top of Home. Shows nothing until something is pinned. */
 export function ShortcutBar() {
@@ -21,6 +22,7 @@ export function ShortcutBar() {
           return <li key={screen.id}><Link to={to} className="chip shortcut-bar__chip"><Icon size={16} aria-hidden="true" />{th(screen.titleKey)}</Link></li>
         })}
       </ul>
+      <EditFavourites />
     </nav>
   )
 }

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties } from 'react'
 import logo from '../assets/princess.webp'
 import stanley from '../assets/stanley-small.png'
@@ -19,6 +19,10 @@ import { Help, Search } from './icons'
 import { SCREEN_ICONS } from './screenIcons'
 import { FALLBACK_ICON, TAB_ICONS } from './tabIcons'
 import { HelpSheet } from './HelpSheet'
+import { PageSkeleton } from './Skeleton'
+import { ShortcutsSheet } from './ShortcutsSheet'
+import { useShortcuts } from '../hooks/useShortcuts'
+import type { Shortcut } from '../domain/ease'
 import { StanleyDialog } from './ai/StanleyDialog'
 import { subscribeStanleyRequest, takeStanleyRequest } from '../ai/stanleyOpen'
 import { dismissDot, dotVisible, subscribeDot } from '../ai/stanleyDot'
@@ -60,6 +64,9 @@ export function Shell() {
   const [stanleyOpen, setStanleyOpen] = useState(false)
   const [prefill, setPrefill] = useState('')
   useEffect(() => subscribeStanleyRequest(() => { const r = takeStanleyRequest(); if (r) { setPrefill(r.prefill); setStanleyOpen(true) } }), [])
+  const [keysOpen, setKeysOpen] = useState(false)
+  const onShortcut = useCallback((s: Shortcut) => { if (s.action === 'help') setKeysOpen(true); else if (s.to) navigate(s.to) }, [navigate])
+  useShortcuts(onShortcut)
   const [announcement, setAnnouncement] = useState('')
   const [settings] = useSettings()
   const dot = useSyncExternalStore(subscribeDot, dotVisible, () => false)
@@ -196,12 +203,13 @@ export function Shell() {
         {route && !route.public && <BrowseDepthNote />}
         {route && !route.public && <TipCard id={tipIdFor(landing ? undefined : screen?.id, landing?.key)} />}
         {route && !route.public && !landing && <StanleyCoach screenId={screen?.id} />}
-        <Suspense fallback={<p role="status" className="page">{t('shell.loading')}</p>}>
+        <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>
         {route && !route.public && <StanleyChips screenId={landing ? (landing.key === 'home' ? undefined : `tab.${landing.key}`) : screen?.id ?? 'none'} stage={stage} onAsk={() => setStanleyOpen(true)} />}
       </main>
       <div className="visually-hidden" role="status" aria-live="polite">{announcement}</div>
+      {keysOpen && <ShortcutsSheet onClose={() => setKeysOpen(false)} />}
       {helpOpen && <HelpSheet screenId={screen?.id} onAskStanley={() => setStanleyOpen(true)} onClose={() => setHelpOpen(false)} />}
       {stanleyOpen && <StanleyDialog prefill={prefill} onClose={() => { setStanleyOpen(false); setPrefill('') }} />}
     </div>

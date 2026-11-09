@@ -1,3 +1,4 @@
+import { ShowMe } from '../ShowMe'
 import { Link } from 'react-router'
 import { asPortDayCopy } from '../../api/guards'
 import type { PortDayView, TenderInfo, TourToday } from '../../api/types'
@@ -89,6 +90,7 @@ function Tender({ v, tender }: { v: PortDayView; tender: TenderInfo }) {
         <div><dt>{t('tender.last')}</dt><dd>{t('tender.lastAt', { ship: shipTime(tender.lastTenderAt), local: local(tender.lastTenderAt) })}</dd></div>
       </dl>
       <p>{t('tender.priority')}</p>
+      <p><ShowMe id="tender" /></p>
       <p>{tender.assistance ? t('tender.assist') : t('tender.assistAsk')} <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </Card>
   )

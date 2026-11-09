@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react'
 import { report } from './diagnostics/watch'
 import { t, th } from './i18n'
+import { StanleyPose } from './ui/StanleyPose'
 
 interface Props {
   children: ReactNode
@@ -47,6 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children
     return (
       <main className="page" role="alert">
+        <StanleyPose pose="oops" size={96} />
         <h1>{th('error.title')}</h1>
         <p>{staleFiles(error) ? t('error.stale') : t('error.body')}</p>
         <p>{t('error.help')}</p>

@@ -3,6 +3,8 @@ import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
 import { Link } from 'react-router'
 import { PORTS } from '../../domain/sailings'
+import { searchChips } from '../../domain/ease'
+import { ABOARD_STAGES } from '../../routes/stageHome'
 import type { Recent } from '../../domain/recentSearches'
 import { clearRecent, loadRecent, rememberSearch } from '../../settings/recentSearches'
 import { answerCards } from '../../domain/answerCards'
@@ -93,6 +95,7 @@ export function SearchScreen() {
   const remember = (item: Recent) => setRecent(rememberSearch(recent, item))
   const forget = () => { clearRecent(); setRecent([]) }
   const { stage } = useJourneyPosition()
+  const chips = searchChips(ABOARD_STAGES.includes(stage))
   const now = searchContent(query, screenHits(t, stage), (to) => visibleAt(stage, to))
   // Screens of an earlier stage come after, labelled, and open from the result.
   const earlier = searchContent(query, screenHits(t, stage, true), (to) => isFromEarlier(stage, to)).filter((h) => !now.some((n) => n.to === h.to))
@@ -111,6 +114,12 @@ export function SearchScreen() {
       </form>
       <p role="status" className="muted">{enough ? t('search.count', { count: hits.length }) : ''}</p>
       {enough && hits.length === 0 && <Banner kind="info" title={t('search.none')}><p>{t('search.noneBody')} <Link to="/me/help">{t('route.helpCentre')}</Link></p></Banner>}
+      {!enough && (
+        <section aria-labelledby="chips-h">
+          <h2 id="chips-h">{th('search.try')}</h2>
+          <ul className="chip-row">{chips.map((c) => <li key={c}><button type="button" className="chip" onClick={() => setQuery(c)}>{c}</button></li>)}</ul>
+        </section>
+      )}
       {!enough && recent.length > 0 && (
         <section aria-labelledby="recent-h">
           <h2 id="recent-h">{th('search.recent')}</h2>

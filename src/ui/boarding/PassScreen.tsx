@@ -19,6 +19,7 @@ import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
+import { ShowMe } from '../ShowMe'
 import { Printer } from '../icons'
 import { SyncChip } from '../SyncChip'
 import { LoadError } from '../discover/parts'
@@ -62,6 +63,7 @@ export function PassBody({ pass, offline, reload, signedIn = true }: { pass: Boa
         </Banner>
       )}
       <p className="muted">{t('trip.booking', { number: pass.number })} · {formatDate(pass.departure)}</p>
+      {pass.checkinDone && <ShowMe id="gangway" />}
       <ul className="pass-list">
         {pass.passes.map((p) => (
           <li key={p.id} className="pass">

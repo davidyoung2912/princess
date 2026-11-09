@@ -1,3 +1,4 @@
+import { ShowMe } from '../ShowMe'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asMusterView } from '../../api/guards'
@@ -30,6 +31,7 @@ export function MusterScreen() {
   return (
     <div className="page">
       <p>{t('muster.intro')}<StanleyExplain term="muster" /></p>
+      <p><ShowMe id="muster" /></p>
       <Saved copy={copy}>{(m) => <Station m={m} reload={copy.retry} />}</Saved>
       <Briefing />
       <Alternatives />

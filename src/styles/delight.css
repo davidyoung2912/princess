@@ -125,3 +125,21 @@ body, table, time, input, .price__amount, .fare__total, .booking-number, .trip-c
 :root[data-motion='full'] .sailaway__wake path { stroke-dasharray: 6 5; animation: sail-wake 2s linear infinite; }
 @keyframes sail-wake { to { stroke-dashoffset: -22; } }
 :root[data-light='on'] .sailaway__wake path { animation: none; }
+
+/* Ease of use (look and feel L5): skeletons, favourites editor, "Show me" steps. */
+.skeleton__bar, .skeleton__card { background: linear-gradient(90deg, var(--surface-info) 25%, var(--surface) 50%, var(--surface-info) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s linear infinite; border-radius: var(--radius-card); }
+.skeleton__bar { height: 1rem; margin-block: var(--space-3); max-inline-size: 32rem; }
+.skeleton__bar--title { height: 1.75rem; max-inline-size: 16rem; }
+.skeleton__card { height: 7rem; margin-block: var(--space-3); }
+@keyframes skeleton-shimmer { to { background-position: -200% 0; } }
+:root[data-motion='reduced'] .skeleton__bar, :root[data-motion='reduced'] .skeleton__card { animation: none; background: var(--surface-info); }
+@media (prefers-reduced-motion: reduce) { .skeleton__bar, .skeleton__card { animation: none; background: var(--surface-info); } }
+.shortcut-bar__edit { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target-min); }
+.favs { list-style: none; padding: 0; display: grid; gap: var(--space-2); }
+.favs li { display: flex; align-items: center; gap: var(--space-2); }
+.favs li span { flex: 1; }
+.favs .icon-btn:disabled { opacity: 0.4; }
+.showme { list-style: none; padding: 0; display: grid; gap: var(--space-3); margin-block-end: var(--space-4); }
+.showme__step { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--surface-info); border-radius: var(--radius-card); }
+.showme__step p { margin: 0; }
+kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 0.4em; font-family: inherit; background: var(--surface); }
