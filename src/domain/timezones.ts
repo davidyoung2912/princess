@@ -25,7 +25,9 @@ export function zonedToEpoch(date: string, time: string, zone: string): number {
   const [h, mi] = time.split(':').map(Number)
   const guess = Date.UTC(y, mo - 1, d, h, mi)
   const first = guess - offsetMinutes(guess, zone) * 60_000
-  return guess - offsetMinutes(first, zone) * 60_000
+  const second = guess - offsetMinutes(first, zone) * 60_000
+  // A wall time the clocks skipped does not round-trip; the first estimate is then the later side of the change.
+  return timeIn(second, zone) === `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}` ? second : first
 }
 
 /** The calendar date ("2027-03-21") on a wall clock in `zone`. */

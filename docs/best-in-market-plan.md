@@ -1,6 +1,6 @@
 # Best-in-market plan (BM)
 
-Status: **Written 2026-11-08. Phases BM1 and BM2 are built; BM3 to BM5 are proposed and wait for approval. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+Status: **Written 2026-11-08. Phases BM1 to BM4 are built; BM5 is proposed and wait for approval. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
 
 ## 1. How this was done, and how far to trust it
 
@@ -87,9 +87,12 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Dropped**: update-hold (MOB-02 is met by design, see the matrix).
 - **Not done, moved on**: guest-chosen capsule download (MOB-03) and local reminder fallback (MOB-23). Both need a fetch/schedule design and are proposed for a later phase. The test result is not stored (the audit gate limits `localStorage`), so "last test" shows only for the visit.
 
-### BM4. Time and calendar proof
+### BM4. Time and calendar proof (built, not committed)
 
-DST and date-line tests for the three clocks (QOL-21, POR-02, MOB-14); calendar export update and cancel semantics (MOB-15).
+- **Time tests**: `src/domain/timeIntelligence.test.ts` (23- and 25-hour days, skipped times, offset change across a clock change, Cancun vs Chicago gap, date line, Samoa's skipped day, half-hour zones, port clock at sea, date arithmetic edges).
+- **Bug found and fixed**: `zonedToEpoch` put a wall time skipped by spring-forward (02:30 on 14 March) an hour *before* the change, against its own doc comment. It now lands just after.
+- **Calendar (MOB-15)**: `IcsEvent` gains `sequence` (written as `SEQUENCE`, default 0) and `cancelled` (`STATUS:CANCELLED`; a file of only cancelled events is `METHOD:CANCEL`). Uids were already stable per booking item. Tests: `src/domain/calendar.test.ts`.
+- **Not done**: no caller sends a higher sequence or a cancel yet; that needs the booking-change flow to know the previous version.
 
 ### BM5. Permissions model check
 

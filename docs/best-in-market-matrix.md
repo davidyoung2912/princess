@@ -208,7 +208,7 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | SEA-24 | P1 | Built | F | `src/ui/extras/HealthScreens.tsx`, `src/domain/health.ts` | None found |
 | SEA-25 | P0 | Built | F | `src/settings/settings.ts`, `src/ui/extras/WifiScreen.tsx` | Save-data signal only; battery not (MOB-24) |
 | POR-01 | P0 | Built | F | `src/ui/onboard/PortPilot.tsx`, `src/domain/portPilot.ts`, `src/domain/portPilot.test.ts` | None found |
-| POR-02 | P0 | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | No explicit DST or date-line test. BM4 |
+| POR-02 | P0 | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
 | POR-03 | P0 | Built | F | `src/ui/onboard/PortGuideScreen.tsx`, `src/domain/portsServed.ts` | Download progress per port unchecked |
 | POR-04 | P0 | Built | F | `src/ui/onboard/PortCard.tsx`, `src/domain/excursions.ts` | None found |
 | POR-05 | P0 | Built | F | `src/domain/tender.ts`, `src/ui/discover/TenderOutlook.tsx`, `src/ui/onboard/PortDayScreen.tsx` | Feed simulated |
@@ -272,8 +272,8 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | MOB-11 | P1 | Built | F | `src/hooks/useWakeLock.ts`, `src/hooks/useWakeLock.test.tsx`, `src/ui/boarding/PassScreen.tsx` | Muster card and map route use unchecked |
 | MOB-12 | P0 | Built | F | `src/styles`, `src/ui/a11y.test.tsx` | Touch target size asserted only by the audit |
 | MOB-13 | P1 | Partial | F | `src/ui/delights/PortDelights.tsx`, `src/domain/landPath.ts` | `geolocation` appears only in a headers file; port navigation is manual |
-| MOB-14 | P0 | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | DST and date-line cases not tested. BM4 |
-| MOB-15 | P1 | Partial | F | `src/domain/calendar.ts` | Zone and update/cancel ids unchecked (no calendar test file). BM4 |
+| MOB-14 | P0 | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/ui/onboard/shipTime.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
+| MOB-15 | P1 | Built | F | `src/domain/calendar.ts`, `calendar.test.ts` | Zoned times in UTC, SEQUENCE and cancel tested (BM4); no caller sends an update or cancel yet |
 | MOB-16 | P2 | Out of reach | F | `server/Princess.Api/Services/Providers.cs` | Wallet passes are simulated on the server only; the document marks P2 |
 | MOB-17 | P1 | Built | F | `src/ui/boarding/PassScreen.tsx`, `src/ui/onboard/SafetyScreens.tsx`, `src/domain/calm.ts` | High-contrast full-screen check unchecked |
 | MOB-18 | P1 | Built | F | `src/ui/CopyText.tsx`, `src/domain/contacts.ts`, `src/ui/aboard/SupportScreens.tsx` | `contacts.ts` has no test |
@@ -311,7 +311,7 @@ Priority is not given per concept in the document.
 | QOL-18 | - | Partial | F | `src/domain/highlightReel.ts`, `src/domain/photos.ts`, `src/ui/delights/HighlightReel.tsx` | Photo curation from guest photos unchecked |
 | QOL-19 | - | Built | F | `src/domain/disruptionHub.ts`, `src/domain/disruptionHub.test.ts` | None found |
 | QOL-20 | - | Built | F | `src/domain/accessReference.ts`, `src/domain/medicalCard.ts`, `src/ui/plan/AssistanceScreen.tsx` | Single passport screen not confirmed |
-| QOL-21 | - | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | No DST or date-line test. BM4 |
+| QOL-21 | - | Built | F | `src/ui/ThreeClocks.tsx`, `src/domain/clockView.ts`, `src/domain/timezones.ts` | DST and date-line tests in `timeIntelligence.test.ts` (BM4) |
 | QOL-22 | - | Built | F | `src/ui/aboard/RequestsScreen.tsx`, `src/ui/finish/CasesScreen.tsx` | None found |
 
 ## Cross-stage foundations

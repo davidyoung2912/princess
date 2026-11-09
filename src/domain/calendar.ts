@@ -19,6 +19,10 @@ export interface IcsEvent {
   minutes?: number
   /** A soft hold: shown as tentative and never a booking. */
   tentative?: boolean
+  /** Revision number: raise it each time the same `uid` is sent again with changes, so a calendar replaces its copy (RFC 5545 SEQUENCE). 0 when absent. */
+  sequence?: number
+  /** The event is withdrawn: written as cancelled, so a calendar that has the same `uid` removes or strikes it. */
+  cancelled?: boolean
 }
 
 const escapeText = (text: string): string => text.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
@@ -44,12 +48,13 @@ function fold(line: string): string[] {
 /** A calendar file (iCalendar) with all-day events, one per entry, for "add to calendar" (BOK-07, S2-05). */
 export function buildIcsCalendar(events: readonly IcsEvent[]): string {
   const lines = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Princess concept//Booking//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Princess concept//Booking//EN', 'CALSCALE:GREGORIAN', `METHOD:${events.length > 0 && events.every((e) => e.cancelled) ? 'CANCEL' : 'PUBLISH'}`,
     ...events.flatMap((e) => [
       'BEGIN:VEVENT', `UID:${e.uid}`, `DTSTAMP:${stampOf(e.stamp)}`,
       ...(e.at && e.zone ? (() => { const s = zonedToEpoch(e.start, e.at, e.zone); return [`DTSTART:${utcOf(s)}`, `DTEND:${utcOf(s + (e.minutes ?? 60) * 60_000)}`] })()
         : e.at ? [`DTSTART:${clock(e.start, e.at)}`, `DTEND:${clock(e.start, e.at, e.minutes ?? 60)}`] : [`DTSTART;VALUE=DATE:${compact(e.start)}`, `DTEND;VALUE=DATE:${compact(addDays(e.end, 1))}`]),
-      ...(e.tentative ? ['STATUS:TENTATIVE', 'TRANSP:TRANSPARENT'] : []),
+      `SEQUENCE:${Math.max(0, Math.floor(e.sequence ?? 0))}`,
+      ...(e.cancelled ? ['STATUS:CANCELLED'] : e.tentative ? ['STATUS:TENTATIVE', 'TRANSP:TRANSPARENT'] : []),
       `SUMMARY:${escapeText(e.summary)}`, `DESCRIPTION:${escapeText(e.description)}`, `LOCATION:${escapeText(e.location)}`,
       'END:VEVENT',
     ]),
