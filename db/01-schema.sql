@@ -1135,6 +1135,17 @@ CREATE TABLE dbo.StanleyMemorySettings (
 );
 END
 
+IF OBJECT_ID(N'dbo.StanleyBriefs', N'U') IS NULL
+BEGIN
+-- The saved Dream and Discover decision brief (docs/stanley-gap-analysis-and-plan.md, phase 8): one JSON row per guest, the same on every device. Deleted by the guest or with the account.
+CREATE TABLE dbo.StanleyBriefs (
+  UserId BIGINT NOT NULL CONSTRAINT PK_StanleyBriefs PRIMARY KEY,
+  Json NVARCHAR(MAX) NOT NULL,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyBriefs_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

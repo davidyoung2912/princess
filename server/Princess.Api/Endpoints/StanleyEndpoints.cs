@@ -76,6 +76,29 @@ public static class StanleyEndpoints
         memory.MapPut("/settings", async (StanleyMemorySettingsRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.SetEnabledAsync(await me.LoadAsync(ct), body.Enabled, ct); return Results.NoContent(); })
             .WithSummary("Switches Stanley's memory on or off { enabled }. Off, no remembered item is used in an answer; items stay listed until forgotten.");
 
+        var discover = api.MapGroup("/stanley/discover").WithTags("Stanley").AllowAnonymous();
+        discover.MapPost("/interview", (DiscoverInterviewRequest body, StanleyDiscoverService svc) => Results.Ok(svc.Interview(body)))
+            .WithSummary("Turns a free-text cruise wish (at most 500 characters) into editable filters by plain rules, with no model and nothing stored: { filters { months, nightsMin, nightsMax, regions, warm, maxTender, maxPerNightCents }, chips[{ key, label, assumed }], assumptions[], understood }. " +
+                "Every gap Stanley filled is listed in assumptions and its chip is marked assumed, so the guest can change it. 400 text for nothing to read, 400 tooLong.");
+        discover.MapPost("/directions", async (DiscoverDirectionsRequest body, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(await svc.DirectionsAsync(body, ct)))
+            .WithSummary("Two to four distinct directions from the catalogue for the filters (edited or not): { directions[{ kind (bestFit, lowestPrice, mostPorts, calmest, another), label, sailingId, title, departure, nights, perNightCents, met[], missed[], noData[], tradeOffs[] }], considered, note (none or onlyOne) }. " +
+                "Only sailings that have not departed and fit at least half of the checks with an answer are used; a check with no data is listed in noData, never counted as met or missed. 400 filters.");
+        discover.MapPost("/compare", async (DiscoverCompareRequest body, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(await svc.CompareAsync(body, ct)))
+            .WithSummary("Compares two to four sailings by criteria the guest weights from 0 to 5 (price, ports, seaDays, tender, fit; the default is 3 each): { rows[{ sailingId, title, score (0 to 100, or null with too little data), cells[{ key, text, known, fit }], missing[], portNotes[] }], weights, criteria[], ifYouValue[{ criterion, label, sailingIds[] }], priceBasis, note }. " +
+                "Every figure is calculated from the catalogue; a criterion with no data is labelled and left out of the score; nothing is ranked by commercial preference. 400 sailings, weights or filters.");
+        discover.MapPost("/booking-check", (BookingCheckRequest body, StanleyDiscoverService svc) => Results.Ok(svc.CheckBooking(body)))
+            .WithSummary("Hints about likely slips in a name or date of birth before booking: { flags[{ field, code, text }], authority }. Nothing is stored. The booking validator stays the authority.");
+
+        var brief = api.MapGroup("/me/stanley/discover/brief").WithTags("Stanley");
+        brief.MapGet("", async (ICurrentUser me, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(await svc.GetBriefAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The signed-in guest's saved decision brief { brief { text, filters, shortlist[], weights, needs[], title }, updatedAt }, the same on every device. Empty with a null updatedAt when none is saved.");
+        brief.MapPut("", async (DiscoverBrief body, ICurrentUser me, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(await svc.PutBriefAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Saves the brief, replacing the last one. At most 5 shortlisted sailings that exist, 6 needs of 60 characters, text of 500 and a title of 60. 400 brief, tooLong, filters, shortlist, weights or needs, 403 for a child account.");
+        brief.MapDelete("", async (ICurrentUser me, StanleyDiscoverService svc, CancellationToken ct) => { await svc.DeleteBriefAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
+            .WithSummary("Deletes the saved brief.");
+        brief.MapGet("/share", async (bool? includeNeeds, ICurrentUser me, StanleyDiscoverService svc, CancellationToken ct) => Results.Ok(new { text = await svc.ShareAsync(await me.LoadAsync(ct), includeNeeds == true, ct) }))
+            .WithSummary("The \"our ideal cruise\" text of the saved brief { text } for sharing. Needs such as access or diet are left out unless includeNeeds is true. 404 when no brief is saved.");
+
         var handoffs = api.MapGroup("/me/stanley/handoffs").WithTags("Stanley");
         handoffs.MapPost("", async (StanleyHandoffRequest body, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))

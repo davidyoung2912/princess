@@ -36,3 +36,7 @@ Decided 2026-11-09 for phase 7. Stanley uses one provider, Anthropic, through th
 - **What we keep:** counts only in the tier log; remembered preferences until the guest forgets them; actions and handoffs for `Retention:StanleyDays`. The chat thread is not stored on the server.
 - **A guest's controls:** memory off (nothing remembered is sent), forget one item or all, and mobility and diet off by default.
 - **Open:** the agreed retention period and a copy of the confirmation. This is a decision for the business, not something the code can settle.
+
+## Decision brief (phase 8)
+
+`dbo.StanleyBriefs` holds one JSON row per guest: the wish text (at most 500 characters), the edited filters, up to five shortlisted sailing ids, the weights, and optional needs. It is read and written only for the signed-in guest, is the same on every device, and is deleted by the guest (`DELETE /me/stanley/discover/brief`) or with the account (cascade). The shared text omits needs unless the guest includes them. The interview, directions, comparison and booking-check calls need no sign-in and store nothing; the audit trail records only that a brief was saved or deleted, never its content.

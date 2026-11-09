@@ -87,6 +87,14 @@ public class SwaggerCoverageTests : IDisposable
         { "delete", "/api/v1/me/stanley/memory/items/{id}" },
         { "delete", "/api/v1/me/stanley/memory" },
         { "put", "/api/v1/me/stanley/memory/settings" },
+        { "post", "/api/v1/stanley/discover/interview" },
+        { "post", "/api/v1/stanley/discover/directions" },
+        { "post", "/api/v1/stanley/discover/compare" },
+        { "post", "/api/v1/stanley/discover/booking-check" },
+        { "get", "/api/v1/me/stanley/discover/brief" },
+        { "put", "/api/v1/me/stanley/discover/brief" },
+        { "delete", "/api/v1/me/stanley/discover/brief" },
+        { "get", "/api/v1/me/stanley/discover/brief/share" },
         { "post", "/api/v1/me/staff-requests" },
         { "get", "/api/v1/me/staff-requests" },
         { "delete", "/api/v1/me/staff-requests/{id}" },
@@ -627,7 +635,7 @@ public class SwaggerCoverageTests : IDisposable
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/sailings")).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/help/contacts")).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.OK, (await http.GetAsync("/api/v1/auth/demo-accounts")).StatusCode);   // lists the seeded demo accounts outside production
-        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts" or "/api/v1/auth/demo-accounts")))
+        foreach (var (verb, route) in Routes.Select(r => ((string)r[0], (string)r[1])).Where(r => r.Item2 is not ("/api/v1/sailings" or "/api/v1/help/contacts" or "/api/v1/auth/demo-accounts" or "/api/v1/stanley/discover/interview" or "/api/v1/stanley/discover/directions" or "/api/v1/stanley/discover/compare" or "/api/v1/stanley/discover/booking-check")))
         {
             var url = route.Replace("{number}", "PC243902").Replace("{id}", Guid.NewGuid().ToString()).Replace("{doc}", "passport").Replace("{consent}", "improve");
             var res = await http.SendAsync(new HttpRequestMessage(new HttpMethod(verb.ToUpperInvariant()), url));

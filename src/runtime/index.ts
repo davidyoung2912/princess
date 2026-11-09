@@ -106,6 +106,18 @@ export const stanleyMemory = {
   setEnabled: (enabled: boolean) => http.put<void>('/me/stanley/memory/settings', { enabled }),
 }
 
+/** Dream and Discover (phase 8): the server reads a wish into filters, finds directions and compares sailings with the guest's weights; the brief is the guest's own, kept so every device resumes it. No sign-in is needed for the first four. */
+export const stanleyDiscover = {
+  interview: (text: string) => http.post<unknown>('/stanley/discover/interview', { text }),
+  directions: (filters: unknown) => http.post<unknown>('/stanley/discover/directions', { filters }),
+  compare: (sailingIds: string[], weights: unknown, filters: unknown) => http.post<unknown>('/stanley/discover/compare', { sailingIds, weights, filters }),
+  bookingCheck: (body: { firstName: string; lastName: string; birthDate: string; departure: string }) => http.post<unknown>('/stanley/discover/booking-check', body),
+  getBrief: () => http.get<unknown>('/me/stanley/discover/brief'),
+  saveBrief: (brief: unknown) => http.put<unknown>('/me/stanley/discover/brief', brief),
+  deleteBrief: () => http.delete<void>('/me/stanley/discover/brief'),
+  share: (includeNeeds: boolean) => http.get<{ text: string }>(`/me/stanley/discover/brief/share?includeNeeds=${includeNeeds}`),
+}
+
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 

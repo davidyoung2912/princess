@@ -184,3 +184,32 @@ public sealed class DapperStanleyMemoryStore(IDbConnectionFactory db) : IStanley
             """, new { userId, enabled }, null, ct));
     }
 }
+
+/// <summary>The decision brief, in <c>dbo.StanleyBriefs</c> (phase 8): one JSON row per guest. Every statement is scoped to one user id.</summary>
+public sealed class DapperStanleyBriefStore(IDbConnectionFactory db) : IStanleyBriefStore
+{
+    public async Task<(string Json, DateTime UpdatedAt)?> GetAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var row = await c.QueryFirstOrDefaultAsync<BriefRow>(Sql.Cmd("SELECT Json, UpdatedAt FROM dbo.StanleyBriefs WHERE UserId = @userId", new { userId }, null, ct));
+        return row is null ? null : (row.Json, row.UpdatedAt);
+    }
+
+    private sealed class BriefRow { public string Json { get; set; } = ""; public DateTime UpdatedAt { get; set; } }
+
+    public async Task PutAsync(long userId, string json, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyBriefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET Json = @json, UpdatedAt = @at
+            WHEN NOT MATCHED THEN INSERT (UserId, Json, UpdatedAt) VALUES (@userId, @json, @at);
+            """, new { userId, json, at }, null, ct));
+    }
+
+    public async Task DeleteAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.StanleyBriefs WHERE UserId = @userId", new { userId }, null, ct));
+    }
+}

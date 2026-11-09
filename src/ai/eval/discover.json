@@ -1,0 +1,15 @@
+[
+  { "text": "March, 7 nights, Caribbean", "months": [3], "nightsMin": 7, "nightsMax": 7, "regions": ["caribbean"], "understood": true },
+  { "text": "a week in the Caribbean in July", "months": [7], "nightsMin": 6, "nightsMax": 8, "regions": ["caribbean"], "understood": true },
+  { "text": "two weeks in the Med in summer", "months": [6, 7, 8], "nightsMin": 14, "nightsMax": 14, "regions": ["western-med", "eastern-med"], "understood": true },
+  { "text": "10 days in Alaska", "nightsMin": 9, "nightsMax": 9, "understood": true },
+  { "text": "no tender ports please", "maxTender": 0, "understood": true },
+  { "text": "something cool in the fjords in September", "months": [9], "regions": ["northern-europe", "scandinavia"], "warm": false, "understood": true },
+  { "text": "a long weekend away", "nightsMin": 2, "nightsMax": 5, "understood": true },
+  { "text": "cheap beach holiday under $150 per night", "warm": true, "maxPerNightCents": 15000, "understood": true },
+  { "text": "early autumn", "months": [9], "understood": true },
+  { "text": "late winter, a week, sunny", "months": [2], "nightsMin": 6, "nightsMax": 8, "warm": true, "understood": true },
+  { "text": "I may like Greece", "regions": ["western-med", "eastern-med"], "understood": true },
+  { "text": "surprise me", "understood": false },
+  { "text": "Christmas with the kids", "understood": false }
+]

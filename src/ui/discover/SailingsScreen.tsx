@@ -22,6 +22,7 @@ import { useNow } from '../../hooks/useDemo'
 import { localDate } from '../../domain/tileLive'
 import { CataloguePrice, DataStatusNote } from './catalogueParts'
 import { regionName, shipName } from './catalogueNames'
+import { StanleyFindPanel } from './StanleyFindPanel'
 
 const pick = <T extends string>(value: string | null, allowed: readonly T[]): T | undefined => (allowed.includes(value as T) ? (value as T) : undefined)
 
@@ -73,6 +74,7 @@ export function SailingsScreen() {
   return (
     <div className="page">
       <p>{t('cat.browseIntro')}</p>
+      <StanleyFindPanel />
       <form className="filters" aria-label={t('cat.filters')} onSubmit={(e) => e.preventDefault()}>
         {ships.length > 1 && select('f-ship', t('cat.ship'), 'ship', ships.map((s) => ({ value: s.id, label: s.name })), 'cat.anyShip')}
         {regions.length > 1 && select('f-region', t('cat.region'), 'region', regions.map((r) => ({ value: r.id, label: r.name })), 'cat.anyRegion')}

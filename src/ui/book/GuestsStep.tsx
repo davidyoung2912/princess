@@ -7,6 +7,7 @@ import { t, type StringKey } from '../../i18n'
 import { Field, FieldLabel } from '../Field'
 import { StepSection, type StepProps } from './common'
 import { NameCheck } from '../delights/Delights'
+import { StanleyBookingHints } from './StanleyBookingHints'
 import { SavedTravellers } from '../delights/PrepareDelights'
 
 const toggle = <T,>(list: readonly T[], item: T, on: boolean): T[] => (on ? [...list.filter((x) => x !== item), item] : list.filter((x) => x !== item))
@@ -38,6 +39,7 @@ export function GuestsStep({ draft, update, error, ctx }: StepProps) {
           <Field label={t('book.field.firstName')} hint={i === 0 ? t('book.guests.nameHint') : undefined} value={g.firstName} error={error(`people.${i}.firstName`)} onChange={(e) => setGuest(i, { firstName: e.target.value })} autoComplete={i === 0 ? 'given-name' : 'off'} />
           <Field label={t('book.field.lastName')} help={t('helptip.passportName')} value={g.lastName} error={error(`people.${i}.lastName`)} onChange={(e) => setGuest(i, { lastName: e.target.value })} autoComplete={i === 0 ? 'family-name' : 'off'} />
           <NameCheck first={g.firstName} last={g.lastName} />
+          <StanleyBookingHints first={g.firstName} last={g.lastName} dob={g.dob} departure={departure} />
           <Field label={t('book.field.dob')} hint={t('book.guests.dobHint')} type="date" max={ctx.today} value={g.dob} error={error(`people.${i}.dob`)} onChange={(e) => setGuest(i, { dob: e.target.value })} autoComplete={i === 0 ? 'bday' : 'off'} />
           <div className="field">
             <FieldLabel htmlFor={`gender-${i}`} help={t('helptip.gender')}>{t('book.field.gender')}</FieldLabel>
