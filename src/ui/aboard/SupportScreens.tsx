@@ -12,6 +12,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { TextArea } from '../Field'
 import { StatusBadge } from '../StatusBadge'
+import { formatDateTime } from '../account/format'
 import { Load } from '../account/parts'
 import { AboardError, Back } from './common'
 import type { FeedbackKind } from '../../api/aboardTypes'
@@ -20,12 +21,33 @@ import type { FeedbackKind } from '../../api/aboardTypes'
 export function StatusScreen() {
   const demo = useDemo()
   const served = useMine(() => api.help.status())
+  const incidents = useMine(() => api.help.incidents())
   const offline = demo.network.offline
   return (
     <div className="page">
       {offline ? <StatusBody rows={statusRows([], true)} /> : <Load state={served}>{(list) => <StatusBody rows={statusRows(list, false)} />}</Load>}
+      {!offline && incidents.data && <Incidents list={incidents.data} />}
       <Back to="/me/help" label={t('route.helpCentre')} />
     </div>
+  )
+}
+
+/** Known problems, with when each began and any end (TRU-07). Nothing is listed when none are declared, and a feed that cannot be read says nothing rather than "all clear"; the service rows above still show. */
+function Incidents({ list }: { list: { id: string; area: string; startedAt: number; message: string; resolvedAt: number | null }[] }) {
+  if (list.length === 0) return null
+  return (
+    <section aria-labelledby="inc-h">
+      <h2 id="inc-h">{th('stat.incidents')}</h2>
+      <ul className="plain-list">
+        {list.map((i) => (
+          <li key={i.id}>
+            <strong>{th(`stat.s.${i.area}` as StringKey)}</strong> <StatusBadge kind={i.resolvedAt ? 'booked' : 'changed'} label={t(i.resolvedAt ? 'stat.incident.resolved' : 'stat.incident.open')} />
+            <br />{i.message}
+            <br /><span className="muted">{t('stat.incident.started', { time: formatDateTime(i.startedAt) })}{i.resolvedAt ? ` · ${t('stat.incident.ended', { time: formatDateTime(i.resolvedAt) })}` : ''}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

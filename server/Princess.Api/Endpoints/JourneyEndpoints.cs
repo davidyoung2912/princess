@@ -186,6 +186,9 @@ public static class JourneyEndpoints
             })
             .WithTags("Help").WithSummary("What each part of the service is doing: `[{id, health}]` with health `ok`, `slow` or `down`, for booking, checkin, dining, ordering, chat, photos and account.");
 
+        api.MapGet("/help/incidents", (IIncidentFeed feed) => Results.Ok(feed.Current()))
+            .AllowAnonymous().WithTags("Help").WithSummary("Known problems with the service: `[{id, area, startedAt, message, resolvedAt}]`, newest first, declared by the operator (`Status:Incidents`). Resolved ones stay for a day.");
+
         api.MapGet("/me/feedback", async (ICurrentUser me, InboxService svc, CancellationToken ct) =>
                 Results.Ok(await svc.FeedbackAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Feedback").WithSummary("Feedback you have sent.");

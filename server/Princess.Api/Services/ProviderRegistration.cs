@@ -67,6 +67,7 @@ public static class ProviderRegistration
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)
     {
         services.AddSingleton<ProviderHealth>();
+        services.AddSingleton<IIncidentFeed, ConfigIncidentFeed>();
         foreach (var seam in Catalogue)
         {
             var name = (config[$"{Section}:{seam.Key}"] ?? Sim).Trim().ToLowerInvariant();

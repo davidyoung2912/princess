@@ -907,6 +907,8 @@ export interface Api {
     contacts(): Promise<{ guestServices: string; emergency: string }>
     /** What each part of the service is doing, served by the backend (TRU-07). */
     status(): Promise<{ id: string; health: 'ok' | 'slow' | 'down' }[]>
+    /** Known problems with the service, newest first, each with when it began and any end (TRU-07). */
+    incidents(): Promise<{ id: string; area: string; startedAt: number; message: string; resolvedAt: number | null }[]>
   }
 }
 

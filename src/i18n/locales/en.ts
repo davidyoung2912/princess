@@ -4779,6 +4779,11 @@ export const en = {
   'chat.photoAlt': 'A photo from {name}',
   'img.show': 'Show photo: {name}',
 
+  'stat.incidents': 'Known problems',
+  'stat.incident.open': 'Ongoing',
+  'stat.incident.resolved': 'Fixed',
+  'stat.incident.started': 'Started {time}',
+  'stat.incident.ended': 'ended {time}',
   'stat.allOk': 'Everything is working',
   'stat.allOkBody': 'No known problems right now.',
   'stat.some_one': '{count} service has a problem',
