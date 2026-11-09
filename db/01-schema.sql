@@ -894,7 +894,12 @@ IF OBJECT_ID(N'dbo.TR_AuditEvents_AppendOnly', N'TR') IS NOT NULL DROP TRIGGER d
 EXEC(N'CREATE TRIGGER dbo.TR_AuditEvents_AppendOnly ON dbo.AuditEvents INSTEAD OF UPDATE, DELETE AS
 BEGIN
   SET NOCOUNT ON;
-  IF NOT EXISTS (SELECT 1 FROM inserted) THROW 51000, N''dbo.AuditEvents is append-only.'', 1;
+  -- An INSTEAD OF trigger also fires for an UPDATE that matches no rows (both tables empty): that is harmless. A DELETE has rows in deleted only.
+  IF NOT EXISTS (SELECT 1 FROM inserted)
+  BEGIN
+    IF EXISTS (SELECT 1 FROM deleted) THROW 51000, N''dbo.AuditEvents is append-only.'', 1;
+    RETURN;
+  END;
   IF UPDATE(Id) OR UPDATE(EventId) OR UPDATE([At]) OR UPDATE(Category) OR UPDATE(Action) OR UPDATE(Outcome) OR UPDATE(ActorPublicId) OR UPDATE(ActorRole)
      OR UPDATE(SubjectPublicId) OR UPDATE(Target) OR UPDATE(HttpMethod) OR UPDATE(Route) OR UPDATE(StatusCode) OR UPDATE(DurationMs) OR UPDATE(ErrorCode)
      OR UPDATE(ErrorType) OR UPDATE(ErrorMessage) OR UPDATE(Detail) OR UPDATE(CorrelationId)
