@@ -12,6 +12,8 @@ export interface HttpAuthOptions {
   baseUrl: string
   /** Per-tab storage for the refresh token. The access token never leaves memory. */
   storage: KeyValue | null
+  /** Long-lived device storage for "Remember me": holds the refresh token so the next app start skips the sign-in page. */
+  persistent?: KeyValue | null
   fetch?: typeof fetch
   now?: () => number
   channel?: Channel
@@ -33,12 +35,18 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
   const listeners = new Set<() => void>()
   let current: Session | null = null
   let access: string | null = null
+  const readKey = (kv: KeyValue | null | undefined): string | null => { try { return kv?.getItem(REFRESH_KEY) ?? null } catch { return null } }
+  /** True when this device was told to remember the sign-in (the token sits in device storage). */
+  let remember = readKey(opts.persistent) !== null
+  const storedToken = () => readKey(opts.storage) ?? readKey(opts.persistent)
 
   const notify = () => listeners.forEach((l) => l())
   const store = (refreshToken: string | null) => {
     try {
       if (refreshToken) opts.storage?.setItem(REFRESH_KEY, refreshToken)
       else opts.storage?.removeItem(REFRESH_KEY)
+      if (refreshToken && remember) opts.persistent?.setItem(REFRESH_KEY, refreshToken)
+      else opts.persistent?.removeItem(REFRESH_KEY)
     } catch { /* storage blocked: the session works until the page closes */ }
   }
   const take = (w: WireSession, method: AuthMethod = 'password'): Session => {
@@ -49,6 +57,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     return current
   }
   const clear = () => {
+    remember = false
     access = null
     current = null
     store(null)
@@ -58,8 +67,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
 
   let restoring: Promise<boolean> | null = null
   const restore = (): Promise<boolean> => (restoring ??= (async () => {
-    let token: string | null = null
-    try { token = opts.storage?.getItem(REFRESH_KEY) ?? null } catch { /* none */ }
+    const token = storedToken()
     if (!token) return current !== null
     try {
       take(await raw.post<WireSession>('/auth/refresh', { refreshToken: token }, { anonymous: true }))
@@ -105,8 +113,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
         try { await raw.post('/auth/reset', { email: email.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
       },
       async listDevices() {
-        let token: string | null = null
-        try { token = opts.storage?.getItem(REFRESH_KEY) ?? null } catch { /* none: no device is marked as this one */ }
+        const token = storedToken()
         try { return await raw.post<DeviceSession[]>('/auth/sessions/list', { refreshToken: token }) } catch (e) { throw failure(e) }
       },
       async signOutDevice(id) {
@@ -127,6 +134,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
     },
     async signIn(c: Credentials) {
       try {
+        remember = c.remember === true
         const session = c.method === 'code'
           ? take(await raw.post<WireSession>('/auth/magic/redeem', { email: c.email.trim(), code: c.code.trim() }, { anonymous: true }), 'code')
           : take(await raw.post<WireSession>('/auth/login', { identifier: c.identifier.trim(), password: c.password }, { anonymous: true }))
@@ -138,7 +146,7 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       }
     },
     async signOut() {
-      const refreshToken = (() => { try { return opts.storage?.getItem(REFRESH_KEY) ?? null } catch { return null } })()
+      const refreshToken = storedToken()
       const wasIn = access !== null
       try {
         if (wasIn && refreshToken) await raw.post('/auth/logout', { refreshToken })

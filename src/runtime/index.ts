@@ -64,7 +64,7 @@ const session = () => safe(() => sessionStorage)
 /** The server's address: `VITE_API_URL`, or `/api/v1` (the Vite proxy in development). There is no other mode; the server must be running. */
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.trim() || '/api/v1'
 
-export const auth = createHttpAuthProvider({ baseUrl: API_URL, storage: session(), channel })
+export const auth = createHttpAuthProvider({ baseUrl: API_URL, storage: session(), persistent: local(), channel })
 const http = auth.http
 
 const rest = createHttpGroups(http)

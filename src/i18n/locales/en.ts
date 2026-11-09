@@ -1014,6 +1014,7 @@ export const en = {
   'signin.identifier.hint': 'For example name@example.com',
   'signin.identifier.required': 'Enter your email address.',
   'signin.password': 'Password',
+  'signin.remember': 'Remember me on this device',
   'signin.password.required': 'Enter your password.',
   'signin.submit': 'Sign in',
   'signin.busy': 'Signing in…',

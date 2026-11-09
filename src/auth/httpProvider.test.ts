@@ -199,3 +199,22 @@ describe('createHttpAuthProvider', () => {
     })
   })
 })
+
+describe('remember me', () => {
+  const login = { method: 'password' as const, identifier: 'maya', password: 'pw' }
+  it('keeps the token on the device only when asked, restores from it, and sign-out clears it', async () => {
+    const s = server((c) => (c.url.endsWith('/auth/login') ? reply(200, session(1)) : c.url.endsWith('/auth/refresh') ? reply(200, session(2)) : reply(204)))
+    const tab = memory(), device = memory()
+    const a = createHttpAuthProvider({ baseUrl: '', storage: tab, persistent: device, fetch: s.f })
+    await a.signIn(login)
+    expect(device.m.has(REFRESH_KEY)).toBe(false)
+    await a.signIn({ ...login, remember: true })
+    expect(device.m.get(REFRESH_KEY)).toBe('r1')
+    // A new app start: empty tab storage, token still on the device.
+    const b = createHttpAuthProvider({ baseUrl: '', storage: memory(), persistent: device, fetch: s.f })
+    expect(await b.restore()).toBe(true)
+    expect(device.m.get(REFRESH_KEY)).toBe('r2')
+    await b.signOut()
+    expect(device.m.has(REFRESH_KEY)).toBe(false)
+  })
+})

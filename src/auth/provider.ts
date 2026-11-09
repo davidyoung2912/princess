@@ -28,9 +28,9 @@ export type AuthMethod = 'password' | 'code'
 
 /** Ways to sign in. `password` takes an email (the server can be switched to accept the 10-digit account number too) (ACT-01). */
 export type Credentials =
-  | { method: 'password'; identifier: string; password: string }
+  | { method: 'password'; identifier: string; password: string; /** Keep this device signed in across app starts until sign-out. */ remember?: boolean }
   /** The one-time code emailed after `requestCode('magic', email)`. */
-  | { method: 'code'; email: string; code: string }
+  | { method: 'code'; email: string; code: string; remember?: boolean }
 
 export type AuthErrorCode = 'unknownIdentity' | 'unsupportedMethod' | 'badCredentials' | 'unavailable' | 'offline' | 'emailTaken' | 'tooYoung' | 'badCode' | 'possibleDuplicate' | 'invalid'
 
