@@ -795,6 +795,8 @@ export interface Api {
     list(): Promise<HelpedGuest[]>
     payments(guestId: string, booking: string): Promise<PaymentsView>
     payBalance(guestId: string, booking: string, cardId: string): Promise<PaymentsView>
+    /** The guest's onboard account, read only (needs their Folio permission). */
+    folio(guestId: string, booking: string): Promise<FolioView>
   }
   documents: {
     get(): Promise<DocumentsView>

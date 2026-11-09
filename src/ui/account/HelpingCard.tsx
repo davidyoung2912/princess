@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { HelpedGuest } from '../../api/types'
 import { BRAND_NAMES, validateCard } from '../../domain/account'
 import { formatDate } from '../../domain/cruise'
+import { folioTotals } from '../../domain/folio'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
 import { api } from '../../runtime'
@@ -36,14 +37,32 @@ export function HelpingCard() {
 
 function Guest({ guest }: { guest: HelpedGuest }) {
   const [open, setOpen] = useState(false)
+  const [folio, setFolio] = useState(false)
+  const canPay = guest.permissions.includes('payments')
+  const canFolio = guest.permissions.includes('folio')
   return (
     <>
       <strong>{guest.name}</strong> <span className="muted">{guest.relationship}</span>
-      {guest.booking
-        ? <div><Button variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>{t(open ? 'helping.hide' : 'helping.open', { name: guest.name })}</Button></div>
-        : <p className="muted">{t('helping.noPayments', { name: guest.name })}</p>}
-      {open && guest.booking && <GuestPayments guest={guest} booking={guest.booking} />}
+      {guest.booking && canPay && <div><Button variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>{t(open ? 'helping.hide' : 'helping.open', { name: guest.name })}</Button></div>}
+      {open && guest.booking && canPay && <GuestPayments guest={guest} booking={guest.booking} />}
+      {guest.booking && canFolio && <div><Button variant="secondary" aria-expanded={folio} onClick={() => setFolio(!folio)}>{t(folio ? 'helping.folioHide' : 'helping.folioOpen', { name: guest.name })}</Button></div>}
+      {folio && guest.booking && canFolio && <GuestFolio guest={guest} booking={guest.booking} />}
+      {!guest.booking && <p className="muted">{t('helping.noAccess', { name: guest.name })}</p>}
     </>
+  )
+}
+
+/** The guest's onboard account, read only: the balance and the latest lines. */
+function GuestFolio({ guest, booking }: { guest: HelpedGuest; booking: string }) {
+  const view = useMine(() => api.helping.folio(guest.guestId, booking), [guest.guestId, booking])
+  if (!view.data) return view.status === 'error' ? <LoadError retry={view.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>
+  const f = view.data
+  if (f.lines.length === 0) return <p>{t('helping.folioNotYet', { name: guest.name })}</p>
+  return (
+    <div>
+      <p>{t('helping.folioTotal', { name: guest.name, amount: formatMoney(folioTotals(f.lines).balance), day: f.throughDay })}</p>
+      <ul className="plain-list">{f.lines.slice(-10).reverse().map((l) => <li key={l.id}>{l.description} <span className="muted">{formatMoney(l.cents)}</span></li>)}</ul>
+    </div>
   )
 }
 

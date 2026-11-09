@@ -180,7 +180,8 @@ public sealed class TripService(AccessService access, SubjectAccess subjects, IT
             if (guest is null) continue;
             var held = g.Permissions.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             var canPay = AccessRules.HelperAllows(new HelperGrant { Permissions = g.Permissions, Status = "active" }, HelperPermission.Payments);
-            var booking = canPay && !helper.IsSupervised ? (await CurrentAsync(guest, now, ct))?.Number : null;
+            var canSee = canPay || AccessRules.HelperAllows(new HelperGrant { Permissions = g.Permissions, Status = "active" }, HelperPermission.Folio);
+            var booking = canSee && !helper.IsSupervised ? (await CurrentAsync(guest, now, ct))?.Number : null;
             list.Add(new HelpedGuestDto(guest.PublicId, $"{guest.FirstName} {guest.LastName}".Trim(), g.Relationship, held, TripRules.ToMs(g.ChangedAt), booking));
         }
         return list;

@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// Any guest on the booking reads; an adult guest writes. "Now" is the person's own clock (D4). Weather is a mocked service (data model section 8); scenarios apply only to demo users.
 /// </summary>
 public sealed class OnboardService(
-    ScopeLoader scopes, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt, IWeatherService weather, IProgramChanges programChanges)
+    ScopeLoader scopes, SubjectAccess subjects, IOnboardStore store, IPlanStore plan, IAccountStore accounts, IDemoStore demo, PlanService planService, IOptions<JwtOptions> jwt, IWeatherService weather, IProgramChanges programChanges)
 {
     private static long Ms(DateTime utc) => TripRules.ToMs(utc);
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");
@@ -158,6 +158,15 @@ public sealed class OnboardService(
     }
 
     // ---- The onboard account ----
+
+    /// <summary>A helper the guest consented to, holding view and Folio, reads the guest's onboard account. Read only: no grant is notFound, a grant without Folio is forbidden.</summary>
+    public async Task<FolioViewDto> FolioForGuestAsync(UserRecord helper, Guid guestId, string? number, CancellationToken ct)
+    {
+        if (helper.IsSupervised) throw ApiException.Forbidden("supervised");
+        var s = await subjects.ResolveAsync(helper, guestId, HelperPermission.Folio, write: false, ct);
+        if (!s.ViaHelper || s.Target.Id == helper.Id) throw ApiException.Forbidden();
+        return await FolioAsync(s.Target, number, ct);
+    }
 
     public async Task<FolioViewDto> FolioAsync(UserRecord actor, string? number, CancellationToken ct)
     {

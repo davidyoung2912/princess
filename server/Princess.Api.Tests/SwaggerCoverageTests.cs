@@ -106,6 +106,7 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/bookings/{number}/payments/balance" },
         { "get", "/api/v1/me/helping" },
         { "get", "/api/v1/guests/{guestId}/bookings/{number}/payments" },
+        { "get", "/api/v1/guests/{guestId}/bookings/{number}/folio" },
         { "post", "/api/v1/guests/{guestId}/bookings/{number}/payments/balance" },
         { "get", "/api/v1/bookings/{number}/documents" },
         { "put", "/api/v1/users/{id}/documents/{doc}" },

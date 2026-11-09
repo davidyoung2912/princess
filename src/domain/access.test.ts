@@ -22,8 +22,8 @@ describe('accessRows', () => {
   })
 
   it('lists Payments now that a helper can pay (BM8)', () => {
-    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const], status: 'active' as const, at: 1, linked: false, inviteCode: null }
-    expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'payments', 'documents'])
+    const helper = { name: 'Sam', relationship: 'Son', permissions: ['view' as const, 'payments' as const, 'documents' as const, 'folio' as const], status: 'active' as const, at: 1, linked: false, inviteCode: null }
+    expect(accessRows({ ...base, helper })[0].items).toEqual(['view', 'payments', 'documents', 'folio'])
   })
 
   it('treats a family contact as active only while a link is live, and reports when it ends', () => {

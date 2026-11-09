@@ -106,8 +106,8 @@ export function validateCard(last4: string, expiry: string, today: string): Card
   return `20${m[2]}-${m[1]}` < today.slice(0, 7) ? 'expired' : null
 }
 
-export type PermissionId = 'view' | 'documents' | 'payments' | 'profile'
-export const PERMISSIONS: readonly PermissionId[] = ['view', 'documents', 'payments', 'profile']
+export type PermissionId = 'view' | 'documents' | 'payments' | 'profile' | 'folio'
+export const PERMISSIONS: readonly PermissionId[] = ['view', 'documents', 'payments', 'profile', 'folio']
 /** Permissions the server does not act on yet. They are shown as unavailable and are not saved. Empty since BM8: a helper can now pay from "People you help" (BM7 server path). */
 export const NOT_YET: readonly PermissionId[] = []
 export const permissionWorks = (p: PermissionId): boolean => !NOT_YET.includes(p)

@@ -131,6 +131,13 @@ Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-
 - **Front end**: the guest sees the code (as `ABCD-2345`) on `/me/helper` until it is accepted, then "has accepted"; an "Accept an invitation" card on the same screen for the helper, which refreshes "People you help". `api.account.acceptHelperInvite`, `formatInviteCode`, three tests.
 - **Not done**: no rate limit specific to guessing codes (32^8 space, and the normal limits apply), no code expiry or regenerate button (revoke and add again), email/SMS delivery of the code, read-only folio, check-in, booking and message permissions, IDN-04.
 
+### BM10. Helper reads the guest's onboard account (built, not committed)
+
+- **Choice (mine, not asked)**: the read-only folio, the next item the plan kept listing. A new `folio` permission (`HelperPermission.Folio`, `AccountRules.Permissions`, `PermissionId`), no schema change beyond the comment (the column is a csv of up to 60 characters).
+- **Server (written, not compiled or run)**: `GET /api/v1/guests/{guestId}/bookings/{number}/folio` (`OnboardService.FolioForGuestAsync`) goes through `SubjectAccess` with Folio, read only, then returns the same view the guest sees. No grant is notFound, no Folio is forbidden, a supervised helper is refused. `me/helping` now gives the booking number for payments or folio. One C# test and the swagger list were added; run them yourself.
+- **Front end**: the guest can grant "See my onboard account"; on "People you help" the helper gets a button that shows the balance and the ten latest lines. Pay and folio buttons each depend on their own permission. `api.helping.folio`, test lines in `httpApi.test.ts` and `access.test.ts`.
+- **Not done**: check-in, booking and message permissions, IDN-04, code expiry and delivery.
+
 ## 5. Decisions I need from you
 
 1. Approve BM2 next, or choose another from BM3 to BM5?
