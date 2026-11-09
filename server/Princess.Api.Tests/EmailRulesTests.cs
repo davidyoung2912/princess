@@ -66,3 +66,18 @@ public class EmailRulesTests
         Assert.NotEqual(phoneKey, Key);
     }
 }
+
+/// <summary>The one-click unsubscribe headers on notice emails.</summary>
+public class EmailListHeaderTests
+{
+    [Fact]
+    public void ALinkGivesTheTwoOneClickHeaders()
+    {
+        var h = new Princess.Api.Services.EmailMessage("a@b.c", "s", "b", "https://x.test/u/1").ListHeaders;
+        Assert.Equal("<https://x.test/u/1>", h["List-Unsubscribe"]);
+        Assert.Equal("List-Unsubscribe=One-Click", h["List-Unsubscribe-Post"]);
+    }
+
+    [Fact]
+    public void NoLinkGivesNoHeaders() => Assert.Empty(new Princess.Api.Services.EmailMessage("a@b.c", "s", "b").ListHeaders);
+}

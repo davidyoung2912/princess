@@ -132,12 +132,18 @@ public sealed class PushService(
         {
             var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
             if (emailOk && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
-                && await email.SendAsync(new EmailMessage(actor.Email, n.Title, NoticeEmailRules.WithFooter(n.Body, UnsubscribeUrl(actor.Id, n.Category))), ct))
+                && await email.SendAsync(NoticeEmail(actor, n), ct))
                 await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
             if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)
                 && await sms.SendAsync(new SmsMessage(phone, n.Title + ": " + n.Body), ct))
                 await store.AddDeliveryAsync(actor.Id, new("sms:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
         }
+    }
+
+    private EmailMessage NoticeEmail(UserRecord actor, PushNotice n)
+    {
+        var url = UnsubscribeUrl(actor.Id, n.Category);
+        return new(actor.Email!, n.Title, NoticeEmailRules.WithFooter(n.Body, url), url);
     }
 
     private string? UnsubscribeUrl(long userId, string category) =>

@@ -2,7 +2,17 @@ using System.Collections.Concurrent;
 
 namespace Princess.Api.Services;
 
-public sealed record EmailMessage(string To, string Subject, string Body);
+/// <summary>
+/// An email to send. When <see cref="UnsubscribeUrl"/> is set, a real provider adds the one-click headers (RFC 8058): <c>List-Unsubscribe: &lt;url&gt;</c> and
+/// <c>List-Unsubscribe-Post: List-Unsubscribe=One-Click</c>, so a mail app can offer its own "unsubscribe" button that posts to the same link.
+/// </summary>
+public sealed record EmailMessage(string To, string Subject, string Body, string? UnsubscribeUrl = null)
+{
+    /// <summary>The headers a provider should add for the one-click unsubscribe; empty when there is no link.</summary>
+    public IReadOnlyDictionary<string, string> ListHeaders => UnsubscribeUrl is null
+        ? new Dictionary<string, string>()
+        : new Dictionary<string, string> { ["List-Unsubscribe"] = $"<{UnsubscribeUrl}>", ["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click" };
+}
 
 /// <summary>
 /// Sends a plain email (small delights DL5). The seam a real provider replaces (<c>Providers:Email</c>); the front end never knows which is in use.

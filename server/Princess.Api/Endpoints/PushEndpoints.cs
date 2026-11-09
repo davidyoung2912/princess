@@ -39,6 +39,11 @@ public static class PushEndpoints
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
             .WithTags("Push").WithSummary("The link in a payment or travel notice email: switches that category's email off with no sign-in and answers a small page. A link that was not made here gets the same page saying it does not work. Rate-limited.");
 
+        api.MapPost("/public/notice/unsubscribe/{token}", async (string token, PushService svc, CancellationToken ct) =>
+                await svc.UnsubscribeEmailAsync(token, ct) ? Results.Ok() : Results.NotFound())
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
+            .WithTags("Push").WithSummary("The one-click unsubscribe a mail app posts to (RFC 8058, from the List-Unsubscribe headers on notice emails). Same link and effect as the page; 404 for a link that was not made here. Rate-limited.");
+
         api.MapPost("/me/push/read", async (ICurrentUser me, PushService svc, CancellationToken ct) =>
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Push").WithSummary("Marks the sent alerts as seen (clears the unread count).");
