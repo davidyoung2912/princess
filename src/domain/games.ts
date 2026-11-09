@@ -22,6 +22,33 @@ export const TRIVIA: readonly Question[] = [
   { id: 'q-sun', text: 'Which helps most against sunburn on a port day?', options: ['Cloud cover', 'Sunscreen reapplied every two hours', 'A dark shirt'], answer: 1 },
 ]
 
+/** A trivia question about one port (for the daily "ports ahead" quiz). `port` is the start of the port's name (so "Belize" matches "Belize City"); no port id is written in source. */
+export interface PortQuestion extends Question { port: string }
+
+export const PORT_TRIVIA: readonly PortQuestion[] = [
+  { id: 'p-coz-1', port: 'Cozumel', text: 'Cozumel is part of which country?', options: ['Mexico', 'Belize', 'Honduras'], answer: 0 },
+  { id: 'p-coz-2', port: 'Cozumel', text: 'What is Cozumel especially known for?', options: ['Coral reefs for snorkelling and diving', 'Glaciers', 'Desert dunes'], answer: 0 },
+  { id: 'p-coz-3', port: 'Cozumel', text: 'Which currency do most shops in Cozumel list prices in, besides US dollars?', options: ['Mexican pesos', 'Euros', 'Belize dollars'], answer: 0 },
+  { id: 'p-bel-1', port: 'Belize', text: 'What language is most widely spoken in Belize?', options: ['English', 'Portuguese', 'French'], answer: 0 },
+  { id: 'p-bel-2', port: 'Belize', text: 'Belize has the largest barrier reef in which hemisphere?', options: ['Northern', 'Southern', 'Neither'], answer: 0 },
+  { id: 'p-bel-3', port: 'Belize', text: 'How do guests usually reach the shore at Belize City?', options: ['By tender boat', 'By a bridge', 'By helicopter'], answer: 0 },
+  { id: 'p-roa-1', port: 'Roatán', text: 'Roatán is the largest of which island group?', options: ['The Bay Islands', 'The Canary Islands', 'The Cayman Islands'], answer: 0 },
+  { id: 'p-roa-2', port: 'Roatán', text: 'Roatán belongs to which country?', options: ['Honduras', 'Mexico', 'Jamaica'], answer: 0 },
+  { id: 'p-roa-3', port: 'Roatán', text: 'Which sea creature do many visitors hope to see while snorkelling at Roatán?', options: ['Sea turtles', 'Penguins', 'Walruses'], answer: 0 },
+  { id: 'p-amb-1', port: 'Amber Cove', text: 'Amber Cove is on the coast of which island?', options: ['Hispaniola', 'Cuba', 'Aruba'], answer: 0 },
+  { id: 'p-cay-1', port: 'Princess Cays', text: 'Princess Cays is on which island?', options: ['Eleuthera', 'Jamaica', 'Barbados'], answer: 0 },
+]
+
+/**
+ * Three questions for today about the ports still ahead (today's port included). The same three for everyone on the same day: no score is kept, no clock,
+ * no ranking. Returns fewer when the ports ahead have fewer questions, and none when nothing is ahead.
+ */
+export function dailyTrivia(portNamesAhead: readonly string[], dayKey: string, count = 3): PortQuestion[] {
+  const names = portNamesAhead.map((n) => n.toLowerCase())
+  const pool = PORT_TRIVIA.filter((q) => names.some((n) => n.startsWith(q.port.toLowerCase()))).sort((a, b) => hash(`${dayKey}|${a.id}`) - hash(`${dayKey}|${b.id}`))
+  return pool.slice(0, count)
+}
+
 export interface GameState {
   found: string[]
   /** Question id to the option chosen. */
@@ -107,4 +134,4 @@ export function achievements(state: GameState, card: readonly (readonly number[]
   return out
 }
 
-registerContent('games', { HUNT, TRIVIA, ACHIEVEMENTS })
+registerContent('games', { HUNT, TRIVIA, PORT_TRIVIA, ACHIEVEMENTS })

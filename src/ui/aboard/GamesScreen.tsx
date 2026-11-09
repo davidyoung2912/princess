@@ -1,8 +1,10 @@
-import { ACHIEVEMENTS, HUNT, TRIVIA, achievements, bingoCard, bingoLines, calledNumbers, triviaScore } from '../../domain/games'
+import { ACHIEVEMENTS, HUNT, TRIVIA, achievements, dailyTrivia, bingoCard, bingoLines, calledNumbers, triviaScore } from '../../domain/games'
 import { placeById } from '../../domain/deck'
+import { itinerary } from '../../domain/sailings'
+import { dayFor } from '../../domain/tripDiary'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
-import { useNow, usePersona } from '../../hooks/useDemo'
+import { useNow, usePersona, useSailing } from '../../hooks/useDemo'
 import { useMine } from '../../hooks/useMine'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -10,6 +12,41 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { Load } from '../account/parts'
 import { AboardError, Back } from './common'
+import { useState } from 'react'
+import { portById } from '../../domain/sailings'
+
+/** Today's three questions about the ports still ahead. Answers stay on the screen only: nothing is scored, saved or ranked. */
+function DailyTrivia() {
+  const sailing = useSailing()
+  const now = useNow()
+  const [picked, setPicked] = useState<Record<string, number>>({})
+  const days = itinerary(sailing)
+  const today = Math.max(1, dayFor(days.map((d) => d.date), now))
+  const ahead = days.filter((d) => d.day >= today && d.port !== 'sea').map((d) => portById(d.port)?.name ?? '')
+  const questions = dailyTrivia(ahead, `${sailing.id}|${today}`)
+  return (
+    <section aria-labelledby="daily-h">
+      <h2 id="daily-h">{th('game.daily')}</h2>
+      <p>{t('game.dailyBody')}</p>
+      {questions.length === 0 && <p className="muted">{t('game.dailyNone')}</p>}
+      {questions.map((q) => {
+        const chosen = picked[q.id]
+        return (
+          <fieldset key={q.id} className="plain-fieldset">
+            <legend>{q.text} <span className="muted">({q.port})</span></legend>
+            {q.options.map((o, i) => (
+              <label key={o} className="choice choice--top">
+                <input type="radio" name={q.id} checked={chosen === i} disabled={chosen !== undefined} onChange={() => setPicked((p) => ({ ...p, [q.id]: i }))} />
+                <span>{o}</span>
+              </label>
+            ))}
+            {chosen !== undefined && <p role="status">{chosen === q.answer ? t('game.right') : t('game.wrong', { answer: q.options[q.answer] })}</p>}
+          </fieldset>
+        )
+      })}
+    </section>
+  )
+}
 
 /** Games on board (ENT-05): a scavenger hunt, trivia, a bingo card and the badges they earn. Progress is kept on the account. */
 export function GamesScreen() {
@@ -53,6 +90,8 @@ export function GamesScreen() {
                   ))}
                 </ul>
               </section>
+
+              <DailyTrivia />
 
               <section aria-labelledby="trivia-h">
                 <h2 id="trivia-h">{th('game.trivia')}</h2>

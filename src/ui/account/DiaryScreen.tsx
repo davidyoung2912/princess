@@ -1,4 +1,5 @@
 import { t } from '../../i18n'
+import { StampBook } from '../delights/StampBook'
 import { TripDiary } from '../delights/TripDiary'
 import { BackLink } from '../onboard/common'
 
@@ -8,6 +9,7 @@ export function DiaryScreen() {
     <div className="page">
       <BackLink to="/me" label={t('route.me')} />
       <p className="muted">{t('diary.screenBody')}</p>
+      <StampBook />
       <TripDiary />
     </div>
   )

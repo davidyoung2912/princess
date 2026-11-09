@@ -143,3 +143,11 @@ body, table, time, input, .price__amount, .fare__total, .booking-number, .trip-c
 .showme__step { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--surface-info); border-radius: var(--radius-card); }
 .showme__step p { margin: 0; }
 kbd { border: 1px solid var(--border); border-radius: 4px; padding: 0 0.4em; font-family: inherit; background: var(--surface); }
+
+/* Passport stamp book: dated marks in a grid. The press-in animation is for Lively only; at other levels the stamps simply show. */
+.stamps { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.6rem; }
+.stamp { display: grid; gap: 0.15rem; padding: 0.6rem 0.7rem; border: 2px solid var(--gold-text, var(--accent)); border-radius: 0.6rem; text-align: center; }
+.stamp[data-kind='port'] { border-style: double; border-width: 4px; }
+.stamp__date { font-size: 0.8rem; color: var(--muted, inherit); font-variant-numeric: tabular-nums; }
+.stamp--waiting { border-style: dashed; border-width: 2px; opacity: 0.8; }
+:root[data-fun='lively'] .stamp--new { animation: land var(--t-mid) var(--ease) both; }
