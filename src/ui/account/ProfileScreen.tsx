@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { HelpTip } from '../HelpTip'
 import { Link, useParams } from 'react-router'
 import type { ProfileView } from '../../api/types'
 import { BEDDING, DIETARY, NEEDS, nameChange, validateProfile, type Bedding, type DietaryId, type NeedId, type Profile, type ProfileErrors, type ProfileField } from '../../domain/account'
@@ -15,7 +16,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
-import { ErrorSummary, Field, TextArea } from '../Field'
+import { ErrorSummary, Field, TextArea, FieldLabel } from '../Field'
 import { ActionError, Load, SupervisedNote } from './parts'
 import { partyPeople, personFirstName } from '../../account/context'
 
@@ -108,13 +109,14 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
           </Banner>
         )}
         <h2>{th('profile.details')}</h2>
-        <Field label={t('profile.field.firstName')} value={p.firstName} onChange={(e) => set({ firstName: e.target.value })} error={err('firstName')} autoComplete="given-name" />
+        <Field label={t('profile.field.firstName')} help={t('helptip.passportName')} value={p.firstName} onChange={(e) => set({ firstName: e.target.value })} error={err('firstName')} autoComplete="given-name" />
         <Field label={t('profile.field.lastName')} value={p.lastName} onChange={(e) => set({ lastName: e.target.value })} error={err('lastName')} hint={t('profile.nameHint')} autoComplete="family-name" />
-        <Field label={t('profile.field.dob')} type="date" value={p.dob} onChange={(e) => set({ dob: e.target.value })} error={err('dob')} autoComplete="bday" />
+        <Field label={t('profile.field.dob')} help={t('helptip.dobProfile')} type="date" value={p.dob} onChange={(e) => set({ dob: e.target.value })} error={err('dob')} autoComplete="bday" />
         <Field label={t('profile.field.email')} type="email" value={p.email} onChange={(e) => set({ email: e.target.value })} error={err('email')} autoComplete="email" hint={child ? t('profile.optionalChild') : undefined} />
-        <Field label={t('profile.field.phone')} type="tel" value={p.phone} onChange={(e) => set({ phone: e.target.value })} error={err('phone')} autoComplete="tel" />
+        <Field label={t('profile.field.phone')} help={t('helptip.mobile')} type="tel" value={p.phone} onChange={(e) => set({ phone: e.target.value })} error={err('phone')} autoComplete="tel" />
         <fieldset>
           <legend>{t('profile.citizenship')}</legend>
+<HelpTip about={t('profile.citizenship')}>{t('helptip.citizenship')}</HelpTip>
           {(['us', 'other'] as const).map((c) => (
             <label key={c} className="choice"><input type="radio" name="citizenship" checked={p.citizenship === c} onChange={() => set({ citizenship: c })} /><span>{t(`profile.citizenship.${c}` as StringKey)}</span></label>
           ))}
@@ -124,15 +126,17 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
         <h2>{th('profile.preferences')}</h2>
         <fieldset>
           <legend>{t('profile.dietary')}</legend>
+<HelpTip about={t('profile.dietary')}>{t('helptip.dietary')}</HelpTip>
           {DIETARY.map((d: DietaryId) => <label key={d} className="choice"><input type="checkbox" checked={p.dietary.includes(d)} onChange={() => set({ dietary: toggle(p.dietary, d) })} /><span>{t(`profile.dietary.${d}` as StringKey)}</span></label>)}
         </fieldset>
         <fieldset>
           <legend>{t('profile.needs')}</legend>
+<HelpTip about={t('profile.needs')}>{t('helptip.accessNeeds')}</HelpTip>
           {NEEDS.map((n: NeedId) => <label key={n} className="choice"><input type="checkbox" checked={p.needs.includes(n)} onChange={() => set({ needs: toggle(p.needs, n) })} /><span>{t(`profile.needs.${n}` as StringKey)}</span></label>)}
           <p className="field__hint">{t('profile.needsHint')}</p>
         </fieldset>
         <div className="field">
-          <label htmlFor="bedding">{t('profile.bedding')}</label>
+          <FieldLabel htmlFor="bedding" help={t('helptip.bedding')}>{t('profile.bedding')}</FieldLabel>
           <select id="bedding" value={p.bedding} onChange={(e) => set({ bedding: e.target.value as Bedding })}>
             {BEDDING.map((b) => <option key={b} value={b}>{t(`profile.bedding.${b}` as StringKey)}</option>)}
           </select>
@@ -157,9 +161,9 @@ function ProfileForm({ view, onSaved, child, now }: { view: ProfileView; onSaved
 
         <h2>{th('profile.emergency')}</h2>
         <p className="muted">{t('profile.emergencyHint')}</p>
-        <Field label={t('profile.field.emergencyName')} value={p.emergency.name} onChange={(e) => set({ emergency: { ...p.emergency, name: e.target.value } })} error={err('emergencyName')} />
-        <Field label={t('profile.field.emergencyPhone')} type="tel" value={p.emergency.phone} onChange={(e) => set({ emergency: { ...p.emergency, phone: e.target.value } })} error={err('emergencyPhone')} />
-        <Field label={t('profile.emergencyRelationship')} value={p.emergency.relationship} onChange={(e) => set({ emergency: { ...p.emergency, relationship: e.target.value } })} />
+        <Field label={t('profile.field.emergencyName')} help={t('helptip.emergencyName')} value={p.emergency.name} onChange={(e) => set({ emergency: { ...p.emergency, name: e.target.value } })} error={err('emergencyName')} />
+        <Field label={t('profile.field.emergencyPhone')} help={t('helptip.emergencyPhone')} type="tel" value={p.emergency.phone} onChange={(e) => set({ emergency: { ...p.emergency, phone: e.target.value } })} error={err('emergencyPhone')} />
+        <Field label={t('profile.emergencyRelationship')} help={t('helptip.relationship')} value={p.emergency.relationship} onChange={(e) => set({ emergency: { ...p.emergency, relationship: e.target.value } })} />
       </fieldset>
       <ActionError error={save.error} forbidden="profile.err.forbidden" />
       {save.error?.code === 'conflict' && <Banner kind="warning" title={t('profile.name.large', { days: 14 })} action={<LinkButton to="/me/contact" variant="secondary">{t('account.err.contact')}</LinkButton>} />}

@@ -13,7 +13,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useDaysOf, usePricedSailings, useRoomChoices, useSailingRooms } from '../../hooks/useShipCatalogue'
 import { t, th, type StringKey } from '../../i18n'
 import { Card } from '../Card'
-import { Field } from '../Field'
+import { Field, FieldLabel } from '../Field'
 import { budgetNote } from '../../domain/planning'
 import { useMemory } from '../../hooks/useMemory'
 import { Banner } from '../Banner'
@@ -80,7 +80,7 @@ export function TripCostScreen() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="cost-adults">{t('cost.adults')}</label>
+          <FieldLabel htmlFor="cost-adults" help={t('helptip.adults21')}>{t('cost.adults')}</FieldLabel>
           <p className="field__hint">{t('cost.adults.hint')}</p>
           <select id="cost-adults" value={Math.min(adults, guests)} onChange={(e) => setAdults(Number(e.target.value))}>
             {Array.from({ length: guests + 1 }, (_, i) => i).map((n) => <option key={n} value={n}>{n}</option>)}
@@ -168,7 +168,7 @@ function BudgetNote({ option, budget, text, setText, save }: { option: CostOptio
   const rail = guardRail(option, budget)
   return (
     <div>
-      <Field label={t('cost.budget')} inputMode="decimal" value={text !== '' ? text : budget === null ? '' : String(budget / 100)} error={typed === null ? t('cost.invalid') : undefined}
+      <Field label={t('cost.budget')} help={t('helptip.tripBudget')} inputMode="decimal" value={text !== '' ? text : budget === null ? '' : String(budget / 100)} error={typed === null ? t('cost.invalid') : undefined}
         onChange={(e) => { setText(e.target.value); const v = e.target.value.trim() === '' ? null : parseMoney(e.target.value); if (v !== undefined && (v === null || v > 0)) save(e.target.value.trim() === '' ? null : v) }} />
       {rail && (
         <div>

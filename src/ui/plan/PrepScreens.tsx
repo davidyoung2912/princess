@@ -1,4 +1,5 @@
 import { ReadyRing } from '../delights/PrepareDelights'
+import { HelpTip } from '../HelpTip'
 import type { PaymentsView } from '../../api/types'
 import { ShareSliders } from '../delights/PlanPolish'
 import { SharingNote } from '../SharingNote'
@@ -241,6 +242,7 @@ export function ShareLedgerScreen() {
             {state.shares.some((x) => !x.paid) && (
               <fieldset>
                 <legend>{t('shares.chase.tone')}</legend>
+<HelpTip about={t('shares.chase.tone')}>{t('helptip.chaseTone')}</HelpTip>
                 {CHASE_TONES.map((x) => <label key={x} className="choice"><input type="radio" name="chase-tone" checked={tone === x} onChange={() => setTone(x)} /><span>{t(`shares.chase.tone.${x}` as StringKey)}</span></label>)}
                 <p className="muted">{t('shares.chase.note')}</p>
               </fieldset>

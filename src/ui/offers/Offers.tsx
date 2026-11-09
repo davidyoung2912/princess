@@ -121,8 +121,8 @@ function OfferCompare() {
     <section aria-labelledby="offer-cmp-h">
       <h2 id="offer-cmp-h">{th('offer.cmp.title')}</h2>
       <p>{t('offer.cmp.intro')}</p>
-      <Field label={t('offer.cmp.fare')} inputMode="decimal" value={fareText} onChange={(e) => setFareText(e.target.value)} error={fareText.trim() !== '' && fare === null ? t('decide.budgetBad') : undefined} />
-      <Field label={t('offer.cmp.guests')} inputMode="numeric" value={guestsText} onChange={(e) => setGuestsText(e.target.value)} />
+      <Field label={t('offer.cmp.fare')} help={t('helptip.fare')} inputMode="decimal" value={fareText} onChange={(e) => setFareText(e.target.value)} error={fareText.trim() !== '' && fare === null ? t('decide.budgetBad') : undefined} />
+      <Field label={t('offer.cmp.guests')} help={t('helptip.guests')} inputMode="numeric" value={guestsText} onChange={(e) => setGuestsText(e.target.value)} />
       <DealFields name={t('offer.cmp.a')} kind={kindA} text={textA} onKind={setKindA} onText={setTextA} />
       <DealFields name={t('offer.cmp.b')} kind={kindB} text={textB} onKind={setKindB} onText={setTextB} />
       {(kindA === 'credit' || kindB === 'credit') && <Field label={t('offer.cmp.spend')} hint={t('offer.cmp.spendHint')} inputMode="decimal" value={spendText} onChange={(e) => setSpendText(e.target.value)} />}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpTip } from '../HelpTip'
 import { Link } from 'react-router'
 import { asFamilyView } from '../../api/guards'
 import type { FamilyKid, FamilyView } from '../../api/types'
@@ -102,6 +103,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
         <>
           <fieldset className="plain-fieldset">
             <legend>{t('fam.zones')}</legend>
+<HelpTip about={t('fam.zones')}>{t('helptip.famZones')}</HelpTip>
             <p className="field__hint">{t('fam.zonesHint')}</p>
             {kidZones().map((z) => <label key={z} className="choice"><input type="checkbox" checked={zones.includes(z)} onChange={() => setZones(zones.includes(z) ? zones.filter((x) => x !== z) : [...zones, z])} /><span>{placeName(z)}</span></label>)}
           </fieldset>
@@ -110,6 +112,7 @@ function Kid({ k, v, reload, offline, locked }: { k: FamilyKid; v: FamilyView; r
 
           <fieldset className="plain-fieldset">
             <legend>{t('fam.auth')}</legend>
+<HelpTip about={t('fam.auth')}>{t('helptip.famAuth')}</HelpTip>
             {v.adults.map((a) => <label key={a.id} className="choice"><input type="checkbox" checked={pickup.includes(a.id)} onChange={() => setPickup(pickup.includes(a.id) ? pickup.filter((x) => x !== a.id) : [...pickup, a.id])} /><span>{t('fam.mayCollect', { name: a.name })}</span></label>)}
             {aloneOk && <label className="choice"><input type="checkbox" checked={alone} onChange={() => setAlone(!alone)} /><span>{t('fam.signAlone', { name: k.name.split(' ')[0] })}</span></label>}
             <label className="choice"><input type="checkbox" checked={photos} onChange={() => setPhotos(!photos)} /><span>{t('fam.photos')}</span></label>

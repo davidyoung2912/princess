@@ -55,7 +55,7 @@ function Wifi({ v, reload }: { v: WifiView; reload: () => void }) {
         <Card labelledBy="wifi-add-h">
           <h2 id="wifi-add-h" className="card__title">{th('wifi.add')}</h2>
           <form onSubmit={(e) => { e.preventDefault(); sure.ask(cost, t('wifi.confirmWhat'), () => void add.run()) }}>
-            <Field label={t('wifi.deviceName')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
+            <Field label={t('wifi.deviceName')} help={t('helptip.deviceName')} value={name} maxLength={30} onChange={(e) => setName(e.target.value)} />
             <div className="field">
               <label htmlFor="wifi-plan">{t('wifi.plan')}</label>
               <select id="wifi-plan" className="field__input" value={plan} onChange={(e) => setPlan(e.target.value as WifiPlan)}>

@@ -82,7 +82,7 @@ function DocumentForm({ view, guestId, choose, save, busy, error }: StepProps & 
         </fieldset>
         {kind === 'passport' ? (
           <>
-            <Field label={t('checkin.document.country')} value={country} onChange={(e) => setCountry(e.target.value)} autoComplete="country-name" />
+            <Field label={t('checkin.document.country')} help={t('helptip.passportCountry')} value={country} onChange={(e) => setCountry(e.target.value)} autoComplete="country-name" />
             <Field label={t('checkin.document.number')} hint={t('checkin.document.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" spellCheck={false} />
             <Field label={t('checkin.document.expires')} hint={t('checkin.document.expiresHint', { date: formatDate(view.returnDate) })} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
           </>
@@ -163,9 +163,9 @@ export function EmergencyStep({ view, save, busy, error }: StepProps) {
     <>
       <p>{t('checkin.emergency.intro')}</p>
       <Form onSubmit={() => void save({ step: 'emergency', guests: who, name, phone, relationship })} error={error} busy={busy || who.length === 0} label={t('checkin.emergency.button')}>
-        <Field label={t('checkin.emergency.name')} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-        <Field label={t('checkin.emergency.phone')} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="off" />
-        <Field label={t('checkin.emergency.relationship')} value={relationship} onChange={(e) => setRelationship(e.target.value)} autoComplete="off" />
+        <Field label={t('checkin.emergency.name')} help={t('helptip.emergencyName')} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+        <Field label={t('checkin.emergency.phone')} help={t('helptip.emergencyPhone')} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="off" />
+        <Field label={t('checkin.emergency.relationship')} help={t('helptip.relationship')} value={relationship} onChange={(e) => setRelationship(e.target.value)} autoComplete="off" />
         {view.guests.length > 1 && <ApplyTo view={view} step="emergency" value={who} onChange={setWho} />}
       </Form>
     </>

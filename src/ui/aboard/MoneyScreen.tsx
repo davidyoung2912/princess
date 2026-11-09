@@ -16,7 +16,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { Field, TextArea } from '../Field'
+import { Field, TextArea, FieldLabel } from '../Field'
 import { Load } from '../account/parts'
 import { StatusBadge } from '../StatusBadge'
 import { AboardError, Back, ChildNote } from './common'
@@ -68,7 +68,7 @@ function ChargeChecks() {
       <h2 id="chk-h">{th('money.checks')}</h2>
       <p>{t('money.checksBody')}</p>
       <div className="field">
-        <label htmlFor="chk">{t('money.checksLabel')}</label>
+        <FieldLabel htmlFor="chk" help={t('helptip.chargeCheck')}>{t('money.checksLabel')}</FieldLabel>
         <select id="chk" className="field__input" value={settings.chargeCheck} onChange={(e) => update({ chargeCheck: e.target.value as typeof settings.chargeCheck })}>
           {CHARGE_CHECKS.map((c) => <option key={c} value={c}>{t(`money.check.${c}` as StringKey)}</option>)}
         </select>
@@ -162,7 +162,7 @@ function Pin({ v, reload }: { v: MoneyView; reload: () => void }) {
         </Banner>
       )}
       <form onSubmit={(e: FormEvent) => { e.preventDefault(); void save.run() }}>
-        {v.pinSet && !ready && <Field label={t('money.pinCurrent')} type="password" inputMode="numeric" autoComplete="off" maxLength={4} value={current} onChange={(e) => setCurrent(e.target.value)} />}
+        {v.pinSet && !ready && <Field label={t('money.pinCurrent')} help={t('helptip.pinCurrent')} type="password" inputMode="numeric" autoComplete="off" maxLength={4} value={current} onChange={(e) => setCurrent(e.target.value)} />}
         <Field label={t('money.pinNew')} hint={t('money.pinHint')} type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} value={next} onChange={(e) => setNext(e.target.value)} />
         <AboardError error={save.error ?? forgot.error} />
         <div className="button-row">

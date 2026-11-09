@@ -188,8 +188,8 @@ export function DndScreen() {
         <Card key={d.id} labelledBy={`dnd-${d.id}`}>
           <h2 id={`dnd-${d.id}`} className="card__title">{d.from} – {d.to}</h2>
           <label className="choice"><input type="checkbox" checked={d.on} onChange={(e) => patch(d.id, { on: e.target.checked })} /><span>{t('dnd.on')}</span></label>
-          <Field label={t('dnd.from')} type="time" value={d.from} onChange={(e) => e.target.value && patch(d.id, { from: e.target.value })} />
-          <Field label={t('dnd.to')} type="time" value={d.to} onChange={(e) => e.target.value && patch(d.id, { to: e.target.value })} />
+          <Field label={t('dnd.from')} help={t('helptip.quietFrom')} type="time" value={d.from} onChange={(e) => e.target.value && patch(d.id, { from: e.target.value })} />
+          <Field label={t('dnd.to')} help={t('helptip.quietTo')} type="time" value={d.to} onChange={(e) => e.target.value && patch(d.id, { to: e.target.value })} />
           <Button variant="tertiary" onClick={() => set((x) => ({ ...x, dnd: x.dnd.filter((y) => y.id !== d.id) }))}>{t('poll.remove')}</Button>
         </Card>
       ))}
@@ -261,8 +261,8 @@ export function LostFoundScreen() {
   return (
     <Page intro="lost.intro">
       <Banner kind="info" title={t('lost.local')} />
-      <Field label={t('lost.what')} value={what} maxLength={80} onChange={(e) => setWhat(e.target.value)} />
-      <Field label={t('lost.where')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
+      <Field label={t('lost.what')} help={t('helptip.lostWhat')} value={what} maxLength={80} onChange={(e) => setWhat(e.target.value)} />
+      <Field label={t('lost.where')} help={t('helptip.lostWhere')} value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} />
       <Button disabled={!what.trim() || a.lost.length >= LOST_MAX} onClick={() => { set((x) => ({ ...x, lost: [...x.lost, { id: newMemoryId(), what: what.trim(), where: where.trim(), at: now }] })); setWhat(''); setWhere('') }}>{t('lost.save')}</Button>
       {a.lost.map((r) => {
         const m = found ? matchFound(r, found) : []
@@ -314,7 +314,7 @@ export function CabinWordsCard() {
   return (
     <Card labelledBy="cw-h">
       <h2 id="cw-h" className="card__title">{th('cw.title')}</h2>
-      <Field label={t('cw.number')} inputMode="numeric" value={text} maxLength={6} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))} error={a.cabin && !cabin ? t('cw.unknown') : undefined} />
+      <Field label={t('cw.number')} help={t('helptip.cabinNumber')} inputMode="numeric" value={text} maxLength={6} onChange={(e) => setText(e.target.value.replace(/\D/g, ''))} error={a.cabin && !cabin ? t('cw.unknown') : undefined} />
       {fromBooking && !a.cabin && <p>{t('cw.fromBooking', { number: fromBooking })}</p>}
       <Button variant="secondary" onClick={() => set((x) => ({ ...x, cabin: text.trim() }))}>{t('cw.show')}</Button>
       {words && <ol>{words.steps.map((s) => <li key={s.key}>{t(`cw.step.${s.key}` as StringKey, s.params)}</li>)}</ol>}

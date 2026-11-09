@@ -99,8 +99,8 @@ export function MoneyPlanScreen() {
           <>
             <Card labelledBy="mp-in">
               <h2 id="mp-in" className="card__title">{th('mplan.perPerson')}</h2>
-              <Field label={t('mplan.seaDay')} inputMode="numeric" value={sea} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setSea(v); keep({ ...daily, sea: Number(v || '0') * 100 }) }} />
-              <Field label={t('mplan.portDay')} inputMode="numeric" value={port} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setPort(v); keep({ ...daily, port: Number(v || '0') * 100 }) }} />
+              <Field label={t('mplan.seaDay')} help={t('helptip.dayBudget')} inputMode="numeric" value={sea} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setSea(v); keep({ ...daily, sea: Number(v || '0') * 100 }) }} />
+              <Field label={t('mplan.portDay')} help={t('helptip.dayBudget')} inputMode="numeric" value={port} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setPort(v); keep({ ...daily, port: Number(v || '0') * 100 }) }} />
             </Card>
             <Card labelledBy="mp-out">
               <h2 id="mp-out" className="card__title">{th('mplan.plan')}</h2>

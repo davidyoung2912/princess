@@ -67,7 +67,7 @@ export function ContactScreen() {
       <section aria-labelledby="cb-h">
         <h2 id="cb-h">{th('contact.callback')}</h2>
         <form onSubmit={(e) => void askCallback(e)} noValidate>
-          <Field label={t('contact.phoneField')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneProblem ? t('contact.phoneProblem') : undefined} />
+          <Field label={t('contact.phoneField')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={phoneProblem ? t('contact.phoneProblem') : undefined} />
           <ActionError error={callback.error} />
           <Button type="submit" variant="secondary" disabled={callback.busy}>{callback.busy ? t('account.saving') : t('contact.callbackButton')}</Button>
         </form>

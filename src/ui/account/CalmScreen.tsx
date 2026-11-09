@@ -14,7 +14,7 @@ import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
-import { Field } from '../Field'
+import { Field, FieldLabel } from '../Field'
 import { BackLink } from '../onboard/common'
 import { CabinWordsCard } from '../onboard/AboardMoreScreens'
 
@@ -133,8 +133,8 @@ export function CalmScreen() {
           </>
         ) : (
           <>
-            <Field label={t('calm.caregiver.name')} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} error={problem === 'name' ? t('calm.err.name') : undefined} />
-            <label htmlFor="cg-auth">{t('calm.caregiver.authority')}</label>
+            <Field label={t('calm.caregiver.name')} help={t('helptip.caregiverName')} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} error={problem === 'name' ? t('calm.err.name') : undefined} />
+            <FieldLabel htmlFor="cg-auth" help={t('helptip.authority')}>{t('calm.caregiver.authority')}</FieldLabel>
             <select id="cg-auth" className="field__input" value={authority} onChange={(e) => setAuthority(e.target.value as Authority)}>
               <option value="guest">{t('calm.authority.guest')}</option>
               <option value="legal">{t('calm.authority.legal')}</option>

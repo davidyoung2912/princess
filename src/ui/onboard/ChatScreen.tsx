@@ -205,7 +205,7 @@ function Thread({ th, minutes, reload, canWrite }: { th: ServiceThread; minutes:
               <h3 className="card__title">{heading('chat.callMe')}</h3>
               <p>{t('chat.callMeBody', { minutes: ESCALATE_AFTER_MINUTES })}</p>
               <form onSubmit={(e) => { e.preventDefault(); void call.run() }}>
-                <Field label={t('chat.phone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={call.error?.code === 'invalid' ? t('chat.phoneBad') : undefined} />
+                <Field label={t('chat.phone')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={call.error?.code === 'invalid' ? t('chat.phoneBad') : undefined} />
                 {call.error && call.error.code !== 'invalid' && <ActionError error={call.error} />}
                 <Button type="submit" variant="secondary" disabled={call.busy || !phone.trim()}>{t('chat.callMeSend')}</Button>
               </form>

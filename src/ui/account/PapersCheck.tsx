@@ -5,7 +5,7 @@ import { isWithParents, papersCheck, WITH_PARENTS, type WithParents } from '../.
 import { formatDate } from '../../domain/cruise'
 import { passportValidUntil } from '../../domain/documents'
 import { t, th, type StringKey } from '../../i18n'
-import { Field } from '../Field'
+import { Field, FieldLabel } from '../Field'
 import { StatusBadge } from '../StatusBadge'
 
 /** Document sanity checks for one guest (S3-02). The passport name is typed here and compared on the device; it is not sent or stored. */
@@ -21,7 +21,7 @@ export function PapersCheck({ guest, returnDate }: { guest: GuestDocumentsView; 
       <Field label={t('papers.passportName', { name: guest.name })} hint={t('papers.passportHint')} value={passportName} autoComplete="off" onChange={(e) => setPassportName(e.target.value)} />
       {guest.age < 18 && (
         <div className="field">
-          <label htmlFor={`${id}-with`}>{t('papers.with')}</label>
+          <FieldLabel htmlFor={`${id}-with`} help={t('helptip.travellingWith')}>{t('papers.with')}</FieldLabel>
           <select id={`${id}-with`} className="field__input" value={withParents} onChange={(e) => { if (isWithParents(e.target.value)) setWithParents(e.target.value) }}>
             {WITH_PARENTS.map((w) => <option key={w} value={w}>{t(`papers.with.${w}` as StringKey)}</option>)}
           </select>

@@ -51,18 +51,18 @@ function Registration({ child, canEdit, reload }: { child: ClubChild; canEdit: b
           )}
           {open && canEdit && (
             <form onSubmit={(e) => { e.preventDefault(); void save.run() }}>
-              <TextArea label={t('club.allergies')} value={reg.allergies} maxLength={300} onChange={(e) => set({ allergies: e.target.value })} />
-              <TextArea label={t('club.medical')} value={reg.medical} maxLength={300} onChange={(e) => set({ medical: e.target.value })} />
+              <TextArea label={t('club.allergies')} help={t('helptip.clubAllergies')} value={reg.allergies} maxLength={300} onChange={(e) => set({ allergies: e.target.value })} />
+              <TextArea label={t('club.medical')} help={t('helptip.clubMedical')} value={reg.medical} maxLength={300} onChange={(e) => set({ medical: e.target.value })} />
               <TextArea label={t('club.medication')} hint={t('club.medicationHint')} value={reg.medication} maxLength={300} onChange={(e) => set({ medication: e.target.value })} />
-              <Field label={t('club.emergency')} type="tel" autoComplete="tel" value={reg.emergencyPhone} onChange={(e) => set({ emergencyPhone: e.target.value })} />
+              <Field label={t('club.emergency')} help={t('helptip.clubPhone')} type="tel" autoComplete="tel" value={reg.emergencyPhone} onChange={(e) => set({ emergencyPhone: e.target.value })} />
               <fieldset>
                 <legend>{t('club.pickups')}</legend>
                 <p className="muted">{t('club.pickupsHint', { max: MAX_PICKUPS })}</p>
                 {reg.pickups.map((p, i) => (
                   <div key={i} className="ab-controls">
-                    <Field label={t('club.pickupName', { n: i + 1 })} value={p.name} onChange={(e) => setPickup(i, { name: e.target.value })} />
+                    <Field label={t('club.pickupName', { n: i + 1 })} help={t('helptip.pickupName')} value={p.name} onChange={(e) => setPickup(i, { name: e.target.value })} />
                     <Field label={t('club.pickupRelation', { n: i + 1 })} value={p.relation} onChange={(e) => setPickup(i, { relation: e.target.value })} />
-                    <Field label={t('club.pickupPhone', { n: i + 1 })} type="tel" value={p.phone} onChange={(e) => setPickup(i, { phone: e.target.value })} />
+                    <Field label={t('club.pickupPhone', { n: i + 1 })} help={t('helptip.pickupPhone')} type="tel" value={p.phone} onChange={(e) => setPickup(i, { phone: e.target.value })} />
                     <Button variant="tertiary" onClick={() => set({ pickups: reg.pickups.filter((_, n) => n !== i) })}>{t('club.removePickup', { n: i + 1 })}</Button>
                   </div>
                 ))}

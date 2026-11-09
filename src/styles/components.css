@@ -40,6 +40,13 @@
 /* Fields */
 .field { margin-bottom: var(--space-5); max-width: var(--form-max); }
 .field label { display: block; font-weight: 600; margin-bottom: var(--space-2); }
+.field__top { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-2); }
+.field__top label { margin-bottom: var(--space-2); }
+.helptip { display: contents; }
+.helptip__btn { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); margin: calc(var(--space-2) * -0.5) 0; padding: 0; background: transparent; border: 0; border-radius: 50%; color: var(--primary); cursor: pointer; }
+.helptip__btn svg { width: 1.375rem; height: 1.375rem; }
+.helptip__btn:hover, .helptip__btn[aria-expanded='true'] { background: var(--brand-tint); }
+.helptip__note { flex: 1 0 100%; box-sizing: border-box; margin: 0 0 var(--space-2); padding: var(--space-2) var(--space-3); background: var(--sky-tint); border-left: 0.25rem solid var(--primary); border-radius: var(--radius-card); font-size: var(--fs-caption); font-weight: 400; }
 .field__hint { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--fs-caption); }
 .field__input { width: 100%; min-height: var(--target-min); padding: var(--space-2) var(--space-3); background: var(--bg); color: var(--text); border: 2px solid var(--border-strong); border-radius: var(--radius-card); }
 .field__input[aria-invalid='true'] { border-color: var(--danger); }

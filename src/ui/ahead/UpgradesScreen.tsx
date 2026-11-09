@@ -8,6 +8,7 @@ import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { FieldLabel } from '../Field'
 import { StatusBadge } from '../StatusBadge'
 import { Load } from '../account/parts'
 import { formatDateTime } from '../account/format'
@@ -27,7 +28,7 @@ function Offer({ offer, open, canEdit, reload }: { offer: UpgradeOffer; open: bo
       {open && canEdit && (
         <form onSubmit={(e) => { e.preventDefault(); void bid.run(dollars * 100) }}>
           <div className="field">
-            <label htmlFor={id}>{t('upg.yourBid')}</label>
+            <FieldLabel htmlFor={id} help={t('helptip.bid')}>{t('upg.yourBid')}</FieldLabel>
             <p className="field__hint">{t('upg.range', { min: formatMoney(offer.minBid), max: formatMoney(offer.buyNow) })}</p>
             <input id={id} className="field__input" type="number" inputMode="numeric" min={offer.minBid / 100} max={offer.buyNow / 100} step={1} value={dollars} onChange={(e) => setDollars(Number(e.target.value))} />
           </div>

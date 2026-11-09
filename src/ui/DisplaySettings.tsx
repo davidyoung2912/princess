@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { HelpTip } from './HelpTip'
 import { t, th, type StringKey } from '../i18n'
 import { TEXT_SIZES } from '../design/textSize'
 import { CONSENT_REGIONS } from '../domain/ahead'
@@ -28,6 +29,7 @@ export function DisplaySettings() {
       </fieldset>
       <fieldset>
         <legend>{t('settings.theme')}</legend>
+        <HelpTip about={t('settings.theme')}>{t('helptip.theme')}</HelpTip>
         {THEMES.map((theme) => (
           <label key={theme} className="choice">
             <input type="radio" name="theme" checked={settings.theme === theme} onChange={() => update({ theme })} />
@@ -37,6 +39,7 @@ export function DisplaySettings() {
       </fieldset>
       <fieldset>
         <legend>{t('settings.contrast')}</legend>
+        <HelpTip about={t('settings.contrast')}>{t('helptip.contrast')}</HelpTip>
         {CONTRASTS.map((contrast) => (
           <label key={contrast} className="choice">
             <input type="radio" name="contrast" checked={settings.contrast === contrast} onChange={() => update({ contrast })} />
@@ -99,6 +102,7 @@ export function DisplaySettings() {
       </label>
       <fieldset>
         <legend>{t('settings.units')}</legend>
+        <HelpTip about={t('settings.units')}>{t('helptip.units')}</HelpTip>
         {UNITS.map((units) => (
           <label key={units} className="choice">
             <input type="radio" name="units" checked={settings.units === units} onChange={() => update({ units, unitsChosen: true })} />

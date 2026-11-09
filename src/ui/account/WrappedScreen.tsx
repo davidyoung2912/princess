@@ -113,7 +113,7 @@ export function WrappedScreen() {
       <Card labelledBy="wrapped-hind">
         <h2 id="wrapped-hind" className="card__title">{th('wrapped.hindsight')}</h2>
         <p>{t('wrapped.hindsightBody')}</p>
-        <Field label={t('wrapped.paid')} inputMode="decimal" value={paidText} onChange={(e) => { setPaidText(e.target.value); const c = parseMoney(e.target.value); update((m) => ({ ...m, use: { ...m.use, paid: c ?? 0 } })) }} error={paidText.trim() !== '' && paid === null ? t('wrapped.paidBad') : undefined} />
+        <Field label={t('wrapped.paid')} help={t('helptip.packagePaid')} inputMode="decimal" value={paidText} onChange={(e) => { setPaidText(e.target.value); const c = parseMoney(e.target.value); update((m) => ({ ...m, use: { ...m.use, paid: c ?? 0 } })) }} error={paidText.trim() !== '' && paid === null ? t('wrapped.paidBad') : undefined} />
         <Field label={t('wrapped.useDrinks')} inputMode="numeric" value={state.use.drinks ? String(state.use.drinks) : ''} onChange={(e) => setUse('drinks', e.target.value)} />
         <Field label={t('wrapped.useDinners')} inputMode="numeric" value={state.use.dinners ? String(state.use.dinners) : ''} onChange={(e) => setUse('dinners', e.target.value)} />
         <Field label={t('wrapped.useWifi')} inputMode="numeric" value={state.use.wifiNights ? String(state.use.wifiNights) : ''} onChange={(e) => setUse('wifiNights', e.target.value)} />

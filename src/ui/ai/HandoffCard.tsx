@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpTip } from '../HelpTip'
 import { screen } from '../../ai/guard'
 import type { ChatMessage } from '../../ai/types'
 import { EMERGENCY_NUMBER } from '../../domain/contacts'
@@ -47,6 +48,7 @@ export function HandoffCard({ messages }: { messages: readonly ChatMessage[] }) 
       <p>{t('handoff.body')}</p>
       <fieldset className="plain-fieldset">
         <legend>{t('handoff.include')}</legend>
+        <HelpTip about={t('handoff.include')}>{t('helptip.handoff')}</HelpTip>
         {(['question', 'booking', 'conversation'] as const).map((k) => (
           <label key={k} className="choice"><input type="checkbox" checked={parts[k]} onChange={() => toggle(k)} /><span>{t(`handoff.part.${k}` as StringKey)}</span></label>
         ))}

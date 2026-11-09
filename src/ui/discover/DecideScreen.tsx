@@ -15,7 +15,7 @@ import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
 import { qualityFeed } from '../../feeds/sailingQuality'
 import { useFeed } from '../../hooks/useServedFeeds'
-import { Field, TextArea } from '../Field'
+import { Field, TextArea, FieldLabel } from '../Field'
 import { WantMatchLine, WantNext } from '../delights/RememberDelights'
 import { GutCheckFlip, ReadAloud } from '../delights/DiscoverDelights'
 import { EmailRecap, NicknameCard, RemindCard } from '../delights/PrepareDelights'
@@ -124,7 +124,7 @@ export function DecideScreen() {
             {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
-        <Field label={t('decide.budgetAmount')} inputMode="decimal" value={budgetText} onChange={(e) => { setBudgetText(e.target.value); const c = parseMoney(e.target.value); update((s) => ({ ...s, budget: c && c > 0 ? c : null })) }} error={budgetText.trim() !== '' && budget === null ? t('decide.budgetBad') : undefined} />
+        <Field label={t('decide.budgetAmount')} help={t('helptip.budget')} inputMode="decimal" value={budgetText} onChange={(e) => { setBudgetText(e.target.value); const c = parseMoney(e.target.value); update((s) => ({ ...s, budget: c && c > 0 ? c : null })) }} error={budgetText.trim() !== '' && budget === null ? t('decide.budgetBad') : undefined} />
         {result && (
           <>
             {result.fitting.length === 0 ? <p>{t('decide.budgetNone', { price: formatMoney(result.cheapest ?? 0) })}</p> : (
@@ -185,7 +185,7 @@ export function DecideScreen() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="dec-fare">{t('cabins.fare')}</label>
+          <FieldLabel htmlFor="dec-fare" help={t('helptip.fareType')}>{t('cabins.fare')}</FieldLabel>
           <select id="dec-fare" value={useFare ?? ''} onChange={(e) => setFare(e.target.value as FareId | '')}>
             <option value="">{t('decide.notYet')}</option>
             {(category ? fareOptions(category) : []).map((f) => <option key={f} value={f}>{FARES[f].name}</option>)}

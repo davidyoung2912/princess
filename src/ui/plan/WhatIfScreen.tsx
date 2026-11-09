@@ -62,9 +62,9 @@ function Body({ trip, today, now }: { trip: TripView; today: string; now: number
           <legend id="wi-pick">{t('whatif.pick')}</legend>
           {SCENARIOS.map((s) => <label key={s} className="choice"><input type="radio" name="scenario" checked={scenario === s} onChange={() => setScenario(s)} /><span>{t(SCENARIO_KEY[s])}</span></label>)}
         </fieldset>
-        {(scenario === 'cancel' || scenario === 'oneGo') && <Field label={t('whatif.date')} type="date" value={on} min={today} max={trip.departure} onChange={(e) => setOn(e.target.value)} />}
-        {scenario === 'drop' && <Field label={t('whatif.newTotal')} inputMode="numeric" value={newTotal} onChange={(e) => setNewTotal(e.target.value.replace(/[^\d]/g, ''))} />}
-        {scenario === 'move' && <Field label={t('whatif.newSailing')} type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />}
+        {(scenario === 'cancel' || scenario === 'oneGo') && <Field label={t('whatif.date')} help={t('helptip.whatifDate')} type="date" value={on} min={today} max={trip.departure} onChange={(e) => setOn(e.target.value)} />}
+        {scenario === 'drop' && <Field label={t('whatif.newTotal')} help={t('helptip.newTotal')} inputMode="numeric" value={newTotal} onChange={(e) => setNewTotal(e.target.value.replace(/[^\d]/g, ''))} />}
+        {scenario === 'move' && <Field label={t('whatif.newSailing')} help={t('helptip.whatifSailing')} type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />}
         <div role="status" aria-live="polite">
           {scenario === 'cancel' && <Cancel b={b} on={clamp} />}
           {scenario === 'oneGo' && <OneGo b={b} on={clamp} />}

@@ -110,8 +110,8 @@ export function PortParty({ v }: { v: PortDayView }) {
         {me && !me.child && (
           <form onSubmit={(e) => { e.preventDefault(); addMeet() }}>
             <h3>{th('meet.new')}</h3>
-            <Field label={t('meet.place')} value={place} maxLength={80} onChange={(e) => setPlace(e.target.value)} />
-            <Field label={t('meet.time', { zone: PORTS[v.day.port].name })} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <Field label={t('meet.place')} help={t('helptip.meetPlace')} value={place} maxLength={80} onChange={(e) => setPlace(e.target.value)} />
+            <Field label={t('meet.time', { zone: PORTS[v.day.port].name })} help={t('helptip.meetTime')} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             <Field label={t('meet.fallbackLabel')} hint={t('meet.fallbackHint')} value={fallback} maxLength={80} onChange={(e) => setFallback(e.target.value)} />
             {problem && <p className="field__error" role="alert">{t(problem)}</p>}
             <Button type="submit">{t('meet.add')}</Button>

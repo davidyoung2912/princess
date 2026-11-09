@@ -1,4 +1,5 @@
 import { PACES, type Pace } from '../../domain/autopilot'
+import { FieldLabel } from '../Field'
 import { PORTS } from '../../domain/sailings'
 import { formatMoney } from '../../domain/money'
 import { useSailing } from '../../hooks/useDemo'
@@ -38,11 +39,11 @@ export function WeekPlanner() {
         <legend>{t('week.pace')}</legend>
         {PACES.map((p: Pace) => <label key={p} className="choice"><input type="radio" name="week-pace" checked={prefs.pace === p} onChange={() => set({ pace: p })} /><span>{t(`week.pace.${p}` as StringKey)}</span></label>)}
       </fieldset>
-      <label htmlFor="wk-mob">{t('week.mobility')}</label>
+      <FieldLabel htmlFor="wk-mob" help={t('helptip.mobility')}>{t('week.mobility')}</FieldLabel>
       <select id="wk-mob" className="field__input" value={prefs.mobility} onChange={(e) => set({ mobility: e.target.value as typeof prefs.mobility })}>
         {(['any', 'easy', 'wheelchair'] as const).map((m) => <option key={m} value={m}>{t(`week.mobility.${m}` as StringKey)}</option>)}
       </select>
-      <label htmlFor="wk-bud">{t('week.budget')}</label>
+      <FieldLabel htmlFor="wk-bud" help={t('helptip.tourLimit')}>{t('week.budget')}</FieldLabel>
       <select id="wk-bud" className="field__input" value={prefs.maxTour ?? ''} onChange={(e) => set({ maxTour: e.target.value ? Number(e.target.value) : null })}>
         {BUDGETS.map((b) => <option key={b ?? 'none'} value={b ?? ''}>{b === null ? t('week.budget.none') : t('week.budget.upTo', { amount: formatMoney(b) })}</option>)}
       </select>

@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react'
+import { FieldLabel } from '../Field'
 import { MAX_PHOTO_BYTES, PHOTO_MIN_AGE, PHOTO_TYPES, REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import type { PersonaId } from '../../domain/people'
 import { api } from '../../runtime'
@@ -24,7 +25,7 @@ export function MessageSafety({ messageId, from, onBlocked }: { messageId: strin
         <div>
           {sent ? <p role="status">{t('safe.reported')}</p> : (
             <div className="field">
-              <label htmlFor={`rsn-${messageId}`}>{t('safe.reason')}</label>
+              <FieldLabel htmlFor={`rsn-${messageId}`} help={t('helptip.reportReason')}>{t('safe.reason')}</FieldLabel>
               <select id={`rsn-${messageId}`} className="field__input" value={reason} onChange={(e) => setReason(e.target.value as ChatReportReason)}>
                 {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(`safe.r.${r}` as StringKey)}</option>)}
               </select>

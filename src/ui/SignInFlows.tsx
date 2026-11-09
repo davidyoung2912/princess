@@ -71,9 +71,9 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
       <ErrorSummary title={t('signin.problems')} errors={summary} />
       <Card>
         <form onSubmit={(e) => void submit(e)} noValidate>
-          <Field label={t('signin.signup.first')} value={v.firstName} onChange={set('firstName')} autoComplete="given-name" error={err('firstName')} />
-          <Field label={t('signin.signup.last')} value={v.lastName} onChange={set('lastName')} autoComplete="family-name" error={err('lastName')} />
-          <Field label={t('signin.signup.email')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
+          <Field label={t('signin.signup.first')} help={t('helptip.passportName')} value={v.firstName} onChange={set('firstName')} autoComplete="given-name" error={err('firstName')} />
+          <Field label={t('signin.signup.last')} help={t('helptip.passportName')} value={v.lastName} onChange={set('lastName')} autoComplete="family-name" error={err('lastName')} />
+          <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
           <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} value={v.dob} onChange={set('dob')} autoComplete="bday" inputMode="numeric" placeholder="YYYY-MM-DD" error={err('dob') ?? err('tooYoung')} />
           <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
           <Button type="submit" block disabled={busy}>{busy ? t('signin.signup.busy') : t('signin.signup.submit')}</Button>
@@ -136,11 +136,11 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
       <ErrorSummary title={t('signin.problems')} errors={errors} />
       <Card>
         <form onSubmit={(e) => void (sent ? finish(e) : ask(e))} noValidate>
-          <Field label={t('signin.signup.email')} value={email} onChange={(e) => setEmail(e.target.value)} readOnly={sent} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} />
+          <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={email} onChange={(e) => setEmail(e.target.value)} readOnly={sent} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} />
           {sent && (
             <>
               <p role="status">{t('signin.code.sent')}</p>
-              <Field label={t('signin.code.field')} value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" inputMode="numeric" />
+              <Field label={t('signin.code.field')} help={t('helptip.code')} value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" inputMode="numeric" />
               {purpose === 'reset' && <Field label={t('signin.code.newPassword')} hint={t('signin.signup.password.hint')} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />}
             </>
           )}

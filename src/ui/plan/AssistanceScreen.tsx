@@ -11,7 +11,7 @@ import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { TextArea } from '../Field'
+import { TextArea, FieldLabel } from '../Field'
 import { StatusBadge, type BadgeKind } from '../StatusBadge'
 import { Stepper } from '../Stepper'
 import { Load } from '../account/parts'
@@ -71,7 +71,7 @@ function Body({ view, reload }: { view: AssistanceView; reload: () => void }) {
         <h2 id="req-h">{th('assist.new')}</h2>
         <form onSubmit={(e) => { e.preventDefault(); void submit() }}>
           <div className="field">
-            <label htmlFor="as-kind">{t('assist.what')}</label>
+            <FieldLabel htmlFor="as-kind" help={t('helptip.assistWhat')}>{t('assist.what')}</FieldLabel>
             <select id="as-kind" value={kind} disabled={!view.canRequest} onChange={(e) => { setKind(e.target.value as AssistId); setSent(null) }}>
               {ASSIST_KINDS.map((k) => <option key={k.id} value={k.id}>{t(`assist.kind.${k.id}` as never)}</option>)}
             </select>

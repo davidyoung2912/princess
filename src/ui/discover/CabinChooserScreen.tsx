@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FieldLabel } from '../Field'
 import { Link, useSearchParams } from 'react-router'
 import { compareMatrix, MAX_COMPARE, NO_FILTER, notIncluded, type CabinFilter, type CabinScore, type CompareColumn } from '../../domain/cabinScore'
 import { capacityIn, FARES, fareOptions, type FareId } from '../../domain/fares'
@@ -152,7 +153,7 @@ export function CabinChooserScreen() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="cabins-fare">{t('cabins.fare')}</label>
+          <FieldLabel htmlFor="cabins-fare" help={t('helptip.fareType')}>{t('cabins.fare')}</FieldLabel>
           <select id="cabins-fare" value={useFare} onChange={(e) => setFare(e.target.value as FareId)}>
             {options.map((f) => <option key={f} value={f}>{FARES[f].name}</option>)}
           </select>

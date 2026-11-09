@@ -62,11 +62,11 @@ export function JourneyScreen() {
         {plan.mode === 'fly' ? (
           <>
             <Field label={t('journey.flight')} hint={t('journey.flight.hint')} value={flight} maxLength={7} onChange={(e) => setFlight(e.target.value)} onBlur={() => set({ flightNumber: normalizeFlight(flight).slice(0, 6) })} />
-            <Field label={t('journey.landing')} type="time" value={plan.landing} onChange={(e) => isTime(e.target.value) && set({ landing: e.target.value })} />
+            <Field label={t('journey.landing')} help={t('helptip.landing')} type="time" value={plan.landing} onChange={(e) => isTime(e.target.value) && set({ landing: e.target.value })} />
             <label className="choice"><input type="checkbox" checked={plan.carryOnOnly} onChange={(e) => set({ carryOnOnly: e.target.checked })} /><span>{t('journey.carryOnOnly')}</span></label>
           </>
         ) : (
-          <Field label={t('journey.road')} type="number" min={10} max={900} value={String(plan.roadMinutes)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10 && v <= 900) set({ roadMinutes: v }) }} />
+          <Field label={t('journey.road')} help={t('helptip.roadMinutes')} type="number" min={10} max={900} value={String(plan.roadMinutes)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10 && v <= 900) set({ roadMinutes: v }) }} />
         )}
         <label className="choice"><input type="checkbox" checked={plan.hotelNight} onChange={(e) => set({ hotelNight: e.target.checked })} /><span>{t('journey.hotelNight')}</span></label>
         {plan.windowStart ? <p className="muted">{t('journey.window', { time: plan.windowStart })}</p> : <p className="muted">{t('journey.window.none')} <Link to="/home/embarkation/plan">{t('route.embarkPlan')}</Link></p>}

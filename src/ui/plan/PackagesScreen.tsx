@@ -210,10 +210,10 @@ function Worth({ view }: { view: PackagesView }) {
       <h2 id="worth-h">{th('pk.worth')}</h2>
       <p>{t('pk.worthIntro')}</p>
       <div className="calc-grid">
-        <Field label={t('pk.w.drinks')} type="number" inputMode="decimal" min={0} max={20} value={use.drinksPerDay} onChange={(e) => setUse({ ...use, drinksPerDay: num(e.target.value, 20) })} />
+        <Field label={t('pk.w.drinks')} help={t('helptip.drinksPerDay')} type="number" inputMode="decimal" min={0} max={20} value={use.drinksPerDay} onChange={(e) => setUse({ ...use, drinksPerDay: num(e.target.value, 20) })} />
         <Field label={t('pk.w.avg')} hint={t('pk.w.avgHint', { price: formatMoney(AVG_DRINK) })} type="number" inputMode="decimal" min={4} max={30} value={use.avgDrink / 100} onChange={(e) => setUse({ ...use, avgDrink: Math.round(num(e.target.value, 30) * 100) })} />
         <Field label={t('pk.w.dinners')} type="number" inputMode="numeric" min={0} max={7} value={use.specialtyDinners} onChange={(e) => setUse({ ...use, specialtyDinners: Math.round(num(e.target.value, 7)) })} />
-        <Field label={t('pk.w.tours')} type="number" inputMode="numeric" min={0} max={1000} value={use.excursionSpend} onChange={(e) => setUse({ ...use, excursionSpend: Math.round(num(e.target.value, 1000)) })} />
+        <Field label={t('pk.w.tours')} help={t('helptip.toursSpend')} type="number" inputMode="numeric" min={0} max={1000} value={use.excursionSpend} onChange={(e) => setUse({ ...use, excursionSpend: Math.round(num(e.target.value, 1000)) })} />
       </div>
       <label className="choice"><input type="checkbox" checked={use.wifi} onChange={() => setUse({ ...use, wifi: !use.wifi })} /><span>{t('pk.w.wifi')}</span></label>
       <div aria-live="polite">

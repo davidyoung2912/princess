@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpTip } from '../HelpTip'
 import { Link } from 'react-router'
 import { accessRows, activeCount, relationshipOf, type AccessItem, type AccessRow } from '../../domain/access'
 import type { Helper, PermissionId } from '../../domain/account'
@@ -49,6 +50,7 @@ function Permissions({ value, onChange }: { value: PermissionId[]; onChange: (ne
   return (
     <fieldset>
       <legend>{t('helper.mayDo')}</legend>
+<HelpTip about={t('helper.mayDo')}>{t('helptip.helperMay')}</HelpTip>
       {PERMISSIONS.map((x) => (
         <label key={x} className="choice">
           <input type="checkbox" checked={value.includes(x) && permissionWorks(x)} disabled={x === 'view' || !permissionWorks(x)} onChange={() => onChange(value.includes(x) ? value.filter((p) => p !== x) : [...value, x])} />
@@ -94,7 +96,7 @@ function AcceptInvite() {
     <Card labelledBy="accept-h">
       <h2 id="accept-h">{th('helper.accept.title')}</h2>
       <p>{t('helper.accept.body')}</p>
-      <Field label={t('helper.accept.label')} value={code} onChange={(e) => setCode(e.target.value)} error={bad ? t('helper.accept.bad') : undefined} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
+      <Field label={t('helper.accept.label')} help={t('helptip.inviteCode')} value={code} onChange={(e) => setCode(e.target.value)} error={bad ? t('helper.accept.bad') : undefined} autoComplete="off" autoCapitalize="characters" spellCheck={false} />
       {accept.error?.code === 'notFound' ? <p role="alert" className="field__error">{t('helper.accept.notFound')}</p> : <ActionError error={accept.error} />}
       <p role="status">{done ? t('helper.accept.done', { name: done }) : ''}</p>
       <Button disabled={accept.busy} onClick={() => void go()}>{t('helper.accept.button')}</Button>
@@ -137,8 +139,8 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
       {!active && (
         <section aria-labelledby="form-h">
           <h2 id="form-h">{requested ? th('helper.decide') : th('helper.add')}</h2>
-          <Field label={t('helper.name')} value={name} onChange={(e) => setName(e.target.value)} readOnly={requested} error={needName ? t('helper.needName') : undefined} autoComplete="off" />
-          <Field label={t('helper.relationship')} value={relationship} onChange={(e) => setRelationship(e.target.value)} readOnly={requested} autoComplete="off" />
+          <Field label={t('helper.name')} help={t('helptip.helperName')} value={name} onChange={(e) => setName(e.target.value)} readOnly={requested} error={needName ? t('helper.needName') : undefined} autoComplete="off" />
+          <Field label={t('helper.relationship')} help={t('helptip.helperRelation')} value={relationship} onChange={(e) => setRelationship(e.target.value)} readOnly={requested} autoComplete="off" />
           <Permissions value={permissions} onChange={setPermissions} />
           <ActionError error={save.error} />
           <div className="button-row">

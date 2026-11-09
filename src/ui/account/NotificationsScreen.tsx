@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { HelpTip } from '../HelpTip'
+import { FieldLabel } from '../Field'
 import { CATEGORIES, CHANNELS, type Category, type Channel, type NotificationPrefs } from '../../domain/notifications'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
@@ -101,6 +103,7 @@ function Prefs({ prefs, onSaved }: { prefs: NotificationPrefs; onSaved: () => vo
       ))}
       <fieldset>
         <legend>{t('notices.quiet')}</legend>
+<HelpTip about={t('notices.quiet')}>{t('helptip.quietNotices')}</HelpTip>
         <label className="choice"><input type="checkbox" checked={draft.quiet.on} onChange={() => quiet({ on: !draft.quiet.on })} /><span>{t('notices.quietOn')}</span></label>
         <div className="time-pair">
           <div className="field"><label htmlFor="q-from">{t('notices.quietFrom')}</label><input id="q-from" className="field__input" type="time" value={draft.quiet.from} disabled={!draft.quiet.on} onChange={(e) => quiet({ from: e.target.value })} /></div>
@@ -123,7 +126,7 @@ function Nudges() {
       <h2 id="nudge-h">{th('nudges.title')}</h2>
       <p>{t('nudges.body')}</p>
       <div className="field">
-        <label htmlFor="nudge-n">{t('nudges.label')}</label>
+        <FieldLabel htmlFor="nudge-n" help={t('helptip.nudges')}>{t('nudges.label')}</FieldLabel>
         <select id="nudge-n" className="field__input" value={settings.nudgesPerDay} onChange={(e) => update({ nudgesPerDay: Number(e.target.value) as typeof settings.nudgesPerDay })}>
           {NUDGE_CHOICES.map((n) => <option key={n} value={n}>{n === 0 ? t('nudges.none') : t('nudges.count', { count: n })}</option>)}
         </select>

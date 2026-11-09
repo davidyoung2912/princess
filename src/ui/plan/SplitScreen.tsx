@@ -69,8 +69,8 @@ export function SplitScreen() {
         ))}</ul>
         <p className="muted">{t('split.removeNote')}</p>
         <form onSubmit={(e) => { e.preventDefault(); addFamily() }}>
-          <Field label={t('split.famName')} value={fam} maxLength={40} onChange={(e) => setFam(e.target.value)} />
-          <Field label={t('split.famPeople')} type="number" min={1} max={12} value={people} onChange={(e) => setPeople(e.target.value)} />
+          <Field label={t('split.famName')} help={t('helptip.famName')} value={fam} maxLength={40} onChange={(e) => setFam(e.target.value)} />
+          <Field label={t('split.famPeople')} help={t('helptip.famPeople')} type="number" min={1} max={12} value={people} onChange={(e) => setPeople(e.target.value)} />
           {famProblem && <p className="field__error" role="alert">{t(famProblem)}</p>}
           <Button type="submit" variant="secondary">{t('split.addFamily')}</Button>
         </form>
@@ -83,7 +83,7 @@ export function SplitScreen() {
         {parties.length < 2 ? <p>{t('split.needTwo')}</p> : (
           <form onSubmit={(e) => { e.preventDefault(); addShared() }}>
             <Field label={t('split.what')} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
-            <Field label={t('split.amount')} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Field label={t('split.amount')} help={t('helptip.splitAmount')} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
             <label className="field"><span>{t('split.kind')}</span>
               <select className="field__input" value={kind} onChange={(e) => setKind(e.target.value as SplitKind)}>{SPLIT_KINDS.map((k) => <option key={k} value={k}>{t(`split.kind.${k}` as StringKey)}</option>)}</select>
             </label>

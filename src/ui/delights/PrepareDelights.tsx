@@ -99,7 +99,7 @@ export function PassportByPortCard() {
           <label key={c} className="choice"><input type="radio" name="dl5-pass-who" checked={citizenship === c} onChange={() => setChosen(c)} />{t(`clr.who.${c}` as StringKey)}</label>
         ))}
       </fieldset>
-      <Field label={t('dl5.pass.field')} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
+      <Field label={t('dl5.pass.field')} help={t('helptip.passportExpiry')} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
       <div aria-live="polite">
         {checks && worst && (
           <>

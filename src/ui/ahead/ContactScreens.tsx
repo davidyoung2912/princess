@@ -73,7 +73,7 @@ export function AdvisorsScreen() {
             </label>
           ))}
         </fieldset>
-        {way === 'callback' && <Field label={t('adv.phone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
+        {way === 'callback' && <Field label={t('adv.phone')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
         <TextArea label={t('adv.question')} hint={t('adv.questionHint')} value={question} maxLength={500} onChange={(e) => setQuestion(e.target.value)} />
         <AheadError error={ask.error} />
         <Button type="submit" disabled={ask.busy}>{way === 'chat' ? t('adv.send') : t('adv.callMe')}</Button>
@@ -127,7 +127,7 @@ function Channel({ channel, reload, region }: { channel: MarketingChannel; reloa
                 <p><StatusBadge kind="waitlist" label={t('mkt.pending', { contact: c.contact })} /></p>
                 <p className="muted">{t('mkt.demoCode', { code: c.demoCode ?? '' })}</p>
                 <form onSubmit={(e) => { e.preventDefault(); void confirm.run() }}>
-                  <Field label={t('mkt.code')} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
+                  <Field label={t('mkt.code')} help={t('helptip.code')} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
                   <Button type="submit" disabled={confirm.busy || !v.canEdit}>{t('mkt.confirm')}</Button>{' '}
                   <Button variant="tertiary" disabled={withdraw.busy} onClick={() => void withdraw.run()}>{t('mkt.cancel')}</Button>
                 </form>
@@ -192,7 +192,7 @@ export function AssistScreen() {
             </label>
           ))}
         </fieldset>
-        <Field label={t('asst.phone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Field label={t('asst.phone')} help={t('helptip.callbackPhone')} type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <TextArea label={t('asst.note')} hint={t(`asst.noteHint.${kind}` as StringKey)} value={note} maxLength={600} onChange={(e) => setNote(e.target.value)} />
         <AheadError error={ask.error} />
         <Button type="submit" disabled={ask.busy}>{t('asst.send')}</Button>

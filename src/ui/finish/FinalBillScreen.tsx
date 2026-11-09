@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpTip } from '../HelpTip'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
 import type { FinalBillView } from '../../api/finishTypes'
@@ -75,6 +76,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
           <form onSubmit={(e) => { e.preventDefault(); void adjust.run() }}>
             <fieldset disabled={!b.tip.canAdjust}>
               <legend>{t('fb.tipKeep')}</legend>
+<HelpTip about={t('fb.tipKeep')}>{t('helptip.gratuity')}</HelpTip>
               {TIP_KEEP.map((k) => (
                 <label key={k} className="choice">
                   <input type="radio" name="tip-keep" checked={keep === k} onChange={() => setKeep(k)} />
@@ -119,7 +121,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
               {charges.map((l) => <option key={l.id} value={l.id}>{l.description} · {formatMoney(l.cents)}</option>)}
             </select>
           </div>
-          <Field label={t('fb.why')} maxLength={CASE_TEXT_MAX} value={why} onChange={(e) => setWhy(e.target.value)} />
+          <Field label={t('fb.why')} help={t('helptip.billWhy')} maxLength={CASE_TEXT_MAX} value={why} onChange={(e) => setWhy(e.target.value)} />
           <ExtraError error={query.error} />
           <Button type="submit" variant="secondary" disabled={query.busy || !picked || why.trim().length < 5}>{query.busy ? t('account.saving') : t('fb.send')}</Button>
         </form>

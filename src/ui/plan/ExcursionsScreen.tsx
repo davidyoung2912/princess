@@ -1,4 +1,5 @@
 import { AccessAreaNote } from '../AccessAreaNote'
+import { FieldLabel } from '../Field'
 import { useState } from 'react'
 import { SaveButton } from '../ahead/common'
 import type { ExcursionOffer, ExcursionsView, TourBooking } from '../../api/types'
@@ -142,7 +143,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
         <p>{t('exc.fit.intro')}</p>
         <div className="filters">
           <div className="field">
-            <label htmlFor="fit-active">{t('exc.fit.active')}</label>
+            <FieldLabel htmlFor="fit-active" help={t('helptip.activeFit')}>{t('exc.fit.active')}</FieldLabel>
             <select id="fit-active" value={fit?.activity ?? ''} onChange={(e) => setFit({ ...(fit ?? NO_FIT), activity: e.target.value as FitAnswers['activity'] })}>
               {!fit && <option value="">{t('exc.fit.choose')}</option>}
               {ACTIVITIES.map((a) => <option key={a} value={a}>{t(`exc.fit.active.${a}` as StringKey)}</option>)}
@@ -198,7 +199,7 @@ function Body({ view, reload }: { view: ExcursionsView; reload: () => void }) {
             </select>
           </div>
           <div className="field">
-            <label htmlFor="f-level">{t('exc.f.level')}</label>
+            <FieldLabel htmlFor="f-level" help={t('helptip.activeFilter')}>{t('exc.f.level')}</FieldLabel>
             <select id="f-level" value={filter.maxActivity ?? ''} onChange={(e) => set({ maxActivity: (e.target.value || null) as Filter['maxActivity'] })}>
               <option value="">{t('exc.f.any')}</option>
               {ACTIVITIES.map((a) => <option key={a} value={a}>{t(`exc.level.up.${a}` as never)}</option>)}

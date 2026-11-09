@@ -13,7 +13,7 @@ import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { Field } from '../Field'
+import { Field, FieldLabel } from '../Field'
 import { ActionError } from '../account/parts'
 
 const dollars = (cents: number | null) => (cents === null ? '' : String(cents / 100))
@@ -87,7 +87,7 @@ function BudgetForm({ data, lines, saved }: { data: BudgetView; lines: readonly 
         <form onSubmit={submit} noValidate>
           <Field label={t('bud.total')} hint={fromPlan && total === dollars(planned) ? t('bud.total.fromPlan') : t('bud.total.hint')} inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} error={bad ? t('bud.bad') : undefined} />
           <div className="field">
-            <label htmlFor="bud-level">{t('bud.level')}</label>
+            <FieldLabel htmlFor="bud-level" help={t('helptip.budgetLevel')}>{t('bud.level')}</FieldLabel>
             <select id="bud-level" className="field__input" value={level} onChange={(e) => setLevel(Number(e.target.value) as AlertLevel)}>
               {ALERT_LEVELS.map((l) => <option key={l} value={l}>{t('bud.level.at', { percent: l })}</option>)}
             </select>

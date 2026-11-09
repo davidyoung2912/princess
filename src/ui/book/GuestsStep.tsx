@@ -4,7 +4,7 @@ import { fillBlank, GENDERS, type GuestDraft, type LeadContact } from '../../dom
 import { sailingById } from '../../domain/sailings'
 import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
-import { Field } from '../Field'
+import { Field, FieldLabel } from '../Field'
 import { StepSection, type StepProps } from './common'
 import { NameCheck } from '../delights/Delights'
 import { SavedTravellers } from '../delights/PrepareDelights'
@@ -36,11 +36,11 @@ export function GuestsStep({ draft, update, error, ctx }: StepProps) {
         <fieldset key={i}>
           <legend>{i === 0 ? t('book.guests.lead') : t('book.guests.guestN', { n: i + 1 })}</legend>
           <Field label={t('book.field.firstName')} hint={i === 0 ? t('book.guests.nameHint') : undefined} value={g.firstName} error={error(`people.${i}.firstName`)} onChange={(e) => setGuest(i, { firstName: e.target.value })} autoComplete={i === 0 ? 'given-name' : 'off'} />
-          <Field label={t('book.field.lastName')} value={g.lastName} error={error(`people.${i}.lastName`)} onChange={(e) => setGuest(i, { lastName: e.target.value })} autoComplete={i === 0 ? 'family-name' : 'off'} />
+          <Field label={t('book.field.lastName')} help={t('helptip.passportName')} value={g.lastName} error={error(`people.${i}.lastName`)} onChange={(e) => setGuest(i, { lastName: e.target.value })} autoComplete={i === 0 ? 'family-name' : 'off'} />
           <NameCheck first={g.firstName} last={g.lastName} />
           <Field label={t('book.field.dob')} hint={t('book.guests.dobHint')} type="date" max={ctx.today} value={g.dob} error={error(`people.${i}.dob`)} onChange={(e) => setGuest(i, { dob: e.target.value })} autoComplete={i === 0 ? 'bday' : 'off'} />
           <div className="field">
-            <label htmlFor={`gender-${i}`}>{t('book.field.gender')}</label>
+            <FieldLabel htmlFor={`gender-${i}`} help={t('helptip.gender')}>{t('book.field.gender')}</FieldLabel>
             <p className="field__hint">{t('book.guests.genderHint')}</p>
             <select id={`gender-${i}`} value={g.gender} aria-invalid={error(`people.${i}.gender`) ? true : undefined} onChange={(e) => setGuest(i, { gender: e.target.value as GuestDraft['gender'] })}>
               <option value="">{t('book.choose')}</option>
@@ -49,7 +49,7 @@ export function GuestsStep({ draft, update, error, ctx }: StepProps) {
             {error(`people.${i}.gender`) && <p className="field__error">{error(`people.${i}.gender`)}</p>}
           </div>
           <div className="field">
-            <label htmlFor={`citizen-${i}`}>{t('book.field.citizenship')}</label>
+            <FieldLabel htmlFor={`citizen-${i}`} help={t('helptip.citizenship')}>{t('book.field.citizenship')}</FieldLabel>
             <select id={`citizen-${i}`} value={g.citizenship} aria-invalid={error(`people.${i}.citizenship`) ? true : undefined} onChange={(e) => setGuest(i, { citizenship: e.target.value as GuestDraft['citizenship'] })}>
               <option value="">{t('book.choose')}</option>
               <option value="us">{t('book.citizenship.us')}</option>

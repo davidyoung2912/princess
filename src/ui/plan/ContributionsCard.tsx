@@ -36,8 +36,8 @@ export function ContributionsCard({ split, parties, me, organiser, commit }: {
           <p>{t('contrib.intro')}</p>
           {parties.length < 2 ? <p className="muted">{t('contrib.needTwo')}</p> : (
             <>
-              <Field label={t('contrib.total')} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              <Field label={t('contrib.due')} type="date" value={due} onChange={(e) => setDue(e.target.value)} error={bad ? t('contrib.bad') : undefined} />
+              <Field label={t('contrib.total')} help={t('helptip.splitTotal')} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Field label={t('contrib.due')} help={t('helptip.payBy')} type="date" value={due} onChange={(e) => setDue(e.target.value)} error={bad ? t('contrib.bad') : undefined} />
               <Button onClick={create}>{t('contrib.create')}</Button>
             </>
           )}

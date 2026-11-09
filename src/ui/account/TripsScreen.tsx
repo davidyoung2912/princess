@@ -9,7 +9,7 @@ import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { ErrorSummary, Field } from '../Field'
+import { ErrorSummary, Field, FieldLabel } from '../Field'
 import { ActionError, Load } from './parts'
 import { TripCard } from './tripParts'
 
@@ -68,9 +68,9 @@ export function TripsScreen() {
           {code === 'forbidden' && link.error?.message === 'review' && <Banner kind="info" title={t('trips.link.review')}><p>{t('trips.link.reviewBody')}</p></Banner>}
           {code && !(['notFound', 'conflict', 'invalid'].includes(code) || (code === 'forbidden' && link.error?.message === 'review')) && <ActionError error={link.error} />}
           <Field label={t('trips.link.number')} hint={t('trips.link.numberHint')} value={number} onChange={(e) => setNumber(e.target.value)} autoComplete="off" autoCapitalize="characters" />
-          <Field label={t('trips.link.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+          <Field label={t('trips.link.lastName')} help={t('helptip.bookingLastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
           <div className="field">
-            <label htmlFor="link-date">{t('trips.link.date')}</label>
+            <FieldLabel htmlFor="link-date" help={t('helptip.departureDate')}>{t('trips.link.date')}</FieldLabel>
             <select id="link-date" value={departure} onChange={(e) => setDeparture(e.target.value)}>
               <option value="">{t('trips.link.chooseDate')}</option>
               {SAILINGS.map((s) => <option key={s.id} value={s.departure}>{formatDate(s.departure)}</option>)}

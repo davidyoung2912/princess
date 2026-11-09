@@ -1,4 +1,5 @@
 import { asRoomView } from '../../api/guards'
+import { FieldLabel } from '../Field'
 import type { RoomView } from '../../api/types'
 import { CLEANING_WINDOWS, LIGHTS, SERVICE_MODES, TEMP_RANGE, type CleaningWindow, type Lights, type ServiceMode } from '../../domain/room'
 import { api } from '../../runtime'
@@ -64,7 +65,7 @@ function Room({ r, reload, offline }: { r: RoomView; reload: () => void; offline
         </fieldset>
         {r.housekeeping.since !== null && <p role="status" className="muted">{t('room.since', { time: shipTime(r.housekeeping.since) })}</p>}
         <div className="field">
-          <label htmlFor="room-window">{t('room.window')}</label>
+          <FieldLabel htmlFor="room-window" help={t('helptip.cleaning')}>{t('room.window')}</FieldLabel>
           <select id="room-window" className="field__input" disabled={locked} value={r.housekeeping.window} onChange={(e) => void hk.run({ window: e.target.value as CleaningWindow })}>
             {CLEANING_WINDOWS.map((w) => <option key={w} value={w}>{t(`room.window.${w}` as StringKey)}</option>)}
           </select>
