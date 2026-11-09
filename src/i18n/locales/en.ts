@@ -450,6 +450,7 @@ export const en = {
   'notices.markRead': 'Mark all as seen',
   'notices.payOverdue': 'Your final payment was due {date}',
   'notices.instalmentDue': 'Your instalment of {amount} is due {date}',
+  'notices.instalmentAutoFailed': 'We could not take your instalment of {amount} due {date}. Please pay it yourself',
   'notices.payDue': 'Your final payment is due {date}',
   'notices.passportProblem_one': '{count} passport will not be valid long enough',
   'notices.passportProblem_other': '{count} passports will not be valid long enough',

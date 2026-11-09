@@ -7,6 +7,7 @@ namespace Princess.Api.Services;
 /// <summary>What is worth telling the guest about their current trip beyond the basics: the next instalment, the tender boats and the onward flight. Shared by the notifications centre and the push check so the two never disagree.</summary>
 public sealed record TripWatches(
     InstalmentPayment? Instalment,
+    bool InstalmentAuto,
     (string Port, string Date, string Band, int Percent)? Tender,
     (string Flight, string Date, string State, int DelayMinutes)? Flight);
 
@@ -21,6 +22,6 @@ public sealed class TripWatchService(IBookingStore bookings, ITenderOutlook tend
         // The onward flight (saved on the disembark screens) leaves on the last day of the sailing.
         var onward = await finish.GetOnwardAsync(current.BookingId, ct);
         var flight = onward is null ? null : FlightRules.Watch(onward.Flight, timeline.LastDay, today, flights.Status);
-        return new(next, tenderWatch, flight);
+        return new(next, choice?.AutoCard is not null, tenderWatch, flight);
     }
 }

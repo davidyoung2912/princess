@@ -56,7 +56,7 @@ public static partial class NotificationRules
 
     public sealed record Notice(string Id, string Category, Dictionary<string, object> Params);
 
-    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens, string? InstalmentDate = null, long InstalmentCents = 0, string Today = "", string? TenderPort = null, string TenderDate = "", string TenderBand = "", int TenderPercent = 0, string? FlightNumber = null, string FlightDate = "", string FlightState = "", int FlightDelay = 0);
+    public sealed record NoticeInput(string Payment, string FinalDue, int DocumentsMissing, int PassportProblems, string CheckinState, string CheckinOpens, string? InstalmentDate = null, long InstalmentCents = 0, string Today = "", string? TenderPort = null, string TenderDate = "", string TenderBand = "", int TenderPercent = 0, string? FlightNumber = null, string FlightDate = "", string FlightState = "", int FlightDelay = 0, bool InstalmentAutoFailed = false);
 
     /// <summary>What the guest should hear about now, most urgent first. Derived from their trip, so it can never disagree with it.</summary>
     public static List<Notice> BuildNotices(NoticeInput i)
@@ -66,7 +66,7 @@ public static partial class NotificationRules
         if (i.PassportProblems > 0) list.Add(new("passportProblem", "critical", new() { ["count"] = i.PassportProblems }));
         if (i.Payment == "dueSoon") list.Add(new("payDue", "payments", new() { ["date"] = i.FinalDue }));
         if (i.InstalmentDate is not null && string.CompareOrdinal(i.InstalmentDate, DateOnly.ParseExact(i.Today, "yyyy-MM-dd").AddDays(InstalmentRules.RemindDays).ToString("yyyy-MM-dd")) <= 0)
-            list.Add(new("instalmentDue", "payments", new() { ["date"] = i.InstalmentDate, ["amount"] = i.InstalmentCents }));
+            list.Add(new(i.InstalmentAutoFailed ? "instalmentAutoFailed" : "instalmentDue", "payments", new() { ["date"] = i.InstalmentDate, ["amount"] = i.InstalmentCents }));
         if (i.DocumentsMissing > 0) list.Add(new("documentsMissing", "documents", new() { ["count"] = i.DocumentsMissing }));
         if (i.TenderPort is not null) list.Add(new("tenderWatch", "checkin", new() { ["port"] = i.TenderPort, ["date"] = i.TenderDate, ["band"] = i.TenderBand, ["percent"] = i.TenderPercent }));
         if (i.FlightNumber is not null) list.Add(new("flightWatch", "checkin", new() { ["flight"] = i.FlightNumber, ["date"] = i.FlightDate, ["state"] = i.FlightState, ["minutes"] = i.FlightDelay }));
@@ -74,7 +74,7 @@ public static partial class NotificationRules
         return list;
     }
 
-    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "instalmentDue", "passportProblem", "documentsMissing", "tenderWatch", "flightWatch", "checkinOpens"];
+    public static readonly string[] NoticeIds = ["payOverdue", "payDue", "instalmentDue", "instalmentAutoFailed", "passportProblem", "documentsMissing", "tenderWatch", "flightWatch", "checkinOpens"];
 
     public static readonly TimeSpan TicketReceived = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan TicketInProgress = TimeSpan.FromMinutes(60);

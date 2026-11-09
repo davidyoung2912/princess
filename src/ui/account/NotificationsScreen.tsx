@@ -20,7 +20,7 @@ import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
 import { CalendarFeed, DeliveryLog, PushSwitch } from './PushPanels'
 
-const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', flightWatch: '/home/disembark/onward', checkinOpens: '/me/trips' } as const
+const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', instalmentAutoFailed: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', flightWatch: '/home/disembark/onward', checkinOpens: '/me/trips' } as const
 
 /** Notifications centre and preferences (MNG-14): what needs attention, and how and when to be told. */
 export function NotificationsScreen() {

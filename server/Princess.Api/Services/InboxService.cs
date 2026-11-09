@@ -32,13 +32,14 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
             var today = TripRules.Today(now);
             var watches = await watchService.WatchAsync(current, trip, today, ct);
             var next = watches.Instalment;
+            var instalmentFailed = watches.InstalmentAuto && next is not null && string.CompareOrdinal(next.Date, today.ToString("yyyy-MM-dd")) <= 0;
             var watch = watches.Tender;
             var flight = watches.Flight;
             var built = NotificationRules.BuildNotices(new NotificationRules.NoticeInput(
                 trip.Payment, trip.Plan.FinalDue, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State,
                 TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd"),
                 next?.Date, next?.Cents ?? 0, today.ToString("yyyy-MM-dd"), watch?.Port, watch?.Date ?? "", watch?.Band ?? "", watch?.Percent ?? 0,
-                flight?.Flight, flight?.Date ?? "", flight?.State ?? "", flight?.DelayMinutes ?? 0));
+                flight?.Flight, flight?.Date ?? "", flight?.State ?? "", flight?.DelayMinutes ?? 0, instalmentFailed));
             notices = built.Select(n => new NoticeDto(n.Id, n.Category, n.Params, read.Contains(n.Id))).ToList();
         }
         return new NotificationsDto(notices, await PrefsAsync(actor.Id, ct));

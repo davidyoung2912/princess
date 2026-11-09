@@ -55,4 +55,11 @@ public class FlightRulesTests
         Assert.True(BoardingRules.WalletOutdated([new(1, "a"), new(2, "old")], now));
         Assert.True(BoardingRules.WalletOutdated([new(1, "a")], now));
     }
+
+    [Fact]
+    public void AutoInstalmentStillDueShowsAsCouldNotTake()
+    {
+        var ids = NotificationRules.BuildNotices(new("ok", "2027-05-01", 0, 0, "done", "2027-03-18", "2027-03-20", 50_000, "2027-03-20", InstalmentAutoFailed: true)).Select(n => n.Id);
+        Assert.Equal(["instalmentAutoFailed"], ids);
+    }
 }
