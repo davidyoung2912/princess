@@ -2,7 +2,7 @@ import type { Place, PlaceKind } from './deck'
 import { routeBetween } from './route'
 
 /** The category filters on the deck plan (Q6): each is a group of place kinds. Quiet spaces and step-free have their own toggles beside these. */
-export const DECK_CATEGORIES = ['food', 'shows', 'family', 'wellness', 'services'] as const
+export const DECK_CATEGORIES = ['food', 'shows', 'family', 'wellness', 'services', 'restrooms', 'lifts'] as const
 export type DeckCategory = (typeof DECK_CATEGORIES)[number]
 
 const KINDS: Record<DeckCategory, readonly PlaceKind[]> = {
@@ -11,6 +11,8 @@ const KINDS: Record<DeckCategory, readonly PlaceKind[]> = {
   family: ['family'],
   wellness: ['wellness', 'pool'],
   services: ['service', 'medical', 'shop'],
+  restrooms: ['restroom'],
+  lifts: [], // chosen alone, the plan dims every place so the lift banks stand out
 }
 
 /** True when nothing is chosen (show everything) or the place is in one of the chosen categories. */

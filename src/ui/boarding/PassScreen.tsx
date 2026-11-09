@@ -26,6 +26,7 @@ import { LoadError } from '../discover/parts'
 import { ActionError } from '../account/parts'
 import { FailsafeCard, PassFace } from './parts'
 import { KeepStub } from '../delights/EmbarkDelights'
+import { KeepsakeSheet } from '../KeepsakeSheet'
 
 /** The boarding pass (CHK-04, CHK-14): large, high-contrast, kept on the phone, with a bright full-screen view, wallet, print, and a plan for a dead phone. */
 export function PassScreen() {
@@ -35,6 +36,7 @@ export function PassScreen() {
   const now = useNow()
   return (
     <div className="page">
+      <KeepsakeSheet title={t('screen.H31.title')} withButton={false} />
       {pass.data ? (
         <>
           {pass.at !== null && <SyncChip updated={new Date(pass.at)} now={new Date(now)} state={pass.fromCopy ? 'offline' : 'live'} timeZone="America/New_York" />}

@@ -123,6 +123,17 @@ export function posterCard(i: PosterInput): Card {
   return { id: 'poster', title: i.title, subtitle: `${i.shipName} · ${formatDate(days[0].date)} to ${formatDate(days[days.length - 1].date)}`, lines, footer: 'Plans can change.' }
 }
 
+/** Q11: one day of the plan as a card: where the ship is and what is booked, in time order. */
+export function dayCard(d: PlanDay, shipName: string, title: string): Card {
+  const lines = d.entries.filter((e) => e.kind === 'tour' || e.kind === 'dinner').sort((a, b) => a.time.localeCompare(b.time)).map((e) => `${e.time}  ${e.name}`)
+  return { id: `day-${d.day}`, title, subtitle: `${shipName} · ${d.place || 'At sea'} · ${formatDate(d.date)}`, lines: lines.length ? lines : ['Nothing booked yet.'], footer: 'Plans can change.' }
+}
+
+/** Q11: a port as a card: its facts, as plain lines. No booking or guest detail. */
+export function portCard(name: string, facts: readonly { label: string; value: string }[]): Card {
+  return { id: `port-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, title: name, subtitle: 'Port guide', lines: facts.map((f) => `${f.label}: ${f.value}`), footer: 'Check the guide before you go.' }
+}
+
 export interface ComparisonInput { columns: readonly string[]; rows: readonly { label: string; values: readonly string[] }[]; note: string }
 
 /** D1-8: the side-by-side as a card, one block per choice so it reads on a phone. No names or booking detail. */

@@ -233,8 +233,9 @@ describe('gate 6: accessibility', () => {
   it('nothing needs a drag, and hover is never the only way to reach something', () => {
     const src = walk('src').map((f) => ({ f, text: read(f) }))
     expect(src.filter((s) => /\bonDrag\w*=|draggable=\{?["']?true|onPointerMove=/.test(s.text)).map((s) => s.f)).toEqual([])
-    // The one hover handler is a decorative wiggle on a page title: it hides nothing and the same title is shown without it.
-    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f)).toEqual(['src/ui/PageHeader.tsx'])
+    // Hover handlers: a decorative wiggle on a page title (hides nothing), and the tile preview card (L7), which opens on keyboard focus too, closes on Escape and only repeats words the tile already shows.
+    expect(src.filter((s) => /onMouseEnter|onMouseOver/.test(s.text)).map((s) => s.f).sort()).toEqual(['src/ui/PageHeader.tsx', 'src/ui/ScreenList.tsx'])
+    expect(read('src/ui/ScreenList.tsx')).toMatch(/onFocus=/)
   })
 
   it('every screen is checked structurally (one h1, one main, labelled buttons) and for colour contrast', () => {

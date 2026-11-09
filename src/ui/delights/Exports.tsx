@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { PlanDay } from '../../domain/plan'
 import { OPEN_DAYS_BEFORE } from '../../domain/checkin'
 import { formatDate } from '../../domain/cruise'
-import { bagTagCard, certificateCard, journeyCalendar, keepsakeCard, MOMENT_MAX, momentCard, nextYearHold, planCalendar, posterCard, sameWeekNextYear, type Card as CardData } from '../../domain/export'
+import { dayCard, bagTagCard, certificateCard, journeyCalendar, keepsakeCard, MOMENT_MAX, momentCard, nextYearHold, planCalendar, posterCard, sameWeekNextYear, type Card as CardData } from '../../domain/export'
 import { formatMoney } from '../../domain/money'
 import { itinerary, sailingNights, type Sailing } from '../../domain/sailings'
 import { cruiseOf, shipOf } from '../../domain/shipCatalogue'
@@ -39,8 +39,27 @@ export function PlanExports({ days }: { days: readonly PlanDay[] }) {
       </div>
       {!hasAny && <p className="muted">{t('dl.plan.empty')}</p>}
       <p className="muted">{t('dl.plan.note')}</p>
+      <DayShare days={days} shipName={shipOf(sailing.id).name} />
       <PrintCard label={t('dl.poster.label')} card={posterCard({ title: t('dl.poster.title'), sailing, plan: days, shipName: shipOf(sailing.id).name })} />
     </Card>
+  )
+}
+
+/** Q11: pick a day and share it as a card (print, save as an image, or copy the words). */
+function DayShare({ days, shipName }: { days: readonly PlanDay[]; shipName: string }) {
+  const [n, setN] = useState(days.find((d) => d.entries.length > 0)?.day ?? days[0]?.day ?? 1)
+  const d = days.find((x) => x.day === n)
+  if (!d) return null
+  return (
+    <div className="no-print-wrap">
+      <div className="field">
+        <label htmlFor="share-day">{t('l7.share.day')}</label>
+        <select id="share-day" className="field__input" value={n} onChange={(e) => setN(Number(e.target.value))}>
+          {days.map((x) => <option key={x.day} value={x.day}>{t('plan.day', { n: x.day })} · {x.place || t('plan.atSea')}</option>)}
+        </select>
+      </div>
+      <PrintCard label={t('l7.share.label')} card={dayCard(d, shipName, t('l7.share.title', { n: d.day }))} />
+    </div>
   )
 }
 

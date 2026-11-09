@@ -8,6 +8,7 @@ import { formatDate, formatTime } from '../../domain/cruise'
 import { dinnerDays, DRESS_NOTES, venueById } from '../../domain/dining'
 import { formatMoney } from '../../domain/money'
 import { itinerary, PORTS, type PortId } from '../../domain/sailings'
+import { nearestFreeSlot } from '../../domain/reservationNudge'
 import { addDays } from '../../domain/timezones'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
@@ -41,7 +42,7 @@ export function ReservationsScreen() {
           {(v) => (
             <>
               {v.seating && <p>{t('res.fixed', { time: formatTime(v.seating) })}</p>}
-              {v.reservations.length === 0 ? <p className="muted">{t('dine.none')}</p> : <ul className="card-grid">{v.reservations.map((r) => <DinnerCard key={r.id} r={r} date={addDays(s.departure, r.day - 1)} />)}</ul>}
+              {v.reservations.length === 0 ? <p className="muted">{t('dine.none')}</p> : <ul className="card-grid">{v.reservations.map((r) => <DinnerCard key={r.id} r={r} date={addDays(s.departure, r.day - 1)} canEdit={v.canBook} reload={dining.retry} />)}</ul>}
               <p><LinkButton to="/plan/dining" variant="secondary">{t('res.find')}</LinkButton></p>
             </>
           )}
@@ -79,7 +80,7 @@ export function ReservationsScreen() {
   )
 }
 
-function DinnerCard({ r, date }: { r: Reservation; date: string }) {
+function DinnerCard({ r, date, canEdit, reload }: { r: Reservation; date: string; canEdit: boolean; reload: () => void }) {
   const v = venueById(r.venueId)
   return (
     <li className="card">
@@ -92,8 +93,25 @@ function DinnerCard({ r, date }: { r: Reservation; date: string }) {
         <li>{t('dine.when', { day: r.day, date: formatDate(date), time: formatTime(r.time) })}</li>
         <li>{names(r.guests)}</li>
       </ul>
+      {canEdit && <Nudge r={r} reload={reload} name={v?.name ?? r.venueId} />}
       <Link to={`/plan/reservations/${r.id}`}>{t('res.open')}<span className="visually-hidden"> {v?.name}, {t('plan.day', { n: r.day })}</span></Link>
     </li>
+  )
+}
+
+/** Earlier and later buttons (L7): move a dinner to the nearest free time the same night. The detail screen has the full picker; drag is not offered, because buttons work for everyone. */
+function Nudge({ r, reload, name }: { r: Reservation; reload: () => void; name: string }) {
+  const slots = useAsync(() => api.plan.dining.slots(r.venueId, r.day), [r.venueId, r.day, r.time])
+  const [said, setSaid] = useState('')
+  const earlier = slots.data ? nearestFreeSlot(slots.data, r.time, 'earlier') : null
+  const later = slots.data ? nearestFreeSlot(slots.data, r.time, 'later') : null
+  const go = useAction(async (time: string) => { await api.plan.dining.move(r.id, { day: r.day, time }); setSaid(t('res.moved', { day: r.day, time: formatTime(time) })); reload() })
+  return (
+    <div className="button-row">
+      <Button variant="secondary" disabled={!earlier || go.busy} onClick={() => earlier && void go.run(earlier.time)}>{earlier ? t('l7.res.earlier', { time: formatTime(earlier.time) }) : t('l7.res.noEarlier')}<span className="visually-hidden"> {name}</span></Button>
+      <Button variant="secondary" disabled={!later || go.busy} onClick={() => later && void go.run(later.time)}>{later ? t('l7.res.later', { time: formatTime(later.time) }) : t('l7.res.noLater')}<span className="visually-hidden"> {name}</span></Button>
+      <span role="status" className="muted">{go.error ? t('res.stillYours', { when: formatTime(r.time) }) : said}</span>
+    </div>
   )
 }
 

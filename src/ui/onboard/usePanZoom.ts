@@ -37,7 +37,7 @@ export function usePanZoom() {
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinch.current = null
     if (pointers.current.size > 0 || e.pointerType === 'touch') return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduced') return
     const tick = () => {
       const s = momentumStep(velocity.current)
       if (box.current) box.current.scrollLeft += s.move

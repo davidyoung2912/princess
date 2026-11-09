@@ -140,6 +140,7 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .deck-plan__route { stroke-dasharray: 2 8; animation: deck-route 1.2s linear infinite; }
 @keyframes deck-route { to { stroke-dashoffset: -20; } }
 @media (prefers-reduced-motion: reduce) { .deck-plan__route { animation: none; } }
+:root[data-motion='reduced'] .deck-plan__route, :root[data-fun='quiet'] .deck-plan__route, :root[data-light='on'] .deck-plan__route { animation: none; }
 @media (min-width: 1280px) {
   .workspace--map { grid-template-columns: 20rem minmax(0, 1fr); }
 }
@@ -147,3 +148,4 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
   .deck-elev, .deck-plan__zoom { display: none; }
   .deck-map__view { display: block; }
 }
+.deck-plan__lift--on { stroke-width: 4; fill: var(--gold, var(--bg)); }

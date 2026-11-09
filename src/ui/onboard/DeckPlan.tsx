@@ -53,7 +53,7 @@ export function DeckPlan({ deck, stepFree = false, quiet = false, here = null, p
           <line x1={20} x2={620} y1={100} y2={100} className="deck-plan__hall" />
           {lifts.map((l) => (
             <g key={l.bank}>
-              <rect x={l.at.x - 10} y={l.at.y - 10} width={20} height={20} rx={3} className="deck-plan__lift" />
+              <rect x={l.at.x - 10} y={l.at.y - 10} width={20} height={20} rx={3} className={`deck-plan__lift${categories.has('lifts') ? ' deck-plan__lift--on' : ''}`} />
               <text x={l.at.x} y={l.at.y + 4} textAnchor="middle" className="deck-plan__lift-text">{l.bank}</text>
             </g>
           ))}

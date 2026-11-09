@@ -36,3 +36,13 @@
   .page, .page--wide { max-width: none; padding: 0; }
   a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 0.8em; }
 }
+
+/* Keepsake heading: hidden on screen, a ship-and-title header with a brass rule on paper. */
+.keepsake-head { display: none; }
+@media print {
+  .keepsake-head { display: block; margin-bottom: 1rem; text-align: center; border-bottom: 3px double #8a6d1d; padding-bottom: 0.5rem; }
+  .keepsake-head__ship { margin: 0; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.85rem; }
+  .keepsake-head__title { margin: 0.2rem 0 0; font-size: 2rem; font-weight: 700; }
+  .card { box-shadow: none; border-color: #8a6d1d; }
+  li, tr { break-inside: avoid; }
+}

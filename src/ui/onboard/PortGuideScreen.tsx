@@ -14,6 +14,8 @@ import { Banner } from '../Banner'
 import { Card } from '../Card'
 import { BackLink } from './common'
 import { PortDirection } from './DeviceTools'
+import { PrintCard } from '../delights/Cards'
+import { portCard } from '../../domain/export'
 import { TippingCard } from '../delights/Delights'
 
 /** Port know-how (S6A-03, S6A-07 to S6A-13): fair prices and scam alerts, safety and local rules, phrases and allergy cards, walks, day passes, family notes and local vendors. Authored concept content (verify before real use). */
@@ -41,6 +43,7 @@ export function PortGuideScreen() {
 
       <div className="workspace__main">
       <PortDirection port={port} />
+      <PortShare port={port} />
       {!k && <ShortGuide port={port} />}
       {k && <FullGuide port={port} k={k} crowd={crowd} />}
       </div>
@@ -48,6 +51,14 @@ export function PortGuideScreen() {
       <BackLink to="/ship/port" label={t('route.portDay')} />
     </div>
   )
+}
+
+/** Q11: the port's facts as a card to print, save as an image or copy. */
+function PortShare({ port }: { port: string }) {
+  const p = portById(port)
+  if (!p) return null
+  const facts = portFacts(port).map((f) => ({ label: t(`guide.fact.${f.label}` as StringKey), value: f.label === 'landing' ? t(`guide.fact.landing.${f.value}` as StringKey) : f.value }))
+  return <Card labelledBy="g-share"><h2 id="g-share" className="card__title">{th('l7.share.port')}</h2><PrintCard label={t('l7.share.portLabel')} card={portCard(p.name, facts)} /></Card>
 }
 
 /** The Tier B and C fallback: only the facts the catalogue holds, and a plain note that the guide is not written yet. */

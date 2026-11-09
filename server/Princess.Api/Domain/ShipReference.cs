@@ -172,6 +172,33 @@ public static class ShipReference
    "stepFree": true
   },
   {
+   "id": "wc-7",
+   "name": "Restrooms by the Piazza",
+   "deck": 7,
+   "section": "midship",
+   "kind": "restroom",
+   "stepFree": true,
+   "note": "Step-free and accessible stalls; a family restroom is next door"
+  },
+  {
+   "id": "wc-9",
+   "name": "Restrooms by the Promenade",
+   "deck": 9,
+   "section": "aft",
+   "kind": "restroom",
+   "stepFree": true,
+   "note": "Step-free and accessible stalls"
+  },
+  {
+   "id": "wc-17",
+   "name": "Restrooms at the Lido",
+   "deck": 17,
+   "section": "aft",
+   "kind": "restroom",
+   "stepFree": true,
+   "note": "Step-free and accessible stalls; baby changing"
+  },
+  {
    "id": "medical",
    "name": "Medical Center",
    "deck": 4,

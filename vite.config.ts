@@ -58,6 +58,11 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',
         background_color: '#003595',
         theme_color: '#003595',
+        shortcuts: [
+          { name: 'Boarding Pass', short_name: 'Pass', url: '/home/boarding-pass', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'Today', short_name: 'Today', url: '/', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'Ask Stanley', short_name: 'Stanley', url: '/home/ask', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+        ],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

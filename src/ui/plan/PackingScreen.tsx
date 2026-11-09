@@ -11,6 +11,7 @@ import { Card } from '../Card'
 import { Printer, Share } from '../icons'
 import { Load } from '../account/parts'
 import { Back, PlanError } from './common'
+import { KeepsakeSheet } from '../KeepsakeSheet'
 
 /** A packing list built from the itinerary, the season, the dress codes and what the party has booked (MNG-08), shareable as text. */
 export function PackingScreen() {
@@ -21,6 +22,7 @@ export function PackingScreen() {
 
   return (
     <div className="page">
+      <KeepsakeSheet title={t('route.packing')} />
       <p>{t('pack.intro')}</p>
       <Load state={list}>
         {(p) => {

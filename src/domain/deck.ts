@@ -1,6 +1,6 @@
 /** The deck plan: where things are, the six elevator banks and the muster stations (OB-04, SAF-01). Places follow the ship profile; deck and position are authored where the profile is silent (verify before real use). */
 export type Section = 'forward' | 'midship' | 'aft'
-export type PlaceKind = 'dining' | 'bar' | 'show' | 'family' | 'wellness' | 'pool' | 'shop' | 'service' | 'medical'
+export type PlaceKind = 'dining' | 'bar' | 'show' | 'family' | 'wellness' | 'pool' | 'shop' | 'service' | 'medical' | 'restroom'
 
 export interface Place {
   id: string
@@ -46,7 +46,10 @@ export const PLACES: readonly Place[] = [
   pl('promenade', 'Promenade (outdoor)', 9, 'aft', 'pool', true, 'Gentle ramps at each door; the deck is flat'),
   pl('intl-cafe', 'International Café', 9, 'midship', 'dining'),
   pl('excursions-desk', 'Shore Excursions desk', 9, 'midship', 'service'),
+  pl('wc-7', 'Restrooms by the Piazza', 7, 'midship', 'restroom', true, 'Step-free and accessible stalls; a family restroom is next door'),
+  pl('wc-9', 'Restrooms by the Promenade', 9, 'aft', 'restroom', true, 'Step-free and accessible stalls'),
   pl('lido', 'The Lido (Lido Eats)', 17, 'midship', 'dining'),
+  pl('wc-17', 'Restrooms at the Lido', 17, 'aft', 'restroom', true, 'Step-free and accessible stalls; baby changing'),
   pl('love', 'Love by Britto', 17, 'aft', 'dining'),
   pl('lido-pool', 'Lido Pool', 17, 'midship', 'pool', true, 'Pool lift at the shallow end'),
   pl('sea-view', 'Sea View Bar', 17, 'forward', 'bar'),

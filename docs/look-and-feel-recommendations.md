@@ -351,6 +351,9 @@ My recommendation: do **L1 and L2 first**. They are cheap, they change the feel 
 
 **L7 completed (2026-11-09):** drag-pan with momentum and pinch zoom on the plan (`usePanZoom`, `deckFilter.ts`), walk time on search results when "You are here" is set, category filters, week-at-a-glance table in Build my week (from 1024px), hover/focus previews on tiles (wide screens with a pointer), full-height dashboard hero beside the Moment card (from 1280px), two-pane Port guide and Bill. Not built: drag to reorder reservations (no keyboard-safe version designed yet), a toilets category (the ship data has none), two-pane Trip itinerary.
 
+
+**L8 decisions and build (2026-11-09):** Fun level default is **Lively** (already the default in settings). Brand boundary: extend colour and artwork freely to complement Princess, not limited by it. Built: restroom places on all three ships (client `deck.ts`, server `AboardPlans.cs`, `ShipReference.cs`) with Restrooms and Lifts filters on the deck map; Earlier/Later buttons on dinner reservations (`nearestFreeSlot`; drag is not offered, and a release gate forbids drag); Q11 share cards for one day of the plan and for a port (print, save as image, copy); PWA app shortcuts (Boarding Pass, Today, Ask Stanley); tile preview card rework (opens on focus as well as hover, anchored under the tile, closes on Escape, words hidden from screen readers because the tile already holds them); keepsake print heading and a Print button on the plan, packing list and boarding pass; a motion-policy test. Not built: an image in the tile preview (no per-screen art exists), a live status line on the app icon (no browser API for it), a lifts-only route highlight.
+
 ---
 
 ## 12. Open questions for you

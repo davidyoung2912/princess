@@ -267,8 +267,11 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
   .home-hero .stage-hero { aspect-ratio: auto; max-height: none; height: 100%; min-height: 18rem; }
 }
 
-/* Hover preview: on a wide screen with a pointer, a tile's description opens as a small card on hover or keyboard focus. It stays in the page for screen readers. */
+/* Hover preview: on a wide screen with a pointer, a tile opens a preview card on hover or keyboard focus (TileItem). The inline description is visually hidden there,
+   because the card repeats it; it stays in the page for screen readers. */
 @media (min-width: 1024px) and (hover: hover) {
-  .screen-list__more { position: absolute; z-index: 5; inset-inline: 0; top: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-card); background: var(--bg); box-shadow: var(--elev-2, 0 4px 12px rgba(0, 0, 0, 0.2)); clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; }
-  .screen-list li:hover .screen-list__more, .screen-list li:focus-within .screen-list__more { clip-path: none; width: auto; height: auto; overflow: visible; white-space: normal; }
+  .screen-list__more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .tile-preview { position: absolute; z-index: 5; inset-inline: 0; top: 100%; display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-card); background: var(--bg); box-shadow: var(--elev-2, 0 4px 12px rgba(0, 0, 0, 0.2)); font-size: 1.05rem; }
+  .tile-preview__icon { color: var(--trip); }
+  .tile-preview__icon svg { width: 2rem; height: 2rem; }
 }
