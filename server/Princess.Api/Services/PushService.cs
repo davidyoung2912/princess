@@ -1,4 +1,6 @@
+using System.Net;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Options;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
@@ -14,8 +16,10 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, ITripStore profiles)
+    IEmailSender email, ISmsSender sms, ITripStore profiles, IOptions<JwtOptions> jwt, IConfiguration config)
 {
+    private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
+
     public async Task<PushStatusDto> StatusAsync(UserRecord actor, string? endpoint, CancellationToken ct)
     {
         var subs = await store.ListSubscriptionsAsync(actor.Id, ct);
@@ -124,13 +128,28 @@ public sealed class PushService(
         {
             var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
             if (!string.IsNullOrWhiteSpace(actor.Email) && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
-                && await email.SendAsync(new EmailMessage(actor.Email, n.Title, n.Body), ct))
+                && await email.SendAsync(new EmailMessage(actor.Email, n.Title, NoticeEmailRules.WithFooter(n.Body, UnsubscribeUrl(actor.Id, n.Category))), ct))
                 await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
             if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)
                 && await sms.SendAsync(new SmsMessage(phone, n.Title + ": " + n.Body), ct))
                 await store.AddDeliveryAsync(actor.Id, new("sms:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
         }
     }
+
+    private string? UnsubscribeUrl(long userId, string category) =>
+        NoticeEmailRules.Token(NoticeKey, userId, category) is { } t ? $"{(config["Public:ApiBaseUrl"] ?? "").TrimEnd('/')}/api/v1/public/notice/unsubscribe/{t}" : null;
+
+    /// <summary>Switches off the email channel for the category the link was made for, with no sign-in. False when the link is not one of ours.</summary>
+    public async Task<bool> UnsubscribeEmailAsync(string? token, CancellationToken ct)
+    {
+        if (NoticeEmailRules.Verify(NoticeKey, token) is not { } who) return false;
+        var next = NoticeEmailRules.WithEmailOff(await PrefsAsync(who.UserId, ct), who.Category);
+        await inbox.SavePrefsJsonAsync(who.UserId, next.ToJsonString(), DateTime.UtcNow, ct);
+        return true;
+    }
+
+    public static string UnsubscribePage(bool ok) =>
+        $"<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Notice emails</title><body style=\"font-family:system-ui;max-width:32rem;margin:3rem auto;padding:0 1rem\"><h1>{(ok ? "No more of these emails" : "That link does not work")}</h1><p>{WebUtility.HtmlEncode(ok ? "You will not get this kind of notice by email. You can turn it back on in the app under notification settings. Nothing else has changed." : "It may be mistyped or out of date. You can also turn the email off in the app under notification settings.")}</p></body></html>";
 
     private static DateTime InZone(DateTime utc, string zone) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));

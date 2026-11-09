@@ -34,6 +34,10 @@ public static class PushEndpoints
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
             .WithTags("Push").WithSummary("The link in the reminder email: switches that email off with no sign-in and answers a small page. A link that was not made here gets the same page saying it does not work. Rate-limited.");
 
+        api.MapGet("/public/notice/unsubscribe/{token}", async (string token, PushService svc, CancellationToken ct) =>
+                Results.Content(PushService.UnsubscribePage(await svc.UnsubscribeEmailAsync(token, ct)), "text/html"))
+            .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
+            .WithTags("Push").WithSummary("The link in a payment or travel notice email: switches that category's email off with no sign-in and answers a small page. A link that was not made here gets the same page saying it does not work. Rate-limited.");
 
         api.MapPost("/me/push/read", async (ICurrentUser me, PushService svc, CancellationToken ct) =>
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
