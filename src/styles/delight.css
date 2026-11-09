@@ -78,3 +78,50 @@ body, table, time, input, .price__amount, .fare__total, .booking-number, .trip-c
 .today-strip__name { font-weight: 700; }
 .clock-pill { display: inline-block; margin: 0 0 var(--space-2); padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); border: 2px solid var(--success); background: var(--success-tint); color: var(--text); font-weight: 600; }
 .clock-pill--warn { border-color: var(--warning); background: var(--warning-tint); }
+
+/* L4: the ship's sky over the hero (tint and one light effect), the wave gauge, the day header and the sail-away card.
+   The tint and effects are decoration over the picture only. They are off in calm mode, at the Quiet fun level, in data-light mode and in high contrast; effects also stop under reduced motion. */
+.atmo { position: relative; }
+.atmo .stage-hero { margin-bottom: 0; }
+.atmo__tint, .atmo__fx { position: absolute; inset: 0; border-radius: var(--radius-hero); pointer-events: none; overflow: hidden; }
+.atmo[data-phase='sunrise'] .atmo__tint { background: linear-gradient(180deg, rgb(255 190 150 / 0.45), rgb(120 170 230 / 0.25)); }
+.atmo[data-phase='sunset'] .atmo__tint { background: linear-gradient(180deg, rgb(255 190 80 / 0.4), rgb(230 100 130 / 0.35)); }
+.atmo[data-phase='night'] .atmo__tint {
+  background:
+    radial-gradient(circle at 12% 22%, rgb(255 255 255 / 0.9) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 34% 12%, rgb(255 255 255 / 0.7) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 78% 18%, rgb(255 255 255 / 0.8) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 90% 8%, rgb(255 244 200 / 0.95) 0 6px, transparent 7px),
+    linear-gradient(180deg, rgb(10 20 60 / 0.6), rgb(10 20 60 / 0.35));
+}
+.atmo[data-fx='cloud'] .atmo__fx { background: radial-gradient(ellipse 30% 18% at 20% 25%, rgb(255 255 255 / 0.35), transparent), radial-gradient(ellipse 25% 15% at 65% 35%, rgb(255 255 255 / 0.3), transparent); background-size: 200% 100%; animation: atmo-drift 60s linear infinite; }
+.atmo[data-fx='rain'] .atmo__fx { background: repeating-linear-gradient(105deg, transparent 0 14px, rgb(255 255 255 / 0.3) 14px 15px); background-size: 40px 40px; animation: atmo-rain 0.8s linear infinite; }
+.atmo[data-fx='glint'] .atmo__fx { background: linear-gradient(100deg, transparent 40%, rgb(255 255 255 / 0.35) 50%, transparent 60%); background-size: 250% 100%; animation: atmo-glint 8s ease-in-out infinite; }
+.atmo[data-fx='spray'] .atmo__fx { background: radial-gradient(ellipse 50% 22% at 50% 100%, rgb(255 255 255 / 0.5), transparent); animation: atmo-spray 3s ease-in-out infinite alternate; }
+@keyframes atmo-drift { to { background-position: -100% 0; } }
+@keyframes atmo-rain { to { background-position: -12px 40px; } }
+@keyframes atmo-glint { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@keyframes atmo-spray { from { opacity: 0.4; } to { opacity: 1; } }
+:root[data-motion='reduced'] .atmo__fx, :root[data-light='on'] .atmo__fx { animation: none; }
+:root[data-calm='on'] .atmo__tint, :root[data-calm='on'] .atmo__fx, :root[data-contrast='high'] .atmo__tint, :root[data-contrast='high'] .atmo__fx { display: none; }
+.atmo-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: var(--space-2) 0 var(--space-3); }
+.atmo-line__text { font-weight: 600; }
+.sea-gauge { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); border-radius: var(--radius-pill); border: 1px solid var(--border); font-size: var(--fs-small, 0.875rem); }
+.sea-gauge__on { stroke: var(--primary); }
+.sea-gauge__off { stroke: var(--border); }
+
+.dayhead__title { margin: 0 0 var(--space-1); font-size: 1.5rem; }
+.dayhead__port { margin: 0 0 var(--space-1); font-size: 2.25rem; font-weight: 800; line-height: 1.05; }
+.dayhead__route { position: relative; block-size: 6px; margin: var(--space-2) 0 var(--space-1); border-radius: 3px; background: var(--border); }
+.dayhead__routefill { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 3px; background: var(--primary); }
+.dayhead__tag { display: inline-flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); border: 2px solid var(--gold); background: var(--surface-2, transparent); }
+.dayhead__tag--amber { border-color: var(--warning); background: var(--warning-tint); }
+.dayhead__tag--red { border-color: var(--danger, var(--warning)); }
+.dayhead__ring .ring { margin: 0; vertical-align: middle; }
+.dayhead__tag--amber .ring__fill { stroke: var(--warning); }
+.dayhead__tag--red .ring__fill { stroke: var(--danger, var(--warning)); }
+
+.sailaway__wake { stroke: var(--primary); }
+:root[data-motion='full'] .sailaway__wake path { stroke-dasharray: 6 5; animation: sail-wake 2s linear infinite; }
+@keyframes sail-wake { to { stroke-dashoffset: -22; } }
+:root[data-light='on'] .sailaway__wake path { animation: none; }

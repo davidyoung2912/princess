@@ -43,6 +43,9 @@ import { useMoment } from '../../hooks/useMoment'
 import { MomentCard } from '../MomentCard'
 import { TodayStrip } from '../TodayStrip'
 import { HeroCount } from '../HeroCount'
+import { AtmosphereHero } from '../AtmosphereHero'
+import { DayHeader } from '../DayHeader'
+import { SailAwayCard } from '../SailAwayCard'
 
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {
@@ -96,9 +99,11 @@ export function HomeScreen() {
   if (today.data?.aboard) {
     return (
       <div className="page">
-        <StageHero stage={stage} />
+        <AtmosphereHero stage={stage} today={today.data} />
         <NewTabsNote /><ShortcutBar />
         {moment && <MomentCard moment={moment} />}
+        <SailAwayCard today={today.data} />
+        <DayHeader today={today.data} />
         <TodayStrip />
         {!ABOARD_STAGES.includes(stage) && !moment && <StageLanding />}
         <NudgeCards aboard />
