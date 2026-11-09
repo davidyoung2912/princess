@@ -328,7 +328,7 @@ Priority is not given per concept in the document.
 
 | ID | Pri | Status | Basis | Evidence | Gap |
 |---|---|---|---|---|---|
-| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere built; no device list or step-up check |
+| IDN-01 | P0 | Partial | R | `src/auth/httpProvider.ts`, `src/auth/httpProvider.test.ts`, `src/ui/SignInFlows.tsx`, `src/domain/pinReset.ts` | BM35: sign out everywhere; BM46: device list with per-device sign-out (`src/ui/account/DevicesCard.tsx`); no step-up check yet |
 | IDN-02 | P0 | Built | F | `src/ui/boarding/FindPassScreen.tsx`, `src/domain/signup.ts` | Guess-resistance is server side: not read |
 | IDN-03 | P0 | Partial | F | `server/Princess.Api/Auth/AuthService.cs` (`RegisterAsync`), `src/ui/SignInFlows.tsx` | BM38: sign-up asks when name and date of birth match an adult account and flags the new one for a person; no staff screen to resolve it and no booking-link matching |
 | IDN-04 | P0 | Partial | R | `src/domain/party.ts`, `src/domain/account.ts`, `src/domain/homeLink.ts`, `src/domain/people.ts` | Party, helper and family link exist as three separate models. Shared vocabulary of relationships and tasks since BM37 (`src/domain/relationships.ts`); the stores are still three, and no cabin party, linked group or shipmate. BM5 |

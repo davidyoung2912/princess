@@ -82,6 +82,21 @@ public static class AuthEndpoints
             })
             .WithSummary("Sign out everywhere: ends every session and access token this person has, on every device, this one included. 403 on a view-as token.");
 
+        auth.MapPost("/sessions/list", async (SessionListRequest body, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                return Results.Ok(await svc.ListSessionsAsync(await me.LoadAsync(ct), body.RefreshToken, ct));
+            })
+            .WithSummary("The devices this person is signed in on (name, first sign-in, last activity), most recent first. Send this device's refresh token to have it marked `current`. A POST so the token stays out of URLs and logs. 403 on a view-as token.");
+
+        auth.MapDelete("/sessions/{id}", async (string id, ICurrentUser me, IAuthService svc, CancellationToken ct) =>
+            {
+                if (me.ActorPublicId is not null) throw ApiException.Forbidden();
+                await svc.EndSessionAsync(await me.LoadAsync(ct), id, ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Sign one device out: its refresh token stops working at once (an access token already issued runs out within 15 minutes; use sign out everywhere to end those too). 404 for a device that is not this person's. 403 on a view-as token.");
+
         auth.MapGet("/demo-accounts", async (IUserStore users, IConfiguration config, CancellationToken ct) =>
             {
                 if (!config.GetValue("Demo:Enabled", false)) throw ApiException.NotFound();

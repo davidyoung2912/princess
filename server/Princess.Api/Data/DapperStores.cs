@@ -111,6 +111,27 @@ public sealed class DapperRefreshTokenStore(IDbConnectionFactory db) : IRefreshT
             new { userId, familyId, now }, cancellationToken: ct));
     }
 
+    public async Task<IReadOnlyList<SessionRow>> ListSessionsAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.QueryAsync<SessionRow>(new CommandDefinition("""
+            SELECT t.FamilyId, t.UserAgent, f.SignedInAt, t.CreatedAt AS LastActiveAt
+            FROM dbo.RefreshTokens t
+            JOIN (SELECT FamilyId, MIN(CreatedAt) AS SignedInAt FROM dbo.RefreshTokens WHERE UserId = @userId GROUP BY FamilyId) f ON f.FamilyId = t.FamilyId
+            WHERE t.UserId = @userId AND t.UsedAt IS NULL AND t.RevokedAt IS NULL AND t.ExpiresAt > @now
+            ORDER BY t.CreatedAt DESC, t.Id DESC
+            """, new { userId, now }, cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    public async Task<long?> FindOpenFamilyAsync(long userId, byte[] tokenHash, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<long?>(new CommandDefinition(
+            "SELECT FamilyId FROM dbo.RefreshTokens WHERE TokenHash = @tokenHash AND UserId = @userId AND UsedAt IS NULL AND RevokedAt IS NULL AND ExpiresAt > @now",
+            new { tokenHash, userId, now }, cancellationToken: ct));
+    }
+
     private static object Params(NewRefreshToken t, DateTime now) =>
         new { t.UserId, t.FamilyId, t.TokenHash, t.ExpiresAt, t.UserAgent, t.Ip, now };
 }

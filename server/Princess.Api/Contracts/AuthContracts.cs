@@ -6,6 +6,12 @@ public sealed record RefreshRequest(string? RefreshToken);
 
 public sealed record LogoutRequest(string? RefreshToken);
 
+/// <summary>Asks for the signed-in devices; the refresh token (when sent) is how the answer marks <c>Current</c>.</summary>
+public sealed record SessionListRequest(string? RefreshToken);
+
+/// <summary>One signed-in device (IDN-01). <c>Id</c> is opaque text. Instants are epoch milliseconds (D6).</summary>
+public sealed record DeviceSessionDto(string Id, string Device, long SignedInAt, long LastActiveAt, bool Current);
+
 /// <summary>The signed-in person. <c>Id</c> is the public guid (the wire form of <c>PersonaId</c>, D2).</summary>
 public sealed record MeResponse(
     Guid Id,

@@ -131,6 +131,20 @@ describe('createHttpAuthProvider', () => {
     expect(down.auth.current()).not.toBeNull()
   })
 
+  it('lists devices with this tab\'s refresh token and signs one out by id', async () => {
+    const devices = [{ id: '7', device: 'Safari on iPhone', signedInAt: 1, lastActiveAt: 2, current: true }, { id: '9', device: 'Edge on Windows', signedInAt: 1, lastActiveAt: 1, current: false }]
+    const a = make((c) => (c.url.endsWith('/sessions/list') ? reply(200, devices) : c.method === 'DELETE' ? reply(204) : reply(200, session(1))))
+    await a.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    expect(await a.auth.account!.listDevices()).toEqual(devices)
+    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/sessions/list', method: 'POST', body: '{"refreshToken":"r1"}' })
+    await a.auth.account!.signOutDevice('9')
+    expect(a.s.calls.at(-1)).toMatchObject({ url: '/api/v1/auth/sessions/9', method: 'DELETE' })
+    expect(a.auth.current()).not.toBeNull()
+    const down = make((c) => (c.url.endsWith('/sessions/list') ? reply(503) : reply(200, session(1))))
+    await down.auth.signIn({ method: 'password', identifier: 'a', password: 'b' })
+    await expect(down.auth.account!.listDevices()).rejects.toBeDefined()
+  })
+
   describe('sign-up and recovery', () => {
     it('registers and signs in, trimming the email', async () => {
       const { auth, s, storage } = make(() => reply(200, session(1, 'new@example.com')))

@@ -1,7 +1,7 @@
 import type { Channel } from '../data/sync'
 import { createHttp, type Http } from '../api/http'
 import { isApiError } from '../api/errors'
-import { AuthError, type AuthMethod, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
+import { AuthError, type AuthMethod, type DeviceSession, type AuthProvider, type Credentials, type Session, type SessionUser } from './provider'
 
 /** Per-tab storage for the refresh token (see the token decision in docs/backend-plan.md, Phase 12). */
 export const REFRESH_KEY = 'princess:refresh'
@@ -103,6 +103,14 @@ export function createHttpAuthProvider(opts: HttpAuthOptions): AuthProvider & { 
       },
       async resetPassword(email, code, newPassword) {
         try { await raw.post('/auth/reset', { email: email.trim(), code: code.trim(), newPassword }, { anonymous: true }) } catch (e) { throw failure(e) }
+      },
+      async listDevices() {
+        let token: string | null = null
+        try { token = opts.storage?.getItem(REFRESH_KEY) ?? null } catch { /* none: no device is marked as this one */ }
+        try { return await raw.post<DeviceSession[]>('/auth/sessions/list', { refreshToken: token }) } catch (e) { throw failure(e) }
+      },
+      async signOutDevice(id) {
+        try { await raw.delete(`/auth/sessions/${encodeURIComponent(id)}`) } catch (e) { throw failure(e) }
       },
       async signOutEverywhere() {
         try { await raw.post('/auth/logout-all', {}) } catch (e) { throw failure(e) }

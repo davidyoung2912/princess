@@ -76,6 +76,8 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
         public RefreshTokenRecord Record { get; init; } = new();
         public byte[] Hash { get; init; } = [];
         public long? ReplacedById { get; set; }
+        public string? UserAgent { get; init; }
+        public DateTime CreatedAt { get; init; }
     }
 
     public List<Row> Rows { get; } = [];
@@ -109,6 +111,26 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
         return Task.CompletedTask;
     }
 
+    public Task<IReadOnlyList<SessionRow>> ListSessionsAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        var mine = Rows.Where(r => r.Record.UserId == userId).ToList();
+        IReadOnlyList<SessionRow> open = mine
+            .Where(r => r.Record.UsedAt is null && r.Record.RevokedAt is null && r.Record.ExpiresAt > now)
+            .OrderByDescending(r => r.Record.Id)
+            .Select(r => new SessionRow
+            {
+                FamilyId = r.Record.FamilyId,
+                UserAgent = r.UserAgent,
+                SignedInAt = mine.Where(x => x.Record.FamilyId == r.Record.FamilyId).Min(x => x.CreatedAt),
+                LastActiveAt = r.CreatedAt,
+            }).ToList();
+        return Task.FromResult(open);
+    }
+
+    public Task<long?> FindOpenFamilyAsync(long userId, byte[] tokenHash, DateTime now, CancellationToken ct) =>
+        Task.FromResult(Rows.FirstOrDefault(r => r.Hash.SequenceEqual(tokenHash) && r.Record.UserId == userId
+            && r.Record.UsedAt is null && r.Record.RevokedAt is null && r.Record.ExpiresAt > now)?.Record.FamilyId);
+
     private long Add(NewRefreshToken t)
     {
         var id = _next++;
@@ -116,6 +138,8 @@ public sealed class InMemoryRefreshTokenStore : IRefreshTokenStore
         {
             Record = new RefreshTokenRecord { Id = id, UserId = t.UserId, FamilyId = t.FamilyId, ExpiresAt = t.ExpiresAt },
             Hash = t.TokenHash,
+            UserAgent = t.UserAgent,
+            CreatedAt = DateTime.UtcNow,
         });
         return id;
     }

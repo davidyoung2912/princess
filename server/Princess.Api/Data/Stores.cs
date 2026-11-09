@@ -23,6 +23,10 @@ public interface IRefreshTokenStore
     /// </summary>
     Task<bool> TryRotateAsync(long oldTokenId, NewRefreshToken next, DateTime now, CancellationToken ct);
     Task RevokeFamilyAsync(long userId, long familyId, DateTime now, CancellationToken ct);
+    /// <summary>The open sessions (families whose newest token is unspent, unrevoked and unexpired), most recently active first.</summary>
+    Task<IReadOnlyList<SessionRow>> ListSessionsAsync(long userId, DateTime now, CancellationToken ct);
+    /// <summary>The family a refresh token belongs to, or null when it is unknown or someone else's.</summary>
+    Task<long?> FindOpenFamilyAsync(long userId, byte[] tokenHash, DateTime now, CancellationToken ct);
 }
 
 public interface IAccessStore

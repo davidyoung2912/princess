@@ -47,7 +47,14 @@ export interface AccountActions {
   resetPassword(email: string, code: string, newPassword: string): Promise<void>
   /** Ends every session this person has on every device (SEC-07), then clears this one. Fails, and keeps this device signed in, when the server cannot be reached. */
   signOutEverywhere(): Promise<void>
+  /** The devices this person is signed in on, this one marked `current` (IDN-01). */
+  listDevices(): Promise<DeviceSession[]>
+  /** Signs one other device out. Fails, changing nothing, when the server cannot be reached. */
+  signOutDevice(id: string): Promise<void>
 }
+
+/** One device this person is signed in on (IDN-01). Instants are epoch milliseconds. */
+export interface DeviceSession { id: string; device: string; signedInAt: number; lastActiveAt: number; current: boolean }
 
 export class AuthError extends Error {
   readonly code: AuthErrorCode

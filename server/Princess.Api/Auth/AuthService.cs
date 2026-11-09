@@ -16,6 +16,10 @@ public interface IAuthService
     Task LogoutAsync(UserRecord user, LogoutRequest request, CancellationToken ct);
     /// <summary>Ends every session this person has, on every device, this one included.</summary>
     Task LogoutEverywhereAsync(UserRecord user, CancellationToken ct);
+    /// <summary>The devices this person is signed in on, the one holding <paramref name="currentRefreshToken"/> marked.</summary>
+    Task<IReadOnlyList<DeviceSessionDto>> ListSessionsAsync(UserRecord user, string? currentRefreshToken, CancellationToken ct);
+    /// <summary>Signs one device out. Not found for a device that is not this person's or is already signed out.</summary>
+    Task EndSessionAsync(UserRecord user, string id, CancellationToken ct);
     Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct);
     Task<SessionResponse> RegisterAsync(RegisterRequest request, string? userAgent, string? ip, CancellationToken ct);
     /// <summary>Always completes without saying whether the address has an account.</summary>
@@ -122,6 +126,28 @@ public sealed class AuthService(
     {
         await signIn.EndAllSessionsAsync(user.Id, clock.UtcNow, ct);
         await Audit("auth.logoutEverywhere", AuditOutcome.Success, user, null, ct);
+    }
+
+    public async Task<IReadOnlyList<DeviceSessionDto>> ListSessionsAsync(UserRecord user, string? currentRefreshToken, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        long? current = string.IsNullOrEmpty(currentRefreshToken) || currentRefreshToken.Length > 200
+            ? null
+            : await refreshTokens.FindOpenFamilyAsync(user.Id, tokens.HashRefreshToken(currentRefreshToken), now, ct);
+        var rows = await refreshTokens.ListSessionsAsync(user.Id, now, ct);
+        return rows.Select(r => new DeviceSessionDto(
+            r.FamilyId.ToString(System.Globalization.CultureInfo.InvariantCulture), DeviceLabel.From(r.UserAgent),
+            Ms(r.SignedInAt), Ms(r.LastActiveAt), r.FamilyId == current)).ToList();
+    }
+
+    public async Task EndSessionAsync(UserRecord user, string id, CancellationToken ct)
+    {
+        if (!long.TryParse(id, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var family)) throw ApiException.NotFound();
+        var now = clock.UtcNow;
+        // Only this person's open sessions count, so an id of someone else's looks the same as one that does not exist.
+        if (!(await refreshTokens.ListSessionsAsync(user.Id, now, ct)).Any(r => r.FamilyId == family)) throw ApiException.NotFound();
+        await refreshTokens.RevokeFamilyAsync(user.Id, family, now, ct);
+        await Audit("auth.sessionEnded", AuditOutcome.Success, user, null, ct);
     }
 
     public async Task<ViewAsResponse> ViewAsAsync(UserRecord booker, Guid childPublicId, CancellationToken ct)

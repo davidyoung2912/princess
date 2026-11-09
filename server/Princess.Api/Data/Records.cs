@@ -41,6 +41,15 @@ public sealed class RefreshTokenRecord
     public DateTime? RevokedAt { get; set; }
 }
 
+/// <summary>One signed-in device: a refresh-token family that is still open. Times are UTC.</summary>
+public sealed class SessionRow
+{
+    public long FamilyId { get; set; }
+    public string? UserAgent { get; set; }
+    public DateTime SignedInAt { get; set; }
+    public DateTime LastActiveAt { get; set; }
+}
+
 public sealed record NewRefreshToken(long UserId, long FamilyId, byte[] TokenHash, DateTime ExpiresAt, string? UserAgent, string? Ip);
 
 public sealed class BookingMembership

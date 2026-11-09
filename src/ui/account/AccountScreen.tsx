@@ -3,6 +3,7 @@ import { auth, signOutEverywhereSaving, signOutSaving } from '../../runtime'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { DevicesCard } from './DevicesCard'
 
 /** The account page, reached from the logo in the top bar: who is signed in, and how to sign out. More will be added here. */
 export function AccountScreen() {
@@ -25,6 +26,7 @@ export function AccountScreen() {
         {user?.isDemo && <p className="muted">{t('account.demo')}</p>}
       </Card>
       <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
+      {auth.account && !user?.isDemo && <DevicesCard />}
       {auth.account && !user?.isDemo && (
         <Card>
           <h2>{t('signin.signOutEverywhere')}</h2>

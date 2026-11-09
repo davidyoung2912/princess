@@ -126,6 +126,38 @@ public class SignInFlowsApiTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, (await Post("login", new LoginRequest(_gerald.Email, Password))).StatusCode);
     }
 
+    private HttpRequestMessage Authed(HttpMethod method, string url, string token, object? body = null)
+    {
+        var req = new HttpRequestMessage(method, url);
+        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        if (body is not null) req.Content = JsonContent.Create(body, options: Json);
+        return req;
+    }
+
+    [Fact]
+    public async Task TheDeviceListMarksThisDeviceAndSignsAnotherOut()
+    {
+        var one = (await (await Post("login", new LoginRequest(_gerald.Email, Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        var two = (await (await Post("login", new LoginRequest(_gerald.Email, Password))).Content.ReadFromJsonAsync<SessionResponse>(Json))!;
+        var list = (await (await _http.SendAsync(Authed(HttpMethod.Post, "/api/v1/auth/sessions/list", one.AccessToken, new SessionListRequest(one.RefreshToken)))).Content
+            .ReadFromJsonAsync<List<DeviceSessionDto>>(Json))!;
+        Assert.Equal(2, list.Count);
+        var mine = Assert.Single(list, d => d.Current);
+        var other = Assert.Single(list, d => !d.Current);
+        Assert.NotEqual(mine.Id, other.Id);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _http.SendAsync(Authed(HttpMethod.Delete, $"/api/v1/auth/sessions/{other.Id}", one.AccessToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post("refresh", new RefreshRequest(two.RefreshToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _http.SendAsync(Authed(HttpMethod.Delete, $"/api/v1/auth/sessions/{other.Id}", one.AccessToken))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Post("refresh", new RefreshRequest(one.RefreshToken))).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", "Safari on iPhone")]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36 Edg/120.0", "Edge on Windows")]
+    [InlineData(null, "Unknown device")]
+    public void ADeviceGetsAShortName(string? userAgent, string expected) => Assert.Equal(expected, DeviceLabel.From(userAgent));
+
     [Fact]
     public async Task ACodeDiesAfterFiveWrongTriesAndAfterFifteenMinutes()
     {
