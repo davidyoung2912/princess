@@ -1,6 +1,6 @@
 # Best-in-market plan (BM)
 
-Status: **Written 2026-11-08. Phase BM1 is built; BM2 to BM5 are proposed and wait for approval.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
+Status: **Written 2026-11-08. Phases BM1 and BM2 are built; BM3 to BM5 are proposed and wait for approval. BM2's matrix (`docs/best-in-market-matrix.md`) changes BM3 and BM5; see its Findings section.** Source: `docs/princess_cruises_expanded_best_in_market_requirements.md` (the "OpenAI document", dated 2026-11-07), checked against the code as it stands.
 
 ## 1. How this was done, and how far to trust it
 
@@ -72,7 +72,11 @@ Each phase is small enough to finish, check and commit on its own. Checks are on
 - **Screen**: `src/ui/plan/CapsuleCard.tsx` on `/plan/phone`: missing essentials with an "Open to save" link, one row per saved copy, "Check now", "Ask the browser to keep them", and the crew-override line (OFF-03). No new route, so the screen registry is unchanged.
 - **Not done**: no device test (rule); expiry uses the existing per-kind limits in `offlineCache.ts` and the phone's own time zone; the card reads copies but does not fetch them (a copy is saved when its screen is opened with a signal).
 
-### BM2. Verified baseline matrix
+### BM2. Verified baseline matrix (built, not committed)
+
+Done: `docs/best-in-market-matrix.md`, 292 rows, 15 read and 277 found by name or search. Findings: IDN-04/05 and IDN-03 are real gaps; `/me/status` reads client demo scenarios; COM-04 is not built; MOB-02 is already met; BM3 and BM5 should be reshaped as the matrix says.
+
+Original scope:
 
 Write `docs/best-in-market-matrix.md`: every document ID (187 + 25 + 22 + cross-stage) as built, partial, mock, planned or not planned, with the file and test that prove it, in the style of `docs/a-tier-matrix.md`. Settle section 3 above. Doc only plus any one-line fixes found. This sets the real size of the remaining work.
 
