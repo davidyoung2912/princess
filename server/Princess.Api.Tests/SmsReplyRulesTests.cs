@@ -51,6 +51,22 @@ public class SmsReplyRulesTests
     }
 
     [Fact]
+    public void ASignatureMustMatchTheBodyAndBeRecent()
+    {
+        const string key = "provider-signing-key", body = "{\"from\":\"+15550100123\",\"body\":\"STOP\"}";
+        const long now = 1_700_000_000;
+        var sig = SmsReplyRules.Sign(key, now.ToString(), body);
+        Assert.True(SmsReplyRules.SignatureOk(key, now.ToString(), sig, body, now + 60));
+        Assert.True(SmsReplyRules.SignatureOk(key, now.ToString(), sig.ToUpperInvariant().Replace("SHA256=", "sha256="), body, now));
+        Assert.False(SmsReplyRules.SignatureOk(key, now.ToString(), sig, body.Replace("STOP", "HELP"), now));
+        Assert.False(SmsReplyRules.SignatureOk("other-key", now.ToString(), sig, body, now));
+        Assert.False(SmsReplyRules.SignatureOk(key, now.ToString(), sig, body, now + SmsReplyRules.SignatureToleranceSeconds + 1));
+        Assert.False(SmsReplyRules.SignatureOk(key, "soon", sig, body, now));
+        Assert.False(SmsReplyRules.SignatureOk("", now.ToString(), sig, body, now));
+        Assert.False(SmsReplyRules.SignatureOk(key, now.ToString(), "", body, now));
+    }
+
+    [Fact]
     public void TheSecretMustMatchAndMustBeSet()
     {
         Assert.True(SmsReplyRules.SecretOk("s3cret", "s3cret"));

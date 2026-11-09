@@ -40,6 +40,20 @@ public static class SmsReplyRules
         return next;
     }
 
+    public const int SignatureToleranceSeconds = 300;
+
+    /// <summary>The signature a text provider's adapter puts in <c>X-Signature</c>: <c>sha256=</c> and the lower-case hex HMAC-SHA256, under the signing key, of <c>{timestamp}.{raw body}</c>.</summary>
+    public static string Sign(string signingKey, string timestamp, string rawBody) =>
+        "sha256=" + Convert.ToHexString(HMACSHA256.HashData(Encoding.UTF8.GetBytes(signingKey), Encoding.UTF8.GetBytes($"{timestamp}.{rawBody}"))).ToLowerInvariant();
+
+    /// <summary>Whether the signature is right for this body and the timestamp (Unix seconds) is within five minutes of now, so a captured request cannot be replayed later. False when no key is set.</summary>
+    public static bool SignatureOk(string? signingKey, string? timestamp, string? signature, string rawBody, long nowUnixSeconds)
+    {
+        if (string.IsNullOrEmpty(signingKey) || string.IsNullOrEmpty(signature) || !long.TryParse(timestamp, out var ts)) return false;
+        if (Math.Abs(nowUnixSeconds - ts) > SignatureToleranceSeconds) return false;
+        return SecretOk(Sign(signingKey, timestamp!, rawBody), signature.Trim().ToLowerInvariant());
+    }
+
     /// <summary>Whether the shared secret sent with an inbound text is the configured one (compared in constant time). False when none is configured.</summary>
     public static bool SecretOk(string? configured, string? given)
     {

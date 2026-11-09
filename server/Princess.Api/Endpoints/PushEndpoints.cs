@@ -50,15 +50,24 @@ public static class PushEndpoints
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
             .WithTags("Push").WithSummary("The one-click unsubscribe a mail app posts to (RFC 8058, from the List-Unsubscribe headers on notice emails). Same link and effect as the page; 404 for a link that was not made here. Rate-limited.");
 
-        api.MapPost("/public/sms/inbound", async (InboundSmsRequest body, HttpRequest req, IConfiguration config, SmsReplyService svc, CancellationToken ct) =>
+        api.MapPost("/public/sms/inbound", async (HttpRequest req, IConfiguration config, SmsReplyService svc, CancellationToken ct) =>
             {
-                // Off unless a shared secret is configured (Sms:InboundSecret); the text provider's adapter sends it in X-Inbound-Secret.
-                if (string.IsNullOrEmpty(config["Sms:InboundSecret"])) return Results.NotFound();
-                if (!SmsReplyRules.SecretOk(config["Sms:InboundSecret"], req.Headers["X-Inbound-Secret"].ToString())) return Results.Unauthorized();
-                return Results.Ok(new { stopped = await svc.HandleAsync(body.From, body.Body, ct) });
+                // Off unless a signing key (Sms:InboundSigningKey, preferred) or a shared secret (Sms:InboundSecret) is configured.
+                string? key = config["Sms:InboundSigningKey"], secret = config["Sms:InboundSecret"];
+                if (string.IsNullOrEmpty(key) && string.IsNullOrEmpty(secret)) return Results.NotFound();
+                using var reader = new StreamReader(req.Body, System.Text.Encoding.UTF8);
+                var raw = await reader.ReadToEndAsync(ct);
+                var ok = !string.IsNullOrEmpty(key)
+                    ? SmsReplyRules.SignatureOk(key, req.Headers["X-Timestamp"].ToString(), req.Headers["X-Signature"].ToString(), raw, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+                    : SmsReplyRules.SecretOk(secret, req.Headers["X-Inbound-Secret"].ToString());
+                if (!ok) return Results.Unauthorized();
+                InboundSmsRequest? body;
+                try { body = System.Text.Json.JsonSerializer.Deserialize<InboundSmsRequest>(raw, System.Text.Json.JsonSerializerOptions.Web); }
+                catch (System.Text.Json.JsonException) { return Results.BadRequest(); }
+                return Results.Ok(new { stopped = await svc.HandleAsync(body?.From, body?.Body, ct) });
             })
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
-            .WithTags("Push").WithSummary("A text sent back to the notice number. A STOP reply from a guest's confirmed phone number switches text notices off for them. 404 unless Sms:InboundSecret is set; 401 for a wrong secret. Rate-limited.");
+            .WithTags("Push").WithSummary("A text sent back to the notice number. A STOP reply from a guest's confirmed phone number switches text notices off for them. 404 unless Sms:InboundSigningKey (HMAC-SHA256 of "{X-Timestamp}.{raw body}" in X-Signature as sha256=hex, within 5 minutes) or the weaker Sms:InboundSecret (X-Inbound-Secret) is set; 401 for a wrong signature or secret. Rate-limited.");
 
         api.MapPost("/me/push/read", async (ICurrentUser me, PushService svc, CancellationToken ct) =>
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))
