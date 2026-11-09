@@ -236,8 +236,50 @@ public sealed class DapperFinishStore(IDbConnectionFactory db) : IFinishStore
         await using var c = await db.OpenAsync(ct);
         var row = await c.QuerySingleOrDefaultAsync<LoyaltyRecordRow>(Sql.Cmd("SELECT RTRIM(Number) AS Number, DaysCounted, ReferralCode FROM dbo.Loyalty WHERE UserId = @userId", new { userId }, null, ct));
         if (row is null) return null;
-        row.Referrals = [.. (await c.QueryAsync<(string Name, string State)>(Sql.Cmd("SELECT FriendName, State FROM dbo.Referrals WHERE UserId = @userId ORDER BY Id", new { userId }, null, ct)))];
+        row.Referrals = [.. (await c.QueryAsync<(string Name, string State, Guid Id)>(Sql.Cmd("SELECT FriendName, State, PublicId FROM dbo.Referrals WHERE UserId = @userId ORDER BY Id", new { userId }, null, ct)))];
         return row;
+    }
+
+    public async Task<List<CreditRow>> ListCreditsAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<CreditRow>(Sql.Cmd(
+            "SELECT PublicId AS Id, Source, OriginalCents AS Original, RemainingCents AS Remaining, ExpiresOn FROM dbo.FutureCruiseCredits WHERE UserId = @userId ORDER BY ExpiresOn, Id", new { userId }, null, ct))).ToList();
+    }
+
+    public async Task<List<CreditUseRow>> ListCreditUsesAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<CreditUseRow>(Sql.Cmd("""
+            SELECT f.[At] AS [At], f.Description AS What, -f.Cents AS Cents
+            FROM dbo.FolioLines f JOIN dbo.Bookings b ON b.Id = f.BookingId
+            WHERE b.BookerUserId = @userId AND f.SourceType = N'fcc' ORDER BY f.[At] DESC, f.Id DESC
+            """, new { userId }, null, ct))).ToList();
+    }
+
+    public async Task<List<LoyaltyReportRow>> ListLoyaltyReportsAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<LoyaltyReportRow>(Sql.Cmd(
+            "SELECT PublicId AS Id, What, Note, Status, [At] AS [At] FROM dbo.LoyaltyReports WHERE UserId = @userId ORDER BY Id DESC", new { userId }, null, ct))).ToList();
+    }
+
+    public async Task AddLoyaltyReportAsync(long userId, string what, string note, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.LoyaltyReports (UserId, What, Note, [At]) VALUES (@userId, @what, @note, @at)", new { userId, what, note, at }, null, ct));
+    }
+
+    public async Task AddReferralAsync(long userId, string name, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.Referrals (UserId, FriendName) VALUES (@userId, @name)", new { userId, name }, null, ct));
+    }
+
+    public async Task<bool> RevokeReferralAsync(long userId, Guid id, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.Referrals WHERE UserId = @userId AND PublicId = @id AND State = 'invited'", new { userId, id }, null, ct)) > 0;
     }
 
     // ---- Rebooking ----

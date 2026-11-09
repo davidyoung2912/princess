@@ -25,8 +25,6 @@ MOB-05	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 MOB-23	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 OFF-01	OK	(BM19 closed) see best-in-market-plan-2 section 5d
 DRM-16	PARTIAL	(BM20) SlotWatch is a dinner/show/tour cancellation watch, not a sailing, fare or availability alert with a threshold and price context. priceCalendar has no alert. Stop exists; no pause.
-REM-07	PARTIAL	(BM20) LoyaltyScreen shows tier, days and perks; no last-sync time, stale flag or way to report a discrepancy.
-REM-10	PARTIAL	(BM20) Only a credit mention in PerksPanel; no credit wallet with source, expiry, eligibility or redemption history found in LoyaltyScreen or PerksPanel.
 PRE-07	PARTIAL	(BM20) excursions.ts has minAge and accessible, excursionFit has wheelchair; no exertion level and no "operator to confirm" flag found for uncertain accessibility.
 SEA-05	PARTIAL	(BM20) Venue directory shows open or closed from hours (openAt) only: no temporarily-unavailable state and no timestamp.
 AST-02	PARTIAL	(BM20) src/ai has no source or freshness label on answers.
@@ -44,7 +42,6 @@ UX-04	OK	(BM20) sync.ts is a versioned per-key document store with conflict on a
 PRE-12	NEEDS-READ	(BM20) ClubsScreen has no guardian wording; ahead.ts has consent and age constants but they were not read in full.
 PRE-12	PARTIAL	(BM20) The only consent in ahead.ts is marketing double opt-in; ClubsScreen and ahead.ts have no guardian consent or sign-in/out authority wording.
 EMB-07	PARTIAL	(BM20) RequestsScreen shows status; no photo attachment, preferred-contact or duplicate-case guard found.
-REM-08	PARTIAL	(BM20) RebookScreen shows no reason for a recommendation and no editable inputs (search found none).
 QOL-20	PARTIAL	(BM20) AssistanceScreen and medicalCard have no recipient preview, revoke or acknowledgement.
 MNG-09	PARTIAL	(BM20) travel.ts has no provider, reference or contact fields found; only a "booked with" note.
 OFF-07	OK	(BM20) BM19 added export and restore of waiting items and unreadable-store handling (deviceBackup).

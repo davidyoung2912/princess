@@ -282,6 +282,10 @@ describe('REST after-cruise groups', () => {
       '/bookings/PC2/rebook/holds': {},
       '/bookings/PC2/rebook/appointment': {},
       '/me/loyalty-summary': {},
+      '/me/loyalty-summary/reports': {},
+      '/me/referrals': {},
+      '/me/referrals/f1': {},
+      '/bookings/PC2/rebook?category=suite&guests=2': {},
       '/bookings/PC2/history': {},
     })
     const g = createHttpGroups(http).groups
@@ -291,7 +295,11 @@ describe('REST after-cruise groups', () => {
     await g.disembark.emailReceipt()
     await g.cases.withdraw('c1')
     await g.post.saveFeedback({ overall: 5 } as never)
-    await g.post.hold('d1')
+    await g.post.hold('d1', { category: 'suite', guests: 2 })
+    await g.post.rebook({ category: 'suite', guests: 2 })
+    await g.post.reportLoyalty('days', 'I count 40')
+    await g.post.invite('Frank')
+    await g.post.revokeInvite('f1')
     await g.post.bookSlot(123)
     await g.post.cancelSlot()
     await g.post.loyalty()
@@ -300,7 +308,11 @@ describe('REST after-cruise groups', () => {
     expect(call('PUT', '/bookings/PC2/disembark/choice')).toEqual({ option: 'selfWalk', bags: { [PERSONA_GUIDS.maya]: 2 } })
     expect(call('PUT', '/bookings/PC2/disembark/night/n1')).toEqual({ done: true })
     expect(call('PUT', '/bookings/PC2/disembark/final-bill/tip')).toEqual({ keepPercent: 50 })
-    expect(call('POST', '/bookings/PC2/rebook/holds')).toEqual({ departureId: 'd1' })
+    expect(call('POST', '/bookings/PC2/rebook/holds')).toEqual({ departureId: 'd1', category: 'suite', guests: 2 })
+    expect(call('POST', '/me/loyalty-summary/reports')).toEqual({ what: 'days', note: 'I count 40' })
+    expect(call('POST', '/me/referrals')).toEqual({ name: 'Frank' })
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/me/referrals/f1')).toBe(true)
+    expect(calls.some((c) => c.method === 'GET' && c.path === '/bookings/PC2/rebook?category=suite&guests=2')).toBe(true)
     expect(call('POST', '/bookings/PC2/rebook/appointment')).toEqual({ at: 123 })
     expect(calls.some((c) => c.method === 'DELETE' && c.path === '/bookings/PC2/cases/c1')).toBe(true)
     expect(calls.some((c) => c.method === 'DELETE' && c.path === '/bookings/PC2/rebook/appointment')).toBe(true)

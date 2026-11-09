@@ -251,17 +251,17 @@ What I did not do: read the C# endpoints behind each row, so server-side clauses
 | REM-01 | P0 | Built | F | `src/ui/finish/HistoryScreen.tsx`, `src/ui/account/TripScreen.tsx` | None found |
 | REM-02 | P1 | Built | F | `src/domain/tripDiary.ts`, `src/domain/tripDiary.test.ts`, `src/ui/account/DiaryScreen.tsx` | None found |
 | REM-03 | P1 | Built | F | `src/domain/memoryBook.ts`, `src/domain/memoryBook.test.ts`, `src/ui/account/MemoryScreen.tsx` | Photos missing (a-tier-matrix row 20) |
-| REM-04 | P1 | Partial | F | `src/domain/photos.ts`, `src/ui/extras/PhotosScreen.tsx` | Per-photo ownership and consent unchecked |
+| REM-04 | P1 | Built | F | `src/domain/albumRules.ts`, `src/domain/albumRules.test.ts`, `src/ui/extras/PhotosScreen.tsx` | BM51: the album says who can see it (people on the booking only, no public link, no download button), a guest takes back only their own photos, one at a time or all at once; nothing is shared until its owner chooses |
 | REM-05 | P1 | Simulated | F | `src/ui/extras/PhotosScreen.tsx` | Photo archive purchase is a mock; resumable download unchecked |
 | REM-06 | P0 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Route to service recovery is server side: unchecked |
-| REM-07 | P1 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx` | BM20: no last-sync or discrepancy report |
-| REM-08 | P1 | Partial | F | `src/ui/finish/RebookScreen.tsx` | BM20: no reason shown or editable inputs |
+| REM-07 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: "checked {time}" from the served `syncedAt`, and a report form (`POST /me/loyalty-summary/reports`, table `LoyaltyReports`) with the guest's own reports and their state; no staff screen answers a report yet, and the server is not compiled |
+| REM-08 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: each date lists why it is offered (`reasons`); stateroom type and party size are editable and reset (`?category=&guests=`, also sent with a hold); the screen says health and children's details are not used. Only those two inputs; no stored preferences or past-trip inputs |
 | REM-09 | P1 | Built | F | `src/ui/finish/RebookScreen.tsx` | Consent for stored details unchecked |
-| REM-10 | P1 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx`, `src/ui/book/PerksPanel.tsx` | BM20: no credit wallet with expiry or history |
+| REM-10 | P1 | Built | F | `src/ui/finish/LoyaltyScreen.tsx`, `src/domain/wallet.ts`, `src/domain/wallet.test.ts` | BM51: each future cruise credit with source, original and left, currency, expiry, who can use it, the redemptions, and a line that says when the amounts used do not add up to what was spent. Onboard credit from holds is not in the wallet |
 | REM-11 | P1 | Built | F | `src/ui/finish/FeedbackScreen.tsx` | Progressive survey unchecked |
 | REM-12 | P1 | Built | F | `src/domain/finishMore.ts`, `src/ui/onboard/FinishMoreScreens.tsx` | Receipt unchecked |
 | REM-13 | P2 | Built | F | `src/domain/wrapped.ts`, `src/domain/wrapped.test.ts`, `src/domain/recap.ts`, `src/ui/ai/RecapScreen.tsx` | None found |
-| REM-14 | P2 | Partial | F | `src/domain/family.ts` | Referral and reunion tools: no referral screen found |
+| REM-14 | P2 | Partial | F | `src/ui/finish/LoyaltyScreen.tsx`, `server/Princess.Api/Services/PostService.cs` | BM51: referral invitations are a first name only (no contact kept or shown), can be added and taken back until the friend books, and the incentive and when it is paid are stated; no reunion tool |
 | REM-15 | P2 | Simulated | F | `server/Princess.Api/Domain/PrintRules.cs`, `server/Princess.Api/Services/Providers.cs` | Print provider is a mock; no front-end screen found |
 | REM-16 | P0 | Built | F | `src/ui/account/PrivacyScreen.tsx`, `src/domain/privacy.ts`, `src/domain/dataRules.ts` | None found |
 

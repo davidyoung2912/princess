@@ -89,14 +89,55 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
         var counted = current is not null && now >= DisembarkRules.Times(TimelineBook.For(current.SailingId, DateOnly.FromDateTime(current.Departure))).ArrivalAt;
         var status = PostCruiseRules.Loyalty(actor.Tier, row?.DaysCounted ?? PostCruiseRules.TierDays(actor.Tier), current?.Nights ?? Pricing.Nights, counted);
         var perks = EntitlementRules.Compute(status.After, "none", false);
-        var friends = (row?.Referrals ?? []).Select(r => new ReferralFriendDto(r.Name, r.State)).ToList();
+        var friends = (row?.Referrals ?? []).Select(r => new ReferralFriendDto(r.Id, r.Name, r.State)).ToList();
         var code = row?.ReferralCode ?? PostCruiseRules.ReferralCode(actor.FirstName ?? "");
-        return new LoyaltyViewDto(status, counted, perks.Perks, perks.WifiDevices, new ReferralDto(code, PostCruiseRules.ReferralCredit, friends.Count(f => f.State == "sailed") * PostCruiseRules.ReferralCredit, friends));
+        var today = DateOnly.FromDateTime(now);
+        var credits = (await store.ListCreditsAsync(actor.Id, ct)).Select(x => new CreditDto(x.Id, x.Source, x.Original, x.Remaining, Iso(x.ExpiresOn), DateOnly.FromDateTime(x.ExpiresOn) < today, "booker")).ToList();
+        var used = (await store.ListCreditUsesAsync(actor.Id, ct)).Select(x => new CreditUseDto(Ms(x.At), x.What, x.Cents)).ToList();
+        var reports = (await store.ListLoyaltyReportsAsync(actor.Id, ct)).Select(x => new LoyaltyReportDto(x.Id, x.What, x.Note, x.Status, Ms(x.At))).ToList();
+        return new LoyaltyViewDto(status, counted, perks.Perks, perks.WifiDevices, new ReferralDto(code, PostCruiseRules.ReferralCredit, friends.Count(f => f.State == "sailed") * PostCruiseRules.ReferralCredit, friends),
+            Ms(now), "USD", credits, used, reports);
+    }
+
+    private static readonly string[] ReportKinds = ["tier", "days", "credit", "other"];
+    private const int MaxOpenReports = 5;
+    private const int MaxInvites = 10;
+
+    /// <summary>REM-07: the guest says a level, day count or credit looks wrong. Kept for a person to answer; nothing on the record changes.</summary>
+    public async Task<LoyaltyViewDto> ReportAsync(UserRecord actor, LoyaltyReportRequest? body, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden();
+        var what = (body?.What ?? "").Trim();
+        if (!ReportKinds.Contains(what)) throw ApiException.Invalid("badWhat");
+        var note = (body?.Note ?? "").Trim();
+        if (note.Length > 300) throw ApiException.Invalid("badNote");
+        if ((await store.ListLoyaltyReportsAsync(actor.Id, ct)).Count(r => r.Status == "open") >= MaxOpenReports) throw ApiException.Conflict("tooManyReports");
+        await store.AddLoyaltyReportAsync(actor.Id, what, note, await clock.NowAsync(actor, ct), ct);
+        return await LoyaltyAsync(actor, ct);
+    }
+
+    /// <summary>REM-14: records an invited friend by first name only. The invitation can be taken back until the friend has booked.</summary>
+    public async Task<LoyaltyViewDto> InviteAsync(UserRecord actor, ReferralRequest? body, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden();
+        var name = (body?.Name ?? "").Trim();
+        if (name.Length is < 1 or > 40) throw ApiException.Invalid("badName");
+        var row = await store.GetLoyaltyAsync(actor.Id, ct) ?? throw ApiException.Conflict("noRecord");
+        if (row.Referrals.Count(r => r.State == "invited") >= MaxInvites) throw ApiException.Conflict("tooManyInvites");
+        await store.AddReferralAsync(actor.Id, name, ct);
+        return await LoyaltyAsync(actor, ct);
+    }
+
+    public async Task<LoyaltyViewDto> RevokeInviteAsync(UserRecord actor, Guid id, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden();
+        if (!await store.RevokeReferralAsync(actor.Id, id, ct)) throw ApiException.NotFound();
+        return await LoyaltyAsync(actor, ct);
     }
 
     // ---- Rebooking (POS-06) ----
 
-    private sealed record Option(string Id, DateOnly Departure, bool Bookable, long Total, long Deposit, long Credit);
+    private sealed record Option(string Id, DateOnly Departure, bool Bookable, long Total, long Deposit, long Credit, string[] Reasons);
 
     private static int Guests(Scope c) => Math.Min(4, c.Party.Count);
 
@@ -104,14 +145,31 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
 
     private static bool Bookable(SailingRow s, Scope c) => s.BookingOpen && Pricing.HasPrice(s.Id) && Pricing.Bookable(TripRules.DaysBetween(c.Today, DateOnly.FromDateTime(s.Departure)));
 
-    private async Task<List<Option>> OptionsAsync(Scope c, CancellationToken ct)
+    /// <summary>REM-08: the cabin type and party size the dates are priced for. They start from this booking and the guest may change them; nothing about health or children is used.</summary>
+    private static (string Category, int Guests) Inputs(Scope c, string? category, int? guests)
+    {
+        var cat = string.IsNullOrWhiteSpace(category) ? c.Booking.CategoryId : category;
+        if (cat != c.Booking.CategoryId && !Pricing.Categories.Any(x => x.Id == cat)) throw ApiException.Invalid("badCategory");
+        var n = guests ?? Guests(c);
+        if (n is < 1 or > 4) throw ApiException.Invalid("badGuests");
+        return (cat, n);
+    }
+
+    private async Task<List<Option>> OptionsAsync(Scope c, string category, int guests, CancellationToken ct)
     {
         var onboard = Onboard(c);
-        var guests = Guests(c);
         var from = PostCruiseRules.EarliestRebook(c.Timeline.Days[^1].Date);
         var credit = onboard ? PostCruiseRules.BookingCredit + PostCruiseRules.LevelCredit(c.Actor.Tier) : 0;
         return [.. (await trips.ListSailingsAsync(ct)).Where(s => DateOnly.FromDateTime(s.Departure) >= from).OrderBy(s => s.Departure).SelectMany(s =>
-            Pricing.Quote(s.Id, c.Booking.CategoryId, guests) is { } q ? [new Option(s.Id, DateOnly.FromDateTime(s.Departure), Bookable(s, c), q.Total, PostCruiseRules.HoldDeposit(q.Total, guests, onboard), credit)] : Array.Empty<Option>())];
+            Pricing.Quote(s.Id, category, guests) is { } q ? [new Option(s.Id, DateOnly.FromDateTime(s.Departure), Bookable(s, c), q.Total, PostCruiseRules.HoldDeposit(q.Total, guests, onboard), credit, ReasonsFor(c, s.Id, credit))] : Array.Empty<Option>())];
+    }
+
+    private static string[] ReasonsFor(Scope c, string sailingId, long credit)
+    {
+        var reasons = new List<string> { "cabin", "party" };
+        if (Pricing.NightsOf(sailingId) == c.Booking.Nights) reasons.Add("length");
+        if (credit > 0) reasons.Add("credit");
+        return [.. reasons];
     }
 
     /// <summary>Desk slots from now on: at least an hour away, not full (a slot this booking holds counts as free), the first twelve. Times are ship wall-clock, as seeded.</summary>
@@ -142,8 +200,9 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
             c.Now > h.ExpiresAt, s is not null && Bookable(s, c));
     }
 
-    private async Task<RebookViewDto> RebookViewAsync(Scope c, CancellationToken ct)
+    private async Task<RebookViewDto> RebookViewAsync(Scope c, CancellationToken ct, string? category = null, int? guests = null)
     {
+        var (cat, n) = Inputs(c, category, guests);
         var sailings = (await trips.ListSailingsAsync(ct)).ToDictionary(s => s.Id);
         var holds = await store.ListHoldsAsync(c.Booking.BookingId, ct);
         var applied = holds.Where(h => c.Now <= h.ExpiresAt).Sum(h => h.FccAppliedCents);
@@ -158,27 +217,29 @@ public sealed class PostService(ScopeLoader scopes, IFinishStore store, ITripSto
         }
         var onboard = Onboard(c);
         return new RebookViewDto(
-            c.Booking.CategoryId, Guests(c), c.Actor.Tier, onboard, [.. (await OptionsAsync(c, ct)).Select(o => new RebookOptionDto(o.Id, Iso(o.Departure), o.Bookable, o.Total, o.Deposit, o.Credit))],
+            cat, n, c.Actor.Tier, onboard, [.. (await OptionsAsync(c, cat, n, ct)).Select(o => new RebookOptionDto(o.Id, Iso(o.Departure), o.Bookable, o.Total, o.Deposit, o.Credit, o.Reasons))],
             [.. holds.Select(h => HoldOf(h, c, sailings))], left, await store.FccConvertedAsync(c.Booking.BookingId, ct), appointment,
-            onboard ? [.. (await DeskSlotsAsync(c, ct)).Select(s => new DeskSlotDto(s.At, s.Day))] : [], (onboard || FinishStages.Sailed(c)) && !c.Actor.IsSupervised);
+            onboard ? [.. (await DeskSlotsAsync(c, ct)).Select(s => new DeskSlotDto(s.At, s.Day))] : [], (onboard || FinishStages.Sailed(c)) && !c.Actor.IsSupervised,
+            cat != c.Booking.CategoryId || n != Guests(c), [.. Pricing.Categories.Select(x => x.Id)]);
     }
 
-    public async Task<RebookViewDto> RebookAsync(UserRecord actor, string? number, CancellationToken ct) =>
-        await RebookViewAsync(await scopes.LoadAsync(actor, number, write: false, ct), ct);
+    public async Task<RebookViewDto> RebookAsync(UserRecord actor, string? number, string? category, int? guests, CancellationToken ct) =>
+        await RebookViewAsync(await scopes.LoadAsync(actor, number, write: false, ct), ct, category, guests);
 
     public async Task<RebookViewDto> HoldAsync(UserRecord actor, string? number, HoldRequest? body, CancellationToken ct)
     {
         var c = await scopes.LoadAsync(actor, number, write: true, ct);
         if (!(Onboard(c) || FinishStages.Sailed(c))) throw ApiException.Conflict("closed");
-        var option = (await OptionsAsync(c, ct)).FirstOrDefault(o => o.Id == body?.DepartureId) ?? throw ApiException.Invalid("badDeparture");
+        var (cat, n) = Inputs(c, body?.Category, body?.Guests);
+        var option = (await OptionsAsync(c, cat, n, ct)).FirstOrDefault(o => o.Id == body?.DepartureId) ?? throw ApiException.Invalid("badDeparture");
         var live = (await store.ListHoldsAsync(c.Booking.BookingId, ct)).Where(h => c.Now <= h.ExpiresAt).ToList();
         if (live.Any(h => h.SailingId == option.Id)) throw ApiException.Conflict("alreadyHeld");
         if (live.Count >= PostCruiseRules.MaxHolds) throw ApiException.Conflict("tooManyHolds");
-        var view = await RebookViewAsync(c, ct);
+        var view = await RebookViewAsync(c, ct, cat, n);
         var onboard = view.OnboardOffer;
         var hold = new HoldRow
         {
-            SailingId = option.Id, CategoryId = c.Booking.CategoryId, Guests = view.Guests, TotalCents = option.Total, DepositCents = option.Deposit, CreditCents = option.Credit,
+            SailingId = option.Id, CategoryId = cat, Guests = view.Guests, TotalCents = option.Total, DepositCents = option.Deposit, CreditCents = option.Credit,
             FccAppliedCents = Math.Min(view.FccLeft, option.Deposit), Onboard = onboard, PlacedAt = c.Now, ExpiresAt = PostCruiseRules.HoldExpiry(c.Now),
         };
         FolioWrite[] folio = onboard && option.Credit > 0 ? [new(c.Booking.BookerUserId, Shipboard.DayAt(c, c.Now), "credit", "Onboard credit for holding a future cruise", -option.Credit, null, c.Now)] : [];

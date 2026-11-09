@@ -70,10 +70,10 @@ public static class FinishEndpoints
         p.MapPut("/post-feedback", async (string number, FeedbackRequest body, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.SaveFeedbackAsync(await me.LoadAsync(ct), number, body, ct)))
             .WithSummary("Saves feedback; a poor score with permission to be contacted starts a service-recovery case. 400 noOverall, badRating, badComment or badCrew; 403 for a child account; 409 closed or expired.");
         var r = b.MapGroup("/rebook").WithTags("Rebooking");
-        r.MapGet("", async (string number, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.RebookAsync(await me.LoadAsync(ct), number, ct)))
-            .WithSummary("Future departures to hold with their price, deposit and onboard credit, the holds, the future cruise credit and the Future Cruise Desk slots.");
+        r.MapGet("", async (string number, string? category, int? guests, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.RebookAsync(await me.LoadAsync(ct), number, category, guests, ct)))
+            .WithSummary("Future departures to hold with their price, deposit, onboard credit and the reasons each is offered, the holds, the future cruise credit and the Future Cruise Desk slots. Optional `category` and `guests` price the dates for a different cabin type or party size (1 to 4); 400 badCategory or badGuests.");
         r.MapPost("/holds", async (string number, HoldRequest body, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.HoldAsync(await me.LoadAsync(ct), number, body, ct)))
-            .WithSummary("Holds a departure for a week. 400 badDeparture; 403 for a child account; 409 closed, alreadyHeld or tooManyHolds.");
+            .WithSummary("Holds a departure for a week, at the booking's cabin type and party size unless the body names another. 400 badDeparture, badCategory or badGuests; 403 for a child account; 409 closed, alreadyHeld or tooManyHolds.");
         r.MapDelete("/holds/{id:guid}", async (string number, Guid id, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.ReleaseHoldAsync(await me.LoadAsync(ct), number, id, ct)))
             .WithSummary("Lets a hold go and takes back the onboard credit it came with.");
         r.MapPost("/convert-fcc", async (string number, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.ConvertFccAsync(await me.LoadAsync(ct), number, ct)))
@@ -84,6 +84,12 @@ public static class FinishEndpoints
             .WithSummary("Cancels the Future Cruise Desk appointment.");
 
         api.MapGet("/me/loyalty-summary", async (ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.LoyaltyAsync(await me.LoadAsync(ct), ct)))
-            .WithTags("After the cruise").WithSummary("Captain's Circle progress and the referral code. Once the ship has tied up, the latest cruise's days count.");
+            .WithTags("After the cruise").WithSummary("Captain's Circle progress, when it was last read from the loyalty record, the future cruise credits with their source, expiry and redemptions, reports the guest has made, and the referral code. Once the ship has tied up, the latest cruise's days count.");
+        api.MapPost("/me/loyalty-summary/reports", async (LoyaltyReportRequest body, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.ReportAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("After the cruise").WithSummary("Reports that a level, day count or credit looks wrong; a person answers it and nothing on the record changes. 400 badWhat or badNote; 403 for a child account; 409 tooManyReports.");
+        api.MapPost("/me/referrals", async (ReferralRequest body, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.InviteAsync(await me.LoadAsync(ct), body, ct)))
+            .WithTags("After the cruise").WithSummary("Records a friend invited, by first name only; no contact detail is kept. 400 badName; 403 for a child account; 409 noRecord or tooManyInvites.");
+        api.MapDelete("/me/referrals/{id:guid}", async (Guid id, ICurrentUser me, PostService svc, CancellationToken ct) => Results.Ok(await svc.RevokeInviteAsync(await me.LoadAsync(ct), id, ct)))
+            .WithTags("After the cruise").WithSummary("Takes back an invitation that has not been used. 404 when it is not the caller's or the friend has already booked.");
     }
 }

@@ -140,6 +140,31 @@ public sealed class InMemoryFinishStore(InMemoryShipboardStore shipboard) : IFin
 
     public Task<LoyaltyRecordRow?> GetLoyaltyAsync(long userId, CancellationToken ct) => Task.FromResult(Loyalty.GetValueOrDefault(userId));
 
+    public Task<List<CreditRow>> ListCreditsAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Credits.Where(c => c.UserId == userId).OrderBy(c => c.ExpiresOn).ThenBy(c => c.Id).Select(c => new CreditRow { Id = new Guid((int)c.Id, 0, 0, new byte[8]), Source = "Test credit", Original = c.Remaining, Remaining = c.Remaining, ExpiresOn = c.ExpiresOn.ToDateTime(TimeOnly.MinValue) }).ToList());
+
+    public List<(long UserId, CreditUseRow Row)> CreditUses { get; } = [];
+    public List<(long UserId, LoyaltyReportRow Row)> Reports { get; } = [];
+
+    public Task<List<CreditUseRow>> ListCreditUsesAsync(long userId, CancellationToken ct) => Task.FromResult(CreditUses.Where(u => u.UserId == userId).Select(u => u.Row).OrderByDescending(u => u.At).ToList());
+
+    public Task<List<LoyaltyReportRow>> ListLoyaltyReportsAsync(long userId, CancellationToken ct) => Task.FromResult(Reports.Where(r => r.UserId == userId).Select(r => r.Row).OrderByDescending(r => r.At).ToList());
+
+    public Task AddLoyaltyReportAsync(long userId, string what, string note, DateTime at, CancellationToken ct)
+    {
+        Reports.Add((userId, new LoyaltyReportRow { Id = Guid.NewGuid(), What = what, Note = note, At = at }));
+        return Task.CompletedTask;
+    }
+
+    public Task AddReferralAsync(long userId, string name, CancellationToken ct)
+    {
+        Loyalty[userId].Referrals.Add((name, "invited", Guid.NewGuid()));
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> RevokeReferralAsync(long userId, Guid id, CancellationToken ct) =>
+        Task.FromResult(Loyalty.TryGetValue(userId, out var l) && l.Referrals.RemoveAll(r => r.Id == id && r.State == "invited") > 0);
+
     public Task<List<HoldRow>> ListHoldsAsync(long bookingId, CancellationToken ct) => Task.FromResult(Holds.Where(h => h.BookingId == bookingId).Select(h => h.Row).OrderBy(h => h.PlacedAt).ThenBy(h => h.Id).ToList());
 
     public Task<HoldRow> AddHoldAsync(long bookingId, long userId, HoldRow hold, IReadOnlyList<FolioWrite> folio, CancellationToken ct)

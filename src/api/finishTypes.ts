@@ -124,12 +124,27 @@ export interface FeedbackView {
   recovery: { number: string; dueAt: number; stage: CaseStage } | null
 }
 
+/** A future cruise credit (REM-10). `eligible` is a code: `booker` is the person it belongs to, on their own bookings. */
+export interface CreditView { id: string; source: string; original: Cents; remaining: Cents; /** YYYY-MM-DD. */ expiresOn: string; expired: boolean; eligible: string }
+
+/** One redemption: `amount` of a credit changed to onboard credit. */
+export interface CreditUse { at: number; what: string; amount: Cents }
+
+export type LoyaltyReportKind = 'tier' | 'days' | 'credit' | 'other'
+export interface LoyaltyReport { id: string; what: LoyaltyReportKind; note: string; status: 'open' | 'answered'; at: number }
+
 export interface LoyaltyView {
   status: LoyaltyStatus
   counted: boolean
   perks: string[]
   wifiDevices: number
-  referral: { code: string; credit: Cents; earned: Cents; friends: { name: string; state: ReferralState }[] }
+  referral: { code: string; credit: Cents; earned: Cents; friends: { id: string; name: string; state: ReferralState }[] }
+  /** When the figures were last read from the loyalty record (REM-07). */
+  syncedAt: number
+  currency: string
+  credits: CreditView[]
+  used: CreditUse[]
+  reports: LoyaltyReport[]
 }
 
 export interface HoldView {
@@ -150,7 +165,13 @@ export interface HoldView {
   bookable: boolean
 }
 
-export interface RebookOption { id: string; departure: string; bookable: boolean; total: Cents; deposit: Cents; credit: Cents }
+/** Why a date is offered (REM-08): the cabin type and party size it is priced for, the same length as this cruise, onboard credit for holding now. */
+export type RebookReason = 'cabin' | 'party' | 'length' | 'credit'
+
+export interface RebookOption { id: string; departure: string; bookable: boolean; total: Cents; deposit: Cents; credit: Cents; reasons: RebookReason[] }
+
+/** What the dates are priced for. Both start from this booking and the guest may change them. */
+export interface RebookInputs { category?: CategoryId; guests?: number }
 
 export interface DeskSlot { at: number; day: number }
 
@@ -167,6 +188,10 @@ export interface RebookView {
   appointment: { at: number } | null
   slots: DeskSlot[]
   canHold: boolean
+  /** The inputs differ from this booking's. */
+  edited: boolean
+  /** The cabin types the guest may price the dates for. */
+  categories: CategoryId[]
 }
 
 export interface PostApi {
@@ -174,8 +199,14 @@ export interface PostApi {
   feedback(): Promise<FeedbackView>
   saveFeedback(f: Feedback): Promise<FeedbackView>
   loyalty(): Promise<LoyaltyView>
-  rebook(): Promise<RebookView>
-  hold(departureId: string): Promise<RebookView>
+  /** Says a level, day count or credit looks wrong; a person answers it. Rejects `invalid` or `conflict` (`tooManyReports`). */
+  reportLoyalty(what: LoyaltyReportKind, note: string): Promise<LoyaltyView>
+  /** Records an invited friend by first name only. Rejects `invalid` or `conflict`. */
+  invite(name: string): Promise<LoyaltyView>
+  /** Takes back an invitation not yet used. Rejects `notFound`. */
+  revokeInvite(id: string): Promise<LoyaltyView>
+  rebook(inputs?: RebookInputs): Promise<RebookView>
+  hold(departureId: string, inputs?: RebookInputs): Promise<RebookView>
   releaseHold(id: string): Promise<RebookView>
   convertFcc(): Promise<RebookView>
   bookSlot(at: number): Promise<RebookView>

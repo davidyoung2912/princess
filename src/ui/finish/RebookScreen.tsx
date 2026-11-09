@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import type { HoldView, RebookOption, RebookView } from '../../api/finishTypes'
+import type { HoldView, RebookInputs, RebookOption, RebookView } from '../../api/finishTypes'
 import { DESK, HOLD_DAYS } from '../../domain/postcruise'
 import { formatDate } from '../../domain/cruise'
 import { formatMoney } from '../../domain/money'
@@ -20,18 +20,19 @@ import { Human } from './common'
 
 /** Book your next cruise (POS-06): hold a date and a price, with the bigger offer on board, future cruise credit, and an appointment at the Future Cruise desk. */
 export function RebookScreen() {
-  const view = useMine(() => api.post.rebook(), [])
+  const [inputs, setInputs] = useState<RebookInputs>({})
+  const view = useMine(() => api.post.rebook(inputs), [inputs.category, inputs.guests])
   return (
     <div className="page">
       <p>{t('reb.intro')}</p>
-      <Load state={view}>{(v) => <Rebook v={v} reload={view.retry} />}</Load>
+      <Load state={view}>{(v) => <Rebook v={v} reload={view.retry} inputs={inputs} setInputs={setInputs} />}</Load>
       <BackLink to="/me" label={t('route.me')} />
     </div>
   )
 }
 
-function Rebook({ v, reload }: { v: RebookView; reload: () => void }) {
-  const hold = useAction(async (id: string) => { await api.post.hold(id); reload() })
+function Rebook({ v, reload, inputs, setInputs }: { v: RebookView; reload: () => void; inputs: RebookInputs; setInputs: (i: RebookInputs) => void }) {
+  const hold = useAction(async (id: string) => { await api.post.hold(id, inputs); reload() })
   const release = useAction(async (id: string) => { await api.post.releaseHold(id); reload() })
   const convert = useAction(async () => { await api.post.convertFcc(); reload() })
   const heldDates = new Set(v.holds.filter((h) => !h.expired).map((h) => h.departure))
@@ -51,9 +52,9 @@ function Rebook({ v, reload }: { v: RebookView; reload: () => void }) {
 
       <section aria-labelledby="reb-dates-h">
         <h2 id="reb-dates-h">{th('reb.dates')}</h2>
-        <p className="muted">{t('reb.for', { room: t(`reb.room.${v.category}` as StringKey), count: v.guests })}</p>
+        <Inputs v={v} setInputs={setInputs} />
         {v.options.length === 0 ? <p>{t('reb.noDates')}</p> : (
-          <ul className="order-list">{v.options.map((o) => <Option key={o.id} o={o} held={heldDates.has(o.departure)} canHold={v.canHold} busy={hold.busy} onHold={() => void hold.run(o.id)} />)}</ul>
+          <ul className="order-list">{v.options.map((o) => <Option key={o.id} o={o} v={v} held={heldDates.has(o.departure)} canHold={v.canHold} busy={hold.busy} onHold={() => void hold.run(o.id)} />)}</ul>
         )}
         <p className="muted">{t('reb.protect')}</p>
         <p className="muted">{t('reb.others')}</p>
@@ -78,11 +79,12 @@ function Rebook({ v, reload }: { v: RebookView; reload: () => void }) {
   )
 }
 
-function Option({ o, held, canHold, busy, onHold }: { o: RebookOption; held: boolean; canHold: boolean; busy: boolean; onHold: () => void }) {
+function Option({ o, v, held, canHold, busy, onHold }: { o: RebookOption; v: RebookView; held: boolean; canHold: boolean; busy: boolean; onHold: () => void }) {
   return (
     <li className="order">
       <h3 className="order__title">{formatDate(o.departure)}</h3>
       <p>{t('reb.total', { amount: formatMoney(o.total) })} · {t('reb.deposit', { amount: formatMoney(o.deposit) })}{o.credit > 0 && <> · {t('reb.credit', { amount: formatMoney(o.credit) })}</>}</p>
+      {o.reasons.length > 0 && <ul className="plain-bullets muted">{o.reasons.map((r) => <li key={r}>{t(`reb.reason.${r}` as StringKey, { room: roomName(v.category), count: v.guests })}</li>)}</ul>}
       {!o.bookable && <p className="muted">{t('reb.notOpen')}</p>}
       {held ? <p role="status"><strong>{t('reb.held')}</strong></p> : canHold ? <Button variant="secondary" disabled={busy} onClick={onHold}>{t('reb.hold', { days: HOLD_DAYS })}</Button> : <p className="muted">{t('reb.cannotHold')}</p>}
     </li>
@@ -133,5 +135,33 @@ function Desk({ v, reload }: { v: RebookView; reload: () => void }) {
       ) : <p className="muted">{t('reb.apptOnboard')}</p>}
       <p className="muted"><Link to="/home/disembark">{t('route.disembark')}</Link></p>
     </Card>
+  )
+}
+
+const roomName = (id: string): string => t(`reb.room.${id}` as StringKey)
+
+/** What the dates are priced for (REM-08): this booking's stateroom and party, which the guest can change or reset. */
+function Inputs({ v, setInputs }: { v: RebookView; setInputs: (i: RebookInputs) => void }) {
+  return (
+    <div role="group" aria-labelledby="reb-inputs-h">
+      <h3 id="reb-inputs-h">{t('reb.inputsH')}</h3>
+      <p className="muted">{t('reb.for', { room: roomName(v.category), count: v.guests })}</p>
+      <div className="field">
+        <label htmlFor="reb-cabin">{t('reb.cabin')}</label>
+        <select id="reb-cabin" className="field__input" value={v.category} onChange={(e) => setInputs({ category: e.target.value, guests: v.guests })}>
+          {v.categories.map((c) => <option key={c} value={c}>{roomName(c)}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="reb-party">{t('reb.party')}</label>
+        <select id="reb-party" className="field__input" value={v.guests} onChange={(e) => setInputs({ category: v.category, guests: Number(e.target.value) })}>
+          {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{t('reb.guestsN', { count: n })}</option>)}
+        </select>
+      </div>
+      {v.edited && (
+        <p role="status">{t('reb.edited')} <Button variant="tertiary" onClick={() => setInputs({})}>{t('reb.reset')}</Button></p>
+      )}
+      <p className="muted">{t('reb.noSensitive')}</p>
+    </div>
   )
 }

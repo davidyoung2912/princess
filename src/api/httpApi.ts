@@ -65,6 +65,15 @@ interface WireCore { personaId: string; bookerId: string; sailingId: string; par
 
 const seg = encodeURIComponent
 
+/** The `?category=&guests=` part of the rebook read; empty when the guest has not changed anything. */
+export const rebookQuery = (i?: { category?: string; guests?: number }): string => {
+  const q = new URLSearchParams()
+  if (i?.category) q.set('category', i.category)
+  if (i?.guests) q.set('guests', String(i.guests))
+  const text = q.toString()
+  return text ? `?${text}` : ''
+}
+
 /** The query string of an activity page: older than an id, at most this many. */
 const activityQuery = (q?: { before?: number; max?: number }): string => {
   const parts = [q?.max ? `max=${q.max}` : '', q?.before ? `before=${q.before}` : ''].filter(Boolean)
@@ -555,8 +564,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       feedback: () => inBooking('/post-feedback'),
       saveFeedback: (f) => inTrip('put', '/post-feedback', f),
       loyalty: () => get('/me/loyalty-summary'),
-      rebook: () => inBooking('/rebook'),
-      hold: (departureId) => inTrip('post', '/rebook/holds', { departureId }),
+      reportLoyalty: (what, note) => send('post', '/me/loyalty-summary/reports', { what, note }),
+      invite: (name) => send('post', '/me/referrals', { name }),
+      revokeInvite: (id) => send('delete', `/me/referrals/${seg(id)}`),
+      rebook: (inputs) => inBooking(`/rebook${rebookQuery(inputs)}`),
+      hold: (departureId, inputs) => inTrip('post', '/rebook/holds', { departureId, ...inputs }),
       releaseHold: (id) => inTrip('delete', `/rebook/holds/${seg(id)}`),
       convertFcc: () => inTrip('post', '/rebook/convert-fcc'),
       bookSlot: (at) => inTrip('post', '/rebook/appointment', { at }),

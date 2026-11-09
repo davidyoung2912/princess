@@ -109,7 +109,33 @@ public sealed class LoyaltyRecordRow
     /// <summary>Cruise days on the guest's record before the cruise in hand.</summary>
     public int DaysCounted { get; set; }
     public string? ReferralCode { get; set; }
-    public List<(string Name, string State)> Referrals { get; set; } = [];
+    public List<(string Name, string State, Guid Id)> Referrals { get; set; } = [];
+}
+
+public sealed class CreditRow
+{
+    public Guid Id { get; set; }
+    public string Source { get; set; } = "";
+    public long Original { get; set; }
+    public long Remaining { get; set; }
+    public DateTime ExpiresOn { get; set; }
+}
+
+/// <summary>One time a future cruise credit was turned into onboard credit.</summary>
+public sealed class CreditUseRow
+{
+    public DateTime At { get; set; }
+    public string What { get; set; } = "";
+    public long Cents { get; set; }
+}
+
+public sealed class LoyaltyReportRow
+{
+    public Guid Id { get; set; }
+    public string What { get; set; } = "";
+    public string Note { get; set; } = "";
+    public string Status { get; set; } = "open";
+    public DateTime At { get; set; }
 }
 
 public sealed class HoldRow
@@ -172,6 +198,16 @@ public interface IFinishStore
 
     Task<List<HistoryTripRow>> ListHistoryTripsAsync(long userId, CancellationToken ct);
     Task<LoyaltyRecordRow?> GetLoyaltyAsync(long userId, CancellationToken ct);
+    /// <summary>All the person's future cruise credits, including spent and expired ones, soonest expiry first.</summary>
+    Task<List<CreditRow>> ListCreditsAsync(long userId, CancellationToken ct);
+    /// <summary>Each time a credit of the person's was changed to onboard credit, newest first.</summary>
+    Task<List<CreditUseRow>> ListCreditUsesAsync(long userId, CancellationToken ct);
+    Task<List<LoyaltyReportRow>> ListLoyaltyReportsAsync(long userId, CancellationToken ct);
+    Task AddLoyaltyReportAsync(long userId, string what, string note, DateTime at, CancellationToken ct);
+    /// <summary>Records a friend the person invited, by first name only; no contact detail is kept. The person must have a loyalty record.</summary>
+    Task AddReferralAsync(long userId, string name, CancellationToken ct);
+    /// <summary>Takes back an invitation that has not been used; false when it is not the person's or has already been used.</summary>
+    Task<bool> RevokeReferralAsync(long userId, Guid id, CancellationToken ct);
 
     Task<List<HoldRow>> ListHoldsAsync(long bookingId, CancellationToken ct);
     /// <summary>Adds the hold and, with <paramref name="folio"/>, the onboard credit that came with it.</summary>

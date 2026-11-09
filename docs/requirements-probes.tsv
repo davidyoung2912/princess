@@ -195,8 +195,8 @@ DEB-13	terminal exit directions accessible route	terminal.*(exit|directions)|exi
 DEB-15	departure pocket card printable	pocket ?card|pocketCard	src
 REM-02	diary entries editable, sourced milestone labelled	diary	src
 REM-03	memory book preview and delete project	memoryBook|memory book	src
-REM-07	loyalty last sync and report discrepancy	discrepancy|reportMismatch	src
-REM-08	next-voyage reason shown, inputs editable	because|reason	src/domain/nextVoyage.ts,src/domain/recommend.ts
+REM-07	loyalty last sync and report discrepancy	syncedAt|reportLoyalty	src
+REM-08	next-voyage reason shown, inputs editable	reb\.reason|reasons	src
 REM-09	rebooking reuses consented details, revalidates	rebook|reuse	src
 REM-10	credits wallet source, expiry, redemption history	redemption|redeemed	src
 REM-11	progressive survey short first then expand	survey	src

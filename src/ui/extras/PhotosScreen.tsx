@@ -1,3 +1,4 @@
+import { canTakeBack, mySharedIds } from '../../domain/albumRules'
 import { useConfirmCharge } from '../ConfirmCharge'
 import { useState } from 'react'
 import { asPhotosView, asPrintView } from '../../api/guards'
@@ -48,6 +49,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
   const set = (patch: Partial<PhotoFilter>) => setFilter({ ...filter, ...patch })
   const fav = useAction(async (id: string) => { await api.photos.toggleFavourite(id); reload() })
   const share = useAction(async (id: string) => { await api.photos.toggleAlbum(id); reload() })
+  const takeAll = useAction(async () => { for (const id of mySharedIds(v.album)) await api.photos.toggleAlbum(id); reload() })
   const { state: memory, update } = useMemory()
   const inDiary = (id: string) => memory.diary.entries.some((e) => e.sailingId === s.id && e.key === photoDiaryKey(id))
   const toDiary = (p: PhotosView['photos'][number]) => {
@@ -121,7 +123,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
       <MemoryStory story={buildStory(v.photos.filter((p) => v.favourites.includes(p.id)), entriesFor(memory.diary, s.id), days)} />
 
       <ExtraError error={share.error} />
-      <Album v={v} share={(id) => void share.run(id)} busy={share.busy || offline} />
+      <Album v={v} share={(id) => void share.run(id)} takeAll={() => void takeAll.run()} busy={share.busy || takeAll.busy || offline} />
 
       {canBuy && !offline && picked.length > 0 && <Options picked={picked} done={() => { setPicked([]); reload() }} />}
       <Receipts receipts={v.receipts} reload={reload} offline={offline} />
@@ -131,13 +133,14 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
 }
 
 /** Our Album: the photos anyone on the booking has shared; each person can take back only their own. */
-function Album({ v, share, busy }: { v: PhotosView; share: (id: string) => void; busy: boolean }) {
+function Album({ v, share, takeAll, busy }: { v: PhotosView; share: (id: string) => void; takeAll: () => void; busy: boolean }) {
   const name = (id: string) => v.people.find((x) => x.id === id)?.name.split(' ')[0] ?? ''
   const photos = v.album.flatMap((a) => { const p = v.photos.find((x) => x.id === a.photoId); return p ? [{ a, p }] : [] })
   return (
     <section aria-labelledby="album-h">
       <h2 id="album-h">{th('pho.album.title')}</h2>
       <p>{t('pho.album.intro')}</p>
+      {mySharedIds(v.album).length > 1 && <Button variant="tertiary" disabled={busy} onClick={takeAll}>{t('pho.album.takeAll')}</Button>}
       {photos.length === 0 ? <p className="muted">{t('pho.album.empty')}</p> : (
         <ul className="photo-list">
           {photos.map(({ a, p }) => (
@@ -145,7 +148,7 @@ function Album({ v, share, busy }: { v: PhotosView; share: (id: string) => void;
               {p.preview && <DeferredImage name={p.title} className="photo__img" src={p.preview} alt={t('pho.previewAlt', { title: p.title })} />}
               <p className="photo__title"><strong>{p.title}</strong></p>
               <p className="muted">{t('pho.album.by', { name: name(a.by) })}</p>
-              {a.mine && <Button variant="tertiary" disabled={busy} onClick={() => share(p.id)}>{t('pho.album.hide')}<span className="visually-hidden"> {p.title}</span></Button>}
+              {canTakeBack(a) && <Button variant="tertiary" disabled={busy} onClick={() => share(p.id)}>{t('pho.album.hide')}<span className="visually-hidden"> {p.title}</span></Button>}
             </li>
           ))}
         </ul>

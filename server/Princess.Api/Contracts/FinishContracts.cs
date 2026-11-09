@@ -78,16 +78,31 @@ public sealed record FeedbackViewDto(bool Open, FeedbackDto? Feedback, long? Sub
 
 public sealed record FeedbackRequest(int Overall, Dictionary<string, int>? Areas, string? Comment, List<string>? Crew, bool AllowContact, bool ShareName);
 
-public sealed record ReferralFriendDto(string Name, string State);
+public sealed record ReferralFriendDto(Guid Id, string Name, string State);
 
 public sealed record ReferralDto(string Code, long Credit, long Earned, List<ReferralFriendDto> Friends);
 
-public sealed record LoyaltyViewDto(LoyaltyStatus Status, bool Counted, string[] Perks, int WifiDevices, ReferralDto Referral);
+/// <summary>A future cruise credit. <c>ExpiresOn</c> is "YYYY-MM-DD"; <c>Eligible</c> is a code for who may use it (<c>booker</c>: the person it belongs to, on their own bookings).</summary>
+public sealed record CreditDto(Guid Id, string Source, long Original, long Remaining, string ExpiresOn, bool Expired, string Eligible);
+
+/// <summary>One redemption: <c>Amount</c> of a future cruise credit changed to onboard credit at <c>At</c>.</summary>
+public sealed record CreditUseDto(long At, string What, long Amount);
+
+public sealed record LoyaltyReportDto(Guid Id, string What, string Note, string Status, long At);
+
+/// <summary><c>SyncedAt</c> is when the figures were last read from the loyalty record. <c>Currency</c> is the one every amount here is in.</summary>
+public sealed record LoyaltyViewDto(
+    LoyaltyStatus Status, bool Counted, string[] Perks, int WifiDevices, ReferralDto Referral, long SyncedAt, string Currency, List<CreditDto> Credits, List<CreditUseDto> Used, List<LoyaltyReportDto> Reports);
+
+public sealed record LoyaltyReportRequest(string? What, string? Note);
+
+public sealed record ReferralRequest(string? Name);
 
 public sealed record HoldDto(
     Guid Id, string Departure, string Category, int Guests, long Total, long Deposit, long Credit, long FccApplied, bool Onboard, long PlacedAt, long ExpiresAt, bool Expired, bool Bookable);
 
-public sealed record RebookOptionDto(string Id, string Departure, bool Bookable, long Total, long Deposit, long Credit);
+/// <summary><c>Reasons</c> are codes for why the date is offered: <c>cabin</c>, <c>party</c>, <c>length</c> (the same number of nights as this cruise) and <c>credit</c> (onboard credit for holding now).</summary>
+public sealed record RebookOptionDto(string Id, string Departure, bool Bookable, long Total, long Deposit, long Credit, string[] Reasons);
 
 public sealed record DeskSlotDto(long At, int Day);
 
@@ -95,9 +110,9 @@ public sealed record AppointmentDto(long At);
 
 public sealed record RebookViewDto(
     string Category, int Guests, string Tier, bool OnboardOffer, List<RebookOptionDto> Options, List<HoldDto> Holds, long FccLeft, long FccConverted, AppointmentDto? Appointment,
-    List<DeskSlotDto> Slots, bool CanHold);
+    List<DeskSlotDto> Slots, bool CanHold, bool Edited, List<string> Categories);
 
-public sealed record HoldRequest(string? DepartureId);
+public sealed record HoldRequest(string? DepartureId, string? Category = null, int? Guests = null);
 
 public sealed record SlotRequest(long At);
 

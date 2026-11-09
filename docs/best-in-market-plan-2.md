@@ -382,3 +382,14 @@ Theme: assistant and search (AST-02, SEA-04, SEA-05).
 - **SEA-04:** answer cards show scope and source with a time; results end with a source line. Row stays Partial: only three topics have direct answers.
 - **SEA-05:** `venueState` gives open, closed or temporarily unavailable (`unavailableSince`, set by the ship); venue list and page show it with a ship-time stamp. Row stays Partial until the server sends `unavailableSince`.
 - `npm run test`, `lint`, `tsc -b` per the working rules.
+
+## 5ai. BM51 result (built, not committed)
+
+Theme: loyalty and rebook (REM-04, REM-07, REM-08, REM-10, REM-14).
+- **REM-04:** album copy says who can see it and that there is no download button; `albumRules` (`mySharedIds`, `canTakeBack`) and a "Take back everything I shared" button. Row Built. Sharing, per-person take-back and party-only visibility already existed.
+- **REM-07:** `LoyaltyView.syncedAt` ("Checked {time}"), `POST /me/loyalty-summary/reports` (table `LoyaltyReports`, five open at a time), the guest's own reports listed. No staff screen answers a report; nothing on the record changes. Row Built.
+- **REM-08:** rebook options carry `reasons` (`cabin`, `party`, `length`, `credit`); `GET /bookings/{n}/rebook?category=&guests=` prices for another stateroom type or party size and `POST /rebook/holds` takes the same two fields. Screen has two selects, a reset, and the "no health or children's details" line. Row Built; only those two inputs are editable.
+- **REM-10:** `LoyaltyView.credits` (source, original, left, expiry, expired, `eligible`), `used` (redemptions from `fcc` folio lines), currency, and `walletTotals` which flags a history that does not add up. Row Built; onboard credit from holds is not in the wallet.
+- **REM-14:** `POST /me/referrals` (first name only, ten open, needs a loyalty record) and `DELETE /me/referrals/{id}` (only while `invited`); incentive and payment timing stated. Row stays Partial: no reunion tool.
+- **Tests:** `wallet.test.ts`, `albumRules.test.ts`, `httpApi.test.ts`; server tests in `FinishApiTests.cs` (written, not run). `dotnet` is not installed here, so none of the C# was compiled; `InMemoryFinish.cs` was updated for the new store methods. Run `npm run test`, `lint`, `tsc -b` per the working rules; no browser check.
+- **Not done:** the front end does not yet show the "who can use it" text for any code other than `booker`; selecting a new stateroom reloads the dates with no focus management.

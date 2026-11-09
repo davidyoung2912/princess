@@ -1427,6 +1427,24 @@ CREATE TABLE dbo.Referrals (
 CREATE INDEX IX_Referrals_UserId ON dbo.Referrals (UserId);
 END
 
+-- REM-07: a guest's report that the level, days or a credit shown does not match what they expect. A person at the loyalty desk answers it.
+IF OBJECT_ID(N'dbo.LoyaltyReports', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.LoyaltyReports (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_LoyaltyReports PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_LoyaltyReports_PublicId DEFAULT NEWID() CONSTRAINT UX_LoyaltyReports_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  What VARCHAR(8) NOT NULL, Note NVARCHAR(300) NOT NULL CONSTRAINT DF_LoyaltyReports_Note DEFAULT N'',
+  Status VARCHAR(8) NOT NULL CONSTRAINT DF_LoyaltyReports_Status DEFAULT 'open',
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_LoyaltyReports_At DEFAULT SYSUTCDATETIME(),
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_LoyaltyReports_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_LoyaltyReports_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_LoyaltyReports_What CHECK (What IN ('tier','days','credit','other')),
+  CONSTRAINT CK_LoyaltyReports_Status CHECK (Status IN ('open','answered'))
+);
+CREATE INDEX IX_LoyaltyReports_UserId ON dbo.LoyaltyReports (UserId);
+END
+
 IF OBJECT_ID(N'dbo.LinkedBookings', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.LinkedBookings (

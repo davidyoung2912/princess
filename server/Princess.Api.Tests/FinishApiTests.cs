@@ -526,7 +526,7 @@ public class FinishApiTests : JourneyWorld
     public async Task TheCruiseCountsTowardsTheLevelOnceTheShipHasTiedUp()
     {
         Daniel.Tier = "gold";
-        F.Finish.Loyalty[Daniel.Id] = new LoyaltyRecordRow { Number = "PC1039595", DaysCounted = 28, ReferralCode = "REFDANIEL", Referrals = [("Ruth", "sailed"), ("Frank", "invited"), ("Camille", "booked")] };
+        F.Finish.Loyalty[Daniel.Id] = new LoyaltyRecordRow { Number = "PC1039595", DaysCounted = 28, ReferralCode = "REFDANIEL", Referrals = [("Ruth", "sailed", Guid.NewGuid()), ("Frank", "invited", Guid.NewGuid()), ("Camille", "booked", Guid.NewGuid())] };
         var token = await DanielToken();
 
         var during = (await Get("/api/v1/me/loyalty-summary", token)).Json;
@@ -554,6 +554,50 @@ public class FinishApiTests : JourneyWorld
         Assert.Matches(@"^DANIEL\d{3}$", view.GetProperty("referral").GetProperty("code").GetString());
     }
 
+    [Fact]
+    public async Task TheLoyaltyViewSaysWhenItWasReadAndListsEachCreditWithItsSourceAndExpiry()
+    {
+        F.Finish.Credits.Add((Daniel.Id, 1, 25_000, new DateOnly(2028, 3, 31)));
+        F.Finish.Credits.Add((Daniel.Id, 2, 9_999, new DateOnly(2026, 1, 1)));
+        var view = (await Get("/api/v1/me/loyalty-summary", await DanielToken())).Json;
+        Assert.True(view.GetProperty("syncedAt").GetInt64() > 0);
+        Assert.Equal("USD", view.GetProperty("currency").GetString());
+        var credits = view.GetProperty("credits").EnumerateArray().ToArray();
+        Assert.Equal(("booker", false, 25_000L), (credits[1].GetProperty("eligible").GetString(), credits[1].GetProperty("expired").GetBoolean(), credits[1].GetProperty("remaining").GetInt64()));
+        Assert.True(credits[0].GetProperty("expired").GetBoolean());
+    }
+
+    [Fact]
+    public async Task AGuestCanReportAMismatchButOnlyFiveAtATimeAndNothingOnTheRecordChanges()
+    {
+        var token = await DanielToken();
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(HttpMethod.Post, "/api/v1/me/loyalty-summary/reports", token, new { what = "colour" })).Status);
+        var view = (await Call(HttpMethod.Post, "/api/v1/me/loyalty-summary/reports", token, new { what = "days", note = "I count 40" })).Json;
+        var report = view.GetProperty("reports").EnumerateArray().Single();
+        Assert.Equal(("days", "open"), (report.GetProperty("what").GetString(), report.GetProperty("status").GetString()));
+        for (var i = 0; i < 4; i++) await Call(HttpMethod.Post, "/api/v1/me/loyalty-summary/reports", token, new { what = "tier" });
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(HttpMethod.Post, "/api/v1/me/loyalty-summary/reports", token, new { what = "tier" })).Status);
+    }
+
+    [Fact]
+    public async Task AnInvitationIsAFirstNameThatCanBeTakenBackUntilTheFriendHasBooked()
+    {
+        F.Finish.Loyalty[Daniel.Id] = new LoyaltyRecordRow { Number = "PC1039595", DaysCounted = 28, ReferralCode = "REFDANIEL", Referrals = [("Camille", "booked", Guid.NewGuid())] };
+        var token = await DanielToken();
+        var view = (await Call(HttpMethod.Post, "/api/v1/me/referrals", token, new { name = "Frank" })).Json;
+        var friends = view.GetProperty("referral").GetProperty("friends").EnumerateArray().ToArray();
+        Assert.Equal(["Camille", "Frank"], friends.Select(x => x.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(HttpMethod.Delete, $"/api/v1/me/referrals/{friends[0].GetProperty("id").GetGuid()}", token)).Status);
+        var after = (await Call(HttpMethod.Delete, $"/api/v1/me/referrals/{friends[1].GetProperty("id").GetGuid()}", token)).Json;
+        Assert.Equal(["Camille"], after.GetProperty("referral").GetProperty("friends").EnumerateArray().Select(x => x.GetProperty("name").GetString()!).ToArray());
+    }
+
+    [Fact]
+    public async Task WithoutALoyaltyRecordAnInvitationIsRefused()
+    {
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(HttpMethod.Post, "/api/v1/me/referrals", await DanielToken(), new { name = "Frank" })).Status);
+    }
+
     // ---- Rebooking ----
 
     private static readonly string[] NextSeason = ["sun-2027-11-07", "sun-2027-11-21", "sun-2027-12-05", "sun-2028-01-09"];
@@ -565,6 +609,22 @@ public class FinishApiTests : JourneyWorld
     }
 
     private static long Quote(string sailing) => Pricing.Quote(sailing, "balcony", 3)!.Total;
+
+    [Fact]
+    public async Task EachDateSaysWhyItIsOfferedAndTheGuestCanPriceItForAnotherCabinAndPartySize()
+    {
+        OpenNextSeason();
+        var token = await DanielToken();
+        var view = (await Read("rebook", token)).Json;
+        Assert.False(view.GetProperty("edited").GetBoolean());
+        Assert.Contains("cabin", view.GetProperty("options")[0].GetProperty("reasons").EnumerateArray().Select(x => x.GetString()));
+
+        var changed = (await Read("rebook?category=suite&guests=2", token)).Json;
+        Assert.Equal(("suite", 2, true), (changed.GetProperty("category").GetString(), changed.GetProperty("guests").GetInt32(), changed.GetProperty("edited").GetBoolean()));
+        Assert.Equal(Pricing.Quote("sun-2027-11-07", "suite", 2)!.Total, changed.GetProperty("options")[0].GetProperty("total").GetInt64());
+        Assert.Equal(HttpStatusCode.BadRequest, (await Read("rebook?guests=9", token)).Status);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Read("rebook?category=castle", token)).Status);
+    }
 
     [Fact]
     public async Task OnBoardTheDeparturesComeWithTheLowerDepositAndOnboardCreditForTheLevel()

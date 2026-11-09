@@ -104,6 +104,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'Loyalty'),
   (N'dbo', N'FutureCruiseCredits'),
   (N'dbo', N'Referrals'),
+  (N'dbo', N'LoyaltyReports'),
   (N'dbo', N'LinkedBookings'),
   (N'dbo', N'GuestDocuments'),
   (N'dbo', N'TourBookings'),
