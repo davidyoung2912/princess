@@ -19,6 +19,7 @@ export interface HttpGroups {
   push: Api['push']
   calendar: Api['calendar']
   phoneCheck: Api['phoneCheck']
+  emailCheck: Api['emailCheck']
   support: Api['support']
   help: Api['help']
   budget: BudgetApi
@@ -341,6 +342,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       sendCode: () => send('post', '/me/phone-check/code'),
       confirm: (code) => send('post', '/me/phone-check/confirm', { code }),
     },
+    emailCheck: {
+      status: () => get('/me/email-check'),
+      sendCode: () => send('post', '/me/email-check/code'),
+      confirm: (code) => send('post', '/me/email-check/confirm', { code }),
+    },
     support: {
       tickets: () => get('/me/support-tickets'),
       callback: (phone) => send('post', '/me/support-tickets', { kind: 'callback', phone }),
@@ -554,6 +560,7 @@ export function toApi(g: HttpGroups): Api {
     push: g.push,
     calendar: g.calendar,
     phoneCheck: g.phoneCheck,
+    emailCheck: g.emailCheck,
     support: g.support,
     help: g.help,
     budget: g.budget,

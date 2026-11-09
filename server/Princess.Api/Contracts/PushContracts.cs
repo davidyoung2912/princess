@@ -18,4 +18,7 @@ public sealed record CalendarFeedDto(bool On, string? Path);
 /// <summary>Whether the guest has a phone number on the profile, whether it has been confirmed by text, and whether a code is waiting.</summary>
 public sealed record PhoneCheckDto(bool HasPhone, bool Verified, bool Pending);
 
+/// <summary>Whether the account has an email address, whether it has been confirmed by an emailed code, and whether a code is waiting.</summary>
+public sealed record EmailCheckDto(bool HasEmail, bool Verified, bool Pending);
+
 public sealed record PhoneCodeRequest(string? Code);

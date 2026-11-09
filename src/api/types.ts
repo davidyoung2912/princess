@@ -811,6 +811,12 @@ export interface Api {
     sendCode(): Promise<PhoneCheck>
     confirm(code: string): Promise<PhoneCheck>
   }
+  /** Confirming the account email by an emailed code; payment and travel notice emails go only to a confirmed address. */
+  emailCheck: {
+    status(): Promise<EmailCheck>
+    sendCode(): Promise<EmailCheck>
+    confirm(code: string): Promise<EmailCheck>
+  }
   support: {
     tickets(): Promise<Ticket[]>
     callback(phone: string): Promise<Ticket>
@@ -1215,4 +1221,7 @@ export interface WifiApi {
 }
 
 /** Whether the profile has a phone number, whether it has been confirmed by text, and whether a code is waiting. */
+/** Whether the account has an email address, whether it has been confirmed by an emailed code, and whether a code is waiting. */
+export interface EmailCheck { hasEmail: boolean; verified: boolean; pending: boolean }
+
 export interface PhoneCheck { hasPhone: boolean; verified: boolean; pending: boolean }

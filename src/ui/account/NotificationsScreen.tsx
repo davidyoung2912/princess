@@ -18,7 +18,7 @@ import { useNow, useSailing } from '../../hooks/useDemo'
 import { useMemory } from '../../hooks/useMemory'
 import { NUDGE_CHOICES } from '../../domain/nudges'
 import { useSettings } from '../../hooks/useSettings'
-import { CalendarFeed, DeliveryLog, PhoneCheck, PushSwitch } from './PushPanels'
+import { CalendarFeed, DeliveryLog, EmailCheck, PhoneCheck, PushSwitch } from './PushPanels'
 
 const LINKS = { payOverdue: '/me/payments', payDue: '/me/payments', instalmentDue: '/me/payments', instalmentAutoFailed: '/me/payments', instalmentTaken: '/me/payments', passportProblem: '/me/documents', documentsMissing: '/me/documents', tenderWatch: '/home/cruise', flightWatch: '/home/disembark/onward', checkinOpens: '/me/trips' } as const
 
@@ -63,6 +63,7 @@ export function NotificationsScreen() {
               </section>
               <PushSwitch />
               <Prefs prefs={prefs} onSaved={data.retry} />
+              <EmailCheck />
               <PhoneCheck />
               <Nudges />
               <DeliveryLog />

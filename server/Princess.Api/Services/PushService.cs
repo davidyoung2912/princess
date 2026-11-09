@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, ITripStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck)
+    IEmailSender email, ISmsSender sms, ITripStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -125,11 +125,13 @@ public sealed class PushService(
         var phone = (await profiles.GetProfileAsync(actor.Id, ct))?.Phone;
         // Texts go only to a number the guest has confirmed with a code.
         if (!await phoneCheck.IsVerifiedAsync(actor.Id, phone, ct)) phone = null;
+        // Emails likewise go only to an address the guest has confirmed.
+        var emailOk = !string.IsNullOrWhiteSpace(actor.Email) && await emailCheck.IsVerifiedAsync(actor, ct);
         // Only the payment and travel notices (instalments, tender, flight) go beyond the phone; the on-board and port-day ones are for the phone alone.
         foreach (var n in notices.Where(n => n.Kind is "payment" or "travel"))
         {
             var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
-            if (!string.IsNullOrWhiteSpace(actor.Email) && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
+            if (emailOk && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
                 && await email.SendAsync(new EmailMessage(actor.Email, n.Title, NoticeEmailRules.WithFooter(n.Body, UnsubscribeUrl(actor.Id, n.Category))), ct))
                 await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
             if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)

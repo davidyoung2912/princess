@@ -147,3 +147,41 @@ export function PhoneCheck() {
     </section>
   )
 }
+
+/** Payment and travel notice emails go only to an address the guest has confirmed: a six-digit code is emailed to the address on the account and typed back here. */
+export function EmailCheck() {
+  const status = useMine(() => api.emailCheck.status())
+  const [code, setCode] = useState('')
+  const send = useAction(() => api.emailCheck.sendCode())
+  const confirm = useAction((c: string) => api.emailCheck.confirm(c))
+  return (
+    <section aria-labelledby="email-h">
+      <h2 id="email-h">{th('emailCheck.title')}</h2>
+      <p>{t('emailCheck.intro')}</p>
+      <Load state={status}>
+        {(s) => !s.hasEmail
+          ? <p className="muted">{t('emailCheck.none')}</p>
+          : s.verified
+            ? <p role="status">{t('emailCheck.verified')}</p>
+            : (
+              <>
+                <p>{t('emailCheck.not')}</p>
+                <Button variant={s.pending ? 'secondary' : 'primary'} disabled={send.busy} onClick={async () => { if (await send.run()) { setCode(''); status.retry() } }}>{s.pending ? t('emailCheck.resend') : t('emailCheck.send')}</Button>
+                {send.error?.code === 'conflict' ? <p role="alert" className="field__error">{t('emailCheck.err.soon')}</p> : send.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('emailCheck.err.phone')}</p> : <ActionError error={send.error} />}
+                {s.pending && (
+                  <form onSubmit={async (e) => { e.preventDefault(); if (await confirm.run(code)) { setCode(''); status.retry() } }}>
+                    <div className="field">
+                      <label htmlFor="email-code">{t('emailCheck.code')}</label>
+                      <input id="email-code" className="field__input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} />
+                      <p className="field__hint">{t('emailCheck.codeHint')}</p>
+                    </div>
+                    {confirm.error?.code === 'invalid' ? <p role="alert" className="field__error">{t('emailCheck.err.code')}</p> : <ActionError error={confirm.error} />}
+                    <Button type="submit" disabled={confirm.busy || code.trim().length !== 6}>{t('emailCheck.confirm')}</Button>
+                  </form>
+                )}
+              </>
+            )}
+      </Load>
+    </section>
+  )
+}

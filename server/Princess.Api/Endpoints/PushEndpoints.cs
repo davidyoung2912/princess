@@ -55,6 +55,18 @@ public static class PushEndpoints
                 Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), body.Code, ct)))
             .WithTags("Push").WithSummary("Confirms the number with the code (400 wrongCode, expiredCode, tooManyTries or noCode). Text notices go only to a confirmed number.");
 
+        api.MapGet("/me/email-check", async (ICurrentUser me, EmailCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.StatusAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Push").WithSummary("Whether the email address on the account has been confirmed by an emailed code.");
+
+        api.MapPost("/me/email-check/code", async (ICurrentUser me, EmailCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.SendCodeAsync(await me.LoadAsync(ct), ct)))
+            .WithTags("Push").WithSummary("Emails a six-digit code to the address on the account (400 email when there is none; 409 tooSoon within a minute of the last).");
+
+        api.MapPost("/me/email-check/confirm", async (PhoneCodeRequest body, ICurrentUser me, EmailCheckService svc, CancellationToken ct) =>
+                Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), body.Code, ct)))
+            .WithTags("Push").WithSummary("Confirms the address with the code (400 wrongCode, expiredCode, tooManyTries or noCode). Payment and travel notice emails go only to a confirmed address.");
+
         api.MapGet("/me/calendar-feed", async (ICurrentUser me, CalendarFeedService svc, CancellationToken ct) =>
                 Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), ct)))
             .WithTags("Calendar").WithSummary("Whether the guest has a calendar feed.");
