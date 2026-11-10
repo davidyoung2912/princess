@@ -12,6 +12,9 @@ public interface IRealtimeHub
     /// <summary>Whether this person has an app open and connected to this server.</summary>
     bool IsConnected(Guid userPublicId);
 
+    /// <summary>When this person's last live connection closed, or null while one is open or when none is known (see <see cref="RealtimeState.QuietSince"/>).</summary>
+    DateTime? QuietSince(Guid userPublicId);
+
     /// <summary>
     /// Sends the nudge to every open app of the person. The result is true when one of them acknowledged it within <paramref name="wait"/>, false when none did
     /// (or none is connected, which answers false at once). Never throws for a lost connection.

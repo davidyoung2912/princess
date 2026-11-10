@@ -11,7 +11,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -69,9 +69,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
             var name = m.FromUserId == actor.Id || !byId.TryGetValue(m.FromUserId, out var sender) ? null : ShortName(sender);
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name));
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms));
         }
-        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more);
+        // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
+        var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
+        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)]);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
@@ -83,6 +85,19 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         // Not sent, not stored, not logged; the matched word is never returned.
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
         return await StoreAsync(actor, member, text, null, body?.ClientId, ct);
+    }
+
+    /// <summary>
+    /// A message a guest ashore sent by text (docs/chat-plan.md, 4.9). The same checks as <see cref="SendAsync"/> (membership, closed, length, the word filter), the carrier's message id as the
+    /// idempotency key, and the message is labelled "by text". Adults only, so the age rule does not apply.
+    /// </summary>
+    public async Task<ChatMessageDto> SendFromTextAsync(UserRecord actor, Guid conversationId, string? body, Guid key, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
+        var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
+        if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
+        return await StoreAsync(actor, member, text, null, key, ct, viaSms: true);
     }
 
     public async Task<ChatMessageDto> SendPhotoAsync(UserRecord actor, Guid conversationId, ChatPhotoRequest? body, CancellationToken ct)
@@ -101,10 +116,10 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return await StoreAsync(actor, member, caption, url, null, ct);
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, CancellationToken ct)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, CancellationToken ct, bool viaSms = false)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, await userClock.NowAsync(actor, ct), ct);
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo);
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, await userClock.NowAsync(actor, ct), ct, viaSms);
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         await TellAsync(actor, member, sent.Row, ct);
         return dto;
@@ -116,10 +131,13 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         try
         {
             var from = (await store.ListMembersAsync(member.GroupId, ct)).FirstOrDefault(p => p.UserId == actor.Id) is { } me ? ShortName(me) : "Guest";
-            foreach (var r in await store.ListRecipientsAsync(member.GroupId, actor.Id, ct))
+            var recipients = await store.ListRecipientsAsync(member.GroupId, actor.Id, ct);
+            foreach (var r in recipients)
             {
                 await notifier.MessageAsync(r.UserId, member.GroupPublicId, message.PublicId, from, message.Text, r.ShowPreview, r.Muted, ct);
             }
+            // People ashore who chose the text bridge hear it by text too (its own caps and checks; a failure there is never the sender's problem).
+            await sms.MessageAsync(member.GroupId, from, message, recipients, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

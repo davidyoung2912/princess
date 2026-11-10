@@ -29,6 +29,12 @@ public static class ChatConnectionEndpoints
         chat.MapPut("/settings", async (ChatSettingsDto body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Saves the caller's chat choices and returns them.");
 
+        chat.MapGet("/sms", async (ICurrentUser me, ChatSmsService svc, CancellationToken ct) => Results.Ok(await svc.SettingsAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The text bridge for when the caller is ashore: on, whether idle time also counts as ashore, and whether it can be turned on (available, with a reason: supervised, noPhone, unverified or off).");
+
+        chat.MapPut("/sms", async (ChatSmsSettingsBody body, ICurrentUser me, ChatSmsService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Turns the text bridge on or off. Turning it on needs a verified phone number and sends one text that explains it. 400 supervised|noPhone|unverified|off (403 supervised for a child). Returns the new state.");
+
         chat.MapPost("/hide", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.HideAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Hide me: turns off being found by name, ends every chat with the caller and withdraws every waiting request, in one step. Nobody is told who ended it. Turning being found back on does not restore chats. Returns the new settings.");
 

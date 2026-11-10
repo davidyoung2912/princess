@@ -23,6 +23,7 @@ public sealed record PhoneCheckDto(bool HasPhone, bool Verified, bool Pending);
 public sealed record EmailCheckDto(bool HasEmail, bool Verified, bool Pending);
 
 /// <summary>A text sent back to the notice number, as the text provider's adapter passes it on.</summary>
-public sealed record InboundSmsRequest(string? From, string? Body);
+/// <summary><c>Id</c> is the provider's message id; a delivery repeated with the same id is stored once.</summary>
+public sealed record InboundSmsRequest(string? From, string? Body, string? Id = null);
 
 public sealed record PhoneCodeRequest(string? Code);

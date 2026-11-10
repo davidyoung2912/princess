@@ -3258,3 +3258,46 @@ CREATE INDEX IX_ChatGroupInvites_InviteeId ON dbo.ChatGroupInvites (InviteeId, S
 CREATE INDEX IX_ChatGroupInvites_GuardianUserId ON dbo.ChatGroupInvites (GuardianUserId, Status) WHERE GuardianUserId IS NOT NULL;
 END
 GO
+
+-- SMS bridge (docs/chat-plan.md, phase 6). Both are off unless the guest turns the bridge on in chat settings.
+-- ChatSmsOn: let people on the ship reach me by text when I am ashore. ChatSmsIdle: also count me as ashore when I have had no live app connection for 30 minutes.
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatSmsOn') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatSmsOn BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatSmsOn DEFAULT 0;
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatSmsIdle') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatSmsIdle BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatSmsIdle DEFAULT 0;
+GO
+
+-- A message that came in by text from a guest ashore is labelled "by text" for everyone else in the conversation.
+IF COL_LENGTH(N'dbo.ChatMessages', N'ViaSms') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD ViaSms BIT NOT NULL CONSTRAINT DF_ChatMessages_ViaSms DEFAULT 0;
+GO
+
+-- Where a guest's text replies go (the conversation they were last texted from) and when they said BACK (the bridge stays quiet until they are next ashore after that).
+IF OBJECT_ID(N'dbo.ChatSmsState', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatSmsState (
+  UserId BIGINT NOT NULL CONSTRAINT PK_ChatSmsState PRIMARY KEY,
+  LastGroupId BIGINT NULL,
+  BackAt DATETIME2(0) NULL,
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatSmsState_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ChatSmsState_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+
+-- One row per text the bridge sent or received, for the daily and hourly caps and for support. Never holds message text or a phone number.
+IF OBJECT_ID(N'dbo.ChatSmsLog', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatSmsLog (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatSmsLog PRIMARY KEY,
+  UserId BIGINT NOT NULL, GroupId BIGINT NULL,
+  Direction VARCHAR(3) NOT NULL,                -- out | in
+  Outcome VARCHAR(16) NOT NULL,                 -- sent, failed, capped, digest, delivered, blocked, refused, command
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatSmsLog_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ChatSmsLog_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT CK_ChatSmsLog_Direction CHECK (Direction IN ('out','in'))
+);
+CREATE INDEX IX_ChatSmsLog_User_At ON dbo.ChatSmsLog (UserId, Direction, [At]);
+CREATE INDEX IX_ChatSmsLog_Group_At ON dbo.ChatSmsLog (UserId, GroupId, Direction, [At]) WHERE GroupId IS NOT NULL;
+END
+GO

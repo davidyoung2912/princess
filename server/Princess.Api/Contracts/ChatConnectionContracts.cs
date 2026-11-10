@@ -41,6 +41,17 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At);
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
-public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore);
+/// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
+public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null);
 
 public sealed record ChatMuteRequest(bool On);
+
+// ---- SMS bridge (phase 6) ----
+
+/// <summary>
+/// The text bridge for a guest ashore. <c>On</c>: people on the ship can reach them by text. <c>Idle</c>: also count them as ashore after 30 minutes with no live app connection.
+/// <c>Available</c> is false when the bridge cannot be turned on, and <c>Reason</c> says why: <c>supervised</c>, <c>noPhone</c>, <c>unverified</c> or <c>off</c> (switched off for everyone).
+/// </summary>
+public sealed record ChatSmsDto(bool On, bool Idle, bool Available, string? Reason);
+
+public sealed record ChatSmsSettingsBody(bool On, bool Idle);

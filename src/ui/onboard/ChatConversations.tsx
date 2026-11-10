@@ -8,6 +8,7 @@ import {
   conversationFromSearch, deliveryOf, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
   type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
+import { ashoreNames } from '../../domain/chatSms'
 import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
@@ -121,6 +122,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [announce, setAnnounce] = useState('')
   const [blockedVersion, setBlockedVersion] = useState(0)
   const [details, setDetails] = useState(false)
+  const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
   const end = useRef<HTMLDivElement>(null)
   const lastSeen = useRef<string | null>(null)
   const lastRead = useRef<string | null>(null)
@@ -131,6 +133,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     try {
       const th = await api.chatConversations.thread(id)
       setConversation(th.conversation)
+      setAshore(ashoreNames(th.ashore))
       setMessages((cur) => {
         // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
         const next = first.current ? th.messages : withLatest(cur, th.messages)
@@ -266,6 +269,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {conversation && conversation.kind !== 'direct' && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
+      {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
@@ -283,7 +287,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           const card = m.text ? parsePlanCard(m.text) : null
           return (
             <li key={m.id} className={own ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
-              <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+              <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
               {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
               {m.photo && <DeferredImage name={m.fromName ?? ''} className="chat-msg__photo" src={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
               {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={() => { void load(); setBlockedVersion((v) => v + 1) }} />}

@@ -327,11 +327,11 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(all.TakeLast(limit + 1).ToList());
     }
 
-    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct)
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false)
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
             return Task.FromResult(new ChatSentRow(again.Row, false));
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms };
         Messages.Add(new Stored(groupId, row, clientId));
         return Task.FromResult(new ChatSentRow(row, true));
     }

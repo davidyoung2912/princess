@@ -1,6 +1,6 @@
 # Chat: connections, conversations and notifications
 
-Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 5 are built; later phases are built only when asked.
+Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 6 are built; later phases are built only when asked.
 
 ## 1. What the guest gets
 
@@ -232,10 +232,12 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Screens: "New group" on the conversation list (name, tick people, make), group invitations at the top of People, and "Group details" in a group's thread (members, who is still waiting, rename, add, remove, leave with a confirmation).
 - Left for later: moving the push fan-out off the request for groups of 25 (messages still notify sequentially), a re-invite after a decline cool-down, and the guardian-can-read notice (phase 7).
 
-### Phase 6: SMS bridge
+### Phase 6: SMS bridge — built
 
 - Opt-in setting (verified number, away-from-ship or no-connection trigger), outbound routing with short codes, inbound routing with `LIST`, `STOP`, `HELP`, `BACK`, caps and rate limits, the "by text" and "ashore" labels, and the matching screen text.
 - Reuses `ISmsSender`, `PhoneCheckService`, `AwayRules` and the signed inbound webhook. Simulated provider by default.
+- Built as: `ChatSmsRules` (pure, tested), `ChatSmsService` (settings, ashore, outbound), `ChatSmsInboundService` (replies and commands, called first by `SmsReplyService`), `IChatSmsStore`, `GET|PUT /me/chat/sms`, `UserPrefs.ChatSmsOn/ChatSmsIdle`, `ChatMessages.ViaSms`, `ChatSmsState`, `ChatSmsLog`, global switch `Sms:ChatBridge`. A guest turns it on in the People settings (the screen says texts pass through the phone company and what each word does) and gets one explaining text. A thread shows "by text" on such messages and "Ashore, replies by text: names" for members who are ashore.
+- Decisions made while building: the bridge texts only when the app is not open; the idle trigger is the guest's own choice and is per server (a restart forgets it); BACK pauses the bridge until the guest is next ashore; a shared number turns the bridge off for both guests; the carrier's message id becomes the idempotency key. Not built: a "Back on board" note when the Away flow ends by itself, and push counts as activity for idleness (only the live connection does).
 
 ### Phase 7: guardians, moderation and retention
 

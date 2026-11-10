@@ -7,6 +7,8 @@ public sealed class SignalRRealtimeHub(IHubContext<ChatHub> hub, RealtimeState s
 {
     public bool IsConnected(Guid userPublicId) => state.IsConnected(userPublicId);
 
+    public DateTime? QuietSince(Guid userPublicId) => state.QuietSince(userPublicId);
+
     public async Task<bool> PublishAsync(Guid userPublicId, ChatEvent evt, TimeSpan wait, CancellationToken ct)
     {
         if (!state.IsConnected(userPublicId)) return false;

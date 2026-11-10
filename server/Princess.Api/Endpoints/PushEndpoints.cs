@@ -68,10 +68,10 @@ public static class PushEndpoints
                 InboundSmsRequest? body;
                 try { body = System.Text.Json.JsonSerializer.Deserialize<InboundSmsRequest>(raw, System.Text.Json.JsonSerializerOptions.Web); }
                 catch (System.Text.Json.JsonException) { return Results.BadRequest(); }
-                return Results.Ok(new { stopped = await svc.HandleAsync(body?.From, body?.Body, ct) });
+                return Results.Ok(new { stopped = await svc.HandleAsync(body?.From, body?.Body, body?.Id, ct) });
             })
             .AllowAnonymous().RequireRateLimiting(CheckinEndpoints.LookupLimiter)
-            .WithTags("Push").WithSummary("A text sent back to the notice number. A STOP reply from a guest's confirmed phone number switches text notices off for them. 404 unless Sms:InboundSigningKey (HMAC-SHA256 of {X-Timestamp}.{raw body} in X-Signature as sha256=hex, within 5 minutes) or the weaker Sms:InboundSecret (X-Inbound-Secret) is set; 401 for a wrong signature or secret. Rate-limited.");
+            .WithTags("Push").WithSummary("A text sent back to the notice number. From a guest who turned on chat by text it is a chat reply (a plain reply, \"2 text\" for conversation 2, LIST, HELP, BACK or STOP); the optional id is the provider's message id and makes a repeated delivery harmless. Otherwise a STOP reply from a guest's confirmed phone number switches text notices off for them. 404 unless Sms:InboundSigningKey (HMAC-SHA256 of {X-Timestamp}.{raw body} in X-Signature as sha256=hex, within 5 minutes) or the weaker Sms:InboundSecret (X-Inbound-Secret) is set; 401 for a wrong signature or secret. Rate-limited.");
 
         api.MapPost("/me/push/read", async (ICurrentUser me, PushService svc, CancellationToken ct) =>
                 Results.Ok(await svc.MarkReadAsync(await me.LoadAsync(ct), ct)))

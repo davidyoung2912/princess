@@ -35,6 +35,12 @@ export interface ChatSummary { incoming: number; approvals: number; answers: num
 
 export interface ChatSettings { findable: boolean; showPreview: boolean }
 
+/** Why chat by text cannot be turned on: a child's account, no number on the profile, a number not yet confirmed, or switched off for everyone. */
+export type ChatSmsReason = 'supervised' | 'noPhone' | 'unverified' | 'off'
+
+/** Chat by text for a guest ashore. `on` is the choice; `idle` also counts 30 minutes with the app closed as ashore; `available` is whether it can be turned on. */
+export interface ChatSms { on: boolean; idle: boolean; available: boolean; reason: ChatSmsReason | null }
+
 export interface ChatConnectionsApi {
   /** Rejects `invalid` (`query`) for a name under 3 letters. */
   search(query: string): Promise<ChatPerson[]>
@@ -50,6 +56,9 @@ export interface ChatConnectionsApi {
   seen(): Promise<void>
   settings(): Promise<ChatSettings>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
+  sms(): Promise<ChatSms>
+  /** Rejects `invalid` (`noPhone`, `unverified`, `off`) or `forbidden` (`supervised`) when it cannot be turned on. */
+  saveSms(on: boolean, idle: boolean): Promise<ChatSms>
   /** Hide me: not findable, every chat ended, every waiting request withdrawn. Returns the new settings. */
   hide(): Promise<ChatSettings>
 }
@@ -89,9 +98,12 @@ export interface ChatMessage {
   seenBy?: string[]
   /** A line about the group ("Sam R. left the group"), not something a person said. */
   system?: boolean
+  /** It came in by text from someone ashore. */
+  viaSms?: boolean
 }
 
-export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean }
+/** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
+export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[] }
 
 export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
 

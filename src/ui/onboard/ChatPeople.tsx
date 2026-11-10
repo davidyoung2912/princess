@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import type { ChatConnection, ChatPerson, ChatSettings } from '../../api/chatTypes'
+import type { ChatConnection, ChatPerson, ChatSettings, ChatSms } from '../../api/chatTypes'
+import { needsPhone, smsReason } from '../../domain/chatSms'
 import { cleanQuery, hasActivity, personAction, relationNote, requestProblem, waitingCount } from '../../domain/chatConnections'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
@@ -58,6 +59,7 @@ export function People() {
           </>
         )}
       </Load>
+      <TextBridge />
       <Settings state={settings} onHidden={() => { setNote(t('people.hidden')); refresh() }} />
     </section>
   )
@@ -184,6 +186,45 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
         ))}
       {why ? <p role="alert" className="field__error">{t(`people.problem.${why}` as StringKey)}</p> : <ActionError error={ask.error} />}
     </Dialog>
+  )
+}
+
+/**
+ * Chat by text for when I am ashore (docs/chat-plan.md, 4.9). Off until the guest turns it on, and it needs a confirmed phone number.
+ * Says plainly that texts pass through the phone company, and what each word does.
+ */
+function TextBridge() {
+  const state = useMine(() => api.chatConnections.sms())
+  const [shown, setShown] = useState<ChatSms | null>(null)
+  const [refused, setRefused] = useState<ReturnType<typeof smsReason>>(null)
+  const current = shown ?? state.data
+  const save = useAction(async (on: boolean, idle: boolean) => {
+    setRefused(null)
+    try { setShown(await api.chatConnections.saveSms(on, idle)) } catch (e) {
+      const err = e as ApiError
+      setRefused(smsReason(err.message, err.code))
+      throw e
+    }
+  })
+  if (!current) return null
+  const reason = refused ?? current.reason
+  return (
+    <section aria-labelledby="people-sms-h">
+      <h3 id="people-sms-h">{th('people.sms')}</h3>
+      <div className="chip-row">
+        <Chip pressed={current.on} onToggle={() => void save.run(!current.on, current.idle).catch(() => undefined)}>{t('people.sms.on')}</Chip>
+        <Chip pressed={current.idle} onToggle={() => void save.run(current.on, !current.idle).catch(() => undefined)}>{t('people.sms.idle')}</Chip>
+      </div>
+      <p className="muted">{t('people.sms.body')}</p>
+      <p className="muted">{t('people.sms.cost')}</p>
+      <p className="muted">{t('people.sms.commands')}</p>
+      {reason && (
+        <p role={refused ? 'alert' : 'status'} className={refused ? 'field__error' : 'muted'}>
+          {t(`people.sms.reason.${reason}` as StringKey)}{needsPhone(reason) && <> <Link to="/me/notifications">{t('people.sms.confirm')}</Link></>}
+        </p>
+      )}
+      {!save.error || refused ? null : <ActionError error={save.error} />}
+    </section>
   )
 }
 
