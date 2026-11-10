@@ -111,6 +111,8 @@ export interface ChatMessage {
   text: string
   at: number
   photo?: string
+  /** A thread page says there is a photo without carrying it (it is large); fetch it once with `chatConversations.photo`. */
+  hasPhoto?: boolean
   /** People who have read it, when both they and the sender have read receipts on. */
   seenBy?: string[]
   /** A line about the group ("Sam R. left the group"), not something a person said. */
@@ -144,6 +146,8 @@ export interface ChatConversationsApi {
   sendPhoto(id: string, input: ChatPhotoInput): Promise<ChatMessage>
   /** "Got it" on an urgent message from someone else; repeating it changes nothing. Rejects `invalid` (`notUrgent`) or `notFound`. */
   ack(id: string, messageId: string): Promise<void>
+  /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
+  photo(id: string, messageId: string): Promise<string>
   /** Marks everything read, on every device. */
   read(id: string): Promise<void>
   /** Returns the new state. */

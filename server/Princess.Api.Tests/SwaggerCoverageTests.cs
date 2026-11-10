@@ -456,6 +456,7 @@ public class SwaggerCoverageTests : IDisposable
         { "get", "/api/v1/me/chat/conversations" },
         { "get", "/api/v1/me/chat/conversations/{id}/messages" },
         { "post", "/api/v1/me/chat/conversations/{id}/messages" },
+        { "get", "/api/v1/me/chat/conversations/{id}/messages/{messageId}/photo" },
         { "post", "/api/v1/me/chat/conversations/{id}/read" },
         { "put", "/api/v1/me/chat/conversations/{id}/mute" },
         { "post", "/api/v1/me/chat/conversations/{id}/photos" },

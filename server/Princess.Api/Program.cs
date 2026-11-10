@@ -76,6 +76,9 @@ services.AddScoped<ChatSmsService>();
 services.AddScoped<ChatSmsInboundService>();
 services.AddPrincessRealtime();
 services.AddScoped<ChatNotifier>();
+services.AddSingleton<ChatFanoutQueue>();
+services.AddScoped<ChatFanout>();
+services.AddHostedService<ChatFanoutService>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 // External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
 services.AddProviders(builder.Configuration);

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import type { ChatConversation, ChatMessage, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -15,7 +15,7 @@ import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } fro
 import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
-import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
+import { chatChanged, fetchChatSummary, isChatLive, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
@@ -23,6 +23,7 @@ import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { useLatest } from '../../hooks/useLatest'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useOwnerId, usePersona } from '../../hooks/useDemo'
+import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t, th as heading } from '../../i18n'
 import { Banner } from '../Banner'
@@ -55,7 +56,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   // Conversations with an urgent message nobody on this account has acknowledged stay at the top; the numbers come from the server so every device agrees.
   const [urgentIds, setUrgentIds] = useState<string[]>([])
   const load = useCallback(() => {
-    api.chatConnections.summary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
+    fetchChatSummary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
     api.chatConversations.list().then(
       (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list) },
       () => setFailed(true),
@@ -64,7 +65,8 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
   useEffect(() => { load() }, [load])
   useChatLive(load)
-  useVisibleInterval(load, 30_000)
+  // The live connection says when something changed; reading on a timer is only the fallback while it is down.
+  useVisibleInterval(() => { if (!isChatLive()) load() }, 30_000)
   const [making, setMaking] = useState(false)
   return (
     <section aria-labelledby="conv-h">
@@ -165,18 +167,16 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const first = useRef(true)
   const mine = me?.id ?? ''
 
+  const latestAnswer = useRef<ChatThread | null>(null)
   const load = useCallback(async () => {
     try {
       const th = await api.chatConversations.thread(id)
       setConversation(th.conversation)
       setAshore(ashoreNames(th.ashore))
       setMayUrgent(th.mayUrgent === true)
-      setMessages((cur) => {
-        // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
-        const next = first.current ? th.messages : withLatest(cur, th.messages)
-        saveThread(chatStorage(), owner, id, { ...th, messages: next })
-        return next
-      })
+      latestAnswer.current = th
+      // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
+      setMessages((cur) => (first.current ? th.messages : withLatest(cur, th.messages)))
       if (first.current) { setHasMore(th.hasMore); first.current = false }
       setOffline(false)
       setPhase('ready')
@@ -184,11 +184,18 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       if (isApiError(e) && e.code === 'notFound') setPhase('gone')
       else { setOffline(true); setPhase((p) => (p === 'ready' ? p : 'error')) }
     }
-  }, [id, owner])
+  }, [id])
+  // The on-device copy is written after the messages settle (a burst of nudges is one write), not inside the state update.
+  useEffect(() => {
+    const th = latestAnswer.current
+    if (phase !== 'ready' || !th) return
+    const h = setTimeout(() => saveThread(chatStorage(), owner, id, { ...th, messages }), 400)
+    return () => clearTimeout(h)
+  }, [phase, messages, owner, id])
   // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
   useEffect(() => { void load() }, [load])
   useChatLive(() => void load())
-  useVisibleInterval(() => void load(), 30_000)
+  useVisibleInterval(() => { if (!isChatLive()) void load() }, 30_000)
 
   const toEnd = useCallback(() => { end.current?.scrollIntoView({ block: 'end', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); setChip(false) }, [])
 
@@ -258,6 +265,10 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     chatChanged()
     await load()
   })
+
+  // Stable, so a keystroke in the composer does not re-render the messages above it.
+  const runAck = useLatest((messageId: string) => void ack.run(messageId))
+  const onBlocked = useLatest(() => { void load(); setBlockedVersion((v) => v + 1) })
 
   const mute = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
@@ -331,28 +342,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ActionError error={older.error} />
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
-        {messages.map((m) => {
-          if (m.system) return <li key={m.id} className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
-          const own = m.from === mine
-          const card = m.text ? parsePlanCard(m.text) : null
-          const mlevel = urgencyOf(m)
-          return (
-            <li key={m.id} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
-              {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-              <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
-              {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
-              {m.photo && <DeferredImage name={m.fromName ?? ''} className="chat-msg__photo" src={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
-              {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={() => { void load(); setBlockedVersion((v) => v + 1) }} />}
-              {own && <p className="muted">{t(deliveryOf(m) === 'read' ? 'conv.read' : 'conv.sent')}</p>}
-              {own && mlevel === 'urgent' && (
-                <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : conversation?.kind === 'direct' ? t('urgent.ackedBy', { names: conversation.name }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
-              )}
-              {!own && mlevel === 'urgent' && (m.acked
-                ? <p className="muted">{t('urgent.youAcked')}</p>
-                : <Button disabled={ack.busy} onClick={() => void ack.run(m.id)}>{t('urgent.gotIt')}</Button>)}
-            </li>
-          )
-        })}
+        {messages.map((m) => (
+          <MessageRow key={m.id} m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
+        ))}
         {bubbles.map((b) => (
           <li key={b.id} className="chat-msg chat-msg--mine chat-msg--pending">
             <p>{b.text}</p>
@@ -388,6 +380,72 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     </section>
   )
 }
+
+/** A photo is not in the thread page (it is large); it is fetched once for the message and kept for the life of the page. */
+const photos = new Map<string, Promise<string>>()
+const photoFor = (conversationId: string, messageId: string): Promise<string> => {
+  let p = photos.get(messageId)
+  if (!p) {
+    p = api.chatConversations.photo(conversationId, messageId)
+    photos.set(messageId, p)
+    // A failed fetch is forgotten so the next render can try again.
+    p.catch(() => photos.delete(messageId))
+  }
+  return p
+}
+
+function MessagePhoto({ conversationId, messageId, name, alt, sent }: { conversationId: string; messageId: string; name: string; alt: string; sent?: string }) {
+  const [settings] = useSettings()
+  const [asked, setAsked] = useState(false)
+  const [src, setSrc] = useState<string | undefined>(sent)
+  const wanted = !settings.dataLight || asked
+  useEffect(() => {
+    if (!wanted || src) return
+    let live = true
+    photoFor(conversationId, messageId).then((url) => { if (live) setSrc(url) }, () => undefined)
+    return () => { live = false }
+  }, [wanted, src, conversationId, messageId])
+  // In data-light mode nothing is fetched until the guest asks (DeferredImage's rule, applied before the fetch rather than after it).
+  if (!wanted) return <Button variant="secondary" onClick={() => setAsked(true)}>{t('img.show', { name })}</Button>
+  if (!src) return <p className="muted" role="status">{t('account.loading')}</p>
+  return <DeferredImage name={name} className="chat-msg__photo" src={src} alt={alt} />
+}
+
+interface MessageRowProps {
+  m: ChatMessage
+  mine: string
+  shipTime: (at: number) => string
+  conversationId: string
+  kind: ChatConversation['kind'] | undefined
+  peerName: string
+  ackBusy: boolean
+  onAck: (messageId: string) => void
+  onBlocked: () => void
+}
+
+/** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked }: MessageRowProps) {
+  if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
+  const own = m.from === mine
+  const card = m.text ? parsePlanCard(m.text) : null
+  const mlevel = urgencyOf(m)
+  return (
+    <li className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
+      {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
+      <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
+      {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
+      {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
+      {own && <p className="muted">{t(deliveryOf(m) === 'read' ? 'conv.read' : 'conv.sent')}</p>}
+      {own && mlevel === 'urgent' && (
+        <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : kind === 'direct' ? t('urgent.ackedBy', { names: peerName }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
+      )}
+      {!own && mlevel === 'urgent' && (m.acked
+        ? <p className="muted">{t('urgent.youAcked')}</p>
+        : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
+    </li>
+  )
+})
 
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
 function Options({ conversation, muteBusy, onMute, onSent, blockedVersion, reload }: {

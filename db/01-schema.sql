@@ -3338,3 +3338,8 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatReports_Status' AND object_id = OBJECT_ID(N'dbo.ChatReports'))
   CREATE INDEX IX_ChatReports_Status ON dbo.ChatReports (Status, [At]);
 GO
+
+-- Chat performance: the thread, list, unread and mark-read queries all filter by conversation and order or compare by message Id, which (GroupId, [At]) cannot serve without a sort.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatMessages_GroupId_Id' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
+  CREATE INDEX IX_ChatMessages_GroupId_Id ON dbo.ChatMessages (GroupId, Id) INCLUDE (FromUserId, IsSystem);
+GO

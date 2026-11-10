@@ -124,6 +124,13 @@ public static class AboardEndpoints
             .WithSummary("Marks the conversation read now, on every device. Who read what is recorded only when the caller has read receipts on. 404 not a member.");
         chat.MapPut("/conversations/{id:guid}/mute", async (Guid id, ChatMuteRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.MuteAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Mutes or unmutes a conversation: no phone alert for its messages. The unread count still shows. Returns the new state. 404 not a member.");
+        chat.MapGet("/conversations/{id:guid}/messages/{messageId:guid}/photo", async (Guid id, Guid messageId, ICurrentUser me, ChatService svc, HttpContext http, CancellationToken ct) =>
+            {
+                var photo = await svc.PhotoAsync(await me.LoadAsync(ct), id, messageId, ct);
+                http.Response.Headers.CacheControl = "private, max-age=31536000, immutable";   // a sent photo never changes
+                return Results.Ok(photo);
+            })
+            .WithSummary("The photo of one message as a data URL (`photo`). The thread lists `hasPhoto` instead of carrying it. Cacheable by the app. 404 when the message is not one the caller can read.");
         chat.MapPost("/conversations/{id:guid}/photos", async (Guid id, ChatPhotoRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SendPhotoAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Sends a photo (JPEG, PNG or WebP under 1 MB, as a data URL) with an optional caption to one conversation. 400 type, size, empty, contactInfo or blocked; 403 age (under 18); 404 not a member; 409 closed.");
         chat.MapGet("/receipts", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ReceiptsAsync(await me.LoadAsync(ct), ct)))

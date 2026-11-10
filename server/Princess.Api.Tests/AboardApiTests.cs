@@ -799,8 +799,12 @@ public class AboardApiTests : JourneyWorld
         var daniel = await DanielToken();
         SetNow(SeaDay);
         Assert.Equal(HttpStatusCode.OK, (await ChatPost($"conversations/{party.PublicId}/photos", daniel, Photo(caption: " The sunset "))).Status);
-        var m = (await ChatGet(Msgs(party), await SignIn(Priya))).Json.GetProperty("messages")[0];
-        Assert.Equal(("The sunset", "data:image/png;base64,AAAA"), (m.GetProperty("text").GetString(), m.GetProperty("photo").GetString()));
+        var priya = await SignIn(Priya);
+        var m = (await ChatGet(Msgs(party), priya)).Json.GetProperty("messages")[0];
+        // A thread page says there is a photo; the photo itself is fetched once, by message.
+        Assert.Equal(("The sunset", true, false), (m.GetProperty("text").GetString(), m.GetProperty("hasPhoto").GetBoolean(), m.TryGetProperty("photo", out _)));
+        var photo = await ChatGet($"conversations/{party.PublicId}/messages/{m.GetProperty("id").GetString()}/photo", priya);
+        Assert.Equal("data:image/png;base64,AAAA", photo.Json.GetProperty("photo").GetString());
     }
 
     [Fact]

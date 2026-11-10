@@ -4,11 +4,22 @@ import { API_URL, api, auth } from '../runtime'
 import { startVisibleInterval } from './visibleInterval'
 import { requestsWaiting } from '../domain/chatNotice'
 import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
+import { coalesce } from '../domain/coalesce'
 
 const CHANGED = 'princess:chat-changed'
 const LIVE = 'princess:chat-live'
 /** While the live connection is down, the numbers are read again this often. */
 export const POLL_MS = 60_000
+
+/**
+ * The one way to read the chat numbers. The badge, the Home row and the conversation list all want them at the same moments (a nudge, focus, a message marked read),
+ * so they share one request instead of making one each (see `coalesce`).
+ */
+export const fetchChatSummary = coalesce(() => api.chatConnections.summary())
+
+let live = false
+/** Whether the live connection is up. While it is, a screen need not poll: the server says when something changed. */
+export const isChatLive = (): boolean => live
 
 /** Tells every open badge that chat connections changed, so the number on the Chat tab is right after an action. */
 export const chatChanged = (): void => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHANGED)) }
@@ -31,10 +42,11 @@ export function useChatLive(onChange: () => void): void {
  */
 export function useChatSummary(enabled: boolean): ChatSummary | null {
   const [summary, setSummary] = useState<ChatSummary | null>(null)
-  const load = useCallback(() => { api.chatConnections.summary().then(setSummary, () => undefined) }, [])
+  const load = useCallback(() => { fetchChatSummary().then(setSummary, () => undefined) }, [])
   useEffect(() => {
     if (!enabled) return
     load()
+    // Coming back to the front fires both events; they share one request.
     const onVisible = () => { if (document.visibilityState === 'visible') load() }
     window.addEventListener('focus', load)
     window.addEventListener(CHANGED, load)
@@ -43,6 +55,7 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
     let poll: (() => void) | null = null
     const stopPoll = () => { poll?.(); poll = null }
     const onState = (s: HubState) => {
+      live = s === 'live'
       if (s === 'live') { stopPoll(); load() }   // anything missed while it was down
       else if (poll === null) poll = startVisibleInterval(load, POLL_MS)
     }
@@ -61,6 +74,7 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
     else onState('waiting')
     return () => {
       hub.stop()
+      live = false
       stopPoll()
       window.removeEventListener('focus', load)
       window.removeEventListener(CHANGED, load)
@@ -73,7 +87,7 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
 /** Requests waiting for the guest, for the "needs you" row on Home. Reads the same summary over REST and follows the same nudges and actions, without a second live connection. */
 export function useChatWaiting(): number {
   const [n, setN] = useState(0)
-  const load = useCallback(() => { api.chatConnections.summary().then((s) => setN(requestsWaiting(s)), () => undefined) }, [])
+  const load = useCallback(() => { fetchChatSummary().then((s) => setN(requestsWaiting(s)), () => undefined) }, [])
   useEffect(() => {
     load()
     window.addEventListener(CHANGED, load)

@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, IAuditLog audit)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -27,9 +27,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ensureParty) await store.EnsurePartyAsync(actor.Id, ct);
         var rows = await store.ListConversationsAsync(actor.Id, ct);
         var list = new List<ChatConversationDto>();
+        // One query for everyone in every conversation, not one per conversation.
+        var membersOf = await store.ListMembersForAsync([.. rows.Select(r => r.GroupId)], ct);
         foreach (var r in rows)
         {
-            var members = await store.ListMembersAsync(r.GroupId, ct);
+            var members = membersOf[r.GroupId];
             list.Add(Conversation(actor, r, members, r.Unread, r.LastMessageId is null ? null : Last(actor, r, members), r.LastAt ?? r.CreatedAt));
         }
         return list;
@@ -78,7 +80,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var urgent = m.Urgency == ChatUrgencyRules.Urgent;
             var ackedBy = urgent && m.FromUserId == actor.Id ? m.AckedBy.Select(publicOf).OfType<Guid>().ToList() : null;
             bool? acked = urgent && m.FromUserId != actor.Id ? m.AckedBy.Contains(actor.Id) : null;
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked));
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
@@ -92,7 +94,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
-        if (ServiceRules.ChildSafeProblem(text, await AgeAsync(actor, ct)) is { } problem) throw ApiException.Invalid(problem);
+        var now = await userClock.NowAsync(actor, ct);
+        if (ServiceRules.ChildSafeProblem(text, await AgeAsync(actor, now, ct)) is { } problem) throw ApiException.Invalid(problem);
         // Not sent, not stored, not logged; the matched word is never returned.
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
         var urgency = ChatUrgencyRules.Parse(body?.Urgency) ?? throw ApiException.Invalid("urgency");
@@ -102,10 +105,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var guardianHere = ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId)));
             if (!ChatUrgencyRules.MaySend(urgency, actor.Role == "admin", guardianHere)) throw ApiException.Forbidden("urgency");
         }
-        var now = await userClock.NowAsync(actor, ct);
         // The hourly limit for important and urgent messages (urgent is already limited to staff and guardians).
         if (urgency != ChatUrgencyRules.Normal && ChatUrgencyRules.OverLimit(urgency, await store.CountSentAsync(actor.Id, urgency, now.AddHours(-1), ct))) throw ApiException.TooMany("urgencyLimit");
-        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, ct, urgency: urgency);
+        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency);
         // Who sent an urgent message and where, never what it said.
         if (urgency == ChatUrgencyRules.Urgent)
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.urgent.send", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = actor.Role == "admin" ? "staff" : "guardian" }, ct);
@@ -122,14 +124,15 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
-        return await StoreAsync(actor, member, text, null, key, ct, viaSms: true);
+        return await StoreAsync(actor, member, text, null, key, await userClock.NowAsync(actor, ct), ct, viaSms: true);
     }
 
     public async Task<ChatMessageDto> SendPhotoAsync(UserRecord actor, Guid conversationId, ChatPhotoRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
-        var age = await AgeAsync(actor, ct);
+        var now = await userClock.NowAsync(actor, ct);
+        var age = await AgeAsync(actor, now, ct);
         var problem = ServiceRules.PhotoProblem(body?.Type, body?.Bytes ?? 0, age);
         if (problem == "age") throw ApiException.Forbidden("age");
         if (problem is not null) throw ApiException.Invalid(problem);
@@ -138,36 +141,37 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (caption.Length > 200) caption = caption[..200];
         if (ServiceRules.ChildSafeProblem(caption, age) is { } bad) throw ApiException.Invalid(bad);
         if (ProfanityFilter.IsBlocked(caption)) throw ApiException.Invalid("blocked");
-        return await StoreAsync(actor, member, caption, url, null, ct);
+        return await StoreAsync(actor, member, caption, url, null, now, ct);
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, await userClock.NowAsync(actor, ct), ct, viaSms, urgency);
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency));
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency);
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
-        await TellAsync(actor, member, sent.Row, ct);
+        await TellAsync(actor, member, sent.Row);
         return dto;
     }
 
-    /// <summary>Tells every other active member who has not blocked the sender (<see cref="IChatStore.ListRecipientsAsync"/>). A failed notice never fails the send.</summary>
-    private async Task TellAsync(UserRecord actor, ChatMemberRow member, ChatMessageRow message, CancellationToken ct)
+    /// <summary>
+    /// The photo of one message the caller may read, as the data URL it was sent as (a thread page leaves it out, so a refetch does not carry megabytes). 404 for anything the caller cannot read.
+    /// A photo never changes, so the answer can be kept by the app.
+    /// </summary>
+    public async Task<ChatPhotoDto> PhotoAsync(UserRecord actor, Guid conversationId, Guid messageId, CancellationToken ct)
     {
-        try
-        {
-            var from = (await store.ListMembersAsync(member.GroupId, ct)).FirstOrDefault(p => p.UserId == actor.Id) is { } me ? ShortName(me) : "Guest";
-            var recipients = await store.ListRecipientsAsync(member.GroupId, actor.Id, ct);
-            foreach (var r in recipients)
-            {
-                await notifier.MessageAsync(r.UserId, member.GroupPublicId, message.PublicId, from, message.Text, r.ShowPreview, r.Muted, ct, message.Urgency);
-            }
-            // People ashore who chose the text bridge hear it by text too (its own caps and checks; a failure there is never the sender's problem).
-            await sms.MessageAsync(member.GroupId, from, message, recipients, ct);
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            // The message is stored and shows in every member's app; only the alert was lost.
-        }
+        var member = await MemberAsync(actor, conversationId, ct);
+        var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct);
+        return message?.Photo is { } photo ? new ChatPhotoDto(photo) : throw ApiException.NotFound();
+    }
+
+    /// <summary>
+    /// Hands the message to <see cref="ChatFanoutQueue"/>: the sender's answer does not wait for the notices (who is told, and how, is in <see cref="ChatFanout"/>).
+    /// Only if the line is full is it done here, so an alert is never dropped.
+    /// </summary>
+    private async Task TellAsync(UserRecord actor, ChatMemberRow member, ChatMessageRow message)
+    {
+        var job = new ChatFanoutJob(actor.Id, member.GroupId, member.GroupPublicId, message);
+        if (!fanoutQueue.TryEnqueue(job)) await fanout.RunAsync(job, CancellationToken.None);
     }
 
     /// <summary>The caller has read the conversation up to now: the unread count clears on every device, and receipts are recorded only when the caller has them on.</summary>
@@ -228,6 +232,6 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     }
 
     /// <summary>The person's age today from their profile; someone with no date of birth on file counts as a child while their account is supervised, else an adult.</summary>
-    private async Task<int> AgeAsync(UserRecord actor, CancellationToken ct) =>
-        await accounts.GetProfileAsync(actor.Id, ct) is { } p ? AccountRules.AgeOn(DateOnly.FromDateTime(p.Dob), TripRules.Today(await userClock.NowAsync(actor, ct))) : actor.IsSupervised ? 0 : 18;
+    private async Task<int> AgeAsync(UserRecord actor, DateTime now, CancellationToken ct) =>
+        await accounts.GetProfileAsync(actor.Id, ct) is { } p ? AccountRules.AgeOn(DateOnly.FromDateTime(p.Dob), TripRules.Today(now)) : actor.IsSupervised ? 0 : 18;
 }

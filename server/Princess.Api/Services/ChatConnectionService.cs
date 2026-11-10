@@ -33,9 +33,23 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         _ => "none",
     };
 
-    public async Task<ChatConnectionsDto> ListAsync(UserRecord actor, CancellationToken ct)
+    /// <summary>How often the badge numbers may write the "expired" status for one person. A request lasts days, so a few seconds' delay in the count is invisible; the lists still expire at once.</summary>
+    private static readonly TimeSpan SummaryExpiryEvery = TimeSpan.FromSeconds(30);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<long, long> LastSummaryExpiry = new();
+
+    private static bool SummaryExpiryDue(long userId)
     {
-        await store.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        var now = Environment.TickCount64;
+        if (LastSummaryExpiry.TryGetValue(userId, out var last) && now - last < SummaryExpiryEvery.TotalMilliseconds) return false;
+        // Bounded: forget everyone when it grows, which only makes the next summary of each person expire once more.
+        if (LastSummaryExpiry.Count > 50_000) LastSummaryExpiry.Clear();
+        LastSummaryExpiry[userId] = now;
+        return true;
+    }
+
+    public async Task<ChatConnectionsDto> ListAsync(UserRecord actor, CancellationToken ct, bool expire = true)
+    {
+        if (expire) await store.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
         var rows = await store.ListForUserAsync(actor.Id, ct);
         var all = rows.Select(r => (Row: r, Dto: View(actor.Id, r))).Where(x => x.Dto is not null).ToList();
         List<ChatConnectionDto> Of(string kind) => [.. all.Where(x => x.Dto!.Kind == kind).Select(x => x.Dto!)];
@@ -64,9 +78,13 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
 
     public async Task<ChatSummaryDto> SummaryAsync(UserRecord actor, CancellationToken ct)
     {
-        var l = await ListAsync(actor, ct);
+        // The badge is read on every nudge, focus and read, so it only reads: expiry is written at most every 30 seconds per person (the lists, which show the requests themselves, still expire on every read).
+        var due = SummaryExpiryDue(actor.Id);
+        var now = due ? await clock.NowAsync(actor, ct) : default;
+        if (due) await store.ExpireAsync(actor.Id, now, ct);
+        var l = await ListAsync(actor, ct, expire: false);
         // Group invitations are waiting requests too: one for the guest counts with the people who want to chat, one for their child with the approvals.
-        await groups.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        if (due) await groups.ExpireAsync(actor.Id, now, ct);
         var invites = await groups.ListInvitesForAsync(actor.Id, ct);
         var forChild = invites.Count(i => i.GuardianUserId == actor.Id && i.Status == ChatGroupRules.AwaitingGuardian);
         var urgent = await chat.ListUnackedUrgentAsync(actor.Id, ct);

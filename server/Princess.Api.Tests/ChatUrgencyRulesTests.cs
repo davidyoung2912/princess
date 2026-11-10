@@ -83,7 +83,7 @@ public class ChatUrgencyRulesTests
     }
 
     [Theory]
-    [InlineData("normal", false)]
+    [InlineData("normal", false, false, true)]
     [InlineData("important", false, false, true)]
     [InlineData("urgent", false, false, false)]   // an ordinary guest
     [InlineData("urgent", true, false, true)]     // staff

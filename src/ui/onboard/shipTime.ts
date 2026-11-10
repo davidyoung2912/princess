@@ -1,12 +1,13 @@
+import { useMemo } from 'react'
 import { shipZoneAt } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { useSailing } from '../../hooks/useDemo'
 import { t } from '../../i18n'
 
-/** A moment as ship time ("9:14 am"), whichever zone the ship's clock is in then. */
+/** A moment as ship time ("9:14 am"), whichever zone the ship's clock is in then. The function keeps its identity until the sailing changes, so memoised rows that take it stay put. */
 export function useShipTime(): (at: number) => string {
   const sailing = useSailing()
-  return (at) => clockTime(new Date(at), shipZoneAt(sailing, at))
+  return useMemo(() => (at: number) => clockTime(new Date(at), shipZoneAt(sailing, at)), [sailing])
 }
 
 /** "1 hour 20 minutes", "45 minutes", "less than a minute". */

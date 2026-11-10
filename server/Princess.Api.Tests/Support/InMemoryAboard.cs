@@ -315,6 +315,9 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct) => Task.FromResult(Of(groupId).Members.Select(m => Peer(m.UserId)).ToList());
 
+    public Task<Dictionary<long, List<ChatPeerRow>>> ListMembersForAsync(IReadOnlyCollection<long> groupIds, CancellationToken ct) =>
+        Task.FromResult(groupIds.ToDictionary(id => id, id => Of(id).Members.Select(m => { var p = Peer(m.UserId); p.GroupId = id; p.Status = m.Status; return p; }).ToList()));
+
     public Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct) =>
         Task.FromResult(Mine(userId).SelectMany(c => c.Members).Select(m => m.UserId).Where(id => id != userId).Distinct().Select(Peer).ToList());
 
@@ -324,7 +327,12 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         var me = c.Members.First(m => m.UserId == userId);
         var all = Visible(c, me).ToList();
         if (before is { } b) all = all.Where(m => m.Id < (Messages.FirstOrDefault(x => x.Row.PublicId == b && x.GroupId == groupId)?.Row.Id ?? long.MaxValue)).ToList();
-        return Task.FromResult(all.TakeLast(limit + 1).ToList());
+        // Like the real store: a page says there is a photo but does not carry it.
+        return Task.FromResult(all.TakeLast(limit + 1).Select(m => new ChatMessageRow
+        {
+            Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, HasPhoto = m.Photo is not null, At = m.At, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
+            SeenBy = m.SeenBy, AckedBy = m.AckedBy,
+        }).ToList());
     }
 
     public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal")

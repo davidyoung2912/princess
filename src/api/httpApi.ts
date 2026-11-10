@@ -218,6 +218,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     send: (id, text, clientId, urgency) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}) }),
     ack: async (id, messageId) => { await send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/ack`) },
     sendPhoto: (id, input) => send('post', `/me/chat/conversations/${seg(id)}/photos`, input),
+    photo: async (id, messageId) => (await get<{ photo: string }>(`/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/photo`)).photo,
     read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
     mute: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on }),
   }

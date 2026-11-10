@@ -103,6 +103,8 @@ public sealed class ChatPeerRow
     public bool ReceiptsOn { get; set; }
     /// <summary>active, left or removed. The people shown as "in" a conversation are the active ones; the others are kept so earlier messages still have a name.</summary>
     public string Status { get; set; } = "active";
+    /// <summary>Set only by <see cref="IChatStore.ListMembersForAsync"/>: the conversation this row belongs to.</summary>
+    public long GroupId { get; set; }
     /// <summary>A supervised child's account: a guardian can read the conversations they are in.</summary>
     public bool IsSupervised { get; set; }
     /// <summary>The booker of a supervised child (their guardian); null for anyone else.</summary>
@@ -116,6 +118,8 @@ public sealed class ChatMessageRow
     public long FromUserId { get; set; }
     public string Text { get; set; } = "";
     public string? Photo { get; set; }
+    /// <summary>A thread page leaves <see cref="Photo"/> out (it is a large data URL) and says only that there is one; the app fetches it once by message.</summary>
+    public bool HasPhoto { get; set; }
     public DateTime At { get; set; }
     /// <summary>A line about the group ("Sam left the group"), not something a person said: shown in the thread, never counted as unread.</summary>
     public bool IsSystem { get; set; }
@@ -241,6 +245,8 @@ public interface IChatStore
     Task<ChatMemberRow?> GetMemberAsync(long userId, Guid conversationId, CancellationToken ct);
     /// <summary>Everyone who is, or was, in the conversation, with names and receipt choice.</summary>
     Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct);
+    /// <summary>The members of several conversations in one query, by conversation id (the list screen would otherwise ask once per conversation).</summary>
+    Task<Dictionary<long, List<ChatPeerRow>>> ListMembersForAsync(IReadOnlyCollection<long> groupIds, CancellationToken ct);
     /// <summary>Everyone who shares any conversation with the person, the person excluded (for blocking and read receipts).</summary>
     Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct);
     /// <summary>
