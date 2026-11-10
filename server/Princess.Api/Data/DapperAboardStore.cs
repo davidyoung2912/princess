@@ -574,6 +574,28 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { userId, topics }, null, ct));
     }
 
+    public async Task<bool> GetGroupStanleyAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<bool?>(Sql.Cmd("SELECT [On] FROM dbo.ChatGroupStanley WHERE GroupId = @groupId", new { groupId }, null, ct)) ?? false;
+    }
+
+    public async Task SetGroupStanleyAsync(long groupId, bool on, long by, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.ChatGroupStanley WITH (HOLDLOCK) AS t USING (SELECT @groupId AS GroupId) AS s ON t.GroupId = s.GroupId
+            WHEN MATCHED THEN UPDATE SET [On] = @on, TurnedOnBy = @by, [At] = @at
+            WHEN NOT MATCHED THEN INSERT (GroupId, [On], TurnedOnBy, [At]) VALUES (@groupId, @on, @by, @at);
+            """, new { groupId, on, by, at }, null, ct));
+    }
+
+    public async Task<bool> HasPlanningAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatMessages WHERE GroupId = @groupId AND Kind IN ('poll', 'plan') AND DeletedAt IS NULL", new { groupId }, null, ct)) > 0;
+    }
+
     public async Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

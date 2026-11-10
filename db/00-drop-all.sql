@@ -158,6 +158,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'ShowTicketGuests'),
   (N'dbo', N'Orders'),
   (N'dbo', N'OrderLines'),
+  (N'dbo', N'ChatGroupStanley'),
   (N'dbo', N'ChatSmsLog'),
   (N'dbo', N'ChatSmsState'),
   (N'dbo', N'ChatGroupInvites'),

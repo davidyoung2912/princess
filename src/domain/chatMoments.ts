@@ -28,3 +28,6 @@ export const toggleTopic = (off: readonly string[], topic: string, on: boolean):
 
 /** Whether a topic is on: a topic is on unless it is in the off list. */
 export const topicOn = (off: readonly string[], topic: string): boolean => !off.includes(topic)
+
+/** A shared card (7.4) names the group it would be posted to in its notice `subject`; no other suggestion has one. The server checks everything again when the admin taps. */
+export const shareGroupOf = (m: Pick<ChatMessage, 'notice'>): string | null => (isMoment(m) && m.notice?.subject ? m.notice.subject : null)

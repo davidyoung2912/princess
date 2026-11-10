@@ -132,6 +132,21 @@ public static class AboardEndpoints
                 return Results.NoContent();
             })
             .WithSummary("Puts away a Stanley suggestion card in the caller's own Stanley chat: `snooze` (Not now: it may come back tomorrow) or `dismiss` (Don't show again, until what it is about changes). The card stops offering its action. 400 action or notMoment; 403 stanley; 404.");
+        chat.MapPost("/conversations/{id:guid}/messages/{messageId:guid}/moment/share", async (Guid id, Guid messageId, MomentShareRequest body, ICurrentUser me, StanleyGroupShareService svc, IUserClock clock, CancellationToken ct) =>
+            {
+                var actor = await me.LoadAsync(ct);
+                await svc.ShareToGroupAsync(actor, id, messageId, body.GroupId, await clock.NowAsync(actor, ct), ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Posts a shared Stanley card (a poll) to a group, on an admin's confirmation: it appears under the admin's name after a line saying they asked Stanley to share it, and the card is put away. Everything is checked again: 400 notMoment or group; 403 stanley, notAdmin, off (Stanley is not switched on in the group), child (a supervised child is in it) or notGroup; 404; 409 already (the group has a poll or plan).");
+        chat.MapGet("/groups/{id:guid}/stanley", async (Guid id, ICurrentUser me, StanleyGroupShareService svc, CancellationToken ct) => Results.Ok(await svc.GroupStanleyAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Whether Stanley may offer to share cards in this group, and whether the caller (an admin) may change it. 404 for anyone who is not an active member of a made group.");
+        chat.MapPut("/groups/{id:guid}/stanley", async (Guid id, GroupStanleyRequest body, ICurrentUser me, StanleyGroupShareService svc, IUserClock clock, CancellationToken ct) =>
+            {
+                var actor = await me.LoadAsync(ct);
+                return Results.Ok(await svc.SetGroupStanleyAsync(actor, id, body, await clock.NowAsync(actor, ct), ct));
+            })
+            .WithSummary("An admin lets Stanley offer to share cards in the group, or stops him. Off by default; nothing is ever posted without an admin's tap. 403 notAdmin; 404.");
         chat.MapGet("/stanley/prefs", async (ICurrentUser me, StanleyMomentService svc, CancellationToken ct) => Results.Ok(await svc.PrefsAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The topics Stanley may suggest in the chat, the ones the caller turned off and the mode their Stanley level gives (off, trip, suggest or guide).");
         chat.MapPut("/stanley/prefs", async (StanleyChatPrefsRequest body, ICurrentUser me, StanleyMomentService svc, CancellationToken ct) => Results.Ok(await svc.SetPrefsAsync(await me.LoadAsync(ct), body, ct)))

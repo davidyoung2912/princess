@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ChatMessage } from '../../api/chatTypes'
-import { MOMENT_TOPICS, toggleTopic, topicOn } from '../../domain/chatMoments'
+import { MOMENT_TOPICS, shareGroupOf, toggleTopic, topicOn } from '../../domain/chatMoments'
 import { useAction } from '../../hooks/useAction'
 import { chatChanged } from '../../hooks/useChatSummary'
 import { useMine } from '../../hooks/useMine'
@@ -22,8 +22,24 @@ export function MomentButtons({ m, conversationId, onChanged }: { m: ChatMessage
     chatChanged()
     onChanged()
   }, { quiet: true })
+  const group = shareGroupOf(m)
+  const [shared, setShared] = useState(false)
+  const share = useAction(async () => {
+    await api.chatConversations.shareMoment(conversationId, m.id, group ?? '')
+    setShared(true)
+    chatChanged()
+    onChanged()
+  }, { quiet: true })
   return (
     <div className="chat-notice-offers">
+      {group && (
+        <>
+          <Button disabled={share.busy || shared || done !== null} onClick={() => void share.run()}>{t('stanley.moment.share')}</Button>
+          <p className="muted">{t('stanley.moment.shareHint')}</p>
+          {shared && <p role="status">{t('stanley.moment.shared')}</p>}
+          {share.error && <ActionError error={share.error} />}
+        </>
+      )}
       <div className="chip-row" role="group" aria-label={t('stanley.moment.group')}>
         <Button variant="secondary" disabled={put.busy || done !== null} onClick={() => void put.run('snooze')}>{t('stanley.moment.notNow')}</Button>
         <Button variant="secondary" disabled={put.busy || done !== null} onClick={() => void put.run('dismiss')}>{t('stanley.moment.dontShow')}</Button>
@@ -56,5 +72,26 @@ export function StanleySuggestions() {
       <p className="muted">{t('stanley.moment.settingsBody')}</p>
       {save.error && <ActionError error={save.error} />}
     </section>
+  )
+}
+
+/** An admin's switch for Stanley offering to share cards in this group. Off unless turned on; only an admin sees it. Nothing is posted without that admin's tap on a card. */
+export function GroupStanleySwitch({ groupId }: { groupId: string }) {
+  const state = useMine(() => api.chatConversations.groupStanley(groupId), [groupId])
+  const [on, setOn] = useState<boolean | null>(null)
+  const set = useAction(async (next: boolean) => {
+    setOn(next)
+    try { setOn((await api.chatConversations.setGroupStanley(groupId, next)).on) } catch (e) { setOn(null); throw e }
+  })
+  if (!state.data?.canChange) return null
+  const current = on ?? state.data.on
+  return (
+    <>
+      <div className="chip-row">
+        <Chip pressed={current} onToggle={() => void set.run(!current).catch(() => undefined)}>{t('stanley.group.switch')}</Chip>
+      </div>
+      <p className="muted">{t('stanley.group.hint')}</p>
+      {set.error && <ActionError error={set.error} />}
+    </>
   )
 }

@@ -133,3 +133,11 @@ public sealed record StanleyChatPrefsRequest(List<string>? TopicsOff);
 
 /// <summary>Not now (snooze) or Don't show again (dismiss) on a suggestion card.</summary>
 public sealed record MomentActionRequest(string? Action);
+
+/// <summary>Post a shared Stanley card to a group the caller is an admin of (<c>GroupId</c> is the group's conversation id).</summary>
+public sealed record MomentShareRequest(Guid GroupId);
+
+/// <summary>Whether Stanley may share cards in a group, and whether the caller may change it (an admin).</summary>
+public sealed record GroupStanleyDto(bool On, bool CanChange);
+
+public sealed record GroupStanleyRequest(bool On);

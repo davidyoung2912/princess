@@ -4,10 +4,10 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
-public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash);
+public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
 
 /// <summary>What was done with a moment before, as stored (no text).</summary>
 public sealed record MomentHistory(string Key, string Topic, DateTime PostedAt, DateTime? ExpiresAt, DateTime? DismissedAt, DateTime? SnoozedUntil, string FactsHash);
@@ -115,6 +115,8 @@ public static class ChatProactiveRules
             list.Add(new("manage.documents", Travel, ClassDue, "Some travel documents are still needed\nOpen Documents to see who still needs to add theirs.", "/me/documents", f.Now.AddDays(3), Hash($"documents{f.DocumentsMissing}")));
         if (f.CheckinOpen && f.Stage == StageRules.GetToShip)
             list.Add(new("getship.checkin-open", Travel, ClassDue, "Online check-in is open\nCheck in to get your boarding pass.", "/home/check-in", f.Now.AddDays(2), Hash("getship.checkin-open")));
+        if (f.ShareGroup is { } group && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
+            list.Add(new(ChatGroupMomentRules.GroupPollKey, Planning, ClassSuggestion, ChatGroupMomentRules.OfferText, ChatGroupMomentRules.GroupPath(group), f.Now.AddDays(3), Hash(group.ToString("N")), group.ToString()));
         return list;
     }
 
@@ -149,7 +151,7 @@ public static class ChatProactiveRules
 
     /// <summary>The thread message for a moment. One per moment and day, so a snoozed card that returns is a new message.</summary>
     public static StanleyNotice ToNotice(Moment m, DateTime now) =>
-        new($"{KeyPrefix}{m.Key}:{now:yyyyMMdd}", Lane, KindOf, m.Path, m.Text, $"{KeyPrefix}{m.Key}", m.ExpiresAt, ChatUrgencyRules.Normal);
+        new($"{KeyPrefix}{m.Key}:{now:yyyyMMdd}", Lane, KindOf, m.Path, m.Text, $"{KeyPrefix}{m.Key}", m.ExpiresAt, ChatUrgencyRules.Normal, m.Subject);
 
     /// <summary>The moment key out of a card's notice key (<c>moment:finalPayment:20261110</c>), or null when it is not a card.</summary>
     public static string? KeyOf(string? noticeKey)

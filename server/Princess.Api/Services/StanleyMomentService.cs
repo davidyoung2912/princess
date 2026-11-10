@@ -24,6 +24,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             if (mode == ChatProactiveRules.ModeOff) return null;
             var off = (await store.GetTopicsOffAsync(actor.Id, ct)).Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var history = await store.ListMomentsAsync(actor.Id, ct);
+            if (!off.Contains(ChatProactiveRules.Planning) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && await GroupOfferAsync(actor, ct) is { } group) facts = facts with { ShareGroup = group };
             var pick = ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), history, new(mode, off, held, actor.IsSupervised), facts.Now);
             if (pick is null) return null;
             await store.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), facts.Now, ct);
@@ -38,6 +39,18 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             log.LogWarning(e, "A Stanley suggestion could not be posted for user {UserId}", actor.Id);
             return null;
         }
+    }
+
+    /// <summary>The first group the guest is an admin of that may be offered a shared poll (7.4): Stanley is on there, three or more are in it, no supervised child is, and it has no poll or plan yet.</summary>
+    private async Task<Guid?> GroupOfferAsync(UserRecord actor, CancellationToken ct)
+    {
+        foreach (var g in (await store.ListConversationsAsync(actor.Id, ct)).Where(c => c.Kind == ChatConversationRules.Group && c.Status == ChatConversationRules.Active && ChatPlanningService.AdminOf(c, actor.Id)))
+        {
+            if (!await store.GetGroupStanleyAsync(g.GroupId, ct)) continue;
+            var members = (await store.ListMembersAsync(g.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();
+            if (ChatGroupMomentRules.Offer(true, true, members.Count, members.Any(p => p.IsSupervised), await store.HasPlanningAsync(g.GroupId, ct))) return g.GroupPublicId;
+        }
+        return null;
     }
 
     /// <summary>

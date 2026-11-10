@@ -175,6 +175,7 @@ services.AddScoped<ReadyService>();
 services.AddScoped<StanleyThreadService>();
 services.AddScoped<StanleyNoticeRelay>();
 services.AddScoped<StanleyMomentService>();
+services.AddScoped<StanleyGroupShareService>();
 services.AddScoped<ChatShareService>();
 services.AddScoped<ChatPlanningService>();
 services.AddScoped<ChatService>();

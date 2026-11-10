@@ -3583,3 +3583,13 @@ BEGIN
   ALTER TABLE dbo.StanleyNoticeDeliveries ADD CONSTRAINT CK_StanleyNoticeDeliveries_Event CHECK (Event IN ('posted','failOpen','acked','snooze','dismiss'));
 END
 GO
+
+-- Chat phase 7b: a group's opt-in for shared Stanley cards (docs/chat-features-research.md, 7.4). Off unless an admin turns it on; one row per group.
+IF OBJECT_ID(N'dbo.ChatGroupStanley', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatGroupStanley (
+  GroupId BIGINT NOT NULL CONSTRAINT PK_ChatGroupStanley PRIMARY KEY, [On] BIT NOT NULL, TurnedOnBy BIGINT NULL, [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatGroupStanley_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE
+);
+END
+GO

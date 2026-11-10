@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatMessage } from '../api/chatTypes'
-import { isMoment, momentView, MOMENT_TOPICS, toggleTopic, topicOn } from './chatMoments'
+import { isMoment, momentView, MOMENT_TOPICS, shareGroupOf, toggleTopic, topicOn } from './chatMoments'
 
 const card = (over: Partial<NonNullable<ChatMessage['notice']>> = {}): Pick<ChatMessage, 'notice'> => ({
   notice: { lane: 'suggestion', kind: 'moment', path: '/plan/ahead', expired: false, superseded: false, ...over },
@@ -34,5 +34,15 @@ describe('Stanley suggestion cards', () => {
 
   it('offers the same topics the server accepts', () => {
     expect([...MOMENT_TOPICS]).toEqual(['payment', 'planning', 'packing', 'steps', 'discovery', 'travel'])
+  })
+})
+
+describe('shareGroupOf', () => {
+  const card = (lane: string, subject?: string) => ({ notice: { lane, kind: 'moment', path: '/chat', expired: false, superseded: false, subject } }) as never
+  it('names the group only on a suggestion card that carries one', () => {
+    expect(shareGroupOf(card('suggestion', 'g-1'))).toBe('g-1')
+    expect(shareGroupOf(card('suggestion'))).toBeNull()
+    expect(shareGroupOf(card('info', 'g-1'))).toBeNull()
+    expect(shareGroupOf({} as never)).toBeNull()
   })
 })

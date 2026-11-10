@@ -44,7 +44,7 @@ import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
-import { MomentButtons, StanleySuggestions } from './ChatMoments'
+import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
 import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
@@ -1137,6 +1137,7 @@ function Options({ conversation, awayBusy, onAway, mentionsBusy, onMentionsOnly,
           <p className="muted">{t('mention.only.hint')}</p>
         </>
       )}
+      {conversation.kind === 'group' && <GroupStanleySwitch groupId={conversation.id} />}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

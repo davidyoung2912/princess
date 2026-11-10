@@ -383,6 +383,11 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(true);
     }
 
+    public Dictionary<long, bool> GroupStanley { get; } = [];
+    public Task<bool> GetGroupStanleyAsync(long groupId, CancellationToken ct) => Task.FromResult(GroupStanley.GetValueOrDefault(groupId));
+    public Task SetGroupStanleyAsync(long groupId, bool on, long by, DateTime at, CancellationToken ct) { GroupStanley[groupId] = on; return Task.CompletedTask; }
+    public Task<bool> HasPlanningAsync(long groupId, CancellationToken ct) => Task.FromResult(Messages.Any(m => m.GroupId == groupId && m.Row.Kind is "poll" or "plan" && m.Row.DeletedAt is null));
+
     public Task<string> GetTopicsOffAsync(long userId, CancellationToken ct) => Task.FromResult(TopicsOff.GetValueOrDefault(userId, ""));
 
     public Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct)

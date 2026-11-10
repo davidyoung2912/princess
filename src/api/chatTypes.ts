@@ -261,6 +261,8 @@ export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info' | 'sugge
  * `expiresAt` (ship milliseconds) lets a copy held on the device stop offering actions when the time passes without asking the server. `actions` are ids the screen turns into buttons
  * (`confirmMuster` calls the muster service, `reviewChange` shows the change card named by `subject` with its options; the rest open the screen that does the job) and `replies` are the chips; both are empty once the notice is replaced or expired.
  */
+export interface GroupStanley { on: boolean; canChange: boolean }
+
 export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[]; subject?: string }
 export type NoticeReply = 'why' | 'what' | 'later'
 /** What the guest's Stanley level gives: `off` posts no suggestion, `trip` only what affects the trip, `suggest` adds suggestions, `guide` adds a step-by-step. */
@@ -326,6 +328,11 @@ export interface ChatConversationsApi {
   noticeReply(id: string, messageId: string, reply: NoticeReply): Promise<NoticeReplyAnswer>
   /** Not now (`snooze`: it may come back tomorrow) or Don't show again (`dismiss`: until what it is about changes) on a Stanley suggestion card. Rejects `invalid` (`action`, `notMoment`), `forbidden` or `notFound`. */
   momentAction(id: string, messageId: string, action: 'snooze' | 'dismiss'): Promise<void>
+  /** "Post this to the group?": an admin's confirmation of a shared Stanley card (a poll) in their own Stanley chat. Rejects `invalid` (`notMoment`, `group`), `forbidden` (`notAdmin`, `off`, `child`, `notGroup`), `notFound` or `conflict` (`already`). */
+  shareMoment(id: string, messageId: string, groupId: string): Promise<void>
+  /** Whether Stanley may offer to share cards in a made group, and whether the caller (an admin) can change it. */
+  groupStanley(groupId: string): Promise<GroupStanley>
+  setGroupStanley(groupId: string, on: boolean): Promise<GroupStanley>
   /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
   photo(id: string, messageId: string): Promise<string>
   /** Marks everything read, on every device. */

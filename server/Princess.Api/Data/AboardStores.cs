@@ -381,6 +381,11 @@ public interface IChatStore
     Task<bool> PutAwayMomentAsync(long userId, long messageId, string momentKey, DateTime? dismissedAt, DateTime? snoozedUntil, DateTime at, CancellationToken ct);
     /// <summary>The suggestion topics the person turned off, as a space-separated list (empty when none).</summary>
     Task<string> GetTopicsOffAsync(long userId, CancellationToken ct);
+    /// <summary>Phase 7b: whether an admin has let Stanley share cards in this group (off when there is no row).</summary>
+    Task<bool> GetGroupStanleyAsync(long groupId, CancellationToken ct);
+    Task SetGroupStanleyAsync(long groupId, bool on, long by, DateTime at, CancellationToken ct);
+    /// <summary>Phase 7b: whether the group already has a poll or a plan that has not been deleted.</summary>
+    Task<bool> HasPlanningAsync(long groupId, CancellationToken ct);
     Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);

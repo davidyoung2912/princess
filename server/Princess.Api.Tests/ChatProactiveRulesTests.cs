@@ -276,6 +276,63 @@ public class ManageToBoardingMomentTests
         Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.ManageToBoarding(new(Now, StageRules.Manage, 30, false, null, DocumentsMissing: 1))], [], new(ChatProactiveRules.ModeTrip, ["travel"], false, false), Now));
 }
 
+public class GroupMomentTests
+{
+    private static readonly DateTime Now = new(2026, 11, 10, 15, 0, 0, DateTimeKind.Utc);
+    private static readonly Guid Group = Guid.Parse("11111111-2222-3333-4444-555555555555");
+
+    [Fact]
+    public void AGroupIsOfferedAPollOnlyWhenEveryConditionHolds()
+    {
+        Assert.True(ChatGroupMomentRules.Offer(true, true, 3, false, false));
+        Assert.False(ChatGroupMomentRules.Offer(false, true, 3, false, false));   // not an admin
+        Assert.False(ChatGroupMomentRules.Offer(true, false, 3, false, false));   // Stanley not switched on
+        Assert.False(ChatGroupMomentRules.Offer(true, true, 2, false, false));    // fewer than three
+        Assert.False(ChatGroupMomentRules.Offer(true, true, 3, true, false));     // a supervised child is in it
+        Assert.False(ChatGroupMomentRules.Offer(true, true, 3, false, true));     // it already has a poll or plan
+    }
+
+    [Fact]
+    public void ThePostRefusalsAreNamedAndCheckedInOrder()
+    {
+        Assert.Null(ChatGroupMomentRules.Refusal(true, true, true, false, false));
+        Assert.Equal(ChatGroupMomentRules.NotGroup, ChatGroupMomentRules.Refusal(true, true, false, false, false));
+        Assert.Equal(ChatGroupMomentRules.NotAdmin, ChatGroupMomentRules.Refusal(false, true, true, false, false));
+        Assert.Equal(ChatGroupMomentRules.Off, ChatGroupMomentRules.Refusal(true, false, true, false, false));
+        Assert.Equal(ChatGroupMomentRules.Child, ChatGroupMomentRules.Refusal(true, true, true, true, false));
+        Assert.Equal(ChatGroupMomentRules.Already, ChatGroupMomentRules.Refusal(true, true, true, false, true));
+    }
+
+    [Fact]
+    public void TheCardNamesItsGroupInItsSubjectAndOpensThatGroup()
+    {
+        var facts = new MomentFacts(Now, StageRules.Manage, 40, false, null, ShareGroup: Group);
+        var m = Assert.Single(ChatProactiveRules.Candidates(facts), c => c.Key == ChatGroupMomentRules.GroupPollKey);
+        Assert.Equal(Group.ToString(), m.Subject);
+        Assert.Equal($"/chat?c={Group}", m.Path);
+        Assert.Equal(ChatProactiveRules.Planning, m.Topic);
+        Assert.Equal(Group.ToString(), ChatProactiveRules.ToNotice(m, Now).Subject);
+        Assert.DoesNotContain(ChatProactiveRules.Candidates(facts with { ShareGroup = null }), c => c.Key == ChatGroupMomentRules.GroupPollKey);
+        Assert.DoesNotContain(ChatProactiveRules.Candidates(facts with { Stage = StageRules.Sea }), c => c.Key == ChatGroupMomentRules.GroupPollKey);
+    }
+
+    [Fact]
+    public void TheCardIsASuggestionSoATripOnlyGuestNeverSeesIt()
+    {
+        var cards = ChatProactiveRules.Candidates(new MomentFacts(Now, StageRules.Manage, 40, false, null, ShareGroup: Group));
+        Assert.Null(ChatProactiveRules.Choose([.. cards.Where(c => c.Key == ChatGroupMomentRules.GroupPollKey)], [], new(ChatProactiveRules.ModeTrip, [], false, false), Now));
+        Assert.NotNull(ChatProactiveRules.Choose([.. cards.Where(c => c.Key == ChatGroupMomentRules.GroupPollKey)], [], new(ChatProactiveRules.ModeSuggest, [], false, false), Now));
+    }
+
+    [Fact]
+    public void TheLineNamesTheAdminNotStanleyAndThePollIsAValidPoll()
+    {
+        Assert.Equal("Alex T. asked Stanley to share this", ChatGroupMomentRules.ShareLine("Alex T."));
+        Assert.NotNull(ChatPlanningRules.CleanPoll(ChatGroupMomentRules.PollQuestion, [.. ChatGroupMomentRules.PollOptions]));
+        foreach (var line in ChatGroupMomentRules.PollOptions.Prepend(ChatGroupMomentRules.PollQuestion)) Assert.False(ProfanityFilter.IsBlocked(line));
+    }
+}
+
 public class SuggestionCountsTests
 {
     [Fact]
