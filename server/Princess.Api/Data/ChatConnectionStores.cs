@@ -70,6 +70,8 @@ public interface IChatConnectionStore
     /// <summary>The person's chat choices: whether others can find them by name, and whether a notice may show the message text.</summary>
     Task<(bool Findable, bool ShowPreview)> GetSettingsAsync(long userId, CancellationToken ct);
     Task SetSettingsAsync(long userId, bool findable, bool showPreview, CancellationToken ct);
+    /// <summary>Hide me, in one transaction: turns off being found, ends every agreed connection and withdraws every waiting request the person sent or was sent. Returns how many connections it closed.</summary>
+    Task<int> HideAsync(long userId, DateTime now, CancellationToken ct);
 }
 
 public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatConnectionStore
@@ -266,5 +268,27 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             WHEN MATCHED THEN UPDATE SET ChatFindable = @findable, ChatShowPreview = @showPreview, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable, ChatShowPreview) VALUES (@userId, @findable, @showPreview);
             """, new { userId, findable, showPreview }, null, ct));
+    }
+
+    public async Task<int> HideAsync(long userId, DateTime now, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET ChatFindable = 0, UpdatedAt = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable) VALUES (@userId, 0);
+            """, new { userId }, tx, ct));
+        var ended = await c.ExecuteAsync(Sql.Cmd("""
+            UPDATE dbo.ChatConnections SET Status = 'ended', EndedByUserId = @userId, EndedAt = @now, UpdatedAt = @now
+            WHERE Status = 'accepted' AND (RequesterId = @userId OR TargetId = @userId)
+            """, new { userId, now }, tx, ct));
+        // Waiting requests close quietly as withdrawn, so nobody gets a decline (and no cooldown starts).
+        await c.ExecuteAsync(Sql.Cmd("""
+            UPDATE dbo.ChatConnections SET Status = 'cancelled', UpdatedAt = @now
+            WHERE Status IN ('awaitingGuardian','pending') AND (RequesterId = @userId OR TargetId = @userId)
+            """, new { userId, now }, tx, ct));
+        await tx.CommitAsync(ct);
+        return ended;
     }
 }

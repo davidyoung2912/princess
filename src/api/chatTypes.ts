@@ -50,4 +50,6 @@ export interface ChatConnectionsApi {
   seen(): Promise<void>
   settings(): Promise<ChatSettings>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
+  /** Hide me: not findable, every chat ended, every waiting request withdrawn. Returns the new settings. */
+  hide(): Promise<ChatSettings>
 }

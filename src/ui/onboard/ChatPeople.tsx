@@ -53,7 +53,7 @@ export function People() {
           </>
         )}
       </Load>
-      <Settings state={settings} />
+      <Settings state={settings} onHidden={() => { setNote(t('people.hidden')); refresh() }} />
     </section>
   )
 }
@@ -183,13 +183,15 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
 }
 
 /** Who can find me, and whether a notice may show the text (stored now; used when messages arrive). */
-function Settings({ state }: { state: ReturnType<typeof useMine<ChatSettings>> }) {
+function Settings({ state, onHidden }: { state: ReturnType<typeof useMine<ChatSettings>>; onHidden: () => void }) {
+  const [confirm, setConfirm] = useState(false)
   const [shown, setShown] = useState<ChatSettings | null>(null)
   const current = shown ?? state.data
   const save = useAction(async (next: ChatSettings) => {
     setShown(next)
     try { setShown(await api.chatConnections.saveSettings(next)) } catch (e) { setShown(null); throw e }
   })
+  const hide = useAction(async () => { setShown(await api.chatConnections.hide()); setConfirm(false); onHidden() })
   if (!current) return null
   return (
     <section aria-labelledby="people-settings-h">
@@ -201,6 +203,18 @@ function Settings({ state }: { state: ReturnType<typeof useMine<ChatSettings>> }
       <p className="muted">{t('people.findableBody')}</p>
       <p className="muted">{t('people.previewBody')}</p>
       <ActionError error={save.error} />
+      <Button variant="secondary" onClick={() => setConfirm(true)}>{t('people.hide')}</Button>
+      <p className="muted">{t('people.hideBody')}</p>
+      {confirm && (
+        <Dialog title={t('people.hideTitle')} onClose={() => setConfirm(false)}>
+          <p>{t('people.hideConfirm')}</p>
+          <div className="button-row">
+            <Button disabled={hide.busy} onClick={() => void hide.run()}>{t('people.hideYes')}</Button>
+            <Button variant="secondary" onClick={() => setConfirm(false)}>{t('people.hideNo')}</Button>
+          </div>
+          <ActionError error={hide.error} />
+        </Dialog>
+      )}
     </section>
   )
 }

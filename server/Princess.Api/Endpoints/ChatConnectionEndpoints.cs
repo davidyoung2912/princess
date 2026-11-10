@@ -29,6 +29,9 @@ public static class ChatConnectionEndpoints
         chat.MapPut("/settings", async (ChatSettingsDto body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Saves the caller's chat choices and returns them.");
 
+        chat.MapPost("/hide", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.HideAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("Hide me: turns off being found by name, ends every chat with the caller and withdraws every waiting request, in one step. Nobody is told who ended it. Turning being found back on does not restore chats. Returns the new settings.");
+
         chat.MapPost("/requests", async (ChatRequestBody body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.RequestAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Asks a guest to chat. The other person is told at once. A child's request goes to their guardian first, and a request to a child to theirs. If the person already asked the caller this accepts it. 400 person, self or noGuardian; 404 person (not found on the sailing); 409 connected, alreadyAsked, cooldown (declined within 7 days), tooManyOpen or tooMany.");
 

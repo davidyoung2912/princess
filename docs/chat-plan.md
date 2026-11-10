@@ -169,6 +169,7 @@ A guest in port often has no data but still has a phone number. Text lets them s
 | `POST /me/chat/connections/{id}/end` | 1 | Stop chatting with this person. |
 | `POST /me/chat/connections/seen` | 1 | The sender has seen the answers. |
 | `GET/PUT /me/chat/settings` | 2 | Findable by name; notice text preview. |
+| `POST /me/chat/hide` | 2 | Hide me: not findable, all chats ended, waiting requests withdrawn. |
 | `GET /me/chat/summary` | 1 | Counts for badges: requests waiting, answers unseen, later unread messages. |
 | `/hubs/chat` (SignalR) | 3 | Live events. |
 | `GET /me/chat/conversations`, `GET/POST /me/chat/conversations/{id}/messages`, `POST …/read`, `PUT …/mute` | 4 | Per-conversation chat. |
@@ -218,7 +219,7 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 ### Phase 5: groups
 
 - A guest makes a group from people they are connected with; each invitee accepts or declines; leave; remove (creator); rename. A group's history starts at each member's join time.
-- Group size limit (for example 12). Guardian rules apply to every child in the group.
+- Group size limit: 25 participants. Guardian rules apply to every child in the group.
 
 ### Phase 6: SMS bridge
 
@@ -230,9 +231,9 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Guardian read-only view with audit; the "a guardian can read this chat" notice.
 - Staff review of reports; blocking from inside a conversation; retention job at 30 days after the cruise; an access log for reads of someone else's conversation.
 
-## 7. Open points to revisit
+## 7. Decisions on the earlier open points (answered 2026-11-09)
 
-- Whether "discoverable" should default to on (as Princess does) or off.
-- A hard group size limit.
-- Whether "ashore" should also be detectable without the Away flow (for example no live connection for 30 minutes).
-- Whether photos in conversations (supported today in party chat) carry over to direct chats.
+- **Discoverable defaults to on**, and is configurable in two places: chat settings, and a master **Hide me** button directly in the Chat screen. Hide me turns discoverability off, **ends every existing connection** (the other people are not told who ended it, as in 4.3) and withdraws open requests, then keeps the guest out of every later search. Because it ends chats, it asks for confirmation first and says what will happen. Turning discoverability back on does not restore ended connections. Built as `POST /me/chat/hide` and a Hide me button with a confirmation dialog in the People settings. Guests who share a booking can still find each other, as with the setting.
+- **Group size limit: 25 participants** (phase 5). Applies to the creator's invitations and to guardian-approved children alike.
+- **"Ashore" is also detected without the Away flow** (phase 6): a guest with no live app connection or push for 30 minutes counts as ashore for the SMS bridge and the "Ashore, replies by text" label, in addition to the Away From Ship flow. Still needs the opt-in and a verified number.
+- **Photos carry over to direct chats and groups** (phase 4), with the same size, type and minimum-age rules as party chat today.

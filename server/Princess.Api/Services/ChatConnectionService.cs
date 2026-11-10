@@ -55,6 +55,13 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         return body;
     }
 
+    /// <summary>The master "Hide me": nobody can find the caller by name, every chat with them ends and every waiting request is withdrawn. The others are not told. Turning being found back on later does not bring chats back.</summary>
+    public async Task<ChatSettingsDto> HideAsync(UserRecord actor, CancellationToken ct)
+    {
+        await store.HideAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        return await SettingsAsync(actor, ct);
+    }
+
     public async Task<ChatSummaryDto> SummaryAsync(UserRecord actor, CancellationToken ct)
     {
         var l = await ListAsync(actor, ct);

@@ -223,6 +223,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     seen: async () => { await send('post', '/me/chat/connections/seen') },
     settings: () => get('/me/chat/settings'),
     saveSettings: (settings) => send('put', '/me/chat/settings', settings),
+    hide: () => send('post', '/me/chat/hide'),
   }
   const aboard: HttpGroups['aboard'] = {
     selections: {
