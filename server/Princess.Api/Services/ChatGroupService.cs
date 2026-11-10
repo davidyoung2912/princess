@@ -67,6 +67,46 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         await store.RemoveMemberAsync(group.Id, person.UserId, "removed", ChatGroupRules.RemovedLine(Short(person)), await clock.NowAsync(actor, ct), ct);
     }
 
+    /// <summary>
+    /// Names or releases the group's second admin (creator only). An admin can pin, close a poll before its time, post in an announcement-only group and switch that on or off; inviting, removing and renaming stay with the creator.
+    /// 400 self (the creator is always an admin), child (a supervised child is never made one) or person; 403 creator; 409 adminsFull.
+    /// </summary>
+    public async Task<ChatGroupDto> SetAdminAsync(UserRecord actor, Guid id, Guid personId, ChatGroupAdminBody? body, CancellationToken ct)
+    {
+        var group = await CreatorGroupAsync(actor, id, ct);
+        var members = await store.ListActiveAsync(group.Id, ct);
+        var person = members.FirstOrDefault(m => m.PublicId == personId) ?? throw ApiException.Invalid("person");
+        if (person.UserId == group.CreatedByUserId) throw ApiException.Invalid("self");
+        var on = body?.On == true;
+        if (on && !person.IsAdmin)
+        {
+            if (!ChatPlanningRules.MayBeAdmin(person.IsSupervised)) throw ApiException.Invalid("child");
+            if (!ChatPlanningRules.CanAddAdmin(members.Count(m => m.IsAdmin && m.UserId != group.CreatedByUserId))) throw ApiException.Conflict("adminsFull");
+        }
+        await store.SetAdminAsync(group.Id, person.UserId, on, ct);
+        person.IsAdmin = on;
+        await TellAsync(group, members, "admins", ct);
+        return await ViewAsync(actor, group, ct);
+    }
+
+    /// <summary>Makes the group announcement-only (only admins post; votes, answers and reactions stay open) or opens it again. The creator or the second admin may. 403 admin.</summary>
+    public async Task<ChatGroupDto> SetAnnouncementOnlyAsync(UserRecord actor, Guid id, ChatGroupAnnouncementBody? body, CancellationToken ct)
+    {
+        var group = await MemberGroupAsync(actor, id, ct);
+        var members = await store.ListActiveAsync(group.Id, ct);
+        var mine = members.FirstOrDefault(m => m.UserId == actor.Id);
+        if (!ChatPlanningRules.IsAdmin(group.CreatedByUserId == actor.Id, mine?.IsAdmin == true)) throw ApiException.Forbidden("admin");
+        var on = body?.On == true;
+        if (on != group.AnnouncementOnly) await store.SetAnnouncementOnlyAsync(group.Id, on, ct);
+        group.AnnouncementOnly = on;
+        await TellAsync(group, members, "admins", ct);
+        return await ViewAsync(actor, group, ct);
+    }
+
+    /// <summary>The open apps of everyone in the group refetch (a live nudge, never a phone alert), so the composer and the controls change at once.</summary>
+    private Task TellAsync(ChatGroupRow group, List<ChatGroupPersonRow> members, string kind, CancellationToken ct) =>
+        Task.WhenAll(members.Select(m => notifier.ThreadChangedAsync(m.UserId, group.PublicId, kind, ct)));
+
     /// <summary>Anyone in the group can leave. They keep nothing of what is said after, and the others are told by a line in the thread.</summary>
     public async Task LeaveAsync(UserRecord actor, Guid id, CancellationToken ct)
     {
@@ -163,9 +203,10 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
         var waiting = creator
             ? [.. (await store.ListWaitingAsync(group.Id, ct)).Select(w => new ChatGroupWaitingDto(w.PublicId, w.InviteePublicId, ChatConnectionRules.ShortName(w.InviteeFirst, w.InviteeLast), w.Status == ChatGroupRules.AwaitingGuardian))]
             : new List<ChatGroupWaitingDto>();
+        var admin = ChatPlanningRules.IsAdmin(creator, members.Any(m => m.UserId == actor.Id && m.IsAdmin));
         return new(group.PublicId, group.Name,
-            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId))],
-            waiting, creator, ChatGroupRules.MaxMembers);
+            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin))],
+            waiting, creator, ChatGroupRules.MaxMembers, group.AnnouncementOnly, admin);
     }
 
     private static ChatGroupInviteDto View(long me, ChatGroupInviteRow r)

@@ -30,7 +30,7 @@ export function cardSummary(card: ChatCard, clock: (time: string) => string): st
   return [card.title, when, card.place && card.place !== card.title ? card.place : ''].filter(Boolean).join(' · ')
 }
 
-const TYPE_ORDER: Record<Exclude<ChatCardType, 'place'>, number> = { booking: 0, portDay: 1, excursion: 2, dining: 3 }
+const TYPE_ORDER: Record<Exclude<ChatCardType, 'place' | 'plan'>, number> = { booking: 0, portDay: 1, excursion: 2, dining: 3 }
 
 /** The share list in a steady order: the booking, then port days, excursions and dinners, each by day and time. */
 export function sortShareables(items: readonly ChatShareable[]): ChatShareable[] {

@@ -124,7 +124,26 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatCardDto? Card = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Pinned = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MentionsYou = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? Mentions = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? Mentions = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatPollDto? Poll = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatTallyDto? Tally = null);
+
+/// <summary>A poll (phase 4): the question and its two to five options.</summary>
+public sealed record ChatPollDto(string Question, List<string> Options);
+
+/// <summary>
+/// The answers to a poll or plan as one reader sees them. <c>Counts</c> is one number per poll option, or going, maybe and no for a plan. <c>Mine</c> is the reader's own choice. <c>Closed</c>, <c>ClosesAt</c> and <c>MayClose</c> are for a poll.
+/// <c>Going</c> names the others who are going to a plan (first name and last initial; people the reader blocked are left out); a poll's answers are never named. <c>AddedToPlan</c>: the reader's Going put the event on their own programme.
+/// </summary>
+public sealed record ChatTallyDto(List<int> Counts, int? Mine, bool Closed, long? ClosesAt, bool MayClose,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<string>? Going = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AddedToPlan = false);
+
+/// <summary>A poll option vote: the index of the option, or null to take the vote back.</summary>
+public sealed record ChatVoteRequest(int? Option);
+
+/// <summary>A plan answer: <c>going</c>, <c>maybe</c> or <c>no</c>.</summary>
+public sealed record ChatRsvpRequest(string? Choice);
 
 /// <summary>
 /// A card or place as a reader sees it (phase 3): a title, and where it applies. Names, times and places only. <c>Type</c> is <c>excursion</c>, <c>dining</c>, <c>booking</c>, <c>portDay</c> or <c>place</c>;
@@ -151,7 +170,10 @@ public sealed record ChatShareableDto(string Ref, string Type, string Title, [pr
 public sealed record ChatPlaceDto(string Id, string Name, int Deck, string Section);
 
 /// <summary>What the guest can share (<c>Items</c>, from their own booking) and where they can ask to meet (<c>Places</c>, from the ship profile).</summary>
-public sealed record ChatShareableListDto(List<ChatShareableDto> Items, List<ChatPlaceDto> Places);
+public sealed record ChatShareableListDto(List<ChatShareableDto> Items, List<ChatPlaceDto> Places, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatPlannableDto>? Events = null);
+
+/// <summary>A programme event on a day the guest's own sailing runs it, which a plan can be made of. <c>Ref</c> (<c>eventId:day</c>) is sent back to make the plan.</summary>
+public sealed record ChatPlannableDto(string Ref, string Title, int Day, string Time, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Place = null);
 
 /// <summary>One chip under a message: the emoji, how many chose it, whether the reader did, and the others' names (first name and last initial) for a screen reader.</summary>
 public sealed record ChatReactionDto(string Emoji, int Count, bool Mine, List<string> Names);
@@ -178,9 +200,10 @@ public sealed record ChatPhotoDto(string Photo);
 /// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message. <c>Urgency</c> is normal (default), important or urgent; urgent is for staff and guardians only. <c>ReplyTo</c> is the message being answered.</summary>
 /// <summary>
 /// A message. <c>Kind</c> (phase 3) is <c>text</c> (the default), <c>card</c> (<c>ShareRef</c> from the shareable list) or <c>place</c> (<c>PlaceId</c> of a named place, an optional <c>Note</c>); a card or place carries no text from the sender.
+/// Phase 4 adds <c>poll</c> (a <c>Question</c> and two to five <c>Options</c>) and <c>plan</c> (a <c>ShareRef</c> of <c>eventId:day</c> from the plannable list, an optional <c>Note</c>).
 /// <c>Mentions</c> are the public ids of members the message names (at most 10); anyone who is not an active member is left out.
 /// </summary>
-public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null);
+public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null, string? Question = null, List<string>? Options = null);
 
 /// <summary>Alert me only when I am mentioned in this conversation.</summary>
 public sealed record ChatMentionsOnlyRequest(bool On);

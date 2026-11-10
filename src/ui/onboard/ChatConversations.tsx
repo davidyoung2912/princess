@@ -50,6 +50,8 @@ import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
+import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
+import { canPost, isPlan, isPoll } from '../../domain/chatPlanning'
 
 /**
  * Chats (docs/chat-plan.md, 4.8): the conversation list is the home of Chat, and one tap opens a conversation. The open conversation is in the address (`?c=`),
@@ -591,7 +593,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <div ref={end} />
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
-      {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
+      {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
         <>
         <form ref={form} className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {replyTo?.id && (
@@ -640,6 +642,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
         </form>
         <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />
+        {conversation!.kind !== 'direct' && <PlanTools conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
         </>
       ))}
       {conversation && permanent && <StanleyNotices />}
@@ -834,11 +837,13 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     // Deleted for everyone: the fact and who and when, nothing of what it said.
     return <li id={`msg-${m.id}`} className="chat-msg chat-msg--deleted"><p className="muted"><strong>{m.from === mine ? t('chat.you') : (m.fromName ?? '')}</strong> · {t('conv.deleted')} · {shipTime(m.at)}</p></li>
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} />
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} />
 })
 
+const noop = (): void => {}
+
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin }: Omit<MessageRowProps, 'onChanged'>) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin }: MessageRowProps) {
   const own = m.from === mine
   // A typed card or place is drawn from the server's own fields; an older plan card travels as text with a marker.
   const typed = isTyped(m) && m.card ? m.card : null
@@ -858,7 +863,9 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
       <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
-      {typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
+      {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} />
+        : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} />
+        : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
       {m.reactions && m.reactions.length > 0 && (

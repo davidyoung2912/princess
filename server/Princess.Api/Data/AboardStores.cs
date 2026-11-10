@@ -161,6 +161,8 @@ public sealed class ChatMessageRow
     public string? Payload { get; set; }
     /// <summary>The members it mentions (user ids), filled by <see cref="IChatStore.AddMessageAsync"/> and <see cref="IChatStore.ListMessagesAsync"/>.</summary>
     public List<long> Mentions { get; set; } = [];
+    /// <summary>Phase 4: when a poll was closed on demand (it also closes by itself 24 hours after it was sent).</summary>
+    public DateTime? ClosedAt { get; set; }
     public bool FromStanley => FromUserId == 0;
 }
 
@@ -185,6 +187,10 @@ public class ChatMemberRow
     public bool NotifyAway { get; set; }
     /// <summary>Phase 3: the member is alerted only for a message that mentions them (the conversation still shows and counts everything).</summary>
     public bool MentionsOnly { get; set; }
+    /// <summary>Phase 4: the second admin of a made group (the creator is always one, and is not flagged).</summary>
+    public bool IsAdmin { get; set; }
+    /// <summary>Phase 4: only admins post in this group.</summary>
+    public bool AnnouncementOnly { get; set; }
     public long? LastReadMessageId { get; set; }
     /// <summary>The guest who made a group (null for the booking's group, a direct chat and Stanley's): the one who may pin in it.</summary>
     public long? CreatedByUserId { get; set; }
@@ -252,6 +258,9 @@ public sealed class ChatPinRow
     public bool HasPhoto { get; set; }
     public DateTime At { get; set; }
 }
+
+/// <summary>One person's answer to a poll (<c>Choice</c> is the option index) or a plan (0 going, 1 maybe, 2 no). <c>AddedToPlan</c>: this answer put the plan's event on their programme.</summary>
+public sealed record ChatResponseRow(long MessageId, long UserId, int Choice, bool AddedToPlan);
 
 /// <summary>One person's reaction to one message.</summary>
 public sealed record ChatReactionRow(long MessageId, long UserId, string Emoji);
@@ -421,6 +430,14 @@ public interface IChatStore
     Task UnpinAsync(long groupId, long messageId, CancellationToken ct);
     /// <summary>The message ids of the conversation that are pinned, so a thread page can mark them.</summary>
     Task<HashSet<long>> ListPinnedIdsAsync(long groupId, CancellationToken ct);
+    /// <summary>Records the person's answer to a poll or plan, replacing an earlier one (a vote can be changed).</summary>
+    Task SetResponseAsync(long messageId, long userId, int choice, bool addedToPlan, DateTime at, CancellationToken ct);
+    /// <summary>The person's answer to a poll or plan, or null when they have none.</summary>
+    Task<ChatResponseRow?> GetResponseAsync(long messageId, long userId, CancellationToken ct);
+    /// <summary>Everyone's answers to the given polls and plans, in one query.</summary>
+    Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct);
+    /// <summary>Closes a poll now. False when it was already closed on demand.</summary>
+    Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct);
     /// <summary>Switches "alert me only when I am mentioned" on or off for the member.</summary>
     Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the member.</summary>

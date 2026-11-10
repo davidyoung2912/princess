@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Princess.Api.Domain;
 
 /// <summary>A card or place as it travels in <c>ChatMessages.Payload</c>: names, times and places only. Built by the server from its own data, never from what a client sent.</summary>
-public sealed record ChatCard(string Type, string Title, string? Subtitle = null, int? Day = null, string? Time = null, string? Place = null, string? Path = null, long? ExpiresAt = null, string? Note = null, Guid? Ref = null);
+public sealed record ChatCard(string Type, string Title, string? Subtitle = null, int? Day = null, string? Time = null, string? Place = null, string? Path = null, long? ExpiresAt = null, string? Note = null, Guid? Ref = null, string? EventId = null);
 
 /// <summary>
 /// The pure rules of typed chat messages (docs/chat-features-research.md, section 11, phase 3): the kinds of card a guest can share from the app, the place card with its expiry, pins and mentions.
@@ -11,10 +11,13 @@ public sealed record ChatCard(string Type, string Title, string? Subtitle = null
 /// </summary>
 public static class ChatCardRules
 {
-    public const string Text = "text", Card = "card", Place = "place";
+    public const string Text = "text", Card = "card", Place = "place", Plan = "plan";
 
-    /// <summary>The kinds a message can have: a typed message is a card or a place; everything else is ordinary text.</summary>
-    public static bool IsTyped(string? kind) => kind is Card or Place;
+    /// <summary>The kinds a message can have: a typed message is a card, a place or a plan (all drawn from a <see cref="ChatCard"/>); everything else is ordinary text, or a poll (<see cref="ChatPlanningRules.Poll"/>, which has its own payload).</summary>
+    public static bool IsTyped(string? kind) => kind is Card or Place or Plan;
+
+    /// <summary>A card, place, plan or poll is deleted and sent again, never reworded.</summary>
+    public static bool CannotEdit(string? kind) => IsTyped(kind) || kind == ChatPlanningRules.Poll;
 
     // What a card can be.
     public const string Excursion = "excursion", Dining = "dining", Booking = "booking", PortDay = "portDay", PlaceType = "place";
@@ -87,6 +90,7 @@ public static class ChatCardRules
     public static string Preview(string kind, ChatCard? card) => kind switch
     {
         Place => card is null ? "Meeting point" : $"Meet me at {card.Title}",
+        Plan => card is null ? "Plan" : ChatPlanningRules.PlanPreview(card.Title),
         Card => card?.Title ?? "Shared from the app",
         _ => "",
     };
@@ -96,9 +100,9 @@ public static class ChatCardRules
     public const int MaxPins = 3;
 
     /// <summary>
-    /// Who may pin or unpin: either person in a direct chat and any member of the booking's group, but only the creator of a made group (admins arrive with phase 4). Nobody pins in the Stanley chat.
+    /// Who may pin or unpin: either person in a direct chat and any member of the booking's group, but only an admin (the creator, or the one other person they named) of a made group. Nobody pins in the Stanley chat.
     /// </summary>
-    public static bool MayPin(string kind, bool isCreator) => kind is ChatConversationRules.Party or ChatConversationRules.Direct || (kind == ChatConversationRules.Group && isCreator);
+    public static bool MayPin(string kind, bool isAdmin) => kind is ChatConversationRules.Party or ChatConversationRules.Direct || (kind == ChatConversationRules.Group && isAdmin);
 
     /// <summary>Whether another pin fits.</summary>
     public static bool CanAddPin(int pinned) => pinned < MaxPins;

@@ -57,7 +57,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             Permanent: ChatConversationRules.IsPermanent(m.Kind), Voice: m.Persona, Subtitle: m.Subtitle,
             People: ChatConversationRules.IsPermanent(m.Kind) ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatMemberDto(p.PublicId, ShortName(p)))],
             Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null, MentionsOnly: m.MentionsOnly,
-            CanPin: ChatCardRules.MayPin(m.Kind, m.CreatedByUserId == actor.Id) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded));
+            CanPin: ChatCardRules.MayPin(m.Kind, ChatPlanningService.AdminOf(m, actor.Id)) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded),
+            AnnouncementOnly: m.Kind == ChatConversationRules.Group && m.AnnouncementOnly, Admin: ChatPlanningService.AdminOf(m, actor.Id));
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -111,6 +112,12 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var cards = page.Where(m => ChatCardRules.IsTyped(m.Kind) && m.DeletedAt is null).Select(m => ChatCardRules.Parse(m.Payload)).ToList();
         var stillBooked = ChatCardRules.SourceIds(cards).Any() ? await share.StillBookedAsync(cards, ct) : new HashSet<Guid>();
         var pinned = page.Count == 0 ? new HashSet<long>() : await store.ListPinnedIdsAsync(member.GroupId, ct);
+        // Phase 4: the answers to every poll and plan on the page, in one query (none when the page has none).
+        var answerable = page.Where(m => m.DeletedAt is null && (m.Kind == ChatPlanningRules.Poll || m.Kind == ChatCardRules.Plan)).Select(m => m.Id).ToList();
+        var answers = answerable.Count == 0 ? new List<ChatResponseRow>() : await store.ListResponsesAsync(answerable, ct);
+        var answersOf = answers.ToLookup(r => r.MessageId);
+        var adminHere = ChatPlanningService.AdminOf(member, actor.Id);
+        var blockedForAnswers = answerable.Count == 0 ? new HashSet<long>() : new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));
         var messages = new List<ChatMessageDto>();
         foreach (var m in page)
         {
@@ -142,8 +149,10 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var delivered = m.FromUserId == actor.Id && receiptsOf(actor.Id) && m.DeliveredBy.Any(id => id != actor.Id && receiptsOf(id));
             messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto,
                 Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null,
-                Kind: ChatCardRules.IsTyped(m.Kind) ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
-                Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()]));
+                Kind: ChatCardRules.IsTyped(m.Kind) || m.Kind == ChatPlanningRules.Poll ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
+                Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
+                Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options) : null,
+                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
@@ -160,15 +169,35 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");   // a question to Stanley goes through his own route
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var kind = body?.Kind is null or "" ? ChatCardRules.Text : body.Kind;
-        if (kind is not (ChatCardRules.Text or ChatCardRules.Card or ChatCardRules.Place)) throw ApiException.Invalid("kind");
+        if (kind is not (ChatCardRules.Text or ChatCardRules.Card or ChatCardRules.Place or ChatCardRules.Plan or ChatPlanningRules.Poll)) throw ApiException.Invalid("kind");
+        // An announcement-only group is read by everyone and posted to by its admins; votes, answers and reactions are not messages and stay open.
+        if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var now = await userClock.NowAsync(actor, ct);
         // A card or place is built here from the server's own data; the sender supplies a ref or a named place (and a short note), never the words.
         string text;
         string? payload = null;
         if (kind == ChatCardRules.Text) text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
+        else if (kind == ChatPlanningRules.Poll)
+        {
+            // A poll is the one typed message whose words come from the sender, so every line of it is held to the rules of a message.
+            var poll = ChatPlanningRules.CleanPoll(body?.Question, body?.Options) ?? throw ApiException.Invalid("poll");
+            var age = await AgeAsync(actor, now, ct);
+            foreach (var line in poll.Options.Prepend(poll.Question))
+            {
+                if (ServiceRules.ChildSafeProblem(line, age) is { } pollProblem) throw ApiException.Invalid(pollProblem);
+                if (ProfanityFilter.IsBlocked(line)) throw ApiException.Invalid("blocked");
+            }
+            payload = ChatPlanningRules.Serialise(poll);
+            text = ChatPlanningRules.PollPreview(poll.Question);
+        }
         else
         {
-            var card = kind == ChatCardRules.Card ? await share.CardAsync(actor, body?.ShareRef, ct) : ChatShareService.Place(body?.PlaceId, body?.Note, now);
+            var card = kind switch
+            {
+                ChatCardRules.Card => await share.CardAsync(actor, body?.ShareRef, ct),
+                ChatCardRules.Plan => await share.PlanAsync(actor, body?.ShareRef, body?.Note, ct),
+                _ => ChatShareService.Place(body?.PlaceId, body?.Note, now),
+            };
             payload = ChatCardRules.Serialise(card);
             if (ChatCardRules.HasForbiddenKey(payload)) throw ApiException.Invalid("kind");   // a guard: no card may carry money or identity
             text = ChatCardRules.Preview(kind, card);
@@ -225,6 +254,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
+        if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
         return await StoreAsync(actor, member, text, null, key, await userClock.NowAsync(actor, ct), ct, viaSms: true);
@@ -235,6 +265,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
+        if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var now = await userClock.NowAsync(actor, ct);
         var age = await AgeAsync(actor, now, ct);
         await EnforceRateAsync(actor, member, now, ct);
@@ -265,7 +296,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             quote = QuoteDto(new ChatQuoteRow { Id = quoted.Id, PublicId = quoted.PublicId, FromUserId = quoted.FromUserId, Text = quoted.Text, HasPhoto = quoted.Photo is not null, IsSystem = quoted.IsSystem }, actor.Id, peers);
         }
         var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, ReplyTo: quote,
-            Kind: ChatCardRules.IsTyped(kind) ? kind : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null);
+            Kind: ChatCardRules.IsTyped(kind) || kind == ChatPlanningRules.Poll ? kind : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null,
+            Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options) : null,
+            Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>()) : null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"
         await store.UnarchiveOthersAsync(member.GroupId, actor.Id, ct);
@@ -467,7 +500,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var now = await userClock.NowAsync(actor, ct);
         var why = ChatControlRules.ChangeProblem(message.IsSystem, message.FromStanley, message.FromUserId == actor.Id, message.DeletedAt is not null, message.Photo is not null, message.Urgency, message.At, now, forEdit);
         if (why is not null) throw Refusal(why);
-        if (forEdit && ChatCardRules.IsTyped(message.Kind)) throw ApiException.Invalid(ChatControlRules.NotMessage);   // a card is retracted, not reworded
+        if (forEdit && ChatCardRules.CannotEdit(message.Kind)) throw ApiException.Invalid(ChatControlRules.NotMessage);   // a card, plan or poll is retracted, not reworded
         return (member, message, now);
     }
 
@@ -521,7 +554,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     }
 
     /// <summary>
-    /// Pins a message to the top of the conversation, or takes the pin away: up to three, by anyone in a direct chat or the booking's group and by the creator of a made group. Everyone's open app is nudged to refetch; nobody gets a phone alert.
+    /// Pins a message to the top of the conversation, or takes the pin away: up to three, by anyone in a direct chat or the booking's group and by an admin (the creator, or the one other person they named) of a made group. Everyone's open app is nudged to refetch; nobody gets a phone alert.
     /// Returns the pin bar. 400 notMessage; 403 stanley or pin; 404; 409 closed or pinsFull.
     /// </summary>
     public async Task<List<ChatPinDto>> PinAsync(UserRecord actor, Guid conversationId, Guid messageId, bool on, CancellationToken ct)
@@ -529,7 +562,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
-        if (!ChatCardRules.MayPin(member.Kind, member.CreatedByUserId == actor.Id)) throw ApiException.Forbidden("pin");
+        if (!ChatCardRules.MayPin(member.Kind, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("pin");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
         if (!ChatReactionRules.CanTarget(message.IsSystem, message.FromStanley) || message.DeletedAt is not null) throw ApiException.Invalid("notMessage");
         if (on)

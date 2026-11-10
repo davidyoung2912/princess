@@ -31,7 +31,42 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         {
             foreach (var (id, card) in await CardsAsync(booking, ct)) items.Add(new ChatShareableDto(id, card.Type, card.Title, card.Subtitle, card.Day, card.Time));
         }
-        return new(items, places);
+        return new(items, places, await EventsAsync(actor, ct));
+    }
+
+    /// <summary>The programme events a plan can be made of: each event on each day the guest's own sailing runs it, by day and time. Empty without a current booking.</summary>
+    private async Task<List<ChatPlannableDto>> EventsAsync(UserRecord actor, CancellationToken ct)
+    {
+        var list = new List<ChatPlannableDto>();
+        if (await CurrentAsync(actor, ct) is not { } booking) return list;
+        var ship = AboardPlans.ShipOfSailing(booking.SailingId);
+        var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
+        for (var day = 1; day <= timeline.Days.Count && day <= Itinerary.MaxDay; day++)
+            foreach (var e in ProgramRules.On(timeline, day, false, [], ship))
+                list.Add(new ChatPlannableDto(ChatPlanningRules.PlanRef(e.Id, day), e.Title, day, e.Start, ProgramRules.PlaceName(e.PlaceId) is { Length: > 0 } place ? place : null));
+        return list;
+    }
+
+    /// <summary>
+    /// The sailing whose programme the event can go on for this guest on this day, or null: no current booking, an event their ship does not run, or a day it does not run. A plan is made, and answered Going, only where this is not null.
+    /// </summary>
+    public async Task<string?> ProgrammeSailingAsync(UserRecord actor, string eventId, int day, CancellationToken ct)
+    {
+        if (await CurrentAsync(actor, ct) is not { } booking) return null;
+        if (ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(booking.SailingId)) is not { } ev) return null;
+        var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
+        return day >= 1 && day <= timeline.Days.Count && DayKinds.Runs(timeline, day, ev.When) ? booking.SailingId : null;
+    }
+
+    /// <summary>
+    /// A plan card for a programme event on a day (<paramref name="shareRef"/> is <c>eventId:day</c> from the plannable list), built from the ship's programme: its title, day, time and place, and a short note. 400 <c>shareRef</c> when the guest's own sailing does not run it that day.
+    /// </summary>
+    public async Task<ChatCard> PlanAsync(UserRecord actor, string? shareRef, string? note, CancellationToken ct)
+    {
+        var (eventId, day) = ChatPlanningRules.ParsePlanRef(shareRef) ?? throw ApiException.Invalid("shareRef");
+        if (await ProgrammeSailingAsync(actor, eventId, day, ct) is not { } sailing) throw ApiException.Invalid("shareRef");
+        var ev = ProgramRules.ById(eventId, AboardPlans.ShipOfSailing(sailing))!;
+        return new ChatCard(ChatCardRules.Plan, ev.Title, null, day, ev.Start, ProgramRules.PlaceName(ev.PlaceId) is { Length: > 0 } place ? place : null, Note: ChatCardRules.CleanNote(note), EventId: ev.Id);
     }
 
     /// <summary>Every card the booking can make, keyed by its ref: the booking itself, each booked excursion and dinner, and each port day.</summary>

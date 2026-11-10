@@ -234,6 +234,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
         public long? StanleyUserId { get; init; }
         public long? CreatedByUserId { get; set; }
+        public bool AnnouncementOnly { get; set; }
         public List<Member> Members { get; } = [];
     }
 
@@ -248,6 +249,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public DateTime? ArchivedAt { get; set; }
         public bool NotifyAway { get; set; }
         public bool MentionsOnly { get; set; }
+        public bool IsAdmin { get; set; }
         public string? AwayStatus { get; set; }
         public long? LastRead { get; set; }
     }
@@ -309,7 +311,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         Persona = PersonaOf(c)?.Persona, Subtitle = PersonaOf(c)?.Subtitle,
         GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
-        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, MentionsOnly = me.MentionsOnly, CreatedByUserId = c.CreatedByUserId, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
+        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, MentionsOnly = me.MentionsOnly, IsAdmin = me.IsAdmin, AnnouncementOnly = c.AnnouncementOnly, CreatedByUserId = c.CreatedByUserId, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
     };
 
     private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
@@ -414,7 +416,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             Reactions = m.DeletedAt is not null ? [] : [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
             DeliveredBy = [.. MessageDeliveries.Where(x => x.MessageId == m.Id).Select(x => x.UserId)],
             Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
-            Kind = m.Kind, Payload = m.DeletedAt is null ? m.Payload : null, Mentions = m.DeletedAt is null ? [.. MentionsOf.Where(x => x.MessageId == m.Id).Select(x => x.UserId)] : [],
+            Kind = m.Kind, ClosedAt = m.ClosedAt, Payload = m.DeletedAt is null ? m.Payload : null, Mentions = m.DeletedAt is null ? [.. MentionsOf.Where(x => x.MessageId == m.Id).Select(x => x.UserId)] : [],
         }).ToList());
     }
 
@@ -520,6 +522,27 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     }
 
     public Task<HashSet<long>> ListPinnedIdsAsync(long groupId, CancellationToken ct) => Task.FromResult(Pins.Where(p => p.GroupId == groupId).Select(p => p.MessageId).ToHashSet());
+
+    /// <summary>One answer per (message id, person), like the real table's key.</summary>
+    public Dictionary<(long MessageId, long UserId), ChatResponseRow> Responses { get; } = [];
+
+    public Task SetResponseAsync(long messageId, long userId, int choice, bool addedToPlan, DateTime at, CancellationToken ct)
+    {
+        Responses[(messageId, userId)] = new ChatResponseRow(messageId, userId, choice, addedToPlan);
+        return Task.CompletedTask;
+    }
+
+    public Task<ChatResponseRow?> GetResponseAsync(long messageId, long userId, CancellationToken ct) => Task.FromResult(Responses.GetValueOrDefault((messageId, userId)));
+
+    public Task<List<ChatResponseRow>> ListResponsesAsync(IReadOnlyCollection<long> messageIds, CancellationToken ct) => Task.FromResult(Responses.Values.Where(r => messageIds.Contains(r.MessageId)).ToList());
+
+    public Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct)
+    {
+        var row = Messages.FirstOrDefault(m => m.Row.Id == messageId && m.Row.Kind == "poll")?.Row;
+        if (row is null || row.ClosedAt is not null) return Task.FromResult(false);
+        row.ClosedAt = at;
+        return Task.FromResult(true);
+    }
 
     public Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct)
     {

@@ -1205,6 +1205,72 @@ public class AboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task APollCountsOneChangeableVoteEachAndClosesOnDemandOnlyForItsAskerOrAnAdmin()
+    {
+        var group = F.Chat.MadeGroup(Priya.Id, Daniel.Id, Paul.Id);
+        var daniel = await DanielToken();
+        var priya = await SignIn(Priya);
+        var paul = await SignIn(Paul);
+        var asked = await ChatPost(Msgs(group), daniel, new { kind = "poll", question = "Where to eat?", options = new[] { "Pasta", "", "Pizza", "pasta" } });   // the empty row and the repeat are left out
+        Assert.Equal(HttpStatusCode.OK, asked.Status);
+        Assert.Equal(2, asked.Json.GetProperty("poll").GetProperty("options").GetArrayLength());
+        var id = asked.Json.GetProperty("id").GetString()!;
+        var vote = (string who, int option) => ChatPut($"{One(group, id)}/vote", who, new { option });
+        Assert.Equal([1, 0], (await vote(priya, 0)).Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray());
+        var changed = await vote(priya, 1);   // a vote can be changed
+        Assert.Equal([0, 1], changed.Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray());
+        Assert.Equal(1, changed.Json.GetProperty("mine").GetInt32());
+        Is(HttpStatusCode.BadRequest, "option", await vote(paul, 5));
+        // Only the person who asked, or an admin (Priya made the group), may close it early.
+        Is(HttpStatusCode.Forbidden, "close", await ChatPost($"{One(group, id)}/close", paul));
+        Assert.True((await ChatPost($"{One(group, id)}/close", priya)).Json.GetProperty("closed").GetBoolean());
+        Is(HttpStatusCode.Conflict, "pollClosed", await vote(paul, 0));
+        // A poll is deleted and sent again, never edited.
+        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPatch(One(group, id), daniel, new { text = "Changed" }));
+        var seen = (await ChatGet(Msgs(group), paul)).Json.GetProperty("messages").EnumerateArray().Last();
+        Assert.Equal("poll", seen.GetProperty("kind").GetString());
+        Assert.True(seen.GetProperty("tally").GetProperty("closed").GetBoolean());
+        Is(HttpStatusCode.BadRequest, "poll", await ChatPost(Msgs(group), daniel, new { kind = "poll", question = "Only one?", options = new[] { "Yes" } }));
+    }
+
+    [Fact]
+    public async Task APollClosesByItselfAfter24Hours()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        SetNow(SeaDay);
+        var id = (await ChatPost(Msgs(group), daniel, new { kind = "poll", question = "Early start?", options = new[] { "Yes", "No" } })).Json.GetProperty("id").GetString()!;
+        Assert.Equal(HttpStatusCode.OK, (await ChatPut($"{One(group, id)}/vote", daniel, new { option = 0 })).Status);
+        SetNow(SeaDay.AddHours(25));
+        Is(HttpStatusCode.Conflict, "pollClosed", await ChatPut($"{One(group, id)}/vote", daniel, new { option = 1 }));
+    }
+
+    [Fact]
+    public async Task OnlyAdminsPostInAnAnnouncementOnlyGroupButEveryoneCanStillVoteAndReact()
+    {
+        var group = F.Chat.MadeGroup(Priya.Id, Daniel.Id, Paul.Id);
+        var priya = await SignIn(Priya);
+        var daniel = await DanielToken();
+        var poll = (await ChatPost(Msgs(group), priya, new { kind = "poll", question = "Quiet deck?", options = new[] { "Yes", "No" } })).Json.GetProperty("id").GetString()!;
+        group.AnnouncementOnly = true;
+        Is(HttpStatusCode.Forbidden, "announcementOnly", await ChatPost(Msgs(group), daniel, new { text = "Hello" }));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(group), priya, new { text = "Notice for all" })).Status);   // the creator is an admin
+        Assert.Equal(HttpStatusCode.OK, (await ChatPut($"{One(group, poll)}/vote", daniel, new { option = 1 })).Status);
+        group.Members.First(m => m.UserId == Daniel.Id).IsAdmin = true;   // the second admin may post
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(group), daniel, new { text = "Me too" })).Status);
+        Assert.True((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == group.PublicId.ToString()).GetProperty("canPin").GetBoolean());
+    }
+
+    [Fact]
+    public async Task APlanNeedsAnEventTheGuestsOwnSailingRunsAndAnAnswerIsRecordedForTheGroup()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        Is(HttpStatusCode.BadRequest, "shareRef", await ChatPost(Msgs(group), daniel, new { kind = "plan", shareRef = "no-such-event:3" }));
+        Is(HttpStatusCode.BadRequest, "kind", await ChatPost(Msgs(group), daniel, new { kind = "banner" }));
+    }
+
+    [Fact]
     public async Task TooManyMessagesInAMinuteAreRefusedAndANewMinuteStartsFresh()
     {
         var group = F.Chat.Group(Daniel.Id, Priya.Id);

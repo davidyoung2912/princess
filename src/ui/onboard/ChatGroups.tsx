@@ -8,6 +8,7 @@ import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
@@ -77,6 +78,8 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
   const invite = useAction(async () => { await api.chatGroups.invite(id, picked); setPicked([]); done(t('cgroup.invited', { count: picked.length })) })
   const remove = useAction(async (personId: string, who: string) => { await api.chatGroups.remove(id, personId); done(t('cgroup.removed', { name: who })) })
   const leave = useAction(async () => { await api.chatGroups.leave(id); chatChanged(); onLeft() })
+  const admin = useAction(async (personId: string, on: boolean) => { await api.chatGroups.setAdmin(id, personId, on); done(t(on ? 'cgroup.admin.make' : 'cgroup.admin.remove')) })
+  const announce = useAction(async (on: boolean) => { await api.chatGroups.setAnnouncementOnly(id, on); done(t('cgroup.announce')) })
   return (
     <Dialog title={group.data?.name ?? t('cgroup.details')} onClose={onClose}>
       <p role="status" className="visually-hidden">{note}</p>
@@ -87,12 +90,22 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             <ul className="plain-list">
               {g.members.map((m) => (
                 <li key={m.id}>
-                  <span><strong>{m.you ? t('conv.you') : m.name}</strong>{m.creator && <> <span className="muted">{t('cgroup.creator')}</span></>}</span>
+                  <span><strong>{m.you ? t('conv.you') : m.name}</strong>{m.creator && <> <span className="muted">{t('cgroup.creator')}</span></>}{m.admin && <> <span className="muted">{t('cgroup.admin')}</span></>}</span>
+                  {g.isCreator && !m.you && !m.creator && <Button variant="tertiary" disabled={admin.busy} onClick={() => void admin.run(m.id, !m.admin)}>{t(m.admin ? 'cgroup.admin.remove' : 'cgroup.admin.make')}<span className="visually-hidden"> {m.name}</span></Button>}
                   {g.isCreator && !m.you && <Button variant="tertiary" disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
                 </li>
               ))}
             </ul>
             <Problem error={remove.error} />
+            {admin.error && <p role="alert" className="field__error">{t(admin.error.message === 'adminsFull' ? 'cgroup.admin.full' : admin.error.message === 'child' ? 'cgroup.admin.child' : 'cgroup.admin.failed')}</p>}
+            {g.isCreator && <p className="muted">{t('cgroup.admin.hint')}</p>}
+            {g.isAdmin && (
+              <>
+                <Chip pressed={g.announcementOnly === true} onToggle={() => { if (!announce.busy) void announce.run(g.announcementOnly !== true) }}>{t('cgroup.announce')}</Chip>
+                <p className="muted">{t('cgroup.announce.hint')}</p>
+                {announce.error && <p role="alert" className="field__error">{t('cgroup.announce.failed')}</p>}
+              </>
+            )}
             {g.isCreator && g.waiting.length > 0 && (
               <>
                 <h3>{t('cgroup.waiting')}</h3>

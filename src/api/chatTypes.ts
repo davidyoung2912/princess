@@ -120,6 +120,10 @@ export interface ChatConversation {
   canPin?: boolean
   /** You are alerted only when someone mentions you here (it still shows and counts everything). Absent when off. */
   mentionsOnly?: boolean
+  /** Phase 4, a made group: only admins post (votes, answers and reactions stay open). Absent when not. */
+  announcementOnly?: boolean
+  /** You are an admin of this made group (its creator, or the one other person the creator named). Absent when not. */
+  admin?: boolean
   /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
   voice?: StanleyVoice
   subtitle?: string
@@ -167,8 +171,12 @@ export interface ChatMessage {
   /** The sender deleted it for everyone: `text` is empty and there is no photo, quote or chips (phase 2). */
   deleted?: boolean
   /** Phase 3: `card` (something shared from the app) or `place` (a meeting point). Absent for text and photos. `text` then holds the words the list and alerts use; the screen draws `card`. */
-  kind?: 'card' | 'place'
+  kind?: 'card' | 'place' | 'plan' | 'poll'
   card?: ChatCard
+  /** Phase 4, a poll: the question and its options (the words come from the person who asked). */
+  poll?: ChatPoll
+  /** Phase 4, a poll or a plan: the answers as you see them. */
+  tally?: ChatTally
   /** It is one of the pinned messages in this conversation. */
   pinned?: boolean
   /** It mentions you by name (it breaks through a muted chat). */
@@ -178,20 +186,35 @@ export interface ChatMessage {
 }
 
 /** A card or place as the server built it: a title and where it applies, never a price, cabin or booking number. `expired` is set on a place whose time has passed; `path` is the screen it opens. */
-export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place'
+export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place' | 'plan'
 export interface ChatCard { type: ChatCardType; title: string; subtitle?: string; day?: number; time?: string; place?: string; path?: string; expiresAt?: number; expired?: boolean; note?: string; /** What it points at was cancelled after it was sent. */ gone?: boolean }
 
 /** One pinned message in the pin bar (up to three). `fromName` is absent for your own. */
-export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' }
+export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' | 'plan' }
 
 /** Something you can share from the app. `ref` is sent back to share it; the server rebuilds the card from its own data. */
-export interface ChatShareable { ref: string; type: Exclude<ChatCardType, 'place'>; title: string; subtitle?: string; day?: number; time?: string }
+export interface ChatShareable { ref: string; type: Exclude<ChatCardType, 'place' | 'plan'>; title: string; subtitle?: string; day?: number; time?: string }
 /** A named place on the ship a meeting point can be dropped at. */
 export interface ChatPlace { id: string; name: string; deck: number; section: string }
-export interface ChatShareables { items: ChatShareable[]; places: ChatPlace[] }
+/** A programme event on a day your own sailing runs it, which a plan can be made of. `ref` (`eventId:day`) is sent back to make the plan. */
+export interface ChatPlannable { ref: string; title: string; day: number; time: string; place?: string }
+export interface ChatShareables { items: ChatShareable[]; places: ChatPlace[]; events?: ChatPlannable[] }
+
+/** A poll: a question and two to five options. */
+export interface ChatPoll { question: string; options: string[] }
+/**
+ * The answers to a poll or plan. `counts` is one number per poll option, or going, maybe and no for a plan; `mine` is your own choice (the option's index, or 0, 1, 2 for a plan). A poll's answers are counted, never named.
+ * `closesAt` (ship milliseconds) and `mayClose` are for a poll; `going` names the others going to a plan; `addedToPlan` says your Going put the event on your own programme.
+ */
+export interface ChatTally { counts: number[]; mine?: number; closed: boolean; closesAt?: number; mayClose: boolean; going?: string[]; addedToPlan?: boolean }
+export type ChatRsvp = 'going' | 'maybe' | 'no'
 
 /** What a typed send carries: a `ref` from the shareable list, or a named place and an optional short note. */
-export type ChatTypedSend = { kind: 'card'; shareRef: string } | { kind: 'place'; placeId: string; note?: string }
+export type ChatTypedSend =
+  | { kind: 'card'; shareRef: string }
+  | { kind: 'place'; placeId: string; note?: string }
+  | { kind: 'plan'; shareRef: string; note?: string }
+  | { kind: 'poll'; question: string; options: string[] }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
 export interface ChatReaction { emoji: string; count: number; mine: boolean; names: string[] }
@@ -235,6 +258,12 @@ export interface ChatConversationsApi {
   shareable(): Promise<ChatShareables>
   /** Pins (up to three) or unpins a message and returns the pin bar. Rejects `invalid` (`notMessage`), `forbidden` (`pin`, `stanley`), `conflict` (`pinsFull`, `closed`) or `notFound`. */
   pin(id: string, messageId: string, on: boolean): Promise<ChatPin[]>
+  /** Votes for one option of a poll, or changes your vote until it closes. Returns the counts. Rejects `invalid` (`option`, `notPoll`), `forbidden` (`stanley`), `notFound` or `conflict` (`pollClosed`, `closed`). */
+  vote(id: string, messageId: string, option: number): Promise<ChatTally>
+  /** Closes a poll early (the person who asked it, or an admin). Returns the counts. Rejects `forbidden` (`close`), `invalid` (`notPoll`), `notFound` or `conflict` (`closed`). */
+  closePoll(id: string, messageId: string): Promise<ChatTally>
+  /** Answers a plan. Going puts its event on your programme when your sailing runs it that day (a child's answer never does); another answer takes it off if the plan put it there. Rejects `invalid` (`choice`, `notPlan`), `notFound` or `conflict` (`closed`). */
+  rsvp(id: string, messageId: string, choice: ChatRsvp): Promise<ChatTally>
   /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */
   mentionsOnly(id: string, on: boolean): Promise<boolean>
   /**
@@ -282,13 +311,13 @@ export interface ChatConversationsApi {
 
 // ---- Groups (docs/chat-plan.md, phase 5) ----
 
-export interface ChatGroupMember { id: string; name: string; you: boolean; creator: boolean }
+export interface ChatGroupMember { id: string; name: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean }
 
 /** An invitation the creator is still waiting on. `needsGuardian`: the person is a child and their guardian must say yes. */
 export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean }
 
 /** A group as a member sees it. `id` is the conversation id. `waiting` is filled only for the creator. `max` is the size limit, the creator included. */
-export interface ChatGroup { id: string; name: string; members: ChatGroupMember[]; waiting: ChatGroupWaiting[]; isCreator: boolean; max: number }
+export interface ChatGroup { id: string; name: string; members: ChatGroupMember[]; waiting: ChatGroupWaiting[]; isCreator: boolean; max: number; /** Only admins post. Absent when not. */ announcementOnly?: boolean; /** You are an admin (the creator, or the second admin). Absent when not. */ isAdmin?: boolean }
 
 /** `incoming` is for the guest; `approval` is for a child the guest is guardian of (`childId`, `childName`). `from` is the inviter's short name. */
 export interface ChatGroupInvite {
@@ -314,6 +343,10 @@ export interface ChatGroupsApi {
   rename(id: string, name: string): Promise<ChatGroup>
   /** Creator only. Rejects `invalid` (`person`, `notConnected`, `noGuardian`), `forbidden` (`creator`) or `conflict` (`full`). */
   invite(id: string, personIds: string[]): Promise<ChatGroup>
+  /** Creator only: names or releases the second admin (one beside the creator; a child is never one). Rejects `invalid` (`self`, `child`, `person`), `forbidden` (`creator`) or `conflict` (`adminsFull`). */
+  setAdmin(id: string, personId: string, on: boolean): Promise<ChatGroup>
+  /** An admin: only admins post, or everyone again. Rejects `forbidden` (`admin`). */
+  setAnnouncementOnly(id: string, on: boolean): Promise<ChatGroup>
   /** Creator only; never themself. */
   remove(id: string, personId: string): Promise<void>
   leave(id: string): Promise<void>

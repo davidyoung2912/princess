@@ -10,6 +10,8 @@ public sealed class ChatGroupRow
     public Guid PublicId { get; set; }
     public string Name { get; set; } = "";
     public long? CreatedByUserId { get; set; }
+    /// <summary>Phase 4: only admins post.</summary>
+    public bool AnnouncementOnly { get; set; }
 }
 
 /// <summary>A person in a group, with the names the screens show.</summary>
@@ -20,6 +22,8 @@ public sealed class ChatGroupPersonRow
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public bool IsSupervised { get; set; }
+    /// <summary>Phase 4: the second admin (the creator is always one and is not flagged).</summary>
+    public bool IsAdmin { get; set; }
 }
 
 /// <summary>One invitation, with the group and the names of the inviter and invitee.</summary>
@@ -51,6 +55,10 @@ public interface IChatGroupStore
     Task<ChatGroupRow?> GetForMemberAsync(long userId, Guid conversationId, CancellationToken ct);
     /// <summary>The people who are in the group now, the creator first, then in the order they joined.</summary>
     Task<List<ChatGroupPersonRow>> ListActiveAsync(long groupId, CancellationToken ct);
+    /// <summary>Names or releases the group's second admin.</summary>
+    Task SetAdminAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>Makes the group announcement-only (only admins post) or open again.</summary>
+    Task SetAnnouncementOnlyAsync(long groupId, bool on, CancellationToken ct);
     /// <summary>The invitations still waiting for the group.</summary>
     Task<List<ChatGroupInviteRow>> ListWaitingAsync(long groupId, CancellationToken ct);
     /// <summary>Whether the two people have an agreed chat connection (either way round).</summary>
@@ -106,7 +114,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<ChatGroupRow>(Sql.Cmd("""
-            SELECT g.Id, g.PublicId, g.Name, g.CreatedByUserId
+            SELECT g.Id, g.PublicId, g.Name, g.CreatedByUserId, g.AnnouncementOnly
             FROM dbo.ChatGroups g
             JOIN dbo.ChatGroupMembers m ON m.GroupId = g.Id AND m.UserId = @userId AND m.Status = 'active'
             WHERE g.PublicId = @conversationId AND g.Kind = 'group'
@@ -117,7 +125,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatGroupPersonRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised
+            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, m.IsAdmin
             FROM dbo.ChatGroupMembers m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.Users u ON u.Id = m.UserId
@@ -125,6 +133,18 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
             WHERE m.GroupId = @groupId AND m.Status = 'active'
             ORDER BY CASE WHEN u.Id = g.CreatedByUserId THEN 0 ELSE 1 END, m.JoinedAt, u.Id
             """, new { groupId }, null, ct))).ToList();
+    }
+
+    public async Task SetAdminAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET IsAdmin = @on WHERE GroupId = @groupId AND UserId = @userId AND Status = 'active'", new { groupId, userId, on }, null, ct));
+    }
+
+    public async Task SetAnnouncementOnlyAsync(long groupId, bool on, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroups SET AnnouncementOnly = @on WHERE Id = @groupId AND Kind = 'group'", new { groupId, on }, null, ct));
     }
 
     public async Task<List<ChatGroupInviteRow>> ListWaitingAsync(long groupId, CancellationToken ct)
@@ -211,7 +231,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
             return "full";
         }
         await c.ExecuteAsync(Sql.Cmd("""
-            UPDATE dbo.ChatGroupMembers SET Status = 'active', JoinedAt = @now, LeftAt = NULL, LastReadMessageId = NULL WHERE GroupId = @groupId AND UserId = @inviteeId;
+            UPDATE dbo.ChatGroupMembers SET Status = 'active', JoinedAt = @now, LeftAt = NULL, LastReadMessageId = NULL, IsAdmin = 0 WHERE GroupId = @groupId AND UserId = @inviteeId;
             IF @@ROWCOUNT = 0 INSERT INTO dbo.ChatGroupMembers (GroupId, UserId, Status, JoinedAt) VALUES (@groupId, @inviteeId, 'active', @now);
             INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At]) VALUES (@groupId, @inviteeId, @joinedLine, 1, @now);
             """, new { i.GroupId, i.InviteeId, joinedLine, now }, tx, ct));
@@ -224,7 +244,7 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var changed = await c.ExecuteAsync(Sql.Cmd("""
-            UPDATE dbo.ChatGroupMembers SET Status = @status, LeftAt = @now WHERE GroupId = @groupId AND UserId = @userId AND Status = 'active'
+            UPDATE dbo.ChatGroupMembers SET Status = @status, LeftAt = @now, IsAdmin = 0 WHERE GroupId = @groupId AND UserId = @userId AND Status = 'active'
             """, new { groupId, userId, status, now }, tx, ct));
         if (changed == 0) return false;
         // The line is sent from the person who went, at the moment they went, so it is the last thing they can read.

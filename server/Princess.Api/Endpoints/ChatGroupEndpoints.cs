@@ -26,6 +26,12 @@ public static class ChatGroupEndpoints
         chat.MapPost("/groups/{id:guid}/remove", async (Guid id, ChatGroupRemoveBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.RemoveAsync(await me.LoadAsync(ct), id, body, ct); return Results.NoContent(); })
             .WithSummary("Removes a member (creator only, never themself) and adds a line to the thread. 400 self, 403 creator, 404 person.");
 
+        chat.MapPut("/groups/{id:guid}/admins/{personId:guid}", async (Guid id, Guid personId, ChatGroupAdminBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.SetAdminAsync(await me.LoadAsync(ct), id, personId, body, ct)))
+            .WithSummary("Names or releases the group's second admin (creator only; the creator is always an admin, and a supervised child is never made one). An admin can pin, close a poll early and post in an announcement-only group. 400 self|child|person, 403 creator, 409 adminsFull.");
+
+        chat.MapPut("/groups/{id:guid}/announcement-only", async (Guid id, ChatGroupAnnouncementBody body, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => Results.Ok(await svc.SetAnnouncementOnlyAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Makes the group announcement-only (only admins post; votes, answers and reactions stay open to everyone) or open again. Creator or the second admin. 403 admin.");
+
         chat.MapPost("/groups/{id:guid}/leave", async (Guid id, ICurrentUser me, ChatGroupService svc, CancellationToken ct) => { await svc.LeaveAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
             .WithSummary("The caller leaves the group. They read nothing said after, and the rest see a line in the thread. When the creator leaves, the person who has been in longest becomes the creator.");
 

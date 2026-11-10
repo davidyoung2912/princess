@@ -3489,3 +3489,28 @@ GO
 IF COL_LENGTH(N'dbo.ChatGroupMembers', N'MentionsOnly') IS NULL
   ALTER TABLE dbo.ChatGroupMembers ADD MentionsOnly BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_MentionsOnly DEFAULT 0;
 GO
+-- Chat phase 4 (docs/chat-features-research.md, section 11): group planning. Kind gains poll and plan.
+-- ClosedAt: a poll closed on demand (it also closes by itself 24 hours after it was sent).
+IF COL_LENGTH(N'dbo.ChatMessages', N'ClosedAt') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD ClosedAt DATETIME2(0) NULL;
+GO
+-- One answer per person per poll or plan. Choice is the option index of a poll, or 0 going, 1 maybe, 2 no for a plan.
+-- AddedToPlan: this answer put the plan's event on the person's programme (so changing the answer takes it off again, and an event they had saved themselves is never removed).
+IF OBJECT_ID(N'dbo.ChatResponses', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatResponses (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, Choice INT NOT NULL, AddedToPlan BIT NOT NULL CONSTRAINT DF_ChatResponses_AddedToPlan DEFAULT 0,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatResponses_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatResponses PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT FK_ChatResponses_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatResponses_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+-- A second admin (the creator is always one) and announcement-only groups, where only admins post.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'IsAdmin') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD IsAdmin BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_IsAdmin DEFAULT 0;
+GO
+IF COL_LENGTH(N'dbo.ChatGroups', N'AnnouncementOnly') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD AnnouncementOnly BIT NOT NULL CONSTRAINT DF_ChatGroups_AnnouncementOnly DEFAULT 0;
+GO

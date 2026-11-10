@@ -14,13 +14,19 @@ public sealed record ChatGroupRenameBody(string? Name);
 public sealed record ChatGroupRemoveBody(Guid PersonId);
 
 /// <summary>A person in the group. <c>Creator</c> can rename, invite and remove.</summary>
-public sealed record ChatGroupMemberDto(Guid Id, string Name, bool You, bool Creator);
+public sealed record ChatGroupMemberDto(Guid Id, string Name, bool You, bool Creator, bool Admin = false);
 
 /// <summary>An invitation still waiting, seen by the creator. <c>NeedsGuardian</c>: the person is a child and their guardian must say yes.</summary>
 public sealed record ChatGroupWaitingDto(Guid InviteId, Guid PersonId, string Name, bool NeedsGuardian);
 
 /// <summary>A group as a member sees it. <c>Id</c> is the conversation id. <c>Waiting</c> is filled only for the creator. <c>Max</c> is the size limit.</summary>
-public sealed record ChatGroupDto(Guid Id, string Name, List<ChatGroupMemberDto> Members, List<ChatGroupWaitingDto> Waiting, bool IsCreator, int Max);
+public sealed record ChatGroupDto(Guid Id, string Name, List<ChatGroupMemberDto> Members, List<ChatGroupWaitingDto> Waiting, bool IsCreator, int Max, bool AnnouncementOnly = false, bool IsAdmin = false);
+
+/// <summary>Name or release the group's second admin (the creator only).</summary>
+public sealed record ChatGroupAdminBody(bool On);
+
+/// <summary>Make the group announcement-only (only admins post) or open again.</summary>
+public sealed record ChatGroupAnnouncementBody(bool On);
 
 /// <summary>
 /// An invitation waiting for the caller. <c>Kind</c> is <c>incoming</c> (for the caller) or <c>approval</c> (for a child the caller is guardian of; <c>ChildId</c> and <c>ChildName</c> say which).
