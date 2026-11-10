@@ -36,6 +36,8 @@ import { Button, LinkButton } from '../Button'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
 import { TextArea } from '../Field'
+import { MicButton, PocketPanel, ReadAloud } from './StanleyVoice'
+import { appendTranscript, cardSpeech } from '../../ai/stanleyVoice'
 
 /** Stanley's own wording for a reply; only an answer carries text from the server. */
 function wording(turn: StanleyTurn): string {
@@ -73,7 +75,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const { state: mem } = useMemory()
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [help, setHelp] = useState<'person' | 'crew' | null>(null)
+  const [help, setHelp] = useState<'person' | 'crew' | 'pocket' | null>(null)
   const [reveal, setReveal] = useState<{ id: string; steps: string[]; i: number } | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const end = useRef<HTMLLIElement>(null)
@@ -175,6 +177,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
               <li key={m.id} className={`ai-msg ai-msg--${m.role}`}>
                 <p className="ai-msg__who">{m.role === 'user' ? t('stanley.you') : t('stanley.from')}</p>
                 {m.card ? <StanleyAnswerCard card={m.card} onNavigate={onClose} /> : <p className="ai-msg__text">{reveal?.id === m.id ? reveal.steps[reveal.i] : m.text}</p>}
+                {m.role === 'assistant' && (m.card || m.text) && <p className="stanley__actions"><ReadAloud text={m.card ? cardSpeech(m.card, { abstained: t('stanley.read.abstained'), cached: t('stanley.read.cached') }) : m.text} /></p>}
                 {m.saved?.map((c) => <StanleyAnswerCard key={c.id} card={asSaved(c, t('stanley.offline.note'))} onNavigate={onClose} />)}
                 {m.source && !m.card && <p className="ai-msg__cites muted">{t(`stanley.source.${m.source}` as StringKey, { time: new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) })}</p>}
                 {m.actions && m.actions.length > 0 && <p className="stanley__actions">{m.actions.map((a) => <LinkButton key={a.path} variant="secondary" to={a.path} onClick={onClose}>{a.label}</LinkButton>)}</p>}
@@ -194,14 +197,17 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
         <p className="stanley__explain">
           <button type="button" className="link-button" onClick={explain} disabled={busy}>{t('stanley.explain.screen')}</button>{' · '}
           <button type="button" className="link-button" aria-expanded={help === 'person'} onClick={() => setHelp(help === 'person' ? null : 'person')}>{t('handoff.open')}</button>{' · '}
-          <button type="button" className="link-button" aria-expanded={help === 'crew'} onClick={() => setHelp(help === 'crew' ? null : 'crew')}>{t('crew.open')}</button>
+          <button type="button" className="link-button" aria-expanded={help === 'crew'} onClick={() => setHelp(help === 'crew' ? null : 'crew')}>{t('crew.open')}</button>{' · '}
+          <button type="button" className="link-button" aria-expanded={help === 'pocket'} onClick={() => setHelp(help === 'pocket' ? null : 'pocket')}>{t('stanley.pocket.open')}</button>
         </p>
         {help === 'person' && !(lastAnswer?.kind === 'handoff') && <HandoffCard messages={messages} initialTopic="person" />}
         {help === 'crew' && <CrewCards />}
+        {help === 'pocket' && <PocketPanel />}
         <HandoffCases />
         <form className="stanley__form" onSubmit={(e) => void submit(e)} noValidate>
           <TextArea label={t('stanley.ask')} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={MAX_MESSAGE + 100} rows={2} />
           <Button type="submit" disabled={busy || cooldown > 0}>{t('stanley.send')}</Button>
+          <MicButton onHeard={(heard) => setDraft((d) => appendTranscript(d, heard, MAX_MESSAGE))} />
         </form>
         {cooldown > 0 && <p role="status" className="muted stanley__note">{t('stanley.cooldown', { seconds: cooldown })}</p>}
         {problem && <p role="alert" className="field__error stanley__note">{problem}</p>}

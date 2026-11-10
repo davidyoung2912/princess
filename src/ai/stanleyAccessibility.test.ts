@@ -74,4 +74,19 @@ describe('Stanley surfaces: accessibility audit', () => {
     const css = ['src/styles/concierge.css', 'src/styles/motion.css'].map((f) => readFileSync(f, 'utf8')).join('\n')
     expect(css).toMatch(/prefers-reduced-motion/)
   })
+
+  it('keeps voice optional and under the guest\'s hand: pressed state, a status while listening, and no speech that starts by itself', () => {
+    const voice = src(join(DIR, 'StanleyVoice.tsx'))
+    expect(voice).toMatch(/aria-pressed=/)
+    expect(voice).toMatch(/role=["']status["']/)
+    // Speech is only started from a button handler, never from an effect.
+    expect(voice).not.toMatch(/useEffect\([^)]*speak\(/)
+    expect(src(join(DIR, 'StanleyDialog.tsx'))).toMatch(/<MicButton/)
+  })
+
+  it('lets the pocket card be printed on its own, with a large-print choice', () => {
+    const voice = src(join(DIR, 'StanleyVoice.tsx'))
+    expect(voice).toMatch(/<PrintCard/)
+    expect(voice).toMatch(/stanley\.pocket\.large/)
+  })
 })

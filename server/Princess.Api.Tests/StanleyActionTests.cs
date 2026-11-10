@@ -129,8 +129,8 @@ public class StanleyActionTests
         Assert.NotNull(StanleyIntents.Validate(Input("""{"kind":"reserve_dinner","day":3,"time":"21:45"}"""), WithPlan).Clarify);
         var model = StanleyIntents.Validate(Input("""{"kind":"reserve_dinner","day":3,"time":"19:00"}"""), WithPlan).Intent!;
         Assert.Equal(("3", "all"), (model.Arg("day"), model.Arg("who")));
-        Assert.Contains("fixed seating", StanleyActionRules.Problem("fixedSeating"));
-        Assert.Contains("already has a table", StanleyActionRules.Problem("clash"));
+        Assert.Contains("fixed seating", StanleyActionText.Problem("fixedSeating"));
+        Assert.Contains("already has a table", StanleyActionText.Problem("clash"));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Princess.Api.Contracts;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 

@@ -527,11 +527,11 @@ public class StanleyChangeTests
     }
 
     [Fact]
-    public void TheMemoryStoreKeepsEachGuestsOwnAndNeverAnothers()
+    public async Task TheMemoryStoreKeepsEachGuestsOwnAndNeverAnothers()
     {
         var store = new MemoryStanleyChangeStore();
-        store.PutAsync(1, "{\"a\":1}", DateTime.UtcNow, default).GetAwaiter().GetResult();
-        Assert.Equal("{\"a\":1}", store.GetAsync(1, default).GetAwaiter().GetResult());
-        Assert.Null(store.GetAsync(2, default).GetAwaiter().GetResult());
+        await store.PutAsync(1, "{\"a\":1}", DateTime.UtcNow, default);
+        Assert.Equal("{\"a\":1}", await store.GetAsync(1, default));
+        Assert.Null(await store.GetAsync(2, default));
     }
 }
