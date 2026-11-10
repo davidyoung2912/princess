@@ -357,6 +357,25 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.CompletedTask;
     }
 
+    public Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == userId);
+        return Task.FromResult(Visible(c, me).FirstOrDefault(m => m.PublicId == messagePublicId));
+    }
+
+    public Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct)
+    {
+        var row = Messages.First(m => m.Row.Id == messageId).Row;
+        if (row.AckedBy.Contains(userId)) return Task.FromResult(false);
+        row.AckedBy.Add(userId);
+        return Task.FromResult(true);
+    }
+
+    public Task<List<(Guid ConversationId, Guid MessageId)>> ListUnackedUrgentAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Mine(userId).Select(c => (C: c, Me: c.Members.First(m => m.UserId == userId))).Where(x => x.Me.Status == "active")
+            .SelectMany(x => Visible(x.C, x.Me).Where(m => m.Urgency == "urgent" && !m.IsSystem && m.FromUserId != userId && !m.AckedBy.Contains(userId)).Select(m => (x.C.PublicId, m.PublicId))).ToList());
+
     public Task<int> UnreadTotalAsync(long userId, CancellationToken ct) =>
         Task.FromResult(Mine(userId).Select(c => (C: c, Me: c.Members.First(m => m.UserId == userId))).Where(x => x.Me.Status == "active").Sum(x => UnreadIn(x.C, x.Me)));
 

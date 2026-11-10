@@ -51,11 +51,20 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 - Rows, the fake store and `docs/backend-data-model.md` updated.
 - Not in this phase: any front-end change, acknowledgement, list ordering, rate limit, audit, SMS rules.
 
-### Phase 2: acknowledgement
+### Phase 2: acknowledgement — built
 
 - `ChatMessageAcks` (message, user, at) and `POST /me/chat/conversations/{id}/messages/{messageId}/ack`; reading an urgent message in the open thread does not acknowledge it, only the explicit tap does.
 - The sender's thread shows who has acknowledged (names follow the receipts rule: first name and last initial, only members).
 - The summary gains `urgentUnacked` (a count and the conversation ids) so badges and the pinned state are the same on every device. A live nudge on acknowledge.
+
+As built:
+
+- Schema: `ChatMessageAcks (MessageId, UserId, AckedAt)`, keyed by the pair, cascading from the message.
+- `POST /me/chat/conversations/{id}/messages/{messageId}/ack` (`ChatService.AckAsync`): 204; idempotent; `404` for a message the caller cannot read (not a member, left, outside their window, from someone they blocked); `400 notUrgent` for a message that is not urgent, a system line or their own (`ChatUrgencyRules.CanAck`). Reading or marking a conversation read never acknowledges.
+- Thread messages: the sender of an urgent message gets `ackedBy` (public ids of members, empty until someone acknowledges); a reader gets `acked` (bool) on urgent messages from others. Both are omitted otherwise. Acknowledgement is deliberate, so it shows whatever the read-receipts setting is; names are resolved by the app from the member list (first name and last initial).
+- `GET /me/chat/summary` gains `urgentUnacked` and `urgentConversations` (ids, distinct), from `IChatStore.ListUnackedUrgentAsync`.
+- `ChatNotifier.AckedAsync`: a live nudge (kind `acked`, never a phone notice) to the sender and to the acknowledger's other devices.
+- Not in this phase: any front-end change, list ordering or pinning (phase 3).
 
 ### Phase 3: presentation (front end)
 

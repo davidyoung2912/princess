@@ -164,6 +164,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'ChatConnections'),
   (N'dbo', N'ChatGroups'),
   (N'dbo', N'ChatGroupMembers'),
+  (N'dbo', N'ChatMessageAcks'),
   (N'dbo', N'ChatMessages'),
   (N'dbo', N'ChatReads'),
   (N'dbo', N'ChatBlocks'),

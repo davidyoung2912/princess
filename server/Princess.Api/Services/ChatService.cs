@@ -73,7 +73,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
             var name = m.FromUserId == actor.Id || !byId.TryGetValue(m.FromUserId, out var sender) ? null : ShortName(sender);
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency)));
+            // Urgent only: the sender sees who has acknowledged (members only), a reader sees whether they have. Nobody else's acknowledgement is shown to a reader.
+            var urgent = m.Urgency == ChatUrgencyRules.Urgent;
+            var ackedBy = urgent && m.FromUserId == actor.Id ? m.AckedBy.Select(publicOf).OfType<Guid>().ToList() : null;
+            bool? acked = urgent && m.FromUserId != actor.Id ? m.AckedBy.Contains(actor.Id) : null;
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
@@ -161,6 +165,21 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var member = await MemberAsync(actor, conversationId, ct);
         await store.MarkReadAsync(member.GroupId, actor.Id, await store.GetReceiptsAsync(actor.Id, ct), await userClock.NowAsync(actor, ct), ct);
+    }
+
+    /// <summary>
+    /// The caller acknowledges an urgent message from someone else ("Got it"). Idempotent. The sender and the caller's other devices are nudged so the sender's "seen by" and the pinned state update.
+    /// 404 for a message the caller cannot read; 400 notUrgent for one that cannot be acknowledged.
+    /// </summary>
+    public async Task AckAsync(UserRecord actor, Guid conversationId, Guid messageId, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (member.Status != ChatConversationRules.Active) throw ApiException.NotFound();
+        var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
+        if (!ChatUrgencyRules.CanAck(message.Urgency, message.IsSystem, message.FromUserId == actor.Id)) throw ApiException.Invalid("notUrgent");
+        if (!await store.AddAckAsync(message.Id, actor.Id, await userClock.NowAsync(actor, ct), ct)) return;
+        await notifier.AckedAsync(message.FromUserId, conversationId, messageId, ct);
+        await notifier.AckedAsync(actor.Id, conversationId, messageId, ct);
     }
 
     public async Task<bool> MuteAsync(UserRecord actor, Guid conversationId, ChatMuteRequest? body, CancellationToken ct)

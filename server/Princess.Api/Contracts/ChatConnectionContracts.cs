@@ -19,7 +19,7 @@ public sealed record ChatConnectionsDto(
     List<ChatConnectionDto> Answers, List<ChatConnectionDto> Approvals);
 
 /// <summary>The numbers for a badge. <c>Unread</c> counts unread messages (phase 4; 0 until then).</summary>
-public sealed record ChatSummaryDto(int Incoming, int Approvals, int Answers, int NewlyConnected, int Unread);
+public sealed record ChatSummaryDto(int Incoming, int Approvals, int Answers, int NewlyConnected, int Unread, int UrgentUnacked, List<Guid> UrgentConversations);
 
 public sealed record ChatRequestBody(Guid ToUserId);
 

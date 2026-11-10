@@ -125,6 +125,8 @@ public sealed class ChatMessageRow
     public string Urgency { get; set; } = "normal";
     /// <summary>The people who have read it.</summary>
     public List<long> SeenBy { get; set; } = [];
+    /// <summary>The people who have acknowledged it (urgent messages only).</summary>
+    public List<long> AckedBy { get; set; } = [];
 }
 
 /// <summary>The person's own place in one conversation: the access check every read and write goes through (docs/chat-plan.md, 4.1).</summary>
@@ -252,6 +254,12 @@ public interface IChatStore
     /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>
     Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct);
     Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>One message the person may read in the conversation (their window, not from someone they blocked), or null.</summary>
+    Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct);
+    /// <summary>Records that the person acknowledged the message; false when they already had (nothing changes).</summary>
+    Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct);
+    /// <summary>The urgent messages from others that the person may read and has not acknowledged, as (conversation id, message id), for the badge and the pinned state.</summary>
+    Task<List<(Guid ConversationId, Guid MessageId)>> ListUnackedUrgentAsync(long userId, CancellationToken ct);
     /// <summary>Unread messages over every conversation, for the tab badge.</summary>
     Task<int> UnreadTotalAsync(long userId, CancellationToken ct);
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);

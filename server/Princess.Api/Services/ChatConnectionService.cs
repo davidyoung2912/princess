@@ -69,7 +69,8 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         await groups.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
         var invites = await groups.ListInvitesForAsync(actor.Id, ct);
         var forChild = invites.Count(i => i.GuardianUserId == actor.Id && i.Status == ChatGroupRules.AwaitingGuardian);
-        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct));
+        var urgent = await chat.ListUnackedUrgentAsync(actor.Id, ct);
+        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct), urgent.Count, [.. urgent.Select(u => u.ConversationId).Distinct()]);
     }
 
     /// <summary>The sender has seen the answers (declines, and new connections).</summary>

@@ -56,6 +56,11 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         return Deliver(toUserId, "message", notice, breaks || !muted, ct);
     }
 
+    /// <summary>An urgent message was acknowledged: a live nudge only (never a phone notice) so the sender's "seen by" and the reader's pinned state refresh at once.</summary>
+    public Task AckedAsync(long userId, Guid conversationId, Guid messageId, CancellationToken ct) =>
+        Deliver(userId, "acked", new PushNotice($"chat:ack:{conversationId:N}:{messageId:N}:{userId}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
+            new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
+
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 

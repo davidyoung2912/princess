@@ -37,6 +37,11 @@ public static class ChatUrgencyRules
     /// <summary>Messages that arrive by text or as photos are always <see cref="Normal"/>: the sender there cannot be checked for the right to use more.</summary>
     public static string ForChannel(bool viaSmsOrPhoto, string level) => viaSmsOrPhoto ? Normal : level;
 
+    /// <summary>
+    /// Whether a message can be acknowledged by this reader: it is urgent, written by a person (not a system line) and not by the reader. Reading the thread never acknowledges; only the explicit tap does.
+    /// </summary>
+    public static bool CanAck(string level, bool isSystem, bool isOwn) => level == Urgent && !isSystem && !isOwn;
+
     /// <summary>The first words of a phone notice for the level (the sender's name follows).</summary>
     public static string NoticeLead(string level) => level switch { Urgent => "Urgent message from", Important => "Important message from", _ => "New message from" };
 }

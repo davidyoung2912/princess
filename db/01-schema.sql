@@ -3277,6 +3277,20 @@ IF COL_LENGTH(N'dbo.ChatMessages', N'Urgency') IS NULL
   ALTER TABLE dbo.ChatMessages ADD Urgency NVARCHAR(10) NOT NULL CONSTRAINT DF_ChatMessages_Urgency DEFAULT N'normal' CONSTRAINT CK_ChatMessages_Urgency CHECK (Urgency IN (N'normal', N'important', N'urgent'));
 GO
 
+-- Who has acknowledged an urgent message (docs/chat-urgency-plan.md, phase 2). Only the explicit tap writes a row; reading the thread does not.
+IF OBJECT_ID(N'dbo.ChatMessageAcks', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatMessageAcks (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, AckedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatMessageAcks_AckedAt DEFAULT SYSUTCDATETIME(),
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatMessageAcks_CreatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatMessageAcks PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT FK_ChatMessageAcks_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatMessageAcks_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatMessageAcks_UserId ON dbo.ChatMessageAcks (UserId);
+END
+GO
+
 -- Where a guest's text replies go (the conversation they were last texted from) and when they said BACK (the bridge stays quiet until they are next ashore after that).
 IF OBJECT_ID(N'dbo.ChatSmsState', N'U') IS NULL
 BEGIN

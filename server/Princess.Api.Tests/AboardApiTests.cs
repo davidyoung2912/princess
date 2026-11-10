@@ -623,7 +623,7 @@ public class AboardApiTests : JourneyWorld
         Assert.Contains(mine.PublicId.ToString(), list);
         Assert.DoesNotContain(theirs.PublicId.ToString(), list);
         Assert.Equal(0, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
-        Assert.Empty(F.Chat.Messages.Where(m => m.GroupId == mine.Id));
+        Assert.DoesNotContain(F.Chat.Messages, m => m.GroupId == mine.Id);
     }
 
     [Fact]

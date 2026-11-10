@@ -43,6 +43,15 @@ public class ChatUrgencyRulesTests
         Assert.False(ChatUrgencyRules.BreaksThrough("normal"));
     }
 
+    [Theory]
+    [InlineData("urgent", false, false, true)]
+    [InlineData("urgent", true, false, false)]    // a system line
+    [InlineData("urgent", false, true, false)]    // the sender's own message
+    [InlineData("important", false, false, false)]
+    [InlineData("normal", false, false, false)]
+    public void OnlySomeoneElsesUrgentMessageCanBeAcknowledged(string level, bool system, bool own, bool allowed) =>
+        Assert.Equal(allowed, ChatUrgencyRules.CanAck(level, system, own));
+
     [Fact]
     public void TextsAndPhotosAreAlwaysNormal()
     {

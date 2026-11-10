@@ -449,6 +449,8 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         var ids = messages.Select(m => m.Id).ToArray();
         var reads = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatReads WHERE MessageId IN @ids", new { ids }, null, ct))).ToList();
         foreach (var m in messages) m.SeenBy = [.. reads.Where(r => r.MessageId == m.Id).Select(r => r.UserId)];
+        var acks = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatMessageAcks WHERE MessageId IN @ids", new { ids = messages.Where(m => m.Urgency == "urgent").Select(m => m.Id).ToArray() }, null, ct))).ToList();
+        foreach (var m in messages) m.AckedBy = [.. acks.Where(a => a.MessageId == m.Id).Select(a => a.UserId)];
         return messages;
     }
 
@@ -513,6 +515,42 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET Muted = @on WHERE GroupId = @groupId AND UserId = @userId", new { groupId, userId, on }, null, ct));
+    }
+
+    public async Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd($"""
+            SELECT m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms, m.Urgency
+            FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE m.GroupId = @groupId AND m.PublicId = @messagePublicId AND {Window}
+            """, new { groupId, userId, messagePublicId }, null, ct));
+    }
+
+    public async Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.ChatMessageAcks (MessageId, UserId, AckedAt)
+            SELECT @messageId, @userId, @at
+            WHERE NOT EXISTS (SELECT 1 FROM dbo.ChatMessageAcks a WHERE a.MessageId = @messageId AND a.UserId = @userId)
+            """, new { messageId, userId, at }, null, ct)) > 0;
+    }
+
+    public async Task<List<(Guid ConversationId, Guid MessageId)>> ListUnackedUrgentAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<(Guid, Guid)>(Sql.Cmd($"""
+            SELECT g.PublicId, m.PublicId
+            FROM dbo.ChatGroupMembers me
+            JOIN dbo.ChatGroups g ON g.Id = me.GroupId
+            JOIN dbo.ChatMessages m ON m.GroupId = g.Id
+            WHERE me.UserId = @userId AND me.Status = 'active' AND m.Urgency = 'urgent' AND m.IsSystem = 0 AND m.FromUserId <> me.UserId AND {Window}
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageAcks a WHERE a.MessageId = m.Id AND a.UserId = @userId)
+            ORDER BY m.Id
+            """, new { userId }, null, ct))).ToList();
     }
 
     public async Task<int> UnreadTotalAsync(long userId, CancellationToken ct)
