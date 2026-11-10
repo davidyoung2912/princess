@@ -1216,9 +1216,10 @@ public class AboardApiTests : JourneyWorld
         Assert.Equal(2, asked.Json.GetProperty("poll").GetProperty("options").GetArrayLength());
         var id = asked.Json.GetProperty("id").GetString()!;
         var vote = (string who, int option) => ChatPut($"{One(group, id)}/vote", who, new { option });
-        Assert.Equal([1, 0], (await vote(priya, 0)).Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray());
+        var first = (await vote(priya, 0)).Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray();
+        Assert.Equal(new[] { 1, 0 }, first);
         var changed = await vote(priya, 1);   // a vote can be changed
-        Assert.Equal([0, 1], changed.Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray());
+        Assert.Equal(new[] { 0, 1 }, changed.Json.GetProperty("counts").EnumerateArray().Select(c => c.GetInt32()).ToArray());
         Assert.Equal(1, changed.Json.GetProperty("mine").GetInt32());
         Is(HttpStatusCode.BadRequest, "option", await vote(paul, 5));
         // Only the person who asked, or an admin (Priya made the group), may close it early.
@@ -1240,8 +1241,8 @@ public class AboardApiTests : JourneyWorld
         var daniel = await DanielToken();
         foreach (var u in new[] { Priya.Id, Paul.Id }) { var m = group.Members.First(x => x.UserId == u); m.AwayStatus = "back"; m.NotifyAway = true; }
         F.Chat.Connected.Add((Daniel.Id, Priya.Id));   // Paul is not connected to Daniel
-        var back = (await ChatGet(Msgs(group), daniel)).Json.GetProperty("back").EnumerateArray().Select(n => n.GetString()).ToArray();
-        Assert.Equal(["Priya U."], back);
+        var back = (await ChatGet(Msgs(group), daniel)).Json.GetProperty("back").EnumerateArray().Select(n => n.GetString()!).ToArray();
+        Assert.Equal(new[] { "Priya U." }, back);
         group.Members.First(x => x.UserId == Priya.Id).NotifyAway = false;   // she did not choose to tell the chat
         Assert.False((await ChatGet(Msgs(group), daniel)).Json.TryGetProperty("back", out _));
     }

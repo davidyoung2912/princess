@@ -38,7 +38,7 @@ public class ChatCardRulesTests
     {
         var sent = new DateTime(2027, 3, 22, 16, 0, 0, DateTimeKind.Utc);
         var card = ChatShareService.Place(ShipPlaceId(), "  by the\r\nfountain ", sent);
-        var expiry = Shipboard.Ms(sent.AddHours(6));
+        var expiry = TripRules.ToMs(sent.AddHours(6));
         Assert.Equal(expiry, card.ExpiresAt);
         Assert.False(ChatCardRules.IsExpired(card.ExpiresAt, expiry - 1));
         Assert.True(ChatCardRules.IsExpired(card.ExpiresAt, expiry));
