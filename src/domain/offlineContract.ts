@@ -162,6 +162,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/plan/gifts': 'needs-connection',
   '/me/alerts': 'needs-connection',
   '/ship/read-aloud': 'needs-connection',
+  '/ship/away': 'offline',
   '/ship/port/snapshot': 'needs-connection',
   '/ship/report': 'needs-connection',
   '/chat': 'queued',

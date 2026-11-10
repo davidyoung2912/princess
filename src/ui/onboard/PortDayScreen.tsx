@@ -1,9 +1,8 @@
 import { ShowMe } from '../ShowMe'
 import { Link } from 'react-router'
 import { asPortDayCopy } from '../../api/guards'
-import type { PortDayView, TenderInfo, TourToday } from '../../api/types'
+import type { PortDayView, TenderInfo } from '../../api/types'
 import { TENDER_GROUPS } from '../../domain/allaboard'
-import { formatTime } from '../../domain/cruise'
 import { PORTS } from '../../domain/sailings'
 import { clockTime } from '../../domain/syncAge'
 import { api } from '../../runtime'
@@ -15,7 +14,6 @@ import { Banner } from '../Banner'
 import { PORT_CONTACTS } from '../../domain/services'
 import { LinkButton } from '../Button'
 import { Card } from '../Card'
-import { QrCode } from '../checkin/QrCode'
 import { ContactsAshore, LastMinute, Readiness } from '../aboard/PortExtras'
 import { BackLink, Saved } from './common'
 import { duration, useShipTime } from './shipTime'
@@ -23,6 +21,8 @@ import { PushSwitch } from '../account/PushPanels'
 import { PortCard } from './PortCard'
 import { PortParty } from './PortParty'
 import { PortPilot } from './PortPilot'
+import { Tours } from './PortTours'
+import { LeavingShipCard } from './AwayFromShip'
 import { PinAndDayCard, PocketStopwatch, PortStamps, SunNudge, TakeMeBack } from '../delights/PortDelights'
 import { TenderOutlook } from '../discover/TenderOutlook'
 import { StanleyMoment } from '../ai/StanleyMoment'
@@ -59,6 +59,7 @@ function Body({ v }: { v: PortDayView }) {
           <p>{t('port.skippedBody')}</p>
         </Banner>
       )}
+      <LeavingShipCard />
       <PortCard view={v.day} />
       <PocketStopwatch day={v.day} />
       <SunNudge day={v.day} />
@@ -100,37 +101,5 @@ function Tender({ v, tender }: { v: PortDayView; tender: TenderInfo }) {
       <p><ShowMe id="tender" /></p>
       <p>{tender.assistance ? t('tender.assist') : t('tender.assistAsk')} <Link to="/plan/assistance">{t('route.assistance')}</Link></p>
     </Card>
-  )
-}
-
-function Tours({ tours, port }: { tours: TourToday[]; port: string }) {
-  return (
-    <section aria-labelledby="tours-h">
-      <h2 id="tours-h">{th('port.tours')}</h2>
-      {tours.length === 0 ? <p>{t('port.noTours', { port: PORTS[port as keyof typeof PORTS]?.name ?? port })} <Link to="/plan/excursions">{t('route.excursions')}</Link></p> : (
-        <ul className="card-grid">
-          {tours.map((x) => (
-            <li key={x.id} className="card">
-              <h3 className="card__title">{x.name}</h3>
-              <p className="muted">{t('port.tourOperated')}</p>
-              <ul className="tour__facts">
-                <li>{t('port.meet', { time: formatTime(x.start) })}</li>
-                <li>{x.meeting}</li>
-                <li>{t('port.backBy', { time: formatTime(x.backBy) })}</li>
-                {x.tender && <li>{t('port.tenderTour')}</li>}
-              </ul>
-              <div className="qr-row">
-                {x.guests.map((g) => (
-                  <figure key={g.id} className="qr-fig">
-                    <QrCode text={g.code} label={t('port.qr', { name: g.name, tour: x.name })} className="pass__qr" />
-                    <figcaption>{g.name}</figcaption>
-                  </figure>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   )
 }

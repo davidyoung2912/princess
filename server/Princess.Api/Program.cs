@@ -94,6 +94,7 @@ services.AddScoped<IStaffTicketStore, DapperStaffTicketStore>();
 services.AddScoped<StateService>();
 services.AddScoped<IPortRowStore, DapperPortRowStore>();
 services.AddScoped<PortRowService>();
+services.AddScoped<GangwayService>();
 services.AddScoped<FamilyHomeService>();
 services.AddScoped<IMediaStore, DapperMediaStore>();
 services.AddScoped<MediaService>();

@@ -177,6 +177,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'S36', path: '/ship/dnd', titleKey: 'screen.S36.title', subtextKey: 'screen.S36.subtext', family: 'S' },
   { id: 'S37', path: '/ship/port', titleKey: 'screen.S37.title', subtextKey: 'screen.S37.subtext', family: 'S' },
   { id: 'S38', path: '/ship/port/guide', titleKey: 'screen.S38.title', subtextKey: 'screen.S38.subtext', family: 'S' },
+  { id: 'S50', path: '/ship/away', titleKey: 'screen.S50.title', subtextKey: 'screen.S50.subtext', family: 'S' },
   { id: 'S39', path: '/ship/port/snapshot', titleKey: 'screen.S39.title', subtextKey: 'screen.S39.subtext', family: 'S' },
   { id: 'C01', path: '/chat', titleKey: 'screen.C01.title', subtextKey: 'screen.C01.subtext', family: 'C' },
   { id: 'S40', path: '/ship/family', titleKey: 'screen.S40.title', subtextKey: 'screen.S40.subtext', family: 'S' },
@@ -332,7 +333,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your day ashore, and when to be back.',
     tiles: ['S37', 'S38', 'P37', 'S32', 'P31', 'S40'],
     tabs: [
-      { label: 'Port', colour: 'teal', subtext: 'Your day ashore, with the all-aboard time.', screens: ['S37', 'S38', 'S39', 'H09', 'P37', 'P44', 'S32', 'P31', 'H38', 'S33', 'S45', 'S46', 'H25', 'H22', 'P34', 'P35'] },
+      { label: 'Port', colour: 'teal', subtext: 'Your day ashore, with the all-aboard time.', screens: ['S37', 'S50', 'S38', 'S39', 'H09', 'P37', 'P44', 'S32', 'P31', 'H38', 'S33', 'S45', 'S46', 'H25', 'H22', 'P34', 'P35'] },
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['C01', 'S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],

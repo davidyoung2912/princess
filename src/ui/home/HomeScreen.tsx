@@ -47,6 +47,8 @@ import { HeroCount } from '../HeroCount'
 import { AtmosphereHero } from '../AtmosphereHero'
 import { DayHeader } from '../DayHeader'
 import { SailAwayCard } from '../SailAwayCard'
+import { useAwayFromShip } from '../../hooks/useAwayFromShip'
+import { AwayFromShipPanel, LeavingShipCard } from '../onboard/AwayFromShip'
 
 /** Home for a booked guest: the one next step, then the cruise to browse. The next step follows the stage of the trip (UX-01, UX-02: required tasks first, no offers). */
 export function HomeScreen() {
@@ -58,6 +60,9 @@ export function HomeScreen() {
   const now = useNow()
   const counts = useCountdowns(trip, now)
   const moment = useMoment(!!today.data?.aboard)
+  const away = useAwayFromShip()
+  // While the guest is off the ship, Home is the way back and what they need in hand, not the on-board day.
+  if (away.away && away.day) return <div className="page page--wide"><AwayFromShipPanel day={away.day} /></div>
   if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
     return (
@@ -106,6 +111,7 @@ export function HomeScreen() {
           {moment && <MomentCard moment={moment} />}
         </div>
         <SailAwayCard today={today.data} />
+        <LeavingShipCard />
         <DayHeader today={today.data} />
         <TodayStrip />
         {!ABOARD_STAGES.includes(stage) && !moment && <StageLanding />}

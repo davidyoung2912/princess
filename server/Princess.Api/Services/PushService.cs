@@ -140,10 +140,12 @@ public sealed class PushService(
         // Emails likewise go only to an address the guest has confirmed.
         var emailOk = !string.IsNullOrWhiteSpace(actor.Email) && await emailCheck.IsVerifiedAsync(actor, ct);
         // Only the payment and travel notices (instalments, tender, flight) go beyond the phone; the on-board and port-day ones are for the phone alone.
-        foreach (var n in notices.Where(n => n.Kind is "payment" or "travel"))
+        // The exception is the "head back to the ship" notice for a guest who is away: it also goes by text to a confirmed number, straight away, because a guest ashore may have no data
+        // for the push to arrive on (the unacknowledged-alert fallback below only starts once a push has reached a phone). Never by email: nobody reads it on the pier.
+        foreach (var n in notices.Where(n => n.Kind is "payment" or "travel" || AwayRules.IsReturnNotice(n)))
         {
             var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
-            if (emailOk && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
+            if (emailOk && !AwayRules.IsReturnNotice(n) && !sentKeys.Contains("email:" + n.Key) && PushRules.Reach(n, prefs, "email", local)
                 && await email.SendAsync(NoticeEmail(actor, n), ct))
                 await store.AddDeliveryAsync(actor.Id, new("email:" + n.Key, n.Kind, n.Bypass, "sent", null, 1, paramsJson, now, true), now, ct);
             if (!string.IsNullOrWhiteSpace(phone) && !sentKeys.Contains("sms:" + n.Key) && PushRules.Reach(n, prefs, "sms", local)
@@ -225,11 +227,12 @@ public sealed class PushService(
         var port = AboardRules.PortDayAt(TimelineBook.For(booking.SailingId, dep), now) is { } p ? AboardRules.WithState(p, now) : null;
         var rows = port is null ? [] : (await portRows.ListAsync(booking.BookingId, ct)).Where(r => !r.Deleted).ToList();
         var notBack = port is not null && rows.Any(r => r.Kind == "presence" && r.Key.StartsWith(port.Date + "|", StringComparison.Ordinal) && Status(r.Json) is not (null or "back"));
+        var guestAway = port is not null && AwayRules.IsAway(AwayRules.StatusOf(rows.FirstOrDefault(r => r.Kind == "presence" && r.Key == AwayRules.PresenceKey(port.Date, actor.PublicId))?.Json));
         var alert = rows.FirstOrDefault(r => r.Kind == "setting" && r.Key == "alertBefore")?.Json is { } a && int.TryParse(a, out var minutes) ? minutes : 45;
         var buffer = port is null ? null : PlanBuffer(rows.FirstOrDefault(r => r.Kind == "plan" && r.Key == port.Date)?.Json);
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
         var watches = await watchService.WatchAsync(booking, trip, TripRules.Today(now), ct);
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight, watches.InstalmentAuto && watches.Instalment is { } ni && string.CompareOrdinal(ni.Date, TripRules.Today(now).ToString("yyyy-MM-dd")) <= 0, watches.InstalmentTaken, stanley);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight, watches.InstalmentAuto && watches.Instalment is { } ni && string.CompareOrdinal(ni.Date, TripRules.Today(now).ToString("yyyy-MM-dd")) <= 0, watches.InstalmentTaken, stanley, GuestAway: guestAway);
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>

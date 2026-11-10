@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { Link, useLocation } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
-import { MAX_MESSAGE } from '../../ai/guard'
+import { MAX_MESSAGE, screen } from '../../ai/guard'
+import { AWAY_CHIPS, awayAnswer, awayTopic } from '../../ai/stanleyAway'
+import { useAwayFacts } from '../../hooks/useAwayFacts'
 import { clockHhmm, planSnapshot, type ActionContext, type StanleyAction } from '../../ai/stanleyAction'
 import { decideStanley } from '../../ai/stanleyDecide'
 import { answerOf, LIBRARY, questionOf, type LibraryEntry } from '../../ai/stanleyLibrary'
@@ -71,6 +73,8 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
   const dayPlan = useDayPlan(useCurrentDay())
   const allAboardAt = useOnboardToday(hasBooking).data?.portDay?.state.at ?? null
   const [settings] = useSettings()
+  // While the guest is off the ship Stanley answers on the phone, about the port and getting back, and never calls the server.
+  const awayFacts = useAwayFacts()
   const screenId = screenForPath(useLocation().pathname)?.id
   const { state: mem } = useMemory()
   const [problem, setProblem] = useState<string | null>(null)
@@ -106,6 +110,14 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
     const withUser = [...getStanleyThread(), asked]
     setStanleyThread(withUser)
     setDraft('')
+    // Away from the ship: the safety screen still comes first (an emergency goes to the handoff below); anything else is answered here, from what the app holds.
+    if (awayFacts && !screen(asked.text)) {
+      const topic = awayTopic(asked.text)
+      setStanleyThread([...withUser, { id: `a-${at}-${withUser.length}`, role: 'assistant', text: awayAnswer(topic, awayFacts, t as (k: string, p?: Record<string, string | number>) => string), at: Date.now(), kind: 'answer' }])
+      countTier('library', `away:${topic ?? 'none'}`)
+      setNow(Date.now())
+      return
+    }
     setBusy(true)
     // One front door: the authored library first (free, on the device), then a ship fact; everything else, including a request to change something, goes to the server's gateway, which picks the source or prepares a preview.
     // The safety screen comes first, so an emergency is never answered from a library or a model. The server's switch can turn the library off.
@@ -168,8 +180,9 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
       <div className="stanley">
         {messages.length === 0 ? (
           <div className="stanley__empty">
-            <p>{t('stanley.empty')}</p>
-            <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button><WhyThis kind="suggestion" fact={t('stanley.why.fact.suggestion')} what={t(k)} /></li>)}</ul>
+            <p>{awayFacts ? t('away.mode') : t('stanley.empty')}</p>
+            {awayFacts && <ul className="stanley__tries">{AWAY_CHIPS.map((c) => <li key={c}><button type="button" className="link-button" onClick={() => pick(t(`away.chip.${c}` as StringKey))}>{t(`away.chip.${c}` as StringKey)}</button></li>)}</ul>}
+            {!awayFacts && <ul className="stanley__tries">{(['stanley.try.1', 'stanley.try.2', 'stanley.try.3'] as const).map((k) => <li key={k}><button type="button" className="link-button" onClick={() => setDraft(t(k))}>{t(k)}</button><WhyThis kind="suggestion" fact={t('stanley.why.fact.suggestion')} what={t(k)} /></li>)}</ul>}
           </div>
         ) : (
           <ol className="ai-log stanley__log" role="log" aria-live="polite" aria-label={t('stanley.log')}>
@@ -192,6 +205,7 @@ export function StanleyDialog({ onClose, prefill = '' }: { onClose: () => void; 
             <li ref={end} aria-hidden="true" />
           </ol>
         )}
+        {awayFacts && messages.length > 0 && <p role="status" className="muted stanley__note">{t('away.mode')}</p>}
         {status.degraded.length > 0 && <p role="status" className="muted stanley__note">{t('stanley.degraded')}</p>}
         {busy && <p role="status" className="muted stanley__typing"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span className="visually-hidden">{t('stanley.typing')}</span></p>}
         <p className="stanley__explain">

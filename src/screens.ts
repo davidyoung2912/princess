@@ -108,6 +108,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/plan/gifts': screen(() => import('./ui/onboard/FinishMoreScreens'), 'GiftsScreen'),
   '/me/alerts': screen(() => import('./ui/onboard/FinishMoreScreens'), 'AlertsScreen'),
   '/ship/read-aloud': screen(() => import('./ui/onboard/FinishMoreScreens'), 'ReadAloudScreen'),
+  '/ship/away': screen(() => import('./ui/onboard/AwayFromShip'), 'AwayFromShipScreen'),
   '/ship/port/snapshot': screen(() => import('./ui/onboard/FinishMoreScreens'), 'PortSnapshotScreen'),
   '/home/ask': screen(() => import('./ui/home/AskScreen'), 'AskScreen'),
   '/plan/autopilot': screen(() => import('./ui/plan/AutopilotScreen'), 'AutopilotScreen'),

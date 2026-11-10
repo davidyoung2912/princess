@@ -15,7 +15,9 @@ public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
     IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
     InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
-    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null, IReadOnlyList<string>? HelperPrepared = null);
+    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null, IReadOnlyList<string>? HelperPrepared = null,
+    // The guest's own presence for the port day says they are off the ship (see AwayRules).
+    bool GuestAway = false);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -101,6 +103,9 @@ public static class PushRules
                     new() { ["port"] = day.Port, ["time"] = day.AllAboardShip }));
             }
         }
+
+        // A guest who has said they are off the ship also hears when to start back (the pier gate or tender landing time, before all-aboard itself).
+        if (i.GuestAway && i.PortDay is { } away && i.ArrivedInPort) list.AddRange(AwayRules.ReturnNotices(away, i.PlanBuffer, i.Now));
 
         foreach (var d in i.Disruptions)
         {

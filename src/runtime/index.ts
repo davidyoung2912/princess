@@ -55,6 +55,7 @@ import { registerSyncBindings } from '../sync/bindings'
 import { createHttpRemote } from '../sync/httpRemote'
 import { createHttpPortRows } from '../sync/httpPortRows'
 import { portRows, setPortRowsRemote } from '../sync/portRows'
+import { setGangwayRemote } from '../sync/gangway'
 import { channel } from './channel'
 
 const safe = (get: () => Storage): Storage | null => {
@@ -278,6 +279,7 @@ export const partyShare = {
   for (const f of [savedFacts, dayPlanFeed, weekFeed, skyFeed, flightFeed, conditionsFeed, crowdFeed, faresFeed, pulseFeed, pulseDayFeed, stormFeed, tenderFeed, skyNightFeed, positionFeed, seaFeed, weatherFeed, nauticalFeed, alongFeed, loungerFeed, sightingsFeed, foundFeed, openingFeed, qualityFeed, friendReplyFeed, embarkFeed, cabinGuideFeed]) auth.subscribe(f.forget)
   // A demo account's controls (clock, scenarios) are sent to the server so its own "now" agrees, and a new device takes them back; real accounts send nothing.
   const demoOnly = <T,>(call: () => Promise<T>): Promise<T | undefined> => (auth.current()?.user?.isDemo ? call() : Promise.resolve(undefined))
+  setGangwayRemote({ scan: (direction) => demoOnly(() => http.post('/demo/gangway', { direction })) })
   setDemoRemote({
     save: (payload) => demoOnly(() => http.put('/demo/state', payload)),
     jump: (at) => demoOnly(() => http.post('/demo/jump', { at })),

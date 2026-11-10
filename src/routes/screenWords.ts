@@ -151,6 +151,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/ship/safe-ashore': 'safe ashore; going ashore safely; port safety; scams',
   '/ship/allergy-chain': 'allergy confidence; allergy; kitchen knows; safe food',
   '/ship/read-aloud': 'read aloud; speak; listen; screen reader; audio',
+  '/ship/away': 'away from ship; leaving the ship; going ashore; off the ship; back aboard; return time; all aboard',
   '/ship/port/snapshot': 'port snapshot; port today; quick port facts; port summary',
   '/ship/report': 'report a concern; security; suspicious; report something',
   '/book': 'book your cruise; book; reserve; new booking; buy',

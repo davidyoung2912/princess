@@ -15,6 +15,8 @@ public static class DemoEndpoints
             .WithSummary("Sets the demo clock offset, speed and scenarios. 400 for an offset over a year, a speed outside 0 to 3600 or an unknown scenario; 404 unless a demo account.");
         demo.MapPost("/jump", async (DemoJumpDto body, DemoService svc, CancellationToken ct) => Results.Ok(await svc.JumpAsync(body, ct)))
             .WithSummary("Moves the demo clock so its \"now\" is `at` (milliseconds since 1970), keeping speed and scenarios. 400 badOffset for a moment over a year from real time; 404 unless a demo account.");
+        demo.MapPost("/gangway", async (GangwayScanDto body, GangwayService svc, CancellationToken ct) => Results.Ok(await svc.DemoScanAsync(body, ct)))
+            .WithSummary("Stands in for a Medallion read at the gangway: { direction: on | off }. on marks the guest back aboard, off marks them away, for today's port day, in the same presence row the app writes by hand. Returns { status, at, port, date }. 400 badDirection or noPortDay (the ship is not in port); 404 unless a demo account.");
         demo.MapPost("/reset", async (DemoService svc, CancellationToken ct) => Results.Ok(await svc.ResetAsync(ct)))
             .WithSummary("Back to real time at normal speed with no scenarios. 404 unless a demo account.");
     }

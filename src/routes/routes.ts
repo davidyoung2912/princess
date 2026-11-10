@@ -122,6 +122,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/ship/where', titleKey: 'route.where', tab: 'ship', phase: 28 },
   { path: '/ship/sea', titleKey: 'route.sea', tab: 'ship', phase: 28 },
   { path: '/ship/along', titleKey: 'route.along', tab: 'ship', phase: 28 },
+  { path: '/ship/away', titleKey: 'route.awayFromShip', tab: 'ship', phase: 29 },
   { path: '/ship/port/guide', titleKey: 'route.portGuide', tab: 'ship', phase: 23 },
   { path: '/ship/order', titleKey: 'route.order', tab: 'ship', phase: 7 },
   { path: '/ship/family', titleKey: 'route.family', tab: 'ship', phase: 7 },
