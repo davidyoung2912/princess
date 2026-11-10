@@ -13,7 +13,7 @@ import {
   canTarget, conversationFromSearch, deliveryOf, dividerBefore, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
   QUICK_REPLY_KEYS, quoteSummary, type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
-import { chipLabel, myReaction, REACTIONS, toggleReaction, withReactions } from '../../domain/chatReactions'
+import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
 import { readDraft, saveDraft } from '../../domain/chatDrafts'
 import { useLongPress } from '../../hooks/useLongPress'
 import { ashoreNames } from '../../domain/chatSms'
@@ -307,20 +307,37 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     api.chatConversations.delivered(id).catch(() => { deliveredTo.current = null })
   }, [phase, offline, messages, mine, id, conversation?.kind])
 
-  // A reaction shows at once and the server's answer replaces it; if the server refuses, the thread is read again so the screen tells the truth.
-  const react = useAction(async (messageId: string, emoji: string) => {
-    setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, toggleReaction(x.reactions, emoji)) : x)))
+  // A quote whose original is on an older page: read older pages (up to ten) until it is on screen, then go to it. Gives up quietly when it is not there.
+  const pendingJump = useRef<string | null>(null)
+  const jump = useAction(async (target: string) => {
+    if (loadingOlder.current) return
+    loadingOlder.current = true
+    pendingJump.current = target
     try {
-      const chips = await api.chatConversations.react(id, messageId, emoji)
-      setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, chips) : x)))
-      const held = myReaction(chips)
-      setAnnounce(held ? t('conv.youReacted', { emoji: held }) : t('conv.reactionRemoved'))
-    } catch (e) {
-      void load()
-      throw e
+      let before = messages[0]?.id
+      for (let page = 0; page < 10 && before; page++) {
+        const th = await api.chatConversations.thread(id, before)
+        setMessages((cur) => withOlder(cur, th.messages))
+        setHasMore(th.hasMore)
+        if (th.messages.some((x) => x.id === target) || !th.hasMore) break
+        before = th.messages[0]?.id
+      }
+    } finally {
+      loadingOlder.current = false
+      // The page that holds it has rendered by now or never will: whichever, stop waiting.
+      setTimeout(() => { pendingJump.current = null }, 0)
     }
   })
-  const runReact = useLatest((messageId: string, emoji: string) => void react.run(messageId, emoji))
+  const runJump = useLatest((target: string) => void jump.run(target))
+  useEffect(() => {
+    const target = pendingJump.current
+    const el = target ? document.getElementById(`msg-${target}`) : null
+    if (!el) return
+    pendingJump.current = null
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    el.focus({ preventScroll: true })
+  }, [messages])
+
   const form = useRef<HTMLFormElement>(null)
   const runReply = useLatest((m: ChatMessage) => { setReplyTo(m); form.current?.querySelector('textarea')?.focus() })
   const jumpToUnread = () => {
@@ -357,7 +374,29 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [problem, setProblem] = useState<SendProblem | null>(null)
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
-  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined) : Promise.resolve()), () => void load())
+  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => {
+    const job = readReactionJob(p)
+    if (job) return api.chatConversations.setReaction(job.conversation, job.messageId, job.emoji)
+    return p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined) : Promise.resolve()
+  }, () => void load())
+  // Reactions held for signal are laid over the thread, so the chip stays as the guest left it until the server has it.
+  const heldReactions = outbox.items.map((x) => readReactionJob(x.payload)).filter((j): j is ReactionJob => j !== null && j.conversation === id)
+  // A reaction shows at once. With signal the server's answer replaces it; without, the tap is held and sent when the phone is back (it says exactly what is wanted, so replaying it is safe).
+  const react = useAction(async (messageId: string, picked: string) => {
+    const current = messages.find((x) => x.id === messageId)
+    const wanted = nextReaction(current ? heldReactions.reduce((r, j) => (j.messageId === messageId ? setMyReaction(r, j.emoji) : r), current.reactions) : undefined, picked)
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, setMyReaction(x.reactions, wanted)) : x)))
+    try {
+      const chips = await sendWithin(api.chatConversations.setReaction(id, messageId, wanted))
+      setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, chips) : x)))
+      setAnnounce(wanted ? t('conv.youReacted', { emoji: wanted }) : t('conv.reactionRemoved'))
+    } catch (e) {
+      if (worthRetrying(e) && outbox.hold(reactionJob(id, messageId, wanted))) { setAnnounce(t('conv.reactionQueued')); return }
+      void load()
+      throw e
+    }
+  })
+  const runReact = useLatest((messageId: string, emoji: string) => void react.run(messageId, emoji))
   // A quick reply sends its own words and leaves the box (and any draft in it) alone.
   const submit = async (quick?: string) => {
     const body = (quick ?? text).trim()
@@ -398,6 +437,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     )
   }
   const dividerId = dividerBefore(messages, firstUnread)
+  const shownMessages = heldReactions.length === 0 ? messages : messages.map((m) => heldReactions.reduce((acc, j) => (j.messageId === m.id ? withReactions(acc, setMyReaction(acc.reactions, j.emoji)) : acc), m))
   const queued = pendingFor(id, outbox.items).filter((q) => !messages.some((m) => m.id === q.id))
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
@@ -434,11 +474,11 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
           ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
-          : messages.map((m) => (
+          : shownMessages.map((m) => (
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -485,6 +525,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ActionError error={mute.error} />
       <ActionError error={notifyAway.error} />
       <ActionError error={ack.error} />
+      <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
     </section>
   )
@@ -616,6 +657,8 @@ interface MessageRowProps {
   canAct?: boolean
   onReact?: (messageId: string, emoji: string) => void
   onReply?: (m: ChatMessage) => void
+  /** Go to a quoted message that is not on screen yet (older pages are read until it is). */
+  onJump?: (messageId: string) => void
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -640,7 +683,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -655,11 +698,11 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     }
     return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} />
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} />
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} />
 })
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply }: Omit<MessageRowProps, 'onChanged'>) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump }: Omit<MessageRowProps, 'onChanged'>) {
   const own = m.from === mine
   const card = m.text ? parsePlanCard(m.text) : null
   const mlevel = urgencyOf(m)
@@ -673,7 +716,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
     // A long press is a shortcut for touch; the React and Reply buttons below do the same for keyboard and screen reader.
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
-      {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} />}
+      {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
       <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
@@ -705,14 +748,14 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
 }
 
 /** The quote above a reply. A tap goes to the original when it is on screen; one the reader may not read any more shows only "Message removed". */
-function ReplyQuote({ q, you }: { q: ChatQuote; you: string }) {
+function ReplyQuote({ q, you, onJump }: { q: ChatQuote; you: string; onJump?: (messageId: string) => void }) {
   const who = q.mine ? you : q.fromName
   const body = <>{who && <strong>{who}</strong>} <span>{q.text}</span></>
   if (!q.id || q.removed) return <p className="chat-quote chat-quote--gone muted">{body}</p>
   const target = q.id
   const jump = () => {
     const el = document.getElementById(`msg-${target}`)
-    if (!el) return
+    if (!el) { onJump?.(target); return }   // on an older page: the thread reads back to it
     el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
     el.focus({ preventScroll: true })
   }

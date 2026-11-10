@@ -152,7 +152,7 @@ public class StanleyNoticeRelayTests
         Assert.Empty(StanleyNoticeRules.ActionsFor(copy.NoticeKind ?? "", copy.NoticeSubject, false, false));   // the guardian cannot confirm the child's muster
         // A repeat adds nothing.
         await relay.RelayAsync(child, [Notice("muster:1", "muster", true)], Now.AddMinutes(15), default);
-        Assert.Single((await Thread(store, guardian)).Where(m => m.NoticeKey is not null));
+        Assert.Single(await Thread(store, guardian), m => m.NoticeKey is not null);
     }
 
     [Fact]

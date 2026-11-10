@@ -188,6 +188,11 @@ export interface ChatConversationsApi {
    * Rejects `invalid` (`emoji`, `notMessage`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`).
    */
   react(id: string, messageId: string, emoji: string): Promise<ChatReaction[]>
+  /**
+   * Sets your reaction to exactly `emoji`, or clears it with null. Unlike `react` it is idempotent, so it is the one a queued tap uses: replaying it after a reconnect cannot undo anything.
+   * Rejects as `react` does.
+   */
+  setReaction(id: string, messageId: string, emoji: string | null): Promise<ChatReaction[]>
   /** This device has the messages others sent here, so their senders can show Delivered. Idempotent; rejects `notFound`. */
   delivered(id: string): Promise<void>
   /** Rejects `invalid` (`type`, `size`, `empty`, `contactInfo`, `blocked`), `forbidden` (`age`), `conflict` (`closed`) or `notFound`. */

@@ -45,7 +45,7 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     /// A new message in a conversation (docs/chat-plan.md, 4.4). The text is on the lock screen only when the recipient opted in (<paramref name="showPreview"/>).
     /// A muted conversation never buzzes the phone, unless the message is urgent (<see cref="ChatUrgencyRules"/>); an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.
     /// </summary>
-    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct, string urgency = ChatUrgencyRules.Normal)
+    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct, string urgency = ChatUrgencyRules.Normal, long senderId = 0)
     {
         var words = ChatConversationRules.MessageNotice(from, text, showPreview, urgency);
         var key = ChatConversationRules.NoticeKey(conversationId, messageId);
@@ -53,7 +53,8 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         var breaks = ChatUrgencyRules.BreaksThrough(urgency);
         var notice = new PushNotice(key, "chat", "chat", breaks, breaks ? 90 : 50, ChatConversationRules.NoticePath(conversationId), words.Title, words.Body,
             new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId));
-        return Deliver(toUserId, "message", notice, breaks || !muted, ct);
+        // An open app that answers the nudge has the message: that is Delivered for the sender, even in a muted chat.
+        return Deliver(toUserId, "message", notice, breaks || !muted, ct, senderId == 0 ? null : new DeliveryRef(conversationId, messageId, senderId));
     }
 
     /// <summary>A connected guest left or returned to the ship. A normal notice: it obeys do-not-disturb, and a muted conversation gets the line but no phone alert.</summary>
@@ -86,7 +87,10 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 
-    private async Task Deliver(long userId, string kind, PushNotice notice, bool phone, CancellationToken ct)
+    /// <summary>The message a nudge is about, so an app that answers it can be recorded as having it and the sender told.</summary>
+    private sealed record DeliveryRef(Guid ConversationId, Guid MessageId, long SenderId);
+
+    private async Task Deliver(long userId, string kind, PushNotice notice, bool phone, CancellationToken ct, DeliveryRef? delivery = null)
     {
         try
         {
@@ -97,10 +101,27 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
             // An app is open: nudge it, and buzz the phone only if no app answers. The wait is off the request, so accepting a request never takes 8 seconds.
             var nudge = realtime.PublishAsync(user.PublicId, new ChatEvent(key, kind), AckWait, CancellationToken.None);
             if (phone) _ = Task.Run(() => PhoneIfUnheardAsync(nudge, userId, notice));
+            if (delivery is not null) _ = Task.Run(() => RecordDeliveredAsync(nudge, userId, delivery));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             log.LogWarning(e, "Chat notice {Kind} could not be sent", kind);
+        }
+    }
+
+    /// <summary>When the open app answered the nudge, records the delivery (once; a repeat changes nothing) and nudges the sender to show Delivered. A failure is logged and never reaches anyone.</summary>
+    private async Task RecordDeliveredAsync(Task<bool> nudge, long userId, DeliveryRef delivery)
+    {
+        try
+        {
+            if (!await nudge) return;
+            using var scope = scopes.CreateScope();
+            if (!await scope.ServiceProvider.GetRequiredService<IChatStore>().AddDeliveryAsync(delivery.MessageId, userId, DateTime.UtcNow, CancellationToken.None)) return;
+            await ThreadChangedAsync(delivery.SenderId, delivery.ConversationId, "delivered", CancellationToken.None);
+        }
+        catch (Exception e)
+        {
+            log.LogWarning(e, "A delivery could not be recorded for {Key}", delivery.MessageId);
         }
     }
 

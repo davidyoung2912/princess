@@ -466,6 +466,12 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(Visible(c, me).FirstOrDefault(m => m.PublicId == messagePublicId));
     }
 
+    public Task<bool> AddDeliveryAsync(Guid messagePublicId, long userId, DateTime at, CancellationToken ct)
+    {
+        var m = Messages.FirstOrDefault(x => x.Row.PublicId == messagePublicId)?.Row;
+        return Task.FromResult(m is { IsSystem: false } && m.FromUserId != 0 && m.FromUserId != userId && MessageDeliveries.Add((m.Id, userId)));
+    }
+
     public Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct) =>
         Task.FromResult(ReactionsBy.TryGetValue((messageId, userId), out var e) ? e : null);
 

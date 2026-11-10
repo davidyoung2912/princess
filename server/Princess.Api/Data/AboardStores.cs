@@ -340,6 +340,8 @@ public interface IChatStore
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
     /// <param name="replyToId">The stored id of the message this one answers (already checked to be in the same conversation and readable by the sender), or null.</param>
     Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null);
+    /// <summary>Records that a device of the person has one message (by its public id). False when it was already recorded, so only the first is told to the sender.</summary>
+    Task<bool> AddDeliveryAsync(Guid messagePublicId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The person's reaction to the message, or null when they have none.</summary>
     Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct);
     /// <summary>Sets the person's one reaction to the message (replacing any), or clears it when <paramref name="emoji"/> is null.</summary>

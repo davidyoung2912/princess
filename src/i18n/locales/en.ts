@@ -15446,6 +15446,7 @@ export const en = {
   'conv.youLower': 'you',
   'conv.youReacted': 'You reacted {emoji}.',
   'conv.reactionRemoved': 'Reaction removed.',
+  'conv.reactionQueued': 'No signal. Your reaction will be sent when you are back online.',
   'conv.reactFailed': 'The reaction did not go through. Try again.',
   'conv.reply': 'Reply',
   'conv.replyingTo': 'Replying to {who}',

@@ -247,16 +247,27 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     /// Reacts to a message with one of the six emoji (phase 1): a different one replaces the caller's old reaction, the same one again takes it away. Returns the chips now under the message.
     /// The other members' open apps are nudged to refetch; no phone alert is ever sent for a reaction. 400 emoji or notMessage (a line about the group, or a notice); 403 stanley; 404 for a message the caller cannot read; 409 closed.
     /// </summary>
-    public async Task<List<ChatReactionDto>> ReactAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct)
+    public Task<List<ChatReactionDto>> ReactAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct) =>
+        ApplyReactionAsync(actor, conversationId, messageId, body?.Emoji, toggle: true, ct);
+
+    /// <summary>
+    /// Sets the caller's reaction to exactly <c>emoji</c>, or clears it when <c>emoji</c> is null or empty (phase 1 follow-up). Unlike <see cref="ReactAsync"/> it is idempotent, so a tap queued while offline
+    /// can be replayed after a reconnect without undoing anything. The last write wins. Same refusals as <see cref="ReactAsync"/>.
+    /// </summary>
+    public Task<List<ChatReactionDto>> SetReactionAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct) =>
+        ApplyReactionAsync(actor, conversationId, messageId, string.IsNullOrEmpty(body?.Emoji) ? null : body!.Emoji, toggle: false, ct);
+
+    private async Task<List<ChatReactionDto>> ApplyReactionAsync(UserRecord actor, Guid conversationId, Guid messageId, string? emoji, bool toggle, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
-        if (!ChatReactionRules.IsAllowed(body?.Emoji)) throw ApiException.Invalid("emoji");
+        if (emoji is null ? toggle : !ChatReactionRules.IsAllowed(emoji)) throw ApiException.Invalid("emoji");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
         if (!ChatReactionRules.CanTarget(message.IsSystem, message.FromStanley)) throw ApiException.Invalid("notMessage");
         var now = await userClock.NowAsync(actor, ct);
-        await store.SetReactionAsync(message.Id, actor.Id, ChatReactionRules.Toggle(await store.GetReactionAsync(message.Id, actor.Id, ct), body!.Emoji!), now, ct);
+        var next = toggle ? ChatReactionRules.Toggle(await store.GetReactionAsync(message.Id, actor.Id, ct), emoji!) : emoji;
+        await store.SetReactionAsync(message.Id, actor.Id, next, now, ct);
         await TellThreadChangedAsync(actor, member, "reaction", ct);
         var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
         return ReactionDtos(await store.ListReactionsAsync(message.Id, ct), actor.Id, peers, new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)));

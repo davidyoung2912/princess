@@ -35,7 +35,7 @@ public sealed class ChatFanout(IChatStore store, ChatNotifier notifier, ChatSmsS
             var from = members.FirstOrDefault(p => p.UserId == job.ActorId) is { } me ? ChatConnectionRules.ShortName(me.FirstName, me.LastName) : "Guest";
             var recipients = await store.ListRecipientsAsync(job.GroupId, job.ActorId, ct);
             // Each recipient is independent (a lookup and a nudge), so a large group is told together rather than one after another.
-            await Task.WhenAll(recipients.Select(r => notifier.MessageAsync(r.UserId, job.GroupPublicId, job.Message.PublicId, from, job.Message.Text, r.ShowPreview, r.Muted, ct, job.Message.Urgency)));
+            await Task.WhenAll(recipients.Select(r => notifier.MessageAsync(r.UserId, job.GroupPublicId, job.Message.PublicId, from, job.Message.Text, r.ShowPreview, r.Muted, ct, job.Message.Urgency, job.ActorId)));
             await sms.MessageAsync(job.GroupId, from, job.Message, recipients, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException)

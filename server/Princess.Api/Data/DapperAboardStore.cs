@@ -700,6 +700,17 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { groupId, userId, messagePublicId }, null, ct));
     }
 
+    public async Task<bool> AddDeliveryAsync(Guid messagePublicId, long userId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.ChatMessageDeliveries (MessageId, UserId, DeliveredAt)
+            SELECT m.Id, @userId, @at FROM dbo.ChatMessages m
+            WHERE m.PublicId = @messagePublicId AND m.IsSystem = 0 AND m.FromUserId IS NOT NULL AND m.FromUserId <> @userId
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageDeliveries d WHERE d.MessageId = m.Id AND d.UserId = @userId)
+            """, new { messagePublicId, userId, at }, null, ct)) > 0;
+    }
+
     public async Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

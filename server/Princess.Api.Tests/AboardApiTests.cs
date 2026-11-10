@@ -747,6 +747,33 @@ public class AboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task SettingAReactionIsIdempotentSoAQueuedTapCanBeReplayed()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Priya, "Dinner at eight?", 0);
+        var daniel = await DanielToken();
+        var set = (object? emoji) => ChatPut($"conversations/{group.PublicId}/messages/{said}/reaction", daniel, new { emoji });
+        Assert.Equal("👍", (await set("👍")).Json.EnumerateArray().Single().GetProperty("emoji").GetString());
+        Assert.Equal("👍", (await set("👍")).Json.EnumerateArray().Single().GetProperty("emoji").GetString());   // a replay keeps it; the toggle would have cleared it
+        Assert.Equal("❤️", (await set("❤️")).Json.EnumerateArray().Single().GetProperty("emoji").GetString());
+        Assert.Empty((await set(null)).Json.EnumerateArray());
+        Assert.Empty((await set(null)).Json.EnumerateArray());   // clearing twice is fine
+        Is(HttpStatusCode.BadRequest, "emoji", await set("🔥"));
+    }
+
+    [Fact]
+    public async Task ADeviceThatAnsweredTheLiveNudgeIsRecordedAsHavingTheMessageOnlyOnce()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Anyone for cards?", 0);
+        var id = F.Chat.Messages.Single(m => m.Row.PublicId.ToString() == said).Row.PublicId;
+        Assert.True(await F.Chat.AddDeliveryAsync(id, Priya.Id, SeaDay, CancellationToken.None));
+        Assert.False(await F.Chat.AddDeliveryAsync(id, Priya.Id, SeaDay, CancellationToken.None));   // a repeat tells the sender nothing more
+        Assert.False(await F.Chat.AddDeliveryAsync(id, Daniel.Id, SeaDay, CancellationToken.None));   // never one's own message
+        Assert.Single(F.Chat.MessageDeliveries);
+    }
+
+    [Fact]
     public async Task AReactionIsRefusedOnAnEndedDirectChat()
     {
         var direct = F.Chat.Direct(Daniel.Id, Priya.Id);

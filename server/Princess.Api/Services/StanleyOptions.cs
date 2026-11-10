@@ -27,7 +27,10 @@ public sealed class StanleySwitches
     /// <summary>Entitlement, spend and loyalty coach (phase 12): the money answers in chat, the spend pace and the endpoints under <c>/me/stanley/money</c>.</summary>
     public bool Money { get; set; } = true;
     /// <summary>The notice relay's lanes (phase 0d): each can be stopped on its own (<c>Stanley:Switches:ThreadCritical=false</c>). The phone push never depends on these, so with the critical lane off the direct push still goes.</summary>
-    public bool ThreadCritical { get; set; } = true, ThreadImportant { get; set; } = true, ThreadReminder { get; set; } = true, ThreadInfo { get; set; } = true;
+    public bool ThreadCritical { get; set; } = true;
+    public bool ThreadImportant { get; set; } = true;
+    public bool ThreadReminder { get; set; } = true;
+    public bool ThreadInfo { get; set; } = true;
 
     /// <summary>The names of the routes that are off, for the reply.</summary>
     public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money) }.Where(x => !x.On).Select(x => x.Name)];

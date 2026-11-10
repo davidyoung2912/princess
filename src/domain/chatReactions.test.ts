@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatReaction } from '../api/chatTypes'
-import { chipLabel, isReaction, myReaction, REACTIONS, toggleReaction, whoReacted, withReactions } from './chatReactions'
+import { chipLabel, isReaction, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, toggleReaction, whoReacted, withReactions } from './chatReactions'
 
 const chip = (emoji: string, count: number, mine = false, names: string[] = []): ChatReaction => ({ emoji, count, mine, names })
 
@@ -71,5 +71,29 @@ describe('putting chips on a message', () => {
     expect(set.reactions).toEqual([chip('👍', 1, true)])
     expect('reactions' in withReactions(set, [])).toBe(false)
     expect(base).toEqual({ id: 'a', text: 'hi' })
+  })
+})
+
+describe('reactions held while offline', () => {
+  it('works out exactly what a tap means', () => {
+    expect(nextReaction(undefined, '👍')).toBe('👍')
+    expect(nextReaction([chip('👍', 1, true)], '👍')).toBeNull()
+    expect(nextReaction([chip('👍', 1, true)], '❤️')).toBe('❤️')
+  })
+
+  it('sets your reaction to exactly one value, and doing it twice changes nothing', () => {
+    const base = [chip('👍', 2, true, ['Sam R.'])]
+    const once = setMyReaction(base, '❤️')
+    expect(once).toEqual([chip('👍', 1, false, ['Sam R.']), chip('❤️', 1, true)])
+    expect(setMyReaction(once, '❤️')).toEqual(once)
+    expect(setMyReaction(base, null)).toEqual([chip('👍', 1, false, ['Sam R.'])])
+    expect(setMyReaction(setMyReaction(base, null), null)).toEqual([chip('👍', 1, false, ['Sam R.'])])
+    expect(setMyReaction(undefined, null)).toEqual([])
+  })
+
+  it('round-trips through an outbox payload and is not mistaken for a message', () => {
+    expect(readReactionJob(reactionJob('c1', 'm1', '👍'))).toEqual({ conversation: 'c1', messageId: 'm1', emoji: '👍' })
+    expect(readReactionJob(reactionJob('c1', 'm1', null))).toEqual({ conversation: 'c1', messageId: 'm1', emoji: null })
+    expect(readReactionJob({ conversation: 'c1', text: 'hello', clientId: 'x' })).toBeNull()
   })
 })
