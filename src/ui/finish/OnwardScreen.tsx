@@ -9,6 +9,7 @@ import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { usePersona, useSailing } from '../../hooks/useDemo'
 import { StanleyConnectionCard, StanleyFlightCard } from '../ai/StanleyTravel'
+import { StanleyChanges } from '../ai/StanleyChanges'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -27,6 +28,7 @@ export function OnwardScreen() {
   return (
     <div className="page">
       <p>{t('onw.intro')}</p>
+      <StanleyChanges screen="travel" />
       <Saved copy={copy}>{(v) => <Onward v={v} reload={copy.retry} />}</Saved>
       {me && <StanleyFlightCard sailingId={sailing.id} />}
       {me && <StanleyConnectionCard sailingId={sailing.id} />}

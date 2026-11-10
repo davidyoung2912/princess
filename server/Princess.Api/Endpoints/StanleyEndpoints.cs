@@ -150,6 +150,24 @@ public static class StanleyEndpoints
         travellers.MapDelete("/{id}", async (string id, ICurrentUser me, StanleyTravellerService svc, CancellationToken ct) => Results.Ok(await svc.DeleteAsync(await me.LoadAsync(ct), id, ct)))
             .WithSummary("Forgets one traveller and answers the list. 404 when there is no such traveller.");
 
+        var changes = api.MapGroup("/me/stanley/changes").WithTags("Stanley");
+        changes.MapGet("", async (string? sailingId, string? saved, ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), sailingId, SavedList(saved), ct)))
+            .WithSummary("The changes that matter to the guest's own trip now, most serious first: { asOf (epoch ms), asOfText (ship time), cards[{ id, fingerprint, kind (itinerary, portCall, venue, tender, weather, flight, reservation, order, case), status (verified, provisional, forecast), source, sourceAt, sourceAtText, " +
+                "consequence (safety, lostReservation, conflict, improvement, optional), critical, day, title, what, why, recommended { id, label, detail, action? { kind, args }, route? }, others[] (same shape, always ending with Ask a person), affects[{ kind, name, day, time }], ifNothing, tip, where[], noticedAt }], unread[] (sources that could not be read) }. " +
+                "Only things the guest holds or has saved are reported (saved: comma-separated programme event ids, at most 30, added to those on the guest's phone alerts). A forecast is never critical. An option that would change something is a phase 5 action to prepare and confirm; nothing is cancelled, rebooked or paid from here. Empty with no current trip or with the changes switch off. 400 saved.");
+        changes.MapGet("/missed", async (string? sailingId, string? saved, ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => Results.Ok(await svc.MissedAsync(await me.LoadAsync(ct), sailingId, SavedList(saved), ct)))
+            .WithSummary("\"What did I miss?\": the changes first noticed since the guest last caught up, ranked by the same order as the list: { since (epoch ms or null), cards[] (at most 5), total }. The first time there is nothing to compare with, so since is null and nothing is claimed as missed. Dismissed changes are left out. 400 saved.");
+        changes.MapPost("/caught-up", async (ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => { await svc.CaughtUpAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
+            .WithSummary("Marks the guest as caught up now, so what was new is no longer new.");
+        changes.MapPost("/deliver", async (ChangeDeliveryRequest body, ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => Results.Ok(await svc.DeliverAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("What to show on a screen now under the delivery rules. Send { screen (home, ship, port, plan, travel), level (off, affects, suggest, guide: the guest's proactivity), shown[] (suggestion ids already shown this session, at most 20), saved[], sailingId }. " +
+                "Answers { alerts[] (safety or deadline risks and lost reservations, at most 3: they ignore quiet hours and the session count and only an acknowledgement hides them), suggestion (at most one, or null), held[{ id, reason (off, dismissed, level, screen, shown, sessionCap, quiet, oneOnScreen, alertCap) }] }. " +
+                "A suggestion needs the guest's level, no quiet hours (their own notification setting), fewer than three shown this session and a card that suits the screen. A dismissed card stays dismissed until its facts change. 400 screen, level, shown or saved.");
+        changes.MapGet("/{id}/explain", async (string id, string? sailingId, string? saved, ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => Results.Ok(await svc.ExplainAsync(await me.LoadAsync(ct), id, sailingId, SavedList(saved), ct)))
+            .WithSummary("Explain this change: the six questions answered from the change card alone, never from chat history: { id, title, questions[{ key (what, sure, affects, recommend, others, nothing), question, answer }] }. 404 when there is no such change now.");
+        changes.MapPost("/{id}/dismiss", async (string id, ChangeDismissRequest body, ICurrentUser me, StanleyChangeService svc, CancellationToken ct) => Results.Ok(await svc.DismissAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Dismisses one change in the form the guest saw (send its fingerprint). It stays dismissed until its facts change, when it comes back as a new card. Answers the list without it. 400 fingerprint, 404 when there is no such change.");
+
         api.MapPost("/stanley/group/status", (GroupStatusRequest body, StanleyPlannerService svc) => Results.Ok(svc.GroupStatus(body)))
             .WithTags("Stanley").AllowAnonymous()
             .WithSummary("The state of a group poll from the answers sent (2 to 6 options, 1 to 20 members, each answer yes, maybe or no; no reasons are accepted): { state (open, expired, closed), answered, silent, tally[], suggestion { kind (clear, leading, tie, compromise, none), optionIds[], text }, reminderDue, reminderText, remains[], controls[], note }. " +
@@ -175,6 +193,10 @@ public static class StanleyEndpoints
             .WithTags("Stanley")
             .WithSummary("Administrators only (403 otherwise): Stanley's replies over the last days (default 7, 1 to 90), counted by tier, source, stage, topic, outcome and model tier, with model calls and tokens. Counts only: no message text and no guest.");
     }
+
+    /// <summary>The comma-separated <c>saved</c> query as a list of ids (checked by the service); null when none is sent.</summary>
+    private static List<string>? SavedList(string? saved) =>
+        string.IsNullOrWhiteSpace(saved) ? null : [.. saved.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(StanleyChangeRules.MaxSaved + 1)];
 }
 
 /// <summary>Body of <c>POST /me/stanley/actions/prepare</c>.</summary>

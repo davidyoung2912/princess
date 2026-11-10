@@ -15,6 +15,7 @@ import { ActionError } from '../account/parts'
 import { LoadError } from '../discover/parts'
 import { BackLink } from './common'
 import { useShipTime } from './shipTime'
+import { StanleyChangeList } from '../ai/StanleyChanges'
 
 const useUpdates = () => {
   const id = usePersona()?.id
@@ -43,6 +44,7 @@ export function UpdatesScreen() {
   return (
     <div className="page">
       <p>{t('disrupt.intro')}</p>
+      <StanleyChangeList />
       {!updates.data ? (updates.status === 'error' ? <LoadError retry={updates.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : updates.data.length === 0 ? <p>{t('disrupt.none')}</p> : (
         <>
           <ActionError error={ack.error} />

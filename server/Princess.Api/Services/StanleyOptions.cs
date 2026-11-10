@@ -22,9 +22,11 @@ public sealed class StanleySwitches
     public bool Actions { get; set; } = true;
     /// <summary>Handing a guest to a person with a case reference. Off, the guest still gets the phone number and the chat link; no case is made.</summary>
     public bool Handoff { get; set; } = true;
+    /// <summary>The change engine (phase 11): change cards, "explain this change", "what did I miss?" and the rough-seas tip. Off, Stanley says nothing unprompted about changes and the chat falls back to Notices.</summary>
+    public bool Changes { get; set; } = true;
 
     /// <summary>The names of the routes that are off, for the reply.</summary>
-    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff) }.Where(x => !x.On).Select(x => x.Name)];
+    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes) }.Where(x => !x.On).Select(x => x.Name)];
 }
 
 /// <summary>

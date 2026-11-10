@@ -37,6 +37,7 @@ import { RecentCard } from './RecentCard'
 import { ABOARD_STAGES, REMEMBER_STAGES, TILE_STAGES, TRIP_STAGES } from '../../routes/stageHome'
 import { useJourneyPosition } from '../../hooks/useJourneyPosition'
 import { NudgeCards } from './NudgeCards'
+import { StanleyChanges } from '../ai/StanleyChanges'
 import { useCountdowns } from './useCountdowns'
 import { useNow } from '../../hooks/useDemo'
 import { useMoment } from '../../hooks/useMoment'
@@ -108,6 +109,7 @@ export function HomeScreen() {
         <DayHeader today={today.data} />
         <TodayStrip />
         {!ABOARD_STAGES.includes(stage) && !moment && <StageLanding />}
+        <StanleyChanges screen="home" />
         <NudgeCards aboard />
         {ABOARD_STAGES.includes(stage) && <StageHome today={today.data} />}
         <QuickDiary />
@@ -125,6 +127,7 @@ export function HomeScreen() {
       <RecentCard />
       {trip && <JourneyStrip />}
       <UpdatesBanner />
+      <StanleyChanges screen="home" />
       <NudgeCards aboard={false} />
       <AfterCruiseCard />
       <ContinueBookingCard />

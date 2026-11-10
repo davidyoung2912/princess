@@ -19,6 +19,7 @@ import { useMemory } from '../../hooks/useMemory'
 import { GroupBoard } from './GroupBoard'
 import { SpendForecastCard } from './SpendForecastCard'
 import { KeepsakeSheet } from '../KeepsakeSheet'
+import { StanleyChanges } from '../ai/StanleyChanges'
 
 /** Everything booked and not yet booked, day by day (PRE-15). */
 export function PlanScreen() {
@@ -29,6 +30,7 @@ export function PlanScreen() {
   return (
     <div className="page">
       <KeepsakeSheet title={t('route.plan')} />
+      <StanleyChanges screen="plan" />
       {aboard ? <Planner today={aboard} /> : <p>{t('plan.intro')}</p>}
 
       <Load state={list}>

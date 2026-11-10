@@ -14,7 +14,7 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null, StanleyChangeService? changes = null)
 {
     public const string NoTools = "[]";
 
@@ -74,8 +74,17 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
             }
         }
         // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
-        if (trip is not null && o.Switches.Resolver && StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow) is { } card)
-            return await End(new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card), card.Id, card.Abstained ? "abstained" : "ok");
+        if (trip is not null && o.Switches.Resolver)
+        {
+            // "What changed" and "explain this change" are answered from the change engine (phase 11), the same cards as Home, with each change's source and how sure it is.
+            var useChanges = o.Switches.Changes && changes is not null;
+            var explain = useChanges && StanleyChangeRules.IsExplainQuestion(turns.Message);
+            var resolved = explain ? null : StanleyResolvers.Resolve(turns.Message, trip, trip.AsOf ?? clock.UtcNow);
+            if (useChanges && (explain || resolved?.Id == "changed"))
+                resolved = await changes!.ChatAsync(user, packet?.Choice.Chosen?.SailingId ?? context.SailingId, explain, ct) ?? resolved;
+            if (resolved is { } card)
+                return await End(new StanleyReplyDto("answer", card.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", card.Text)], card.Links ?? [], null, card), card.Id, card.Abstained ? "abstained" : "ok");
+        }
         // Entry, visa, immigration and customs rules are never answered by Stanley or a model (phase 10): the guest gets the official sources for each country on the sailing.
         if (StanleyTravelRules.IsEntryQuestion(turns.Message))
         {

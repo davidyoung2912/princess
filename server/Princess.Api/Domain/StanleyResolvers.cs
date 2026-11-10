@@ -255,8 +255,8 @@ public static class StanleyResolvers
         Cannot("readiness", "Are you ready to sail", "Your documents, boarding pass and checklist are not in what I can read in chat yet. The checklist shows each task, who it is for and the date.", i, Checklist, Documents, Pass);
 
     private static StanleyCardDto Changed(ResolverInput i) =>
-        new("changed", "What changed", ["I do not keep a record of changes to your booking yet, so I cannot say what changed. Check Notices on Home, or ask a person."],
-            new StanleyProvenance([], "Your Princess booking", i.Trip.AsOf, "provisional", true, "No change log exists yet."), true);
+        new("changed", "What changed", ["I cannot read the list of changes just now, so I cannot say what changed. Check Notices on Home, or ask a person."],
+            new StanleyProvenance([], "Your Princess booking", i.Trip.AsOf, "provisional", true, "The change engine answers this when it is on; this card is only the fallback."), true);
 
     private static StanleyCardDto TourList(ResolverInput i)
     {

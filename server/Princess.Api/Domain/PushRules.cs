@@ -15,7 +15,7 @@ public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
     IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
     InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
-    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null);
+    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -30,7 +30,7 @@ public static class PushRules
     public const int MaxLog = 50;
     public const int MaxEndpoint = 450;
 
-    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder", "travel"];
+    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder", "travel", "reservation", "case", "change"];
 
     /// <summary>Minutes before all-aboard at which the escalation speaks (90, 60, 30 and 10).</summary>
     public static readonly int[] AllAboardSteps = [90, 60, 30, 10];
@@ -73,7 +73,8 @@ public static class PushRules
     /// </summary>
     public static PushNotice Redact(PushNotice n) => n.Kind switch
     {
-        "payment" or "travel" or "scheduleChange" => n with { Title = "Stanley: something to look at", Body = "Open the app to see the details." },
+        "payment" or "travel" or "scheduleChange" or "case" => n with { Title = "Stanley: something to look at", Body = "Open the app to see the details." },
+        "change" when n.Params.TryGetValue("change", out var kind) && kind as string == ChangeKinds.Flight => n with { Title = "Stanley: something to look at", Body = "Open the app to see the details." },
         _ => n,
     };
 
@@ -157,6 +158,20 @@ public static class PushRules
                 f.State == "cancelled" ? "Stanley: your flight is cancelled" : "Stanley: your flight is running late",
                 f.State == "cancelled" ? $"Flight {f.Flight} on {f.Date} has been cancelled." : $"Flight {f.Flight} on {f.Date} is about {f.DelayMinutes} minutes late.",
                 new() { ["flight"] = f.Flight, ["date"] = f.Date, ["state"] = f.State, ["minutes"] = f.DelayMinutes }));
+        }
+
+        // Changes from Stanley's change engine (phase 11) that are worth the phone: a reservation that is lost, a deadline risk, a case that has an answer. Never a forecast and never a tip.
+        // The key holds the card's fingerprint, so a change whose facts moved is a new notice, and one that did not is sent once. Only safety notices skip the guest's limits.
+        foreach (var c in (i.StanleyCards ?? []).Where(StanleyChangeRules.PushWorthy))
+        {
+            var isCase = c.Kind == ChangeKinds.Case;
+            var lostReservation = c.Consequence == ChangeConsequence.LostReservation;
+            var kind = isCase ? "case" : lostReservation ? "reservation" : "change";
+            var link = new Dictionary<string, object> { ["change"] = c.Kind, ["consequence"] = c.Consequence };
+            if (isCase && c.Affects.FirstOrDefault() is { } a) link["case"] = a.Name;
+            if (lostReservation && c.Affects.FirstOrDefault() is { } r) link["reservation"] = $"{r.Kind}-{r.Day}";
+            list.Add(new($"change:{c.Id}:{c.Fingerprint}", kind, isCase ? "checkin" : "critical", c.Consequence == ChangeConsequence.Safety, c.Consequence == ChangeConsequence.Safety ? 96 : lostReservation ? 85 : 40,
+                c.Recommended.Route ?? "/home/updates", $"Stanley: {c.Title}", c.What, link));
         }
 
         // "Remind me in a week": one plain note once the time the guest chose has passed. It is a suggestion, so it keeps to the budget, quiet hours and calm mode.

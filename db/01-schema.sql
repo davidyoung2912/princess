@@ -1157,6 +1157,17 @@ CREATE TABLE dbo.StanleyTravellers (
 );
 END
 
+IF OBJECT_ID(N'dbo.StanleyChanges', N'U') IS NULL
+BEGIN
+-- What Stanley's change engine remembers for one guest (docs/stanley-gap-analysis-and-plan.md, phase 11): one JSON row per guest holding when each change was first noticed, which version was dismissed and when they last caught up. No trip data is copied here. Deleted with the account.
+CREATE TABLE dbo.StanleyChanges (
+  UserId BIGINT NOT NULL CONSTRAINT PK_StanleyChanges PRIMARY KEY,
+  Json NVARCHAR(MAX) NOT NULL,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyChanges_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
 IF OBJECT_ID(N'dbo.DataProtectionKeys', N'U') IS NULL
 BEGIN
 -- The ASP.NET Data Protection key ring (encrypts health, calm, family and travellers documents). Losing it makes those documents unreadable.

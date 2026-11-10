@@ -84,6 +84,7 @@ export const sendStanley: StanleySender = (body) => http.post<unknown>('/me/stan
  * Nothing changes on the server without a confirm for a preview the server itself made.
  */
 export const stanleyActions = {
+  prepare: (body: { kind: string; args: Record<string, string>; context?: unknown }) => http.post<unknown>('/me/stanley/actions/prepare', body),
   confirm: (id: string, key: string, context?: unknown) => http.post<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}/confirm`, { key, context }),
   get: (id: string) => http.get<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}`),
   undo: (id: string, context?: unknown) => http.post<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}/undo`, { context }),
@@ -130,6 +131,20 @@ export const stanleyPlanner = {
   travellers: () => http.get<unknown>('/me/stanley/travellers'),
   saveTraveller: (id: string, record: unknown) => http.put<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`, record),
   forgetTraveller: (id: string) => http.delete<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`),
+}
+
+/** Changes that matter to this guest (phase 11): ranked change cards, "explain this change", "what did I miss?" and what to show on a screen under the delivery rules. Nothing is changed from here; an option that would change something is prepared and confirmed through `stanleyActions`. */
+const changesQuery = (sailingId?: string, saved?: string): string => {
+  const q = [sailingId ? `sailingId=${encodeURIComponent(sailingId)}` : '', saved ? `saved=${encodeURIComponent(saved)}` : ''].filter(Boolean).join('&')
+  return q ? `?${q}` : ''
+}
+export const stanleyChanges = {
+  list: (sailingId?: string, saved?: string) => http.get<unknown>(`/me/stanley/changes${changesQuery(sailingId, saved)}`),
+  missed: (sailingId?: string, saved?: string) => http.get<unknown>(`/me/stanley/changes/missed${changesQuery(sailingId, saved)}`),
+  caughtUp: () => http.post<unknown>('/me/stanley/changes/caught-up', {}),
+  deliver: (body: { sailingId?: string; screen: string; level: string; shown: string[]; saved: string[] }) => http.post<unknown>('/me/stanley/changes/deliver', body),
+  explain: (id: string, sailingId?: string, saved?: string) => http.get<unknown>(`/me/stanley/changes/${encodeURIComponent(id)}/explain${changesQuery(sailingId, saved)}`),
+  dismiss: (id: string, body: { fingerprint: string; sailingId?: string }) => http.post<unknown>(`/me/stanley/changes/${encodeURIComponent(id)}/dismiss`, body),
 }
 
 /** Travel-day, port and onward-travel help (phase 10): the flight rechecked, traffic, a shore plan, reviewed phrases, the offline port pack, an embark tour and the official entry sources. Nothing is booked or sent from here. */

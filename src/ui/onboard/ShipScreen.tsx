@@ -9,6 +9,7 @@ import { TabScreens } from '../TabScreens'
 import { Card } from '../Card'
 import { Siren } from '../icons'
 import { Saved } from './common'
+import { StanleyChanges } from '../ai/StanleyChanges'
 import { useShipTime } from './shipTime'
 import { useOnboardToday } from '../../hooks/useOnboardToday'
 
@@ -22,6 +23,7 @@ export function ShipScreen() {
   return (
     <div className="page">
       <p>{t('ship.intro')}</p>
+      <StanleyChanges screen="ship" />
 
       <Card hero labelledBy="safe-h">
         <h2 id="safe-h" className="card__title"><Siren aria-hidden="true" /> {th('ship.safety')}</h2>

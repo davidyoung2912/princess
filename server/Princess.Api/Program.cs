@@ -113,6 +113,7 @@ services.AddScoped<StanleyDiscoverService>();
 services.AddScoped<StanleyPlannerService>();
 services.AddScoped<StanleyTravelService>();
 services.AddScoped<StanleyTravellerService>();
+services.AddScoped<StanleyChangeService>();
 services.AddScoped<PrivacyService>();
 services.AddScoped<DiscoverService>();
 services.AddScoped<BookingService>();

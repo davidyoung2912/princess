@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -210,8 +210,12 @@ public sealed class PushService(
         var acked = (await shipboard.ListAcksAsync(actor.Id, ct)).Select(a => a.ScenarioId).ToHashSet();
         var disruptions = DisruptionRules.Active(await scopes.ScenariosAsync(actor, ct)).Where(d => !acked.Contains(d.Id)).ToList();
         var reminderAt = await ReminderAtAsync(actor.Id, ct);
+        // The change engine reads the same sources again, so one failing source never stops the other notices.
+        IReadOnlyList<ChangeCard> stanley = [];
+        try { stanley = await changes.PushCardsAsync(actor, ct); }
+        catch (Exception e) when (e is not OperationCanceledException) { stanley = []; }
         if (booking is null || departure is not { } dep)
-            return new(now, "ok", "", null, false, 45, false, [], [], 0, disruptions, reminderAt);
+            return new(now, "ok", "", null, false, 45, false, [], [], 0, disruptions, reminderAt, StanleyCards: stanley);
 
         var postcards = PostcardRules.Due(await PostcardRefsAsync(actor.Id, ct), booking.SailingId, dep.DayNumber - TripRules.Today(now).DayNumber);
         var trip = await trips.BuildAsync(booking, current: true, now, ct);
@@ -222,7 +226,7 @@ public sealed class PushService(
         var buffer = port is null ? null : PlanBuffer(rows.FirstOrDefault(r => r.Kind == "plan" && r.Key == port.Date)?.Json);
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
         var watches = await watchService.WatchAsync(booking, trip, TripRules.Today(now), ct);
-        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight, watches.InstalmentAuto && watches.Instalment is { } ni && string.CompareOrdinal(ni.Date, TripRules.Today(now).ToString("yyyy-MM-dd")) <= 0, watches.InstalmentTaken);
+        return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight, watches.InstalmentAuto && watches.Instalment is { } ni && string.CompareOrdinal(ni.Date, TripRules.Today(now).ToString("yyyy-MM-dd")) <= 0, watches.InstalmentTaken, stanley);
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>

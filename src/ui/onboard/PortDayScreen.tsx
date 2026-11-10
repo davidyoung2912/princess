@@ -26,6 +26,7 @@ import { PortPilot } from './PortPilot'
 import { PinAndDayCard, PocketStopwatch, PortStamps, SunNudge, TakeMeBack } from '../delights/PortDelights'
 import { TenderOutlook } from '../discover/TenderOutlook'
 import { StanleyMoment } from '../ai/StanleyMoment'
+import { StanleyChanges } from '../ai/StanleyChanges'
 
 /** The port day (POR-01 to POR-04, POR-11, POR-12): all-aboard, tender arrangements, and the day's tours with codes that work with no signal. */
 export function PortDayScreen() {
@@ -33,6 +34,7 @@ export function PortDayScreen() {
   const copy = useSavedCopy('portDay', me?.booker ?? 'none', async () => ({ view: await api.onboard.portDay() }), asPortDayCopy, [me?.id])
   return (
     <div className="page">
+      <StanleyChanges screen="port" />
       <PushSwitch question={t('push.allAboard.question')} />
       <Saved copy={copy}>
         {(c) => (c.view ? <Body v={c.view} /> : (
