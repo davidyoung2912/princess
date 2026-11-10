@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ApiError } from '../../api/errors'
-import type { ChatRoomAdminItem, ChatRoomStaffAction } from '../../api/chatTypes'
+import type { ChatRoomAdminItem, ChatRoomModerator, ChatRoomMute, ChatRoomPerson, ChatRoomPost, ChatRoomStaffAction } from '../../api/chatTypes'
 import { canOpenRoom, checkNewRoom, MIN_MODERATORS, staffOrder, staffProblem } from '../../domain/chatRooms'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -70,15 +70,8 @@ function Summary() {
 function RoomRow({ room, onChanged }: { room: ChatRoomAdminItem; onChanged: () => void }) {
   const [editing, setEditing] = useState(false)
   const [rules, setRules] = useState(room.rules)
-  const [person, setPerson] = useState('')
+  const [looking, setLooking] = useState<'rota' | 'posts' | 'people' | null>(null)
   const act = useAction(async (body: ChatRoomStaffAction) => { await api.chatRoomsStaff.act(room.id, body); onChanged() })
-  const rota = useAction(async (on: boolean) => {
-    const personId = person.trim()
-    if (!personId) return
-    await api.chatRoomsStaff.act(room.id, { action: on ? 'moderator' : 'unmoderator', personId })
-    setPerson('')
-    onChanged()
-  })
   const isRoom = room.kind === 'room'
   const state = room.closed ? t('rs.state.closed') : t('rs.state.open')
   return (
@@ -93,16 +86,14 @@ function RoomRow({ room, onChanged }: { room: ChatRoomAdminItem; onChanged: () =
         <Button variant="secondary" onClick={() => setEditing(true)}>{t('rs.rules')}<span className="visually-hidden"> {room.name}</span></Button>
       </div>
       <Problem error={act.error} />
-      {isRoom && (
-        <form onSubmit={(e) => { e.preventDefault(); void rota.run(true) }}>
-          <Field label={t('rs.moderator', { name: room.name })} hint={t('rs.moderatorHint')} value={person} autoComplete="off" onChange={(e) => setPerson(e.target.value)} />
-          <div className="button-row">
-            <Button type="submit" variant="secondary" disabled={rota.busy || !person.trim()}>{t('rs.moderatorAdd')}</Button>
-            <Button variant="secondary" disabled={rota.busy || !person.trim()} onClick={() => void rota.run(false)}>{t('rs.moderatorRemove')}</Button>
-          </div>
-          <Problem error={rota.error} />
-        </form>
-      )}
+      <div className="button-row">
+        {isRoom && <Button variant="secondary" onClick={() => setLooking('rota')}>{t('rs.rota.open')}<span className="visually-hidden"> {room.name}</span></Button>}
+        <Button variant="secondary" onClick={() => setLooking('posts')}>{t('rs.posts.open')}<span className="visually-hidden"> {room.name}</span></Button>
+        {isRoom && <Button variant="secondary" onClick={() => setLooking('people')}>{t('rs.people.open')}<span className="visually-hidden"> {room.name}</span></Button>}
+      </div>
+      {looking === 'rota' && <RotaDialog room={room} onClose={() => setLooking(null)} onChanged={onChanged} />}
+      {looking === 'posts' && <PostsDialog room={room} onClose={() => setLooking(null)} />}
+      {looking === 'people' && <PeopleDialog room={room} onClose={() => setLooking(null)} onChanged={onChanged} />}
       {editing && (
         <Dialog title={t('rs.rulesTitle', { name: room.name })} onClose={() => setEditing(false)}>
           <TextArea label={t('rs.rules')} value={rules} rows={6} maxLength={1000} onChange={(e) => setRules(e.target.value)} />
@@ -215,5 +206,109 @@ function Questions() {
       </Load>
       <Problem error={decide.error} />
     </section>
+  )
+}
+
+/** Who is on the room's rota: tick a staff member to name or remove them. A room opens with two named. */
+function RotaDialog({ room, onClose, onChanged }: { room: ChatRoomAdminItem; onClose: () => void; onChanged: () => void }) {
+  const list = useMine(() => api.chatRoomsStaff.rota(room.id), [room.id])
+  const set = useAction(async (m: ChatRoomModerator) => { await api.chatRoomsStaff.act(room.id, { action: m.named ? 'unmoderator' : 'moderator', personId: m.id }); list.retry(); onChanged() })
+  return (
+    <Dialog title={t('rs.rota.title', { name: room.name })} onClose={onClose}>
+      <p className="muted">{t('rs.rota.body')}</p>
+      <Load state={list}>
+        {(items) => (items.length === 0 ? <p>{t('rs.rota.none')}</p> : (
+          <ul className="plain-list">
+            {items.map((m) => (
+              <li key={m.id}>
+                <label><input type="checkbox" checked={m.named} disabled={set.busy} onChange={() => void set.run(m)} /> {m.name}</label>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </Load>
+      <Problem error={set.error} />
+      <Button variant="secondary" onClick={onClose}>{t('rs.done')}</Button>
+    </Dialog>
+  )
+}
+
+/** The latest posts, to remove or pin. Removing asks first: it takes the post away for everyone. */
+function PostsDialog({ room, onClose }: { room: ChatRoomAdminItem; onClose: () => void }) {
+  const list = useMine(() => api.chatRoomsStaff.posts(room.id), [room.id])
+  const [removing, setRemoving] = useState<ChatRoomPost | null>(null)
+  const act = useAction(async (p: ChatRoomPost, action: 'remove' | 'pin') => { await api.chatRoomsStaff.message(room.id, p.id, action); setRemoving(null); list.retry() })
+  return (
+    <Dialog title={t('rs.posts.title', { name: room.name })} onClose={onClose}>
+      <p className="muted">{t('rs.posts.body')}</p>
+      <Load state={list}>
+        {(items) => (items.length === 0 ? <p>{t('rs.posts.none')}</p> : (
+          <ul className="plain-list">
+            {items.map((p) => (
+              <li key={p.id}>
+                <p className="muted">{p.from} · {when(p.at)}{p.pinned ? ` · ${t('rs.posts.pinned')}` : ''}</p>
+                <blockquote>{p.text}</blockquote>
+                <div className="button-row">
+                  {room.kind === 'room' && !p.pinned && <Button variant="secondary" disabled={act.busy} onClick={() => void act.run(p, 'pin')}>{t('rs.posts.pin')}</Button>}
+                  <Button variant="secondary" disabled={act.busy} onClick={() => setRemoving(p)}>{t('rs.posts.remove')}</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </Load>
+      <Problem error={act.error} />
+      {removing && (
+        <Dialog title={t('rs.posts.removeTitle')} onClose={() => setRemoving(null)}>
+          <p>{t('rs.posts.removeBody', { who: removing.from })}</p>
+          <blockquote>{removing.text}</blockquote>
+          <div className="button-row">
+            <Button disabled={act.busy} onClick={() => void act.run(removing, 'remove')}>{t('rs.posts.removeYes')}</Button>
+            <Button variant="secondary" onClick={() => setRemoving(null)}>{t('rs.cancel')}</Button>
+          </div>
+        </Dialog>
+      )}
+      <Button variant="secondary" onClick={onClose}>{t('rs.done')}</Button>
+    </Dialog>
+  )
+}
+
+/** The room's people, to mute for an hour, a day or the room, to lift a mute, or to remove for good (asks first). */
+function PeopleDialog({ room, onClose, onChanged }: { room: ChatRoomAdminItem; onClose: () => void; onChanged: () => void }) {
+  const list = useMine(() => api.chatRoomsStaff.people(room.id), [room.id])
+  const [removing, setRemoving] = useState<ChatRoomPerson | null>(null)
+  const act = useAction(async (p: ChatRoomPerson, action: 'mute' | 'unmute' | 'remove', mute?: ChatRoomMute) => { await api.chatRoomsStaff.person(room.id, p.id, action, mute); setRemoving(null); list.retry(); onChanged() })
+  return (
+    <Dialog title={t('rs.people.title', { name: room.name })} onClose={onClose}>
+      <p className="muted">{t('rs.people.body')}</p>
+      <Load state={list}>
+        {(items) => (items.length === 0 ? <p>{t('rs.people.none')}</p> : (
+          <ul className="plain-list">
+            {items.map((p) => (
+              <li key={p.id}>
+                <p><strong>{p.name}</strong>{p.muted && p.mutedUntil ? <span className="muted"> · {t('rs.people.mutedUntil', { when: when(p.mutedUntil) })}</span> : null}</p>
+                <div className="button-row">
+                  {p.muted
+                    ? <Button variant="secondary" disabled={act.busy} onClick={() => void act.run(p, 'unmute')}>{t('rs.people.unmute')}<span className="visually-hidden"> {p.name}</span></Button>
+                    : (['hour', 'day', 'room'] as const).map((m) => <Button key={m} variant="secondary" disabled={act.busy} onClick={() => void act.run(p, 'mute', m)}>{t(`rs.people.mute.${m}` as StringKey)}<span className="visually-hidden"> {p.name}</span></Button>)}
+                  <Button variant="secondary" disabled={act.busy} onClick={() => setRemoving(p)}>{t('rs.people.remove')}<span className="visually-hidden"> {p.name}</span></Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </Load>
+      <Problem error={act.error} />
+      {removing && (
+        <Dialog title={t('rs.people.removeTitle', { who: removing.name })} onClose={() => setRemoving(null)}>
+          <p>{t('rs.people.removeBody')}</p>
+          <div className="button-row">
+            <Button disabled={act.busy} onClick={() => void act.run(removing, 'remove')}>{t('rs.people.removeYes')}</Button>
+            <Button variant="secondary" onClick={() => setRemoving(null)}>{t('rs.cancel')}</Button>
+          </div>
+        </Dialog>
+      )}
+      <Button variant="secondary" onClick={onClose}>{t('rs.done')}</Button>
+    </Dialog>
   )
 }

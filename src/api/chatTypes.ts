@@ -468,7 +468,25 @@ export interface ChatRoomCreate { kind: 'channel' | 'room'; roomKind?: 'sailing'
 
 export type ChatRoomStaffAction = { action: 'slow'; on: boolean } | { action: 'open' } | { action: 'close' } | { action: 'rules'; rules: string } | { action: 'moderator' | 'unmoderator'; personId: string }
 
+/** A live post as staff see it. `from` is a first name and last initial; `fromId` is for a person action. */
+export interface ChatRoomPost { id: string; fromId: string; from: string; text: string; at: number; pinned: boolean }
+
+/** An active member as staff see them. */
+export interface ChatRoomPerson { id: string; name: string; muted: boolean; mutedUntil?: number }
+
+/** An administrator who could be on a room's rota. */
+export interface ChatRoomModerator { id: string; name: string; named: boolean }
+
+export type ChatRoomMute = 'hour' | 'day' | 'room'
+
 export interface ChatRoomsStaffApi {
+  posts(id: string): Promise<ChatRoomPost[]>
+  people(id: string): Promise<ChatRoomPerson[]>
+  rota(id: string): Promise<ChatRoomModerator[]>
+  /** Rejects `notFound` for a post that is gone, `conflict` (`pinsFull`) when three are pinned. */
+  message(id: string, messageId: string, action: 'remove' | 'pin'): Promise<void>
+  /** Rejects `notFound` when the person is no longer in the room. */
+  person(id: string, personId: string, action: 'mute' | 'unmute' | 'remove', mute?: ChatRoomMute): Promise<void>
   list(): Promise<ChatRoomAdminItem[]>
   /** Rejects `invalid` (`kind`, `roomKind`, `name`, `topic`, `sailing`, `rules`, `cap`) or `forbidden`. */
   create(body: ChatRoomCreate): Promise<unknown>

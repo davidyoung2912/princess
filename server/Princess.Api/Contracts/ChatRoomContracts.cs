@@ -49,3 +49,12 @@ public sealed record ChatRoomSummaryDto(int Days, int Reports, List<ChatRoomActi
 public sealed record ChatRoomActionCountDto(string Action, int Count);
 public sealed record ChatRoomBusyDto(Guid Id, string Name, int Posts);
 public sealed record ChatRoomGapDto(Guid Id, string Name, int Moderators);
+
+/// <summary>A live post in a room as staff see it, so they can remove or pin it. <c>From</c> is a first name and last initial; <c>FromId</c> is the sender's public id, for a person action.</summary>
+public sealed record ChatRoomPostDto(Guid Id, Guid FromId, string From, string Text, long At, bool Pinned);
+
+/// <summary>An active member as staff see them: first name and last initial, with whether staff muted them (and until when).</summary>
+public sealed record ChatRoomPersonDto(Guid Id, string Name, bool Muted, long? MutedUntil);
+
+/// <summary>A staff member who could be on the room's rota, and whether they are named.</summary>
+public sealed record ChatRoomModeratorDto(Guid Id, string Name, bool Named);

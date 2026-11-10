@@ -51,6 +51,15 @@ public static class ChatRoomEndpoints
         admin.MapPost("/{id:guid}/messages/{messageId:guid}", async (Guid id, Guid messageId, ChatRoomMessageBody body, ICurrentUser me, ChatRoomService svc, CancellationToken ct) => { await svc.MessageAsync(await AdminAsync(me, ct), id, messageId, body, ct); return Results.NoContent(); })
             .WithSummary("Administrators only: `remove` a message for everyone (the words are kept for the report case) or `pin` it (3 at most: 409 pinsFull). Audited.");
 
+        admin.MapGet("/{id:guid}/posts", async (Guid id, ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.PostsAsync(await AdminAsync(me, ct), id, ct)))
+            .WithSummary("Administrators only: the latest 50 live posts of a room, newest first, with the sender's first name and last initial, so a post can be removed or pinned. The read is audited.");
+
+        admin.MapGet("/{id:guid}/people", async (Guid id, ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.PeopleAsync(await AdminAsync(me, ct), id, ct)))
+            .WithSummary("Administrators only: the room's active members (first name and last initial) and whether staff muted each, so one can be muted, unmuted or removed. The read is audited.");
+
+        admin.MapGet("/{id:guid}/rota", async (Guid id, ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.RotaAsync(await AdminAsync(me, ct), id, ct)))
+            .WithSummary("Administrators only: every administrator who could be named a moderator of the room, and whether they are.");
+
         admin.MapGet("/held", async (ICurrentUser me, ChatRoomService svc, CancellationToken ct) => Results.Ok(await svc.HeldAsync(await AdminAsync(me, ct), ct)))
             .WithSummary("Administrators only: posts held because they carry a link or a phone number, oldest first, with the words and the sender's first name and last initial. The read is audited.");
 

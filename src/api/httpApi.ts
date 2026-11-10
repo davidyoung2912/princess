@@ -269,6 +269,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     suggestQuestion: async (id, text) => { await send('post', `/me/chat/rooms/${seg(id)}/questions`, { text }) },
   }
   const chatRoomsStaff: HttpGroups['chatRoomsStaff'] = {
+    posts: (id) => get(`/admin/chat/rooms/${seg(id)}/posts`),
+    people: (id) => get(`/admin/chat/rooms/${seg(id)}/people`),
+    rota: (id) => get(`/admin/chat/rooms/${seg(id)}/rota`),
+    message: async (id, messageId, action) => { await send('post', `/admin/chat/rooms/${seg(id)}/messages/${seg(messageId)}`, { action }) },
+    person: async (id, personId, action, mute) => { await send('post', `/admin/chat/rooms/${seg(id)}/people/${seg(personId)}`, { action, for: mute }) },
     list: () => get('/admin/chat/rooms'),
     create: (body) => send('post', '/admin/chat/rooms', body),
     act: (id, body) => send('post', `/admin/chat/rooms/${seg(id)}/action`, body),

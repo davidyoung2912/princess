@@ -66,6 +66,33 @@ public sealed class ChatQuestionRow
     public DateTime At { get; set; }
 }
 
+public sealed class ChatRoomPostRow
+{
+    public Guid PublicId { get; set; }
+    public Guid FromPublicId { get; set; }
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Text { get; set; } = "";
+    public DateTime At { get; set; }
+    public bool Pinned { get; set; }
+}
+
+public sealed class ChatRoomPersonRow
+{
+    public Guid PublicId { get; set; }
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public DateTime? MutedUntil { get; set; }
+}
+
+public sealed class ChatRoomModeratorRow
+{
+    public Guid PublicId { get; set; }
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public bool Named { get; set; }
+}
+
 public sealed class ChatRoomCountRow
 {
     public Guid GroupPublicId { get; set; }
@@ -112,6 +139,13 @@ public interface IChatRoomStore
     /// <summary>Pins a message of the room, or false when the room is full of pins or the message is not in it.</summary>
     Task<bool> PinAsync(long groupId, Guid messagePublicId, long by, DateTime now, int max, CancellationToken ct);
     Task LogActionAsync(long groupId, long by, string action, long? targetUserId, long? messageId, DateTime now, CancellationToken ct);
+
+    /// <summary>The latest live posts of people in the room (newest first), for staff to remove or pin.</summary>
+    Task<List<ChatRoomPostRow>> ListPostsAsync(long groupId, int max, CancellationToken ct);
+    /// <summary>The room's active members, for staff to mute or remove.</summary>
+    Task<List<ChatRoomPersonRow>> ListPeopleAsync(long groupId, int max, CancellationToken ct);
+    /// <summary>Every administrator, with whether they are named on this room's rota.</summary>
+    Task<List<ChatRoomModeratorRow>> ListModeratorsAsync(long groupId, CancellationToken ct);
 
     // ---- Held posts ----
     Task AddHeldAsync(long groupId, long fromUserId, string text, string reason, DateTime now, CancellationToken ct);
@@ -319,6 +353,45 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
         if (await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatPins WHERE GroupId = @groupId", new { groupId }, null, ct)) >= max) return false;
         await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatPins (GroupId, MessageId, PinnedBy, [At]) VALUES (@groupId, @id, @by, @now)", new { groupId, id, by, now }, null, ct));
         return true;
+    }
+
+    public async Task<List<ChatRoomPostRow>> ListPostsAsync(long groupId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatRoomPostRow>(Sql.Cmd("""
+            SELECT TOP (@max) m.PublicId, u.PublicId AS FromPublicId, pr.FirstName, pr.LastName, m.[Text], m.[At],
+                   CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatPins p WHERE p.GroupId = m.GroupId AND p.MessageId = m.Id) THEN 1 ELSE 0 END AS bit) AS Pinned
+            FROM dbo.ChatMessages m
+            JOIN dbo.Users u ON u.Id = m.FromUserId
+            JOIN dbo.Profiles pr ON pr.UserId = m.FromUserId
+            WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.DeletedAt IS NULL AND m.FromUserId IS NOT NULL AND m.[Text] <> N''
+            ORDER BY m.Id DESC
+            """, new { groupId, max }, null, ct))).ToList();
+    }
+
+    public async Task<List<ChatRoomPersonRow>> ListPeopleAsync(long groupId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatRoomPersonRow>(Sql.Cmd("""
+            SELECT TOP (@max) u.PublicId, pr.FirstName, pr.LastName, m.ModMutedUntil AS MutedUntil
+            FROM dbo.ChatGroupMembers m
+            JOIN dbo.Users u ON u.Id = m.UserId
+            JOIN dbo.Profiles pr ON pr.UserId = m.UserId
+            WHERE m.GroupId = @groupId AND m.Status = 'active'
+            ORDER BY pr.FirstName, pr.LastName
+            """, new { groupId, max }, null, ct))).ToList();
+    }
+
+    public async Task<List<ChatRoomModeratorRow>> ListModeratorsAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatRoomModeratorRow>(Sql.Cmd("""
+            SELECT u.PublicId, pr.FirstName, pr.LastName,
+                   CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatRoomModerators r WHERE r.GroupId = @groupId AND r.UserId = u.Id) THEN 1 ELSE 0 END AS bit) AS Named
+            FROM dbo.Users u JOIN dbo.Profiles pr ON pr.UserId = u.Id
+            WHERE u.Role = 'admin'
+            ORDER BY pr.FirstName, pr.LastName
+            """, new { groupId }, null, ct))).ToList();
     }
 
     public async Task LogActionAsync(long groupId, long by, string action, long? targetUserId, long? messageId, DateTime now, CancellationToken ct)

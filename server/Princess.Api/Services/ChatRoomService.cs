@@ -280,6 +280,34 @@ public sealed class ChatRoomService(IChatRoomStore rooms, IChatStore chat, IUser
         await AuditAsync(admin, "chat.room." + body!.Action, id, null, ct);
     }
 
+    // ---- What staff pick from (posts, people, rota) ----
+
+    /// <summary>The latest live posts of a room, newest first, with the words, for staff to remove or pin. Sender first name and last initial only. The read is audited. 404 for no such room.</summary>
+    public async Task<List<ChatRoomPostDto>> PostsAsync(UserRecord admin, Guid id, CancellationToken ct)
+    {
+        var r = await FindAsync(admin, id, ct);
+        var rows = await rooms.ListPostsAsync(r.GroupId, 50, ct);
+        await AuditAsync(admin, "chat.room.posts.read", id, new { count = rows.Count }, ct);
+        return [.. rows.Select(p => new ChatRoomPostDto(p.PublicId, p.FromPublicId, ChatConnectionRules.ShortName(p.FirstName, p.LastName), p.Text, Shipboard.Ms(p.At), p.Pinned))];
+    }
+
+    /// <summary>The active members of a room (first name and last initial) with their mute, for staff to mute, unmute or remove. The read is audited. 404 for no such room.</summary>
+    public async Task<List<ChatRoomPersonDto>> PeopleAsync(UserRecord admin, Guid id, CancellationToken ct)
+    {
+        var r = await FindAsync(admin, id, ct);
+        var utc = clock.UtcNow;
+        var rows = await rooms.ListPeopleAsync(r.GroupId, 500, ct);
+        await AuditAsync(admin, "chat.room.people.read", id, new { count = rows.Count }, ct);
+        return [.. rows.Select(p => new ChatRoomPersonDto(p.PublicId, ChatConnectionRules.ShortName(p.FirstName, p.LastName), p.MutedUntil > utc, p.MutedUntil > utc ? Shipboard.Ms(p.MutedUntil.Value) : null))];
+    }
+
+    /// <summary>The administrators who could be on a room's rota, with whether each is named. 404 for no such room.</summary>
+    public async Task<List<ChatRoomModeratorDto>> RotaAsync(UserRecord admin, Guid id, CancellationToken ct)
+    {
+        var r = await FindAsync(admin, id, ct);
+        return [.. (await rooms.ListModeratorsAsync(r.GroupId, ct)).Select(m => new ChatRoomModeratorDto(m.PublicId, ChatConnectionRules.ShortName(m.FirstName, m.LastName), m.Named))];
+    }
+
     // ---- Suggested questions (staff) ----
 
     /// <summary>The suggested questions waiting for staff, oldest first. No names. The read is audited.</summary>
