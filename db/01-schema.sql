@@ -3359,8 +3359,13 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups'))
   ALTER TABLE dbo.ChatGroups ADD CONSTRAINT CK_ChatGroups_Kind CHECK (Kind IN ('party','direct','group','stanley'));
 GO
+-- NO ACTION, not CASCADE: Users already reaches ChatGroups through ChatGroupMembers by cascade, and SQL Server refuses a second cascade path (Msg 1750).
+-- A purge that removes a user must delete that user's Stanley ChatGroups row first (its members, messages and acknowledgements cascade from it).
 IF COL_LENGTH(N'dbo.ChatGroups', N'StanleyUserId') IS NULL
-  ALTER TABLE dbo.ChatGroups ADD StanleyUserId BIGINT NULL CONSTRAINT FK_ChatGroups_Users_Stanley FOREIGN KEY REFERENCES dbo.Users (Id) ON DELETE CASCADE;
+  ALTER TABLE dbo.ChatGroups ADD StanleyUserId BIGINT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_ChatGroups_Users_Stanley')
+  ALTER TABLE dbo.ChatGroups ADD CONSTRAINT FK_ChatGroups_Users_Stanley FOREIGN KEY (StanleyUserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION;
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatGroups_Stanley' AND object_id = OBJECT_ID(N'dbo.ChatGroups'))
   CREATE UNIQUE INDEX UX_ChatGroups_Stanley ON dbo.ChatGroups (StanleyUserId) WHERE StanleyUserId IS NOT NULL;
