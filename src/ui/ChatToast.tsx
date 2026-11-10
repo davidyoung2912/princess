@@ -9,7 +9,7 @@ import { Chat, X } from './icons'
 
 /**
  * A small notice at the top of the screen for a chat request or message that arrived while the guest is elsewhere in the app. It never takes focus and has no sound,
- * goes away by itself (and waits while the keyboard is on it), and Escape closes it. A request can be accepted from it; declining and blocking stay in the list.
+ * goes away by itself (and waits while the keyboard is on it), and Escape closes it. Tapping the sentence opens the chat, as Open does. A request can be accepted from it; declining and blocking stay in the list.
  */
 export function ChatToast({ notice, onClose }: { notice: ChatNotice | null; onClose: () => void }) {
   return (
@@ -60,7 +60,9 @@ function Toast({ notice, onClose }: { notice: ChatNotice; onClose: () => void })
       ref={box} className="chat-toast" role="group" aria-label={t('notice.label')}
     >
       <Chat className="chat-toast__icon" aria-hidden="true" />
-      <p className="chat-toast__text"><span className="chat-toast__label">{t('notice.label')}</span> {text}</p>
+      <p className="chat-toast__text">
+        <button type="button" className="chat-toast__main" onClick={() => go(target)}><span className="chat-toast__label">{t('notice.label')}</span> {text}</button>
+      </p>
       <div className="chat-toast__actions">
         {notice.requestId && !done && <Button onClick={() => void accept()} disabled={busy}>{t('notice.accept')}</Button>}
         <Button variant="secondary" onClick={() => go(target)}>{t('notice.open')}</Button>
