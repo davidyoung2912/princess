@@ -272,3 +272,8 @@ button.chat-quote { cursor: pointer; }
 .chat-mentions ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chat-share { margin-top: var(--space-3); }
 .chat-share__list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-block-end: 1px solid var(--border); }
+
+/* Chat search (phase 9): a found word is marked by weight and an underline as well as colour, so it reads without colour and in forced-colors. */
+.search-hit .conv__last { white-space: normal; }
+.search-hit mark { background: transparent; color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+@media (forced-colors: active) { .search-hit mark { forced-color-adjust: none; background: Mark; color: MarkText; } }

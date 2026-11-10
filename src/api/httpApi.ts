@@ -221,6 +221,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     thread: (id, before) => get(`/me/chat/conversations/${seg(id)}/messages${before ? `?before=${seg(before)}` : ''}`),
     send: (id, text, clientId, urgency, replyTo, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}), ...(replyTo ? { replyTo } : {}), ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
     sendTyped: (id, input, clientId, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { ...input, clientId, ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
+    search: (query, conversation, before) => get(`/me/chat/search?q=${seg(query)}${conversation ? `&conversation=${seg(conversation)}` : ''}${before ? `&before=${seg(before)}` : ''}`),
+    exportChat: (id) => get(`/me/chat/conversations/${seg(id)}/export`),
     shareable: () => get('/me/chat/shareable'),
     pin: (id, messageId, on) => send(on ? 'put' : 'delete', `/me/chat/conversations/${seg(id)}/pins/${seg(messageId)}`),
     mentionsOnly: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mentions-only`, { on }),

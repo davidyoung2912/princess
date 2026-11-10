@@ -70,6 +70,7 @@ services.AddScoped<ChatConnectionService>();
 services.AddScoped<IChatGroupStore, DapperChatGroupStore>();
 services.AddScoped<IChatKeepStore, DapperChatKeepStore>();
 services.AddScoped<ChatKeepService>();
+services.AddScoped<ChatSearchService>();
 services.AddScoped<ChatGroupService>();
 services.AddOptions<ChatRoomOptions>().BindConfiguration(ChatRoomOptions.Section);
 services.AddScoped<IChatRoomStore, DapperChatRoomStore>();

@@ -358,7 +358,22 @@ export interface ChatConversationsApi {
   reportPerson(id: string, personId: string, reason: string): Promise<void>
   /** Tells the connected people in this chat when you leave or return to the ship (off by default). Returns the new state; a supervised account is refused. */
   notifyAway(id: string, on: boolean): Promise<boolean>
+  /**
+   * Searches the words of your own chats (2 to 60 letters), or one chat with `conversation`. Newest first; pass the last `before` to read older hits. Rejects `invalid` (`query`) or `notFound`.
+   * Never covers Stanley's chat, channels or rooms.
+   */
+  search(query: string, conversation?: string, before?: string): Promise<ChatSearchResult>
+  /** Everything you may read of one of your chats, for saving as a file. Rejects `forbidden` (`notExportable`) or `notFound`. */
+  exportChat(id: string): Promise<ChatExport>
 }
+
+// ---- Search and export (docs/chat-features-research.md, phase 9) ----
+
+/** One message a search found. `from` is empty for your own message; `text` is a snippet around the match. */
+export interface ChatSearchHit { conversationId: string; messageId: string; fromName: string; mine: boolean; text: string; at: number }
+export interface ChatSearchResult { hits: ChatSearchHit[]; hasMore: boolean; /** Pass as `before` for the next, older page. */ before?: string }
+export interface ChatExportLine { from: string; at: number; text: string; photo: boolean; system: boolean }
+export interface ChatExport { name: string; at: number; lines: ChatExportLine[]; /** Only the newest messages are here. */ truncated: boolean }
 
 // ---- Groups (docs/chat-plan.md, phase 5) ----
 

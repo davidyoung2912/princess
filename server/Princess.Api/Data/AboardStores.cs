@@ -226,6 +226,21 @@ public sealed class ChatConversationRow : ChatMemberRow
     public int Unread { get; set; }
 }
 
+/// <summary>One message found by a search or read for an export (phase 9): only what a list of words needs, never a photo, card, reaction or quote.</summary>
+public sealed class ChatSearchRow
+{
+    public long Id { get; set; }
+    public Guid PublicId { get; set; }
+    public long GroupId { get; set; }
+    public Guid GroupPublicId { get; set; }
+    public string Kind { get; set; } = "party";
+    public long FromUserId { get; set; }
+    public string Text { get; set; } = "";
+    public bool HasPhoto { get; set; }
+    public bool IsSystem { get; set; }
+    public DateTime At { get; set; }
+}
+
 /// <summary>Someone who should hear about a new message: an active member other than the sender who has not blocked the sender.</summary>
 public sealed class ChatRecipientRow
 {
@@ -414,6 +429,14 @@ public interface IChatStore
     /// (from when they joined to when they left; the booking's group shows all) and not from someone the member blocked. One extra message is read so the caller can tell there is more.
     /// </summary>
     Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct);
+    /// <summary>
+    /// Phase 9: messages whose text holds <paramref name="like"/> (a pattern from <see cref="Domain.ChatSearchRules.LikePattern"/>), newest first, one more than <paramref name="limit"/> so the caller can tell there is more.
+    /// Only plain text a person wrote (not a deleted, system, card, poll or Stanley line), in a person-to-person conversation the member belongs to (one conversation when <paramref name="conversationId"/> is given),
+    /// inside the member's window and not from someone they blocked: the same rule as reading the thread.
+    /// </summary>
+    Task<List<ChatSearchRow>> SearchMessagesAsync(long userId, Guid? conversationId, string like, Guid? before, int limit, CancellationToken ct);
+    /// <summary>Phase 9: the newest <paramref name="max"/> messages the member may read in one conversation, oldest first, for an export. Deleted messages carry no text.</summary>
+    Task<List<ChatSearchRow>> ListForExportAsync(long groupId, long userId, int max, CancellationToken ct);
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
     /// <param name="replyToId">The stored id of the message this one answers (already checked to be in the same conversation and readable by the sender), or null.</param>
     /// <param name="kind">Phase 3: <c>text</c>, <c>card</c> or <c>place</c>; <paramref name="payload"/> is the card's JSON. <paramref name="mentions"/> are members (user ids) the message mentions, stored with it.</param>

@@ -17,6 +17,14 @@ public static class ChatConnectionEndpoints
             .RequireRateLimiting(SearchLimiter)
             .WithSummary("Finds guests on the caller's sailing by name (3 to 40 letters). Each result is a first name and last initial, and how they relate to the caller (none, asked, waiting, approval, connected). Nobody who blocked the caller or turned off being found. 400 query. Rate-limited per person.");
 
+        chat.MapGet("/search", async (string? q, Guid? conversation, Guid? before, int? limit, ICurrentUser me, ChatSearchService svc, CancellationToken ct) => Results.Ok(await svc.SearchAsync(await me.LoadAsync(ct), q, conversation, before, limit, ct)))
+            .RequireRateLimiting(SearchLimiter)
+            .WithSummary("Searches the words of the caller's own chats (the booking's group, direct chats and groups; not Stanley's chat, channels or rooms). 2 to 60 characters; with `conversation` only that one. Only messages the caller may already read: their own window, nobody they blocked, nothing deleted. Newest first, a snippet each; pass `before` for older. 400 query; 404 not a member. Rate-limited per person.");
+
+        chat.MapGet("/conversations/{id:guid}/export", async (Guid id, ICurrentUser me, ChatSearchService svc, CancellationToken ct) => Results.Ok(await svc.ExportAsync(await me.LoadAsync(ct), id, ct)))
+            .RequireRateLimiting(SearchLimiter)
+            .WithSummary("Everything the caller may read of one of their own chats (up to 5000 newest messages), oldest first, for saving as a file. A photo is named, not carried. Audited without text. 403 notExportable (Stanley, channel, room); 404 not a member.");
+
         chat.MapGet("/eligibility", async (ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.EligibilityAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("What chat the caller may use now, decided from their journey stage and bookings: the permanent Stanley chat (always), the travel party chat and asking other guests to chat (from a confirmed booking), and whether a chat can be kept. `reason` is beforeBooking when only Stanley is on. Only governs starting new chats; chats already there stay readable.");
 

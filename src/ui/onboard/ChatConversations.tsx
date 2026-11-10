@@ -10,7 +10,7 @@ import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
 import {
-  canTarget, conversationFromSearch, deliveryOf, dividerBefore, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
+  canTarget, conversationFromSearch, messageFromSearch, deliveryOf, dividerBefore, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
   QUICK_REPLY_KEYS, quoteSummary, type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
@@ -41,6 +41,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
+import { Dialog } from '../Dialog'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
@@ -55,6 +56,8 @@ import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { RoomDetails, RulesDialog } from './ChatRooms'
+import { ChatSearch, SaveChat } from './ChatSearch'
+import { isSearchable } from '../../domain/chatSearch'
 import { isRoomChat, needsRules, roomPostState } from '../../domain/chatRooms'
 import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../domain/chatPlanning'
 
@@ -65,7 +68,8 @@ import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../do
 export function Conversations() {
   const [params, setParams] = useSearchParams()
   const open = conversationFromSearch(params.toString())
-  return open ? <Thread key={open} id={open} onBack={() => setParams({})} /> : <ConversationList onOpen={(id) => setParams({ c: id })} />
+  const target = messageFromSearch(params.toString())
+  return open ? <Thread key={open} id={open} jumpTo={target} onBack={() => setParams({})} /> : <ConversationList onOpen={(id) => setParams({ c: id })} />
 }
 
 /** Conversations this device has already said it received messages for (by id and last message time), so a refresh of the list does not ask again. */
@@ -201,7 +205,7 @@ const nearBottom = (): boolean => {
 type Phase = 'loading' | 'ready' | 'error' | 'gone'
 
 /** One conversation: the latest 30 messages, older ones on request, a composer that never blocks typing, and live arrival that does not move what the guest is reading. */
-function Thread({ id, onBack }: { id: string; onBack: () => void }) {
+function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo?: string | null }) {
   const me = usePersona()
   const supervisedChild = me?.child === true
   const now = useNow()
@@ -462,6 +466,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
     el.focus({ preventScroll: true })
   })
+  // A search result opens its chat and goes to the message once the thread is ready (older pages are read when it is not on the first).
+  const jumpedTo = useRef<string | null>(null)
+  useEffect(() => {
+    if (!jumpTo || phase !== 'ready' || jumpedTo.current === jumpTo) return
+    jumpedTo.current = jumpTo
+    goToPin(jumpTo)
+  }, [jumpTo, phase, goToPin])
   const mentionsOnly = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, mentionsOnly: on || undefined } : c)), () => api.chatConversations.mentionsOnly(id, on), () => setConversation((c) => (c ? { ...c, mentionsOnly: on ? undefined : true } : c)))
   })
@@ -578,7 +589,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
       {conversation && !permanent && phase === 'ready' && (
-        <ChatMenu conversation={conversation} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} />
+        <ChatMenu conversation={conversation} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
       )}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
@@ -1050,9 +1061,10 @@ const MUTE_KEY: Record<MuteLength, StringKey> = { hour: 'conv.muteHour', day: 'c
  * The chat's header menu: mute (for an hour, a day, a week or until turned back on), archive, and for the people in it Block and Report. A report goes with their latest message so the moderators can see
  * what was said; a block only hides them from you. Escape closes it and focus returns to the button.
  */
-function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
-  conversation: ChatConversation; now: number; busy: boolean; onMute: (on: boolean, length?: MuteLength) => void; onArchive: (on: boolean) => void; onBlocked: () => void
+function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked, onFind }: {
+  conversation: ChatConversation; now: number; busy: boolean; onMute: (on: boolean, length?: MuteLength) => void; onArchive: (on: boolean) => void; onBlocked: () => void; onFind: (messageId: string) => void
 }) {
+  const [finding, setFinding] = useState(false)
   const shipTime = useShipTime()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -1070,7 +1082,8 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
   const close = () => { setOpen(false); root.current?.querySelector<HTMLElement>('[aria-expanded]')?.focus() }
   const muted = isMuted(conversation, now)
   return (
-    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- Escape is a shortcut for a menu whose controls all work by themselves
+    <>
+    {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- Escape is a shortcut for a menu whose controls all work by themselves */}
     <div ref={root} className="chat-menu" onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); close() } }}>
       <Button variant="secondary" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>{t('conv.menu')}</Button>
       {open && (
@@ -1087,6 +1100,12 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
             </div>
           )}
           <p className="muted">{t('conv.muteBody')}</p>
+          {isSearchable(conversation) && (
+            <>
+              <div className="button-row"><Button variant="secondary" onClick={() => setFinding(true)}>{t('csearch.inChat')}</Button></div>
+              <SaveChat conversationId={conversation.id} />
+            </>
+          )}
           <div className="button-row"><Button variant="secondary" disabled={busy} onClick={() => onArchive(!conversation.archived)}>{t(conversation.archived ? 'conv.unarchive' : 'conv.archive')}</Button></div>
           {!conversation.permanent && !conversation.closed && !isRoomChat(conversation) && <KeepSection conversationId={conversation.id} />}
           {person && (
@@ -1118,6 +1137,12 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
         </div>
       )}
     </div>
+    {finding && (
+      <Dialog title={t('csearch.inChat')} onClose={() => setFinding(false)}>
+        <ChatSearch conversationId={conversation.id} onPick={(h) => { setFinding(false); setOpen(false); setTimeout(() => onFind(h.messageId), 0) }} />
+      </Dialog>
+    )}
+    </>
   )
 }
 

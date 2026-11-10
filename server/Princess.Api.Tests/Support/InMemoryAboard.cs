@@ -455,6 +455,25 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         }).ToList());
     }
 
+    private static ChatSearchRow Hit(Conversation c, ChatMessageRow m) => new() { Id = m.Id, PublicId = m.PublicId, GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, FromUserId = m.FromUserId, Text = m.DeletedAt is null && m.Kind == "text" ? m.Text : "", HasPhoto = m.Photo is not null && m.DeletedAt is null, IsSystem = m.IsSystem, At = m.At };
+
+    public Task<List<ChatSearchRow>> SearchMessagesAsync(long userId, Guid? conversationId, string like, Guid? before, int limit, CancellationToken ct)
+    {
+        var needle = like[1..^1].Replace("\\%", "%").Replace("\\_", "_").Replace("\\[", "[").Replace("\\\\", "\\");
+        var hits = Mine(userId).Where(c => c.Kind is "party" or "direct" or "group" && (conversationId is null || c.PublicId == conversationId))
+            .SelectMany(c => Visible(c, c.Members.First(m => m.UserId == userId)).Where(m => m.DeletedAt is null && !m.IsSystem && m.FromUserId != 0 && m.Kind == "text" && m.Text.Contains(needle, StringComparison.OrdinalIgnoreCase)).Select(m => Hit(c, m)))
+            .OrderByDescending(h => h.Id).ToList();
+        if (before is { } b && Messages.FirstOrDefault(x => x.Row.PublicId == b) is { } cut) hits = hits.Where(h => h.Id < cut.Row.Id).ToList();
+        return Task.FromResult(hits.Take(limit + 1).ToList());
+    }
+
+    public Task<List<ChatSearchRow>> ListForExportAsync(long groupId, long userId, int max, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        if (c.Kind is not ("party" or "direct" or "group")) return Task.FromResult(new List<ChatSearchRow>());
+        return Task.FromResult(Visible(c, c.Members.First(m => m.UserId == userId)).Where(m => m.DeletedAt is null).TakeLast(max).Select(m => Hit(c, m)).ToList());
+    }
+
     public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null)
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)

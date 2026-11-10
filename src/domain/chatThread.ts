@@ -117,3 +117,9 @@ export function conversationFromSearch(search: string): string | null {
   const v = new URLSearchParams(search).get('c')
   return v && /^[0-9a-fA-F-]{32,36}$/.test(v) ? v : null
 }
+
+/** The message to scroll to, from `?m=` (a search result opens its chat there). Only a well-formed id is taken. */
+export function messageFromSearch(search: string): string | null {
+  const m = new URLSearchParams(search).get('m')
+  return m && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m) ? m : null
+}

@@ -726,6 +726,41 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return messages;
     }
 
+    public async Task<List<ChatSearchRow>> SearchMessagesAsync(long userId, Guid? conversationId, string like, Guid? before, int limit, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        // The member row is joined on the caller's own id, so the window and block rules are the thread's; the query text only ever reaches a parameter.
+        return (await c.QueryAsync<ChatSearchRow>(Sql.Cmd($"""
+            SELECT TOP (@take) m.Id, m.PublicId, g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], CAST(0 AS bit) AS HasPhoto, CAST(0 AS bit) AS IsSystem, m.[At]
+            FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE g.Kind IN ('party','direct','group') AND {Window}
+              AND m.DeletedAt IS NULL AND m.IsSystem = 0 AND m.FromUserId IS NOT NULL AND m.Kind = 'text'
+              AND m.[Text] LIKE @like ESCAPE '\'
+              AND (@conversationId IS NULL OR g.PublicId = @conversationId)
+              AND (@before IS NULL OR m.Id < (SELECT x.Id FROM dbo.ChatMessages x WHERE x.PublicId = @before AND x.GroupId = g.Id))
+            ORDER BY m.Id DESC
+            """, new { userId, conversationId, like, before, take = limit + 1 }, null, ct))).ToList();
+    }
+
+    public async Task<List<ChatSearchRow>> ListForExportAsync(long groupId, long userId, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = (await c.QueryAsync<ChatSearchRow>(Sql.Cmd($"""
+            SELECT TOP (@max) m.Id, m.PublicId, g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, ISNULL(m.FromUserId, 0) AS FromUserId,
+                   CASE WHEN m.DeletedAt IS NULL AND m.Kind = 'text' THEN m.[Text] ELSE N'' END AS [Text],
+                   CAST(CASE WHEN m.Photo IS NULL OR m.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.IsSystem, m.[At]
+            FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE m.GroupId = @groupId AND g.Kind IN ('party','direct','group') AND {Window} AND m.DeletedAt IS NULL AND m.FromUserId IS NOT NULL
+            ORDER BY m.Id DESC
+            """, new { groupId, userId, max }, null, ct))).ToList();
+        rows.Reverse();
+        return rows;
+    }
+
     public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null)
     {
         await using var c = await db.OpenAsync(ct);

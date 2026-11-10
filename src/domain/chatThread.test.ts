@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
-import { canTarget, conversationFromSearch, deliveryOf, dividerBefore, QUICK_REPLY_KEYS, quoteSummary, incomingSince, initials, isNearBottom, lastLine, mergeMessages, newClientId, pendingFor, sendProblem, totalUnread, withLatest, withOlder } from './chatThread'
+import { messageFromSearch, canTarget, conversationFromSearch, deliveryOf, dividerBefore, QUICK_REPLY_KEYS, quoteSummary, incomingSince, initials, isNearBottom, lastLine, mergeMessages, newClientId, pendingFor, sendProblem, totalUnread, withLatest, withOlder } from './chatThread'
 
 const m = (id: string, from = 'sam'): ChatMessage => ({ id, from, text: id, at: 1 })
 const ids = (list: ChatMessage[]) => list.map((x) => x.id)
@@ -133,5 +133,13 @@ describe('replies, quick replies and the unread divider', () => {
   it('has a fixed set of six quick replies', () => {
     expect(QUICK_REPLY_KEYS).toHaveLength(6)
     expect(new Set(QUICK_REPLY_KEYS).size).toBe(6)
+  })
+})
+
+describe('messageFromSearch', () => {
+  it('takes only a well-formed message id', () => {
+    expect(messageFromSearch('?c=a&m=3f2504e0-4f89-41d3-9a0c-0305e82c3301')).toBe('3f2504e0-4f89-41d3-9a0c-0305e82c3301')
+    expect(messageFromSearch('?m=<script>')).toBeNull()
+    expect(messageFromSearch('?c=a')).toBeNull()
   })
 })
