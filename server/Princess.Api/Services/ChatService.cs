@@ -90,7 +90,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 var replaced = m.SupersededAt is not null;
                 var notice = m.Lane is null ? null : new ChatNoticeDto(m.Lane, m.NoticeKind ?? "", m.NoticePath ?? "", expired, replaced,
                     m.ExpiresAt is { } until ? Shipboard.Ms(until) : null,
-                    StanleyNoticeRules.ActionsFor(m.NoticeKind ?? "", expired, replaced), expired || replaced ? [] : StanleyNoticeRules.RepliesOf(m.Lane));
+                    StanleyNoticeRules.ActionsFor(m.NoticeKind ?? "", m.NoticeSubject, expired, replaced), expired || replaced ? [] : StanleyNoticeRules.RepliesOf(m.Lane), m.NoticeSubject);
                 // A relayed notice asks for Got it when it is critical or important; the guest sees whether they have, and a replaced or expired one no longer asks.
                 var asks = notice is not null && ChatUrgencyRules.CanAck(m.Urgency, m.IsSystem, false, true) && !notice.Expired && !notice.Superseded;
                 messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle,
@@ -220,7 +220,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (member.Status != ChatConversationRules.Active) throw ApiException.NotFound();
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
         if (!ChatUrgencyRules.CanAck(message.Urgency, message.IsSystem, message.FromUserId == actor.Id, message.Lane is not null)) throw ApiException.Invalid("notUrgent");
-        if (!await store.AddAckAsync(message.Id, actor.Id, await userClock.NowAsync(actor, ct), ct)) return;
+        var at = await userClock.NowAsync(actor, ct);
+        if (!await store.AddAckAsync(message.Id, actor.Id, at, ct)) return;
+        // The delivery log keeps kind, lane, key and time, never the text; a failure to log must not undo the acknowledgement.
+        if (message.Lane is not null && message.NoticeKey is not null)
+            try { await store.LogNoticeDeliveryAsync(actor.Id, message.NoticeKey, message.NoticeKind ?? "", message.Lane, StanleyNoticeRules.EventAcked, at, ct); } catch (Exception e) when (e is not OperationCanceledException) { /* counts are best effort */ }
         if (!message.FromStanley) await notifier.AckedAsync(message.FromUserId, conversationId, messageId, ct);   // Stanley has no one to tell
         await notifier.AckedAsync(actor.Id, conversationId, messageId, ct);
     }

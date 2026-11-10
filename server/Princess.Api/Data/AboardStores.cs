@@ -140,6 +140,8 @@ public sealed class ChatMessageRow
     public string? SupersedeKey { get; set; }
     public string? NoticeKind { get; set; }
     public string? NoticePath { get; set; }
+    /// <summary>The engine card the notice is about (phase 0c), when it has one.</summary>
+    public string? NoticeSubject { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime? SupersededAt { get; set; }
     public bool FromStanley => FromUserId == 0;
@@ -208,6 +210,9 @@ public sealed class ChatAwayRecipientRow
 
 /// <summary>A message stored by <see cref="IChatStore.AddMessageAsync"/>. <c>Created</c> is false when the same <c>clientId</c> had been sent before and the stored message came back.</summary>
 public sealed record ChatSentRow(ChatMessageRow Row, bool Created);
+
+/// <summary>How many times one event happened for one kind and lane of Stanley notice (phase 0c delivery log).</summary>
+public sealed record NoticeDeliveryCount(string Kind, string Lane, string Event, int Count);
 
 /// <summary>Phase 10c store: on-board bookings, requests, reports, drinks, money, parties, group tables, games, the TV, last-minute tours and port readiness. Writes that put something on the account take the lines in the same transaction and replace every line of that source.</summary>
 public interface IAboardStore
@@ -288,6 +293,12 @@ public interface IChatStore
     /// Writes a company or ship notice into the person's Stanley thread (phase 0b), once per <see cref="Domain.StanleyNotice.Key"/>: a repeat adds nothing and returns false. A notice with a supersede key marks the
     /// earlier messages of that occasion as replaced. Returns true when a message was added.
     /// </summary>
+    /// <summary>
+    /// Writes one row of the relay's delivery log: kind, lane, key and time, never the text. A repeat of the same (person, key, event) adds nothing, so a retry or a second tap is counted once.
+    /// </summary>
+    Task LogNoticeDeliveryAsync(long userId, string noticeKey, string kind, string lane, string evt, DateTime at, CancellationToken ct);
+    /// <summary>Counts of delivery events since <paramref name="since"/> by kind, lane and event: aggregates only, no person and no text.</summary>
+    Task<List<NoticeDeliveryCount>> NoticeDeliverySummaryAsync(DateTime since, CancellationToken ct);
     Task<bool> AddStanleyNoticeAsync(long userId, Domain.StanleyNotice notice, string voice, string subtitle, DateTime at, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);

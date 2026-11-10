@@ -53,7 +53,7 @@ export function noticeOffers(m: Pick<ChatMessage, 'notice'>, now?: number): { ac
 }
 
 /** Whether an action runs in the thread itself (calls the same service its own screen calls) rather than opening that screen. */
-export const IN_THREAD_ACTIONS: readonly string[] = ['confirmMuster']
+export const IN_THREAD_ACTIONS: readonly string[] = ['confirmMuster', 'reviewChange']
 
 /** The words for the age of the copy shown when the server cannot be reached: "As of 3:10". `savedAt` is epoch milliseconds on this device; `format` shows a time. */
 export const copyAge = (savedAt: number | undefined, format: (at: number) => string): string | null => (savedAt === undefined || !Number.isFinite(savedAt) ? null : format(savedAt))

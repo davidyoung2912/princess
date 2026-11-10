@@ -1,7 +1,7 @@
 namespace Princess.Api.Domain;
 
 /// <summary>A notice as it is written into the guest's Stanley thread (docs/chat-features-research.md, section 15.4). One per <see cref="Key"/>; a newer one with the same <see cref="SupersedeKey"/> replaces the older.</summary>
-public sealed record StanleyNotice(string Key, string Lane, string Kind, string Path, string Text, string? SupersedeKey, DateTime? ExpiresAt, string Urgency);
+public sealed record StanleyNotice(string Key, string Lane, string Kind, string Path, string Text, string? SupersedeKey, DateTime? ExpiresAt, string Urgency, string? Subject = null);
 
 /// <summary>
 /// The notice relay's pure rules (phase 0b): which lane a push notice belongs to, how long it stays useful, what it supersedes and the words of the thread message. The delivery path
@@ -9,6 +9,9 @@ public sealed record StanleyNotice(string Key, string Lane, string Kind, string 
 /// </summary>
 public static class StanleyNoticeRules
 {
+    /// <summary>The events of the delivery log (docs/chat-features-research.md, 15.8): written to the thread, written only to the phone because the thread failed, and the guest's Got it.</summary>
+    public const string EventPosted = "posted", EventFailOpen = "failOpen", EventAcked = "acked";
+
     public const string Critical = "critical", Important = "important", Reminder = "reminder", Info = "info";
     public static readonly string[] Lanes = [Critical, Important, Reminder, Info];
 
@@ -49,7 +52,8 @@ public static class StanleyNoticeRules
         // The thread is already Stanley's: the "Stanley: " the phone needs on a lock screen would only repeat his name.
         var title = n.Title.StartsWith("Stanley: ", StringComparison.Ordinal) ? n.Title["Stanley: ".Length..] : n.Title;
         var text = string.IsNullOrWhiteSpace(n.Body) ? title : $"{title}\n{n.Body}";
-        return new(n.Key, lane, n.Kind, n.Path, text.Length > 1000 ? text[..1000] : text, SupersedeKeyOf(n), ExpiryOf(lane, now), UrgencyOf(lane));
+        return new(n.Key, lane, n.Kind, n.Path, text.Length > 1000 ? text[..1000] : text, SupersedeKeyOf(n), ExpiryOf(lane, now), UrgencyOf(lane),
+            n.Params.TryGetValue("card", out var card) && card is string cs && cs.Length is > 0 and <= 120 ? cs : null);
     }
 
     /// <summary>Whether a message can still be acted on: not replaced, not past its expiry.</summary>
@@ -86,6 +90,13 @@ public static class StanleyNoticeRules
         return list;
     }
 
+    // ---- Phase 0c: the delivery log's counts ----
+
+    public const int DefaultStatsHours = 24, MaxStatsHours = 720;
+
+    /// <summary>The window asked for, in hours: the default when none is given, and never outside 1 to 720.</summary>
+    public static int StatsWindowHours(int? hours) => hours is null ? DefaultStatsHours : Math.Clamp(hours.Value, 1, MaxStatsHours);
+
     // ---- Phase 0c: actions and replies ----
 
     /// <summary>The replies a notice offers as chips. Remind me later is never offered for a critical notice: safety is not put off.</summary>
@@ -113,7 +124,14 @@ public static class StanleyNoticeRules
         _ => [],
     };
 
-    public static IReadOnlyList<string> ActionsFor(string kind, bool expired, bool superseded) => expired || superseded ? [] : ActionsOf(kind);
+    /// <summary>The action that shows the change engine's card for this notice, with its options (move dinner, add to plan) each prepared and confirmed on the card's own Confirm. Offered only when the notice names its card.</summary>
+    public const string ReviewChange = "reviewChange";
+
+    public static IReadOnlyList<string> ActionsFor(string kind, string? subject, bool expired, bool superseded)
+    {
+        if (expired || superseded) return [];
+        return kind is "reservation" or "change" && !string.IsNullOrEmpty(subject) ? [ReviewChange] : ActionsOf(kind);
+    }
 
     private static string WhyOf(string kind) => kind switch
     {

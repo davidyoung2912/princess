@@ -15491,6 +15491,8 @@ export const en = {
   'stanley.notice.action.checkIn': 'Check in',
   'stanley.notice.action.pay': 'Pay',
   'stanley.notice.action.boardingPass': 'Boarding pass',
+  'stanley.notice.action.reviewChange': 'See the options',
+  'stanley.notice.noOptions': 'There is nothing left to decide here. It may already be sorted out.',
   'stanley.notice.action.addToPlan': 'See my plan',
   'stanley.notice.musterDone': 'Confirmed. Thank you.',
   'stanley.notice.musterNothing': 'Everyone on your booking has already been confirmed.',

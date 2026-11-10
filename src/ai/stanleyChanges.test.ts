@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DIGEST, deliveryLevel, emptySession, loadSession, needsConfirm, normalizeCard, normalizeDelivery, normalizeExplanation, normalizeList, normalizeMissed, recordShown, safeRoute, saveSession, savedParam, shownElsewhere,
+  DIGEST, cardFor, deliveryLevel, emptySession, loadSession, needsConfirm, normalizeCard, normalizeDelivery, normalizeExplanation, normalizeList, normalizeMissed, recordShown, safeRoute, saveSession, savedParam, shownElsewhere,
 } from './stanleyChanges'
 
 const option = (extra: Record<string, unknown> = {}) => ({ id: 'o', label: 'Do it', detail: 'Details', action: null, route: null, ...extra })
@@ -122,5 +122,17 @@ describe('the saved events sent with a request', () => {
     expect(savedParam([])).toBeUndefined()
     expect(savedParam(['stage-show', 'bad id', '<x>', 'trivia_2'])).toBe('stage-show,trivia_2')
     expect(savedParam(Array.from({ length: 40 }, (_, i) => `e${i}`))!.split(',')).toHaveLength(30)
+  })
+})
+
+describe('the card a thread notice is about', () => {
+  const list = normalizeList({ asOf: 1, asOfText: '12:00', cards: [raw(), raw({ id: 'dinner:2' })], unread: [] })
+  it('finds it by the id the notice carries', () => {
+    expect(cardFor(list, 'dinner:2')?.id).toBe('dinner:2')
+  })
+  it('is null when the card is gone, the notice names none or the list did not load', () => {
+    expect(cardFor(list, 'gone')).toBeNull()
+    expect(cardFor(list, undefined)).toBeNull()
+    expect(cardFor(null, 'dinner:2')).toBeNull()
   })
 })

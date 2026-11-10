@@ -431,17 +431,37 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { userId, text, voice, subtitle, at }, null, ct));
     }
 
+    public async Task LogNoticeDeliveryAsync(long userId, string noticeKey, string kind, string lane, string evt, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        // The test is in the insert (and backed by the unique constraint), so a repeat adds nothing.
+        await c.ExecuteAsync(Sql.Cmd("""
+            INSERT INTO dbo.StanleyNoticeDeliveries (UserId, NoticeKey, Kind, Lane, Event, [At])
+            SELECT @userId, @noticeKey, @kind, @lane, @evt, @at
+            WHERE NOT EXISTS (SELECT 1 FROM dbo.StanleyNoticeDeliveries d WHERE d.UserId = @userId AND d.NoticeKey = @noticeKey AND d.Event = @evt)
+            """, new { userId, noticeKey = Trim(noticeKey, 120), kind = Trim(kind, 20), lane, evt, at }, null, ct));
+    }
+
+    private static string Trim(string s, int max) => s.Length > max ? s[..max] : s;
+
+    public async Task<List<NoticeDeliveryCount>> NoticeDeliverySummaryAsync(DateTime since, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<NoticeDeliveryCount>(Sql.Cmd(
+            "SELECT Kind, Lane, Event, COUNT(*) AS [Count] FROM dbo.StanleyNoticeDeliveries WHERE [At] >= @since GROUP BY Kind, Lane, Event ORDER BY Lane, Kind, Event", new { since }, null, ct))).ToList();
+    }
+
     public async Task<bool> AddStanleyNoticeAsync(long userId, StanleyNotice n, string voice, string subtitle, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         // The key test is in the insert (and backed by a unique index), so two checks at once add one message, not two.
         var added = await c.ExecuteAsync(Sql.Cmd("""
-            INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At], Persona, Subtitle, Urgency, NoticeKey, Lane, NoticeKind, NoticePath, SupersedeKey, ExpiresAt)
-            SELECT g.Id, NULL, @text, 0, @at, @voice, @subtitle, @urgency, @key, @lane, @kind, @path, @supersedeKey, @expiresAt
+            INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At], Persona, Subtitle, Urgency, NoticeKey, Lane, NoticeKind, NoticePath, SupersedeKey, ExpiresAt, NoticeSubject)
+            SELECT g.Id, NULL, @text, 0, @at, @voice, @subtitle, @urgency, @key, @lane, @kind, @path, @supersedeKey, @expiresAt, @subject
             FROM dbo.ChatGroups g
             WHERE g.StanleyUserId = @userId
               AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessages x WHERE x.GroupId = g.Id AND x.NoticeKey = @key)
-            """, new { userId, text = n.Text, at, voice, subtitle, urgency = n.Urgency, key = n.Key, lane = n.Lane, kind = n.Kind, path = n.Path, supersedeKey = n.SupersedeKey, expiresAt = n.ExpiresAt }, null, ct));
+            """, new { userId, text = n.Text, at, voice, subtitle, urgency = n.Urgency, key = n.Key, lane = n.Lane, kind = n.Kind, path = n.Path, supersedeKey = n.SupersedeKey, expiresAt = n.ExpiresAt, subject = n.Subject }, null, ct));
         if (added == 0) return false;
         if (n.SupersedeKey is not null)
             await c.ExecuteAsync(Sql.Cmd("""
@@ -528,7 +548,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
             SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
-                   m.Lane, m.NoticeKind, m.NoticePath, m.ExpiresAt, m.SupersededAt
+                   m.Lane, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
@@ -654,7 +674,8 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle, m.Lane
+            SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
+                   m.Lane, m.NoticeKey, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId

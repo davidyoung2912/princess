@@ -148,9 +148,9 @@ export interface ChatMessage {
 export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info'
 /**
  * `expiresAt` (ship milliseconds) lets a copy held on the device stop offering actions when the time passes without asking the server. `actions` are ids the screen turns into buttons
- * (`confirmMuster` calls the muster service; the rest open the screen that does the job) and `replies` are the chips; both are empty once the notice is replaced or expired.
+ * (`confirmMuster` calls the muster service, `reviewChange` shows the change card named by `subject` with its options; the rest open the screen that does the job) and `replies` are the chips; both are empty once the notice is replaced or expired.
  */
-export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[] }
+export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[]; subject?: string }
 export type NoticeReply = 'why' | 'what' | 'later'
 /** Stanley's answer to a chip. `remindAt` is set when the reply was Remind me later. */
 export interface NoticeReplyAnswer { text: string; remindAt?: number }

@@ -113,6 +113,9 @@ export function normalizeList(raw: unknown): ChangeList | null {
   return { asOf: num(o.asOf), asOfText: text(o.asOfText, 40), cards: cards(o.cards), unread: Array.isArray(o.unread) ? o.unread.filter((u): u is string => typeof u === 'string').map((u) => u.slice(0, 40)).slice(0, 8) : [] }
 }
 
+/** The card a thread notice is about, from the change list, or null when it is no longer open (resolved, dismissed or replaced by a card with other facts). */
+export const cardFor = (list: ChangeList | null, subject: string | undefined): ChangeCard | null => (subject ? list?.cards.find((c) => c.id === subject) ?? null : null)
+
 export function normalizeMissed(raw: unknown): Missed | null {
   const o = obj(raw)
   if (!o || !Array.isArray(o.cards)) return null

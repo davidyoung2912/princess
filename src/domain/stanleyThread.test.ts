@@ -153,8 +153,8 @@ describe('notice actions, replies and offline copies (phase 0c)', () => {
     expect(needsYou([m], 600)).toHaveLength(0)
   })
 
-  it('runs only the muster confirmation in the thread; everything else opens its own screen', () => {
-    expect(IN_THREAD_ACTIONS).toEqual(['confirmMuster'])
+  it('runs the muster confirmation and the change card in the thread; everything else opens its own screen', () => {
+    expect(IN_THREAD_ACTIONS).toEqual(['confirmMuster', 'reviewChange'])
   })
 
   it('shows the age of an offline copy, and nothing when it is not known', () => {

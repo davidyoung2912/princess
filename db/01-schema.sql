@@ -3386,6 +3386,26 @@ IF COL_LENGTH(N'dbo.ChatMessages', N'NoticeKey') IS NULL
   ALTER TABLE dbo.ChatMessages ADD NoticeKey VARCHAR(120) NULL, Lane VARCHAR(9) NULL CONSTRAINT CK_ChatMessages_Lane CHECK (Lane IS NULL OR Lane IN ('critical','important','reminder','info')),
     NoticeKind VARCHAR(20) NULL, NoticePath NVARCHAR(200) NULL, SupersedeKey VARCHAR(160) NULL, ExpiresAt DATETIME2 NULL, SupersededAt DATETIME2 NULL;
 GO
+-- Phase 0c: the engine card a notice is about, so the thread can show that card's options (move dinner, add to plan) under the notice.
+IF COL_LENGTH(N'dbo.ChatMessages', N'NoticeSubject') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD NoticeSubject VARCHAR(120) NULL;
+GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatMessages_NoticeKey' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
   CREATE UNIQUE INDEX UX_ChatMessages_NoticeKey ON dbo.ChatMessages (GroupId, NoticeKey) WHERE NoticeKey IS NOT NULL;
+GO
+
+-- Phase 0c: the delivery log of the notice relay (docs/chat-features-research.md, 15.8 and 15.12). One row per notice and event, with kind, lane, key and time and NEVER the text, so it can be
+-- counted without reading anyone's messages. Event: posted (written to the thread), failOpen (the thread write failed and only the phone push went), acked (the guest tapped Got it).
+IF OBJECT_ID(N'dbo.StanleyNoticeDeliveries', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyNoticeDeliveries (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyNoticeDeliveries PRIMARY KEY,
+  UserId BIGINT NOT NULL, NoticeKey VARCHAR(120) NOT NULL, Kind VARCHAR(20) NOT NULL, Lane VARCHAR(9) NOT NULL,
+  Event VARCHAR(8) NOT NULL CONSTRAINT CK_StanleyNoticeDeliveries_Event CHECK (Event IN ('posted','failOpen','acked')),
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_StanleyNoticeDeliveries_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_StanleyNoticeDeliveries_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT UX_StanleyNoticeDeliveries UNIQUE (UserId, NoticeKey, Event)
+);
+CREATE INDEX IX_StanleyNoticeDeliveries_At ON dbo.StanleyNoticeDeliveries ([At]);
+END
 GO

@@ -314,6 +314,17 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.CompletedTask;
     }
 
+    public List<(long UserId, string Key, string Kind, string Lane, string Event, DateTime At)> Deliveries { get; } = [];
+
+    public Task LogNoticeDeliveryAsync(long userId, string noticeKey, string kind, string lane, string evt, DateTime at, CancellationToken ct)
+    {
+        if (!Deliveries.Any(d => d.UserId == userId && d.Key == noticeKey && d.Event == evt)) Deliveries.Add((userId, noticeKey, kind, lane, evt, at));
+        return Task.CompletedTask;
+    }
+
+    public Task<List<NoticeDeliveryCount>> NoticeDeliverySummaryAsync(DateTime since, CancellationToken ct) =>
+        Task.FromResult(Deliveries.Where(d => d.At >= since).GroupBy(d => (d.Kind, d.Lane, d.Event)).Select(g => new NoticeDeliveryCount(g.Key.Kind, g.Key.Lane, g.Key.Event, g.Count())).ToList());
+
     public virtual Task<bool> AddStanleyNoticeAsync(long userId, StanleyNotice n, string voice, string subtitle, DateTime at, CancellationToken ct)
     {
         if (Conversations.FirstOrDefault(c => c.StanleyUserId == userId) is not { } c) return Task.FromResult(false);
@@ -323,7 +334,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         Messages.Add(new Stored(c.Id, new ChatMessageRow
         {
             Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = n.Text, At = at, Persona = voice, Subtitle = subtitle, Urgency = n.Urgency,
-            NoticeKey = n.Key, Lane = n.Lane, NoticeKind = n.Kind, NoticePath = n.Path, SupersedeKey = n.SupersedeKey, ExpiresAt = n.ExpiresAt,
+            NoticeKey = n.Key, Lane = n.Lane, NoticeKind = n.Kind, NoticePath = n.Path, SupersedeKey = n.SupersedeKey, ExpiresAt = n.ExpiresAt, NoticeSubject = n.Subject,
         }, null));
         return Task.FromResult(true);
     }

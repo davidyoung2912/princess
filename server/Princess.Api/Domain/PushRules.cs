@@ -172,7 +172,7 @@ public static class PushRules
             var isCase = c.Kind == ChangeKinds.Case;
             var lostReservation = c.Consequence == ChangeConsequence.LostReservation;
             var kind = isCase ? "case" : lostReservation ? "reservation" : "change";
-            var link = new Dictionary<string, object> { ["change"] = c.Kind, ["consequence"] = c.Consequence };
+            var link = new Dictionary<string, object> { ["change"] = c.Kind, ["consequence"] = c.Consequence, ["card"] = c.Id };
             if (isCase && c.Affects.FirstOrDefault() is { } a) link["case"] = a.Name;
             if (lostReservation && c.Affects.FirstOrDefault() is { } r) link["reservation"] = $"{r.Kind}-{r.Day}";
             list.Add(new($"change:{c.Id}:{c.Fingerprint}", kind, isCase ? "checkin" : "critical", c.Consequence == ChangeConsequence.Safety, c.Consequence == ChangeConsequence.Safety ? 96 : lostReservation ? 85 : 40,

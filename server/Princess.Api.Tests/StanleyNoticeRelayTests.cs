@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Princess.Api.Data;
 using Princess.Api.Domain;
+using Princess.Api.Endpoints;
 using Princess.Api.Services;
 using Princess.Api.Tests.Support;
 
@@ -133,6 +134,15 @@ public class StanleyNoticeRelayTests
         Assert.Equal(0, await relay.RelayAsync(new UserRecord { Id = 1 }, [Notice("a", "allAboard", true)], Now, default));
     }
 
+    [Fact]
+    public async Task AFailedWriteIsCountedAsTheFailOpenPath()
+    {
+        var chat = new ThrowingChat(new InMemoryUserStore());
+        var relay = new StanleyNoticeRelay(chat, NullLogger<StanleyNoticeRelay>.Instance);
+        await relay.RelayAsync(new UserRecord { Id = 1 }, [Notice("a", "allAboard", true)], Now, default);
+        Assert.Equal(StanleyNoticeRules.EventFailOpen, chat.Deliveries.Single().Event);
+    }
+
     private sealed class ThrowingChat(InMemoryUserStore users) : InMemoryChatStore(users)
     {
         public override Task<bool> AddStanleyNoticeAsync(long userId, StanleyNotice n, string voice, string subtitle, DateTime at, CancellationToken ct) => throw new InvalidOperationException("store down");
@@ -192,10 +202,10 @@ public class StanleyNoticeRelayTests
     [Fact]
     public void AnExpiredOrReplacedNoticeOffersNoAction()
     {
-        Assert.Equal(["confirmMuster"], StanleyNoticeRules.ActionsFor("muster", false, false));
-        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", true, false));
-        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", false, true));
-        Assert.Empty(StanleyNoticeRules.ActionsFor("reminder", false, false));
+        Assert.Equal(["confirmMuster"], StanleyNoticeRules.ActionsFor("muster", null, false, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", null, true, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", null, false, true));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("reminder", null, false, false));
     }
 
     [Theory]
@@ -213,5 +223,56 @@ public class StanleyNoticeRelayTests
         Assert.Contains("no longer", StanleyNoticeRules.AnswerTo("what", "muster", true, false));
         Assert.Null(StanleyNoticeRules.AnswerTo(StanleyNoticeRules.ReplyLater, "payment", false, false));
         Assert.Null(StanleyNoticeRules.AnswerTo("nonsense", "payment", false, false));
+    }
+
+    [Fact]
+    public void AReservationOrChangeNoticeOffersItsCardOnlyWhenItNamesOne()
+    {
+        Assert.Equal([StanleyNoticeRules.ReviewChange], StanleyNoticeRules.ActionsFor("reservation", "dinner:2", false, false));
+        Assert.Equal([StanleyNoticeRules.ReviewChange], StanleyNoticeRules.ActionsFor("change", "dinner:2", false, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("reservation", null, false, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("change", "dinner:2", true, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("case", "x", false, false));
+    }
+
+    [Fact]
+    public async Task TheThreadKeepsTheCardAThisNoticeIsAbout()
+    {
+        var (store, relay, user) = Setup();
+        var n = new PushNotice("change:dinner-2:abc", "reservation", "reminders", false, 85, "/plan/dining", "Stanley: dinner lost", "Your table is gone.", new() { ["card"] = "dinner-2" });
+        await relay.RelayAsync(user, [n], Now, default);
+        Assert.Equal("dinner-2", (await Thread(store, user)).Single(m => m.NoticeKey == "change:dinner-2:abc").NoticeSubject);
+    }
+
+    [Fact]
+    public void TheStatsWindowIsClamped()
+    {
+        Assert.Equal(24, StanleyNoticeRules.StatsWindowHours(null));
+        Assert.Equal(1, StanleyNoticeRules.StatsWindowHours(0));
+        Assert.Equal(720, StanleyNoticeRules.StatsWindowHours(100000));
+        Assert.Equal(48, StanleyNoticeRules.StatsWindowHours(48));
+    }
+
+    [Fact]
+    public async Task EachPostedNoticeIsLoggedOnceWithKindAndLaneButNoText()
+    {
+        var (store, relay, user) = Setup();
+        await relay.RelayAsync(user, [Notice("k1", "payment", true), Notice("k2")], Now, default);
+        await relay.RelayAsync(user, [Notice("k1", "payment", true)], Now, default);
+        Assert.Equal(2, store.Deliveries.Count);
+        Assert.Contains(store.Deliveries, d => d.Key == "k1" && d.Kind == "payment" && d.Lane == StanleyNoticeRules.Critical && d.Event == StanleyNoticeRules.EventPosted);
+        Assert.All(store.Deliveries, d => Assert.DoesNotContain("Title", d.Key + d.Kind + d.Lane + d.Event));
+    }
+
+    [Fact]
+    public async Task TheSummaryCountsByEventAndGivesTheFailOpenShare()
+    {
+        var (store, relay, user) = Setup();
+        await relay.RelayAsync(user, [Notice("k1"), Notice("k2"), Notice("k3")], Now, default);
+        await store.LogNoticeDeliveryAsync(user.Id, "k4", "payment", "critical", StanleyNoticeRules.EventFailOpen, Now, default);
+        var s = StanleyNoticeStatsEndpoints.Summarise(0, await store.NoticeDeliverySummaryAsync(Now.AddHours(-1), default));
+        Assert.Equal(3, s.Posted);
+        Assert.Equal(1, s.FailOpen);
+        Assert.Equal(0.25, s.FailOpenShare, 3);
     }
 }

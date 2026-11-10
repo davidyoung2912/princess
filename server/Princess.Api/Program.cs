@@ -350,6 +350,7 @@ v1.MapMediaEndpoints();
 v1.MapDemoEndpoints();
 v1.MapAuditEndpoints();
 v1.MapReviewEndpoints();
+v1.MapStanleyNoticeStatsEndpoints();
 
 // Printed straight to the console, so it shows even if log filters hide the framework's own "Now listening on" line.
 app.Lifetime.ApplicationStarted.Register(() =>
