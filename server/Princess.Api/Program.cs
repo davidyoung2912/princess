@@ -64,6 +64,9 @@ services.AddScoped<IOnboardStore, DapperOnboardStore>();
 services.AddScoped<IShipboardStore, DapperShipboardStore>();
 services.AddScoped<IAboardStore, DapperAboardStore>();
 services.AddScoped<IChatStore, DapperChatStore>();
+services.AddScoped<IChatConnectionStore, DapperChatConnectionStore>();
+services.AddScoped<ChatConnectionService>();
+services.AddScoped<ChatNotifier>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 // External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
 services.AddProviders(builder.Configuration);
@@ -196,6 +199,14 @@ services.AddOptions<RateLimiterOptions>().Configure<IOptions<AuthOptions>>((o, a
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+    // Searching guests by name could be used to list everyone on a sailing, so it is limited per signed-in person (30 searches a minute).
+    o.AddPolicy(ChatConnectionEndpoints.SearchLimiter, http =>
+        RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
     // Guessing agent booking numbers is the thing to stop, so the window is per signed-in person (their sub), falling back to the address.
     o.AddPolicy(JourneyEndpoints.LinkLimiter, http =>
         RateLimitPartition.GetFixedWindowLimiter(http.User.FindFirst(Claims.Subject)?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
@@ -307,6 +318,7 @@ v1.MapCheckinEndpoints();
 v1.MapOnboardEndpoints();
 v1.MapShipboardEndpoints();
 v1.MapAboardEndpoints();
+v1.MapChatConnectionEndpoints();
 v1.MapFinishEndpoints();
 v1.MapStateEndpoints();
 v1.MapPortRowEndpoints();

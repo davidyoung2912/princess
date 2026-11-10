@@ -354,7 +354,8 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
 /// <summary>The chat store over SQL Server.</summary>
 public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
 {
-    private const string MyGroups = "(SELECT GroupId FROM dbo.ChatGroupMembers WHERE UserId = @userId)";
+    // The old pooled chat is the booking's "My group" only. Direct and guest-made conversations (Kind <> 'party', docs/chat-plan.md) never appear in it.
+    private const string MyGroups = "(SELECT m.GroupId FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party')";
 
     public async Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct)
     {
@@ -362,6 +363,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
             SELECT DISTINCT u.Id AS UserId, u.PublicId, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
             FROM dbo.ChatGroupMembers me
+            JOIN dbo.ChatGroups g ON g.Id = me.GroupId AND g.Kind = 'party'
             JOIN dbo.ChatGroupMembers m ON m.GroupId = me.GroupId AND m.UserId <> me.UserId
             JOIN dbo.Users u ON u.Id = m.UserId
             LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
@@ -387,7 +389,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
-        var group = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT TOP 1 GroupId FROM dbo.ChatGroupMembers WHERE UserId = @userId ORDER BY GroupId", new { userId }, tx, ct));
+        var group = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT TOP 1 m.GroupId FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party' ORDER BY m.GroupId", new { userId }, tx, ct));
         if (group is null)
         {
             group = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name) OUTPUT INSERTED.Id VALUES (N'Chat')", null, tx, ct));

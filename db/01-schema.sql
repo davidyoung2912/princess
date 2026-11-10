@@ -3144,3 +3144,63 @@ CREATE TABLE dbo.DeskAppointments (
 CREATE INDEX IX_DeskAppointments_At ON dbo.DeskAppointments ([At]);   -- slot capacity count
 END
 GO
+
+-- ============================================================================
+-- Chat connections and conversations (docs/chat-plan.md, phase 1).
+-- A conversation is a ChatGroups row: 'party' is the booking's existing group chat, 'direct' is two people who agreed to connect, 'group' is guest-made (phase 5).
+-- The old pooled chat reads only Kind = 'party', so a private conversation never shows in it.
+-- ============================================================================
+IF COL_LENGTH(N'dbo.ChatGroups', N'Kind') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD Kind VARCHAR(7) NOT NULL CONSTRAINT DF_ChatGroups_Kind DEFAULT 'party' CONSTRAINT CK_ChatGroups_Kind CHECK (Kind IN ('party','direct','group'));
+GO
+
+-- A member reads only what was sent while they were a member (from JoinedAt, to LeftAt); the party group keeps showing everything (phase 4 applies this to the other kinds).
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'Status') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD Status VARCHAR(7) NOT NULL CONSTRAINT DF_ChatGroupMembers_Status DEFAULT 'active' CONSTRAINT CK_ChatGroupMembers_Status CHECK (Status IN ('active','left','removed'));
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'JoinedAt') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD JoinedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatGroupMembers_JoinedAt DEFAULT SYSUTCDATETIME();
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'LeftAt') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD LeftAt DATETIME2(0) NULL;
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'Muted') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD Muted BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_Muted DEFAULT 0;
+GO
+
+-- Whether other guests on the sailing can find this person by name. On unless the guest turns it off.
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatFindable') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatFindable BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatFindable DEFAULT 1;
+GO
+
+IF OBJECT_ID(N'dbo.ChatConnections', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatConnections (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatConnections PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatConnections_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatConnections_PublicId UNIQUE,
+  RequesterId BIGINT NOT NULL, TargetId BIGINT NOT NULL,
+  Status VARCHAR(16) NOT NULL,                  -- awaitingGuardian, pending, accepted, declined, cancelled, expired, ended
+  GuardianUserId BIGINT NULL,                   -- who has to approve while the status is awaitingGuardian
+  GuardianFor VARCHAR(9) NULL,                  -- requester or target: whose guardian that is
+  GroupId BIGINT NULL,                          -- the direct conversation, made when the request is accepted
+  EndedByUserId BIGINT NULL,
+  RequesterSeenAt DATETIME2(0) NULL,            -- when the sender saw the answer
+  RespondedAt DATETIME2(0) NULL, EndedAt DATETIME2(0) NULL,
+  ExpiresAt DATETIME2(0) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatConnections_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatConnections_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  PairLow AS (CASE WHEN RequesterId < TargetId THEN RequesterId ELSE TargetId END) PERSISTED,
+  PairHigh AS (CASE WHEN RequesterId < TargetId THEN TargetId ELSE RequesterId END) PERSISTED,
+  -- No cascades from the two people (SQL Server allows only one cascade path to Users): a person is removed by the retention job, not by deleting rows here.
+  CONSTRAINT FK_ChatConnections_Users_Requester FOREIGN KEY (RequesterId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_ChatConnections_Users_Target FOREIGN KEY (TargetId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_ChatConnections_Users_Guardian FOREIGN KEY (GuardianUserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_ChatConnections_ChatGroups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE SET NULL,
+  CONSTRAINT CK_ChatConnections_Status CHECK (Status IN ('awaitingGuardian','pending','accepted','declined','cancelled','expired','ended')),
+  CONSTRAINT CK_ChatConnections_Self CHECK (RequesterId <> TargetId),
+  CONSTRAINT CK_ChatConnections_GuardianFor CHECK (GuardianFor IS NULL OR GuardianFor IN ('requester','target'))
+);
+-- One live connection between two people, whichever way round it was asked. Declined, cancelled, expired and ended rows stay as the record (and the decline cool-down).
+CREATE UNIQUE INDEX UX_ChatConnections_OpenPair ON dbo.ChatConnections (PairLow, PairHigh) WHERE Status IN ('awaitingGuardian','pending','accepted');
+CREATE INDEX IX_ChatConnections_TargetId ON dbo.ChatConnections (TargetId, Status);
+CREATE INDEX IX_ChatConnections_RequesterId ON dbo.ChatConnections (RequesterId, Status);
+CREATE INDEX IX_ChatConnections_GuardianUserId ON dbo.ChatConnections (GuardianUserId, Status) WHERE GuardianUserId IS NOT NULL;
+END
+GO

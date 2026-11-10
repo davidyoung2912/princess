@@ -82,6 +82,45 @@ public sealed class PushService(
         return await StatusAsync(actor, endpoint, ct);
     }
 
+    /// <summary>
+    /// Tells a guest about a chat event now (docs/chat-plan.md, 4.4), instead of waiting for the app to ask. It follows the guest's own limits: no phone, no push; calm mode,
+    /// quiet hours and a daily budget of none hold it (it stays in the app either way, so nothing is lost). It does not use up the daily notice budget, and one event is sent once.
+    /// Children's accounts have no phone alerts, so a request that needs a guardian goes to the guardian.
+    /// </summary>
+    public async Task NotifyChatAsync(UserRecord target, PushNotice n, CancellationToken ct)
+    {
+        if (target.IsSupervised || sender.PublicKey is null) return;
+        var subs = await store.ListSubscriptionsAsync(target.Id, ct);
+        if (subs.Count == 0) return;
+        var now = await clock.NowAsync(target, ct);
+        var log = await store.ListDeliveriesAsync(target.Id, 200, ct);
+        if (log.Any(l => l.NoticeKey == n.Key && l.Outcome == "sent")) return;
+        var booking = await trips.CurrentAsync(target, now, ct);
+        var departure = booking is null ? (DateOnly?)null : DateOnly.FromDateTime(booking.Departure);
+        var zone = departure is { } d ? Itinerary.ShipZoneAt(d, now) : Itinerary.ShipHomeZone;
+        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(now, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
+        var prefs = await PrefsAsync(target.Id, ct);
+        var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), []);
+        var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
+        // sentToday is 0: chat does not count against the budget, but a guest who chose "none" (budget 0) still hears nothing.
+        var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), 0);
+        if (!decision.Send)
+        {
+            if (log.FirstOrDefault(l => l.NoticeKey == n.Key) is not { Outcome: "held" } last || last.Reason != decision.Reason)
+                await store.AddDeliveryAsync(target.Id, new(n.Key, n.Kind, n.Bypass, "held", decision.Reason, 0, paramsJson, now, false), now, ct);
+            return;
+        }
+        var message = new PushMessage(n.Key, n.Kind, n.Title, n.Body, n.Path, n.Bypass, n.Params);
+        var delivered = 0;
+        foreach (var s in subs)
+        {
+            var result = await sender.SendAsync(s, message, ct);
+            if (result == PushResult.Gone) await store.RemoveEndpointAsync(s.Endpoint, ct);
+            else if (result == PushResult.Delivered) delivered++;
+        }
+        if (delivered > 0) await store.AddDeliveryAsync(target.Id, new(n.Key, n.Kind, n.Bypass, "sent", null, delivered, paramsJson, now, false), now, ct);
+    }
+
     private async Task RunAsync(UserRecord actor, List<PushSubscriptionRow> subs, CancellationToken ct)
     {
         var now = await clock.NowAsync(actor, ct);
