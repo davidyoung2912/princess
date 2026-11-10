@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -351,7 +351,15 @@ public sealed class PushService(
             var evening = aboardDay && Itinerary.LocalAt(now, line.ShipZoneAt(now)).Item2 >= new TimeOnly(15, 0);
             var dinnerUnbooked = evening && plan is not null && FolioRules.CruiseDay(line, now) is var day and > 0 && !(await plan.ListTablesAsync(booking.BookingId, ct)).Any(t => t.Day == day);
             var tenderLate = stage == StageRules.Port && (await watchService.WatchAsync(booking, trip, TripRules.Today(now), ct)).Tender is { } tw && tw.Date == Itinerary.LocalAt(now, line.ShipZoneAt(now)).Item1.ToString("yyyy-MM-dd");
-            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open", MusterPending: stage == StageRules.Embark && onboard is not null && !(await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id), LastFullDay: stage == StageRules.Sea && TripRules.Today(now).AddDays(1) == line.LastDay, DinnerUnbooked: dinnerUnbooked, TenderLate: tenderLate), held, ct);
+            var ashoreNoBridge = false;
+            if (stage == StageRules.Port && chatStore is not null && smsStore is not null && AboardRules.PortDayAt(TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)), now) is { } pd)
+            {
+                var presence = (await portRows.ListAsync(booking.BookingId, ct)).FirstOrDefault(r => !r.Deleted && r.Kind == "presence" && r.Key == AwayRules.PresenceKey(pd.Date, actor.PublicId));
+                ashoreNoBridge = AwayRules.IsAway(AwayRules.StatusOf(presence?.Json))
+                    && !(await smsStore.GetSettingsAsync(actor.Id, ct)).On
+                    && (await chatStore.ListConversationsAsync(actor.Id, ct)).Any(r => !ChatConversationRules.IsPermanent(r.Kind) && !ChatConversationRules.IsClosed(r.Kind, r.Status, r.DirectEnded));
+            }
+            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open", MusterPending: stage == StageRules.Embark && onboard is not null && !(await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id), LastFullDay: stage == StageRules.Sea && TripRules.Today(now).AddDays(1) == line.LastDay, DinnerUnbooked: dinnerUnbooked, TenderLate: tenderLate, AshoreNoBridge: ashoreNoBridge, CruiseDay: aboardDay ? FolioRules.CruiseDay(line, now) : 0, ShipHour: aboardDay ? Itinerary.LocalAt(now, line.ShipZoneAt(now)).Item2.Hour : 0), held, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException) { /* a suggestion is never worth stopping a notice for */ }
     }

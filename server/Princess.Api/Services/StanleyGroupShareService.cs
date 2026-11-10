@@ -6,10 +6,10 @@ using Princess.Api.Domain;
 namespace Princess.Api.Services;
 
 /// <summary>
-/// Shared Stanley cards (docs/chat-features-research.md, 7.4, phase 7b): an admin's tap posts a suggested poll to their group, and the group's opt-in switch. It is apart from <see cref="StanleyMomentService"/>
+/// Shared Stanley cards (docs/chat-features-research.md, 7.4, phase 7b): an admin's tap posts a suggested poll, a meet-me-here place or the port day to their group, and the group's opt-in switch. It is apart from <see cref="StanleyMomentService"/>
 /// because it posts through <see cref="ChatService"/>, which reaches the push path that calls the moment service.
 /// </summary>
-public sealed class StanleyGroupShareService(IChatStore store, ChatService chat)
+public sealed class StanleyGroupShareService(IChatStore store, ChatService chat, ChatShareService share)
 {
     /// <summary>
     /// "Post this to the group?" (7.4): the admin's tap on a shared card. Everything is checked again here. The poll is sent by <see cref="ChatService.SendAsync"/> as the admin's own message, under every rule a poll
@@ -21,19 +21,38 @@ public sealed class StanleyGroupShareService(IChatStore store, ChatService chat)
         if (member.Status != ChatConversationRules.Active) throw ApiException.NotFound();
         if (!ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
-        if (!message.FromStanley || message.Lane != ChatProactiveRules.Lane || ChatProactiveRules.KeyOf(message.NoticeKey) != ChatGroupMomentRules.GroupPollKey || message.SupersededAt is not null) throw ApiException.Invalid("notMoment");
+        if (!message.FromStanley || message.Lane != ChatProactiveRules.Lane || !ChatGroupMomentRules.IsSharedKey(ChatProactiveRules.KeyOf(message.NoticeKey)) || message.SupersededAt is not null) throw ApiException.Invalid("notMoment");
         if (message.ExpiresAt is { } e && e <= now) throw ApiException.Invalid("notMoment");
         if (message.NoticeSubject != groupId.ToString()) throw ApiException.Invalid("group");
         var group = await store.GetMemberAsync(actor.Id, groupId, ct) ?? throw ApiException.NotFound();
         if (group.Status != ChatConversationRules.Active) throw ApiException.NotFound();
+        var key = ChatProactiveRules.KeyOf(message.NoticeKey)!;
         var members = (await store.ListMembersAsync(group.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();
+        var poll = key == ChatGroupMomentRules.GroupPollKey;
         var refusal = ChatGroupMomentRules.Refusal(ChatPlanningService.AdminOf(group, actor.Id), await store.GetGroupStanleyAsync(group.GroupId, ct), group.Kind == ChatConversationRules.Group,
-            members.Any(p => p.IsSupervised), await store.HasPlanningAsync(group.GroupId, ct));
+            members.Any(p => p.IsSupervised), poll && await store.HasPlanningAsync(group.GroupId, ct));
+        if (refusal is null && members.Count < ChatGroupMomentRules.MinMembers) refusal = ChatGroupMomentRules.NotGroup;
         if (refusal == ChatGroupMomentRules.Already) throw ApiException.Conflict("already");
         if (refusal is not null) throw ApiException.Forbidden(refusal);
-        await chat.SendAsync(actor, groupId, new(null, Kind: "poll", Question: ChatGroupMomentRules.PollQuestion, Options: [.. ChatGroupMomentRules.PollOptions]), ct);
+        if (poll) await chat.SendAsync(actor, groupId, new(null, Kind: "poll", Question: ChatGroupMomentRules.PollQuestion, Options: [.. ChatGroupMomentRules.PollOptions]), ct);
+        else
+        {
+            // The offer is worked out again from the group's plans and today's date, so a plan that was deleted or a day that moved on refuses (409 already) instead of posting something stale.
+            var day = await share.CruiseDayAsync(actor, now, ct);
+            var plans = await GroupDayPlans.ListAsync(store, group.GroupId, ct);
+            if (key == ChatGroupMomentRules.GroupMeetKey)
+            {
+                if (ChatGroupMomentRules.Gathering(plans, day, GroupDayPlans.ShipPlaces()) is not { } meet) throw ApiException.Conflict("already");
+                await chat.SendAsync(actor, groupId, new(null, Kind: "place", PlaceId: meet.PlaceId, Note: $"For {meet.Title}"), ct);
+            }
+            else
+            {
+                if (day <= 0 || !ChatGroupMomentRules.HasDayPlan(plans, day)) throw ApiException.Conflict("already");
+                await chat.SendAsync(actor, groupId, new(null, Kind: "card", ShareRef: $"{ChatCardRules.PortDay}:{day}"), ct);
+            }
+        }
         await store.AddSystemLineAsync(group.GroupId, actor.Id, ChatGroupMomentRules.ShareLine(ChatConnectionRules.ShortName(actor.FirstName, actor.LastName)), now, ct);
-        await store.PutAwayMomentAsync(actor.Id, message.Id, ChatGroupMomentRules.GroupPollKey, now, null, now, ct);
+        await store.PutAwayMomentAsync(actor.Id, message.Id, key, now, null, now, ct);
         try { await store.LogNoticeDeliveryAsync(actor.Id, message.NoticeKey!, ChatProactiveRules.KindOf, ChatProactiveRules.Lane, StanleyNoticeRules.EventDismiss, now, ct); }
         catch (Exception ex) when (ex is not OperationCanceledException) { /* counting never reaches the guest */ }
     }

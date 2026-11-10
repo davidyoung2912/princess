@@ -386,6 +386,8 @@ public interface IChatStore
     Task SetGroupStanleyAsync(long groupId, bool on, long by, DateTime at, CancellationToken ct);
     /// <summary>Phase 7b: whether the group already has a poll or a plan that has not been deleted.</summary>
     Task<bool> HasPlanningAsync(long groupId, CancellationToken ct);
+    /// <summary>The plans (not deleted) in a group: id, public id and the server-built card payload. Used to see what a group has planned for a day (phase 7c shared cards).</summary>
+    Task<List<ChatMessageRow>> ListPlansAsync(long groupId, CancellationToken ct);
     Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);

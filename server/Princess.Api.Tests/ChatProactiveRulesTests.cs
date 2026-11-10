@@ -275,8 +275,8 @@ public class ManageToBoardingMomentTests
     public void TheTravelTopicCanBeSwitchedOff() =>
         Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.ManageToBoarding(new(Now, StageRules.Manage, 30, false, null, DocumentsMissing: 1))], [], new(ChatProactiveRules.ModeTrip, ["travel"], false, false), Now));
 
-    private static List<string> AboardKeys(string stage, bool muster = false, bool lastDay = false, bool dinner = false, bool tender = false) =>
-        [.. ChatProactiveRules.Candidates(new(Now, stage, 0, false, null, MusterPending: muster, LastFullDay: lastDay, DinnerUnbooked: dinner, TenderLate: tender)).Where(c => c.Topic == ChatProactiveRules.Onboard).Select(c => c.Key)];
+    private static List<string> AboardKeys(string stage, bool muster = false, bool lastDay = false, bool dinner = false, bool tender = false, bool ashore = false) =>
+        [.. ChatProactiveRules.Candidates(new(Now, stage, 0, false, null, MusterPending: muster, LastFullDay: lastDay, DinnerUnbooked: dinner, TenderLate: tender, AshoreNoBridge: ashore)).Where(c => c.Topic == ChatProactiveRules.Onboard).Select(c => c.Key)];
 
     [Fact]
     public void EachAboardStageGetsItsOwnMoments()
@@ -318,6 +318,14 @@ public class ManageToBoardingMomentTests
         Assert.Contains("port.tender-delay", AboardKeys(StageRules.Port, tender: true));
         Assert.DoesNotContain("port.tender-delay", AboardKeys(StageRules.Sea, tender: true));
         Assert.DoesNotContain("port.tender-delay", AboardKeys(StageRules.Port));
+    }
+
+    [Fact]
+    public void AshoreBridgeIsOfferedOnlyOnAPortDayWhenAshoreWithNoBridge()
+    {
+        Assert.Contains("port.ashore-bridge", AboardKeys(StageRules.Port, ashore: true));
+        Assert.DoesNotContain("port.ashore-bridge", AboardKeys(StageRules.Port));
+        Assert.DoesNotContain("port.ashore-bridge", AboardKeys(StageRules.Sea, ashore: true));
     }
 
     [Fact]
@@ -405,5 +413,56 @@ public class SuggestionCountsTests
         Assert.True(StanleyNoticeRules.EventSnooze.Length <= 8);
         Assert.True(StanleyNoticeRules.EventDismiss.Length <= 8);
         Assert.True(ChatProactiveRules.Lane.Length <= 10);
+    }
+}
+
+public class GroupMeetAndLunchTests
+{
+    private static readonly DateTime Now = new(2026, 11, 10, 15, 0, 0, DateTimeKind.Utc);
+    private static readonly (string Id, string Name)[] Places = [("piazza", "The Piazza"), ("lido-pool", "Lido Pool")];
+    private static ChatGroupMomentRules.DayPlan Plan(int day, string? place, int going, string title = "Trivia") => new(new ChatCard(ChatCardRules.Plan, title, null, day, "15:00", place), going);
+
+    [Fact]
+    public void AMeetingPlaceNeedsThreeGoingTodayAndAPlaceTheShipNames()
+    {
+        Assert.Equal(("piazza", "Trivia"), ChatGroupMomentRules.Gathering([Plan(3, "The Piazza", 3)], 3, Places));
+        Assert.Null(ChatGroupMomentRules.Gathering([Plan(3, "The Piazza", 2)], 3, Places));
+        Assert.Null(ChatGroupMomentRules.Gathering([Plan(4, "The Piazza", 5)], 3, Places));
+        Assert.Null(ChatGroupMomentRules.Gathering([Plan(3, "A place the ship does not name", 5)], 3, Places));
+        Assert.Null(ChatGroupMomentRules.Gathering([Plan(3, null, 5)], 3, Places));
+    }
+
+    [Fact]
+    public void TheBestSupportedPlanWins() =>
+        Assert.Equal(("lido-pool", "Pool party"), ChatGroupMomentRules.Gathering([Plan(3, "The Piazza", 3), Plan(3, "Lido Pool", 4, "Pool party")], 3, Places));
+
+    [Fact]
+    public void LunchNeedsAPlanWithTwoGoingToday()
+    {
+        Assert.True(ChatGroupMomentRules.HasDayPlan([Plan(3, null, 2)], 3));
+        Assert.False(ChatGroupMomentRules.HasDayPlan([Plan(3, null, 1)], 3));
+        Assert.False(ChatGroupMomentRules.HasDayPlan([Plan(2, null, 4)], 3));
+    }
+
+    [Fact]
+    public void TheCardsAreSharedOnesForTheGroupOnlyAtTheRightStageAndHour()
+    {
+        var g = Guid.NewGuid();
+        var sea = ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Sea, 0, false, null, MeetGroup: g, CruiseDay: 3, ShipHour: 9));
+        var meet = Assert.Single(sea, c => c.Key == ChatGroupMomentRules.GroupMeetKey);
+        Assert.Equal(g.ToString(), meet.Subject);
+        Assert.True(ChatGroupMomentRules.IsSharedKey(meet.Key));
+        Assert.Empty(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, MeetGroup: g)).Where(c => c.Key == ChatGroupMomentRules.GroupMeetKey));
+        Assert.Empty(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, LunchGroup: g, ShipHour: 11)).Where(c => c.Key == ChatGroupMomentRules.GroupLunchKey));
+        var lunch = Assert.Single(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, LunchGroup: g, ShipHour: 12)), c => c.Key == ChatGroupMomentRules.GroupLunchKey);
+        Assert.Equal(g.ToString(), lunch.Subject);
+        Assert.False(ChatGroupMomentRules.IsSharedKey("sea.today"));
+    }
+
+    [Fact]
+    public void NeitherCardNamesAPlaceOrAPerson()
+    {
+        foreach (var text in new[] { ChatGroupMomentRules.MeetOfferText, ChatGroupMomentRules.LunchOfferText })
+            Assert.DoesNotContain(text, c => char.IsDigit(c));
     }
 }

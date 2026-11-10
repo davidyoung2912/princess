@@ -15669,7 +15669,7 @@ export const en = {
   'stanley.notice.lane.info': 'For your information',
   'stanley.notice.lane.suggestion': 'A suggestion',
   'stanley.moment.share': 'Post it to the group',
-  'stanley.moment.shareHint': 'It appears under your name, and the group can vote. You stay in charge of it.',
+  'stanley.moment.shareHint': 'It appears under your name, after a line saying you asked Stanley to share it. You stay in charge of it.',
   'stanley.moment.shared': 'Posted to the group.',
   'stanley.group.switch': 'Stanley can offer to share ideas here',
   'stanley.group.hint': 'Only an admin can switch this on. Stanley never posts to the group himself: he asks an admin first, and nothing appears until they say yes. It stays off when a child is in the group.',

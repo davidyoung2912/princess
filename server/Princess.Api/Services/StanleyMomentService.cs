@@ -25,6 +25,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             var off = (await store.GetTopicsOffAsync(actor.Id, ct)).Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var history = await store.ListMomentsAsync(actor.Id, ct);
             if (!off.Contains(ChatProactiveRules.Planning) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && await GroupOfferAsync(actor, ct) is { } group) facts = facts with { ShareGroup = group };
+            if (!off.Contains(ChatProactiveRules.Onboard) && ChatProactiveRules.ModeAllows(mode, ChatProactiveRules.ClassSuggestion) && facts.CruiseDay > 0) facts = await GroupsTodayAsync(actor, facts, ct);
             var pick = ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), history, new(mode, off, held, actor.IsSupervised), facts.Now);
             if (pick is null) return null;
             await store.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), facts.Now, ct);
@@ -39,6 +40,27 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             log.LogWarning(e, "A Stanley suggestion could not be posted for user {UserId}", actor.Id);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Phase 7c: the first group the guest is an admin of that may be offered a meeting place (a sea day, a plan today with enough going) and the first that may be offered the port day for lunch (a port day, midday on,
+    /// a plan today). Both need Stanley on in the group, three or more active members and no supervised child.
+    /// </summary>
+    private async Task<MomentFacts> GroupsTodayAsync(UserRecord actor, MomentFacts facts, CancellationToken ct)
+    {
+        var wantMeet = facts.Stage == StageRules.Sea;
+        var wantLunch = facts.Stage == StageRules.Port && facts.ShipHour >= ChatGroupMomentRules.LunchFromHour;
+        if (!wantMeet && !wantLunch) return facts;
+        foreach (var g in (await store.ListConversationsAsync(actor.Id, ct)).Where(c => c.Kind == ChatConversationRules.Group && c.Status == ChatConversationRules.Active && ChatPlanningService.AdminOf(c, actor.Id)))
+        {
+            if (!await store.GetGroupStanleyAsync(g.GroupId, ct)) continue;
+            var members = (await store.ListMembersAsync(g.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToList();
+            if (members.Count < ChatGroupMomentRules.MinMembers || members.Any(p => p.IsSupervised)) continue;
+            var plans = await GroupDayPlans.ListAsync(store, g.GroupId, ct);
+            if (wantMeet && facts.MeetGroup is null && ChatGroupMomentRules.Gathering(plans, facts.CruiseDay, GroupDayPlans.ShipPlaces()) is not null) facts = facts with { MeetGroup = g.GroupPublicId };
+            if (wantLunch && facts.LunchGroup is null && ChatGroupMomentRules.HasDayPlan(plans, facts.CruiseDay)) facts = facts with { LunchGroup = g.GroupPublicId };
+        }
+        return facts;
     }
 
     /// <summary>The first group the guest is an admin of that may be offered a shared poll (7.4): Stanley is on there, three or more are in it, no supervised child is, and it has no poll or plan yet.</summary>

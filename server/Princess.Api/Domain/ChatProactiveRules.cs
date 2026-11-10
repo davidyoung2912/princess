@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false, bool AshoreNoBridge = false, Guid? MeetGroup = null, Guid? LunchGroup = null, int CruiseDay = 0, int ShipHour = 0);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
@@ -137,6 +137,8 @@ public static class ChatProactiveRules
                 list.Add(new("embark.find-friends", Onboard, ClassGuide, "Say hello to your group\nOpen Chat to see your group and who else is on board.", "/chat", f.Now.AddDays(1), Hash("embark.find-friends")));
                 break;
             case StageRules.Sea:
+                if (f.MeetGroup is { } meet)
+                    list.Add(new(ChatGroupMomentRules.GroupMeetKey, Onboard, ClassSuggestion, ChatGroupMomentRules.MeetOfferText, ChatGroupMomentRules.GroupPath(meet), f.Now.AddHours(4), Hash($"{meet:N}{f.Now:yyyyMMdd}"), meet.ToString()));
                 list.Add(new("sea.today", Onboard, ClassSuggestion, "Today at sea\nSee what is on today.", "/plan/day", f.Now.AddHours(12), Hash($"sea.today{f.Now:yyyyMMdd}")));
                 if (f.DinnerUnbooked)
                     list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
@@ -144,9 +146,13 @@ public static class ChatProactiveRules
                     list.Add(new("sea.bag-night", Onboard, ClassDue, "Bags go out tonight\nOpen Leave to see when and where.", "/home/disembark/bags", f.Now.AddHours(12), Hash("sea.bag-night")));
                 break;
             case StageRules.Port:
+                if (f.LunchGroup is { } lunch && f.ShipHour >= ChatGroupMomentRules.LunchFromHour)
+                    list.Add(new(ChatGroupMomentRules.GroupLunchKey, Onboard, ClassSuggestion, ChatGroupMomentRules.LunchOfferText, ChatGroupMomentRules.GroupPath(lunch), f.Now.AddHours(4), Hash($"{lunch:N}{f.Now:yyyyMMdd}"), lunch.ToString()));
                 list.Add(new("port.all-aboard", Onboard, ClassDue, "Check your all-aboard time\nOpen Port to see it, and your tender if there is one.", "/ship/port", f.Now.AddHours(10), Hash($"port.all-aboard{f.Now:yyyyMMdd}")));
                 if (f.TenderLate)
                     list.Add(new("port.tender-delay", Onboard, ClassDue, "Tenders may be running late\nOpen Port and plan to head back early.", "/ship/port", f.Now.AddHours(10), Hash($"port.tender-delay{f.Now:yyyyMMdd}")));
+                if (f.AshoreNoBridge)
+                    list.Add(new("port.ashore-bridge", Onboard, ClassSuggestion, "Be reachable ashore\nTurn on texts in Chat so your group can reach you while you are off the ship.", "/chat", f.Now.AddHours(8), Hash($"port.ashore-bridge{f.Now:yyyyMMdd}")));
                 if (f.DinnerUnbooked)
                     list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
                 break;

@@ -20,6 +20,10 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
             .Where(b => b.Status == "confirmed" && DateOnly.FromDateTime(b.Departure).AddDays(b.Nights) >= today).OrderBy(b => b.Departure).FirstOrDefault();
     }
 
+    /// <summary>Today's cruise day for the guest's current booking, in ship time (0 when there is none or the ship has not sailed). Used to repeat the check behind a shared Stanley card.</summary>
+    public async Task<int> CruiseDayAsync(UserRecord actor, DateTime now, CancellationToken ct) =>
+        await CurrentAsync(actor, ct) is { } booking ? FolioRules.CruiseDay(TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)), now) : 0;
+
     private static string Clock(TimeOnly t) => t.ToString("HH:mm");
 
     /// <summary>The booking's own things the guest can send, with a ref for each, and the named places a meeting point can be dropped at.</summary>
