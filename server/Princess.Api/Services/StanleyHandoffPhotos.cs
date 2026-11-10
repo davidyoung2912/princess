@@ -1,4 +1,5 @@
 using Princess.Api.Audit;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Services;
