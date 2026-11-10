@@ -27,8 +27,9 @@ import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 import { personFirstName } from '../../account/context'
+import { People, RequestsBanner } from './ChatPeople'
 
-type Mode = 'party' | 'service'
+type Mode = 'party' | 'people' | 'service'
 
 /** Chat (MSG-01, MSG-02, SUP-08): free messages with the travel party, and Guest Services by topic with visible response times and a phone call when waiting is too long. */
 export function ChatScreen() {
@@ -36,11 +37,13 @@ export function ChatScreen() {
   return (
     <div className="page">
       <p>{t('chat.free')}</p>
+      {mode !== 'people' && <RequestsBanner onOpen={() => setMode('people')} />}
       <div className="chip-row" role="group" aria-label={t('chat.who')}>
         <Chip pressed={mode === 'party'} onToggle={() => setMode('party')}>{t('chat.party')}</Chip>
+        <Chip pressed={mode === 'people'} onToggle={() => setMode('people')}>{t('chat.people')}</Chip>
         <Chip pressed={mode === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>
       </div>
-      {mode === 'party' ? <Party /> : <Service />}
+      {mode === 'party' ? <Party /> : mode === 'people' ? <People /> : <Service />}
       <Card info>
         <p><Phone aria-hidden="true" /> {t('chat.urgent', { number: GUEST_SERVICES_NUMBER })} <a href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a></p>
       </Card>

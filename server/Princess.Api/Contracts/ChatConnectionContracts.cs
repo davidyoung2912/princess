@@ -25,3 +25,6 @@ public sealed record ChatRequestBody(Guid ToUserId);
 
 /// <summary>Answer a request. <c>Block</c> with a no also stops that person finding or writing to the caller.</summary>
 public sealed record ChatRespondBody(bool Accept, bool Block = false);
+
+/// <summary>The caller's chat choices. <c>Findable</c>: other guests on the sailing can find them by name. <c>ShowPreview</c>: a notice may show the message text (used from phase 4).</summary>
+public sealed record ChatSettingsDto(bool Findable, bool ShowPreview);

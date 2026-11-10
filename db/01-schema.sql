@@ -3170,6 +3170,11 @@ IF COL_LENGTH(N'dbo.UserPrefs', N'ChatFindable') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatFindable BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatFindable DEFAULT 1;
 GO
 
+-- Whether a chat notice may show the message text on the lock screen. Off unless the guest turns it on (used from phase 4 of docs/chat-plan.md).
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatShowPreview') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatShowPreview BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatShowPreview DEFAULT 0;
+GO
+
 IF OBJECT_ID(N'dbo.ChatConnections', N'U') IS NULL
 BEGIN
 CREATE TABLE dbo.ChatConnections (

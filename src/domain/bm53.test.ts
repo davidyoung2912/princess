@@ -137,7 +137,8 @@ describe('party chat (SEA-16)', () => {
     expect(deliveryOf({})).toBe('sent')
     expect(deliveryOf({ seenBy: ['a'] })).toBe('seen')
     expect(CHAT_NOTIFICATION_PREVIEW).toBe('none')
-    expect(PUSH_KINDS.some((k) => /chat|message/i.test(k))).toBe(false)
+    // The one chat kind is for connection requests and answers (docs/chat-plan.md); party messages never have a kind of their own.
+    expect(PUSH_KINDS.filter((k) => /chat|message/i.test(k))).toEqual(['chat'])
   })
 })
 

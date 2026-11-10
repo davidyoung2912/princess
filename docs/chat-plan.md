@@ -168,6 +168,7 @@ A guest in port often has no data but still has a phone number. Text lets them s
 | `POST /me/chat/requests/{id}/cancel` | 1 | Withdraw my request. |
 | `POST /me/chat/connections/{id}/end` | 1 | Stop chatting with this person. |
 | `POST /me/chat/connections/seen` | 1 | The sender has seen the answers. |
+| `GET/PUT /me/chat/settings` | 2 | Findable by name; notice text preview. |
 | `GET /me/chat/summary` | 1 | Counts for badges: requests waiting, answers unseen, later unread messages. |
 | `/hubs/chat` (SignalR) | 3 | Live events. |
 | `GET /me/chat/conversations`, `GET/POST /me/chat/conversations/{id}/messages`, `POST …/read`, `PUT …/mute` | 4 | Per-conversation chat. |
@@ -190,14 +191,15 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 - `docs/backend-data-model.md` rows.
 - Not in this phase: any front-end screen, SignalR, messages.
 
-### Phase 2: connection screens (front end)
+### Phase 2: connection screens (front end) — built
 
 Designed to section 4.8: the conversation list is the home of Chat, requests are a banner on it, and "New chat" is a single button.
 
 - `src/api` types and `httpApi.ts` calls. The `chat` push kind added to the front end's accepted kinds.
 - A "People" area in Chat: search, request, requests waiting (accept, decline, block), requests sent (cancel), my chat targets (end), the guardian approvals list.
 - Badge on the Chat tab from `/me/chat/summary`, refreshed on launch, focus and after an action. Offline copy ("Connect when you have signal").
-- Setting: let others find me by name. Setting: show message text in notifications (stored now, used in phase 4).
+- Setting: let others find me by name. Setting: show message text in notifications (stored now, used in phase 4). Added `GET/PUT /me/chat/settings` and `UserPrefs.ChatShowPreview` for these (phase 1 had only the column for finding).
+- Built as a "People" chip in Chat beside My group and Guest Services, with a "N people want to chat" banner on the other two. The tab badge is a count (`tabs__count`), not the dot, and the Chat tab reads `/me/chat/summary` through `useChatSummary`.
 - Accessibility: focus-trapped dialogs that close on Escape, live region for answers, reduced motion, contrast.
 
 ### Phase 3: SignalR

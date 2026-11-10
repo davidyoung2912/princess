@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-      workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}', 'assets/princess-*.webp'], runtimeCaching: [{ urlPattern: ({ request }) => request.destination === 'image', handler: 'CacheFirst', options: { cacheName: 'art', expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 90 } } }], maximumFileSizeToCacheInBytes: 1024 * 1024, navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
+      workbox: { importScripts: ['push-sw.js'], globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}', 'assets/princess-*.webp'], runtimeCaching: [{ urlPattern: ({ request }) => request.destination === 'image', handler: 'CacheFirst', options: { cacheName: 'art', expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 90 } } }], maximumFileSizeToCacheInBytes: 1280 * 1024, navigateFallback: 'index.html', navigateFallbackDenylist: [/^\/\.well-known\//] },
       manifest: {
         name: 'Princess Voyages',
         short_name: 'Princess',

@@ -45,6 +45,7 @@ export interface HttpGroups {
   service: Api['service']
   orders: Api['orders']
   messages: Api['messages']
+  chatConnections: Api['chatConnections']
   family: Api['family']
   health: Api['health']
   room: Api['room']
@@ -211,6 +212,18 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     setReceipts: (on) => send('put', '/me/chat/receipts', { on }),
     markSeen: async () => { await http.post('/me/chat/seen') },
   }
+  const chatConnections: HttpGroups['chatConnections'] = {
+    search: (query) => get(`/me/chat/people?query=${seg(query)}`),
+    list: () => get('/me/chat/connections'),
+    summary: () => get('/me/chat/summary'),
+    request: (toUserId) => send('post', '/me/chat/requests', { toUserId }),
+    respond: (id, accept, block = false) => send('post', `/me/chat/requests/${seg(id)}/respond`, { accept, block }),
+    cancel: async (id) => { await send('post', `/me/chat/requests/${seg(id)}/cancel`) },
+    end: async (id) => { await send('post', `/me/chat/connections/${seg(id)}/end`) },
+    seen: async () => { await send('post', '/me/chat/connections/seen') },
+    settings: () => get('/me/chat/settings'),
+    saveSettings: (settings) => send('put', '/me/chat/settings', settings),
+  }
   const aboard: HttpGroups['aboard'] = {
     selections: {
       list: () => inBooking('/selections'),
@@ -286,6 +299,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     service,
     orders,
     messages,
+    chatConnections,
     family,
     health,
     room,
@@ -615,6 +629,7 @@ export function toApi(g: HttpGroups): Api {
     service: g.service,
     orders: g.orders,
     messages: g.messages,
+    chatConnections: g.chatConnections,
     family: g.family,
     health: g.health,
     room: g.room,

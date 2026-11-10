@@ -23,6 +23,12 @@ public static class ChatConnectionEndpoints
         chat.MapGet("/summary", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SummaryAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The numbers for a chat badge: requests waiting, approvals waiting, answers not yet seen, new connections, and unread messages (0 until messages are per conversation).");
 
+        chat.MapGet("/settings", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SettingsAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The caller's chat choices: whether other guests can find them by name (on unless turned off), and whether a notice may show message text (off unless turned on).");
+
+        chat.MapPut("/settings", async (ChatSettingsDto body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Saves the caller's chat choices and returns them.");
+
         chat.MapPost("/requests", async (ChatRequestBody body, ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.RequestAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Asks a guest to chat. The other person is told at once. A child's request goes to their guardian first, and a request to a child to theirs. If the person already asked the caller this accepts it. 400 person, self or noGuardian; 404 person (not found on the sailing); 409 connected, alreadyAsked, cooldown (declined within 7 days), tooManyOpen or tooMany.");
 

@@ -42,6 +42,19 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         return new(Of("connected"), Of("incoming"), Of("outgoing"), Of("declined"), Of("approval"));
     }
 
+    public async Task<ChatSettingsDto> SettingsAsync(UserRecord actor, CancellationToken ct)
+    {
+        var (findable, preview) = await store.GetSettingsAsync(actor.Id, ct);
+        return new(findable, preview);
+    }
+
+    public async Task<ChatSettingsDto> SetSettingsAsync(UserRecord actor, ChatSettingsDto? body, CancellationToken ct)
+    {
+        if (body is null) throw ApiException.Invalid("settings");
+        await store.SetSettingsAsync(actor.Id, body.Findable, body.ShowPreview, ct);
+        return body;
+    }
+
     public async Task<ChatSummaryDto> SummaryAsync(UserRecord actor, CancellationToken ct)
     {
         var l = await ListAsync(actor, ct);
