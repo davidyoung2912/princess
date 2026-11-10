@@ -349,7 +349,7 @@ public interface IAboardStore
 /// </summary>
 public interface IChatStore
 {
-    /// <summary>Makes the booking's "My group" for a person who has none, so there is always one conversation to open.</summary>
+    /// <summary>Makes the travel party chat of each of the person's confirmed bookings (everyone on the booking is in it) and adds them to ones that exist; a person with no confirmed booking gets a solo "My group", so there is always one conversation to open.</summary>
     Task EnsurePartyAsync(long userId, CancellationToken ct);
     /// <summary>
     /// Makes the person's permanent Stanley chat if they have none (one per account, enforced by a unique index), with the welcome as its first message. Safe to repeat and to race: the second caller finds the first one's thread.

@@ -33,6 +33,13 @@ export function keptIds(keeps: readonly ChatKeep[]): Set<string> {
   return new Set(keeps.filter((k) => k.available && k.kept).map((k) => k.id))
 }
 
+/** For the privacy centre: how many chats are kept and the last day any of them is held to, or null when none is kept. */
+export function keptSummary(keeps: readonly ChatKeep[]): { count: number; until: number } | null {
+  const kept = keeps.filter((k) => k.available && k.kept && k.deleteOn !== null)
+  if (kept.length === 0) return null
+  return { count: kept.length, until: Math.max(...kept.map((k) => k.deleteOn as number)) }
+}
+
 /** The tag a kept conversation wears in the list, or null: "Kept until March 20, 2028". */
 export function keptUntil(keeps: readonly ChatKeep[], id: string): number | null {
   const k = keeps.find((x) => x.id === id)
@@ -41,6 +48,9 @@ export function keptUntil(keeps: readonly ChatKeep[], id: string): number | null
 
 /** Whether to offer Chat's people (finding a guest, making a group) at all. Chat is never hidden, only the people part before a booking. */
 export const canFindPeople = (e: ChatEligibility | null | undefined): boolean => e?.people !== false
+
+/** Whether to offer Guest Services: from a confirmed booking, before boarding as well as aboard. Unknown (still loading, or offline) counts as available; the server decides. */
+export const canUseGuestServices = (e: ChatEligibility | null | undefined): boolean => e?.guestServices !== false
 
 /** The words key for why a chat cannot be kept. */
 export const KEEP_REASON_KEY: Record<ChatKeepReason, string> = {

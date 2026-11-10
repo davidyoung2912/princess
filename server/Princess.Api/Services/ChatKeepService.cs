@@ -26,7 +26,7 @@ public sealed class ChatKeepService(ContextService context, ITripStore trips, IC
     {
         var stage = (await context.GetAsync(ct)).Stage;
         var e = ChatEligibilityRules.For(stage, await HasBookingAsync(user, ct));
-        return new(e.Stage, e.Stanley, e.Party, e.People, e.Keep, e.Reason);
+        return new(e.Stage, e.Stanley, e.Party, e.People, e.GuestServices, e.Keep, e.Reason);
     }
 
     /// <summary>Refuses (403 <c>notEligible</c>) a guest who may not ask another guest to chat yet.</summary>

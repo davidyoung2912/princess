@@ -4926,6 +4926,7 @@ export const en = {
   'priv.r.health.why': 'Shared with the Medical Center only.',
   'priv.r.payment': 'Payments and receipts',
   'priv.r.payment.why': 'Needed for your bill and tax records.',
+  'priv.keptChats': 'Chats you agreed with everyone to keep ({count}) are held until {date}.',
   'priv.r.messages': 'Messages',
   'priv.r.messages.why': 'Your chats with your party and Guest Services. A chat that everyone in it agrees to keep is held for 12 months after the cruise instead.',
   'priv.r.history': 'Trip history',

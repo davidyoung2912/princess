@@ -15,6 +15,7 @@ public class ChatEligibilityRulesTests
         Assert.True(e.Stanley);
         Assert.False(e.Party);
         Assert.False(e.People);
+        Assert.False(e.GuestServices);
         Assert.False(e.Keep);
         Assert.Equal(ChatEligibilityRules.BeforeBooking, e.Reason);
         Assert.False(ChatEligibilityRules.MayAsk(stage, false));
@@ -32,7 +33,7 @@ public class ChatEligibilityRulesTests
     public void ABookedGuestCanChatWithTheirPartyAndTheSailing(string stage)
     {
         var e = ChatEligibilityRules.For(stage, hasConfirmedBooking: true);
-        Assert.True(e.Stanley && e.Party && e.People && e.Keep);
+        Assert.True(e.Stanley && e.Party && e.People && e.GuestServices && e.Keep);
         Assert.Null(e.Reason);
     }
 

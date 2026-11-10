@@ -54,7 +54,7 @@ export type ChatSmsReason = 'supervised' | 'noPhone' | 'unverified' | 'off'
 export interface ChatSms { on: boolean; idle: boolean; available: boolean; reason: ChatSmsReason | null }
 
 /** What chat the guest may use now, decided on the server from their journey stage and bookings. `reason` is `beforeBooking` when only Stanley is on. It governs starting new chats; chats already there stay readable. */
-export interface ChatEligibility { stage: string; stanley: boolean; party: boolean; people: boolean; keep: boolean; reason?: 'beforeBooking' }
+export interface ChatEligibility { stage: string; stanley: boolean; party: boolean; people: boolean; guestServices: boolean; keep: boolean; reason?: 'beforeBooking' }
 
 /** Why a chat cannot be kept: the Stanley chat, an ended chat, no trip to count from, or the standard date has passed. */
 export type ChatKeepReason = 'permanent' | 'closed' | 'noTrip' | 'tooLate'

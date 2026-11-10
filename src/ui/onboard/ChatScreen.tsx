@@ -23,7 +23,7 @@ import { personFirstName } from '../../account/context'
 import { People, RequestsBanner } from './ChatPeople'
 import { Conversations } from './ChatConversations'
 import { Children } from './ChatGuardian'
-import { canFindPeople } from '../../domain/chatKeep'
+import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 
 type Mode = 'chats' | 'people' | 'service' | 'children'
 
@@ -38,7 +38,8 @@ export function ChatScreen() {
   // Before a booking is confirmed there is nobody on a sailing to chat with: Stanley is here, and the people part waits. A failed check leaves everything shown (the server still decides).
   const eligibility = useMine(() => api.chatConnections.eligibility())
   const people = canFindPeople(eligibility.data)
-  const shown: Mode = !people && mode === 'people' ? 'chats' : mode
+  const service = canUseGuestServices(eligibility.data)
+  const shown: Mode = (!people && mode === 'people') || (!service && mode === 'service') ? 'chats' : mode
   return (
     <div className="page">
       <p>{t('chat.free')}</p>
@@ -48,7 +49,7 @@ export function ChatScreen() {
         <Chip pressed={shown === 'chats'} onToggle={() => setMode('chats')}>{t('chat.chats')}</Chip>
         {people && <Chip pressed={shown === 'people'} onToggle={() => setMode('people')}>{t('chat.people')}</Chip>}
         {guardian && <Chip pressed={shown === 'children'} onToggle={() => setMode('children')}>{t('guard.chip')}</Chip>}
-        <Chip pressed={shown === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>
+        {service && <Chip pressed={shown === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>}
       </div>
       {shown === 'chats' ? <Conversations /> : shown === 'people' ? <People /> : shown === 'children' ? <Children /> : <Service />}
       <Card info>

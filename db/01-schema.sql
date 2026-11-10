@@ -3531,3 +3531,11 @@ GO
 IF COL_LENGTH(N'dbo.ChatGroups', N'KeepUntil') IS NULL
   ALTER TABLE dbo.ChatGroups ADD KeepUntil DATETIME2(0) NULL;
 GO
+-- Chat phase 5 follow-up: one shared travel party chat per confirmed booking. BookingId names the booking (no foreign key, like ReplyToId, so a booking can never be blocked by a chat);
+-- the chat and its members are made the first time one of the booking's guests opens chat, which also moves an earlier solo "My group" into it, so there is no data to backfill here.
+IF COL_LENGTH(N'dbo.ChatGroups', N'BookingId') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD BookingId BIGINT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatGroups_Booking' AND object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  CREATE UNIQUE INDEX UX_ChatGroups_Booking ON dbo.ChatGroups (BookingId) WHERE BookingId IS NOT NULL;
+GO

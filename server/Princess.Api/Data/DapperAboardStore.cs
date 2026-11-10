@@ -373,17 +373,73 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         OUTER APPLY (SELECT TOP 1 x.Persona, x.Subtitle FROM dbo.ChatMessages x WHERE g.Kind = 'stanley' AND x.GroupId = g.Id AND x.Persona IS NOT NULL ORDER BY x.Id DESC) sp
         """;
 
+    /// <summary>
+    /// The travel party chat (docs/chat-features-research.md, phase 5): one conversation per confirmed booking, with everyone on the booking in it, made the first time any of them opens chat after the booking is confirmed.
+    /// A guest added to the booking later is added to it on their first read. Someone who left stays out. A guest's earlier solo "My group" (made before this) has its messages moved into the booking's chat and is removed, so the list has one.
+    /// A guest with no confirmed booking still gets a solo "My group", so there is always one conversation to open.
+    /// </summary>
     public async Task EnsurePartyAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        await using var tx = await c.BeginTransactionAsync(ct);
-        var has = await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party'", new { userId }, tx, ct));
-        if (has == 0)
+        for (var attempt = 0; ; attempt++)
         {
-            var group = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind) OUTPUT INSERTED.Id VALUES (N'My group', 'party')", null, tx, ct));
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatGroupMembers (GroupId, UserId) VALUES (@group, @userId)", new { group, userId }, tx, ct));
+            await using var tx = await c.BeginTransactionAsync(ct);
+            try
+            {
+                await EnsurePartyInAsync(c, tx, userId, ct);
+                await tx.CommitAsync(ct);
+                return;
+            }
+            catch (DbException e) when (attempt == 0 && e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 })
+            {
+                // Two first reads raced to make the same booking's chat: the other won, so go round once more and find it.
+                await tx.RollbackAsync(ct);
+            }
         }
-        await tx.CommitAsync(ct);
+    }
+
+    private static async Task EnsurePartyInAsync(DbConnection c, DbTransaction tx, long userId, CancellationToken ct)
+    {
+        var bookings = (await c.QueryAsync<long>(Sql.Cmd("""
+            SELECT b.Id FROM dbo.Bookings b JOIN dbo.BookingGuests g ON g.BookingId = b.Id
+            WHERE g.UserId = @userId AND b.Status = 'confirmed' ORDER BY b.Id
+            """, new { userId }, tx, ct))).ToList();
+        if (bookings.Count == 0)
+        {
+            var has = await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party'", new { userId }, tx, ct));
+            if (has > 0) return;
+            var solo = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind) OUTPUT INSERTED.Id VALUES (N'My group', 'party')", null, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatGroupMembers (GroupId, UserId) VALUES (@solo, @userId)", new { solo, userId }, tx, ct));
+            return;
+        }
+        long? first = null;
+        foreach (var booking in bookings)
+        {
+            var group = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT Id FROM dbo.ChatGroups WHERE Kind = 'party' AND BookingId = @booking", new { booking }, tx, ct))
+                ?? await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind, BookingId) OUTPUT INSERTED.Id VALUES (N'My group', 'party', @booking)", new { booking }, tx, ct));
+            first ??= group;
+            // Everyone on the booking, once. A person who left (their row stays, marked left) is not added again.
+            await c.ExecuteAsync(Sql.Cmd("""
+                INSERT INTO dbo.ChatGroupMembers (GroupId, UserId)
+                SELECT @group, bg.UserId FROM dbo.BookingGuests bg
+                WHERE bg.BookingId = @booking AND NOT EXISTS (SELECT 1 FROM dbo.ChatGroupMembers m WHERE m.GroupId = @group AND m.UserId = bg.UserId)
+                """, new { group, booking }, tx, ct));
+        }
+        // The solo "My group" from before booking chats were shared: its (one person's) messages and read place move to the booking's chat, then it goes.
+        foreach (var legacy in (await c.QueryAsync<long>(Sql.Cmd("""
+            SELECT g.Id FROM dbo.ChatGroups g JOIN dbo.ChatGroupMembers m ON m.GroupId = g.Id AND m.UserId = @userId
+            WHERE g.Kind = 'party' AND g.BookingId IS NULL AND (SELECT COUNT(*) FROM dbo.ChatGroupMembers x WHERE x.GroupId = g.Id) = 1
+            """, new { userId }, tx, ct))).ToList())
+        {
+            await c.ExecuteAsync(Sql.Cmd("""
+                UPDATE dbo.ChatMessages SET GroupId = @first WHERE GroupId = @legacy;
+                UPDATE gm SET LastReadMessageId = lm.LastReadMessageId
+                FROM dbo.ChatGroupMembers gm JOIN dbo.ChatGroupMembers lm ON lm.GroupId = @legacy AND lm.UserId = @userId
+                WHERE gm.GroupId = @first AND gm.UserId = @userId;
+                DELETE FROM dbo.ChatPins WHERE GroupId = @legacy;   -- the pin table has no cascade, and a solo chat's pins are not worth carrying over
+                DELETE FROM dbo.ChatGroups WHERE Id = @legacy;
+                """, new { first, legacy, userId }, tx, ct));
+        }
     }
 
     private sealed class PersonaRow

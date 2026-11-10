@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { PrivacyPerson } from '../../api/careTypes'
 import { formatDate } from '../../domain/cruise'
+import { keepDate, keptSummary } from '../../domain/chatKeep'
 import { DATA_RULES } from '../../domain/dataRules'
 import { consentsFor, RETENTION, type ConsentId } from '../../domain/privacy'
 import { parentDecidesIn, regionRules } from '../../domain/regions'
@@ -30,6 +31,9 @@ export function PrivacyScreen() {
   const me = usePersona()
   const view = useAsync(() => api.privacy.view(), [me?.id])
   const set = useAction(async (person: string, consent: ConsentId, on: boolean) => { await api.privacy.setConsent(person as never, consent, on); if (consent === 'improve') setImproveConsent(on); view.retry() })
+  // Chats every member agreed to keep are held longer than the messages row says; a failed read just leaves that line out.
+  const kept = useAsync(() => api.chatConnections.keeps().catch(() => []), [me?.id])
+  const keptChats = kept.data ? keptSummary(kept.data) : null
   const keep = useAction(setKeepPrivate)
   const exporting = useAction(async () => { downloadText(`princess-my-data-${today}.json`, 'application/json', JSON.stringify(await api.account.exportData(), null, 2)) })
   const [keepPending, setKeepPending] = useState(false)
@@ -50,7 +54,7 @@ export function PrivacyScreen() {
             <ul className="plain-bullets">
               {RETENTION.map((r) => {
                 const day = view.data!.deleteOn[r.id]
-                return <li key={r.id}><strong>{t(r.label)}</strong>: {t(r.why)} {day ? t(day <= today ? 'priv.deletedOn' : 'priv.deleteOn', { date: formatDate(day) }) : t('priv.untilAsked')}</li>
+                return <li key={r.id}><strong>{t(r.label)}</strong>: {t(r.why)} {day ? t(day <= today ? 'priv.deletedOn' : 'priv.deleteOn', { date: formatDate(day) }) : t('priv.untilAsked')}{r.id === 'messages' && keptChats && <> {t('priv.keptChats', { count: keptChats.count, date: keepDate(keptChats.until) })}</>}</li>
               })}
             </ul>
             {view.data.deleted.length > 0 && <p role="status">{t('priv.deleted', { count: view.data.deleted.length })}</p>}

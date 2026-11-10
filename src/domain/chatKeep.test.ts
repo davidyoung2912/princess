@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatKeep } from '../api/chatTypes'
-import { canFindPeople, deleteDay, hasAgreed, keepDate, keepStatus, keptIds, keptUntil, waitingPhrase } from './chatKeep'
+import { keptSummary, canFindPeople, canUseGuestServices, deleteDay, hasAgreed, keepDate, keepStatus, keptIds, keptUntil, waitingPhrase } from './chatKeep'
 
 const DAY = Date.UTC(2027, 3, 19)
 const KEPT_DAY = Date.UTC(2028, 2, 20)
@@ -40,6 +40,15 @@ describe('keptIds and keptUntil', () => {
   })
 })
 
+describe('keptSummary', () => {
+  it('counts the kept chats and gives the last day', () => {
+    const a = keep({ id: 'a', kept: true, deleteOn: DAY }), b = keep({ id: 'b', kept: true, deleteOn: KEPT_DAY })
+    expect(keptSummary([a, b, keep({ id: 'c' })])).toEqual({ count: 2, until: KEPT_DAY })
+    expect(keptSummary([keep()])).toBeNull()
+    expect(keptSummary([])).toBeNull()
+  })
+})
+
 describe('hasAgreed', () => {
   it('follows the guest\'s own agreement', () => {
     expect(hasAgreed(keep({ mine: true }))).toBe(true)
@@ -49,10 +58,18 @@ describe('hasAgreed', () => {
 
 describe('canFindPeople', () => {
   it('is off before a booking and on otherwise, and on while the answer is unknown', () => {
-    expect(canFindPeople({ stage: 'dream', stanley: true, party: false, people: false, keep: false, reason: 'beforeBooking' })).toBe(false)
-    expect(canFindPeople({ stage: 'sea', stanley: true, party: true, people: true, keep: true })).toBe(true)
+    expect(canFindPeople({ stage: 'dream', stanley: true, party: false, people: false, guestServices: false, keep: false, reason: 'beforeBooking' })).toBe(false)
+    expect(canFindPeople({ stage: 'sea', stanley: true, party: true, people: true, guestServices: true, keep: true })).toBe(true)
     expect(canFindPeople(null)).toBe(true)
     expect(canFindPeople(undefined)).toBe(true)
+  })
+})
+
+describe('canUseGuestServices', () => {
+  it('follows the booking and stays on while unknown', () => {
+    expect(canUseGuestServices({ stage: 'dream', stanley: true, party: false, people: false, guestServices: false, keep: false, reason: 'beforeBooking' })).toBe(false)
+    expect(canUseGuestServices({ stage: 'manage', stanley: true, party: true, people: true, guestServices: true, keep: true })).toBe(true)
+    expect(canUseGuestServices(null)).toBe(true)
   })
 })
 
