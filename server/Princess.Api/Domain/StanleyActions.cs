@@ -300,8 +300,8 @@ public static partial class StanleyIntents
         // The dining plan: "change my dining time to late seating", "switch to anytime dining". A fixed seating is a plan for the whole cruise, not a table for one night.
         if (Regex.IsMatch(lower, @"\b(change|switch|move|put|swap|want|like)\b") && Regex.IsMatch(lower, @"\b(early|late|anytime|any time|flexible)\s+(seating|sitting|dining)\b|\b(seating|sitting)\b.{0,15}\b(early|late)\b|\bto (early|late|anytime)\b.{0,12}\b(seating|sitting|dining)\b"))
         {
-            var plan = Regex.Match(lower, @"\b(early|late|anytime|any time|flexible)\b").Value;
-            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.ChangeSeating, new() { ["plan"] = DiningPlanRules.FromWords(plan) ?? "anytime" }));
+            var seating = Regex.Match(lower, @"\b(early|late|anytime|any time|flexible)\b").Value;
+            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.ChangeSeating, new() { ["plan"] = DiningPlanRules.FromWords(seating) ?? "anytime" }));
         }
 
         // Booking a table: "book dinner on night 3 at 7pm". Moving a table is read below.
