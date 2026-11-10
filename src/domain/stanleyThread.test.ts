@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
 import { en } from '../i18n/locales/en'
-import { copyAge, IN_THREAD_ACTIONS, isStanleyChat, mentionsAI, noticeOffers, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, startsDay, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
+import { copyAge, IN_THREAD_ACTIONS, isStanleyChat, mayAsk, mentionsAI, noticeOffers, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, questionFrom, startsDay, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
 import { sortConversations } from './chatUrgency'
 
 const conv = (id: string, o: Partial<ChatConversation> = {}): ChatConversation =>
@@ -161,5 +161,20 @@ describe('notice actions, replies and offline copies (phase 0c)', () => {
     expect(copyAge(5, (at) => `at ${at}`)).toBe('at 5')
     expect(copyAge(undefined, (at) => `at ${at}`)).toBeNull()
     expect(copyAge(Number.NaN, (at) => `at ${at}`)).toBeNull()
+  })
+
+  it('asks about phone alerts only when something is time-sensitive, and says what is missed once declined', () => {
+    expect(pushPrompt('ask', false, true)).toBe('ask')
+    expect(pushPrompt('ask', false, false)).toBeNull()
+    expect(pushPrompt('denied', false, false)).toBe('declined')
+    expect(pushPrompt('granted', false, true)).toBeNull()
+    expect(pushPrompt('unsupported', false, true)).toBeNull()
+  })
+
+  it('never asks a supervised account about alerts and gives it no free-text box', () => {
+    expect(pushPrompt('ask', true, true)).toBeNull()
+    expect(pushPrompt('denied', true, true)).toBeNull()
+    expect(mayAsk(true)).toBe(false)
+    expect(mayAsk(false)).toBe(true)
   })
 })

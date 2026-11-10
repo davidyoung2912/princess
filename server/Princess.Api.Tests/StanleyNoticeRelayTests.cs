@@ -119,12 +119,92 @@ public class StanleyNoticeRelayTests
         Assert.True(m.FromStanley);
     }
 
-    [Fact]
-    public async Task ASupervisedAccountGetsNothingFromTheRelay()
+    private static (InMemoryChatStore Store, StanleyNoticeRelay Relay, UserRecord Child, UserRecord Guardian) Family(StanleySwitches? switches = null)
     {
-        var (_, relay, user) = Setup();
-        user.IsSupervised = true;
-        Assert.Equal(0, await relay.RelayAsync(user, [Notice("a")], Now, default));
+        var users = new InMemoryUserStore();
+        var store = new InMemoryChatStore(users);
+        var guardian = users.Add("g@example.com", "pw", first: "Pat");
+        var child = users.Add(null, null, supervised: true, booker: guardian, first: "Alex");
+        var options = Microsoft.Extensions.Options.Options.Create(new StanleyOptions { Switches = switches ?? new() });
+        return (store, new StanleyNoticeRelay(store, NullLogger<StanleyNoticeRelay>.Instance, options), child, guardian);
+    }
+
+    [Fact]
+    public async Task ASupervisedAccountGetsOnlyTheScriptedChildNotices()
+    {
+        var (store, relay, child, _) = Family();
+        // Muster and check-in are for a child; a payment, a reminder and an offer are not.
+        var added = await relay.RelayAsync(child, [Notice("m", "muster", true), Notice("c", "checkin"), Notice("p", "payment"), Notice("r", "reminder"), Notice("o", "offer")], Now, default, offersOptedIn: true);
+        Assert.Equal(2, added);
+        Assert.Equal(["c", "m"], (await Thread(store, child)).Where(m => m.NoticeKey is not null).Select(m => m.NoticeKey!).Order());
+    }
+
+    [Fact]
+    public async Task TheGuardianReceivesTheChildsCriticalNoticeLabelledWithTheirName()
+    {
+        var (store, relay, child, guardian) = Family();
+        await relay.RelayAsync(child, [Notice("muster:1", "muster", true) with { Title = "Muster", Body = "Station B, deck 5." }, Notice("c", "checkin")], Now, default);
+        var copies = (await Thread(store, guardian)).Where(m => m.NoticeKey is not null).ToList();
+        var copy = Assert.Single(copies);
+        Assert.Equal($"child:{child.Id}:muster:1", copy.NoticeKey);
+        Assert.StartsWith("For Alex: ", copy.Text);
+        Assert.Equal("critical", copy.Lane);
+        Assert.Empty(StanleyNoticeRules.ActionsFor(copy.NoticeKind ?? "", copy.NoticeSubject, false, false));   // the guardian cannot confirm the child's muster
+        // A repeat adds nothing.
+        await relay.RelayAsync(child, [Notice("muster:1", "muster", true)], Now.AddMinutes(15), default);
+        Assert.Single((await Thread(store, guardian)).Where(m => m.NoticeKey is not null));
+    }
+
+    [Fact]
+    public void OnlyTheCriticalLaneIsCopiedToAGuardian()
+    {
+        var important = StanleyNoticeRules.Build(Notice("p", "payment"), Now);
+        Assert.Null(StanleyNoticeRules.ForGuardian(important, "Alex", 3));
+        Assert.NotNull(StanleyNoticeRules.ForGuardian(StanleyNoticeRules.Build(Notice("m", "muster", true), Now), "Alex", 3));
+    }
+
+    [Fact]
+    public void AnOfferIsNeverCriticalNeverBypassesAndNeedsOptInAndNoOpenCase()
+    {
+        var offer = Notice("o", "offer", bypass: true);
+        Assert.Equal("info", StanleyNoticeRules.LaneOf(offer));
+        Assert.False(StanleyNoticeRules.OfferAllowed(offer, true, false, false));                          // it may not bypass
+        var plain = Notice("o", "offer");
+        Assert.False(StanleyNoticeRules.OfferAllowed(plain, false, false, false));                         // no opt-in
+        Assert.False(StanleyNoticeRules.OfferAllowed(plain, true, true, false));                           // a serious case is open
+        Assert.False(StanleyNoticeRules.OfferAllowed(plain, true, false, true));                           // a supervised account
+        Assert.True(StanleyNoticeRules.OfferAllowed(plain, true, false, false));
+        Assert.True(StanleyNoticeRules.OfferAllowed(Notice("p", "payment"), false, true, false));          // a required notice is never held by the gate
+    }
+
+    [Fact]
+    public async Task AnOfferIsNotWrittenWithoutOptInAndIsPausedWhileACaseIsOpen()
+    {
+        var (store, relay, user) = Setup();
+        Assert.Equal(0, await relay.RelayAsync(user, [Notice("o", "offer")], Now, default));
+        Assert.Equal(0, await relay.RelayAsync(user, [Notice("o", "offer")], Now, default, offersOptedIn: true, seriousCaseOpen: true));
+        Assert.Equal(1, await relay.RelayAsync(user, [Notice("o", "offer")], Now, default, offersOptedIn: true));
+        Assert.Equal("info", (await Thread(store, user)).Single(m => m.NoticeKey == "o").Lane);
+    }
+
+    [Fact]
+    public async Task AKilledLaneIsNotWrittenToTheThreadButOtherLanesAre()
+    {
+        var users = new InMemoryUserStore();
+        var store = new InMemoryChatStore(users);
+        var user = new UserRecord { Id = 7, PublicId = Guid.NewGuid(), FirstName = "Sam" };
+        var options = Microsoft.Extensions.Options.Options.Create(new StanleyOptions { Switches = new() { ThreadCritical = false } });
+        var relay = new StanleyNoticeRelay(store, NullLogger<StanleyNoticeRelay>.Instance, options);
+        Assert.Equal(1, await relay.RelayAsync(user, [Notice("m", "muster", true), Notice("r")], Now, default));
+        Assert.DoesNotContain(await Thread(store, user), m => m.NoticeKey == "m");
+    }
+
+    [Fact]
+    public void TheThreadSwitchesAreOnByDefaultAndTheRelayNeverControlsThePush()
+    {
+        var sw = new StanleySwitches();
+        Assert.All(StanleyNoticeRules.Lanes, lane => Assert.True(StanleyNoticeRules.LaneOn(lane, sw.ThreadCritical, sw.ThreadImportant, sw.ThreadReminder, sw.ThreadInfo)));
+        Assert.DoesNotContain("thread", sw.Off());   // a thread switch is not a Stanley route and never turns off the direct push
     }
 
     [Fact]

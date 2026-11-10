@@ -25,10 +25,57 @@ public static class StanleyNoticeRules
     private static readonly string[] ImportantKinds = ["allAboard", "backAboard", "disruption", "payment", "travel", "reservation", "case", "helper", "documents", "checkin", "service", "muster"];
 
     public static string LaneOf(PushNotice n) =>
-        n.Bypass ? Critical
+        n.Kind == OfferKind ? Info   // an offer is never critical and never important, whatever it claims
+        : n.Bypass ? Critical
         : ImportantKinds.Contains(n.Kind) ? Important
         : n.Kind == "reminder" ? Reminder
         : Info;
+
+    // ---- Phase 0d: supervised accounts, the guardian's copy, kill switches and offers ----
+
+    /// <summary>The kind of a commercial message. It is its own opt-in category and is built by no rule today; the gate below is what any future offer must pass.</summary>
+    public const string OfferKind = "offer";
+
+    /// <summary>The kind of a critical notice copied into a guardian's thread about their child.</summary>
+    public const string ChildCopyKind = "childNotice";
+
+    /// <summary>What a supervised account is told, in the notices' own scripted wording: the muster drill, all-aboard, schedule and check-in. No payment, trip-planning, case, reminder or offer notice.</summary>
+    public static readonly string[] ChildKinds = ["muster", "allAboard", "backAboard", "scheduleChange", "disruption", "checkin", "checkinSoon", "documents"];
+
+    /// <summary>The notices a supervised account's thread may carry. Everything else is for the guardian, who is told through their own account.</summary>
+    public static bool ChildMayReceive(PushNotice n) => n.Kind != OfferKind && ChildKinds.Contains(n.Kind);
+
+    /// <summary>
+    /// An offer reaches a thread only when the guest opted in to offers, no serious case is open, the account is not supervised, and the offer does not try to bypass quiet hours. A required notice
+    /// is never an offer, so this gate never holds one back.
+    /// </summary>
+    public static bool OfferAllowed(PushNotice n, bool optedIn, bool seriousCaseOpen, bool supervised) =>
+        n.Kind != OfferKind || (optedIn && !seriousCaseOpen && !supervised && !n.Bypass);
+
+    /// <summary>
+    /// The guardian's copy of a child's critical notice, labelled with the child's first name. Only the critical lane is copied; the copy has its own key (one per child and occasion), carries no
+    /// action (the guardian cannot confirm the child's muster from their own station) and names the child in words. Null for any other lane.
+    /// </summary>
+    public static StanleyNotice? ForGuardian(StanleyNotice n, string childFirstName, long childId)
+    {
+        if (n.Lane != Critical) return null;
+        var name = string.IsNullOrWhiteSpace(childFirstName) ? "Your child" : childFirstName.Trim();
+        var text = $"For {name}: {n.Text}";
+        return n with
+        {
+            Key = $"child:{childId}:{n.Key}", Kind = ChildCopyKind, Path = "/home", Text = text.Length > 1000 ? text[..1000] : text,
+            SupersedeKey = n.SupersedeKey is null ? null : $"child:{childId}:{n.SupersedeKey}", Subject = null,
+        };
+    }
+
+    /// <summary>
+    /// A switch that stops one lane being written to threads (docs/chat-features-research.md, 15.8, point 9). Safe default: every lane is on. The phone push is decided elsewhere and is never held
+    /// by this, so switching the critical lane off in the thread leaves the direct push in place.
+    /// </summary>
+    public static bool LaneOn(string lane, bool critical, bool important, bool reminder, bool info) => lane switch
+    {
+        Critical => critical, Important => important, Reminder => reminder, _ => info,
+    };
 
     /// <summary>How long a message stays actionable. A muster or all-aboard prompt is stale within hours; a payment reminder lasts days; information does not expire.</summary>
     public static DateTime? ExpiryOf(string lane, DateTime now) => lane switch
@@ -141,6 +188,7 @@ public static class StanleyNoticeRules
         "payment" => "A payment on your booking needs attention before its due date.",
         "travel" => "Your flight changed or is coming up.",
         "scheduleChange" => "Something in your plan moved.",
+        ChildCopyKind => "You are the guardian of a child on your booking, so I copy their safety notices to you.",
         "documents" or "passportProblem" => "Your travel documents must be complete before you board.",
         "checkin" or "checkinSoon" => "Online check-in has a window, and you need it for your boarding pass.",
         "service" => "Guest Services answered a request you made.",
@@ -158,6 +206,7 @@ public static class StanleyNoticeRules
         "documents" or "passportProblem" => "Open Documents and add or fix what is missing.",
         "checkin" => "Check in now to get your boarding pass.",
         "service" => "Open Help to read the reply.",
+        ChildCopyKind => "Make sure the child has seen it and knows where to be.",
         _ => "Nothing is needed unless the message asks for something.",
     };
 

@@ -31,6 +31,8 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
 
     public async Task<StanleyReplyDto> AskAsync(UserRecord user, StanleyRequestDto request, CancellationToken ct)
     {
+        // A supervised account's Stanley thread is notice-only (docs/chat-features-research.md, 15.7): no free text, no model, no suggestions or offers.
+        if (user.IsSupervised) throw ApiException.Forbidden("supervised");
         var o = options.Value;
         var turns = StanleyRules.Usable(request.History) ?? throw ApiException.Invalid("badStanley");
         var context = StanleyRouter.Clean(request.Context);

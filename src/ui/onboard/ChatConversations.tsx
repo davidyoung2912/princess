@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
-import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
+import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -26,7 +26,7 @@ import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { useLatest } from '../../hooks/useLatest'
-import { closeChatNotice } from '../../push/browser'
+import { closeChatNotice, currentSupport } from '../../push/browser'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useNow, useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
@@ -153,6 +153,8 @@ type Phase = 'loading' | 'ready' | 'error' | 'gone'
 /** One conversation: the latest 30 messages, older ones on request, a composer that never blocks typing, and live arrival that does not move what the guest is reading. */
 function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const me = usePersona()
+  const supervisedChild = me?.child === true
+  const now = useNow()
   const ownerId = useOwnerId()
   const shipTime = useShipTime()
   const owner = ownerId ?? 'none'
@@ -361,6 +363,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
       {offline && phase === 'ready' && <Banner kind="offline" title={staleTitle} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
+      {permanent && <p className="muted" role="note">{t('stanley.chat.neverAsk')}</p>}
+      {permanent && supervisedChild && <p className="muted" role="note">{t('stanley.chat.noticeOnly')}</p>}
+      {permanent && <PushPromptNote prompt={pushPrompt(currentSupport(), supervisedChild, messages.some((m) => m.notice !== undefined && m.acked === false && noticeState(m, now) === 'active'))} />}
       {permanent && <NeedsYouStrip messages={messages} ackBusy={ack.busy} onAck={runAck} />}
       <div ref={top} />
       {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
@@ -381,7 +386,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       </ol>
       <div ref={end} />
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
-      {permanent && phase === 'ready' && <AskStanley />}
+      {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           <fieldset className="urgency-pick">
@@ -456,6 +461,14 @@ function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; 
       </ul>
     </section>
   )
+}
+
+/** The permission prompt in the thread: asked at a meaningful moment, with a link to the settings screen that does the asking, and a plain note once declined. */
+function PushPromptNote({ prompt }: { prompt: ReturnType<typeof pushPrompt> }) {
+  if (prompt === null) return null
+  return prompt === 'ask'
+    ? <Banner kind="info" title={t('stanley.chat.pushAskTitle')} action={<LinkButton to="/me/notifications">{t('stanley.chat.pushAskLink')}</LinkButton>}><p>{t('stanley.chat.pushAskBody')}</p></Banner>
+    : <Banner kind="info" title={t('stanley.chat.pushDeclinedTitle')}><p>{t('stanley.chat.pushDeclinedBody')}</p></Banner>
 }
 
 /** The free-text box. Asking goes through Stanley's own window (his limits, safety screen and tools live there), with the words already in its box. */

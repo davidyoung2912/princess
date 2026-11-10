@@ -86,3 +86,17 @@ export const dayKey = (at: number): string => {
 
 /** True when this item starts a new day, so the thread shows a heading above it. The first item always does. */
 export const startsDay = (items: readonly { at: number }[], index: number): boolean => index === 0 || dayKey(items[index - 1].at) !== dayKey(items[index].at)
+
+/**
+ * What the thread says about phone alerts. A supervised account has none, so it is never asked. Otherwise: ask only at a meaningful moment (something time-sensitive is waiting for the guest) and
+ * only when the browser can still be asked; once the guest has said no, say plainly what they will miss rather than ask again. Never nags: `allowed` and `unsupported` say nothing.
+ */
+export type PushPrompt = 'ask' | 'declined' | null
+export function pushPrompt(support: 'unsupported' | 'needsInstall' | 'denied' | 'ask' | 'granted', supervised: boolean, hasTimeSensitive: boolean): PushPrompt {
+  if (supervised) return null
+  if (support === 'denied') return 'declined'
+  return support === 'ask' && hasTimeSensitive ? 'ask' : null
+}
+
+/** A notice-only thread (a supervised account's): there is no free-text box, so a child cannot ask or send anything. */
+export const mayAsk = (supervised: boolean): boolean => !supervised

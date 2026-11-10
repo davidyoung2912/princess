@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
@@ -10,11 +11,12 @@ namespace Princess.Api.Services;
 /// so a failure here cannot silence a safety notice (fail open). The voice is the one the thread last spoke in; it is brought up to date when the guest opens the thread, which is also
 /// why this works with no signed-in person, as the scheduled pass has none.
 /// </summary>
-public sealed class StanleyNoticeRelay(IChatStore store, ILogger<StanleyNoticeRelay> log)
+public sealed class StanleyNoticeRelay(IChatStore store, ILogger<StanleyNoticeRelay> log, IOptions<StanleyOptions>? options = null)
 {
     /// <summary>
-    /// Writes each notice that is not yet in the thread. Supervised accounts are left out (their notice-only variant is phase 0d). Returns how many messages were added; any failure is logged
-    /// without the notice's text and swallowed, because the caller sends the push regardless.
+    /// Writes each notice that is not yet in the thread. A supervised account gets the notice-only variant (phase 0d): only the scripted kinds a child needs, and each critical one is copied into the
+    /// guardian's thread, labelled with the child's name. A lane switched off in configuration is not written; an offer is written only when it passes <see cref="StanleyNoticeRules.OfferAllowed"/>.
+    /// Returns how many messages were added to the person's own thread; any failure is logged without the notice's text and swallowed, because the caller sends the push regardless.
     /// </summary>
     /// <summary>Kind, lane, key and time only. Best effort: a counting failure never reaches the notice.</summary>
     private async Task LogAsync(long userId, StanleyNotice n, string evt, DateTime now, CancellationToken ct)
@@ -23,9 +25,36 @@ public sealed class StanleyNoticeRelay(IChatStore store, ILogger<StanleyNoticeRe
         catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "A Stanley notice delivery could not be logged"); }
     }
 
-    public async Task<int> RelayAsync(UserRecord actor, IReadOnlyList<PushNotice> notices, DateTime now, CancellationToken ct)
+    private bool LaneOn(string lane)
     {
-        if (notices.Count == 0 || actor.IsSupervised) return 0;
+        var sw = options?.Value.Switches ?? new StanleySwitches();
+        return StanleyNoticeRules.LaneOn(lane, sw.ThreadCritical, sw.ThreadImportant, sw.ThreadReminder, sw.ThreadInfo);
+    }
+
+    /// <summary>The child's critical notices, copied into the booker's thread. A failure here is logged and does not touch the child's own thread or the push.</summary>
+    private async Task CopyToGuardianAsync(UserRecord child, long guardianId, IReadOnlyList<PushNotice> notices, DateTime now, CancellationToken ct)
+    {
+        try
+        {
+            await store.EnsureStanleyAsync(guardianId, StanleyPersonaRules.Welcome(null), now, ct);
+            var (voice, subtitle) = await store.LastStanleyPersonaAsync(guardianId, ct) ?? (StanleyPersonaRules.Company, StanleyPersonaRules.CompanyName);
+            foreach (var n in notices.OrderByDescending(n => n.Priority))
+            {
+                if (StanleyNoticeRules.ForGuardian(StanleyNoticeRules.Build(n, now), child.FirstName ?? "", child.Id) is not { } copy) continue;
+                if (await store.AddStanleyNoticeAsync(guardianId, copy, voice, subtitle, now, ct)) await LogAsync(guardianId, copy, StanleyNoticeRules.EventPosted, now, ct);
+            }
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            log.LogWarning(e, "A child's notice could not be copied to the guardian's thread for user {UserId}", child.Id);
+        }
+    }
+
+    public async Task<int> RelayAsync(UserRecord actor, IReadOnlyList<PushNotice> notices, DateTime now, CancellationToken ct, bool offersOptedIn = false, bool seriousCaseOpen = false)
+    {
+        notices = [.. notices.Where(n => StanleyNoticeRules.OfferAllowed(n, offersOptedIn, seriousCaseOpen, actor.IsSupervised) && LaneOn(StanleyNoticeRules.LaneOf(n))
+            && (!actor.IsSupervised || StanleyNoticeRules.ChildMayReceive(n)))];
+        if (notices.Count == 0) return 0;
         try
         {
             await store.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), now, ct);
@@ -39,6 +68,7 @@ public sealed class StanleyNoticeRelay(IChatStore store, ILogger<StanleyNoticeRe
                 added++;
                 await LogAsync(actor.Id, built, StanleyNoticeRules.EventPosted, now, ct);
             }
+            if (actor.IsSupervised && actor.BookerUserId is { } guardian) await CopyToGuardianAsync(actor, guardian, notices, now, ct);
             return added;
         }
         catch (Exception e) when (e is not OperationCanceledException)
