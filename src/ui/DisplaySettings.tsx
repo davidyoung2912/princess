@@ -97,6 +97,13 @@ export function DisplaySettings() {
         </span>
       </label>
       <label className="choice">
+        <input type="checkbox" checked={settings.chatPopups} onChange={(e) => update({ chatPopups: e.target.checked })} />
+        <span>
+          {t('settings.chatPopups')}
+          <small>{t('settings.chatPopupsHint')}</small>
+        </span>
+      </label>
+      <label className="choice">
         <input type="checkbox" checked={settings.captions} onChange={(e) => update({ captions: e.target.checked })} />
         <span>
           {t('settings.captions')}

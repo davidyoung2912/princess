@@ -1,3 +1,4 @@
+import { ChatNeedsYou } from './ChatNeedsYou'
 import { Link } from 'react-router'
 import { formatTemp } from '../../domain/readiness'
 import { useSettings } from '../../hooks/useSettings'
@@ -48,7 +49,7 @@ export function OnboardHome({ today }: { today: OnboardToday }) {
 
       {today.day !== null && <DressBadge day={today.day} />}
       <CelebrationDay date={today.date} />
-      <UpdatesBanner />
+      <ChatNeedsYou /><UpdatesBanner />
       <HomeBudgetAlert />
 
       {today.clockChange && (

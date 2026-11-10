@@ -1,3 +1,4 @@
+import { ChatNeedsYou } from '../onboard/ChatNeedsYou'
 import { DeadlineNotes } from './DeadlineNotes'
 import { QuickDiary } from '../delights/TripDiary'
 import { EssentialsHome } from '../delights/EmbarkDelights'
@@ -63,14 +64,14 @@ export function HomeScreen() {
   const away = useAwayFromShip()
   // While the guest is off the ship, Home is the way back and what they need in hand, not the on-board day.
   if (away.away && away.day) return <div className="page page--wide"><AwayFromShipPanel day={away.day} /></div>
-  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><UpdatesBanner /><StageHome /></div>
+  if (!trip && TILE_STAGES.includes(stage)) return <div className="page"><StageHero stage={stage} /><NewTabsNote /><ShortcutBar /><ChatNeedsYou /><UpdatesBanner /><StageHome /></div>
   if (trip && TRIP_STAGES.includes(stage) && !today.data?.aboard && !settings.essentials) {
     return (
       <div className="page">
         <StageHero stage={stage} />
         <h2>{sailingRange(sailingById(trip.sailingId)!)}</h2>
         <NewTabsNote /><ShortcutBar />
-        <UpdatesBanner />
+        <ChatNeedsYou /><UpdatesBanner />
         <p className="muted">{t('trip.booking', { number: trip.number })}</p>
         <HeroCount days={trip.daysToDeparture} />
         {moment && <MomentCard moment={moment} />}
@@ -91,7 +92,7 @@ export function HomeScreen() {
       <div className="page">
         <StageHero stage={stage} />
         <NewTabsNote /><ShortcutBar />
-        <UpdatesBanner />
+        <ChatNeedsYou /><UpdatesBanner />
         <StageHome />
         {others.length > 0 && (
           <ul className="link-list">
@@ -132,7 +133,7 @@ export function HomeScreen() {
       {trip && <HeroCount days={trip.daysToDeparture} />}
       <RecentCard />
       {trip && <JourneyStrip />}
-      <UpdatesBanner />
+      <ChatNeedsYou /><UpdatesBanner />
       <StanleyChanges screen="home" />
       <NudgeCards aboard={false} />
       <AfterCruiseCard />

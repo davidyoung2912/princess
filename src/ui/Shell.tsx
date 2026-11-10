@@ -15,6 +15,8 @@ import { useRecentVisit } from '../hooks/useRecentVisit'
 import { screenForPath, type TabColour } from '../routes/screens'
 import { useTabAlerts } from '../hooks/useTabAlerts'
 import { useChatSummary } from '../hooks/useChatSummary'
+import { useChatNotice } from '../hooks/useChatNotice'
+import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
 import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
@@ -83,7 +85,9 @@ export function Shell() {
   const landing = tabAtPath(pathname, stage)
   const tabs = navTabs(stage)
   const alerts = useTabAlerts(stage, !!route && !route.public)
-  const chatCount = chatBadge(useChatSummary(!!route && !route.public))
+  const chat = useChatSummary(!!route && !route.public)
+  const chatCount = chatBadge(chat)
+  const chatNotice = useChatNotice(chat)
   // Until the server has said which stage the guest is in, the stage is a guess; a stale address is only judged once it is known.
   // A screen of an earlier stage opens when the guest chose it from a search result ("From your trip"); typed or refreshed, it is stale.
   const fromSearch = (state as { earlier?: unknown } | null)?.earlier === true && !!route && earlierAt(route.path, stage)
@@ -209,6 +213,7 @@ export function Shell() {
         </button>
       </nav>
       <UpdateBanner />
+      <ChatToast notice={chatNotice.notice} onClose={chatNotice.close} />
       <main id="main" ref={main} tabIndex={-1} className="shell__main">
         {landingWords ? <PageHeader title={landingWords.label} subtext={landingWords.subtext} icon={headerIcon} /> : screen ? <PageHeader titleKey={screen.titleKey} subtextKey={screen.subtextKey} icon={headerIcon} back /> : route && !route.public && route.path !== '/kit' && <PageHeader title={t(route.titleKey)} icon={headerIcon} back />}
         {route && !route.public && <DeepLinkNote />}

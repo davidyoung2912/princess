@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import type { ServiceThread } from '../../api/types'
 import { channelById, CHANNELS, ESCALATE_AFTER_MINUTES, MAX_MESSAGE, type ChannelId } from '../../domain/chat'
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
@@ -27,7 +28,9 @@ type Mode = 'chats' | 'people' | 'service' | 'children'
 
 /** Chat (MSG-01, MSG-02, SUP-08): free messages with the travel party, and Guest Services by topic with visible response times and a phone call when waiting is too long. */
 export function ChatScreen() {
-  const [mode, setMode] = useState<Mode>('chats')
+  const [params] = useSearchParams()
+  // A chat notice for a request opens straight on People (`?mode=people`).
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'people' ? 'people' : 'chats')
   // Only someone who supervises a child sees the guardian view; a failed check (offline, or acting as a child) just hides it.
   const kids = useMine(() => api.chatGuardian.children())
   const guardian = (kids.data?.length ?? 0) > 0

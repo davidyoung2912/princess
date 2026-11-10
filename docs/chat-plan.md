@@ -251,6 +251,15 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - **Retention:** already enforced, so unchanged. `RetentionPurgeService` runs `PrivacyRules`' `messages` rule 30 days after a booking's cruise ends and deletes every `ChatMessages` row the party's guests sent, in every kind of conversation (reports and receipts go with the messages by cascade). The empty conversation shells are kept (a connection points at its direct chat).
 - Not built: a staff screen (the routes are API only, like the account reviews), a guardian-facing list of who has read the child's chats, and removing the guardian's access when the child leaves a chat is automatic only because a child who has left is no longer a member.
 
+### Phase 8: in-app notices — built
+
+Closes the gap in 4.4: a guest on Home, Plan or Dining who gets a request or message saw only a number change on the Chat tab.
+
+- **Notice.** A small box at the top of the screen (safe-area aware, clear of the tab bar) when the summary shows a new request or unread message and the guest is not on Chat. "Sam wants to chat" or "New message from Sam" (a group names the sender; several messages say "3 new messages from Sam"). Never shows message text. A request has **Accept** (a guardian approval does not: it only opens the list); **Open** goes to the conversation or to People (`/chat?mode=people`); Dismiss closes it. Declining and blocking stay in the list.
+- **Quiet by design.** `aria-live="polite"`, takes no focus, no sound, goes after 6 seconds (waits while the keyboard is on it, Escape closes), one at a time and one per conversation, no slide with reduced motion. Muted, closed and own messages make none. Calm mode and the per-device setting "Chat pop-ups" (default on) switch it off; the tab count always stays.
+- **Home row.** "N chat requests need you" with a "See requests" button, shown on Home until the requests are answered.
+- Built as: `domain/chatNotice.ts` (pure, tested), `useChatNotice` (diffs the summary, reads the lists over REST, so the live nudge stays "something changed"), `ChatToast` in the Shell, `ChatNeedsYou` on Home, `useChatWaiting`, `Settings.chatPopups`. No server change.
+
 ## 7. Decisions on the earlier open points (answered 2026-11-09)
 
 - **Discoverable defaults to on**, and is configurable in two places: chat settings, and a master **Hide me** button directly in the Chat screen. Hide me turns discoverability off, **ends every existing connection** (the other people are not told who ended it, as in 4.3) and withdraws open requests, then keeps the guest out of every later search. Because it ends chats, it asks for confirmation first and says what will happen. Turning discoverability back on does not restore ended connections. Built as `POST /me/chat/hide` and a Hide me button with a confirmation dialog in the People settings. Guests who share a booking can still find each other, as with the setting.

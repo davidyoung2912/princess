@@ -252,3 +252,14 @@ textarea { max-width: min(100%, 32rem); }
 
 .offline-note { margin: 0 var(--space-3) var(--space-2); color: var(--text-muted, var(--text)); font-size: var(--fs-caption); }
 .sync-chip--pending, .sync-chip--unavailable, .sync-chip--notLinked { border-width: 2px; font-weight: 600; }
+
+/* The chat notice (docs/chat-plan.md, phase 8): top of the screen inside the safe area, clear of the tab bar and the page's own actions. */
+.chat-toast-region { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top, 0px) + var(--space-2)); inset-inline: var(--space-3); display: flex; justify-content: center; pointer-events: none; }
+.chat-toast { pointer-events: auto; display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-2) var(--space-3); align-items: center; width: min(100%, 32rem); padding: var(--space-3) var(--space-4); background: var(--bg); color: var(--text); border: 2px solid var(--primary); border-radius: var(--radius-card); box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.2); animation: chat-toast-in 0.2s ease-out; }
+.chat-toast__icon { color: var(--primary); }
+.chat-toast__text { margin: 0; overflow-wrap: anywhere; }
+.chat-toast__label { font-weight: 700; }
+.chat-toast__actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.chat-toast__close { display: inline-grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; background: none; border: 0; color: inherit; cursor: pointer; border-radius: 50%; }
+@keyframes chat-toast-in { from { opacity: 0; transform: translateY(-0.5rem); } to { opacity: 1; transform: none; } }
+@media (max-width: 30rem) { .chat-toast { grid-template-columns: auto 1fr; } .chat-toast__actions { grid-column: 1 / -1; justify-content: flex-start; } }

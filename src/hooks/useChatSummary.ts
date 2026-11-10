@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatSummary } from '../api/chatTypes'
 import { API_URL, api, auth } from '../runtime'
 import { startVisibleInterval } from './visibleInterval'
+import { requestsWaiting } from '../domain/chatNotice'
 import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
 
 const CHANGED = 'princess:chat-changed'
@@ -67,4 +68,18 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
     }
   }, [enabled, load])
   return enabled ? summary : null
+}
+
+/** Requests waiting for the guest, for the "needs you" row on Home. Reads the same summary over REST and follows the same nudges and actions, without a second live connection. */
+export function useChatWaiting(): number {
+  const [n, setN] = useState(0)
+  const load = useCallback(() => { api.chatConnections.summary().then((s) => setN(requestsWaiting(s)), () => undefined) }, [])
+  useEffect(() => {
+    load()
+    window.addEventListener(CHANGED, load)
+    window.addEventListener(LIVE, load)
+    window.addEventListener('focus', load)
+    return () => { window.removeEventListener(CHANGED, load); window.removeEventListener(LIVE, load); window.removeEventListener('focus', load) }
+  }, [load])
+  return n
 }

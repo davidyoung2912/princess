@@ -23,6 +23,8 @@ export interface Settings {
   calm: boolean
   /** Short, quiet confirmation clicks after an action the guest takes. On by default; calm mode silences them whatever this says. Chosen per device. */
   sounds: boolean
+  /** A small notice at the top of the screen when a chat request or message arrives and the guest is not in Chat. On by default; calm mode shows none (the tab count stays). Chosen per device. */
+  chatPopups: boolean
   /** How playful the app is: Quiet (no sound, buzz or celebrations), Gentle (quiet clicks and small stamps) or Lively (everything, including the extra moments and captions). Lively by default; calm mode always counts as Quiet. Chosen per device. */
   fun: FunLevel
   /** Show captions or a transcript wherever sound or video has one (ACS-01). */
@@ -79,7 +81,7 @@ const isFunLevel = (v: unknown): v is FunLevel => (FUN_LEVELS as readonly unknow
 /** The fun level that applies: calm mode is always Quiet, whatever was chosen. */
 export const funLevelFor = (s: Pick<Settings, 'fun' | 'calm'>): FunLevel => (s.calm ? 'quiet' : s.fun)
 
-export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, fun: 'lively', captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
+export const DEFAULT_SETTINGS: Settings = { language: 'en', unitsChosen: false, textSize: DEFAULT_TEXT_SIZE, theme: 'auto', contrast: 'standard', reduceMotion: false, simple: false, calm: false, sounds: true, chatPopups: true, fun: 'lively', captions: true, dataLight: false, essentials: false, units: 'imperial', region: 'us', chargeCheck: DEFAULT_CHARGE_CHECK, nudgesPerDay: DEFAULT_NUDGES, syncPrivate: false, stanleyLevel: 'helpful', tripColour: 'sea', pins: [] }
 
 /** Small preferences live in localStorage; structured data goes to IndexedDB. */
 export const SETTINGS_KEY = 'princess:settings'
@@ -115,6 +117,7 @@ export function normalizeSettings(raw: unknown, defaults: Settings = DEFAULT_SET
     simple: typeof o.simple === 'boolean' ? o.simple : defaults.simple,
     calm: typeof o.calm === 'boolean' ? o.calm : defaults.calm,
     sounds: typeof o.sounds === 'boolean' ? o.sounds : defaults.sounds,
+    chatPopups: typeof o.chatPopups === 'boolean' ? o.chatPopups : defaults.chatPopups,
     fun: isFunLevel(o.fun) ? o.fun : defaults.fun,
     captions: typeof o.captions === 'boolean' ? o.captions : defaults.captions,
     dataLight: typeof o.dataLight === 'boolean' ? o.dataLight : defaults.dataLight,
