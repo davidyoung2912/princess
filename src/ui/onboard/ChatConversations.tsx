@@ -527,6 +527,27 @@ interface MessageRowProps {
   onBlocked: () => void
 }
 
+/** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
+function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }: { m: ChatMessage; n: NonNullable<ChatMessage['notice']>; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged?: () => void }) {
+  const now = useNow()
+  // Its lane in words (never by colour alone), the text, why it may no longer apply, a link into the app and Got it where it asks for one.
+  const state = noticeState(m, now)
+  const link = state === 'active' ? safeNoticePath(n.path) : null
+  const body = noticeBody(m.text)
+  return (
+    <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}`}>
+      <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>
+      <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+      <p><strong>{noticeHeadline(m.text)}</strong></p>
+      {body && <p>{body}</p>}
+      {state !== 'active' && <p className="muted">{t(state === 'superseded' ? 'stanley.notice.superseded' : 'stanley.notice.expired')}</p>}
+      {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+      {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
+      {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
+    </li>
+  )
+}
+
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
 const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
@@ -541,22 +562,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
         </li>
       )
     }
-    // A relayed company or ship notice: its lane in words (never by colour alone), the text, why it may no longer apply, a link into the app and Got it where it asks for one.
-    const state = noticeState(m)
-    const link = state === 'active' ? safeNoticePath(n.path) : null
-    const body = noticeBody(m.text)
-    return (
-      <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}`}>
-        <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>
-        <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
-        <p><strong>{noticeHeadline(m.text)}</strong></p>
-        {body && <p>{body}</p>}
-        {state !== 'active' && <p className="muted">{t(state === 'superseded' ? 'stanley.notice.superseded' : 'stanley.notice.expired')}</p>}
-        {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
-        {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
-        {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
-      </li>
-    )
+    return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} />
   }
   const own = m.from === mine
   const card = m.text ? parsePlanCard(m.text) : null
