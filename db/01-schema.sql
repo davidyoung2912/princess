@@ -3379,6 +3379,17 @@ IF COL_LENGTH(N'dbo.ChatMessages', N'Persona') IS NULL
 IF COL_LENGTH(N'dbo.ChatMessages', N'Subtitle') IS NULL
   ALTER TABLE dbo.ChatMessages ADD Subtitle NVARCHAR(80) NULL;
 GO
+-- Phase 9b: a message may carry up to 10 photos. The first stays in ChatMessages.Photo (so every "has a photo" test is unchanged); photos 2 to 10 are rows here.
+IF COL_LENGTH(N'dbo.ChatMessages', N'ExtraPhotos') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD ExtraPhotos TINYINT NOT NULL CONSTRAINT DF_ChatMessages_ExtraPhotos DEFAULT 0;
+GO
+IF OBJECT_ID(N'dbo.ChatMessagePhotos', N'U') IS NULL
+CREATE TABLE dbo.ChatMessagePhotos (
+  MessageId BIGINT NOT NULL, Position TINYINT NOT NULL, Photo NVARCHAR(MAX) NOT NULL,   -- Position 1 is the message's second photo
+  CONSTRAINT PK_ChatMessagePhotos PRIMARY KEY (MessageId, Position),
+  CONSTRAINT FK_ChatMessagePhotos_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE
+);
+GO
 
 -- Phase 0b: a company or ship notice written into the guest's Stanley thread. NoticeKey is the push notice's stable key, so one occasion is posted once; SupersedeKey groups
 -- the versions of one occasion (a newer one marks the older SupersededAt); ExpiresAt is when it stops being actionable.

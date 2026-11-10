@@ -151,7 +151,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             bool? acked = urgent && m.FromUserId != actor.Id ? m.AckedBy.Contains(actor.Id) : null;
             var reactions = m.Reactions.Count == 0 ? null : ReactionDtos(m.Reactions, actor.Id, byId, blocked);
             var delivered = m.FromUserId == actor.Id && receiptsOf(actor.Id) && m.DeliveredBy.Any(id => id != actor.Id && receiptsOf(id));
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto,
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto, PhotoCount: m.HasPhoto && m.ExtraPhotos > 0 ? m.ExtraPhotos + 1 : null,
                 Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null,
                 Kind: ChatCardRules.IsTyped(m.Kind) || m.Kind == ChatPlanningRules.Poll ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
@@ -299,7 +299,19 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (caption.Length > 200) caption = caption[..200];
         if (ServiceRules.ChildSafeProblem(caption, age) is { } bad) throw ApiException.Invalid(bad);
         if (ProfanityFilter.IsBlocked(caption)) throw ApiException.Invalid("blocked");
-        return await StoreAsync(actor, member, caption, url, null, now, ct);
+        // Phase 9b: up to 9 more, each held to the same type, size and data-URL rules; the first problem found is the answer.
+        var more = body.More ?? [];
+        if (more.Count > ChatPhotoRules.MaxMore) throw ApiException.Invalid("count");
+        var extra = new List<string>();
+        foreach (var m in more)
+        {
+            var bad2 = ServiceRules.PhotoProblem(m.Type, m.Bytes, age);
+            if (bad2 is not null) throw ApiException.Invalid(bad2);
+            if (m.DataUrl is not { } u || !u.StartsWith($"data:{m.Type};base64,", StringComparison.Ordinal) || u.Length > ServiceRules.MaxPhotoDataUrl) throw ApiException.Invalid("size");
+            extra.Add(u);
+        }
+        if (ChatPhotoRules.TotalTooLarge([url, .. extra])) throw ApiException.Invalid("total");
+        return await StoreAsync(actor, member, caption, url, null, now, ct, morePhotos: extra);
     }
 
     /// <summary>The per-member send limit for one conversation (20 a minute): a flood is refused with 429 <c>rate</c> before anything is stored. A retry of a message that was already stored is let through first.</summary>
@@ -308,16 +320,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatControlRules.OverSendLimit(await store.CountSentInAsync(member.GroupId, actor.Id, now - ChatControlRules.SendPeriod, ct))) throw ApiException.TooMany("rate");
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null, string kind = ChatCardRules.Text, string? payload = null, List<long>? mentions = null)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null, string kind = ChatCardRules.Text, string? payload = null, List<long>? mentions = null, IReadOnlyList<string>? morePhotos = null)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id, kind, payload, mentions);
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id, kind, payload, mentions, morePhotos);
         ChatQuoteDto? quote = null;
         if (quoted is not null)
         {
             var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
             quote = QuoteDto(new ChatQuoteRow { Id = quoted.Id, PublicId = quoted.PublicId, FromUserId = quoted.FromUserId, Text = quoted.Text, HasPhoto = quoted.Photo is not null, IsSystem = quoted.IsSystem }, actor.Id, peers);
         }
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, ReplyTo: quote,
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, PhotoCount: sent.Row.ExtraPhotos > 0 ? sent.Row.ExtraPhotos + 1 : null, ReplyTo: quote,
             Kind: ChatCardRules.IsTyped(kind) || kind == ChatPlanningRules.Poll ? kind : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null,
             Poll: kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(payload) is { } sentPoll ? new ChatPollDto(sentPoll.Question, sentPoll.Options) : null,
             Tally: kind is ChatPlanningRules.Poll or ChatCardRules.Plan ? ChatPlanningService.TallyOf(sent.Row, [], actor.Id, now, ChatPlanningService.AdminOf(member, actor.Id), new Dictionary<long, ChatPeerRow>(), new HashSet<long>()) : null);
@@ -332,11 +344,13 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     /// The photo of one message the caller may read, as the data URL it was sent as (a thread page leaves it out, so a refetch does not carry megabytes). 404 for anything the caller cannot read.
     /// A photo never changes, so the answer can be kept by the app.
     /// </summary>
-    public async Task<ChatPhotoDto> PhotoAsync(UserRecord actor, Guid conversationId, Guid messageId, CancellationToken ct)
+    public async Task<ChatPhotoDto> PhotoAsync(UserRecord actor, Guid conversationId, Guid messageId, int index, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct);
-        return message is { DeletedAt: null, Photo: { } photo } ? new ChatPhotoDto(photo) : throw ApiException.NotFound();
+        if (message is not { DeletedAt: null, Photo: { } photo } || index < 0 || index > message.ExtraPhotos) throw ApiException.NotFound();
+        if (index == 0) return new ChatPhotoDto(photo);
+        return await store.FindExtraPhotoAsync(message.Id, index, ct) is { } more ? new ChatPhotoDto(more) : throw ApiException.NotFound();
     }
 
     /// <summary>

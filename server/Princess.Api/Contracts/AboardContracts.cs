@@ -126,7 +126,9 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MentionsYou = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? Mentions = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatPollDto? Poll = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatTallyDto? Tally = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatTallyDto? Tally = null,
+    /// <summary>How many photos the message has, only when there are two or more (the first is <c>hasPhoto</c>; phase 9b).</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? PhotoCount = null);
 
 /// <summary>A poll (phase 4): the question and its two to five options.</summary>
 public sealed record ChatPollDto(string Question, List<string> Options);
@@ -214,4 +216,7 @@ public sealed record ChatBlockRequest(bool On);
 
 public sealed record ChatReportRequest(Guid MessageId, string? Reason);
 
-public sealed record ChatPhotoRequest(string? Type, long Bytes, string? DataUrl, string? Caption);
+/// <summary>Photos for one message. The first photo is the top-level fields; <c>More</c> holds up to 9 more (phase 9b), each checked the same way.</summary>
+public sealed record ChatPhotoRequest(string? Type, long Bytes, string? DataUrl, string? Caption, List<ChatMorePhoto>? More = null);
+
+public sealed record ChatMorePhoto(string? Type, long Bytes, string? DataUrl);

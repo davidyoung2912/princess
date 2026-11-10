@@ -120,6 +120,8 @@ public sealed class ChatMessageRow
     public string? Photo { get; set; }
     /// <summary>A thread page leaves <see cref="Photo"/> out (it is a large data URL) and says only that there is one; the app fetches it once by message.</summary>
     public bool HasPhoto { get; set; }
+    /// <summary>Photos after the first (0 to 9); they are fetched one at a time by position (<see cref="IChatStore.FindExtraPhotoAsync"/>).</summary>
+    public int ExtraPhotos { get; set; }
     public DateTime At { get; set; }
     /// <summary>A line about the group ("Sam left the group"), not something a person said: shown in the thread, never counted as unread.</summary>
     public bool IsSystem { get; set; }
@@ -440,7 +442,7 @@ public interface IChatStore
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
     /// <param name="replyToId">The stored id of the message this one answers (already checked to be in the same conversation and readable by the sender), or null.</param>
     /// <param name="kind">Phase 3: <c>text</c>, <c>card</c> or <c>place</c>; <paramref name="payload"/> is the card's JSON. <paramref name="mentions"/> are members (user ids) the message mentions, stored with it.</param>
-    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null);
+    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null, IReadOnlyList<string>? morePhotos = null);
     /// <summary>Records that a device of the person has one message (by its public id). False when it was already recorded, so only the first is told to the sender.</summary>
     Task<bool> AddDeliveryAsync(Guid messagePublicId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The person's reaction to the message, or null when they have none.</summary>
@@ -510,6 +512,8 @@ public interface IChatStore
     Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct);
     /// <summary>One message the person may read in the conversation (their window, not from someone they blocked), or null.</summary>
     Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct);
+    /// <summary>The photo after the first of a message (<paramref name="position"/> 1 is the second photo); null when there is none. The caller has already checked the message is readable.</summary>
+    Task<string?> FindExtraPhotoAsync(long messageId, int position, CancellationToken ct);
     /// <summary>Records that the person acknowledged the message; false when they already had (nothing changes).</summary>
     Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The urgent messages from others that the person may read and has not acknowledged, as (conversation id, message id), for the badge and the pinned state.</summary>

@@ -177,6 +177,8 @@ export interface ChatMessage {
   photo?: string
   /** A thread page says there is a photo without carrying it (it is large); fetch it once with `chatConversations.photo`. */
   hasPhoto?: boolean
+  /** How many photos the message has, present only when there are two or more (phase 9b); `hasPhoto` covers the first. */
+  photoCount?: number
   /** People who have read it, when both they and the sender have read receipts on. */
   seenBy?: string[]
   /** A line about the group ("Sam R. left the group"), not something a person said. */
@@ -278,7 +280,8 @@ export interface NoticeReplyAnswer { text: string; remindAt?: number }
 /** `firstUnread`: the first message from someone else you had not read when the thread was fetched (latest page only), for the "New messages" divider. */
 export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string; /** The pin bar, on the latest page only. */ pins?: ChatPin[]; /** Phase 4 follow-up, latest page only: people back on the ship who chose to tell this chat when they leave or return and whom you are connected to. */ back?: string[] }
 
-export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
+/** One photo, or the first of several with the rest in `more` (up to 9 more; phase 9b). */
+export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string; more?: { type: string; bytes: number; dataUrl: string }[] }
 
 export interface ChatConversationsApi {
   list(): Promise<ChatConversation[]>
@@ -336,7 +339,7 @@ export interface ChatConversationsApi {
   groupStanley(groupId: string): Promise<GroupStanley>
   setGroupStanley(groupId: string, on: boolean): Promise<GroupStanley>
   /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
-  photo(id: string, messageId: string): Promise<string>
+  photo(id: string, messageId: string, index?: number): Promise<string>
   /** Marks everything read, on every device. */
   read(id: string): Promise<void>
   /** Returns the new state. `length` (`hour`, `day` or `week`) ends the mute by itself; without it the mute lasts until turned off. Rejects `invalid` (`for`) or `forbidden` (`stanley`). */

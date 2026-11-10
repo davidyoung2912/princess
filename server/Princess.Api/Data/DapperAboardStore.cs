@@ -683,7 +683,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE N'' END AS [Text], CAST(CASE WHEN m.Photo IS NULL OR m.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle, m.ReplyToId,
+            SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE N'' END AS [Text], CAST(CASE WHEN m.Photo IS NULL OR m.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, CASE WHEN m.DeletedAt IS NULL THEN m.ExtraPhotos ELSE 0 END AS ExtraPhotos, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle, m.ReplyToId,
                    m.Lane, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt, m.EditedAt, m.DeletedAt,
                    m.Kind, CASE WHEN m.DeletedAt IS NULL THEN m.Payload ELSE NULL END AS Payload, m.ClosedAt
             FROM dbo.ChatMessages m
@@ -761,7 +761,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return rows;
     }
 
-    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null)
+    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null, IReadOnlyList<string>? morePhotos = null)
     {
         await using var c = await db.OpenAsync(ct);
         const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At], ViaSms, Urgency, ReplyToId, Kind, Payload FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
@@ -769,13 +769,15 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         try
         {
             var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At], ViaSms, Urgency, ReplyToId, Kind, Payload) OUTPUT INSERTED.Id, INSERTED.PublicId
-                VALUES (@groupId, @userId, @text, @photo, @clientId, @at, @viaSms, @urgency, @replyToId, @kind, @payload)
-                """, new { groupId, userId, text, photo, clientId, at, viaSms, urgency, replyToId, kind, payload }, null, ct));
+                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ExtraPhotos, ClientId, [At], ViaSms, Urgency, ReplyToId, Kind, Payload) OUTPUT INSERTED.Id, INSERTED.PublicId
+                VALUES (@groupId, @userId, @text, @photo, @extra, @clientId, @at, @viaSms, @urgency, @replyToId, @kind, @payload)
+                """, new { groupId, userId, text, photo, extra = morePhotos?.Count ?? 0, clientId, at, viaSms, urgency, replyToId, kind, payload }, null, ct));
+            for (var i = 0; i < (morePhotos?.Count ?? 0); i++)
+                await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMessagePhotos (MessageId, Position, Photo) VALUES (@id, @position, @photo)", new { id, position = i + 1, photo = morePhotos![i] }, null, ct));
             var who = mentions?.Distinct().ToArray() ?? [];
             if (who.Length > 0)
                 await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMentions (MessageId, UserId) SELECT @id, UserId FROM dbo.ChatGroupMembers WHERE GroupId = @groupId AND Status = 'active' AND UserId IN @who", new { id, groupId, who }, null, ct));
-            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId, Kind = kind, Payload = payload, Mentions = [.. who] }, true);
+            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, ExtraPhotos = morePhotos?.Count ?? 0, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId, Kind = kind, Payload = payload, Mentions = [.. who] }, true);
         }
         catch (DbException e) when (e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } && clientId is not null)
         {
@@ -1006,11 +1008,17 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At]) VALUES (@groupId, @userId, @text, 1, @at)", new { groupId, userId, text, at }, null, ct));
     }
 
+    public async Task<string?> FindExtraPhotoAsync(long messageId, int position, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<string>(Sql.Cmd("SELECT Photo FROM dbo.ChatMessagePhotos WHERE MessageId = @messageId AND Position = @position", new { messageId, position }, null, ct));
+    }
+
     public async Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         return await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
+            SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], m.Photo, m.ExtraPhotos, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
                    m.Lane, m.NoticeKey, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt, m.EditedAt, m.DeletedAt, m.Kind, m.Payload, m.ClosedAt
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId

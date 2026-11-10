@@ -37,7 +37,6 @@ import { useLatest } from '../../hooks/useLatest'
 import { closeChatNotice, currentSupport } from '../../push/browser'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useNow, useOwnerId, usePersona } from '../../hooks/useDemo'
-import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -47,7 +46,6 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
-import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
@@ -57,6 +55,8 @@ import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
+import { MessagePhotos, PhotosGallery } from './ChatPhotos'
+import { photoCountOf } from '../../domain/chatPhotos'
 import { isSearchable } from '../../domain/chatSearch'
 import { isRoomChat, needsRules, roomPostState } from '../../domain/chatRooms'
 import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../domain/chatPlanning'
@@ -444,7 +444,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   }
   const remove = async (messageId: string) => {
     await api.chatConversations.remove(id, messageId)
-    setMessages((cur) => cur.map((x) => (x.id === messageId ? { ...x, text: '', deleted: true, photo: undefined, hasPhoto: undefined, reactions: undefined, replyTo: undefined } : x)))
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? { ...x, text: '', deleted: true, photo: undefined, hasPhoto: undefined, photoCount: undefined, reactions: undefined, replyTo: undefined } : x)))
     setAnnounce(t('conv.deletedAnnounce'))
     void load()
   }
@@ -589,7 +589,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
       {conversation && !permanent && phase === 'ready' && (
-        <ChatMenu conversation={conversation} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
+        <ChatMenu conversation={conversation} messages={messages} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
       )}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
@@ -777,36 +777,6 @@ function StanleyNotices() {
   )
 }
 
-/** A photo is not in the thread page (it is large); it is fetched once for the message and kept for the life of the page. */
-const photos = new Map<string, Promise<string>>()
-const photoFor = (conversationId: string, messageId: string): Promise<string> => {
-  let p = photos.get(messageId)
-  if (!p) {
-    p = api.chatConversations.photo(conversationId, messageId)
-    photos.set(messageId, p)
-    // A failed fetch is forgotten so the next render can try again.
-    p.catch(() => photos.delete(messageId))
-  }
-  return p
-}
-
-function MessagePhoto({ conversationId, messageId, name, alt, sent }: { conversationId: string; messageId: string; name: string; alt: string; sent?: string }) {
-  const [settings] = useSettings()
-  const [asked, setAsked] = useState(false)
-  const [src, setSrc] = useState<string | undefined>(sent)
-  const wanted = !settings.dataLight || asked
-  useEffect(() => {
-    if (!wanted || src) return
-    let live = true
-    photoFor(conversationId, messageId).then((url) => { if (live) setSrc(url) }, () => undefined)
-    return () => { live = false }
-  }, [wanted, src, conversationId, messageId])
-  // In data-light mode nothing is fetched until the guest asks (DeferredImage's rule, applied before the fetch rather than after it).
-  if (!wanted) return <Button variant="secondary" onClick={() => setAsked(true)}>{t('img.show', { name })}</Button>
-  if (!src) return <p className="muted" role="status">{t('account.loading')}</p>
-  return <DeferredImage name={name} className="chat-msg__photo" src={src} alt={alt} />
-}
-
 interface MessageRowProps {
   m: ChatMessage
   mine: string
@@ -908,7 +878,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
         : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
-      {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
+      {photoCountOf(m) > 0 && <MessagePhotos conversationId={conversationId} message={m} name={m.fromName ?? ''} you={t('chat.you')} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
       {m.reactions && m.reactions.length > 0 && (
         <ul className="chat-reactions" aria-label={t('conv.reactions')}>
@@ -1061,10 +1031,11 @@ const MUTE_KEY: Record<MuteLength, StringKey> = { hour: 'conv.muteHour', day: 'c
  * The chat's header menu: mute (for an hour, a day, a week or until turned back on), archive, and for the people in it Block and Report. A report goes with their latest message so the moderators can see
  * what was said; a block only hides them from you. Escape closes it and focus returns to the button.
  */
-function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked, onFind }: {
-  conversation: ChatConversation; now: number; busy: boolean; onMute: (on: boolean, length?: MuteLength) => void; onArchive: (on: boolean) => void; onBlocked: () => void; onFind: (messageId: string) => void
+function ChatMenu({ conversation, messages, now, busy, onMute, onArchive, onBlocked, onFind }: {
+  conversation: ChatConversation; messages: readonly ChatMessage[]; now: number; busy: boolean; onMute: (on: boolean, length?: MuteLength) => void; onArchive: (on: boolean) => void; onBlocked: () => void; onFind: (messageId: string) => void
 }) {
   const [finding, setFinding] = useState(false)
+  const [gallery, setGallery] = useState(false)
   const shipTime = useShipTime()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -1103,6 +1074,7 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked, onFin
           {isSearchable(conversation) && (
             <>
               <div className="button-row"><Button variant="secondary" onClick={() => setFinding(true)}>{t('csearch.inChat')}</Button></div>
+              <div className="button-row"><Button variant="secondary" onClick={() => setGallery(true)}>{t('cphoto.gallery')}</Button></div>
               <SaveChat conversationId={conversation.id} />
             </>
           )}
@@ -1137,6 +1109,11 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked, onFin
         </div>
       )}
     </div>
+    {gallery && (
+      <Dialog title={t('cphoto.gallery')} onClose={() => setGallery(false)}>
+        <PhotosGallery conversationId={conversation.id} messages={messages} you={t('chat.you')} />
+      </Dialog>
+    )}
     {finding && (
       <Dialog title={t('csearch.inChat')} onClose={() => setFinding(false)}>
         <ChatSearch conversationId={conversation.id} onPick={(h) => { setFinding(false); setOpen(false); setTimeout(() => onFind(h.messageId), 0) }} />

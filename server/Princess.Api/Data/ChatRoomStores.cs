@@ -334,10 +334,12 @@ public sealed class DapperChatRoomStore(IDbConnectionFactory db) : IChatRoomStor
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
         var found = await c.QuerySingleOrDefaultAsync<RemovedRef>(Sql.Cmd("""
-            UPDATE dbo.ChatMessages SET OriginalText = ISNULL(OriginalText, [Text]), [Text] = N'', Photo = NULL, DeletedAt = @now
+            UPDATE dbo.ChatMessages SET OriginalText = ISNULL(OriginalText, [Text]), [Text] = N'', Photo = NULL, ExtraPhotos = 0, DeletedAt = @now
             OUTPUT INSERTED.Id, INSERTED.FromUserId
             WHERE PublicId = @messagePublicId AND GroupId = @groupId AND DeletedAt IS NULL AND IsSystem = 0 AND FromUserId IS NOT NULL
             """, new { groupId, messagePublicId, now }, tx, ct));
+        if (found is not null)
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatMessagePhotos WHERE MessageId = @id", new { id = found.Id }, tx, ct));
         if (found is not null)
             await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatReports SET Status = 'removed', ResolvedAt = @now, ResolvedByUserId = @by WHERE MessageId = @id AND Status = 'open'", new { id = found.Id, now, by }, tx, ct));
         await tx.CommitAsync(ct);

@@ -474,11 +474,12 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(Visible(c, c.Members.First(m => m.UserId == userId)).Where(m => m.DeletedAt is null).TakeLast(max).Select(m => Hit(c, m)).ToList());
     }
 
-    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null)
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null, IReadOnlyList<string>? morePhotos = null)
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
             return Task.FromResult(new ChatSentRow(again.Row, false));
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId, Kind = kind, Payload = payload };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, ExtraPhotos = morePhotos?.Count ?? 0, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId, Kind = kind, Payload = payload };
+        if (morePhotos is { Count: > 0 }) Extras[row.Id] = [.. morePhotos];
         Messages.Add(new Stored(groupId, row, clientId));
         // Like the real store: only active members of the conversation are kept as mentioned.
         foreach (var u in (mentions ?? []).Distinct().Where(u => Of(groupId).Members.Any(m => m.UserId == u && m.Status == "active"))) { MentionsOf.Add((row.Id, u)); row.Mentions.Add(u); }
@@ -638,6 +639,11 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         Messages.Add(new Stored(groupId, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, At = at, IsSystem = true }, null));
         return Task.CompletedTask;
     }
+
+    public readonly Dictionary<long, List<string>> Extras = [];
+
+    public Task<string?> FindExtraPhotoAsync(long messageId, int position, CancellationToken ct) =>
+        Task.FromResult(Extras.TryGetValue(messageId, out var l) && position >= 1 && position <= l.Count ? l[position - 1] : null);
 
     public Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct)
     {

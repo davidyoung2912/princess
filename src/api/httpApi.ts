@@ -239,7 +239,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     momentAction: async (id, messageId, action) => { await send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/moment`, { action }) },
     noticeReply: (id, messageId, reply) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/reply`, { reply }),
     sendPhoto: (id, input) => send('post', `/me/chat/conversations/${seg(id)}/photos`, input),
-    photo: async (id, messageId) => (await get<{ photo: string }>(`/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/photo`)).photo,
+    photo: async (id, messageId, index = 0) => (await get<{ photo: string }>(`/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/photo${index > 0 ? `?index=${index}` : ''}`)).photo,
     read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
     mute: (id, on, length) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on, ...(on && length ? { for: length } : {}) }),
     archive: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/archive`, { on }),

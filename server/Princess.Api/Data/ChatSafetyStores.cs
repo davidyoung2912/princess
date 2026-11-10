@@ -112,7 +112,8 @@ public sealed class DapperChatSafetyStore(IDbConnectionFactory db) : IChatSafety
         if (messageId is null) return false;
         if (removeMessage)
         {
-            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatMessages SET [Text] = @text, Photo = NULL WHERE Id = @messageId", new { messageId, text = ChatSafetyRules.RemovedText }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatMessages SET [Text] = @text, Photo = NULL, ExtraPhotos = 0 WHERE Id = @messageId", new { messageId, text = ChatSafetyRules.RemovedText }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatMessagePhotos WHERE MessageId = @messageId", new { messageId }, tx, ct));
             await c.ExecuteAsync(Sql.Cmd("""
                 UPDATE dbo.ChatReports SET Status = @status, ResolvedAt = @now, ResolvedByUserId = @reviewerId
                 WHERE MessageId = @messageId AND Status = 'open'

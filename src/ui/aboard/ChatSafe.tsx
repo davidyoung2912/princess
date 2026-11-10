@@ -10,6 +10,8 @@ import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { AboardError } from './common'
 import { personFirstName } from '../../account/context'
+import { shrinkPicture } from '../../media/shrink'
+import { MAX_PHOTOS_PER_MESSAGE, planPicks } from '../../domain/chatPhotos'
 
 /** Report or hide someone's messages (MSG-05). Reporting sends the message to the ship's moderators; blocking only hides it from you. */
 export function MessageSafety({ messageId, from, name, onBlocked }: { messageId: string; from: PersonaId; /** Their first name and last initial, when the screen knows it. */ name?: string; onBlocked: () => void }) {
@@ -56,40 +58,55 @@ export function BlockedList({ reload, version }: { reload: () => void; version: 
   )
 }
 
-const readAsDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
+const readAsDataUrl = (file: Blob): Promise<string> => new Promise((resolve, reject) => {
   const reader = new FileReader()
   reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('read')))
   reader.onerror = () => reject(new Error('read'))
   reader.readAsDataURL(file)
 })
 
-/** Send a photo into one conversation (MSG-01): JPEG, PNG or WebP under 1 MB, adults only. */
+/**
+ * Send photos into one conversation (MSG-01, phase 9b): up to ten at once, each shrunk on the device first, JPEG, PNG or WebP, adults only.
+ * The words go with the message; a photo still over the limit after shrinking is left out and the guest is told.
+ */
 export function PhotoSender({ conversationId, onSent }: { conversationId: string; onSent: () => void }) {
   const me = usePersona()
   const [caption, setCaption] = useState('')
-  const [bad, setBad] = useState<'type' | 'size' | null>(null)
-  const send = useAction(async (file: File) => {
-    const dataUrl = await readAsDataUrl(file)
-    await api.chatConversations.sendPhoto(conversationId, { type: file.type, bytes: file.size, dataUrl, caption })
+  const [note, setNote] = useState<{ badType: number; over: number; big: number } | null>(null)
+  const send = useAction(async (files: File[]) => {
+    const ready: { type: string; bytes: number; dataUrl: string }[] = []
+    let big = 0
+    for (const file of files) {
+      const shrunk = await shrinkPicture(file)
+      if (shrunk.size > MAX_PHOTO_BYTES) { big++; continue }
+      ready.push({ type: shrunk.type || file.type, bytes: shrunk.size, dataUrl: await readAsDataUrl(shrunk) })
+    }
+    setNote((n) => (n ? { ...n, big } : n))
+    const [first, ...more] = ready
+    if (!first) return
+    await api.chatConversations.sendPhoto(conversationId, { ...first, caption, ...(more.length > 0 ? { more } : {}) })
     setCaption('')
     onSent()
   })
   if (!me || me.age < PHOTO_MIN_AGE) return <p className="muted">{t('safe.photoAdults', { age: PHOTO_MIN_AGE })}</p>
   const pick = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const files = [...(e.target.files ?? [])]
     e.target.value = ''
-    setBad(null)
-    if (!file) return
-    if (!PHOTO_TYPES.includes(file.type)) { setBad('type'); return }
-    if (file.size > MAX_PHOTO_BYTES) { setBad('size'); return }
-    void send.run(file)
+    setNote(null)
+    if (files.length === 0) return
+    const plan = planPicks(files.map((f) => ({ type: f.type, size: f.size })), PHOTO_TYPES)
+    setNote({ badType: plan.badType, over: plan.over, big: 0 })
+    if (plan.keep.length > 0) void send.run(plan.keep.map((i) => files[i]))
   }
   return (
     <div className="field">
       <label htmlFor="chat-photo">{t('safe.photo')}</label>
-      <p className="field__hint">{t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000 })}</p>
-      <input id="chat-photo" type="file" accept={PHOTO_TYPES.join(',')} onChange={pick} disabled={send.busy} />
-      {bad && <p role="alert" className="field__error">{t(bad === 'type' ? 'safe.badType' : 'safe.badSize', { mb: MAX_PHOTO_BYTES / 1_000_000 })}</p>}
+      <p className="field__hint">{t('safe.photoHint', { mb: MAX_PHOTO_BYTES / 1_000_000, max: MAX_PHOTOS_PER_MESSAGE })}</p>
+      <input id="chat-photo" type="file" multiple accept={PHOTO_TYPES.join(',')} onChange={pick} disabled={send.busy} />
+      {send.busy && <p role="status" className="muted">{t('cphoto.preparing')}</p>}
+      {note && note.badType > 0 && <p role="alert" className="field__error">{t('safe.badType')}</p>}
+      {note && note.over > 0 && <p role="alert" className="field__error">{t('cphoto.tooMany', { max: MAX_PHOTOS_PER_MESSAGE })}</p>}
+      {note && note.big > 0 && <p role="alert" className="field__error">{t('safe.badSize', { mb: MAX_PHOTO_BYTES / 1_000_000 })}</p>}
       <AboardError error={send.error} />
     </div>
   )

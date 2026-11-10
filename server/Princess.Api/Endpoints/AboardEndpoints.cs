@@ -187,15 +187,15 @@ public static class AboardEndpoints
             .WithSummary("What the caller can share into a chat from their own booking (the booking, booked excursions and dinners, port days), each with a ref to send back, the named ship places a meeting point can be dropped at, and the programme events a plan can be made of (`events`, ref `eventId:day`). Names, times and places only: no price, folio line, cabin or booking number.");
         chat.MapPut("/conversations/{id:guid}/notify-away", async (Guid id, ChatNotifyAwayRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.NotifyAwayAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Turns on or off telling the other connected people in this conversation when the caller leaves or returns to the ship (off by default; only the ship-level change is shared, never where in port). Returns the new state. 403 supervised; 404 not a member.");
-        chat.MapGet("/conversations/{id:guid}/messages/{messageId:guid}/photo", async (Guid id, Guid messageId, ICurrentUser me, ChatService svc, HttpContext http, CancellationToken ct) =>
+        chat.MapGet("/conversations/{id:guid}/messages/{messageId:guid}/photo", async (Guid id, Guid messageId, int? index, ICurrentUser me, ChatService svc, HttpContext http, CancellationToken ct) =>
             {
-                var photo = await svc.PhotoAsync(await me.LoadAsync(ct), id, messageId, ct);
+                var photo = await svc.PhotoAsync(await me.LoadAsync(ct), id, messageId, index ?? 0, ct);
                 http.Response.Headers.CacheControl = "private, max-age=31536000, immutable";   // a sent photo never changes
                 return Results.Ok(photo);
             })
-            .WithSummary("The photo of one message as a data URL (`photo`). The thread lists `hasPhoto` instead of carrying it. Cacheable by the app. 404 when the message is not one the caller can read.");
+            .WithSummary("The photo of one message as a data URL (`photo`); `?index=` (0 to 9, default 0) picks one of a message's photos. The thread lists `hasPhoto` instead of carrying it. Cacheable by the app. 404 when the message is not one the caller can read.");
         chat.MapPost("/conversations/{id:guid}/photos", async (Guid id, ChatPhotoRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SendPhotoAsync(await me.LoadAsync(ct), id, body, ct)))
-            .WithSummary("Sends a photo (JPEG, PNG or WebP under 1 MB, as a data URL) with an optional caption to one conversation. 400 type, size, empty, contactInfo or blocked; 403 age (under 18); 404 not a member; 409 closed.");
+            .WithSummary("Sends one photo, or up to 10 (the first in the body, the rest in `more`), each JPEG, PNG or WebP under 1 MB as a data URL, with an optional caption to one conversation. 400 type, size, empty, count, total, contactInfo or blocked; 403 age (under 18); 404 not a member; 409 closed.");
         chat.MapGet("/receipts", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ReceiptsAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Whether the caller shows and sees read receipts.");
         chat.MapPut("/receipts", async (ChatReceiptsRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SetReceiptsAsync(await me.LoadAsync(ct), body, ct)))
