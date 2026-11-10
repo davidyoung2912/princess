@@ -18,6 +18,7 @@ import { useMine } from '../../hooks/useMine'
 import { useSavedCopy } from '../../hooks/useSavedCopy'
 import { t, th } from '../../i18n'
 import { Banner } from '../Banner'
+import { SendToChat } from './SendToChat'
 import { Button, LinkButton } from '../Button'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
@@ -66,6 +67,7 @@ export function ReservationsScreen() {
                         <li>{offer.item.meeting}</li>
                         <li>{names(b.guests)}</li>
                       </ul>
+                      <SendToChat shareRef={`excursion:${b.id}`} title={offer.item.name} />
                     </li>
                   )
                 })}
@@ -94,6 +96,7 @@ function DinnerCard({ r, date, canEdit, reload }: { r: Reservation; date: string
         <li>{names(r.guests)}</li>
       </ul>
       {canEdit && <Nudge r={r} reload={reload} name={v?.name ?? r.venueId} />}
+      <SendToChat shareRef={`dining:${r.id}`} title={v?.name ?? r.venueId} />
       <Link to={`/plan/reservations/${r.id}`}>{t('res.open')}<span className="visually-hidden"> {v?.name}, {t('plan.day', { n: r.day })}</span></Link>
     </li>
   )

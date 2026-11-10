@@ -88,7 +88,7 @@ export function MentionList({ people, query, onPick }: { people: readonly Mentio
 }
 
 /** The words for a card that could not be sent: the thing is no longer on the trip, the note was not acceptable, or the chat has closed. */
-function shareError(e: unknown): StringKey {
+export function shareError(e: unknown): StringKey {
   if (!isApiError(e)) return 'conv.share.failed'
   if (e.message === 'shareRef' || e.message === 'place') return 'conv.share.stale'
   if (e.message === 'blocked') return 'conv.blocked'
