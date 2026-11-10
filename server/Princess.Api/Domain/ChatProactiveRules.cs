@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash);
@@ -31,9 +31,9 @@ public static class ChatProactiveRules
     public const int DailyCap = 3;
     public static readonly TimeSpan SnoozeFor = TimeSpan.FromHours(24);
 
-    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps";
+    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery";
     /// <summary>The topics a guest can switch off. A due-date card (payment) is on this list too: a guest may not want even that in the thread, and the payment notice and the phone push are unaffected.</summary>
-    public static readonly string[] Topics = [Payment, Planning, Packing, Steps];
+    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery];
 
     /// <summary>The stored level, as a mode. A guest who has not chosen gets the narrowest useful one (section 7.2).</summary>
     public static string ModeOf(string? level) => level switch
@@ -67,6 +67,7 @@ public static class ChatProactiveRules
     {
         var list = new List<Moment>();
         var today = DateOnly.FromDateTime(f.Now);
+        list.AddRange(BeforeBooking(f));
         if (f.BalanceOwing && f.FinalDue is { } due && (due.DayNumber - today.DayNumber) is >= 0 and <= 14 && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
         {
             var days = due.DayNumber - today.DayNumber;
@@ -79,6 +80,26 @@ public static class ChatProactiveRules
             list.Add(new("packing", Packing, ClassSuggestion, "Start your packing list\nA list for your sailing is ready when you are.", "/plan/packing", f.Now.AddDays(3), Hash("packing")));
         if (f.Stage is StageRules.Manage or StageRules.Prebook)
             list.Add(new($"steps{f.Stage}", Steps, ClassGuide, "Your next steps\nHome shows the three things to do at this stage.", "/home", f.Now.AddDays(2), Hash(f.Stage)));
+        return list;
+    }
+
+    /// <summary>
+    /// Phase 7a (stages Dream, Discover and Book; docs/chat-features-research.md, 7.6): moments for a guest who has not yet paid in full. The triggers are the trip facts the server already holds: saved sailings,
+    /// the guest's own price and cabin views, and an unpaid deposit. Each card opens a screen that already exists and carries no price, cabin or amount.
+    /// </summary>
+    public static List<Moment> BeforeBooking(MomentFacts f)
+    {
+        var list = new List<Moment>();
+        if (f.Stage == StageRules.Dream && f.Saved == 0)
+            list.Add(new("dream.first-look", Discovery, ClassGuide, "Tell me what you are hoping for\nI can find sailings that fit.", "/home/ask", f.Now.AddDays(7), Hash("dream.first-look")));
+        if (f.Stage is StageRules.Dream or StageRules.Discover && f.Saved >= 2)
+            list.Add(new("dream.compare", Discovery, ClassSuggestion, "Compare your saved trips\nSee two sailings side by side.", "/home/saved/compare", f.Now.AddDays(3), Hash($"compare{f.Saved}")));
+        if (f.Stage == StageRules.Discover && f.CabinViews >= 3)
+            list.Add(new("discover.cabin-help", Discovery, ClassSuggestion, "Help choosing a cabin type\nThe cabin chooser compares them for you.", "/home/cabins", f.Now.AddDays(3), Hash("discover.cabin-help")));
+        if (f.Stage == StageRules.Discover && f.PriceViewed)
+            list.Add(new("discover.true-cost", Discovery, ClassSuggestion, "The whole cost of a trip\nSee the total including gratuities and extras.", "/home/cruise/cost", f.Now.AddDays(2), Hash("discover.true-cost")));
+        if (f.DepositUnpaid)
+            list.Add(new("book.pay-deposit", Payment, ClassDue, "Your deposit is still to pay\nOpen Payments to see what is owing.", "/me/payments", f.Now.AddDays(3), Hash("book.pay-deposit")));
         return list;
     }
 

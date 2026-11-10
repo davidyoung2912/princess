@@ -15684,6 +15684,7 @@ export const en = {
   'stanley.moment.topic.planning': 'Planning ahead',
   'stanley.moment.topic.packing': 'Packing',
   'stanley.moment.topic.steps': 'Next steps',
+  'stanley.moment.topic.discovery': 'Finding a trip',
   'updates.inThread': 'Every notice from Princess Cruises and your ship also arrives in your Stanley chat, where you can confirm you have seen it.',
   'updates.openThread': 'Open the Stanley chat',
   'stanley.notice.superseded': 'Replaced by a newer message.',

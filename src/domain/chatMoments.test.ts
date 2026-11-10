@@ -33,6 +33,6 @@ describe('Stanley suggestion cards', () => {
   })
 
   it('offers the same topics the server accepts', () => {
-    expect([...MOMENT_TOPICS]).toEqual(['payment', 'planning', 'packing', 'steps'])
+    expect([...MOMENT_TOPICS]).toEqual(['payment', 'planning', 'packing', 'steps', 'discovery'])
   })
 })

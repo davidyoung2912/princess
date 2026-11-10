@@ -165,6 +165,77 @@ public class ChatProactiveRulesTests
     }
 }
 
+public class BeforeBookingMomentTests
+{
+    private static readonly DateTime Now = new(2026, 11, 10, 15, 0, 0, DateTimeKind.Utc);
+    private static MomentFacts F(string stage, int saved = 0, int cabins = 0, bool price = false, bool deposit = false) => new(Now, stage, 0, false, null, saved, cabins, price, deposit);
+    private static string[] Keys(MomentFacts f) => [.. ChatProactiveRules.Candidates(f).Select(m => m.Key)];
+
+    [Fact]
+    public void ADreamerWithNothingSavedIsOfferedTheFirstLookAndNothingElse() => Assert.Equal(["dream.first-look"], Keys(F(StageRules.Dream)));
+
+    [Fact]
+    public void TwoSavedSailingsOfferACompareAndStopTheFirstLook()
+    {
+        Assert.Contains("dream.compare", Keys(F(StageRules.Discover, saved: 2)));
+        Assert.DoesNotContain("dream.compare", Keys(F(StageRules.Discover, saved: 1)));
+        Assert.DoesNotContain("dream.first-look", Keys(F(StageRules.Dream, saved: 2)));
+    }
+
+    [Fact]
+    public void CabinHelpNeedsThreeCabinViewsAndTheCostCardNeedsAPriceView()
+    {
+        Assert.Contains("discover.cabin-help", Keys(F(StageRules.Discover, cabins: 3)));
+        Assert.DoesNotContain("discover.cabin-help", Keys(F(StageRules.Discover, cabins: 2)));
+        Assert.Contains("discover.true-cost", Keys(F(StageRules.Discover, price: true)));
+        Assert.DoesNotContain("discover.true-cost", Keys(F(StageRules.Dream, price: true)));
+    }
+
+    [Fact]
+    public void AnUnpaidDepositIsADueCardThatIsNotCountedInTheDailyCap()
+    {
+        var m = Assert.Single(ChatProactiveRules.Candidates(F(StageRules.Manage, deposit: true)), c => c.Key == "book.pay-deposit");
+        Assert.Equal(ChatProactiveRules.ClassDue, m.Class);
+        Assert.Equal(ChatProactiveRules.Payment, m.Topic);
+        Assert.DoesNotContain(ChatProactiveRules.Candidates(F(StageRules.Manage)), c => c.Key == "book.pay-deposit");
+    }
+
+    [Fact]
+    public void EveryNewCardHasAKnownTopicAnExpiryAnExistingScreenAndNoAmount()
+    {
+        var all = ChatProactiveRules.Candidates(F(StageRules.Discover, saved: 2, cabins: 3, price: true, deposit: true))
+            .Concat(ChatProactiveRules.Candidates(F(StageRules.Dream)));
+        foreach (var m in all)
+        {
+            Assert.Contains(m.Topic, ChatProactiveRules.Topics);
+            Assert.NotNull(m.ExpiresAt);
+            Assert.StartsWith("/", m.Path);
+            Assert.DoesNotContain("$", m.Text);
+        }
+    }
+
+    [Fact]
+    public void ATripOnlyGuestSeesTheDepositButNotTheSuggestions()
+    {
+        var facts = F(StageRules.Discover, saved: 2, deposit: true);
+        var ctx = new MomentContext(ChatProactiveRules.ModeTrip, [], false, false);
+        Assert.Equal("book.pay-deposit", ChatProactiveRules.Choose(ChatProactiveRules.Candidates(facts), [], ctx, Now)?.Key);
+        Assert.Null(ChatProactiveRules.Choose(ChatProactiveRules.Candidates(F(StageRules.Discover, saved: 2)), [], ctx, Now));
+    }
+
+    [Fact]
+    public void TheDiscoveryTopicCanBeSwitchedOff()
+    {
+        Assert.True(ChatProactiveRules.ValidTopics(["discovery"]));
+        var ctx = new MomentContext(ChatProactiveRules.ModeGuide, ["discovery"], false, false);
+        Assert.Null(ChatProactiveRules.Choose(ChatProactiveRules.Candidates(F(StageRules.Dream)), [], ctx, Now));
+    }
+
+    [Fact]
+    public void ACardKeyWithADotStillMapsBackToItsMoment() =>
+        Assert.Equal("dream.first-look", ChatProactiveRules.KeyOf("moment:dream.first-look:20261110"));
+}
+
 public class SuggestionCountsTests
 {
     [Fact]

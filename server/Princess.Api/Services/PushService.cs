@@ -332,12 +332,21 @@ public sealed class PushService(
     {
         try
         {
-            if (booking is null) return;
             var held = PushRules.QuietOrDnd(await PrefsAsync(actor.Id, ct), TimeOnly.FromDateTime(local), Shipboard.Ms(now));
+            if (booking is null)
+            {
+                // Dream and Discover (phase 7a): no booking yet, so the facts are the guest's saved sailings and their own recent views.
+                var saved = (await inbox.ListFavouritesAsync(actor.Id, ct)).Count(k => k.StartsWith("sailing:", StringComparison.Ordinal));
+                var events = (await inbox.ListJourneyEventsAsync(actor.Id, 20, ct)).Where(e => now - e.At < TimeSpan.FromDays(7)).ToList();
+                var early = StageRules.Derive(new(now, [], events.Select(e => new JourneyIntent(e.Kind, e.SailingId, e.At)).ToList(), null, null, null)).Stage;
+                if (saved > 0 && early == StageRules.Dream) early = StageRules.Discover;
+                await moments!.PostAsync(actor, new(now, early, 0, false, null, saved, events.Count(e => e.Kind == "cabinView"), events.Any(e => e.Kind == StageRules.PriceView)), held, ct);
+                return;
+            }
             var trip = await trips.BuildAsync(booking, current: true, now, ct);
             var stage = StageRules.Derive(new(now, [], [], null, null, new StageTrip(booking.SailingId, DateOnly.FromDateTime(booking.Departure), trip.Plan.Balance <= 0, trip.Checkin.State == "done"))).Stage;
             var due = DateOnly.TryParse(trip.Plan.FinalDue, out var f) ? f : (DateOnly?)null;
-            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due), held, ct);
+            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit), held, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException) { /* a suggestion is never worth stopping a notice for */ }
     }
