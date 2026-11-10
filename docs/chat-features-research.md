@@ -954,6 +954,8 @@ Two answers worth restating because they shape many phases: **no cost split, no 
 
 ## 15. The permanent Stanley chat: every guest's always-on 1:1 connection
 
+> **Owner decision (2026-11-10): no "AI" wording anywhere in the guest-facing UX.** Wherever this document says "AI label", read "Stanley's picture and name only". Honesty is kept by other means ("automatic notice", naming a person who wrote a message, never claiming to be a crew member). A test should fail the build if a guest-facing Stanley string contains the word "AI".
+
 Added 2026-11-10 on the owner's instruction. **This section overrides earlier sections where they differ**; those sections carry a pointer to it. It makes Stanley's 1:1 conversation the foundation of the chat, not one feature of it.
 
 ### 15.1 The decision (owner's words, summarised)

@@ -4,6 +4,8 @@ Plan for letting Stanley make chat feel friendlier: softer wording around connec
 
 ## 1. Principles and proposed decisions
 
+> **Owner decision (2026-11-10): no "AI" wording anywhere in the guest-facing UX.** Wherever this document says "AI label", read "Stanley's picture and name only". Honesty is kept by other means ("automatic notice", naming a person who wrote a message, never claiming to be a crew member). A test should fail the build if a guest-facing Stanley string contains the word "AI".
+
 | Question | Proposed decision |
 | --- | --- |
 | Who decides | **People and staff decide; Stanley speaks and suggests.** Accept, decline, block, remove, report and end stay with guests and staff. Stanley never accepts, declines, blocks, sends or reports on anyone's behalf. |
