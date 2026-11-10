@@ -408,7 +408,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, m.Status, u.IsSupervised
+            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, m.Status, u.IsSupervised, u.BookerUserId
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles pr ON pr.UserId = u.Id
@@ -436,7 +436,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT TOP (@take) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms
+            SELECT TOP (@take) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem, m.ViaSms, m.Urgency
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
@@ -452,18 +452,18 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return messages;
     }
 
-    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false)
+    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal")
     {
         await using var c = await db.OpenAsync(ct);
-        const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At], ViaSms FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
+        const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At], ViaSms, Urgency FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
         if (clientId is not null && await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd(existing, new { groupId, userId, clientId }, null, ct)) is { } again) return new(again, false);
         try
         {
             var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At], ViaSms) OUTPUT INSERTED.Id, INSERTED.PublicId
-                VALUES (@groupId, @userId, @text, @photo, @clientId, @at, @viaSms)
-                """, new { groupId, userId, text, photo, clientId, at, viaSms }, null, ct));
-            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms }, true);
+                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At], ViaSms, Urgency) OUTPUT INSERTED.Id, INSERTED.PublicId
+                VALUES (@groupId, @userId, @text, @photo, @clientId, @at, @viaSms, @urgency)
+                """, new { groupId, userId, text, photo, clientId, at, viaSms, urgency }, null, ct));
+            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency }, true);
         }
         catch (DbException e) when (e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } && clientId is not null)
         {

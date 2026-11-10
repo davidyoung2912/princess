@@ -72,6 +72,6 @@ public static class ChatConversationRules
     public static string NoticePath(Guid conversationId) => $"/chat?c={conversationId}";
 
     /// <summary>The words a phone shows. The title names the sender by first name and last initial; the body carries message text only when the guest opted in.</summary>
-    public static (string Title, string Body) MessageNotice(string from, string? text, bool showPreview) =>
-        ($"New message from {from}", showPreview && !string.IsNullOrWhiteSpace(text) ? Preview(text) : "Open Princess to read it.");
+    public static (string Title, string Body) MessageNotice(string from, string? text, bool showPreview, string urgency = ChatUrgencyRules.Normal) =>
+        ($"{ChatUrgencyRules.NoticeLead(urgency)} {from}", showPreview && !string.IsNullOrWhiteSpace(text) ? Preview(text) : "Open Princess to read it.");
 }

@@ -43,15 +43,17 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
 
     /// <summary>
     /// A new message in a conversation (docs/chat-plan.md, 4.4). The text is on the lock screen only when the recipient opted in (<paramref name="showPreview"/>).
-    /// A muted conversation never buzzes the phone; an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.
+    /// A muted conversation never buzzes the phone, unless the message is urgent (<see cref="ChatUrgencyRules"/>); an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.
     /// </summary>
-    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct)
+    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct, string urgency = ChatUrgencyRules.Normal)
     {
-        var words = ChatConversationRules.MessageNotice(from, text, showPreview);
+        var words = ChatConversationRules.MessageNotice(from, text, showPreview, urgency);
         var key = ChatConversationRules.NoticeKey(conversationId, messageId);
-        var notice = new PushNotice(key, "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), words.Title, words.Body,
+        // Urgent breaks through do-not-disturb, calm mode and a muted conversation; important and normal do not.
+        var breaks = ChatUrgencyRules.BreaksThrough(urgency);
+        var notice = new PushNotice(key, "chat", "chat", breaks, breaks ? 90 : 50, ChatConversationRules.NoticePath(conversationId), words.Title, words.Body,
             new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId));
-        return Deliver(toUserId, "message", notice, !muted, ct);
+        return Deliver(toUserId, "message", notice, breaks || !muted, ct);
     }
 
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>

@@ -15,6 +15,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
+    /// <summary>The level to show: nothing for a normal message, so ordinary messages look and weigh the same as before.</summary>
+    private static string? Flag(string? urgency) => urgency is ChatUrgencyRules.Important or ChatUrgencyRules.Urgent ? urgency : null;
+
     private static string ShortName(ChatPeerRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
     /// <summary>The caller's conversations, newest activity first. The booking's "My group" is made on first use so there is always one to open.</summary>
@@ -70,7 +73,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
             var name = m.FromUserId == actor.Id || !byId.TryGetValue(m.FromUserId, out var sender) ? null : ShortName(sender);
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms));
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency)));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
@@ -85,7 +88,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ServiceRules.ChildSafeProblem(text, await AgeAsync(actor, ct)) is { } problem) throw ApiException.Invalid(problem);
         // Not sent, not stored, not logged; the matched word is never returned.
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
-        return await StoreAsync(actor, member, text, null, body?.ClientId, ct);
+        var urgency = ChatUrgencyRules.Parse(body?.Urgency) ?? throw ApiException.Invalid("urgency");
+        if (urgency == ChatUrgencyRules.Urgent)
+        {
+            var members = await store.ListMembersAsync(member.GroupId, ct);
+            var guardianHere = ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId)));
+            if (!ChatUrgencyRules.MaySend(urgency, actor.Role == "admin", guardianHere)) throw ApiException.Forbidden("urgency");
+        }
+        return await StoreAsync(actor, member, text, null, body?.ClientId, ct, urgency: urgency);
     }
 
     /// <summary>
@@ -117,10 +127,10 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return await StoreAsync(actor, member, caption, url, null, ct);
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, CancellationToken ct, bool viaSms = false)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, await userClock.NowAsync(actor, ct), ct, viaSms);
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms);
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, await userClock.NowAsync(actor, ct), ct, viaSms, urgency);
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency));
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         await TellAsync(actor, member, sent.Row, ct);
         return dto;
@@ -135,7 +145,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var recipients = await store.ListRecipientsAsync(member.GroupId, actor.Id, ct);
             foreach (var r in recipients)
             {
-                await notifier.MessageAsync(r.UserId, member.GroupPublicId, message.PublicId, from, message.Text, r.ShowPreview, r.Muted, ct);
+                await notifier.MessageAsync(r.UserId, member.GroupPublicId, message.PublicId, from, message.Text, r.ShowPreview, r.Muted, ct, message.Urgency);
             }
             // People ashore who chose the text bridge hear it by text too (its own caps and checks; a failure there is never the sender's problem).
             await sms.MessageAsync(member.GroupId, from, message, recipients, ct);

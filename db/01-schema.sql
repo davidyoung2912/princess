@@ -3272,6 +3272,11 @@ IF COL_LENGTH(N'dbo.ChatMessages', N'ViaSms') IS NULL
   ALTER TABLE dbo.ChatMessages ADD ViaSms BIT NOT NULL CONSTRAINT DF_ChatMessages_ViaSms DEFAULT 0;
 GO
 
+-- How much a message matters (docs/chat-urgency-plan.md): normal, important or urgent. Only urgent breaks through do-not-disturb, and only staff and guardians may send it (checked by the API).
+IF COL_LENGTH(N'dbo.ChatMessages', N'Urgency') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD Urgency NVARCHAR(10) NOT NULL CONSTRAINT DF_ChatMessages_Urgency DEFAULT N'normal' CONSTRAINT CK_ChatMessages_Urgency CHECK (Urgency IN (N'normal', N'important', N'urgent'));
+GO
+
 -- Where a guest's text replies go (the conversation they were last texted from) and when they said BACK (the bridge stays quiet until they are next ashore after that).
 IF OBJECT_ID(N'dbo.ChatSmsState', N'U') IS NULL
 BEGIN

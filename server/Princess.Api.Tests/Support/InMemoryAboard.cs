@@ -310,7 +310,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     private ChatPeerRow Peer(long id)
     {
         var u = users.Users.First(u => u.Id == id);
-        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id), IsSupervised = u.IsSupervised };
+        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id), IsSupervised = u.IsSupervised, BookerUserId = u.BookerUserId };
     }
 
     public Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct) => Task.FromResult(Of(groupId).Members.Select(m => Peer(m.UserId)).ToList());
@@ -327,11 +327,11 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(all.TakeLast(limit + 1).ToList());
     }
 
-    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false)
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal")
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
             return Task.FromResult(new ChatSentRow(again.Row, false));
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency };
         Messages.Add(new Stored(groupId, row, clientId));
         return Task.FromResult(new ChatSentRow(row, true));
     }

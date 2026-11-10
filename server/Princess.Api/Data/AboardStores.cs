@@ -105,6 +105,8 @@ public sealed class ChatPeerRow
     public string Status { get; set; } = "active";
     /// <summary>A supervised child's account: a guardian can read the conversations they are in.</summary>
     public bool IsSupervised { get; set; }
+    /// <summary>The booker of a supervised child (their guardian); null for anyone else.</summary>
+    public long? BookerUserId { get; set; }
 }
 
 public sealed class ChatMessageRow
@@ -119,6 +121,8 @@ public sealed class ChatMessageRow
     public bool IsSystem { get; set; }
     /// <summary>It came in by text from a guest ashore (docs/chat-plan.md, phase 6).</summary>
     public bool ViaSms { get; set; }
+    /// <summary>normal, important or urgent (<see cref="Domain.ChatUrgencyRules"/>).</summary>
+    public string Urgency { get; set; } = "normal";
     /// <summary>The people who have read it.</summary>
     public List<long> SeenBy { get; set; } = [];
 }
@@ -242,7 +246,7 @@ public interface IChatStore
     /// </summary>
     Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct);
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
-    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false);
+    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal");
     /// <summary>The members to tell about a message from <paramref name="senderId"/>: active, not the sender, and not having blocked the sender.</summary>
     Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct);
     /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>
