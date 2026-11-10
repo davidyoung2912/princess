@@ -56,7 +56,8 @@ export function deviceSignals(tiers: TierCounts, asked: AskedCounts): DeviceSign
 
 /** One row of `GET /me/stanley/tiers`, read defensively. */
 export interface TierRow { tier: string; source: string; stage: string; topic: string; outcome: string; modelTier: string; replies: number; calls: number; inputTokens: number; outputTokens: number }
-export interface TierSummary { since: string; replies: number; modelCalls: number; inputTokens: number; outputTokens: number; rows: TierRow[] }
+export interface CardCount { cardId: string; replies: number; abstained: number }
+export interface TierSummary { since: string; replies: number; modelCalls: number; inputTokens: number; outputTokens: number; rows: TierRow[]; cards: CardCount[] }
 
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null)
 const n = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0)
@@ -69,7 +70,22 @@ export function normalizeTierSummary(raw: unknown): TierSummary | null {
     const x = obj(r)
     return x ? [{ tier: s(x.tier, 20), source: s(x.source, 20), stage: s(x.stage, 20), topic: s(x.topic, 30), outcome: s(x.outcome, 20), modelTier: s(x.modelTier, 20), replies: n(x.replies), calls: n(x.calls), inputTokens: n(x.inputTokens), outputTokens: n(x.outputTokens) }] : []
   })
-  return { since: s(o.since, 40), replies: n(o.replies), modelCalls: n(o.modelCalls), inputTokens: n(o.inputTokens), outputTokens: n(o.outputTokens), rows }
+  const cards = Array.isArray(o.cards)
+    ? o.cards.slice(0, 20).flatMap((c): CardCount[] => { const x = obj(c); const id = x ? s(x.cardId, 40) : ''; return x && /^[A-Za-z0-9._-]+$/.test(id) ? [{ cardId: id, replies: n(x.replies), abstained: n(x.abstained) }] : [] })
+    : []
+  return { since: s(o.since, 40), replies: n(o.replies), modelCalls: n(o.modelCalls), inputTokens: n(o.inputTokens), outputTokens: n(o.outputTokens), rows, cards }
+}
+
+export interface HandoffTopic { topic: string; opened: number; fulfilled: number; overdue: number; escalated: number }
+export interface HandoffOutcomes { opened: number; fulfilled: number; overdue: number; escalated: number; onTimePercent: number | null; topics: HandoffTopic[] }
+
+/** The server's handoff counts (`GET /me/stanley/handoff-outcomes`), read defensively. */
+export function normalizeHandoffOutcomes(raw: unknown): HandoffOutcomes | null {
+  const o = obj(raw)
+  if (!o || !Array.isArray(o.topics)) return null
+  const topics = o.topics.slice(0, 20).flatMap((t): HandoffTopic[] => { const x = obj(t); return x && s(x.topic, 20) ? [{ topic: s(x.topic, 20), opened: n(x.opened), fulfilled: n(x.fulfilled), overdue: n(x.overdue), escalated: n(x.escalated) }] : [] })
+  const p = typeof o.onTimePercent === 'number' && Number.isFinite(o.onTimePercent) ? Math.max(0, Math.min(100, Math.round(o.onTimePercent))) : null
+  return { opened: n(o.opened), fulfilled: n(o.fulfilled), overdue: n(o.overdue), escalated: n(o.escalated), onTimePercent: p, topics }
 }
 
 export interface CostDashboard {
@@ -86,6 +102,8 @@ export interface CostDashboard {
   tokensPerResolved: number | null
   meetsNoModel: boolean | null
   meetsLarge: boolean | null
+  /** The cards answered most often across all guests, with how often each said it could not answer. */
+  cards: CardCount[]
 }
 
 const pct = (a: number, b: number): number | null => (b === 0 ? null : Math.round((a / b) * 100))
@@ -106,6 +124,7 @@ export function costDashboard(t: TierSummary): CostDashboard {
     tokensPerResolved: resolved === 0 ? null : Math.round(tokens / resolved),
     meetsNoModel: noModelPercent === null ? null : noModelPercent >= TARGET_NO_MODEL,
     meetsLarge: largePercent === null ? null : largePercent < TARGET_LARGE_BELOW,
+    cards: t.cards,
   }
 }
 

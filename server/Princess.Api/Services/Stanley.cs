@@ -45,6 +45,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
                 {
                     At = clock.UtcNow, Tier = reply.Tier, Source = reply.Source, Stage = context.Stage, Topic = topicName, Outcome = outcome,
                     ModelTier = used?.Highest?.ToString().ToLowerInvariant() ?? "", Calls = used?.Calls ?? 0, InputTokens = used?.InputTokens ?? 0, OutputTokens = used?.OutputTokens ?? 0,
+                    CardId = StanleyTierEntry.CleanCardId(reply.Card?.Id), Abstained = reply.Card?.Abstained ?? false,
                 }, ct);
             }
             catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "Stanley tier log failed"); }

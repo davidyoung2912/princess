@@ -10,6 +10,8 @@ public interface IStanleyHandoffStore
     Task AddAsync(StanleyHandoffRow row, CancellationToken ct);
     /// <summary>The guest's handoffs, newest first. Anyone else's are never returned.</summary>
     Task<List<StanleyHandoffRow>> ListAsync(long userId, int max, CancellationToken ct);
+    /// <summary>Every guest's handoffs opened since a time, for the administrators' counts. Only <c>Topic</c> and <c>OpenedAt</c> are filled; no guest and no words.</summary>
+    Task<List<StanleyHandoffRow>> SinceAsync(DateTime since, int max, CancellationToken ct);
 }
 
 /// <summary>Kept in memory. For tests and a single-instance trial: <c>Providers:StanleyLog</c> = <c>memory</c>.</summary>
@@ -28,6 +30,11 @@ public sealed class MemoryStanleyHandoffStore : IStanleyHandoffStore
     {
         lock (_rows) return Task.FromResult(_rows.Where(r => r.UserId == userId).OrderByDescending(r => r.OpenedAt).ThenByDescending(r => r.Id).Take(max).ToList());
     }
+
+    public Task<List<StanleyHandoffRow>> SinceAsync(DateTime since, int max, CancellationToken ct)
+    {
+        lock (_rows) return Task.FromResult(_rows.Where(r => r.OpenedAt >= since).OrderByDescending(r => r.OpenedAt).Take(max).Select(r => new StanleyHandoffRow { Topic = r.Topic, OpenedAt = r.OpenedAt }).ToList());
+    }
 }
 
 /// <summary>
@@ -35,7 +42,7 @@ public sealed class MemoryStanleyHandoffStore : IStanleyHandoffStore
 /// only from that answer. The guest must have agreed to the exact text (<c>consent</c>), a child account cannot send one, and an emergency is not a topic. What goes in the audit trail is the topic and
 /// the reference, never the guest's words. The case's progress is worked out from the clock (<see cref="StanleyHandoffRules.StatusOf"/>) because the staff side is simulated.
 /// </summary>
-public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options)
+public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options, IOperatorAlerts? alerts = null)
 {
     private static string Clean(string? s) => (s ?? "").Trim();
 
@@ -56,6 +63,13 @@ public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clo
         };
         await store.AddAsync(row, ct);
         await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "stanley.handoff", Outcome = AuditOutcome.Success, Target = row.Reference, Detail = row.Topic }, ct);
+        // An urgent case tells whoever is on duty at once. The alert holds the topic, the desk and the reference only, and a failure to send it never fails the guest's request.
+        if (alerts is not null && StanleyHandoffRules.IsUrgent(row.Topic))
+        {
+            var a = StanleyHandoffRules.AlertFor(row.Topic, row.Reference);
+            try { await alerts.NotifyAsync(new OperatorAlert("urgent", "handoff", a.Summary, a.Reference), ct); }
+            catch (Exception e) when (e is not OperationCanceledException) { /* the sender logs its own failure; the case is already stored */ }
+        }
         return StanleyHandoffRules.View(row, now);
     }
 

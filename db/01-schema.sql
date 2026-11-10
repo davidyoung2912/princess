@@ -1056,6 +1056,9 @@ CREATE TABLE dbo.StanleyTierLog (
 );
 CREATE INDEX IX_StanleyTierLog_At ON dbo.StanleyTierLog (At);
 END
+-- Phase 14 (follow-up): the resolver card that answered, a closed set of ids and never words, so the most asked and most abstained cards can be counted across all guests.
+IF COL_LENGTH(N'dbo.StanleyTierLog', N'CardId') IS NULL ALTER TABLE dbo.StanleyTierLog ADD CardId NVARCHAR(40) NOT NULL CONSTRAINT DF_StanleyTierLog_CardId DEFAULT N'';
+IF COL_LENGTH(N'dbo.StanleyTierLog', N'Abstained') IS NULL ALTER TABLE dbo.StanleyTierLog ADD Abstained BIT NOT NULL CONSTRAINT DF_StanleyTierLog_Abstained DEFAULT 0;
 
 IF OBJECT_ID(N'dbo.StanleyActions', N'U') IS NULL
 BEGIN

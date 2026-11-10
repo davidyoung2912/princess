@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { LIBRARY, PAGE_QA } from './stanleyLibrary'
 import { REVIEWED_ON } from './stanleyLibrary/governance'
-import { costDashboard, cardExpired, deviceSignals, expiresInMs, normalizeTierSummary, reviewItems, staleReport, SUGGESTION_MINUTES, TIP_MINUTES, type TierRow } from './stanleyOps'
+import { costDashboard, normalizeHandoffOutcomes, cardExpired, deviceSignals, expiresInMs, normalizeTierSummary, reviewItems, staleReport, SUGGESTION_MINUTES, TIP_MINUTES, type TierRow } from './stanleyOps'
 import type { TierCounts } from '../diagnostics/stanleyTiers'
 
 const DAY = 86_400_000
 const at = (iso: string): number => Date.parse(`${iso}T12:00:00Z`)
 const row = (o: Partial<TierRow>): TierRow => ({ tier: 'trip', source: '', stage: 'sea', topic: 'x', outcome: 'ok', modelTier: '', replies: 1, calls: 0, inputTokens: 0, outputTokens: 0, ...o })
 const counts = (o: Partial<TierCounts>): TierCounts => ({ library: 0, ship: 0, trip: 0, before: 0, model: 0, handoff: 0, unanswered: 0, ...o })
-const sum = (rows: TierRow[]) => ({ since: '', replies: 0, modelCalls: 0, inputTokens: 0, outputTokens: 0, rows })
+const sum = (rows: TierRow[]) => ({ since: '', replies: 0, modelCalls: 0, inputTokens: 0, outputTokens: 0, rows, cards: [] })
 
 describe('review workflow', () => {
   it('lists every authored entry once, with an owner and a due date', () => {
@@ -103,5 +103,19 @@ describe('stale-tip expiry', () => {
   it('says how long is left, never below zero', () => {
     expect(expiresInMs(card, 0, 60_000)).toBe((SUGGESTION_MINUTES - 1) * 60_000)
     expect(expiresInMs(card, 0, 100 * DAY)).toBe(0)
+  })
+})
+
+describe('server counts: cards and handoffs', () => {
+  it('reads the most answered cards, keeping only id-shaped keys', () => {
+    const s = normalizeTierSummary({ rows: [], cards: [{ cardId: 'plan.today', replies: 5, abstained: 2 }, { cardId: 'what is my cabin?', replies: 9 }, 4] })
+    expect(s?.cards).toEqual([{ cardId: 'plan.today', replies: 5, abstained: 2 }])
+    expect(normalizeTierSummary({ rows: [] })?.cards).toEqual([])
+  })
+  it('reads handoff counts and the on-time share defensively', () => {
+    expect(normalizeHandoffOutcomes({})).toBeNull()
+    const h = normalizeHandoffOutcomes({ opened: 3, onTimePercent: 150, topics: [{ topic: 'billing', opened: 2, overdue: 1, escalated: 1 }, null] })
+    expect(h).toMatchObject({ opened: 3, onTimePercent: 100, topics: [{ topic: 'billing', opened: 2, fulfilled: 0, overdue: 1, escalated: 1 }] })
+    expect(normalizeHandoffOutcomes({ topics: [], onTimePercent: null })?.onTimePercent).toBeNull()
   })
 })

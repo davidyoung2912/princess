@@ -20,6 +20,13 @@ public sealed class StanleyTierEntry
     public int Calls { get; set; }
     public long InputTokens { get; set; }
     public long OutputTokens { get; set; }
+    /// <summary>The id of the resolver card that answered (a closed set of ids such as <c>plan.today</c>), or empty. Never words.</summary>
+    public string CardId { get; set; } = "";
+    /// <summary>The card said it could not answer.</summary>
+    public bool Abstained { get; set; }
+
+    /// <summary>A card id that is safe to keep: letters, digits, dots and dashes, at most 40; anything else is dropped to empty.</summary>
+    public static string CleanCardId(string? id) => id is { Length: > 0 and <= 40 } && id.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '.' or '-' or '_') ? id : "";
 }
 
 /// <summary>Replies grouped by tier, source, stage, topic, outcome and model tier.</summary>
@@ -37,10 +44,26 @@ public sealed class StanleyTierRow
     public long OutputTokens { get; set; }
 }
 
-public sealed record StanleyTierSummary(DateTime Since, int Replies, int ModelCalls, long InputTokens, long OutputTokens, List<StanleyTierRow> Rows)
+/// <summary>How often one resolver card answered in the period, and how often it said it could not. Only cards answered at least twice are listed.</summary>
+public sealed class StanleyCardCount
 {
-    public static StanleyTierSummary Of(DateTime since, List<StanleyTierRow> rows) =>
-        new(since, rows.Sum(r => r.Replies), rows.Sum(r => r.Calls), rows.Sum(r => r.InputTokens), rows.Sum(r => r.OutputTokens), rows);
+    public string CardId { get; set; } = "";
+    public int Replies { get; set; }
+    public int Abstained { get; set; }
+}
+
+public sealed record StanleyTierSummary(DateTime Since, int Replies, int ModelCalls, long InputTokens, long OutputTokens, List<StanleyTierRow> Rows, List<StanleyCardCount>? Cards = null)
+{
+    public const int MaxCards = 10;
+
+    public static StanleyTierSummary Of(DateTime since, List<StanleyTierRow> rows, List<StanleyCardCount>? cards = null) =>
+        new(since, rows.Sum(r => r.Replies), rows.Sum(r => r.Calls), rows.Sum(r => r.InputTokens), rows.Sum(r => r.OutputTokens), rows, cards ?? []);
+
+    /// <summary>The most often answered cards of a set of entries, at least twice each, most first.</summary>
+    public static List<StanleyCardCount> TopCards(IEnumerable<StanleyTierEntry> entries) =>
+        [.. entries.Where(e => e.CardId.Length > 0).GroupBy(e => e.CardId)
+            .Select(g => new StanleyCardCount { CardId = g.Key, Replies = g.Count(), Abstained = g.Count(e => e.Abstained) })
+            .Where(c => c.Replies >= 2).OrderByDescending(c => c.Replies).ThenBy(c => c.CardId, StringComparer.Ordinal).Take(MaxCards)];
 }
 
 public interface IStanleyTierLog
@@ -64,13 +87,14 @@ public sealed class MemoryStanleyTierLog : IStanleyTierLog
 
     public Task<StanleyTierSummary> SummaryAsync(DateTime since, CancellationToken ct)
     {
-        var rows = Entries.Where(e => e.At >= since)
+        var recent = Entries.Where(e => e.At >= since).ToList();
+        var rows = recent
             .GroupBy(e => (e.Tier, e.Source, e.Stage, e.Topic, e.Outcome, e.ModelTier))
             .Select(g => new StanleyTierRow
             {
                 Tier = g.Key.Tier, Source = g.Key.Source, Stage = g.Key.Stage, Topic = g.Key.Topic, Outcome = g.Key.Outcome, ModelTier = g.Key.ModelTier,
                 Replies = g.Count(), Calls = g.Sum(e => e.Calls), InputTokens = g.Sum(e => e.InputTokens), OutputTokens = g.Sum(e => e.OutputTokens),
             }).OrderByDescending(r => r.Replies).ToList();
-        return Task.FromResult(StanleyTierSummary.Of(since, rows));
+        return Task.FromResult(StanleyTierSummary.Of(since, rows, StanleyTierSummary.TopCards(recent)));
     }
 }

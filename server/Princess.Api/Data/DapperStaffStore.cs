@@ -52,7 +52,7 @@ public sealed class DapperStanleyTierLog(IDbConnectionFactory db) : IStanleyTier
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd(
-            "INSERT INTO dbo.StanleyTierLog (At, Tier, Source, Stage, Topic, Outcome, ModelTier, Calls, InputTokens, OutputTokens) VALUES (@At, @Tier, @Source, @Stage, @Topic, @Outcome, @ModelTier, @Calls, @InputTokens, @OutputTokens)",
+            "INSERT INTO dbo.StanleyTierLog (At, Tier, Source, Stage, Topic, Outcome, ModelTier, Calls, InputTokens, OutputTokens, CardId, Abstained) VALUES (@At, @Tier, @Source, @Stage, @Topic, @Outcome, @ModelTier, @Calls, @InputTokens, @OutputTokens, @CardId, @Abstained)",
             e, null, ct));
     }
 
@@ -63,7 +63,11 @@ public sealed class DapperStanleyTierLog(IDbConnectionFactory db) : IStanleyTier
             "SELECT Tier, Source, Stage, Topic, Outcome, ModelTier, COUNT(*) AS Replies, SUM(Calls) AS Calls, SUM(CAST(InputTokens AS BIGINT)) AS InputTokens, SUM(CAST(OutputTokens AS BIGINT)) AS OutputTokens " +
             "FROM dbo.StanleyTierLog WHERE At >= @since GROUP BY Tier, Source, Stage, Topic, Outcome, ModelTier ORDER BY Replies DESC",
             new { since }, null, ct))).ToList();
-        return StanleyTierSummary.Of(since, rows);
+        var cards = (await c.QueryAsync<StanleyCardCount>(Sql.Cmd(
+            "SELECT TOP (@top) CardId, COUNT(*) AS Replies, SUM(CAST(Abstained AS INT)) AS Abstained FROM dbo.StanleyTierLog WHERE At >= @since AND CardId <> N'' " +
+            "GROUP BY CardId HAVING COUNT(*) >= 2 ORDER BY Replies DESC, CardId",
+            new { since, top = StanleyTierSummary.MaxCards }, null, ct))).ToList();
+        return StanleyTierSummary.Of(since, rows, cards);
     }
 }
 
@@ -130,6 +134,15 @@ public sealed class DapperStanleyHandoffStore(IDbConnectionFactory db) : IStanle
         return (await c.QueryAsync<StanleyHandoffRow>(Sql.Cmd(
             "SELECT TOP (@max) Id, PublicId, UserId, Topic, Reference, Issue, Outcome, BookingRef, Tried, Attachment, Role, OpenedAt, Source FROM dbo.StanleyHandoffs WHERE UserId = @userId ORDER BY OpenedAt DESC, Id DESC",
             new { userId, max }, null, ct))).ToList();
+    }
+
+    public async Task<List<StanleyHandoffRow>> SinceAsync(DateTime since, int max, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        // Topic and time only: the aggregate never reads a guest or the words of a case.
+        return (await c.QueryAsync<StanleyHandoffRow>(Sql.Cmd(
+            "SELECT TOP (@max) Topic, OpenedAt FROM dbo.StanleyHandoffs WHERE OpenedAt >= @since ORDER BY OpenedAt DESC",
+            new { since, max }, null, ct))).ToList();
     }
 }
 

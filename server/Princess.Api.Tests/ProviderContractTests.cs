@@ -152,6 +152,9 @@ public class ProviderContractTests
                 var sent = await push.SendAsync(new PushSubscriptionRow("https://push.example/abc", "k", "a", 3, false, ""), new PushMessage("k", "payment", "t", "b", "/me/payments", false, []), CancellationToken.None);
                 Assert.Equal(PushResult.Delivered, sent);
                 break;
+            case IOperatorAlerts alerts:
+                Assert.True(await alerts.NotifyAsync(new OperatorAlert("urgent", "handoff", "A case needs a person", "GS-TEST01"), CancellationToken.None));
+                break;
             case IPaymentGateway pay:
                 var result = await pay.ChargeAsync("ref-1", [new ChargePart("wallet", null, null, null, false, 1_000)], null, CancellationToken.None);
                 Assert.False(string.IsNullOrEmpty(result.Reference));

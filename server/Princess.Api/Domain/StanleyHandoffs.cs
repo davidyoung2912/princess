@@ -49,6 +49,12 @@ public static class StanleyHandoffRules
         _ => (15, 4, 8),
     };
 
+    /// <summary>Topics where a delay can cost a guest the ship, their health or their plans: a person on duty is told as soon as one opens.</summary>
+    public static bool IsUrgent(string topic) => topic is "missedShip" or "allergy" or "disruption";
+
+    /// <summary>The line an operator is paged with: the topic, the desk and the reference. Never the guest's words or name.</summary>
+    public static OperatorSummary AlertFor(string topic, string reference) => new($"Urgent Stanley handoff ({topic}) for {Owner(topic)}", reference);
+
     /// <summary>The desk that holds a topic. A real roster would name a person; the simulation names the desk, never invents a staff member.</summary>
     public static string Owner(string topic) => topic switch
     {
@@ -100,9 +106,32 @@ public static class StanleyHandoffRules
         return ("acknowledged", next, overdue, now >= openedAt.AddHours(escalate));
     }
 
+    /// <summary>
+    /// How handed-over cases fared, by topic, as the clock-driven desk sees them (phase 14 follow-up). Counts only. <c>OnTimePercent</c> is the share of cases that had not run past
+    /// their update time; it is the nearest honest signal while the desk is simulated, and it is not the precision of the decision to hand over (no outcome says whether a person was needed).
+    /// </summary>
+    public static StanleyHandoffOutcomes Outcomes(IEnumerable<(string Topic, DateTime OpenedAt)> cases, DateTime since, DateTime now)
+    {
+        var rows = cases.Select(c => (c.Topic, Status: StatusOf(c.Topic, c.OpenedAt, now))).ToList();
+        var topics = rows.GroupBy(r => r.Topic).Select(g => new StanleyHandoffOutcomeRow(
+            g.Key, g.Count(), g.Count(r => r.Status.Status == "fulfilled"), g.Count(r => r.Status.Overdue), g.Count(r => r.Status.Escalated))).OrderByDescending(t => t.Opened).ThenBy(t => t.Topic, StringComparer.Ordinal).ToList();
+        var opened = rows.Count;
+        var overdue = rows.Count(r => r.Status.Overdue);
+        return new(since, opened, rows.Count(r => r.Status.Status == "fulfilled"), overdue, rows.Count(r => r.Status.Escalated), opened == 0 ? null : (int)Math.Round(100.0 * (opened - overdue) / opened), topics);
+    }
+
     public static StanleyHandoffDto View(StanleyHandoffRow r, DateTime now)
     {
         var (status, next, overdue, escalated) = StatusOf(r.Topic, r.OpenedAt, now);
         return new(r.PublicId, r.Topic, r.Reference, Owner(r.Topic), status, TripRules.ToMs(r.OpenedAt), TripRules.ToMs(next), overdue, escalated, r.Issue, r.Outcome, r.Source);
     }
 }
+
+/// <summary>One topic's cases in the period.</summary>
+public sealed record StanleyHandoffOutcomeRow(string Topic, int Opened, int Fulfilled, int Overdue, int Escalated);
+
+/// <summary>Handoff counts for administrators: no guest, no words.</summary>
+public sealed record StanleyHandoffOutcomes(DateTime Since, int Opened, int Fulfilled, int Overdue, int Escalated, int? OnTimePercent, List<StanleyHandoffOutcomeRow> Topics);
+
+/// <summary>What an operator alert says and the case it is about.</summary>
+public sealed record OperatorSummary(string Summary, string Reference);

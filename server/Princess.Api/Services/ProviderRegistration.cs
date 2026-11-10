@@ -66,6 +66,7 @@ public static class ProviderRegistration
         S<IServiceStatus, SimServiceStatus>(),
         S<ITranslationProvider, SimTranslationProvider>(),
         S<IImageTextReader, SimImageTextReader>(),
+        S<IOperatorAlerts, SimOperatorAlerts>(),
     ];
 
     public static IServiceCollection AddProviders(this IServiceCollection services, IConfiguration config)
@@ -93,8 +94,18 @@ public static class ProviderRegistration
                 services.AddSingleton(seam.Contract, sp => sp.GetRequiredService<PingramSender>());
                 continue;
             }
+            // Providers:OperatorAlerts = webhook posts urgent alerts (an urgent Stanley handoff) to OperatorAlerts:Url. Another named special case: it needs an HttpClient.
+            if (seam.Key == "OperatorAlerts" && name == "webhook")
+            {
+                if (!OperatorAlertOptions.IsUsable(config[$"{OperatorAlertOptions.Section}:Url"]))
+                    throw new InvalidOperationException($"{Section}:OperatorAlerts is 'webhook' but {OperatorAlertOptions.Section}:Url is not set to an https address (user-secrets or an environment variable).");
+                services.AddOptions<OperatorAlertOptions>().BindConfiguration(OperatorAlertOptions.Section);
+                services.AddHttpClient<WebhookOperatorAlerts>();
+                services.AddSingleton(seam.Contract, sp => sp.GetRequiredService<WebhookOperatorAlerts>());
+                continue;
+            }
             if (!seam.Implementations.TryGetValue(name, out var impl))
-                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}{(seam.Key == "Weather" ? ", openmeteo" : seam.Key is "Email" or "Sms" ? ", pingram" : "")}.");
+                throw new InvalidOperationException($"{Section}:{seam.Key} is '{name}', which is not registered. Choose one of: {string.Join(", ", seam.Implementations.Keys)}{(seam.Key == "Weather" ? ", openmeteo" : seam.Key is "Email" or "Sms" ? ", pingram" : seam.Key == "OperatorAlerts" ? ", webhook" : "")}.");
             services.AddSingleton(seam.Contract, impl);
         }
 

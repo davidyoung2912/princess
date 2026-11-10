@@ -2,9 +2,9 @@ import { useId, useState } from 'react'
 import { ApiError } from '../../api/errors'
 import { questionOf, LIBRARY } from '../../ai/stanleyLibrary'
 import { SHIP_FACTS } from '../../domain/finishMore'
-import { costDashboard, normalizeTierSummary, readDeviceSignals, staleReport, TARGET_LARGE_BELOW, TARGET_NO_MODEL, type CostDashboard } from '../../ai/stanleyOps'
+import { costDashboard, normalizeHandoffOutcomes, normalizeTierSummary, readDeviceSignals, staleReport, TARGET_LARGE_BELOW, TARGET_NO_MODEL, type CostDashboard, type HandoffOutcomes } from '../../ai/stanleyOps'
 import { t, th } from '../../i18n'
-import { fetchStanleyTiers } from '../../runtime'
+import { fetchHandoffOutcomes, fetchStanleyTiers } from '../../runtime'
 import { Button } from '../Button'
 
 function askedQuestion(id: string): string {
@@ -25,12 +25,14 @@ export function StanleyOpsConsole() {
   const owners = staleReport(now)
   const [sig] = useState(readDeviceSignals)
   const [cost, setCost] = useState<CostDashboard | null>(null)
+  const [handoffs, setHandoffs] = useState<HandoffOutcomes | null>(null)
   const [state, setState] = useState<'idle' | 'busy' | 'forbidden' | 'failed'>('idle')
 
   async function load() {
     setState('busy')
     try {
       const summary = normalizeTierSummary(await fetchStanleyTiers(7))
+      setHandoffs(normalizeHandoffOutcomes(await fetchHandoffOutcomes(7).catch(() => null)))
       setCost(summary ? costDashboard(summary) : null)
       setState(summary ? 'idle' : 'failed')
     } catch (e) {
@@ -74,6 +76,19 @@ export function StanleyOpsConsole() {
             <li>{t('ops.cost.failedShare', { percent: percent(cost.failedPercent) })}</li>
             <li>{t('ops.cost.tokens', { count: cost.tokensPerResolved ?? t('ops.none') })}</li>
           </ul>
+        )}
+        {cost && cost.cards.length > 0 && (
+          <>
+            <h5>{t('ops.cards.title')}</h5>
+            <ul>{cost.cards.map((c) => <li key={c.cardId}>{t('ops.cards.line', { card: c.cardId, count: c.replies, abstained: c.abstained })}</li>)}</ul>
+          </>
+        )}
+        {handoffs && handoffs.opened > 0 && (
+          <>
+            <h5>{t('ops.handoff.title')}</h5>
+            <p>{t('ops.handoff.intro', { count: handoffs.opened, percent: percent(handoffs.onTimePercent) })}</p>
+            <ul>{handoffs.topics.map((x) => <li key={x.topic}>{t('ops.handoff.line', { topic: x.topic, opened: x.opened, overdue: x.overdue, escalated: x.escalated })}</li>)}</ul>
+          </>
         )}
       </div>
     </section>

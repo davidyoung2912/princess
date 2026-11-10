@@ -213,6 +213,18 @@ public static class StanleyEndpoints
         handoffs.MapGet("/{id:guid}", async (Guid id, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), id, ct)))
             .WithSummary("One handoff case as it stands now. 404 for one that is not yours.");
 
+        api.MapGet("/me/stanley/handoff-outcomes", async (ICurrentUser me, IStanleyHandoffStore store, IClock clock, int? days, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                if (user.Role != "admin") throw ApiException.Forbidden();
+                var now = clock.UtcNow;
+                var since = now.AddDays(-Math.Clamp(days ?? 7, 1, 90));
+                var rows = await store.SinceAsync(since, 5000, ct);
+                return Results.Ok(StanleyHandoffRules.Outcomes(rows.Select(r => (r.Topic, r.OpenedAt)), since, now));
+            })
+            .WithTags("Stanley")
+            .WithSummary("Administrators only (403 otherwise): handed-over cases of the last days (default 7, 1 to 90) by topic, with how many are fulfilled, overdue or escalated and the share not overdue. Counts only: no guest and no words. The desk is simulated, so this is a proxy for how handoffs fare, not the precision of the decision to hand over.");
+
         api.MapGet("/me/stanley/tiers", async (ICurrentUser me, IStanleyTierLog tiers, IClock clock, int? days, CancellationToken ct) =>
             {
                 var user = await me.LoadAsync(ct);
@@ -220,7 +232,7 @@ public static class StanleyEndpoints
                 return Results.Ok(await tiers.SummaryAsync(clock.UtcNow.AddDays(-Math.Clamp(days ?? 7, 1, 90)), ct));
             })
             .WithTags("Stanley")
-            .WithSummary("Administrators only (403 otherwise): Stanley's replies over the last days (default 7, 1 to 90), counted by tier, source, stage, topic, outcome and model tier, with model calls and tokens. Counts only: no message text and no guest.");
+            .WithSummary("Administrators only (403 otherwise): Stanley's replies over the last days (default 7, 1 to 90), counted by tier, source, stage, topic, outcome and model tier, with model calls and tokens. Counts only: no message text and no guest. cards lists the resolver cards answered at least twice with how often each said it could not answer (top 10).");
     }
 
     /// <summary>The comma-separated <c>saved</c> query as a list of ids (checked by the service); null when none is sent.</summary>
