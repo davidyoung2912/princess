@@ -10,10 +10,11 @@ namespace Princess.Api.Services;
 /// A child's request needs their guardian first, and a request to a child is answered by their guardian. The other person is told at once; if a request is to someone who blocked the
 /// sender it looks the same to the sender and is never delivered.
 /// </summary>
-public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IChatGroupStore groups, IUserStore users, IUserClock clock, ChatNotifier notifier)
+public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IChatGroupStore groups, IUserStore users, IUserClock clock, ChatNotifier notifier, ChatKeepService eligibility)
 {
     public async Task<List<ChatPersonDto>> SearchAsync(UserRecord actor, string? query, CancellationToken ct)
     {
+        await eligibility.RequirePeopleAsync(actor, ct);   // before a confirmed booking there is nobody on a sailing to find
         var clean = ChatConnectionRules.CleanQuery(query) ?? throw ApiException.Invalid("query");
         var people = await store.FindPeopleAsync(actor.Id, $"%{clean}%", null, ChatConnectionRules.MaxResults, ct);
         var list = new List<ChatPersonDto>();
@@ -99,6 +100,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     {
         if (body is null || body.ToUserId == Guid.Empty) throw ApiException.Invalid("person");
         if (body.ToUserId == actor.PublicId) throw ApiException.Invalid("self");
+        await eligibility.RequirePeopleAsync(actor, ct);
         var now = await clock.NowAsync(actor, ct);
         await store.ExpireAsync(actor.Id, now, ct);
 

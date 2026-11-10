@@ -255,7 +255,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['H02', 'H13', 'H07', 'H04', 'P49', 'H11'],
     tabs: [
       { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02'] },
-      { label: 'Ask', colour: 'pink', subtext: 'Get answers and advice before you decide.', screens: ['H04', 'H03', 'H02', 'H13', 'P21', 'P49', 'P50'] },
+      { label: 'Ask', colour: 'pink', subtext: 'Get answers and advice before you decide.', screens: ['C01', 'H04', 'H03', 'H02', 'H13', 'P21', 'P49', 'P50'] },
     ],
     me: { subtext: 'Your details and the sailings you have saved.', screens: ['H11', 'H51', ...SETTINGS_AND_HELP] },
   },
@@ -265,7 +265,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tabs: [
       { label: 'Sailing', colour: 'teal', subtext: 'Everything about the sailing you are considering.', screens: ['H08', 'H07', 'H50', 'H09', 'H06', 'H10', 'H47', 'H49', 'H48', 'S01', 'S02', 'S03', 'H13', 'X02'] },
       { label: 'Cabin', colour: 'pink', subtext: 'Pick the room that suits you.', screens: ['H14', 'P19', 'H13'] },
-      { label: 'Cost', colour: 'gold', subtext: 'The real, all-in price, and ways to pay less.', screens: ['H12', 'H15', 'P17', 'P18', 'H16', 'H03', 'H04'] },
+      { label: 'Cost', colour: 'gold', subtext: 'The real, all-in price, and ways to pay less.', screens: ['C01', 'H12', 'H15', 'P17', 'P18', 'H16', 'H03', 'H04'] },
     ],
     me: { subtext: 'Your saved sailings, price watches and details.', screens: ['H11', 'H51', 'P17', ...SETTINGS_AND_HELP] },
   },
@@ -273,8 +273,8 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Finish booking. Nothing is lost if you stop.',
     tiles: ['H18', 'H17', 'P47', 'P15', 'P22', 'P13'],
     tabs: [
-      { label: 'Booking', colour: 'teal', subtext: 'Your booking, from price to confirmation.', screens: ['H16', 'H17', 'H18', 'H20', 'P13', 'P22', 'P20', 'P19', 'H08', 'H12', 'H14', 'H15', 'H10'] },
-      { label: 'Travellers', colour: 'pink', subtext: 'Who is going, and what each person needs.', screens: ['P47', 'M05', 'P09', 'P10', 'P11', 'P46'] },
+      { label: 'Booking', colour: 'teal', subtext: 'Your booking, from price to confirmation.', screens: ['C01', 'H16', 'H17', 'H18', 'H20', 'P13', 'P22', 'P20', 'P19', 'H08', 'H12', 'H14', 'H15', 'H10'] },
+      { label: 'Travellers', colour: 'pink', subtext: 'Who is going, and what each person needs.', screens: ['C01', 'P47', 'M05', 'P09', 'P10', 'P11', 'P46'] },
       { label: 'Pay', colour: 'gold', subtext: 'Deposit, balance and sharing the cost.', screens: ['H19', 'P14', 'P15', 'P16', 'M07'] },
     ],
     me: { subtext: 'Your draft, payments and travellers\' details.', screens: ['M02', 'M07', 'P13', ...SETTINGS_AND_HELP] },
@@ -353,8 +353,8 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your trip, and where to next.',
     tiles: ['M16', 'M17', 'M19', 'M09', 'M15', 'M22'],
     tabs: [
-      { label: 'Memories', colour: 'teal', subtext: 'Your trip, kept.', screens: ['M16', 'M17', 'M42', 'M18', 'S48', 'S47', 'M15'] },
-      { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09'] },
+      { label: 'Memories', colour: 'teal', subtext: 'Your trip, kept.', screens: ['C01', 'M16', 'M17', 'M42', 'M18', 'S48', 'S47', 'M15'] },
+      { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['C01', 'M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09'] },
       { label: 'Feedback', colour: 'gold', subtext: 'Tell us how it went.', screens: ['M19', 'M21', 'M20', 'M23', 'M24'] },
     ],
     me: { subtext: 'Your history, receipts, rewards and settings.', screens: ['M15', 'M13', 'M09', 'M06', 'M02', 'M03', 'P13', 'H20', ...SETTINGS_AND_HELP] },

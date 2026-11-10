@@ -106,3 +106,22 @@ public sealed record ChatCaseDto(Guid Id, string Reason, string Status, string K
 
 /// <summary><c>Decision</c> is <c>dismiss</c> (nothing wrong) or <c>remove</c> (the message is replaced for everyone).</summary>
 public sealed record ChatResolveBody(string? Decision);
+
+// ---- Chat across the stages (phase 5 of docs/chat-features-research.md) ----
+
+/// <summary>
+/// What chat the guest may use now. <c>Stanley</c> is always true. <c>Party</c> and <c>People</c> (asking another guest, making a group) come with a confirmed booking; <c>Keep</c> can be offered then.
+/// <c>Reason</c> is a stable code (<c>beforeBooking</c>) when something is off, else absent. <c>Stage</c> is the journey stage the answer is for.
+/// </summary>
+public sealed record ChatEligibilityDto(string Stage, bool Stanley, bool Party, bool People, bool Keep, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Reason = null);
+
+/// <summary>
+/// Whether one conversation is kept past the standard 30 days. <c>Available</c> is false with a <c>Reason</c> (permanent, closed, noTrip or tooLate). <c>Mine</c>: the viewed person has agreed.
+/// <c>Kept</c>: every person in the chat has. <c>Agreed</c> of <c>Total</c> people have. <c>Waiting</c> are the others who have not, by first name and last initial.
+/// <c>StandardDeleteOn</c> is when the messages go unless kept; <c>DeleteOn</c> is the date they go when kept (both epoch ms, the day itself). <c>NeedsGuardian</c>: the viewer is a supervised child, whose guardian decides.
+/// </summary>
+public sealed record ChatKeepDto(Guid Id, bool Available, bool Mine, bool Kept, int Agreed, int Total, List<string> Waiting, long? StandardDeleteOn, long? DeleteOn, bool NeedsGuardian,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Reason = null);
+
+/// <summary>Agree to keep a conversation (<c>On</c> true) or take the agreement back.</summary>
+public sealed record ChatKeepBody(bool On);

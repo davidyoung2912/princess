@@ -170,6 +170,7 @@ INSERT INTO @tables (SchemaName, TableName) VALUES
   (N'dbo', N'ChatPins'),
   (N'dbo', N'ChatMentions'),
   (N'dbo', N'ChatResponses'),
+  (N'dbo', N'ChatKeeps'),
   (N'dbo', N'StanleyNoticeDeliveries'),
   (N'dbo', N'ChatMessages'),
   (N'dbo', N'ChatReads'),

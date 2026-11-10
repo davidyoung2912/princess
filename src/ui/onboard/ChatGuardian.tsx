@@ -8,6 +8,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ActionError, Load } from '../account/parts'
 import { useShipTime } from './shipTime'
+import { KeepSection } from './ChatKeep'
 
 /**
  * A guardian's read-only view of a supervised child's chats (docs/chat-plan.md, 4.6 and phase 7). It says first that every read is recorded and that the other people in the chat are told a guardian can read it.
@@ -87,6 +88,7 @@ function ChildThread({ child, conversation, onBack }: { child: ChatChild; conver
       <Button variant="tertiary" onClick={onBack}>{t('guard.backChats')}</Button>
       <h3>{t('guard.thread', { name: conversation.name, child: child.name })}</h3>
       <p className="muted">{t('guard.readOnly')}</p>
+      {!conversation.permanent && !conversation.closed && <KeepSection conversationId={conversation.id} childId={child.id} />}
       {failed && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {!messages && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
       {more && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}

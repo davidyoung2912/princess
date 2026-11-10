@@ -3514,3 +3514,20 @@ GO
 IF COL_LENGTH(N'dbo.ChatGroups', N'AnnouncementOnly') IS NULL
   ALTER TABLE dbo.ChatGroups ADD AnnouncementOnly BIT NOT NULL CONSTRAINT DF_ChatGroups_AnnouncementOnly DEFAULT 0;
 GO
+-- Chat phase 5 (docs/chat-features-research.md, section 11): keep a chat past the standard 30 days.
+-- ChatKeeps: one row per person who agreed to keep a conversation (a supervised child's row is written by their guardian).
+-- ChatGroups.KeepUntil: the date a kept chat is deleted (12 months after the cruise); the chat counts as kept only while every active member still has a row and the date is ahead.
+IF OBJECT_ID(N'dbo.ChatKeeps', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatKeeps (
+  GroupId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  KeptAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatKeeps_KeptAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatKeeps PRIMARY KEY (GroupId, UserId),
+  CONSTRAINT FK_ChatKeeps_ChatGroups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatKeeps_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+IF COL_LENGTH(N'dbo.ChatGroups', N'KeepUntil') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD KeepUntil DATETIME2(0) NULL;
+GO

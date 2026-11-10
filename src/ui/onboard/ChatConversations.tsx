@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -22,6 +22,8 @@ import { useLongPress } from '../../hooks/useLongPress'
 import { ashoreNames } from '../../domain/chatSms'
 import { dndChoices, dndEndsAt } from '../../domain/chatDnd'
 import { useChatDnd } from '../../hooks/useChatDnd'
+import { keepDate, keptUntil } from '../../domain/chatKeep'
+import { KeepSection } from './ChatKeep'
 import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } from '../../domain/chatUrgency'
 import { readCachedThread, readList, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
@@ -86,8 +88,11 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   const [failed, setFailed] = useState(false)
   // Conversations with an urgent message nobody on this account has acknowledged stay at the top; the numbers come from the server so every device agrees.
   const [urgentIds, setUrgentIds] = useState<string[]>([])
+  // Which chats every member agreed to keep past 30 days; a failed read only leaves the tags off.
+  const [keeps, setKeeps] = useState<readonly ChatKeep[]>([])
   const load = useCallback(() => {
     fetchChatSummary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
+    api.chatConnections.keeps().then(setKeeps, () => undefined)
     api.chatConversations.list().then(
       (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list); tellDelivered(list) },
       () => setFailed(true),
@@ -113,13 +118,13 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
         return (
           <>
             <ul className="conv-list" aria-label={t('conv.title')}>
-              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} />)}
+              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
             </ul>
             {archived.length > 0 && (
               <details className="conv-archived">
                 <summary>{t('conv.archivedTitle', { count: archived.length })}</summary>
                 <ul className="conv-list" aria-label={t('conv.archivedTitle', { count: archived.length })}>
-                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} />)}
+                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} keptDay={keptUntil(keeps, c.id)} />)}
                 </ul>
               </details>
             )}
@@ -131,10 +136,10 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
 }
 
 /** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
-function ConversationItem({ c, urgentIds, onOpen, shipTime, now }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; shipTime: (at: number) => string; now: number }) {
+function ConversationItem({ c, urgentIds, onOpen, shipTime, now, keptDay }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; shipTime: (at: number) => string; now: number; keptDay: number | null }) {
   const level: ChatUrgency = urgentIds.includes(c.id) ? 'urgent' : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine ? 'important' : 'normal'
   const muted = isMuted(c, now)
-  const tags = [muted && (c.mutedUntil ? t('conv.mutedUntil', { time: shipTime(c.mutedUntil) }) : t('conv.muted')), c.closed && t('conv.closed')].filter(Boolean)
+  const tags = [muted && (c.mutedUntil ? t('conv.mutedUntil', { time: shipTime(c.mutedUntil) }) : t('conv.muted')), c.closed && t('conv.closed'), keptDay !== null && t('keep.tag', { date: keepDate(keptDay) })].filter(Boolean)
   return (
     <li>
       <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
@@ -1069,6 +1074,7 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
           )}
           <p className="muted">{t('conv.muteBody')}</p>
           <div className="button-row"><Button variant="secondary" disabled={busy} onClick={() => onArchive(!conversation.archived)}>{t(conversation.archived ? 'conv.unarchive' : 'conv.archive')}</Button></div>
+          {!conversation.permanent && !conversation.closed && <KeepSection conversationId={conversation.id} />}
           {person && (
             <>
               <h3>{t('conv.menuPerson')}</h3>

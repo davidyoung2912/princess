@@ -214,6 +214,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   }
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),
+    keep: (id) => get(`/me/chat/conversations/${seg(id)}/keep`),
+    setKeep: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/keep`, { on }),
     thread: (id, before) => get(`/me/chat/conversations/${seg(id)}/messages${before ? `?before=${seg(before)}` : ''}`),
     send: (id, text, clientId, urgency, replyTo, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}), ...(replyTo ? { replyTo } : {}), ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
     sendTyped: (id, input, clientId, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { ...input, clientId, ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
@@ -256,11 +258,15 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     children: () => get('/me/chat/children'),
     conversations: (childId) => get(`/me/chat/children/${seg(childId)}/conversations`),
     thread: (childId, conversationId, before) => get(`/me/chat/children/${seg(childId)}/conversations/${seg(conversationId)}/messages${before ? `?before=${seg(before)}` : ''}`),
+    keep: (childId, conversationId) => get(`/me/chat/children/${seg(childId)}/conversations/${seg(conversationId)}/keep`),
+    setKeep: (childId, conversationId, on) => send('put', `/me/chat/children/${seg(childId)}/conversations/${seg(conversationId)}/keep`, { on }),
   }
   const chatConnections: HttpGroups['chatConnections'] = {
     search: (query) => get(`/me/chat/people?query=${seg(query)}`),
     list: () => get('/me/chat/connections'),
     summary: () => get('/me/chat/summary'),
+    eligibility: () => get('/me/chat/eligibility'),
+    keeps: () => get('/me/chat/keeps'),
     request: (toUserId) => send('post', '/me/chat/requests', { toUserId }),
     respond: (id, accept, block = false) => send('post', `/me/chat/requests/${seg(id)}/respond`, { accept, block }),
     cancel: async (id) => { await send('post', `/me/chat/requests/${seg(id)}/cancel`) },

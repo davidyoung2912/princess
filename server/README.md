@@ -417,3 +417,9 @@ Off or closed unless configured (all but `Security:Contact` are on in `appsettin
 - `Security:Contact`: the `mailto:` or `https:` contact in `/.well-known/security.txt`.
 - `GET /health/providers` needs a sign-in; `/health` and `/health/db` stay open for probes.
 - Static host headers for `dist/`: `docs/static-host-headers.md`.
+
+## Chat across the stages and keeping a chat (phase 5 of `docs/chat-features-research.md`)
+
+- **Eligibility.** `GET /me/chat/eligibility` says what chat the caller may use: Stanley always; the travel party and asking other guests (`GET /me/chat/people`, `POST /me/chat/requests`, so also making a group) from a confirmed booking, else 403 `notEligible`. It only governs starting new chats.
+- **Keep a chat.** Messages go 30 days after the cruise. `PUT /me/chat/conversations/{id}/keep {on}` records one person's agreement (`ChatKeeps`); when every active member has agreed, `ChatGroups.KeepUntil` is set to 12 months after the cruise. A supervised child cannot agree (403 `guardian`); the guardian does it through `PUT /me/chat/children/{childId}/conversations/{id}/keep`. `GET /me/chat/keeps` lists the state of each conversation for the list screen.
+- **Purge.** The booking purge skips the messages of a kept chat (`ChatKeepSql.IsKept`: date ahead and every active member has a `ChatKeeps` row); the retention job deletes them on `KeepUntil` (`ChatKeepSql.DeleteExpiredAsync`). Not run against SQL Server here: check with the smoke calls.

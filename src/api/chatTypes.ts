@@ -53,6 +53,31 @@ export type ChatSmsReason = 'supervised' | 'noPhone' | 'unverified' | 'off'
 /** Chat by text for a guest ashore. `on` is the choice; `idle` also counts 30 minutes with the app closed as ashore; `available` is whether it can be turned on. */
 export interface ChatSms { on: boolean; idle: boolean; available: boolean; reason: ChatSmsReason | null }
 
+/** What chat the guest may use now, decided on the server from their journey stage and bookings. `reason` is `beforeBooking` when only Stanley is on. It governs starting new chats; chats already there stay readable. */
+export interface ChatEligibility { stage: string; stanley: boolean; party: boolean; people: boolean; keep: boolean; reason?: 'beforeBooking' }
+
+/** Why a chat cannot be kept: the Stanley chat, an ended chat, no trip to count from, or the standard date has passed. */
+export type ChatKeepReason = 'permanent' | 'closed' | 'noTrip' | 'tooLate'
+
+/**
+ * Whether one conversation is kept past the standard 30 days after the cruise. It is kept only when every person in it has agreed (`agreed` of `total`); `waiting` are the others who have not.
+ * `standardDeleteOn` is the day the messages go by default and `deleteOn` the day they go if kept (12 months after the cruise); both are the day itself in epoch ms (UTC midnight).
+ * `needsGuardian`: the viewer is a supervised child, whose guardian decides.
+ */
+export interface ChatKeep {
+  id: string
+  available: boolean
+  mine: boolean
+  kept: boolean
+  agreed: number
+  total: number
+  waiting: string[]
+  standardDeleteOn: number | null
+  deleteOn: number | null
+  needsGuardian: boolean
+  reason?: ChatKeepReason
+}
+
 export interface ChatConnectionsApi {
   /** Rejects `invalid` (`query`) for a name under 3 letters. */
   search(query: string): Promise<ChatPerson[]>
@@ -77,6 +102,10 @@ export interface ChatConnectionsApi {
   saveSms(on: boolean, idle: boolean): Promise<ChatSms>
   /** Hide me: not findable, every chat ended, every waiting request withdrawn. Returns the new settings. */
   hide(): Promise<ChatSettings>
+  /** What chat the caller may use at their stage. */
+  eligibility(): Promise<ChatEligibility>
+  /** Keeping, for every conversation that can be kept, so the list can say which are. */
+  keeps(): Promise<ChatKeep[]>
 }
 
 // ---- Conversations and messages (docs/chat-plan.md, phase 4) ----
@@ -242,6 +271,10 @@ export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; 
 
 export interface ChatConversationsApi {
   list(): Promise<ChatConversation[]>
+  /** Whether the conversation is kept past 30 days. Rejects `notFound` for one you are not in. */
+  keep(id: string): Promise<ChatKeep>
+  /** Agrees to keep it, or takes that back; it is kept once everyone has agreed. Rejects `forbidden` (`guardian`, `stanley`), `conflict` (`closed`, `noTrip`, `tooLate`) or `notFound`. */
+  setKeep(id: string, on: boolean): Promise<ChatKeep>
   /** The latest 30 messages, or the page before the message `before`. Rejects `notFound` for a conversation you are not in. */
   thread(id: string, before?: string): Promise<ChatThread>
   /**
@@ -368,4 +401,8 @@ export interface ChatGuardianApi {
   conversations(childId: string): Promise<ChatConversation[]>
   /** One page of the child's conversation as the child sees it; nothing is marked read and nothing can be sent. Rejects `notFound` when it is not yours to read. */
   thread(childId: string, conversationId: string, before?: string): Promise<ChatThread>
+  /** Whether the child's conversation is kept, and the child's agreement, which only the guardian gives. */
+  keep(childId: string, conversationId: string): Promise<ChatKeep>
+  /** The guardian agrees to keep the child's conversation, or takes that back. Rejects `conflict` (`closed`, `noTrip`, `tooLate`) or `notFound`. */
+  setKeep(childId: string, conversationId: string, on: boolean): Promise<ChatKeep>
 }

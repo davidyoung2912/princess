@@ -91,9 +91,9 @@ describe('screen registry (P2)', () => {
     expect(outside.sort()).toEqual(['X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10'])
   })
 
-  it('counts the screens each stage uses as the plan lists them', () => {
+  it('counts the screens each stage uses as the plan lists them (chat is one more at the five stages that had no way in)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 37, discover: 43, book: 43, manage: 58, prebook: 73, getToShip: 62, embark: 67, sea: 93, port: 89, disembark: 48, remember: 50 })
+    expect(counts).toEqual({ dream: 38, discover: 44, book: 44, manage: 58, prebook: 73, getToShip: 62, embark: 67, sea: 93, port: 89, disembark: 48, remember: 51 })
   })
 
   it('keeps ships out of Dream and the first ship screens in Discover', () => {
@@ -106,7 +106,15 @@ describe('screen registry (P2)', () => {
   it('moves a screen between tabs by data alone: Chat (C01) is listed in a tab, not coded into one', () => {
     expect(placementIn('C01', 'manage').tabs).toEqual(['Group'])
     expect(placementIn('C01', 'sea').tabs).toEqual(['People'])
-    expect(primaryTab('C01', 'discover')).toBeNull()
+    expect(primaryTab('C01', 'discover')).toEqual({ label: 'Cost', colour: 'gold' })
+  })
+
+  it('gives chat a way in at every one of the eleven stages (chat plan phase 5, section 6.2)', () => {
+    const entry: Record<string, string[]> = {
+      dream: ['Ask'], discover: ['Cost'], book: ['Booking', 'Travellers'], manage: ['Group'], prebook: ['Group'], getToShip: ['Plan'],
+      embark: ['Board'], sea: ['People'], port: ['People'], disembark: ['People'], remember: ['Memories', 'Next'],
+    }
+    for (const [stage, tabs] of Object.entries(entry)) expect(placementIn('C01', stage as never).tabs, stage).toEqual(tabs)
   })
 
   it('picks the primary tab: the first listing tab, else Me, else Home', () => {

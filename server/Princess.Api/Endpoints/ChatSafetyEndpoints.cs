@@ -23,6 +23,12 @@ public static class ChatSafetyEndpoints
                 Results.Ok(await svc.ChildThreadAsync(await GuardianAsync(me, ct), childId, id, before, limit, ct)))
             .WithSummary("A page of the child's conversation as the child sees it, read only: nothing is marked read and nothing can be sent. Audited. 404 when the caller is not the child's booker or the child is not in it.");
 
+        chat.MapGet("/{childId:guid}/conversations/{id:guid}/keep", async (Guid childId, Guid id, ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.GetForChildAsync(await GuardianAsync(me, ct), childId, id, ct)))
+            .WithSummary("Whether the child's conversation is kept past 30 days, and the child's agreement, which only the guardian gives. 404 when the caller is not the child's booker or the child is not in it.");
+
+        chat.MapPut("/{childId:guid}/conversations/{id:guid}/keep", async (Guid childId, Guid id, ChatKeepBody body, ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.SetForChildAsync(await GuardianAsync(me, ct), childId, id, body, ct)))
+            .WithSummary("The guardian agrees to keep the child's conversation, or takes it back. The chat is kept only when everyone in it has agreed. 403 stanley; 404; 409 closed|noTrip|tooLate. Returns the new state.");
+
         var admin = api.MapGroup("/admin/chat/reports").WithTags("Chat safety");
 
         admin.MapGet("", async (string? status, ICurrentUser me, ChatSafetyService svc, CancellationToken ct) => Results.Ok(await svc.ReportsAsync(await AdminAsync(me, ct), status, ct)))

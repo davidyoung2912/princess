@@ -68,6 +68,8 @@ services.AddScoped<IChatStore, DapperChatStore>();
 services.AddScoped<IChatConnectionStore, DapperChatConnectionStore>();
 services.AddScoped<ChatConnectionService>();
 services.AddScoped<IChatGroupStore, DapperChatGroupStore>();
+services.AddScoped<IChatKeepStore, DapperChatKeepStore>();
+services.AddScoped<ChatKeepService>();
 services.AddScoped<ChatGroupService>();
 services.AddScoped<IChatSafetyStore, DapperChatSafetyStore>();
 services.AddScoped<ChatSafetyService>();

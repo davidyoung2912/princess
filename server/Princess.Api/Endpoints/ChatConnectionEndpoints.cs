@@ -17,6 +17,18 @@ public static class ChatConnectionEndpoints
             .RequireRateLimiting(SearchLimiter)
             .WithSummary("Finds guests on the caller's sailing by name (3 to 40 letters). Each result is a first name and last initial, and how they relate to the caller (none, asked, waiting, approval, connected). Nobody who blocked the caller or turned off being found. 400 query. Rate-limited per person.");
 
+        chat.MapGet("/eligibility", async (ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.EligibilityAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("What chat the caller may use now, decided from their journey stage and bookings: the permanent Stanley chat (always), the travel party chat and asking other guests to chat (from a confirmed booking), and whether a chat can be kept. `reason` is beforeBooking when only Stanley is on. Only governs starting new chats; chats already there stay readable.");
+
+        chat.MapGet("/keeps", async (ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("Whether each of the caller's conversations is kept past the standard 30 days (every member agreed), who has agreed, and the dates the messages go. A conversation that cannot be kept is left out.");
+
+        chat.MapGet("/conversations/{id:guid}/keep", async (Guid id, ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.GetAsync(await me.LoadAsync(ct), id, ct)))
+            .WithSummary("Whether one conversation is kept: whether the caller agreed, how many of the people have, who has not, the date the messages go by default and the date they go if kept (12 months after the cruise). 404 not a member.");
+
+        chat.MapPut("/conversations/{id:guid}/keep", async (Guid id, ChatKeepBody body, ICurrentUser me, ChatKeepService svc, CancellationToken ct) => Results.Ok(await svc.SetAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Agrees to keep a conversation (on) or takes the agreement back. It is kept only when every person in it has agreed; a supervised child cannot, their guardian does. 403 guardian|stanley; 404 not a member; 409 closed|noTrip|tooLate. Returns the new state.");
+
         chat.MapGet("/connections", async (ICurrentUser me, ChatConnectionService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The caller's chat targets (connected), requests waiting for them (incoming), requests they sent (outgoing), declines they have not seen (answers) and a child's requests waiting for their approval (approvals). Requests past their time are closed first.");
 

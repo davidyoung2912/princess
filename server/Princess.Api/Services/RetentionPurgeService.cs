@@ -140,6 +140,13 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
             {
                 await using var scope = scopes.CreateAsyncScope();
                 var n = await scope.ServiceProvider.GetRequiredService<PrivacyService>().PurgeAllDueAsync(stoppingToken);
+                // A chat every member agreed to keep goes when its own date comes (chat phase 5); the booking purge above leaves it alone until then.
+                var keptGone = await ChatKeepSql.DeleteExpiredAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, stoppingToken);
+                if (keptGone > 0)
+                {
+                    log.LogInformation("Deleted {Messages} message(s) of kept chats past their date", keptGone);
+                    await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.chatKeep", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { messages = keptGone }) }, stoppingToken);
+                }
                 if (options.Value.NetworkDataDays > 0)
                 {
                     var (a, r) = await NetworkDataRetention.BlankOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow.AddDays(-options.Value.NetworkDataDays), stoppingToken);

@@ -88,6 +88,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IAboardStore>();
             services.RemoveAll<IChatStore>();
             services.RemoveAll<IChatSmsStore>();
+            services.RemoveAll<IChatKeepStore>();
             services.RemoveAll<IFinishStore>();
             services.RemoveAll<IStateStore>();
             services.RemoveAll<IFamilyHomeStore>();
@@ -114,6 +115,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IAboardStore>(Aboard);
             services.AddSingleton<IChatStore>(Chat);
             services.AddSingleton<IChatSmsStore>(new InMemoryChatSmsStore());
+            services.AddSingleton<IChatKeepStore>(new InMemoryChatKeepStore());
             services.AddSingleton<IFinishStore>(Finish);
             services.AddSingleton<IStateStore>(State);
             services.AddSingleton<IFamilyHomeStore>(FamilyHome);

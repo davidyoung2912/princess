@@ -526,10 +526,11 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db, IHttpContextAcce
                 "documents" => "DELETE FROM dbo.GuestDocuments WHERE UserId IN @guestUserIds",
                 "illness" => "DELETE FROM dbo.HealthReports WHERE BookingId = @bookingId",
                 "clubReg" => "DELETE FROM dbo.ClubRegistrations WHERE BookingId = @bookingId",
-                "message" => "DELETE FROM dbo.ChatMessages WHERE FromUserId IN @guestUserIds",
+                // A chat every member agreed to keep (phase 5) stays until its own date; the daily sweep deletes it then.
+                "message" => $"DELETE m FROM dbo.ChatMessages m WHERE m.FromUserId IN @guestUserIds AND NOT EXISTS (SELECT 1 FROM dbo.ChatGroups g WHERE g.Id = m.GroupId AND {ChatKeepSql.IsKept("g")})",
                 _ => throw new InvalidOperationException($"Unknown retention kind {kind}"),
             };
-            await c.ExecuteAsync(Sql.Cmd(sql, new { bookingId, guestUserIds }, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd(sql, new { bookingId, guestUserIds, now }, tx, ct));
             // The party's shared notes and port-day record (BookingState) go with the messages rule: same 30 days, same people.
             if (kind == "message") await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.BookingState WHERE BookingId = @bookingId", new { bookingId }, tx, ct));
         }
