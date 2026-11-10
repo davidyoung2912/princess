@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Princess.Api.Domain;
 
 /// <summary>A card or place as it travels in <c>ChatMessages.Payload</c>: names, times and places only. Built by the server from its own data, never from what a client sent.</summary>
-public sealed record ChatCard(string Type, string Title, string? Subtitle = null, int? Day = null, string? Time = null, string? Place = null, string? Path = null, long? ExpiresAt = null, string? Note = null);
+public sealed record ChatCard(string Type, string Title, string? Subtitle = null, int? Day = null, string? Time = null, string? Place = null, string? Path = null, long? ExpiresAt = null, string? Note = null, Guid? Ref = null);
 
 /// <summary>
 /// The pure rules of typed chat messages (docs/chat-features-research.md, section 11, phase 3): the kinds of card a guest can share from the app, the place card with its expiry, pins and mentions.
@@ -39,6 +39,12 @@ public static class ChatCardRules
     public const int MaxNote = 80;
 
     public static DateTime PlaceExpiry(DateTime sentAt) => sentAt + PlaceLife;
+
+    /// <summary>The cards whose source can be cancelled (an excursion or a dinner) and so can go stale: their source ids.</summary>
+    public static IEnumerable<Guid> SourceIds(IEnumerable<ChatCard?> cards) => cards.Where(c => c is { Type: Excursion or Dining, Ref: not null }).Select(c => c!.Ref!.Value).Distinct();
+
+    /// <summary>A card is gone when it names a source that is no longer booked. A card with no source (a place, the trip, a port day) never is.</summary>
+    public static bool IsGone(ChatCard card, IReadOnlySet<Guid> stillBooked) => card.Ref is { } r && !stillBooked.Contains(r);
 
     public static bool IsExpired(long? expiresAt, long nowMs) => expiresAt is { } e && e <= nowMs;
 

@@ -75,6 +75,9 @@ public sealed class InMemoryPlanStore(InMemoryJourney world) : IPlanStore
     }
 
     // ---- Dining ----
+    public Task<HashSet<Guid>> ListStillBookedAsync(IReadOnlyCollection<Guid> publicIds, CancellationToken ct) =>
+        Task.FromResult(Tours.Where(t => t.Row.Status == "booked").Select(t => t.Row.PublicId).Concat(Tables.Where(t => t.Status == "booked").Select(t => t.Row.PublicId)).Where(publicIds.Contains).ToHashSet());
+
     public Task<List<TableRow>> ListTablesAsync(long bookingId, CancellationToken ct) =>
         Task.FromResult(Tables.Where(t => t.BookingId == bookingId && t.Status == "booked").Select(t => t.Row).OrderBy(t => t.Day).ThenBy(t => t.Time, StringComparer.Ordinal).ToList());
 

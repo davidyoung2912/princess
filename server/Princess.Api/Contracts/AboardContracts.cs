@@ -138,7 +138,8 @@ public sealed record ChatCardDto(string Type, string Title,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Path = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? ExpiresAt = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Expired = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Gone = false);
 
 /// <summary>One pinned message in the pin bar: its id, who said it (null for the reader's own), the words (a card's title) and when.</summary>
 public sealed record ChatPinDto(Guid MessageId, string Text, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? FromName, long At, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Kind = null);

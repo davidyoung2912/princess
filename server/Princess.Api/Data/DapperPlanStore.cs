@@ -157,6 +157,18 @@ public sealed class DapperPlanStore(IDbConnectionFactory db) : IPlanStore
         FROM dbo.DiningReservations
         """;
 
+    public async Task<HashSet<Guid>> ListStillBookedAsync(IReadOnlyCollection<Guid> publicIds, CancellationToken ct)
+    {
+        if (publicIds.Count == 0) return [];
+        await using var c = await db.OpenAsync(ct);
+        var ids = publicIds.ToArray();
+        return [.. await c.QueryAsync<Guid>(Sql.Cmd("""
+            SELECT PublicId FROM dbo.TourBookings WHERE PublicId IN @ids AND Status = 'booked'
+            UNION ALL
+            SELECT PublicId FROM dbo.DiningReservations WHERE PublicId IN @ids AND Status = 'booked'
+            """, new { ids }, null, ct))];
+    }
+
     public async Task<List<TableRow>> ListTablesAsync(long bookingId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

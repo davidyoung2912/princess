@@ -40,11 +40,11 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         var list = new List<(string, ChatCard)> { (BookingRef, new ChatCard(ChatCardRules.Booking, booking.SailingTitle, $"{booking.ShipName}, {booking.Nights} nights", Path: ChatCardRules.PathOf(ChatCardRules.Booking))) };
         foreach (var t in (await plan.ListToursAsync(booking.BookingId, ct)).Where(x => x.Status == "booked"))
             if (ExcursionRules.ById(t.ExcursionId) is { } e)
-                list.Add(($"{ChatCardRules.Excursion}:{t.PublicId}", new ChatCard(ChatCardRules.Excursion, e.Name, Itinerary.PortOf(e.Port)?.Name, t.Day, e.Start, e.Meeting, ChatCardRules.PathOf(ChatCardRules.Excursion))));
+                list.Add(($"{ChatCardRules.Excursion}:{t.PublicId}", new ChatCard(ChatCardRules.Excursion, e.Name, Itinerary.PortOf(e.Port)?.Name, t.Day, e.Start, e.Meeting, ChatCardRules.PathOf(ChatCardRules.Excursion), Ref: t.PublicId)));
         foreach (var t in await plan.ListTablesAsync(booking.BookingId, ct))
         {
             var venue = DiningRules.VenueById(t.VenueId);
-            list.Add(($"{ChatCardRules.Dining}:{t.PublicId}", new ChatCard(ChatCardRules.Dining, venue?.Name ?? "Dinner", venue?.Cuisine, t.Day, t.Time, venue?.Deck, ChatCardRules.PathOf(ChatCardRules.Dining))));
+            list.Add(($"{ChatCardRules.Dining}:{t.PublicId}", new ChatCard(ChatCardRules.Dining, venue?.Name ?? "Dinner", venue?.Cuisine, t.Day, t.Time, venue?.Deck, ChatCardRules.PathOf(ChatCardRules.Dining), Ref: t.PublicId)));
         }
         var timeline = TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure));
         foreach (var d in timeline.Days.Where(d => d.Arrive is not null && Itinerary.PortOf(d.Port) is not null))
@@ -62,6 +62,9 @@ public sealed class ChatShareService(ITripStore trips, IPlanStore plan, IUserClo
         var found = (await CardsAsync(booking, ct)).FirstOrDefault(c => c.Ref == shareRef);
         return found.Card ?? throw ApiException.Invalid("shareRef");
     }
+
+    /// <summary>Which of the cards' sources are still booked, in one query; a card whose source was cancelled after it was sent reads "No longer available".</summary>
+    public Task<HashSet<Guid>> StillBookedAsync(IEnumerable<ChatCard?> cards, CancellationToken ct) => plan.ListStillBookedAsync([.. ChatCardRules.SourceIds(cards)], ct);
 
     /// <summary>A "Meet me here" card for a named place on the ship, good for <see cref="ChatCardRules.PlaceLife"/> from <paramref name="now"/>. 400 <c>place</c> for a place the ship profile does not name.</summary>
     public static ChatCard Place(string? placeId, string? note, DateTime now)

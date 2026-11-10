@@ -47,6 +47,17 @@ public class ChatCardRulesTests
     }
 
     [Fact]
+    public void ACardIsGoneOnceItsExcursionOrDinnerIsNoLongerBooked()
+    {
+        var tour = Guid.NewGuid();
+        var kept = new ChatCard(ChatCardRules.Excursion, "Reef", Ref: tour);
+        Assert.False(ChatCardRules.IsGone(kept, new HashSet<Guid> { tour }));
+        Assert.True(ChatCardRules.IsGone(kept, new HashSet<Guid>()));
+        Assert.False(ChatCardRules.IsGone(new ChatCard(ChatCardRules.PortDay, "Cozumel"), new HashSet<Guid>()));   // no source to cancel
+        Assert.Equal([tour], ChatCardRules.SourceIds([kept, kept, null, new ChatCard(ChatCardRules.Booking, "Trip", Ref: Guid.NewGuid())]));
+    }
+
+    [Fact]
     public void APlaceMustBeNamedByTheShipProfile()
     {
         var e = Assert.Throws<ApiException>(() => ChatShareService.Place("the-secret-bar", null, DateTime.UtcNow));

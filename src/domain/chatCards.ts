@@ -12,8 +12,8 @@ export const isExpired = (card: Pick<ChatCard, 'expired' | 'expiresAt'>, now: nu
 const CARD_PATH = /^\/(plan\/(excursions|dining|reservations|ahead)|home\/ports\/[\w-]+)$/
 
 /** Where a card goes, or null when it points nowhere the app knows: the card then says it is no longer available instead of linking. */
-export function cardLink(card: Pick<ChatCard, 'type' | 'path'>): string | null {
-  if (card.type === 'place') return null
+export function cardLink(card: Pick<ChatCard, 'type' | 'path' | 'gone'>): string | null {
+  if (card.type === 'place' || card.gone) return null
   const path = safeNoticePath(card.path)
   return path && CARD_PATH.test(path) ? path : null
 }

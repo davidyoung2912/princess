@@ -79,7 +79,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     }
 
     /// <summary>A stored card as a reader sees it. A place is "expired" once its time has passed on the same clock it was stamped with.</summary>
-    private static ChatCardDto CardDto(ChatCard c, long nowMs) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note);
+    private static ChatCardDto CardDto(ChatCard c, long nowMs, IReadOnlySet<Guid>? stillBooked = null) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note, stillBooked is not null && ChatCardRules.IsGone(c, stillBooked));
 
     /// <summary>The pin bar: what each pinned message says (a card's title), who said it, and when. Only messages the reader may read.</summary>
     private static List<ChatPinDto> PinDtos(IEnumerable<ChatPinRow> rows, long reader, Dictionary<long, ChatPeerRow> byId) =>
@@ -108,6 +108,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var blocked = page.Any(m => m.Reactions.Count > 0) ? new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)) : new HashSet<long>();
         var firstUnread = before is null ? page.FirstOrDefault(m => !m.IsSystem && ChatConversationRules.IsUnread(m.Id, m.FromUserId, actor.Id, member.LastReadMessageId))?.PublicId : null;
         var nowMs = Shipboard.Ms(now);
+        var cards = page.Where(m => ChatCardRules.IsTyped(m.Kind) && m.DeletedAt is null).Select(m => ChatCardRules.Parse(m.Payload)).ToList();
+        var stillBooked = ChatCardRules.SourceIds(cards).Any() ? await share.StillBookedAsync(cards, ct) : new HashSet<Guid>();
         var pinned = page.Count == 0 ? new HashSet<long>() : await store.ListPinnedIdsAsync(member.GroupId, ct);
         var messages = new List<ChatMessageDto>();
         foreach (var m in page)
@@ -140,7 +142,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var delivered = m.FromUserId == actor.Id && receiptsOf(actor.Id) && m.DeliveredBy.Any(id => id != actor.Id && receiptsOf(id));
             messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto,
                 Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null,
-                Kind: ChatCardRules.IsTyped(m.Kind) ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs) : null,
+                Kind: ChatCardRules.IsTyped(m.Kind) ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()]));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.

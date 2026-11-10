@@ -102,6 +102,9 @@ public interface IPlanStore
     /// <summary>Applies the change and records the refund (if any money went back to a card) in one transaction.</summary>
     Task ChangeTourAsync(long bookingId, TourChange change, NewBookingPayment? refund, CancellationToken ct);
 
+    /// <summary>Of these tour and dining-table public ids, the ones still booked (not cancelled). Lets a chat card say it is no longer available once what it points at is cancelled.</summary>
+    Task<HashSet<Guid>> ListStillBookedAsync(IReadOnlyCollection<Guid> publicIds, CancellationToken ct);
+
     // Dining
     Task<List<TableRow>> ListTablesAsync(long bookingId, CancellationToken ct);
     /// <summary>Tables booked at this time across the whole sailing, optionally leaving one out.</summary>

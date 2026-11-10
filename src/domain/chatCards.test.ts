@@ -23,6 +23,7 @@ describe('cards', () => {
     expect(cardLink({ type: 'excursion', path: '/admin' })).toBeNull()
     expect(cardLink({ type: 'excursion' })).toBeNull()
     expect(cardLink({ type: 'place', path: '/plan/dining' })).toBeNull()
+    expect(cardLink({ type: 'excursion', path: '/plan/excursions', gone: true })).toBeNull()   // cancelled after it was sent
   })
 
   it('a message is typed when it has a kind and its card', () => {
