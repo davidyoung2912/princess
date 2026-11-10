@@ -23,7 +23,12 @@ const cspFor = (apiUrl: string): string => [
 
 /** The API's origin for `connect-src` when `VITE_API_URL` is an absolute address (a relative one such as `/api/v1` is already 'self'). */
 function apiOrigin(apiUrl: string): string {
-  try { return /^https?:\/\//i.test(apiUrl) ? ` ${new URL(apiUrl).origin}` : '' } catch { return '' }
+  try {
+    if (!/^https?:\/\//i.test(apiUrl)) return ''
+    const u = new URL(apiUrl)
+    // The live chat connection is a WebSocket to the same host, which `https:` in connect-src does not cover.
+    return ` ${u.origin} ${u.protocol === 'https:' ? 'wss:' : 'ws:'}//${u.host}`
+  } catch { return '' }
 }
 
 const contentSecurityPolicy = (apiUrl: string): Plugin => ({
@@ -37,7 +42,13 @@ const contentSecurityPolicy = (apiUrl: string): Plugin => ({
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  server: { proxy: { '/api': { target: loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182', changeOrigin: true } } },
+  server: {
+    proxy: (() => {
+      const target = loadEnv(mode, process.cwd(), 'VITE_').VITE_API_PROXY || 'http://localhost:5182'
+      // /hubs is the live chat connection (WebSocket).
+      return { '/api': { target, changeOrigin: true }, '/hubs': { target, changeOrigin: true, ws: true } }
+    })(),
+  },
   build: {
     rolldownOptions: {
       // React and the router get their own long-lived chunk, so a release that changes only app code leaves them cached.

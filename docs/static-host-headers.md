@@ -1,6 +1,6 @@
 # Static host headers for `dist/`
 
-The API sets its own security headers (`SecurityHeaders.cs`). The front end is static files, so the host or CDN that serves `dist/` must set these. Adjust `connect-src` to the real API origin.
+The API sets its own security headers (`SecurityHeaders.cs`). The front end is static files, so the host or CDN that serves `dist/` must set these. Adjust `connect-src` to the real API origin, and add its `wss://` address too: the live chat connection is a WebSocket to `/hubs/chat` on the API host (the build adds both when `VITE_API_URL` is absolute).
 
 | Header | Value |
 | --- | --- |

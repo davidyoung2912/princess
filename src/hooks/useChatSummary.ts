@@ -1,14 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatSummary } from '../api/chatTypes'
-import { api } from '../runtime'
+import { API_URL, api, auth } from '../runtime'
+import { startVisibleInterval } from './visibleInterval'
+import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
 
 const CHANGED = 'princess:chat-changed'
+const LIVE = 'princess:chat-live'
+/** While the live connection is down, the numbers are read again this often. */
+export const POLL_MS = 60_000
 
 /** Tells every open badge that chat connections changed, so the number on the Chat tab is right after an action. */
 export const chatChanged = (): void => { if (typeof window !== 'undefined') window.dispatchEvent(new Event(CHANGED)) }
 
+/** Runs `onChange` when the server says something changed in chat (a request, an answer, later a message). The screen refetches; the nudge carries no data. */
+export function useChatLive(onChange: () => void): void {
+  const latest = useRef(onChange)
+  useEffect(() => { latest.current = onChange })
+  useEffect(() => {
+    const run = () => latest.current()
+    window.addEventListener(LIVE, run)
+    return () => window.removeEventListener(LIVE, run)
+  }, [])
+}
+
 /**
- * The numbers for the Chat tab badge, from the server so they match on every device. Loaded on launch, when the app comes back to the front, and after an action.
+ * The numbers for the Chat tab badge, from the server so they match on every device. Loaded on launch, when the app comes back to the front, after an action,
+ * and when the server nudges over the live connection (docs/chat-plan.md, 4.4). While that connection is down they are read every minute instead.
  * A failed load keeps the last numbers: a badge is never worth an error message.
  */
 export function useChatSummary(enabled: boolean): ChatSummary | null {
@@ -21,7 +38,29 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
     window.addEventListener('focus', load)
     window.addEventListener(CHANGED, load)
     document.addEventListener('visibilitychange', onVisible)
+
+    let poll: (() => void) | null = null
+    const stopPoll = () => { poll?.(); poll = null }
+    const onState = (s: HubState) => {
+      if (s === 'live') { stopPoll(); load() }   // anything missed while it was down
+      else if (poll === null) poll = startVisibleInterval(load, POLL_MS)
+    }
+    const hub = createHubConnection({
+      url: () => hubUrl(API_URL, window.location.href, auth.accessToken()),
+      onEvent: (target, args) => {
+        if (target !== 'chatChanged') return
+        const id = (args[0] as { id?: unknown } | undefined)?.id
+        if (typeof id === 'string') hub.send('Ack', [id])
+        load()
+        window.dispatchEvent(new Event(LIVE))
+      },
+      onState,
+    })
+    if (typeof WebSocket !== 'undefined') hub.start()
+    else onState('waiting')
     return () => {
+      hub.stop()
+      stopPoll()
       window.removeEventListener('focus', load)
       window.removeEventListener(CHANGED, load)
       document.removeEventListener('visibilitychange', onVisible)

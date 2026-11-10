@@ -6,7 +6,7 @@ A mobile-first, responsive, installable (PWA) React site for a cruise line, with
 
 There is one mode: the front end always talks to the REST API and keeps no data of its own (only display settings, the session token, diagnostics and caches of server answers). The server must be running for `npm run dev`. `VITE_API_URL` is optional and defaults to `/api/v1`, which the Vite proxy sends to the API.
 
-Vite proxies `/api` to `VITE_API_PROXY` (default `http://localhost:5182`). A different API origin also needs adding to the CSP `connect-src` and the API's CORS origins.
+Vite proxies `/api` and `/hubs` (the live chat WebSocket) to `VITE_API_PROXY` (default `http://localhost:5182`). A different API origin also needs adding to the CSP `connect-src` and the API's CORS origins.
 
 Still mocked, on the server, on purpose: live ship telemetry and weather, and card charging. Stanley, the one chat helper, runs through a gateway on the server (`POST /me/stanley`) and calls a model when a key is set (`Concierge:ApiKey`, user-secrets); without one, scripted answers on the server reply. Models, call caps and kill switches are the `Stanley` configuration section.
 

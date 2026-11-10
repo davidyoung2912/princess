@@ -40,7 +40,7 @@ describe('timers and wake locks', () => {
   })
 
   it('keeps timers out of render paths: no setTimeout without a clear except one-shot start-up and test helpers', () => {
-    const allowed = ['src/main.tsx', 'src/diagnostics/watch.ts', 'src/data/outbox.ts', 'src/api/mock.ts', 'src/api/http.ts', 'src/hooks/useDraft.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useRecentVisit.ts', 'src/hooks/useSavedCopy.ts', 'src/hooks/visibleInterval.ts', 'src/sync/sync.ts', 'src/sync/portRows.ts', 'src/push/browser.ts', 'src/ui/onboard/DeviceTools.tsx']
+    const allowed = ['src/main.tsx', 'src/diagnostics/watch.ts', 'src/data/outbox.ts', 'src/api/mock.ts', 'src/api/http.ts', 'src/hooks/useDraft.ts', 'src/hooks/useOutbox.ts', 'src/hooks/useRecentVisit.ts', 'src/hooks/useSavedCopy.ts', 'src/hooks/visibleInterval.ts', 'src/sync/sync.ts', 'src/sync/portRows.ts', 'src/push/browser.ts', 'src/realtime/hubClient.ts', 'src/ui/onboard/DeviceTools.tsx']
     expect(usersOf(/\bsetTimeout\(/).filter((f) => !allowed.includes(f))).toEqual([])
   })
 })

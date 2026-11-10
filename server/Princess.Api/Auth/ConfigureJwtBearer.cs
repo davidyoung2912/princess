@@ -27,6 +27,12 @@ public sealed class ConfigureJwtBearer(IOptions<JwtOptions> jwt) : IConfigureNam
         };
         options.Events = new JwtBearerEvents
         {
+            // A browser WebSocket cannot set headers, so the live connection sends its token as ?access_token=. Only that path may do so; every other route needs the header.
+            OnMessageReceived = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments(Realtime.ChatHub.Path) && ctx.Request.Query["access_token"] is { Count: > 0 } t) ctx.Token = t[0];
+                return Task.CompletedTask;
+            },
             // A password reset ends access tokens already issued, not just refresh tokens. The user row is the cached one every request loads anyway.
             OnTokenValidated = async ctx =>
             {

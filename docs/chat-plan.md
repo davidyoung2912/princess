@@ -203,11 +203,12 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Built as a "People" chip in Chat beside My group and Guest Services, with a "N people want to chat" banner on the other two. The tab badge is a count (`tabs__count`), not the dot, and the Chat tab reads `/me/chat/summary` through `useChatSummary`.
 - Accessibility: focus-trapped dialogs that close on Escape, live region for answers, reduced motion, contrast.
 
-### Phase 3: SignalR
+### Phase 3: SignalR — built
 
 - `ChatHub` at `/hubs/chat`, JWT through `access_token`, group `user:{publicId}`; `IRealtimeHub` interface and a real implementation; acknowledgements; push only when no live acknowledgement.
 - Client connection with reconnect and fallback, and live badges. Events are "something changed" nudges; the client refetches over REST, so a lost event costs nothing.
 - Backplane (Redis or Azure SignalR) documented as configuration for more than one server.
+- Built as: `Realtime/` (`ChatHub`, `RealtimeState`, `IRealtimeHub` with `SignalRRealtimeHub`), WebSockets only. `ChatNotifier` nudges an open app first and sends the phone alert off the request after 8 s with no `Ack` (at once when no app is connected to that server). The browser side is `src/realtime/hubClient.ts`, a small JSON-protocol client (no `@microsoft/signalr` package) with reconnect, ping and silence timeout; `useChatSummary` runs it, acknowledges, refetches, and polls every minute while it is down. `useChatLive` lets a screen refetch on a nudge.
 
 ### Phase 4: conversations and messages
 

@@ -10,6 +10,7 @@ using Princess.Api.Auth;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Endpoints;
+using Princess.Api.Realtime;
 using Princess.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,6 +67,7 @@ services.AddScoped<IAboardStore, DapperAboardStore>();
 services.AddScoped<IChatStore, DapperChatStore>();
 services.AddScoped<IChatConnectionStore, DapperChatConnectionStore>();
 services.AddScoped<ChatConnectionService>();
+services.AddPrincessRealtime();
 services.AddScoped<ChatNotifier>();
 services.AddScoped<IFinishStore, DapperFinishStore>();
 // External sources and the concierge model are chosen by configuration (Providers:*), all defaulting to the simulation.
@@ -306,6 +308,7 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapHealthEndpoints();
+app.MapPrincessRealtime();
 app.MapSecurityTxt();
 var v1 = app.MapGroup("/api/v1");
 v1.MapAuthEndpoints();

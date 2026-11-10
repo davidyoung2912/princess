@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ChatConnection, ChatPerson, ChatSettings } from '../../api/chatTypes'
 import { cleanQuery, hasActivity, personAction, relationNote, requestProblem, waitingCount } from '../../domain/chatConnections'
-import { chatChanged } from '../../hooks/useChatSummary'
+import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { api } from '../../runtime'
@@ -19,6 +19,7 @@ import type { ApiError } from '../../api/errors'
 /** The banner at the top of Chat: "2 people want to chat", one tap to the People area. */
 export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
   const list = useMine(() => api.chatConnections.list())
+  useChatLive(list.retry)
   const count = list.data ? waitingCount(list.data) : 0
   if (count === 0) return null
   return <Banner kind="info" title={t('people.banner', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.bannerOpen')}</Button>} />
@@ -28,6 +29,7 @@ export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
 export function People() {
   const list = useMine(() => api.chatConnections.list())
   const settings = useMine(() => api.chatConnections.settings())
+  useChatLive(list.retry)
   const [searching, setSearching] = useState(false)
   const [note, setNote] = useState('')
   const refresh = () => { list.retry(); chatChanged() }
