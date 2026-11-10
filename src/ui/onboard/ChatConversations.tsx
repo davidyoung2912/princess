@@ -1,5 +1,9 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import stanleyPicture from '../../assets/stanley-small.png'
+import { requestStanley } from '../../ai/stanleyOpen'
+import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
+import { isStanleyChat, questionFrom, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -85,12 +89,15 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
             return (
             <li key={c.id}>
               <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
-                <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>
+                {isStanleyChat(c)
+                  ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
+                  : <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>}
                 <span className="conv__body">
                   <span className="conv__top">
                     <strong>{c.name}</strong>
                     {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
                   </span>
+                  {isStanleyChat(c) && subtitleOf(c) && <span className="muted conv__sub">{t('stanley.chat.speaking', { name: subtitleOf(c) })}</span>}
                   {level !== 'normal' && <UrgencyTag level={level} />}
                   <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
                   {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
@@ -327,11 +334,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const queued = pendingFor(id, outbox.items).filter((q) => !messages.some((m) => m.id === q.id))
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
+  const permanent = conversation !== null && isStanleyChat(conversation)
   return (
     <section aria-labelledby="thread-h">
       <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
       <h2 id="thread-h">{name}</h2>
-      {conversation && conversation.kind !== 'direct' && (
+      {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
+      {conversation && conversation.kind !== 'direct' && !permanent && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
@@ -348,9 +357,11 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ActionError error={older.error} />
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
-        {messages.map((m) => (
-          <MessageRow key={m.id} m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
-        ))}
+        {permanent
+          ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
+          : messages.map((m) => (
+            <MessageRow key={m.id} m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
+          ))}
         {bubbles.map((b) => (
           <li key={b.id} className="chat-msg chat-msg--mine chat-msg--pending">
             <p>{b.text}</p>
@@ -360,7 +371,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       </ol>
       <div ref={end} />
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
-      {conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
+      {permanent && phase === 'ready' && <AskStanley />}
+      {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           <fieldset className="urgency-pick">
             <legend>{t('urgent.pick')}</legend>
@@ -379,12 +391,58 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
         </form>
-      )}
-      {conversation && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      ))}
+      {conversation && permanent && <StanleyNotices />}
+      {conversation && !permanent && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
       <ActionError error={notifyAway.error} />
       <ActionError error={ack.error} />
     </section>
+  )
+}
+
+/**
+ * The permanent Stanley chat's log: the notices and lines the server holds, and the questions and answers held on this device, in time order. A second device shows the notices only.
+ * The device's history is the Ask dialog's, so a question asked there appears here and the other way round.
+ */
+function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck, onBlocked }: {
+  messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onBlocked: () => void
+}) {
+  const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
+  return threadItems(messages, device).map((item) => {
+    if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} />
+    const asked = item.kind === 'question'
+    return (
+      <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
+        <p className="chat-msg__meta"><strong>{asked ? t('stanley.chat.asked') : t('stanley.chat.from')}</strong></p>
+        <p>{item.text}</p>
+      </li>
+    )
+  })
+}
+
+/** The free-text box. Asking goes through Stanley's own window (his limits, safety screen and tools live there), with the words already in its box. */
+function AskStanley() {
+  const [text, setText] = useState('')
+  const ask = questionFrom(text)
+  return (
+    <form className="composer" onSubmit={(e) => { e.preventDefault(); if (ask) { requestStanley(ask); setText('') } }}>
+      <TextArea label={t('stanley.chat.askLabel')} value={text} rows={2} maxLength={500} autoComplete="off" onChange={(e) => setText(e.target.value)} />
+      <p className="muted">{t('stanley.chat.askHint')}</p>
+      <Button type="submit" disabled={!ask}>{t('stanley.chat.askButton')}</Button>
+      <p className="muted">{t('stanley.chat.history')}</p>
+    </form>
+  )
+}
+
+/** The shell of the Stanley notices settings. The categories, quiet hours and budget are the existing notification settings; the relay that fills this chat with them comes in the next slice. */
+function StanleyNotices() {
+  return (
+    <details className="chat-options">
+      <summary>{t('stanley.chat.noticesTitle')}</summary>
+      <p className="muted">{t('stanley.chat.noticesBody')}</p>
+      <p><Link to="/me/notifications">{t('stanley.chat.noticesLink')}</Link></p>
+    </details>
   )
 }
 
@@ -433,6 +491,15 @@ interface MessageRowProps {
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
 const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
+  if (m.stanley) {
+    // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
+    return (
+      <li className="chat-msg chat-msg--stanley">
+        <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+        <p>{m.text}</p>
+      </li>
+    )
+  }
   const own = m.from === mine
   const card = m.text ? parsePlanCard(m.text) : null
   const mlevel = urgencyOf(m)

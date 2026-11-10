@@ -232,6 +232,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public string Name { get; init; } = "";
         public bool DirectEnded { get; set; }
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+        public long? StanleyUserId { get; init; }
         public List<Member> Members { get; } = [];
     }
 
@@ -279,8 +280,12 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     private bool Readable(Conversation c, Member me, ChatMessageRow m) =>
         ChatConversationRules.CanRead(c.Kind, m.At, me.JoinedAt, me.LeftAt) && !Blocks.Contains((me.UserId, m.FromUserId));
 
+    private (string Persona, string Subtitle)? PersonaOf(Conversation c) =>
+        c.Kind != "stanley" ? null : Messages.Where(m => m.GroupId == c.Id && m.Row.Persona is not null).OrderByDescending(m => m.Row.Id).Select(m => ((string, string)?)(m.Row.Persona!, m.Row.Subtitle ?? "")).FirstOrDefault();
+
     private ChatMemberRow Row(Conversation c, Member me) => new()
     {
+        Persona = PersonaOf(c)?.Persona, Subtitle = PersonaOf(c)?.Subtitle,
         GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
         Muted = me.Muted, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
     };
@@ -288,6 +293,26 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
 
     private int UnreadIn(Conversation c, Member me) => Visible(c, me).Count(m => m.FromUserId != me.UserId && m.Id > (me.LastRead ?? 0));
+
+    public Task EnsureStanleyAsync(long userId, string welcome, DateTime now, CancellationToken ct)
+    {
+        if (Conversations.Any(c => c.StanleyUserId == userId)) return Task.CompletedTask;
+        var c = new Conversation { Id = _next++, Kind = "stanley", Name = StanleyPersonaRules.Name, StanleyUserId = userId };
+        c.Members.Add(new Member { UserId = userId, JoinedAt = now });
+        Conversations.Add(c);
+        Messages.Add(new Stored(c.Id, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = welcome, At = now, Persona = StanleyPersonaRules.Company, Subtitle = StanleyPersonaRules.CompanyName }, null));
+        return Task.CompletedTask;
+    }
+
+    public Task<(string Voice, string Subtitle)?> LastStanleyPersonaAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Conversations.FirstOrDefault(c => c.StanleyUserId == userId) is { } c ? PersonaOf(c) : null);
+
+    public Task AddStanleyLineAsync(long userId, string text, string voice, string subtitle, DateTime at, CancellationToken ct)
+    {
+        if (Conversations.FirstOrDefault(c => c.StanleyUserId == userId) is not { } c || PersonaOf(c) is { } last && last.Persona == voice && last.Subtitle == subtitle) return Task.CompletedTask;
+        Messages.Add(new Stored(c.Id, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = text, At = at, IsSystem = true, Persona = voice, Subtitle = subtitle }, null));
+        return Task.CompletedTask;
+    }
 
     public Task EnsurePartyAsync(long userId, CancellationToken ct)
     {
@@ -298,15 +323,16 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct) =>
         Task.FromResult(Mine(userId).Select(c => (C: c, Me: c.Members.First(m => m.UserId == userId))).Where(x => x.Me.Status == "active").Select(x =>
         {
-            var last = Visible(x.C, x.Me).LastOrDefault();
+            var last = Visible(x.C, x.Me).Where(m => x.C.Kind != "stanley" || !m.IsSystem).LastOrDefault();
             var r = new ChatConversationRow
             {
                 GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
                 Muted = x.Me.Muted, NotifyAway = x.Me.NotifyAway, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
+                Persona = PersonaOf(x.C)?.Persona, Subtitle = PersonaOf(x.C)?.Subtitle,
             };
             if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
             return r;
-        }).OrderByDescending(r => r.LastAt ?? r.CreatedAt).ThenByDescending(r => r.GroupId).ToList());
+        }).OrderBy(r => r.Kind == "stanley" ? 0 : 1).ThenByDescending(r => r.LastAt ?? r.CreatedAt).ThenByDescending(r => r.GroupId).ToList());
 
     public Task<ChatMemberRow?> GetMemberAsync(long userId, Guid conversationId, CancellationToken ct) =>
         Task.FromResult(Conversations.FirstOrDefault(c => c.PublicId == conversationId) is { } c && c.Members.FirstOrDefault(m => m.UserId == userId) is { } me ? Row(c, me) : null);
@@ -335,7 +361,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(all.TakeLast(limit + 1).Select(m => new ChatMessageRow
         {
             Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, HasPhoto = m.Photo is not null, At = m.At, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
-            SeenBy = m.SeenBy, AckedBy = m.AckedBy,
+            SeenBy = m.SeenBy, AckedBy = m.AckedBy, Persona = m.Persona, Subtitle = m.Subtitle,
         }).ToList());
     }
 
@@ -381,7 +407,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         foreach (var c in Mine(userId))
         {
             var me = c.Members.First(m => m.UserId == userId);
-            if (me.Status != "active" || me.AwayStatus == status) continue;
+            if (me.Status != "active" || me.AwayStatus == status || c.Kind == "stanley") continue;
             claims.Add(new ChatAwayClaimRow { GroupId = c.Id, Previous = me.AwayStatus, NotifyAway = me.NotifyAway });
             me.AwayStatus = status;
         }

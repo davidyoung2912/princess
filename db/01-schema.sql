@@ -3349,3 +3349,28 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatMessages_GroupId_Id' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
   CREATE INDEX IX_ChatMessages_GroupId_Id ON dbo.ChatMessages (GroupId, Id) INCLUDE (FromUserId, IsSystem);
 GO
+
+-- The permanent Stanley chat (docs/chat-features-research.md, section 15, phase 0a).
+-- Every account has exactly one conversation of Kind = 'stanley' with the guest as its only member; Stanley is the sender of its messages, so FromUserId is NULL there.
+-- StanleyUserId names the guest it belongs to, and a filtered unique index keeps it to one per account (the repeatable backfill relies on that).
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups') AND definition NOT LIKE N'%stanley%')
+  ALTER TABLE dbo.ChatGroups DROP CONSTRAINT CK_ChatGroups_Kind;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  ALTER TABLE dbo.ChatGroups ADD CONSTRAINT CK_ChatGroups_Kind CHECK (Kind IN ('party','direct','group','stanley'));
+GO
+IF COL_LENGTH(N'dbo.ChatGroups', N'StanleyUserId') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD StanleyUserId BIGINT NULL CONSTRAINT FK_ChatGroups_Users_Stanley FOREIGN KEY REFERENCES dbo.Users (Id) ON DELETE CASCADE;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatGroups_Stanley' AND object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  CREATE UNIQUE INDEX UX_ChatGroups_Stanley ON dbo.ChatGroups (StanleyUserId) WHERE StanleyUserId IS NOT NULL;
+GO
+-- A message from Stanley has no user. Persona (company or ship) and Subtitle are kept on each of his messages so earlier lines keep the voice they were sent under.
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.ChatMessages') AND name = N'FromUserId' AND is_nullable = 0)
+  ALTER TABLE dbo.ChatMessages ALTER COLUMN FromUserId BIGINT NULL;
+GO
+IF COL_LENGTH(N'dbo.ChatMessages', N'Persona') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD Persona VARCHAR(7) NULL CONSTRAINT CK_ChatMessages_Persona CHECK (Persona IS NULL OR Persona IN ('company','ship'));
+IF COL_LENGTH(N'dbo.ChatMessages', N'Subtitle') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD Subtitle NVARCHAR(80) NULL;
+GO

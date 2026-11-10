@@ -92,4 +92,22 @@ public class ChatConversationRulesTests
         Assert.NotEqual(ChatConversationRules.NoticeKey(c, Guid.NewGuid()), ChatConversationRules.NoticeKey(c, Guid.NewGuid()));
         Assert.Equal($"/chat?c={c}", ChatConversationRules.NoticePath(c));
     }
+
+    [Fact]
+    public void TheStanleyChatShowsEverythingAndIsNeverClosed()
+    {
+        Assert.True(ChatConversationRules.CanRead("stanley", Joined.AddDays(-30), Joined, null));
+        Assert.False(ChatConversationRules.IsClosed("stanley", "active", false));
+        Assert.False(ChatConversationRules.IsClosed("stanley", "left", true));   // even a damaged member row does not close the permanent thread
+    }
+
+    [Theory]
+    [InlineData("stanley", true)]
+    [InlineData("party", false)]
+    [InlineData("direct", false)]
+    [InlineData("group", false)]
+    public void OnlyTheStanleyChatIsPermanent(string kind, bool permanent) => Assert.Equal(permanent, ChatConversationRules.IsPermanent(kind));
+
+    [Fact]
+    public void TheStanleyChatIsCalledStanley() => Assert.Equal("Stanley", ChatConversationRules.DisplayName("stanley", "anything", ["Sam R."]));
 }

@@ -80,7 +80,11 @@ export interface ChatConnectionsApi {
 
 // ---- Conversations and messages (docs/chat-plan.md, phase 4) ----
 
-export type ConversationKind = 'party' | 'direct' | 'group'
+/** `stanley` is every account's permanent 1:1 chat with Stanley (docs/chat-features-research.md, section 15): it cannot be left, muted, ended or removed. */
+export type ConversationKind = 'party' | 'direct' | 'group' | 'stanley'
+
+/** Who Stanley speaks for: the company before and after the trip, the ship while aboard. The server decides; the screen shows the subtitle it is given. */
+export type StanleyVoice = 'company' | 'ship'
 
 /** The last line of a conversation, for the list. `fromName` is empty for your own message. */
 export interface ChatLast { text: string; photo: boolean; mine: boolean; fromName: string; at: number; /** Of the last message; absent when normal. */ urgency?: ChatUrgency }
@@ -103,6 +107,11 @@ export interface ChatConversation {
   guardianCanRead?: boolean
   /** You tell the connected people in this chat when you leave or return to the ship. Off unless you chose it; absent when off. */
   notifyAway?: boolean
+  /** The permanent Stanley chat: no leave, mute, archive, block or hide controls. */
+  permanent?: boolean
+  /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
+  voice?: StanleyVoice
+  subtitle?: string
 }
 
 export interface ChatMessage {
@@ -127,6 +136,10 @@ export interface ChatMessage {
   ackedBy?: string[]
   /** Urgent, from someone else: whether you have acknowledged it. */
   acked?: boolean
+  /** Sent by Stanley (a notice, a card or a line marking a change of voice), not by a person. */
+  stanley?: boolean
+  /** On a Stanley message: the name shown under his when it was sent, so earlier lines keep the voice they had. */
+  subtitle?: string
 }
 
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */

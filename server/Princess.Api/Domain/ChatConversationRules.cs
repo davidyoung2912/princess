@@ -9,6 +9,8 @@ public static class ChatConversationRules
     public const string Party = "party";
     public const string Direct = "direct";
     public const string Group = "group";
+    /// <summary>Every account's permanent 1:1 chat with Stanley (docs/chat-features-research.md, section 15).</summary>
+    public const string Stanley = "stanley";
 
     public const string Active = "active";
 
@@ -31,16 +33,23 @@ public static class ChatConversationRules
     /// The booking's "My group" is the exception: it keeps showing everything, as before (the old chat had no join time).
     /// </summary>
     public static bool CanRead(string kind, DateTime sentAt, DateTime joinedAt, DateTime? leftAt) =>
-        kind == Party || (sentAt >= joinedAt && (leftAt is null || sentAt <= leftAt));
+        kind is Party or Stanley || (sentAt >= joinedAt && (leftAt is null || sentAt <= leftAt));
 
     /// <summary>Whether sending is closed to this member: they are no longer an active member, or a direct chat has ended.</summary>
     public static bool IsClosed(string kind, string memberStatus, bool directEnded) =>
-        memberStatus != Active || (kind == Direct && directEnded);
+        kind != Stanley && (memberStatus != Active || (kind == Direct && directEnded));
+
+    /// <summary>
+    /// What a member may do to a conversation. The permanent Stanley chat cannot be left, ended, archived, muted, hidden, blocked, renamed or given an away notice,
+    /// and the guest cannot post into it: a question to Stanley goes through his own route, not through <c>POST messages</c>.
+    /// </summary>
+    public static bool IsPermanent(string kind) => kind == Stanley;
 
     /// <summary>What the list calls a conversation: the other person for a direct chat, "My group" for the booking's group, else the group's own name.</summary>
     public static string DisplayName(string kind, string? stored, IReadOnlyList<string> others) => kind switch
     {
         Party => "My group",
+        Stanley => StanleyPersonaRules.Name,
         Direct => others.Count > 0 ? others[0] : "Chat",
         _ => string.IsNullOrWhiteSpace(stored) ? (others.Count > 0 ? string.Join(", ", others.Take(3)) : "Group") : stored.Trim(),
     };

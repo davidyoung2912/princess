@@ -41,6 +41,8 @@ public sealed class DapperSignInStore(IDbConnectionFactory db, UserCache users) 
             await c.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO dbo.Profiles (UserId, FirstName, LastName, Dob, CreatedAt, UpdatedAt) VALUES (@id, @FirstName, @LastName, @Dob, @now, @now)",
                 new { id, a.FirstName, a.LastName, Dob = a.Dob.ToDateTime(TimeOnly.MinValue), now }, tx, cancellationToken: ct));
+            // Every account has a permanent chat with Stanley from the start, made in the same transaction so there is never an account without one.
+            await StanleyThread.EnsureAsync(c, tx, id, Domain.StanleyPersonaRules.Welcome(a.FirstName), now, ct);
             await tx.CommitAsync(ct);
             return id;
         }

@@ -622,7 +622,7 @@ public class AboardApiTests : JourneyWorld
         var list = (await ChatGet("conversations", daniel)).Json.EnumerateArray().Select(c => c.GetProperty("id").GetString()).ToArray();
         Assert.Contains(mine.PublicId.ToString(), list);
         Assert.DoesNotContain(theirs.PublicId.ToString(), list);
-        Assert.Equal(0, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(1, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());   // only Stanley's welcome: nothing from the other conversation leaks in
         Assert.DoesNotContain(F.Chat.Messages, m => m.GroupId == mine.Id);
     }
 
@@ -639,10 +639,10 @@ public class AboardApiTests : JourneyWorld
         Assert.Equal(1, list[party.PublicId.ToString()].GetProperty("unread").GetInt32());
         Assert.Equal(2, list[direct.PublicId.ToString()].GetProperty("unread").GetInt32());
         Assert.Equal("Direct two", list[direct.PublicId.ToString()].GetProperty("last").GetProperty("text").GetString());
-        Assert.Equal(3, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(4, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());   // the group, the direct chat and Stanley's welcome
         Assert.Equal(["Direct one", "Direct two"], await Texts(direct, daniel));
         Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{direct.PublicId}/read", daniel)).Status);
-        Assert.Equal(1, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(2, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
         Assert.Equal(0, (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("unread").GetInt32());
     }
 
@@ -735,8 +735,59 @@ public class AboardApiTests : JourneyWorld
     public async Task TheConversationListMakesMyGroupForSomeoneWithNone()
     {
         var list = (await ChatGet("conversations", await SignIn(Stranger))).Json;
-        Assert.Equal(1, list.GetArrayLength());
-        Assert.Equal(("party", "My group"), (list[0].GetProperty("kind").GetString(), list[0].GetProperty("name").GetString()));
+        Assert.Equal(2, list.GetArrayLength());
+        Assert.Equal(("stanley", "Stanley"), (list[0].GetProperty("kind").GetString(), list[0].GetProperty("name").GetString()));   // always first
+        Assert.Equal(("party", "My group"), (list[1].GetProperty("kind").GetString(), list[1].GetProperty("name").GetString()));
+    }
+
+    [Fact]
+    public async Task EveryoneHasAPermanentStanleyChatFirstInTheListWithAWelcome()
+    {
+        var token = await SignIn(Stranger);
+        var list = (await ChatGet("conversations", token)).Json;
+        var stanley = list[0];
+        Assert.Equal(("stanley", "Stanley", true), (stanley.GetProperty("kind").GetString(), stanley.GetProperty("name").GetString(), stanley.GetProperty("permanent").GetBoolean()));
+        Assert.Equal("company", stanley.GetProperty("voice").GetString());
+        Assert.Equal("Princess Cruises", stanley.GetProperty("subtitle").GetString());
+        Assert.Equal(1, stanley.GetProperty("unread").GetInt32());
+        var thread = (await ChatGet($"conversations/{stanley.GetProperty("id").GetString()}/messages", token)).Json;
+        var welcome = thread.GetProperty("messages")[0];
+        Assert.True(welcome.GetProperty("stanley").GetBoolean());
+        Assert.Equal("Princess Cruises", welcome.GetProperty("subtitle").GetString());
+        Assert.Contains("cannot be removed", welcome.GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task ReadingTheListTwiceStillLeavesOneStanleyChatAndOneWelcome()
+    {
+        var token = await SignIn(Stranger);
+        await ChatGet("conversations", token);
+        await ChatGet("conversations", token);
+        Assert.Single(F.Chat.Conversations, c => c.Kind == "stanley");
+        Assert.Single(F.Chat.Messages, m => m.Row.FromUserId == 0);
+    }
+
+    [Fact]
+    public async Task TheStanleyChatCannotBeMutedPostedIntoOrGivenAnAwayNoticeAndNobodyElseCanOpenIt()
+    {
+        var token = await SignIn(Stranger);
+        var id = (await ChatGet("conversations", token)).Json[0].GetProperty("id").GetString();
+        Assert.Equal(HttpStatusCode.Forbidden, (await ChatPut($"conversations/{id}/mute", token, new { on = true })).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ChatPut($"conversations/{id}/notify-away", token, new { on = true })).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ChatPost($"conversations/{id}/messages", token, new { text = "Hi Stanley" })).Status);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ChatPost($"conversations/{id}/photos", token, Photo())).Status);
+        Assert.False(F.Chat.Conversations.First(c => c.Kind == "stanley").Members.Any(m => m.Muted));
+        // Someone else gets the same 404 as for a conversation that does not exist.
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatGet($"conversations/{id}/messages", await DanielToken())).Status);
+    }
+
+    [Fact]
+    public async Task TheStanleyChatIsNotAPersonSoItIsNotInPeopleAndIsNotCountedAsAConnection()
+    {
+        var token = await SignIn(Stranger);
+        await ChatGet("conversations", token);
+        Assert.Empty((await ChatGet("blocks", token)).Json.EnumerateArray());
+        Assert.Equal(0, (await ChatGet("connections", token)).Json.GetProperty("connected").GetArrayLength());
     }
 
     [Fact]

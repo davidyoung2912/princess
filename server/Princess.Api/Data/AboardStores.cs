@@ -131,6 +131,10 @@ public sealed class ChatMessageRow
     public List<long> SeenBy { get; set; } = [];
     /// <summary>The people who have acknowledged it (urgent messages only).</summary>
     public List<long> AckedBy { get; set; } = [];
+    /// <summary>A message from Stanley carries who he spoke for (company or ship) and the subtitle shown then; null for a person's message. Stanley has no user, so his <see cref="FromUserId"/> is 0.</summary>
+    public string? Persona { get; set; }
+    public string? Subtitle { get; set; }
+    public bool FromStanley => FromUserId == 0;
 }
 
 /// <summary>The person's own place in one conversation: the access check every read and write goes through (docs/chat-plan.md, 4.1).</summary>
@@ -151,6 +155,9 @@ public class ChatMemberRow
     /// <summary>A direct chat whose connection has ended: readable, but sending is closed.</summary>
     public bool DirectEnded { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>The permanent Stanley chat only: who he last spoke for, and the subtitle shown. Null for every other conversation.</summary>
+    public string? Persona { get; set; }
+    public string? Subtitle { get; set; }
 }
 
 /// <summary>A conversation in the person's list: their place in it, its last visible message and how many they have not read.</summary>
@@ -258,6 +265,17 @@ public interface IChatStore
 {
     /// <summary>Makes the booking's "My group" for a person who has none, so there is always one conversation to open.</summary>
     Task EnsurePartyAsync(long userId, CancellationToken ct);
+    /// <summary>
+    /// Makes the person's permanent Stanley chat if they have none (one per account, enforced by a unique index), with the welcome as its first message. Safe to repeat and to race: the second caller finds the first one's thread.
+    /// This is both the registration step and the backfill for accounts that existed before it.
+    /// </summary>
+    Task EnsureStanleyAsync(long userId, string welcome, DateTime now, CancellationToken ct);
+    /// <summary>
+    /// Records that Stanley now speaks for <paramref name="persona"/> in the person's Stanley chat: a system line, only if his latest persona there is different, so a repeat adds nothing.
+    /// Returns the persona he spoke under before (null when there was none), so the caller can choose the line's words.
+    /// </summary>
+    Task<(string Voice, string Subtitle)?> LastStanleyPersonaAsync(long userId, CancellationToken ct);
+    Task AddStanleyLineAsync(long userId, string text, string voice, string subtitle, DateTime at, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);
     /// <summary>The person's place in one conversation, or null when they are not (or never were) a member. The check behind every other call.</summary>

@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -24,7 +24,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     /// <summary>The caller's conversations, newest activity first. The booking's "My group" is made on first use so there is always one to open.</summary>
     public async Task<List<ChatConversationDto>> ConversationsAsync(UserRecord actor, CancellationToken ct, bool ensureParty = true)
     {
-        if (ensureParty) await store.EnsurePartyAsync(actor.Id, ct);
+        if (ensureParty)
+        {
+            await store.EnsurePartyAsync(actor.Id, ct);
+            await stanley.EnsureAsync(actor, ct);   // the permanent thread is always there, and always first
+        }
         var rows = await store.ListConversationsAsync(actor.Id, ct);
         var list = new List<ChatConversationDto>();
         // One query for everyone in every conversation, not one per conversation.
@@ -49,7 +53,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var others = members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
-            ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway);
+            ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway,
+            Permanent: ChatConversationRules.IsPermanent(m.Kind), Voice: m.Persona, Subtitle: m.Subtitle);
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -60,6 +65,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<ChatThreadDto> ThreadAsync(UserRecord actor, Guid conversationId, Guid? before, int? limit, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind))
+        {
+            await stanley.EnsureAsync(actor, ct);   // a deep link can open the thread before the list has: bring the voice up to date
+            member = await MemberAsync(actor, conversationId, ct);
+        }
         var size = ChatConversationRules.ClampPage(limit);
         var members = await store.ListMembersAsync(member.GroupId, ct);
         var mine = await store.GetReceiptsAsync(actor.Id, ct);
@@ -72,6 +82,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var messages = new List<ChatMessageDto>();
         foreach (var m in page)
         {
+            // Stanley has no user: his messages (and the lines marking a change of voice) are shown as his, under the subtitle they were sent with.
+            if (m.FromStanley) { messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle)); continue; }
             if (publicOf(m.FromUserId) is not { } from) continue;
             if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
@@ -92,6 +104,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");   // a question to Stanley goes through his own route
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
         var now = await userClock.NowAsync(actor, ct);
@@ -121,6 +134,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<ChatMessageDto> SendFromTextAsync(UserRecord actor, Guid conversationId, string? body, Guid key, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
@@ -130,6 +144,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<ChatMessageDto> SendPhotoAsync(UserRecord actor, Guid conversationId, ChatPhotoRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var now = await userClock.NowAsync(actor, ct);
         var age = await AgeAsync(actor, now, ct);
@@ -200,6 +215,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<bool> MuteAsync(UserRecord actor, Guid conversationId, ChatMuteRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");   // quieted by category in Stanley notices, never as a whole
         var on = body?.On == true;
         await store.SetMutedAsync(member.GroupId, actor.Id, on, ct);
         return on;
@@ -209,6 +225,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<bool> NotifyAwayAsync(UserRecord actor, Guid conversationId, ChatNotifyAwayRequest? body, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
         var on = body?.On == true;
         if (on && !ChatAwayRules.MayEnable(actor.IsSupervised)) throw ApiException.Forbidden("supervised");
         await store.SetNotifyAwayAsync(member.GroupId, actor.Id, on, ct);

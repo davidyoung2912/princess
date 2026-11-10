@@ -42,8 +42,10 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 /// <c>Members</c> are first name and last initial, the caller excluded. <c>Closed</c>: sending has stopped (a chat that ended, or a caller who left). <c>Unread</c> is the same on every device.
 /// <c>GuardianCanRead</c>: a supervised child is in it, so their parent or guardian can read it; every member is told.
 /// <c>NotifyAway</c>: the caller has chosen to tell the connected people in this chat when they leave or return to the ship (omitted when off).
+/// <c>Permanent</c>, <c>Voice</c> and <c>Subtitle</c>: the permanent Stanley chat (<c>Kind</c> stanley) cannot be left, muted, ended or removed; <c>Voice</c> is company or ship and <c>Subtitle</c> the name shown under Stanley's.
 /// </summary>
-public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool NotifyAway = false);
+public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool NotifyAway = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Permanent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Voice = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null);
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>

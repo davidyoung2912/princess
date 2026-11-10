@@ -13,13 +13,13 @@ export const levelsFor = (mayUrgent: boolean): readonly ChatUrgency[] => (mayUrg
 export const announceMode = (level: ChatUrgency): 'assertive' | 'polite' => (level === 'urgent' ? 'assertive' : 'polite')
 
 /**
- * The conversation list order: conversations with an unacknowledged urgent message first, then those whose last message is an unread important one from someone else,
+ * The conversation list order: the permanent Stanley chat always first, then conversations with an unacknowledged urgent message, then those whose last message is an unread important one from someone else,
  * then the rest. Each group keeps the order it came in (newest activity first).
  */
 export function sortConversations(rows: readonly ChatConversation[], urgentIds: readonly string[]): ChatConversation[] {
   const urgent = new Set(urgentIds)
   const rank = (c: ChatConversation): number =>
-    urgent.has(c.id) ? 0 : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine && !c.muted ? 1 : 2
+    c.permanent === true || c.kind === 'stanley' ? -1 : urgent.has(c.id) ? 0 : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine && !c.muted ? 1 : 2
   return rows.map((c, i) => ({ c, i, r: rank(c) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.c)
 }
 

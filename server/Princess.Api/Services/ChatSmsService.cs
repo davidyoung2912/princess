@@ -79,7 +79,7 @@ public sealed class ChatSmsService(
 
     /// <summary>The guest's open conversations, numbered from 1 by when they were made (so a number does not change mid-chat).</summary>
     public async Task<List<ChatConversationRow>> OpenAsync(long userId, CancellationToken ct) =>
-        [.. (await chat.ListConversationsAsync(userId, ct)).Where(r => !ChatConversationRules.IsClosed(r.Kind, r.Status, r.DirectEnded)).OrderBy(r => r.GroupId)];
+        [.. (await chat.ListConversationsAsync(userId, ct)).Where(r => !ChatConversationRules.IsPermanent(r.Kind) && !ChatConversationRules.IsClosed(r.Kind, r.Status, r.DirectEnded)).OrderBy(r => r.GroupId)];
 
     /// <summary>Texts the people ashore who should hear about a new message. Never throws for one person's failure.</summary>
     public async Task MessageAsync(long groupId, string from, ChatMessageRow message, IReadOnlyList<ChatRecipientRow> recipients, CancellationToken ct)
