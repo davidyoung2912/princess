@@ -36,6 +36,7 @@ describe('following new messages', () => {
   it('reports a new message from someone else, never your own or one already seen', () => {
     expect(incomingSince('a', [m('a'), m('b', 'sam')], 'me')?.id).toBe('b')
     expect(incomingSince('b', [m('a'), m('b', 'sam')], 'me')).toBeNull()
+    expect(incomingSince('a', [m('a'), { ...m('b', 'sam'), system: true }], 'me')).toBeNull()
     expect(incomingSince('a', [m('a'), m('b', 'me')], 'me')).toBeNull()
     expect(incomingSince(null, [], 'me')).toBeNull()
   })

@@ -40,7 +40,8 @@ export const isNearBottom = (scrollTop: number, clientHeight: number, scrollHeig
 /** Whether the newest message changed to one from someone else: the case that deserves an announcement and maybe a chip. */
 export function incomingSince(previousLastId: string | null, messages: readonly ChatMessage[], me: string): ChatMessage | null {
   const last = messages[messages.length - 1]
-  if (!last || last.id === previousLastId || last.from === me) return null
+  // A line about the group (someone joined or left) is shown in the thread but is not a message to announce.
+  if (!last || last.id === previousLastId || last.from === me || last.system) return null
   return last
 }
 

@@ -10,7 +10,7 @@ namespace Princess.Api.Services;
 /// A child's request needs their guardian first, and a request to a child is answered by their guardian. The other person is told at once; if a request is to someone who blocked the
 /// sender it looks the same to the sender and is never delivered.
 /// </summary>
-public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IUserStore users, IUserClock clock, ChatNotifier notifier)
+public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore chat, IChatGroupStore groups, IUserStore users, IUserClock clock, ChatNotifier notifier)
 {
     public async Task<List<ChatPersonDto>> SearchAsync(UserRecord actor, string? query, CancellationToken ct)
     {
@@ -65,7 +65,11 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     public async Task<ChatSummaryDto> SummaryAsync(UserRecord actor, CancellationToken ct)
     {
         var l = await ListAsync(actor, ct);
-        return new(l.Incoming.Count, l.Approvals.Count, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct));
+        // Group invitations are waiting requests too: one for the guest counts with the people who want to chat, one for their child with the approvals.
+        await groups.ExpireAsync(actor.Id, await clock.NowAsync(actor, ct), ct);
+        var invites = await groups.ListInvitesForAsync(actor.Id, ct);
+        var forChild = invites.Count(i => i.GuardianUserId == actor.Id && i.Status == ChatGroupRules.AwaitingGuardian);
+        return new(l.Incoming.Count + invites.Count - forChild, l.Approvals.Count + forChild, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct));
     }
 
     /// <summary>The sender has seen the answers (declines, and new connections).</summary>

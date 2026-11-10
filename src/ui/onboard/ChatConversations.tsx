@@ -29,6 +29,7 @@ import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
+import { GroupDetails, NewGroup } from './ChatGroups'
 
 /**
  * Chats (docs/chat-plan.md, 4.8): the conversation list is the home of Chat, and one tap opens a conversation. The open conversation is in the address (`?c=`),
@@ -56,9 +57,12 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   useEffect(() => { load() }, [load])
   useChatLive(load)
   useVisibleInterval(load, 30_000)
+  const [making, setMaking] = useState(false)
   return (
     <section aria-labelledby="conv-h">
       <h2 id="conv-h">{heading('conv.title')}</h2>
+      <Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button>
+      {making && <NewGroup onClose={() => setMaking(false)} onCreated={(g) => { setMaking(false); onOpen(g.id) }} />}
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {!rows && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
@@ -116,6 +120,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [chip, setChip] = useState(false)
   const [announce, setAnnounce] = useState('')
   const [blockedVersion, setBlockedVersion] = useState(0)
+  const [details, setDetails] = useState(false)
   const end = useRef<HTMLDivElement>(null)
   const lastSeen = useRef<string | null>(null)
   const lastRead = useRef<string | null>(null)
@@ -261,6 +266,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {conversation && conversation.kind !== 'direct' && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
+      {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
+      {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
       {offline && phase === 'ready' && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
@@ -271,6 +278,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {messages.map((m) => {
+          if (m.system) return <li key={m.id} className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
           const own = m.from === mine
           const card = m.text ? parsePlanCard(m.text) : null
           return (

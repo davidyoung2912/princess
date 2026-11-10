@@ -40,7 +40,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
 
     private static ChatConversationDto Conversation(UserRecord actor, ChatMemberRow m, List<ChatPeerRow> members, int unread, ChatLastDto? last, DateTime at)
     {
-        var others = members.Where(p => p.UserId != actor.Id).Select(ShortName).ToList();
+        var others = members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at));
     }
@@ -66,6 +66,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         foreach (var m in page)
         {
             if (publicOf(m.FromUserId) is not { } from) continue;
+            if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
             var name = m.FromUserId == actor.Id || !byId.TryGetValue(m.FromUserId, out var sender) ? null : ShortName(sender);
             messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name));

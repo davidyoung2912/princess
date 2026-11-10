@@ -1,6 +1,6 @@
 # Chat: connections, conversations and notifications
 
-Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 4 are built; later phases are built only when asked.
+Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 5 are built; later phases are built only when asked.
 
 ## 1. What the guest gets
 
@@ -173,7 +173,8 @@ A guest in port often has no data but still has a phone number. Text lets them s
 | `GET /me/chat/summary` | 1 | Counts for badges: requests waiting, answers unseen, later unread messages. |
 | `/hubs/chat` (SignalR) | 3 | Live events. |
 | `GET /me/chat/conversations`, `GET/POST /me/chat/conversations/{id}/messages`, `POST …/read`, `PUT …/mute` | 4 | Per-conversation chat. |
-| `POST /me/chat/groups`, `…/{id}/invite`, `…/{id}/leave` | 5 | Groups. |
+| `POST /me/chat/groups`, `GET/PUT …/groups/{id}`, `POST …/groups/{id}/invite`, `…/remove`, `…/leave` | 5 | Make, read, rename, invite, remove, leave. |
+| `GET /me/chat/group-invites`, `POST …/group-invites/{id}/respond` | 5 | Invitations waiting for the guest or their child, and the answer. |
 | `GET/PUT /me/chat/sms` | 6 | The text bridge: on or off, and whether it applies. |
 | `POST /public/sms/inbound` (existing) | 6 | Replies by text are routed into conversations. |
 
@@ -221,10 +222,15 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Added after: the list and the open thread are copied to the device (`chatCache.ts`, per person, text only: photos are dropped from the copy and fetched live; the latest 30 messages) and show at once, then the server's answer replaces them, with "You are offline. This is what was here last time." if it cannot be reached. Older messages load when the guest scrolls to the top (the button stays for keyboard and screen readers) and the page keeps its place.
 - Left for later: the **Delivered** state (the server does not track delivery to a device yet), and moving the push fan-out off the request for groups (phase 5).
 
-### Phase 5: groups
+### Phase 5: groups — built
 
 - A guest makes a group from people they are connected with; each invitee accepts or declines; leave; remove (creator); rename. A group's history starts at each member's join time.
 - Group size limit: 25 participants. Guardian rules apply to every child in the group.
+- Built as: `ChatGroupService`, `ChatGroupRules` (pure, tested), `IChatGroupStore` and `/me/chat/groups…` and `/me/chat/group-invites…` (section 5). An invitation is a row in the new `ChatGroupInvites` table, **not** a `ChatConnections` row as 4.1 first said: that table allows one live row per pair, and an invitation goes to someone already connected. Only people the creator is connected with can be invited, and the 25 limit counts the people in the group plus invitations still waiting (checked again, with the group row locked, when an invitation is accepted). A guest makes a group of at least two other people; the group opens at once and each invitee joins when they accept.
+- The creator (`ChatGroups.CreatedByUserId`) renames, invites and removes; anyone can leave. If the creator leaves, the person who has been in longest becomes the creator. Joining, leaving, removal and renaming each add a system line (`ChatMessages.IsSystem`, shown centred, never unread, never announced, not reportable). A person who rejoins starts a fresh window: they never see what was said while they were away.
+- Guardian rules: a supervised child cannot make a group (`403 supervised`). An invitation to a child waits for their booker, and the guardian's yes is the acceptance (as for a direct chat). Declines are quiet, the creator is not told who said no. The summary's `incoming` and `approvals` include group invitations, so the tab badge and the banner count them.
+- Screens: "New group" on the conversation list (name, tick people, make), group invitations at the top of People, and "Group details" in a group's thread (members, who is still waiting, rename, add, remove, leave with a confirmation).
+- Left for later: moving the push fan-out off the request for groups of 25 (messages still notify sequentially), a re-invite after a decline cool-down, and the guardian-can-read notice (phase 7).
 
 ### Phase 6: SMS bridge
 

@@ -105,7 +105,8 @@ public sealed record ChatMessageDto(
     Guid Id, Guid From, string Text, long At,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Photo = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? SeenBy = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? FromName = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? FromName = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool System = false);
 
 /// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message.</summary>
 public sealed record SendChatRequest(string? Text, Guid? ClientId = null);

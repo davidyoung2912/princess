@@ -389,7 +389,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                    lm.Id AS LastMessageId, lm.FromUserId AS LastFromUserId, lm.[Text] AS LastText,
                    CAST(CASE WHEN lm.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, lm.[At] AS LastAt,
                    (SELECT COUNT(*) FROM dbo.ChatMessages m
-                    WHERE m.GroupId = g.Id AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
+                    WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
             OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At] FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND {Window} ORDER BY m.Id DESC) lm
@@ -408,7 +408,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
+            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, m.Status
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles pr ON pr.UserId = u.Id
@@ -436,7 +436,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT TOP (@take) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At]
+            SELECT TOP (@take) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At], m.IsSystem
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
@@ -503,7 +503,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
                 FROM dbo.ChatMessages m
                 JOIN dbo.ChatGroups g ON g.Id = m.GroupId
                 JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
-                WHERE m.GroupId = @groupId AND m.FromUserId <> @userId AND {Window}
+                WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.FromUserId <> @userId AND {Window}
                   AND NOT EXISTS (SELECT 1 FROM dbo.ChatReads r WHERE r.MessageId = m.Id AND r.UserId = @userId)
                 """, new { groupId, userId, at }, tx, ct));
         await tx.CommitAsync(ct);
@@ -523,7 +523,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
             JOIN dbo.ChatMessages m ON m.GroupId = g.Id
-            WHERE me.UserId = @userId AND me.Status = 'active' AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}
+            WHERE me.UserId = @userId AND me.Status = 'active' AND m.IsSystem = 0 AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}
             """, new { userId }, null, ct));
     }
 
@@ -566,7 +566,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             SELECT m.Id, @userId, @reason, @at FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
-            WHERE m.PublicId = @messagePublicId AND {Window}
+            WHERE m.PublicId = @messagePublicId AND m.IsSystem = 0 AND {Window}
             """, new { userId, messagePublicId, reason, at }, null, ct)) > 0;
     }
 }

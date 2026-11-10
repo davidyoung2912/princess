@@ -3223,3 +3223,38 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatMessages_Client' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
   CREATE UNIQUE INDEX UX_ChatMessages_Client ON dbo.ChatMessages (GroupId, FromUserId, ClientId) WHERE ClientId IS NOT NULL;
 GO
+
+-- Guest-made groups (docs/chat-plan.md, phase 5).
+-- The creator can rename the group, invite and remove people. A system line ("Sam left the group") is a message with IsSystem = 1: it is shown in the thread and is never counted as unread.
+IF COL_LENGTH(N'dbo.ChatGroups', N'CreatedByUserId') IS NULL
+  ALTER TABLE dbo.ChatGroups ADD CreatedByUserId BIGINT NULL CONSTRAINT FK_ChatGroups_Users_Creator REFERENCES dbo.Users (Id);
+GO
+IF COL_LENGTH(N'dbo.ChatMessages', N'IsSystem') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD IsSystem BIT NOT NULL CONSTRAINT DF_ChatMessages_IsSystem DEFAULT 0;
+GO
+
+-- One invitation per invitee. It is not a ChatConnections row: that table allows one live row per pair, and an invitation goes to someone the inviter is already connected to.
+IF OBJECT_ID(N'dbo.ChatGroupInvites', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatGroupInvites (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatGroupInvites PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatGroupInvites_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatGroupInvites_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, InviterId BIGINT NOT NULL, InviteeId BIGINT NOT NULL,
+  Status VARCHAR(16) NOT NULL,                  -- awaitingGuardian, pending, accepted, declined, cancelled, expired
+  GuardianUserId BIGINT NULL,                   -- the invitee's guardian while the status is awaitingGuardian: their yes is the acceptance
+  RespondedAt DATETIME2(0) NULL,
+  ExpiresAt DATETIME2(0) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatGroupInvites_CreatedAt DEFAULT SYSUTCDATETIME(),
+  UpdatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatGroupInvites_UpdatedAt DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ChatGroupInvites_ChatGroups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatGroupInvites_Users_Inviter FOREIGN KEY (InviterId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_ChatGroupInvites_Users_Invitee FOREIGN KEY (InviteeId) REFERENCES dbo.Users (Id),
+  CONSTRAINT FK_ChatGroupInvites_Users_Guardian FOREIGN KEY (GuardianUserId) REFERENCES dbo.Users (Id),
+  CONSTRAINT CK_ChatGroupInvites_Status CHECK (Status IN ('awaitingGuardian','pending','accepted','declined','cancelled','expired'))
+);
+-- One waiting invitation per person per group.
+CREATE UNIQUE INDEX UX_ChatGroupInvites_Open ON dbo.ChatGroupInvites (GroupId, InviteeId) WHERE Status IN ('awaitingGuardian','pending');
+CREATE INDEX IX_ChatGroupInvites_InviteeId ON dbo.ChatGroupInvites (InviteeId, Status);
+CREATE INDEX IX_ChatGroupInvites_GuardianUserId ON dbo.ChatGroupInvites (GuardianUserId, Status) WHERE GuardianUserId IS NOT NULL;
+END
+GO

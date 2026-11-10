@@ -101,6 +101,8 @@ public sealed class ChatPeerRow
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public bool ReceiptsOn { get; set; }
+    /// <summary>active, left or removed. The people shown as "in" a conversation are the active ones; the others are kept so earlier messages still have a name.</summary>
+    public string Status { get; set; } = "active";
 }
 
 public sealed class ChatMessageRow
@@ -111,6 +113,8 @@ public sealed class ChatMessageRow
     public string Text { get; set; } = "";
     public string? Photo { get; set; }
     public DateTime At { get; set; }
+    /// <summary>A line about the group ("Sam left the group"), not something a person said: shown in the thread, never counted as unread.</summary>
+    public bool IsSystem { get; set; }
     /// <summary>The people who have read it.</summary>
     public List<long> SeenBy { get; set; } = [];
 }

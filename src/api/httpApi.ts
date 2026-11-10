@@ -47,6 +47,7 @@ export interface HttpGroups {
   messages: Api['messages']
   chatConnections: Api['chatConnections']
   chatConversations: Api['chatConversations']
+  chatGroups: Api['chatGroups']
   family: Api['family']
   health: Api['health']
   room: Api['room']
@@ -218,6 +219,16 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
     mute: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on }),
   }
+  const chatGroups: HttpGroups['chatGroups'] = {
+    create: (name, personIds) => send('post', '/me/chat/groups', { name, personIds }),
+    get: (id) => get(`/me/chat/groups/${seg(id)}`),
+    rename: (id, name) => send('put', `/me/chat/groups/${seg(id)}`, { name }),
+    invite: (id, personIds) => send('post', `/me/chat/groups/${seg(id)}/invite`, { personIds }),
+    remove: async (id, personId) => { await send('post', `/me/chat/groups/${seg(id)}/remove`, { personId }) },
+    leave: async (id) => { await send('post', `/me/chat/groups/${seg(id)}/leave`) },
+    invites: () => get('/me/chat/group-invites'),
+    respond: async (id, accept) => { await send('post', `/me/chat/group-invites/${seg(id)}/respond`, { accept }) },
+  }
   const chatConnections: HttpGroups['chatConnections'] = {
     search: (query) => get(`/me/chat/people?query=${seg(query)}`),
     list: () => get('/me/chat/connections'),
@@ -307,6 +318,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     messages,
     chatConnections,
     chatConversations,
+    chatGroups,
     family,
     health,
     room,
@@ -638,6 +650,7 @@ export function toApi(g: HttpGroups): Api {
     messages: g.messages,
     chatConnections: g.chatConnections,
     chatConversations: g.chatConversations,
+    chatGroups: g.chatGroups,
     family: g.family,
     health: g.health,
     room: g.room,

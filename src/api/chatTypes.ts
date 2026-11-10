@@ -87,6 +87,8 @@ export interface ChatMessage {
   photo?: string
   /** People who have read it, when both they and the sender have read receipts on. */
   seenBy?: string[]
+  /** A line about the group ("Sam R. left the group"), not something a person said. */
+  system?: boolean
 }
 
 export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean }
@@ -108,4 +110,46 @@ export interface ChatConversationsApi {
   read(id: string): Promise<void>
   /** Returns the new state. */
   mute(id: string, on: boolean): Promise<boolean>
+}
+
+// ---- Groups (docs/chat-plan.md, phase 5) ----
+
+export interface ChatGroupMember { id: string; name: string; you: boolean; creator: boolean }
+
+/** An invitation the creator is still waiting on. `needsGuardian`: the person is a child and their guardian must say yes. */
+export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean }
+
+/** A group as a member sees it. `id` is the conversation id. `waiting` is filled only for the creator. `max` is the size limit, the creator included. */
+export interface ChatGroup { id: string; name: string; members: ChatGroupMember[]; waiting: ChatGroupWaiting[]; isCreator: boolean; max: number }
+
+/** `incoming` is for the guest; `approval` is for a child the guest is guardian of (`childId`, `childName`). `from` is the inviter's short name. */
+export interface ChatGroupInvite {
+  id: string
+  kind: 'incoming' | 'approval'
+  groupName: string
+  from: string
+  childId: string | null
+  childName: string | null
+  at: number
+  expiresAt: number
+}
+
+export interface ChatGroupsApi {
+  /**
+   * Makes a group from 2 to 24 connected people and invites each. Rejects `invalid` (`name`, `blocked`, `tooFew`, `tooMany`, `notConnected`, `noGuardian`)
+   * or `forbidden` (`supervised`: a child cannot make a group).
+   */
+  create(name: string, personIds: string[]): Promise<ChatGroup>
+  /** Rejects `notFound` unless you are an active member. */
+  get(id: string): Promise<ChatGroup>
+  /** Creator only. Rejects `invalid` (`name`, `blocked`) or `forbidden` (`creator`). */
+  rename(id: string, name: string): Promise<ChatGroup>
+  /** Creator only. Rejects `invalid` (`person`, `notConnected`, `noGuardian`), `forbidden` (`creator`) or `conflict` (`full`). */
+  invite(id: string, personIds: string[]): Promise<ChatGroup>
+  /** Creator only; never themself. */
+  remove(id: string, personId: string): Promise<void>
+  leave(id: string): Promise<void>
+  invites(): Promise<ChatGroupInvite[]>
+  /** A decline is quiet. Rejects `conflict` (`answered`, `expired`, `full`) or `notFound`. */
+  respond(id: string, accept: boolean): Promise<void>
 }

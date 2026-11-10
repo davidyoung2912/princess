@@ -30,6 +30,17 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     public Task ApprovalAsync(long guardianUserId, Guid connectionId, string child, CancellationToken ct) =>
         Send(guardianUserId, "approval", connectionId, ChatConnectionRules.ApprovalNotice(child), ct);
 
+    /// <summary>A guest is invited to a group. The notice names the inviter and the group.</summary>
+    public Task GroupInviteAsync(long toUserId, Guid inviteId, string from, string group, CancellationToken ct) =>
+        Deliver(toUserId, "groupInvite", Notice(ChatGroupRules.NoticeKey("invite", inviteId), ChatGroupRules.InviteNotice(from, group), inviteId), true, ct);
+
+    /// <summary>A guardian is asked to approve a group invitation for their child.</summary>
+    public Task GroupApprovalAsync(long guardianUserId, Guid inviteId, string child, CancellationToken ct) =>
+        Deliver(guardianUserId, "groupApproval", Notice(ChatGroupRules.NoticeKey("approval", inviteId), ChatGroupRules.ApprovalNotice(child), inviteId), true, ct);
+
+    private static PushNotice Notice(string key, (string Title, string Body) text, Guid id) =>
+        new(key, "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["invite"] = id.ToString("N") });
+
     /// <summary>
     /// A new message in a conversation (docs/chat-plan.md, 4.4). The text is on the lock screen only when the recipient opted in (<paramref name="showPreview"/>).
     /// A muted conversation never buzzes the phone; an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.

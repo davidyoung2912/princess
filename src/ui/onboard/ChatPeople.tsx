@@ -14,13 +14,15 @@ import { Chip } from '../Chip'
 import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
+import { GroupInvites } from './ChatGroups'
 import type { ApiError } from '../../api/errors'
 
 /** The banner at the top of Chat: "2 people want to chat", one tap to the People area. */
 export function RequestsBanner({ onOpen }: { onOpen: () => void }) {
   const list = useMine(() => api.chatConnections.list())
-  useChatLive(list.retry)
-  const count = list.data ? waitingCount(list.data) : 0
+  const invites = useMine(() => api.chatGroups.invites())
+  useChatLive(() => { list.retry(); invites.retry() })
+  const count = (list.data ? waitingCount(list.data) : 0) + (invites.data?.length ?? 0)
   if (count === 0) return null
   return <Banner kind="info" title={t('people.banner', { count })} action={<Button variant="secondary" onClick={onOpen}>{t('people.bannerOpen')}</Button>} />
 }
@@ -43,6 +45,7 @@ export function People() {
       <Button onClick={() => setSearching(true)}>{t('people.new')}</Button>
       <p role="status" className="visually-hidden">{note}</p>
       {searching && <Search onClose={() => setSearching(false)} onDone={(text) => { setNote(text); refresh() }} />}
+      <GroupInvites onDone={(text) => { setNote(text); refresh() }} />
       <Load state={list}>
         {(c) => (
           <>
