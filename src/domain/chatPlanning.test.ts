@@ -3,6 +3,8 @@ import type { ChatPlannable, ChatTally } from '../api/chatTypes'
 import {
   OPTION_MAX, QUESTION_MAX, adminCandidates, applyRsvp, applyVote, canAddOption, canPost, cleanPollDraft, eventsOnDay, isPlan, isPoll, isPollClosed, leaders, percentOf, planDays, pollResultText, rsvpIndex, rsvpOf,
 } from './chatPlanning'
+import { answerJob, readAnswerJob, withHeld } from './chatPlanning'
+import { readReactionJob } from './chatReactions'
 import { canEditKind } from './chatCards'
 
 const tally = (counts: number[], extra: Partial<ChatTally> = {}): ChatTally => ({ counts, closed: false, mayClose: false, ...extra })
@@ -109,5 +111,28 @@ describe('plannable events', () => {
     expect(planDays(events)).toEqual([1, 2])
     expect(eventsOnDay(events, 2).map((e) => e.title)).toEqual(['Pool party', 'Trivia'])
     expect(eventsOnDay(events, 9)).toEqual([])
+  })
+})
+
+describe('answers held for signal', () => {
+  it('round-trips a vote and an answer through the outbox payload', () => {
+    expect(readAnswerJob(answerJob('c', 'm', 'vote', '1'))).toEqual({ conversation: 'c', messageId: 'm', kind: 'vote', value: '1' })
+    expect(readAnswerJob(answerJob('c', 'm', 'rsvp', 'going'))).toEqual({ conversation: 'c', messageId: 'm', kind: 'rsvp', value: 'going' })
+  })
+
+  it('refuses anything that is not a vote or answer, and is never mistaken for a reaction', () => {
+    expect(readAnswerJob({ conversation: 'c', messageId: 'm', answer: 'vote', value: 'x' })).toBeNull()
+    expect(readAnswerJob({ conversation: 'c', messageId: 'm', answer: 'rsvp', value: 'yes' })).toBeNull()
+    expect(readAnswerJob({ conversation: 'c', text: 'hi' })).toBeNull()
+    expect(readAnswerJob({ conversation: 'c', messageId: 'm', emoji: '👍' })).toBeNull()
+    expect(readReactionJob(answerJob('c', 'm', 'vote', '1'))).toBeNull()
+  })
+
+  it('lays a held answer over the tally once', () => {
+    expect(withHeld(tally([1, 0]), { kind: 'vote', value: '1' })).toEqual(tally([1, 1], { mine: 1 }))
+    expect(withHeld(tally([1, 1], { mine: 1 }), { kind: 'vote', value: '1' })).toEqual(tally([1, 1], { mine: 1 }))
+    expect(withHeld(tally([0, 0, 0]), { kind: 'rsvp', value: 'maybe' })).toEqual(tally([0, 1, 0], { mine: 1 }))
+    expect(withHeld(undefined, { kind: 'vote', value: '0' })).toBeUndefined()
+    expect(withHeld(tally([1, 0]), undefined)).toEqual(tally([1, 0]))
   })
 })

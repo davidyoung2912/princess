@@ -246,6 +246,9 @@ public sealed class ChatAwayRecipientRow
     public bool Muted { get; set; }
 }
 
+/// <summary>A member's last recorded presence (<c>ashore</c> or <c>back</c>) in one conversation, for the header.</summary>
+public sealed record ChatPresenceRow(long UserId, string Status);
+
 /// <summary>A pinned message as the pin bar shows it: the message, who said it, its text (or a card's title) and when it was sent.</summary>
 public sealed class ChatPinRow
 {
@@ -440,6 +443,11 @@ public interface IChatStore
     Task<bool> ClosePollAsync(long messageId, DateTime at, CancellationToken ct);
     /// <summary>Switches "alert me only when I am mentioned" on or off for the member.</summary>
     Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>
+    /// What the header may say about the other members' presence: only members who turned "tell this chat when I leave or return" on, are connected to the reader (an accepted connection) and have not blocked them
+    /// nor been blocked, and have a recorded presence.
+    /// </summary>
+    Task<List<ChatPresenceRow>> ListPresenceAsync(long groupId, long readerId, CancellationToken ct);
     /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the member.</summary>
     Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>

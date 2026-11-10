@@ -3,11 +3,12 @@ import type { ChatConversation, ChatMessage, ChatPlannable, ChatRsvp, ChatTally 
 import { isApiError } from '../../api/errors'
 import { newClientId } from '../../domain/chatThread'
 import {
-  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, applyRsvp, applyVote, canAddOption, cleanPollDraft, eventsOnDay, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MAX_OPTIONS, POLL_MIN_OPTIONS, rsvpOf, totalVotes,
+  OPTION_MAX, QUESTION_MAX, RSVP_CHOICES, answerJob, applyRsvp, applyVote, canAddOption, cleanPollDraft, eventsOnDay, isPollClosed, leaders, percentOf, planDays, pollResultText, POLL_MAX_OPTIONS, POLL_MIN_OPTIONS, rsvpOf, totalVotes, withHeld,
 } from '../../domain/chatPlanning'
 import { cleanNote, NOTE_MAX } from '../../domain/chatCards'
 import { clock12 } from '../../domain/planCard'
 import { useAction } from '../../hooks/useAction'
+import { sendWithin, worthRetrying } from '../../hooks/useOutbox'
 import { useNow } from '../../hooks/useDemo'
 import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
@@ -32,22 +33,25 @@ function useTally(initial: ChatTally | undefined): [ChatTally | undefined, (next
  * A poll (phase 4): the question and each option as a radio button with its votes and share. A vote can be changed until the poll closes; the counts are announced to a screen reader as one sentence, and the answers are
  * counted, never named. The person who asked it, or an admin, can close it early. It stops taking votes by itself 24 hours after it was sent.
  */
-export function PollMessage({ conversationId, message, canAct, onChanged }: { conversationId: string; message: ChatMessage; canAct: boolean; onChanged: () => void }) {
+export function PollMessage({ conversationId, message, canAct, onChanged, held, onHold }: { conversationId: string; message: ChatMessage; canAct: boolean; onChanged: () => void; held?: string; onHold?: (job: Record<string, string>) => boolean }) {
   const poll = message.poll!
   const now = useNow()
   const shipTime = useShipTime()
-  const [tally, setTally] = useTally(message.tally)
+  const [base, setTally] = useTally(message.tally)
+  const tally = withHeld(base, held === undefined ? undefined : { kind: 'vote', value: held })
   const [announce, setAnnounce] = useState('')
   const words = { votes, yours: (option: string) => t('cpoll.yours', { option }), closed: t('cpoll.closed'), open: t('cpoll.open') }
   const vote = useAction(async (option: number) => {
-    const before = tally
+    const before = base
     if (before) setTally(applyVote(before, option))
     try {
-      const next = await api.chatConversations.vote(conversationId, message.id, option)
+      const next = await sendWithin(api.chatConversations.vote(conversationId, message.id, option))
       setTally(next)
       setAnnounce(t('cpoll.announce', { result: pollResultText(poll, next, words) }))
     } catch (e) {
       setTally(before)
+      // Without signal the vote is kept and sent when the phone is back; the server still decides whether the poll is open then.
+      if (worthRetrying(e) && onHold?.(answerJob(conversationId, message.id, 'vote', String(option)))) { setAnnounce(t('cpoll.queued')); return }
       if (isApiError(e) && e.message === 'pollClosed') onChanged()
       throw e
     }
@@ -95,19 +99,21 @@ export function PollMessage({ conversationId, message, canAct, onChanged }: { co
  * A plan (phase 4): an event, the day and time, and who is going. Going, Maybe and Can't go are toggle buttons; Going puts the event on your own plan for that day when your trip runs it, and a later answer takes it off again
  * if the plan put it there. The counts and the names of those going are read as a sentence.
  */
-export function PlanMessage({ conversationId, message, canAct }: { conversationId: string; message: ChatMessage; canAct: boolean }) {
+export function PlanMessage({ conversationId, message, canAct, held, onHold }: { conversationId: string; message: ChatMessage; canAct: boolean; held?: string; onHold?: (job: Record<string, string>) => boolean }) {
   const card = message.card!
-  const [tally, setTally] = useTally(message.tally)
+  const [base, setTally] = useTally(message.tally)
+  const tally = withHeld(base, held === undefined ? undefined : { kind: 'rsvp', value: held })
   const [announce, setAnnounce] = useState('')
   const answer = useAction(async (choice: ChatRsvp) => {
-    const before = tally
+    const before = base
     if (before) setTally(applyRsvp(before, choice))
     try {
-      const next = await api.chatConversations.rsvp(conversationId, message.id, choice)
+      const next = await sendWithin(api.chatConversations.rsvp(conversationId, message.id, choice))
       setTally(next)
       setAnnounce(t('cplan.announce', { answer: t(RSVP_KEY[choice]) }))
     } catch (e) {
       setTally(before)
+      if (worthRetrying(e) && onHold?.(answerJob(conversationId, message.id, 'rsvp', choice))) { setAnnounce(t('cplan.queued')); return }
       throw e
     }
   })

@@ -236,7 +236,7 @@ export interface NoticeReplyAnswer { text: string; remindAt?: number }
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
 /** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */
 /** `firstUnread`: the first message from someone else you had not read when the thread was fetched (latest page only), for the "New messages" divider. */
-export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string; /** The pin bar, on the latest page only. */ pins?: ChatPin[] }
+export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string; /** The pin bar, on the latest page only. */ pins?: ChatPin[]; /** Phase 4 follow-up, latest page only: people back on the ship who chose to tell this chat when they leave or return and whom you are connected to. */ back?: string[] }
 
 export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
 

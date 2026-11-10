@@ -1234,6 +1234,19 @@ public class AboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task TheHeaderNamesWhoIsBackOnlyForConnectedMembersWhoChoseToTellTheChat()
+    {
+        var group = F.Chat.MadeGroup(Daniel.Id, Priya.Id, Paul.Id);
+        var daniel = await DanielToken();
+        foreach (var u in new[] { Priya.Id, Paul.Id }) { var m = group.Members.First(x => x.UserId == u); m.AwayStatus = "back"; m.NotifyAway = true; }
+        F.Chat.Connected.Add((Daniel.Id, Priya.Id));   // Paul is not connected to Daniel
+        var back = (await ChatGet(Msgs(group), daniel)).Json.GetProperty("back").EnumerateArray().Select(n => n.GetString()).ToArray();
+        Assert.Equal(["Priya U."], back);
+        group.Members.First(x => x.UserId == Priya.Id).NotifyAway = false;   // she did not choose to tell the chat
+        Assert.False((await ChatGet(Msgs(group), daniel)).Json.TryGetProperty("back", out _));
+    }
+
+    [Fact]
     public async Task APollClosesByItselfAfter24Hours()
     {
         var group = F.Chat.Group(Daniel.Id, Priya.Id);

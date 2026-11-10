@@ -65,6 +65,6 @@ export interface ReactionJob { conversation: string; messageId: string; emoji: s
 
 /** The reaction in an outbox payload, or null when the payload is something else (a message). */
 export function readReactionJob(payload: Record<string, string>): ReactionJob | null {
-  if (typeof payload.conversation !== 'string' || typeof payload.messageId !== 'string' || payload.messageId === '') return null
+  if (typeof payload.conversation !== 'string' || typeof payload.messageId !== 'string' || payload.messageId === '' || payload.answer) return null
   return { conversation: payload.conversation, messageId: payload.messageId, emoji: payload.emoji ? payload.emoji : null }
 }

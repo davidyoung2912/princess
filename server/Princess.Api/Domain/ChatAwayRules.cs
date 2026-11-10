@@ -34,6 +34,13 @@ public static class ChatAwayRules
     /// <summary>The key a notice is logged and de-duplicated under: one per person, conversation, change and moment.</summary>
     public static string NoticeKey(Guid conversationId, long userId, Change change, long atMs) => $"chat:away:{conversationId:N}:{userId}:{(change == Change.Left ? "left" : "back")}:{atMs}";
 
+    /// <summary>
+    /// The people a conversation's header shows as back on the ship: those whose last recorded presence is <see cref="Back"/>. The store has already left out everyone who did not turn the feature on,
+    /// is not connected to the reader, or is blocked either way, so this is only the choice of words and order.
+    /// </summary>
+    public static List<string> BackNames(IEnumerable<(string Name, string? Status)> people) =>
+        [.. people.Where(p => p.Status == Back).Select(p => p.Name).Order(StringComparer.Ordinal)];
+
     /// <summary>Whether a person may switch the flag on: a supervised child may not (their guardian already controls who they chat with).</summary>
     public static bool MayEnable(bool supervised) => !supervised;
 }

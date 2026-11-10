@@ -94,3 +94,26 @@ export const canPost = (c: { announcementOnly?: boolean; admin?: boolean } | nul
 export function adminCandidates<M extends { you: boolean; creator: boolean }>(members: readonly M[]): M[] {
   return members.filter((m) => !m.you && !m.creator)
 }
+
+// ---- Answers held for signal ----
+
+/** A vote or plan answer held in the outbox until there is signal. Kept as plain strings because an outbox payload is. The server still applies its own rules when it is sent (a poll that closed meanwhile refuses it, and the thread then shows the real counts). */
+export interface AnswerJob { conversation: string; messageId: string; kind: 'vote' | 'rsvp'; value: string }
+
+export const answerJob = (conversation: string, messageId: string, kind: AnswerJob['kind'], value: string): Record<string, string> => ({ conversation, messageId, answer: kind, value })
+
+/** The answer in an outbox payload, or null when the payload is something else (a message or a reaction). */
+export function readAnswerJob(payload: Record<string, string>): AnswerJob | null {
+  const { conversation, messageId, answer, value } = payload
+  if (typeof conversation !== 'string' || typeof messageId !== 'string' || messageId === '' || typeof value !== 'string' || value === '') return null
+  if (answer === 'vote') return /^\d+$/.test(value) ? { conversation, messageId, kind: 'vote', value } : null
+  if (answer === 'rsvp') return RSVP_CHOICES.includes(value as ChatRsvp) ? { conversation, messageId, kind: 'rsvp', value } : null
+  return null
+}
+
+/** The tally with a held answer laid over it, so the guest sees what they chose until the server has it. A tally that already shows that answer is left alone. */
+export function withHeld(tally: ChatTally | undefined, job: Pick<AnswerJob, 'kind' | 'value'> | undefined): ChatTally | undefined {
+  if (!tally || !job) return tally
+  if (job.kind === 'vote') return tally.mine === Number(job.value) ? tally : applyVote(tally, Number(job.value))
+  return rsvpOf(tally.mine) === job.value ? tally : applyRsvp(tally, job.value as ChatRsvp)
+}

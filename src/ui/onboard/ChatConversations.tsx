@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatMessage, ChatPin, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -51,7 +51,7 @@ import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
-import { canPost, isPlan, isPoll } from '../../domain/chatPlanning'
+import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../domain/chatPlanning'
 
 /**
  * Chats (docs/chat-plan.md, 4.8): the conversation list is the home of Chat, and one tap opens a conversation. The open conversation is in the address (`?c=`),
@@ -222,6 +222,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
   const [pins, setPins] = useState<ChatPin[]>(cached?.pins ?? [])
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
+  // Who is back on the ship, from people who chose to tell this chat. Never kept on the device: presence is only worth showing when it is fresh.
+  const [back, setBack] = useState('')
   // Who is typing now (never stored; each name drops off six seconds after the last nudge) and whether this guest shows and sees it.
   const [typers, setTypers] = useState<string[]>([])
   const typingSettings = useMine(() => api.chatConnections.settings())
@@ -241,6 +243,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       const th = await api.chatConversations.thread(id)
       setConversation(th.conversation)
       setAshore(ashoreNames(th.ashore))
+      setBack(ashoreNames(th.back))
       setMayUrgent(th.mayUrgent === true)
       setPins(th.pins ?? [])
       latestAnswer.current = th
@@ -471,12 +474,17 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
   const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => {
+    const answer = readAnswerJob(p)
+    if (answer) return answer.kind === 'vote' ? api.chatConversations.vote(answer.conversation, answer.messageId, Number(answer.value)) : api.chatConversations.rsvp(answer.conversation, answer.messageId, answer.value as ChatRsvp)
     const job = readReactionJob(p)
     if (job) return api.chatConversations.setReaction(job.conversation, job.messageId, job.emoji)
     return p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined, p.mentions ? p.mentions.split(',') : undefined) : Promise.resolve()
   }, () => void load())
   // Reactions held for signal are laid over the thread, so the chip stays as the guest left it until the server has it.
   const heldReactions = outbox.items.map((x) => readReactionJob(x.payload)).filter((j): j is ReactionJob => j !== null && j.conversation === id)
+  // Votes and plan answers held for signal, by message: laid over the counts until the server has them.
+  const heldAnswers = new Map(outbox.items.map((x) => readAnswerJob(x.payload)).filter((j): j is AnswerJob => j !== null && j.conversation === id).map((j) => [j.messageId, j.value]))
+  const holdAnswer = useLatest((job: Record<string, string>) => outbox.hold(job))
   // A reaction shows at once. With signal the server's answer replaces it; without, the tap is held and sent when the phone is back (it says exactly what is wanted, so replaying it is safe).
   const react = useAction(async (messageId: string, picked: string) => {
     const current = messages.find((x) => x.id === messageId)
@@ -550,6 +558,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {conversation && conversation.kind !== 'direct' && !permanent && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
+      {back && !offline && <p className="muted">{t('conv.backOnShip', { names: back })}</p>}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
@@ -579,7 +588,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} held={heldAnswers.get(m.id)} onHold={holdAnswer} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -794,6 +803,9 @@ interface MessageRowProps {
   canPin?: boolean
   pinned?: number
   onPin?: (messageId: string, on: boolean) => void
+  /** Phase 4: a vote or plan answer for this message held for signal (the value), and the way to hold another. */
+  held?: string
+  onHold?: (job: Record<string, string>) => boolean
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -818,7 +830,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin, held, onHold }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -837,13 +849,13 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     // Deleted for everyone: the fact and who and when, nothing of what it said.
     return <li id={`msg-${m.id}`} className="chat-msg chat-msg--deleted"><p className="muted"><strong>{m.from === mine ? t('chat.you') : (m.fromName ?? '')}</strong> · {t('conv.deleted')} · {shipTime(m.at)}</p></li>
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} />
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} held={held} onHold={onHold} />
 })
 
 const noop = (): void => {}
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin }: MessageRowProps) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin, held, onHold }: MessageRowProps) {
   const own = m.from === mine
   // A typed card or place is drawn from the server's own fields; an older plan card travels as text with a marker.
   const typed = isTyped(m) && m.card ? m.card : null
@@ -863,8 +875,8 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
       <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
-      {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} />
-        : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} />
+      {isPoll(m) ? <PollMessage conversationId={conversationId} message={m} canAct={canAct === true} onChanged={onChanged ?? noop} held={held} onHold={onHold} />
+        : isPlan(m) ? <PlanMessage conversationId={conversationId} message={m} canAct={canAct === true} held={held} onHold={onHold} />
         : typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}

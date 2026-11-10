@@ -60,7 +60,7 @@ public sealed record ChatMemberDto(Guid Id, string Name);
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
 /// <summary><c>MayUrgent</c> is whether the caller may send an urgent message here (staff, or a guardian of a supervised child in it); the app shows the control only then.</summary>
-public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? FirstUnread = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatPinDto>? Pins = null);
+public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? FirstUnread = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatPinDto>? Pins = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<string>? Back = null);
 
 /// <summary><c>For</c>: <c>hour</c>, <c>day</c> or <c>week</c> to mute for that long (it ends by itself); left out, a mute lasts until turned off.</summary>
 public sealed record ChatMuteRequest(bool On, string? For = null);

@@ -574,6 +574,11 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
                 && (Connected.Contains((userId, m.UserId)) || Connected.Contains((m.UserId, userId))) && !Blocks.Contains((m.UserId, userId)) && !Blocks.Contains((userId, m.UserId)))
             .Select(m => new ChatAwayRecipientRow { GroupId = c.Id, GroupPublicId = c.PublicId, UserId = m.UserId, Muted = MutedNow(m) })).ToList());
 
+    public Task<List<ChatPresenceRow>> ListPresenceAsync(long groupId, long readerId, CancellationToken ct) =>
+        Task.FromResult(Of(groupId).Members.Where(m => m.Status == "active" && m.UserId != readerId && m.NotifyAway && m.AwayStatus is not null
+                && (Connected.Contains((readerId, m.UserId)) || Connected.Contains((m.UserId, readerId))) && !Blocks.Contains((m.UserId, readerId)) && !Blocks.Contains((readerId, m.UserId)))
+            .Select(m => new ChatPresenceRow(m.UserId, m.AwayStatus!)).ToList());
+
     public Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct)
     {
         Messages.Add(new Stored(groupId, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, At = at, IsSystem = true }, null));

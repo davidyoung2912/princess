@@ -820,6 +820,18 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { userId, groupIds }, null, ct))).ToList();
     }
 
+    public async Task<List<ChatPresenceRow>> ListPresenceAsync(long groupId, long readerId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatPresenceRow>(Sql.Cmd("""
+            SELECT m.UserId, m.AwayStatus AS Status
+            FROM dbo.ChatGroupMembers m
+            WHERE m.GroupId = @groupId AND m.Status = 'active' AND m.UserId <> @readerId AND m.NotifyAway = 1 AND m.AwayStatus IS NOT NULL
+              AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.Status = 'accepted' AND cc.PairLow = CASE WHEN @readerId < m.UserId THEN @readerId ELSE m.UserId END AND cc.PairHigh = CASE WHEN @readerId < m.UserId THEN m.UserId ELSE @readerId END)
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks b WHERE (b.UserId = m.UserId AND b.BlockedUserId = @readerId) OR (b.UserId = @readerId AND b.BlockedUserId = m.UserId))
+            """, new { groupId, readerId }, null, ct))).ToList();
+    }
+
     public async Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

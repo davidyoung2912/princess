@@ -44,4 +44,11 @@ public class ChatAwayRulesTests
         Assert.False(MayEnable(true));
         Assert.True(MayEnable(false));
     }
+
+    [Fact]
+    public void TheHeaderNamesOnlyThoseWhoAreBackInOrder()
+    {
+        Assert.Equal(["Priya U.", "Sam R."], BackNames([("Sam R.", Back), ("Paul K.", Ashore), ("Priya U.", Back), ("Lee T.", null)]));
+        Assert.Empty(BackNames([("Paul K.", Ashore)]));
+    }
 }

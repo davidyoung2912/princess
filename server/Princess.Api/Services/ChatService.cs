@@ -160,7 +160,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId))));
         // The pin bar comes with the latest page only; an older page is a scroll back and needs none.
         var pins = before is null ? PinDtos(await store.ListPinsAsync(member.GroupId, actor.Id, ct), actor.Id, byId) : null;
-        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread, pins is { Count: > 0 } ? pins : null);
+        // Who is back on the ship, for the header (latest page only): only people who chose to tell this chat, and only what the away rules let this reader know.
+        List<string>? back = null;
+        if (before is null && !ChatConversationRules.IsPermanent(member.Kind))
+        {
+            var seen = (await store.ListPresenceAsync(member.GroupId, actor.Id, ct)).Where(r => byId.ContainsKey(r.UserId)).Select(r => (ShortName(byId[r.UserId]), (string?)r.Status));
+            back = ChatAwayRules.BackNames(seen);
+        }
+        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread, pins is { Count: > 0 } ? pins : null, back is { Count: > 0 } ? back : null);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
