@@ -30,18 +30,33 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     public Task ApprovalAsync(long guardianUserId, Guid connectionId, string child, CancellationToken ct) =>
         Send(guardianUserId, "approval", connectionId, ChatConnectionRules.ApprovalNotice(child), ct);
 
-    private async Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct)
+    /// <summary>
+    /// A new message in a conversation (docs/chat-plan.md, 4.4). The text is on the lock screen only when the recipient opted in (<paramref name="showPreview"/>).
+    /// A muted conversation never buzzes the phone; an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.
+    /// </summary>
+    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct)
+    {
+        var words = ChatConversationRules.MessageNotice(from, text, showPreview);
+        var key = ChatConversationRules.NoticeKey(conversationId, messageId);
+        var notice = new PushNotice(key, "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), words.Title, words.Body,
+            new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId));
+        return Deliver(toUserId, "message", notice, !muted, ct);
+    }
+
+    private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
+        Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
+
+    private async Task Deliver(long userId, string kind, PushNotice notice, bool phone, CancellationToken ct)
     {
         try
         {
             if (await users.FindByIdAsync(userId, ct) is not { } user) return;
-            var key = ChatConnectionRules.NoticeKey(kind, connectionId);
-            var notice = new PushNotice(key, "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") });
+            var key = notice.Key;
             // Nobody has the app open here: the phone is told at once, as before.
-            if (!realtime.IsConnected(user.PublicId)) { await push.NotifyChatAsync(user, notice, ct); return; }
+            if (!realtime.IsConnected(user.PublicId)) { if (phone) await push.NotifyChatAsync(user, notice, ct); return; }
             // An app is open: nudge it, and buzz the phone only if no app answers. The wait is off the request, so accepting a request never takes 8 seconds.
             var nudge = realtime.PublishAsync(user.PublicId, new ChatEvent(key, kind), AckWait, CancellationToken.None);
-            _ = Task.Run(() => PhoneIfUnheardAsync(nudge, userId, notice));
+            if (phone) _ = Task.Run(() => PhoneIfUnheardAsync(nudge, userId, notice));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

@@ -42,6 +42,18 @@ describe('the service worker script', () => {
     expect(sw.shown[0].options).toMatchObject({ tag: 'allAboard:2027-03-24:30', requireInteraction: true, data: { path: '/ship/port' } })
   })
 
+  it('collapses a conversation under its own tag and alerts again, and opens that conversation', async () => {
+    const sw = load()
+    await sw.run('push', { data: { json: () => JSON.parse(serverPayload({ critical: false, kind: 'chat', id: 'chat:message:c:1', tag: 'chat:conversation:c', path: '/chat?c=3f2504e0-4f89-41d3-9a0c-0305e82c3301' })) } })
+    expect(sw.shown[0].options).toMatchObject({ tag: 'chat:conversation:c', renotify: true, data: { path: '/chat?c=3f2504e0-4f89-41d3-9a0c-0305e82c3301' } })
+  })
+
+  it('does not renotify for a notice that is its own tag', async () => {
+    const sw = load()
+    await sw.run('push', { data: { json: () => JSON.parse(serverPayload()) } })
+    expect(sw.shown[0].options.renotify).toBe(false)
+  })
+
   it('lets a suggestion fade by itself', async () => {
     const sw = load()
     await sw.run('push', { data: { json: () => JSON.parse(serverPayload({ critical: false, kind: 'payment', id: 'payment:dueSoon:x' })) } })

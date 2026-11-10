@@ -351,33 +351,100 @@ public sealed class DapperAboardStore(IDbConnectionFactory db) : IAboardStore
     }
 }
 
-/// <summary>The chat store over SQL Server.</summary>
+/// <summary>The chat store over SQL Server (docs/chat-plan.md, phase 4). Nothing here reads across conversations except the list and the counts.</summary>
 public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
 {
-    // The old pooled chat is the booking's "My group" only. Direct and guest-made conversations (Kind <> 'party', docs/chat-plan.md) never appear in it.
-    private const string MyGroups = "(SELECT m.GroupId FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party')";
+    // The messages a member may read: sent in their window (the booking's "My group" keeps showing everything) and not from someone they blocked.
+    private const string Window = """
+        (g.Kind = 'party' OR (m.[At] >= me.JoinedAt AND (me.LeftAt IS NULL OR m.[At] <= me.LeftAt)))
+        AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks b WHERE b.UserId = me.UserId AND b.BlockedUserId = m.FromUserId)
+        """;
+
+    private const string MemberSelect = """
+        SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.LastReadMessageId, g.CreatedAt,
+               CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded
+        FROM dbo.ChatGroupMembers me
+        JOIN dbo.ChatGroups g ON g.Id = me.GroupId
+        """;
+
+    public async Task EnsurePartyAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await using var tx = await c.BeginTransactionAsync(ct);
+        var has = await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party'", new { userId }, tx, ct));
+        if (has == 0)
+        {
+            var group = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name, Kind) OUTPUT INSERTED.Id VALUES (N'My group', 'party')", null, tx, ct));
+            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatGroupMembers (GroupId, UserId) VALUES (@group, @userId)", new { group, userId }, tx, ct));
+        }
+        await tx.CommitAsync(ct);
+    }
+
+    public async Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatConversationRow>(Sql.Cmd($"""
+            SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.LastReadMessageId, g.CreatedAt,
+                   CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded,
+                   lm.Id AS LastMessageId, lm.FromUserId AS LastFromUserId, lm.[Text] AS LastText,
+                   CAST(CASE WHEN lm.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, lm.[At] AS LastAt,
+                   (SELECT COUNT(*) FROM dbo.ChatMessages m
+                    WHERE m.GroupId = g.Id AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
+            FROM dbo.ChatGroupMembers me
+            JOIN dbo.ChatGroups g ON g.Id = me.GroupId
+            OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At] FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND {Window} ORDER BY m.Id DESC) lm
+            WHERE me.UserId = @userId AND me.Status = 'active'
+            ORDER BY ISNULL(lm.[At], g.CreatedAt) DESC, g.Id DESC
+            """, new { userId }, null, ct))).ToList();
+    }
+
+    public async Task<ChatMemberRow?> GetMemberAsync(long userId, Guid conversationId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<ChatMemberRow>(Sql.Cmd(MemberSelect + " WHERE me.UserId = @userId AND g.PublicId = @conversationId", new { userId, conversationId }, null, ct));
+    }
+
+    public async Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
+            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
+            FROM dbo.ChatGroupMembers m
+            JOIN dbo.Users u ON u.Id = m.UserId
+            JOIN dbo.Profiles pr ON pr.UserId = u.Id
+            LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
+            WHERE m.GroupId = @groupId
+            """, new { groupId }, null, ct))).ToList();
+    }
 
     public async Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT DISTINCT u.Id AS UserId, u.PublicId, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
+            SELECT DISTINCT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
             FROM dbo.ChatGroupMembers me
-            JOIN dbo.ChatGroups g ON g.Id = me.GroupId AND g.Kind = 'party'
             JOIN dbo.ChatGroupMembers m ON m.GroupId = me.GroupId AND m.UserId <> me.UserId
             JOIN dbo.Users u ON u.Id = m.UserId
+            JOIN dbo.Profiles pr ON pr.UserId = u.Id
             LEFT JOIN dbo.UserPrefs p ON p.UserId = u.Id
             WHERE me.UserId = @userId
             """, new { userId }, null, ct))).ToList();
     }
 
-    public async Task<List<ChatMessageRow>> ListMessagesAsync(long userId, CancellationToken ct)
+    public async Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
+        // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT TOP (500) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At]
-            FROM dbo.ChatMessages m WHERE m.GroupId IN {MyGroups} ORDER BY m.[At] DESC, m.Id DESC
-            """, new { userId }, null, ct))).Reverse().ToList();
+            SELECT TOP (@take) m.Id, m.PublicId, m.FromUserId, m.[Text], m.Photo, m.[At]
+            FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE m.GroupId = @groupId AND {Window}
+              AND (@before IS NULL OR m.Id < (SELECT x.Id FROM dbo.ChatMessages x WHERE x.PublicId = @before AND x.GroupId = @groupId))
+            ORDER BY m.Id DESC
+            """, new { groupId, userId, before, take = limit + 1 }, null, ct))).ToList();
+        messages.Reverse();
         if (messages.Count == 0) return messages;
         var ids = messages.Select(m => m.Id).ToArray();
         var reads = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatReads WHERE MessageId IN @ids", new { ids }, null, ct))).ToList();
@@ -385,22 +452,79 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return messages;
     }
 
-    public async Task<ChatMessageRow> AddMessageAsync(long userId, string text, string? photo, DateTime at, CancellationToken ct)
+    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At] FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
+        if (clientId is not null && await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd(existing, new { groupId, userId, clientId }, null, ct)) is { } again) return new(again, false);
+        try
+        {
+            var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
+                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At]) OUTPUT INSERTED.Id, INSERTED.PublicId
+                VALUES (@groupId, @userId, @text, @photo, @clientId, @at)
+                """, new { groupId, userId, text, photo, clientId, at }, null, ct));
+            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at }, true);
+        }
+        catch (DbException e) when (e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } && clientId is not null)
+        {
+            // Two sends of the same id raced: the other one won, and its message is the answer.
+            var stored = await c.QuerySingleAsync<ChatMessageRow>(Sql.Cmd(existing, new { groupId, userId, clientId }, null, ct));
+            return new(stored, false);
+        }
+    }
+
+    public async Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatRecipientRow>(Sql.Cmd("""
+            SELECT m.UserId, m.Muted, CAST(ISNULL(up.ChatShowPreview, 0) AS bit) AS ShowPreview
+            FROM dbo.ChatGroupMembers m
+            LEFT JOIN dbo.UserPrefs up ON up.UserId = m.UserId
+            WHERE m.GroupId = @groupId AND m.Status = 'active' AND m.UserId <> @senderId
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks b WHERE b.UserId = m.UserId AND b.BlockedUserId = @senderId)
+            """, new { groupId, senderId }, null, ct))).ToList();
+    }
+
+    public async Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
-        var group = await c.ExecuteScalarAsync<long?>(Sql.Cmd("SELECT TOP 1 m.GroupId FROM dbo.ChatGroupMembers m JOIN dbo.ChatGroups g ON g.Id = m.GroupId WHERE m.UserId = @userId AND g.Kind = 'party' ORDER BY m.GroupId", new { userId }, tx, ct));
-        if (group is null)
-        {
-            group = await c.ExecuteScalarAsync<long>(Sql.Cmd("INSERT INTO dbo.ChatGroups (Name) OUTPUT INSERTED.Id VALUES (N'Chat')", null, tx, ct));
-            await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatGroupMembers (GroupId, UserId) VALUES (@group, @userId)", new { group, userId }, tx, ct));
-        }
-        var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-            INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, [At]) OUTPUT INSERTED.Id, INSERTED.PublicId
-            VALUES (@group, @userId, @text, @photo, @at)
-            """, new { group, userId, text, photo, at }, tx, ct));
+        // Only ever moves forward: a read on a slow phone must not un-read what another device read.
+        await c.ExecuteAsync(Sql.Cmd("""
+            UPDATE me SET LastReadMessageId = x.Latest
+            FROM dbo.ChatGroupMembers me
+            CROSS APPLY (SELECT MAX(m.Id) AS Latest FROM dbo.ChatMessages m WHERE m.GroupId = me.GroupId) x
+            WHERE me.GroupId = @groupId AND me.UserId = @userId AND x.Latest IS NOT NULL AND x.Latest > ISNULL(me.LastReadMessageId, 0)
+            """, new { groupId, userId }, tx, ct));
+        if (receipts)
+            await c.ExecuteAsync(Sql.Cmd($"""
+                INSERT INTO dbo.ChatReads (MessageId, UserId, SeenAt)
+                SELECT m.Id, @userId, @at
+                FROM dbo.ChatMessages m
+                JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+                JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+                WHERE m.GroupId = @groupId AND m.FromUserId <> @userId AND {Window}
+                  AND NOT EXISTS (SELECT 1 FROM dbo.ChatReads r WHERE r.MessageId = m.Id AND r.UserId = @userId)
+                """, new { groupId, userId, at }, tx, ct));
         await tx.CommitAsync(ct);
-        return new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at };
+    }
+
+    public async Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET Muted = @on WHERE GroupId = @groupId AND UserId = @userId", new { groupId, userId, on }, null, ct));
+    }
+
+    public async Task<int> UnreadTotalAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd($"""
+            SELECT COUNT(*)
+            FROM dbo.ChatGroupMembers me
+            JOIN dbo.ChatGroups g ON g.Id = me.GroupId
+            JOIN dbo.ChatMessages m ON m.GroupId = g.Id
+            WHERE me.UserId = @userId AND me.Status = 'active' AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}
+            """, new { userId }, null, ct));
     }
 
     public async Task<bool> GetReceiptsAsync(long userId, CancellationToken ct)
@@ -417,16 +541,6 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             WHEN MATCHED THEN UPDATE SET ReceiptsOn = @on, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ReceiptsOn) VALUES (@userId, @on);
             """, new { userId, on }, null, ct));
-    }
-
-    public async Task MarkSeenAsync(long userId, DateTime at, CancellationToken ct)
-    {
-        await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd($"""
-            INSERT INTO dbo.ChatReads (MessageId, UserId, SeenAt)
-            SELECT m.Id, @userId, @at FROM dbo.ChatMessages m
-            WHERE m.GroupId IN {MyGroups} AND m.FromUserId <> @userId AND NOT EXISTS (SELECT 1 FROM dbo.ChatReads r WHERE r.MessageId = m.Id AND r.UserId = @userId)
-            """, new { userId, at }, null, ct));
     }
 
     public async Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct)
@@ -449,7 +563,10 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         return await c.ExecuteAsync(Sql.Cmd($"""
             INSERT INTO dbo.ChatReports (MessageId, ByUserId, Reason, [At])
-            SELECT m.Id, @userId, @reason, @at FROM dbo.ChatMessages m WHERE m.PublicId = @messagePublicId AND m.GroupId IN {MyGroups}
+            SELECT m.Id, @userId, @reason, @at FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE m.PublicId = @messagePublicId AND {Window}
             """, new { userId, messagePublicId, reason, at }, null, ct)) > 0;
     }
 }

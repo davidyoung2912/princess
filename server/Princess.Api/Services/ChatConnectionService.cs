@@ -65,7 +65,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     public async Task<ChatSummaryDto> SummaryAsync(UserRecord actor, CancellationToken ct)
     {
         var l = await ListAsync(actor, ct);
-        return new(l.Incoming.Count, l.Approvals.Count, l.Answers.Count, l.Connected.Count(c => c.IsNew), 0);
+        return new(l.Incoming.Count, l.Approvals.Count, l.Answers.Count, l.Connected.Count(c => c.IsNew), await chat.UnreadTotalAsync(actor.Id, ct));
     }
 
     /// <summary>The sender has seen the answers (declines, and new connections).</summary>

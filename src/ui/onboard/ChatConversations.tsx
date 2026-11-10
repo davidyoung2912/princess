@@ -1,0 +1,338 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
+import type { ChatConversation, ChatMessage } from '../../api/chatTypes'
+import { isApiError } from '../../api/errors'
+import { optimistic } from '../../data/optimistic'
+import {
+  conversationFromSearch, deliveryOf, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
+  type PendingMessage, type SendProblem,
+} from '../../domain/chatThread'
+import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
+import { MAX_PLAN_DAY } from '../../domain/nightsRules'
+import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
+import { useAction } from '../../hooks/useAction'
+import { useMemory } from '../../hooks/useMemory'
+import { useMine } from '../../hooks/useMine'
+import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
+import { useVisibleInterval } from '../../hooks/useVisibleInterval'
+import { useOwnerId, usePersona } from '../../hooks/useDemo'
+import { api } from '../../runtime'
+import { t, th as heading } from '../../i18n'
+import { Banner } from '../Banner'
+import { Button } from '../Button'
+import { Chip } from '../Chip'
+import { DeferredImage } from '../DeferredImage'
+import { Field, TextArea } from '../Field'
+import { ActionError, Load } from '../account/parts'
+import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
+import { useShipTime } from './shipTime'
+
+/**
+ * Chats (docs/chat-plan.md, 4.8): the conversation list is the home of Chat, and one tap opens a conversation. The open conversation is in the address (`?c=`),
+ * so back returns to the list and an alert opens the right one. Each conversation has its own history and its own unread count.
+ */
+export function Conversations() {
+  const [params, setParams] = useSearchParams()
+  const open = conversationFromSearch(params.toString())
+  return open ? <Thread key={open} id={open} onBack={() => setParams({})} /> : <ConversationList onOpen={(id) => setParams({ c: id })} />
+}
+
+function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
+  const shipTime = useShipTime()
+  const list = useMine(() => api.chatConversations.list())
+  useChatLive(list.retry)
+  useVisibleInterval(list.retry, 30_000)
+  return (
+    <section aria-labelledby="conv-h">
+      <h2 id="conv-h">{heading('conv.title')}</h2>
+      <Load state={list}>
+        {(rows) => rows.length === 0 ? <p>{t('conv.none')}</p> : (
+          <ul className="conv-list" aria-label={t('conv.title')}>
+            {rows.map((c) => (
+              <li key={c.id}>
+                <button type="button" className={c.unread > 0 ? 'conv conv--unread' : 'conv'} onClick={() => onOpen(c.id)}>
+                  <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>
+                  <span className="conv__body">
+                    <span className="conv__top">
+                      <strong>{c.name}</strong>
+                      {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
+                    </span>
+                    <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || ' '}</span>
+                    {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
+                  </span>
+                  {c.unread > 0 && (
+                    <span className="conv__unread">
+                      <span aria-hidden="true">{c.unread}</span>
+                      <span className="visually-hidden">{t('conv.unread', { count: c.unread })}</span>
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Load>
+    </section>
+  )
+}
+
+const prefersReducedMotion = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const nearBottom = (): boolean => {
+  const el = document.documentElement
+  return isNearBottom(window.scrollY, window.innerHeight, el.scrollHeight)
+}
+
+type Phase = 'loading' | 'ready' | 'error' | 'gone'
+
+/** One conversation: the latest 30 messages, older ones on request, a composer that never blocks typing, and live arrival that does not move what the guest is reading. */
+function Thread({ id, onBack }: { id: string; onBack: () => void }) {
+  const me = usePersona()
+  const ownerId = useOwnerId()
+  const shipTime = useShipTime()
+  const [phase, setPhase] = useState<Phase>('loading')
+  const [conversation, setConversation] = useState<ChatConversation | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [hasMore, setHasMore] = useState(false)
+  const [chip, setChip] = useState(false)
+  const [announce, setAnnounce] = useState('')
+  const [blockedVersion, setBlockedVersion] = useState(0)
+  const end = useRef<HTMLDivElement>(null)
+  const lastSeen = useRef<string | null>(null)
+  const lastRead = useRef<string | null>(null)
+  const first = useRef(true)
+  const mine = me?.id ?? ''
+
+  const load = useCallback(async () => {
+    try {
+      const th = await api.chatConversations.thread(id)
+      setConversation(th.conversation)
+      setMessages((cur) => withLatest(cur, th.messages))
+      if (first.current) { setHasMore(th.hasMore); first.current = false }
+      setPhase('ready')
+    } catch (e) {
+      if (isApiError(e) && e.code === 'notFound') setPhase('gone')
+      else setPhase((p) => (p === 'ready' ? p : 'error'))
+    }
+  }, [id])
+  // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
+  useEffect(() => { void load() }, [load])
+  useChatLive(() => void load())
+  useVisibleInterval(() => void load(), 30_000)
+
+  const toEnd = useCallback(() => { end.current?.scrollIntoView({ block: 'end', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); setChip(false) }, [])
+
+  // New arrivals follow the guest only when they are already at the bottom; otherwise a chip says so and nothing moves. Focus is never touched.
+  const wasNear = useRef(true)
+  useEffect(() => {
+    const onScroll = () => { wasNear.current = nearBottom(); if (wasNear.current) setChip(false) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  useEffect(() => {
+    if (phase !== 'ready') return
+    const incoming = incomingSince(lastSeen.current, messages, mine)
+    const wasFirst = lastSeen.current === null
+    lastSeen.current = messages[messages.length - 1]?.id ?? null
+    // oxlint-disable-next-line react/set-state-in-effect -- the first page arrived from the server: show its end
+    if (wasFirst) { if (messages.length > 0) toEnd(); return }
+    if (incoming) {
+      // oxlint-disable-next-line react/set-state-in-effect -- a message that just arrived from the server is announced once and may raise the chip
+      setAnnounce(t('conv.incoming', { name: incoming.fromName ?? '' }))
+      if (wasNear.current) toEnd(); else setChip(true)
+    }
+  }, [phase, messages, mine, toEnd])
+
+  // Reading clears the unread count on every device. Only while the page is in front, and only when something new has arrived.
+  useEffect(() => {
+    const last = messages[messages.length - 1]?.id ?? null
+    if (phase !== 'ready' || !last || last === lastRead.current || document.visibilityState !== 'visible') return
+    lastRead.current = last
+    void api.chatConversations.read(id).then(chatChanged, () => { lastRead.current = null })
+  }, [phase, messages, id])
+
+  const older = useAction(async () => {
+    const before = messages[0]?.id
+    if (!before) return
+    const th = await api.chatConversations.thread(id, before)
+    setMessages((cur) => withOlder(cur, th.messages))
+    setHasMore(th.hasMore)
+  })
+
+  const mute = useAction(async (on: boolean) => {
+    await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
+  })
+
+  // ---- Sending ----
+  const [text, setText] = useState('')
+  const [problem, setProblem] = useState<SendProblem | null>(null)
+  const [full, setFull] = useState(false)
+  const [sending, setSending] = useState<PendingMessage[]>([])
+  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId) : Promise.resolve()), () => void load())
+  const submit = async () => {
+    const body = text.trim()
+    if (!body) return
+    setProblem(null)
+    setFull(false)
+    const clientId = newClientId()
+    setText('')   // typing is never blocked: the message is on screen at once, marked Sending
+    setSending((s) => [...s, { id: clientId, text: body, state: 'sending' }])
+    try {
+      const sent = await sendWithin(api.chatConversations.send(id, body, clientId))
+      setMessages((cur) => mergeMessages(cur, [sent]))
+      wasNear.current = true
+    } catch (e) {
+      if (worthRetrying(e)) {
+        if (!outbox.hold({ conversation: id, text: body, clientId })) { setText((cur) => cur || body); setFull(true) }
+      } else {
+        // The text stays in the box so the guest does not lose it.
+        setText((cur) => cur || body)
+        setProblem(isApiError(e) ? sendProblem(e.code, e.message) : 'other')
+        if (isApiError(e) && e.code === 'notFound') setPhase('gone')
+      }
+    } finally {
+      setSending((s) => s.filter((x) => x.id !== clientId))
+    }
+  }
+
+  if (phase === 'gone') {
+    return (
+      <section>
+        <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
+        <Banner kind="info" title={t('conv.gone')} />
+      </section>
+    )
+  }
+  const queued = pendingFor(id, outbox.items).filter((q) => !messages.some((m) => m.id === q.id))
+  const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
+  const name = conversation?.name ?? ''
+  return (
+    <section aria-labelledby="thread-h">
+      <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
+      <h2 id="thread-h">{name}</h2>
+      {conversation && conversation.kind !== 'direct' && (
+        <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
+      )}
+      <p role="status" className="visually-hidden">{announce}</p>
+      {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
+      {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
+      {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
+      <ActionError error={older.error} />
+      {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
+      <ol className="chat-log" aria-label={t('conv.messages', { name })}>
+        {messages.map((m) => {
+          const own = m.from === mine
+          const card = m.text ? parsePlanCard(m.text) : null
+          return (
+            <li key={m.id} className={own ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
+              <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span></p>
+              {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
+              {m.photo && <DeferredImage name={m.fromName ?? ''} className="chat-msg__photo" src={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
+              {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={() => { void load(); setBlockedVersion((v) => v + 1) }} />}
+              {own && <p className="muted">{t(deliveryOf(m) === 'read' ? 'conv.read' : 'conv.sent')}</p>}
+            </li>
+          )
+        })}
+        {bubbles.map((b) => (
+          <li key={b.id} className="chat-msg chat-msg--mine chat-msg--pending">
+            <p>{b.text}</p>
+            <p className="muted">{t(b.state === 'sending' ? 'conv.sending' : 'conv.waiting')}</p>
+          </li>
+        ))}
+      </ol>
+      <div ref={end} />
+      {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
+      {conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
+        <form className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+          <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
+            onChange={(e) => { setText(e.target.value); if (problem) setProblem(null) }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } }} />
+          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : 'conv.failed')}</p>}
+          {problem && problem !== 'blocked' && <p className="muted">{t('chat.kept')}</p>}
+          {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
+          <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
+        </form>
+      )}
+      {conversation && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      <ActionError error={mute.error} />
+    </section>
+  )
+}
+
+/** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
+function Options({ conversation, muteBusy, onMute, onSent, blockedVersion, reload }: {
+  conversation: ChatConversation; muteBusy: boolean; onMute: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
+}) {
+  const receipts = useMine(() => api.messages.receipts())
+  const [shown, setShown] = useState<boolean | null>(null)
+  const on = shown ?? receipts.data === true
+  // The switch moves at once and goes back if saving fails (PERF-04).
+  const flip = useAction(async (next: boolean) => {
+    await optimistic(() => setShown(next), () => api.messages.setReceipts(next), () => setShown(null))
+    receipts.retry(); reload(); setShown(null)
+  })
+  return (
+    <details className="chat-options">
+      <summary>{t('conv.options')}</summary>
+      <div className="chip-row">
+        <Chip pressed={conversation.muted} onToggle={() => { if (!muteBusy) onMute(!conversation.muted) }}>{t('conv.mute')}</Chip>
+      </div>
+      <p className="muted">{t('conv.muteBody')}</p>
+      <div className="chip-row">
+        <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
+      </div>
+      <ActionError error={flip.error} />
+      <p className="muted">{t('chat.receiptsBody')}</p>
+      <p className="muted">{t('chat.noPreview')}</p>
+      {!conversation.closed && (
+        <>
+          <PlanCardSender conversationId={conversation.id} onSent={onSent} />
+          <PhotoSender conversationId={conversation.id} onSent={onSent} />
+        </>
+      )}
+      <BlockedList version={blockedVersion} reload={reload} />
+      <p className="muted">{t('chat.photos')}</p>
+    </details>
+  )
+}
+
+/** A plan card in the chat, with a button that adds it to the guest's own plan day. */
+function PlanCardView({ card }: { card: PlanCard }) {
+  const { state, update } = useMemory()
+  const added = hasPlanCard(state.pasted, card)
+  const full = !added && addPlanCard(state.pasted, card).length === state.pasted.length
+  return (
+    <div className="plan-card">
+      <p><strong>{planCardSentence(card)}</strong></p>
+      <Button variant="secondary" disabled={added || full} onClick={() => update((m) => ({ ...m, pasted: addPlanCard(m.pasted, card) }))}>{added ? t('chat.card.added') : t('chat.card.add')}</Button>
+      {full && <p className="muted">{t('chat.card.full')}</p>}
+    </div>
+  )
+}
+
+/** Sends a meeting as a card instead of a line of text (C01). */
+function PlanCardSender({ conversationId, onSent }: { conversationId: string; onSent: () => void }) {
+  const [place, setPlace] = useState('')
+  const [day, setDay] = useState(1)
+  const [time, setTime] = useState('19:00')
+  const card = newPlanCard(day, time, place)
+  const send = useAction(async () => { if (card) { await api.chatConversations.send(conversationId, encodePlanCard(card), newClientId()); setPlace(''); onSent() } })
+  return (
+    <details className="plan-card-form">
+      <summary>{t('chat.card.title')}</summary>
+      <p className="muted">{t('chat.card.hint')}</p>
+      <form onSubmit={(e) => { e.preventDefault(); void send.run() }}>
+        <Field label={t('chat.card.place')} value={place} maxLength={PLACE_MAX} onChange={(e) => setPlace(e.target.value)} autoComplete="off" />
+        <div className="field">
+          <label htmlFor="card-day">{t('chat.card.day')}</label>
+          <select id="card-day" value={day} onChange={(e) => setDay(Number(e.target.value))}>
+            {Array.from({ length: MAX_PLAN_DAY }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <Field label={t('chat.card.time')} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <ActionError error={send.error} />
+        <Button type="submit" disabled={send.busy || !card}>{t('chat.card.send')}</Button>
+      </form>
+    </details>
+  )
+}

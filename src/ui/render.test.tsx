@@ -206,9 +206,10 @@ describe('onboard screens', () => {
     expect(html).toContain(th('muster.alt'))
   })
 
-  it('offers party chat first with Guest Services one press away, and always shows the phone number', () => {
+  it('offers the chat list first with People and Guest Services one press away, and always shows the phone number', () => {
     const html = decode(render('/chat'))
-    expect(html).toContain(t('chat.party'))
+    expect(html).toContain(t('chat.chats'))
+    expect(html).toContain(t('chat.people'))
     expect(html).toContain(t('chat.service'))
     expect(html).toContain('href="tel:555-0100"')
   })

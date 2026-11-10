@@ -1,5 +1,5 @@
 import type { AboardApi } from './aboardTypes'
-import type { ChatConnectionsApi } from './chatTypes'
+import type { ChatConnectionsApi, ChatConversationsApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
@@ -753,13 +753,9 @@ export interface Api {
   }
   orders: OrdersApi
   messages: {
-    list(): Promise<Message[]>
-    send(text: string): Promise<Message>
     /** Whether the signed-in person shows and sees read receipts. */
     receipts(): Promise<boolean>
     setReceipts(on: boolean): Promise<boolean>
-    /** Marks the chat as read now (only recorded when receipts are on). */
-    markSeen(): Promise<void>
   }
   photos: PhotosApi
   family: FamilyApi
@@ -774,6 +770,7 @@ export interface Api {
   privacy: PrivacyApi
   aboard: AboardApi
   chatConnections: ChatConnectionsApi
+  chatConversations: ChatConversationsApi
   ahead: AheadApi
   disembark: DisembarkApi
   cases: CasesApi

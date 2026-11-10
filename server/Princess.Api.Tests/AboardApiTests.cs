@@ -578,84 +578,210 @@ public class AboardApiTests : JourneyWorld
     private Task<Reply> ChatPost(string path, string token, object? body = null) => Call(HttpMethod.Post, $"{Chat}/{path}", token, body);
     private Task<Reply> ChatPut(string path, string token, object? body) => Call(HttpMethod.Put, $"{Chat}/{path}", token, body);
 
-    private async Task<string> Say(UserRecord who, string text, int minutes = 0)
+    private static string Msgs(InMemoryChatStore.Conversation c) => $"conversations/{c.PublicId}/messages";
+
+    private async Task<string> Say(InMemoryChatStore.Conversation c, UserRecord who, string text, int minutes = 0)
     {
         SetNow(SeaDay.AddMinutes(minutes));
-        return (await ChatPost("messages", await SignIn(who), new { text })).Json.GetProperty("id").GetString()!;
+        return (await ChatPost(Msgs(c), await SignIn(who), new { text })).Json.GetProperty("id").GetString()!;
     }
+
+    private async Task<string[]> Texts(InMemoryChatStore.Conversation c, string token) =>
+        [.. (await ChatGet(Msgs(c), token)).Json.GetProperty("messages").EnumerateArray().Select(m => m.GetProperty("text").GetString()!)];
 
     [Fact]
     public async Task PeopleInAGroupSeeEachOthersMessagesInOrderAndOthersSeeNothing()
     {
-        F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
-        await Say(Daniel, "Meet at the pool", 0);
-        await Say(Priya, "On my way", 2);
-        await Say(Stranger, "Anyone here?", 3);
-        var seen = (await ChatGet("messages", await SignIn(Paul))).Json;
+        var party = F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
+        var alone = F.Chat.Group(Stranger.Id);
+        await Say(party, Daniel, "Meet at the pool", 0);
+        await Say(party, Priya, "On my way", 2);
+        await Say(alone, Stranger, "Anyone here?", 3);
+        var seen = (await ChatGet(Msgs(party), await SignIn(Paul))).Json.GetProperty("messages");
         Assert.Equal(["Meet at the pool", "On my way"], seen.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
         Assert.Equal([Daniel.PublicId.ToString(), Priya.PublicId.ToString()], seen.EnumerateArray().Select(m => m.GetProperty("from").GetString()!).ToArray());
-        Assert.Equal(["Anyone here?"], (await ChatGet("messages", await SignIn(Stranger))).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
+        Assert.Equal(["Daniel U.", "Priya U."], seen.EnumerateArray().Select(m => m.GetProperty("fromName").GetString()!).ToArray());
+        Assert.Equal(["Anyone here?"], await Texts(alone, await SignIn(Stranger)));
         Assert.False(seen[0].TryGetProperty("photo", out _));
         Assert.False(seen[0].TryGetProperty("seenBy", out _));
     }
 
     [Fact]
+    public async Task AMemberOfOneConversationCannotReadSendCountMuteOrReportInAnother()
+    {
+        var mine = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var theirs = F.Chat.Direct(Paul.Id, Stranger.Id);
+        var theirMessage = await Say(theirs, Paul, "Private", 0);
+        var daniel = await DanielToken();
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatGet(Msgs(theirs), daniel)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost(Msgs(theirs), daniel, new { text = "Hello?" })).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/read", daniel)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPut($"conversations/{theirs.PublicId}/mute", daniel, new { on = true })).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/photos", daniel, Photo())).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost("reports", daniel, new { messageId = theirMessage, reason = "rude" })).Status);
+        var list = (await ChatGet("conversations", daniel)).Json.EnumerateArray().Select(c => c.GetProperty("id").GetString()).ToArray();
+        Assert.Contains(mine.PublicId.ToString(), list);
+        Assert.DoesNotContain(theirs.PublicId.ToString(), list);
+        Assert.Equal(0, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Empty(F.Chat.Messages.Where(m => m.GroupId == mine.Id));
+    }
+
+    [Fact]
+    public async Task EachConversationHasItsOwnHistoryAndUnreadCountThatClearsWhenRead()
+    {
+        var party = F.Chat.Group(Daniel.Id, Priya.Id);
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        await Say(party, Priya, "Party one", 0);
+        await Say(direct, Priya, "Direct one", 1);
+        await Say(direct, Priya, "Direct two", 2);
+        var daniel = await DanielToken();
+        var list = (await ChatGet("conversations", daniel)).Json.EnumerateArray().ToDictionary(c => c.GetProperty("id").GetString()!);
+        Assert.Equal(1, list[party.PublicId.ToString()].GetProperty("unread").GetInt32());
+        Assert.Equal(2, list[direct.PublicId.ToString()].GetProperty("unread").GetInt32());
+        Assert.Equal("Direct two", list[direct.PublicId.ToString()].GetProperty("last").GetProperty("text").GetString());
+        Assert.Equal(3, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(["Direct one", "Direct two"], await Texts(direct, daniel));
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{direct.PublicId}/read", daniel)).Status);
+        Assert.Equal(1, (await ChatGet("summary", daniel)).Json.GetProperty("unread").GetInt32());
+        Assert.Equal(0, (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("unread").GetInt32());
+    }
+
+    [Fact]
+    public async Task APersonOnlyReadsWhatWasSentWhileTheyWereAMemberOfADirectOrGuestChat()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        await Say(direct, Priya, "Before", 0);
+        direct.Members.First(m => m.UserId == Daniel.Id).JoinedAt = SeaDay.AddMinutes(5);
+        await Say(direct, Priya, "After", 10);
+        Assert.Equal(["After"], await Texts(direct, await DanielToken()));
+    }
+
+    [Fact]
+    public async Task ThreadsComeInPagesOfThirtyWithOlderOnesFetchedBeforeTheOldestShown()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        for (var i = 1; i <= 45; i++) await Say(direct, Priya, $"m{i}", i);
+        var daniel = await DanielToken();
+        var first = (await ChatGet(Msgs(direct), daniel)).Json;
+        Assert.True(first.GetProperty("hasMore").GetBoolean());
+        var page = first.GetProperty("messages");
+        Assert.Equal(30, page.GetArrayLength());
+        Assert.Equal(("m16", "m45"), (page[0].GetProperty("text").GetString(), page[29].GetProperty("text").GetString()));
+        var older = (await ChatGet($"{Msgs(direct)}?before={page[0].GetProperty("id").GetString()}", daniel)).Json;
+        Assert.False(older.GetProperty("hasMore").GetBoolean());
+        Assert.Equal(15, older.GetProperty("messages").GetArrayLength());
+        Assert.Equal("m15", older.GetProperty("messages")[14].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task AMessageThatFailsTheWordFilterIsNotSentOrStoredAndTheSenderIsTold()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        Is(HttpStatusCode.BadRequest, "blocked", await ChatPost(Msgs(direct), await DanielToken(), new { text = "you are a fucking idiot" }));
+        Assert.Empty(F.Chat.Messages);
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(direct), await DanielToken(), new { text = "Class starts at ten" })).Status);
+    }
+
+    [Fact]
+    public async Task ARetriedMessageWithTheSameClientIdIsStoredOnce()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        var clientId = Guid.NewGuid();
+        var one = (await ChatPost(Msgs(direct), daniel, new { text = "Hello", clientId })).Json.GetProperty("id").GetString();
+        var two = (await ChatPost(Msgs(direct), daniel, new { text = "Hello", clientId })).Json.GetProperty("id").GetString();
+        Assert.Equal(one, two);
+        Assert.Single(F.Chat.Messages);
+    }
+
+    [Fact]
+    public async Task AnEndedDirectChatStaysReadableButClosesSending()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        await Say(direct, Priya, "Bye", 0);
+        direct.DirectEnded = true;
+        var daniel = await DanielToken();
+        Is(HttpStatusCode.Conflict, "closed", await ChatPost(Msgs(direct), daniel, new { text = "Wait" }));
+        Assert.Equal(["Bye"], await Texts(direct, daniel));
+        Assert.True((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("closed").GetBoolean());
+    }
+
+    [Fact]
+    public async Task AConversationCanBeMutedAndTheListSaysSo()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        Assert.True((await ChatPut($"conversations/{direct.PublicId}/mute", daniel, new { on = true })).Json.GetBoolean());
+        Assert.True((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("muted").GetBoolean());
+        Assert.False((await ChatPut($"conversations/{direct.PublicId}/mute", daniel, new { on = false })).Json.GetBoolean());
+    }
+
+    [Fact]
     public async Task AMessageNeedsTextAndAChildCannotPassOnANumberOrALink()
     {
+        var party = F.Chat.Group(Daniel.Id, Priya.Id);
         var token = await DanielToken();
-        Is(HttpStatusCode.BadRequest, "text", await ChatPost("messages", token, new { text = "   " }));
-        Is(HttpStatusCode.BadRequest, "text", await ChatPost("messages", token, new { text = new string('x', 2001) }));
-        Assert.Equal(HttpStatusCode.OK, (await ChatPost("messages", token, new { text = "Call me on 555 123 4567" })).Status);       // an adult may
+        Is(HttpStatusCode.BadRequest, "text", await ChatPost(Msgs(party), token, new { text = "   " }));
+        Is(HttpStatusCode.BadRequest, "text", await ChatPost(Msgs(party), token, new { text = new string('x', 2001) }));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(party), token, new { text = "Call me on 555 123 4567" })).Status);       // an adult may
         var maya = MayaToken();
-        Is(HttpStatusCode.BadRequest, "contactInfo", await ChatPost("messages", maya, new { text = "Call me on 555 123 4567" }));
-        Is(HttpStatusCode.BadRequest, "contactInfo", await ChatPost("messages", maya, new { text = "look at https://example.com" }));
-        Assert.Equal(HttpStatusCode.OK, (await ChatPost("messages", maya, new { text = "See you at seven" })).Status);
+        var kids = F.Chat.Group(Maya.Id, Priya.Id);
+        Is(HttpStatusCode.BadRequest, "contactInfo", await ChatPost(Msgs(kids), maya, new { text = "Call me on 555 123 4567" }));
+        Is(HttpStatusCode.BadRequest, "contactInfo", await ChatPost(Msgs(kids), maya, new { text = "look at https://example.com" }));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(kids), maya, new { text = "See you at seven" })).Status);
+    }
+
+    [Fact]
+    public async Task TheConversationListMakesMyGroupForSomeoneWithNone()
+    {
+        var list = (await ChatGet("conversations", await SignIn(Stranger))).Json;
+        Assert.Equal(1, list.GetArrayLength());
+        Assert.Equal(("party", "My group"), (list[0].GetProperty("kind").GetString(), list[0].GetProperty("name").GetString()));
     }
 
     [Fact]
     public async Task ReadReceiptsShowOnlyWhenBothTheSenderAndTheReaderHaveThemOn()
     {
-        F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
+        var party = F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
         var daniel = await DanielToken();
         var priya = await SignIn(Priya);
         var paul = await SignIn(Paul);
         Assert.False((await ChatGet("receipts", daniel)).Json.GetBoolean());
-        await Say(Daniel, "Dinner at seven?", 0);
-        await ChatPost("seen", priya);                                                                     // receipts off: nothing recorded
-        Assert.False((await ChatGet("messages", daniel)).Json[0].TryGetProperty("seenBy", out _));
+        await Say(party, Daniel, "Dinner at seven?", 0);
+        await ChatPost($"conversations/{party.PublicId}/read", priya);                                       // receipts off: nothing recorded
+        Assert.False((await ChatGet(Msgs(party), daniel)).Json.GetProperty("messages")[0].TryGetProperty("seenBy", out _));
 
         Assert.True((await ChatPut("receipts", daniel, new { on = true })).Json.GetBoolean());
         Assert.True((await ChatPut("receipts", priya, new { on = true })).Json.GetBoolean());
-        await ChatPost("seen", priya);
-        await ChatPost("seen", paul);                                                                      // Paul has them off
-        var first = (await ChatGet("messages", daniel)).Json[0];
+        await ChatPost($"conversations/{party.PublicId}/read", priya);
+        await ChatPost($"conversations/{party.PublicId}/read", paul);                                        // Paul has them off
+        var first = (await ChatGet(Msgs(party), daniel)).Json.GetProperty("messages")[0];
         Assert.Equal([Priya.PublicId.ToString()], first.GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()!).ToArray());
-        Assert.Equal([Priya.PublicId.ToString()], (await ChatGet("messages", daniel)).Json[0].GetProperty("seenBy").EnumerateArray().Select(x => x.GetString()!).ToArray());
-        await ChatPut("receipts", daniel, new { on = false });                                             // the sender turns them off: nobody is shown
-        Assert.False((await ChatGet("messages", daniel)).Json[0].TryGetProperty("seenBy", out _));
+        await ChatPut("receipts", daniel, new { on = false });                                              // the sender turns them off: nobody is shown
+        Assert.False((await ChatGet(Msgs(party), daniel)).Json.GetProperty("messages")[0].TryGetProperty("seenBy", out _));
     }
 
     [Fact]
     public async Task ABlockedPersonsMessagesAreHiddenFromTheBlockerOnly()
     {
-        F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
-        await Say(Paul, "Hello all", 0);
-        await Say(Priya, "Hi Paul", 1);
+        var party = F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
+        await Say(party, Paul, "Hello all", 0);
+        await Say(party, Priya, "Hi Paul", 1);
         var daniel = await DanielToken();
         Assert.Empty((await ChatGet("blocks", daniel)).Json.EnumerateArray());
         Assert.Equal([Paul.PublicId.ToString()], (await ChatPut($"blocks/{Paul.PublicId}", daniel, new { on = true })).Json.EnumerateArray().Select(x => x.GetString()!).ToArray());
-        Assert.Equal(["Hi Paul"], (await ChatGet("messages", daniel)).Json.EnumerateArray().Select(m => m.GetProperty("text").GetString()!).ToArray());
-        Assert.Equal(2, (await ChatGet("messages", await SignIn(Priya))).Json.GetArrayLength());
+        Assert.Equal(["Hi Paul"], await Texts(party, daniel));
+        Assert.Equal(2, (await Texts(party, await SignIn(Priya))).Length);
         Assert.Empty((await ChatPut($"blocks/{Paul.PublicId}", daniel, new { on = false })).Json.EnumerateArray());
-        Assert.Equal(2, (await ChatGet("messages", daniel)).Json.GetArrayLength());
+        Assert.Equal(2, (await Texts(party, daniel)).Length);
         Is(HttpStatusCode.BadRequest, "notInChat", await ChatPut($"blocks/{Stranger.PublicId}", daniel, new { on = true }));
     }
 
     [Fact]
     public async Task AMessageCanBeReportedOnlyByThoseWhoCanSeeItForAKnownReason()
     {
-        F.Chat.Group(Daniel.Id, Priya.Id);
-        var id = await Say(Priya, "Something rude", 0);
+        var party = F.Chat.Group(Daniel.Id, Priya.Id);
+        var id = await Say(party, Priya, "Something rude", 0);
         var daniel = await DanielToken();
         Assert.Equal(HttpStatusCode.NoContent, (await ChatPost("reports", daniel, new { messageId = id, reason = "rude" })).Status);
         Assert.Equal((Daniel.Id, "rude"), (F.Chat.Reports[0].UserId, F.Chat.Reports[0].Reason));
@@ -669,24 +795,26 @@ public class AboardApiTests : JourneyWorld
     [Fact]
     public async Task AnAdultCanSendAPhotoWithACaptionAndItAppearsInTheChat()
     {
-        F.Chat.Group(Daniel.Id, Priya.Id);
+        var party = F.Chat.Group(Daniel.Id, Priya.Id);
         var daniel = await DanielToken();
         SetNow(SeaDay);
-        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost("photos", daniel, Photo(caption: " The sunset "))).Status);
-        var m = (await ChatGet("messages", await SignIn(Priya))).Json[0];
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost($"conversations/{party.PublicId}/photos", daniel, Photo(caption: " The sunset "))).Status);
+        var m = (await ChatGet(Msgs(party), await SignIn(Priya))).Json.GetProperty("messages")[0];
         Assert.Equal(("The sunset", "data:image/png;base64,AAAA"), (m.GetProperty("text").GetString(), m.GetProperty("photo").GetString()));
     }
 
     [Fact]
     public async Task APhotoIsCheckedForTypeSizeAgeAndTheDataUrl()
     {
+        var party = F.Chat.Group(Daniel.Id, Priya.Id, Maya.Id);
+        var photos = $"conversations/{party.PublicId}/photos";
         var daniel = await DanielToken();
-        Is(HttpStatusCode.BadRequest, "type", await ChatPost("photos", daniel, Photo(type: "image/gif")));
-        Is(HttpStatusCode.BadRequest, "empty", await ChatPost("photos", daniel, Photo(bytes: 0)));
-        Is(HttpStatusCode.BadRequest, "size", await ChatPost("photos", daniel, Photo(bytes: 1_000_001)));
-        Is(HttpStatusCode.BadRequest, "size", await ChatPost("photos", daniel, new { type = "image/png", bytes = 500, dataUrl = "data:image/jpeg;base64,AAAA", caption = "" }));
-        Is(HttpStatusCode.BadRequest, "size", await ChatPost("photos", daniel, new { type = "image/png", bytes = 500, dataUrl = "data:image/png;base64," + new string('A', 1_400_000), caption = "" }));
-        Is(HttpStatusCode.Forbidden, "age", await ChatPost("photos", MayaToken(), Photo()));
+        Is(HttpStatusCode.BadRequest, "type", await ChatPost(photos, daniel, Photo(type: "image/gif")));
+        Is(HttpStatusCode.BadRequest, "empty", await ChatPost(photos, daniel, Photo(bytes: 0)));
+        Is(HttpStatusCode.BadRequest, "size", await ChatPost(photos, daniel, Photo(bytes: 1_000_001)));
+        Is(HttpStatusCode.BadRequest, "size", await ChatPost(photos, daniel, new { type = "image/png", bytes = 500, dataUrl = "data:image/jpeg;base64,AAAA", caption = "" }));
+        Is(HttpStatusCode.BadRequest, "size", await ChatPost(photos, daniel, new { type = "image/png", bytes = 500, dataUrl = "data:image/png;base64," + new string('A', 1_400_000), caption = "" }));
+        Is(HttpStatusCode.Forbidden, "age", await ChatPost(photos, MayaToken(), Photo()));
     }
 
     // ---- Account lines are one source each ----

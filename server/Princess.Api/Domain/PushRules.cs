@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Princess.Api.Domain;
 
 /// <summary>One thing the server may tell a guest's phone. <see cref="Key"/> is stable for the same occasion, so it is sent once; <see cref="Bypass"/> notices skip the budget, quiet hours and calm mode.</summary>
-public sealed record PushNotice(string Key, string Kind, string Category, bool Bypass, int Priority, string Path, string Title, string Body, Dictionary<string, object> Params);
+public sealed record PushNotice(string Key, string Kind, string Category, bool Bypass, int Priority, string Path, string Title, string Body, Dictionary<string, object> Params, string? Tag = null);
 
 /// <summary>The settings a phone sends with its subscription: the unprompted-suggestions-a-day budget, calm mode and the events it wants to hear about.</summary>
 public sealed record PushSettings(int Budget, bool Calm, IReadOnlyList<string> Watch);

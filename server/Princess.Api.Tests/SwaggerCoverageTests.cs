@@ -453,15 +453,17 @@ public class SwaggerCoverageTests : IDisposable
         { "post", "/api/v1/bookings/{number}/last-minute/{excursionId}" },
         { "get", "/api/v1/bookings/{number}/ready" },
         { "put", "/api/v1/bookings/{number}/ready/{id}" },
-        { "get", "/api/v1/me/chat/messages" },
-        { "post", "/api/v1/me/chat/messages" },
+        { "get", "/api/v1/me/chat/conversations" },
+        { "get", "/api/v1/me/chat/conversations/{id}/messages" },
+        { "post", "/api/v1/me/chat/conversations/{id}/messages" },
+        { "post", "/api/v1/me/chat/conversations/{id}/read" },
+        { "put", "/api/v1/me/chat/conversations/{id}/mute" },
+        { "post", "/api/v1/me/chat/conversations/{id}/photos" },
         { "get", "/api/v1/me/chat/receipts" },
         { "put", "/api/v1/me/chat/receipts" },
-        { "post", "/api/v1/me/chat/seen" },
         { "get", "/api/v1/me/chat/blocks" },
         { "put", "/api/v1/me/chat/blocks/{id}" },
         { "post", "/api/v1/me/chat/reports" },
-        { "post", "/api/v1/me/chat/photos" },
     };
 
     [Theory]

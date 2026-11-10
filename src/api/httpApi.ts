@@ -46,6 +46,7 @@ export interface HttpGroups {
   orders: Api['orders']
   messages: Api['messages']
   chatConnections: Api['chatConnections']
+  chatConversations: Api['chatConversations']
   family: Api['family']
   health: Api['health']
   room: Api['room']
@@ -206,11 +207,16 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     escalate: (channel, phone) => inTrip('post', `/service/${seg(channel)}/escalate`, { phone }),
   }
   const messages: HttpGroups['messages'] = {
-    list: () => get('/me/chat/messages'),
-    send: (text) => send('post', '/me/chat/messages', { text }),
     receipts: () => get('/me/chat/receipts'),
     setReceipts: (on) => send('put', '/me/chat/receipts', { on }),
-    markSeen: async () => { await http.post('/me/chat/seen') },
+  }
+  const chatConversations: HttpGroups['chatConversations'] = {
+    list: () => get('/me/chat/conversations'),
+    thread: (id, before) => get(`/me/chat/conversations/${seg(id)}/messages${before ? `?before=${seg(before)}` : ''}`),
+    send: (id, text, clientId) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId }),
+    sendPhoto: (id, input) => send('post', `/me/chat/conversations/${seg(id)}/photos`, input),
+    read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
+    mute: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on }),
   }
   const chatConnections: HttpGroups['chatConnections'] = {
     search: (query) => get(`/me/chat/people?query=${seg(query)}`),
@@ -290,7 +296,6 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
       blocked: () => get('/me/chat/blocks'),
       block: (id, on) => send('put', `/me/chat/blocks/${seg(id)}`, { on }),
       report: async (messageId, reason) => { await http.post('/me/chat/reports', { messageId, reason }) },
-      sendPhoto: async (input) => { await http.post('/me/chat/photos', input) },
     },
   }
   const groups: HttpGroups = {
@@ -301,6 +306,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     orders,
     messages,
     chatConnections,
+    chatConversations,
     family,
     health,
     room,
@@ -631,6 +637,7 @@ export function toApi(g: HttpGroups): Api {
     orders: g.orders,
     messages: g.messages,
     chatConnections: g.chatConnections,
+    chatConversations: g.chatConversations,
     family: g.family,
     health: g.health,
     room: g.room,

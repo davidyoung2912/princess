@@ -6,10 +6,10 @@ using Princess.Api.Data;
 namespace Princess.Api.Services;
 
 /// <summary>What a phone is told. The service worker shows <see cref="Title"/> and <see cref="Body"/> and opens <see cref="Path"/> when tapped.</summary>
-public sealed record PushMessage(string Key, string Kind, string Title, string Body, string Path, bool Critical, Dictionary<string, object> Params)
+public sealed record PushMessage(string Key, string Kind, string Title, string Body, string Path, bool Critical, Dictionary<string, object> Params, string? Tag = null)
 {
     /// <summary>The body sent to the phone. Small, with no personal data beyond what the notice says.</summary>
-    public string ToJson() => JsonSerializer.Serialize(new { id = Key, kind = Kind, title = Title, body = Body, path = Path, critical = Critical, @params = Params }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    public string ToJson() => JsonSerializer.Serialize(new { id = Key, kind = Kind, title = Title, body = Body, path = Path, critical = Critical, @params = Params, tag = Tag }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }
 
 public enum PushResult { Delivered, Gone, Failed }

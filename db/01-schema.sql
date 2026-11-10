@@ -3209,3 +3209,17 @@ CREATE INDEX IX_ChatConnections_RequesterId ON dbo.ChatConnections (RequesterId,
 CREATE INDEX IX_ChatConnections_GuardianUserId ON dbo.ChatConnections (GuardianUserId, Status) WHERE GuardianUserId IS NOT NULL;
 END
 GO
+
+-- Chat conversations and messages (docs/chat-plan.md, phase 4).
+-- Read state is per member per conversation: the last message the member has read. Unread = messages after it, from others, sent while they were a member.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'LastReadMessageId') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD LastReadMessageId BIGINT NULL;
+GO
+
+-- A client-made id makes a retried send safe: the same person sending the same id into the same conversation gets the stored message back.
+IF COL_LENGTH(N'dbo.ChatMessages', N'ClientId') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD ClientId UNIQUEIDENTIFIER NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatMessages_Client' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
+  CREATE UNIQUE INDEX UX_ChatMessages_Client ON dbo.ChatMessages (GroupId, FromUserId, ClientId) WHERE ClientId IS NOT NULL;
+GO

@@ -1,6 +1,6 @@
 # Chat: connections, conversations and notifications
 
-Plan for person-to-person and group chat between guests. Written 2026-11-09. Phase 1 is built with this plan; later phases are built only when asked.
+Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 4 are built; later phases are built only when asked.
 
 ## 1. What the guest gets
 
@@ -210,12 +210,15 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Backplane (Redis or Azure SignalR) documented as configuration for more than one server.
 - Built as: `Realtime/` (`ChatHub`, `RealtimeState`, `IRealtimeHub` with `SignalRRealtimeHub`), WebSockets only. `ChatNotifier` nudges an open app first and sends the phone alert off the request after 8 s with no `Ack` (at once when no app is connected to that server). The browser side is `src/realtime/hubClient.ts`, a small JSON-protocol client (no `@microsoft/signalr` package) with reconnect, ping and silence timeout; `useChatSummary` runs it, acknowledges, refetches, and polls every minute while it is down. `useChatLive` lets a screen refetch on a nudge.
 
-### Phase 4: conversations and messages
+### Phase 4: conversations and messages — built
 
 - Per-conversation list, history, send, read, unread counts, mute. Retire the pooled `/me/chat/messages` for party chat (the party group becomes one conversation among others).
 - `ProfanityFilter` on send, with the sender told; idempotent `clientId`; offline outbox with "Sending, Sent, Waiting for signal".
 - Message push with the opt-in preview and per-conversation collapse.
 - Tests prove that a member of conversation A cannot read, count, search or be notified about conversation B.
+- Built as: `IChatStore` is per conversation (`GetMemberAsync` is the access check), `ChatConversationRules` holds the pure rules, and the routes are `GET /me/chat/conversations`, `GET/POST …/{id}/messages`, `POST …/{id}/read`, `PUT …/{id}/mute`, `POST …/{id}/photos`. The pooled `/messages`, `/seen` and `/photos` are gone. `ChatGroupMembers.LastReadMessageId` and `ChatMessages.ClientId` are new. `ChatNotifier.MessageAsync` uses the phase 3 path; notices share a `tag` per conversation (`PushNotice.Tag`, read by `push-sw.js`) and open `/chat?c=<id>`. "My group" is made on first list for a guest who has none. The summary's `unread` is now real.
+- The screen: Chat opens on the conversation list (`ChatConversations.tsx`), a thread loads 30 messages with "Show earlier messages", an own message shows at once as Sending, then Sent or Read, or "Waiting for signal" when held in the outbox (the outbox item carries the `clientId`, so a retry never doubles). A word-filter refusal keeps the text in the box with "That message cannot be sent. Please reword it." New messages announce politely and never move the page: a "New messages" chip shows when the guest has scrolled up. Reading clears the count on every device.
+- Left for later: the **Delivered** state (the server does not track delivery to a device yet), caching the list and open thread for instant display on a slow link, fetching older messages by scrolling (a button does it now), and moving the push fan-out off the request for groups (phase 5).
 
 ### Phase 5: groups
 

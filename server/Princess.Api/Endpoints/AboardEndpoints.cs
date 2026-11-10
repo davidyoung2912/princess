@@ -108,23 +108,27 @@ public static class AboardEndpoints
             .WithSummary("Ticks or unticks an item. 400 badItem.");
 
         var chat = api.MapGroup("/me/chat").WithTags("Chat");
-        chat.MapGet("/messages", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
-            .WithSummary("Messages in the caller's chat groups, oldest first, without those from people the caller has blocked.");
-        chat.MapPost("/messages", async (SendChatRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SendAsync(await me.LoadAsync(ct), body, ct)))
-            .WithSummary("Sends a message. 400 text for an empty or over-long message, contactInfo for a phone number or link from an under-18.");
+        chat.MapGet("/conversations", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ConversationsAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The caller's conversations, newest activity first: the booking's \"My group\" and a direct chat for each connection. Each has its members, its last line, the unread count (the same on every device), whether it is muted and whether sending is closed. Nothing from a conversation the caller is not in.");
+        chat.MapGet("/conversations/{id:guid}/messages", async (Guid id, Guid? before, int? limit, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ThreadAsync(await me.LoadAsync(ct), id, before, limit, ct)))
+            .WithSummary("The latest 30 messages of one conversation, oldest first (`limit` up to 100), or the page before the message `before`. `hasMore` says older ones exist. Messages from before the caller joined, and from people the caller blocked, are left out. 404 for a conversation the caller is not in.");
+        chat.MapPost("/conversations/{id:guid}/messages", async (Guid id, SendChatRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SendAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Sends a message (1 to 2000 characters) to one conversation; the other members are told. `clientId` makes a retry safe: a repeat returns the stored message and tells nobody twice. 400 text, blocked (the word filter; nothing is stored) or contactInfo (an under-18 sharing a number or link); 404 not a member; 409 closed.");
+        chat.MapPost("/conversations/{id:guid}/read", async (Guid id, ICurrentUser me, ChatService svc, CancellationToken ct) => { await svc.ReadAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("Marks the conversation read now, on every device. Who read what is recorded only when the caller has read receipts on. 404 not a member.");
+        chat.MapPut("/conversations/{id:guid}/mute", async (Guid id, ChatMuteRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.MuteAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Mutes or unmutes a conversation: no phone alert for its messages. The unread count still shows. Returns the new state. 404 not a member.");
+        chat.MapPost("/conversations/{id:guid}/photos", async (Guid id, ChatPhotoRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SendPhotoAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Sends a photo (JPEG, PNG or WebP under 1 MB, as a data URL) with an optional caption to one conversation. 400 type, size, empty, contactInfo or blocked; 403 age (under 18); 404 not a member; 409 closed.");
         chat.MapGet("/receipts", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.ReceiptsAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Whether the caller shows and sees read receipts.");
         chat.MapPut("/receipts", async (ChatReceiptsRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SetReceiptsAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Turns read receipts on or off and returns the new setting.");
-        chat.MapPost("/seen", async (ICurrentUser me, ChatService svc, CancellationToken ct) => { await svc.MarkSeenAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
-            .WithSummary("Marks the chat read now (only recorded when receipts are on).");
         chat.MapGet("/blocks", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.BlockedAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The people the caller has blocked.");
         chat.MapPut("/blocks/{id:guid}", async (Guid id, ChatBlockRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.BlockAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Hides a person's messages from the caller, or shows them again. 400 notInChat for someone who shares no group.");
         chat.MapPost("/reports", async (ChatReportRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => { await svc.ReportAsync(await me.LoadAsync(ct), body, ct); return Results.NoContent(); })
             .WithSummary("Reports a message the caller can see. 400 badReason; 404 for a message the caller cannot see.");
-        chat.MapPost("/photos", async (ChatPhotoRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => { await svc.SendPhotoAsync(await me.LoadAsync(ct), body, ct); return Results.NoContent(); })
-            .WithSummary("Sends a photo (a data URL under 1 MB) with a caption. 400 type, size, empty or contactInfo; 403 age for under-18s.");
     }
 }

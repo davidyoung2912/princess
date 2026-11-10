@@ -8,7 +8,9 @@ self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all([
     self.registration.showNotification(data.title, {
       body: typeof data.body === 'string' ? data.body : '',
-      tag: typeof data.id === 'string' ? data.id : undefined,
+      // A notice may name a tag of its own so several collapse into one (a busy chat); otherwise each is its own.
+      tag: typeof data.tag === 'string' ? data.tag : typeof data.id === 'string' ? data.id : undefined,
+      renotify: typeof data.tag === 'string',
       requireInteraction: data.critical === true,
       icon: '/icon-192.png',
       data: { path, id: typeof data.id === 'string' ? data.id : null },

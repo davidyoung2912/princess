@@ -12,7 +12,8 @@ import { AboardError } from './common'
 import { personFirstName } from '../../account/context'
 
 /** Report or hide someone's messages (MSG-05). Reporting sends the message to the ship's moderators; blocking only hides it from you. */
-export function MessageSafety({ messageId, from, onBlocked }: { messageId: string; from: PersonaId; onBlocked: () => void }) {
+export function MessageSafety({ messageId, from, name, onBlocked }: { messageId: string; from: PersonaId; /** Their first name and last initial, when the screen knows it. */ name?: string; onBlocked: () => void }) {
+  const who = name || personFirstName(from)
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState<ChatReportReason>('rude')
   const [sent, setSent] = useState(false)
@@ -20,7 +21,7 @@ export function MessageSafety({ messageId, from, onBlocked }: { messageId: strin
   const block = useAction(async () => { await api.aboard.chat.block(from, true); onBlocked() })
   return (
     <div className="chat-safety">
-      <Button variant="tertiary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('safe.more')}<span className="visually-hidden"> {personFirstName(from)}</span></Button>
+      <Button variant="tertiary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('safe.more')}<span className="visually-hidden"> {who}</span></Button>
       {open && (
         <div>
           {sent ? <p role="status">{t('safe.reported')}</p> : (
@@ -32,7 +33,7 @@ export function MessageSafety({ messageId, from, onBlocked }: { messageId: strin
               <Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('safe.report')}</Button>
             </div>
           )}
-          <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: personFirstName(from) })}</Button>
+          <Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('safe.block', { name: who })}</Button>
           <AboardError error={report.error ?? block.error} />
         </div>
       )}
@@ -62,14 +63,14 @@ const readAsDataUrl = (file: File): Promise<string> => new Promise((resolve, rej
   reader.readAsDataURL(file)
 })
 
-/** Send a photo to the party (MSG-01): JPEG, PNG or WebP under 1 MB, adults only. */
-export function PhotoSender({ onSent }: { onSent: () => void }) {
+/** Send a photo into one conversation (MSG-01): JPEG, PNG or WebP under 1 MB, adults only. */
+export function PhotoSender({ conversationId, onSent }: { conversationId: string; onSent: () => void }) {
   const me = usePersona()
   const [caption, setCaption] = useState('')
   const [bad, setBad] = useState<'type' | 'size' | null>(null)
   const send = useAction(async (file: File) => {
     const dataUrl = await readAsDataUrl(file)
-    await api.aboard.chat.sendPhoto({ type: file.type, bytes: file.size, dataUrl, caption })
+    await api.chatConversations.sendPhoto(conversationId, { type: file.type, bytes: file.size, dataUrl, caption })
     setCaption('')
     onSent()
   })

@@ -93,10 +93,13 @@ public sealed class GroupTableRow
     public List<(int Seq, string Name, string Cabin)> Friends { get; set; } = [];
 }
 
+/// <summary>Someone who shares a conversation with the person: the public id and short name the screens use, and whether they show read receipts.</summary>
 public sealed class ChatPeerRow
 {
     public long UserId { get; set; }
     public Guid PublicId { get; set; }
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
     public bool ReceiptsOn { get; set; }
 }
 
@@ -111,6 +114,47 @@ public sealed class ChatMessageRow
     /// <summary>The people who have read it.</summary>
     public List<long> SeenBy { get; set; } = [];
 }
+
+/// <summary>The person's own place in one conversation: the access check every read and write goes through (docs/chat-plan.md, 4.1).</summary>
+public class ChatMemberRow
+{
+    public long GroupId { get; set; }
+    public Guid GroupPublicId { get; set; }
+    public string Kind { get; set; } = "party";
+    public string Name { get; set; } = "";
+    public long UserId { get; set; }
+    public string Status { get; set; } = "active";
+    public DateTime JoinedAt { get; set; }
+    public DateTime? LeftAt { get; set; }
+    public bool Muted { get; set; }
+    public long? LastReadMessageId { get; set; }
+    /// <summary>A direct chat whose connection has ended: readable, but sending is closed.</summary>
+    public bool DirectEnded { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>A conversation in the person's list: their place in it, its last visible message and how many they have not read.</summary>
+public sealed class ChatConversationRow : ChatMemberRow
+{
+    public long? LastMessageId { get; set; }
+    public long? LastFromUserId { get; set; }
+    public string? LastText { get; set; }
+    public bool LastPhoto { get; set; }
+    public DateTime? LastAt { get; set; }
+    public int Unread { get; set; }
+}
+
+/// <summary>Someone who should hear about a new message: an active member other than the sender who has not blocked the sender.</summary>
+public sealed class ChatRecipientRow
+{
+    public long UserId { get; set; }
+    public bool Muted { get; set; }
+    /// <summary>The recipient allows message text on their lock screen (off unless they turned it on).</summary>
+    public bool ShowPreview { get; set; }
+}
+
+/// <summary>A message stored by <see cref="IChatStore.AddMessageAsync"/>. <c>Created</c> is false when the same <c>clientId</c> had been sent before and the stored message came back.</summary>
+public sealed record ChatSentRow(ChatMessageRow Row, bool Created);
 
 /// <summary>Phase 10c store: on-board bookings, requests, reports, drinks, money, parties, group tables, games, the TV, last-minute tours and port readiness. Writes that put something on the account take the lines in the same transaction and replace every line of that source.</summary>
 public interface IAboardStore
@@ -168,20 +212,40 @@ public interface IAboardStore
     Task BookLastMinuteAsync(long bookingId, NewTour tour, IReadOnlyList<FolioWrite> folio, DateTime at, CancellationToken ct);
 }
 
-/// <summary>The group chat and its safeguards (MSG-01, MSG-05). A person may be in several groups; they see every group's messages together.</summary>
+/// <summary>
+/// Conversations and their messages (docs/chat-plan.md, phase 4), and the safeguards of MSG-05. Every read and write is for one conversation and goes through <see cref="GetMemberAsync"/>:
+/// there is no query that spans conversations except the list and the unread counts, which return numbers and ids only.
+/// </summary>
 public interface IChatStore
 {
-    /// <summary>Everyone who shares a group with the person, the person excluded.</summary>
+    /// <summary>Makes the booking's "My group" for a person who has none, so there is always one conversation to open.</summary>
+    Task EnsurePartyAsync(long userId, CancellationToken ct);
+    /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
+    Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);
+    /// <summary>The person's place in one conversation, or null when they are not (or never were) a member. The check behind every other call.</summary>
+    Task<ChatMemberRow?> GetMemberAsync(long userId, Guid conversationId, CancellationToken ct);
+    /// <summary>Everyone who is, or was, in the conversation, with names and receipt choice.</summary>
+    Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct);
+    /// <summary>Everyone who shares any conversation with the person, the person excluded (for blocking and read receipts).</summary>
     Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct);
-    Task<List<ChatMessageRow>> ListMessagesAsync(long userId, CancellationToken ct);
-    /// <summary>Posts to the person's first group, making a group of their own if they are in none.</summary>
-    Task<ChatMessageRow> AddMessageAsync(long userId, string text, string? photo, DateTime at, CancellationToken ct);
+    /// <summary>
+    /// A page of messages in arrival order, oldest first: the newest <paramref name="limit"/> before the message <paramref name="before"/> (or the latest). Only messages in the member's window
+    /// (from when they joined to when they left; the booking's group shows all) and not from someone the member blocked. One extra message is read so the caller can tell there is more.
+    /// </summary>
+    Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct);
+    /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
+    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct);
+    /// <summary>The members to tell about a message from <paramref name="senderId"/>: active, not the sender, and not having blocked the sender.</summary>
+    Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct);
+    /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>
+    Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct);
+    Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>Unread messages over every conversation, for the tab badge.</summary>
+    Task<int> UnreadTotalAsync(long userId, CancellationToken ct);
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);
     Task SetReceiptsAsync(long userId, bool on, CancellationToken ct);
-    /// <summary>Marks every message the person can see, and did not write, as read.</summary>
-    Task MarkSeenAsync(long userId, DateTime at, CancellationToken ct);
     Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct);
     Task SetBlockAsync(long userId, long blockedUserId, bool on, CancellationToken ct);
-    /// <summary>Records a report about a message the person can see; false if there is no such message.</summary>
+    /// <summary>Records a report about a message in a conversation the person is in; false if there is no such message.</summary>
     Task<bool> AddReportAsync(long userId, Guid messagePublicId, string reason, DateTime at, CancellationToken ct);
 }

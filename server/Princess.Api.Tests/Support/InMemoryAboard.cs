@@ -1,4 +1,5 @@
 using Princess.Api.Data;
+using Princess.Api.Domain;
 
 namespace Princess.Api.Tests.Support;
 
@@ -218,44 +219,146 @@ public sealed class InMemoryAboardStore(InMemoryShipboardStore shipboard, InMemo
     }
 }
 
-/// <summary>The chat store in memory: groups of users and their messages.</summary>
+/// <summary>The chat store in memory: conversations of users, their members' places and their messages, with the same access rule as the SQL store (a person reads only conversations they are in).</summary>
 public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 {
     private long _next = 1;
 
-    public List<(long Id, HashSet<long> Members)> Groups { get; } = [];
-    public List<(long GroupId, ChatMessageRow Row)> Messages { get; } = [];
+    public sealed class Conversation
+    {
+        public long Id { get; init; }
+        public Guid PublicId { get; init; } = Guid.NewGuid();
+        public string Kind { get; init; } = "party";
+        public string Name { get; init; } = "";
+        public bool DirectEnded { get; set; }
+        public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+        public List<Member> Members { get; } = [];
+    }
+
+    public sealed class Member
+    {
+        public long UserId { get; init; }
+        public string Status { get; set; } = "active";
+        public DateTime JoinedAt { get; set; } = DateTime.MinValue;
+        public DateTime? LeftAt { get; set; }
+        public bool Muted { get; set; }
+        public long? LastRead { get; set; }
+    }
+
+    public List<Conversation> Conversations { get; } = [];
+    public sealed record Stored(long GroupId, ChatMessageRow Row, Guid? ClientId);
+
+    public List<Stored> Messages { get; } = [];
     public HashSet<long> Receipts { get; } = [];
+    public HashSet<long> Previews { get; } = [];
     public HashSet<(long UserId, long Blocked)> Blocks { get; } = [];
     public List<(long UserId, Guid MessageId, string Reason)> Reports { get; } = [];
 
-    /// <summary>Puts the people in one group.</summary>
-    public void Group(params long[] userIds) => Groups.Add((_next++, [.. userIds]));
+    /// <summary>Puts the people in one booking group ("My group").</summary>
+    public Conversation Group(params long[] userIds) => Make("party", "My group", userIds);
 
-    private IEnumerable<long> GroupsOf(long userId) => Groups.Where(g => g.Members.Contains(userId)).Select(g => g.Id);
+    /// <summary>A direct chat between two people.</summary>
+    public Conversation Direct(long a, long b) => Make("direct", "Direct", [a, b]);
+
+    private Conversation Make(string kind, string name, long[] userIds)
+    {
+        var c = new Conversation { Id = _next++, Kind = kind, Name = name };
+        foreach (var id in userIds) c.Members.Add(new Member { UserId = id });
+        Conversations.Add(c);
+        return c;
+    }
+
+    private Conversation Of(long groupId) => Conversations.First(c => c.Id == groupId);
+
+    private IEnumerable<Conversation> Mine(long userId) => Conversations.Where(c => c.Members.Any(m => m.UserId == userId));
+
+    private bool Readable(Conversation c, Member me, ChatMessageRow m) =>
+        ChatConversationRules.CanRead(c.Kind, m.At, me.JoinedAt, me.LeftAt) && !Blocks.Contains((me.UserId, m.FromUserId));
+
+    private ChatMemberRow Row(Conversation c, Member me) => new()
+    {
+        GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
+        Muted = me.Muted, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
+    };
+
+    private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
+
+    private int UnreadIn(Conversation c, Member me) => Visible(c, me).Count(m => m.FromUserId != me.UserId && m.Id > (me.LastRead ?? 0));
+
+    public Task EnsurePartyAsync(long userId, CancellationToken ct)
+    {
+        if (!Mine(userId).Any(c => c.Kind == "party")) Group(userId);
+        return Task.CompletedTask;
+    }
+
+    public Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Mine(userId).Select(c => (C: c, Me: c.Members.First(m => m.UserId == userId))).Where(x => x.Me.Status == "active").Select(x =>
+        {
+            var last = Visible(x.C, x.Me).LastOrDefault();
+            var r = new ChatConversationRow
+            {
+                GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
+                Muted = x.Me.Muted, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
+            };
+            if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastAt = last.At; }
+            return r;
+        }).OrderByDescending(r => r.LastAt ?? r.CreatedAt).ThenByDescending(r => r.GroupId).ToList());
+
+    public Task<ChatMemberRow?> GetMemberAsync(long userId, Guid conversationId, CancellationToken ct) =>
+        Task.FromResult(Conversations.FirstOrDefault(c => c.PublicId == conversationId) is { } c && c.Members.FirstOrDefault(m => m.UserId == userId) is { } me ? Row(c, me) : null);
+
+    private ChatPeerRow Peer(long id)
+    {
+        var u = users.Users.First(u => u.Id == id);
+        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id) };
+    }
+
+    public Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct) => Task.FromResult(Of(groupId).Members.Select(m => Peer(m.UserId)).ToList());
 
     public Task<List<ChatPeerRow>> ListPeersAsync(long userId, CancellationToken ct) =>
-        Task.FromResult(Groups.Where(g => g.Members.Contains(userId)).SelectMany(g => g.Members).Where(id => id != userId).Distinct()
-            .Select(id => new ChatPeerRow { UserId = id, PublicId = users.Users.First(u => u.Id == id).PublicId, ReceiptsOn = Receipts.Contains(id) }).ToList());
+        Task.FromResult(Mine(userId).SelectMany(c => c.Members).Select(m => m.UserId).Where(id => id != userId).Distinct().Select(Peer).ToList());
 
-    public Task<List<ChatMessageRow>> ListMessagesAsync(long userId, CancellationToken ct)
+    public Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct)
     {
-        var mine = GroupsOf(userId).ToHashSet();
-        return Task.FromResult(Messages.Where(m => mine.Contains(m.GroupId)).Select(m => m.Row).OrderBy(m => m.At).ThenBy(m => m.Id).ToList());
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == userId);
+        var all = Visible(c, me).ToList();
+        if (before is { } b) all = all.Where(m => m.Id < (Messages.FirstOrDefault(x => x.Row.PublicId == b && x.GroupId == groupId)?.Row.Id ?? long.MaxValue)).ToList();
+        return Task.FromResult(all.TakeLast(limit + 1).ToList());
     }
 
-    public Task<ChatMessageRow> AddMessageAsync(long userId, string text, string? photo, DateTime at, CancellationToken ct)
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct)
     {
-        var group = GroupsOf(userId).Cast<long?>().FirstOrDefault();
-        if (group is null)
-        {
-            Group(userId);
-            group = Groups[^1].Id;
-        }
+        if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
+            return Task.FromResult(new ChatSentRow(again.Row, false));
         var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at };
-        Messages.Add((group.Value, row));
-        return Task.FromResult(row);
+        Messages.Add(new Stored(groupId, row, clientId));
+        return Task.FromResult(new ChatSentRow(row, true));
     }
+
+    public Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct) =>
+        Task.FromResult(Of(groupId).Members.Where(m => m.Status == "active" && m.UserId != senderId && !Blocks.Contains((m.UserId, senderId)))
+            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = m.Muted, ShowPreview = Previews.Contains(m.UserId) }).ToList());
+
+    public Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == userId);
+        var latest = Messages.Where(m => m.GroupId == groupId).Select(m => m.Row.Id).DefaultIfEmpty(0).Max();
+        if (latest > (me.LastRead ?? 0)) me.LastRead = latest;
+        if (receipts)
+            foreach (var m in Visible(c, me).Where(m => m.FromUserId != userId && !m.SeenBy.Contains(userId))) m.SeenBy.Add(userId);
+        return Task.CompletedTask;
+    }
+
+    public Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        Of(groupId).Members.First(m => m.UserId == userId).Muted = on;
+        return Task.CompletedTask;
+    }
+
+    public Task<int> UnreadTotalAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Mine(userId).Select(c => (C: c, Me: c.Members.First(m => m.UserId == userId))).Where(x => x.Me.Status == "active").Sum(x => UnreadIn(x.C, x.Me)));
 
     public Task<bool> GetReceiptsAsync(long userId, CancellationToken ct) => Task.FromResult(Receipts.Contains(userId));
 
@@ -263,13 +366,6 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         if (on) Receipts.Add(userId);
         else Receipts.Remove(userId);
-        return Task.CompletedTask;
-    }
-
-    public Task MarkSeenAsync(long userId, DateTime at, CancellationToken ct)
-    {
-        var mine = GroupsOf(userId).ToHashSet();
-        foreach (var m in Messages.Where(m => mine.Contains(m.GroupId) && m.Row.FromUserId != userId && !m.Row.SeenBy.Contains(userId))) m.Row.SeenBy.Add(userId);
         return Task.CompletedTask;
     }
 
@@ -284,8 +380,8 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Task<bool> AddReportAsync(long userId, Guid messagePublicId, string reason, DateTime at, CancellationToken ct)
     {
-        var mine = GroupsOf(userId).ToHashSet();
-        if (!Messages.Any(m => m.Row.PublicId == messagePublicId && mine.Contains(m.GroupId))) return Task.FromResult(false);
+        var found = Messages.FirstOrDefault(m => m.Row.PublicId == messagePublicId);
+        if (found is null || Of(found.GroupId).Members.FirstOrDefault(m => m.UserId == userId) is not { } me || !Readable(Of(found.GroupId), me, found.Row)) return Task.FromResult(false);
         Reports.Add((userId, messagePublicId, reason));
         return Task.FromResult(true);
     }

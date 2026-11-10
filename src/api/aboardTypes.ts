@@ -173,8 +173,6 @@ export interface ChatSafeApi {
   /** Hides their messages from you. Rejects `invalid` for someone who is not on your booking or chat. */
   block(id: PersonaId, on: boolean): Promise<PersonaId[]>
   report(messageId: string, reason: ChatReportReason): Promise<void>
-  /** A photo as a data URL under the size limit. Rejects `invalid` (`type`, `size`, `empty`) or `forbidden` (`age`). */
-  sendPhoto(input: { type: string; bytes: number; dataUrl: string; caption: string }): Promise<void>
 }
 
 export type FeedbackKind = 'bug' | 'idea' | 'praise'

@@ -79,7 +79,7 @@ export function cleanMessage(text: unknown): string {
 limit('SLOW_FACTOR', (v) => { SLOW_FACTOR = v }, SLOW_FACTOR)
 limit('ESCALATE_AFTER_MINUTES', (v) => { ESCALATE_AFTER_MINUTES = v }, ESCALATE_AFTER_MINUTES)
 
-/** Notifications about party chat (SEA-16): there is no push for chat at all, so a message's text can never appear on a lock screen. Kept as a named fact so a change shows up in a test. */
+/** Chat alerts carry no message text by default (docs/chat-plan.md, 4.4): the guest opts in to a preview in the People settings. Kept as a named fact so a change shows up in a test. */
 export const CHAT_NOTIFICATION_PREVIEW = 'none' as const
 
 export type Delivery = 'sent' | 'seen'

@@ -110,7 +110,7 @@ public sealed class PushService(
                 await store.AddDeliveryAsync(target.Id, new(n.Key, n.Kind, n.Bypass, "held", decision.Reason, 0, paramsJson, now, false), now, ct);
             return;
         }
-        var message = new PushMessage(n.Key, n.Kind, n.Title, n.Body, n.Path, n.Bypass, n.Params);
+        var message = new PushMessage(n.Key, n.Kind, n.Title, n.Body, n.Path, n.Bypass, n.Params, n.Tag);
         var delivered = 0;
         foreach (var s in subs)
         {

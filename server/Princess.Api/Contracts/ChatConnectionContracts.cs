@@ -28,3 +28,19 @@ public sealed record ChatRespondBody(bool Accept, bool Block = false);
 
 /// <summary>The caller's chat choices. <c>Findable</c>: other guests on the sailing can find them by name. <c>ShowPreview</c>: a notice may show the message text (used from phase 4).</summary>
 public sealed record ChatSettingsDto(bool Findable, bool ShowPreview);
+
+// ---- Conversations and messages (phase 4) ----
+
+/// <summary>The last line of a conversation, for the list. <c>Text</c> is empty for a photo with no caption.</summary>
+public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string FromName, long At);
+
+/// <summary>
+/// One conversation as the caller sees it. <c>Kind</c> is party (the booking's "My group"), direct or group. <c>Name</c> is the other person for a direct chat.
+/// <c>Members</c> are first name and last initial, the caller excluded. <c>Closed</c>: sending has stopped (a chat that ended, or a caller who left). <c>Unread</c> is the same on every device.
+/// </summary>
+public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At);
+
+/// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
+public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore);
+
+public sealed record ChatMuteRequest(bool On);
