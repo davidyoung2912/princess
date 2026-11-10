@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { StanleyLoyaltyCoach } from '../ai/StanleyMoney'
 import type { LoyaltyReportKind, LoyaltyView } from '../../api/finishTypes'
 import { TIER_DAYS } from '../../domain/postcruise'
 import { formatMoney } from '../../domain/money'
@@ -42,6 +43,7 @@ function Loyalty({ v, reload }: { v: LoyaltyView; reload: () => void }) {
   const target = s.next ? TIER_DAYS[s.next] : s.daysAfter
   return (
     <>
+      <StanleyLoyaltyCoach />
       {s.promoted && <Banner kind="success" title={t('loy.promoted', { tier: t(`me.tier.${s.after}` as StringKey) })}><p>{t('loy.promotedBody')}</p></Banner>}
       <Card hero labelledBy="loy-level-h">
         <h2 id="loy-level-h" className="card__title">{th('loy.level')}</h2>

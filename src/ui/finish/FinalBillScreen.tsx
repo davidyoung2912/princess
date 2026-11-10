@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { StanleyFolioCard } from '../ai/StanleyMoney'
 import { HelpTip } from '../HelpTip'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
@@ -62,6 +63,7 @@ function FinalBill({ f, b, reload }: { f: FolioView; b: FinalBillView; reload: (
   })
   return (
     <>
+      <StanleyFolioCard />
       <Card hero labelledBy="fb-owe-h">
         <h2 id="fb-owe-h" className="card__title">{th('fb.owe')}</h2>
         <p className="bill__big">{total.balance < 0 ? t('bill.credit', { amount: formatMoney(-total.balance) }) : formatMoney(total.balance)}</p>

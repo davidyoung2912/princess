@@ -38,7 +38,7 @@ public sealed class MemoryStanleyChangeStore : IStanleyChangeStore
 /// </summary>
 public sealed class StanleyChangeService(
     IStanleyTrips trips, ITripStore tripStore, IStanleyChangeStore store, IProgramChanges program, IPushStore pushStore, ScopeLoader scopes, ITenderOutlook tender, IWeatherService weather,
-    IShipNavigation nav, StanleyTravelService travel, CaseService cases, OrderService orders, IInboxStore inbox, IUserClock clock, IClock serverClock, IOptions<StanleyOptions> options, ILogger<StanleyChangeService> log)
+    IShipNavigation nav, StanleyTravelService travel, StanleyMoneyService money, CaseService cases, OrderService orders, IInboxStore inbox, IUserClock clock, IClock serverClock, IOptions<StanleyOptions> options, ILogger<StanleyChangeService> log)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -121,7 +121,15 @@ public sealed class StanleyChangeService(
             if (list is not null) orderSignals.AddRange(list.Select(o => new OrderSignal(o.Id.ToString("N")[..8], o.Stage, o.Unavailable.Count)));
         }
 
-        var facts = new ChangeFacts(now, trip, program.Current(), SavedIds(subs, saved), scenarios, tenders, flight, skies, sea, caseSignals, orderSignals);
+        // The spend pace (phase 12) only for a guest who is aboard and has chosen a budget for Stanley to watch.
+        SpendSignal? spend = null;
+        if (booking is not null && !user.IsSupervised && options.Value.Switches.Money && day >= 1 && day <= trip.Nights && await money.BudgetAsync(user.Id, ct) is { } budget)
+        {
+            var pace = await Try("your spending", () => money.PaceForAsync(user, trip, booking, budget, ct));
+            if (pace is not null) spend = new SpendSignal(pace);
+        }
+
+        var facts = new ChangeFacts(now, trip, program.Current(), SavedIds(subs, saved), scenarios, tenders, flight, skies, sea, caseSignals, orderSignals, spend);
         return new(trip, StanleyChangeRules.Cards(facts), unread, now);
     }
 

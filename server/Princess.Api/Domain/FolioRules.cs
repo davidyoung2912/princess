@@ -27,13 +27,16 @@ public static class FolioRules
         new("drinks", "Specialty coffee, Coffee Currents", 600, false),
         new("drinks", "Premium cocktail, Wheelhouse Bar", 1900, true),
         new("drinks", "Pint, O’Malley’s Irish Pub", 850, true),
-        new("internet", "Wi-Fi, one device, one day", 1999, false),
+        new("internet", "Wi-Fi, one device, one day", WifiDayCents, false),
         new("spa", "Massage, Lotus Spa", 15900, true),
         new("shops", "Sunscreen, Shops of Princess", 1899, false),
         new("shops", "Souvenir tee, Shops of Princess", 3200, false),
         new("photos", "Portrait print, ship photographers", 2495, false),
         new("laundry", "Self-service laundry, wash and dry", 800, false),
     ];
+
+    /// <summary>What one device pays for Wi-Fi for one day when no package covers it.</summary>
+    public const long WifiDayCents = 1999;
 
     /// <summary>The bar service charge added to a bar charge.</summary>
     public const double BarServiceRate = 0.18;

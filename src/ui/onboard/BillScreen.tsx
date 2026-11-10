@@ -1,4 +1,5 @@
 import { InCurrency } from '../aboard/MoneyScreen'
+import { StanleyFolioCard, StanleyPaceCard } from '../ai/StanleyMoney'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { asFolioView } from '../../api/guards'
@@ -61,6 +62,8 @@ function Folio({ f }: { f: FolioView }) {
       <BudgetAlert lines={f.lines} />
       <BudgetCard lines={f.lines} />
       <SpendCoachCard lines={f.lines} throughDay={f.throughDay} />
+      <StanleyPaceCard />
+      <StanleyFolioCard />
       <FeeLedgerCard lines={f.lines} />
       <p><Link to="/me/ledger">{t('route.ledger')}</Link></p>
 

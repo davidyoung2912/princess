@@ -14,9 +14,20 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null, StanleyChangeService? changes = null)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null, StanleyChangeService? changes = null, StanleyMoneyService? money = null)
 {
     public const string NoTools = "[]";
+
+    private async Task<StanleyCardDto?> MoneyCardAsync(UserRecord user, string message, string? sailingId, CancellationToken ct)
+    {
+        try { return await money!.ChatAsync(user, message, sailingId, ct); }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            if (StanleyMoneyRules.Classify(message) is null) return null;
+            log.LogWarning(e, "Stanley could not read the guest's account for a money question");
+            return StanleyMoneyRules.UnreadCard(clock.UtcNow);
+        }
+    }
 
     public async Task<StanleyReplyDto> AskAsync(UserRecord user, StanleyRequestDto request, CancellationToken ct)
     {
@@ -73,6 +84,10 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
                 return await End(Answer(StanleyActionText.Problem(e.Title), "scripted", "action", null, null), "action", "refused");
             }
         }
+        // Money questions (phase 12: is it included for me, my bill, my spending pace, Captain's Circle) are answered by the money rules from the services, as a card. No model is called and no model can change a figure;
+        // if the account cannot be read the card says so, and the question does not go on to a model that could make a figure up.
+        if (money is not null && o.Switches.Resolver && o.Switches.Money && await MoneyCardAsync(user, turns.Message, packet?.Choice.Chosen?.SailingId ?? context.SailingId, ct) is { } moneyCard)
+            return await End(new StanleyReplyDto("answer", moneyCard.Text, null, "scripted", null, "resolver", [new StanleyBlockDto("text", moneyCard.Text)], moneyCard.Links ?? [], null, moneyCard), moneyCard.Id, moneyCard.Abstained ? "abstained" : "ok");
         // Tier 0: the questions about the guest's own trip that need no model. Each answer is a card with its provenance; with the switch off the question moves on to the tools and the model.
         if (trip is not null && o.Switches.Resolver)
         {

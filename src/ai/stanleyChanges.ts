@@ -6,7 +6,7 @@ import type { StanleyLevel } from '../settings/settings'
  * delivery rules (alerts apart from suggestions, quiet hours, one proactive element per screen, three per session, a dismissed card stays dismissed until its facts change) are applied there too.
  * This module reads those answers defensively, maps the guest's proactivity to the server's levels and keeps the per-session count. No change is judged, ranked or worded here. Framework-free, so it is tested in node.
  */
-export const CHANGE_KINDS = ['itinerary', 'portCall', 'venue', 'tender', 'weather', 'flight', 'reservation', 'order', 'case'] as const
+export const CHANGE_KINDS = ['itinerary', 'portCall', 'venue', 'tender', 'weather', 'flight', 'reservation', 'order', 'case', 'spend'] as const
 export type ChangeKind = (typeof CHANGE_KINDS)[number]
 export const CHANGE_STATUSES = ['verified', 'provisional', 'forecast'] as const
 export type ChangeStatus = (typeof CHANGE_STATUSES)[number]

@@ -9,8 +9,8 @@ namespace Princess.Api.Domain;
 /// <summary>What kind of thing changed. Every source of change maps to exactly one of these.</summary>
 public static class ChangeKinds
 {
-    public const string Itinerary = "itinerary", PortCall = "portCall", Venue = "venue", Tender = "tender", Weather = "weather", Flight = "flight", Reservation = "reservation", Order = "order", Case = "case";
-    public static readonly string[] All = [Itinerary, PortCall, Venue, Tender, Weather, Flight, Reservation, Order, Case];
+    public const string Itinerary = "itinerary", PortCall = "portCall", Venue = "venue", Tender = "tender", Weather = "weather", Flight = "flight", Reservation = "reservation", Order = "order", Case = "case", Spend = "spend";
+    public static readonly string[] All = [Itinerary, PortCall, Venue, Tender, Weather, Flight, Reservation, Order, Case, Spend];
 }
 
 /// <summary>How sure the source is. Verified: the line, the ship or a provider says it is so. Provisional: reported but may still move. Forecast: something expected, not a fact.</summary>
@@ -71,7 +71,8 @@ public sealed record ChangeDismissRequest(string? Fingerprint, string? SailingId
 /// <summary>What the server remembers for one guest: when each change (in the form it has now) was first noticed, which version was dismissed, and when the guest last caught up.</summary>
 public sealed record ChangeSeen(string Fp, long At, string? DismissedFp = null);
 
-public sealed record ChangeMemory(Dictionary<string, ChangeSeen> Seen, long? LastOpenAt)
+/// <summary><see cref="BudgetCents"/> is the trip budget the guest chose to let Stanley watch (phase 12); it is kept here with the rest of what Stanley remembers about their changes, and is null until they set one.</summary>
+public sealed record ChangeMemory(Dictionary<string, ChangeSeen> Seen, long? LastOpenAt, long? BudgetCents = null)
 {
     public static ChangeMemory Empty => new([], null);
 }
@@ -83,11 +84,13 @@ public sealed record SkySignal(int Day, string Port, string? RainFrom, string? R
 public sealed record SeaSignal(double WaveM, double SwellM);
 public sealed record CaseSignal(string Number, string Kind, string Stage, string? Outcome, long OpenedAt, long DueAt);
 public sealed record OrderSignal(string Id, string Stage, int Unavailable);
+/// <summary>The spending pace against the budget the guest set (phase 12), already worked out by <see cref="StanleyMoneyRules.Pace"/>. Null when there is no budget or the guest is not aboard.</summary>
+public sealed record SpendSignal(PaceResult Pace);
 
 /// <summary>Everything the engine reads. <see cref="Saved"/> are the programme events the guest has saved; <see cref="Scenarios"/> the disruptions in force for a demo guest.</summary>
 public sealed record ChangeFacts(
     DateTime Now, StanleyTrip Trip, IReadOnlyList<PlanChange> Program, IReadOnlySet<string> Saved, IReadOnlySet<string> Scenarios, IReadOnlyList<TenderSignal> Tenders,
-    TravelFlightDto? Flight, IReadOnlyList<SkySignal> Skies, SeaSignal? Sea, IReadOnlyList<CaseSignal> Cases, IReadOnlyList<OrderSignal> Orders);
+    TravelFlightDto? Flight, IReadOnlyList<SkySignal> Skies, SeaSignal? Sea, IReadOnlyList<CaseSignal> Cases, IReadOnlyList<OrderSignal> Orders, SpendSignal? Spend = null);
 
 /// <summary>
 /// Stanley's change engine: it turns what the sources say into change events, works out only the parts of the guest's plan each one touches, and ranks them by consequence.
@@ -176,6 +179,7 @@ public static class StanleyChangeRules
         drafts.AddRange(SeaDrafts(f));
         drafts.AddRange(OrderDrafts(f));
         drafts.AddRange(CaseDrafts(f));
+        drafts.AddRange(SpendDrafts(f));
         return [.. drafts.Select(d => Make(f, d)).OrderBy(c => ChangeConsequence.Rank(c.Consequence)).ThenBy(c => c.Day ?? int.MaxValue).ThenBy(c => c.Id, StringComparer.Ordinal)];
     }
 
@@ -409,6 +413,23 @@ public static class StanleyChangeRules
             Tip: true);
     }
 
+    /// <summary>
+    /// The gentle mid-week spend pace (phase 12): "at this pace you will be around X" against the budget the guest set. It is a projection, so its status is forecast and it is never an alert; it is an improvement
+    /// suggestion when the pace is over the budget and optional when it is close, so the guest's proactivity level and quiet hours decide whether it is shown. Only a move of more than fifty dollars in the projection makes it a new card.
+    /// </summary>
+    private static IEnumerable<Draft> SpendDrafts(ChangeFacts f)
+    {
+        if (f.Spend?.Pace is not { } p || !StanleyMoneyRules.PaceAlertWorthy(p) || p.ProjectedTotalCents is not { } projected || p.BudgetCents is not { } budget) yield break;
+        var over = p.State == "over";
+        yield return new Draft("spend:pace", ChangeKinds.Spend, ChangeStatus.Forecast, "Your onboard account", over ? ChangeConsequence.Improvement : ChangeConsequence.Optional, p.Day,
+            $"At this pace you will be around {StanleyMoneyRules.Money(projected)}",
+            string.Join(" ", p.Lines.Take(3)),
+            over ? $"You set a budget of {StanleyMoneyRules.Money(budget)}, and this pace is about {StanleyMoneyRules.Money(p.OverCents ?? 0)} over it." : $"You set a budget of {StanleyMoneyRules.Money(budget)}, and this pace is close to it.",
+            Route("bill", "See what is on your bill", "Each charge is listed with its state: posted, pending or questioned.", "/me/bill"),
+            [Advice("pace", "Nothing needs to change", "A budget is yours to keep or move. I will not stop anything you buy.")], [], "Nothing changes. This is only a heads-up, and a straight-line guess from the days so far.", ["home", "ship"],
+            [p.State, (projected / 5_000).ToString(CultureInfo.InvariantCulture)], Tip: true);
+    }
+
     private static IEnumerable<Draft> OrderDrafts(ChangeFacts f)
     {
         foreach (var o in f.Orders)
@@ -542,7 +563,7 @@ public static class StanleyChangeRules
         var cutoff = now - (long)SeenStays.TotalMilliseconds;
         foreach (var id in seen.Keys.Where(k => !live.Contains(k) && seen[k].At < cutoff).ToList()) seen.Remove(id);
         while (seen.Count > MaxSeen && seen.Where(kv => !live.Contains(kv.Key)).OrderBy(kv => kv.Value.At).Select(kv => kv.Key).FirstOrDefault() is { } oldest) seen.Remove(oldest);
-        return new ChangeMemory(seen, memory.LastOpenAt ?? now);
+        return memory with { Seen = seen, LastOpenAt = memory.LastOpenAt ?? now };
     }
 
     /// <summary>The cards with the time each was first noticed.</summary>

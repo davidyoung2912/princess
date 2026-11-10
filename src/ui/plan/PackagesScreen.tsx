@@ -20,6 +20,7 @@ import { Load } from '../account/parts'
 import { PayPanel } from '../book/PayPanel'
 import { GuestPicker, PlanError, ReadOnly } from './common'
 import { names } from './people'
+import { StanleyMoneyPanel } from '../ai/StanleyMoney'
 
 type Buying = { kind: 'addOn'; offer: AddOnOffer } | { kind: 'upgrade'; offer: UpgradeOffer; to: 'plus' | 'premier' }
 
@@ -59,6 +60,8 @@ function Body({ view, reload }: { view: PackagesView; reload: () => void }) {
           </Card>
         )}
       </section>
+
+      <StanleyMoneyPanel view={view} />
 
       {view.upgrades.length > 0 && (
         <section aria-labelledby="up-h">

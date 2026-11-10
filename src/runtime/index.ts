@@ -147,6 +147,19 @@ export const stanleyChanges = {
   dismiss: (id: string, body: { fingerprint: string; sailingId?: string }) => http.post<unknown>(`/me/stanley/changes/${encodeURIComponent(id)}/dismiss`, body),
 }
 
+/** Entitlement, spend and loyalty coach (phase 12). Every figure is worked out on the server from the services that hold it; nothing here is bought, charged or settled. A dispute only opens a tracked billing case. */
+export const stanleyMoney = {
+  budget: () => http.get<unknown>('/me/stanley/money/budget'),
+  setBudget: (cents: number | null) => http.put<unknown>('/me/stanley/money/budget', { cents }),
+  entitlement: (body: unknown) => http.post<unknown>('/me/stanley/money/entitlement', body),
+  scenario: (body: unknown) => http.post<unknown>('/me/stanley/money/scenario', body),
+  pace: (sailingId?: string) => http.get<unknown>(`/me/stanley/money/pace${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),
+  folio: (sailingId?: string) => http.get<unknown>(`/me/stanley/money/folio${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),
+  dispute: (body: unknown) => http.post<unknown>('/me/stanley/money/dispute', body),
+  packageValue: (body: unknown) => http.post<unknown>('/me/stanley/money/package-value', body),
+  loyalty: () => http.get<unknown>('/me/stanley/money/loyalty'),
+}
+
 /** Travel-day, port and onward-travel help (phase 10): the flight rechecked, traffic, a shore plan, reviewed phrases, the offline port pack, an embark tour and the official entry sources. Nothing is booked or sent from here. */
 export const stanleyTravel = {
   flight: (sailingId?: string) => http.get<unknown>(`/me/stanley/travel/flight${sailingId ? `?sailingId=${encodeURIComponent(sailingId)}` : ''}`),

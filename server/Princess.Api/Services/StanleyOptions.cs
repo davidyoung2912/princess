@@ -24,9 +24,11 @@ public sealed class StanleySwitches
     public bool Handoff { get; set; } = true;
     /// <summary>The change engine (phase 11): change cards, "explain this change", "what did I miss?" and the rough-seas tip. Off, Stanley says nothing unprompted about changes and the chat falls back to Notices.</summary>
     public bool Changes { get; set; } = true;
+    /// <summary>Entitlement, spend and loyalty coach (phase 12): the money answers in chat, the spend pace and the endpoints under <c>/me/stanley/money</c>.</summary>
+    public bool Money { get; set; } = true;
 
     /// <summary>The names of the routes that are off, for the reply.</summary>
-    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes) }.Where(x => !x.On).Select(x => x.Name)];
+    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money) }.Where(x => !x.On).Select(x => x.Name)];
 }
 
 /// <summary>
