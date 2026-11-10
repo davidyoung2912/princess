@@ -236,6 +236,46 @@ public class BeforeBookingMomentTests
         Assert.Equal("dream.first-look", ChatProactiveRules.KeyOf("moment:dream.first-look:20261110"));
 }
 
+public class ManageToBoardingMomentTests
+{
+    private static readonly DateTime Now = new(2026, 11, 10, 15, 0, 0, DateTimeKind.Utc);
+    private static string[] Keys(string stage, int docs = 0, bool open = false) =>
+        [.. ChatProactiveRules.Candidates(new(Now, stage, 3, false, null, DocumentsMissing: docs, CheckinOpen: open)).Select(m => m.Key)];
+
+    [Fact]
+    public void MissingDocumentsAreOfferedOnlyBetweenManageAndBoarding()
+    {
+        Assert.Contains("manage.documents", Keys(StageRules.Manage, docs: 2));
+        Assert.Contains("manage.documents", Keys(StageRules.GetToShip, docs: 1));
+        Assert.DoesNotContain("manage.documents", Keys(StageRules.Manage));
+        Assert.DoesNotContain("manage.documents", Keys(StageRules.Sea, docs: 2));
+    }
+
+    [Fact]
+    public void CheckinOpenIsOfferedOnlyWhenOpenAndBeforeBoarding()
+    {
+        Assert.Contains("getship.checkin-open", Keys(StageRules.GetToShip, open: true));
+        Assert.DoesNotContain("getship.checkin-open", Keys(StageRules.GetToShip));
+        Assert.DoesNotContain("getship.checkin-open", Keys(StageRules.Embark, open: true));
+    }
+
+    [Fact]
+    public void BothAreDueCardsOnTheTravelTopicWithNoNamesOrNumbers()
+    {
+        foreach (var m in ChatProactiveRules.Candidates(new(Now, StageRules.GetToShip, 3, false, null, DocumentsMissing: 3, CheckinOpen: true)).Where(c => c.Topic == ChatProactiveRules.Travel))
+        {
+            Assert.Equal(ChatProactiveRules.ClassDue, m.Class);
+            Assert.DoesNotContain("3", m.Text);
+            Assert.StartsWith("/", m.Path);
+        }
+        Assert.True(ChatProactiveRules.ValidTopics(["travel"]));
+    }
+
+    [Fact]
+    public void TheTravelTopicCanBeSwitchedOff() =>
+        Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.ManageToBoarding(new(Now, StageRules.Manage, 30, false, null, DocumentsMissing: 1))], [], new(ChatProactiveRules.ModeTrip, ["travel"], false, false), Now));
+}
+
 public class SuggestionCountsTests
 {
     [Fact]

@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash);
@@ -31,9 +31,9 @@ public static class ChatProactiveRules
     public const int DailyCap = 3;
     public static readonly TimeSpan SnoozeFor = TimeSpan.FromHours(24);
 
-    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery";
+    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery", Travel = "travel";
     /// <summary>The topics a guest can switch off. A due-date card (payment) is on this list too: a guest may not want even that in the thread, and the payment notice and the phone push are unaffected.</summary>
-    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery];
+    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery, Travel];
 
     /// <summary>The stored level, as a mode. A guest who has not chosen gets the narrowest useful one (section 7.2).</summary>
     public static string ModeOf(string? level) => level switch
@@ -68,6 +68,7 @@ public static class ChatProactiveRules
         var list = new List<Moment>();
         var today = DateOnly.FromDateTime(f.Now);
         list.AddRange(BeforeBooking(f));
+        list.AddRange(ManageToBoarding(f));
         if (f.BalanceOwing && f.FinalDue is { } due && (due.DayNumber - today.DayNumber) is >= 0 and <= 14 && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
         {
             var days = due.DayNumber - today.DayNumber;
@@ -100,6 +101,20 @@ public static class ChatProactiveRules
             list.Add(new("discover.true-cost", Discovery, ClassSuggestion, "The whole cost of a trip\nSee the total including gratuities and extras.", "/home/cruise/cost", f.Now.AddDays(2), Hash("discover.true-cost")));
         if (f.DepositUnpaid)
             list.Add(new("book.pay-deposit", Payment, ClassDue, "Your deposit is still to pay\nOpen Payments to see what is owing.", "/me/payments", f.Now.AddDays(3), Hash("book.pay-deposit")));
+        return list;
+    }
+
+    /// <summary>
+    /// Phase 7b (stages Manage, Prebook and Get to the ship; 7.6): documents still missing, and check-in open. Both mirror a notice the thread already carries (the thread notice stays the source of truth; the card
+    /// is a quiet second pointer). Neither names a document, a traveller or a number.
+    /// </summary>
+    public static List<Moment> ManageToBoarding(MomentFacts f)
+    {
+        var list = new List<Moment>();
+        if (f.DocumentsMissing > 0 && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
+            list.Add(new("manage.documents", Travel, ClassDue, "Some travel documents are still needed\nOpen Documents to see who still needs to add theirs.", "/me/documents", f.Now.AddDays(3), Hash($"documents{f.DocumentsMissing}")));
+        if (f.CheckinOpen && f.Stage == StageRules.GetToShip)
+            list.Add(new("getship.checkin-open", Travel, ClassDue, "Online check-in is open\nCheck in to get your boarding pass.", "/home/check-in", f.Now.AddDays(2), Hash("getship.checkin-open")));
         return list;
     }
 
