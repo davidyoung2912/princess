@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
 
@@ -340,7 +341,7 @@ public class StanleyReminderTests
         var now = new DateTime(2027, 3, 22, 3, 0, 0, DateTimeKind.Utc);   // the middle of the night
         var id = Guid.NewGuid();
         var input = new PushInput(now, "ok", "", null, false, 45, false, [], [], 0, [], Reminders: [new StanleyReminderDue(id, "Be back on board", TripRules.ToMs(now.AddMinutes(-2)))]);
-        var notice = Assert.Single(PushRules.Build(input).Where(n => n.Key == $"stanleyReminder:{id}"));
+        var notice = Assert.Single(PushRules.Build(input), n => n.Key == $"stanleyReminder:{id}");
         Assert.Equal(("reminder", "Be back on board", false), (notice.Kind, notice.Body, notice.Bypass));
         var prefs = NotificationRules.NormalizePrefs(null);
         Assert.True(PushRules.Decide(notice, prefs, new PushSettings(0, true, []), new TimeOnly(3, 0), 99).Send);
@@ -376,7 +377,7 @@ public class StanleyHandoffPhotoTests
     [Fact]
     public async Task APhotoIsOnlyEverOpenedByItsOwner()
     {
-        var store = new MemoryHandoffPhotoStore(new Support.FakeClock());
+        var store = new MemoryHandoffPhotoStore(new Support.FakeClock(DateTime.UtcNow));
         var id = Guid.NewGuid();
         await store.SaveAsync(1, id, [1, 2, 3], default);
         Assert.NotNull(await store.OpenAsync(1, id, default));
