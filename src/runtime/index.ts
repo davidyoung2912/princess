@@ -176,6 +176,9 @@ export const stanleyTravel = {
 /** Which Stanley routes the server has switched off (`GET /me/stanley/status`). */
 export const fetchStanleyStatus = (): Promise<unknown> => http.get<unknown>('/me/stanley/status')
 
+/** Stanley's reply counts by tier over the last days, for an administrator only (`GET /me/stanley/tiers`; 403 for anyone else). Counts and tokens, never words or guests. */
+export const fetchStanleyTiers = (days: number): Promise<unknown> => http.get<unknown>(`/me/stanley/tiers?days=${Math.max(1, Math.min(90, Math.floor(days)))}`)
+
 /** Asks guest services for a call back, a caregiver or a sensory kit; the server answers with the guest's place in the staff queue. */
 export const staffRequest = (kind: 'callback' | 'caregiver' | 'kit', reason?: string): Promise<unknown> => http.post<unknown>('/me/staff-requests', { kind, reason })
 

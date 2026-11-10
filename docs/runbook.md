@@ -54,6 +54,25 @@ What exists today, and what the operator must fill in. Nothing here is a staffed
 - **How guests are told:** the Status screen reads `Providers:ServiceStatus` through `GET /help/status` (a failed feed says it could not check, never that all is well); ship-change and safety notices go out as push alerts, with the fallback in COM-04; the Disruption Hub shows active changes.
 - **After:** write down what happened, what guests saw and what changed. Refund or charge questions from guests go through the in-app case form, which does not promise a reversal.
 
+## Stanley incident playbook (phase 14)
+
+For the eight incident classes in strategy section 10.4. Stanley's routes are switched off in configuration with no code deploy (`Stanley:Switches:<Name>=false`; names: `Model`, `Tools`, `Resolver`, `Library`, `Actions`, `Handoff`, `Changes`, `Money`), and `GET /me/stanley/status` shows what is off. The safety screen, the word filter, the transactional services (booking, payment, check-in) and the written help keep working with every switch off. The owner and deputy are the operator's to name (see Incidents above); none is named here. `StanleySwitchTests.cs` checks that each switch turns off alone and is named in the status, and the route tests check what each does when off (written, not yet compiled or run here).
+
+| Incident | Detect | Contain (switch) | Then |
+| --- | --- | --- | --- |
+| Incorrect but low-risk recommendation | Guest report; repeat or unanswered counts in Stanley operations | None needed; edit the entry or the resolver text | Fix at the next release; note the entry id |
+| Incorrect price, availability or reservation claim | Guest report; a change card that disagrees with the booking screen | `Changes=false` for cards; `Resolver=false` for chat answers | Correct the source or rule; restore the switch once the replay tests pass |
+| Incorrect payment or transaction guidance | Guest report; a spend or folio answer that differs from the Bill screen | `Money=false`; `Actions=false` if an action was prepared wrongly (receipts stay readable) | Check the receipt; use the in-app case form for the guest, which never promises a reversal |
+| Privacy or data leakage across travellers | Any report that one guest saw another's data; a failed cross-party fixture | `Model=false` and `Tools=false` first, then `Resolver=false` and `Changes=false`; treat as a security incident | Preserve logs, tell the owner, fix and add a fixture before restoring; follow the operator's data-breach duty |
+| False safety, tender or all-aboard instruction | Guest or crew report; a library entry past its review date | `Library=false` and `Resolver=false` so the app sends the guest to the ship's own notices and a person; declare it under `Status:Incidents` | Correct the entry, move its review date, restore |
+| Harmful or discriminatory answer | Guest report; moderation of model text | `Model=false` (scripted and written answers continue) | Keep the exchange id, not the guest's words; change the prompt or the tier, then re-run the evaluation set |
+| Prompt injection or tool abuse | A failed injection example; unexpected tool calls in the tier log | `Tools=false`, then `Model=false` | Add the example to `src/ai/eval/injection.json`; restore when the injection test passes |
+| Model provider outage or degraded quality | `/health/providers`; a rise in "network", "limit" or "bad" outcomes on the tier dashboard | `Model=false`; the library, ship facts and resolvers answer, and the chat says it could not answer | Restore when the provider recovers; re-run the evaluation set if quality was the problem |
+
+**Release gates for Stanley** are in `src/releaseGates.test.ts` (no unconfirmed mutating action, no cross-party leak, no unsupported critical claim). They run with `npm run test`; the full server tests are run by hand before a release.
+
+**Operations screen.** Settings, Problems on this device, "Stanley operations (for the team)": written answers overdue or due within 60 days, by owner; the questions asked again and again and the share unanswered on this device; and, for an administrator, the last seven days of reply counts from `GET /me/stanley/tiers` against the targets (at least 60% with no model call, under 10% on the large tier). Repeat-question rate and unanswered share are per device; escalation precision is not measured (no outcome of a handoff is fed back), only the share handed to a person.
+
 ## Not built yet
 
 An error-reporting hook (PERF-07), structured JSON logs, a staff view of the moderation queue and a retention report. Add them before a pilot.

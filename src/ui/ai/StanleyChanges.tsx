@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
+import { startVisibleInterval } from '../../hooks/visibleInterval'
+import { cardExpired, expiresInMs } from '../../ai/stanleyOps'
 import { normalizeAction, planSnapshot, type StanleyAction } from '../../ai/stanleyAction'
 import {
   DIGEST, deliveryLevel, loadSession, normalizeDelivery, normalizeExplanation, normalizeList, recordShown, saveSession, savedParam, shownElsewhere,
@@ -165,7 +167,7 @@ export function StanleyChanges({ screen }: { screen: ChangeScreen }) {
   const level = deliveryLevel(stanleyLevelFor(settings))
   // The answer is kept with what it was asked for, so one for another screen, level or guest is never shown.
   const asked = `${me?.id ?? ''}|${sailing.id}|${screen}|${level}`
-  const [loaded, setLoaded] = useState<{ asked: string; delivery: Delivery } | null>(null)
+  const [loaded, setLoaded] = useState<{ asked: string; delivery: Delivery; at: number } | null>(null)
   const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set())
   useEffect(() => {
     if (!me || level === 'off') return
@@ -176,17 +178,24 @@ export function StanleyChanges({ screen }: { screen: ChangeScreen }) {
       .then((raw) => {
         const d = normalizeDelivery(raw)
         if (!live || !d) return
-        setLoaded({ asked, delivery: d })
+        setLoaded({ asked, delivery: d, at: Date.now() })
         saveSession(store, recordShown(before, screen, d.digest ? DIGEST : d.suggestion?.id ?? null))
       })
       .catch(() => undefined)
     return () => { live = false }
   }, [me?.id, sailing.id, screen, level]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Stale-tip expiry (phase 14): a suggestion or tip the guest has left on the screen times out, so nothing nags. Alerts never do.
+  const [now, setNow] = useState(() => Date.now())
+  const shown = loaded?.delivery.suggestion
+  useEffect(() => {
+    if (!loaded || !shown || expiresInMs(shown, loaded.at, Date.now()) === null) return
+    return startVisibleInterval(() => setNow(Date.now()), 30_000)
+  }, [loaded, shown])
   const delivery = me && level !== 'off' && loaded?.asked === asked ? loaded.delivery : null
   if (!me || !delivery) return null
   const hide = (id: string) => setHidden((h) => new Set([...h, id]))
   const alerts = delivery.alerts.filter((c) => !hidden.has(c.id))
-  const suggestion = delivery.suggestion && !hidden.has(delivery.suggestion.id) ? delivery.suggestion : null
+  const suggestion = delivery.suggestion && !hidden.has(delivery.suggestion.id) && !cardExpired(delivery.suggestion, loaded?.at ?? now, now) ? delivery.suggestion : null
   const digest = delivery.digest && !hidden.has(DIGEST) ? delivery.digest : null
   if (alerts.length === 0 && !suggestion && !digest) return null
   return (

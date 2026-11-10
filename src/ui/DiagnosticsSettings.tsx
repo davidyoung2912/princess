@@ -6,6 +6,7 @@ import { SHIP_FACTS } from '../domain/finishMore'
 import { t, th, type StringKey } from '../i18n'
 import { Button } from './Button'
 import { Card } from './Card'
+import { StanleyOpsConsole } from './ai/StanleyOpsConsole'
 
 const store = (): Storage | null => {
   try { return window.localStorage } catch { return null }
@@ -68,6 +69,10 @@ export function DiagnosticsSettings() {
           <Button variant="secondary" onClick={() => { clearTiers(store()); clearAsked(store()); setTiers(readTiers(store())); setAsked(readAsked(store())) }}>{t('diag.stanley.clear')}</Button>
         </>
       ) : <p>{t('diag.stanley.none')}</p>}
+      <details>
+        <summary>{t('ops.open')}</summary>
+        <StanleyOpsConsole />
+      </details>
       <p role="status">{note}</p>
     </Card>
   )

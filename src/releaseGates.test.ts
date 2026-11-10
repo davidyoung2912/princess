@@ -378,3 +378,61 @@ describe('gate 10: operational readiness', () => {
     expect(runbook).toMatch(/^## .*(incident|on-call|escalat)/im)
   })
 })
+
+describe('Stanley gates (phase 14): the AI release gates', () => {
+  const server = (f: string): string => read(`server/Princess.Api/Services/${f}`)
+
+  describe('no unconfirmed mutating action', () => {
+    it('only the action card confirms an action; a change card can only prepare one for the guest to confirm', () => {
+      const users = walk('src').filter((f) => /stanleyActions\.confirm\(/.test(read(f)))
+      expect(users.map((f) => f.replace(/\\/g, '/'))).toEqual(['src/ui/ai/StanleyActionCard.tsx'])
+      expect(read('src/ui/ai/StanleyChanges.tsx')).toMatch(/stanleyActions\.prepare\(/)
+    })
+
+    it('a confirm is its own route, and the server\'s change engine and read tools have no way to confirm or apply anything', () => {
+      expect(read('server/Princess.Api/Endpoints/StanleyEndpoints.cs')).toMatch(/\{id:guid\}\/confirm/)
+      expect(server('StanleyChanges.cs')).not.toMatch(/\bConfirmAsync\b|\bExecuteAsync\b|\bApplyAsync\b/)
+      expect(server('StanleyTools.cs')).not.toMatch(/\bConfirmAsync\b|\bExecuteAsync\b|\bApplyAsync\b|\bInsertAsync\b|\bDeleteAsync\b/)
+    })
+
+    it('the action kinds are the seven phase 5 kinds, so nothing outside the confirm flow can be requested', () => {
+      const kinds = read('src/ai/stanleyAction.ts').match(/const KINDS[^=]*=\s*\[([^\]]+)\]/)?.[1] ?? ''
+      expect(kinds.split(',').map((k) => k.trim().replace(/'/g, '')).sort()).toEqual(['add_excursion', 'draft_case', 'move_dinner', 'order_item', 'plan_change', 'remind_me', 'reserve_dinner'])
+    })
+  })
+
+  describe('no cross-party leak', () => {
+    it('the tier log has no field for a guest or for words, so the operations screens cannot show either', () => {
+      const entry = server('StanleyTierLog.cs').match(/class StanleyTierEntry[\s\S]*?\n}/)?.[0] ?? ''
+      expect(entry.length).toBeGreaterThan(100)
+      expect(entry).not.toMatch(/User|Guest|Text|Message|Prompt|Email|Booking/i)
+    })
+
+    it('the cross-party fixtures (family, guardian, helper, revoked) are still part of the server test suite', () => {
+      const t = read('server/Princess.Api.Tests/StanleyPacketTests.cs').toLowerCase()
+      for (const word of ['guardian', 'helper', 'revoked', 'family']) expect(t, word).toContain(word)
+    })
+  })
+
+  describe('no unsupported critical claim', () => {
+    it('a deadline, tender, payment, access, entry or safety answer is a high-risk entry with a person to ask and a live review date', async () => {
+      const { LIBRARY } = await import('./ai/stanleyLibrary')
+      const { HIGH_RISK_IDS, isLive, metaOf } = await import('./ai/stanleyLibrary/governance')
+      const high = LIBRARY.filter((e) => HIGH_RISK_IDS.has(e.id))
+      expect(high.length).toBe(HIGH_RISK_IDS.size)
+      for (const e of high) {
+        expect(metaOf(e).fallback, e.id).toBe('person')
+        expect(metaOf(e).owner.trim(), e.id).not.toBe('')
+        expect(isLive(e, Date.now()), e.id).toBe(true)
+      }
+    })
+
+    it('a forecast never ranks as an alert, even when the card asks to', async () => {
+      const { normalizeCard } = await import('./ai/stanleyChanges')
+      const opt = { id: 'a', label: 'Look', detail: '', route: '/plan' }
+      const base = { id: 'x', fingerprint: 'f', kind: 'tender', source: 'Tender outlook', sourceAt: 1, sourceAtText: '10:00', day: 2, title: 'T', what: 'w', why: 'y', recommended: opt, others: [], affects: [], ifNothing: 'n', where: ['home'], noticedAt: 1 }
+      expect(normalizeCard({ ...base, status: 'forecast', consequence: 'conflict', critical: true })?.critical).toBe(false)
+      expect(normalizeCard({ ...base, status: 'forecast', consequence: 'conflict' })?.status).toBe('forecast')
+    })
+  })
+})
