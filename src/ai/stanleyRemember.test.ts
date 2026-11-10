@@ -3,7 +3,7 @@ import { en } from '../i18n/locales/en'
 import type { StanleyCase } from './stanleyHandoff'
 import {
   askPortMemory, buildMilestones, correctLine, costRange, dailyRecap, draftCaption, draftFeedback, mayPromoteRebooking, nextVoyageIdeas, normalizeStory, openFromCases, openFromHandoffs, rebookGate, removedLines,
-  removeLine, renderStory, restoreLine, setTone, storyLines, EMPTY_STORY, TONES, VERSIONS, CAPTION_MAX, type StoryFacts,
+  removeLine, renderStory, restoreLine, setTone, storyLines, EMPTY_STORY, TONES, VERSIONS, CAPTION_MAX, futureInterests, groupFavouritesByDay, interestMatches, type StoryFacts,
 } from './stanleyRemember'
 import type { TripEntry } from '../domain/tripDiary'
 
@@ -128,6 +128,50 @@ describe('next-voyage ideas', () => {
     expect(nextVoyageIdeas([], voyages)).toEqual([])
     expect(costRange(ideas)).toEqual({ low: 250000, high: 300000 })
     expect(costRange([])).toBeNull()
+  })
+})
+
+describe('next-voyage ideas from kept interests', () => {
+  const tours = [
+    { port: 'cozumel', interests: ['water'], family: true }, { port: 'cozumel', interests: ['water', 'culture'], family: false },
+    { port: 'roatan', interests: ['water'], family: false }, { port: 'juneau', interests: ['nature'], family: false },
+  ]
+  it('keeps only future interests that tours can back', () => {
+    const items = [
+      { kind: 'interest', value: 'water', scope: 'future' }, { kind: 'interest', value: 'water', scope: 'future' }, { kind: 'interest', value: 'culture', scope: 'trip' },
+      { kind: 'interest', value: 'food', scope: 'future' }, { kind: 'pace', value: 'slow', scope: 'future' }, { kind: 'interest', value: 'family', scope: 'future' },
+    ]
+    expect(futureInterests(items)).toEqual(['water', 'family'])
+  })
+  it('matches an interest to the port with most tours, and claims nothing without a tour', () => {
+    expect(interestMatches(['water', 'family', 'challenge'], ['roatan', 'cozumel'], tours)).toEqual([{ interest: 'water', portId: 'cozumel', count: 2 }, { interest: 'family', portId: 'cozumel', count: 1 }])
+    expect(interestMatches(['water'], ['juneau'], tours)).toEqual([])
+  })
+  it('suggests a sailing from interests alone and ranks it with the wants', () => {
+    const voyages = [
+      { id: 'a', departure: '2027-03-01', places: ['Juneau'], portIds: ['juneau'], totalCents: 1 },
+      { id: 'b', departure: '2027-02-01', places: ['Cozumel'], portIds: ['cozumel'], totalCents: 2 },
+      { id: 'c', departure: '2027-04-01', places: ['Roatán'], portIds: ['roatan'], totalCents: 3 },
+    ]
+    const ideas = nextVoyageIdeas(['Roatan'], voyages, 3, ['water'], tours)
+    expect(ideas.map((i) => i.id)).toEqual(['c', 'b'])
+    expect(ideas[0].because).toHaveLength(1)
+    expect(ideas[0].byInterest[0]).toMatchObject({ interest: 'water', portId: 'roatan' })
+  })
+})
+
+describe('photo organiser', () => {
+  const photos = [
+    { id: 'p3', day: 3, title: 'Beach', time: '10:00' }, { id: 'p1', day: 2, title: 'Pool', time: '15:00' }, { id: 'p2', day: 2, title: 'Gangway', time: '09:00' }, { id: 'p4', day: 4, title: 'Not a favourite', time: '09:00' },
+  ]
+  it('groups only favourites by day, oldest first, ordered by time, with a caption from the diary', () => {
+    const g = groupFavouritesByDay(photos, ['p1', 'p2', 'p3'], (d) => (d === 2 ? 'Cozumel' : null), [entry({ day: 2, kind: 'tour', text: 'Snorkel trip' })], 'plain')
+    expect(g.map((x) => x.day)).toEqual([2, 3])
+    expect(g[0].photoIds).toEqual(['p2', 'p1'])
+    expect(g[0].caption).toContain('Snorkel trip')
+    expect(g[1].caption).toContain('A day at sea, day 3')
+    expect(g.flatMap((x) => x.photoIds)).not.toContain('p4')
+    expect(groupFavouritesByDay(photos, [], () => null, [], 'warm')).toEqual([])
   })
 })
 

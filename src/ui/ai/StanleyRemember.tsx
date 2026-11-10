@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import stanley from '../../assets/stanley-small.png'
 import {
-  askPortMemory, buildMilestones, correctLine, costRange, dailyRecap, draftCaption, draftFeedback, mayPromoteRebooking, nextVoyageIdeas, removedLines, removeLine, renderStory,
+  askPortMemory, futureInterests, groupFavouritesByDay, buildMilestones, correctLine, costRange, dailyRecap, draftCaption, draftFeedback, mayPromoteRebooking, nextVoyageIdeas, removedLines, removeLine, renderStory,
   restoreLine, setTone, THANKS, TONES, VERSIONS, type FeedbackFacts, type RebookGate, type Thanks, type Tone, type Version, type Voyage,
 } from '../../ai/stanleyRemember'
 import { storyShows } from '../../ai/stanleyStory'
@@ -13,6 +13,8 @@ import type { Recap } from '../../domain/recap'
 import { itinerary, portById } from '../../domain/sailings'
 import { addNote, entriesFor, type TripEntry } from '../../domain/tripDiary'
 import { useNow, useSailing } from '../../hooks/useDemo'
+import { useStanleyMemory } from '../../hooks/useStanleyMemory'
+import { EXCURSIONS } from '../../domain/excursions'
 import { newMemoryId, useMemory } from '../../hooks/useMemory'
 import { useSettings } from '../../hooks/useSettings'
 import { t, type StringKey } from '../../i18n'
@@ -43,11 +45,13 @@ export function StanleyVoyageIdeas({ options, gate }: { options: readonly Rebook
   const [settings] = useSettings()
   const { state } = useMemory()
   const wants = state.remember.wants
+  const kept = useStanleyMemory()
+  const interests = useMemo(() => futureInterests(kept.state.items), [kept.state.items])
   const ideas = useMemo(() => {
     const byDeparture = new Map(browseSailings().map((s) => [s.departure, sailingFacts(s)]))
-    const voyages: Voyage[] = options.flatMap((o) => { const f = byDeparture.get(o.departure); return f ? [{ id: o.id, departure: o.departure, places: f.ports.map((p) => portById(p)?.name ?? p), totalCents: o.total }] : [] })
-    return nextVoyageIdeas(wants, voyages)
-  }, [options, wants])
+    const voyages: Voyage[] = options.flatMap((o) => { const f = byDeparture.get(o.departure); return f ? [{ id: o.id, departure: o.departure, places: f.ports.map((p) => portById(p)?.name ?? p), portIds: f.ports, totalCents: o.total }] : [] })
+    return nextVoyageIdeas(wants, voyages, 3, interests, EXCURSIONS.map((x) => ({ port: x.port, interests: x.interests, family: x.family })))
+  }, [options, wants, interests])
   if (!storyShows(stanleyLevelFor(settings)) || gate === null || !mayPromoteRebooking(gate) || ideas.length === 0) return null
   const range = costRange(ideas)
   return (
@@ -55,7 +59,11 @@ export function StanleyVoyageIdeas({ options, gate }: { options: readonly Rebook
       <h2 id="rem13-ideas-h" className="card__title">{t('rem13.ideas.title')} <WhyThis kind="story" fact={t('rem13.ideas.why')} what={t('rem13.ideas.title')} /></h2>
       <p className="muted">{t('rem13.ideas.intro')}</p>
       <ul className="plain-bullets">
-        {ideas.map((i) => <li key={i.id}>{t('rem13.ideas.line', { date: formatDate(i.departure), because: [...new Set(i.because.map((b) => b.place))].join(', '), want: [...new Set(i.because.map((b) => b.want))].join('; ') })}{i.totalCents !== null && <> · {t('reb.total', { amount: formatMoney(i.totalCents) })}</>}</li>)}
+        {ideas.map((i) => <li key={i.id}>
+          {formatDate(i.departure)}
+          {i.because.length > 0 && <> · {t('rem13.ideas.line', { because: [...new Set(i.because.map((b) => b.place))].join(', '), want: [...new Set(i.because.map((b) => b.want))].join('; ') })} <span className="muted">({t('rem13.ideas.src.wants')})</span></>}
+          {i.byInterest.map((h) => <span key={h.interest}> · {t('rem13.ideas.interest', { place: portById(h.portId)?.name ?? h.portId, count: h.count, interest: t(`rem13.interest.${h.interest}` as StringKey) })} <span className="muted">({t('rem13.ideas.src.memory')})</span></span>)}
+          {i.totalCents !== null && <> · {t('reb.total', { amount: formatMoney(i.totalCents) })}</>}</li>)}
       </ul>
       {range && <p>{t('rem13.ideas.range', { low: formatMoney(range.low), high: formatMoney(range.high) })}</p>}
       <p className="muted">{t('rem13.ideas.note')}</p>
@@ -232,5 +240,45 @@ export function StanleyDayRecap({ day }: { day: number }) {
         </div>
       </div>
     </aside>
+  )
+}
+
+/** "Group my favourites by day": the photos the guest favourited, a day at a time, each day with a caption to copy. Nothing is read from the pictures and nothing is shared or saved from here. */
+export function StanleyPhotoOrganiser({ photos, favourites }: { photos: readonly { id: string; day: number; title: string; time: string }[]; favourites: readonly string[] }) {
+  const sailing = useSailing()
+  const { state } = useMemory()
+  const [open, setOpen] = useState(false)
+  const [tone, setToneState] = useState<Tone>('warm')
+  const [copied, setCopied] = useState<number | null>(null)
+  const days = itinerary(sailing)
+  const groups = useMemo(() => groupFavouritesByDay(photos, favourites, (n) => { const d = days.find((x) => x.day === n); return d && d.port !== 'sea' ? (portById(d.port)?.name ?? null) : null }, entriesFor(state.diary, sailing.id), tone), [photos, favourites, days, state.diary, sailing.id, tone])
+  if (favourites.length === 0) return null
+  return (
+    <Card labelledBy="rem13-org-h">
+      <h2 id="rem13-org-h" className="card__title">{t('rem13.org.title')}</h2>
+      <Button variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>{t('rem13.org.open')}</Button>
+      {open && (
+        <div>
+          <p className="muted">{t('rem13.org.note')}</p>
+          <div className="field">
+            <label htmlFor="rem13-org-tone">{t('rem13.story.tone')}</label>
+            <select id="rem13-org-tone" className="field__input" value={tone} onChange={(e) => setToneState(e.target.value as Tone)}>{TONES.map((x) => <option key={x} value={x}>{t(`rem13.tone.${x}` as StringKey)}</option>)}</select>
+          </div>
+          {groups.length === 0 ? <p>{t('rem13.org.none')}</p> : (
+            <ul className="plain-list">
+              {groups.map((g) => (
+                <li key={g.day}>
+                  <h3>{t('rem13.org.day', { day: g.day, place: g.port ?? t('stanley.story.seaPlace'), count: g.photoIds.length })}</h3>
+                  <p className="muted">{g.titles.join('; ')}</p>
+                  <p>{g.caption}</p>
+                  <Button variant="tertiary" onClick={() => { void navigator.clipboard.writeText(g.caption).then(() => setCopied(g.day), () => setCopied(null)) }}>{t('rem13.cap.copy')}<span className="visually-hidden"> {t('plan.day', { n: g.day })}</span></Button>
+                  {copied === g.day && <span role="status"> {t('rem13.cap.copied')}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Card>
   )
 }

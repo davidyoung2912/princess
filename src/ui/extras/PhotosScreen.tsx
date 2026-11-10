@@ -1,5 +1,5 @@
 import { canTakeBack, mySharedIds } from '../../domain/albumRules'
-import { StanleyCaption } from '../ai/StanleyRemember'
+import { StanleyCaption, StanleyPhotoOrganiser } from '../ai/StanleyRemember'
 import { useConfirmCharge } from '../ConfirmCharge'
 import { useState } from 'react'
 import { asPhotosView, asPrintView } from '../../api/guards'
@@ -122,6 +122,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
         </section>
       )}
 
+      <StanleyPhotoOrganiser photos={v.photos} favourites={v.favourites} />
       <MemoryStory story={buildStory(v.photos.filter((p) => v.favourites.includes(p.id)), entriesFor(memory.diary, s.id), days)} />
 
       <ExtraError error={share.error} />

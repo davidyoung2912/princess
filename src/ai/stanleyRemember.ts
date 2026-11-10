@@ -172,16 +172,43 @@ export const mayPromoteRebooking = (g: RebookGate): boolean => g.mode === 'norma
 
 // ---- next-voyage ideas (STN-REM-06) ----
 
-/** A sailing the guest could book, with the places it calls at and the total for their party. */
-export interface Voyage { id: string; departure: string; places: readonly string[]; totalCents: number | null }
-export interface VoyageIdea { id: string; departure: string; because: { want: string; place: string }[]; totalCents: number | null }
+/** A sailing the guest could book, with the places it calls at (names, and port ids for the tours) and the total for their party. */
+export interface Voyage { id: string; departure: string; places: readonly string[]; portIds?: readonly string[]; totalCents: number | null }
 
-/** Sailings ranked by how many of the guest's kept wants they call at. Only a sailing that matches at least one want is suggested; the reason names the want and the place, so the guest sees why. */
-export function nextVoyageIdeas(wants: readonly string[], voyages: readonly Voyage[], max = 3): VoyageIdea[] {
+/** A kept interest that can be checked against real shore tours: what the guest told Stanley, and the tour interest it matches. Food has no tour data, so it is never matched. */
+export const TOUR_OF_INTEREST: Record<string, { tour?: string; family?: boolean }> = { water: { tour: 'water' }, culture: { tour: 'culture' }, slow: { tour: 'relax' }, challenge: { tour: 'adventure' }, family: { family: true } }
+
+/** The interests Stanley keeps for future trips, once each, in the order kept. Trip-only items and other kinds (pace, mobility, diet) are not used here. */
+export function futureInterests(items: readonly { kind: string; value: string; scope: string }[]): string[] {
+  return [...new Set(items.filter((i) => i.kind === 'interest' && i.scope === 'future' && i.value in TOUR_OF_INTEREST).map((i) => i.value))]
+}
+
+export interface TourFact { port: string; interests: readonly string[]; family: boolean }
+export interface InterestHit { interest: string; portId: string; count: number }
+
+/** For each kept interest, the port on the route with the most tours that suit it (and how many). A port with none gives no hit, so nothing is claimed without a tour behind it. */
+export function interestMatches(interests: readonly string[], portIds: readonly string[], tours: readonly TourFact[]): InterestHit[] {
+  const hits: InterestHit[] = []
+  for (const interest of interests) {
+    const rule = TOUR_OF_INTEREST[interest]
+    if (!rule) continue
+    const best = portIds
+      .map((portId) => ({ portId, count: tours.filter((x) => x.port === portId && (rule.family ? x.family : rule.tour ? x.interests.includes(rule.tour) : false)).length }))
+      .filter((x) => x.count > 0)
+      .sort((x, y) => y.count - x.count || x.portId.localeCompare(y.portId))[0]
+    if (best) hits.push({ interest, ...best })
+  }
+  return hits
+}
+
+export interface VoyageIdea { id: string; departure: string; because: { want: string; place: string }[]; byInterest: InterestHit[]; totalCents: number | null }
+
+/** Sailings ranked by how many of the guest's kept wants they call at plus how many kept interests have tours on the route. A sailing with neither is not suggested; each idea names the want or the interest behind it, so the guest sees why. */
+export function nextVoyageIdeas(wants: readonly string[], voyages: readonly Voyage[], max = 3, interests: readonly string[] = [], tours: readonly TourFact[] = []): VoyageIdea[] {
   return voyages
-    .map((v) => ({ id: v.id, departure: v.departure, because: wantMatches(wants, v.places), totalCents: v.totalCents }))
-    .filter((v) => v.because.length > 0)
-    .sort((a, b) => b.because.length - a.because.length || a.departure.localeCompare(b.departure) || a.id.localeCompare(b.id))
+    .map((v) => ({ id: v.id, departure: v.departure, because: wantMatches(wants, v.places), byInterest: interestMatches(interests, v.portIds ?? [], tours), totalCents: v.totalCents }))
+    .filter((v) => v.because.length + v.byInterest.length > 0)
+    .sort((a, b) => b.because.length + b.byInterest.length - (a.because.length + a.byInterest.length) || a.departure.localeCompare(b.departure) || a.id.localeCompare(b.id))
     .slice(0, max)
 }
 
@@ -189,4 +216,24 @@ export function nextVoyageIdeas(wants: readonly string[], voyages: readonly Voya
 export function costRange(ideas: readonly VoyageIdea[]): { low: number; high: number } | null {
   const prices = ideas.flatMap((i) => (i.totalCents !== null && i.totalCents > 0 ? [i.totalCents] : []))
   return prices.length === 0 ? null : { low: Math.min(...prices), high: Math.max(...prices) }
+}
+
+// ---- photo organiser (STN-REM-03) ----
+
+export interface FavouriteGroup { day: number; port: string | null; photoIds: string[]; titles: string[]; caption: string }
+
+/**
+ * The guest's favourite photos grouped by the day each was taken, oldest day first, each group with a suggested caption from that day's diary. Only photos the guest favourited are used, they are ordered by their own
+ * day and time, and nothing about a picture or the people in it is read: the day and the photo's own title are all there is. Another guest's photos never reach this: the list given is the guest's own.
+ */
+export function groupFavouritesByDay(
+  photos: readonly { id: string; day: number; title: string; time: string }[], favourites: readonly string[], placeOfDay: (day: number) => string | null, diary: readonly TripEntry[], tone: Tone,
+): FavouriteGroup[] {
+  const chosen = photos.filter((p) => favourites.includes(p.id))
+  const days = [...new Set(chosen.map((p) => p.day))].sort((a, b) => a - b)
+  return days.map((day) => {
+    const mine = chosen.filter((p) => p.day === day).sort((a, b) => a.time.localeCompare(b.time) || a.id.localeCompare(b.id))
+    const port = placeOfDay(day)
+    return { day, port, photoIds: mine.map((p) => p.id), titles: mine.map((p) => p.title), caption: draftCaption({ port, day, tone, diary: diary.filter((e) => e.day === day) }) }
+  })
 }
