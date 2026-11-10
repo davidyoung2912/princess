@@ -93,6 +93,7 @@ describe('why a send failed', () => {
     expect(sendProblem('invalid', 'blocked')).toBe('blocked')
     expect(sendProblem('invalid', 'contactInfo')).toBe('contact')
     expect(sendProblem('invalid', 'text')).toBe('text')
+    expect(sendProblem('forbidden', 'rate')).toBe('rate')
     expect(sendProblem('conflict', 'closed')).toBe('closed')
     expect(sendProblem('forbidden', 'age')).toBe('age')
     expect(sendProblem('notFound')).toBe('gone')

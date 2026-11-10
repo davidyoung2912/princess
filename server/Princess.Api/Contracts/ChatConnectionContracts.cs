@@ -29,7 +29,8 @@ public sealed record ChatRequestBody(Guid ToUserId);
 public sealed record ChatRespondBody(bool Accept, bool Block = false);
 
 /// <summary>The caller's chat choices. <c>Findable</c>: other guests on the sailing can find them by name. <c>ShowPreview</c>: a notice may show the message text (used from phase 4).</summary>
-public sealed record ChatSettingsDto(bool Findable, bool ShowPreview);
+/// <summary><c>Typing</c> (phase 2): show "is typing" to the others and see theirs. On unless turned off; an older app that leaves it out keeps it on.</summary>
+public sealed record ChatSettingsDto(bool Findable, bool ShowPreview, bool Typing = true);
 
 // ---- Conversations and messages (phase 4) ----
 
@@ -45,14 +46,29 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 /// <c>Permanent</c>, <c>Voice</c> and <c>Subtitle</c>: the permanent Stanley chat (<c>Kind</c> stanley) cannot be left, muted, ended or removed; <c>Voice</c> is company or ship and <c>Subtitle</c> the name shown under Stanley's.
 /// </summary>
 public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool NotifyAway = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Permanent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Voice = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Permanent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Voice = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatPersonDto>? People = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Archived = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? MutedUntil = null);
+
+/// <summary>Someone else in a conversation, for its header menu (block, report): their public id and first name with last initial. Phase 2.</summary>
+public sealed record ChatPersonDto(Guid Id, string Name);
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
 /// <summary><c>MayUrgent</c> is whether the caller may send an urgent message here (staff, or a guardian of a supervised child in it); the app shows the control only then.</summary>
 public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? FirstUnread = null);
 
-public sealed record ChatMuteRequest(bool On);
+/// <summary><c>For</c>: <c>hour</c>, <c>day</c> or <c>week</c> to mute for that long (it ends by itself); left out, a mute lasts until turned off.</summary>
+public sealed record ChatMuteRequest(bool On, string? For = null);
+
+/// <summary>The new text of an edited message (phase 2).</summary>
+public sealed record ChatEditRequest(string? Text);
+
+/// <summary>Why a person is reported from a conversation's header; the reasons are the ones a message report takes.</summary>
+public sealed record ChatPersonReportRequest(string? Reason);
+
+/// <summary>Whether the caller has the conversation archived.</summary>
+public sealed record ChatArchiveRequest(bool On);
 
 public sealed record ChatNotifyAwayRequest(bool On);
 

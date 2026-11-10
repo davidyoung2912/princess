@@ -78,6 +78,7 @@ services.AddPrincessRealtime();
 services.AddScoped<ChatNotifier>();
 services.AddScoped<ChatAwayService>();
 services.AddSingleton<ChatFanoutQueue>();
+services.AddSingleton<ChatTypingTracker>();
 services.AddScoped<ChatFanout>();
 services.AddHostedService<ChatFanoutService>();
 services.AddScoped<IFinishStore, DapperFinishStore>();

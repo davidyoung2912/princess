@@ -6,9 +6,11 @@ import { requestsWaiting, shouldAck } from '../domain/chatNotice'
 import { closeSettledChatNotices } from '../push/browser'
 import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
 import { coalesce } from '../domain/coalesce'
+import { typingEventConversation } from '../domain/chatControl'
 
 const CHANGED = 'princess:chat-changed'
 const LIVE = 'princess:chat-live'
+const TYPING = 'princess:chat-typing'
 /** While the live connection is down, the numbers are read again this often. */
 export const POLL_MS = 60_000
 
@@ -33,6 +35,17 @@ export function useChatLive(onChange: () => void): void {
     const run = () => latest.current()
     window.addEventListener(LIVE, run)
     return () => window.removeEventListener(LIVE, run)
+  }, [])
+}
+
+/** Runs `onTyping` with the conversation (32 hex digits) when the server says someone is typing there. Typing is a nudge of its own: it never reloads the numbers or the thread. */
+export function useChatTyping(onTyping: (conversationHex: string) => void): void {
+  const latest = useRef(onTyping)
+  useEffect(() => { latest.current = onTyping })
+  useEffect(() => {
+    const run = (e: Event) => { const hex = (e as CustomEvent<string>).detail; if (typeof hex === 'string') latest.current(hex) }
+    window.addEventListener(TYPING, run)
+    return () => window.removeEventListener(TYPING, run)
   }, [])
 }
 
@@ -72,6 +85,8 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
         if (target !== 'chatChanged') return
         const id = (args[0] as { id?: unknown } | undefined)?.id
         if (typeof id === 'string' && shouldAck(document.visibilityState)) hub.send('Ack', [id])
+        const typing = typeof id === 'string' ? typingEventConversation(id) : null
+        if (typing) { window.dispatchEvent(new CustomEvent(TYPING, { detail: typing })); return }
         load()
         window.dispatchEvent(new Event(LIVE))
       },

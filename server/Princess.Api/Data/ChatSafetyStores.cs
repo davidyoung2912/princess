@@ -90,7 +90,8 @@ public sealed class DapperChatSafetyStore(IDbConnectionFactory db) : IChatSafety
     public async Task<List<ChatCaseLineRow>> ListContextAsync(long messageId, long groupId, int span, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        const string cols = "m.Id, m.PublicId, pr.FirstName, pr.LastName, m.[Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At]";
+        // A message its sender deleted shows staff what it said (OriginalText): that is what the report is about.
+        const string cols = "m.Id, m.PublicId, pr.FirstName, pr.LastName, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE ISNULL(m.OriginalText, N'') END AS [Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At]";
         const string from = "FROM dbo.ChatMessages m JOIN dbo.Profiles pr ON pr.UserId = m.FromUserId";
         var before = (await c.QueryAsync<ChatCaseLineRow>(Sql.Cmd($"SELECT TOP (@span) {cols} {from} WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.Id < @messageId ORDER BY m.Id DESC", new { span, groupId, messageId }, null, ct))).Reverse();
         var it = await c.QueryAsync<ChatCaseLineRow>(Sql.Cmd($"SELECT {cols} {from} WHERE m.Id = @messageId AND m.GroupId = @groupId", new { groupId, messageId }, null, ct));

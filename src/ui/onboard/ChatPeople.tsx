@@ -6,6 +6,7 @@ import { cleanQuery, hasActivity, personAction, relationNote, requestProblem, wa
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
+import { optimistic } from '../../data/optimistic'
 import { api } from '../../runtime'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -238,6 +239,15 @@ function Settings({ state, onHidden }: { state: ReturnType<typeof useMine<ChatSe
     try { setShown(await api.chatConnections.saveSettings(next)) } catch (e) { setShown(null); throw e }
   })
   const hide = useAction(async () => { setShown(await api.chatConnections.hide()); setConfirm(false); onHidden() })
+  // The read-receipts switch lives here too, beside the others, as well as in a chat's options. The switch moves at once and goes back if saving fails.
+  const stored = useMine(() => api.messages.receipts())
+  const [receiptsShown, setReceiptsShown] = useState<boolean | null>(null)
+  const receipts = { on: receiptsShown ?? stored.data === true }
+  const flipReceipts = useAction(async (next: boolean) => {
+    await optimistic(() => setReceiptsShown(next), () => api.messages.setReceipts(next), () => setReceiptsShown(null))
+    stored.retry()
+    setReceiptsShown(null)
+  })
   if (!current) return null
   return (
     <section aria-labelledby="people-settings-h">
@@ -245,10 +255,15 @@ function Settings({ state, onHidden }: { state: ReturnType<typeof useMine<ChatSe
       <div className="chip-row">
         <Chip pressed={current.findable} onToggle={() => void save.run({ ...current, findable: !current.findable })}>{t('people.findable')}</Chip>
         <Chip pressed={current.showPreview} onToggle={() => void save.run({ ...current, showPreview: !current.showPreview })}>{t('people.preview')}</Chip>
+        <Chip pressed={current.typing} onToggle={() => void save.run({ ...current, typing: !current.typing })}>{t('people.typing')}</Chip>
+        <Chip pressed={receipts.on} onToggle={() => void flipReceipts.run(!receipts.on)}>{t('chat.receipts')}</Chip>
       </div>
       <p className="muted">{t('people.findableBody')}</p>
       <p className="muted">{t('people.previewBody')}</p>
+      <p className="muted">{t('people.typingBody')}</p>
+      <p className="muted">{t('chat.receiptsBody')}</p>
       <ActionError error={save.error} />
+      <ActionError error={flipReceipts.error} />
       <Button variant="secondary" onClick={() => setConfirm(true)}>{t('people.hide')}</Button>
       <p className="muted">{t('people.hideBody')}</p>
       {confirm && (

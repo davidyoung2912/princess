@@ -602,6 +602,8 @@ Stanley money (phase 12). All signed in (a child account gets 403), for the gues
 
 **ChatMessages.Urgency** (docs/chat-urgency-plan.md, phase 1) — `NVARCHAR(10)` `{normal|important|urgent}`, default `normal`, CHECK-constrained; the API refuses `urgent` from anyone but staff or a guardian of a child in the conversation.
 
+**Chat phase 2** (docs/chat-features-research.md) — **ChatMessages** gains `EditedAt TS?`, `DeletedAt TS?` and `OriginalText STR(2000)?` (the first text before an edit or delete, shown to staff in a report case and never to a member); **ChatGroupMembers** gains `ArchivedAt TS?` and `MutedUntil TS?` (real UTC; `Muted` with no `MutedUntil` is muted until turned off); **UserPrefs.ChatTyping** `BIT` default 1 (the typing indicator, `GET/PUT /me/chat/settings`). Typing itself is never stored.
+
 **ChatMessageAcks** (docs/chat-urgency-plan.md, phase 2) — `MessageId FK` · `UserId FK` · `AckedAt` (PK is the pair; no `Id` or `PublicId`). One row when a member taps "Got it" on an urgent message from someone else; reading the thread never writes one.
 **Phase 4 additions** (docs/chat-urgency-plan.md): `ChatSmsLog.MessageId BIGINT NULL` (the chat message a text was about; Outcome also takes `retry`), and `UserPrefs` notification JSON gains `dnd: {until}` (ms; 0 off). Routes `GET/PUT /me/chat/do-not-disturb`; `429 urgencyLimit` on send.
 

@@ -58,14 +58,14 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
 
     public async Task<ChatSettingsDto> SettingsAsync(UserRecord actor, CancellationToken ct)
     {
-        var (findable, preview) = await store.GetSettingsAsync(actor.Id, ct);
-        return new(findable, preview);
+        var (findable, preview, typing) = await store.GetSettingsAsync(actor.Id, ct);
+        return new(findable, preview, typing);
     }
 
     public async Task<ChatSettingsDto> SetSettingsAsync(UserRecord actor, ChatSettingsDto? body, CancellationToken ct)
     {
         if (body is null) throw ApiException.Invalid("settings");
-        await store.SetSettingsAsync(actor.Id, body.Findable, body.ShowPreview, ct);
+        await store.SetSettingsAsync(actor.Id, body.Findable, body.ShowPreview, body.Typing, ct);
         return body;
     }
 

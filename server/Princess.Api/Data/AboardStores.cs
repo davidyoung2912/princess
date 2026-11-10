@@ -152,6 +152,10 @@ public sealed class ChatMessageRow
     public string? NoticeSubject { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public DateTime? SupersededAt { get; set; }
+    /// <summary>Phase 2: when the sender last edited it, and when they deleted it for everyone. A deleted message is never shown to a member again; <see cref="OriginalText"/> is for staff review of a report only.</summary>
+    public DateTime? EditedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? OriginalText { get; set; }
     public bool FromStanley => FromUserId == 0;
 }
 
@@ -166,7 +170,12 @@ public class ChatMemberRow
     public string Status { get; set; } = "active";
     public DateTime JoinedAt { get; set; }
     public DateTime? LeftAt { get; set; }
+    /// <summary>Muted right now: switched on and not past <see cref="MutedUntil"/> (the store applies the expiry, so every reader agrees).</summary>
     public bool Muted { get; set; }
+    /// <summary>When a timed mute ends (real UTC); null for no end, or when not muted.</summary>
+    public DateTime? MutedUntil { get; set; }
+    /// <summary>When the member archived the conversation; null when it is in their main list.</summary>
+    public DateTime? ArchivedAt { get; set; }
     /// <summary>The member tells the other connected members when they leave or return to the ship.</summary>
     public bool NotifyAway { get; set; }
     public long? LastReadMessageId { get; set; }
@@ -187,6 +196,8 @@ public sealed class ChatConversationRow : ChatMemberRow
     public bool LastPhoto { get; set; }
     public string LastUrgency { get; set; } = "normal";
     public DateTime? LastAt { get; set; }
+    /// <summary>The last message was deleted for everyone (its text is then empty here).</summary>
+    public bool LastDeleted { get; set; }
     public int Unread { get; set; }
 }
 
@@ -197,6 +208,8 @@ public sealed class ChatRecipientRow
     public bool Muted { get; set; }
     /// <summary>The recipient allows message text on their lock screen (off unless they turned it on).</summary>
     public bool ShowPreview { get; set; }
+    /// <summary>The recipient has the typing indicator on (it is on unless they turned it off); one who has it off is never sent "is typing".</summary>
+    public bool Typing { get; set; } = true;
 }
 
 /// <summary>One conversation's presence change for a member: what the chat last knew (<c>Previous</c>) and whether the member wants the chat told.</summary>
@@ -228,6 +241,8 @@ public sealed class ChatQuoteRow
     public string Text { get; set; } = "";
     public bool HasPhoto { get; set; }
     public bool IsSystem { get; set; }
+    /// <summary>The original was deleted for everyone: the quote then shows only "Message removed".</summary>
+    public bool Deleted { get; set; }
 }
 
 /// <summary>A message stored by <see cref="IChatStore.AddMessageAsync"/>. <c>Created</c> is false when the same <c>clientId</c> had been sent before and the stored message came back.</summary>
@@ -357,7 +372,23 @@ public interface IChatStore
     Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct);
     /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>
     Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct);
-    Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>Mutes or unmutes. <paramref name="until"/> (real UTC) ends a timed mute by itself; null mutes until turned off.</summary>
+    Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct, DateTime? until = null);
+    /// <summary>Moves the conversation into the member's archive, or back out.</summary>
+    Task SetArchivedAsync(long groupId, long userId, DateTime? at, CancellationToken ct);
+    /// <summary>A new message from someone else brings an archived conversation back for the members who are not muting it.</summary>
+    Task UnarchiveOthersAsync(long groupId, long senderId, CancellationToken ct);
+    /// <summary>
+    /// Edits the sender's own message: sets the text and <c>EditedAt</c>, keeping the first text in <c>OriginalText</c>. Only while it is the sender's, not deleted, and sent at or after <paramref name="windowStart"/>
+    /// (so a change that races the window closing is refused). False when nothing changed.
+    /// </summary>
+    Task<bool> EditMessageAsync(long messageId, long userId, string text, DateTime at, DateTime windowStart, CancellationToken ct);
+    /// <summary>Deletes the sender's own message for everyone, with the same guard as <see cref="EditMessageAsync"/>: the text is blanked and <c>OriginalText</c> keeps it for staff review of a report. False when nothing changed.</summary>
+    Task<bool> DeleteMessageAsync(long messageId, long userId, DateTime at, DateTime windowStart, CancellationToken ct);
+    /// <summary>How many messages the person has sent to the conversation since <paramref name="since"/> (the send rate limit).</summary>
+    Task<int> CountSentInAsync(long groupId, long userId, DateTime since, CancellationToken ct);
+    /// <summary>The newest message in the conversation a person said that the reader may read (their window, nobody they blocked), or null: what a header Report of a person files.</summary>
+    Task<ChatMessageRow?> FindLatestFromAsync(long groupId, long readerId, long fromUserId, CancellationToken ct);
     /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the member.</summary>
     Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>
@@ -379,6 +410,8 @@ public interface IChatStore
     Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct);
     /// <summary>Unread messages over every conversation, for the tab badge.</summary>
     Task<int> UnreadTotalAsync(long userId, CancellationToken ct);
+    /// <summary>Whether the person has the typing indicator on (it is on unless they turned it off).</summary>
+    Task<bool> GetTypingAsync(long userId, CancellationToken ct);
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);
     Task SetReceiptsAsync(long userId, bool on, CancellationToken ct);
     Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct);

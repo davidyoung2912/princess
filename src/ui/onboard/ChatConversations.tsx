@@ -15,6 +15,8 @@ import {
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
 import { readDraft, saveDraft } from '../../domain/chatDrafts'
+import { announceTyping, canEdit, changeProblem, isMuted, isSameConversation, MUTE_LENGTHS, muteFor, shouldSendTyping, splitArchived, TYPING_EXPIRE_MS, typingNames, windowLeft, type ChangeProblem, type MuteLength } from '../../domain/chatControl'
+import { REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import { useLongPress } from '../../hooks/useLongPress'
 import { ashoreNames } from '../../domain/chatSms'
 import { dndChoices, dndEndsAt } from '../../domain/chatDnd'
@@ -23,7 +25,7 @@ import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } fro
 import { readCachedThread, readList, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
-import { chatChanged, fetchChatSummary, isChatLive, useChatLive } from '../../hooks/useChatSummary'
+import { chatChanged, fetchChatSummary, isChatLive, useChatLive, useChatTyping } from '../../hooks/useChatSummary'
 import { useAction } from '../../hooks/useAction'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
@@ -34,7 +36,7 @@ import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useNow, useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
-import { t, th as heading } from '../../i18n'
+import { t, th as heading, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
@@ -73,6 +75,7 @@ function tellDelivered(list: readonly ChatConversation[]): void {
 
 function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   const shipTime = useShipTime()
+  const now = useNow()
   const owner = useOwnerId() ?? 'none'
   // The copy from last time shows at once; the server's answer replaces it behind it.
   const [rows, setRows] = useState<ChatConversation[] | null>(() => readList(chatStorage(), owner))
@@ -101,39 +104,57 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {!rows && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
-      {rows && (rows.length === 0 ? <p>{t('conv.none')}</p> : (
-        <ul className="conv-list" aria-label={t('conv.title')}>
-          {sortConversations(rows, urgentIds).map((c) => {
-            const level: ChatUrgency = urgentIds.includes(c.id) ? 'urgent' : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine ? 'important' : 'normal'
-            return (
-            <li key={c.id}>
-              <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
-                {isStanleyChat(c)
-                  ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
-                  : <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>}
-                <span className="conv__body">
-                  <span className="conv__top">
-                    <strong>{c.name}</strong>
-                    {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
-                  </span>
-                  {isStanleyChat(c) && subtitleOf(c) && <span className="muted conv__sub">{t('stanley.chat.speaking', { name: subtitleOf(c) })}</span>}
-                  {level !== 'normal' && <UrgencyTag level={level} />}
-                  <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
-                  {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
-                </span>
-                {c.unread > 0 && (
-                  <span className="conv__unread">
-                    <span aria-hidden="true">{c.unread}</span>
-                    <span className="visually-hidden">{t('conv.unread', { count: c.unread })}</span>
-                  </span>
-                )}
-              </button>
-            </li>
-            )
-          })}
-        </ul>
-      ))}
+      {rows && (rows.length === 0 ? <p>{t('conv.none')}</p> : (() => {
+        const { shown, archived } = splitArchived(sortConversations(rows, urgentIds), urgentIds)
+        return (
+          <>
+            <ul className="conv-list" aria-label={t('conv.title')}>
+              {shown.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} />)}
+            </ul>
+            {archived.length > 0 && (
+              <details className="conv-archived">
+                <summary>{t('conv.archivedTitle', { count: archived.length })}</summary>
+                <ul className="conv-list" aria-label={t('conv.archivedTitle', { count: archived.length })}>
+                  {archived.map((c) => <ConversationItem key={c.id} c={c} urgentIds={urgentIds} onOpen={onOpen} shipTime={shipTime} now={now} />)}
+                </ul>
+              </details>
+            )}
+          </>
+        )
+      })())}
     </section>
+  )
+}
+
+/** One row of the list: who, the last line, an urgency word, the mute and closed tags, and the unread count. */
+function ConversationItem({ c, urgentIds, onOpen, shipTime, now }: { c: ChatConversation; urgentIds: readonly string[]; onOpen: (id: string) => void; shipTime: (at: number) => string; now: number }) {
+  const level: ChatUrgency = urgentIds.includes(c.id) ? 'urgent' : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine ? 'important' : 'normal'
+  const muted = isMuted(c, now)
+  const tags = [muted && (c.mutedUntil ? t('conv.mutedUntil', { time: shipTime(c.mutedUntil) }) : t('conv.muted')), c.closed && t('conv.closed')].filter(Boolean)
+  return (
+    <li>
+      <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
+        {isStanleyChat(c)
+          ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
+          : <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>}
+        <span className="conv__body">
+          <span className="conv__top">
+            <strong>{c.name}</strong>
+            {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
+          </span>
+          {isStanleyChat(c) && subtitleOf(c) && <span className="muted conv__sub">{t('stanley.chat.speaking', { name: subtitleOf(c) })}</span>}
+          {level !== 'normal' && <UrgencyTag level={level} />}
+          <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
+          {tags.length > 0 && <span className="conv__tags muted">{tags.join(' · ')}</span>}
+        </span>
+        {c.unread > 0 && (
+          <span className="conv__unread">
+            <span aria-hidden="true">{c.unread}</span>
+            <span className="visually-hidden">{t('conv.unread', { count: c.unread })}</span>
+          </span>
+        )}
+      </button>
+    </li>
   )
 }
 
@@ -196,6 +217,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [jumped, setJumped] = useState(false)
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
+  // Who is typing now (never stored; each name drops off six seconds after the last nudge) and whether this guest shows and sees it.
+  const [typers, setTypers] = useState<string[]>([])
+  const typingSettings = useMine(() => api.chatConnections.settings())
+  const typingOn = typingSettings.data?.typing !== false
+  const typingSentAt = useRef<number | null>(null)
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typersRef = useRef<string[]>([])
   const end = useRef<HTMLDivElement>(null)
   const lastSeen = useRef<string | null>(null)
   const lastRead = useRef<string | null>(null)
@@ -232,6 +260,19 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   useEffect(() => { void load() }, [load])
   useChatLive(() => void load())
   useVisibleInterval(() => { if (!isChatLive()) void load() }, 30_000)
+  // A typing nudge asks who is typing; the answer lasts six seconds unless another nudge renews it. A polite announcement is made once per burst, not on every nudge.
+  const showTypers = useCallback((names: string[]) => {
+    if (announceTyping(typersRef.current, names)) setAnnounce(typingText(names))
+    typersRef.current = names
+    setTypers(names)
+    if (typingTimer.current) clearTimeout(typingTimer.current)
+    typingTimer.current = names.length > 0 ? setTimeout(() => { typersRef.current = []; setTypers([]) }, TYPING_EXPIRE_MS) : null
+  }, [])
+  useChatTyping((hex) => {
+    if (!isSameConversation(id, hex) || !typingOn || conversation?.kind === 'stanley') return
+    api.chatConversations.typingNow(id).then(showTypers, () => undefined)
+  })
+  useEffect(() => () => { if (typingTimer.current) clearTimeout(typingTimer.current) }, [])
 
   const toEnd = useCallback(() => { end.current?.scrollIntoView({ block: 'end', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); setChip(false) }, [])
 
@@ -251,6 +292,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     // oxlint-disable-next-line react/set-state-in-effect -- the first page arrived from the server: show its end
     if (wasFirst) { if (messages.length > 0) toEnd(); return }
     if (incoming) {
+      // oxlint-disable-next-line react/set-state-in-effect -- their message ends their "is typing"
+      if (typersRef.current.length > 0) { typersRef.current = []; setTypers([]) }
       // oxlint-disable-next-line react/set-state-in-effect -- a message that just arrived from the server is announced once and may raise the chip
       if (announceMode(urgencyOf(incoming)) === 'assertive') setAlertText(t('urgent.incoming', { name: incoming.fromName ?? '' }))
       else setAnnounce(t('conv.incoming', { name: incoming.fromName ?? '' }))
@@ -359,9 +402,32 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const runChanged = useLatest(() => void load())
   const onBlocked = useLatest(() => { void load(); setBlockedVersion((v) => v + 1) })
 
-  const mute = useAction(async (on: boolean) => {
-    await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
+  const mute = useAction(async (on: boolean, length?: MuteLength) => {
+    const before = conversation
+    await optimistic(() => setConversation((c) => (c ? { ...c, muted: on, mutedUntil: undefined } : c)), () => api.chatConversations.mute(id, on, length ? muteFor(length) : undefined), () => setConversation((c) => (c && before ? { ...c, muted: before.muted, mutedUntil: before.mutedUntil } : c)))
+    void load()   // a timed mute's end comes from the server
   })
+  const archive = useAction(async (on: boolean) => {
+    await api.chatConversations.archive(id, on)
+    chatChanged()
+    if (on) onBack()
+    else void load()
+  })
+  // Edit and delete: the row shows its own problem, so these throw; on success the message is changed on screen at once and the thread is read again.
+  const edit = async (messageId: string, body: string) => {
+    const sent = await api.chatConversations.edit(id, messageId, body)
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? { ...x, text: sent.text, edited: sent.edited } : x)))
+    setAnnounce(t('conv.editedAnnounce'))
+    void load()
+  }
+  const remove = async (messageId: string) => {
+    await api.chatConversations.remove(id, messageId)
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? { ...x, text: '', deleted: true, photo: undefined, hasPhoto: undefined, reactions: undefined, replyTo: undefined } : x)))
+    setAnnounce(t('conv.deletedAnnounce'))
+    void load()
+  }
+  const runEdit = useLatest((messageId: string, body: string) => edit(messageId, body))
+  const runRemove = useLatest((messageId: string) => remove(messageId))
 
   const notifyAway = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, notifyAway: on } : c)), () => api.chatConversations.notifyAway(id, on), () => setConversation((c) => (c ? { ...c, notifyAway: !on } : c)))
@@ -456,6 +522,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
+      {conversation && !permanent && phase === 'ready' && (
+        <ChatMenu conversation={conversation} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} />
+      )}
       {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
       <p role="alert" className="visually-hidden">{alertText}</p>
@@ -478,7 +547,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -488,6 +557,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           </li>
         ))}
       </ol>
+      <TypingLine names={typers} />
       <div ref={end} />
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
@@ -509,9 +579,15 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
           </fieldset>
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
-            onChange={(e) => { setText(e.target.value); if (problem) setProblem(null) }}
+            onChange={(e) => {
+              setText(e.target.value)
+              if (problem) setProblem(null)
+              // Tell the others, at most every three seconds, only while there is something written and the guest has the indicator on.
+              const tick = Date.now()
+              if (typingOn && e.target.value.trim() && shouldSendTyping(typingSentAt.current, tick)) { typingSentAt.current = tick; api.chatConversations.typing(id).catch(() => { typingSentAt.current = null }) }
+            }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } }} />
-          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : 'conv.failed')}</p>}
+          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : problem === 'rate' ? 'conv.rate' : 'conv.failed')}</p>}
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
@@ -521,8 +597,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         </form>
       ))}
       {conversation && permanent && <StanleyNotices />}
-      {conversation && !permanent && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      {conversation && !permanent && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
+      <ActionError error={archive.error} />
       <ActionError error={notifyAway.error} />
       <ActionError error={ack.error} />
       <ActionError error={jump.error} />
@@ -659,6 +736,9 @@ interface MessageRowProps {
   onReply?: (m: ChatMessage) => void
   /** Go to a quoted message that is not on screen yet (older pages are read until it is). */
   onJump?: (messageId: string) => void
+  /** Phase 2: fix or retract your own message inside the 15-minute window. They reject with the server's reason, which the row shows. */
+  onEdit?: (messageId: string, text: string) => Promise<void>
+  onDelete?: (messageId: string) => Promise<void>
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -683,7 +763,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -698,11 +778,15 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     }
     return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} />
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} />
+  if (m.deleted) {
+    // Deleted for everyone: the fact and who and when, nothing of what it said.
+    return <li id={`msg-${m.id}`} className="chat-msg chat-msg--deleted"><p className="muted"><strong>{m.from === mine ? t('chat.you') : (m.fromName ?? '')}</strong> · {t('conv.deleted')} · {shipTime(m.at)}</p></li>
+  }
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} />
 })
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump }: Omit<MessageRowProps, 'onChanged'>) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete }: Omit<MessageRowProps, 'onChanged'>) {
   const own = m.from === mine
   const card = m.text ? parsePlanCard(m.text) : null
   const mlevel = urgencyOf(m)
@@ -718,7 +802,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
     <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-      <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
       {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
@@ -736,6 +820,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
       {picking && onReact && (
         <ReactionPicker held={myReaction(m.reactions)} onPick={(emoji) => { onReact(m.id, emoji); closePicker() }} onClose={closePicker} />
       )}
+      {own && canAct && onEdit && onDelete && <OwnChange m={m} onEdit={onEdit} onDelete={onDelete} />}
       {own && <p className="muted">{t(({ read: 'conv.read', delivered: 'conv.delivered', sent: 'conv.sent' } as const)[deliveryOf(m)])}</p>}
       {own && mlevel === 'urgent' && (
         <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : kind === 'direct' ? t('urgent.ackedBy', { names: peerName }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
@@ -789,9 +874,161 @@ function ReactionPicker({ held, onPick, onClose }: { held: string | null; onPick
   )
 }
 
+/** The words for who is typing: one name, two names, or several people. Empty when nobody is. */
+function typingText(names: readonly string[]): string {
+  const w = typingNames(names)
+  return w.kind === 'one' ? t('conv.typing.one', { a: w.a }) : w.kind === 'two' ? t('conv.typing.two', { a: w.a, b: w.b }) : w.kind === 'many' ? t('conv.typing.many') : ''
+}
+
+/** The typing bubble: three dots that move (and sit still under reduced motion) and the words. The words are read once per burst through the thread's polite status, not here. */
+function TypingLine({ names }: { names: readonly string[] }) {
+  if (names.length === 0) return null
+  return (
+    <div className="chat-typing">
+      <span className="chat-typing__dots" aria-hidden="true"><i /><i /><i /></span>
+      <span>{typingText(names)}</span>
+    </div>
+  )
+}
+
+const PROBLEM_KEY: Record<ChangeProblem, StringKey> = {
+  tooLate: 'conv.tooLate', blocked: 'conv.editBlocked', contact: 'conv.editContact', text: 'conv.editFailed', deleted: 'conv.deleted', other: 'conv.editFailed',
+}
+
+/**
+ * Edit and Delete under your own message, only while the 15-minute window is open. The window closes live: the buttons go away and, if you were in the middle of a change, a message says it is too late.
+ * Delete asks first, because it is for everyone. Escape closes the editor and focus goes back to the button that opened it.
+ */
+function OwnChange({ m, onEdit, onDelete }: { m: ChatMessage; onEdit: (messageId: string, text: string) => Promise<void>; onDelete: (messageId: string) => Promise<void> }) {
+  const now = useNow()
+  const open = windowLeft(m.at, now) > 0
+  const [mode, setMode] = useState<'idle' | 'edit' | 'delete'>('idle')
+  const [draft, setDraft] = useState(m.text)
+  const [problem, setProblem] = useState<ChangeProblem | null>(null)
+  const [busy, setBusy] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const back = (selector: string) => setTimeout(() => root.current?.querySelector<HTMLElement>(selector)?.focus(), 0)
+  const close = (selector: string) => { setMode('idle'); setProblem(null); back(selector) }
+  const run = async (job: () => Promise<void>, after: string) => {
+    setBusy(true)
+    setProblem(null)
+    try { await job(); setMode('idle'); back(after) } catch (e) { setProblem(isApiError(e) ? changeProblem(e.code, e.message) : 'other') } finally { setBusy(false) }
+  }
+  if (!open) return mode !== 'idle' || problem === 'tooLate' ? <p role="status" className="muted">{t('conv.tooLate')}</p> : null
+  return (
+    <div ref={root} className="chat-msg__actions-wrap">
+      {mode === 'idle' && (
+        <div className="chat-msg__actions">
+          {canEdit(m) && <button type="button" className="chat-act" data-act="edit" onClick={() => { setDraft(m.text); setMode('edit'); back('textarea') }}>{t('conv.edit')}</button>}
+          <button type="button" className="chat-act" data-act="delete" onClick={() => setMode('delete')}>{t('conv.delete')}</button>
+        </div>
+      )}
+      {mode === 'edit' && (
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape is a shortcut; Cancel does the same
+        <form className="chat-edit" onSubmit={(e) => { e.preventDefault(); void run(() => onEdit(m.id, draft.trim()), '[data-act="edit"]') }}
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); close('[data-act="edit"]') } }}>
+          <TextArea label={t('conv.editLabel')} value={draft} rows={2} maxLength={MAX_TEXT} autoComplete="off" onChange={(e) => { setDraft(e.target.value); setProblem(null) }} />
+          <div className="button-row">
+            <Button type="submit" disabled={busy || !draft.trim()}>{t('conv.editSave')}</Button>
+            <Button variant="secondary" onClick={() => close('[data-act="edit"]')}>{t('conv.editCancel')}</Button>
+          </div>
+        </form>
+      )}
+      {mode === 'delete' && (
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape is a shortcut; Keep it does the same
+        <div role="group" aria-label={t('conv.deleteAsk')} className="chat-edit" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); close('[data-act="delete"]') } }}>
+          <p>{t('conv.deleteAsk')}</p>
+          <div className="button-row">
+            <Button disabled={busy} onClick={() => void run(() => onDelete(m.id), '[data-act="delete"]')}>{t('conv.deleteYes')}</Button>
+            <Button variant="secondary" onClick={() => close('[data-act="delete"]')}>{t('conv.deleteNo')}</Button>
+          </div>
+        </div>
+      )}
+      {problem && problem !== 'tooLate' && <p role="alert" className="field__error">{t(mode === 'delete' ? 'conv.deleteFailed' : PROBLEM_KEY[problem])}</p>}
+      {problem === 'tooLate' && <p role="alert" className="field__error">{t('conv.tooLate')}</p>}
+    </div>
+  )
+}
+
+const MUTE_KEY: Record<MuteLength, StringKey> = { hour: 'conv.muteHour', day: 'conv.muteDay', week: 'conv.muteWeek', forever: 'conv.muteForever' }
+
+/**
+ * The chat's header menu: mute (for an hour, a day, a week or until turned back on), archive, and for the people in it Block and Report. A report goes with their latest message so the moderators can see
+ * what was said; a block only hides them from you. Escape closes it and focus returns to the button.
+ */
+function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
+  conversation: ChatConversation; now: number; busy: boolean; onMute: (on: boolean, length?: MuteLength) => void; onArchive: (on: boolean) => void; onBlocked: () => void
+}) {
+  const shipTime = useShipTime()
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const people = conversation.people ?? []
+  const [personId, setPersonId] = useState('')
+  const person = people.find((p) => p.id === personId) ?? people[0]
+  const [reason, setReason] = useState<ChatReportReason>('rude')
+  const [reported, setReported] = useState<'done' | 'nothing' | null>(null)
+  const block = useAction(async () => { if (person) { await api.aboard.chat.block(person.id, true); onBlocked(); setOpen(false) } })
+  const report = useAction(async () => {
+    if (!person) return
+    try { await api.chatConversations.reportPerson(conversation.id, person.id, reason); setReported('done') } catch (e) { if (isApiError(e) && e.code === 'notFound') setReported('nothing'); else throw e }
+  })
+  useEffect(() => { if (open) root.current?.querySelector<HTMLElement>('.chat-menu__panel button, .chat-menu__panel select')?.focus() }, [open])
+  const close = () => { setOpen(false); root.current?.querySelector<HTMLElement>('[aria-expanded]')?.focus() }
+  const muted = isMuted(conversation, now)
+  return (
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- Escape is a shortcut for a menu whose controls all work by themselves
+    <div ref={root} className="chat-menu" onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); close() } }}>
+      <Button variant="secondary" aria-expanded={open} onClick={() => (open ? close() : setOpen(true))}>{t('conv.menu')}</Button>
+      {open && (
+        <div className="chat-menu__panel" role="group" aria-label={t('conv.menu')}>
+          <h3>{t('conv.menuMute')}</h3>
+          {muted ? (
+            <>
+              <p className="muted">{conversation.mutedUntil ? t('conv.mutedUntil', { time: shipTime(conversation.mutedUntil) }) : t('conv.mutedNoEnd')}</p>
+              <div className="button-row"><Button variant="secondary" disabled={busy} onClick={() => onMute(false)}>{t('conv.unmute')}</Button></div>
+            </>
+          ) : (
+            <div className="button-row">
+              {MUTE_LENGTHS.map((l) => <Button key={l} variant="secondary" disabled={busy} onClick={() => { onMute(true, l); close() }}>{t(MUTE_KEY[l])}</Button>)}
+            </div>
+          )}
+          <p className="muted">{t('conv.muteBody')}</p>
+          <div className="button-row"><Button variant="secondary" disabled={busy} onClick={() => onArchive(!conversation.archived)}>{t(conversation.archived ? 'conv.unarchive' : 'conv.archive')}</Button></div>
+          {person && (
+            <>
+              <h3>{t('conv.menuPerson')}</h3>
+              {people.length > 1 && (
+                <div className="field">
+                  <label htmlFor="menu-person">{t('conv.menuPerson')}</label>
+                  <select id="menu-person" className="field__input" value={person.id} onChange={(e) => { setPersonId(e.target.value); setReported(null) }}>
+                    {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {people.length === 1 && <p><strong>{person.name}</strong></p>}
+              <div className="button-row"><Button variant="secondary" disabled={block.busy} onClick={() => void block.run()}>{t('conv.menuBlock', { name: person.name })}</Button></div>
+              <div className="field">
+                <label htmlFor="menu-reason">{t('safe.reason')}</label>
+                <select id="menu-reason" className="field__input" value={reason} onChange={(e) => setReason(e.target.value as ChatReportReason)}>
+                  {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(`safe.r.${r}` as StringKey)}</option>)}
+                </select>
+              </div>
+              <div className="button-row"><Button variant="secondary" disabled={report.busy} onClick={() => void report.run()}>{t('conv.menuReport', { name: person.name })}</Button></div>
+              <p className="muted">{t('conv.menuReportBody')}</p>
+              {reported === 'done' && <p role="status">{t('conv.menuReported')}</p>}
+              {reported === 'nothing' && <p role="status">{t('conv.menuNothing', { name: person.name })}</p>}
+              <ActionError error={block.error ?? report.error} />
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
-function Options({ conversation, muteBusy, onMute, awayBusy, onAway, onSent, blockedVersion, reload }: {
-  conversation: ChatConversation; muteBusy: boolean; onMute: (on: boolean) => void; awayBusy: boolean; onAway: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
+function Options({ conversation, awayBusy, onAway, onSent, blockedVersion, reload }: {
+  conversation: ChatConversation; awayBusy: boolean; onAway: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
 }) {
   const receipts = useMine(() => api.messages.receipts())
   const [shown, setShown] = useState<boolean | null>(null)
@@ -804,10 +1041,6 @@ function Options({ conversation, muteBusy, onMute, awayBusy, onAway, onSent, blo
   return (
     <details className="chat-options">
       <summary>{t('conv.options')}</summary>
-      <div className="chip-row">
-        <Chip pressed={conversation.muted} onToggle={() => { if (!muteBusy) onMute(!conversation.muted) }}>{t('conv.mute')}</Chip>
-      </div>
-      <p className="muted">{t('conv.muteBody')}</p>
       <div className="chip-row">
         <Chip pressed={conversation.notifyAway === true} onToggle={() => { if (!awayBusy) onAway(conversation.notifyAway !== true) }}>{t('conv.away')}</Chip>
       </div>

@@ -224,7 +224,13 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     sendPhoto: (id, input) => send('post', `/me/chat/conversations/${seg(id)}/photos`, input),
     photo: async (id, messageId) => (await get<{ photo: string }>(`/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/photo`)).photo,
     read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
-    mute: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on }),
+    mute: (id, on, length) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on, ...(on && length ? { for: length } : {}) }),
+    archive: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/archive`, { on }),
+    edit: (id, messageId, text) => send('patch', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}`, { text }),
+    remove: async (id, messageId) => { await send('delete', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}`) },
+    typing: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/typing`) },
+    typingNow: (id) => get(`/me/chat/conversations/${seg(id)}/typing`),
+    reportPerson: async (id, personId, reason) => { await send('post', `/me/chat/conversations/${seg(id)}/people/${seg(personId)}/report`, { reason }) },
     notifyAway: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/notify-away`, { on }),
   }
   const chatGroups: HttpGroups['chatGroups'] = {

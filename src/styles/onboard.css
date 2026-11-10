@@ -212,6 +212,25 @@ button.chat-quote { cursor: pointer; }
 .chat-divider::before, .chat-divider::after { content: ''; flex: 1; border-top: 2px solid var(--primary); }
 .chat-msg:focus-visible, .chat-divider:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
+/* Phase 2: control and safety. Typing bubble (three dots, still under reduced motion), edit and delete, the header menu and the archive. */
+.chat-typing { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; color: var(--text-muted, var(--text)); font-size: var(--fs-caption); }
+.chat-typing__dots { display: inline-flex; gap: 4px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); background: var(--sky-tint); }
+.chat-typing__dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); animation: chat-typing-dot 1.2s ease-in-out infinite; }
+.chat-typing__dots i:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing__dots i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes chat-typing-dot { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .chat-typing__dots i { animation: none; opacity: 1; } }
+.chat-msg--deleted p { font-style: italic; }
+.chat-edit { margin-top: var(--space-2); }
+.chat-edit .button-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.chat-ask { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-2); }
+.chat-menu { margin: var(--space-2) 0; }
+.chat-menu__panel { margin-top: var(--space-2); padding: var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.chat-menu__panel h3 { margin: 0 0 var(--space-2); font-size: var(--fs-body); }
+.chat-menu__panel .button-row { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.conv-archived { margin-top: var(--space-4); }
+.conv-archived > summary { min-height: var(--target-min); display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+
 /* One-tap do not disturb on the Chat list. The word and the border say it is on, not colour alone. */
 .dnd { margin: var(--space-3) 0; padding: var(--space-3); border: 1px solid var(--border, currentColor); border-radius: var(--radius-2, 0.5rem); }
 .dnd--on { border-width: 2px; border-style: dashed; }

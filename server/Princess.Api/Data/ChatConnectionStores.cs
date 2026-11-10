@@ -68,8 +68,8 @@ public interface IChatConnectionStore
     /// <summary>Whether the first person has blocked the second.</summary>
     Task<bool> HasBlockedAsync(long blocker, long blocked, CancellationToken ct);
     /// <summary>The person's chat choices: whether others can find them by name, and whether a notice may show the message text.</summary>
-    Task<(bool Findable, bool ShowPreview)> GetSettingsAsync(long userId, CancellationToken ct);
-    Task SetSettingsAsync(long userId, bool findable, bool showPreview, CancellationToken ct);
+    Task<(bool Findable, bool ShowPreview, bool Typing)> GetSettingsAsync(long userId, CancellationToken ct);
+    Task SetSettingsAsync(long userId, bool findable, bool showPreview, bool typing, CancellationToken ct);
     /// <summary>Hide me, in one transaction: turns off being found, ends every agreed connection and withdraws every waiting request the person sent or was sent. Returns how many connections it closed.</summary>
     Task<int> HideAsync(long userId, DateTime now, CancellationToken ct);
 }
@@ -253,21 +253,21 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
             "SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.ChatBlocks WHERE UserId = @blocker AND BlockedUserId = @blocked) THEN 1 ELSE 0 END", new { blocker, blocked }, null, ct)) == 1;
     }
 
-    public async Task<(bool Findable, bool ShowPreview)> GetSettingsAsync(long userId, CancellationToken ct)
+    public async Task<(bool Findable, bool ShowPreview, bool Typing)> GetSettingsAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var row = await c.QuerySingleOrDefaultAsync<(bool Findable, bool ShowPreview)?>(Sql.Cmd("SELECT ChatFindable, ChatShowPreview FROM dbo.UserPrefs WHERE UserId = @userId", new { userId }, null, ct));
-        return row ?? (true, false);
+        var row = await c.QuerySingleOrDefaultAsync<(bool Findable, bool ShowPreview, bool Typing)?>(Sql.Cmd("SELECT ChatFindable, ChatShowPreview, ChatTyping FROM dbo.UserPrefs WHERE UserId = @userId", new { userId }, null, ct));
+        return row ?? (true, false, true);
     }
 
-    public async Task SetSettingsAsync(long userId, bool findable, bool showPreview, CancellationToken ct)
+    public async Task SetSettingsAsync(long userId, bool findable, bool showPreview, bool typing, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("""
             MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
-            WHEN MATCHED THEN UPDATE SET ChatFindable = @findable, ChatShowPreview = @showPreview, UpdatedAt = SYSUTCDATETIME()
-            WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable, ChatShowPreview) VALUES (@userId, @findable, @showPreview);
-            """, new { userId, findable, showPreview }, null, ct));
+            WHEN MATCHED THEN UPDATE SET ChatFindable = @findable, ChatShowPreview = @showPreview, ChatTyping = @typing, UpdatedAt = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN INSERT (UserId, ChatFindable, ChatShowPreview, ChatTyping) VALUES (@userId, @findable, @showPreview, @typing);
+            """, new { userId, findable, showPreview, typing }, null, ct));
     }
 
     public async Task<int> HideAsync(long userId, DateTime now, CancellationToken ct)

@@ -243,6 +243,8 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public DateTime JoinedAt { get; set; } = DateTime.MinValue;
         public DateTime? LeftAt { get; set; }
         public bool Muted { get; set; }
+        public DateTime? MutedUntil { get; set; }
+        public DateTime? ArchivedAt { get; set; }
         public bool NotifyAway { get; set; }
         public string? AwayStatus { get; set; }
         public long? LastRead { get; set; }
@@ -258,6 +260,9 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public List<Stored> Messages { get; } = [];
     public HashSet<long> Receipts { get; } = [];
     public HashSet<long> Previews { get; } = [];
+    /// <summary>People who turned the typing indicator off (it is on for everyone else).</summary>
+    public HashSet<long> TypingOff { get; } = [];
+    private static bool MutedNow(Member m) => m.Muted && (m.MutedUntil is null || m.MutedUntil > DateTime.UtcNow);
     public HashSet<(long UserId, long Blocked)> Blocks { get; } = [];
     public List<(long UserId, Guid MessageId, string Reason)> Reports { get; } = [];
     /// <summary>Pairs (either order) with an accepted chat connection, for who may be told when someone leaves or returns to the ship.</summary>
@@ -291,7 +296,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         Persona = PersonaOf(c)?.Persona, Subtitle = PersonaOf(c)?.Subtitle,
         GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
-        Muted = me.Muted, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
+        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
     };
 
     private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
@@ -356,10 +361,10 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             var r = new ChatConversationRow
             {
                 GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
-                Muted = x.Me.Muted, NotifyAway = x.Me.NotifyAway, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
+                Muted = MutedNow(x.Me), MutedUntil = x.Me.MutedUntil, ArchivedAt = x.Me.ArchivedAt, NotifyAway = x.Me.NotifyAway, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
                 Persona = PersonaOf(x.C)?.Persona, Subtitle = PersonaOf(x.C)?.Subtitle,
             };
-            if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
+            if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.DeletedAt is null ? last.Text : ""; r.LastDeleted = last.DeletedAt is not null; r.LastPhoto = last.Photo is not null && last.DeletedAt is null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
             return r;
         }).OrderBy(r => r.Kind == "stanley" ? 0 : 1).ThenByDescending(r => r.LastAt ?? r.CreatedAt).ThenByDescending(r => r.GroupId).ToList());
 
@@ -389,11 +394,11 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         // Like the real store: a page says there is a photo but does not carry it.
         return Task.FromResult(all.TakeLast(limit + 1).Select(m => new ChatMessageRow
         {
-            Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, HasPhoto = m.Photo is not null, At = m.At, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
+            Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.DeletedAt is null ? m.Text : "", HasPhoto = m.Photo is not null && m.DeletedAt is null, At = m.At, EditedAt = m.EditedAt, DeletedAt = m.DeletedAt, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
             SeenBy = m.SeenBy, AckedBy = m.AckedBy, Persona = m.Persona, Subtitle = m.Subtitle, ReplyToId = m.ReplyToId,
             // Like the real store: the quote is the original only when this reader may read it.
-            Reply = m.ReplyToId is { } r && Visible(c, me).FirstOrDefault(x => x.Id == r) is { } q ? new ChatQuoteRow { Id = q.Id, PublicId = q.PublicId, FromUserId = q.FromUserId, Text = q.Text, HasPhoto = q.Photo is not null, IsSystem = q.IsSystem } : null,
-            Reactions = [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
+            Reply = m.ReplyToId is { } r && Visible(c, me).FirstOrDefault(x => x.Id == r) is { } q ? new ChatQuoteRow { Id = q.Id, PublicId = q.PublicId, FromUserId = q.FromUserId, Text = q.DeletedAt is null ? q.Text : "", HasPhoto = q.Photo is not null && q.DeletedAt is null, IsSystem = q.IsSystem, Deleted = q.DeletedAt is not null } : null,
+            Reactions = m.DeletedAt is not null ? [] : [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
             DeliveredBy = [.. MessageDeliveries.Where(x => x.MessageId == m.Id).Select(x => x.UserId)],
             Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
         }).ToList());
@@ -410,7 +415,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct) =>
         Task.FromResult(Of(groupId).Members.Where(m => m.Status == "active" && m.UserId != senderId && !Blocks.Contains((m.UserId, senderId)))
-            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = m.Muted, ShowPreview = Previews.Contains(m.UserId) }).ToList());
+            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = MutedNow(m), ShowPreview = Previews.Contains(m.UserId), Typing = !TypingOff.Contains(m.UserId) }).ToList());
 
     public Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct)
     {
@@ -423,11 +428,57 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.CompletedTask;
     }
 
-    public Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct)
+    public Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct, DateTime? until = null)
     {
-        Of(groupId).Members.First(m => m.UserId == userId).Muted = on;
+        var me = Of(groupId).Members.First(m => m.UserId == userId);
+        me.Muted = on;
+        me.MutedUntil = on ? until : null;
         return Task.CompletedTask;
     }
+
+    public Task SetArchivedAsync(long groupId, long userId, DateTime? at, CancellationToken ct)
+    {
+        Of(groupId).Members.First(m => m.UserId == userId).ArchivedAt = at;
+        return Task.CompletedTask;
+    }
+
+    public Task UnarchiveOthersAsync(long groupId, long senderId, CancellationToken ct)
+    {
+        foreach (var m in Of(groupId).Members.Where(m => m.UserId != senderId && m.ArchivedAt is not null && !MutedNow(m))) m.ArchivedAt = null;
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> EditMessageAsync(long messageId, long userId, string text, DateTime at, DateTime windowStart, CancellationToken ct)
+    {
+        var m = Messages.FirstOrDefault(x => x.Row.Id == messageId)?.Row;
+        if (m is null || m.FromUserId != userId || m.DeletedAt is not null || m.IsSystem || m.Photo is not null || m.At < windowStart) return Task.FromResult(false);
+        m.OriginalText ??= m.Text;
+        m.Text = text;
+        m.EditedAt = at;
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> DeleteMessageAsync(long messageId, long userId, DateTime at, DateTime windowStart, CancellationToken ct)
+    {
+        var m = Messages.FirstOrDefault(x => x.Row.Id == messageId)?.Row;
+        if (m is null || m.FromUserId != userId || m.DeletedAt is not null || m.IsSystem || m.At < windowStart) return Task.FromResult(false);
+        m.OriginalText ??= m.Text;
+        m.Text = "";
+        m.DeletedAt = at;
+        return Task.FromResult(true);
+    }
+
+    public Task<int> CountSentInAsync(long groupId, long userId, DateTime since, CancellationToken ct) =>
+        Task.FromResult(Messages.Count(m => m.GroupId == groupId && m.Row.FromUserId == userId && !m.Row.IsSystem && m.Row.At >= since));
+
+    public Task<ChatMessageRow?> FindLatestFromAsync(long groupId, long readerId, long fromUserId, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == readerId);
+        return Task.FromResult(Visible(c, me).LastOrDefault(m => m.FromUserId == fromUserId && !m.IsSystem));
+    }
+
+    public Task<bool> GetTypingAsync(long userId, CancellationToken ct) => Task.FromResult(!TypingOff.Contains(userId));
 
     public Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct)
     {
@@ -451,7 +502,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public Task<List<ChatAwayRecipientRow>> ListAwayRecipientsAsync(long userId, IReadOnlyCollection<long> groupIds, CancellationToken ct) =>
         Task.FromResult(Conversations.Where(c => groupIds.Contains(c.Id)).SelectMany(c => c.Members.Where(m => m.Status == "active" && m.UserId != userId
                 && (Connected.Contains((userId, m.UserId)) || Connected.Contains((m.UserId, userId))) && !Blocks.Contains((m.UserId, userId)) && !Blocks.Contains((userId, m.UserId)))
-            .Select(m => new ChatAwayRecipientRow { GroupId = c.Id, GroupPublicId = c.PublicId, UserId = m.UserId, Muted = m.Muted })).ToList());
+            .Select(m => new ChatAwayRecipientRow { GroupId = c.Id, GroupPublicId = c.PublicId, UserId = m.UserId, Muted = MutedNow(m) })).ToList());
 
     public Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct)
     {

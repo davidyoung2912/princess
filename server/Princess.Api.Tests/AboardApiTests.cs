@@ -1015,4 +1015,153 @@ public class AboardApiTests : JourneyWorld
         Assert.Single(lines, "Top-up by card");
         Assert.Single(lines, "Glass-bottom boat and town (booked on board)");
     }
+
+    // ---- Chat phase 2: control and safety ----
+
+    private Task<Reply> ChatPatch(string path, string token, object? body) => Call(HttpMethod.Patch, $"{Chat}/{path}", token, body);
+    private Task<Reply> ChatDelete(string path, string token) => Call(HttpMethod.Delete, $"{Chat}/{path}", token, null);
+    private static string One(InMemoryChatStore.Conversation c, string id) => $"conversations/{c.PublicId}/messages/{id}";
+
+    [Fact]
+    public async Task AnEditInsideTheWindowReplacesTheTextForEveryoneAndIsLabelledEdited()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Dinner at eihgt?", 0);
+        SetNow(SeaDay.AddMinutes(14).AddSeconds(59));
+        var daniel = await DanielToken();
+        Assert.True((await ChatPatch(One(group, said), daniel, new { text = "Dinner at eight?" })).Json.GetProperty("edited").GetBoolean());
+        var seen = Message((await ChatGet(Msgs(group), await SignIn(Priya))).Json, said);
+        Assert.Equal(("Dinner at eight?", true), (seen.GetProperty("text").GetString(), seen.GetProperty("edited").GetBoolean()));
+        Assert.Equal("Dinner at eihgt?", F.Chat.Messages.Single(m => m.Row.PublicId.ToString() == said).Row.OriginalText);   // the first words are kept for a report
+    }
+
+    [Fact]
+    public async Task AnEditOrDeleteAfterFifteenMinutesIsRefusedAndOnlyTheSenderMayChange()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Hello", 0);
+        var daniel = await DanielToken();
+        var priya = await SignIn(Priya);
+        Is(HttpStatusCode.Forbidden, "notYours", await ChatPatch(One(group, said), priya, new { text = "Hijacked" }));
+        Is(HttpStatusCode.Forbidden, "notYours", await ChatDelete(One(group, said), priya));
+        SetNow(SeaDay.AddMinutes(15).AddSeconds(1));
+        Is(HttpStatusCode.Conflict, "tooLate", await ChatPatch(One(group, said), daniel, new { text = "Too late" }));
+        Is(HttpStatusCode.Conflict, "tooLate", await ChatDelete(One(group, said), daniel));
+        Assert.Equal(["Hello"], await Texts(group, priya));
+    }
+
+    [Fact]
+    public async Task AnEditIsCheckedLikeASendAndSavingTheSameWordsIsNotAnEdit()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Hello there", 0);
+        var daniel = await DanielToken();
+        Is(HttpStatusCode.BadRequest, "text", await ChatPatch(One(group, said), daniel, new { text = "   " }));
+        Assert.False((await ChatPatch(One(group, said), daniel, new { text = "Hello there" })).Json.TryGetProperty("edited", out _));
+        Assert.False(Message((await ChatGet(Msgs(group), daniel)).Json, said).TryGetProperty("edited", out _));
+    }
+
+    [Fact]
+    public async Task ADeletedMessageIsGoneForEveryoneItsQuoteSaysRemovedAndStaffKeepTheOriginal()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Wrong chat, sorry", 0);
+        var priya = await SignIn(Priya);
+        var answer = (await ChatPost(Msgs(group), priya, new { text = "Ha", replyTo = said })).Json.GetProperty("id").GetString()!;
+        var daniel = await DanielToken();
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatDelete(One(group, said), daniel)).Status);
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatDelete(One(group, said), daniel)).Status);   // repeating changes nothing
+        var thread = (await ChatGet(Msgs(group), priya)).Json;
+        var gone = Message(thread, said);
+        Assert.Equal(("", true), (gone.GetProperty("text").GetString(), gone.GetProperty("deleted").GetBoolean()));
+        Assert.True(Message(thread, answer).GetProperty("replyTo").GetProperty("removed").GetBoolean());
+        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPost($"{One(group, said)}/react", priya, new { emoji = "👍" }));
+        Is(HttpStatusCode.BadRequest, "replyTo", await ChatPost(Msgs(group), priya, new { text = "Still there?", replyTo = said }));
+        Is(HttpStatusCode.Conflict, "deleted", await ChatPatch(One(group, said), daniel, new { text = "Back again" }));
+        Assert.Equal("Wrong chat, sorry", F.Chat.Messages.Single(m => m.Row.PublicId.ToString() == said).Row.OriginalText);
+    }
+
+    [Fact]
+    public async Task ADeletedLastMessageShowsAsDeletedInTheListWithNoPhotoOrText()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Oops", 0);
+        await ChatDelete(One(group, said), await DanielToken());
+        var last = (await ChatGet("conversations", await SignIn(Priya))).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == group.PublicId.ToString()).GetProperty("last");
+        Assert.Equal("Message deleted", last.GetProperty("text").GetString());
+        Assert.False(last.GetProperty("photo").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ATimedMuteEndsByItselfAndArchivingComesBackWithANewMessage()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        Is(HttpStatusCode.BadRequest, "for", await ChatPut($"conversations/{direct.PublicId}/mute", daniel, new { on = true, @for = "fortnight" }));
+        await ChatPut($"conversations/{direct.PublicId}/mute", daniel, new { on = true, @for = "hour" });
+        var row = () => F.Chat.Conversations.First(c => c.PublicId == direct.PublicId).Members.First(m => m.UserId == Daniel.Id);
+        var listed = (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString());
+        Assert.True(listed.GetProperty("muted").GetBoolean());
+        Assert.True(listed.GetProperty("mutedUntil").GetInt64() > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        row().MutedUntil = DateTime.UtcNow.AddMinutes(-1);   // the hour is over
+        listed = (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString());
+        Assert.False(listed.GetProperty("muted").GetBoolean());
+        Assert.False(listed.TryGetProperty("mutedUntil", out _));
+
+        Assert.True((await ChatPut($"conversations/{direct.PublicId}/archive", daniel, new { on = true })).Json.GetBoolean());
+        Assert.True((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("archived").GetBoolean());
+        await Say(direct, Priya, "Ping", 1);
+        Assert.False((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).TryGetProperty("archived", out _));
+        var stanley = (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("kind").GetString() == "stanley").GetProperty("id").GetString();
+        Is(HttpStatusCode.Forbidden, "stanley", await ChatPut($"conversations/{stanley}/archive", daniel, new { on = true }));
+    }
+
+    [Fact]
+    public async Task TypingIsNeverStoredIsOffWhenEitherSideTurnsItOffAndTheStanleyChatHasNone()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        var priya = await SignIn(Priya);
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{group.PublicId}/typing", priya)).Status);
+        Assert.Equal(["Priya U."], (await ChatGet($"conversations/{group.PublicId}/typing", daniel)).Json.EnumerateArray().Select(n => n.GetString()!).ToArray());
+        Assert.Empty((await ChatGet($"conversations/{group.PublicId}/typing", priya)).Json.EnumerateArray());            // not your own
+        F.Chat.TypingOff.Add(Daniel.Id);
+        Assert.Empty((await ChatGet($"conversations/{group.PublicId}/typing", daniel)).Json.EnumerateArray());           // off means you see no one
+        F.Chat.TypingOff.Remove(Daniel.Id);
+        await ChatPost(Msgs(group), priya, new { text = "Done typing" });
+        Assert.Empty((await ChatGet($"conversations/{group.PublicId}/typing", daniel)).Json.EnumerateArray());           // sending ends it
+        var stanley = (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("kind").GetString() == "stanley").GetProperty("id").GetString();
+        Is(HttpStatusCode.Forbidden, "stanley", await ChatPost($"conversations/{stanley}/typing", daniel));
+    }
+
+    [Fact]
+    public async Task TooManyMessagesInAMinuteAreRefusedAndANewMinuteStartsFresh()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        SetNow(SeaDay);
+        for (var i = 0; i < 20; i++) Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(group), daniel, new { text = $"m{i}" })).Status);
+        Is(HttpStatusCode.TooManyRequests, "rate", await ChatPost(Msgs(group), daniel, new { text = "one too many" }));
+        SetNow(SeaDay.AddMinutes(2));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPost(Msgs(group), daniel, new { text = "later" })).Status);
+    }
+
+    [Fact]
+    public async Task ReportingAPersonFromTheHeaderFilesTheirNewestMessageAndNeedsAReasonAndAMessage()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
+        await Say(group, Priya, "First", 0);
+        var last = await Say(group, Priya, "Second", 1);
+        var daniel = await DanielToken();
+        var people = (await ChatGet(Msgs(group), daniel)).Json.GetProperty("conversation").GetProperty("people").EnumerateArray().ToList();
+        Assert.Equal(2, people.Count);
+        var priya = people.First(p => p.GetProperty("name").GetString() == "Priya U.").GetProperty("id").GetString();
+        var paul = people.First(p => p.GetProperty("name").GetString() != "Priya U.").GetProperty("id").GetString();
+        Is(HttpStatusCode.BadRequest, "badReason", await ChatPost($"conversations/{group.PublicId}/people/{priya}/report", daniel, new { reason = "nonsense" }));
+        Is(HttpStatusCode.NotFound, "notFound", await ChatPost($"conversations/{group.PublicId}/people/{paul}/report", daniel, new { reason = "rude" }));   // Paul has said nothing
+        Is(HttpStatusCode.BadRequest, "notInChat", await ChatPost($"conversations/{group.PublicId}/people/{Guid.NewGuid()}/report", daniel, new { reason = "rude" }));
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{group.PublicId}/people/{priya}/report", daniel, new { reason = "rude" })).Status);
+        var filed = F.Chat.Reports.Single();
+        Assert.Equal((Daniel.Id, last, "rude"), (filed.UserId, filed.MessageId.ToString(), filed.Reason));
+    }
 }

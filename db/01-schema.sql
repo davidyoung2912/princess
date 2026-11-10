@@ -3441,3 +3441,17 @@ CREATE TABLE dbo.ChatMessageDeliveries (
 CREATE INDEX IX_ChatMessageDeliveries_UserId ON dbo.ChatMessageDeliveries (UserId);
 END
 GO
+-- Chat phase 2 (docs/chat-features-research.md, section 11): control and safety.
+-- Edit and delete for everyone inside a 15-minute window. A delete blanks the text for every member and keeps OriginalText (and the photo) for staff review of a report; an edit keeps the first text in OriginalText.
+-- Nothing here is ever served to a member again once DeletedAt is set.
+IF COL_LENGTH(N'dbo.ChatMessages', N'EditedAt') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD EditedAt DATETIME2(0) NULL, DeletedAt DATETIME2(0) NULL, OriginalText NVARCHAR(2000) NULL;
+GO
+-- A member's own archive and timed mute. MutedUntil is real UTC (a mute is a phone-alert setting, not a ship-clock one); Muted with no MutedUntil is muted until turned off.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'ArchivedAt') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD ArchivedAt DATETIME2(0) NULL, MutedUntil DATETIME2(0) NULL;
+GO
+-- The typing indicator switch: off means the person neither sends "is typing" nor sees anyone else's. On unless turned off.
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatTyping') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatTyping BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatTyping DEFAULT 1;
+GO

@@ -44,7 +44,8 @@ export interface ChatSummary {
 export interface ChatDnd { until: number }
 export type ChatDndMode = 'hour' | 'morning' | 'off'
 
-export interface ChatSettings { findable: boolean; showPreview: boolean }
+/** `typing`: show "is typing" to the others and see theirs (on unless turned off). */
+export interface ChatSettings { findable: boolean; showPreview: boolean; typing: boolean }
 
 /** Why chat by text cannot be turned on: a child's account, no number on the profile, a number not yet confirmed, or switched off for everyone. */
 export type ChatSmsReason = 'supervised' | 'noPhone' | 'unverified' | 'off'
@@ -109,10 +110,19 @@ export interface ChatConversation {
   notifyAway?: boolean
   /** The permanent Stanley chat: no leave, mute, archive, block or hide controls. */
   permanent?: boolean
+  /** The other people in it (not the permanent Stanley chat), for the header's Block and Report. */
+  people?: ChatMember[]
+  /** You moved it to your archive; a new message from someone else brings it back unless it is muted. Absent when not. */
+  archived?: boolean
+  /** A timed mute: when it ends (milliseconds). Absent when the mute has no end, or when not muted. */
+  mutedUntil?: number
   /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
   voice?: StanleyVoice
   subtitle?: string
 }
+
+/** Someone else in a conversation: their public id and first name with last initial. */
+export interface ChatMember { id: string; name: string }
 
 export interface ChatMessage {
   id: string
@@ -148,6 +158,10 @@ export interface ChatMessage {
   replyTo?: ChatQuote
   /** Yours: a device of someone else has it (both of you have read receipts on). `read` beats it. */
   delivered?: boolean
+  /** The sender fixed the text inside the 15-minute window (phase 2). */
+  edited?: boolean
+  /** The sender deleted it for everyone: `text` is empty and there is no photo, quote or chips (phase 2). */
+  deleted?: boolean
 }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
@@ -205,8 +219,23 @@ export interface ChatConversationsApi {
   photo(id: string, messageId: string): Promise<string>
   /** Marks everything read, on every device. */
   read(id: string): Promise<void>
-  /** Returns the new state. */
-  mute(id: string, on: boolean): Promise<boolean>
+  /** Returns the new state. `length` (`hour`, `day` or `week`) ends the mute by itself; without it the mute lasts until turned off. Rejects `invalid` (`for`) or `forbidden` (`stanley`). */
+  mute(id: string, on: boolean, length?: 'hour' | 'day' | 'week'): Promise<boolean>
+  /** Moves the chat into your archive or back. Returns the new state. Rejects `forbidden` (`stanley`). */
+  archive(id: string, on: boolean): Promise<boolean>
+  /**
+   * Fixes the text of your own message within 15 minutes of sending. Returns the message. Rejects `invalid` (`text`, `blocked`, `contactInfo`, `photo`, `urgent`), `forbidden` (`notYours`),
+   * `conflict` (`tooLate`, `deleted`, `closed`) or `notFound`.
+   */
+  edit(id: string, messageId: string, text: string): Promise<ChatMessage>
+  /** Deletes your own message for everyone within 15 minutes of sending; repeating it changes nothing. Rejects `forbidden` (`notYours`), `conflict` (`tooLate`, `closed`) or `notFound`. */
+  remove(id: string, messageId: string): Promise<void>
+  /** You are typing. Quiet on failure; the server sends at most one nudge in three seconds and does nothing when you have the indicator off. */
+  typing(id: string): Promise<void>
+  /** Who is typing here now (first name and last initial); empty when you have the indicator off. */
+  typingNow(id: string): Promise<string[]>
+  /** Reports a person from the header, filed against their newest message you can read. Rejects `invalid` (`badReason`, `notInChat`) or `notFound` when they have said nothing. */
+  reportPerson(id: string, personId: string, reason: string): Promise<void>
   /** Tells the connected people in this chat when you leave or return to the ship (off by default). Returns the new state; a supervised account is refused. */
   notifyAway(id: string, on: boolean): Promise<boolean>
 }
