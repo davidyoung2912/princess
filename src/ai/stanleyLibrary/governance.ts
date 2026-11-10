@@ -76,7 +76,7 @@ export const RISK_TOPICS = /\b(tender\w*|all aboard|deadline|due|owe|owed|paymen
 export const mentionsRiskTopic = (text: string): boolean => RISK_TOPICS.test(text)
 
 /** The question is about the guest's own booking or about now (my, today, running, yet), so a general written answer cannot settle it and the server's data must. */
-export const isLiveOrPersonal = (text: string): boolean => /\b(my|our|mine|today|tonight|tomorrow|now|yet|still|running|status|done|late)\b/i.test(text)
+export const isLiveOrPersonal = (text: string): boolean => /\b(my|our|mine|today|tonight|tomorrow|now|yet|still|running|status|done|late|clos\w*|cut-?off)\b/i.test(text)
 
 /** The entry is within its expiry date at `now` (epoch milliseconds). The whole of the expiry day still counts. */
 export const isLive = (e: LibraryEntry, now: number): boolean => now < Date.parse(`${metaOf(e).expiresOn}T00:00:00Z`) + 86_400_000

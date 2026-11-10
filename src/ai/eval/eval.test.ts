@@ -101,7 +101,15 @@ describe('evaluation set: the device', () => {
       expect(c, e.id).toBeDefined()
       if (decide(c!) !== `library:${e.id}`) screened.push(`${e.id} -> ${decide(c!)}`)
     }
-    expect(screened).toEqual(['dream.seasick -> handoff:medical'])
+    expect(screened).toEqual([])
+  })
+
+  it('still hands a seasickness message to a person when it says more than the authored question', () => {
+    for (const t of ['I am seasick and vomiting', 'What if I get seasick, I need a doctor']) expect(decideStanley(t, { stage: 'dream', now: NOW }), t).toMatchObject({ kind: 'handoff', handoff: 'medical' })
+  })
+
+  it('sends a generic "when does it close" question to the server, where the resolver answers it', () => {
+    expect(decideStanley('when does check-in close', { stage: 'prebook', now: NOW }).kind).toBe('server')
   })
 
   it('keeps the retired concierge\'s questions answerable: each reaches the server or an authored answer, and a request to build a day is marked as planning', () => {

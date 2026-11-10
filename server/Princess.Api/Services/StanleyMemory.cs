@@ -16,6 +16,9 @@ public interface IStanleyMemoryStore
     /// <summary>Memory is on unless the guest switched it off.</summary>
     Task<bool> GetEnabledAsync(long userId, CancellationToken ct);
     Task SetEnabledAsync(long userId, bool enabled, CancellationToken ct);
+    /// <summary>How much Stanley speaks up (chatty, helpful, asked or off), or null when the guest has not chosen one.</summary>
+    Task<string?> GetLevelAsync(long userId, CancellationToken ct);
+    Task SetLevelAsync(long userId, string level, CancellationToken ct);
 }
 
 /// <summary>Kept in memory. For tests and a single-instance trial: <c>Providers:StanleyLog</c> = <c>memory</c>.</summary>
@@ -23,6 +26,7 @@ public sealed class MemoryStanleyMemoryStore : IStanleyMemoryStore
 {
     private readonly List<StanleyMemoryRow> _rows = [];
     private readonly Dictionary<long, bool> _enabled = [];
+    private readonly Dictionary<long, string> _levels = [];
     private long _next;
 
     public Task<List<StanleyMemoryRow>> ListAsync(long userId, CancellationToken ct)
@@ -67,6 +71,17 @@ public sealed class MemoryStanleyMemoryStore : IStanleyMemoryStore
         lock (_rows) _enabled[userId] = enabled;
         return Task.CompletedTask;
     }
+
+    public Task<string?> GetLevelAsync(long userId, CancellationToken ct)
+    {
+        lock (_rows) return Task.FromResult(_levels.TryGetValue(userId, out var l) ? l : null);
+    }
+
+    public Task SetLevelAsync(long userId, string level, CancellationToken ct)
+    {
+        lock (_rows) _levels[userId] = level;
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -81,7 +96,7 @@ public sealed class StanleyMemoryService(IStanleyMemoryStore store, IClock clock
         await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "stanley.memory." + action, Outcome = AuditOutcome.Success, Detail = detail }, ct);
 
     public async Task<StanleyMemoryDto> GetAsync(UserRecord user, CancellationToken ct) =>
-        new(await store.GetEnabledAsync(user.Id, ct), [.. (await store.ListAsync(user.Id, ct)).Select(StanleyMemoryRules.View)], StanleyMemoryRules.Catalogue());
+        new(await store.GetEnabledAsync(user.Id, ct), [.. (await store.ListAsync(user.Id, ct)).Select(StanleyMemoryRules.View)], StanleyMemoryRules.Catalogue(), await store.GetLevelAsync(user.Id, ct));
 
     public async Task<StanleyMemoryItemDto> RememberAsync(UserRecord user, StanleyMemoryItemRequest? body, CancellationToken ct)
     {
@@ -148,6 +163,23 @@ public sealed class StanleyMemoryService(IStanleyMemoryStore store, IClock clock
     {
         await store.SetEnabledAsync(user.Id, enabled, ct);
         await Record(enabled ? "on" : "off", "", ct);
+    }
+
+    /// <summary>Keeps how much Stanley speaks up for the signed-in guest, so a new device starts with the same choice. A child account keeps none. The audit trail records the level word only.</summary>
+    public async Task SetLevelAsync(UserRecord user, string? level, CancellationToken ct)
+    {
+        if (user.IsSupervised) throw ApiException.Forbidden();
+        if (level is null || !StanleyMemoryRules.Levels.Contains(level)) throw ApiException.Invalid("level");
+        await store.SetLevelAsync(user.Id, level, ct);
+        await Record("level", level, ct);
+    }
+
+    /// <summary>The settings call: memory on or off, the level, or both. At least one must be given.</summary>
+    public async Task SetSettingsAsync(UserRecord user, StanleyMemorySettingsRequest? body, CancellationToken ct)
+    {
+        if (body is null || (body.Enabled is null && body.Level is null)) throw ApiException.Invalid("settings");
+        if (body.Level is not null) await SetLevelAsync(user, body.Level, ct);
+        if (body.Enabled is { } on) await SetEnabledAsync(user, on, ct);
     }
 
     /// <summary>What the packet may carry for this guest and voyage. Read from the store on every request, so a forgotten item is gone at once.</summary>

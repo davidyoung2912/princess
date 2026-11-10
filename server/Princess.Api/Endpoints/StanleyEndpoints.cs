@@ -73,8 +73,8 @@ public static class StanleyEndpoints
             .WithSummary("Forgets one item. It is gone from every device and from the next answer. 404 for one that is not yours.");
         memory.MapDelete("", async (ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.ForgetAllAsync(await me.LoadAsync(ct), ct); return Results.NoContent(); })
             .WithSummary("Forgets everything Stanley remembers about the guest.");
-        memory.MapPut("/settings", async (StanleyMemorySettingsRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.SetEnabledAsync(await me.LoadAsync(ct), body.Enabled, ct); return Results.NoContent(); })
-            .WithSummary("Switches Stanley's memory on or off { enabled }. Off, no remembered item is used in an answer; items stay listed until forgotten.");
+        memory.MapPut("/settings", async (StanleyMemorySettingsRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct); return Results.NoContent(); })
+            .WithSummary("Switches Stanley's memory on or off { enabled } and/or keeps how much Stanley speaks up { level: chatty, helpful, asked or off } so every device shows the same choice (the get returns it as level, or null before one is chosen). At least one is needed. Off, no remembered item is used in an answer; items stay listed until forgotten. 400 settings or level, 403 for a child account setting a level.");
 
         var discover = api.MapGroup("/stanley/discover").WithTags("Stanley").AllowAnonymous();
         discover.MapPost("/interview", (DiscoverInterviewRequest body, StanleyDiscoverService svc) => Results.Ok(svc.Interview(body)))

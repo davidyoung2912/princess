@@ -12,21 +12,21 @@ public sealed class RetentionOptions
     public int IntervalMinutes { get; set; } = 360;
     /// <summary>Days an audit row or sign-in session keeps the address and device it came from, and an audit row its stack trace. After that they are blanked (the row stays). 0 keeps them for ever.</summary>
     public int NetworkDataDays { get; set; } = 60;
-    /// <summary>Days Stanley's finished actions and receipts, and its tier log rows, are kept before they are deleted. Prepared actions that never ran go after a day. 0 keeps them for ever.</summary>
+    /// <summary>Days Stanley's finished actions and receipts, its tier log rows and a decision brief nobody has changed are kept before they are deleted. Prepared actions that never ran go after a day. 0 keeps them for ever.</summary>
     public int StanleyDays { get; set; } = 180;
 }
 
-/// <summary>Deletes old Stanley rows in batches: receipts, handoffs and tier log rows past their retention, and previews nobody confirmed.</summary>
+/// <summary>Deletes old Stanley rows in batches: receipts, handoffs, tier log rows and decision briefs past their retention, and previews nobody confirmed.</summary>
 public static class StanleyRetention
 {
     private const int Batch = 5000;
 
-    public static async Task<(int Actions, int TierLog, int Handoffs)> DeleteOlderThanAsync(IDbConnectionFactory db, DateTime now, int days, CancellationToken ct)
+    public static async Task<(int Actions, int TierLog, int Handoffs, int Briefs)> DeleteOlderThanAsync(IDbConnectionFactory db, DateTime now, int days, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
         var cutoff = now.AddDays(-days);
         var unconfirmed = now.AddDays(-1);
-        int actions = 0, tiers = 0, handoffs = 0, n;
+        int actions = 0, tiers = 0, handoffs = 0, briefs = 0, n;
         do
         {
             n = await c.ExecuteAsync(Sql.Cmd("""
@@ -45,7 +45,13 @@ public static class StanleyRetention
             n = await c.ExecuteAsync(Sql.Cmd("DELETE TOP (@batch) FROM dbo.StanleyHandoffs WHERE OpenedAt < @cutoff", new { cutoff, batch = Batch }, null, ct));
             handoffs += n;
         } while (n >= Batch && !ct.IsCancellationRequested);
-        return (actions, tiers, handoffs);
+        // A brief holds the wish text as typed; one the guest has not touched for the whole retention period goes, as the guest can also delete it at any time.
+        do
+        {
+            n = await c.ExecuteAsync(Sql.Cmd("DELETE TOP (@batch) FROM dbo.StanleyBriefs WHERE UpdatedAt < @cutoff", new { cutoff, batch = Batch }, null, ct));
+            briefs += n;
+        } while (n >= Batch && !ct.IsCancellationRequested);
+        return (actions, tiers, handoffs, briefs);
     }
 }
 
@@ -106,11 +112,11 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
                 }
                 if (options.Value.StanleyDays > 0)
                 {
-                    var (acts, tiers, hands) = await StanleyRetention.DeleteOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, options.Value.StanleyDays, stoppingToken);
-                    if (acts + tiers + hands > 0)
+                    var (acts, tiers, hands, briefs) = await StanleyRetention.DeleteOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, options.Value.StanleyDays, stoppingToken);
+                    if (acts + tiers + hands + briefs > 0)
                     {
-                        log.LogInformation("Deleted {Actions} Stanley action row(s), {Tiers} tier log row(s) and {Handoffs} handoff row(s)", acts, tiers, hands);
-                        await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.stanley", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { actions = acts, tierLog = tiers, handoffs = hands }) }, stoppingToken);
+                        log.LogInformation("Deleted {Actions} Stanley action row(s), {Tiers} tier log row(s), {Handoffs} handoff row(s) and {Briefs} brief(s)", acts, tiers, hands, briefs);
+                        await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.stanley", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { actions = acts, tierLog = tiers, handoffs = hands, briefs }) }, stoppingToken);
                     }
                 }
                 if (n > 0)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { STANLEY_LEVELS } from '../settings/settings'
-import { levelOfProactivity, noticedItems, noticedMobility, toldRequest, normalizeItem, normalizeMemory, PROACTIVITY, proactivityOfLevel, tripItems, type MemoryItem } from './stanleyMemory'
+import { levelOfProactivity, levelSyncAction, noticedItems, noticedMobility, toldRequest, normalizeItem, normalizeMemory, PROACTIVITY, proactivityOfLevel, tripItems, type MemoryItem } from './stanleyMemory'
 
 const item = (o: Partial<MemoryItem> = {}): MemoryItem => ({ id: 'a', kind: 'pace', value: 'relaxed', text: 'You like a relaxed pace', reason: 'You asked Stanley to remember this.', scope: 'future', sailingId: null, sensitive: false, shared: true, updatedAt: 1, ...o })
 
@@ -66,5 +66,20 @@ describe('mobility and typed-in preferences', () => {
   it('starts a sensitive kind with its switch off unless the guest turned it on', () => {
     expect(toldRequest(kinds, 'diet', 'vegan', 'future', '')?.share).toBe(false)
     expect(toldRequest(kinds, 'diet', 'vegan', 'future', '', true)?.share).toBe(true)
+  })
+})
+
+describe('proactivity held by the server', () => {
+  it('reads the level the server holds, and null for anything else', () => {
+    for (const l of STANLEY_LEVELS) expect(normalizeMemory({ level: l }).level).toBe(l)
+    for (const bad of [undefined, null, 'loud', 3, {}]) expect(normalizeMemory({ level: bad }).level).toBeNull()
+    expect(normalizeMemory(null).level).toBeNull()
+  })
+
+  it('takes the server\'s level over the device\'s, hands the device\'s up when the server has none, and otherwise leaves both alone', () => {
+    expect(levelSyncAction('asked', 'helpful', 'helpful')).toBe('adopt')
+    expect(levelSyncAction('asked', 'asked', 'helpful')).toBe('none')
+    expect(levelSyncAction(null, 'chatty', 'helpful')).toBe('push')
+    expect(levelSyncAction(null, 'helpful', 'helpful')).toBe('none')
   })
 })

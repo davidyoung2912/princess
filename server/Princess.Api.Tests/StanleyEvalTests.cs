@@ -104,6 +104,18 @@ public class StanleyEvalTests
             if (!ids.Contains(want.Id)) wrong.Add($"{c.Id}: unknown resolver {want.Id}");
             if (card!.Abstained != want.Abstain) wrong.Add($"{c.Id}: abstained {card.Abstained}, expected {want.Abstain}");
             foreach (var chip in want.Chips) if (!card.Provenance.Chips.Contains(chip)) wrong.Add($"{c.Id}: missing chip {chip}");
+            // Sources and wording: an answer names who keeps the data and how to read it, and an abstention says plainly that it cannot confirm and shows the way to a person.
+            if (card.Abstained)
+            {
+                if (!card.Text.Contains("I cannot confirm")) wrong.Add($"{c.Id}: an abstention does not say it cannot confirm");
+                if (!card.Provenance.CheckWithPerson) wrong.Add($"{c.Id}: an abstention does not point to a person");
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(card.Provenance.Owner) || string.IsNullOrWhiteSpace(card.Provenance.Note)) wrong.Add($"{c.Id}: the answer names no owner or note");
+                if (card.Provenance.Chips.Count == 0) wrong.Add($"{c.Id}: the answer carries no source chip");
+                if (card.Text.Contains("I cannot confirm") && !want.Abstain) wrong.Add($"{c.Id}: the answer says it cannot confirm but is not an abstention");
+            }
             if (want.Stale == "abstain" && StanleyResolvers.Resolve(c.Text, Booked(null), at) is not { Abstained: true }) wrong.Add($"{c.Id}: stale data did not make it abstain");
         }
         Assert.Empty(wrong);

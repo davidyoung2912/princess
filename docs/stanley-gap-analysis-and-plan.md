@@ -505,22 +505,24 @@ The per-phase status notes above give the detail; this is the running list of wh
 | Eleven of the 25 to 40 planned resolvers (bill split, open cases, per-traveller readiness, document tasks, boarding-pass state, return brief) need data the trip facts lack | 3 | 6, 10, 12 |
 | "What changed" resolver is a stub | 3 | 11 |
 | ~~Diagnostics tier mix is per device; the server's `GET /me/stanley/tiers` has no screen~~ Done in phase 14: the Stanley operations console loads it for an administrator | 2 | 14 |
-| `dream.seasick` is unreachable as a chip because the medical screen takes it first (listed in the eval test) | 2 | 14 |
-| Eval expected sources and `abstain` wording are checked only for library answers, not yet for resolver answers | 2 | 14 |
-| The library still answers some generic deadline and all-aboard questions from authored text before a resolver sees them (for example "when does check-in close") | 3 | 11 |
+| ~~`dream.seasick` is unreachable as a chip because the medical screen takes it first~~ Done in the carry-over phase: the tapped authored low-risk question whose only medical word is "seasick" is answered by its own entry; "I am seasick and vomiting" and "what if I get seasick, I need a doctor" are still a medical handoff | 2 | 14 |
+| ~~Eval expected sources and `abstain` wording are checked only for library answers~~ Done in the carry-over phase: the server eval test now checks each resolver answer names an owner, a note and a source chip, and each abstention says "I cannot confirm" and points to a person | 2 | 14 |
+| ~~The library still answers some generic deadline and all-aboard questions before a resolver sees them~~ Done in the carry-over phase: a question with "close", "closing" or "cut-off" counts as live, so "when does check-in close" goes to the server's resolver (eval cases added) | 3 | 11 |
 | Staff side of a handoff is simulated (`Source` is `sim`); a real desk replaces `StatusOf`, not the shape | 6 | when a real service desk exists |
 | Handoff cabin photo: the request has an `attachment` note field but nothing uploads | 6 | 15 |
-| Handoff intent flows are one topic chooser, not separate drafts per topic; handoff cases and post-cruise cases are still two services listed on one screen | 6 | 14 |
+| ~~Handoff intent flows are one topic chooser, not separate drafts per topic~~ Done in the carry-over phase: each topic has its own short draft (`TOPIC_FIELDS` in `domain/handoff.ts`: cabin, lost property, billing, allergy, special, disruption, missed ship) shown under the chooser and written into the message the guest sees before agreeing. Still open: handoff cases and post-cruise cases are two services listed on one screen | 6 | 14 |
 | ~~No folio screen has a dispute button; when one is added it should open a `billing` handoff~~ Done in phase 12: each charge on the Bill and Final bill screens has Question this charge, which opens a `billing` case | 6 | 12 |
 | Missed-ship phone numbers are those in `domain/contacts.ts`, not verified per port | 6 | 10 |
 | No diet source on the device (diet is added by hand only); the pilot week settings, quiz, access profile and daily rhythm are offered as "Stanley noticed", never moved silently | 7 | 13 |
-| Proactivity stays per device (`stanleyLevel`), not held by the server | 7 | 14 |
+| ~~Proactivity stays per device (`stanleyLevel`), not held by the server~~ Done in the carry-over phase: `Level` on `dbo.StanleyMemorySettings`, `PUT /me/stanley/memory/settings { level }`, `level` in the memory get; the device takes the server's level on opening (`useStanleyLevelSync`) and sends each change. Existing databases get the column from `db/01-schema.sql` | 7 | 14 |
 | Wish reading is by plain rules, not a model, so unusual phrasings give fewer chips | 8 | 14, if a model-backed reading is wanted |
-| Weighted comparison lives only in the Discover panel; the saved-sailings compare screen has no weights | 8 | 9 |
+| ~~Weighted comparison lives only in the Discover panel~~ Done in the carry-over phase: the saved-sailings compare screen has the same weights and result table (`WeightedCompare.tsx`, shared with the Discover panel), scored by the server | 8 | 9 |
 | Warmth is an authored region-and-month table, not a forecast; cabin evidence is at room-type level because the catalogue holds no per-cabin data | 8 | when forecast or per-cabin data exist |
-| The wish text is stored in the brief as typed (500 characters); no retention job covers `dbo.StanleyBriefs` (it is kept until the guest deletes it or the account goes) | 8 | 14 |
-| Compare two excursions has no chat answer (the Excursions screen has it) | 9 | 14 |
-| Server tests (phases 1 to 12 and the phase 9 follow-up) written but never run or compiled by the assistant here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand (phase 8 compiled and its warnings were fixed on the user's machine, not run; phase 9 not yet compiled anywhere) | 1 to 9 | before release |
+| ~~The wish text is stored in the brief as typed; no retention job covers `dbo.StanleyBriefs`~~ Done in the carry-over phase: the retention job deletes a brief not changed for `Retention:StanleyDays` (180); the guest can still delete it at any time | 8 | 14 |
+| ~~Compare two excursions has no chat answer~~ Done in the carry-over phase: the `compareTours` resolver (18th) takes a comparing word with two excursions on the guest's sailing and answers from the same rules as the Excursions screen's compare table | 9 | 14 |
+| Server tests (phases 1 to 12 and the phase 9 follow-up, and the carry-over phase: resolver source checks, `compareTours`, the level setting, brief retention) written but never run or compiled by the assistant here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand (phase 8 compiled and its warnings were fixed on the user's machine, not run; phase 9 and the carry-over phase not yet compiled anywhere) | 1 to 9 | before release |
+
+Done in the carry-over phase (2026-11-09, one commit, checked with the npm checks only; the new server code and tests are written but not compiled or run): eight rows above. Every row was ticked with this commit.
 
 Done since first noted: the browser's `act` word list (phase 5, `06dc128`), retention for the tier log and actions (phase 5 follow-up, `1266e9b`), the `handoff` kill switch (phase 6, `ef3de6b`).
 

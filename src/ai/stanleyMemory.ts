@@ -1,4 +1,4 @@
-import type { StanleyLevel } from '../settings/settings'
+import { isStanleyLevel, type StanleyLevel } from '../settings/settings'
 import type { Inference } from '../domain/planning'
 
 /**
@@ -26,8 +26,9 @@ export interface MemoryItem {
 }
 
 export interface MemoryKind { kind: string; values: string[]; multiple: boolean; sensitive: boolean }
-export interface MemoryState { enabled: boolean; items: MemoryItem[]; kinds: MemoryKind[] }
-export const EMPTY_MEMORY_STATE: MemoryState = { enabled: true, items: [], kinds: [] }
+/** `level` is how much Stanley speaks up as the server holds it, or null before the guest has chosen one. */
+export interface MemoryState { enabled: boolean; items: MemoryItem[]; kinds: MemoryKind[]; level: StanleyLevel | null }
+export const EMPTY_MEMORY_STATE: MemoryState = { enabled: true, items: [], kinds: [], level: null }
 
 /** What is sent to remember something. */
 export interface RememberRequest { kind: string; value: string; scope: MemoryScope; sailingId?: string; source: MemorySource; share?: boolean }
@@ -52,7 +53,7 @@ export function normalizeMemory(raw: unknown): MemoryState {
         return r && typeof r.kind === 'string' && Array.isArray(r.values) ? [{ kind: r.kind, values: r.values.filter((v): v is string => typeof v === 'string'), multiple: r.multiple === true, sensitive: r.sensitive === true }] : []
       })
     : []
-  return { enabled: o.enabled !== false, items: (Array.isArray(o.items) ? o.items : []).map(normalizeItem).filter((i): i is MemoryItem => i !== null).slice(0, 40), kinds }
+  return { enabled: o.enabled !== false, items: (Array.isArray(o.items) ? o.items : []).map(normalizeItem).filter((i): i is MemoryItem => i !== null).slice(0, 40), kinds, level: isStanleyLevel(o.level) ? o.level : null }
 }
 
 const INTEREST_OF_PASTED: Record<string, string> = { 'likes the water': 'water', 'likes history and culture': 'culture', 'likes to slow down': 'slow', 'likes a challenge': 'challenge' }
@@ -105,4 +106,13 @@ export function toldRequest(kinds: readonly MemoryKind[], kind: string, value: s
   const k = kinds.find((x) => x.kind === kind)
   if (!k || !k.values.includes(value)) return null
   return { kind, value, scope, ...(scope === 'trip' ? { sailingId } : {}), source: 'told', ...(k.sensitive ? { share } : {}) }
+}
+
+/**
+ * Proactivity is held by the server so a new device starts with the guest's choice. What a device does when it loads the server's answer: take the server's level when it has one that differs, hand
+ * the device's level up when the server has none and the guest has moved off the default, otherwise nothing.
+ */
+export function levelSyncAction(server: StanleyLevel | null, local: StanleyLevel, fallback: StanleyLevel): 'adopt' | 'push' | 'none' {
+  if (server !== null) return server === local ? 'none' : 'adopt'
+  return local === fallback ? 'none' : 'push'
 }

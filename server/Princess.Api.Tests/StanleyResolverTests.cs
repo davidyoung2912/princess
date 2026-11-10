@@ -18,16 +18,30 @@ public class StanleyResolverTests
         ("tender", "Will we tender at Roatan?"), ("checkin", "When does online check-in close?"), ("allAboard", "What time is all aboard?"), ("bill", "What is on my bill?"),
         ("cases", "What is the status of my refund?"), ("readiness", "Do I have my boarding pass?"), ("changed", "What has changed?"), ("nextEvent", "What is next?"),
         ("tours", "What are my tours?"), ("dinner", "What time is my dinner?"), ("packages", "What does my package include?"), ("itinerary", "What is the itinerary?"),
-        ("portToday", "Where is the ship today?"), ("countdown", "When do we sail?"), ("stateroom", "What is my cabin category?"), ("party", "How many people are travelling?"), ("venueHours", "When is Sabatini’s open?"),
+        ("portToday", "Where is the ship today?"), ("countdown", "When do we sail?"), ("stateroom", "What is my cabin category?"), ("party", "How many people are travelling?"), ("venueHours", "When is Sabatini’s open?"), ("compareTours", "Compare the reef snorkel and the glass-bottom boat"),
     ];
 
     [Fact]
-    public void ThereAreSeventeenResolversWithUniqueShortIds()
+    public void ThereAreEighteenResolversWithUniqueShortIds()
     {
-        Assert.Equal(17, StanleyResolvers.All.Count);
+        Assert.Equal(18, StanleyResolvers.All.Count);
         Assert.Equal(StanleyResolvers.All.Count, StanleyResolvers.All.Select(r => r.Id).Distinct().Count());
         Assert.All(StanleyResolvers.All, r => Assert.InRange(r.Id.Length, 1, 20));
         Assert.Equal(StanleyResolvers.All.Select(r => r.Id).Order(), Questions.Select(q => q.Id).Order());
+    }
+
+    [Fact]
+    public void ComparingTwoExcursionsAnswersFromTheScreensRulesAndNeedsTwoNames()
+    {
+        // Trip() leaves on 20 March 2027 on the older route, which calls at Cozumel.
+        var card = Ask("What is the difference between the Mayan ruins and the glass-bottom boat?", Trip(AsOf));
+        Assert.Equal("compareTours", card.Id);
+        Assert.False(card.Abstained);
+        Assert.Contains(card.Lines, l => l.StartsWith("Length:") && l.Contains("4 hours") && l.Contains("2.5 hours"));
+        Assert.Contains(card.Lines, l => l.StartsWith("Step-free:"));
+        Assert.Equal([StanleyChips.Schedule], card.Provenance.Chips);
+        foreach (var one in new[] { "Compare the reef snorkel", "Compare my cabin and my dinner", "Compare the reef snorkel with the reef snorkel", "Which tour is best?" })
+            Assert.NotEqual("compareTours", StanleyResolvers.Resolve(one, Trip(AsOf), AsOf)?.Id);
     }
 
     [Fact]

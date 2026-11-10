@@ -1,15 +1,16 @@
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 import {
-  COMPARE_MAX, CRITERIA, TEXT_MAX, WEIGHT_MAX, chipsLeft, defaultWeights, normalizeBrief, normalizeComparison, normalizeDirections, normalizeInterview, toggleShortlist, withoutChip,
+  COMPARE_MAX, TEXT_MAX, WEIGHT_MAX, chipsLeft, defaultWeights, normalizeBrief, normalizeComparison, normalizeDirections, normalizeInterview, toggleShortlist, withoutChip,
   type Brief, type Comparison, type Criterion, type DiscoverChip, type DiscoverFilters, type Directions, type Weights,
 } from '../../ai/stanleyDiscover'
-import { t, th, type StringKey } from '../../i18n'
+import { t, th } from '../../i18n'
 import { useStanleyMemory } from '../../hooks/useStanleyMemory'
 import { stanleyDiscover } from '../../runtime'
 import { formatMoney } from '../../domain/money'
 import { Button } from '../Button'
 import { Card } from '../Card'
+import { ComparisonResult, WeightFields } from './WeightedCompare'
 
 type Busy = '' | 'read' | 'find' | 'compare' | 'save' | 'share'
 
@@ -139,15 +140,7 @@ export function StanleyFindPanel() {
           <ul>{shortlist.map((id) => <li key={id}>{nameOf(id)}</li>)}</ul>
           {shortlist.length >= 2 && shortlist.length <= COMPARE_MAX && (
             <>
-              <fieldset>
-                <legend>{t('find8.weights')}</legend>
-                {CRITERIA.map((c) => (
-                  <label key={c} className="choice">
-                    <span>{t(`find8.criterion.${c}` as StringKey)}</span>
-                    <input type="number" min={0} max={WEIGHT_MAX} step={1} value={weights[c]} onChange={(e) => setWeight(c, Math.round(Number(e.target.value) || 0))} />
-                  </label>
-                ))}
-              </fieldset>
+              <WeightFields weights={weights} onChange={setWeight} />
               <Button onClick={() => void compare()} disabled={busy !== ''}>{t('find8.compareNow')}</Button>
             </>
           )}
@@ -155,42 +148,7 @@ export function StanleyFindPanel() {
         </section>
       )}
 
-      {comparison && (
-        <section aria-labelledby="find8-res-h">
-          <h3 id="find8-res-h">{t('find8.result')}</h3>
-          <div className="table-scroll">
-            <table className="compare-table">
-              <caption>{t('find8.caption')}</caption>
-              <thead>
-                <tr>
-                  <th scope="col"><span className="visually-hidden">{t('cat.compare.fact')}</span></th>
-                  {comparison.rows.map((r) => <th key={r.sailingId} scope="col"><Link to={`/home/sailings/${r.sailingId}`}>{r.title}</Link></th>)}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">{t('find8.score')}</th>
-                  {comparison.rows.map((r) => <td key={r.sailingId}>{r.score === null ? t('find8.noScore') : `${r.score}/100`}</td>)}
-                </tr>
-                {CRITERIA.map((c) => (
-                  <tr key={c}>
-                    <th scope="row">{t(`find8.criterion.${c}` as StringKey)}</th>
-                    {comparison.rows.map((r) => <td key={r.sailingId}>{r.cells.find((x) => x.key === c)?.text ?? t('find8.noData.cell')}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ul>{comparison.ifYouValue.map((v) => <li key={v.criterion}>{t('find8.ifYouValue', { what: v.label, which: v.sailingIds.map(nameOf).join(' / ') })}</li>)}</ul>
-          {comparison.rows.some((r) => r.missing.length > 0) && <ul>{comparison.rows.filter((r) => r.missing.length > 0).map((r) => <li key={r.sailingId}>{t('find8.missing', { sailing: r.title, list: r.missing.join(', ') })}</li>)}</ul>}
-          <details>
-            <summary>{t('find8.ports')}</summary>
-            {comparison.rows.map((r) => <div key={r.sailingId}><h4>{r.title}</h4><ul>{r.portNotes.map((n) => <li key={n}>{n}</li>)}</ul></div>)}
-          </details>
-          <p className="muted">{comparison.priceBasis}</p>
-          <p className="muted">{comparison.note}</p>
-        </section>
-      )}
+      {comparison && <ComparisonResult comparison={comparison} nameOf={nameOf} />}
 
       <section aria-labelledby="find8-brief-h">
         <h3 id="find8-brief-h">{t('find8.brief')}</h3>

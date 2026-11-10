@@ -5,7 +5,7 @@ import { screen } from '../../ai/guard'
 import { getStanleyStatus, subscribeStanley } from '../../ai/stanley'
 import { CASE_TOPICS, caseProblemOf, caseState, normalizeCase, topicFromWords, type CaseTopic, type StanleyCase } from '../../ai/stanleyHandoff'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, type HandoffParts } from '../../domain/handoff'
+import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, TOPIC_FIELDS, topicLines, type HandoffParts, type TopicAnswers } from '../../domain/handoff'
 
 import { useAction } from '../../hooks/useAction'
 import { useSailing, usePersona, useNow } from '../../hooks/useDemo'
@@ -42,6 +42,7 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
   const [topic, setTopic] = useState<CaseTopic>(initialTopic ?? topicFromWords(lastUser))
   const [parts, setParts] = useState<HandoffParts>(defaultParts(screened))
   const [edited, setEdited] = useState<string | null>(null)
+  const [answers, setAnswers] = useState<Partial<Record<CaseTopic, TopicAnswers>>>({})
   const [outcome, setOutcome] = useState('')
   const [tried, setTried] = useState('')
   const [agreed, setAgreed] = useState(false)
@@ -67,7 +68,7 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
     )
   }
   const open = checklist.data ? checklist.data.milestones.flatMap((m) => m.entries).filter((e) => e.state !== 'done' && !e.automatic).length : null
-  const built = buildHandoff(screened, lastUser, messages.map((m) => ({ role: m.role, text: m.text })), { guest: me?.name ?? '', sailing: sailing.departure, party: me ? partyPeople(me.id).length : 1, open }, parts) ?? ''
+  const built = buildHandoff(screened, lastUser, messages.map((m) => ({ role: m.role, text: m.text })), { guest: me?.name ?? '', sailing: sailing.departure, party: me ? partyPeople(me.id).length : 1, open }, parts, topicLines(topic, answers[topic] ?? {})) ?? ''
   const text = edited ?? built
   const toggle = (k: keyof HandoffParts) => { setParts((p) => ({ ...p, [k]: !p[k] })); setEdited(null); setAgreed(false) }
 
@@ -92,11 +93,21 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
       <p>{t('handoff.body')}</p>
       <p>
         <label htmlFor="ai-hand-topic">{t('handoff.topic')}</label>{' '}
-        <select id="ai-hand-topic" value={topic} onChange={(e) => { setTopic(e.target.value as CaseTopic); setAgreed(false) }}>
+        <select id="ai-hand-topic" value={topic} onChange={(e) => { setTopic(e.target.value as CaseTopic); setEdited(null); setAgreed(false) }}>
           {CASE_TOPICS.map((k) => <option key={k} value={k}>{t(`handoff.topic.${k}` as StringKey)}</option>)}
         </select>
       </p>
       {topic === 'missedShip' && <p><strong>{t('handoff.missedShip', { phone: GUEST_SERVICES_NUMBER })}</strong></p>}
+      {TOPIC_FIELDS[topic].length > 0 && (
+        <fieldset className="plain-fieldset">
+          <legend>{t(`handoff.topic.${topic}` as StringKey)}</legend>
+          <p className="muted">{t('handoff.fields.intro')}</p>
+          {TOPIC_FIELDS[topic].map((f) => (
+            <Field key={`${topic}-${f.key}`} label={t(`handoff.f.${topic}.${f.key}` as StringKey)} value={answers[topic]?.[f.key] ?? ''} maxLength={f.max}
+              onChange={(e) => { setAnswers((a) => ({ ...a, [topic]: { ...a[topic], [f.key]: e.target.value } })); setEdited(null); setAgreed(false) }} />
+          ))}
+        </fieldset>
+      )}
       <fieldset className="plain-fieldset">
         <legend>{t('handoff.include')}</legend>
         <HelpTip about={t('handoff.include')}>{t('helptip.handoff')}</HelpTip>

@@ -24,7 +24,12 @@ export interface DecideOptions { stage?: JourneyStage; libraryOn?: boolean; now?
  */
 export function decideStanley(text: string, o: DecideOptions): StanleyDecision {
   const handoff = screen(text)
-  if (handoff) return { kind: 'handoff', handoff }
+  if (handoff) {
+    // A tapped, authored low-risk question whose only medical word is "seasick" ("What if I get seasick?") is answered by its own entry; anything more ("I am seasick and vomiting") is still a handoff.
+    const own = handoff === 'medical' && !screen(text.replace(/seasick\w*/gi, ' ')) ? liveLibrary(o.now ?? Date.now()).find((e) => plain(questionOf(e)) === plain(text) && riskOf(e) === 'low') : undefined
+    if (!own || o.libraryOn === false) return { kind: 'handoff', handoff }
+    return { kind: 'library', entry: own }
+  }
   // The muster drill and life-saving equipment are answered only from the authored safety entry. With it unavailable (expired or switched off) the server's own fixed answer replies.
   if (isMuster(text)) {
     const muster = o.libraryOn === false ? undefined : liveLibrary(o.now ?? Date.now()).find((e) => e.id === MUSTER_ENTRY)

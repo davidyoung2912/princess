@@ -11,6 +11,7 @@ import { portById } from '../../domain/sailings'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { regionName, shipName } from './catalogueNames'
+import { WeightedCompare } from './WeightedCompare'
 
 const MAX = 3
 
@@ -97,6 +98,7 @@ export function CompareSailingsScreen() {
               </table>
             </div>
           )}
+          {chosen.length >= 2 && <WeightedCompare ids={chosen.map((s) => s.id)} />}
         </>
       )}
       <Card info><p>{t('cat.saved.note')}</p></Card>

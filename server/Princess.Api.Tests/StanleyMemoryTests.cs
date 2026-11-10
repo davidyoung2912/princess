@@ -148,6 +148,39 @@ public class StanleyMemoryTests
     }
 
     [Fact]
+    public async Task HowMuchStanleySpeaksUpIsKeptPerGuestAndSurvivesMemoryBeingSwitched()
+    {
+        var (svc, audit) = Build();
+        Assert.Null((await svc.GetAsync(Me, default)).Level);
+        await svc.SetSettingsAsync(Me, new StanleyMemorySettingsRequest(null, "asked"), default);
+        Assert.Equal("asked", (await svc.GetAsync(Me, default)).Level);
+        Assert.Null((await svc.GetAsync(Other, default)).Level);
+        // Switching memory off or on leaves the level alone, and the level leaves memory on.
+        await svc.SetSettingsAsync(Me, new StanleyMemorySettingsRequest(false, null), default);
+        var after = await svc.GetAsync(Me, default);
+        Assert.Equal(("asked", false), (after.Level, after.Enabled));
+        await svc.SetSettingsAsync(Me, new StanleyMemorySettingsRequest(true, "chatty"), default);
+        after = await svc.GetAsync(Me, default);
+        Assert.Equal(("chatty", true), (after.Level, after.Enabled));
+        // Forgetting everything is about what is remembered, not how loud Stanley is.
+        await svc.ForgetAllAsync(Me, default);
+        Assert.Equal("chatty", (await svc.GetAsync(Me, default)).Level);
+        Assert.Contains(audit.Rows, r => r.Action == "stanley.memory.level");
+    }
+
+    [Fact]
+    public async Task ALevelThatIsNotOneOfTheFourOrAnEmptyChangeIsRefusedAndAChildKeepsNone()
+    {
+        var (svc, _) = Build();
+        foreach (var bad in new[] { "loud", "", "ASKED", "chatty; drop" })
+            await Assert.ThrowsAsync<ApiException>(() => svc.SetSettingsAsync(Me, new StanleyMemorySettingsRequest(null, bad), default));
+        await Assert.ThrowsAsync<ApiException>(() => svc.SetSettingsAsync(Me, new StanleyMemorySettingsRequest(null, null), default));
+        await Assert.ThrowsAsync<ApiException>(() => svc.SetSettingsAsync(Me, null, default));
+        await Assert.ThrowsAsync<ApiException>(() => svc.SetSettingsAsync(Child, new StanleyMemorySettingsRequest(null, "off"), default));
+        Assert.Null((await svc.GetAsync(Me, default)).Level);
+    }
+
+    [Fact]
     public async Task AChildAccountKeepsNoMemoryAndIsToldNone()
     {
         var (svc, _) = Build();

@@ -105,6 +105,8 @@ export const stanleyMemory = {
   forget: (id: string) => http.delete<void>(`/me/stanley/memory/items/${encodeURIComponent(id)}`),
   forgetAll: () => http.delete<void>('/me/stanley/memory'),
   setEnabled: (enabled: boolean) => http.put<void>('/me/stanley/memory/settings', { enabled }),
+  /** How much Stanley speaks up (chatty, helpful, asked or off), kept so another device starts with the same choice. */
+  setLevel: (level: string) => http.put<void>('/me/stanley/memory/settings', { level }),
 }
 
 /** Dream and Discover (phase 8): the server reads a wish into filters, finds directions and compares sailings with the guest's weights; the brief is the guest's own, kept so every device resumes it. No sign-in is needed for the first four. */

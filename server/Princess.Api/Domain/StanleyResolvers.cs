@@ -114,6 +114,59 @@ public static class StanleyResolvers
         }
     }
 
+    /// <summary>
+    /// "Compare the reef snorkel and the Mayan ruins": two shore excursions side by side, from the same rules as the Excursions screen's compare table (<see cref="StanleyPlannerRules.CompareTours"/>), so the chat and the screen
+    /// cannot disagree. It takes only a question with a comparing word that names two different excursions on the guest's own sailing; nothing is booked from here.
+    /// </summary>
+    private sealed class TourCompare : IStanleyResolver
+    {
+        private static readonly Regex Cue = new(@"\b(compar(e|ing|ison)|differences? between|versus|vs)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex Split = new(@"\b(and|versus|vs|or|against|with|to)\b|[,&/]", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly HashSet<string> Skip = ["with", "pass", "town", "boat", "tour", "tours"];
+        private static readonly Dictionary<string, string> Labels = new()
+        {
+            ["when"] = "Day", ["start"] = "Starts", ["duration"] = "Length", ["exertion"] = "Effort", ["transport"] = "Getting there", ["return"] = "Getting back",
+            ["price"] = "Price for your party", ["included"] = "Included", ["stepFree"] = "Step-free", ["places"] = "Places",
+        };
+        public string Id => "compareTours";
+        public bool Matches(string message) => Cue.IsMatch(message) && Pair(message) is not null;
+
+        private static string[] Content(Excursion e) => [.. Regex.Split(e.Name.ToLowerInvariant(), "[^a-z]+").Where(w => w.Length > 3 && !Skip.Contains(w))];
+
+        /// <summary>The one excursion a piece of the question names: the full name, or the most of its own words (at least two), and never a tie.</summary>
+        private static Excursion? Find(string part)
+        {
+            var words = Regex.Split(part.ToLowerInvariant(), "[^a-z]+").ToHashSet();
+            var scored = ExcursionRules.Catalogue.Select(e => (e, c: Content(e))).Select(x => (x.e, hit: x.c.Count(words.Contains), all: x.c.Length)).Where(x => x.hit >= Math.Min(2, x.all) && x.hit > 0).OrderByDescending(x => x.hit == x.all).ThenByDescending(x => x.hit).ToList();
+            return scored.Count == 0 || (scored.Count > 1 && scored[0].hit == scored[1].hit && (scored[0].hit == scored[0].all) == (scored[1].hit == scored[1].all)) ? null : scored[0].e;
+        }
+
+        private static (Excursion A, Excursion B)? Pair(string message)
+        {
+            var found = Split.Split(message).Select(Find).OfType<Excursion>().DistinctBy(e => e.Id).ToList();
+            return found.Count == 2 ? (found[0], found[1]) : null;
+        }
+
+        public StanleyCardDto Resolve(ResolverInput i)
+        {
+            const string Note = "From the published excursion listings; places and prices can change, so confirm on the Excursions screen before you book.";
+            const string Owner = "Princess shore excursion listings";
+            var (a, b) = Pair(i.Message) ?? throw new InvalidOperationException("No pair of excursions.");
+            var timeline = i.Trip.Timeline;
+            var off = new[] { a, b }.Where(e => timeline.Days.All(d => d.Port != e.Port)).ToList();
+            if (off.Count > 0) return FromPublished(Id, "Compare excursions", [.. off.Select(e => $"{e.Name} is not at a port on your sailing, so I cannot compare it for your trip."), "The Excursions screen lists what is on your sailing."], StanleyChips.Schedule, Owner, Note, false, Tours);
+            var cmp = StanleyPlannerRules.CompareTours(timeline, i.Trip.SailingId ?? "", a.Id, b.Id, i.Trip.Ages, i.Trip.Today);
+            if (cmp is null) return FromPublished(Id, "Compare excursions", ["I could not compare those two. The Excursions screen has the compare table."], StanleyChips.Schedule, Owner, Note, false, Tours);
+            var lines = new List<string>();
+            foreach (var r in cmp.Rows.Where(r => r.Differs)) lines.Add($"{Labels.GetValueOrDefault(r.Key, r.Key)}: {cmp.NameA}, {r.A}. {cmp.NameB}, {r.B}.");
+            var same = cmp.Rows.Where(r => !r.Differs).Select(r => Labels.GetValueOrDefault(r.Key, r.Key).ToLowerInvariant()).ToList();
+            if (same.Count > 0) lines.Add($"The same for both: {string.Join(", ", same)}.");
+            lines.AddRange(cmp.Risks.Select(x => "Check: " + x));
+            lines.AddRange(cmp.Missing.Select(x => "Not stated: " + x));
+            return FromPublished(Id, $"{cmp.NameA} or {cmp.NameB}", lines, StanleyChips.Schedule, Owner, Note, false, Tours);
+        }
+    }
+
     private static readonly CitationDto Trips = new("My trips", "/me/trips"), Bill = new("Bill", "/me/bill"), Cases = new("Cases", "/me/cases"), Documents = new("Documents", "/me/documents"),
         Pass = new("Boarding pass", "/home/boarding-pass"), Checklist = new("Checklist", "/plan/checklist"), Tours = new("Excursions", "/plan/excursions"), Dining = new("Dining", "/plan/dining"),
         Packages = new("Packages", "/me/packages");
@@ -128,6 +181,7 @@ public static class StanleyResolvers
         new Resolver("readiness", @"\bboarding pass\b|\b(my|our) (documents?|passports?|visas?)\b|\bready to (sail|board|go)\b|\bwhat (do|must|should) (i|we) still (need|have) to do\b|\bwhat('s| is) (still )?left to do\b", true, "Are you ready to sail", Readiness),
         new Resolver("changed", @"\bwhat('s| has| have)? changed\b|\bany changes\b|\banything (new|changed)\b", false, "What changed", Changed),
         new Resolver("nextEvent", @"\bwhat('s| is) next\b|\bwhats next\b|\bnext (thing|event|booking|reservation|tour|dinner)\b|\bcoming up\b|\bwhat do (i|we) have (next|on)\b", false, "Next on your plan", NextEvent),
+        new TourCompare(),
         new Resolver("tours", @"\b(my|our) (tours?|excursions?)\b|\b(tours?|excursions?) (do )?(i|we) (have )?(booked|got)\b|\bwhat (tours?|excursions?) (have|did) (i|we) book", false, "Your tours", TourList),
         new Resolver("dinner", @"\b(my|our) (dinners?|dining|table)\b|\bdinner reservations?\b|\bwhat time is (my |our )?dinner\b|\bwhere (am i|are we) eating\b", false, "Your dinners", DinnerList),
         new Resolver("packages", @"\b(my|our) (packages?|drinks? package|wi-?fi package)\b|\bwhat (does|do) (my|our) .{0,30}package.{0,20} include\b|\bpackages? (do )?(i|we) have\b", false, "Your packages", PackageList),

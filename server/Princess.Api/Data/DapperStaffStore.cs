@@ -196,6 +196,22 @@ public sealed class DapperStanleyMemoryStore(IDbConnectionFactory db) : IStanley
             WHEN NOT MATCHED THEN INSERT (UserId, Enabled) VALUES (@userId, @enabled);
             """, new { userId, enabled }, null, ct));
     }
+
+    public async Task<string?> GetLevelAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT Level FROM dbo.StanleyMemorySettings WHERE UserId = @userId", new { userId }, null, ct));
+    }
+
+    public async Task SetLevelAsync(long userId, string level, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyMemorySettings AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET Level = @level
+            WHEN NOT MATCHED THEN INSERT (UserId, Enabled, Level) VALUES (@userId, 1, @level);
+            """, new { userId, level }, null, ct));
+    }
 }
 
 /// <summary>The decision brief, in <c>dbo.StanleyBriefs</c> (phase 8): one JSON row per guest. Every statement is scoped to one user id.</summary>

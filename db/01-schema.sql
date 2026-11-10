@@ -1138,6 +1138,10 @@ CREATE TABLE dbo.StanleyMemorySettings (
 );
 END
 
+-- How much Stanley speaks up (chatty, helpful, asked or off), kept so a new device starts with the same choice. NULL until the guest chooses.
+IF COL_LENGTH(N'dbo.StanleyMemorySettings', N'Level') IS NULL
+  ALTER TABLE dbo.StanleyMemorySettings ADD [Level] NVARCHAR(10) NULL;
+
 IF OBJECT_ID(N'dbo.StanleyBriefs', N'U') IS NULL
 BEGIN
 -- The saved Dream and Discover decision brief (docs/stanley-gap-analysis-and-plan.md, phase 8): one JSON row per guest, the same on every device. Deleted by the guest or with the account.

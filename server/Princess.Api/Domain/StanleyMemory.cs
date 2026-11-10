@@ -8,8 +8,8 @@ public sealed record StanleyMemoryItemRequest(string? Kind, string? Value, strin
 /// <summary>A change to a kept item: carry it to future trips or back to this trip, or switch its use in answers.</summary>
 public sealed record StanleyMemoryUpdateRequest(string? Scope, bool? Share);
 
-/// <summary>Switches Stanley's memory on or off. Off, nothing is used in an answer; what is listed stays until the guest forgets it.</summary>
-public sealed record StanleyMemorySettingsRequest(bool Enabled);
+/// <summary>Switches Stanley's memory on or off, and/or keeps how much Stanley speaks up (<c>level</c>: chatty, helpful, asked or off) so every device shows the same choice. Memory off: nothing is used in an answer; what is listed stays until the guest forgets it.</summary>
+public sealed record StanleyMemorySettingsRequest(bool? Enabled, string? Level = null);
 
 /// <summary>An item as the guest sees it: the words, why Stanley has it, where it applies, and whether answers may use it.</summary>
 public sealed record StanleyMemoryItemDto(Guid Id, string Kind, string Value, string Text, string Reason, string Scope, string? SailingId, bool Sensitive, bool Shared, long UpdatedAt);
@@ -17,7 +17,7 @@ public sealed record StanleyMemoryItemDto(Guid Id, string Kind, string Value, st
 /// <summary>A kind of thing that can be remembered and the values it takes, so the screen offers only what the server accepts.</summary>
 public sealed record StanleyMemoryKindDto(string Kind, string[] Values, bool Multiple, bool Sensitive);
 
-public sealed record StanleyMemoryDto(bool Enabled, List<StanleyMemoryItemDto> Items, List<StanleyMemoryKindDto> Kinds);
+public sealed record StanleyMemoryDto(bool Enabled, List<StanleyMemoryItemDto> Items, List<StanleyMemoryKindDto> Kinds, string? Level = null);
 
 /// <summary>The stored form of one remembered item. Owned by one guest; no other traveller on the booking can read or be personalised by it.</summary>
 public sealed class StanleyMemoryRow
@@ -41,6 +41,9 @@ public sealed class StanleyMemoryRow
 /// </summary>
 public static class StanleyMemoryRules
 {
+    /// <summary>The four levels of proactivity the device knows, loudest first. The server keeps the word the guest chose; the device decides what each one does.</summary>
+    public static readonly IReadOnlyList<string> Levels = ["chatty", "helpful", "asked", "off"];
+
     public const int MaxItems = 40, SailingMax = 40;
     public static readonly string[] Scopes = ["trip", "future"];
     public static readonly string[] Sources = ["told", "quiz", "plan", "carried"];

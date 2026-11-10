@@ -132,7 +132,7 @@
  {"id": "E131", "stage": "sea", "booked": true, "text": "dinner", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["open"]},
  {"id": "E132", "stage": "sea", "booked": true, "text": "what", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["open"]},
  {"id": "E133", "stage": "dream", "booked": true, "text": "Is a cruise right for a first timer?", "client": "library:dream.firstTime", "tier": "library", "tags": ["library", "authored-question", "risk:low"]},
- {"id": "E134", "stage": "dream", "booked": true, "text": "What if I get seasick?", "client": "handoff:medical", "tier": "safety", "server": {"route": "handoff:medical"}, "tags": ["library", "authored-question", "risk:low"]},
+ {"id": "E134", "stage": "dream", "booked": true, "text": "What if I get seasick?", "client": "library:dream.seasick", "tier": "library", "tags": ["library", "authored-question", "risk:low"]},
  {"id": "E135", "stage": "dream", "booked": true, "text": "What is included in the fare?", "client": "library:dream.included", "tier": "library", "tags": ["library", "authored-question", "risk:low"]},
  {"id": "E136", "stage": "dream", "booked": true, "text": "What are the cabin types?", "client": "library:dream.cabinTypes", "tier": "library", "tags": ["library", "authored-question", "risk:low"]},
  {"id": "E137", "stage": "dream", "booked": true, "text": "When is the best time to go?", "client": "library:dream.whenToGo", "tier": "library", "tags": ["library", "authored-question", "risk:low"]},
@@ -278,5 +278,7 @@
  {"id": "E277", "stage": "sea", "booked": true, "text": "What does the Crown Grill menu look like", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["plan-grounded"]},
  {"id": "E278", "stage": "manage", "booked": true, "text": "What is the status of my billing query", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["plan-grounded"]},
  {"id": "E279", "stage": "sea", "booked": true, "text": "Show me my husband's plan for tomorrow", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["permission", "plan-grounded"]},
- {"id": "E280", "stage": "manage", "booked": true, "text": "What is the status of the case my sister opened", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["permission", "plan-grounded"]}
+ {"id": "E280", "stage": "manage", "booked": true, "text": "What is the status of the case my sister opened", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["permission", "plan-grounded"]},
+ {"id": "E281", "stage": "manage", "booked": true, "text": "Compare the Mayan ruins and the glass-bottom boat", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["resolver", "concierge:excursions"], "card": {"id": "compareTours", "abstain": false, "chips": ["Ship schedule"]}},
+ {"id": "E282", "stage": "port", "booked": true, "text": "What is the difference between the reef snorkel and the beach club day pass", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["resolver", "concierge:excursions"], "card": {"id": "compareTours", "abstain": false, "chips": ["Ship schedule"]}}
 ]
