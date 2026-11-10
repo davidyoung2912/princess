@@ -35,7 +35,7 @@ public sealed class StanleyGroupShareService(IChatStore store, ChatService chat)
         await store.AddSystemLineAsync(group.GroupId, actor.Id, ChatGroupMomentRules.ShareLine(ChatConnectionRules.ShortName(actor.FirstName, actor.LastName)), now, ct);
         await store.PutAwayMomentAsync(actor.Id, message.Id, ChatGroupMomentRules.GroupPollKey, now, null, now, ct);
         try { await store.LogNoticeDeliveryAsync(actor.Id, message.NoticeKey!, ChatProactiveRules.KindOf, ChatProactiveRules.Lane, StanleyNoticeRules.EventDismiss, now, ct); }
-        catch (Exception e) when (e is not OperationCanceledException) { /* counting never reaches the guest */ }
+        catch (Exception ex) when (ex is not OperationCanceledException) { /* counting never reaches the guest */ }
     }
 
     /// <summary>Whether Stanley may share cards in this group. Any active member can read it; only an admin can change it.</summary>
