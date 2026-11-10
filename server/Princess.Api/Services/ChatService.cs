@@ -18,9 +18,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     private static string ShortName(ChatPeerRow p) => ChatConnectionRules.ShortName(p.FirstName, p.LastName);
 
     /// <summary>The caller's conversations, newest activity first. The booking's "My group" is made on first use so there is always one to open.</summary>
-    public async Task<List<ChatConversationDto>> ConversationsAsync(UserRecord actor, CancellationToken ct)
+    public async Task<List<ChatConversationDto>> ConversationsAsync(UserRecord actor, CancellationToken ct, bool ensureParty = true)
     {
-        await store.EnsurePartyAsync(actor.Id, ct);
+        if (ensureParty) await store.EnsurePartyAsync(actor.Id, ct);
         var rows = await store.ListConversationsAsync(actor.Id, ct);
         var list = new List<ChatConversationDto>();
         foreach (var r in rows)
@@ -42,7 +42,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var others = members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
-            ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at));
+            ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
+            ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))));
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>

@@ -37,8 +37,9 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 /// <summary>
 /// One conversation as the caller sees it. <c>Kind</c> is party (the booking's "My group"), direct or group. <c>Name</c> is the other person for a direct chat.
 /// <c>Members</c> are first name and last initial, the caller excluded. <c>Closed</c>: sending has stopped (a chat that ended, or a caller who left). <c>Unread</c> is the same on every device.
+/// <c>GuardianCanRead</c>: a supervised child is in it, so their parent or guardian can read it; every member is told.
 /// </summary>
-public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At);
+public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false);
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
@@ -55,3 +56,20 @@ public sealed record ChatMuteRequest(bool On);
 public sealed record ChatSmsDto(bool On, bool Idle, bool Available, string? Reason);
 
 public sealed record ChatSmsSettingsBody(bool On, bool Idle);
+
+// ---- Guardians and staff review (phase 7) ----
+
+/// <summary>A child the caller supervises (their first name only). Their conversations are read separately, and every read is audited. A guardian never sends as the child.</summary>
+public sealed record ChatChildDto(Guid Id, string Name);
+
+/// <summary>One report waiting for, or answered by, staff. No message text: that is read only by opening the case.</summary>
+public sealed record ChatReportDto(Guid Id, string Reason, string Status, string Kind, long At);
+
+/// <summary>One line of a report case. <c>Reported</c> marks the message that was reported. <c>From</c> is a first name and last initial. A photo is flagged, never sent.</summary>
+public sealed record ChatCaseLineDto(Guid Id, bool Reported, string From, string Text, bool HasPhoto, long At);
+
+/// <summary>A report with the reported message and up to three lines either side of it, and nothing else of the conversation.</summary>
+public sealed record ChatCaseDto(Guid Id, string Reason, string Status, string Kind, long At, List<ChatCaseLineDto> Lines);
+
+/// <summary><c>Decision</c> is <c>dismiss</c> (nothing wrong) or <c>remove</c> (the message is replaced for everyone).</summary>
+public sealed record ChatResolveBody(string? Decision);

@@ -310,7 +310,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     private ChatPeerRow Peer(long id)
     {
         var u = users.Users.First(u => u.Id == id);
-        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id) };
+        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id), IsSupervised = u.IsSupervised };
     }
 
     public Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct) => Task.FromResult(Of(groupId).Members.Select(m => Peer(m.UserId)).ToList());

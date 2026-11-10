@@ -601,3 +601,5 @@ Stanley money (phase 12). All signed in (a child account gets 403), for the gues
 
 
 **ChatSmsState** (docs/chat-plan.md, phase 6) — `UserId PK/FK→Users (cascade)` · `LastGroupId BIGINT?` (where an unnumbered text reply goes) · `BackAt TS?` (when the guest said BACK). **ChatSmsLog** — `Id ID` · `UserId FK→Users (cascade)` · `GroupId?` · `Direction {out|in}` · `Outcome` · `At TS*`; never message text or a number. **UserPrefs.ChatSmsOn / ChatSmsIdle** (the bridge is on; also count idle as ashore) and **ChatMessages.ViaSms** (arrived by text).
+
+**ChatReports** (phase 7) gains `Status {open|dismissed|removed}` (default open) · `ResolvedAt TS?` · `ResolvedByUserId BIGINT?` and an index on `(Status, At)`. A removed message keeps its row with the text replaced by "This message was removed." and no photo. Guardian and staff reads of someone else's conversation have no table of their own: they are audit rows (`chat.guardian.list`, `chat.guardian.read`, `chat.staff.read`, `chat.staff.resolve`) holding ids and counts, never text.

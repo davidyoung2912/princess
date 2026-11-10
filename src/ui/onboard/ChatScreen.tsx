@@ -21,12 +21,16 @@ import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
 import { People, RequestsBanner } from './ChatPeople'
 import { Conversations } from './ChatConversations'
+import { Children } from './ChatGuardian'
 
-type Mode = 'chats' | 'people' | 'service'
+type Mode = 'chats' | 'people' | 'service' | 'children'
 
 /** Chat (MSG-01, MSG-02, SUP-08): free messages with the travel party, and Guest Services by topic with visible response times and a phone call when waiting is too long. */
 export function ChatScreen() {
   const [mode, setMode] = useState<Mode>('chats')
+  // Only someone who supervises a child sees the guardian view; a failed check (offline, or acting as a child) just hides it.
+  const kids = useMine(() => api.chatGuardian.children())
+  const guardian = (kids.data?.length ?? 0) > 0
   return (
     <div className="page">
       <p>{t('chat.free')}</p>
@@ -34,9 +38,10 @@ export function ChatScreen() {
       <div className="chip-row" role="group" aria-label={t('chat.who')}>
         <Chip pressed={mode === 'chats'} onToggle={() => setMode('chats')}>{t('chat.chats')}</Chip>
         <Chip pressed={mode === 'people'} onToggle={() => setMode('people')}>{t('chat.people')}</Chip>
+        {guardian && <Chip pressed={mode === 'children'} onToggle={() => setMode('children')}>{t('guard.chip')}</Chip>}
         <Chip pressed={mode === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>
       </div>
-      {mode === 'chats' ? <Conversations /> : mode === 'people' ? <People /> : <Service />}
+      {mode === 'chats' ? <Conversations /> : mode === 'people' ? <People /> : mode === 'children' ? <Children /> : <Service />}
       <Card info>
         <p><Phone aria-hidden="true" /> {t('chat.urgent', { number: GUEST_SERVICES_NUMBER })} <a href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a></p>
       </Card>

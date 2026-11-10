@@ -3301,3 +3301,16 @@ CREATE INDEX IX_ChatSmsLog_User_At ON dbo.ChatSmsLog (UserId, Direction, [At]);
 CREATE INDEX IX_ChatSmsLog_Group_At ON dbo.ChatSmsLog (UserId, GroupId, Direction, [At]) WHERE GroupId IS NOT NULL;
 END
 GO
+
+-- Staff review of chat reports (docs/chat-plan.md, phase 7).
+-- A report is open until an administrator dismisses it or removes the message (its text is replaced, so nobody reads it again). The reviewer and time are kept; what was read is in the audit trail.
+IF COL_LENGTH(N'dbo.ChatReports', N'Status') IS NULL
+  ALTER TABLE dbo.ChatReports ADD Status VARCHAR(9) NOT NULL CONSTRAINT DF_ChatReports_Status DEFAULT 'open' CONSTRAINT CK_ChatReports_Status CHECK (Status IN ('open','dismissed','removed'));
+IF COL_LENGTH(N'dbo.ChatReports', N'ResolvedAt') IS NULL
+  ALTER TABLE dbo.ChatReports ADD ResolvedAt DATETIME2(0) NULL;
+IF COL_LENGTH(N'dbo.ChatReports', N'ResolvedByUserId') IS NULL
+  ALTER TABLE dbo.ChatReports ADD ResolvedByUserId BIGINT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatReports_Status' AND object_id = OBJECT_ID(N'dbo.ChatReports'))
+  CREATE INDEX IX_ChatReports_Status ON dbo.ChatReports (Status, [At]);
+GO

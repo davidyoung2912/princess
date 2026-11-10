@@ -84,6 +84,8 @@ export interface ChatConversation {
   /** Sending has stopped: the chat ended, or you left. It stays readable. */
   closed: boolean
   at: number
+  /** A supervised child is in it, so their parent or guardian can read it. Every member is told. */
+  guardianCanRead?: boolean
 }
 
 export interface ChatMessage {
@@ -164,4 +166,19 @@ export interface ChatGroupsApi {
   invites(): Promise<ChatGroupInvite[]>
   /** A decline is quiet. Rejects `conflict` (`answered`, `expired`, `full`) or `notFound`. */
   respond(id: string, accept: boolean): Promise<void>
+}
+
+// ---- Guardians (docs/chat-plan.md, phase 7) ----
+
+/** A child you supervise: their id and first name. */
+export interface ChatChild { id: string; name: string }
+
+/** A guardian's read-only view of a supervised child's chats. Every read is recorded. */
+export interface ChatGuardianApi {
+  /** Empty for anyone who supervises no one. */
+  children(): Promise<ChatChild[]>
+  /** The child's conversations as the child sees them. Every read is recorded. Rejects `notFound` when the child is not yours to read. */
+  conversations(childId: string): Promise<ChatConversation[]>
+  /** One page of the child's conversation as the child sees it; nothing is marked read and nothing can be sent. Rejects `notFound` when it is not yours to read. */
+  thread(childId: string, conversationId: string, before?: string): Promise<ChatThread>
 }

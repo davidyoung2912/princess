@@ -103,6 +103,8 @@ public sealed class ChatPeerRow
     public bool ReceiptsOn { get; set; }
     /// <summary>active, left or removed. The people shown as "in" a conversation are the active ones; the others are kept so earlier messages still have a name.</summary>
     public string Status { get; set; } = "active";
+    /// <summary>A supervised child's account: a guardian can read the conversations they are in.</summary>
+    public bool IsSupervised { get; set; }
 }
 
 public sealed class ChatMessageRow

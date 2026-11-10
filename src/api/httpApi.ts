@@ -48,6 +48,7 @@ export interface HttpGroups {
   chatConnections: Api['chatConnections']
   chatConversations: Api['chatConversations']
   chatGroups: Api['chatGroups']
+  chatGuardian: Api['chatGuardian']
   family: Api['family']
   health: Api['health']
   room: Api['room']
@@ -229,6 +230,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     invites: () => get('/me/chat/group-invites'),
     respond: async (id, accept) => { await send('post', `/me/chat/group-invites/${seg(id)}/respond`, { accept }) },
   }
+  const chatGuardian: HttpGroups['chatGuardian'] = {
+    children: () => get('/me/chat/children'),
+    conversations: (childId) => get(`/me/chat/children/${seg(childId)}/conversations`),
+    thread: (childId, conversationId, before) => get(`/me/chat/children/${seg(childId)}/conversations/${seg(conversationId)}/messages${before ? `?before=${seg(before)}` : ''}`),
+  }
   const chatConnections: HttpGroups['chatConnections'] = {
     search: (query) => get(`/me/chat/people?query=${seg(query)}`),
     list: () => get('/me/chat/connections'),
@@ -321,6 +327,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     chatConnections,
     chatConversations,
     chatGroups,
+    chatGuardian,
     family,
     health,
     room,
@@ -653,6 +660,7 @@ export function toApi(g: HttpGroups): Api {
     chatConnections: g.chatConnections,
     chatConversations: g.chatConversations,
     chatGroups: g.chatGroups,
+    chatGuardian: g.chatGuardian,
     family: g.family,
     health: g.health,
     room: g.room,

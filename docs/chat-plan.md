@@ -1,6 +1,6 @@
 # Chat: connections, conversations and notifications
 
-Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 6 are built; later phases are built only when asked.
+Plan for person-to-person and group chat between guests. Written 2026-11-09. Phases 1 to 7 are built; later phases are built only when asked.
 
 ## 1. What the guest gets
 
@@ -177,6 +177,8 @@ A guest in port often has no data but still has a phone number. Text lets them s
 | `GET /me/chat/group-invites`, `POST …/group-invites/{id}/respond` | 5 | Invitations waiting for the guest or their child, and the answer. |
 | `GET/PUT /me/chat/sms` | 6 | The text bridge: on or off, and whether it applies. |
 | `POST /public/sms/inbound` (existing) | 6 | Replies by text are routed into conversations. |
+| `GET /me/chat/children`, `GET …/children/{childId}/conversations`, `GET …/children/{childId}/conversations/{id}/messages` | 7 | A guardian's read-only view of a supervised child's chats (audited). |
+| `GET /admin/chat/reports`, `GET …/{id}`, `POST …/{id}/resolve` | 7 | Staff review: the reports, the reported message with its context, dismiss or remove. |
 
 ## 6. Phases
 
@@ -239,10 +241,15 @@ Designed to section 4.8: the conversation list is the home of Chat, requests are
 - Built as: `ChatSmsRules` (pure, tested), `ChatSmsService` (settings, ashore, outbound), `ChatSmsInboundService` (replies and commands, called first by `SmsReplyService`), `IChatSmsStore`, `GET|PUT /me/chat/sms`, `UserPrefs.ChatSmsOn/ChatSmsIdle`, `ChatMessages.ViaSms`, `ChatSmsState`, `ChatSmsLog`, global switch `Sms:ChatBridge`. A guest turns it on in the People settings (the screen says texts pass through the phone company and what each word does) and gets one explaining text. A thread shows "by text" on such messages and "Ashore, replies by text: names" for members who are ashore.
 - Decisions made while building: the bridge texts only when the app is not open; the idle trigger is the guest's own choice and is per server (a restart forgets it); BACK pauses the bridge until the guest is next ashore; a shared number turns the bridge off for both guests; the carrier's message id becomes the idempotency key. Not built: a "Back on board" note when the Away flow ends by itself, and push counts as activity for idleness (only the live connection does).
 
-### Phase 7: guardians, moderation and retention
+### Phase 7: guardians, moderation and retention — built
 
 - Guardian read-only view with audit; the "a guardian can read this chat" notice.
 - Staff review of reports; blocking from inside a conversation; retention job at 30 days after the cruise; an access log for reads of someone else's conversation.
+- Built as: `ChatSafetyRules` (pure, tested), `IChatSafetyStore`, `ChatSafetyService` and `ChatSafetyEndpoints`. **Guardian view:** `GET /me/chat/children` (who, no content), `GET …/children/{childId}/conversations` and `…/conversations/{id}/messages`, read only, and 404 unless the caller is the booker of that supervised child (a booker acting as the child is refused). The thread is the child's own view (their window and blocks) and marks nothing read. **Notice:** `ChatConversationDto.GuardianCanRead` is true while a supervised child is an active member; the thread says "A parent or guardian can read this chat" to every member. The "My children" chip in Chat appears only for someone who supervises a child. **Staff review:** `GET /admin/chat/reports?status=`, `GET …/{id}` (the reported message and three lines either side, first name and last initial, photos flagged not sent) and `POST …/{id}/resolve {decision: dismiss|remove}`, administrators only; `remove` replaces the text for everyone and closes every other report on that message. `ChatReports` gains `Status`, `ResolvedAt`, `ResolvedByUserId`.
+- **Access log:** there is no new table. Each guardian list or read (`chat.guardian.list`, `chat.guardian.read`, subject = the child) and each staff read or decision (`chat.staff.read`, `chat.staff.resolve`) is an audit row with the reader, the conversation or report and how many lines, never the text. Administrators search it at `/audit?action=chat.`, and the child sees "done for you" rows in their own activity report.
+- **Blocking from inside a conversation** already existed per message (`MessageSafety` under every message from someone else, which also reports); this phase adds nothing there. Blocking someone who has not written anything yet is still done from People.
+- **Retention:** already enforced, so unchanged. `RetentionPurgeService` runs `PrivacyRules`' `messages` rule 30 days after a booking's cruise ends and deletes every `ChatMessages` row the party's guests sent, in every kind of conversation (reports and receipts go with the messages by cascade). The empty conversation shells are kept (a connection points at its direct chat).
+- Not built: a staff screen (the routes are API only, like the account reviews), a guardian-facing list of who has read the child's chats, and removing the guardian's access when the child leaves a chat is automatic only because a child who has left is no longer a member.
 
 ## 7. Decisions on the earlier open points (answered 2026-11-09)
 

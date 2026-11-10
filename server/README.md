@@ -68,6 +68,12 @@ Run it where it can reach SQL Server (the Windows side, for a Windows-authentica
 - **Switch and logs**: `Sms:ChatBridge=false` turns the whole bridge off. `ChatSmsLog` keeps conversation, person, direction and outcome, never text or a number. The provider is `ISmsSender` (simulated by default).
 - A thread's `ashore` lists first names of people in it who are ashore and reachable by text, for "Ashore, replies by text".
 
+### Chat safety (docs/chat-plan.md, phase 7)
+
+- **Guardians**: `GET /me/chat/children`, `GET /me/chat/children/{childId}/conversations` and `…/conversations/{id}/messages`: read only, for the booker of a supervised child only (404 otherwise, 403 for a booker acting as the child). Each list and read writes an audit row (`chat.guardian.list`, `chat.guardian.read`) with ids and counts, never text. A conversation with a supervised child in it carries `guardianCanRead`.
+- **Staff**: `GET /admin/chat/reports?status=open|dismissed|removed`, `GET /admin/chat/reports/{id}` (the reported message and three lines either side) and `POST /admin/chat/reports/{id}/resolve {decision: dismiss|remove}`, administrators only; reads and decisions are audited (`chat.staff.read`, `chat.staff.resolve`).
+- **Retention** is unchanged: `RetentionPurgeService` deletes a party's chat messages 30 days after the cruise ends.
+
 ## Realtime chat (phase 3 of `docs/chat-plan.md`)
 
 - **Hub.** `Realtime/ChatHub` at `/hubs/chat`, WebSockets only, JWT in the `access_token` query value (only on that path; `ConfigureJwtBearer.OnMessageReceived`). Each person joins `user:{publicId}`. The server sends `chatChanged {id, kind}` (no text, no names); the one method a client can call is `Ack(id)`. Messages over 4 KB are refused. Keep-alive 15 s, client timeout 30 s.

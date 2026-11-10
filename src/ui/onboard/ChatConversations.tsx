@@ -270,6 +270,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
+      {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
