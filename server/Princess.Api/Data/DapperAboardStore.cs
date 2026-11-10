@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Dapper;
+using Princess.Api.Domain;
 
 namespace Princess.Api.Data;
 
