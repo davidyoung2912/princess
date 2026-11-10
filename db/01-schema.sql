@@ -3463,6 +3463,8 @@ IF COL_LENGTH(N'dbo.ChatGroupMembers', N'ArchivedAt') IS NULL
   ALTER TABLE dbo.ChatGroupMembers ADD ArchivedAt DATETIME2(0) NULL, MutedUntil DATETIME2(0) NULL;
 GO
 -- The typing indicator switch: off means the person neither sends "is typing" nor sees anyone else's. On unless turned off.
+IF COL_LENGTH(N'dbo.UserPrefs', N'ChatAvatar') IS NULL
+  ALTER TABLE dbo.UserPrefs ADD ChatAvatar NVARCHAR(20) NULL;   -- phase 9c: 'colour:icon', see ChatAvatarRules
 IF COL_LENGTH(N'dbo.UserPrefs', N'ChatTyping') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatTyping BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatTyping DEFAULT 1;
 GO

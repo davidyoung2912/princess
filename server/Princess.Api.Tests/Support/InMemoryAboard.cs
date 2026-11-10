@@ -424,7 +424,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     private ChatPeerRow Peer(long id)
     {
         var u = users.Users.First(u => u.Id == id);
-        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id), IsSupervised = u.IsSupervised, BookerUserId = u.BookerUserId };
+        return new ChatPeerRow { UserId = id, PublicId = u.PublicId, FirstName = u.FirstName ?? "", LastName = u.LastName ?? "", ReceiptsOn = Receipts.Contains(id), Avatar = Avatars.TryGetValue(id, out var av) ? av : null, IsSupervised = u.IsSupervised, BookerUserId = u.BookerUserId };
     }
 
     public Task<List<ChatPeerRow>> ListMembersAsync(long groupId, CancellationToken ct) => Task.FromResult(Of(groupId).Members.Select(m => Peer(m.UserId)).ToList());
@@ -704,6 +704,17 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         if (on) Receipts.Add(userId);
         else Receipts.Remove(userId);
+        return Task.CompletedTask;
+    }
+
+    public Dictionary<long, string> Avatars { get; } = [];
+
+    public Task<string?> GetAvatarAsync(long userId, CancellationToken ct) => Task.FromResult(Avatars.TryGetValue(userId, out var a) ? a : null);
+
+    public Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct)
+    {
+        if (avatar is null) Avatars.Remove(userId);
+        else Avatars[userId] = avatar;
         return Task.CompletedTask;
     }
 

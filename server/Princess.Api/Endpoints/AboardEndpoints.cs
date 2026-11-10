@@ -200,6 +200,10 @@ public static class AboardEndpoints
             .WithSummary("Whether the caller shows and sees read receipts.");
         chat.MapPut("/receipts", async (ChatReceiptsRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.SetReceiptsAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Turns read receipts on or off and returns the new setting.");
+        chat.MapGet("/avatar", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(new ChatAvatarRequest(await svc.AvatarAsync(await me.LoadAsync(ct), ct))))
+            .WithSummary("The caller's chat avatar (`colour:icon`), or null for the initials.");
+        chat.MapPut("/avatar", async (ChatAvatarRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(new ChatAvatarRequest(await svc.SetAvatarAsync(await me.LoadAsync(ct), body, ct))))
+            .WithSummary("Sets the caller's chat avatar to a known colour and icon (`colour:icon`); null or empty goes back to the initials. 400 avatar. Other people see it in a direct chat's list row.");
         chat.MapGet("/blocks", async (ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.BlockedAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("The people the caller has blocked.");
         chat.MapPut("/blocks/{id:guid}", async (Guid id, ChatBlockRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.BlockAsync(await me.LoadAsync(ct), id, body, ct)))

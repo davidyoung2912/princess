@@ -212,6 +212,9 @@ public sealed record ChatMentionsOnlyRequest(bool On);
 
 public sealed record ChatReceiptsRequest(bool On);
 
+/// <summary>Phase 9c: the caller's avatar as <c>colour:icon</c>; null or empty goes back to the initials. 400 <c>avatar</c> for anything that is not a known colour and icon.</summary>
+public sealed record ChatAvatarRequest(string? Avatar);
+
 public sealed record ChatBlockRequest(bool On);
 
 public sealed record ChatReportRequest(Guid MessageId, string? Reason);

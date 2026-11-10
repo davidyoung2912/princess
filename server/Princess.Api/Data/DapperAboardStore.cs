@@ -638,7 +638,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, m.Status, u.IsSupervised, u.BookerUserId
+            SELECT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles pr ON pr.UserId = u.Id
@@ -653,7 +653,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         if (map.Count == 0) return map;
         await using var c = await db.OpenAsync(ct);
         var rows = await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT m.GroupId, u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, m.Status, u.IsSupervised, u.BookerUserId
+            SELECT m.GroupId, u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar, m.Status, u.IsSupervised, u.BookerUserId
             FROM dbo.ChatGroupMembers m
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles pr ON pr.UserId = u.Id
@@ -668,7 +668,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPeerRow>(Sql.Cmd("""
-            SELECT DISTINCT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn
+            SELECT DISTINCT u.Id AS UserId, u.PublicId, pr.FirstName, pr.LastName, CAST(ISNULL(p.ReceiptsOn, 0) AS bit) AS ReceiptsOn, p.ChatAvatar AS Avatar
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroupMembers m ON m.GroupId = me.GroupId AND m.UserId <> me.UserId
             JOIN dbo.Users u ON u.Id = m.UserId
@@ -1144,6 +1144,22 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             WHEN MATCHED THEN UPDATE SET ReceiptsOn = @on, UpdatedAt = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN INSERT (UserId, ReceiptsOn) VALUES (@userId, @on);
             """, new { userId, on }, null, ct));
+    }
+
+    public async Task<string?> GetAvatarAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT ChatAvatar FROM dbo.UserPrefs WHERE UserId = @userId", new { userId }, null, ct));
+    }
+
+    public async Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.UserPrefs AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET ChatAvatar = @avatar, UpdatedAt = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN INSERT (UserId, ChatAvatar) VALUES (@userId, @avatar);
+            """, new { userId, avatar }, null, ct));
     }
 
     public async Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct)

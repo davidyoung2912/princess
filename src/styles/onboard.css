@@ -289,3 +289,20 @@ button.chat-quote { cursor: pointer; }
 .chat-viewer { touch-action: pan-y; text-align: center; }
 .chat-viewer__img { display: block; max-width: 100%; max-height: 60vh; margin: 0 auto var(--space-2); object-fit: contain; }
 :root[data-light='on'] .chat-photo-grid { max-width: 12rem; }
+
+/* Chat avatars, the desktop emoji picker and the chat sound settings (phase 9c). Text on each colour is dark for contrast in every theme. */
+.conv__avatar[data-avatar] { color: #1b2430; font-size: 1.25rem; }
+.conv__avatar[data-avatar="sea"] { background: #cfe3f8; }
+.conv__avatar[data-avatar="teal"] { background: #c6ebe6; }
+.conv__avatar[data-avatar="coral"] { background: #fad3c8; }
+.conv__avatar[data-avatar="gold"] { background: #f5e3a6; }
+.conv__avatar[data-avatar="plum"] { background: #e3d0ef; }
+.conv__avatar[data-avatar="green"] { background: #cbe8c7; }
+.avatar-preview { display: flex; align-items: center; gap: var(--space-3); }
+.avatar-pick { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); border: 0; padding: 0; margin: 0 0 var(--space-3); }
+.avatar-pick legend { font-weight: 600; padding: 0; margin-bottom: var(--space-1); }
+.avatar-pick__option { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 2.75rem; }
+.emoji-picker { border: var(--border-width) solid var(--border); border-radius: var(--radius-card); padding: var(--space-2); background: var(--bg); }
+.emoji-picker__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr)); gap: var(--space-1); }
+.emoji-picker__btn { min-height: 2.75rem; font-size: 1.5rem; background: transparent; border: var(--border-width) solid transparent; border-radius: var(--radius-card); cursor: pointer; }
+.emoji-picker__btn:hover { background: var(--brand-tint); }

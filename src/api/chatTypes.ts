@@ -162,6 +162,8 @@ export interface ChatConversation {
   subtitle?: string
   /** Phase 8, a channel or room only: its rules, whether slow mode applies now and whether you may post. */
   room?: ChatRoomInfo
+  /** Direct chat only: the other person's chosen avatar (`colour:icon`); absent for the initials. */
+  avatar?: string
 }
 
 /** Someone else in a conversation: their public id and first name with last initial. */

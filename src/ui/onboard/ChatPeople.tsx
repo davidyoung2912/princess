@@ -1,3 +1,4 @@
+import { ChatLooks } from './ChatLooks'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ChatConnection, ChatPerson, ChatSettings, ChatSms } from '../../api/chatTypes'
@@ -264,6 +265,7 @@ function Settings({ state, onHidden }: { state: ReturnType<typeof useMine<ChatSe
       <p className="muted">{t('chat.receiptsBody')}</p>
       <ActionError error={save.error} />
       <ActionError error={flipReceipts.error} />
+      <ChatLooks />
       <Button variant="secondary" onClick={() => setConfirm(true)}>{t('people.hide')}</Button>
       <p className="muted">{t('people.hideBody')}</p>
       {confirm && (

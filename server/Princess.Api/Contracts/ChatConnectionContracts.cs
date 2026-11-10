@@ -53,7 +53,8 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool CanPin = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AnnouncementOnly = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Admin = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatRoomInfoDto? Room = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatRoomInfoDto? Room = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
 
 /// <summary>Someone else in a conversation, for its header menu (block, report): their public id and first name with last initial. Phase 2.</summary>
 public sealed record ChatMemberDto(Guid Id, string Name);

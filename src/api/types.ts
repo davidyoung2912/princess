@@ -756,6 +756,9 @@ export interface Api {
     /** Whether the signed-in person shows and sees read receipts. */
     receipts(): Promise<boolean>
     setReceipts(on: boolean): Promise<boolean>
+    /** The person's chat avatar as `colour:icon` (see `src/domain/chatAvatar.ts`), or null for the initials. */
+    avatar(): Promise<string | null>
+    setAvatar(avatar: string | null): Promise<string | null>
   }
   photos: PhotosApi
   family: FamilyApi

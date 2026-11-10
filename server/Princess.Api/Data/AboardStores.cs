@@ -101,6 +101,8 @@ public sealed class ChatPeerRow
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public bool ReceiptsOn { get; set; }
+    /// <summary>The person's chosen avatar (<c>colour:icon</c>), or null for the default initials.</summary>
+    public string? Avatar { get; set; }
     /// <summary>active, left or removed. The people shown as "in" a conversation are the active ones; the others are kept so earlier messages still have a name.</summary>
     public string Status { get; set; } = "active";
     /// <summary>Set only by <see cref="IChatStore.ListMembersForAsync"/>: the conversation this row belongs to.</summary>
@@ -526,6 +528,8 @@ public interface IChatStore
     Task<bool> GetTypingAsync(long userId, CancellationToken ct);
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);
     Task SetReceiptsAsync(long userId, bool on, CancellationToken ct);
+    Task<string?> GetAvatarAsync(long userId, CancellationToken ct);
+    Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct);
     Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct);
     Task SetBlockAsync(long userId, long blockedUserId, bool on, CancellationToken ct);
     /// <summary>Records a report about a message in a conversation the person is in; false if there is no such message.</summary>

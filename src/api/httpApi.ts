@@ -213,6 +213,8 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   const messages: HttpGroups['messages'] = {
     receipts: () => get('/me/chat/receipts'),
     setReceipts: (on) => send('put', '/me/chat/receipts', { on }),
+    avatar: async () => (await get<{ avatar: string | null }>('/me/chat/avatar')).avatar,
+    setAvatar: async (avatar) => (await send<{ avatar: string | null }>('put', '/me/chat/avatar', { avatar })).avatar,
   }
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),

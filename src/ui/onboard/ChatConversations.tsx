@@ -10,7 +10,7 @@ import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
 import {
-  canTarget, conversationFromSearch, messageFromSearch, deliveryOf, dividerBefore, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
+  canTarget, conversationFromSearch, messageFromSearch, deliveryOf, dividerBefore, incomingSince, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
   QUICK_REPLY_KEYS, quoteSummary, type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
@@ -56,6 +56,13 @@ import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
+import { ChatAvatar } from './ChatLooks'
+import { EmojiPicker } from './ChatEmoji'
+import { insertEmoji, wantsEmojiPicker } from '../../domain/chatEmoji'
+import { chatFeedback } from '../../domain/chatFeedback'
+import { playCue } from '../../sound/cues'
+import { buzz, BUZZ } from '../../settings/haptics'
+import { getSettings } from '../../settings/store'
 import { photoCountOf } from '../../domain/chatPhotos'
 import { isSearchable } from '../../domain/chatSearch'
 import { isRoomChat, needsRules, roomPostState } from '../../domain/chatRooms'
@@ -152,7 +159,7 @@ function ConversationItem({ c, urgentIds, onOpen, shipTime, now, keptDay }: { c:
       <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
         {isStanleyChat(c)
           ? <img className="conv__avatar conv__avatar--stanley" src={stanleyPicture} alt="" width="44" height="44" />
-          : <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>}
+          : <ChatAvatar avatar={c.avatar} name={c.name} />}
         <span className="conv__body">
           <span className="conv__top">
             <strong>{c.name}</strong>
@@ -242,6 +249,12 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const typingSettings = useMine(() => api.chatConnections.settings())
   const typingOn = typingSettings.data?.typing !== false
   const typingSentAt = useRef<number | null>(null)
+  const dnd = useChatDnd().active
+  // The latest values for the arrival effect, which must not re-run when they change.
+  const feelRef = useRef({ muted: false, dnd: false })
+  useEffect(() => { feelRef.current = { muted: conversation !== null && isMuted(conversation, Date.now()), dnd } })
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const [emojiOk] = useState(() => typeof window !== 'undefined' && wantsEmojiPicker(!!window.matchMedia?.('(pointer: fine)').matches, !!window.matchMedia?.('(hover: hover)').matches))
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typersRef = useRef<string[]>([])
   const end = useRef<HTMLDivElement>(null)
@@ -320,6 +333,11 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       if (announceMode(urgencyOf(incoming)) === 'assertive') setAlertText(t('urgent.incoming', { name: incoming.fromName ?? '' }))
       else setAnnounce(t('conv.incoming', { name: incoming.fromName ?? '' }))
       if (wasNear.current) toEnd(); else setChip(true)
+      // A soft sound and buzz when the guest asked for them (off by default; never in a muted chat, calm mode or do not disturb).
+      const s = getSettings()
+      const feel = chatFeedback(s, { ...feelRef.current, urgency: urgencyOf(incoming) })
+      if (feel.sound) playCue('confirm', { ...s, sounds: true })
+      if (feel.buzz) buzz(s, BUZZ.tick)
     }
   }, [phase, messages, mine, toEnd])
 
@@ -660,6 +678,20 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
             onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
+          {emojiOk && (
+            <>
+              <Button type="button" variant="tertiary" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((o) => !o)}>{t('emoji.button')}</Button>
+              {emojiOpen && <EmojiPicker onClose={() => { setEmojiOpen(false); form.current?.querySelector('textarea')?.focus() }} onPick={(emoji) => {
+                const box = form.current?.querySelector('textarea')
+                const next = insertEmoji(text, box?.selectionStart ?? text.length, box?.selectionEnd ?? text.length, emoji, MAX_TEXT)
+                setText(next.text)
+                setCaret(next.caret)
+                setEmojiOpen(false)
+                box?.focus()
+                requestAnimationFrame(() => box?.setSelectionRange(next.caret, next.caret))
+              }} />}
+            </>
+          )}
           {typedMention && (
             <MentionList people={people} query={typedMention.query} onPick={(person) => {
               const next = insertMention(text, caret, typedMention.start, person)

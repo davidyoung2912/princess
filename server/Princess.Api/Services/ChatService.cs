@@ -61,7 +61,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null, MentionsOnly: m.MentionsOnly,
             CanPin: ChatCardRules.MayPin(m.Kind, ChatPlanningService.AdminOf(m, actor.Id)) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded),
             AnnouncementOnly: m.Kind == ChatConversationRules.Group && m.AnnouncementOnly, Admin: ChatPlanningService.AdminOf(m, actor.Id),
-            Room: rooms.InfoOf(m, actor.Role == "admin", roomy ? members.Count(p => p.Status == ChatConversationRules.Active) : 0, DateTime.UtcNow));
+            Room: rooms.InfoOf(m, actor.Role == "admin", roomy ? members.Count(p => p.Status == ChatConversationRules.Active) : 0, DateTime.UtcNow),
+            Avatar: m.Kind == ChatConversationRules.Direct ? members.FirstOrDefault(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active)?.Avatar : null);
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -641,6 +642,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         await store.SetReceiptsAsync(actor.Id, body?.On == true, ct);
         return body?.On == true;
+    }
+
+    public Task<string?> AvatarAsync(UserRecord actor, CancellationToken ct) => store.GetAvatarAsync(actor.Id, ct);
+
+    public async Task<string?> SetAvatarAsync(UserRecord actor, ChatAvatarRequest? body, CancellationToken ct)
+    {
+        var avatar = ChatAvatarRules.Normalise(body?.Avatar);
+        if (avatar is null && !string.IsNullOrWhiteSpace(body?.Avatar)) throw ApiException.Invalid("avatar");
+        await store.SetAvatarAsync(actor.Id, avatar, ct);
+        return avatar;
     }
 
     public async Task<List<Guid>> BlockedAsync(UserRecord actor, CancellationToken ct)
