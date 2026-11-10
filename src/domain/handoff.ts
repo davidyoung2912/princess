@@ -66,3 +66,9 @@ export function buildHandoff(topic: Handoff, question: string, turns: readonly T
   while (kept.length > 0 && `${base}\nConversation:\n${kept.join('\n')}`.length > HANDOFF_MAX) kept = kept.slice(1)
   return kept.length > 0 ? `${base}\nConversation:\n${kept.join('\n')}` : base.slice(0, HANDOFF_MAX)
 }
+
+/** The photo a guest may add to a case: a JPEG or PNG of at most 5 MB (the server checks the bytes again and removes the place, time and camera). */
+export const PHOTO_MAX_BYTES = 5_000_000
+export type PhotoProblem = 'empty' | 'size' | 'type'
+export const photoProblem = (file: { type: string; size: number }): PhotoProblem | null =>
+  file.size <= 0 ? 'empty' : file.size > PHOTO_MAX_BYTES ? 'size' : file.type !== 'image/jpeg' && file.type !== 'image/png' ? 'type' : null

@@ -9,7 +9,7 @@ import { PERMISSIONS } from './account'
 describe('relationships and tasks (IDN-04, IDN-05)', () => {
   it('maps every helper permission to a task or deliberately to none', () => {
     expect(PERMISSIONS.map((p) => [p, taskOf(p)])).toEqual([
-      ['view', 'itinerary'], ['documents', 'documents'], ['payments', 'pay'], ['profile', null], ['folio', 'folio'], ['checkin', 'checkin'], ['trip', 'itinerary'],
+      ['view', 'itinerary'], ['documents', 'documents'], ['payments', 'pay'], ['profile', null], ['folio', 'folio'], ['checkin', 'checkin'], ['trip', 'itinerary'], ['stanley', null],
     ])
   })
   it('lists the distinct tasks in the fixed order', () => {

@@ -7,7 +7,9 @@ import { NOT_YET, PERMISSIONS, formatInviteCode, permissionWorks } from '../../d
 import { GUEST_SERVICES_NUMBER } from '../../domain/contacts'
 import { TASKS_NEVER_SHARED, TASKS_NOT_OFFERED } from '../../domain/relationships'
 import { liveLinkIds } from '../../domain/homeLink'
-import { api, familyHome } from '../../runtime'
+import { normalizeReceipts, type StanleyAction } from '../../ai/stanleyAction'
+import { api, familyHome, stanleyActions } from '../../runtime'
+import { StanleyActionCard } from '../ai/StanleyActionCard'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
@@ -127,6 +129,7 @@ function HelperBody({ helper, refresh }: { helper: Helper | null; refresh: () =>
       {helper?.status === 'revoked' && <Banner kind="info" title={t('helper.revoked', { name: helper.name, date: formatMoment(helper.at) })} />}
       {requested && <Banner kind="warning" title={t('helper.requested', { name: helper!.name, relationship: helper!.relationship.toLowerCase() })}><p>{t('helper.requestedBody')}</p></Banner>}
       {helper && helper.status !== 'revoked' && <InviteCode helper={helper} refresh={refresh} />}
+      {active && <WaitingFromHelper />}
       {active && (
         <Card labelledBy="active-h">
           <h2 id="active-h">{helper!.name}</h2>
@@ -220,6 +223,28 @@ function WhoCanSee({ helper, refresh }: { helper: Helper | null; refresh: () => 
       <ul>{rows.map((r) => <Row key={r.id} row={r} onStop={stop} stopped={stopped === r.id} />)}</ul>
       <p className="muted">{t('access.footnote')}</p>
       <p className="muted">{t('access.notOffered', { tasks: TASKS_NOT_OFFERED.map((k) => t(`task.${k}` as StringKey)).join(', '), never: TASKS_NEVER_SHARED.map((k) => t(`task.${k}` as StringKey)).join(', ') })}</p>
+    </Card>
+  )
+}
+
+/** What the helper prepared for this guest. Each is a Stanley preview: nothing has happened until the guest confirms it here. */
+function WaitingFromHelper() {
+  const list = useMine(() => stanleyActions.waiting())
+  const [changed, setChanged] = useState<Record<string, StanleyAction>>({})
+  const rows = normalizeReceipts(list.data).map((a) => changed[a.id] ?? a)
+  if (rows.length === 0) return null
+  return (
+    <Card labelledBy="helper-waiting-h">
+      <h2 id="helper-waiting-h">{th('helper.waiting.title')}</h2>
+      <p>{t('helper.waiting.intro')}</p>
+      <ul className="plain-list">
+        {rows.map((a) => (
+          <li key={a.id}>
+            {a.preparedBy && <p className="muted">{t('helper.waiting.by', { name: a.preparedBy })}</p>}
+            <StanleyActionCard action={a} onChange={(next) => setChanged((c) => ({ ...c, [next.id]: next }))} />
+          </li>
+        ))}
+      </ul>
     </Card>
   )
 }

@@ -3,7 +3,7 @@ using Princess.Api.Domain;
 
 namespace Princess.Api.Auth;
 
-public enum HelperPermission { Documents, Payments, Profile, Folio, Checkin, Trip }
+public enum HelperPermission { Documents, Payments, Profile, Folio, Checkin, Trip, Stanley }
 
 /// <summary>The pure rules of section 7 of <c>docs/backend-data-model.md</c>, separate from the lookups so they test without a database.</summary>
 public static class AccessRules

@@ -67,4 +67,6 @@ public sealed class HelperGrant
 {
     public string Permissions { get; set; } = "";
     public string Status { get; set; } = "";
+    /// <summary>When the guest last saved the link. A helper's Stanley permission lasts <c>StanleyHelperRules.GrantDays</c> from here.</summary>
+    public DateTime ChangedAt { get; set; }
 }

@@ -5,7 +5,7 @@ import { screen } from '../../ai/guard'
 import { getStanleyStatus, subscribeStanley } from '../../ai/stanley'
 import { CASE_TOPICS, caseProblemOf, caseState, normalizeCase, topicFromWords, type CaseTopic, type StanleyCase } from '../../ai/stanleyHandoff'
 import { EMERGENCY_NUMBER, GUEST_SERVICES_NUMBER } from '../../domain/contacts'
-import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, TOPIC_FIELDS, topicLines, type HandoffParts, type TopicAnswers } from '../../domain/handoff'
+import { buildHandoff, defaultParts, hasMessage, HANDOFF_MAX, photoProblem, TOPIC_FIELDS, topicLines, type HandoffParts, type TopicAnswers } from '../../domain/handoff'
 
 import { useAction } from '../../hooks/useAction'
 import { useSailing, usePersona, useNow } from '../../hooks/useDemo'
@@ -16,6 +16,12 @@ import { getContext, subscribeContext, partyPeople } from '../../account/context
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Field, TextArea } from '../Field'
+
+/** The words for each way adding a photo can fail. */
+const PHOTO_PROBLEM: Record<string, StringKey> = {
+  empty: 'handoff.photo.empty', size: 'handoff.photo.size', type: 'handoff.photo.type', unreadable: 'handoff.photo.unreadable',
+  tooMany: 'handoff.photo.tooMany', forbidden: 'handoff.photo.forbidden', other: 'handoff.photo.other',
+}
 
 const time = (ms: number): string => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
@@ -49,6 +55,23 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
   const [made, setMade] = useState<StanleyCase | null>(null)
   const now = useNow()
   const send = useAction((body: unknown) => stanleyHandoffs.create(body), { quiet: false })
+  const [photo, setPhoto] = useState<{ id: string; name: string } | null>(null)
+  const [photoError, setPhotoError] = useState<StringKey | null>(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return
+    const problem = photoProblem(file)
+    if (problem) { setPhotoError(PHOTO_PROBLEM[problem]); return }
+    setPhotoBusy(true); setPhotoError(null)
+    try {
+      const r = (await stanleyHandoffs.uploadPhoto(file)) as { id?: unknown } | null
+      if (typeof r?.id === 'string') { if (photo) void stanleyHandoffs.deletePhoto(photo.id).catch(() => undefined); setPhoto({ id: r.id, name: file.name.slice(0, 60) }) } else setPhotoError(PHOTO_PROBLEM.other)
+    } catch (e) {
+      const code = e && typeof e === 'object' && 'code' in e ? (e as { code: unknown }).code : null
+      setPhotoError(PHOTO_PROBLEM[code === 'conflict' ? 'tooMany' : code === 'forbidden' ? 'forbidden' : code === 'invalid' ? 'unreadable' : 'other'])
+    } finally { setPhotoBusy(false) }
+  }
+  const removePhoto = () => { if (photo) void stanleyHandoffs.deletePhoto(photo.id).catch(() => undefined); setPhoto(null) }
 
   if (!hasMessage(screened)) {
     return (
@@ -83,7 +106,7 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
   }
 
   const submit = async () => {
-    const r = await send.run({ topic, issue: text.trim(), outcome: outcome.trim(), reference: booking?.number ?? '', tried: tried.trim(), role: 'guest', consent: agreed })
+    const r = await send.run({ topic, issue: text.trim(), outcome: outcome.trim(), reference: booking?.number ?? '', tried: tried.trim(), attachment: photo?.id ?? '', role: 'guest', consent: agreed })
     const c = normalizeCase(r)
     if (c) setMade(c)
   }
@@ -119,6 +142,14 @@ export function HandoffCard({ messages, initialTopic }: { messages: readonly { r
       <TextArea label={t('handoff.preview')} hint={t('handoff.previewHint')} value={text} maxLength={HANDOFF_MAX} rows={8} onChange={(e) => { setEdited(e.target.value); setAgreed(false) }} />
       <Field label={t('handoff.outcome')} hint={t('handoff.outcomeHint')} value={outcome} maxLength={200} onChange={(e) => { setOutcome(e.target.value); setAgreed(false) }} />
       <Field label={t('handoff.tried')} hint={t('handoff.triedHint')} value={tried} maxLength={300} onChange={(e) => { setTried(e.target.value); setAgreed(false) }} />
+      <div>
+        <label htmlFor="ai-hand-photo">{t('handoff.photo')}</label>
+        <input id="ai-hand-photo" type="file" accept="image/jpeg,image/png" disabled={photoBusy || photo !== null} onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = '' }} />
+        <p className="muted">{t('handoff.photo.hint')}</p>
+        {photo && <p>{t('handoff.photo.added', { name: photo.name })} <Button variant="secondary" onClick={removePhoto}>{t('handoff.photo.remove')}</Button></p>}
+        <div role="status">{photoBusy && <p>{t('handoff.photo.busy')}</p>}</div>
+        {photoError && <p role="alert" className="field__error">{t(photoError)}</p>}
+      </div>
       <label className="choice"><input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} /><span>{t('handoff.consent')}</span></label>
       {send.error && <p role="alert" className="field__error">{t(`handoff.problem.${caseProblemOf(send.error)}` as StringKey, { phone: GUEST_SERVICES_NUMBER })}</p>}
       {!made && <p className="muted">{t('handoff.notSent')}</p>}

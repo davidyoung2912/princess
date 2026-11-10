@@ -45,3 +45,14 @@ describe('handoff with context', () => {
     expect(m).not.toMatch(/checklist/)
   })
 })
+
+describe('handoff photo', () => {
+  it('accepts a JPEG or PNG up to 5 MB and names the first problem otherwise', async () => {
+    const { photoProblem, PHOTO_MAX_BYTES } = await import('./handoff')
+    expect(photoProblem({ type: 'image/jpeg', size: 1000 })).toBeNull()
+    expect(photoProblem({ type: 'image/png', size: PHOTO_MAX_BYTES })).toBeNull()
+    expect(photoProblem({ type: 'image/png', size: PHOTO_MAX_BYTES + 1 })).toBe('size')
+    expect(photoProblem({ type: 'image/gif', size: 1000 })).toBe('type')
+    expect(photoProblem({ type: 'image/png', size: 0 })).toBe('empty')
+  })
+})

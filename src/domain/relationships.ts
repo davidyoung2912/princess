@@ -20,7 +20,7 @@ export const TASKS_NOT_OFFERED: readonly Task[] = ['editBooking', 'message']
 export const TASKS_NEVER_SHARED: readonly Task[] = ['location']
 
 const TASK_OF: Record<AccessItem, Task | null> = {
-  view: 'itinerary', trip: 'itinerary', checkin: 'checkin', payments: 'pay', folio: 'folio', documents: 'documents', profile: null,
+  view: 'itinerary', trip: 'itinerary', checkin: 'checkin', payments: 'pay', folio: 'folio', documents: 'documents', profile: null, stanley: null,
   shipFacts: 'itinerary', 'share.plans': 'itinerary', 'share.status': 'checkin', 'share.spending': 'folio', 'share.photos': null,
 }
 

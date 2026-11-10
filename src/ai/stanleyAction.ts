@@ -5,10 +5,10 @@ import { UNDO_ASSISTANT_MIN, isHhmm, type Change, type PlanEntry, type PlanRow }
  * the device only shows it, sends the guest's Confirm with an idempotency key, and shows the receipt. A day-plan change and a reminder are applied here, from the confirmed receipt, because
  * those live on the device. Framework-free, so it is tested in node.
  */
-export type ActionKind = 'order_item' | 'add_excursion' | 'move_dinner' | 'reserve_dinner' | 'draft_case' | 'plan_change' | 'remind_me'
+export type ActionKind = 'order_item' | 'add_excursion' | 'move_dinner' | 'reserve_dinner' | 'draft_case' | 'plan_change' | 'remind_me' | 'create_poll' | 'change_seating'
 export type ActionStatus = 'prepared' | 'executing' | 'done' | 'failed' | 'pending' | 'expired' | 'changed' | 'undone'
 
-const KINDS: readonly ActionKind[] = ['order_item', 'add_excursion', 'move_dinner', 'reserve_dinner', 'draft_case', 'plan_change', 'remind_me']
+const KINDS: readonly ActionKind[] = ['order_item', 'add_excursion', 'move_dinner', 'reserve_dinner', 'draft_case', 'plan_change', 'remind_me', 'create_poll', 'change_seating']
 const STATUSES: readonly ActionStatus[] = ['prepared', 'executing', 'done', 'failed', 'pending', 'expired', 'changed', 'undone']
 
 /** A preview and, once confirmed, its receipt. Nothing has happened while `status` is `prepared`. */
@@ -35,6 +35,8 @@ export interface StanleyAction {
   params: Record<string, string>
   /** A short number to quote, once it is done. */
   receipt: string | null
+  /** The helper who prepared it for the guest, when one did. */
+  preparedBy: string | null
 }
 
 const text = (v: unknown, max: number): string => (typeof v === 'string' ? v.slice(0, max) : '')
@@ -60,7 +62,7 @@ export function normalizeAction(raw: unknown): StanleyAction | null {
     id: o.id.slice(0, 64), kind, status, title, lines: strings(o.lines, 12), who: strings(o.who, 10),
     cents: typeof o.cents === 'number' && Number.isFinite(o.cents) ? Math.round(o.cents) : null,
     terms: text(o.terms, 400) || null, expiresAt, onDevice: o.onDevice === true, doneAt: time(o.doneAt), undoUntil: time(o.undoUntil),
-    reason: text(o.reason, 40) || null, params, receipt: text(o.receipt, 20) || null,
+    reason: text(o.reason, 40) || null, params, receipt: text(o.receipt, 20) || null, preparedBy: text(o.preparedBy, 80) || null,
   }
 }
 

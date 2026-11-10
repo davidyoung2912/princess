@@ -16,7 +16,7 @@ public static partial class AccountRules
     /// <summary>The preference groups a guest can keep out of later bookings (MNG-16). Only these two are carried into a new booking, so only these two can be left out.</summary>
     public static readonly string[] KeepOutGroups = ["dietary", "needs"];
     public static readonly string[] CardBrands = ["visa", "mastercard", "amex", "discover"];
-    public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin", "trip"];
+    public static readonly string[] Permissions = ["view", "documents", "payments", "profile", "folio", "checkin", "trip", "stanley"];
     public static readonly string[] HelperStatuses = ["active", "requested"];
 
     [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$")]

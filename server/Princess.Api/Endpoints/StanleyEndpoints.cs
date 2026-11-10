@@ -45,6 +45,21 @@ public static class StanleyEndpoints
             .WithSummary("Prepares a change as a preview and does nothing else. Send { kind (order_item, add_excursion, move_dinner, reserve_dinner, draft_case, plan_change, remind_me, create_poll (args question, options joined with |, days) or change_seating (args plan: early, late or anytime)), args (plain strings, for example item and qty), context { plan[{ id, title, start, day, listed }], allAboard { at, label }, sailingId } }. " +
                 "Answers the action { id, kind, status (prepared), title, lines[], who[], cents, terms, expiresAt, onDevice, params }: the exact items, who is affected, any price, the cancellation terms and an expiry ten minutes ahead. " +
                 "400 badAction for a kind or detail that is not allowed, 403 for a child account, 409 off when the actions switch is off, and the same 400, 404 and 409 codes the service behind the action gives.");
+        actions.MapGet("/waiting", async (ICurrentUser me, StanleyActionService svc, CancellationToken ct) => Results.Ok(await svc.WaitingFromHelperAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("What a helper has prepared for the guest that is still waiting, newest first, each with preparedBy (the helper's name). Nothing has happened: confirm one with the usual confirm, or ignore it and it expires after a day.");
+        var helping = api.MapGroup("/me/stanley/helping").WithTags("Stanley");
+        helping.MapGet("", async (ICurrentUser me, StanleyHelperService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The guests who have let this person prepare Stanley previews for them: { guestId, name, relationship, until }. A guest allows it with the stanley permission on their helper link; it lasts 30 days from when they last saved the link.");
+        helping.MapPost("/{guestId:guid}/actions/prepare", async (Guid guestId, StanleyPrepareRequest body, ICurrentUser me, StanleyHelperService svc, CancellationToken ct) =>
+            {
+                var input = new JsonObject { ["kind"] = body.Kind ?? "" };
+                foreach (var (k, v) in (body.Args ?? new Dictionary<string, string>()).Take(20)) if (k != "kind") input[k] = v;
+                var read = StanleyIntents.Validate(input, new StanleyActionContext());
+                if (read.Intent is null) throw ApiException.Invalid("badAction");
+                return Results.Ok(await svc.PrepareAsync(await me.LoadAsync(ct), guestId, read.Intent, ct));
+            })
+            .WithSummary("A helper prepares a preview for a guest who allowed it. Kinds: add_excursion, reserve_dinner, move_dinner, change_seating, create_poll. The preview is the guest's, names the helper and waits a day; only the guest can confirm it. " +
+                "404 when the guest has not allowed this helper, 400 badAction for any other kind, 403 for a child account.");
         actions.MapPost("/{id:guid}/confirm", async (Guid id, StanleyConfirmRequest body, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
                 Results.Ok(await svc.ConfirmAsync(await me.LoadAsync(ct), id, body.Key, body.Context, ct)))
             .WithSummary("Confirms a prepared action. Send { key (an idempotency key of 8 to 64 letters, digits, dash or underscore), context (as for prepare, needed for plan_change and remind_me) }. " +

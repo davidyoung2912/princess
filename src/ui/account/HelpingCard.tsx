@@ -5,7 +5,7 @@ import { formatDate } from '../../domain/cruise'
 import { folioTotals } from '../../domain/folio'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
-import { api } from '../../runtime'
+import { api, stanleyHelping } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
 import { useNow } from '../../hooks/useDemo'
@@ -14,6 +14,7 @@ import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Card } from '../Card'
 import { Dialog } from '../Dialog'
+import { Field } from '../Field'
 import { LoadError } from '../discover/parts'
 import { ActionError } from './parts'
 
@@ -60,6 +61,7 @@ function Guest({ guest }: { guest: HelpedGuest }) {
       {checkin && guest.booking && canCheckin && <GuestCheckin guest={guest} booking={guest.booking} />}
       {guest.booking && canTrip && <div><Button variant="secondary" aria-expanded={trip} onClick={() => setTrip(!trip)}>{t(trip ? 'helping.tripHide' : 'helping.tripOpen', { name: guest.name })}</Button></div>}
       {trip && guest.booking && canTrip && <GuestTrip guest={guest} booking={guest.booking} />}
+      {guest.permissions.includes('stanley') && <GuestStanley guest={guest} />}
       {!guest.booking && <p className="muted">{t('helping.noAccess', { name: guest.name })}</p>}
       <div><Button variant="secondary" onClick={() => setStopping(true)}>{t('helping.stop', { name: guest.name })}</Button></div>
       {stopping && (
@@ -73,6 +75,51 @@ function Guest({ guest }: { guest: HelpedGuest }) {
         </Dialog>
       )}
     </>
+  )
+}
+
+/** Preparing a Stanley request for a guest who allowed it. Only a poll and a seating change are offered here; the guest has to confirm what is prepared. */
+function GuestStanley({ guest }: { guest: HelpedGuest }) {
+  const [kind, setKind] = useState<'create_poll' | 'change_seating'>('create_poll')
+  const [question, setQuestion] = useState('')
+  const [options, setOptions] = useState('')
+  const [plan, setPlan] = useState('early')
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const go = async () => {
+    setNote(null); setBusy(true)
+    try {
+      await stanleyHelping.prepare(guest.guestId, { kind, args: kind === 'create_poll' ? { question: question.trim(), options: options.trim() } : { plan } })
+      setNote({ ok: true, text: t('helping.stanley.sent', { name: guest.name }) }); setQuestion(''); setOptions('')
+    } catch (e) {
+      setNote({ ok: false, text: t('helping.stanley.failed', { why: e && typeof e === 'object' && 'code' in e ? String((e as { code: unknown }).code) : 'error' }) })
+    } finally { setBusy(false) }
+  }
+  return (
+    <fieldset className="plain-fieldset">
+      <legend>{t('helping.stanley.title', { name: guest.name })}</legend>
+      <p className="muted">{t('helping.stanley.intro', { name: guest.name })}</p>
+      <label>{t('helping.stanley.kind')}{' '}
+        <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+          <option value="create_poll">{t('helping.stanley.poll')}</option>
+          <option value="change_seating">{t('helping.stanley.seating')}</option>
+        </select>
+      </label>
+      {kind === 'create_poll' ? (
+        <>
+          <Field label={t('helping.stanley.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
+          <Field label={t('helping.stanley.options')} value={options} maxLength={300} onChange={(e) => setOptions(e.target.value)} />
+        </>
+      ) : (
+        <label>{t('helping.stanley.plan')}{' '}
+          <select value={plan} onChange={(e) => setPlan(e.target.value)}>
+            {(['early', 'late', 'anytime'] as const).map((p) => <option key={p} value={p}>{t(`helping.stanley.${p}` as StringKey)}</option>)}
+          </select>
+        </label>
+      )}
+      <div role="status">{note && <p className={note.ok ? undefined : 'field__error'}>{note.text}</p>}</div>
+      <Button variant="secondary" disabled={busy || (kind === 'create_poll' && (question.trim() === '' || options.trim() === ''))} onClick={() => void go()}>{t('helping.stanley.send', { name: guest.name })}</Button>
+    </fieldset>
   )
 }
 

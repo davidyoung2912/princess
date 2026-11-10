@@ -215,6 +215,56 @@ public class StanleyActionTests
     private static readonly StanleyIntent Drop = new(StanleyActionKinds.PlanChange, new() { ["op"] = "drop", ["itemId"] = "quiz", ["day"] = "3" });
 
     [Fact]
+    public async Task AHelpersPreviewBelongsToTheGuestNamesTheHelperAndWaitsADay()
+    {
+        var w = Build();
+        var helper = new UserRecord { Id = 9, PublicId = Guid.NewGuid(), FirstName = "Anna", LastName = "Lee" };
+        var p = await w.Svc.PrepareAsync(Me, Towels, null, default, helper);
+        Assert.Equal("Anna Lee", p.PreparedBy);
+        Assert.Equal(T0.AddMinutes(StanleyHelperRules.PreviewMinutes), p.ExpiresAt);
+        Assert.Contains(w.Audit.Rows, a => a.Action == "stanley.action.prepareForGuest");
+        Assert.Equal(0, w.Effects.Executed);
+        Assert.Single(await w.Svc.WaitingFromHelperAsync(Me, default));
+        // The helper cannot confirm it or see it: both need the owner.
+        await Assert.ThrowsAsync<ApiException>(() => w.Svc.ConfirmAsync(helper, Guid.Parse(p.Id), "key-12345", null, default));
+        Assert.Empty(await w.Svc.WaitingFromHelperAsync(helper, default));
+        var done = await w.Svc.ConfirmAsync(Me, Guid.Parse(p.Id), "key-12345", null, default);
+        Assert.Equal(StanleyActionStatus.Done, done.Status);
+        Assert.Empty(await w.Svc.WaitingFromHelperAsync(Me, default));
+    }
+
+    [Fact]
+    public async Task APreviewTheGuestPreparedThemselvesIsNotListedAsFromAHelper()
+    {
+        var w = Build();
+        await w.Svc.PrepareAsync(Me, Towels, null, default);
+        Assert.Empty(await w.Svc.WaitingFromHelperAsync(Me, default));
+    }
+
+    [Fact]
+    public void AHelperGrantNeedsViewAndStanleyAndLastsThirtyDays()
+    {
+        var at = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc);
+        HelperGrant G(string perms, string status = "active") => new() { Permissions = perms, Status = status, ChangedAt = at };
+        Assert.True(StanleyHelperRules.Live(G("view,stanley"), at.AddDays(29)));
+        Assert.False(StanleyHelperRules.Live(G("view,stanley"), at.AddDays(31)));
+        Assert.False(StanleyHelperRules.Live(G("view,trip"), at));
+        Assert.False(StanleyHelperRules.Live(G("stanley"), at));
+        Assert.False(StanleyHelperRules.Live(G("view,stanley", "revoked"), at));
+        Assert.False(StanleyHelperRules.Live(null, at));
+    }
+
+    [Theory]
+    [InlineData("add_excursion", true)]
+    [InlineData("reserve_dinner", true)]
+    [InlineData("create_poll", true)]
+    [InlineData("draft_case", false)]
+    [InlineData("order_item", false)]
+    [InlineData("plan_change", false)]
+    [InlineData("remind_me", false)]
+    public void AHelperMayOnlyPrepareTheShortList(string kind, bool allowed) => Assert.Equal(allowed, StanleyHelperRules.KindOk(kind));
+
+    [Fact]
     public async Task PreparingShowsAPreviewAndChangesNothing()
     {
         var w = Build();

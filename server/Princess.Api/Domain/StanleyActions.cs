@@ -29,7 +29,7 @@ public sealed record StanleyIntent(string Kind, Dictionary<string, string> Args)
 /// (the device applies a device action from them). <c>OnDevice</c> says the device, not the server, makes the change. <c>Cents</c> is the price, credit or refund to the guest's account (null when there is none).
 /// </summary>
 public sealed record StanleyActionDto(string Id, string Kind, string Status, string Title, List<string> Lines, List<string> Who, long? Cents, string? Terms, DateTime ExpiresAt, bool OnDevice,
-    DateTime? DoneAt, DateTime? UndoUntil, string? Reason, Dictionary<string, string> Params, string? Receipt);
+    DateTime? DoneAt, DateTime? UndoUntil, string? Reason, Dictionary<string, string> Params, string? Receipt, string? PreparedBy = null);
 
 /// <summary>One line of the day plan the device shows, sent so the server can name it in a preview: no guest data, only the activity.</summary>
 public sealed record StanleyPlanEntry(string Id, string Title, string Start, int Day, bool Listed);
@@ -381,7 +381,7 @@ public static class StanleyActionRules
     /// <summary>A confirm that began and never finished is checked against what exists before it is tried again, once it is this old.</summary>
     public const int StaleSeconds = 90;
 
-    /// <summary>A guest acts for themselves, or for another traveller only as the person who booked them. A helper's grant never reaches an action.</summary>
+    /// <summary>A guest acts for themselves, or for another traveller only as the person who booked them. A helper never confirms: the helper path (<see cref="StanleyHelperRules"/>) only prepares a preview that belongs to the guest.</summary>
     public static bool MayActFor(long actorId, long bookerUserId, long travellerUserId) => actorId == travellerUserId || actorId == bookerUserId;
 
     /// <summary>What a stateroom item is called in a preview.</summary>

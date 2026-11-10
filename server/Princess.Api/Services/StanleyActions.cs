@@ -34,7 +34,7 @@ public sealed class StanleyActionRow
     public DateTime? UndoUntil { get; set; }
 }
 
-public sealed record StanleyActionData(string? SailingId, string Title, List<string> Lines, List<string> Who, long? Cents, string? Terms, Dictionary<string, string> Args);
+public sealed record StanleyActionData(string? SailingId, string Title, List<string> Lines, List<string> Who, long? Cents, string? Terms, Dictionary<string, string> Args, string? PreparedBy = null);
 
 public interface IStanleyActionStore
 {
@@ -148,8 +148,12 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
     {
         var d = DataOf(row);
         return new StanleyActionDto(row.PublicId.ToString(), row.Kind, row.Status, d.Title, d.Lines, d.Who, d.Cents, d.Terms, row.ExpiresAt, StanleyActionKinds.OnDevice.Contains(row.Kind),
-            row.DoneAt, row.UndoUntil, row.Reason.Length == 0 ? null : row.Reason, d.Args, row.Status is StanleyActionStatus.Done or StanleyActionStatus.Undone ? Receipt(row) : null);
+            row.DoneAt, row.UndoUntil, row.Reason.Length == 0 ? null : row.Reason, d.Args, row.Status is StanleyActionStatus.Done or StanleyActionStatus.Undone ? Receipt(row) : null, d.PreparedBy);
     }
+
+    /// <summary>What a helper prepared for this guest that is still waiting for them: prepared, not expired, newest first. Only the guest ever sees or confirms these.</summary>
+    public async Task<List<StanleyActionDto>> WaitingFromHelperAsync(UserRecord user, CancellationToken ct) =>
+        [.. (await store.ListAsync(user.Id, 50, ct)).Where(r => r.Status == StanleyActionStatus.Prepared && r.ExpiresAt > clock.UtcNow && DataOf(r).PreparedBy is not null).Select(ToDto)];
 
     /// <summary>A short receipt number the guest can quote: the first eight characters of the action's id.</summary>
     public static string Receipt(StanleyActionRow row) => "STN-" + row.PublicId.ToString("N")[..8].ToUpperInvariant();
@@ -161,7 +165,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
         await StanleyPlanSnapshots.MergeAsync(snapshots, user.Id, Ctx(given, sailingId), clock.UtcNow, ct);
 
     /// <summary>Makes a preview. Nothing is changed. The preview lives for <see cref="StanleyActionRules.PreviewMinutes"/> minutes.</summary>
-    public async Task<StanleyActionDto> PrepareAsync(UserRecord user, StanleyIntent intent, StanleyActionContext? context, CancellationToken ct)
+    public async Task<StanleyActionDto> PrepareAsync(UserRecord user, StanleyIntent intent, StanleyActionContext? context, CancellationToken ct, UserRecord? preparedBy = null)
     {
         RequireOn(user);
         if (!StanleyActionKinds.All.Contains(intent.Kind)) throw ApiException.Invalid("badAction");
@@ -173,11 +177,11 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
         var row = new StanleyActionRow
         {
             PublicId = Guid.NewGuid(), UserId = user.Id, Kind = intent.Kind, Status = StanleyActionStatus.Prepared, CreatedAt = now, UpdatedAt = now,
-            ExpiresAt = now.AddMinutes(StanleyActionRules.PreviewMinutes), Fingerprint = StanleyActionRules.Fingerprint(facts.Facts),
-            Data = JsonSerializer.Serialize(new StanleyActionData(ctx.SailingId, facts.Title, facts.Lines, facts.Who, facts.Cents, facts.Terms, args), Json),
+            ExpiresAt = now.AddMinutes(preparedBy is null ? StanleyActionRules.PreviewMinutes : StanleyHelperRules.PreviewMinutes), Fingerprint = StanleyActionRules.Fingerprint(facts.Facts),
+            Data = JsonSerializer.Serialize(new StanleyActionData(ctx.SailingId, facts.Title, facts.Lines, facts.Who, facts.Cents, facts.Terms, args, preparedBy is null ? null : $"{preparedBy.FirstName} {preparedBy.LastName}".Trim()), Json),
         };
         await store.AddAsync(row, ct);
-        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "stanley.action.prepare", Outcome = AuditOutcome.Success, Target = intent.Kind + ":" + row.PublicId, Detail = intent.Kind }, ct);
+        await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = preparedBy is null ? "stanley.action.prepare" : "stanley.action.prepareForGuest", Outcome = AuditOutcome.Success, Target = intent.Kind + ":" + row.PublicId, Detail = preparedBy is null ? intent.Kind : intent.Kind + " by helper " + preparedBy.PublicId }, ct);
         return ToDto(row);
     }
 

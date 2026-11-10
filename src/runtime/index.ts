@@ -89,12 +89,22 @@ export const stanleyActions = {
   get: (id: string) => http.get<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}`),
   undo: (id: string, context?: unknown) => http.post<unknown>(`/me/stanley/actions/${encodeURIComponent(id)}/undo`, { context }),
   receipts: () => http.get<unknown>('/me/stanley/receipts'),
+  /** What a helper has prepared for this guest that is still waiting. Nothing has happened until the guest confirms. */
+  waiting: () => http.get<unknown>('/me/stanley/actions/waiting'),
+}
+
+/** A helper preparing a preview for a guest who allowed it (the `stanley` permission on their helper link). Only the guest can confirm it. */
+export const stanleyHelping = {
+  prepare: (guestId: string, body: { kind: string; args: Record<string, string> }) => http.post<unknown>(`/me/stanley/helping/${encodeURIComponent(guestId)}/actions/prepare`, body),
 }
 
 /** Human handoff (phase 6): the server opens a case and answers with its reference, owner and status; the device lists them to show progress. */
 export const stanleyHandoffs = {
   create: (body: unknown) => http.post<unknown>('/me/stanley/handoffs', body),
   list: () => http.get<unknown>('/me/stanley/handoffs'),
+  /** Keeps a photo (JPEG or PNG, at most 5 MB) for a case; the answer holds its id, which goes in the case's attachment. */
+  uploadPhoto: (file: Blob) => http.upload<unknown>('/me/stanley/handoffs/photo', file),
+  deletePhoto: (id: string) => http.delete<void>(`/me/stanley/handoffs/photo/${encodeURIComponent(id)}`),
 }
 
 /** What Stanley remembers (phase 7): the guest's own preferences, kept by the server so every device shows the same list. Forgetting deletes the row. */

@@ -112,6 +112,7 @@ services.AddScoped<StanleyMemoryService>();
 services.AddScoped<StanleyPollService>();
 services.AddScoped<StanleyReminderService>();
 services.AddScoped<StanleyHandoffPhotoService>();
+services.AddScoped<StanleyHelperService>();
 services.AddScoped<StanleyDiningPlanService>();
 services.AddScoped<IDiningPlanStore, DapperDiningPlanStore>();
 services.AddScoped<StanleyDiscoverService>();
