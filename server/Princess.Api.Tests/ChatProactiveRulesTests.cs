@@ -274,6 +274,44 @@ public class ManageToBoardingMomentTests
     [Fact]
     public void TheTravelTopicCanBeSwitchedOff() =>
         Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.ManageToBoarding(new(Now, StageRules.Manage, 30, false, null, DocumentsMissing: 1))], [], new(ChatProactiveRules.ModeTrip, ["travel"], false, false), Now));
+
+    private static List<string> AboardKeys(string stage, bool muster = false, bool lastDay = false) =>
+        [.. ChatProactiveRules.Candidates(new(Now, stage, 0, false, null, MusterPending: muster, LastFullDay: lastDay)).Where(c => c.Topic == ChatProactiveRules.Onboard).Select(c => c.Key)];
+
+    [Fact]
+    public void EachAboardStageGetsItsOwnMoments()
+    {
+        Assert.Equal(["embark.find-friends", "embark.first-night"], AboardKeys(StageRules.Embark).Order().ToList());
+        Assert.Equal(["sea.today"], AboardKeys(StageRules.Sea));
+        Assert.Equal(["port.all-aboard"], AboardKeys(StageRules.Port));
+        Assert.Equal(["leave.exit-time", "leave.swap-contacts"], AboardKeys(StageRules.Disembark).Order().ToList());
+        Assert.Empty(AboardKeys(StageRules.Remember));
+    }
+
+    [Fact]
+    public void MusterAndBagNightNeedTheirFacts()
+    {
+        Assert.Contains("embark.muster", AboardKeys(StageRules.Embark, muster: true));
+        Assert.DoesNotContain("embark.muster", AboardKeys(StageRules.Embark));
+        Assert.Contains("sea.bag-night", AboardKeys(StageRules.Sea, lastDay: true));
+        Assert.DoesNotContain("sea.bag-night", AboardKeys(StageRules.Sea));
+    }
+
+    [Fact]
+    public void AboardCardsCarryNoTimeOrNumberAndOpenAScreen()
+    {
+        foreach (var m in ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Embark, 0, false, null, MusterPending: true)).Concat(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null))))
+        {
+            Assert.DoesNotContain(m.Text, c => char.IsDigit(c));
+            Assert.StartsWith("/", m.Path);
+            Assert.True(m.ExpiresAt > Now);
+        }
+        Assert.True(ChatProactiveRules.ValidTopics(["onboard"]));
+    }
+
+    [Fact]
+    public void TheOnboardTopicCanBeSwitchedOff() =>
+        Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null))], [], new(ChatProactiveRules.ModeTrip, ["onboard"], false, false), Now));
 }
 
 public class GroupMomentTests

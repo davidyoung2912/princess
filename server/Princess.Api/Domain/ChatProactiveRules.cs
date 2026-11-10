@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
@@ -31,9 +31,9 @@ public static class ChatProactiveRules
     public const int DailyCap = 3;
     public static readonly TimeSpan SnoozeFor = TimeSpan.FromHours(24);
 
-    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery", Travel = "travel";
+    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery", Travel = "travel", Onboard = "onboard";
     /// <summary>The topics a guest can switch off. A due-date card (payment) is on this list too: a guest may not want even that in the thread, and the payment notice and the phone push are unaffected.</summary>
-    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery, Travel];
+    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery, Travel, Onboard];
 
     /// <summary>The stored level, as a mode. A guest who has not chosen gets the narrowest useful one (section 7.2).</summary>
     public static string ModeOf(string? level) => level switch
@@ -69,6 +69,7 @@ public static class ChatProactiveRules
         var today = DateOnly.FromDateTime(f.Now);
         list.AddRange(BeforeBooking(f));
         list.AddRange(ManageToBoarding(f));
+        list.AddRange(AboardToDisembark(f));
         if (f.BalanceOwing && f.FinalDue is { } due && (due.DayNumber - today.DayNumber) is >= 0 and <= 14 && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
         {
             var days = due.DayNumber - today.DayNumber;
@@ -117,6 +118,37 @@ public static class ChatProactiveRules
             list.Add(new("getship.checkin-open", Travel, ClassDue, "Online check-in is open\nCheck in to get your boarding pass.", "/home/check-in", f.Now.AddDays(2), Hash("getship.checkin-open")));
         if (f.ShareGroup is { } group && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
             list.Add(new(ChatGroupMomentRules.GroupPollKey, Planning, ClassSuggestion, ChatGroupMomentRules.OfferText, ChatGroupMomentRules.GroupPath(group), f.Now.AddDays(3), Hash(group.ToString("N")), group.ToString()));
+        return list;
+    }
+
+    /// <summary>
+    /// Phase 7c (stages Embark, Sea, Port and Disembark; 7.6): moments for a guest on board, on a switchable <c>onboard</c> topic. The muster, all-aboard and exit cards mirror what the ship already says (the
+    /// notice or screen stays the source of truth) and carry no time, deck, cabin or amount: the card opens the screen that has them.
+    /// </summary>
+    public static List<Moment> AboardToDisembark(MomentFacts f)
+    {
+        var list = new List<Moment>();
+        switch (f.Stage)
+        {
+            case StageRules.Embark:
+                if (f.MusterPending)
+                    list.Add(new("embark.muster", Onboard, ClassDue, "Confirm your safety drill\nOpen Muster to see your station and confirm you have been.", "/ship/muster", f.Now.AddHours(12), Hash("embark.muster")));
+                list.Add(new("embark.first-night", Onboard, ClassSuggestion, "Your first evening\nSee what is on tonight and plan it.", "/plan/day", f.Now.AddHours(12), Hash("embark.first-night")));
+                list.Add(new("embark.find-friends", Onboard, ClassGuide, "Say hello to your group\nOpen Chat to see your group and who else is on board.", "/chat", f.Now.AddDays(1), Hash("embark.find-friends")));
+                break;
+            case StageRules.Sea:
+                list.Add(new("sea.today", Onboard, ClassSuggestion, "Today at sea\nSee what is on today.", "/plan/day", f.Now.AddHours(12), Hash($"sea.today{f.Now:yyyyMMdd}")));
+                if (f.LastFullDay)
+                    list.Add(new("sea.bag-night", Onboard, ClassDue, "Bags go out tonight\nOpen Leave to see when and where.", "/home/disembark/bags", f.Now.AddHours(12), Hash("sea.bag-night")));
+                break;
+            case StageRules.Port:
+                list.Add(new("port.all-aboard", Onboard, ClassDue, "Check your all-aboard time\nOpen Port to see it, and your tender if there is one.", "/ship/port", f.Now.AddHours(10), Hash($"port.all-aboard{f.Now:yyyyMMdd}")));
+                break;
+            case StageRules.Disembark:
+                list.Add(new("leave.exit-time", Onboard, ClassDue, "Your way off the ship\nOpen Leave to see your exit time.", "/home/disembark", f.Now.AddHours(12), Hash("leave.exit-time")));
+                list.Add(new("leave.swap-contacts", Onboard, ClassSuggestion, "Keep in touch?\nChoose which chats to keep after the cruise.", "/chat", f.Now.AddDays(1), Hash("leave.swap-contacts")));
+                break;
+        }
         return list;
     }
 

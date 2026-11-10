@@ -346,7 +346,7 @@ public sealed class PushService(
             var trip = await trips.BuildAsync(booking, current: true, now, ct);
             var stage = StageRules.Derive(new(now, [], [], null, null, new StageTrip(booking.SailingId, DateOnly.FromDateTime(booking.Departure), trip.Plan.Balance <= 0, trip.Checkin.State == "done"))).Stage;
             var due = DateOnly.TryParse(trip.Plan.FinalDue, out var f) ? f : (DateOnly?)null;
-            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open"), held, ct);
+            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open", MusterPending: stage == StageRules.Embark && onboard is not null && !(await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id), LastFullDay: stage == StageRules.Sea && TripRules.Today(now).AddDays(1) == TimelineBook.For(booking.SailingId, DateOnly.FromDateTime(booking.Departure)).LastDay), held, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException) { /* a suggestion is never worth stopping a notice for */ }
     }
