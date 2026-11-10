@@ -29,10 +29,10 @@ Answers given 2026-11-09. "Applied as" is how this plan reads each answer; anyth
 | Question | Owner's answer | Applied as |
 | --- | --- | --- |
 | Plan the trip, or just talk? | Chat should span **all 11 stages**. Stanley should be able to push things into conversations to help guests move forward in planning and execution. "Can Stanley become more proactive?" | Yes. Chat is available, in some form, at every stage (section 6). A new private **Stanley conversation** and optional group cards carry proactive "moments" (section 7), under a guest-controlled proactivity setting and strict caps. Plans, polls, RSVP and share-from-app cards (phases 3 and 4) are the way chat turns into action. |
-| Public room posting: ship only, or beyond? | "Has to work beyond the ship." | Rooms and channels exist **before, during and after** a sailing, not only aboard (section 8). Guests can post in rooms, with moderation. Staff-only broadcast channels are a separate, simpler kind. **Assumed:** posting needs a booking (current or past) on the guest's account; people who have not yet booked can read and ask Stanley but not post (decision to confirm, section 12). |
+| Public room posting: ship only, or beyond? | "Has to work beyond the ship." | Rooms and channels exist **before, during and after** a sailing, not only aboard (section 8). Guests can post in rooms, with moderation. Staff-only broadcast channels are a separate, simpler kind. **Decided (my judgement, 2026-11-10):** posting needs a booking (current or past) on the guest's account; people who have not yet booked can read staff-curated previews and ask Stanley but not post. |
 | Voice notes | "I don't think so." | **Dropped.** Not built, not planned. The SMS bridge and quick replies cover the "I don't want to type" need. Removed from earlier drafts. |
 | Edit and delete windows | "Within 15 minutes of sending a message." | Both **edit** and **delete for everyone** are allowed for 15 minutes after sending, then neither. After the window a guest can still report or (for their own view) hide a message. A staff removal after a report is unaffected by the window. |
-| Typing indicator and read receipts defaults | "A triple dot bubble I presume." | The typing indicator is an **animated three-dot bubble** ("Sam is typing" for screen readers). **Assumed:** it is **on by default** for direct chats and groups, with a switch in chat settings; with reduced motion on, the dots are still and the text "typing" shows. Read receipts are **unchanged**: they work as today (shown only when both people have them on); no new default is introduced. |
+| Typing indicator and read receipts defaults | "A triple dot bubble I presume." | The typing indicator is an **animated three-dot bubble** ("Sam is typing" for screen readers). **Decided (my judgement, 2026-11-10):** it is **on by default** in direct chats and in groups of **6 or fewer**, **off in larger groups and never in rooms** (too noisy), with a switch in chat settings; with reduced motion on, the dots are still and the text "typing" shows. Read receipts are **unchanged**: they work as today (shown only when both people have them on); no new default is introduced. |
 
 Second round of answers, 2026-11-10 (from the open points in section 14):
 
@@ -46,6 +46,21 @@ Second round of answers, 2026-11-10 (from the open points in section 14):
 | Group cost split | **Keep money out of chat by default; guests can discuss it themselves** | No cost splits, balances or spend in any shared thread; money cards stay private. No switch in version one (13.4 never-list item 10). |
 | Rollout thresholds for proactive features | "You choose" | Defined in phase 14 (proposed numbers; the owner may change them). |
 | Guardian-controlled Stanley for older teens | No | Out of scope and removed from the open points. |
+
+Third round, 2026-11-10: the owner confirmed there is **no cost-split at all in version one** and asked me to use my best judgement on the remaining open points. They are decided in section 12 and 14.3 below; each can be reversed by the owner at any time.
+
+| Open point | Decision (my judgement) |
+| --- | --- |
+| Money switch | None. No cost split in version one, confirmed by the owner |
+| Public room posting | Needs a current or past booking |
+| Previews before booking | Staff-curated previews only; live guest posts need a booking |
+| Kept-chat retention | 12 months, per member opt-in, legal review is a gate |
+| Default proactivity | "Only what affects my trip", with a one-time plain offer to change it |
+| Typing indicator | On in direct chats and groups up to 6; off above that and in rooms |
+| Read receipts | Unchanged |
+| Moderation staffing | Rooms open only with a moderator rota; channels first (section 8.3) |
+| Shared Stanley cards | The admin confirms each card; standing permission only for reminders and tallies on items the group already made |
+| Huddle details | 18+, 60 days of silence, a named sign-off group (phase 15) |
 
 ## 3. What we already have
 
@@ -140,7 +155,7 @@ Scored for **value** (how much a guest would notice), **effort** (S under a week
 | --- | --- | --- | --- | --- | --- |
 | **Staff broadcast channels** | Read-only: "Cruise Director", "Kids Club", "Today on Sun Princess", and before sailing "Your sailing: news". Guests follow or unfollow. | High | M | 8 | Counts against the notice budget so it cannot spam. A channel is not a person-to-person chat, so guardian and retention rules stay simple. |
 | **Sailing rooms** | One room per **sailing**, open to anyone with a booking on it, from booking to 30 days after. "Who else is on the 14 March Sun Princess?" | High | L | 8 | The pre-cruise community is where Dream-to-Prebook guests meet. Moderated (section 8). |
-| **Interest rooms** | "Solo travellers", "First-timers", "Accessibility", "Foodies", "Photography". Not tied to one sailing. | Medium-High | L | 8 | Open to guests with a current or past booking (**assumed**). The place for the "beyond the ship" answer. |
+| **Interest rooms** | "Solo travellers", "First-timers", "Accessibility", "Foodies", "Photography". Not tied to one sailing. | Medium-High | L | 8 | Open to guests with a current or past booking. The place for the "beyond the ship" answer. |
 | **Alumni and next-trip rooms** | After the cruise, an opt-in "Keep in touch" for a group or a sailing, and "Plan our next cruise". | Medium-High | M | 8 | Needs the retention change in phase 5. |
 | **Meet-up matching** | Stanley introduces two guests with a shared interest, both consenting. | Medium | L | later | Opt-in, public facts only (Stanley plan request cards). |
 | **Service chat extras** | "Replying within 5 minutes", attach a photo, "mark solved". | Medium | S | 2 | Parity with person-to-person chat. |
@@ -174,8 +189,8 @@ The eleven stages and their tabs come from `stage-experience-plan.md` 5.1. Chat 
 
 | # | Stage | Person-to-person | Rooms and channels | Stanley conversation |
 | --- | --- | --- | --- | --- |
-| 1 | Dream | **Trip huddle** with invited companions (adults, up to 6, invite link; phase 15). No sailing-mates yet | Read-only previews of interest rooms (**assumed**); no posting | Yes: the existing "Ask" Stanley, shown as a conversation |
-| 2 | Discover | Trip huddle (as above) | Same, plus the sailing's channel preview when a sailing is under consideration | Yes |
+| 1 | Dream | **Trip huddle** with invited companions (adults, up to 6, invite link; phase 15). No sailing-mates yet | **Staff-curated previews** of interest rooms (rules, popular questions, pinned posts); no live guest posts, no posting | Yes: the existing "Ask" Stanley, shown as a conversation |
+| 2 | Discover | Trip huddle (as above) | Same, plus the sailing's **staff channel** (staff-written, so safe to read) when a sailing is under consideration | Yes |
 | 3 | Book | Only the **people on the booking** (travel party chat starts at booking) | Can follow the sailing channel after the booking confirms | Yes |
 | 4 | Manage | Travel party, plus sailing-mates once the booking is confirmed | Sailing room, interest rooms, staff channel | Yes |
 | 5 | Prebook | Same | Same | Yes |
@@ -220,7 +235,7 @@ Stored with chat preferences so it follows the guest across devices. Matches the
 
 | Mode | Behaviour |
 | --- | --- |
-| **Only what affects my trip** | Critical and due-date moments only (payment due, documents missing, check-in opens, all-aboard, disruption). Default for guests who have not chosen. |
+| **Only what affects my trip** | Critical and due-date moments only (payment due, documents missing, check-in opens, all-aboard, disruption). Default for guests who have not chosen; Stanley offers the choice once at Prebook and again at Embark (section 12). |
 | **Offer suggestions** | The above plus well-timed suggestions (book an excursion, a dinner, a plan with the group, a photo recap). |
 | **Guide me through everything** | The above plus a gentle step-by-step on each stage's three Next steps (`stageHome.ts`). |
 
@@ -311,9 +326,9 @@ Notes on the table:
 
 | Kind | Who posts | Who can read | Lives |
 | --- | --- | --- | --- |
-| **Channel** | Staff only | Anyone following (booking holders, plus read-only previews before booking if allowed) | A sailing, a ship, a port, or the brand |
+| **Channel** | Staff only | Anyone following, including guests considering that sailing (staff-written content only) | A sailing, a ship, a port, or the brand |
 | **Sailing room** | Guests with a booking on that sailing | Same | Booking to 30 days after, unless kept |
-| **Interest room** | Guests with a current or past booking (**assumed**) | Same, plus read-only previews to prospective guests (**assumed**) | Persistent |
+| **Interest room** | Guests with a current or past booking | Same, plus **staff-curated previews** (rules, popular questions, pinned posts) to prospective guests; live guest posts are visible only to signed-in guests with a booking | Persistent |
 | **Alumni and next-trip room** | Members who opted in | Members | Until members leave; a retention period applies (8.5) |
 
 ### 8.2 Who may post
@@ -339,14 +354,14 @@ Notes on the table:
 
 Pre-cruise rooms give Manage and Prebook guests people to talk to ("Is the 3pm excursion worth it?"). Aboard, rooms and channels sit beside party and direct chat in the conversation list, never ahead of it. After the cruise, rooms are the place for photos and the next trip.
 
-### 8.5 Retention beyond 30 days (decision to confirm)
+### 8.5 Retention beyond 30 days (decided, with a legal gate)
 
 Today messages are deleted 30 days after the cruise, and the screen says so. The vision needs chats that outlive the cruise:
 
 - **Default stays 30 days** for private chats and sailing rooms.
-- **Keep this chat** is opt-in **per conversation, by every member** (a member who does not agree sees the chat leave their list on schedule; the chat stays for those who kept it, with a system line). A kept chat is held for **12 months** after the cruise (**proposed**), with a visible date.
+- **Keep this chat** is opt-in **per conversation, by every member** (a member who does not agree sees the chat leave their list on schedule; the chat stays for those who kept it, with a system line). A kept chat is held for **12 months** after the cruise (decided, section 12), with a visible date.
 - A chat with a supervised child cannot be kept past 30 days without the guardian's choice, and the guardian's reading rights remain.
-- Interest and alumni rooms have their own retention (proposed: posts kept 12 months, then removed).
+- Interest and alumni rooms have their own retention (decided: posts kept 12 months, then removed).
 - Retention changes touch the retention job, the privacy notice and the "kept for 30 days" screen text. This is done in phase 5 and must be reviewed before it ships.
 
 ## 9. Cross-cutting rules
@@ -498,16 +513,17 @@ Phase 3's typed messages are required by 4, 6 and 8. Phase 5 is required by 6, 7
 | Edit and delete are used to hide abuse | Original kept for staff review of reports; a reported message cannot be edited or deleted by the sender |
 | Scope is large | Each phase is independently useful and ends in a commit; 7 is four slices |
 
-### Open points for the owner
+### Decisions on the earlier open points (my judgement, 2026-11-10)
 
-1. **Who may post in public rooms?** This plan assumes a verified booking (current or past). Confirm, or say whether people who have not booked may post in an "Ask the community" room.
-2. **Read-only previews before booking.** Should Dream and Discover guests be able to read rooms (assumed yes), and should the channel for a sailing be visible before booking?
-3. **Retention for kept chats:** 12 months proposed. Is that right, and does legal need to review?
-4. **Default proactivity mode:** "Only what affects my trip" is proposed for new guests. Should it be "Offer suggestions" instead?
-5. **Typing indicator default:** on for both direct chats and groups (assumed from "a triple dot bubble"). Say if groups should be off by default.
-6. **Read receipts:** unchanged (shown when both have them on). Say if a new default is wanted.
-7. **Moderation staffing:** who moderates sailing and interest rooms, and in which hours?
-8. **Group cards:** should the admin confirm each shared Stanley card (proposed), or should a group be able to allow them without asking each time?
+The owner asked me to decide these. Each is a default the owner can overturn.
+
+1. **Who may post in public rooms: a current or past booking.** A guest without one reads staff-curated previews and asks Stanley, and may suggest a question to staff for the curated "popular questions". Reason: it keeps anonymous visitors out of live conversation and matches the existing "strangers share only a sailing" trust model. No "Ask the community" room for non-booked guests in version one.
+2. **Previews before booking: staff-curated only.** Dream and Discover guests see rules, popular questions and pinned posts of interest rooms, and the staff channel of a sailing they are considering. They do **not** see live guest posts. Reason: real guests' words and first names should not be readable by anonymous strangers, and a curated preview is more useful as sales-neutral reassurance.
+3. **Kept-chat retention: 12 months, opt-in by every member.** Rooms' posts also 12 months. **Legal and privacy review is a gate** for phase 5 (the retention text and the privacy notice change in the same release). The deletion date is always shown.
+4. **Default proactivity: "Only what affects my trip".** It is the quietest choice and matches "no pressure". Stanley offers **once**, at the Prebook stage and again at Embark, a plain choice ("Want Stanley to suggest things too?") with the three options; the answer is saved with Stanley's memory.
+5. **Typing indicator: on in direct chats and groups of 6 or fewer; off in larger groups and in rooms.** The three-dot bubble in a 25-person group is noise. A guest can switch it off or on in settings. **Read receipts: unchanged** (shown only when both have them on); none in rooms or channels.
+6. **Moderation staffing: channels first, rooms behind a rota.** Rooms open for a sailing or interest only when a named moderator rota exists: aboard, the ship's guest-relations or activities team; before and after the cruise, a shore-side community team. No volunteer or guest moderators in version one. Hours: 08:00 to 23:00 in the room's reference time, with **slow mode and the link-and-number hold turned on automatically outside those hours**. Triage: a report is reviewed within **4 hours** in hours and **12 hours** outside them; any report marked as a safety concern goes to the existing staff review path at once. At least two trained moderators per room-day so absence does not close a room. Room member cap 500, then a second room.
+7. **Shared Stanley cards: the admin confirms each card by default.** A group admin can switch on a **standing permission** that covers only **reminders and tallies for polls and plans the group has already created**; new suggestions always need a tap. The permission can be turned off at any time and shows a system line when changed.
 
 ### Measures of success
 
@@ -891,16 +907,21 @@ Same rules as section 11: each phase ends with `npm run test`, `npm run lint`, `
 9 media and polish: any time after 2
 ```
 
-### 14.3 Decisions made and what is still open
+### 14.3 Decisions made and what is left
 
-All eight points raised in the second pass are decided (see the table in section 2): catch-up yes, card feed on the server, trip huddle yes (phase 15), introductions yes, organiser reminders yes, money out of chat by default, rollout thresholds chosen by me (phase 14), no teen Stanley.
+Every question raised so far is decided: the owner's answers in section 2 (rounds one to three) and my judgement on the rest, recorded in section 12. **Nothing is open for the owner to decide before phase 1.** What remains are **sign-off gates**, not questions:
 
-Still open, for the owner:
+| Gate | Needed before | Who signs off (roles, to be named by the owner) |
+| --- | --- | --- |
+| Retention and privacy notice for kept chats (12 months) | Phase 5 ships | Product owner, privacy or data protection lead, legal |
+| Trip huddle: invite-link design, age confirmation, what an invitee sees before joining, abuse cases (spam, harassment, grooming) | Phase 15 ships | Product owner, privacy lead, security, legal, and the safeguarding lead for the moderation and child-safety rules |
+| Moderator rota, hours and training | Phase 8 opens a room to guests | Guest-relations or community-team lead and the product owner |
+| Chat-specific model use: provider retention and training terms (Stanley AI-SEC-07) | Phase 6 and phase 10 ship | Privacy lead and the product owner |
+| Rollout thresholds and the kill-switch drill | Phase 14 cohort stage | Product owner and engineering lead |
 
-1. **Money in chat.** The decision is "out by default; guests can discuss it themselves". Confirm there is **no switch at all in version one** (proposed), or whether a group admin should later be able to enable a Stanley cost split.
-2. **Huddle retention** (60 days of silence) and the **16-or-18 age line** for huddle members (proposed 18, adults only).
-3. **Huddle and the privacy review.** Who signs it off, and does legal need to see the invite-link design?
-4. Everything still open in section 12 (public room posting rules, previews before booking, kept-chat retention, default proactivity level, typing default for groups, read receipts, moderation staffing, shared Stanley card confirmation).
+**Huddle details settled by my judgement:** adults only (**18+**, not 16); **60 days of silence** before deletion with a warning at 50 days; invitees must sign in and confirm their age; the privacy review is a **hard gate**, and the huddle ships last of the planned phases for that reason.
+
+Two answers worth restating because they shape many phases: **no cost split, no money in shared chat** (confirmed), and **no Stanley for children or teens**.
 
 ## 15. Sources and method
 
