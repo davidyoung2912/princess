@@ -55,7 +55,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
             ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway,
             Permanent: ChatConversationRules.IsPermanent(m.Kind), Voice: m.Persona, Subtitle: m.Subtitle,
-            People: ChatConversationRules.IsPermanent(m.Kind) ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatPersonDto(p.PublicId, ShortName(p)))],
+            People: ChatConversationRules.IsPermanent(m.Kind) ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatMemberDto(p.PublicId, ShortName(p)))],
             Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null);
     }
 
