@@ -1135,6 +1135,76 @@ public class AboardApiTests : JourneyWorld
     }
 
     [Fact]
+    public async Task AMeetingPointIsBuiltFromANamedPlaceOnTheShipAndCarriesNothingElse()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        var place = Princess.Api.Domain.ShipReference.Get().Places[0];
+        Is(HttpStatusCode.BadRequest, "place", await ChatPost(Msgs(direct), daniel, new { kind = "place", placeId = "the-secret-bar" }));
+        Is(HttpStatusCode.BadRequest, "kind", await ChatPost(Msgs(direct), daniel, new { kind = "poll", text = "x" }));
+        Is(HttpStatusCode.BadRequest, "shareRef", await ChatPost(Msgs(direct), daniel, new { kind = "card", shareRef = "excursion:" + Guid.NewGuid() }));   // not on the caller's booking
+        var sent = await ChatPost(Msgs(direct), daniel, new { kind = "place", placeId = place.Id, note = "by the fountain", text = "ignored: the sender never supplies the words" });
+        Assert.Equal(HttpStatusCode.OK, sent.Status);
+        Assert.Equal("place", sent.Json.GetProperty("kind").GetString());
+        var card = sent.Json.GetProperty("card");
+        Assert.Equal(place.Name, card.GetProperty("title").GetString());
+        Assert.Equal("by the fountain", card.GetProperty("note").GetString());
+        Assert.True(card.GetProperty("expiresAt").GetInt64() > 0);
+        foreach (var banned in new[] { "price", "cabin", "folio", "bookingNumber", "totalCents" }) Assert.False(card.TryGetProperty(banned, out _), banned);
+        Assert.Equal($"Meet me at {place.Name}", sent.Json.GetProperty("text").GetString());   // the list line and the phone alert read this, never the payload
+        var thread = (await ChatGet(Msgs(direct), await SignIn(Priya))).Json.GetProperty("messages").EnumerateArray().Last();
+        Assert.Equal("place", thread.GetProperty("kind").GetString());
+        // A note goes through the word filter and the under-18 rule, like any message.
+        Is(HttpStatusCode.BadRequest, "blocked", await ChatPost(Msgs(direct), daniel, new { kind = "place", placeId = place.Id, note = "you fucking idiot" }));
+        // A card is retracted, not reworded.
+        var edit = await Call(HttpMethod.Patch, $"{Chat}/conversations/{direct.PublicId}/messages/{sent.Json.GetProperty("id").GetString()}", daniel, new { text = "changed" });
+        Is(HttpStatusCode.BadRequest, "notMessage", edit);
+    }
+
+    [Fact]
+    public async Task OnlyThreeMessagesCanBePinnedAndOnlyWhereThePersonMayPin()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var daniel = await DanielToken();
+        var ids = new List<string>();
+        for (var i = 0; i < 4; i++) ids.Add((await Say(direct, Priya, $"Plan {i}", i)).ToString());
+        for (var i = 0; i < 3; i++) Assert.Equal(HttpStatusCode.OK, (await ChatPut($"conversations/{direct.PublicId}/pins/{ids[i]}", daniel, null)).Status);
+        Is(HttpStatusCode.Conflict, "pinsFull", await ChatPut($"conversations/{direct.PublicId}/pins/{ids[3]}", daniel, null));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPut($"conversations/{direct.PublicId}/pins/{ids[0]}", daniel, null)).Status);   // pinning it again changes nothing
+        var bar = (await ChatGet(Msgs(direct), daniel)).Json.GetProperty("pins").EnumerateArray().ToList();
+        Assert.Equal(3, bar.Count);
+        var gone = await Call(HttpMethod.Delete, $"{Chat}/conversations/{direct.PublicId}/pins/{ids[1]}", daniel, null);
+        Assert.Equal(2, gone.Json.GetArrayLength());
+        Assert.Equal(HttpStatusCode.OK, (await ChatPut($"conversations/{direct.PublicId}/pins/{ids[3]}", daniel, null)).Status);
+        // In a made group only the creator pins.
+        var group = F.Chat.MadeGroup(Priya.Id, Daniel.Id, Paul.Id);
+        var said = await Say(group, Priya, "Dinner at 7", 0);
+        Is(HttpStatusCode.Forbidden, "pin", await ChatPut($"conversations/{group.PublicId}/pins/{said}", daniel, null));
+        Assert.Equal(HttpStatusCode.OK, (await ChatPut($"conversations/{group.PublicId}/pins/{said}", await SignIn(Priya), null)).Status);
+        var stanley = (await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("kind").GetString() == "stanley").GetProperty("id").GetString();
+        Is(HttpStatusCode.Forbidden, "stanley", await ChatPut($"conversations/{stanley}/pins/{Guid.NewGuid()}", daniel, null));
+    }
+
+    [Fact]
+    public async Task AMentionNamesAnActiveMemberOnlyAndTheMentionedPersonSeesIt()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id, Paul.Id);
+        var daniel = await DanielToken();
+        var priya = await SignIn(Priya);
+        var people = (await ChatGet(Msgs(group), daniel)).Json.GetProperty("conversation").GetProperty("people").EnumerateArray().ToList();
+        var priyaId = people.First(p => p.GetProperty("name").GetString() == "Priya U.").GetProperty("id").GetString();
+        var sent = await ChatPost(Msgs(group), daniel, new { text = "@Priya U. can you book it?", mentions = new[] { priyaId, Guid.NewGuid().ToString() } });   // a stranger is dropped, not an error
+        Assert.Equal(HttpStatusCode.OK, sent.Status);
+        var seen = (await ChatGet(Msgs(group), priya)).Json.GetProperty("messages").EnumerateArray().Last();
+        Assert.True(seen.GetProperty("mentionsYou").GetBoolean());
+        Assert.Single(seen.GetProperty("mentions").EnumerateArray());
+        var unmentioned = (await ChatGet(Msgs(group), await SignIn(Paul))).Json.GetProperty("messages").EnumerateArray().Last();
+        Assert.False(unmentioned.TryGetProperty("mentionsYou", out _));
+        Assert.True((await ChatPut($"conversations/{group.PublicId}/mentions-only", priya, new { on = true })).Json.GetBoolean());
+        Assert.True((await ChatGet("conversations", priya)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == group.PublicId.ToString()).GetProperty("mentionsOnly").GetBoolean());
+    }
+
+    [Fact]
     public async Task TooManyMessagesInAMinuteAreRefusedAndANewMinuteStartsFresh()
     {
         var group = F.Chat.Group(Daniel.Id, Priya.Id);

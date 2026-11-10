@@ -3455,3 +3455,37 @@ GO
 IF COL_LENGTH(N'dbo.UserPrefs', N'ChatTyping') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatTyping BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatTyping DEFAULT 1;
 GO
+-- Chat phase 3 (docs/chat-features-research.md, section 11): typed messages and cards, pins and mentions.
+-- Kind is text (the default), card or place. Payload is the server-built JSON of a card or place: names, times and places only, never a price, folio, cabin or booking number.
+IF COL_LENGTH(N'dbo.ChatMessages', N'Kind') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD Kind NVARCHAR(12) NOT NULL CONSTRAINT DF_ChatMessages_Kind DEFAULT N'text', Payload NVARCHAR(MAX) NULL;
+GO
+-- A mention is stored as the member's id. It breaks through a muted conversation (never do-not-disturb); MentionsOnly alerts a member only for a mention.
+IF OBJECT_ID(N'dbo.ChatMentions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatMentions (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  CONSTRAINT PK_ChatMentions PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT FK_ChatMentions_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatMentions_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatMentions_UserId ON dbo.ChatMentions (UserId);
+END
+GO
+-- Up to three pinned messages per conversation (enforced by the service); a pin goes with its message.
+IF OBJECT_ID(N'dbo.ChatPins', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatPins (
+  GroupId BIGINT NOT NULL, MessageId BIGINT NOT NULL, PinnedBy BIGINT NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatPins_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatPins PRIMARY KEY (GroupId, MessageId),
+  -- The pin goes with its message (cascade); the group link has no cascade of its own, as it would reach this table by two paths.
+  CONSTRAINT FK_ChatPins_ChatGroups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id),
+  CONSTRAINT FK_ChatPins_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatPins_Users FOREIGN KEY (PinnedBy) REFERENCES dbo.Users (Id)
+);
+END
+GO
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'MentionsOnly') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD MentionsOnly BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_MentionsOnly DEFAULT 0;
+GO

@@ -156,6 +156,11 @@ public sealed class ChatMessageRow
     public DateTime? EditedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? OriginalText { get; set; }
+    /// <summary>Phase 3: <c>text</c> (the default), <c>card</c> or <c>place</c>, and the server-built JSON of a card or place (<see cref="Domain.ChatCard"/>).</summary>
+    public string Kind { get; set; } = "text";
+    public string? Payload { get; set; }
+    /// <summary>The members it mentions (user ids), filled by <see cref="IChatStore.AddMessageAsync"/> and <see cref="IChatStore.ListMessagesAsync"/>.</summary>
+    public List<long> Mentions { get; set; } = [];
     public bool FromStanley => FromUserId == 0;
 }
 
@@ -178,7 +183,11 @@ public class ChatMemberRow
     public DateTime? ArchivedAt { get; set; }
     /// <summary>The member tells the other connected members when they leave or return to the ship.</summary>
     public bool NotifyAway { get; set; }
+    /// <summary>Phase 3: the member is alerted only for a message that mentions them (the conversation still shows and counts everything).</summary>
+    public bool MentionsOnly { get; set; }
     public long? LastReadMessageId { get; set; }
+    /// <summary>The guest who made a group (null for the booking's group, a direct chat and Stanley's): the one who may pin in it.</summary>
+    public long? CreatedByUserId { get; set; }
     /// <summary>A direct chat whose connection has ended: readable, but sending is closed.</summary>
     public bool DirectEnded { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -210,6 +219,8 @@ public sealed class ChatRecipientRow
     public bool ShowPreview { get; set; }
     /// <summary>The recipient has the typing indicator on (it is on unless they turned it off); one who has it off is never sent "is typing".</summary>
     public bool Typing { get; set; } = true;
+    /// <summary>Phase 3: the recipient chose to be alerted only when mentioned.</summary>
+    public bool MentionsOnly { get; set; }
 }
 
 /// <summary>One conversation's presence change for a member: what the chat last knew (<c>Previous</c>) and whether the member wants the chat told.</summary>
@@ -227,6 +238,19 @@ public sealed class ChatAwayRecipientRow
     public Guid GroupPublicId { get; set; }
     public long UserId { get; set; }
     public bool Muted { get; set; }
+}
+
+/// <summary>A pinned message as the pin bar shows it: the message, who said it, its text (or a card's title) and when it was sent.</summary>
+public sealed class ChatPinRow
+{
+    public long Id { get; set; }
+    public Guid PublicId { get; set; }
+    public long FromUserId { get; set; }
+    public string Text { get; set; } = "";
+    public string Kind { get; set; } = "text";
+    public string? Payload { get; set; }
+    public bool HasPhoto { get; set; }
+    public DateTime At { get; set; }
 }
 
 /// <summary>One person's reaction to one message.</summary>
@@ -354,7 +378,8 @@ public interface IChatStore
     Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct);
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
     /// <param name="replyToId">The stored id of the message this one answers (already checked to be in the same conversation and readable by the sender), or null.</param>
-    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null);
+    /// <param name="kind">Phase 3: <c>text</c>, <c>card</c> or <c>place</c>; <paramref name="payload"/> is the card's JSON. <paramref name="mentions"/> are members (user ids) the message mentions, stored with it.</param>
+    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null);
     /// <summary>Records that a device of the person has one message (by its public id). False when it was already recorded, so only the first is told to the sender.</summary>
     Task<bool> AddDeliveryAsync(Guid messagePublicId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The person's reaction to the message, or null when they have none.</summary>
@@ -389,6 +414,15 @@ public interface IChatStore
     Task<int> CountSentInAsync(long groupId, long userId, DateTime since, CancellationToken ct);
     /// <summary>The newest message in the conversation a person said that the reader may read (their window, nobody they blocked), or null: what a header Report of a person files.</summary>
     Task<ChatMessageRow?> FindLatestFromAsync(long groupId, long readerId, long fromUserId, CancellationToken ct);
+    /// <summary>The conversation's pinned messages the person may read (their window, not from someone they blocked, not deleted), oldest pin first.</summary>
+    Task<List<ChatPinRow>> ListPinsAsync(long groupId, long userId, CancellationToken ct);
+    /// <summary>Pins the message unless the conversation already has <paramref name="max"/> pins. Returns false when it is full; pinning a message that is already pinned changes nothing and returns true.</summary>
+    Task<bool> PinAsync(long groupId, long messageId, long pinnedBy, DateTime at, int max, CancellationToken ct);
+    Task UnpinAsync(long groupId, long messageId, CancellationToken ct);
+    /// <summary>The message ids of the conversation that are pinned, so a thread page can mark them.</summary>
+    Task<HashSet<long>> ListPinnedIdsAsync(long groupId, CancellationToken ct);
+    /// <summary>Switches "alert me only when I am mentioned" on or off for the member.</summary>
+    Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the member.</summary>
     Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct);
     /// <summary>

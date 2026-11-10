@@ -215,7 +215,11 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),
     thread: (id, before) => get(`/me/chat/conversations/${seg(id)}/messages${before ? `?before=${seg(before)}` : ''}`),
-    send: (id, text, clientId, urgency, replyTo) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}), ...(replyTo ? { replyTo } : {}) }),
+    send: (id, text, clientId, urgency, replyTo, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}), ...(replyTo ? { replyTo } : {}), ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
+    sendTyped: (id, input, clientId, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { ...input, clientId, ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
+    shareable: () => get('/me/chat/shareable'),
+    pin: (id, messageId, on) => send(on ? 'put' : 'delete', `/me/chat/conversations/${seg(id)}/pins/${seg(messageId)}`),
+    mentionsOnly: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mentions-only`, { on }),
     react: (id, messageId, emoji) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/react`, { emoji }),
     setReaction: (id, messageId, emoji) => send('put', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/reaction`, { emoji }),
     delivered: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/delivered`) },

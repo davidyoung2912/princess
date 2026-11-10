@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatMessage, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatPin, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -15,6 +15,7 @@ import {
 } from '../../domain/chatThread'
 import { chipLabel, myReaction, nextReaction, REACTIONS, readReactionJob, reactionJob, setMyReaction, withReactions, type ReactionJob } from '../../domain/chatReactions'
 import { readDraft, saveDraft } from '../../domain/chatDrafts'
+import { insertMention, isTyped, mentionedIds, mentionQuery, pinOffer, type MentionPerson } from '../../domain/chatCards'
 import { announceTyping, canEdit, changeProblem, isMuted, isSameConversation, MUTE_LENGTHS, muteFor, shouldSendTyping, splitArchived, TYPING_EXPIRE_MS, typingNames, windowLeft, type ChangeProblem, type MuteLength } from '../../domain/chatControl'
 import { REPORT_REASONS, type ChatReportReason } from '../../domain/services'
 import { useLongPress } from '../../hooks/useLongPress'
@@ -48,6 +49,7 @@ import { ActionError } from '../account/parts'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
+import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 
 /**
  * Chats (docs/chat-plan.md, 4.8): the conversation list is the home of Chat, and one tap opens a conversation. The open conversation is in the address (`?c=`),
@@ -216,6 +218,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [firstUnread, setFirstUnread] = useState<string | null>(null)
   const [jumped, setJumped] = useState(false)
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
+  const [pins, setPins] = useState<ChatPin[]>(cached?.pins ?? [])
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
   // Who is typing now (never stored; each name drops off six seconds after the last nudge) and whether this guest shows and sees it.
   const [typers, setTypers] = useState<string[]>([])
@@ -237,6 +240,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       setConversation(th.conversation)
       setAshore(ashoreNames(th.ashore))
       setMayUrgent(th.mayUrgent === true)
+      setPins(th.pins ?? [])
       latestAnswer.current = th
       setFetchedAt(Date.now())
       // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
@@ -429,6 +433,25 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const runEdit = useLatest((messageId: string, body: string) => edit(messageId, body))
   const runRemove = useLatest((messageId: string) => remove(messageId))
 
+  // Phase 3: pins (up to three). The bar comes back from the server; the message is marked at once.
+  const pin = useAction(async (messageId: string, on: boolean) => {
+    const bar = await api.chatConversations.pin(id, messageId, on)
+    setPins(bar)
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? { ...x, pinned: on } : x)))
+    setAnnounce(t(on ? 'pin.announce.on' : 'pin.announce.off'))
+    void load()
+  })
+  const runPin = useLatest((messageId: string, on: boolean) => void pin.run(messageId, on))
+  const goToPin = useLatest((messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`)
+    if (!el) { runJump(messageId); return }   // on an older page: the thread reads back to it
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    el.focus({ preventScroll: true })
+  })
+  const mentionsOnly = useAction(async (on: boolean) => {
+    await optimistic(() => setConversation((c) => (c ? { ...c, mentionsOnly: on || undefined } : c)), () => api.chatConversations.mentionsOnly(id, on), () => setConversation((c) => (c ? { ...c, mentionsOnly: on ? undefined : true } : c)))
+  })
+
   const notifyAway = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, notifyAway: on } : c)), () => api.chatConversations.notifyAway(id, on), () => setConversation((c) => (c ? { ...c, notifyAway: !on } : c)))
   })
@@ -438,12 +461,17 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [text, setText] = useState(() => readDraft(chatStorage(), owner, id))
   useEffect(() => { saveDraft(chatStorage(), owner, id, text) }, [text, owner, id])
   const [problem, setProblem] = useState<SendProblem | null>(null)
+  // Phase 3: the `@word` being typed offers the people in this conversation; Escape puts the offer away until the next `@`.
+  const [caret, setCaret] = useState(0)
+  const [mentionOff, setMentionOff] = useState(false)
+  const people: MentionPerson[] = conversation?.people ?? []
+  const typedMention = mentionOff || people.length === 0 ? null : mentionQuery(text, caret)
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
   const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => {
     const job = readReactionJob(p)
     if (job) return api.chatConversations.setReaction(job.conversation, job.messageId, job.emoji)
-    return p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined) : Promise.resolve()
+    return p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined, p.mentions ? p.mentions.split(',') : undefined) : Promise.resolve()
   }, () => void load())
   // Reactions held for signal are laid over the thread, so the chip stays as the guest left it until the server has it.
   const heldReactions = outbox.items.map((x) => readReactionJob(x.payload)).filter((j): j is ReactionJob => j !== null && j.conversation === id)
@@ -472,16 +500,17 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     const clientId = newClientId()
     const sendLevel = mayUrgent || level !== 'urgent' ? level : 'normal'
     const answering = replyTo?.id ?? ''
+    const named = quick === undefined ? mentionedIds(body, people) : []
     setReplyTo(null)
     if (quick === undefined) { setLevel('normal'); setText('') }   // each message chooses again: a habit of urgent would stop meaning anything; typing is never blocked
     setSending((s) => [...s, { id: clientId, text: body, state: 'sending' }])
     try {
-      const sent = await sendWithin(api.chatConversations.send(id, body, clientId, sendLevel, answering || undefined))
+      const sent = await sendWithin(api.chatConversations.send(id, body, clientId, sendLevel, answering || undefined, named.length > 0 ? named : undefined))
       setMessages((cur) => mergeMessages(cur, [sent]))
       wasNear.current = true
     } catch (e) {
       if (worthRetrying(e)) {
-        if (!outbox.hold({ conversation: id, text: body, clientId, urgency: sendLevel, replyTo: answering })) { if (quick === undefined) { setText((cur) => cur || body); setLevel(sendLevel) } setFull(true) }
+        if (!outbox.hold({ conversation: id, text: body, clientId, urgency: sendLevel, replyTo: answering, mentions: named.join(',') })) { if (quick === undefined) { setText((cur) => cur || body); setLevel(sendLevel) } setFull(true) }
       } else {
         // The text stays in the box so the guest does not lose it (a quick reply was never in the box). A reply to a message that is gone is sent as a plain message next time.
         const why = isApiError(e) ? sendProblem(e.code, e.message) : 'other'
@@ -540,6 +569,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ActionError error={older.error} />
       {dividerId && !jumped && <Button variant="secondary" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
+      {!permanent && <PinBar pins={pins} canPin={conversation?.canPin === true} busy={pin.busy} onGo={goToPin} onUnpin={(messageId) => void pin.run(messageId, false)} />}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
           ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
@@ -547,7 +577,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             <Fragment key={m.id}>
               {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
               <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
-                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} />
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} onJump={runJump} onEdit={runEdit} onDelete={runRemove} canPin={conversation?.canPin === true} pinned={pins.length} onPin={runPin} />
             </Fragment>
           ))}
         {bubbles.map((b) => (
@@ -562,6 +592,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
+        <>
         <form ref={form} className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {replyTo?.id && (
             <div className="chat-replying" role="group" aria-label={t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}>
@@ -581,12 +612,25 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
+              setCaret(e.target.selectionStart ?? e.target.value.length)
+              setMentionOff(false)
               if (problem) setProblem(null)
               // Tell the others, at most every three seconds, only while there is something written and the guest has the indicator on.
               const tick = Date.now()
               if (typingOn && e.target.value.trim() && shouldSendTyping(typingSentAt.current, tick)) { typingSentAt.current = tick; api.chatConversations.typing(id).catch(() => { typingSentAt.current = null }) }
             }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } }} />
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
+            onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
+          {typedMention && (
+            <MentionList people={people} query={typedMention.query} onPick={(person) => {
+              const next = insertMention(text, caret, typedMention.start, person)
+              setText(next.text)
+              setCaret(next.caret)
+              const box = form.current?.querySelector('textarea')
+              box?.focus()
+              requestAnimationFrame(() => box?.setSelectionRange(next.caret, next.caret))
+            }} />
+          )}
           {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : problem === 'rate' ? 'conv.rate' : 'conv.failed')}</p>}
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
@@ -595,12 +639,16 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
             {QUICK_REPLY_KEYS.map((k) => <button key={k} type="button" className="chat-quick__btn" onClick={() => void submit(t(`conv.quick.${k}`))}>{t(`conv.quick.${k}`)}</button>)}
           </div>
         </form>
+        <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />
+        </>
       ))}
       {conversation && permanent && <StanleyNotices />}
-      {conversation && !permanent && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      {conversation && !permanent && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
       <ActionError error={archive.error} />
       <ActionError error={notifyAway.error} />
+      {pin.error && <p role="alert" className="field__error">{t(pin.error.message === 'pinsFull' ? 'pin.full' : pin.error.code === 'forbidden' ? 'pin.denied' : 'pin.failed')}</p>}
+      <ActionError error={mentionsOnly.error} />
       <ActionError error={ack.error} />
       <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
@@ -739,6 +787,10 @@ interface MessageRowProps {
   /** Phase 2: fix or retract your own message inside the 15-minute window. They reject with the server's reason, which the row shows. */
   onEdit?: (messageId: string, text: string) => Promise<void>
   onDelete?: (messageId: string) => Promise<void>
+  /** Phase 3: Pin or Unpin is offered when the server allows it here (`canPin`) and, to pin, fewer than three are pinned. */
+  canPin?: boolean
+  pinned?: number
+  onPin?: (messageId: string, on: boolean) => void
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -763,7 +815,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply, onJump, onEdit, onDelete, canPin, pinned, onPin }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -782,13 +834,16 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     // Deleted for everyone: the fact and who and when, nothing of what it said.
     return <li id={`msg-${m.id}`} className="chat-msg chat-msg--deleted"><p className="muted"><strong>{m.from === mine ? t('chat.you') : (m.fromName ?? '')}</strong> · {t('conv.deleted')} · {shipTime(m.at)}</p></li>
   }
-  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} />
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} onJump={onJump} onEdit={onEdit} onDelete={onDelete} canPin={canPin} pinned={pinned} onPin={onPin} />
 })
 
 /** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
-function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete }: Omit<MessageRowProps, 'onChanged'>) {
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply, onJump, onEdit, onDelete, canPin = false, pinned = 0, onPin }: Omit<MessageRowProps, 'onChanged'>) {
   const own = m.from === mine
-  const card = m.text ? parsePlanCard(m.text) : null
+  // A typed card or place is drawn from the server's own fields; an older plan card travels as text with a marker.
+  const typed = isTyped(m) && m.card ? m.card : null
+  const card = !typed && m.text ? parsePlanCard(m.text) : null
+  const pinning = pinOffer(m, canPin, pinned)
   const mlevel = urgencyOf(m)
   const [picking, setPicking] = useState(false)
   const reactButton = useRef<HTMLButtonElement>(null)
@@ -799,11 +854,11 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
   return (
     // A long press is a shortcut for touch; the React and Reply buttons below do the same for keyboard and screen reader.
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-    <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
+    <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', m.mentionsYou && 'chat-msg--mention', m.pinned && 'chat-msg--pinned', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
       {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} onJump={onJump} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
-      <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
-      {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
+      <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.edited && <> <span className="muted">· {t('conv.edited')}</span></>}{m.pinned && <> <span className="muted">· {t('pin.pinned')}</span></>}{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
+      {typed ? <CardMessage card={typed} /> : m.text && (card ? <PlanCardView card={card} /> : <MessageWords text={m.text} mentionsYou={m.mentionsYou} />)}
       {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
       {m.reactions && m.reactions.length > 0 && (
@@ -815,6 +870,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
         <div className="chat-msg__actions">
           <button ref={reactButton} type="button" className="chat-act" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>{t('conv.react')}</button>
           <button type="button" className="chat-act" onClick={() => onReply?.(m)}>{t('conv.reply')}</button>
+          {pinning && onPin && <button type="button" className="chat-act" onClick={() => onPin(m.id, pinning === 'pin')}>{t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')}</button>}
         </div>
       )}
       {picking && onReact && (
@@ -1027,8 +1083,8 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
 }
 
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
-function Options({ conversation, awayBusy, onAway, onSent, blockedVersion, reload }: {
-  conversation: ChatConversation; awayBusy: boolean; onAway: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
+function Options({ conversation, awayBusy, onAway, mentionsBusy, onMentionsOnly, onSent, blockedVersion, reload }: {
+  conversation: ChatConversation; awayBusy: boolean; onAway: (on: boolean) => void; mentionsBusy: boolean; onMentionsOnly: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
 }) {
   const receipts = useMine(() => api.messages.receipts())
   const [shown, setShown] = useState<boolean | null>(null)
@@ -1045,6 +1101,14 @@ function Options({ conversation, awayBusy, onAway, onSent, blockedVersion, reloa
         <Chip pressed={conversation.notifyAway === true} onToggle={() => { if (!awayBusy) onAway(conversation.notifyAway !== true) }}>{t('conv.away')}</Chip>
       </div>
       <p className="muted">{t('conv.awayBody')}</p>
+      {conversation.kind !== 'direct' && (
+        <>
+          <div className="chip-row">
+            <Chip pressed={conversation.mentionsOnly === true} onToggle={() => { if (!mentionsBusy) onMentionsOnly(conversation.mentionsOnly !== true) }}>{t('mention.only')}</Chip>
+          </div>
+          <p className="muted">{t('mention.only.hint')}</p>
+        </>
+      )}
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

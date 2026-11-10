@@ -22,6 +22,8 @@ describe('the 15-minute window', () => {
     expect(canEdit({})).toBe(true)
     expect(canEdit({ hasPhoto: true })).toBe(false)
     expect(canEdit({ urgency: 'urgent' })).toBe(false)
+    expect(canEdit({ kind: 'card' })).toBe(false)
+    expect(canEdit({ kind: 'place' })).toBe(false)
     expect(canEdit({ urgency: 'important' })).toBe(false)
   })
   it('names why a change failed', () => {

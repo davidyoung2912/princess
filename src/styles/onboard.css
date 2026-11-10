@@ -238,3 +238,22 @@ button.chat-quote { cursor: pointer; }
 .dnd__choices { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .chat-day { list-style: none; margin-block: var(--space-2) 0; }
 .chat-day h3 { margin: 0; font-size: 1rem; }
+
+/* Phase 3: typed messages. A card is a bordered block with its type named in words (never colour alone); a spent meeting point is dashed and quieter; a pin is marked in words and by a heavier edge; a mention is bold type. */
+.chat-card { margin: var(--space-2) 0; padding: var(--space-3); border: var(--border-width) solid var(--border); border-inline-start: 4px solid var(--primary); border-radius: var(--radius-card); background: var(--sky-tint); overflow-wrap: anywhere; }
+.chat-card p { margin: 0 0 var(--space-1); }
+.chat-card__type { font-size: var(--fs-caption); }
+.chat-card__title { font-weight: 700; }
+.chat-card--spent { border-inline-start-style: dashed; background: var(--bg); }
+.chat-mention { font-weight: 700; }
+.chat-msg--mention { border-inline-end: 4px solid var(--primary); }
+.chat-msg--pinned { border-block-start: 3px double var(--primary); }
+.chat-pins { margin: var(--space-3) 0; padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--sky-tint); }
+.chat-pins__title { margin: 0 0 var(--space-1); font-size: var(--fs-caption); }
+.chat-pins ul, .chat-mentions ul, .chat-share__list { list-style: none; margin: 0; padding: 0; }
+.chat-pin { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.chat-pin__go { flex: 1; min-height: var(--target-min); padding: 0 var(--space-2); text-align: start; font: inherit; color: var(--text); border: 0; background: none; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-mentions { margin-top: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.chat-mentions ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chat-share { margin-top: var(--space-3); }
+.chat-share__list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-block-end: 1px solid var(--border); }

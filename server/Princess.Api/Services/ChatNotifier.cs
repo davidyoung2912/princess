@@ -45,9 +45,9 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
     /// A new message in a conversation (docs/chat-plan.md, 4.4). The text is on the lock screen only when the recipient opted in (<paramref name="showPreview"/>).
     /// A muted conversation never buzzes the phone, unless the message is urgent (<see cref="ChatUrgencyRules"/>); an open app is still nudged so its unread count stays right. Notices of one conversation share a tag, so a phone shows one line for a busy group.
     /// </summary>
-    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct, string urgency = ChatUrgencyRules.Normal, long senderId = 0)
+    public Task MessageAsync(long toUserId, Guid conversationId, Guid messageId, string from, string? text, bool showPreview, bool muted, CancellationToken ct, string urgency = ChatUrgencyRules.Normal, long senderId = 0, bool mentioned = false)
     {
-        var words = ChatConversationRules.MessageNotice(from, text, showPreview, urgency);
+        var words = ChatConversationRules.MessageNotice(from, text, showPreview, urgency, mentioned);
         var key = ChatConversationRules.NoticeKey(conversationId, messageId);
         // Urgent breaks through do-not-disturb, calm mode and a muted conversation; important and normal do not.
         var breaks = ChatUrgencyRules.BreaksThrough(urgency);

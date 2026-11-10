@@ -119,7 +119,38 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatQuoteDto? ReplyTo = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Delivered = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Edited = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Deleted = false);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Deleted = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Kind = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatCardDto? Card = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Pinned = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MentionsYou = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Guid>? Mentions = null);
+
+/// <summary>
+/// A card or place as a reader sees it (phase 3): a title, and where it applies. Names, times and places only. <c>Type</c> is <c>excursion</c>, <c>dining</c>, <c>booking</c>, <c>portDay</c> or <c>place</c>;
+/// <c>Path</c> is the screen it opens; <c>ExpiresAt</c> (ship milliseconds) and <c>Expired</c> are set on a place, and the app shows "no longer available" for anything it cannot open.
+/// </summary>
+public sealed record ChatCardDto(string Type, string Title,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Day = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Time = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Place = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Path = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? ExpiresAt = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Expired = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
+
+/// <summary>One pinned message in the pin bar: its id, who said it (null for the reader's own), the words (a card's title) and when.</summary>
+public sealed record ChatPinDto(Guid MessageId, string Text, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? FromName, long At, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Kind = null);
+
+/// <summary>Something the guest can share from the app: <c>Ref</c> is sent back to share it (the server rebuilds the card from its own data).</summary>
+public sealed record ChatShareableDto(string Ref, string Type, string Title, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Day = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Time = null);
+
+/// <summary>A named place on the ship a guest can drop as a meeting point ("Meet me here").</summary>
+public sealed record ChatPlaceDto(string Id, string Name, int Deck, string Section);
+
+/// <summary>What the guest can share (<c>Items</c>, from their own booking) and where they can ask to meet (<c>Places</c>, from the ship profile).</summary>
+public sealed record ChatShareableListDto(List<ChatShareableDto> Items, List<ChatPlaceDto> Places);
 
 /// <summary>One chip under a message: the emoji, how many chose it, whether the reader did, and the others' names (first name and last initial) for a screen reader.</summary>
 public sealed record ChatReactionDto(string Emoji, int Count, bool Mine, List<string> Names);
@@ -144,7 +175,14 @@ public sealed record ChatNoticeReplyDto(string Text, long? RemindAt = null);
 public sealed record ChatPhotoDto(string Photo);
 
 /// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message. <c>Urgency</c> is normal (default), important or urgent; urgent is for staff and guardians only. <c>ReplyTo</c> is the message being answered.</summary>
-public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null);
+/// <summary>
+/// A message. <c>Kind</c> (phase 3) is <c>text</c> (the default), <c>card</c> (<c>ShareRef</c> from the shareable list) or <c>place</c> (<c>PlaceId</c> of a named place, an optional <c>Note</c>); a card or place carries no text from the sender.
+/// <c>Mentions</c> are the public ids of members the message names (at most 10); anyone who is not an active member is left out.
+/// </summary>
+public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null, string? Kind = null, string? ShareRef = null, string? PlaceId = null, string? Note = null, List<Guid>? Mentions = null);
+
+/// <summary>Alert me only when I am mentioned in this conversation.</summary>
+public sealed record ChatMentionsOnlyRequest(bool On);
 
 public sealed record ChatReceiptsRequest(bool On);
 

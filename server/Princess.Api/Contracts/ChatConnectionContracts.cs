@@ -48,7 +48,9 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool NotifyAway = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Permanent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Voice = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatMemberDto>? People = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Archived = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? MutedUntil = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? MutedUntil = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MentionsOnly = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool CanPin = false);
 
 /// <summary>Someone else in a conversation, for its header menu (block, report): their public id and first name with last initial. Phase 2.</summary>
 public sealed record ChatMemberDto(Guid Id, string Name);
@@ -56,7 +58,7 @@ public sealed record ChatMemberDto(Guid Id, string Name);
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
 /// <summary><c>MayUrgent</c> is whether the caller may send an urgent message here (staff, or a guardian of a supervised child in it); the app shows the control only then.</summary>
-public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? FirstUnread = null);
+public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? FirstUnread = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatPinDto>? Pins = null);
 
 /// <summary><c>For</c>: <c>hour</c>, <c>day</c> or <c>week</c> to mute for that long (it ends by itself); left out, a mute lasts until turned off.</summary>
 public sealed record ChatMuteRequest(bool On, string? For = null);

@@ -116,6 +116,10 @@ export interface ChatConversation {
   archived?: boolean
   /** A timed mute: when it ends (milliseconds). Absent when the mute has no end, or when not muted. */
   mutedUntil?: number
+  /** You may pin and unpin here (either person in a direct chat, anyone in the booking's group, the creator of a made group). Absent when not. */
+  canPin?: boolean
+  /** You are alerted only when someone mentions you here (it still shows and counts everything). Absent when off. */
+  mentionsOnly?: boolean
   /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
   voice?: StanleyVoice
   subtitle?: string
@@ -162,7 +166,32 @@ export interface ChatMessage {
   edited?: boolean
   /** The sender deleted it for everyone: `text` is empty and there is no photo, quote or chips (phase 2). */
   deleted?: boolean
+  /** Phase 3: `card` (something shared from the app) or `place` (a meeting point). Absent for text and photos. `text` then holds the words the list and alerts use; the screen draws `card`. */
+  kind?: 'card' | 'place'
+  card?: ChatCard
+  /** It is one of the pinned messages in this conversation. */
+  pinned?: boolean
+  /** It mentions you by name (it breaks through a muted chat). */
+  mentionsYou?: boolean
+  /** The public ids of the members it mentions. */
+  mentions?: string[]
 }
+
+/** A card or place as the server built it: a title and where it applies, never a price, cabin or booking number. `expired` is set on a place whose time has passed; `path` is the screen it opens. */
+export type ChatCardType = 'excursion' | 'dining' | 'booking' | 'portDay' | 'place'
+export interface ChatCard { type: ChatCardType; title: string; subtitle?: string; day?: number; time?: string; place?: string; path?: string; expiresAt?: number; expired?: boolean; note?: string }
+
+/** One pinned message in the pin bar (up to three). `fromName` is absent for your own. */
+export interface ChatPin { messageId: string; text: string; fromName?: string; at: number; kind?: 'card' | 'place' }
+
+/** Something you can share from the app. `ref` is sent back to share it; the server rebuilds the card from its own data. */
+export interface ChatShareable { ref: string; type: Exclude<ChatCardType, 'place'>; title: string; subtitle?: string; day?: number; time?: string }
+/** A named place on the ship a meeting point can be dropped at. */
+export interface ChatPlace { id: string; name: string; deck: number; section: string }
+export interface ChatShareables { items: ChatShareable[]; places: ChatPlace[] }
+
+/** What a typed send carries: a `ref` from the shareable list, or a named place and an optional short note. */
+export type ChatTypedSend = { kind: 'card'; shareRef: string } | { kind: 'place'; placeId: string; note?: string }
 
 /** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
 export interface ChatReaction { emoji: string; count: number; mine: boolean; names: string[] }
@@ -184,7 +213,7 @@ export interface NoticeReplyAnswer { text: string; remindAt?: number }
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
 /** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */
 /** `firstUnread`: the first message from someone else you had not read when the thread was fetched (latest page only), for the "New messages" divider. */
-export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string }
+export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string; /** The pin bar, on the latest page only. */ pins?: ChatPin[] }
 
 export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
 
@@ -196,7 +225,18 @@ export interface ChatConversationsApi {
    * `clientId` makes a retry safe: a repeat returns the stored message. Rejects `invalid` (`blocked`: the word filter, nothing was sent; `text`; `contactInfo`),
    * `conflict` (`closed`) or `notFound`. `urgency` is normal when left out; urgent rejects `forbidden` (`urgency`) unless you may send it, and an unknown level rejects `invalid` (`urgency`). `replyTo` is the message being answered; one you cannot read rejects `invalid` (`replyTo`).
    */
-  send(id: string, text: string, clientId: string, urgency?: ChatUrgency, replyTo?: string): Promise<ChatMessage>
+  send(id: string, text: string, clientId: string, urgency?: ChatUrgency, replyTo?: string, mentions?: string[]): Promise<ChatMessage>
+  /**
+   * Sends a card from the shareable list or a meeting place (phase 3). The server builds the words from its own data. Rejects `invalid` (`shareRef`: not yours or not booked any more; `place`; `blocked` or `contactInfo` for a note; `kind`),
+   * `conflict` (`closed`) or `notFound`. It is not held for later: a card needs the server to say it is still true.
+   */
+  sendTyped(id: string, input: ChatTypedSend, clientId: string, mentions?: string[]): Promise<ChatMessage>
+  /** What you can share, and where you can ask to meet. */
+  shareable(): Promise<ChatShareables>
+  /** Pins (up to three) or unpins a message and returns the pin bar. Rejects `invalid` (`notMessage`), `forbidden` (`pin`, `stanley`), `conflict` (`pinsFull`, `closed`) or `notFound`. */
+  pin(id: string, messageId: string, on: boolean): Promise<ChatPin[]>
+  /** Alerts you only for a mention in this conversation. Returns the new state. Rejects `forbidden` (`stanley`) or `notFound`. */
+  mentionsOnly(id: string, on: boolean): Promise<boolean>
   /**
    * Reacts with one of the six emoji (`REACTIONS`): a different one replaces yours, the same one again takes it away. Returns the chips now under the message.
    * Rejects `invalid` (`emoji`, `notMessage`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`).

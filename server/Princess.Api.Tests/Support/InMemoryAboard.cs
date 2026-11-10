@@ -233,6 +233,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public bool DirectEnded { get; set; }
         public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
         public long? StanleyUserId { get; init; }
+        public long? CreatedByUserId { get; set; }
         public List<Member> Members { get; } = [];
     }
 
@@ -246,6 +247,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public DateTime? MutedUntil { get; set; }
         public DateTime? ArchivedAt { get; set; }
         public bool NotifyAway { get; set; }
+        public bool MentionsOnly { get; set; }
         public string? AwayStatus { get; set; }
         public long? LastRead { get; set; }
     }
@@ -258,6 +260,9 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public HashSet<(long MessageId, long UserId)> MessageDeliveries { get; } = [];
 
     public List<Stored> Messages { get; } = [];
+    /// <summary>Pinned messages: (group, message id) in the order they were pinned.</summary>
+    public List<(long GroupId, long MessageId)> Pins { get; } = [];
+    public HashSet<(long MessageId, long UserId)> MentionsOf { get; } = [];
     public HashSet<long> Receipts { get; } = [];
     public HashSet<long> Previews { get; } = [];
     /// <summary>People who turned the typing indicator off (it is on for everyone else).</summary>
@@ -270,6 +275,14 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     /// <summary>Puts the people in one booking group ("My group").</summary>
     public Conversation Group(params long[] userIds) => Make("party", "My group", userIds);
+
+    /// <summary>A group a guest made (kind <c>group</c>): only its creator may pin in it.</summary>
+    public Conversation MadeGroup(long creator, params long[] others)
+    {
+        var c = Make("group", "Weekend", [creator, .. others]);
+        c.CreatedByUserId = creator;
+        return c;
+    }
 
     /// <summary>A direct chat between two people.</summary>
     public Conversation Direct(long a, long b) => Make("direct", "Direct", [a, b]);
@@ -296,7 +309,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         Persona = PersonaOf(c)?.Persona, Subtitle = PersonaOf(c)?.Subtitle,
         GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
-        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
+        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, MentionsOnly = me.MentionsOnly, CreatedByUserId = c.CreatedByUserId, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
     };
 
     private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
@@ -361,7 +374,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             var r = new ChatConversationRow
             {
                 GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
-                Muted = MutedNow(x.Me), MutedUntil = x.Me.MutedUntil, ArchivedAt = x.Me.ArchivedAt, NotifyAway = x.Me.NotifyAway, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
+                Muted = MutedNow(x.Me), MutedUntil = x.Me.MutedUntil, ArchivedAt = x.Me.ArchivedAt, NotifyAway = x.Me.NotifyAway, MentionsOnly = x.Me.MentionsOnly, CreatedByUserId = x.C.CreatedByUserId, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
                 Persona = PersonaOf(x.C)?.Persona, Subtitle = PersonaOf(x.C)?.Subtitle,
             };
             if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.DeletedAt is null ? last.Text : ""; r.LastDeleted = last.DeletedAt is not null; r.LastPhoto = last.Photo is not null && last.DeletedAt is null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
@@ -401,21 +414,24 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             Reactions = m.DeletedAt is not null ? [] : [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
             DeliveredBy = [.. MessageDeliveries.Where(x => x.MessageId == m.Id).Select(x => x.UserId)],
             Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
+            Kind = m.Kind, Payload = m.DeletedAt is null ? m.Payload : null, Mentions = m.DeletedAt is null ? [.. MentionsOf.Where(x => x.MessageId == m.Id).Select(x => x.UserId)] : [],
         }).ToList());
     }
 
-    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null)
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null, string kind = "text", string? payload = null, IReadOnlyCollection<long>? mentions = null)
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
             return Task.FromResult(new ChatSentRow(again.Row, false));
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId, Kind = kind, Payload = payload };
         Messages.Add(new Stored(groupId, row, clientId));
+        // Like the real store: only active members of the conversation are kept as mentioned.
+        foreach (var u in (mentions ?? []).Distinct().Where(u => Of(groupId).Members.Any(m => m.UserId == u && m.Status == "active"))) { MentionsOf.Add((row.Id, u)); row.Mentions.Add(u); }
         return Task.FromResult(new ChatSentRow(row, true));
     }
 
     public Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct) =>
         Task.FromResult(Of(groupId).Members.Where(m => m.Status == "active" && m.UserId != senderId && !Blocks.Contains((m.UserId, senderId)))
-            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = MutedNow(m), ShowPreview = Previews.Contains(m.UserId), Typing = !TypingOff.Contains(m.UserId) }).ToList());
+            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = MutedNow(m), ShowPreview = Previews.Contains(m.UserId), Typing = !TypingOff.Contains(m.UserId), MentionsOnly = m.MentionsOnly }).ToList());
 
     public Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct)
     {
@@ -479,6 +495,37 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     }
 
     public Task<bool> GetTypingAsync(long userId, CancellationToken ct) => Task.FromResult(!TypingOff.Contains(userId));
+
+    public Task<List<ChatPinRow>> ListPinsAsync(long groupId, long userId, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == userId);
+        var visible = Visible(c, me).ToDictionary(m => m.Id);
+        return Task.FromResult(Pins.Where(p => p.GroupId == groupId && visible.TryGetValue(p.MessageId, out var m) && m.DeletedAt is null)
+            .Select(p => visible[p.MessageId]).Select(m => new ChatPinRow { Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, Kind = m.Kind, Payload = m.Payload, HasPhoto = m.Photo is not null, At = m.At }).ToList());
+    }
+
+    public Task<bool> PinAsync(long groupId, long messageId, long pinnedBy, DateTime at, int max, CancellationToken ct)
+    {
+        if (Pins.Contains((groupId, messageId))) return Task.FromResult(true);
+        if (Pins.Count(p => p.GroupId == groupId) >= max) return Task.FromResult(false);
+        Pins.Add((groupId, messageId));
+        return Task.FromResult(true);
+    }
+
+    public Task UnpinAsync(long groupId, long messageId, CancellationToken ct)
+    {
+        Pins.Remove((groupId, messageId));
+        return Task.CompletedTask;
+    }
+
+    public Task<HashSet<long>> ListPinnedIdsAsync(long groupId, CancellationToken ct) => Task.FromResult(Pins.Where(p => p.GroupId == groupId).Select(p => p.MessageId).ToHashSet());
+
+    public Task SetMentionsOnlyAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        Of(groupId).Members.First(m => m.UserId == userId).MentionsOnly = on;
+        return Task.CompletedTask;
+    }
 
     public Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct)
     {

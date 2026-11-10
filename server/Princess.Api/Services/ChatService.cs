@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, StanleyReminderService? reminders = null)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, StanleyReminderService? reminders = null)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -56,7 +56,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway,
             Permanent: ChatConversationRules.IsPermanent(m.Kind), Voice: m.Persona, Subtitle: m.Subtitle,
             People: ChatConversationRules.IsPermanent(m.Kind) ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatMemberDto(p.PublicId, ShortName(p)))],
-            Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null);
+            Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null, MentionsOnly: m.MentionsOnly,
+            CanPin: ChatCardRules.MayPin(m.Kind, m.CreatedByUserId == actor.Id) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded));
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -76,6 +77,13 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var from = q.FromUserId == 0 ? StanleyPersonaRules.Name : mine ? null : byId.TryGetValue(q.FromUserId, out var p) ? ShortName(p) : null;
         return new(q.PublicId, ChatReactionRules.QuoteText(q.Text, q.HasPhoto), from, mine);
     }
+
+    /// <summary>A stored card as a reader sees it. A place is "expired" once its time has passed on the same clock it was stamped with.</summary>
+    private static ChatCardDto CardDto(ChatCard c, long nowMs) => new(c.Type, c.Title, c.Subtitle, c.Day, c.Time, c.Place, c.Path, c.ExpiresAt, ChatCardRules.IsExpired(c.ExpiresAt, nowMs), c.Note);
+
+    /// <summary>The pin bar: what each pinned message says (a card's title), who said it, and when. Only messages the reader may read.</summary>
+    private static List<ChatPinDto> PinDtos(IEnumerable<ChatPinRow> rows, long reader, Dictionary<long, ChatPeerRow> byId) =>
+        [.. rows.Select(p => new ChatPinDto(p.PublicId, ChatConversationRules.Preview(ChatCardRules.IsTyped(p.Kind) ? ChatCardRules.Preview(p.Kind, ChatCardRules.Parse(p.Payload)) : p.Text), p.FromUserId == reader || !byId.TryGetValue(p.FromUserId, out var from) ? null : ShortName(from), Shipboard.Ms(p.At), ChatCardRules.IsTyped(p.Kind) ? p.Kind : null))];
 
     /// <summary>The latest page of a conversation, or the page before the message <paramref name="before"/>.</summary>
     public async Task<ChatThreadDto> ThreadAsync(UserRecord actor, Guid conversationId, Guid? before, int? limit, CancellationToken ct)
@@ -99,6 +107,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         // Phase 1: reactions (a block hides the blocked person's reactions as it hides their messages), the quote above a reply, and Delivered. Blocks are read only when some message has a reaction.
         var blocked = page.Any(m => m.Reactions.Count > 0) ? new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)) : new HashSet<long>();
         var firstUnread = before is null ? page.FirstOrDefault(m => !m.IsSystem && ChatConversationRules.IsUnread(m.Id, m.FromUserId, actor.Id, member.LastReadMessageId))?.PublicId : null;
+        var nowMs = Shipboard.Ms(now);
+        var pinned = page.Count == 0 ? new HashSet<long>() : await store.ListPinnedIdsAsync(member.GroupId, ct);
         var messages = new List<ChatMessageDto>();
         foreach (var m in page)
         {
@@ -129,13 +139,17 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var reactions = m.Reactions.Count == 0 ? null : ReactionDtos(m.Reactions, actor.Id, byId, blocked);
             var delivered = m.FromUserId == actor.Id && receiptsOf(actor.Id) && m.DeliveredBy.Any(id => id != actor.Id && receiptsOf(id));
             messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto,
-                Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null));
+                Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered, Edited: m.EditedAt is not null,
+                Kind: ChatCardRules.IsTyped(m.Kind) ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs) : null,
+                Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()]));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
         var mayUrgent = ChatUrgencyRules.MaySend(ChatUrgencyRules.Urgent, actor.Role == "admin",
             ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId))));
-        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread);
+        // The pin bar comes with the latest page only; an older page is a scroll back and needs none.
+        var pins = before is null ? PinDtos(await store.ListPinsAsync(member.GroupId, actor.Id, ct), actor.Id, byId) : null;
+        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread, pins is { Count: > 0 } ? pins : null);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
@@ -143,11 +157,32 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");   // a question to Stanley goes through his own route
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
-        var text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
+        var kind = body?.Kind is null or "" ? ChatCardRules.Text : body.Kind;
+        if (kind is not (ChatCardRules.Text or ChatCardRules.Card or ChatCardRules.Place)) throw ApiException.Invalid("kind");
         var now = await userClock.NowAsync(actor, ct);
-        if (ServiceRules.ChildSafeProblem(text, await AgeAsync(actor, now, ct)) is { } problem) throw ApiException.Invalid(problem);
-        // Not sent, not stored, not logged; the matched word is never returned.
-        if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
+        // A card or place is built here from the server's own data; the sender supplies a ref or a named place (and a short note), never the words.
+        string text;
+        string? payload = null;
+        if (kind == ChatCardRules.Text) text = ChatConversationRules.CleanText(body?.Text) ?? throw ApiException.Invalid("text");
+        else
+        {
+            var card = kind == ChatCardRules.Card ? await share.CardAsync(actor, body?.ShareRef, ct) : ChatShareService.Place(body?.PlaceId, body?.Note, now);
+            payload = ChatCardRules.Serialise(card);
+            if (ChatCardRules.HasForbiddenKey(payload)) throw ApiException.Invalid("kind");   // a guard: no card may carry money or identity
+            text = ChatCardRules.Preview(kind, card);
+            // The one free-text part of a card is a place's note: it is held to the same rules as a message.
+            if (card.Note is { } note)
+            {
+                if (ServiceRules.ChildSafeProblem(note, await AgeAsync(actor, now, ct)) is { } noteProblem) throw ApiException.Invalid(noteProblem);
+                if (ProfanityFilter.IsBlocked(note)) throw ApiException.Invalid("blocked");
+            }
+        }
+        if (kind == ChatCardRules.Text)
+        {
+            if (ServiceRules.ChildSafeProblem(text, await AgeAsync(actor, now, ct)) is { } problem) throw ApiException.Invalid(problem);
+            // Not sent, not stored, not logged; the matched word is never returned.
+            if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
+        }
         var urgency = ChatUrgencyRules.Parse(body?.Urgency) ?? throw ApiException.Invalid("urgency");
         await EnforceRateAsync(actor, member, now, ct);
         // A reply names a message the sender may read in this conversation (their window, nobody they blocked) that a person said; anything else is refused the same way.
@@ -165,7 +200,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         }
         // The hourly limit for important and urgent messages (urgent is already limited to staff and guardians).
         if (urgency != ChatUrgencyRules.Normal && ChatUrgencyRules.OverLimit(urgency, await store.CountSentAsync(actor.Id, urgency, now.AddHours(-1), ct))) throw ApiException.TooMany("urgencyLimit");
-        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency, quoted: quoted);
+        // Mentions: members of this conversation (active, not the sender), at most ten; anyone else is dropped rather than failing the send.
+        List<long>? mentions = null;
+        if (body?.Mentions is { Count: > 0 } named)
+        {
+            var active = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => p.Status == ChatConversationRules.Active).ToDictionary(p => p.PublicId, p => p.UserId);
+            mentions = ChatCardRules.ValidMentions(named, active, actor.Id);
+        }
+        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency, quoted: quoted, kind: kind, payload: payload, mentions: mentions);
         // Who sent an urgent message and where, never what it said.
         if (urgency == ChatUrgencyRules.Urgent)
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.urgent.send", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = actor.Role == "admin" ? "staff" : "guardian" }, ct);
@@ -211,16 +253,17 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatControlRules.OverSendLimit(await store.CountSentInAsync(member.GroupId, actor.Id, now - ChatControlRules.SendPeriod, ct))) throw ApiException.TooMany("rate");
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null, string kind = ChatCardRules.Text, string? payload = null, List<long>? mentions = null)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id);
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id, kind, payload, mentions);
         ChatQuoteDto? quote = null;
         if (quoted is not null)
         {
             var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
             quote = QuoteDto(new ChatQuoteRow { Id = quoted.Id, PublicId = quoted.PublicId, FromUserId = quoted.FromUserId, Text = quoted.Text, HasPhoto = quoted.Photo is not null, IsSystem = quoted.IsSystem }, actor.Id, peers);
         }
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, ReplyTo: quote);
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, ReplyTo: quote,
+            Kind: ChatCardRules.IsTyped(kind) ? kind : null, Card: ChatCardRules.IsTyped(kind) && ChatCardRules.Parse(payload) is { } made ? CardDto(made, Shipboard.Ms(now)) : null);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"
         await store.UnarchiveOthersAsync(member.GroupId, actor.Id, ct);
@@ -422,6 +465,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var now = await userClock.NowAsync(actor, ct);
         var why = ChatControlRules.ChangeProblem(message.IsSystem, message.FromStanley, message.FromUserId == actor.Id, message.DeletedAt is not null, message.Photo is not null, message.Urgency, message.At, now, forEdit);
         if (why is not null) throw Refusal(why);
+        if (forEdit && ChatCardRules.IsTyped(message.Kind)) throw ApiException.Invalid(ChatControlRules.NotMessage);   // a card is retracted, not reworded
         return (member, message, now);
     }
 
@@ -473,6 +517,40 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var message = await store.FindLatestFromAsync(member.GroupId, actor.Id, person.UserId, ct) ?? throw ApiException.NotFound();
         if (!await store.AddReportAsync(actor.Id, message.PublicId, body.Reason, await userClock.NowAsync(actor, ct), ct)) throw ApiException.NotFound();
     }
+
+    /// <summary>
+    /// Pins a message to the top of the conversation, or takes the pin away: up to three, by anyone in a direct chat or the booking's group and by the creator of a made group. Everyone's open app is nudged to refetch; nobody gets a phone alert.
+    /// Returns the pin bar. 400 notMessage; 403 stanley or pin; 404; 409 closed or pinsFull.
+    /// </summary>
+    public async Task<List<ChatPinDto>> PinAsync(UserRecord actor, Guid conversationId, Guid messageId, bool on, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
+        if (!ChatCardRules.MayPin(member.Kind, member.CreatedByUserId == actor.Id)) throw ApiException.Forbidden("pin");
+        var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
+        if (!ChatReactionRules.CanTarget(message.IsSystem, message.FromStanley) || message.DeletedAt is not null) throw ApiException.Invalid("notMessage");
+        if (on)
+        {
+            if (!await store.PinAsync(member.GroupId, message.Id, actor.Id, await userClock.NowAsync(actor, ct), ChatCardRules.MaxPins, ct)) throw ApiException.Conflict("pinsFull");
+        }
+        else await store.UnpinAsync(member.GroupId, message.Id, ct);
+        await TellThreadChangedAsync(actor, member, "pinned", ct);
+        return PinDtos(await store.ListPinsAsync(member.GroupId, actor.Id, ct), actor.Id, (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId));
+    }
+
+    /// <summary>Alerts the caller only for messages that mention them in this conversation (it still shows and counts everything). Returns the new state. 403 stanley; 404 not a member.</summary>
+    public async Task<bool> MentionsOnlyAsync(UserRecord actor, Guid conversationId, ChatMentionsOnlyRequest? body, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        var on = body?.On == true;
+        await store.SetMentionsOnlyAsync(member.GroupId, actor.Id, on, ct);
+        return on;
+    }
+
+    /// <summary>What the caller can share into a chat from their own booking, and the named places a meeting point can be dropped at (phase 3).</summary>
+    public Task<ChatShareableListDto> ShareableAsync(UserRecord actor, CancellationToken ct) => share.ListAsync(actor, ct);
 
     /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the caller in one conversation. 403 supervised; 404 not a member. Off unless asked for.</summary>
     public async Task<bool> NotifyAwayAsync(UserRecord actor, Guid conversationId, ChatNotifyAwayRequest? body, CancellationToken ct)

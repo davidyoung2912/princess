@@ -9,8 +9,8 @@ export function canChange(m: Pick<ChatMessage, 'from' | 'at' | 'system' | 'stanl
   return m.from === me && !m.system && !m.stanley && !m.deleted && now - m.at <= CHANGE_WINDOW_MS
 }
 
-/** Only plain text can be edited; a photo, an important or an urgent message can only be deleted (the server refuses the rest). */
-export const canEdit = (m: Pick<ChatMessage, 'hasPhoto' | 'photo' | 'urgency'>): boolean => !m.hasPhoto && !m.photo && (m.urgency ?? 'normal') === 'normal'
+/** Only plain text can be edited; a photo, a card or place, an important or an urgent message can only be deleted (the server refuses the rest). */
+export const canEdit = (m: Pick<ChatMessage, 'hasPhoto' | 'photo' | 'urgency' | 'kind'>): boolean => !m.hasPhoto && !m.photo && m.kind === undefined && (m.urgency ?? 'normal') === 'normal'
 
 /** Milliseconds until the window closes (0 once it has). Used to switch the buttons off live. */
 export const windowLeft = (at: number, now: number): number => Math.max(0, at + CHANGE_WINDOW_MS - now)
