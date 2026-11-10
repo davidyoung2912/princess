@@ -136,4 +136,45 @@ public class StanleyNoticeRelayTests
     {
         public override Task<bool> AddStanleyNoticeAsync(long userId, StanleyNotice n, string voice, string subtitle, DateTime at, CancellationToken ct) => throw new InvalidOperationException("store down");
     }
+
+    // ---- Thread-only notices (the ones that lived only on screen) ----
+
+    private static StanleyNoticeRules.ScreenInput Screen(DateTime? drill = null, bool musterDone = false, int docs = 0, int passports = 0, string checkin = "done", params Guid[] tickets) =>
+        new(Now, drill, musterDone, docs, passports, checkin, "2027-03-10", tickets);
+
+    [Fact]
+    public void TheMusterPromptIsCriticalInsideItsWindowAndGoneOnceConfirmed()
+    {
+        var drill = Now.AddMinutes(30);
+        var prompt = Assert.Single(StanleyNoticeRules.ScreenNotices(Screen(drill)));
+        Assert.Equal("critical", StanleyNoticeRules.LaneOf(prompt));
+        Assert.Equal("/ship/muster", prompt.Path);
+        Assert.Empty(StanleyNoticeRules.ScreenNotices(Screen(drill, musterDone: true)));
+        Assert.Empty(StanleyNoticeRules.ScreenNotices(Screen(Now.AddMinutes(61))));            // not open yet
+        Assert.Empty(StanleyNoticeRules.ScreenNotices(Screen(Now.AddHours(-19))));             // window closed
+    }
+
+    [Fact]
+    public void DocumentsCheckInAndAnsweredRequestsEachGetOneStableNotice()
+    {
+        var id = Guid.NewGuid();
+        var notices = StanleyNoticeRules.ScreenNotices(Screen(docs: 2, passports: 1, checkin: "open", tickets: id));
+        Assert.Equal(["passportProblem:1", "documentsMissing:2", "checkinOpen:2027-03-10", $"ticket:{id:N}"], notices.Select(n => n.Key).ToArray());
+        Assert.All(notices, n => Assert.Equal("important", StanleyNoticeRules.LaneOf(n)));
+        Assert.Equal(notices.Select(n => n.Key), StanleyNoticeRules.ScreenNotices(Screen(docs: 2, passports: 1, checkin: "open", tickets: id)).Select(n => n.Key));
+    }
+
+    [Fact]
+    public void CheckInBeforeItOpensIsInformationAndNothingIsSaidOnceDone()
+    {
+        Assert.Equal("info", StanleyNoticeRules.LaneOf(Assert.Single(StanleyNoticeRules.ScreenNotices(Screen(checkin: "notYet")))));
+        Assert.Empty(StanleyNoticeRules.ScreenNotices(Screen(checkin: "done")));
+    }
+
+    [Fact]
+    public void TheThreadDropsTheStanleyPrefixThePhoneNeeds()
+    {
+        var n = StanleyNoticeRules.Build(Notice("p", "payment") with { Title = "Stanley: your payment is due soon", Body = "Pay by Friday." }, Now);
+        Assert.Equal("Your payment is due soon\nPay by Friday.", n.Text);
+    }
 }

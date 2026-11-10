@@ -15474,6 +15474,8 @@ export const en = {
   'stanley.notice.lane.important': 'Needs you soon',
   'stanley.notice.lane.reminder': 'Reminder',
   'stanley.notice.lane.info': 'For your information',
+  'updates.inThread': 'Every notice from Princess Cruises and your ship also arrives in your Stanley chat, where you can confirm you have seen it.',
+  'updates.openThread': 'Open the Stanley chat',
   'stanley.notice.superseded': 'Replaced by a newer message.',
   'stanley.notice.expired': 'No longer needed.',
   'stanley.notice.open': 'Open',

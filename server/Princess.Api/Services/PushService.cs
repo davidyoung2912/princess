@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -134,7 +134,7 @@ public sealed class PushService(
         if (stanleyActions is not null) input = input with { HelperPrepared = [.. (await stanleyActions.WaitingFromHelperAsync(actor, ct)).Select(a => a.Id)] };
         var built = PushRules.Build(input).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
         // The thread keeps the full text (the guest is in the app); the phone gets the lock-screen version. Writing to the thread never holds the push back.
-        if (relay is not null) await relay.RelayAsync(actor, built, now, ct);
+        if (relay is not null) await relay.RelayAsync(actor, [.. built, .. await ScreenNoticesAsync(actor, booking, departure, now, ct)], now, ct);
         var notices = built.Select(PushRules.Redact).ToList();
         if (notices.Count == 0) return;
 
@@ -302,6 +302,25 @@ public sealed class PushService(
         var dayNumber = TripRules.Today(now).DayNumber - dep.DayNumber + 1;
         var watches = await watchService.WatchAsync(booking, trip, TripRules.Today(now), ct);
         return new(now, trip.Payment, trip.Plan.FinalDue, port, port is not null && TripRules.ToMs(now) >= port.ArriveAt, alert, notBack, program.Current(), watched, dayNumber, disruptions, reminderAt, postcards, buffer, watches.Instalment, watches.Tender, watches.Flight, watches.InstalmentAuto && watches.Instalment is { } ni && string.CompareOrdinal(ni.Date, TripRules.Today(now).ToString("yyyy-MM-dd")) <= 0, watches.InstalmentTaken, stanley, GuestAway: guestAway);
+    }
+
+    /// <summary>
+    /// The thread-only notices (phase 0b): the muster drill, documents, check-in and answered Guest Services requests, from the same sources their own screens read. A source that fails
+    /// is left out rather than stopping the others, and none of these is ever pushed.
+    /// </summary>
+    private async Task<List<PushNotice>> ScreenNoticesAsync(UserRecord actor, BookingRow? booking, DateOnly? departure, DateTime now, CancellationToken ct)
+    {
+        try
+        {
+            var answered = (await inbox.ListTicketsAsync(actor.Id, ct)).Where(t => now - t.At < TimeSpan.FromDays(3) && NotificationRules.TicketStatus(t.At, now, t.Status) == "resolved").Select(t => t.PublicId).ToList();
+            if (booking is null || departure is not { } dep)
+                return StanleyNoticeRules.ScreenNotices(new(now, null, true, 0, 0, "done", "", answered));
+            var trip = await trips.BuildAsync(booking, current: true, now, ct);
+            var musterDone = onboard is null || (await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id);
+            var opens = TripRules.Today(DateTimeOffset.FromUnixTimeMilliseconds(trip.Checkin.OpensAt).UtcDateTime).ToString("yyyy-MM-dd");
+            return StanleyNoticeRules.ScreenNotices(new(now, AboardRules.DrillAt(dep), musterDone, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State, opens, answered));
+        }
+        catch (Exception e) when (e is not OperationCanceledException) { return []; }
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>

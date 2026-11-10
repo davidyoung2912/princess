@@ -44,6 +44,7 @@ export function UpdatesScreen() {
   return (
     <div className="page">
       <p>{t('disrupt.intro')}</p>
+      <p className="muted">{t('updates.inThread')} <LinkButton to="/chat" variant="tertiary">{t('updates.openThread')}</LinkButton></p>
       <StanleyChangeList />
       {!updates.data ? (updates.status === 'error' ? <LoadError retry={updates.retry} /> : <p role="status" className="muted">{t('account.loading')}</p>) : updates.data.length === 0 ? <p>{t('disrupt.none')}</p> : (
         <>
