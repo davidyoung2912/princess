@@ -230,6 +230,12 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .welcome__step--done { list-style: none; margin-left: calc(-1 * var(--space-4)); }
 .welcome__step--done svg { vertical-align: text-bottom; color: var(--primary); }
 
+/* Stanley's one-time introduction: the waving pose is large and centred above the words. */
+.stanley-intro__hero { display: flex; justify-content: center; margin: 0 0 var(--space-3); }
+.stanley-intro__hero .stanley-pose { width: min(14rem, 60vw); height: auto; }
+.stanley-intro__can { margin: 0; padding-left: var(--space-5); }
+.stanley-intro__can li { margin: 0 0 var(--space-2); }
+
 .welcome__needs { margin: 0 0 var(--space-3); padding: 0; list-style: none; }
 .welcome__need { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
 .welcome__tick { display: flex; align-items: center; gap: var(--space-3); flex: 1 1 14rem; min-height: 2.75rem; cursor: pointer; }

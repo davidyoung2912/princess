@@ -17,6 +17,7 @@ import { Square, SquareCheck } from '../icons'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { StageHero } from '../StageHero'
+import { StanleyIntro } from './StanleyIntro'
 
 /** Where "Get started" goes: back to the screen the guest was on when the welcome came up (if it was an app address), otherwise Home. */
 const back = (from: unknown): string => (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/welcome') ? from : '/')
@@ -31,6 +32,13 @@ const stageName = (stage: string): string => t(`journey.stage.${stage}` as Strin
  * what the stage is for, how it leads on and the steps in it. The words come from the locale keys `welcomeContent` names.
  */
 export function StageWelcomeScreen() {
+  const { state } = useLocation()
+  // A first sign-in lands here with `intro: 'stanley'`: Stanley introduces himself before the stage's own welcome.
+  if ((state as { intro?: unknown } | null)?.intro === 'stanley') return <StanleyIntro />
+  return <StageWelcomeStage />
+}
+
+function StageWelcomeStage() {
   const { stage, focusSailingId } = useJourneyPosition()
   const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
   const visits = useSyncExternalStore(subscribeProgress, () => getProgress(personId), () => getProgress(personId))

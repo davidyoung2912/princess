@@ -26,7 +26,11 @@ export function welcomeKey(stage: JourneyStage, sailingId: string | null | undef
   return stage
 }
 
+/** The one-time introduction to Stanley, remembered in the same document as the stage welcomes under a key that is not a stage. */
+export const STANLEY_INTRO_KEY = 'stanley'
+
 function validKey(key: string): boolean {
+  if (key === STANLEY_INTRO_KEY) return true
   const colon = key.indexOf(':')
   if (colon < 0) return isStage(key)
   const sailing = key.slice(colon + 1)
@@ -77,6 +81,12 @@ export function shouldShowWelcome(stage: JourneyStage | null, sailingId: string 
   if (!stage || !loaded) return false
   return !(welcomeKey(stage, sailingId) in state.seen)
 }
+
+/**
+ * Whether to send the guest to Stanley's introduction: the welcome documents have arrived and nothing has ever been marked seen, which is a first sign-in.
+ * A guest who has seen any stage welcome already knows their way about, so they are not shown it.
+ */
+export const shouldShowStanleyIntro = (state: StageWelcomeState, loaded: boolean): boolean => loaded && Object.keys(state.seen).length === 0
 
 export interface WelcomeStep { key: string; to: string }
 

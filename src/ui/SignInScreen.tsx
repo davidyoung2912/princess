@@ -5,7 +5,6 @@ import { AuthError } from '../auth/provider'
 import { t, th } from '../i18n'
 import { auth, retryReference } from '../runtime'
 import { referenceState, subscribeReference } from '../domain/referenceStatus'
-import { fetchDemoAccounts, type DemoAccount } from '../auth/demoAccounts'
 import { LanguageSwitch } from './LanguageSwitch'
 import { Button } from './Button'
 import { Card } from './Card'
@@ -74,28 +73,7 @@ function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
         <li><Button variant="secondary" onClick={() => go('magic')}>{t('signin.mode.magic')}</Button></li>
         <li><Button variant="secondary" onClick={() => go('signup')}>{t('signin.mode.signup')}</Button></li>
       </ul>
-      {!import.meta.env.PROD && <TestAccounts />}
     </main>
-  )
-}
-
-/** Non-production help only: the seeded accounts, listed by the server (which refuses in production), and the shared demo password. */
-function TestAccounts() {
-  const [accounts, setAccounts] = useState<readonly DemoAccount[]>([])
-  useEffect(() => {
-    let live = true
-    void fetchDemoAccounts(auth.http).then((list) => { if (live) setAccounts(list) }).catch(() => {})
-    return () => { live = false }
-  }, [])
-  if (accounts.length === 0) return null
-  return (
-    <Card>
-      <h2>{th('signin.test.title')}</h2>
-      <p>{t('signin.test.body')}</p>
-      <ul>
-        {accounts.map((a) => <li key={a.email}>{a.name}: <code>{a.email}</code></li>)}
-      </ul>
-    </Card>
   )
 }
 

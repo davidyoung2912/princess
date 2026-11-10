@@ -45,7 +45,7 @@ import { UpdateBanner } from './UpdateBanner'
 import { getWelcome, markSeen, subscribeWelcome, unmarkSeen, welcomeLoaded } from '../stageWelcome/store'
 import { recordVisit as recordStepVisit } from '../stageProgress/store'
 import { progressKey, stepsAt } from '../routes/stageProgress'
-import { hasWelcomeCopy, shouldShowWelcome, welcomeKey } from '../routes/stageWelcome'
+import { hasWelcomeCopy, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, welcomeKey } from '../routes/stageWelcome'
 
 
 /**
@@ -102,7 +102,10 @@ export function Shell() {
   // (a tab, Back, the button) never brings it back, and Settings never shows it (so its reset button can say it is done); "Stage overview" opens it again. Nothing happens until the server's copy of what was seen has arrived.
   const welcomed = useSyncExternalStore(subscribeWelcome, () => getWelcome(personId), () => getWelcome(personId))
   const welcomeReady = useSyncExternalStore(subscribeWelcome, () => welcomeLoaded(personId), () => false)
-  const welcomeDue = known && !stale && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings' && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
+  // A guest's very first sign-in opens Stanley's introduction before any stage welcome; once it is marked seen the stage's welcome follows when they continue.
+  const canWelcome = known && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
+  const introDue = canWelcome && shouldShowStanleyIntro(welcomed, welcomeReady)
+  const welcomeDue = canWelcome && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
   // A tester who moves the date back to a stage they have seen sees its welcome again: with a demo account the stage changing is the point of the exercise.
   const isDemo = useSyncExternalStore(subscribeContext, getContext, getContext)?.isDemo === true
   const lastStage = useRef<string | null>(null)
@@ -117,6 +120,11 @@ export function Shell() {
     if (!known || stale || !route || route.public) return
     for (const n of stepsAt(stage, pathname)) recordStepVisit(personId, progressKey(stage, focusSailingId, n), Date.now())
   }, [known, stale, route, stage, focusSailingId, pathname, personId])
+  useEffect(() => {
+    if (!introDue) return
+    markSeen(personId, STANLEY_INTRO_KEY, Date.now())
+    navigate('/welcome', { replace: true, state: { intro: 'stanley', from: pathname + search } })
+  }, [introDue, personId, navigate, pathname, search])
   useEffect(() => {
     if (!welcomeDue) return
     markSeen(personId, welcomeKey(stage, focusSailingId), Date.now())

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { JOURNEY_STAGES } from './hubs'
 import { routeForPath } from './nav'
 import { accessAt } from './stageNav'
-import { EMPTY_WELCOME, hasWelcomeCopy, MAX_WELCOME_ENTRIES, needId, normalizeTicks, markWelcomeSeen, mergeWelcome, normalizeWelcome, SAILING_STAGES, shouldShowWelcome, unmarkWelcome, welcomeContent, welcomeKey, welcomeKeys } from './stageWelcome'
+import { EMPTY_WELCOME, hasWelcomeCopy, MAX_WELCOME_ENTRIES, needId, normalizeTicks, markWelcomeSeen, mergeWelcome, normalizeWelcome, SAILING_STAGES, shouldShowStanleyIntro, shouldShowWelcome, STANLEY_INTRO_KEY, unmarkWelcome, welcomeContent, welcomeKey, welcomeKeys } from './stageWelcome'
 import { en } from '../i18n/locales/en'
 
 describe('welcome keys', () => {
@@ -135,5 +135,21 @@ describe('welcome content', () => {
   it('has English text for every key', () => {
     for (const stage of JOURNEY_STAGES) for (const k of welcomeKeys(stage)) expect((en as Record<string, string>)[k], k).toBeTruthy()
     for (const stage of JOURNEY_STAGES) expect(hasWelcomeCopy(stage), stage).toBe(true)
+  })
+})
+
+describe("Stanley's introduction", () => {
+  it('is due on a first sign-in only, once the documents have arrived', () => {
+    expect(shouldShowStanleyIntro(EMPTY_WELCOME, true)).toBe(true)
+    expect(shouldShowStanleyIntro(EMPTY_WELCOME, false)).toBe(false)
+    expect(shouldShowStanleyIntro({ seen: { dream: 1 } }, true)).toBe(false)
+  })
+
+  it('is remembered under its own key, which survives reading and merging', () => {
+    const seen = markWelcomeSeen(EMPTY_WELCOME, STANLEY_INTRO_KEY, 5)
+    expect(seen.seen).toEqual({ stanley: 5 })
+    expect(shouldShowStanleyIntro(seen, true)).toBe(false)
+    expect(normalizeWelcome(seen).seen).toEqual({ stanley: 5 })
+    expect(mergeWelcome({ seen: { stanley: 9 } }, seen).seen).toEqual({ stanley: 5 })
   })
 })

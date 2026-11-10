@@ -66,6 +66,13 @@ public class StageWelcomeStateRulesTests
         Assert.Null(StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc("dream", "discover", "manage:sun-1", "sea:alaska_2027.06")));
     }
 
+    [Fact]
+    public void StanleyIntroKeyIsAcceptedInTheWelcomeDocumentOnly()
+    {
+        Assert.Null(StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc("stanley", "dream")));
+        Assert.Equal("badData", StateRules.Problem(StateRules.UserKeys, "stageWelcome", Doc("stanley:sun-1")));
+    }
+
     [Theory]
     [InlineData("nonsense")]
     [InlineData("manage:")]
