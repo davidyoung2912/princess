@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useRebookGate } from '../../hooks/useRebookGate'
+import { RebookCaseNote, StanleyVoyageIdeas } from '../ai/StanleyRemember'
 import { Link } from 'react-router'
 import type { HoldView, RebookInputs, RebookOption, RebookView } from '../../api/finishTypes'
 import { DESK, HOLD_DAYS } from '../../domain/postcruise'
@@ -32,15 +34,18 @@ export function RebookScreen() {
 }
 
 function Rebook({ v, reload, inputs, setInputs }: { v: RebookView; reload: () => void; inputs: RebookInputs; setInputs: (i: RebookInputs) => void }) {
+  const gate = useRebookGate()
   const hold = useAction(async (id: string) => { await api.post.hold(id, inputs); reload() })
   const release = useAction(async (id: string) => { await api.post.releaseHold(id); reload() })
   const convert = useAction(async () => { await api.post.convertFcc(); reload() })
   const heldDates = new Set(v.holds.filter((h) => !h.expired).map((h) => h.departure))
   return (
     <>
-      {v.onboardOffer
+      <RebookCaseNote gate={gate} />
+      {gate?.mode !== 'hold' && v.onboardOffer
         ? <Banner kind="success" title={t('reb.onboard')}><p>{t('reb.onboardBody', { deposit: formatMoney(10_000), credit: formatMoney(v.options[0]?.credit ?? 0) })}</p></Banner>
         : <Banner kind="info" title={t('reb.after')}><p>{t('reb.afterBody')}</p></Banner>}
+      <StanleyVoyageIdeas options={v.options} gate={gate} />
       <ExtraError error={hold.error ?? release.error ?? convert.error} />
 
       {v.holds.length > 0 && (

@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { StanleyDayRecap } from '../ai/StanleyRemember'
 import { Link } from 'react-router'
 import { formatDate } from '../../domain/cruise'
 import { contactProblem, CONTACT_NAME_MAX, CONTACT_NOTE_MAX, memoryBook, NOTE_MAX, nextTripText, REFLECTION_MAX, reflectionProblem, sailAgainGroup, seedNextTrip, sharedReflections, TOPIC_LABEL, TOPICS, isTopic, bookText, type Topic } from '../../domain/memoryBook'
 import { categoryById, type CategoryId } from '../../domain/ship'
 import { FARES } from '../../domain/fares'
-import { entriesFor } from '../../domain/tripDiary'
+import { dayFor, entriesFor } from '../../domain/tripDiary'
 import { itinerary } from '../../domain/sailings'
 
 import { ADD_ONS } from '../../domain/packages'
@@ -69,6 +70,7 @@ export function MemoryScreen() {
 
   const days = itinerary(sailing)
   const lastDay = days[days.length - 1].date
+  const tripDay = dayFor(days.map((d) => d.date), now)
 
   const addReflection = () => {
     const p = reflectionProblem(topic, text, state.reflections)
@@ -102,6 +104,7 @@ export function MemoryScreen() {
         <p>{t('diary.screenBody')}</p>
         <LinkButton to="/me/diary" variant="secondary">{t('diary.open')}</LinkButton>
       </Card>
+      {tripDay > 0 && <StanleyDayRecap day={tripDay} />}
       <StanleyStoryteller days={days} journal={state.journal} diary={entriesFor(state.diary, sailing.id)} onSave={(journal) => update((s) => ({ ...s, journal }))} />
       <Card labelledBy="mem-journal" >
         <h2 id="mem-journal" className="card__title no-print">{th('memory.journal')}</h2>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePromoteRebooking } from '../../hooks/useRebookGate'
 import { Link } from 'react-router'
 import { compareDeals, dealVerdict, type Deal, type DealKind } from '../../domain/offerCompare'
 import { formatMoney, parseMoney } from '../../domain/money'
@@ -149,7 +150,9 @@ export function OffersScreen() {
   const trip = trips.data ? trips.data.upcoming.find((x) => x.kind === 'current') ?? trips.data.upcoming[0] ?? null : null
   const ctx = useOfferContext(trip?.number ?? null)
   const { dismiss, restore } = useOffers()
-  const shown = offersFor(ctx)
+  // While a case is open (or cannot be checked) the book-again offer is not pushed (phase 13); the guest can still open the booking page themselves.
+  const mayRebook = usePromoteRebooking()
+  const shown = offersFor(ctx).filter((o) => o.id !== 'rebook' || mayRebook)
   const aside = dismissedFor(ctx)
   return (
     <div className="page">

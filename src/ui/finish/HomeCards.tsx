@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import { useRebookGate } from '../../hooks/useRebookGate'
+import { RebookCaseNote } from '../ai/StanleyRemember'
 import { asNightView } from '../../api/guards'
 import { nextNightItem } from '../../domain/disembark'
 import { api } from '../../runtime'
@@ -40,17 +42,19 @@ function DisembarkNext() {
 /** After you have left the ship: rate the cruise, see rewards, and book the next one. Not offered on the last evening (UX-02). */
 export function AfterCruiseCard() {
   const sailed = useSailed()
+  const gate = useRebookGate()
   if (!sailed) return null
   return (
     <Card hero labelledBy="home-after-h">
       <h2 id="home-after-h" className="card__title">{th('home.after')}</h2>
       <p>{t('home.afterBody')}</p>
+      <RebookCaseNote gate={gate} />
       <ul className="link-list">
         <li><Link to="/me/feedback">{t('route.feedback')}</Link></li>
         <li><Link to="/me/bill/final">{t('route.finalBill')}</Link></li>
         <li><Link to="/me/cases">{t('route.cases')}</Link></li>
         <li><Link to="/me/loyalty">{t('route.loyalty')}</Link></li>
-        <li><Link to="/me/rebook">{t('route.rebook')}</Link></li>
+        {gate?.mode === 'hold' ? null : <li><Link to="/me/rebook">{t('route.rebook')}</Link></li>}
         <li><Link to="/me/recap">{t('route.recap')}</Link></li>
         <li><Link to="/me/history">{t('route.history')}</Link></li>
       </ul>

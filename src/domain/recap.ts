@@ -23,6 +23,9 @@ export interface RecapInput {
 
 export interface Recap {
   title: string
+  /** First names on the booking, and the cruise's own name (empty when it has none), as the title is made from them. */
+  party: string[]
+  cruiseName: string
   shipName: string
   nights: number
   dates: string
@@ -50,6 +53,8 @@ export function buildRecap(i: RecapInput): Recap {
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]
   return {
     title: `${i.party.join(' and ')}’s ${cruiseOf(i.sailing.id).name || 'cruise'}`,
+    party: [...i.party],
+    cruiseName: cruiseOf(i.sailing.id).name || '',
     shipName: shipOf(i.sailing.id).name || 'Princess',
     nights: days.length - 1,
     dates: `${formatDate(days[0].date)} to ${formatDate(days[days.length - 1].date)}`,

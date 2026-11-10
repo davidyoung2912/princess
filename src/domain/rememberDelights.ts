@@ -1,4 +1,5 @@
 import type { CallPort, Pin } from './portDelights'
+import { EMPTY_STORY, normalizeStory, type StoryChoices } from './storyChoices'
 import { itinerary, portById, type Sailing } from './sailings'
 import type { DiaryEntry, Favourite } from './seaDelights'
 
@@ -176,8 +177,8 @@ export function normalizeLastHoliday(raw: unknown): LastHoliday | null {
   return lastHolidayPerDay(h) === null ? null : h
 }
 
-export interface RememberState { postcards: Postcard[]; wants: string[]; saved: Record<string, SavedNote>; lastHoliday: LastHoliday | null }
-export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [], saved: {}, lastHoliday: null }
+export interface RememberState { postcards: Postcard[]; wants: string[]; saved: Record<string, SavedNote>; lastHoliday: LastHoliday | null; story: StoryChoices }
+export const EMPTY_REMEMBER: RememberState = { postcards: [], wants: [], saved: {}, lastHoliday: null, story: EMPTY_STORY }
 
 /** Sets the note on a saved sailing, keeping its first-seen price. An empty note with no price removes the entry. */
 export function setSavedNote(saved: Readonly<Record<string, SavedNote>>, id: string, note: string): Record<string, SavedNote> {
@@ -221,5 +222,5 @@ export function normalizeRemember(raw: unknown): RememberState {
     const cents = typeof o.cents === 'number' && Number.isFinite(o.cents) && o.cents > 0 ? Math.round(o.cents) : null
     if (id.length <= 60 && (note || cents !== null)) saved[id] = { note, cents }
   }
-  return { postcards, wants, saved, lastHoliday: normalizeLastHoliday(r.lastHoliday) }
+  return { postcards, wants, saved, lastHoliday: normalizeLastHoliday(r.lastHoliday), story: normalizeStory(r.story) }
 }

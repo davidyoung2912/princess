@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { StanleyVoyageStory } from './StanleyRemember'
 import { buildRecap, recapText } from '../../domain/recap'
 import { formatDate } from '../../domain/cruise'
 
@@ -63,6 +64,7 @@ export function RecapScreen() {
                 <p>{recap.favouriteMeal ? t('recap.favourite', { name: recap.favouriteMeal.name, count: recap.favouriteMeal.times }) : t('recap.noMeal')}</p>
                 <p className="muted">{t('recap.ports.list', { ports: recap.ports.join(', ') })}</p>
               </Card>
+              <StanleyVoyageStory recap={recap} />
               <Card labelledBy="recap-share-h">
                 <h2 id="recap-share-h" className="card__title">{th('recap.share')}</h2>
                 <pre className="recap-text">{recapText(recap)}</pre>

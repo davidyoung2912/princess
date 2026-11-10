@@ -1,4 +1,5 @@
 import { canTakeBack, mySharedIds } from '../../domain/albumRules'
+import { StanleyCaption } from '../ai/StanleyRemember'
 import { useConfirmCharge } from '../ConfirmCharge'
 import { useState } from 'react'
 import { asPhotosView, asPrintView } from '../../api/guards'
@@ -109,6 +110,7 @@ function Photos({ v, reload, offline, canBuy }: { v: PhotosView; reload: () => v
                     {inDiary(p.id)
                       ? <span role="status" className="tag">{t('pho.diary.added')} <Link to="/me/diary">{t('pho.diary.open')}</Link></span>
                       : <Button variant="tertiary" onClick={() => toDiary(p)}>{t('pho.diary.add')}<span className="visually-hidden"> {p.title}</span></Button>}
+                    <StanleyCaption photoDay={p.day} title={p.title} />
                     {mine ? <span className="tag">{t('pho.owned')}</span> : canBuy && (
                       <label className="choice"><input type="checkbox" checked={picked.includes(p.id)} onChange={() => setPicked(picked.includes(p.id) ? picked.filter((x) => x !== p.id) : [...picked, p.id])} /><span>{t('pho.choose')}<span className="visually-hidden"> {p.title}</span></span></label>
                     )}

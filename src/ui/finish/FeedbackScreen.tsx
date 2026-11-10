@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { StanleyFeedbackDrafter } from '../ai/StanleyRemember'
 import { Link } from 'react-router'
 import type { FeedbackView } from '../../api/finishTypes'
 import { AREAS, COMMENT_MAX, CREW_MAX, blankFeedback, crewNotes, needsRecovery, type AreaId, type Feedback } from '../../domain/postcruise'
@@ -92,6 +93,7 @@ function Form({ v, reload }: { v: FeedbackView; reload: () => void }) {
                 {v.crew.map((c) => <label key={c.id} className="choice"><input type="checkbox" checked={f.crew.includes(c.name)} onChange={() => toggleCrew(c.name)} /><span>{c.name}<small>{t(`fbk.role.${c.role}` as StringKey)}{c.name === v.steward ? ` · ${t('fbk.yourSteward')}` : ''}</small></span></label>)}
               </fieldset>
               <CrewPreview f={f} />
+              <StanleyFeedbackDrafter crew={f.crew} overall={f.overall} liked={AREAS.filter((a) => (f.areas[a] ?? 0) >= 4).map((a) => t(`fbk.area.${a}` as StringKey))} disliked={AREAS.filter((a) => (f.areas[a] ?? 6) <= 2).map((a) => t(`fbk.area.${a}` as StringKey))} comment={f.comment} max={COMMENT_MAX} onUse={(comment) => set({ comment })} />
             </>
           )}
           <Card labelledBy="fbk-use-h">
