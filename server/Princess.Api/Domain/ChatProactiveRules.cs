@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false, bool AshoreNoBridge = false, Guid? MeetGroup = null, Guid? LunchGroup = null, int CruiseDay = 0, int ShipHour = 0);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false, bool AshoreNoBridge = false, Guid? MeetGroup = null, Guid? LunchGroup = null, int CruiseDay = 0, int ShipHour = 0, int DaysSinceEnd = 0, bool FeedbackDone = false, bool CaseOpen = false, bool ChatsToKeep = false);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
@@ -31,9 +31,9 @@ public static class ChatProactiveRules
     public const int DailyCap = 3;
     public static readonly TimeSpan SnoozeFor = TimeSpan.FromHours(24);
 
-    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery", Travel = "travel", Onboard = "onboard";
+    public const string Payment = "payment", Planning = "planning", Packing = "packing", Steps = "steps", Discovery = "discovery", Travel = "travel", Onboard = "onboard", Remember = "remember";
     /// <summary>The topics a guest can switch off. A due-date card (payment) is on this list too: a guest may not want even that in the thread, and the payment notice and the phone push are unaffected.</summary>
-    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery, Travel, Onboard];
+    public static readonly string[] Topics = [Payment, Planning, Packing, Steps, Discovery, Travel, Onboard, Remember];
 
     /// <summary>The stored level, as a mode. A guest who has not chosen gets the narrowest useful one (section 7.2).</summary>
     public static string ModeOf(string? level) => level switch
@@ -70,6 +70,7 @@ public static class ChatProactiveRules
         list.AddRange(BeforeBooking(f));
         list.AddRange(ManageToBoarding(f));
         list.AddRange(AboardToDisembark(f));
+        list.AddRange(AfterTheCruise(f));
         if (f.BalanceOwing && f.FinalDue is { } due && (due.DayNumber - today.DayNumber) is >= 0 and <= 14 && f.Stage is StageRules.Manage or StageRules.Prebook or StageRules.GetToShip)
         {
             var days = due.DayNumber - today.DayNumber;
@@ -161,6 +162,28 @@ public static class ChatProactiveRules
                 list.Add(new("leave.swap-contacts", Onboard, ClassSuggestion, "Keep in touch?\nChoose which chats to keep after the cruise.", "/chat", f.Now.AddDays(1), Hash("leave.swap-contacts")));
                 break;
         }
+        return list;
+    }
+
+    /// <summary>The days after the cruise the cards wait for. The Remember stage lasts <see cref="StageRules.RememberDays"/> days, so every card here fires inside it.</summary>
+    public const int PhotosAfterDays = 2, FeedbackAfterDays = 3, KeepAfterDays = 5, NextTripAfterDays = 7;
+
+    /// <summary>
+    /// Phase 7d (stage Remember; 7.6): private cards for a guest back home, on a switchable <c>remember</c> topic. They open screens that exist (memories, feedback, chats, rebook) and carry no amount or date.
+    /// The next-trip card is a rebooking prompt, so it waits while a case is open; the feedback card stops once feedback is in. Nothing here reads a message.
+    /// </summary>
+    public static List<Moment> AfterTheCruise(MomentFacts f)
+    {
+        var list = new List<Moment>();
+        if (f.Stage != StageRules.Remember) return list;
+        if (f.DaysSinceEnd >= PhotosAfterDays)
+            list.Add(new("remember.photos", Remember, ClassSuggestion, "Your photos from the trip\nOpen Memories to look back and choose what to keep.", "/me/memories", f.Now.AddDays(3), Hash("remember.photos")));
+        if (f.DaysSinceEnd >= FeedbackAfterDays && !f.FeedbackDone)
+            list.Add(new("remember.feedback", Remember, ClassSuggestion, "How did it go?\nTell us about your cruise. It takes a couple of minutes.", "/me/feedback", f.Now.AddDays(3), Hash("remember.feedback")));
+        if (f.DaysSinceEnd >= NextTripAfterDays && !f.CaseOpen)
+            list.Add(new("remember.next-trip", Remember, ClassSuggestion, "Thinking about the next one?\nSee what you could book with the same group.", "/me/rebook", f.Now.AddDays(3), Hash("remember.next-trip")));
+        if (f.DaysSinceEnd >= KeepAfterDays && f.ChatsToKeep)
+            list.Add(new("remember.retention-warning", Remember, ClassDue, "Chats are deleted soon\nChoose which chats to keep. Everyone in a chat has to agree.", "/chat", f.Now.AddDays(3), Hash("remember.retention-warning")));
         return list;
     }
 

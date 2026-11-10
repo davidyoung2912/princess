@@ -465,4 +465,37 @@ public class GroupMeetAndLunchTests
         foreach (var text in new[] { ChatGroupMomentRules.MeetOfferText, ChatGroupMomentRules.LunchOfferText })
             Assert.DoesNotContain(text, c => char.IsDigit(c));
     }
+
+    private static List<string> RememberKeys(int days, bool feedbackDone = false, bool caseOpen = false, bool keep = false, string stage = StageRules.Remember) =>
+        [.. ChatProactiveRules.AfterTheCruise(new(Now, stage, 0, false, null, DaysSinceEnd: days, FeedbackDone: feedbackDone, CaseOpen: caseOpen, ChatsToKeep: keep)).Select(c => c.Key).Order()];
+
+    [Fact]
+    public void RememberCardsAppearAsTheDaysPass()
+    {
+        Assert.Empty(RememberKeys(1, keep: true));
+        Assert.Equal(["remember.photos"], RememberKeys(2));
+        Assert.Equal(["remember.feedback", "remember.photos"], RememberKeys(3));
+        Assert.Equal(["remember.feedback", "remember.photos", "remember.retention-warning"], RememberKeys(5, keep: true));
+        Assert.Equal(["remember.feedback", "remember.next-trip", "remember.photos"], RememberKeys(7));
+        Assert.Empty(RememberKeys(9, keep: true, stage: StageRules.Port));
+    }
+
+    [Fact]
+    public void FeedbackStopsOnceGivenAndRebookingWaitsForAnOpenCase()
+    {
+        Assert.DoesNotContain("remember.feedback", RememberKeys(8, feedbackDone: true));
+        Assert.DoesNotContain("remember.next-trip", RememberKeys(8, caseOpen: true));
+        Assert.Contains("remember.photos", RememberKeys(8, caseOpen: true));
+    }
+
+    [Fact]
+    public void RememberCardsAreSwitchableAndCarryNoNumbers()
+    {
+        Assert.True(ChatProactiveRules.ValidTopics(["remember"]));
+        var all = ChatProactiveRules.AfterTheCruise(new(Now, StageRules.Remember, 0, false, null, DaysSinceEnd: 8, ChatsToKeep: true));
+        Assert.Equal(4, all.Count);
+        foreach (var m in all) { Assert.Equal("remember", m.Topic); Assert.DoesNotContain(m.Text, c => char.IsDigit(c)); }
+        Assert.Null(ChatProactiveRules.Choose(all, [], new(ChatProactiveRules.ModeGuide, ["remember"], false, false), Now));
+        Assert.Equal("remember.retention-warning", ChatProactiveRules.Choose(all, [], new(ChatProactiveRules.ModeTrip, [], false, false), Now)?.Key);
+    }
 }

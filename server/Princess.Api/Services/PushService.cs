@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null, IPlanStore? plan = null, IChatStore? chatStore = null, IChatSmsStore? smsStore = null, IFinishStore? finish = null, IChatKeepStore? keepStore = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -359,7 +359,18 @@ public sealed class PushService(
                     && !(await smsStore.GetSettingsAsync(actor.Id, ct)).On
                     && (await chatStore.ListConversationsAsync(actor.Id, ct)).Any(r => !ChatConversationRules.IsPermanent(r.Kind) && !ChatConversationRules.IsClosed(r.Kind, r.Status, r.DirectEnded));
             }
-            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open", MusterPending: stage == StageRules.Embark && onboard is not null && !(await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id), LastFullDay: stage == StageRules.Sea && TripRules.Today(now).AddDays(1) == line.LastDay, DinnerUnbooked: dinnerUnbooked, TenderLate: tenderLate, AshoreNoBridge: ashoreNoBridge, CruiseDay: aboardDay ? FolioRules.CruiseDay(line, now) : 0, ShipHour: aboardDay ? Itinerary.LocalAt(now, line.ShipZoneAt(now)).Item2.Hour : 0), held, ct);
+            var remembering = stage == StageRules.Remember;
+            var daysSinceEnd = remembering ? TripRules.Today(now).DayNumber - line.LastDay.DayNumber : 0;
+            var feedbackDone = remembering && finish is not null && await finish.GetFeedbackAsync(booking.BookingId, ct) is not null;
+            var caseOpen = remembering && finish is not null && (await finish.ListCasesAsync(booking.BookingId, ct)).Any(c => CaseService.StatusOf(c, now).Stage is "received" or "inReview");
+            var chatsToKeep = false;
+            if (remembering && chatStore is not null && keepStore is not null)
+            {
+                var open = (await chatStore.ListConversationsAsync(actor.Id, ct)).Where(r => !ChatConversationRules.IsPermanent(r.Kind) && !ChatConversationRules.IsClosed(r.Kind, r.Status, r.DirectEnded)).ToList();
+                var mine = open.Count == 0 ? [] : (await keepStore.ListAsync([.. open.Select(r => r.GroupId)], ct)).Where(k => k.UserId == actor.Id).Select(k => k.GroupId).ToHashSet();
+                chatsToKeep = !actor.IsSupervised && open.Any(r => !mine.Contains(r.GroupId));
+            }
+            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due, DepositUnpaid: booking.PaidCents < trip.Plan.Deposit, DocumentsMissing: trip.Documents?.Missing ?? 0, CheckinOpen: trip.Checkin.State == "open", MusterPending: stage == StageRules.Embark && onboard is not null && !(await onboard.ListMusterAsync(booking.BookingId, ct)).ContainsKey(actor.Id), LastFullDay: stage == StageRules.Sea && TripRules.Today(now).AddDays(1) == line.LastDay, DinnerUnbooked: dinnerUnbooked, TenderLate: tenderLate, AshoreNoBridge: ashoreNoBridge, CruiseDay: aboardDay ? FolioRules.CruiseDay(line, now) : 0, ShipHour: aboardDay ? Itinerary.LocalAt(now, line.ShipZoneAt(now)).Item2.Hour : 0, DaysSinceEnd: daysSinceEnd, FeedbackDone: feedbackDone, CaseOpen: caseOpen, ChatsToKeep: chatsToKeep), held, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException) { /* a suggestion is never worth stopping a notice for */ }
     }

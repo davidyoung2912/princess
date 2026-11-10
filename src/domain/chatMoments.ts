@@ -8,7 +8,7 @@ import { noticeState } from './stanleyThread'
  */
 
 /** The topics the server accepts, in the order the settings list shows them. */
-export const MOMENT_TOPICS = ['payment', 'planning', 'packing', 'steps', 'discovery', 'travel', 'onboard'] as const
+export const MOMENT_TOPICS = ['payment', 'planning', 'packing', 'steps', 'discovery', 'travel', 'onboard', 'remember'] as const
 export type MomentTopic = (typeof MOMENT_TOPICS)[number]
 
 export const isMoment = (m: Pick<ChatMessage, 'notice'>): boolean => m.notice?.lane === 'suggestion'
