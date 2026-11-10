@@ -59,7 +59,7 @@ public class StanleyNoticeRelayTests
             new PushInput(now, "dueSoon", "2027-03-01", null, false, 45, false, [], [], 4, []),
         };
         var built = inputs.SelectMany(PushRules.Build).ToList();
-        Assert.NotEmpty(built.Where(n => n.Bypass));
+        Assert.Contains(built, n => n.Bypass);
         Assert.All(built.Where(n => n.Bypass), n => Assert.Contains(n.Kind, StanleyNoticeRules.BypassKinds));
     }
 

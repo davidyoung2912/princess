@@ -776,7 +776,7 @@ public class AboardApiTests : JourneyWorld
         Assert.Equal(HttpStatusCode.Forbidden, (await ChatPut($"conversations/{id}/notify-away", token, new { on = true })).Status);
         Assert.Equal(HttpStatusCode.Forbidden, (await ChatPost($"conversations/{id}/messages", token, new { text = "Hi Stanley" })).Status);
         Assert.Equal(HttpStatusCode.Forbidden, (await ChatPost($"conversations/{id}/photos", token, Photo())).Status);
-        Assert.False(F.Chat.Conversations.First(c => c.Kind == "stanley").Members.Any(m => m.Muted));
+        Assert.DoesNotContain(F.Chat.Conversations.First(c => c.Kind == "stanley").Members, m => m.Muted);
         // Someone else gets the same 404 as for a conversation that does not exist.
         Assert.Equal(HttpStatusCode.NotFound, (await ChatGet($"conversations/{id}/messages", await DanielToken())).Status);
     }
