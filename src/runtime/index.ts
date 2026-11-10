@@ -93,6 +93,15 @@ export const stanleyActions = {
   waiting: () => http.get<unknown>('/me/stanley/actions/waiting'),
 }
 
+/** Group polls kept by the server for the guest's booking. Only the person who made a poll may close, extend or remove it. */
+export const stanleyPolls = {
+  list: () => http.get<unknown>('/me/stanley/polls'),
+  create: (body: { question: string; options: string[]; days: number }) => http.post<unknown>('/me/stanley/polls', body),
+  answer: (id: string, optionId: string, answer: string) => http.put<unknown>(`/me/stanley/polls/${encodeURIComponent(id)}/answer`, { optionId, answer }),
+  control: (id: string, action: 'close' | 'extend') => http.post<unknown>(`/me/stanley/polls/${encodeURIComponent(id)}/${action}`, {}),
+  remove: (id: string) => http.delete<void>(`/me/stanley/polls/${encodeURIComponent(id)}`),
+}
+
 /** A helper preparing a preview for a guest who allowed it (the `stanley` permission on their helper link). Only the guest can confirm it. */
 export const stanleyHelping = {
   prepare: (guestId: string, body: { kind: string; args: Record<string, string> }) => http.post<unknown>(`/me/stanley/helping/${encodeURIComponent(guestId)}/actions/prepare`, body),
@@ -139,7 +148,6 @@ export const stanleyPlanner = {
   preview: (body: { sailingId?: string; excursionId: string; scenario?: string; mobility: string }) => http.post<unknown>('/me/stanley/plan/preview', body),
   meeting: (body: { sailingId?: string; day?: number; placeId: string; time: string; note?: string }) => http.post<unknown>('/me/stanley/plan/meeting', body),
   compareTours: (body: { sailingId?: string; a: string; b: string }) => http.post<unknown>('/me/stanley/plan/compare-tours', body),
-  groupStatus: (body: unknown) => http.post<unknown>('/stanley/group/status', body),
   travellers: () => http.get<unknown>('/me/stanley/travellers'),
   saveTraveller: (id: string, record: unknown) => http.put<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`, record),
   forgetTraveller: (id: string) => http.delete<unknown>(`/me/stanley/travellers/${encodeURIComponent(id)}`),

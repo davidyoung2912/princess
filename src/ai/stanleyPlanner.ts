@@ -147,30 +147,6 @@ export function normalizeGroupStatus(raw: unknown): GroupStatus | null {
   }
 }
 
-/** A poll becomes the server's request: a person's pick is a yes, their marks are maybe or no, and nothing said is an empty answer, never a yes. No reason is ever sent. */
-export function groupRequest(
-  poll: { question: string; options: { id: string; label: string }[]; votes: Record<string, string>; answers?: Record<string, Record<string, string>>; closedAt?: number; createdAt?: number; closesAt?: number },
-  members: readonly { id: string; name: string }[],
-  organiser: boolean,
-): { question: string; options: { id: string; label: string }[]; members: { name: string; answers: Record<string, string> }[]; closed: boolean; organiser: boolean; createdAt?: number; closesAt?: number } {
-  const ids = new Set(poll.options.map((o) => o.id))
-  return {
-    question: poll.question,
-    options: poll.options,
-    members: members.slice(0, 20).map((m) => {
-      const answers: Record<string, string> = {}
-      for (const [opt, mark] of Object.entries(poll.answers?.[m.id] ?? {})) if (ids.has(opt) && (mark === 'maybe' || mark === 'no')) answers[opt] = mark
-      const v = poll.votes[m.id]
-      if (v !== undefined && ids.has(v)) answers[v] = 'yes'
-      return { name: m.name.slice(0, NAME_MAX) || '?', answers }
-    }),
-    closed: poll.closedAt !== undefined,
-    organiser,
-    ...(poll.createdAt !== undefined ? { createdAt: poll.createdAt } : {}),
-    ...(poll.closesAt !== undefined ? { closesAt: poll.closesAt } : {}),
-  }
-}
-
 /** The meeting note cut to the limit, so the request is never refused for length. */
 export const cleanNote = (s: string): string => s.trim().slice(0, NOTE_MAX)
 

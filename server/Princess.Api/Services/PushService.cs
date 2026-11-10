@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -92,6 +92,7 @@ public sealed class PushService(
 
         var input = await InputAsync(actor, booking, departure, now, [.. Watch(subs)], ct);
         if (stanleyReminders is not null) input = input with { Reminders = await stanleyReminders.DueAsync(actor.Id, now, ct) };
+        if (stanleyActions is not null) input = input with { HelperPrepared = [.. (await stanleyActions.WaitingFromHelperAsync(actor, ct)).Select(a => a.Id)] };
         var notices = PushRules.Build(input).Select(n => PushRules.Redact(PushRules.WithLink(n, booking?.Number))).ToList();
         if (notices.Count == 0) return;
 

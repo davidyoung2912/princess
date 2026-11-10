@@ -129,7 +129,7 @@ describe('Spanish', () => {
   it('falls back to English for text not yet translated', async () => {
     await loadLocale('es')
     setLocale('es')
-    expect(t('poll.votes' as never, { count: 2 })).toBe(en['poll.votes_other' as keyof typeof en]?.replace('{count}', '2') ?? 'poll.votes')
+    expect(t('push.kind.helper' as never)).toBe(en['push.kind.helper' as keyof typeof en])
     expect(await loadLocale('zz')).toBe(false)
   })
 })

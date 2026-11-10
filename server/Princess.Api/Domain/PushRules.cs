@@ -15,7 +15,7 @@ public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
     IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
     InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
-    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null);
+    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null, IReadOnlyList<string>? HelperPrepared = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -30,7 +30,7 @@ public static class PushRules
     public const int MaxLog = 50;
     public const int MaxEndpoint = 450;
 
-    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder", "travel", "reservation", "case", "change"];
+    public static readonly string[] Kinds = ["allAboard", "backAboard", "scheduleChange", "disruption", "payment", "reminder", "travel", "reservation", "case", "change", "helper"];
 
     /// <summary>Minutes before all-aboard at which the escalation speaks (90, 60, 30 and 10).</summary>
     public static readonly int[] AllAboardSteps = [90, 60, 30, 10];
@@ -185,6 +185,12 @@ public static class PushRules
         // A reminder the guest asked Stanley for: the words they chose, once, when the time they chose comes (and not at all if it is long past). It is theirs, so it is not held for the budget, quiet hours or calm mode.
         foreach (var r in StanleyReminderRules.Sendable(i.Reminders ?? [], TripRules.ToMs(i.Now)))
             list.Add(new($"stanleyReminder:{r.Id}", "reminder", "checkin", false, 85, "/home", "Stanley: your reminder", r.Text, new() { ["requested"] = true }));
+
+        // Something a helper prepared for the guest: one plain note per prepared item, with no names or details in it (the guest reads it on their helper page). It is a suggestion, so it keeps to the budget, quiet hours and calm mode.
+        foreach (var id in i.HelperPrepared ?? [])
+            list.Add(new($"helper:{id}", "helper", "checkin", false, 30, "/me/helper",
+                "Stanley: something is waiting for you", "Someone helping you has prepared a request. Nothing happens until you look and confirm it.",
+                new() { ["prepared"] = id }));
 
         // A postcard the guest wrote to their future self: one plain note, with no words of theirs in it, once per postcard.
         if (i.PostcardIds is { Count: > 0 } cards)

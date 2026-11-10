@@ -7,7 +7,6 @@ import { impactedOn } from './recompose'
 import { normalizeContributions, payerView, planContributions, setStatus, summary } from './contributions'
 import { creditLine } from './creditLines'
 import { eventAccess } from './eventAccess'
-import { closePoll, castVote, newPoll, normalizeBoard, pollResultText } from './board'
 import { travelItems, EMPTY_PLAN } from './travel'
 import { deliveryOf, CHAT_NOTIFICATION_PREVIEW } from './chat'
 import { openDuplicate, withContact } from './services'
@@ -119,20 +118,6 @@ describe('event access (SEA-18)', () => {
   it('shows only verified features', () => {
     expect(eventAccess('stage-show')).toContain('captions')
     expect(eventAccess('trivia')).toEqual([])
-  })
-})
-
-describe('closing a poll (DRM-14)', () => {
-  const poll = castVote(castVote(newPoll('p', 'Where?', ['Alaska', 'Greece'])!, 'a', 'o1'), 'b', 'o1')
-  it('stops further votes and keeps the result', () => {
-    const closed = closePoll(poll, 9)
-    expect(castVote(closed, 'c', 'o2')).toEqual(closed)
-    expect(closePoll(closed, 99).closedAt).toBe(9)
-    expect(normalizeBoard({ polls: [JSON.parse(JSON.stringify(closed))] }).polls[0].closedAt).toBe(9)
-  })
-  it('exports the result without voter names', () => {
-    const text = pollResultText(poll, { winner: 'Chosen: {label}', tie: 'tie', none: 'none', votes: (n) => `${n} votes` })
-    expect(text).toBe('Where?\n- Alaska: 2 votes\n- Greece: 0 votes\nChosen: Alaska')
   })
 })
 

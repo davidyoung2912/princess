@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { newTravellerId, normalizeTravellers, travellerBody, cleanNote, groupRequest, hardConflicts, isReady, normalizeDay, normalizeEvening, normalizeGroupStatus, normalizeHour, normalizeMeeting, normalizePreview, normalizeTourCompare } from './stanleyPlanner'
+import { newTravellerId, normalizeTravellers, travellerBody, cleanNote, hardConflicts, isReady, normalizeDay, normalizeEvening, normalizeGroupStatus, normalizeHour, normalizeMeeting, normalizePreview, normalizeTourCompare } from './stanleyPlanner'
 
 describe('Stanley planner (device side)', () => {
   it('reads a day defensively and never trusts ready over a hard conflict', () => {
@@ -46,14 +46,6 @@ describe('Stanley planner (device side)', () => {
     expect(g.suggestion.kind).toBe('leading')
     expect(g.reminderDue).toBe(true)
     expect(normalizeGroupStatus({})).toBeNull()
-  })
-
-  it('turns a poll into a request where a vote is a yes and silence is an empty answer', () => {
-    const r = groupRequest({ question: 'Q', options: [{ id: 'o1', label: 'A' }, { id: 'o2', label: 'B' }], votes: { p1: 'o2', p3: 'gone' }, answers: { p1: { o1: 'no', zzz: 'maybe' }, p2: { o1: 'maybe', o2: 'because' } }, closesAt: 9000, createdAt: 100 }, [{ id: 'p1', name: 'Ann' }, { id: 'p2', name: 'Bo' }, { id: 'p3', name: 'Cy' }], true)
-    expect(r.members).toEqual([{ name: 'Ann', answers: { o1: 'no', o2: 'yes' } }, { name: 'Bo', answers: { o1: 'maybe' } }, { name: 'Cy', answers: {} }])
-    expect([r.createdAt, r.closesAt]).toEqual([100, 9000])
-    expect(r.closed).toBe(false)
-    expect(JSON.stringify(r)).not.toContain('reason')
   })
 
   it('cuts a meeting note to the limit', () => {

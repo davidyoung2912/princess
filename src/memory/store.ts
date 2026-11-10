@@ -45,7 +45,7 @@ export interface MemoryState {
   /** Weekly companion switched off (S3-03), and the plan lines the guest confirmed from a pasted plan (S0-07). */
   companionOff: boolean
   pasted: PlanLine[]
-  /** Slice B of H8, all on this device: polls, dream board, surprises, taste choices, child brief, rhythm, privacy, traditions, cabins. */
+  /** Slice B of H8, all on this device: dream board, surprises, taste choices, child brief, rhythm, privacy, traditions, cabins. */
   planning: PlanningState
   /** Slice C of H8, on this device: seasickness request, lounger hold, kids report consent, teen agreement, OK tap, solo timer, cabin, do not disturb, dining choices, steps, lost reports, sightings. */
   aboard: AboardState

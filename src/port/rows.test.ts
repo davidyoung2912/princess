@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addItem, addParty, EMPTY_SPLIT, removeItem, removeParty } from '../domain/ledgerSplit'
-import { addIdea, castVote, heartIdea, markOption, newPoll } from '../domain/board'
+import { addIdea, heartIdea } from '../domain/board'
 import { addRendezvous, EMPTY_PORT_PARTY, removeRendezvous, setAlertBefore, setMeetState, setPresence, proposePlan } from '../domain/portParty'
 import { diffState, layer, legacyRows, normalizeRows, rowId, stateOfRows, valuesOf, winner, type PortRow } from './rows'
 import { EMPTY_PORT, type PortState } from './store'
@@ -15,26 +15,23 @@ const sample = (): PortState => {
   party = proposePlan(party, '2027-03-23', { outing: 'coz-snorkel', title: 'Snorkel', travelMinutes: 20, buffer: 45 }, 'daniel')
   party = setAlertBefore(party, 60)
   party = addRendezvous(party, { place: 'Pier', at: 999, fallback: 'Gangway', members: ['daniel', 'priya'] }, 'daniel', 'm1')
-  const poll = castVote(castVote(newPoll('p1', 'Where to eat?', ['Pizza', 'Tacos'])!, 'daniel', 'o1'), 'priya', 'o2')
-  const board = { polls: [poll], ideas: heartIdea(addIdea([], 'i1', 'Swim with rays'), 'i1', 'priya'), dates: { priya: ['sky-2027-04-01', 'sky-2027-05-01'] } }
+  const board = { ideas: heartIdea(addIdea([], 'i1', 'Swim with rays'), 'i1', 'priya'), dates: { priya: ['sky-2027-04-01', 'sky-2027-05-01'] } }
   return { party, split, board }
 }
 
-describe('the group poll and dream board as rows', () => {
-  it('keeps each vote and heart as its own row, so two phones never overwrite each other', () => {
+describe('the dream board as rows', () => {
+  it('keeps each heart as its own row, so two phones never overwrite each other', () => {
     const rows = [...valuesOf(sample()).values()]
-    expect(rows.filter((r) => r.kind === 'vote').map((r) => r.key).sort()).toEqual(['p1|daniel', 'p1|priya'])
     expect(rows.filter((r) => r.kind === 'heart').map((r) => r.key)).toEqual(['i1|priya'])
-    expect(rows.find((r) => r.kind === 'poll')?.data).toMatchObject({ question: 'Where to eat?' })
   })
-  it('turns a vote from one phone into one row change, and a withdrawn poll into deletes', () => {
+  it('turns a heart from one phone into one row change, and a withdrawn idea into deletes', () => {
     const before = sample()
-    const poll = castVote(before.board.polls[0], 'cy', 'o1')
-    const ops = diffState(before, { ...before, board: { ...before.board, polls: [poll] } }, 500)
-    expect(ops.map((o) => `${o.kind}/${o.key}`)).toEqual(['vote/p1|cy'])
-    const gone = diffState(before, { ...before, board: { ...before.board, polls: [] } }, 600)
+    const ideas = heartIdea(before.board.ideas, 'i1', 'cy')
+    const ops = diffState(before, { ...before, board: { ...before.board, ideas } }, 500)
+    expect(ops.map((o) => `${o.kind}/${o.key}`)).toEqual(['heart/i1|cy'])
+    const gone = diffState(before, { ...before, board: { ...before.board, ideas: [] } }, 600)
     expect(gone.every((o) => o.deleted)).toBe(true)
-    expect(gone.map((o) => o.kind).sort()).toEqual(['poll', 'vote', 'vote'])
+    expect(gone.map((o) => o.kind).sort()).toEqual(['heart', 'idea'])
   })
   it('keeps each ticked sailing as its own row', () => {
     const rows = [...valuesOf(sample()).values()].filter((r) => r.kind === 'date')
@@ -120,16 +117,5 @@ describe('port state as rows', () => {
     const rows = normalizeRows({ rows: [{ kind: 'item', key: 'i', data: { a: 1 }, at: 3, deleted: false }, { kind: 'nope', key: 'x', at: 1 }, { kind: 'item', key: 'y' }, 7] })
     expect(rows.map(rowId)).toEqual(['item/i'])
     expect(normalizeRows(null)).toEqual([])
-  })
-})
-
-describe('poll marks and times as rows', () => {
-  it('keeps each maybe or no as its own row and the times on the poll row', () => {
-    const before = sample()
-    const timed = { ...before.board.polls[0], createdAt: 10, closesAt: 99 }
-    const poll = markOption(timed, 'cy', 'o2', 'no')
-    const rows = [...valuesOf({ ...before, board: { ...before.board, polls: [poll] } }).values()]
-    expect(rows.find((r) => r.kind === 'answer')).toMatchObject({ key: 'p1|cy|o2', data: 'no' })
-    expect(rows.find((r) => r.kind === 'poll')?.data).toMatchObject({ createdAt: 10, closesAt: 99 })
   })
 })

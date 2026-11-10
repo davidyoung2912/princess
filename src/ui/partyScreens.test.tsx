@@ -70,19 +70,16 @@ describe('organiser (N4.5)', () => {
 })
 
 describe('group poll (N4.2)', () => {
-  it('makes a poll, counts this phone’s vote once, and changes it when voting again', async () => {
-    await open('/plan/group-poll')
+  it('lists the booking’s server polls and sends this phone’s answer', async () => {
+    const status = { state: 'open', answered: 0, silent: 2, tally: [{ id: 'o1', label: 'Pizza', yes: 0, maybe: 0, no: 0 }, { id: 'o2', label: 'Tacos', yes: 0, maybe: 0, no: 0 }], suggestion: { kind: 'none', optionIds: [], text: 'Nobody has answered yet.' }, reminderDue: false, reminderText: null, remains: [], controls: [], note: '' }
+    const poll = { id: 'p1', question: 'Where to eat?', options: [{ id: 'o1', label: 'Pizza' }, { id: 'o2', label: 'Tacos' }], createdAt: 1, closesAt: null, closed: false, mine: true, owner: 'Tess', myAnswers: {}, status }
+    const net = await open('/plan/group-poll', { 'GET /me/stanley/polls': [poll], 'PUT /me/stanley/polls/p1/answer': { ...poll, myAnswers: { o1: 'yes' } } })
     const m = within(main())
-    fireEvent.change(await m.findByLabelText('Question'), { target: { value: 'Where to eat?' } })
-    fireEvent.change(m.getByLabelText(/Choices/), { target: { value: 'Pizza, Tacos' } })
-    fireEvent.click(m.getByRole('button', { name: 'Create Poll' }))
-    await m.findByText('You have not voted yet.', { exact: false })
-    fireEvent.click(m.getByRole('button', { name: 'Pizza' }))
-    await m.findByText(/You chose Pizza/)
-    expect(m.getAllByText('1 vote').length).toBe(1)
-    fireEvent.click(m.getByRole('button', { name: 'Tacos' }))
-    await m.findByText(/You chose Tacos/)
-    expect(m.getAllByText('1 vote').length).toBe(1)
+    await m.findByRole('heading', { name: 'Where to eat?' })
+    fireEvent.click(m.getByRole('button', { name: 'Yes Pizza' }))
+    await waitFor(() => expect((m.getByRole('button', { name: 'Yes Pizza' }) as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true'))
+    expect(net.calls).toContain('PUT /me/stanley/polls/p1/answer')
+    expect(m.getByRole('button', { name: /close voting/i })).toBeTruthy()
   })
 
   it('says that everyone on the booking sees it', async () => {

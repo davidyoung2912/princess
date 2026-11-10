@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { HelpedGuest } from '../../api/types'
 import { BRAND_NAMES, validateCard } from '../../domain/account'
 import { formatDate } from '../../domain/cruise'
+import { DINNER_TIMES } from '../../domain/dining'
+import { EXCURSIONS } from '../../domain/excursions'
 import { folioTotals } from '../../domain/folio'
 import { formatMoney } from '../../domain/money'
 import { dateIn } from '../../domain/timezones'
@@ -78,47 +80,81 @@ function Guest({ guest }: { guest: HelpedGuest }) {
   )
 }
 
-/** Preparing a Stanley request for a guest who allowed it. Only a poll and a seating change are offered here; the guest has to confirm what is prepared. */
+/** What a helper may prepare (the server's list, `StanleyHelperRules.Preparable`). The guest has to confirm whatever is prepared. */
+type HelpKind = 'create_poll' | 'change_seating' | 'add_excursion' | 'reserve_dinner' | 'move_dinner'
+const HELP_KINDS: readonly HelpKind[] = ['create_poll', 'change_seating', 'add_excursion', 'reserve_dinner', 'move_dinner']
+
+/** Preparing a Stanley request for a guest who allowed it; the guest has to confirm what is prepared. */
 function GuestStanley({ guest }: { guest: HelpedGuest }) {
-  const [kind, setKind] = useState<'create_poll' | 'change_seating'>('create_poll')
+  const [kind, setKind] = useState<HelpKind>('create_poll')
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState('')
   const [plan, setPlan] = useState('early')
+  const [tour, setTour] = useState(EXCURSIONS[0]?.id ?? '')
+  const [night, setNight] = useState('2')
+  const [time, setTime] = useState(DINNER_TIMES[2] ?? '18:30')
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  const args = (): Record<string, string> => {
+    switch (kind) {
+      case 'create_poll': return { question: question.trim(), options: options.trim() }
+      case 'change_seating': return { plan }
+      case 'add_excursion': return { excursionId: tour, who: 'me' }
+      case 'reserve_dinner': return { day: night, time, who: 'all' }
+      case 'move_dinner': return { time }
+    }
+  }
+  const incomplete = (kind === 'create_poll' && (question.trim() === '' || options.trim() === '')) || (kind === 'add_excursion' && tour === '') || (kind === 'reserve_dinner' && !(Number(night) > 0))
   const go = async () => {
     setNote(null); setBusy(true)
     try {
-      await stanleyHelping.prepare(guest.guestId, { kind, args: kind === 'create_poll' ? { question: question.trim(), options: options.trim() } : { plan } })
+      await stanleyHelping.prepare(guest.guestId, { kind, args: args() })
       setNote({ ok: true, text: t('helping.stanley.sent', { name: guest.name }) }); setQuestion(''); setOptions('')
     } catch (e) {
       setNote({ ok: false, text: t('helping.stanley.failed', { why: e && typeof e === 'object' && 'code' in e ? String((e as { code: unknown }).code) : 'error' }) })
     } finally { setBusy(false) }
   }
+  const timePick = (
+    <label>{t('helping.stanley.time')}{' '}
+      <select value={time} onChange={(e) => setTime(e.target.value)}>{DINNER_TIMES.map((x) => <option key={x} value={x}>{x}</option>)}</select>
+    </label>
+  )
   return (
     <fieldset className="plain-fieldset">
       <legend>{t('helping.stanley.title', { name: guest.name })}</legend>
       <p className="muted">{t('helping.stanley.intro', { name: guest.name })}</p>
       <label>{t('helping.stanley.kind')}{' '}
-        <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-          <option value="create_poll">{t('helping.stanley.poll')}</option>
-          <option value="change_seating">{t('helping.stanley.seating')}</option>
+        <select value={kind} onChange={(e) => setKind(e.target.value as HelpKind)}>
+          {HELP_KINDS.map((k) => <option key={k} value={k}>{t(`helping.stanley.kind.${k}` as StringKey)}</option>)}
         </select>
       </label>
-      {kind === 'create_poll' ? (
+      {kind === 'create_poll' && (
         <>
           <Field label={t('helping.stanley.question')} value={question} maxLength={120} onChange={(e) => setQuestion(e.target.value)} />
           <Field label={t('helping.stanley.options')} value={options} maxLength={300} onChange={(e) => setOptions(e.target.value)} />
         </>
-      ) : (
+      )}
+      {kind === 'change_seating' && (
         <label>{t('helping.stanley.plan')}{' '}
           <select value={plan} onChange={(e) => setPlan(e.target.value)}>
             {(['early', 'late', 'anytime'] as const).map((p) => <option key={p} value={p}>{t(`helping.stanley.${p}` as StringKey)}</option>)}
           </select>
         </label>
       )}
+      {kind === 'add_excursion' && (
+        <label>{t('helping.stanley.tour')}{' '}
+          <select value={tour} onChange={(e) => setTour(e.target.value)}>{EXCURSIONS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+        </label>
+      )}
+      {kind === 'reserve_dinner' && (
+        <>
+          <Field label={t('helping.stanley.night')} inputMode="numeric" value={night} maxLength={2} onChange={(e) => setNight(e.target.value.replace(/\D/g, ''))} />
+          {timePick}
+        </>
+      )}
+      {kind === 'move_dinner' && timePick}
       <div role="status">{note && <p className={note.ok ? undefined : 'field__error'}>{note.text}</p>}</div>
-      <Button variant="secondary" disabled={busy || (kind === 'create_poll' && (question.trim() === '' || options.trim() === ''))} onClick={() => void go()}>{t('helping.stanley.send', { name: guest.name })}</Button>
+      <Button variant="secondary" disabled={busy || incomplete} onClick={() => void go()}>{t('helping.stanley.send', { name: guest.name })}</Button>
     </fieldset>
   )
 }
