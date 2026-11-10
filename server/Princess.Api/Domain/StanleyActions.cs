@@ -6,12 +6,16 @@ namespace Princess.Api.Domain;
 /// <summary>The things Stanley may do for a guest, once they have seen a preview and confirmed it (docs/stanley-gap-analysis-and-plan.md, phase 5). Nothing else, ever.</summary>
 public static class StanleyActionKinds
 {
-    public const string OrderItem = "order_item", AddExcursion = "add_excursion", MoveDinner = "move_dinner", ReserveDinner = "reserve_dinner", DraftCase = "draft_case", PlanChange = "plan_change", RemindMe = "remind_me";
-    public static readonly string[] All = [OrderItem, AddExcursion, MoveDinner, ReserveDinner, DraftCase, PlanChange, RemindMe];
+    public const string OrderItem = "order_item", AddExcursion = "add_excursion", MoveDinner = "move_dinner", ReserveDinner = "reserve_dinner", DraftCase = "draft_case", PlanChange = "plan_change", RemindMe = "remind_me", CreatePoll = "create_poll", ChangeSeating = "change_seating";
+    public static readonly string[] All = [OrderItem, AddExcursion, MoveDinner, ReserveDinner, DraftCase, PlanChange, RemindMe, CreatePoll, ChangeSeating];
     /// <summary>These change only what the device keeps (the day plan, a reminder), so the server prepares, checks and confirms them and the device applies them from the receipt.</summary>
     public static readonly HashSet<string> OnDevice = [PlanChange, RemindMe];
     /// <summary>The kinds the server carries out through the plan, orders, excursion, dining and case services.</summary>
     public static bool OnServer(string kind) => All.Contains(kind) && !OnDevice.Contains(kind);
+    /// <summary>A reminder is kept on the device (it shows when the app is open) and also on the server (it reaches the phone as a push alert with the app closed), so it has both.</summary>
+    public static readonly HashSet<string> AlsoOnServer = [RemindMe];
+    /// <summary>The server has an effect to carry out, undo and settle: every server kind, and a reminder's push.</summary>
+    public static bool HasServerEffect(string kind) => OnServer(kind) || AlsoOnServer.Contains(kind);
 }
 
 /// <summary>A request turned into a kind and its parameters. Parameters are plain strings from a closed set per kind, so a stored preview is small and can be checked again.</summary>
@@ -108,7 +112,7 @@ public static partial class StanleyIntents
     public const string ToolName = "propose_action";
 
     public static readonly string ToolJson = """
-        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), reserve_dinner (book a main dining table, with day, time and who: all, me or a first name), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder on the guest's device: at as HH:MM and text). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","reserve_dinner","draft_case","plan_change","remind_me"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, all, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"}},"required":["kind"]}}
+        {"name":"propose_action","description":"Ask for a preview of one change the guest wants made to their trip. Nothing happens until the guest presses Confirm. Use it only for these kinds: order_item (a stateroom item such as towels, with item and qty), add_excursion (put a shore excursion in the cart, with excursionId), move_dinner (move the guest's dinner reservation, with day and time), reserve_dinner (book a main dining table, with day, time and who: all, me or a first name), draft_case (a service case for Guest Services: kind lostItem (with place) or complaint, with summary), plan_change (move, drop or add a day-plan item: op, itemId, and to for a move), remind_me (a reminder: at as HH:MM and text), create_poll (a group poll for the booking: question, options as two to six short choices, and days open 1, 3 or 7), change_seating (the booking's dining plan: plan early, late or anytime; only the person who booked). You can never pay, cancel a booking, change a cabin or share data. If a detail is missing, ask the guest instead of guessing.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["order_item","add_excursion","move_dinner","reserve_dinner","draft_case","plan_change","remind_me","create_poll","change_seating"]},"item":{"type":"string"},"qty":{"type":"integer"},"excursionId":{"type":"string"},"who":{"type":"string","description":"me, all, or a first name of someone on the booking"},"day":{"type":"integer"},"time":{"type":"string","description":"HH:MM, 24 hour"},"caseKind":{"type":"string","enum":["lostItem","complaint"]},"summary":{"type":"string"},"place":{"type":"string"},"op":{"type":"string","enum":["move","drop","add"]},"itemId":{"type":"string"},"to":{"type":"string","description":"HH:MM, 24 hour"},"at":{"type":"string","description":"HH:MM, 24 hour"},"text":{"type":"string"},"question":{"type":"string"},"options":{"type":"array","items":{"type":"string"}},"days":{"type":"integer"},"plan":{"type":"string","enum":["early","late","anytime"]}},"required":["kind"]}}
         """;
 
     /// <summary>The tool list with <see cref="ToolName"/> added, for a request that may prepare an action.</summary>
@@ -139,7 +143,7 @@ public static partial class StanleyIntents
     public static IntentResult Validate(JsonObject input, StanleyActionContext ctx)
     {
         var kind = input["kind"]?.GetValue<string>() ?? "";
-        if (!StanleyActionKinds.All.Contains(kind)) return IntentResult.Ask("I can't do that from here. I can order a stateroom item, add an excursion to your cart, book or move a dinner, draft a service case, change your day plan or set a reminder.");
+        if (!StanleyActionKinds.All.Contains(kind)) return IntentResult.Ask("I can't do that from here. I can order a stateroom item, add an excursion to your cart, book or move a dinner, change your dining seating, draft a service case, change your day plan, set a reminder or start a group poll.");
         string S(string name) => input[name] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
         int N(string name) => input[name] is JsonValue v ? (v.TryGetValue<int>(out var n) ? n : v.TryGetValue<string>(out var t) && int.TryParse(t, out var m) ? m : 0) : 0;
         var who = Clean(S("who"), 40);
@@ -195,6 +199,18 @@ public static partial class StanleyIntents
                 if (op == "move") args["to"] = to;
                 return IntentResult.Of(new StanleyIntent(kind, args));
             }
+            case StanleyActionKinds.CreatePoll:
+            {
+                var options = input["options"] is JsonArray arr ? arr.Select(x => x is JsonValue v && v.TryGetValue<string>(out var s) ? s : "").ToList() : [.. S("options").Split('|', StringSplitOptions.RemoveEmptyEntries)];
+                var req = new StanleyPollRequest(Clean(S("question"), StanleyPollRules.QuestionMax + 40), options, N("days") == 0 ? 3 : N("days"));
+                return PollIntent(req);
+            }
+            case StanleyActionKinds.ChangeSeating:
+            {
+                var plan = DiningPlanRules.FromWords(S("plan"));
+                if (plan is null) return IntentResult.Ask("Which seating would you like: early, late or anytime dining?");
+                return IntentResult.Of(new StanleyIntent(kind, new() { ["plan"] = plan }));
+            }
             default:
             {
                 var at = Hm(S("at"));
@@ -204,6 +220,19 @@ public static partial class StanleyIntents
                 return IntentResult.Of(new StanleyIntent(kind, new() { ["at"] = at, ["text"] = text }));
             }
         }
+    }
+
+    /// <summary>A poll request as an intent, or the question that has to be answered first.</summary>
+    private static IntentResult PollIntent(StanleyPollRequest req)
+    {
+        var (problem, question, options, days) = StanleyPollRules.Clean(req);
+        return problem switch
+        {
+            null => IntentResult.Of(new StanleyIntent(StanleyActionKinds.CreatePoll, new() { ["question"] = question, ["options"] = string.Join("|", options.Select(o => o.Label)), ["days"] = days.ToString() })),
+            "question" => IntentResult.Ask("What should the poll ask? For example: poll the group: snorkel or beach club?"),
+            "days" => IntentResult.Ask("How long should it stay open: 1, 3 or 7 days?"),
+            _ => IntentResult.Ask("What are the choices? Give me two to six short ones, for example: poll the group: snorkel or beach club?"),
+        };
     }
 
     // ---- the words, when no model can be called ---------------------------------------------------------------------------------------
@@ -263,6 +292,16 @@ public static partial class StanleyIntents
             var what = Regex.Match(lower, @"\b(?:to|that)\s+(?<t>(?!\d).+)$");
             var text = what.Success ? Clean(what.Groups["t"].Value, 80) : "Reminder";
             return IntentResult.Of(new StanleyIntent(StanleyActionKinds.RemindMe, new() { ["at"] = at, ["text"] = text.Length == 0 ? "Reminder" : text }));
+        }
+
+        // A group poll: "poll the group: snorkel or beach?".
+        if (StanleyPollRules.FromWords(q) is { } poll) return PollIntent(poll);
+
+        // The dining plan: "change my dining time to late seating", "switch to anytime dining". A fixed seating is a plan for the whole cruise, not a table for one night.
+        if (Regex.IsMatch(lower, @"\b(change|switch|move|put|swap|want|like)\b") && Regex.IsMatch(lower, @"\b(early|late|anytime|any time|flexible)\s+(seating|sitting|dining)\b|\b(seating|sitting)\b.{0,15}\b(early|late)\b|\bto (early|late|anytime)\b.{0,12}\b(seating|sitting|dining)\b"))
+        {
+            var plan = Regex.Match(lower, @"\b(early|late|anytime|any time|flexible)\b").Value;
+            return IntentResult.Of(new StanleyIntent(StanleyActionKinds.ChangeSeating, new() { ["plan"] = DiningPlanRules.FromWords(plan) ?? "anytime" }));
         }
 
         // Booking a table: "book dinner on night 3 at 7pm". Moving a table is read below.

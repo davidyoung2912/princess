@@ -15,7 +15,7 @@ public sealed record PushInput(
     DateTime Now, string Payment, string FinalDue, PortDayWithState? PortDay, bool ArrivedInPort, int AlertBefore, bool SomeoneNotBack,
     IReadOnlyList<PlanChange> Changes, IReadOnlyCollection<string> Watched, int DayNumber, IReadOnlyList<DisruptionDef> Disruptions, long? ReminderAt = null, IReadOnlyList<string>? PostcardIds = null, int? PlanBuffer = null,
     InstalmentPayment? Instalment = null, (string Port, string Date, string Band, int Percent)? Tender = null, (string Flight, string Date, string State, int DelayMinutes)? Flight = null,
-    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null);
+    bool InstalmentFailed = false, InstalmentPayment? InstalmentTaken = null, IReadOnlyList<ChangeCard>? StanleyCards = null, IReadOnlyList<StanleyReminderDue>? Reminders = null);
 
 /// <summary>
 /// The server side of reaching the guest (next-level plan N3.2 and N3.3). Ports the budget of <c>src/domain/nudges.ts</c>; the quiet hours are the guest's own saved preferences.
@@ -182,6 +182,10 @@ public static class PushRules
                 new() { ["at"] = at }));
         }
 
+        // A reminder the guest asked Stanley for: the words they chose, once, when the time they chose comes (and not at all if it is long past). It is theirs, so it is not held for the budget, quiet hours or calm mode.
+        foreach (var r in StanleyReminderRules.Sendable(i.Reminders ?? [], TripRules.ToMs(i.Now)))
+            list.Add(new($"stanleyReminder:{r.Id}", "reminder", "checkin", false, 85, "/home", "Stanley: your reminder", r.Text, new() { ["requested"] = true }));
+
         // A postcard the guest wrote to their future self: one plain note, with no words of theirs in it, once per postcard.
         if (i.PostcardIds is { Count: > 0 } cards)
         {
@@ -209,6 +213,7 @@ public static class PushRules
         if (n.Bypass) return new(true, null);
         var channel = (prefs["channels"] as JsonObject)?[n.Category] as JsonObject;
         if (channel?["push"] is JsonValue p && p.TryGetValue<bool>(out var on) && !on) return new(false, "channelOff");
+        if (n.Params.ContainsKey("requested")) return new(true, null);
         if (s.Calm) return new(false, "calm");
         var quiet = prefs["quiet"] as JsonObject;
         if (InQuiet(local, Flag(quiet?["on"]), Text(quiet?["from"], "22:00"), Text(quiet?["to"], "07:00"))) return new(false, "quiet");

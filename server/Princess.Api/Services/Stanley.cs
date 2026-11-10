@@ -14,7 +14,7 @@ namespace Princess.Api.Services;
 /// tools over the guest's own booking. Message text is never logged.
 /// </summary>
 public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limiter, IClock clock, IStanleyTrips trips, IStanleyTools tools, IStanleyTierLog tierLog,
-    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null, StanleyChangeService? changes = null, StanleyMoneyService? money = null)
+    IOptions<StanleyOptions> options, ILogger<StanleyService> log, IStanleyPackets? packets = null, StanleyActionService? actions = null, StanleyMemoryService? memory = null, StanleyChangeService? changes = null, StanleyMoneyService? money = null, IStanleyPlanSnapshotStore? planSnapshots = null)
 {
     public const string NoTools = "[]";
 
@@ -70,7 +70,7 @@ public sealed class StanleyService(IConciergeModel model, IConciergeLimiter limi
             return await End(Answer(words, "scripted", "action", null, [new CitationDto(label, path)]), "action", "refused");
         }
         // Actions (phase 5): a request to change something becomes a typed intent and a stored preview. Nothing is done here: the guest confirms the preview, and only then does the server act.
-        var actionCtx = (request.ActionContext ?? new StanleyActionContext()).Clean(packet?.Choice.Chosen?.SailingId ?? context.SailingId);
+        var actionCtx = await StanleyPlanSnapshots.MergeAsync(planSnapshots, user.Id, (request.ActionContext ?? new StanleyActionContext()).Clean(packet?.Choice.Chosen?.SailingId ?? context.SailingId), clock.UtcNow, ct);
         var mayAct = o.Switches.Actions && actions is not null && trip is not null;
         if (mayAct && StanleyIntents.Parse(turns.Message, actionCtx) is { } parsed)
         {

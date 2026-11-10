@@ -131,7 +131,7 @@ public interface IStanleyEffects
 /// availability are what was shown, then carries it out through the existing services and returns a receipt. A repeat of the same confirm returns the same receipt; an outcome that is not known is
 /// settled against what exists before anything is tried again. Paying, cancelling a booking, changing a cabin and sharing data are not actions and have no code path here.
 /// </summary>
-public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffects effects, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options, ILogger<StanleyActionService> log)
+public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffects effects, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options, ILogger<StanleyActionService> log, IStanleyPlanSnapshotStore? snapshots = null)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -156,12 +156,16 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
 
     private static StanleyActionContext Ctx(StanleyActionContext? given, string? sailingId) => new(given?.Plan, given?.AllAboard, sailingId);
 
+    /// <summary>The context for a call: what the device sent, and the server's saved plan when it sent none (and the new plan saved when it did), so a preview and its confirm are checked against one plan.</summary>
+    private async Task<StanleyActionContext> CtxAsync(UserRecord user, StanleyActionContext? given, string? sailingId, CancellationToken ct) =>
+        await StanleyPlanSnapshots.MergeAsync(snapshots, user.Id, Ctx(given, sailingId), clock.UtcNow, ct);
+
     /// <summary>Makes a preview. Nothing is changed. The preview lives for <see cref="StanleyActionRules.PreviewMinutes"/> minutes.</summary>
     public async Task<StanleyActionDto> PrepareAsync(UserRecord user, StanleyIntent intent, StanleyActionContext? context, CancellationToken ct)
     {
         RequireOn(user);
         if (!StanleyActionKinds.All.Contains(intent.Kind)) throw ApiException.Invalid("badAction");
-        var ctx = Ctx(context, context?.SailingId);
+        var ctx = await CtxAsync(user, context, context?.SailingId, ct);
         var facts = await effects.PreviewAsync(user, intent, ctx, ct);
         var args = new Dictionary<string, string>(intent.Args);
         foreach (var (k, v) in facts.Resolved ?? new Dictionary<string, string>()) args[k] = v;
@@ -199,7 +203,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
         }
         var data = DataOf(row);
         var intent = new StanleyIntent(row.Kind, data.Args);
-        var ctx = Ctx(context, data.SailingId);
+        var ctx = await CtxAsync(user, context, data.SailingId, ct);
         // The guest's permission, the price and the availability are checked again now, not trusted from the preview.
         var facts = await effects.PreviewAsync(user, intent, ctx, ct);
         if (StanleyActionRules.Fingerprint(facts.Facts) != row.Fingerprint)
@@ -214,7 +218,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
             return await SettleAsync(user, await store.GetAsync(id, user.Id, ct) ?? throw ApiException.NotFound(), context, ct);
 
         row = await store.GetAsync(id, user.Id, ct) ?? throw ApiException.NotFound();
-        if (StanleyActionKinds.OnDevice.Contains(row.Kind)) return await CompleteAsync(row, "", ct);
+        if (!StanleyActionKinds.HasServerEffect(row.Kind)) return await CompleteAsync(row, "", ct);
         try
         {
             var r = await effects.ExecuteAsync(user, intent, ctx, ct);
@@ -256,7 +260,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
         if (row.Status is not (StanleyActionStatus.Executing or StanleyActionStatus.Pending)) return ToDto(row);
         var data = DataOf(row);
         var intent = new StanleyIntent(row.Kind, data.Args);
-        if (await effects.ExistsAsync(user, intent, Ctx(context, data.SailingId), ct)) return await CompleteAsync(row, row.Ref, ct);
+        if (await effects.ExistsAsync(user, intent, await CtxAsync(user, context, data.SailingId, ct), ct)) return await CompleteAsync(row, row.Ref, ct);
         if ((clock.UtcNow - row.UpdatedAt).TotalSeconds >= StanleyActionRules.StaleSeconds)
         {
             row.Status = StanleyActionStatus.Prepared; row.IdemKey = null; row.UpdatedAt = clock.UtcNow;
@@ -280,10 +284,10 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
         if (row.Status == StanleyActionStatus.Undone) return ToDto(row);
         var now = clock.UtcNow;
         if (row.Status != StanleyActionStatus.Done || row.UndoUntil is not { } until || now > until) throw ApiException.Conflict("tooLate");
-        if (StanleyActionKinds.OnServer(row.Kind))
+        if (StanleyActionKinds.HasServerEffect(row.Kind))
         {
             var data = DataOf(row);
-            await effects.UndoAsync(user, new StanleyIntent(row.Kind, data.Args), row.Ref, Ctx(context, data.SailingId), ct);
+            await effects.UndoAsync(user, new StanleyIntent(row.Kind, data.Args), row.Ref, await CtxAsync(user, context, data.SailingId, ct), ct);
         }
         row.Status = StanleyActionStatus.Undone; row.UpdatedAt = now;
         await store.UpdateAsync(row, ct);
@@ -300,7 +304,7 @@ public sealed class StanleyActionService(IStanleyActionStore store, IStanleyEffe
 /// The real effects: each action goes through the service the screens use (stateroom requests, the excursion cart, dining, cases), as the guest, so those services' own checks, limits and
 /// permission rules apply at execution time. A day-plan change and a reminder are checked here and applied by the device.
 /// </summary>
-public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock) : IStanleyEffects
+public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanService planService, ServiceRequestService requests, CaseService cases, ScopeLoader scopes, IUserClock clock, StanleyPollService polls, StanleyDiningPlanService dining, StanleyReminderService reminders) : IStanleyEffects
 {
     private async Task<BookingRow> BookingAsync(UserRecord user, string? sailingId, CancellationToken ct)
     {
@@ -332,7 +336,7 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 var text = intent.Arg("text");
                 var lines = new List<string> { $"At {at}: {text}" };
                 if (ctx.AllAboard is { } a) lines.Add($"All aboard is {a.At} ({a.Label}).");
-                return new StanleyPreviewFacts($"Remind you at {at}", lines, ["You"], null, "The reminder is kept on this device and shows when you open the app after that time. It is not a phone alarm.", $"remind|{at}|{text}");
+                return new StanleyPreviewFacts($"Remind you at {at}", lines, ["You"], null, "It shows on this device when you open the app after that time, and is sent to your phone as an alert if you have allowed alerts. The time is the ship's clock.", $"remind|{at}|{text}");
             }
         }
 
@@ -399,6 +403,22 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                     [.. people.Select(p => p.First)], null, "No charge. You can move or cancel the table on the dining screen.", $"dinner-new|{venue.Id}|{day}|{time}|{left}",
                     new Dictionary<string, string> { ["venueId"] = venue.Id, ["day"] = day.ToString(), ["guests"] = string.Join(",", ids) });
             }
+            case StanleyActionKinds.CreatePoll:
+            {
+                var (problem, question, options, days) = StanleyPollRules.Clean(PollRequestOf(intent));
+                if (problem is not null) throw ApiException.Invalid(problem);
+                var voters = scope.Party.Where(p => !p.Child).Select(p => p.First).ToList();
+                List<string> lines = [question, .. options.Select(o => "• " + o.Label), $"Open for {days} {(days == 1 ? "day" : "days")}.", $"{voters.Count} {(voters.Count == 1 ? "person" : "people")} on the booking can answer."];
+                return new StanleyPreviewFacts("Start a group poll", lines, voters, null, "Nobody is asked until it is made, and only answers given are counted: no answer is never a yes. You can close or remove it.", $"poll|{booking.BookingId}|{question}|{string.Join("|", options.Select(o => o.Label))}|{days}");
+            }
+            case StanleyActionKinds.ChangeSeating:
+            {
+                var p = await dining.PreviewAsync(user, booking.Number, intent.Arg("plan"), ct);
+                var who = scope.Party.Select(x => x.First).ToList();
+                return new StanleyPreviewFacts($"Change your dining to {DiningPlanRules.Label(p.To).ToLowerInvariant()}",
+                    [$"Now: {DiningPlanRules.Label(p.From)}", $"After: {DiningPlanRules.Label(p.To)}", "This changes the dinner plan for everyone on the booking, for the whole cruise."], who, null,
+                    $"No charge. You can change it back until {DiningPlanRules.FreezeDays} days before sailing.", p.Facts);
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var kind = intent.Arg("caseKind");
@@ -414,6 +434,9 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 throw ApiException.Invalid("badAction");
         }
     }
+
+    private static StanleyPollRequest PollRequestOf(StanleyIntent intent) =>
+        new(intent.Arg("question"), [.. intent.Arg("options").Split('|', StringSplitOptions.RemoveEmptyEntries)], int.TryParse(intent.Arg("days"), out var d) ? d : 3);
 
     private static List<ScopePerson> WhoFor(UserRecord user, BookingRow booking, Scope scope, string who)
     {
@@ -446,8 +469,21 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
         return onNight.Count == 1 ? onNight[0] : throw ApiException.Invalid("whichDinner");
     }
 
+    /// <summary>The clock a reminder is read in: the ship's zone at this moment on the guest's current trip, else the ship's home zone.</summary>
+    private async Task<string> ReminderZoneAsync(UserRecord user, StanleyActionContext ctx, CancellationToken ct)
+    {
+        try
+        {
+            var booking = await BookingAsync(user, ctx.SailingId, ct);
+            return Itinerary.ShipZoneAt(DateOnly.FromDateTime(booking.Departure), await clock.NowAsync(user, ct));
+        }
+        catch (ApiException) { return Itinerary.ShipHomeZone; }
+    }
+
     public async Task<StanleyEffectResult> ExecuteAsync(UserRecord user, StanleyIntent intent, StanleyActionContext ctx, CancellationToken ct)
     {
+        if (intent.Kind == StanleyActionKinds.RemindMe)
+            return new StanleyEffectResult((await reminders.SetAsync(user, intent.Arg("at"), intent.Arg("text"), await ReminderZoneAsync(user, ctx, ct), ct)).ToString());
         var booking = await BookingAsync(user, ctx.SailingId, ct);
         switch (intent.Kind)
         {
@@ -480,6 +516,16 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 var made = view.Reservations.First(r => r.VenueId == venueId && r.Day == day && r.Time == time);
                 return new StanleyEffectResult(made.Id.ToString());
             }
+            case StanleyActionKinds.CreatePoll:
+            {
+                var made = await polls.CreateAsync(user, booking.Number, PollRequestOf(intent), ct);
+                return new StanleyEffectResult(made.Id.ToString());
+            }
+            case StanleyActionKinds.ChangeSeating:
+            {
+                var was = await dining.ChangeAsync(user, booking.Number, intent.Arg("plan"), ct);
+                return new StanleyEffectResult($"{was}|{intent.Arg("plan")}");
+            }
             case StanleyActionKinds.DraftCase:
             {
                 var view = await cases.OpenAsync(user, booking.Number, new OpenCaseRequest(intent.Arg("caseKind"), intent.Arg("summary"), intent.Arg("place"), null, 0), ct);
@@ -493,7 +539,8 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
 
     public async Task<bool> ExistsAsync(UserRecord user, StanleyIntent intent, StanleyActionContext ctx, CancellationToken ct)
     {
-        if (!StanleyActionKinds.OnServer(intent.Kind)) return false;
+        if (!StanleyActionKinds.HasServerEffect(intent.Kind)) return false;
+        if (intent.Kind == StanleyActionKinds.RemindMe) return await reminders.ExistsAsync(user, intent.Arg("text"), ct);
         var booking = await BookingAsync(user, ctx.SailingId, ct);
         switch (intent.Kind)
         {
@@ -505,6 +552,10 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
                 return (await plan.ListTablesAsync(booking.BookingId, ct)).Any(t => t.PublicId.ToString() == intent.Arg("tableId") && t.Day.ToString() == intent.Arg("day") && t.Time == intent.Arg("time"));
             case StanleyActionKinds.ReserveDinner:
                 return (await plan.ListTablesAsync(booking.BookingId, ct)).Any(t => t.VenueId == intent.Arg("venueId") && t.Day.ToString() == intent.Arg("day") && t.Time == intent.Arg("time"));
+            case StanleyActionKinds.CreatePoll:
+                return await polls.ExistsAsync(user, booking.Number, intent.Arg("question"), ct);
+            case StanleyActionKinds.ChangeSeating:
+                return await dining.IsAsync(user, booking.Number, intent.Arg("plan"), ct);
             default:
                 return (await cases.ListAsync(user, booking.Number, ct)).Cases.Any(c => c.Kind == intent.Arg("caseKind") && c.Summary == intent.Arg("summary") && c.CanWithdraw);
         }
@@ -512,6 +563,11 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
 
     public async Task UndoAsync(UserRecord user, StanleyIntent intent, string effectRef, StanleyActionContext ctx, CancellationToken ct)
     {
+        if (intent.Kind == StanleyActionKinds.RemindMe)
+        {
+            if (Guid.TryParse(effectRef, out var rid)) await reminders.CancelAsync(user, rid, ct);
+            return;
+        }
         var booking = await BookingAsync(user, ctx.SailingId, ct);
         switch (intent.Kind)
         {
@@ -531,6 +587,15 @@ public sealed class StanleyEffects(ITripStore trips, IPlanStore plan, PlanServic
             case StanleyActionKinds.ReserveDinner:
                 await planService.CancelTableAsync(user, booking.Number, Guid.Parse(effectRef), ct);
                 break;
+            case StanleyActionKinds.CreatePoll:
+                await polls.DeleteAsync(user, booking.Number, Guid.Parse(effectRef), ct);
+                break;
+            case StanleyActionKinds.ChangeSeating:
+            {
+                var parts = effectRef.Split('|');
+                await dining.RestoreAsync(user, booking.Number, parts[0], parts[1], ct);
+                break;
+            }
             default:
                 await cases.WithdrawAsync(user, booking.Number, Guid.Parse(effectRef), ct);
                 break;

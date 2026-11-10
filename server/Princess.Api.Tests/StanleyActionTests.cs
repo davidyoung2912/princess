@@ -212,6 +212,7 @@ public class StanleyActionTests
 
     private static readonly StanleyIntent Towels = new(StanleyActionKinds.OrderItem, new() { ["item"] = "towels", ["qty"] = "2" });
     private static readonly StanleyIntent Remind = new(StanleyActionKinds.RemindMe, new() { ["at"] = "16:15", ["text"] = "Be back" });
+    private static readonly StanleyIntent Drop = new(StanleyActionKinds.PlanChange, new() { ["op"] = "drop", ["itemId"] = "quiz", ["day"] = "3" });
 
     [Fact]
     public async Task PreparingShowsAPreviewAndChangesNothing()
@@ -418,15 +419,30 @@ public class StanleyActionTests
     public async Task ADeviceActionIsConfirmedAndReceiptedButTheServerChangesNothing()
     {
         var w = Build();
-        var p = await w.Svc.PrepareAsync(Me, Remind, null, default);
+        var p = await w.Svc.PrepareAsync(Me, Drop, null, default);
         Assert.True(p.OnDevice);
         var done = await w.Svc.ConfirmAsync(Me, Guid.Parse(p.Id), "key-0001-abc", null, default);
         Assert.Equal((StanleyActionStatus.Done, true), (done.Status, done.OnDevice));
-        Assert.Equal("16:15", done.Params["at"]);
+        Assert.Equal("drop", done.Params["op"]);
         Assert.Equal(0, w.Effects.Executed);
         var undone = await w.Svc.UndoAsync(Me, Guid.Parse(p.Id), null, default);
         Assert.Equal(StanleyActionStatus.Undone, undone.Status);
         Assert.Equal(0, w.Effects.Undone);
+    }
+
+    [Fact]
+    public async Task AReminderIsShownByTheDeviceAndAlsoSetOnTheServerSoItCanBePushedAndUndoCancelsIt()
+    {
+        var w = Build();
+        var p = await w.Svc.PrepareAsync(Me, Remind, null, default);
+        Assert.True(p.OnDevice);
+        var done = await w.Svc.ConfirmAsync(Me, Guid.Parse(p.Id), "key-0002-abc", null, default);
+        Assert.Equal((StanleyActionStatus.Done, true), (done.Status, done.OnDevice));
+        Assert.Equal("16:15", done.Params["at"]);
+        Assert.Equal(1, w.Effects.Executed);
+        var undone = await w.Svc.UndoAsync(Me, Guid.Parse(p.Id), null, default);
+        Assert.Equal(StanleyActionStatus.Undone, undone.Status);
+        Assert.Equal(1, w.Effects.Undone);
     }
 
     [Fact]

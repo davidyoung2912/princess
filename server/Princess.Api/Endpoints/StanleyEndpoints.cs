@@ -42,7 +42,7 @@ public static class StanleyEndpoints
                 if (read.Intent is null) throw ApiException.Invalid("badAction");
                 return Results.Ok(await svc.PrepareAsync(await me.LoadAsync(ct), read.Intent, ctx, ct));
             })
-            .WithSummary("Prepares a change as a preview and does nothing else. Send { kind (order_item, add_excursion, move_dinner, reserve_dinner, draft_case, plan_change or remind_me), args (plain strings, for example item and qty), context { plan[{ id, title, start, day, listed }], allAboard { at, label }, sailingId } }. " +
+            .WithSummary("Prepares a change as a preview and does nothing else. Send { kind (order_item, add_excursion, move_dinner, reserve_dinner, draft_case, plan_change, remind_me, create_poll (args question, options joined with |, days) or change_seating (args plan: early, late or anytime)), args (plain strings, for example item and qty), context { plan[{ id, title, start, day, listed }], allAboard { at, label }, sailingId } }. " +
                 "Answers the action { id, kind, status (prepared), title, lines[], who[], cents, terms, expiresAt, onDevice, params }: the exact items, who is affected, any price, the cancellation terms and an expiry ten minutes ahead. " +
                 "400 badAction for a kind or detail that is not allowed, 403 for a child account, 409 off when the actions switch is off, and the same 400, 404 and 409 codes the service behind the action gives.");
         actions.MapPost("/{id:guid}/confirm", async (Guid id, StanleyConfirmRequest body, ICurrentUser me, StanleyActionService svc, CancellationToken ct) =>
@@ -75,6 +75,33 @@ public static class StanleyEndpoints
             .WithSummary("Forgets everything Stanley remembers about the guest.");
         memory.MapPut("/settings", async (StanleyMemorySettingsRequest body, ICurrentUser me, StanleyMemoryService svc, CancellationToken ct) => { await svc.SetSettingsAsync(await me.LoadAsync(ct), body, ct); return Results.NoContent(); })
             .WithSummary("Switches Stanley's memory on or off { enabled } and/or keeps how much Stanley speaks up { level: chatty, helpful, asked or off } so every device shows the same choice (the get returns it as level, or null before one is chosen). At least one is needed. Off, no remembered item is used in an answer; items stay listed until forgotten. 400 settings or level, 403 for a child account setting a level.");
+
+        api.MapPut("/me/stanley/plan", async (StanleyPlanSnapshotRequest body, ICurrentUser me, IStanleyPlanSnapshotStore store, IClock clock, CancellationToken ct) =>
+            {
+                var user = await me.LoadAsync(ct);
+                var ctx = new StanleyActionContext(body.Plan, null, body.SailingId).Clean(body.SailingId);
+                await store.PutAsync(user.Id, ctx.SailingId ?? "", ctx.Plan ?? [], clock.UtcNow, ct);
+                return Results.NoContent();
+            })
+            .WithTags("Stanley")
+            .WithSummary("Tells the server the day plan as the device lists it { sailingId, plan[{ id, title, start (HH:MM), day, listed }] }, up to 60 entries (titles and times only), so a plan change is checked against one saved plan. An empty plan clears it.");
+        api.MapGet("/me/stanley/plan", async (string? sailing, ICurrentUser me, IStanleyPlanSnapshotStore store, CancellationToken ct) =>
+                Results.Ok((await store.GetAsync((await me.LoadAsync(ct)).Id, sailing ?? "", ct)) ?? new StanleyPlanSnapshot([], default)))
+            .WithTags("Stanley")
+            .WithSummary("The day plan the server holds for the guest and sailing: { plan[], updatedAt }. Empty when none has been sent.");
+
+        var polls = api.MapGroup("/me/stanley/polls").WithTags("Stanley");
+        polls.MapGet("", async (string? booking, ICurrentUser me, StanleyPollService svc, CancellationToken ct) => Results.Ok(await svc.ListAsync(await me.LoadAsync(ct), booking, ct)))
+            .WithSummary("The group polls on a booking (the query `booking` is its number; the current trip when omitted), newest first: { id, question, options[{ id, label }], createdAt, closesAt, closed, mine, owner, myAnswers, status }. " +
+                "status is the group status: totals per option, who is silent (a count, never names), the suggestion, whether a reminder is due and what remains. Nobody sees another person's answer.");
+        polls.MapPost("", async (string? booking, StanleyPollRequest body, ICurrentUser me, StanleyPollService svc, CancellationToken ct) => Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), booking, body, ct)))
+            .WithSummary("Makes a poll { question (up to 120), options (two to six, up to 40 characters each), days (1, 3 or 7) }. 400 question, options or days, 403 for a child account, 409 tooMany after five open polls.");
+        polls.MapPut("/{id:guid}/answer", async (Guid id, string? booking, StanleyPollAnswerRequest body, ICurrentUser me, StanleyPollService svc, CancellationToken ct) => Results.Ok(await svc.AnswerAsync(await me.LoadAsync(ct), booking, id, body, ct)))
+            .WithSummary("Answers one choice { optionId, answer (yes, maybe or no) } for the signed-in adult. 409 closed once the poll is closed or past its closing time; 404 for a poll on another booking.");
+        polls.MapPost("/{id:guid}/{action}", async (Guid id, string action, string? booking, ICurrentUser me, StanleyPollService svc, CancellationToken ct) => Results.Ok(await svc.ControlAsync(await me.LoadAsync(ct), booking, id, action, ct)))
+            .WithSummary("The maker closes a poll now (close) or gives it another day (extend). 404 for anyone else.");
+        polls.MapDelete("/{id:guid}", async (Guid id, string? booking, ICurrentUser me, StanleyPollService svc, CancellationToken ct) => { await svc.DeleteAsync(await me.LoadAsync(ct), booking, id, ct); return Results.NoContent(); })
+            .WithSummary("The maker removes a poll and every answer to it. 404 for anyone else.");
 
         var discover = api.MapGroup("/stanley/discover").WithTags("Stanley").AllowAnonymous();
         discover.MapPost("/interview", (DiscoverInterviewRequest body, StanleyDiscoverService svc) => Results.Ok(svc.Interview(body)))
@@ -203,6 +230,30 @@ public static class StanleyEndpoints
                 "Silence is never counted as a yes. Nothing is stored. 400 question, options, members, answers or times.");
 
         var handoffs = api.MapGroup("/me/stanley/handoffs").WithTags("Stanley");
+        handoffs.MapPost("/photo", async (HttpRequest req, ICurrentUser me, StanleyHandoffPhotoService svc, CancellationToken ct) =>
+            {
+                // The picture is the request body (image/jpeg or image/png). No more than the limit plus one byte is read, so a huge body is refused without being kept.
+                if (req.ContentLength > StanleyHandoffPhotoRules.MaxBytes) throw ApiException.Invalid("size");
+                using var buffer = new MemoryStream();
+                var chunk = new byte[16 * 1024];
+                int n;
+                while ((n = await req.Body.ReadAsync(chunk, ct)) > 0)
+                {
+                    buffer.Write(chunk, 0, n);
+                    if (buffer.Length > StanleyHandoffPhotoRules.MaxBytes) throw ApiException.Invalid("size");
+                }
+                return Results.Ok(await svc.UploadAsync(await me.LoadAsync(ct), buffer.ToArray(), ct));
+            })
+            .WithSummary("Keeps a photo for a handoff case (a lost item, a receipt): the request body is a JPEG or PNG of at most 5 MB. The metadata (place, time, camera) is removed before it is kept. Answers { id, type, bytes }; send the id as the case's attachment. " +
+                "400 empty, size, type, unreadable or scan, 403 for a child account, 409 tooMany when three are already waiting. A photo is deleted with its case, and one never attached is deleted after a day.");
+        handoffs.MapGet("/photo/{id}", async (string id, ICurrentUser me, StanleyHandoffPhotoService svc, CancellationToken ct) =>
+            {
+                var (data, type) = await svc.OpenAsync(await me.LoadAsync(ct), id, ct);
+                return Results.File(data, type);
+            })
+            .WithSummary("The photo itself, for the guest who sent it. 404 for anyone else's or one that is gone.");
+        handoffs.MapDelete("/photo/{id}", async (string id, ICurrentUser me, StanleyHandoffPhotoService svc, CancellationToken ct) => { await svc.DeleteAsync(await me.LoadAsync(ct), id, ct); return Results.NoContent(); })
+            .WithSummary("Deletes one of the guest's photos at once. 404 for anyone else's.");
         handoffs.MapPost("", async (StanleyHandoffRequest body, ICurrentUser me, StanleyHandoffService svc, CancellationToken ct) =>
                 Results.Ok(await svc.CreateAsync(await me.LoadAsync(ct), body, ct)))
             .WithSummary("Hands the guest to a person and opens a case. Send { topic (person, cabin, lostProperty, billing, allergy, special, disruption or missedShip), issue (at most 1000 characters), outcome (what the guest wants, at most 200), reference (booking or order number, at most 40), tried (what was tried, at most 300), attachment (a note naming an attachment the guest approved, at most 120), role (guest, organiser or caregiver), consent (must be true: the guest saw the exact text) }. " +
@@ -239,6 +290,9 @@ public static class StanleyEndpoints
     private static List<string>? SavedList(string? saved) =>
         string.IsNullOrWhiteSpace(saved) ? null : [.. saved.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(StanleyChangeRules.MaxSaved + 1)];
 }
+
+/// <summary>Body of <c>PUT /me/stanley/plan</c>.</summary>
+public sealed record StanleyPlanSnapshotRequest(string? SailingId, List<StanleyPlanEntry>? Plan);
 
 /// <summary>Body of <c>POST /me/stanley/actions/prepare</c>.</summary>
 public sealed record StanleyPrepareRequest(string? Kind, Dictionary<string, string>? Args, StanleyActionContext? Context);

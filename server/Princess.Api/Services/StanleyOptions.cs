@@ -50,6 +50,8 @@ public sealed class StanleyOptions
     public int DailyCeiling { get; set; } = 60;
     /// <summary>The key that turns a guest id into the opaque reference in the context packet. Set it in user-secrets or the environment; the default only keeps a local run working.</summary>
     public string PacketKey { get; set; } = "stanley-local-packet-key";
+    /// <summary>Where a handoff's photos are kept on disk (<c>Stanley:PhotoDir</c>). Empty means a <c>handoff-photos</c> folder beside the server. A blob store replaces <see cref="IHandoffPhotoStore"/> by registration only.</summary>
+    public string PhotoDir { get; set; } = "";
     public StanleySwitches Switches { get; set; } = new();
 
     public (string Model, int MaxTokens) For(ModelTier tier) => tier switch

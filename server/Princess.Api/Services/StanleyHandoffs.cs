@@ -42,7 +42,7 @@ public sealed class MemoryStanleyHandoffStore : IStanleyHandoffStore
 /// only from that answer. The guest must have agreed to the exact text (<c>consent</c>), a child account cannot send one, and an emergency is not a topic. What goes in the audit trail is the topic and
 /// the reference, never the guest's words. The case's progress is worked out from the clock (<see cref="StanleyHandoffRules.StatusOf"/>) because the staff side is simulated.
 /// </summary>
-public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options, IOperatorAlerts? alerts = null)
+public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clock, IAuditLog audit, IOptions<StanleyOptions> options, IOperatorAlerts? alerts = null, StanleyHandoffPhotoService? photos = null)
 {
     private static string Clean(string? s) => (s ?? "").Trim();
 
@@ -51,6 +51,8 @@ public sealed class StanleyHandoffService(IStanleyHandoffStore store, IClock clo
         if (!options.Value.Switches.Handoff) throw ApiException.Conflict("off");
         if (user.IsSupervised) throw ApiException.Forbidden();
         if (StanleyHandoffRules.Problem(body) is { } problem) throw ApiException.Invalid(problem);
+        // The attachment is a photo the guest uploaded: its id, and the photo must be theirs. Nothing else is accepted in the field.
+        if (!string.IsNullOrWhiteSpace(body!.Attachment) && (photos is null || !await photos.HasAsync(user.Id, body.Attachment.Trim(), ct))) throw ApiException.Invalid("attachment");
         var now = clock.UtcNow;
         var existing = await store.ListAsync(user.Id, 100, ct);
         // At most ten in a day, so a stuck device cannot flood the desk.

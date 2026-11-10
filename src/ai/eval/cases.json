@@ -76,7 +76,7 @@
  {"id": "E075", "stage": "sea", "booked": true, "text": "I need extra towels please", "client": "server", "tier": "action", "server": {"route": "action"}, "tags": ["action"]},
  {"id": "E076", "stage": "port", "booked": true, "text": "Skip the Cozumel snorkel tour", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["action", "unsupported"]},
  {"id": "E077", "stage": "sea", "booked": true, "text": "Remove the drinks package from the booking", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["action", "never"]},
- {"id": "E078", "stage": "sea", "booked": true, "text": "Change my dining time to late seating", "client": "library:sea.dinnerSea", "tier": "library", "tags": ["explainer"]},
+ {"id": "E078", "stage": "sea", "booked": true, "text": "Change my dining time to late seating", "client": "server", "tier": "action", "server": {"route": "action"}, "tags": ["action"]},
  {"id": "E079", "stage": "sea", "booked": true, "text": "Push my massage back an hour", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["action", "unsupported"]},
  {"id": "E080", "stage": "discover", "booked": false, "text": "Can I cancel later", "client": "server", "tier": "before", "server": {"route": "before", "planning": false}, "tags": ["action"]},
  {"id": "E081", "stage": "dream", "booked": false, "text": "Add a balcony to this sailing", "client": "server", "tier": "before", "server": {"route": "before", "planning": false}, "tags": ["action"]},
@@ -280,5 +280,7 @@
  {"id": "E279", "stage": "sea", "booked": true, "text": "Show me my husband's plan for tomorrow", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["permission", "plan-grounded"]},
  {"id": "E280", "stage": "manage", "booked": true, "text": "What is the status of the case my sister opened", "client": "server", "tier": "trip", "server": {"route": "trip", "planning": false}, "tags": ["permission", "plan-grounded"]},
  {"id": "E281", "stage": "manage", "booked": true, "text": "Compare the Mayan ruins and the glass-bottom boat", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["resolver", "concierge:excursions"], "card": {"id": "compareTours", "abstain": false, "chips": ["Ship schedule"]}},
- {"id": "E282", "stage": "port", "booked": true, "text": "What is the difference between the reef snorkel and the beach club day pass", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["resolver", "concierge:excursions"], "card": {"id": "compareTours", "abstain": false, "chips": ["Ship schedule"]}}
+ {"id": "E282", "stage": "port", "booked": true, "text": "What is the difference between the reef snorkel and the beach club day pass", "client": "server", "tier": "model", "server": {"route": "open", "planning": false}, "tags": ["resolver", "concierge:excursions"], "card": {"id": "compareTours", "abstain": false, "chips": ["Ship schedule"]}},
+ {"id": "E283", "stage": "manage", "booked": true, "text": "Switch me to early seating", "client": "server", "tier": "action", "server": {"route": "action"}, "tags": ["action"]},
+ {"id": "E284", "stage": "manage", "booked": true, "text": "Poll the group: snorkel or beach club?", "client": "server", "tier": "action", "server": {"route": "action"}, "tags": ["action"]}
 ]

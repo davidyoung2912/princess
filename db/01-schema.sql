@@ -1142,6 +1142,51 @@ END
 IF COL_LENGTH(N'dbo.StanleyMemorySettings', N'Level') IS NULL
   ALTER TABLE dbo.StanleyMemorySettings ADD [Level] NVARCHAR(10) NULL;
 
+IF OBJECT_ID(N'dbo.StanleyReminders', N'U') IS NULL
+BEGIN
+-- Reminders the guest asked Stanley for, sent to their phones by the push dispatch when DueAt comes (docs/stanley-gap-analysis-and-plan.md, the carry-over list). Text is the words the guest chose.
+CREATE TABLE dbo.StanleyReminders (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyReminders PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_StanleyReminders_PublicId DEFAULT NEWID() CONSTRAINT UX_StanleyReminders_PublicId UNIQUE,
+  UserId BIGINT NOT NULL,
+  DueAt DATETIME2(0) NOT NULL,
+  Text NVARCHAR(80) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_StanleyReminders_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_StanleyReminders_UserId ON dbo.StanleyReminders (UserId, DueAt);
+END
+
+IF OBJECT_ID(N'dbo.StanleyPlanSnapshots', N'U') IS NULL
+BEGIN
+-- The day plan as the device last listed it (titles and times only), so a plan change is checked against one saved plan: one row per guest and sailing ('' for the current trip).
+CREATE TABLE dbo.StanleyPlanSnapshots (
+  UserId BIGINT NOT NULL,
+  SailingId NVARCHAR(40) NOT NULL,
+  Json NVARCHAR(MAX) NOT NULL,
+  UpdatedAt DATETIME2(0) NOT NULL,
+  CONSTRAINT PK_StanleyPlanSnapshots PRIMARY KEY (UserId, SailingId),
+  CONSTRAINT FK_StanleyPlanSnapshots_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+
+IF OBJECT_ID(N'dbo.StanleyPolls', N'U') IS NULL
+BEGIN
+-- Group polls made through Stanley (docs/stanley-gap-analysis-and-plan.md, the carry-over list): one row per poll, owned by a booking. Json holds the question, the choices and each adult's answers by user id; no reason is kept.
+CREATE TABLE dbo.StanleyPolls (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StanleyPolls PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_StanleyPolls_PublicId DEFAULT NEWID() CONSTRAINT UX_StanleyPolls_PublicId UNIQUE,
+  BookingId BIGINT NOT NULL,
+  OwnerUserId BIGINT NOT NULL,
+  Json NVARCHAR(MAX) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL,
+  ClosesAt DATETIME2(0) NULL,
+  Closed BIT NOT NULL CONSTRAINT DF_StanleyPolls_Closed DEFAULT 0,
+  CONSTRAINT FK_StanleyPolls_Users FOREIGN KEY (OwnerUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_StanleyPolls_BookingId ON dbo.StanleyPolls (BookingId, CreatedAt DESC);
+END
+
 IF OBJECT_ID(N'dbo.StanleyBriefs', N'U') IS NULL
 BEGIN
 -- The saved Dream and Discover decision brief (docs/stanley-gap-analysis-and-plan.md, phase 8): one JSON row per guest, the same on every device. Deleted by the guest or with the account.

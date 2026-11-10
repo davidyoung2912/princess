@@ -493,14 +493,14 @@ The per-phase status notes above give the detail; this is the running list of wh
 
 | Item | From | Expected in |
 |---|---|---|
-| Group poll as a prepare/confirm action (needs a server poll service; a poll is a device document today) | 5 | 9, with the Group Trip Diplomat |
-| Reminders as push, not only shown when the app is open | 5 | 15, with push |
+| ~~Group poll as a prepare/confirm action (needs a server poll service; a poll is a device document today)~~ Done in the second carry-over phase: `StanleyPollService` and `dbo.StanleyPolls`, `/me/stanley/polls`, and the `create_poll` action (prepare, confirm, undo). Open polls cap at 5; the answer rules reuse `GroupStatus`. | 5 | 9, with the Group Trip Diplomat |
+| ~~Reminders as push, not only shown when the app is open~~ Done in the second carry-over phase: `dbo.StanleyReminders`, `StanleyReminderService`, and a `reminder` notice in the existing push run (category checkin, skips budget and quiet hours but not a switched-off channel). `remind_me` shows on the device and is also set on the server. The push sender is still the mock behind its interface; real VAPID keys are a deployment step. | 5 | 15, with push |
 | In-room order with a price (stateroom requests are free today) | 5 | when an order service exists |
-| "Change my dining time to late seating" is a library explainer; no dining-plan service | 5 | 9 |
-| Plan change is checked only against the plan snapshot the device sends | 5 | 11 |
+| ~~"Change my dining time to late seating" is a library explainer; no dining-plan service~~ Done in the second carry-over phase: `StanleyDiningPlanService` and the `change_seating` action (booker only, frozen 3 days before sailing, capacity checked, undo restores). | 5 | 9 |
+| ~~Plan change is checked only against the plan snapshot the device sends~~ Done in the second carry-over phase: `dbo.StanleyPlanSnapshots` and `PUT/GET /me/stanley/plan`; preview and confirm both use the last plan the device sent when a request has none (saved snapshot less than a day old). | 5 | 11 |
 | Receipts listed beside the ledger, not as money rows (by design while no action moves money) | 5 | revisit with any paid action |
 | Helper path: the device cannot yet name a guest to act for, so only the guest's own booking is loaded (not built in phase 7 either; needs a helper-session design) | 4 | 9 |
-| `get_route` is an outline; the server holds no corridor graph | 4 | 10 |
+| ~~`get_route` is an outline; the server holds no corridor graph~~ Done in the second carry-over phase: `ShipRoute` finds a path over the hall, lift and shaft graph of `AboardPlans`, with step-free routes, closed lift banks and minutes. | 4 | 10 |
 | ~~Bill read tool with the money permission, so the bill and readiness resolvers stop abstaining~~ The bill now answers from the money rules as a card (phase 12); a model read tool was left out on purpose so a model can never quote or change a figure; readiness is still open | 4 | 12 |
 | Eleven of the 25 to 40 planned resolvers (bill split, open cases, per-traveller readiness, document tasks, boarding-pass state, return brief) need data the trip facts lack | 3 | 6, 10, 12 |
 | "What changed" resolver is a stub | 3 | 11 |
@@ -509,7 +509,7 @@ The per-phase status notes above give the detail; this is the running list of wh
 | ~~Eval expected sources and `abstain` wording are checked only for library answers~~ Done in the carry-over phase: the server eval test now checks each resolver answer names an owner, a note and a source chip, and each abstention says "I cannot confirm" and points to a person | 2 | 14 |
 | ~~The library still answers some generic deadline and all-aboard questions before a resolver sees them~~ Done in the carry-over phase: a question with "close", "closing" or "cut-off" counts as live, so "when does check-in close" goes to the server's resolver (eval cases added) | 3 | 11 |
 | Staff side of a handoff is simulated (`Source` is `sim`); a real desk replaces `StatusOf`, not the shape | 6 | when a real service desk exists |
-| Handoff cabin photo: the request has an `attachment` note field but nothing uploads | 6 | 15 |
+| ~~Handoff cabin photo: the request has an `attachment` note field but nothing uploads~~ Done in the second carry-over phase: `POST/GET/DELETE /me/stanley/handoffs/photo`, local-disk store behind `IHandoffPhotoStore` (`Stanley:PhotoDir`), JPEG/PNG up to 5 MB cleaned of metadata, 3 waiting at most, deleted with the case (180 days) or after a day if never attached. Assumed defaults: local disk, 5 MB. The device file picker is not built yet. | 6 | 15 |
 | ~~Handoff intent flows are one topic chooser, not separate drafts per topic~~ Done in the carry-over phase: each topic has its own short draft (`TOPIC_FIELDS` in `domain/handoff.ts`: cabin, lost property, billing, allergy, special, disruption, missed ship) shown under the chooser and written into the message the guest sees before agreeing. Still open: handoff cases and post-cruise cases are two services listed on one screen | 6 | 14 |
 | ~~No folio screen has a dispute button; when one is added it should open a `billing` handoff~~ Done in phase 12: each charge on the Bill and Final bill screens has Question this charge, which opens a `billing` case | 6 | 12 |
 | Missed-ship phone numbers are those in `domain/contacts.ts`, not verified per port | 6 | 10 |
@@ -523,6 +523,8 @@ The per-phase status notes above give the detail; this is the running list of wh
 | Server tests (phases 1 to 12 and the phase 9 follow-up, and the carry-over phase: resolver source checks, `compareTours`, the level setting, brief retention) written but never run or compiled by the assistant here; run `dotnet build server/Princess.Sln` and the Stanley tests by hand (phase 8 compiled and its warnings were fixed on the user's machine, not run; phase 9 and the carry-over phase not yet compiled anywhere) | 1 to 9 | before release |
 
 Done in the carry-over phase (2026-11-09, one commit, checked with the npm checks only; the new server code and tests are written but not compiled or run): eight rows above. Every row was ticked with this commit.
+
+Second carry-over phase (2026-11-09, checked with the npm checks only; server code and tests are written but not compiled or run): six of the seven rows above are done on the server (poll, reminders, dining, plan snapshot, route, cabin photo). **Not done:** the helper-session path (guest grants a revocable, time-limited grant; a helper may only prepare previews and only the guest confirms) is a design only, and nothing for it is built; device screens for polls, seating and the photo picker are not built. Push and photo choices above were assumed, not confirmed.
 
 Done since first noted: the browser's `act` word list (phase 5, `06dc128`), retention for the tier log and actions (phase 5 follow-up, `1266e9b`), the `handoff` kill switch (phase 6, `ef3de6b`).
 

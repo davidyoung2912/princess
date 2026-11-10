@@ -43,7 +43,7 @@ public static class StanleyReadTools
       {"name":"calculate_package_value","description":"What a package or add-on costs for the travellers, today's price and when it next changes, and whether the guest already has it. A cost, not a promise of savings.","input_schema":{"type":"object","properties":{"item_id":{"type":"string","enum":["drinks","wifi","specialtyPass","photo","laundry"]},"traveller":{"type":"string","description":"me (default), all, or a traveller's reference or first name."}},"required":["item_id"]}},
       {"name":"get_case_status","description":"The stage and due date of a guest's service cases (lost item, billing query, claim, complaint). Cannot say what a person decided before the stage says so.","input_schema":{"type":"object","properties":{"traveller":{"type":"string","description":"me (default), all, or a traveller's reference or first name."},"number":{"type":"string","description":"A case number, to read one case."}}}},
       {"name":"get_verified_all_aboard_details","description":"The published arrival and all-aboard times for a port day on the guest's sailing, whether guests tender ashore, and when the schedule was last checked. The ship's notice on the day has the last word.","input_schema":{"type":"object","properties":{"port":{"type":"string","enum":["cozumel","belize","roatan"]},"day":{"type":"integer","minimum":1,"maximum":41}}}},
-      {"name":"get_route","description":"How to get from one place on the ship to another: the decks to change and the end of the ship to go to. Places are venue ids, or \"deck N\".","input_schema":{"type":"object","properties":{"from":{"type":"string"},"to":{"type":"string"},"step_free":{"type":"boolean","description":"Use lifts only."}},"required":["from","to"]}}
+      {"name":"get_route","description":"The way from one place on the ship to another from the ship's deck plan: where to walk and which lifts to take, with a time. Places are place ids or names from search_ship_venues, a cabin number, or \"deck N\". A closed lift bank is avoided.","input_schema":{"type":"object","properties":{"from":{"type":"string"},"to":{"type":"string"},"step_free":{"type":"boolean","description":"Use lifts only; both places must be step-free."},"closed_banks":{"type":"string","description":"Lift banks to avoid, for example \"C,D\"."}},"required":["from","to"]}}
     ]
     """;
 
@@ -260,11 +260,19 @@ public static class StanleyReadTools
 
     private static ToolOutcome Route(JsonObject input, StanleyVoyage voyage)
     {
-        var ship = ShipId(voyage);
-        var from = SpotOf(Text(input, "from"), ship);
-        var to = SpotOf(Text(input, "to"), ship);
-        if (from is null || to is null) return Fail("Unknown place. Use a venue id from search_ship_venues, or \"deck N\".");
-        return Ok(new { from = from.Name, to = to.Name, steps = RouteBetween(from, to, Flag(input, "step_free") == true), approximate = true, note = "An outline by deck and end of the ship. Signs and crew on board are the last word." },
-            new CitationDto("Ship map", "/ship/map"));
+        var plan = AboardPlans.For(ShipId(voyage)) ?? AboardPlans.For("sun-princess")!;
+        var from = ShipRoute.Locate(Text(input, "from"), plan);
+        var to = ShipRoute.Locate(Text(input, "to"), plan);
+        if (from is null || to is null) return Fail("Unknown place. Use a venue or place id from search_ship_venues, a cabin number, or \"deck N\".");
+        var closed = (Text(input, "closed_banks") ?? "").Split([',', ' '], StringSplitOptions.RemoveEmptyEntries).Select(b => b.ToUpperInvariant()).Where(b => plan.Elevators.Any(e => e.Bank == b)).ToHashSet();
+        var way = ShipRoute.Between(from, to, plan, Flag(input, "step_free") == true, closed);
+        return way.Problem switch
+        {
+            "same" => Fail("Those are the same place."),
+            "notStepFree" => Fail($"One of those places is not step-free.{(way.Instead is null ? "" : $" {way.Instead} is a step-free alternative.")}"),
+            "noWay" => Fail("There is no way between those places with the lifts that are closed."),
+            null => Ok(new { from = from.Name, to = to.Name, steps = way.Steps, minutes = way.Minutes, step_free = way.StepFree, rerouted = way.Rerouted, note = "From the ship's deck plan: halls and lifts. Signs and crew on board are the last word." }, new CitationDto("Ship map", "/ship/map")),
+            _ => Fail("Unknown place."),
+        };
     }
 }
