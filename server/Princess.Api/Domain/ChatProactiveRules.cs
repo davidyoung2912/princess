@@ -4,7 +4,7 @@ using System.Text;
 namespace Princess.Api.Domain;
 
 /// <summary>What the engine knows about a guest's trip when it decides. Trip facts only: nothing a guest said to another guest is ever an input (docs/chat-features-research.md, 7.1 point 3).</summary>
-public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false);
+public sealed record MomentFacts(DateTime Now, string Stage, int DaysToDeparture, bool BalanceOwing, DateOnly? FinalDue, int Saved = 0, int CabinViews = 0, bool PriceViewed = false, bool DepositUnpaid = false, int DocumentsMissing = 0, bool CheckinOpen = false, Guid? ShareGroup = null, bool MusterPending = false, bool LastFullDay = false, bool DinnerUnbooked = false, bool TenderLate = false);
 
 /// <summary>A candidate card. <see cref="FactsHash"/> is a hash of what it is about (a due date), so a dismissed card returns only when that changes. <see cref="Class"/> orders them: due, then guide, then suggestion.</summary>
 public sealed record Moment(string Key, string Topic, string Class, string Text, string Path, DateTime? ExpiresAt, string FactsHash, string? Subject = null);
@@ -138,11 +138,17 @@ public static class ChatProactiveRules
                 break;
             case StageRules.Sea:
                 list.Add(new("sea.today", Onboard, ClassSuggestion, "Today at sea\nSee what is on today.", "/plan/day", f.Now.AddHours(12), Hash($"sea.today{f.Now:yyyyMMdd}")));
+                if (f.DinnerUnbooked)
+                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
                 if (f.LastFullDay)
                     list.Add(new("sea.bag-night", Onboard, ClassDue, "Bags go out tonight\nOpen Leave to see when and where.", "/home/disembark/bags", f.Now.AddHours(12), Hash("sea.bag-night")));
                 break;
             case StageRules.Port:
                 list.Add(new("port.all-aboard", Onboard, ClassDue, "Check your all-aboard time\nOpen Port to see it, and your tender if there is one.", "/ship/port", f.Now.AddHours(10), Hash($"port.all-aboard{f.Now:yyyyMMdd}")));
+                if (f.TenderLate)
+                    list.Add(new("port.tender-delay", Onboard, ClassDue, "Tenders may be running late\nOpen Port and plan to head back early.", "/ship/port", f.Now.AddHours(10), Hash($"port.tender-delay{f.Now:yyyyMMdd}")));
+                if (f.DinnerUnbooked)
+                    list.Add(new("sea.dining-gap", Onboard, ClassSuggestion, "No dinner plan tonight\nSee dining options and times.", "/plan/dining", f.Now.AddHours(5), Hash($"sea.dining-gap{f.Now:yyyyMMdd}")));
                 break;
             case StageRules.Disembark:
                 list.Add(new("leave.exit-time", Onboard, ClassDue, "Your way off the ship\nOpen Leave to see your exit time.", "/home/disembark", f.Now.AddHours(12), Hash("leave.exit-time")));

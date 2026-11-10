@@ -275,8 +275,8 @@ public class ManageToBoardingMomentTests
     public void TheTravelTopicCanBeSwitchedOff() =>
         Assert.Null(ChatProactiveRules.Choose([.. ChatProactiveRules.ManageToBoarding(new(Now, StageRules.Manage, 30, false, null, DocumentsMissing: 1))], [], new(ChatProactiveRules.ModeTrip, ["travel"], false, false), Now));
 
-    private static List<string> AboardKeys(string stage, bool muster = false, bool lastDay = false) =>
-        [.. ChatProactiveRules.Candidates(new(Now, stage, 0, false, null, MusterPending: muster, LastFullDay: lastDay)).Where(c => c.Topic == ChatProactiveRules.Onboard).Select(c => c.Key)];
+    private static List<string> AboardKeys(string stage, bool muster = false, bool lastDay = false, bool dinner = false, bool tender = false) =>
+        [.. ChatProactiveRules.Candidates(new(Now, stage, 0, false, null, MusterPending: muster, LastFullDay: lastDay, DinnerUnbooked: dinner, TenderLate: tender)).Where(c => c.Topic == ChatProactiveRules.Onboard).Select(c => c.Key)];
 
     [Fact]
     public void EachAboardStageGetsItsOwnMoments()
@@ -307,6 +307,17 @@ public class ManageToBoardingMomentTests
             Assert.True(m.ExpiresAt > Now);
         }
         Assert.True(ChatProactiveRules.ValidTopics(["onboard"]));
+    }
+
+    [Fact]
+    public void DinnerGapAndTenderDelayNeedTheirFacts()
+    {
+        Assert.Contains("sea.dining-gap", AboardKeys(StageRules.Sea, dinner: true));
+        Assert.Contains("sea.dining-gap", AboardKeys(StageRules.Port, dinner: true));
+        Assert.DoesNotContain("sea.dining-gap", AboardKeys(StageRules.Sea));
+        Assert.Contains("port.tender-delay", AboardKeys(StageRules.Port, tender: true));
+        Assert.DoesNotContain("port.tender-delay", AboardKeys(StageRules.Sea, tender: true));
+        Assert.DoesNotContain("port.tender-delay", AboardKeys(StageRules.Port));
     }
 
     [Fact]
