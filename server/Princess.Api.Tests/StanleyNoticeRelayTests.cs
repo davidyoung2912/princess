@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Princess.Api.Data;
 using Princess.Api.Domain;
 using Princess.Api.Services;
+using Princess.Api.Tests.Support;
 
 namespace Princess.Api.Tests;
 
