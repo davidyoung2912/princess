@@ -113,7 +113,11 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Acked = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool HasPhoto = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Stanley = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatNoticeDto? Notice = null);
+
+/// <summary>What a relayed company or ship notice adds to its message (phase 0b): the lane, the screen it links to, and whether it is still actionable. The text is the message's own.</summary>
+public sealed record ChatNoticeDto(string Lane, string Kind, string Path, bool Expired, bool Superseded);
 
 /// <summary>The photo of one message, as the data URL it was sent as.</summary>
 public sealed record ChatPhotoDto(string Photo);

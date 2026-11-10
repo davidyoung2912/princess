@@ -2,7 +2,7 @@
  * The permanent Stanley chat (docs/chat-features-research.md, section 15, phase 0a). Framework-free: which conversation it is, how the notices the server holds and the questions the device holds
  * are shown in one time-ordered thread, and the one wording rule: nothing the guest reads says "AI" (owner decision, 2026-11-10).
  */
-import type { ChatConversation, ChatMessage } from '../api/chatTypes'
+import type { ChatConversation, ChatMessage, NoticeLane } from '../api/chatTypes'
 
 /** The question and answer history Stanley keeps on the device (the shape the Ask dialog holds, narrowed to what the thread shows). */
 export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number }
@@ -37,3 +37,28 @@ export const questionFrom = (text: string): string | null => {
   const t = text.trim()
   return t === '' ? null : t.slice(0, 500)
 }
+
+/** Whether a relayed notice can still be acted on, or why not: replaced by a newer one, or past its time. Messages that are not notices are always 'active'. */
+export type NoticeState = 'active' | 'superseded' | 'expired'
+export const noticeState = (m: Pick<ChatMessage, 'notice'>): NoticeState =>
+  m.notice?.superseded ? 'superseded' : m.notice?.expired ? 'expired' : 'active'
+
+/** The lane's order for sorting a strip, most pressing first. */
+const LANE_RANK: Record<NoticeLane, number> = { critical: 0, important: 1, reminder: 2, info: 3 }
+
+/** First line of a notice: its headline. The rest is the body. */
+export const noticeHeadline = (text: string): string => text.split('\n', 1)[0] ?? ''
+export const noticeBody = (text: string): string => text.includes('\n') ? text.slice(text.indexOf('\n') + 1) : ''
+
+/**
+ * The "Needs you" strip: critical and important notices that are still actionable and that the guest has not confirmed with Got it, most pressing first, then oldest first.
+ * `acked === undefined` means the notice does not ask for Got it, so it is not outstanding.
+ */
+export function needsYou(messages: readonly ChatMessage[]): ChatMessage[] {
+  return messages
+    .filter((m) => m.stanley === true && m.notice !== undefined && (m.notice.lane === 'critical' || m.notice.lane === 'important') && noticeState(m) === 'active' && m.acked === false)
+    .sort((a, b) => LANE_RANK[a.notice!.lane] - LANE_RANK[b.notice!.lane] || a.at - b.at)
+}
+
+/** A link the thread may follow: an app route only (one slash, no scheme or host), so a stray value from the server can never take the guest off the site. */
+export const safeNoticePath = (path: string | undefined): string | null => (path && /^\/(?!\/)[\w\-./?=&%]*$/.test(path) ? path : null)

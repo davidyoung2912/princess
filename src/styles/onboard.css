@@ -157,6 +157,10 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .conv__avatar--stanley { object-fit: cover; background: var(--brand-tint); }
 .conv__sub { display: block; }
 .chat-msg--stanley { border-inline-start: 4px solid var(--primary); }
+.chat-msg--lane-critical { border-inline-start-color: var(--danger); border-inline-start-width: 6px; }
+.chat-msg--spent { opacity: 0.8; }
+.chat-needs { border: 2px solid var(--danger); border-radius: var(--radius, 8px); padding: var(--space-2); margin-block: var(--space-2); }
+.chat-needs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
 .conv__avatar { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--brand-tint); font-weight: 700; }
 .conv__body { flex: 1; min-width: 0; display: grid; gap: 0.125rem; }
 .conv__top { display: flex; justify-content: space-between; gap: var(--space-2); }

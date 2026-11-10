@@ -21,6 +21,8 @@ public sealed class DapperWatchTargetStore(IDbConnectionFactory db) : IWatchTarg
               UNION
               SELECT AutoUserId FROM dbo.InstalmentPlans WHERE AutoUserId IS NOT NULL
               UNION
+              SELECT StanleyUserId FROM dbo.ChatGroups WHERE StanleyUserId IS NOT NULL
+              UNION
               SELECT u.Id FROM dbo.Users u
                 JOIN dbo.BookingGuests g ON g.UserId = u.Id
                 JOIN dbo.Bookings b ON b.Id = g.BookingId AND b.Status = 'confirmed'

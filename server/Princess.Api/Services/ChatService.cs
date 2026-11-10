@@ -75,6 +75,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var mine = await store.GetReceiptsAsync(actor.Id, ct);
         var page = await store.ListMessagesAsync(member.GroupId, actor.Id, before, size, ct);
         var more = page.Count > size;
+        var now = await userClock.NowAsync(actor, ct);
         if (more) page.RemoveAt(0);   // the extra, oldest one was only read to know there is more
         var byId = members.ToDictionary(p => p.UserId);
         var receiptsOf = (long id) => id == actor.Id ? mine : byId.TryGetValue(id, out var p) && p.ReceiptsOn;
@@ -83,7 +84,15 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         foreach (var m in page)
         {
             // Stanley has no user: his messages (and the lines marking a change of voice) are shown as his, under the subtitle they were sent with.
-            if (m.FromStanley) { messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle)); continue; }
+            if (m.FromStanley)
+            {
+                var notice = m.Lane is null ? null : new ChatNoticeDto(m.Lane, m.NoticeKind ?? "", m.NoticePath ?? "", m.ExpiresAt is { } e && e <= now, m.SupersededAt is not null);
+                // A relayed notice asks for Got it when it is critical or important; the guest sees whether they have, and a replaced or expired one no longer asks.
+                var asks = notice is not null && ChatUrgencyRules.CanAck(m.Urgency, m.IsSystem, false, true) && !notice.Expired && !notice.Superseded;
+                messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle,
+                    Urgency: notice is null ? null : Flag(m.Urgency), Acked: asks ? m.AckedBy.Contains(actor.Id) : null, Notice: notice));
+                continue;
+            }
             if (publicOf(m.FromUserId) is not { } from) continue;
             if (m.IsSystem) { messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), System: true)); continue; }
             var seen = receiptsOf(m.FromUserId) ? m.SeenBy.Where(id => id != m.FromUserId && receiptsOf(id)).Select(publicOf).OfType<Guid>().ToList() : null;
@@ -206,9 +215,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         if (member.Status != ChatConversationRules.Active) throw ApiException.NotFound();
         var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
-        if (!ChatUrgencyRules.CanAck(message.Urgency, message.IsSystem, message.FromUserId == actor.Id)) throw ApiException.Invalid("notUrgent");
+        if (!ChatUrgencyRules.CanAck(message.Urgency, message.IsSystem, message.FromUserId == actor.Id, message.Lane is not null)) throw ApiException.Invalid("notUrgent");
         if (!await store.AddAckAsync(message.Id, actor.Id, await userClock.NowAsync(actor, ct), ct)) return;
-        await notifier.AckedAsync(message.FromUserId, conversationId, messageId, ct);
+        if (!message.FromStanley) await notifier.AckedAsync(message.FromUserId, conversationId, messageId, ct);   // Stanley has no one to tell
         await notifier.AckedAsync(actor.Id, conversationId, messageId, ct);
     }
 

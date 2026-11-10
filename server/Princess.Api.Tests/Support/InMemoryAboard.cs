@@ -220,7 +220,7 @@ public sealed class InMemoryAboardStore(InMemoryShipboardStore shipboard, InMemo
 }
 
 /// <summary>The chat store in memory: conversations of users, their members' places and their messages, with the same access rule as the SQL store (a person reads only conversations they are in).</summary>
-public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
+public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 {
     private long _next = 1;
 
@@ -314,6 +314,20 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.CompletedTask;
     }
 
+    public virtual Task<bool> AddStanleyNoticeAsync(long userId, StanleyNotice n, string voice, string subtitle, DateTime at, CancellationToken ct)
+    {
+        if (Conversations.FirstOrDefault(c => c.StanleyUserId == userId) is not { } c) return Task.FromResult(false);
+        if (Messages.Any(m => m.GroupId == c.Id && m.Row.NoticeKey == n.Key)) return Task.FromResult(false);
+        if (n.SupersedeKey is not null)
+            foreach (var old in Messages.Where(m => m.GroupId == c.Id && m.Row.SupersedeKey == n.SupersedeKey && m.Row.SupersededAt is null)) old.Row.SupersededAt = at;
+        Messages.Add(new Stored(c.Id, new ChatMessageRow
+        {
+            Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = n.Text, At = at, Persona = voice, Subtitle = subtitle, Urgency = n.Urgency,
+            NoticeKey = n.Key, Lane = n.Lane, NoticeKind = n.Kind, NoticePath = n.Path, SupersedeKey = n.SupersedeKey, ExpiresAt = n.ExpiresAt,
+        }, null));
+        return Task.FromResult(true);
+    }
+
     public Task EnsurePartyAsync(long userId, CancellationToken ct)
     {
         if (!Mine(userId).Any(c => c.Kind == "party")) Group(userId);
@@ -362,6 +376,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         {
             Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, HasPhoto = m.Photo is not null, At = m.At, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
             SeenBy = m.SeenBy, AckedBy = m.AckedBy, Persona = m.Persona, Subtitle = m.Subtitle,
+            Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
         }).ToList());
     }
 

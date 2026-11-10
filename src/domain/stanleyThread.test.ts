@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
 import { en } from '../i18n/locales/en'
-import { isStanleyChat, mentionsAI, questionFrom, subtitleOf, threadItems } from './stanleyThread'
+import { isStanleyChat, mentionsAI, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
 import { sortConversations } from './chatUrgency'
 
 const conv = (id: string, o: Partial<ChatConversation> = {}): ChatConversation =>
@@ -71,5 +71,46 @@ describe('no "AI" wording for the guest', () => {
     const keys = Object.keys(en).filter((k) => k.startsWith('stanley.chat.') || k.startsWith('conv.stanley'))
     expect(keys.length).toBeGreaterThan(0)
     for (const k of keys) expect(mentionsAI(en[k as keyof typeof en]), k).toBe(false)
+  })
+})
+
+describe('relayed notices in the Stanley thread', () => {
+  const notice = (id: string, at: number, lane: 'critical' | 'important' | 'reminder' | 'info', o: Partial<ChatMessage> & { expired?: boolean; superseded?: boolean } = {}): ChatMessage => {
+    const { expired = false, superseded = false, ...rest } = o
+    return msg(id, at, { notice: { lane, kind: 'payment', path: '/home', expired, superseded }, acked: lane === 'critical' || lane === 'important' ? false : undefined, ...rest })
+  }
+
+  it('is active unless it was replaced or has expired', () => {
+    expect(noticeState(notice('a', 1, 'info'))).toBe('active')
+    expect(noticeState(notice('a', 1, 'critical', { superseded: true }))).toBe('superseded')
+    expect(noticeState(notice('a', 1, 'critical', { expired: true }))).toBe('expired')
+    expect(noticeState(msg('plain', 1))).toBe('active')
+  })
+
+  it('lists what is outstanding, critical first and then oldest first', () => {
+    const list = needsYou([
+      notice('imp-old', 1, 'important'), notice('crit-new', 9, 'critical'), notice('crit-old', 5, 'critical'),
+      notice('done', 2, 'critical', { acked: true }), notice('gone', 3, 'critical', { expired: true }), notice('replaced', 4, 'important', { superseded: true }),
+      notice('rem', 6, 'reminder'), notice('info', 7, 'info'), msg('welcome', 0),
+    ])
+    expect(list.map((m) => m.id)).toEqual(['crit-old', 'crit-new', 'imp-old'])
+  })
+
+  it('splits a notice into its headline and body', () => {
+    expect(noticeHeadline('Payment due\nFinal payment is due Friday.')).toBe('Payment due')
+    expect(noticeBody('Payment due\nFinal payment is due Friday.')).toBe('Final payment is due Friday.')
+    expect(noticeBody('Only a headline')).toBe('')
+  })
+
+  it('follows only routes inside the app', () => {
+    expect(safeNoticePath('/ship/port')).toBe('/ship/port')
+    expect(safeNoticePath('/chat?mode=people')).toBe('/chat?mode=people')
+    for (const bad of ['//evil.example', 'https://evil.example', 'javascript:alert(1)', '', undefined]) expect(safeNoticePath(bad)).toBeNull()
+  })
+
+  it('says nothing that shows the guest the word AI', () => {
+    const words = Object.entries(en).filter(([k]) => k.startsWith('stanley.notice.')).map(([, v]) => String(v))
+    expect(words.length).toBeGreaterThan(0)
+    for (const w of words) expect(mentionsAI(w)).toBe(false)
   })
 })

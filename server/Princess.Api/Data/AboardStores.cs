@@ -134,6 +134,14 @@ public sealed class ChatMessageRow
     /// <summary>A message from Stanley carries who he spoke for (company or ship) and the subtitle shown then; null for a person's message. Stanley has no user, so his <see cref="FromUserId"/> is 0.</summary>
     public string? Persona { get; set; }
     public string? Subtitle { get; set; }
+    /// <summary>Set on a relayed notice (phase 0b): its lane, kind, link, when it stops being actionable and whether a newer message replaced it. Null on everything else.</summary>
+    public string? Lane { get; set; }
+    public string? NoticeKey { get; set; }
+    public string? SupersedeKey { get; set; }
+    public string? NoticeKind { get; set; }
+    public string? NoticePath { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public DateTime? SupersededAt { get; set; }
     public bool FromStanley => FromUserId == 0;
 }
 
@@ -276,6 +284,11 @@ public interface IChatStore
     /// </summary>
     Task<(string Voice, string Subtitle)?> LastStanleyPersonaAsync(long userId, CancellationToken ct);
     Task AddStanleyLineAsync(long userId, string text, string voice, string subtitle, DateTime at, CancellationToken ct);
+    /// <summary>
+    /// Writes a company or ship notice into the person's Stanley thread (phase 0b), once per <see cref="Domain.StanleyNotice.Key"/>: a repeat adds nothing and returns false. A notice with a supersede key marks the
+    /// earlier messages of that occasion as replaced. Returns true when a message was added.
+    /// </summary>
+    Task<bool> AddStanleyNoticeAsync(long userId, Domain.StanleyNotice notice, string voice, string subtitle, DateTime at, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);
     /// <summary>The person's place in one conversation, or null when they are not (or never were) a member. The check behind every other call.</summary>

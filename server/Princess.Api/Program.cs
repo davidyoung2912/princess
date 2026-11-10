@@ -170,6 +170,7 @@ services.AddScoped<TvService>();
 services.AddScoped<LastMinuteService>();
 services.AddScoped<ReadyService>();
 services.AddScoped<StanleyThreadService>();
+services.AddScoped<StanleyNoticeRelay>();
 services.AddScoped<ChatService>();
 services.AddScoped<DisembarkService>();
 services.AddScoped<CaseService>();

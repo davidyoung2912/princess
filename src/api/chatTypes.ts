@@ -140,7 +140,13 @@ export interface ChatMessage {
   stanley?: boolean
   /** On a Stanley message: the name shown under his when it was sent, so earlier lines keep the voice they had. */
   subtitle?: string
+  /** On a relayed company or ship notice (phase 0b): its lane, the screen it links to and whether it can still be acted on. */
+  notice?: ChatNotice
 }
+
+/** The lane decides how a relayed notice looks and behaves; the server sets it and the screen only shows it. */
+export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info'
+export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean }
 
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
 /** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */

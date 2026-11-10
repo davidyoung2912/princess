@@ -38,9 +38,9 @@ public static class ChatUrgencyRules
     public static string ForChannel(bool viaSmsOrPhoto, string level) => viaSmsOrPhoto ? Normal : level;
 
     /// <summary>
-    /// Whether a message can be acknowledged by this reader: it is urgent, written by a person (not a system line) and not by the reader. Reading the thread never acknowledges; only the explicit tap does.
+    /// Whether a message can be acknowledged by this reader: it is urgent (or, for a relayed company notice, important), written by a person (not a system line) and not by the reader. Reading the thread never acknowledges; only the explicit tap does.
     /// </summary>
-    public static bool CanAck(string level, bool isSystem, bool isOwn) => level == Urgent && !isSystem && !isOwn;
+    public static bool CanAck(string level, bool isSystem, bool isOwn, bool isNotice = false) => (level == Urgent || isNotice && level == Important) && !isSystem && !isOwn;
 
     /// <summary>Most messages of a level one person may send in an hour (staff and guardians included for urgent), so neither level can be used to spam. Normal has no limit here.</summary>
     public const int ImportantPerHour = 20, UrgentPerHour = 10;

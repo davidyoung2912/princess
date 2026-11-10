@@ -3374,3 +3374,13 @@ IF COL_LENGTH(N'dbo.ChatMessages', N'Persona') IS NULL
 IF COL_LENGTH(N'dbo.ChatMessages', N'Subtitle') IS NULL
   ALTER TABLE dbo.ChatMessages ADD Subtitle NVARCHAR(80) NULL;
 GO
+
+-- Phase 0b: a company or ship notice written into the guest's Stanley thread. NoticeKey is the push notice's stable key, so one occasion is posted once; SupersedeKey groups
+-- the versions of one occasion (a newer one marks the older SupersededAt); ExpiresAt is when it stops being actionable.
+IF COL_LENGTH(N'dbo.ChatMessages', N'NoticeKey') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD NoticeKey VARCHAR(120) NULL, Lane VARCHAR(9) NULL CONSTRAINT CK_ChatMessages_Lane CHECK (Lane IS NULL OR Lane IN ('critical','important','reminder','info')),
+    NoticeKind VARCHAR(20) NULL, NoticePath NVARCHAR(200) NULL, SupersedeKey VARCHAR(160) NULL, ExpiresAt DATETIME2 NULL, SupersededAt DATETIME2 NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatMessages_NoticeKey' AND object_id = OBJECT_ID(N'dbo.ChatMessages'))
+  CREATE UNIQUE INDEX UX_ChatMessages_NoticeKey ON dbo.ChatMessages (GroupId, NoticeKey) WHERE NoticeKey IS NOT NULL;
+GO

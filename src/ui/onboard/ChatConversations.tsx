@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
-import { isStanleyChat, questionFrom, subtitleOf, threadItems } from '../../domain/stanleyThread'
+import { isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -32,7 +32,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t, th as heading } from '../../i18n'
 import { Banner } from '../Banner'
-import { Button } from '../Button'
+import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { OctagonAlert, TriangleAlert } from '../icons'
 import { DeferredImage } from '../DeferredImage'
@@ -352,6 +352,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
       {offline && phase === 'ready' && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
+      {permanent && <NeedsYouStrip messages={messages} ackBusy={ack.busy} onAck={runAck} />}
       <div ref={top} />
       {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
       <ActionError error={older.error} />
@@ -419,6 +420,27 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
       </li>
     )
   })
+}
+
+const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley.notice.lane.important', reminder: 'stanley.notice.lane.reminder', info: 'stanley.notice.lane.info' } as const
+
+/** The strip at the top of Stanley's thread: critical and important notices still waiting for Got it, so a guest who scrolled past forty messages still sees what is outstanding. */
+function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; ackBusy: boolean; onAck: (messageId: string) => void }) {
+  const waiting = needsYou(messages)
+  if (waiting.length === 0) return null
+  return (
+    <section className="chat-needs" aria-labelledby="needs-h">
+      <h3 id="needs-h">{t('stanley.notice.needsTitle')}</h3>
+      <p className="muted">{t('stanley.notice.needsBody')}</p>
+      <ul>
+        {waiting.map((m) => (
+          <li key={m.id}>
+            <span>{noticeHeadline(m.text)}</span> <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 /** The free-text box. Asking goes through Stanley's own window (his limits, safety screen and tools live there), with the words already in its box. */
@@ -493,10 +515,28 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
+    const n = m.notice
+    if (!n) {
+      return (
+        <li className="chat-msg chat-msg--stanley">
+          <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+          <p>{m.text}</p>
+        </li>
+      )
+    }
+    // A relayed company or ship notice: its lane in words (never by colour alone), the text, why it may no longer apply, a link into the app and Got it where it asks for one.
+    const state = noticeState(m)
+    const link = state === 'active' ? safeNoticePath(n.path) : null
+    const body = noticeBody(m.text)
     return (
-      <li className="chat-msg chat-msg--stanley">
+      <li className={`chat-msg chat-msg--stanley chat-msg--lane-${n.lane}${state === 'active' ? '' : ' chat-msg--spent'}`}>
+        <p className="chat-msg__level"><strong>{t(LANE_KEY[n.lane])}</strong></p>
         <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
-        <p>{m.text}</p>
+        <p><strong>{noticeHeadline(m.text)}</strong></p>
+        {body && <p>{body}</p>}
+        {state !== 'active' && <p className="muted">{t(state === 'superseded' ? 'stanley.notice.superseded' : 'stanley.notice.expired')}</p>}
+        {link && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+        {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
       </li>
     )
   }
