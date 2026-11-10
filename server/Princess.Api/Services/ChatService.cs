@@ -49,7 +49,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var others = members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
-            ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))));
+            ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway);
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -201,6 +201,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         var on = body?.On == true;
         await store.SetMutedAsync(member.GroupId, actor.Id, on, ct);
+        return on;
+    }
+
+    /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the caller in one conversation. 403 supervised; 404 not a member. Off unless asked for.</summary>
+    public async Task<bool> NotifyAwayAsync(UserRecord actor, Guid conversationId, ChatNotifyAwayRequest? body, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        var on = body?.On == true;
+        if (on && !ChatAwayRules.MayEnable(actor.IsSupervised)) throw ApiException.Forbidden("supervised");
+        await store.SetNotifyAwayAsync(member.GroupId, actor.Id, on, ct);
         return on;
     }
 

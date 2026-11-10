@@ -41,8 +41,9 @@ public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string From
 /// One conversation as the caller sees it. <c>Kind</c> is party (the booking's "My group"), direct or group. <c>Name</c> is the other person for a direct chat.
 /// <c>Members</c> are first name and last initial, the caller excluded. <c>Closed</c>: sending has stopped (a chat that ended, or a caller who left). <c>Unread</c> is the same on every device.
 /// <c>GuardianCanRead</c>: a supervised child is in it, so their parent or guardian can read it; every member is told.
+/// <c>NotifyAway</c>: the caller has chosen to tell the connected people in this chat when they leave or return to the ship (omitted when off).
 /// </summary>
-public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false);
+public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List<string> Members, ChatLastDto? Last, int Unread, bool Muted, bool Closed, long At, bool GuardianCanRead = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool NotifyAway = false);
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
@@ -50,6 +51,8 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
 public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false);
 
 public sealed record ChatMuteRequest(bool On);
+
+public sealed record ChatNotifyAwayRequest(bool On);
 
 // ---- SMS bridge (phase 6) ----
 

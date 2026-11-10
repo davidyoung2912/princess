@@ -17,7 +17,7 @@ public sealed record GangwayScanResultDto(string Status, long At, string Port, s
 /// guest's presence row (the same row the app writes by hand), so a real gangway feed replaces the demo route with no other change. Until then the demo route
 /// stands in for the reader. Scans count only while the ship is in port.
 /// </summary>
-public sealed class GangwayService(ICurrentUser me, TripService trips, IPortRowStore rows, IUserClock userClock, IClock clock)
+public sealed class GangwayService(ICurrentUser me, TripService trips, IPortRowStore rows, IUserClock userClock, IClock clock, ChatAwayService away)
 {
     public static GangwayDirection? ParseDirection(string? direction) => direction switch { "on" => GangwayDirection.On, "off" => GangwayDirection.Off, _ => null };
 
@@ -31,6 +31,7 @@ public sealed class GangwayService(ICurrentUser me, TripService trips, IPortRowS
         if (nowMs < day.ArriveAt || nowMs >= day.DepartAt) throw ApiException.Invalid("noPortDay");
         var status = direction == GangwayDirection.On ? "back" : "ashore";
         await rows.ApplyAsync(booking.BookingId, [new PortRowRow("presence", AwayRules.PresenceKey(day.Date, guest.PublicId), AwayRules.PresenceJson(status, nowMs), nowMs, false)], clock.UtcNow, ct);
+        await away.OnPresenceAsync(guest, status, nowMs, ct);
         return new(status, nowMs, day.Port, day.Date);
     }
 

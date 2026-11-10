@@ -56,6 +56,15 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         return Deliver(toUserId, "message", notice, breaks || !muted, ct);
     }
 
+    /// <summary>A connected guest left or returned to the ship. A normal notice: it obeys do-not-disturb, and a muted conversation gets the line but no phone alert.</summary>
+    public Task AwayAsync(long toUserId, Guid conversationId, string who, ChatAwayRules.Change change, long atMs, bool muted, CancellationToken ct)
+    {
+        var words = ChatAwayRules.Notice(who, change);
+        var notice = new PushNotice(ChatAwayRules.NoticeKey(conversationId, toUserId, change, atMs), "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), words.Title, words.Body,
+            new() { ["conversation"] = conversationId.ToString("N") }, ChatConversationRules.NoticeTag(conversationId));
+        return Deliver(toUserId, "away", notice, !muted, ct);
+    }
+
     /// <summary>An urgent message was acknowledged: a live nudge only (never a phone notice) so the sender's "seen by" and the reader's pinned state refresh at once.</summary>
     public Task AckedAsync(long userId, Guid conversationId, Guid messageId, CancellationToken ct) =>
         Deliver(userId, "acked", new PushNotice($"chat:ack:{conversationId:N}:{messageId:N}:{userId}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",

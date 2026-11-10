@@ -361,7 +361,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         """;
 
     private const string MemberSelect = """
-        SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.LastReadMessageId, g.CreatedAt,
+        SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.NotifyAway, me.LastReadMessageId, g.CreatedAt,
                CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded
         FROM dbo.ChatGroupMembers me
         JOIN dbo.ChatGroups g ON g.Id = me.GroupId
@@ -384,7 +384,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatConversationRow>(Sql.Cmd($"""
-            SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.LastReadMessageId, g.CreatedAt,
+            SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.NotifyAway, me.LastReadMessageId, g.CreatedAt,
                    CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded,
                    lm.Id AS LastMessageId, lm.FromUserId AS LastFromUserId, lm.[Text] AS LastText,
                    CAST(CASE WHEN lm.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, lm.[At] AS LastAt, lm.Urgency AS LastUrgency,
@@ -536,6 +536,42 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
     {
         await using var c = await db.OpenAsync(ct);
         await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET Muted = @on WHERE GroupId = @groupId AND UserId = @userId", new { groupId, userId, on }, null, ct));
+    }
+
+    public async Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatGroupMembers SET NotifyAway = @on WHERE GroupId = @groupId AND UserId = @userId", new { groupId, userId, on }, null, ct));
+    }
+
+    public async Task<List<ChatAwayClaimRow>> ClaimAwayAsync(long userId, string status, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatAwayClaimRow>(Sql.Cmd("""
+            UPDATE dbo.ChatGroupMembers SET AwayStatus = @status
+            OUTPUT INSERTED.GroupId AS GroupId, DELETED.AwayStatus AS Previous, INSERTED.NotifyAway AS NotifyAway
+            WHERE UserId = @userId AND Status = 'active' AND ISNULL(AwayStatus, '') <> @status
+            """, new { userId, status }, null, ct))).ToList();
+    }
+
+    public async Task<List<ChatAwayRecipientRow>> ListAwayRecipientsAsync(long userId, IReadOnlyCollection<long> groupIds, CancellationToken ct)
+    {
+        if (groupIds.Count == 0) return [];
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatAwayRecipientRow>(Sql.Cmd("""
+            SELECT m.GroupId, g.PublicId AS GroupPublicId, m.UserId, m.Muted
+            FROM dbo.ChatGroupMembers m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            WHERE m.GroupId IN @groupIds AND m.Status = 'active' AND m.UserId <> @userId
+              AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.Status = 'accepted' AND cc.PairLow = CASE WHEN @userId < m.UserId THEN @userId ELSE m.UserId END AND cc.PairHigh = CASE WHEN @userId < m.UserId THEN m.UserId ELSE @userId END)
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks b WHERE (b.UserId = m.UserId AND b.BlockedUserId = @userId) OR (b.UserId = @userId AND b.BlockedUserId = m.UserId))
+            """, new { userId, groupIds }, null, ct))).ToList();
+    }
+
+    public async Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], IsSystem, [At]) VALUES (@groupId, @userId, @text, 1, @at)", new { groupId, userId, text, at }, null, ct));
     }
 
     public async Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct)

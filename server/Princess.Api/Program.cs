@@ -76,6 +76,7 @@ services.AddScoped<ChatSmsService>();
 services.AddScoped<ChatSmsInboundService>();
 services.AddPrincessRealtime();
 services.AddScoped<ChatNotifier>();
+services.AddScoped<ChatAwayService>();
 services.AddSingleton<ChatFanoutQueue>();
 services.AddScoped<ChatFanout>();
 services.AddHostedService<ChatFanoutService>();

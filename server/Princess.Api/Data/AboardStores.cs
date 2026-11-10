@@ -145,6 +145,8 @@ public class ChatMemberRow
     public DateTime JoinedAt { get; set; }
     public DateTime? LeftAt { get; set; }
     public bool Muted { get; set; }
+    /// <summary>The member tells the other connected members when they leave or return to the ship.</summary>
+    public bool NotifyAway { get; set; }
     public long? LastReadMessageId { get; set; }
     /// <summary>A direct chat whose connection has ended: readable, but sending is closed.</summary>
     public bool DirectEnded { get; set; }
@@ -170,6 +172,23 @@ public sealed class ChatRecipientRow
     public bool Muted { get; set; }
     /// <summary>The recipient allows message text on their lock screen (off unless they turned it on).</summary>
     public bool ShowPreview { get; set; }
+}
+
+/// <summary>One conversation's presence change for a member: what the chat last knew (<c>Previous</c>) and whether the member wants the chat told.</summary>
+public sealed class ChatAwayClaimRow
+{
+    public long GroupId { get; set; }
+    public string? Previous { get; set; }
+    public bool NotifyAway { get; set; }
+}
+
+/// <summary>Someone to tell that a member left or returned: an active member of the conversation who is connected to the sender and neither has blocked the other.</summary>
+public sealed class ChatAwayRecipientRow
+{
+    public long GroupId { get; set; }
+    public Guid GroupPublicId { get; set; }
+    public long UserId { get; set; }
+    public bool Muted { get; set; }
 }
 
 /// <summary>A message stored by <see cref="IChatStore.AddMessageAsync"/>. <c>Created</c> is false when the same <c>clientId</c> had been sent before and the stored message came back.</summary>
@@ -261,6 +280,17 @@ public interface IChatStore
     /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>
     Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct);
     Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>Turns "tell this chat when I leave or return to the ship" on or off for the member.</summary>
+    Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct);
+    /// <summary>
+    /// Records the person's new presence on every conversation they are active in and returns the ones where it changed, with what each knew before and whether the person wants it shared.
+    /// A repeat of the same status returns nothing, so a retried scan tells no one twice.
+    /// </summary>
+    Task<List<ChatAwayClaimRow>> ClaimAwayAsync(long userId, string status, CancellationToken ct);
+    /// <summary>Who to tell in these conversations about the sender: active members, connected to the sender (an accepted connection), with no block either way.</summary>
+    Task<List<ChatAwayRecipientRow>> ListAwayRecipientsAsync(long userId, IReadOnlyCollection<long> groupIds, CancellationToken ct);
+    /// <summary>Adds a system line in the conversation, attributed to the person it is about.</summary>
+    Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct);
     /// <summary>One message the person may read in the conversation (their window, not from someone they blocked), or null.</summary>
     Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct);
     /// <summary>Records that the person acknowledged the message; false when they already had (nothing changes).</summary>

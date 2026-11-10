@@ -12,7 +12,7 @@ public sealed record PortRowsRequest(List<PortRowDto>? Ops);
 public sealed record PortRowsDto(IReadOnlyList<PortRowDto> Rows);
 
 /// <summary>The port day's rows for a booking: any guest reads, adult guests change (multi-device plan 2, Phase 6).</summary>
-public sealed class PortRowService(IPortRowStore store, AccessService access, IClock clock)
+public sealed class PortRowService(IPortRowStore store, AccessService access, IClock clock, ChatAwayService away)
 {
     private static PortRowDto ToDto(PortRowRow r) => new(r.Kind, r.Key, r.Json is null ? null : JsonNode.Parse(r.Json), r.At, r.Deleted);
 
@@ -44,6 +44,10 @@ public sealed class PortRowService(IPortRowStore store, AccessService access, IC
 
         await store.ApplyAsync(bookingId, [.. latest.Values], clock.UtcNow, ct);
         await store.PurgeAsync(bookingId, nowMs - PortRowRules.TombstoneDays * 86_400_000L, ct);
+        // The guest's own presence row, changed by hand: the chats they chose are told, as for a gangway scan.
+        var suffix = AwayRules.PresenceKey("", actor.PublicId);   // "|" and the guest's encoded id
+        if (latest.Values.Where(r => r.Kind == "presence" && !r.Deleted && r.Key.EndsWith(suffix, StringComparison.Ordinal)).OrderByDescending(r => r.At).FirstOrDefault() is { } presence)
+            await away.OnPresenceAsync(actor, AwayRules.StatusOf(presence.Json), presence.At, ct);
         return await ListRowsAsync(bookingId, ct);
     }
 

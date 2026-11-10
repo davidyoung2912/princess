@@ -242,6 +242,8 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         public DateTime JoinedAt { get; set; } = DateTime.MinValue;
         public DateTime? LeftAt { get; set; }
         public bool Muted { get; set; }
+        public bool NotifyAway { get; set; }
+        public string? AwayStatus { get; set; }
         public long? LastRead { get; set; }
     }
 
@@ -253,6 +255,8 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public HashSet<long> Previews { get; } = [];
     public HashSet<(long UserId, long Blocked)> Blocks { get; } = [];
     public List<(long UserId, Guid MessageId, string Reason)> Reports { get; } = [];
+    /// <summary>Pairs (either order) with an accepted chat connection, for who may be told when someone leaves or returns to the ship.</summary>
+    public HashSet<(long A, long B)> Connected { get; } = [];
 
     /// <summary>Puts the people in one booking group ("My group").</summary>
     public Conversation Group(params long[] userIds) => Make("party", "My group", userIds);
@@ -298,7 +302,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
             var r = new ChatConversationRow
             {
                 GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
-                Muted = x.Me.Muted, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
+                Muted = x.Me.Muted, NotifyAway = x.Me.NotifyAway, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
             };
             if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
             return r;
@@ -362,6 +366,36 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public Task SetMutedAsync(long groupId, long userId, bool on, CancellationToken ct)
     {
         Of(groupId).Members.First(m => m.UserId == userId).Muted = on;
+        return Task.CompletedTask;
+    }
+
+    public Task SetNotifyAwayAsync(long groupId, long userId, bool on, CancellationToken ct)
+    {
+        Of(groupId).Members.First(m => m.UserId == userId).NotifyAway = on;
+        return Task.CompletedTask;
+    }
+
+    public Task<List<ChatAwayClaimRow>> ClaimAwayAsync(long userId, string status, CancellationToken ct)
+    {
+        var claims = new List<ChatAwayClaimRow>();
+        foreach (var c in Mine(userId))
+        {
+            var me = c.Members.First(m => m.UserId == userId);
+            if (me.Status != "active" || me.AwayStatus == status) continue;
+            claims.Add(new ChatAwayClaimRow { GroupId = c.Id, Previous = me.AwayStatus, NotifyAway = me.NotifyAway });
+            me.AwayStatus = status;
+        }
+        return Task.FromResult(claims);
+    }
+
+    public Task<List<ChatAwayRecipientRow>> ListAwayRecipientsAsync(long userId, IReadOnlyCollection<long> groupIds, CancellationToken ct) =>
+        Task.FromResult(Conversations.Where(c => groupIds.Contains(c.Id)).SelectMany(c => c.Members.Where(m => m.Status == "active" && m.UserId != userId
+                && (Connected.Contains((userId, m.UserId)) || Connected.Contains((m.UserId, userId))) && !Blocks.Contains((m.UserId, userId)) && !Blocks.Contains((userId, m.UserId)))
+            .Select(m => new ChatAwayRecipientRow { GroupId = c.Id, GroupPublicId = c.PublicId, UserId = m.UserId, Muted = m.Muted })).ToList());
+
+    public Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct)
+    {
+        Messages.Add(new Stored(groupId, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, At = at, IsSystem = true }, null));
         return Task.CompletedTask;
     }
 

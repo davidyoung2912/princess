@@ -274,6 +274,10 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
   })
 
+  const notifyAway = useAction(async (on: boolean) => {
+    await optimistic(() => setConversation((c) => (c ? { ...c, notifyAway: on } : c)), () => api.chatConversations.notifyAway(id, on), () => setConversation((c) => (c ? { ...c, notifyAway: !on } : c)))
+  })
+
   // ---- Sending ----
   const [text, setText] = useState('')
   const [problem, setProblem] = useState<SendProblem | null>(null)
@@ -374,8 +378,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
         </form>
       )}
-      {conversation && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      {conversation && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
+      <ActionError error={notifyAway.error} />
       <ActionError error={ack.error} />
     </section>
   )
@@ -448,8 +453,8 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
 })
 
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
-function Options({ conversation, muteBusy, onMute, onSent, blockedVersion, reload }: {
-  conversation: ChatConversation; muteBusy: boolean; onMute: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
+function Options({ conversation, muteBusy, onMute, awayBusy, onAway, onSent, blockedVersion, reload }: {
+  conversation: ChatConversation; muteBusy: boolean; onMute: (on: boolean) => void; awayBusy: boolean; onAway: (on: boolean) => void; onSent: () => void; blockedVersion: number; reload: () => void
 }) {
   const receipts = useMine(() => api.messages.receipts())
   const [shown, setShown] = useState<boolean | null>(null)
@@ -466,6 +471,10 @@ function Options({ conversation, muteBusy, onMute, onSent, blockedVersion, reloa
         <Chip pressed={conversation.muted} onToggle={() => { if (!muteBusy) onMute(!conversation.muted) }}>{t('conv.mute')}</Chip>
       </div>
       <p className="muted">{t('conv.muteBody')}</p>
+      <div className="chip-row">
+        <Chip pressed={conversation.notifyAway === true} onToggle={() => { if (!awayBusy) onAway(conversation.notifyAway !== true) }}>{t('conv.away')}</Chip>
+      </div>
+      <p className="muted">{t('conv.awayBody')}</p>
       <div className="chip-row">
         <Chip pressed={on} onToggle={() => void flip.run(!on)}>{t('chat.receipts')}</Chip>
       </div>

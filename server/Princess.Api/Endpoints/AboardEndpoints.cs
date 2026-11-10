@@ -124,6 +124,8 @@ public static class AboardEndpoints
             .WithSummary("Marks the conversation read now, on every device. Who read what is recorded only when the caller has read receipts on. 404 not a member.");
         chat.MapPut("/conversations/{id:guid}/mute", async (Guid id, ChatMuteRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.MuteAsync(await me.LoadAsync(ct), id, body, ct)))
             .WithSummary("Mutes or unmutes a conversation: no phone alert for its messages. The unread count still shows. Returns the new state. 404 not a member.");
+        chat.MapPut("/conversations/{id:guid}/notify-away", async (Guid id, ChatNotifyAwayRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.NotifyAwayAsync(await me.LoadAsync(ct), id, body, ct)))
+            .WithSummary("Turns on or off telling the other connected people in this conversation when the caller leaves or returns to the ship (off by default; only the ship-level change is shared, never where in port). Returns the new state. 403 supervised; 404 not a member.");
         chat.MapGet("/conversations/{id:guid}/messages/{messageId:guid}/photo", async (Guid id, Guid messageId, ICurrentUser me, ChatService svc, HttpContext http, CancellationToken ct) =>
             {
                 var photo = await svc.PhotoAsync(await me.LoadAsync(ct), id, messageId, ct);

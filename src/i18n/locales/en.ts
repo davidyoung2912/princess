@@ -15402,6 +15402,8 @@ export const en = {
   'cgroup.problem.expired': 'This invitation has expired.',
   'conv.mute': 'Mute alerts for this chat',
   'conv.muteBody': 'A muted chat does not alert your phone. Its unread count still shows.',
+  'conv.away': 'Tell this chat when I leave or return to the ship',
+  'conv.awayBody': 'Off unless you turn it on, and only for this chat. People you have connected with here are told when you go ashore and when you are back on board, nothing more: never where you are. They can mute it, and you can turn it off at any time.',
   'conv.earlier': 'Show earlier messages',
   'conv.newMessages': 'New messages',
   'conv.incoming': 'New message from {name}',

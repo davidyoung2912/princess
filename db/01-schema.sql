@@ -3275,6 +3275,12 @@ GO
 -- How much a message matters (docs/chat-urgency-plan.md): normal, important or urgent. Only urgent breaks through do-not-disturb, and only staff and guardians may send it (checked by the API).
 IF COL_LENGTH(N'dbo.ChatMessages', N'Urgency') IS NULL
   ALTER TABLE dbo.ChatMessages ADD Urgency NVARCHAR(10) NOT NULL CONSTRAINT DF_ChatMessages_Urgency DEFAULT N'normal' CONSTRAINT CK_ChatMessages_Urgency CHECK (Urgency IN (N'normal', N'important', N'urgent'));
+
+-- Tell the people in a chat when I leave or return to the ship (docs/chat-ashore-plan.md). NotifyAway is the member's own choice (off by default); AwayStatus is the last presence (ashore or back) seen for them, so a repeat tells no one.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'NotifyAway') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD NotifyAway BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_NotifyAway DEFAULT 0;
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'AwayStatus') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD AwayStatus VARCHAR(8) NULL;
 GO
 
 -- Who has acknowledged an urgent message (docs/chat-urgency-plan.md, phase 2). Only the explicit tap writes a row; reading the thread does not.

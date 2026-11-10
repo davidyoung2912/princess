@@ -101,6 +101,8 @@ export interface ChatConversation {
   at: number
   /** A supervised child is in it, so their parent or guardian can read it. Every member is told. */
   guardianCanRead?: boolean
+  /** You tell the connected people in this chat when you leave or return to the ship. Off unless you chose it; absent when off. */
+  notifyAway?: boolean
 }
 
 export interface ChatMessage {
@@ -152,6 +154,8 @@ export interface ChatConversationsApi {
   read(id: string): Promise<void>
   /** Returns the new state. */
   mute(id: string, on: boolean): Promise<boolean>
+  /** Tells the connected people in this chat when you leave or return to the ship (off by default). Returns the new state; a supervised account is refused. */
+  notifyAway(id: string, on: boolean): Promise<boolean>
 }
 
 // ---- Groups (docs/chat-plan.md, phase 5) ----

@@ -221,6 +221,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     photo: async (id, messageId) => (await get<{ photo: string }>(`/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/photo`)).photo,
     read: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/read`) },
     mute: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mute`, { on }),
+    notifyAway: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/notify-away`, { on }),
   }
   const chatGroups: HttpGroups['chatGroups'] = {
     create: (name, personIds) => send('post', '/me/chat/groups', { name, personIds }),
