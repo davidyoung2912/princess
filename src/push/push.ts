@@ -128,3 +128,17 @@ export function feedUrl(apiUrl: string, origin: string, path: string): string {
 
 /** The same address for calendar apps that ask for `webcal://` (they then keep it up to date). */
 export const webcalUrl = (https: string): string => https.replace(/^https?:/i, 'webcal:')
+
+/** Tag prefix the server gives a conversation's notice (`ChatConversationRules.NoticeTag`). */
+export const CHAT_TAG_PREFIX = 'chat:conversation:'
+export const chatTagFor = (conversationId: string): string => CHAT_TAG_PREFIX + conversationId.replace(/-/g, '').toLowerCase()
+
+/**
+ * Which shown notifications to close because the guest has dealt with chat elsewhere. With nothing unread, every chat notice goes except those of conversations
+ * that still hold an urgent message the guest has not acknowledged. With something unread, none go.
+ */
+export function staleChatTags(shownTags: readonly string[], unread: number, urgentConversations: readonly string[]): string[] {
+  if (unread > 0) return []
+  const keep = new Set(urgentConversations.map(chatTagFor))
+  return shownTags.filter((t) => t.startsWith(CHAT_TAG_PREFIX) && !keep.has(t))
+}

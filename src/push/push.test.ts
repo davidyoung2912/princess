@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { badgeCount, bytesToKey, cleanWatch, feedUrl, isIos, keyToBytes, normalizeLogEntry, pushSupport, shouldDispatch, webcalUrl, type PushEnvironment } from './push'
+import { badgeCount, bytesToKey, cleanWatch, feedUrl, isIos, keyToBytes, normalizeLogEntry, pushSupport, shouldDispatch, staleChatTags, webcalUrl, type PushEnvironment } from './push'
 
 const CHROME: PushEnvironment = { hasServiceWorker: true, hasPushManager: true, hasNotification: true, permission: 'default', userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/130', standalone: false, maxTouchPoints: 5 }
 const IPHONE_TAB: PushEnvironment = { ...CHROME, hasPushManager: false, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Safari/604', standalone: false }
@@ -75,5 +75,17 @@ describe('the calendar address', () => {
 
   it('offers the webcal form that calendar apps keep following', () => {
     expect(webcalUrl('https://api.example/x.ics')).toBe('webcal://api.example/x.ics')
+  })
+})
+
+describe('closing chat alerts that were dealt with elsewhere', () => {
+  const a = 'chat:conversation:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  const b = 'chat:conversation:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+  it('closes every chat alert when nothing is unread, except conversations with an unacknowledged urgent message', () => {
+    expect(staleChatTags([a, b, 'allAboard:1'], 0, ['bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'])).toEqual([a])
+  })
+  it('closes nothing while something is unread, and never touches other kinds of alert', () => {
+    expect(staleChatTags([a, b], 2, [])).toEqual([])
+    expect(staleChatTags(['allAboard:1', 'spot'], 0, [])).toEqual([])
   })
 })

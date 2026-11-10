@@ -70,6 +70,11 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         Deliver(userId, "acked", new PushNotice($"chat:ack:{conversationId:N}:{messageId:N}:{userId}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
             new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
 
+    /// <summary>A conversation was read: a live nudge only, to the reader's own devices, so an app still open on another one refreshes its numbers and takes the stale alert away.</summary>
+    public Task ReadAsync(long userId, Guid conversationId, long atMs, CancellationToken ct) =>
+        Deliver(userId, "read", new PushNotice($"chat:read:{conversationId:N}:{userId}:{atMs}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
+            new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
+
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 

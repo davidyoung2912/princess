@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatSummary } from '../api/chatTypes'
 import { API_URL, api, auth } from '../runtime'
 import { startVisibleInterval } from './visibleInterval'
-import { requestsWaiting } from '../domain/chatNotice'
+import { requestsWaiting, shouldAck } from '../domain/chatNotice'
+import { closeSettledChatNotices } from '../push/browser'
 import { createHubConnection, hubUrl, type HubState } from '../realtime/hubClient'
 import { coalesce } from '../domain/coalesce'
 
@@ -42,7 +43,13 @@ export function useChatLive(onChange: () => void): void {
  */
 export function useChatSummary(enabled: boolean): ChatSummary | null {
   const [summary, setSummary] = useState<ChatSummary | null>(null)
-  const load = useCallback(() => { fetchChatSummary().then(setSummary, () => undefined) }, [])
+  const load = useCallback(() => {
+    fetchChatSummary().then((s) => {
+      setSummary(s)
+      // Read or acknowledged on another device: take this device's stale alerts away.
+      void closeSettledChatNotices(s.unread, s.urgentConversations)
+    }, () => undefined)
+  }, [])
   useEffect(() => {
     if (!enabled) return
     load()
@@ -64,7 +71,7 @@ export function useChatSummary(enabled: boolean): ChatSummary | null {
       onEvent: (target, args) => {
         if (target !== 'chatChanged') return
         const id = (args[0] as { id?: unknown } | undefined)?.id
-        if (typeof id === 'string') hub.send('Ack', [id])
+        if (typeof id === 'string' && shouldAck(document.visibilityState)) hub.send('Ack', [id])
         load()
         window.dispatchEvent(new Event(LIVE))
       },

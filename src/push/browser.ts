@@ -1,6 +1,6 @@
 /** The browser side of alerts: permission, subscription and the badge. The only module that touches `navigator` for push; the decisions are in `push.ts`. */
 import { api } from '../runtime'
-import { badgeCount, bytesToKey, cleanWatch, keyToBytes, pushSupport, type PushEnvironment, type PushStatus, type PushSupport } from './push'
+import { badgeCount, bytesToKey, chatTagFor, cleanWatch, keyToBytes, pushSupport, staleChatTags, type PushEnvironment, type PushStatus, type PushSupport } from './push'
 import { getSettings } from '../settings/store'
 
 export function readEnvironment(): PushEnvironment {
@@ -104,4 +104,21 @@ export function remindIn(ms: number, title: string, body: string): () => void {
     })()
   }, Math.max(0, ms))
   return () => clearTimeout(id)
+}
+
+/** Takes a conversation's alert off this device's screen, for when the guest has opened or read it (here or on another device). */
+export async function closeChatNotice(conversationId: string): Promise<void> {
+  try {
+    const tag = chatTagFor(conversationId)
+    for (const n of (await (await registration())?.getNotifications({ tag })) ?? []) n.close()
+  } catch { /* nothing to close, or no way to ask */ }
+}
+
+/** Takes off this device's screen the chat alerts the guest has already dealt with elsewhere, judged from the shared chat numbers. */
+export async function closeSettledChatNotices(unread: number, urgentConversations: readonly string[]): Promise<void> {
+  try {
+    const shown = (await (await registration())?.getNotifications()) ?? []
+    const stale = new Set(staleChatTags(shown.map((n) => n.tag), unread, urgentConversations))
+    for (const n of shown) if (stale.has(n.tag)) n.close()
+  } catch { /* nothing to close, or no way to ask */ }
 }

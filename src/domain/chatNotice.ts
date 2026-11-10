@@ -71,3 +71,9 @@ export const noticePath = (n: ChatNotice): string =>
 
 /** Requests waiting for the guest, for the "needs you" row on Home. */
 export const requestsWaiting = (s: ChatSummary | null): number => (s ? Math.max(0, s.incoming) + Math.max(0, s.approvals) : 0)
+
+/**
+ * Whether this app should tell the server it got a nudge. Only while the page is in front: a hidden tab or a locked phone may still have a live socket,
+ * and an ack from it would stop the phone alert for a message nobody can see. Without an ack the server sends the alert after a few seconds.
+ */
+export const shouldAck = (visibility: string): boolean => visibility === 'visible'

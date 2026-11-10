@@ -21,6 +21,7 @@ import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { useLatest } from '../../hooks/useLatest'
+import { closeChatNotice } from '../../push/browser'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
@@ -228,6 +229,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     if (phase !== 'ready' || !last || last === lastRead.current || document.visibilityState !== 'visible') return
     lastRead.current = last
     void api.chatConversations.read(id).then(chatChanged, () => { lastRead.current = null })
+    void closeChatNotice(id)
   }, [phase, messages, id])
 
   // Older messages load when the guest scrolls to the top (and by the button, for keyboard and screen reader use). The page keeps its place as they are added above.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConnection, ChatConnections, ChatConversation, ChatSummary } from '../api/chatTypes'
-import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, noticePath, requestsWaiting } from './chatNotice'
+import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, noticePath, requestsWaiting, shouldAck } from './chatNotice'
 
 const sum = (o: Partial<ChatSummary> = {}): ChatSummary => ({ incoming: 0, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, urgentUnacked: 0, urgentConversations: [], ...o })
 const conn = (o: Partial<ChatConnection>): ChatConnection => ({ id: 'r1', kind: 'incoming', personId: 'p', name: 'Sam L', conversationId: null, childId: null, childName: null, isNew: false, at: 1, expiresAt: 9, ...o })
@@ -80,5 +80,12 @@ describe('urgent notice', () => {
     expect(mayNotifyUrgent('/plan')).toBe(true)
     expect(mayNotifyUrgent('/chat')).toBe(false)
     expect(mayNotifyUrgent('/chat/x')).toBe(false)
+  })
+})
+
+describe('shouldAck', () => {
+  it('acknowledges a nudge only while the page is in front, so a hidden app still gets the phone alert', () => {
+    expect(shouldAck('visible')).toBe(true)
+    expect(shouldAck('hidden')).toBe(false)
   })
 })

@@ -179,6 +179,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var member = await MemberAsync(actor, conversationId, ct);
         await store.MarkReadAsync(member.GroupId, actor.Id, await store.GetReceiptsAsync(actor.Id, ct), await userClock.NowAsync(actor, ct), ct);
+        await notifier.ReadAsync(actor.Id, conversationId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), ct);
     }
 
     /// <summary>
