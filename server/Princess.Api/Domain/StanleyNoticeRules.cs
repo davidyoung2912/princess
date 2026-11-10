@@ -11,6 +11,8 @@ public static class StanleyNoticeRules
 {
     /// <summary>The events of the delivery log (docs/chat-features-research.md, 15.8): written to the thread, written only to the phone because the thread failed, and the guest's Got it.</summary>
     public const string EventPosted = "posted", EventFailOpen = "failOpen", EventAcked = "acked";
+    /// <summary>Suggestion cards (chat phase 6): the guest's Not now and Don't show this again. Counted like the rest, with no text.</summary>
+    public const string EventSnooze = "snooze", EventDismiss = "dismiss";
 
     public const string Critical = "critical", Important = "important", Reminder = "reminder", Info = "info";
     public static readonly string[] Lanes = [Critical, Important, Reminder, Info];

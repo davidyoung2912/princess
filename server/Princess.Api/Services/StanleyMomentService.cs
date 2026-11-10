@@ -29,6 +29,7 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
             await store.EnsureStanleyAsync(actor.Id, StanleyPersonaRules.Welcome(actor.FirstName), facts.Now, ct);
             var (voice, subtitle) = await store.LastStanleyPersonaAsync(actor.Id, ct) ?? (StanleyPersonaRules.Company, StanleyPersonaRules.CompanyName);
             if (!await store.AddStanleyNoticeAsync(actor.Id, ChatProactiveRules.ToNotice(pick, facts.Now), voice, subtitle, facts.Now, ct)) return null;
+            await LogAsync(actor.Id, ChatProactiveRules.ToNotice(pick, facts.Now), StanleyNoticeRules.EventPosted, facts.Now, ct);
             await store.SaveMomentAsync(actor.Id, new(pick.Key, pick.Topic, facts.Now, pick.ExpiresAt, null, null, pick.FactsHash), ct);
             return pick.Key;
         }
@@ -53,6 +54,16 @@ public sealed class StanleyMomentService(IChatStore store, IStanleyMemoryStore m
         if (!message.FromStanley || message.Lane != ChatProactiveRules.Lane || ChatProactiveRules.KeyOf(message.NoticeKey) is not { } key) throw ApiException.Invalid("notMoment");
         var snooze = action == ChatProactiveRules.Snooze;
         if (!await store.PutAwayMomentAsync(actor.Id, message.Id, key, snooze ? null : now, snooze ? now + ChatProactiveRules.SnoozeFor : null, now, ct)) throw ApiException.NotFound();
+        await LogAsync(actor.Id, message.NoticeKey!, snooze ? StanleyNoticeRules.EventSnooze : StanleyNoticeRules.EventDismiss, now, ct);
+    }
+
+    /// <summary>Kind, lane, key and time only, as for every notice. Best effort: a counting failure never reaches the guest.</summary>
+    private async Task LogAsync(long userId, StanleyNotice n, string evt, DateTime at, CancellationToken ct) => await LogAsync(userId, n.Key, evt, at, ct);
+
+    private async Task LogAsync(long userId, string noticeKey, string evt, DateTime at, CancellationToken ct)
+    {
+        try { await store.LogNoticeDeliveryAsync(userId, noticeKey, ChatProactiveRules.KindOf, ChatProactiveRules.Lane, evt, at, ct); }
+        catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "A suggestion card could not be counted"); }
     }
 
     /// <summary>The topics Stanley may suggest, and which of them the guest turned off. The level (how much Stanley speaks up) is the existing Stanley memory choice, so it is shown here, not stored twice.</summary>

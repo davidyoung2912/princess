@@ -164,3 +164,29 @@ public class ChatProactiveRulesTests
         Assert.False(ChatProactiveRules.ValidAction(null));
     }
 }
+
+public class SuggestionCountsTests
+{
+    [Fact]
+    public void SuggestionCardsAreCountedByLaneButStayOutOfTheNoticeTotals()
+    {
+        var rows = new List<Princess.Api.Data.NoticeDeliveryCount>
+        {
+            new("payment", "critical", StanleyNoticeRules.EventPosted, 9), new("payment", "critical", StanleyNoticeRules.EventFailOpen, 1),
+            new("moment", "suggestion", StanleyNoticeRules.EventPosted, 40), new("moment", "suggestion", StanleyNoticeRules.EventSnooze, 5), new("moment", "suggestion", StanleyNoticeRules.EventDismiss, 3),
+        };
+        var s = Princess.Api.Endpoints.StanleyNoticeStatsEndpoints.Summarise(0, rows);
+        Assert.Equal(9, s.Posted);
+        Assert.Equal(0.1, s.FailOpenShare, 3);
+        Assert.Equal(5, s.Counts.Count);
+        Assert.Contains(s.Counts, c => c.Lane == "suggestion" && c.Event == "dismiss" && c.Count == 3);
+    }
+
+    [Fact]
+    public void TheSnoozeAndDismissEventsFitTheColumn()
+    {
+        Assert.True(StanleyNoticeRules.EventSnooze.Length <= 8);
+        Assert.True(StanleyNoticeRules.EventDismiss.Length <= 8);
+        Assert.True(ChatProactiveRules.Lane.Length <= 10);
+    }
+}

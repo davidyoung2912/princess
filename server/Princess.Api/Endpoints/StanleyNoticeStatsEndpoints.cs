@@ -30,7 +30,8 @@ public static class StanleyNoticeStatsEndpoints
     /// <summary>The totals and the fail-open share (of notices posted or failed open) from the log's grouped counts.</summary>
     public static StanleyNoticeSummaryDto Summarise(long sinceMs, IReadOnlyList<NoticeDeliveryCount> rows)
     {
-        int Sum(string evt) => rows.Where(r => r.Event == evt).Sum(r => r.Count);
+        // Suggestion cards are in the counts by lane, but not in the totals: they are not notices, and they would hide how often a real notice failed open.
+        int Sum(string evt) => rows.Where(r => r.Event == evt && r.Lane != ChatProactiveRules.Lane).Sum(r => r.Count);
         var posted = Sum(StanleyNoticeRules.EventPosted);
         var failed = Sum(StanleyNoticeRules.EventFailOpen);
         var share = posted + failed == 0 ? 0 : (double)failed / (posted + failed);

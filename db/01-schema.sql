@@ -3570,3 +3570,16 @@ CREATE TABLE dbo.StanleyChatPrefs (
 );
 END
 GO
+
+-- Chat phase 6 follow-up: suggestion cards are counted in the same text-free delivery log. The lane needs one more character, and the event gains snooze (Not now) and dismiss (Don't show again).
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.StanleyNoticeDeliveries') AND name = N'Lane' AND max_length < 10)
+BEGIN
+  ALTER TABLE dbo.StanleyNoticeDeliveries ALTER COLUMN Lane VARCHAR(10) NOT NULL;
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_StanleyNoticeDeliveries_Event' AND definition LIKE N'%snooze%')
+BEGIN
+  ALTER TABLE dbo.StanleyNoticeDeliveries DROP CONSTRAINT CK_StanleyNoticeDeliveries_Event;
+  ALTER TABLE dbo.StanleyNoticeDeliveries ADD CONSTRAINT CK_StanleyNoticeDeliveries_Event CHECK (Event IN ('posted','failOpen','acked','snooze','dismiss'));
+END
+GO
