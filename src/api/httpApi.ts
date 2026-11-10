@@ -49,6 +49,7 @@ export interface HttpGroups {
   chatConversations: Api['chatConversations']
   chatGroups: Api['chatGroups']
   chatRooms: Api['chatRooms']
+  chatRoomsStaff: Api['chatRoomsStaff']
   chatGuardian: Api['chatGuardian']
   family: Api['family']
   health: Api['health']
@@ -267,6 +268,16 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     acceptRules: async (id) => { await send('post', `/me/chat/rooms/${seg(id)}/rules`) },
     suggestQuestion: async (id, text) => { await send('post', `/me/chat/rooms/${seg(id)}/questions`, { text }) },
   }
+  const chatRoomsStaff: HttpGroups['chatRoomsStaff'] = {
+    list: () => get('/admin/chat/rooms'),
+    create: (body) => send('post', '/admin/chat/rooms', body),
+    act: (id, body) => send('post', `/admin/chat/rooms/${seg(id)}/action`, body),
+    held: () => get('/admin/chat/rooms/held'),
+    decideHeld: async (id, decision) => { await send('post', `/admin/chat/rooms/held/${seg(id)}`, { decision }) },
+    questions: () => get('/admin/chat/rooms/questions'),
+    decideQuestion: async (id, decision) => { await send('post', `/admin/chat/rooms/questions/${seg(id)}`, { decision }) },
+    summary: (days) => get(`/admin/chat/rooms/summary${days ? `?days=${days}` : ''}`),
+  }
   const chatGuardian: HttpGroups['chatGuardian'] = {
     children: () => get('/me/chat/children'),
     conversations: (childId) => get(`/me/chat/children/${seg(childId)}/conversations`),
@@ -373,6 +384,7 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     chatConversations,
     chatGroups,
     chatRooms,
+    chatRoomsStaff,
     chatGuardian,
     family,
     health,
@@ -707,6 +719,7 @@ export function toApi(g: HttpGroups): Api {
     chatConversations: g.chatConversations,
     chatGroups: g.chatGroups,
     chatRooms: g.chatRooms,
+    chatRoomsStaff: g.chatRoomsStaff,
     chatGuardian: g.chatGuardian,
     family: g.family,
     health: g.health,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ChatRoomInfo, ChatRoomListItem } from '../api/chatTypes'
-import { canJoinRoom, cleanQuestion, groupRooms, isRoomChat, needsRules, roomPostState, roomProblem } from './chatRooms'
+import type { ChatRoomAdminItem, ChatRoomInfo, ChatRoomListItem } from '../api/chatTypes'
+import { canJoinRoom, canOpenRoom, checkNewRoom, staffOrder, staffProblem, cleanQuestion, groupRooms, isRoomChat, needsRules, roomPostState, roomProblem } from './chatRooms'
 import { sendProblem } from './chatThread'
 
 const info = (o: Partial<ChatRoomInfo> = {}): ChatRoomInfo => ({ roomKind: 'interest', rules: 'Be kind.', slow: false, rulesAccepted: true, canPost: true, staffOnly: false, members: 3, ...o })
@@ -65,5 +65,31 @@ describe('rooms', () => {
     expect(sendProblem('invalid', 'emergency')).toBe('emergency')
     expect(sendProblem('conflict', 'closed')).toBe('closed')
     expect(sendProblem('forbidden', 'age')).toBe('age')
+  })
+})
+
+describe('room staff screens', () => {
+  const admin = (o: Partial<ChatRoomAdminItem>): ChatRoomAdminItem => ({ id: 'a', kind: 'room', roomKind: 'interest', name: 'A', members: 0, cap: 500, moderators: 0, closed: true, slow: false, inHours: true, rules: 'x', ...o })
+  it('opens a closed room only with two moderators', () => {
+    expect(canOpenRoom(admin({ moderators: 1 }))).toBe(false)
+    expect(canOpenRoom(admin({ moderators: 2 }))).toBe(true)
+    expect(canOpenRoom(admin({ moderators: 2, closed: false }))).toBe(false)
+    expect(canOpenRoom(admin({ kind: 'channel', moderators: 5 }))).toBe(false)
+  })
+  it('puts open rooms without a rota first, then open, then closed', () => {
+    const list = [admin({ id: 'c', name: 'C' }), admin({ id: 'o', name: 'B', closed: false, moderators: 2 }), admin({ id: 'g', name: 'Z', closed: false, moderators: 1 })]
+    expect(staffOrder(list).map((r) => r.id)).toEqual(['g', 'o', 'c'])
+  })
+  it('maps staff problems', () => {
+    expect(staffProblem('conflict', 'rota')).toBe('rota')
+    expect(staffProblem('invalid', 'sailing')).toBe('sailing')
+    expect(staffProblem('server', undefined)).toBe('other')
+  })
+  it('checks a new room', () => {
+    expect(checkNewRoom({ kind: 'channel', roomKind: 'interest', name: ' Ship  news ', topic: '', sailingId: '' })).toEqual({ ok: true, body: { kind: 'channel', name: 'Ship news' } })
+    expect(checkNewRoom({ kind: 'room', roomKind: 'interest', name: 'Birders', topic: '', sailingId: '' })).toEqual({ ok: false, field: 'topic' })
+    expect(checkNewRoom({ kind: 'room', roomKind: 'sailing', name: 'Alaska May', topic: '', sailingId: '' })).toEqual({ ok: false, field: 'sailing' })
+    expect(checkNewRoom({ kind: 'room', roomKind: 'sailing', name: 'Alaska May', topic: '', sailingId: 's1' })).toEqual({ ok: true, body: { kind: 'room', roomKind: 'sailing', name: 'Alaska May', sailingId: 's1' } })
+    expect(checkNewRoom({ kind: 'channel', roomKind: 'interest', name: 'ab', topic: '', sailingId: '' })).toEqual({ ok: false, field: 'name' })
   })
 })

@@ -5,6 +5,7 @@ import { Button } from '../Button'
 import { Card } from '../Card'
 import { DevicesCard } from './DevicesCard'
 import { ReviewCard } from './ReviewCard'
+import { RoomsStaffCard } from './RoomsStaffCard'
 
 /** The account page, reached from the logo in the top bar: who is signed in, and how to sign out. More will be added here. */
 export function AccountScreen() {
@@ -29,6 +30,7 @@ export function AccountScreen() {
       <p><Button variant="secondary" onClick={() => void signOutSaving()}>{t('signin.signOut')}</Button></p>
       {auth.account && !user?.isDemo && <DevicesCard />}
       {auth.account && user?.role === 'admin' && <ReviewCard />}
+      {auth.account && user?.role === 'admin' && <RoomsStaffCard />}
       {auth.account && !user?.isDemo && (
         <Card>
           <h2>{t('signin.signOutEverywhere')}</h2>

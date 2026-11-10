@@ -1,5 +1,5 @@
 /** Rules for the channel and room screens (docs/chat-features-research.md, phase 8). Framework-free. */
-import type { ChatConversation, ChatRoomListItem } from '../api/chatTypes'
+import type { ChatConversation, ChatRoomAdminItem, ChatRoomCreate, ChatRoomListItem } from '../api/chatTypes'
 
 export const MIN_QUESTION = 5
 export const MAX_QUESTION = 200
@@ -52,3 +52,34 @@ export function groupRooms(list: readonly ChatRoomListItem[]): RoomGroups {
 
 /** Whether the guest can join or follow it now. */
 export const canJoinRoom = (r: Pick<ChatRoomListItem, 'joined' | 'blocked'>): boolean => !r.joined && !r.blocked
+
+// ---- Staff screens (phase 8c) ----
+
+export type StaffProblem = 'rota' | 'name' | 'topic' | 'sailing' | 'rules' | 'cap' | 'decided' | 'pinsFull' | 'other'
+const STAFF_PROBLEMS: readonly StaffProblem[] = ['rota', 'name', 'topic', 'sailing', 'rules', 'cap', 'decided', 'pinsFull']
+
+/** The server's code and title for a failed staff change, mapped to the wording that says what to do next. */
+export function staffProblem(code: string | undefined, detail: string | undefined): StaffProblem {
+  return STAFF_PROBLEMS.find((p) => p === detail) ?? STAFF_PROBLEMS.find((p) => p === code) ?? 'other'
+}
+
+/** What staff must still do before a closed room can open: name two moderators. */
+export const MIN_MODERATORS = 2
+export const canOpenRoom = (r: Pick<ChatRoomAdminItem, 'kind' | 'closed' | 'moderators'>): boolean => r.kind === 'room' && r.closed && r.moderators >= MIN_MODERATORS
+
+/** Rooms open without their rota come first, then closed ones, then by name, so the gaps are seen at once. */
+export function staffOrder(list: readonly ChatRoomAdminItem[]): ChatRoomAdminItem[] {
+  const rank = (r: ChatRoomAdminItem) => (r.kind === 'room' && !r.closed && r.moderators < MIN_MODERATORS ? 0 : r.closed ? 2 : 1)
+  return [...list].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))
+}
+
+/** A new room's fields, tidied, or the first field that is wrong. A sailing room needs a sailing; an interest room needs a topic. */
+export function checkNewRoom(f: { kind: 'channel' | 'room'; roomKind: 'sailing' | 'interest'; name: string; topic: string; sailingId: string }): { ok: true; body: ChatRoomCreate } | { ok: false; field: 'name' | 'topic' | 'sailing' } {
+  const name = f.name.trim().replace(/\s+/g, ' ')
+  if (name.length < 3 || name.length > 60) return { ok: false, field: 'name' }
+  const topic = f.topic.trim().replace(/\s+/g, ' ')
+  if (f.kind === 'channel') return { ok: true, body: { kind: 'channel', name, ...(topic ? { topic } : {}) } }
+  if (f.roomKind === 'interest') return topic ? { ok: true, body: { kind: 'room', roomKind: 'interest', name, topic } } : { ok: false, field: 'topic' }
+  const sailingId = f.sailingId.trim()
+  return sailingId ? { ok: true, body: { kind: 'room', roomKind: 'sailing', name, sailingId } } : { ok: false, field: 'sailing' }
+}

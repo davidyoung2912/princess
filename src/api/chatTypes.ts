@@ -449,3 +449,34 @@ export interface ChatRoomsApi {
   /** Suggests a question for the room's popular ones. Rejects `invalid` (`text`, `contactInfo`, `blocked`), `forbidden` (`child`), `notFound` or `tooMany`. */
   suggestQuestion(id: string, text: string): Promise<void>
 }
+
+// ---- Staff screens for channels and rooms (phase 8c; administrators only) ----
+
+/** A channel or room as staff see it. `inHours`: moderators are on duty now (otherwise slow mode is on by itself). */
+export interface ChatRoomAdminItem { id: string; kind: 'channel' | 'room'; roomKind?: 'sailing' | 'interest'; name: string; topic?: string; sailingId?: string; members: number; cap: number; moderators: number; closed: boolean; slow: boolean; inHours: boolean; rules: string }
+
+/** A post held for a link, phone number or email. `from` is a first name and last initial. */
+export interface ChatHeldPost { id: string; roomId: string; roomName: string; from: string; text: string; reason: string; at: number }
+
+/** A question a guest suggested for a room's popular ones. No names. */
+export interface ChatSuggestedQuestion { id: string; roomId: string; roomName: string; text: string; at: number }
+
+/** Counts only: no message text and no guest names. */
+export interface ChatRoomSummary { days: number; reports: number; actions: { action: string; count: number }[]; busiest: { id: string; name: string; posts: number }[]; noModerator: { id: string; name: string; moderators: number }[]; held: number }
+
+export interface ChatRoomCreate { kind: 'channel' | 'room'; roomKind?: 'sailing' | 'interest'; name: string; topic?: string; sailingId?: string; cap?: number; rules?: string }
+
+export type ChatRoomStaffAction = { action: 'slow'; on: boolean } | { action: 'open' } | { action: 'close' } | { action: 'rules'; rules: string } | { action: 'moderator' | 'unmoderator'; personId: string }
+
+export interface ChatRoomsStaffApi {
+  list(): Promise<ChatRoomAdminItem[]>
+  /** Rejects `invalid` (`kind`, `roomKind`, `name`, `topic`, `sailing`, `rules`, `cap`) or `forbidden`. */
+  create(body: ChatRoomCreate): Promise<unknown>
+  /** Rejects `conflict` (`rota`) when a room is opened without two moderators. */
+  act(id: string, body: ChatRoomStaffAction): Promise<unknown>
+  held(): Promise<ChatHeldPost[]>
+  decideHeld(id: string, decision: 'release' | 'reject'): Promise<void>
+  questions(): Promise<ChatSuggestedQuestion[]>
+  decideQuestion(id: string, decision: 'popular' | 'reject'): Promise<void>
+  summary(days?: number): Promise<ChatRoomSummary>
+}
