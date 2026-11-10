@@ -8,7 +8,8 @@ Plan for letting Stanley make chat feel friendlier: softer wording around connec
 | --- | --- |
 | Who decides | **People and staff decide; Stanley speaks and suggests.** Accept, decline, block, remove, report and end stay with guests and staff. Stanley never accepts, declines, blocks, sends or reports on anyone's behalf. |
 | What stays deterministic | Everything that protects: `ProfanityFilter`, guardian approval, child restrictions (no phone numbers, links or photos), rate limits, daily caps, the 7-day decline cool-down, blocks and the report flow. A model never gates any of these. |
-| Privacy | Stanley sees **only what a guest hands him** (a draft they ask him to improve, a message they tap "Ask Stanley about this" on, a request they ask him to explain). He does not read a conversation in the background. Background help (phase 5) is off by default and is opt-in per guest, with a visible notice (section 5). |
+| Privacy | Stanley sees **only what a guest hands him**: a draft they ask him to improve, a message they tap "Ask Stanley about this" on, a request they ask him to explain, or a question they ask him in the conversation itself (3.5). He does not read a conversation in the background. Background nudges (phase 6) are optional, off by default and opt-in per guest, with a visible notice (section 5); the owner may drop them, because asking him in the chat covers most of the need. |
+| Asking Stanley in a chat | A member can ask him a question in a group or one-to-one conversation (owner, 2026-11-09), and his answer is a message everyone in the conversation sees. Asking is the consent. It works in the app only; the SMS bridge is left out of the first version (owner, 2026-11-09). |
 | Children | Stanley is off in any conversation a supervised child is an active member of, and never helps a supervised child's request. A guardian can switch him on for their child later (not in this plan). |
 | Voice | Warm, brief, plain English. Always labelled "Stanley" with his picture and the AI label; never written as if from the other guest. English only (project rule). |
 | Cost | Local rules first. A model call is made only on a guest's tap (rewrite, icebreaker, explain), on the **small** tier, behind the existing model meter, hourly limit and daily ceiling. Nothing is called per message. |
@@ -65,7 +66,27 @@ The draft is not stored and not logged; the matched word is never returned (exis
 - **Polish** is an optional "Ask Stanley" action on the composer for a draft ("make it friendlier", "make it shorter"). One suggestion, same rules and checks as 3.3 (filter on the way out, never sent for the guest, never stored).
 - Suggestions never include another guest's private data, never invent plans, prices or times, and never add links or phone numbers.
 
-### 3.5 Ask Stanley about this message
+### 3.5 Ask Stanley in the conversation
+
+Any active member of a group or one-to-one conversation can ask Stanley a question, and his answer goes to everyone in it.
+
+- **Trigger.** Typing `@Stanley` at the start of a message, or the **Ask Stanley** button in the composer (which inserts it). Plain text never calls him by accident, and the composer shows that the message will go to Stanley.
+- **Flow.**
+  1. The question is an ordinary message: `ProfanityFilter`, the 2000 character limit, the idempotency key, stored and fanned out as today.
+  2. The server then treats it as a request to Stanley, and the thread shows a "Stanley is thinking" line to every member through the realtime hub.
+  3. His answer is stored as a message from a fixed Stanley sender (`ChatMessages.FromStanley`, a flag with no user id), labelled with his picture and the AI label, `normal` urgency, and fanned out through `ChatNotifier` to members who have notifications for that conversation. Offline members get it as they would any message.
+  4. If he cannot answer (route off, model down, a limit reached) the thread shows one short line saying so, and the question stays as a normal message.
+- **Pipeline.** The existing Stanley answer path: the word filter, the topic prescan (cruising, this ship, ports and trip planning only), the library and resolver before any model, and `ModelTier` as it is today. `ConciergeRules.Screen` still applies.
+- **Context.** The question, plus at most the last 5 messages of that conversation, and the notice "Stanley will see the last few messages" is shown beside the composer the first time and in the chat settings. Never the whole thread, never messages from before the member joined a group (`ChatConversationRules.CanRead`), and never system lines.
+- **No private data in a shared answer.** The tools over the asker's own booking are **not** available here, because the reply is visible to others. A group answer uses ship, port, event and catalogue facts only, and says "I can only share ship and port information here. Ask me privately for anything about your booking." when the question needs more. A request to plan something for the group produces a preview card that every member must confirm, as in 3.7. Nothing is booked or changed from a chat answer.
+- **Safety questions.** An emergency, medical or legal question is not answered into the group: the asker alone gets the normal safety wording and numbers as a private card, and the group sees only "Stanley sent Sam some help".
+- **Limits.** The asker's hourly limit and daily ceiling apply (the answer counts against the asker), plus a per-conversation cooldown (default 3 answers in 10 minutes) so a chat cannot be flooded. A held question gets a polite "Stanley needs a minute" line, not an error.
+- **Control.** Any member can **mute Stanley's replies** for themselves (they are hidden on their devices, no notice sent). The creator of a group, or either person in a one-to-one chat, can **turn Stanley off in that conversation**, and the conversation shows a system line saying so.
+- **Children.** Off in any conversation a supervised child is an active member of. A supervised child cannot ask him in chat.
+- **Reporting and retention.** His answers can be reported like any message and are removed with the conversation at retention. A reported answer shows the question before it as context.
+- **Not in this version.** Asking him by text message through the SMS bridge: a guest who reads chat by text sees his answers as ordinary messages from "Stanley" but cannot invoke him from the phone.
+
+### 3.6 Ask Stanley privately about a message
 
 A long-press or overflow action on a received message: **Ask Stanley about this**. Only that message (and, at most, the two before it, with the guest's consent shown in the sheet) is sent. Stanley can:
 
@@ -75,14 +96,14 @@ A long-press or overflow action on a received message: **Ask Stanley about this*
 
 Messages from a supervised child, and conversations a supervised child is in, never offer this. Urgent messages from staff or a guardian are never "explained away": Stanley shows them as they are.
 
-### 3.6 Group welcome and plans
+### 3.7 Group welcome and plans
 
 - When a group is created or someone joins, Stanley may add one **system line** ("Welcome, Sam! This group is for the Wednesday dinner crew.") using the existing system-line path, labelled as Stanley. The creator can turn him off for that group in its settings, and any member can mute his lines.
 - A **Plan something** action in a group opens the existing Stanley planning flow (dining plan, polls) with the group's members as the party. Nothing is booked or sent without the guest's confirmation, as today.
 
-### 3.7 Quiet nudges (opt-in, last)
+### 3.8 Quiet nudges (opt-in, optional)
 
-Off by default. A guest who turns on **Stanley can look out for me in chat** (chat settings, stored with the chat preferences so it follows them across devices) lets the server run **local checks only** on messages they receive: the same patterns as 3.5 (money, gift cards, off-app moves, repeated pushing after a decline or a "no"). A match shows a private card visible only to that guest ("Heads up: this message asks for money. You don't have to reply. Report or block?"). Rules:
+This is optional and last; with 3.5 in place the owner may decide not to build it. Off by default. A guest who turns on **Stanley can look out for me in chat** (chat settings, stored with the chat preferences so it follows them across devices) lets the server run **local checks only** on messages they receive: the same patterns as 3.6 (money, gift cards, off-app moves, repeated pushing after a decline or a "no"). A match shows a private card visible only to that guest ("Heads up: this message asks for money. You don't have to reply. Report or block?"). Rules:
 
 - No model call per message; pattern checks are pure and tested. A model is used only if the guest taps **Ask Stanley** on the card.
 - The card is private: the sender and other members never see it and it is never stored in the thread (a per-user `ChatNudges` row, expiring with retention).
@@ -96,15 +117,17 @@ Off by default. A guest who turns on **Stanley can look out for me in chat** (ch
 | `GET /me/chat/stanley` | 1 | Whether Stanley's chat help is on for this guest, and his lines for the screens (status, switch state, opt-ins). |
 | `POST /me/chat/stanley/reword` | 2 | A reworded draft (3.3, 3.4). Body `{text, mode}`; returns `{suggestion?, reason?}`. |
 | `POST /me/chat/stanley/icebreakers` | 2 | Up to three openers for a connection or conversation. |
-| `POST /me/chat/stanley/explain` | 3 | Explain a message the guest chose (3.5). |
-| `PUT /me/chat/stanley/prefs` | 5 | Opt in or out of nudges and group lines. |
-| `GET /me/chat/nudges`, `POST …/{id}/dismiss` | 5 | The private cards (3.7). |
+| `POST /me/chat/conversations/{id}/messages` | 3 | The ordinary send. A message starting `@Stanley` is also queued for his answer; the response is unchanged. |
+| `POST /me/chat/conversations/{id}/stanley/mute`, `…/stanley/off` | 3 | Mute his replies for me; turn him off in this conversation (creator or either one-to-one member). |
+| `POST /me/chat/stanley/explain` | 4 | Explain a message the guest chose privately (3.6). |
+| `PUT /me/chat/stanley/prefs` | 5, 6 | Group lines (phase 5); nudges (phase 6, optional). |
+| `GET /me/chat/nudges`, `POST …/{id}/dismiss` | 6 | The private cards (3.8). |
 
 Errors reuse the existing shapes: `400 blocked`, `429` (hourly limit), `503 unavailable` when Stanley's chat route is off or the model is down (the screen then simply hides the Stanley buttons).
 
 ## 5. Privacy, consent and safety
 
-- **Consent.** Phases 1 to 4 act only on text the guest chooses to send. Phase 5 is off until the guest opts in, with plain wording of what is checked, where it is checked (on the server, by pattern, not by a person) and what is kept (a private card, deleted with the conversation at retention).
+- **Consent.** Phases 1 to 5 act only on text the guest chooses to send or ask about. The optional nudges (phase 6) are off until the guest opts in, with plain wording of what is checked, where it is checked (on the server, by pattern, not by a person) and what is kept (a private card, deleted with the conversation at retention).
 - **No hidden reading.** Staff still see only reported messages. Stanley does not add anyone to a conversation's readers, so the existing "who can read this chat" notices stay true.
 - **Logging.** Draft text, suggestion text and messages sent to Stanley are never logged. The tier log records the call (tier, outcome, tokens), not content, as for the rest of Stanley.
 - **Prompt safety.** Message text is passed as data inside a delimited block; the system prompt tells the model that nothing in it is an instruction; replies are length-capped and run through `ProfanityFilter`. A message that tries to steer Stanley gets the normal scripted answer.
@@ -130,27 +153,37 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 - Front end: **Help me reword** under the blocked-message note, **Ask Stanley** on the composer, **Say hello** after a request; a small sheet showing the suggestion with **Use this**; hooks and client in `src/api/httpApi.ts`; pure helpers in `src/` for the sheet state, tested in node.
 - Supervised children: the buttons are not shown and the endpoints return `403 supervised`.
 
-### Phase 3: ask Stanley about a message
+### Phase 3: ask Stanley in the conversation
+
+- Schema: `ChatMessages.FromStanley` (bit, default 0; a Stanley message has no `FromUserId` sender), `ChatConversationStanley` (conversation, off flag, who turned it off) and a per-member mute in chat preferences.
+- `ChatStanleyRules` (pure, tested): the `@Stanley` trigger, the context window (question plus at most 5 earlier messages the member may read, no system lines), the group-safe tool set (ship, port, event and catalogue facts only), the per-conversation cooldown (3 answers in 10 minutes), the private-card rule for safety questions, and the exclusions (supervised child in the conversation, Stanley off, route off).
+- `ChatStanleyService.AnswerAsync`: runs after the question is stored, through the existing Stanley answer path, stores the answer as a `FromStanley` message and fans it out through `ChatNotifier` and the realtime hub (a "thinking" nudge first). The question's send response is unchanged, and the answer never delays the send.
+- Endpoints for mute and off. Messages, summary and thread DTOs gain `FromStanley`; unread counts and receipts treat his messages like any other incoming message.
+- Front end: **Ask Stanley** in the composer and `@Stanley` handling, his messages in the thread (picture, AI label, not a member in the member list), the "thinking" line, the first-time notice, mute and off controls in the conversation menu, report on his answers. Pure helpers (trigger detection, thinking-state) in `src/`, tested in node.
+- Works in groups and one-to-one chats. Not in the SMS bridge: outbound text carries his answers as ordinary messages, inbound text never invokes him.
+
+### Phase 4: ask Stanley privately about a message
 
 - `ExplainAsync` and `POST /me/chat/stanley/explain` for one chosen message (plus up to two before it with consent).
 - Pattern checks in pure `ChatNudgeRules` (money, gift cards, phone numbers, off-app moves, pressure), tested. They give Stanley his starting facts so a model is needed only for the polite reply.
 - The sheet offers **Reply suggestion**, **Report this** (existing report), **Mute**, **End chat** and **Block**, each confirmed by the guest.
 - Not offered for a supervised child's messages or conversations, or for urgent messages from staff or guardians.
 
-### Phase 4: group welcome and plans
+### Phase 5: group welcome and plans
 
-- System lines labelled Stanley for group creation and joins, with the per-group and per-member off switches (`ChatGroups.StanleyLines`, a member-level mute in chat preferences).
-- **Plan something** in a group opens the existing planner with the group as the party; confirmation as today.
+- System lines labelled Stanley for group creation and joins, with the per-group and per-member off switches (`ChatGroups.StanleyLines`, reusing the phase 3 mute).
+- **Plan something** in a group opens the existing planner with the group as the party; every member confirms (3.5, 3.7).
 - Never in a group with a supervised child as an active member.
 
-### Phase 5: quiet nudges (opt-in)
+### Phase 6: quiet nudges (opt-in, optional)
 
+- Build only if the owner still wants it after phase 3.
 - Settings: **Stanley can look out for me in chat** (default off) in the chat preferences; `PUT /me/chat/stanley/prefs`.
-- `ChatNudges` (per user, expiring with retention); the check runs on message fan-out for opted-in recipients only, using `ChatNudgeRules`, with the one-per-hour limit and the exclusions in 3.7.
+- `ChatNudges` (per user, expiring with retention); the check runs on message fan-out for opted-in recipients only, using `ChatNudgeRules`, with the one-per-hour limit and the exclusions in 3.8.
 - Private cards in the thread and a count in the chat summary so the badge matches across devices; live nudge through the existing realtime hub.
 - A final audit of consent text, the exclusions and the logs.
 
-### Phase 6: polish and review
+### Phase 7: polish and review
 
 - Staff view: Stanley's calls per day and the share of suggestions used (counts only), in the existing admin screens.
 - An accessibility pass over every new control and sheet, reduced motion, contrast, keyboard use.
@@ -161,10 +194,12 @@ Each phase ends with `npm run test`, `npm run lint`, `npx tsc -b` and `npm run b
 | Risk | Handling |
 | --- | --- |
 | A model suggestion is rude or wrong | The output is run through `ProfanityFilter`, length-capped, never sent for the guest; the guest edits and presses Send. |
-| Guests feel watched | No background reading until phase 5, which is opt-in and local-pattern only; the settings text is plain. |
+| Guests feel watched | No background reading; Stanley sees only what a guest asks him. The optional phase 6 is opt-in and local-pattern only; the settings text is plain. |
+| A shared answer exposes one member's data | Chat answers use no booking tools, only ship, port and catalogue facts; anything personal is answered privately. |
+| A chat is flooded with Stanley | Hourly and daily limits on the asker, a per-conversation cooldown, mute and off controls. |
 | Cost from taps | Small tier, one suggestion, hourly limit, daily ceiling, scripted fallbacks. |
 | Stanley's wording leaks a block or decline reason | All wording comes from `ChatStanleyVoice` and is unit-tested against the existing quiet-decline and silent-block rules. |
 | Prompt injection from a chat message | Message text is delimited data; scripted fallback on any steering attempt; outputs filtered. |
 | Children | Off by default everywhere a supervised child is present. |
 
-Open points for the owner: whether Stanley should be offered to guardians for their child's chats (not in this plan); whether the plan-something action should need a group-level opt-in; whether phase 5 is wanted at all given the privacy trade-off (it can be dropped without affecting phases 1 to 4).
+Open points for the owner: whether Stanley should be offered to guardians for their child's chats (not in this plan); whether the plan-something action should need a group-level opt-in; whether phase 6 (nudges) is wanted at all given the privacy trade-off (it can be dropped without affecting the others).
