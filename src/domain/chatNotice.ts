@@ -29,9 +29,9 @@ export function arrivals(prev: ChatSummary | null, next: ChatSummary): Arrivals 
   }
 }
 
-/** Whether a notice may show: switched on, not in calm mode, and the guest is not already in Chat (where the list and banner say it). */
-export function mayNotify(o: { popups: boolean; calm: boolean; path: string }): boolean {
-  return o.popups && !o.calm && o.path !== '/chat' && !o.path.startsWith('/chat/')
+/** Whether a notice may show: switched on, not in calm mode or do not disturb, and the guest is not already in Chat (where the list and banner say it). */
+export function mayNotify(o: { popups: boolean; calm: boolean; path: string; dnd?: boolean }): boolean {
+  return o.popups && !o.calm && !o.dnd && o.path !== '/chat' && !o.path.startsWith('/chat/')
 }
 
 /** An urgent notice shows unless the guest is already in Chat, where the pinned row and the message itself say it. Calm mode and the pop-ups setting do not apply. */

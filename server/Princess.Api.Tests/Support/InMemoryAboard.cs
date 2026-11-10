@@ -364,6 +364,9 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(Visible(c, me).FirstOrDefault(m => m.PublicId == messagePublicId));
     }
 
+    public Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct) =>
+        Task.FromResult(Messages.Count(m => m.Row.FromUserId == userId && m.Row.Urgency == urgency && m.Row.At >= since));
+
     public Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct)
     {
         var row = Messages.First(m => m.Row.Id == messageId).Row;

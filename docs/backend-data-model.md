@@ -603,6 +603,7 @@ Stanley money (phase 12). All signed in (a child account gets 403), for the gues
 **ChatMessages.Urgency** (docs/chat-urgency-plan.md, phase 1) — `NVARCHAR(10)` `{normal|important|urgent}`, default `normal`, CHECK-constrained; the API refuses `urgent` from anyone but staff or a guardian of a child in the conversation.
 
 **ChatMessageAcks** (docs/chat-urgency-plan.md, phase 2) — `MessageId FK` · `UserId FK` · `AckedAt` (PK is the pair; no `Id` or `PublicId`). One row when a member taps "Got it" on an urgent message from someone else; reading the thread never writes one.
+**Phase 4 additions** (docs/chat-urgency-plan.md): `ChatSmsLog.MessageId BIGINT NULL` (the chat message a text was about; Outcome also takes `retry`), and `UserPrefs` notification JSON gains `dnd: {until}` (ms; 0 off). Routes `GET/PUT /me/chat/do-not-disturb`; `429 urgencyLimit` on send.
 
 **ChatSmsState** (docs/chat-plan.md, phase 6) — `UserId PK/FK→Users (cascade)` · `LastGroupId BIGINT?` (where an unnumbered text reply goes) · `BackAt TS?` (when the guest said BACK). **ChatSmsLog** — `Id ID` · `UserId FK→Users (cascade)` · `GroupId?` · `Direction {out|in}` · `Outcome` · `At TS*`; never message text or a number. **UserPrefs.ChatSmsOn / ChatSmsIdle** (the bridge is on; also count idle as ashore) and **ChatMessages.ViaSms** (arrived by text).
 

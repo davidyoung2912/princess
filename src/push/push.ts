@@ -6,8 +6,8 @@ import { isNudgeBudget, type NudgeBudget } from '../domain/nudges'
 
 export const PUSH_KINDS = ['allAboard', 'backAboard', 'scheduleChange', 'disruption', 'payment', 'reminder', 'travel', 'reservation', 'case', 'change', 'helper', 'chat'] as const
 export type PushKind = (typeof PUSH_KINDS)[number]
-export type HeldReason = 'channelOff' | 'calm' | 'quiet' | 'budget'
-export const HELD_REASONS: readonly HeldReason[] = ['channelOff', 'calm', 'quiet', 'budget']
+export type HeldReason = 'channelOff' | 'dnd' | 'calm' | 'quiet' | 'budget'
+export const HELD_REASONS: readonly HeldReason[] = ['channelOff', 'dnd', 'calm', 'quiet', 'budget']
 
 export interface PushLogEntry {
   key: string

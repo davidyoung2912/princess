@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import type { ChatSummary } from '../api/chatTypes'
 import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, type ChatNotice } from '../domain/chatNotice'
 import { api } from '../runtime'
+import { useChatDnd } from './useChatDnd'
 import { useSettings } from './useSettings'
 
 /**
@@ -11,11 +12,12 @@ import { useSettings } from './useSettings'
  */
 export function useChatNotice(summary: ChatSummary | null): { notice: ChatNotice | null; close: () => void } {
   const [settings] = useSettings()
+  const dnd = useChatDnd().active
   const { pathname } = useLocation()
   const [notice, setNotice] = useState<ChatNotice | null>(null)
   const prev = useRef<ChatSummary | null>(null)
   const may = useRef(false)
-  useEffect(() => { may.current = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname }) })
+  useEffect(() => { may.current = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname, dnd }) })
   useEffect(() => {
     if (!summary) { prev.current = null; return }
     const a = arrivals(prev.current, summary)
@@ -37,7 +39,7 @@ export function useChatNotice(summary: ChatSummary | null): { notice: ChatNotice
     void api.chatConversations.list().then((rows) => { if (urgentKey.current === key) setUrgent(chooseUrgentNotice(urgentIds, rows)) }, () => { urgentKey.current = '' })
   }, [urgentIds])
   const close = useCallback(() => { setUrgent(null); setNotice(null) }, [])
-  const showing = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname })
+  const showing = mayNotify({ popups: settings.chatPopups, calm: settings.calm, path: pathname, dnd })
   if (urgent && mayNotifyUrgent(pathname)) return { notice: urgent, close }
   return { notice: showing ? notice : null, close }
 }

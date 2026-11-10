@@ -103,7 +103,7 @@ public sealed class PushService(
         var settings = new PushSettings(subs.Min(s => s.Budget), subs.Any(s => s.Calm), []);
         var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
         // sentToday is 0: chat does not count against the budget, but a guest who chose "none" (budget 0) still hears nothing.
-        var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), 0);
+        var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), 0, Shipboard.Ms(now));
         if (!decision.Send)
         {
             if (log.FirstOrDefault(l => l.NoticeKey == n.Key) is not { Outcome: "held" } last || last.Reason != decision.Reason)
@@ -147,7 +147,7 @@ public sealed class PushService(
 
         foreach (var n in notices.Where(n => !sentKeys.Contains(n.Key)))
         {
-            var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), sentToday);
+            var decision = PushRules.Decide(n, prefs, settings, TimeOnly.FromDateTime(local), sentToday, Shipboard.Ms(now));
             var paramsJson = System.Text.Json.JsonSerializer.Serialize(n.Params);
             if (!decision.Send)
             {
@@ -238,6 +238,33 @@ public sealed class PushService(
 
     private static DateTime InZone(DateTime utc, string zone) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById(zone));
+
+    /// <summary>Whether do-not-disturb is on, and until when (milliseconds; 0 when off or ended).</summary>
+    public async Task<ChatDndDto> DndAsync(UserRecord actor, CancellationToken ct)
+    {
+        var until = (await PrefsAsync(actor.Id, ct))["dnd"]?["until"]?.GetValue<long>() ?? 0;
+        return new(ChatUrgencyRules.DndOn(until, Shipboard.Ms(await clock.NowAsync(actor, ct))) ? until : 0);
+    }
+
+    /// <summary>
+    /// The one-tap do-not-disturb on the Chat screen: "hour", "morning" (until the guest's quiet hours end, 07:00 when they have none) or "off". It is kept with the notification
+    /// preferences, so it follows the guest across devices, holds phone alerts and the in-app pop-up (not urgent chat messages) and ends by itself. 400 mode; 403 supervised.
+    /// </summary>
+    public async Task<ChatDndDto> SetDndAsync(UserRecord actor, ChatDndRequest? body, CancellationToken ct)
+    {
+        if (actor.IsSupervised) throw ApiException.Forbidden("supervised");
+        var now = await clock.NowAsync(actor, ct);
+        var booking = await trips.CurrentAsync(actor, now, ct);
+        var departure = booking is null ? (DateOnly?)null : DateOnly.FromDateTime(booking.Departure);
+        var local = InZone(now, departure is { } d ? Itinerary.ShipZoneAt(d, now) : Itinerary.ShipHomeZone);
+        var prefs = await PrefsAsync(actor.Id, ct);
+        var morning = prefs["quiet"]?["to"]?.GetValue<string>() ?? "07:00";
+        var length = ChatUrgencyRules.DndLength(body?.Mode, local, morning) ?? throw ApiException.Invalid("mode");
+        var until = length == TimeSpan.Zero ? 0 : Shipboard.Ms(now + length);
+        prefs["dnd"] = new JsonObject { ["until"] = until };
+        await inbox.SavePrefsJsonAsync(actor.Id, prefs.ToJsonString(), now, ct);
+        return new(until);
+    }
 
     private async Task<JsonObject> PrefsAsync(long userId, CancellationToken ct)
     {

@@ -10,6 +10,14 @@ const convo = (o: Partial<ChatConversation> & { at?: number; mine?: boolean }): 
   last: { text: 'hi', photo: false, mine: o.mine ?? false, fromName: 'Sam L', at: o.at ?? 1 }, ...o,
 }) as ChatConversation
 
+describe('mayNotify and do not disturb', () => {
+  it('holds the ordinary pop-up in do not disturb, but never the urgent one', () => {
+    expect(mayNotify({ popups: true, calm: false, path: '/home', dnd: true })).toBe(false)
+    expect(mayNotify({ popups: true, calm: false, path: '/home', dnd: false })).toBe(true)
+    expect(mayNotifyUrgent('/home')).toBe(true)
+  })
+})
+
 describe('arrivals', () => {
   it('counts only what grew, and nothing on the first numbers', () => {
     expect(arrivals(null, sum({ incoming: 2, unread: 3 }))).toEqual({ requests: 0, messages: 0 })

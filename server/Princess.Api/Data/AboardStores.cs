@@ -261,6 +261,8 @@ public interface IChatStore
     Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The urgent messages from others that the person may read and has not acknowledged, as (conversation id, message id), for the badge and the pinned state.</summary>
     Task<List<(Guid ConversationId, Guid MessageId)>> ListUnackedUrgentAsync(long userId, CancellationToken ct);
+    /// <summary>How many messages of this level the person has sent since <paramref name="since"/>, over every conversation, for the hourly limit.</summary>
+    Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct);
     /// <summary>Unread messages over every conversation, for the tab badge.</summary>
     Task<int> UnreadTotalAsync(long userId, CancellationToken ct);
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);

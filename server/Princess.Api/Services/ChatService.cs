@@ -1,3 +1,4 @@
+using Princess.Api.Audit;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
 using Princess.Api.Data;
@@ -11,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, IAuditLog audit)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -101,7 +102,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var guardianHere = ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId)));
             if (!ChatUrgencyRules.MaySend(urgency, actor.Role == "admin", guardianHere)) throw ApiException.Forbidden("urgency");
         }
-        return await StoreAsync(actor, member, text, null, body?.ClientId, ct, urgency: urgency);
+        var now = await userClock.NowAsync(actor, ct);
+        // The hourly limit for important and urgent messages (urgent is already limited to staff and guardians).
+        if (urgency != ChatUrgencyRules.Normal && ChatUrgencyRules.OverLimit(urgency, await store.CountSentAsync(actor.Id, urgency, now.AddHours(-1), ct))) throw ApiException.TooMany("urgencyLimit");
+        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, ct, urgency: urgency);
+        // Who sent an urgent message and where, never what it said.
+        if (urgency == ChatUrgencyRules.Urgent)
+            await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.urgent.send", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = actor.Role == "admin" ? "staff" : "guardian" }, ct);
+        return sent;
     }
 
     /// <summary>

@@ -85,10 +85,12 @@ public sealed class ChatSmsService(
     public async Task MessageAsync(long groupId, string from, ChatMessageRow message, IReadOnlyList<ChatRecipientRow> recipients, CancellationToken ct)
     {
         if (!Enabled || message.IsSystem) return;
-        var settings = await store.ListSettingsAsync([.. recipients.Where(r => !r.Muted).Select(r => r.UserId)], ct);
+        // Urgent breaks through a muted conversation, as it does for the phone notice; the guest's own bridge choice and the other checks still apply.
+        var urgent = message.Urgency == ChatUrgencyRules.Urgent;
+        var settings = await store.ListSettingsAsync([.. recipients.Where(r => urgent || !r.Muted).Select(r => r.UserId)], ct);
         foreach (var r in recipients)
         {
-            if (r.Muted || !settings.TryGetValue(r.UserId, out var s) || !s.On) continue;
+            if ((r.Muted && !urgent) || !settings.TryGetValue(r.UserId, out var s) || !s.On) continue;
             try { await TextOneAsync(r.UserId, s, groupId, from, message, ct); }
             catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "A chat text could not be sent"); }
         }
@@ -102,16 +104,47 @@ public sealed class ChatSmsService(
         var state = await store.GetStateAsync(userId, ct);
         if (!await IsAshoreAsync(user, settings, state, ct)) return;
         var now = await clock.NowAsync(user, ct);
-        var verdict = ChatSmsRules.Verdict(await store.CountAsync(userId, "out", null, now.AddHours(-24), ct), await store.CountAsync(userId, "out", groupId, now.AddHours(-1), ct));
+        var verdict = ChatSmsRules.Verdict(await store.CountAsync(userId, "out", null, now.AddHours(-24), ct), await store.CountAsync(userId, "out", groupId, now.AddHours(-1), ct), message.Urgency);
         if (verdict == SmsSendVerdict.Skip) return;
         if (verdict == SmsSendVerdict.Capped) { await store.LogAsync(userId, groupId, "out", "capped", now, ct); return; }
         var open = await OpenAsync(userId, ct);
         int? code = open.Count > 1 ? ChatSmsRules.CodeOf([.. open.Select(o => o.GroupId)], groupId) : null;
         var digest = verdict == SmsSendVerdict.Digest;
-        var text = digest ? ChatSmsRules.Digest(code) : ChatSmsRules.Outbound(code, from, message.Text, message.Photo is not null);
+        var text = digest ? ChatSmsRules.Digest(code) : ChatSmsRules.Outbound(code, from, message.Text, message.Photo is not null, message.Urgency);
         var ok = await sender.SendAsync(new SmsMessage(phone!.Trim(), text), ct);
-        await store.LogAsync(userId, groupId, "out", !ok ? "failed" : digest ? "digest" : "sent", now, ct);
+        await store.LogAsync(userId, groupId, "out", !ok ? "failed" : digest ? "digest" : "sent", now, ct, message.Id);
         if (ok) await store.SetLastGroupAsync(userId, groupId, now, ct);
+    }
+
+    /// <summary>
+    /// The one reminder for an urgent message that went out by text and has not been confirmed with Got it after <see cref="ChatSmsRules.RetryAfter"/>. Run by <see cref="ChatUrgentRetryService"/>.
+    /// It carries no message text, is sent only to someone still ashore with the bridge on, and is logged as "retry" so it is never sent twice. Returns how many were sent.
+    /// </summary>
+    public async Task<int> RetryUnconfirmedAsync(CancellationToken ct)
+    {
+        if (!Enabled) return 0;
+        var sent = 0;
+        // The log's times are on each guest's own clock, so the window here is wide and each row is judged on its owner's clock below.
+        foreach (var row in await store.ListUrgentTextsAsync(DateTime.UtcNow.AddHours(-12), ct))
+        {
+            try
+            {
+                if (await users.FindByIdAsync(row.UserId, ct) is not { IsSupervised: false } user) continue;
+                var now = await clock.NowAsync(user, ct);
+                if (!ChatSmsRules.RetryDue(row.At, now)) continue;
+                var settings = await store.GetSettingsAsync(row.UserId, ct);
+                if (!settings.On) continue;
+                var (reason, phone) = await BlockerAsync(user, ct);
+                if (reason is not null || !await IsAshoreAsync(user, settings, await store.GetStateAsync(row.UserId, ct), ct)) continue;
+                var open = await OpenAsync(row.UserId, ct);
+                int? code = open.Count > 1 ? ChatSmsRules.CodeOf([.. open.Select(o => o.GroupId)], row.GroupId) : null;
+                var ok = await sender.SendAsync(new SmsMessage(phone!.Trim(), ChatSmsRules.UrgentReminder(code)), ct);
+                await store.LogAsync(row.UserId, row.GroupId, "out", ok ? "retry" : "failed", now, ct, row.MessageId);
+                if (ok) sent++;
+            }
+            catch (Exception e) when (e is not OperationCanceledException) { log.LogWarning(e, "An urgent chat reminder could not be sent"); }
+        }
+        return sent;
     }
 
     /// <summary>The people among <paramref name="userIds"/> who are ashore and reachable by text, for the "Ashore, replies by text" label. Only people with the bridge on are looked at.</summary>

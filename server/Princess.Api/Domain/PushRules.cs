@@ -217,13 +217,15 @@ public static class PushRules
 
     /// <summary>
     /// Send now or hold, and why. Notices that bypass (safety, and a payment that is overdue) always go. The rest wait for the guest's own limits:
-    /// the push channel for the category, calm mode, quiet hours, then the day's budget. A held notice is tried again at the next check.
+    /// the push channel for the category, do not disturb, calm mode, quiet hours, then the day's budget. A held notice is tried again at the next check.
     /// </summary>
-    public static PushDecision Decide(PushNotice n, JsonObject prefs, PushSettings s, TimeOnly local, int sentToday)
+    public static PushDecision Decide(PushNotice n, JsonObject prefs, PushSettings s, TimeOnly local, int sentToday, long nowMs = 0)
     {
         if (n.Bypass) return new(true, null);
         var channel = (prefs["channels"] as JsonObject)?[n.Category] as JsonObject;
         if (channel?["push"] is JsonValue p && p.TryGetValue<bool>(out var on) && !on) return new(false, "channelOff");
+        // The guest's one-tap do-not-disturb (from Chat) holds everything that does not bypass; an urgent chat message does bypass.
+        if ((prefs["dnd"] as JsonObject)?["until"] is JsonValue d && d.TryGetValue<long>(out var until) && ChatUrgencyRules.DndOn(until, nowMs)) return new(false, "dnd");
         if (n.Params.ContainsKey("requested")) return new(true, null);
         if (s.Calm) return new(false, "calm");
         var quiet = prefs["quiet"] as JsonObject;

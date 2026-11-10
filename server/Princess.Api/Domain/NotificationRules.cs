@@ -45,8 +45,13 @@ public static partial class NotificationRules
         {
             ["channels"] = channels,
             ["quiet"] = new JsonObject { ["on"] = Flag(q?["on"], false), ["from"] = Time(q?["from"], "22:00"), ["to"] = Time(q?["to"], "07:00") },
+            // One-tap do-not-disturb from Chat: the end time in milliseconds, 0 when off. It ends by itself (see ChatUrgencyRules.DndOn).
+            ["dnd"] = new JsonObject { ["until"] = Millis((o?["dnd"] as JsonObject)?["until"]) },
         };
     }
+
+    private static long Millis(JsonNode? n) =>
+        n is JsonValue v && v.TryGetValue<long>(out var l) && l > 0 ? l : 0;
 
     private static bool Flag(JsonNode? n, bool fallback) =>
         n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : fallback;

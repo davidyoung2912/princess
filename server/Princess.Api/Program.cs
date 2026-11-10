@@ -175,6 +175,7 @@ services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.Secti
 services.AddHostedService<RetentionPurgeService>();
 services.AddOptions<SchedulerOptions>().BindConfiguration(SchedulerOptions.Section);
 services.AddHostedService<WatchSchedulerService>();
+services.AddHostedService<ChatUrgentRetryService>();
 services.AddHttpContextAccessor();
 services.AddScoped<ICurrentUser, CurrentUser>();
 

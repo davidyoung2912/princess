@@ -9,6 +9,8 @@ import {
   type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
 import { ashoreNames } from '../../domain/chatSms'
+import { dndChoices, dndEndsAt } from '../../domain/chatDnd'
+import { useChatDnd } from '../../hooks/useChatDnd'
 import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } from '../../domain/chatUrgency'
 import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
@@ -68,6 +70,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
     <section aria-labelledby="conv-h">
       <h2 id="conv-h">{heading('conv.title')}</h2>
       <Button variant="secondary" onClick={() => setMaking(true)}>{t('cgroup.new')}</Button>
+      <DoNotDisturb />
       {making && <NewGroup onClose={() => setMaking(false)} onCreated={(g) => { setMaking(false); onOpen(g.id) }} />}
       {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
       {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
@@ -106,6 +109,21 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
 }
 
 /** The level as an icon and a word, never colour alone. */
+/** One-tap do not disturb: an hour or until morning, shown clearly while on, and it ends by itself. Urgent messages still come through, and the screen says so. */
+function DoNotDisturb() {
+  const { active, until, busy, failed, set } = useChatDnd()
+  return (
+    <div className={`dnd${active ? ' dnd--on' : ''}`} role="group" aria-labelledby="dnd-h">
+      <p id="dnd-h" className="dnd__title">{t(active ? 'dnd.stateOn' : 'dnd.stateOff', { time: dndEndsAt(until) })}</p>
+      <p className="muted">{t('dnd.hint')}</p>
+      <div className="dnd__choices">
+        {dndChoices(active).map((m) => <Button key={m} variant="secondary" disabled={busy} onClick={() => set(m)}>{t(`dnd.${m}`)}</Button>)}
+      </div>
+      {failed && <p role="alert" className="field__error">{t('dnd.failed')}</p>}
+    </div>
+  )
+}
+
 function UrgencyTag({ level }: { level: Exclude<ChatUrgency, 'normal'> }) {
   const Icon = level === 'urgent' ? OctagonAlert : TriangleAlert
   return <span className={`urgency-tag urgency-tag--${level}`}><Icon aria-hidden="true" /> <span>{t(level === 'urgent' ? 'urgent.label' : 'important.label')}</span></span>
@@ -358,8 +376,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => { setText(e.target.value); if (problem) setProblem(null) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } }} />
-          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : 'conv.failed')}</p>}
-          {problem && problem !== 'blocked' && problem !== 'urgency' && <p className="muted">{t('chat.kept')}</p>}
+          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : 'conv.failed')}</p>}
+          {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
         </form>

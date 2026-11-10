@@ -3321,6 +3321,11 @@ CREATE INDEX IX_ChatSmsLog_Group_At ON dbo.ChatSmsLog (UserId, GroupId, Directio
 END
 GO
 
+-- The chat message a text was about, so the one reminder for an unconfirmed urgent message can find it (docs/chat-urgency-plan.md, phase 4). Outcome also takes 'retry'.
+IF COL_LENGTH(N'dbo.ChatSmsLog', N'MessageId') IS NULL
+  ALTER TABLE dbo.ChatSmsLog ADD MessageId BIGINT NULL;
+GO
+
 -- Staff review of chat reports (docs/chat-plan.md, phase 7).
 -- A report is open until an administrator dismisses it or removes the message (its text is replaced, so nobody reads it again). The reviewer and time are kept; what was read is in the audit trail.
 IF COL_LENGTH(N'dbo.ChatReports', N'Status') IS NULL

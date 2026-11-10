@@ -42,6 +42,42 @@ public static class ChatUrgencyRules
     /// </summary>
     public static bool CanAck(string level, bool isSystem, bool isOwn) => level == Urgent && !isSystem && !isOwn;
 
+    /// <summary>Most messages of a level one person may send in an hour (staff and guardians included for urgent), so neither level can be used to spam. Normal has no limit here.</summary>
+    public const int ImportantPerHour = 20, UrgentPerHour = 10;
+
+    public static int HourlyLimit(string level) => level switch { Urgent => UrgentPerHour, Important => ImportantPerHour, _ => int.MaxValue };
+
+    /// <summary>Whether sending one more of the level would pass the hourly limit, given how many of that level the person sent in the last hour.</summary>
+    public static bool OverLimit(string level, int sentLastHour) => sentLastHour >= HourlyLimit(level);
+
+    /// <summary>The do-not-disturb choices from the Chat screen: for an hour, until the morning, or off.</summary>
+    public const string DndHour = "hour", DndMorning = "morning", DndOff = "off";
+
+    /// <summary>
+    /// How long a do-not-disturb choice lasts from the guest's local time, or null when the choice is not one of ours. "off" is zero. "morning" runs to the next time the clock reads
+    /// <paramref name="morning"/> ("HH:mm", the end of the guest's quiet hours), which is tomorrow when it has already passed today.
+    /// </summary>
+    public static TimeSpan? DndLength(string? mode, DateTime localNow, string morning)
+    {
+        switch (mode)
+        {
+            case DndOff: return TimeSpan.Zero;
+            case DndHour: return TimeSpan.FromHours(1);
+            case DndMorning:
+                if (!TimeOnly.TryParse(morning, out var at)) at = new TimeOnly(7, 0);
+                var end = localNow.Date + at.ToTimeSpan();
+                if (end <= localNow) end = end.AddDays(1);
+                return end - localNow;
+            default: return null;
+        }
+    }
+
+    /// <summary>Whether do-not-disturb (a stored end time in milliseconds, 0 for off) is on at <paramref name="nowMs"/>. It ends by itself.</summary>
+    public static bool DndOn(long until, long nowMs) => until > nowMs;
+
+    /// <summary>The words that open a text for the level: urgent and important texts say so, a normal text has no lead.</summary>
+    public static string SmsLead(string level) => level switch { Urgent => "URGENT: ", Important => "Important: ", _ => "" };
+
     /// <summary>The first words of a phone notice for the level (the sender's name follows).</summary>
     public static string NoticeLead(string level) => level switch { Urgent => "Urgent message from", Important => "Important message from", _ => "New message from" };
 }

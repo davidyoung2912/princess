@@ -82,7 +82,15 @@ As built:
 - `ChatToast`: urgent notices go in their own `role="alert"` region, have no timer, no close button and no Escape; **Got it** acknowledges every unacknowledged urgent message in that conversation, and **Open** goes to the chat. They ignore calm mode and the pop-ups setting, and are hidden only while the guest is inside Chat. No animation, so reduced motion needs nothing more.
 - Group chats show a count of who confirmed rather than names (the thread carries only public ids and the member list has names only for direct chats).
 
-### Phase 4: do not disturb, limits and audit
+### Phase 4: do not disturb, limits and audit — built
+
+As built (the server is not built or tested here; the owner runs the server tests):
+
+- **Do not disturb:** `NotificationRules.NormalizePrefs` keeps `dnd: {until}` (ms, 0 off). `GET/PUT /me/chat/do-not-disturb` (`{mode: hour|morning|off}`; `morning` runs to the end of the guest's quiet hours, 07:00 by default; `400 mode`, `403 supervised`). `PushRules.Decide` holds every non-bypass notice with reason `dnd` until it ends; urgent chat bypasses. The Chat list has a control that says when it ends, and the in-app pop-up (`mayNotify`) honours it; the urgent notice never does. Shown in the push log as "Do not disturb was on".
+- **Limits:** `important` 20 an hour and `urgent` 10 an hour per sender (`429 urgencyLimit`, `ChatUrgencyRules.OverLimit`, `IChatStore.CountSentAsync`). Audit row `chat.urgent.send` (conversation and staff/guardian, never the text).
+- **Text bridge:** urgent texts start `URGENT:`, important `Important:`; urgent ignores mute and the hourly and daily caps. `ChatSmsLog.MessageId` (new column) ties a text to its message; `ChatUrgentRetryService` (every minute, under the scheduler lock) sends one reminder, with no message text, 5 minutes to 2 hours after an urgent text nobody confirmed.
+- Senders are never told that a recipient is in do not disturb.
+- Not done: a do-not-disturb control in the Chat settings screen (the list header only).
 
 - One-tap "Do not disturb for 1 hour / until morning" in Chat, stored with the notification prefs, honoured by `PushRules.Decide` and the in-app pop-up, ends by itself, and shows clearly when on.
 - Per-user rate limit on `important` and on `urgent` (staff and guardians), audit rows `chat.urgent.send` (sender, conversation, never the text).

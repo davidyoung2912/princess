@@ -9,6 +9,9 @@ public sealed record ChatSmsSettingsRow(bool On, bool Idle);
 public sealed record ChatSmsStateRow(long? LastGroupId, DateTime? BackAt);
 
 /// <summary>The text bridge's own data: choices, reply routing, and the log the caps are counted from. Nothing here holds message text or a phone number.</summary>
+/// <summary>An urgent message texted to a guest: who, which conversation, which message, and when the text went out (on that guest's clock).</summary>
+public sealed record UrgentTextRow(long UserId, long GroupId, long MessageId, DateTime At);
+
 public interface IChatSmsStore
 {
     Task<ChatSmsSettingsRow> GetSettingsAsync(long userId, CancellationToken ct);
@@ -20,7 +23,10 @@ public interface IChatSmsStore
     Task SetBackAsync(long userId, DateTime now, CancellationToken ct);
     /// <summary>How many texts in this direction since <paramref name="since"/>, over every conversation or (with <paramref name="groupId"/>) one.</summary>
     Task<int> CountAsync(long userId, string direction, long? groupId, DateTime since, CancellationToken ct);
-    Task LogAsync(long userId, long? groupId, string direction, string outcome, DateTime at, CancellationToken ct);
+    /// <summary><paramref name="messageId"/> is the chat message a text was about, when there is one (the reminder for an unconfirmed urgent message looks for it).</summary>
+    Task LogAsync(long userId, long? groupId, string direction, string outcome, DateTime at, CancellationToken ct, long? messageId = null);
+    /// <summary>Urgent messages that went out by text since <paramref name="since"/> to someone who has not acknowledged them and has not had the reminder yet, one row per person and message.</summary>
+    Task<List<UrgentTextRow>> ListUrgentTextsAsync(DateTime since, CancellationToken ct);
     /// <summary>Of the people asked about, the ones whose bridge is on.</summary>
     Task<List<long>> ListOnAsync(IReadOnlyCollection<long> userIds, CancellationToken ct);
 }
@@ -87,10 +93,23 @@ public sealed class DapperChatSmsStore(IDbConnectionFactory db) : IChatSmsStore
             """, new { userId, direction, groupId, since }, null, ct));
     }
 
-    public async Task LogAsync(long userId, long? groupId, string direction, string outcome, DateTime at, CancellationToken ct)
+    public async Task LogAsync(long userId, long? groupId, string direction, string outcome, DateTime at, CancellationToken ct, long? messageId = null)
     {
         await using var c = await db.OpenAsync(ct);
-        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatSmsLog (UserId, GroupId, Direction, Outcome, [At]) VALUES (@userId, @groupId, @direction, @outcome, @at)", new { userId, groupId, direction, outcome, at }, null, ct));
+        await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatSmsLog (UserId, GroupId, Direction, Outcome, [At], MessageId) VALUES (@userId, @groupId, @direction, @outcome, @at, @messageId)", new { userId, groupId, direction, outcome, at, messageId }, null, ct));
+    }
+
+    public async Task<List<UrgentTextRow>> ListUrgentTextsAsync(DateTime since, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<UrgentTextRow>(Sql.Cmd("""
+            SELECT l.UserId, l.GroupId, l.MessageId, l.[At]
+            FROM dbo.ChatSmsLog l
+            JOIN dbo.ChatMessages m ON m.Id = l.MessageId AND m.Urgency = 'urgent'
+            WHERE l.Direction = 'out' AND l.Outcome = 'sent' AND l.GroupId IS NOT NULL AND l.[At] >= @since
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageAcks a WHERE a.MessageId = l.MessageId AND a.UserId = l.UserId)
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatSmsLog r WHERE r.UserId = l.UserId AND r.MessageId = l.MessageId AND r.Outcome = 'retry')
+            """, new { since }, null, ct))).AsList();
     }
 
     public async Task<List<long>> ListOnAsync(IReadOnlyCollection<long> userIds, CancellationToken ct)

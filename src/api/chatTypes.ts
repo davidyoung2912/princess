@@ -40,6 +40,10 @@ export interface ChatSummary {
   urgentUnacked: number; urgentConversations: string[]
 }
 
+/** One-tap do not disturb: when it ends (milliseconds), or 0 when it is off. It ends by itself and follows the guest across devices. */
+export interface ChatDnd { until: number }
+export type ChatDndMode = 'hour' | 'morning' | 'off'
+
 export interface ChatSettings { findable: boolean; showPreview: boolean }
 
 /** Why chat by text cannot be turned on: a child's account, no number on the profile, a number not yet confirmed, or switched off for everyone. */
@@ -61,6 +65,10 @@ export interface ChatConnectionsApi {
   end(id: string): Promise<void>
   /** The sender has seen the answers. */
   seen(): Promise<void>
+  /** Do not disturb: holds phone alerts and the in-app pop-up, but never an urgent message. */
+  dnd(): Promise<ChatDnd>
+  /** Rejects `forbidden` (`supervised`). */
+  setDnd(mode: ChatDndMode): Promise<ChatDnd>
   settings(): Promise<ChatSettings>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
   sms(): Promise<ChatSms>

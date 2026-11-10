@@ -529,6 +529,12 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             """, new { groupId, userId, messagePublicId }, null, ct));
     }
 
+    public async Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<int>(Sql.Cmd("SELECT COUNT(*) FROM dbo.ChatMessages WHERE FromUserId = @userId AND Urgency = @urgency AND [At] >= @since", new { userId, urgency, since }, null, ct));
+    }
+
     public async Task<bool> AddAckAsync(long messageId, long userId, DateTime at, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

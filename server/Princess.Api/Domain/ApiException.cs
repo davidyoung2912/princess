@@ -22,6 +22,8 @@ public sealed class ApiException(ApiErrorCode code, string title, int status) : 
     public static ApiException Invalid(string title = "invalid") => new(ApiErrorCode.Invalid, title, StatusCodes.Status400BadRequest);
     public static ApiException Unauthenticated(string title = "unauthenticated") => new(ApiErrorCode.Forbidden, title, StatusCodes.Status401Unauthorized);
     public static ApiException Forbidden(string title = "forbidden") => new(ApiErrorCode.Forbidden, title, StatusCodes.Status403Forbidden);
+    /// <summary>A per-person limit was reached (429); the title names it, for example <c>urgencyLimit</c>.</summary>
+    public static ApiException TooMany(string title = "tooManyRequests") => new(ApiErrorCode.Forbidden, title, StatusCodes.Status429TooManyRequests);
     public static ApiException NotFound(string title = "notFound") => new(ApiErrorCode.NotFound, title, StatusCodes.Status404NotFound);
     public static ApiException Conflict(string title = "conflict") => new(ApiErrorCode.Conflict, title, StatusCodes.Status409Conflict);
     /// <summary>The bank wants its one-time code: title <c>required</c> when missing, <c>wrong</c> when it does not match.</summary>

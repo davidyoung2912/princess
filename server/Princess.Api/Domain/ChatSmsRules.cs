@@ -57,10 +57,10 @@ public static partial class ChatSmsRules
     }
 
     /// <summary>The text a guest gets for a message: "Sam: ..." or "[2] Sam: ..." when they have more than one chat. A photo with no caption says so.</summary>
-    public static string Outbound(int? code, string from, string? text, bool photo)
+    public static string Outbound(int? code, string from, string? text, bool photo, string urgency = ChatUrgencyRules.Normal)
     {
         var body = (text ?? "").Trim();
-        var line = body.Length == 0 && photo ? $"{from} sent a photo. Open the app to see it." : $"{from}: {body}";
+        var line = ChatUrgencyRules.SmsLead(urgency) + (body.Length == 0 && photo ? $"{from} sent a photo. Open the app to see it." : $"{from}: {body}");
         if (line.Length > MaxLine) line = line[..(MaxLine - 1)].TrimEnd() + "…";
         return code is { } c ? $"[{c}] {line}" : line;
     }
@@ -73,12 +73,23 @@ public static partial class ChatSmsRules
         chats.Count == 0 ? NoChats : "Your chats: " + string.Join(", ", chats.Select(c => $"[{c.Code}] {c.Name}")) + ". Start a reply with a number to pick one.";
 
     /// <summary>Whether the next text should go out, be replaced by the digest line, be dropped quietly, or be refused for the daily cap.</summary>
-    public static SmsSendVerdict Verdict(int sentToday, int sentThisHourFromConversation)
+    public static SmsSendVerdict Verdict(int sentToday, int sentThisHourFromConversation, string urgency = ChatUrgencyRules.Normal)
     {
+        // An urgent message is never held back by the caps; its own hourly limit on the sender keeps the volume down.
+        if (urgency == ChatUrgencyRules.Urgent) return SmsSendVerdict.Send;
         if (sentToday >= DailyCap) return SmsSendVerdict.Capped;
         if (sentThisHourFromConversation < HourlyConversationCap) return SmsSendVerdict.Send;
         return sentThisHourFromConversation == HourlyConversationCap ? SmsSendVerdict.Digest : SmsSendVerdict.Skip;
     }
+
+    /// <summary>How long an urgent text may go unacknowledged before it is sent once more, and how long after that a reminder would only mislead.</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromMinutes(5), RetryExpires = TimeSpan.FromHours(2);
+
+    /// <summary>Whether an urgent text sent at <paramref name="sentAt"/> is due its one reminder now.</summary>
+    public static bool RetryDue(DateTime sentAt, DateTime now) => now - sentAt >= RetryAfter && now - sentAt <= RetryExpires;
+
+    /// <summary>The single reminder for an urgent message the guest has not confirmed. It carries no message text.</summary>
+    public static string UrgentReminder(int? code) => (code is { } c ? $"[{c}] " : "") + "URGENT: you have an urgent chat message you have not confirmed. Open the app and tap Got it.";
 
     public static bool InboundAllowed(int receivedThisHour) => receivedThisHour < InboundPerHour;
 

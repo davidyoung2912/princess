@@ -57,6 +57,10 @@ public sealed record ChatMuteRequest(bool On);
 /// The text bridge for a guest ashore. <c>On</c>: people on the ship can reach them by text. <c>Idle</c>: also count them as ashore after 30 minutes with no live app connection.
 /// <c>Available</c> is false when the bridge cannot be turned on, and <c>Reason</c> says why: <c>supervised</c>, <c>noPhone</c>, <c>unverified</c> or <c>off</c> (switched off for everyone).
 /// </summary>
+/// <summary>One-tap do-not-disturb: when it ends, in milliseconds, or 0 when it is off.</summary>
+public sealed record ChatDndDto(long Until);
+/// <summary><c>hour</c>, <c>morning</c> or <c>off</c>.</summary>
+public sealed record ChatDndRequest(string? Mode);
 public sealed record ChatSmsDto(bool On, bool Idle, bool Available, string? Reason);
 
 public sealed record ChatSmsSettingsBody(bool On, bool Idle);

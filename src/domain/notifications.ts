@@ -8,7 +8,8 @@ export const CHANNELS: readonly Channel[] = ['push', 'email', 'sms']
 
 export type ChannelPrefs = Record<Channel, boolean>
 export interface QuietHours { on: boolean; /** "HH:MM". */ from: string; to: string }
-export interface NotificationPrefs { channels: Record<Category, ChannelPrefs>; quiet: QuietHours }
+/** `dnd.until` is when the one-tap do not disturb from Chat ends (milliseconds); 0 is off. The server owns it, and it ends by itself. */
+export interface NotificationPrefs { channels: Record<Category, ChannelPrefs>; quiet: QuietHours; dnd: { until: number } }
 
 export const DEFAULT_PREFS: NotificationPrefs = {
   channels: {
@@ -19,6 +20,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
     offers: { push: false, email: false, sms: false },
   },
   quiet: { on: false, from: '22:00', to: '07:00' },
+  dnd: { until: 0 },
 }
 
 const time = (v: unknown, fallback: string) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : fallback)
@@ -34,7 +36,9 @@ export function normalizePrefs(raw: unknown): NotificationPrefs {
     channels[c] = { push: typeof row.push === 'boolean' ? row.push : DEFAULT_PREFS.channels[c].push, email: typeof row.email === 'boolean' ? row.email : DEFAULT_PREFS.channels[c].email, sms: typeof row.sms === 'boolean' ? row.sms : DEFAULT_PREFS.channels[c].sms }
   }
   channels.critical = { push: true, email: true, sms: true }
-  return { channels, quiet: { on: q.on === true, from: time(q.from, DEFAULT_PREFS.quiet.from), to: time(q.to, DEFAULT_PREFS.quiet.to) } }
+  const d = o.dnd && typeof o.dnd === 'object' ? (o.dnd as Record<string, unknown>) : {}
+  const until = typeof d.until === 'number' && Number.isFinite(d.until) && d.until > 0 ? d.until : 0
+  return { channels, quiet: { on: q.on === true, from: time(q.from, DEFAULT_PREFS.quiet.from), to: time(q.to, DEFAULT_PREFS.quiet.to) }, dnd: { until } }
 }
 
 /** Whether a time of day ("HH:MM") falls in quiet hours, which can span midnight. Critical notices ignore quiet hours. */
