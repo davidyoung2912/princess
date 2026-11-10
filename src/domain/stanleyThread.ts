@@ -62,3 +62,12 @@ export function needsYou(messages: readonly ChatMessage[]): ChatMessage[] {
 
 /** A link the thread may follow: an app route only (one slash, no scheme or host), so a stray value from the server can never take the guest off the site. */
 export const safeNoticePath = (path: string | undefined): string | null => (path && /^\/(?!\/)[\w\-./?=&%]*$/.test(path) ? path : null)
+
+/** The calendar day an item falls on, on this device (year-month-day), used to put a day heading above a run of messages on the same day. */
+export const dayKey = (at: number): string => {
+  const d = new Date(at)
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+}
+
+/** True when this item starts a new day, so the thread shows a heading above it. The first item always does. */
+export const startsDay = (items: readonly { at: number }[], index: number): boolean => index === 0 || dayKey(items[index - 1].at) !== dayKey(items[index].at)

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
 import { en } from '../i18n/locales/en'
-import { isStanleyChat, mentionsAI, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
+import { isStanleyChat, mentionsAI, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, startsDay, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
 import { sortConversations } from './chatUrgency'
 
 const conv = (id: string, o: Partial<ChatConversation> = {}): ChatConversation =>
@@ -112,5 +112,11 @@ describe('relayed notices in the Stanley thread', () => {
     const words = Object.entries(en).filter(([k]) => k.startsWith('stanley.notice.')).map(([, v]) => String(v))
     expect(words.length).toBeGreaterThan(0)
     for (const w of words) expect(mentionsAI(w)).toBe(false)
+  })
+
+  it('starts a new day heading when the calendar day changes', () => {
+    const day1 = new Date(2027, 2, 24, 9).getTime()
+    const items = [{ at: day1 }, { at: day1 + 3_600_000 }, { at: new Date(2027, 2, 25, 8).getTime() }]
+    expect([0, 1, 2].map((i) => startsDay(items, i))).toEqual([true, false, true])
   })
 })

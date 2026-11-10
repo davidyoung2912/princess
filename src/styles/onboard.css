@@ -197,3 +197,5 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .dnd--on { border-width: 2px; border-style: dashed; }
 .dnd__title { margin: 0; font-weight: 600; }
 .dnd__choices { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.chat-day { list-style: none; margin-block: var(--space-2) 0; }
+.chat-day h3 { margin: 0; font-size: 1rem; }

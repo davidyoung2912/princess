@@ -1,9 +1,10 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { ReactNode } from 'react'
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
-import { isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, subtitleOf, threadItems } from '../../domain/stanleyThread'
+import { isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -410,7 +411,10 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
   messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onBlocked: () => void
 }) {
   const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
-  return threadItems(messages, device).map((item) => {
+  const items = threadItems(messages, device)
+  return items.map((item, i) => {
+    const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
+    const row = ((): ReactNode => {
     if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} />
     const asked = item.kind === 'question'
     return (
@@ -419,6 +423,8 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
         <p>{item.text}</p>
       </li>
     )
+    })()
+    return <Fragment key={item.key}>{heading}{row}</Fragment>
   })
 }
 

@@ -46,6 +46,23 @@ public class StanleyNoticeRelayTests
     }
 
     [Fact]
+    public void EveryBuiltNoticeThatBypassesIsOfAKindUnderChangeControl()
+    {
+        var now = new DateTime(2027, 3, 24, 15, 0, 0, DateTimeKind.Utc);
+        var left = now.AddMinutes(10);
+        var day = new PortDayWithState(4, "cozumel", "2027-03-24", "4:30 pm", "3:30 pm", new DateTimeOffset(left).ToUnixTimeMilliseconds(), 0, 0, "America/New_York", "America/Cancun", false, AboardRules.StateOf(left, now));
+        var inputs = new[]
+        {
+            new PushInput(now, "ok", "2027-03-01", day, true, 45, true, [], [], 4, []),
+            new PushInput(now, "overdue", "2027-03-01", null, false, 45, false, [], [], 4, []),
+            new PushInput(now, "dueSoon", "2027-03-01", null, false, 45, false, [], [], 4, []),
+        };
+        var built = inputs.SelectMany(PushRules.Build).ToList();
+        Assert.NotEmpty(built.Where(n => n.Bypass));
+        Assert.All(built.Where(n => n.Bypass), n => Assert.Contains(n.Kind, StanleyNoticeRules.BypassKinds));
+    }
+
+    [Fact]
     public void CriticalAndImportantAskForGotItAndTheRestDoNot()
     {
         Assert.Equal("urgent", StanleyNoticeRules.UrgencyOf("critical"));
