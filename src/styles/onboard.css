@@ -169,3 +169,18 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .chat-options { margin-top: var(--space-4); }
 @media (min-width: 1024px) { .composer { bottom: 0; } .chat-chip { bottom: calc(var(--space-3) + 6rem); } }
 @media (prefers-reduced-motion: reduce) { .conv { transition: none; } }
+
+/* Message urgency (docs/chat-urgency-plan.md): an icon and a word always carry the level; the border and tint only back them up. */
+.urgency-tag { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 700; font-size: var(--fs-caption); }
+.urgency-tag svg { width: 1.1em; height: 1.1em; flex: none; }
+.urgency-tag--important { color: var(--warning); }
+.urgency-tag--urgent { color: var(--danger); }
+.chat-msg__level { margin: 0 0 var(--space-1); }
+.chat-msg--important { border-width: 3px; border-color: var(--warning); }
+.chat-msg--urgent { border-width: 3px; border-style: double; border-color: var(--danger); }
+.conv--important { border-width: 3px; border-color: var(--warning); }
+.conv--urgent { border-width: 3px; border-style: double; border-color: var(--danger); }
+.conv--urgent .conv__unread { background: var(--danger); color: var(--on-danger, #fff); }
+.urgency-pick { border: 0; padding: 0; margin: 0 0 var(--space-3); }
+.urgency-pick legend { font-weight: 600; padding: 0; }
+.urgency-pick__option { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; margin-inline-end: var(--space-4); }

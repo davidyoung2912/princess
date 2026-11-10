@@ -38,7 +38,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var mine = r.LastFromUserId == actor.Id;
         var from = members.FirstOrDefault(m => m.UserId == r.LastFromUserId);
-        return new(ChatConversationRules.Preview(r.LastText), r.LastPhoto, mine, mine || from is null ? "" : ShortName(from), Shipboard.Ms(r.LastAt ?? r.CreatedAt));
+        return new(ChatConversationRules.Preview(r.LastText), r.LastPhoto, mine, mine || from is null ? "" : ShortName(from), Shipboard.Ms(r.LastAt ?? r.CreatedAt), Flag(r.LastUrgency));
     }
 
     private static ChatConversationDto Conversation(UserRecord actor, ChatMemberRow m, List<ChatPeerRow> members, int unread, ChatLastDto? last, DateTime at)
@@ -81,7 +81,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
-        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)]);
+        var mayUrgent = ChatUrgencyRules.MaySend(ChatUrgencyRules.Urgent, actor.Role == "admin",
+            ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId))));
+        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Princess.Api.Contracts;
 
 // Chat connections (docs/chat-plan.md, phase 1). People are the public guid of their user (D2). Instants are epoch ms (D6).
@@ -32,7 +34,8 @@ public sealed record ChatSettingsDto(bool Findable, bool ShowPreview);
 // ---- Conversations and messages (phase 4) ----
 
 /// <summary>The last line of a conversation, for the list. <c>Text</c> is empty for a photo with no caption.</summary>
-public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string FromName, long At);
+/// <summary><c>Urgency</c> is the level of the last message, omitted when normal.</summary>
+public sealed record ChatLastDto(string Text, bool Photo, bool Mine, string FromName, long At, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Urgency = null);
 
 /// <summary>
 /// One conversation as the caller sees it. <c>Kind</c> is party (the booking's "My group"), direct or group. <c>Name</c> is the other person for a direct chat.
@@ -43,7 +46,8 @@ public sealed record ChatConversationDto(Guid Id, string Kind, string Name, List
 
 /// <summary>The latest page of a conversation, oldest first. <c>HasMore</c>: older messages can be fetched with <c>before</c>.</summary>
 /// <summary><c>Ashore</c>: first name and last initial of people in it who are ashore and answer by text, so a reply is not expected at once.</summary>
-public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null);
+/// <summary><c>MayUrgent</c> is whether the caller may send an urgent message here (staff, or a guardian of a supervised child in it); the app shows the control only then.</summary>
+public sealed record ChatThreadDto(ChatConversationDto Conversation, List<ChatMessageDto> Messages, bool HasMore, List<string>? Ashore = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool MayUrgent = false);
 
 public sealed record ChatMuteRequest(bool On);
 

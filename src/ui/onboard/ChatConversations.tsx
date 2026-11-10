@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import type { ChatConversation, ChatMessage } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -9,6 +9,7 @@ import {
   type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
 import { ashoreNames } from '../../domain/chatSms'
+import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } from '../../domain/chatUrgency'
 import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
@@ -25,6 +26,7 @@ import { t, th as heading } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { Chip } from '../Chip'
+import { OctagonAlert, TriangleAlert } from '../icons'
 import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
@@ -48,7 +50,10 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   // The copy from last time shows at once; the server's answer replaces it behind it.
   const [rows, setRows] = useState<ChatConversation[] | null>(() => readList(chatStorage(), owner))
   const [failed, setFailed] = useState(false)
+  // Conversations with an urgent message nobody on this account has acknowledged stay at the top; the numbers come from the server so every device agrees.
+  const [urgentIds, setUrgentIds] = useState<string[]>([])
   const load = useCallback(() => {
+    api.chatConnections.summary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
     api.chatConversations.list().then(
       (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list) },
       () => setFailed(true),
@@ -69,15 +74,18 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
       {!rows && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
       {rows && (rows.length === 0 ? <p>{t('conv.none')}</p> : (
         <ul className="conv-list" aria-label={t('conv.title')}>
-          {rows.map((c) => (
+          {sortConversations(rows, urgentIds).map((c) => {
+            const level: ChatUrgency = urgentIds.includes(c.id) ? 'urgent' : urgencyOf(c.last) === 'important' && c.unread > 0 && !c.last?.mine ? 'important' : 'normal'
+            return (
             <li key={c.id}>
-              <button type="button" className={c.unread > 0 ? 'conv conv--unread' : 'conv'} onClick={() => onOpen(c.id)}>
+              <button type="button" className={[c.unread > 0 ? 'conv conv--unread' : 'conv', level !== 'normal' && `conv--${level}`].filter(Boolean).join(' ')} onClick={() => onOpen(c.id)}>
                 <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>
                 <span className="conv__body">
                   <span className="conv__top">
                     <strong>{c.name}</strong>
                     {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
                   </span>
+                  {level !== 'normal' && <UrgencyTag level={level} />}
                   <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
                   {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
                 </span>
@@ -89,11 +97,18 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
                 )}
               </button>
             </li>
-          ))}
+            )
+          })}
         </ul>
       ))}
     </section>
   )
+}
+
+/** The level as an icon and a word, never colour alone. */
+function UrgencyTag({ level }: { level: Exclude<ChatUrgency, 'normal'> }) {
+  const Icon = level === 'urgent' ? OctagonAlert : TriangleAlert
+  return <span className={`urgency-tag urgency-tag--${level}`}><Icon aria-hidden="true" /> <span>{t(level === 'urgent' ? 'urgent.label' : 'important.label')}</span></span>
 }
 
 const prefersReducedMotion = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -120,6 +135,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [hasMore, setHasMore] = useState(cached?.hasMore ?? false)
   const [chip, setChip] = useState(false)
   const [announce, setAnnounce] = useState('')
+  const [alertText, setAlertText] = useState('')
+  const [mayUrgent, setMayUrgent] = useState(cached?.mayUrgent ?? false)
+  const [level, setLevel] = useState<ChatUrgency>('normal')
   const [blockedVersion, setBlockedVersion] = useState(0)
   const [details, setDetails] = useState(false)
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
@@ -134,6 +152,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       const th = await api.chatConversations.thread(id)
       setConversation(th.conversation)
       setAshore(ashoreNames(th.ashore))
+      setMayUrgent(th.mayUrgent === true)
       setMessages((cur) => {
         // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
         const next = first.current ? th.messages : withLatest(cur, th.messages)
@@ -172,7 +191,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     if (wasFirst) { if (messages.length > 0) toEnd(); return }
     if (incoming) {
       // oxlint-disable-next-line react/set-state-in-effect -- a message that just arrived from the server is announced once and may raise the chip
-      setAnnounce(t('conv.incoming', { name: incoming.fromName ?? '' }))
+      if (announceMode(urgencyOf(incoming)) === 'assertive') setAlertText(t('urgent.incoming', { name: incoming.fromName ?? '' }))
+      else setAnnounce(t('conv.incoming', { name: incoming.fromName ?? '' }))
       if (wasNear.current) toEnd(); else setChip(true)
     }
   }, [phase, messages, mine, toEnd])
@@ -215,6 +235,12 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     window.scrollTo(0, a.y + (document.documentElement.scrollHeight - a.height))
   }, [messages])
 
+  const ack = useAction(async (messageId: string) => {
+    await api.chatConversations.ack(id, messageId)
+    chatChanged()
+    await load()
+  })
+
   const mute = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
   })
@@ -224,26 +250,30 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [problem, setProblem] = useState<SendProblem | null>(null)
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
-  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId) : Promise.resolve()), () => void load())
+  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined) : Promise.resolve()), () => void load())
   const submit = async () => {
     const body = text.trim()
     if (!body) return
     setProblem(null)
     setFull(false)
     const clientId = newClientId()
+    const sendLevel = mayUrgent || level !== 'urgent' ? level : 'normal'
+    setLevel('normal')   // each message chooses again: a habit of urgent would stop meaning anything
     setText('')   // typing is never blocked: the message is on screen at once, marked Sending
     setSending((s) => [...s, { id: clientId, text: body, state: 'sending' }])
     try {
-      const sent = await sendWithin(api.chatConversations.send(id, body, clientId))
+      const sent = await sendWithin(api.chatConversations.send(id, body, clientId, sendLevel))
       setMessages((cur) => mergeMessages(cur, [sent]))
       wasNear.current = true
     } catch (e) {
       if (worthRetrying(e)) {
-        if (!outbox.hold({ conversation: id, text: body, clientId })) { setText((cur) => cur || body); setFull(true) }
+        if (!outbox.hold({ conversation: id, text: body, clientId, urgency: sendLevel })) { setText((cur) => cur || body); setLevel(sendLevel); setFull(true) }
       } else {
         // The text stays in the box so the guest does not lose it.
         setText((cur) => cur || body)
-        setProblem(isApiError(e) ? sendProblem(e.code, e.message) : 'other')
+        const why = isApiError(e) ? sendProblem(e.code, e.message) : 'other'
+        setLevel(why === 'urgency' ? 'normal' : sendLevel)
+        setProblem(why)
         if (isApiError(e) && e.code === 'notFound') setPhase('gone')
       }
     } finally {
@@ -274,6 +304,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
+      <p role="alert" className="visually-hidden">{alertText}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
       {offline && phase === 'ready' && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
@@ -286,13 +317,21 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           if (m.system) return <li key={m.id} className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
           const own = m.from === mine
           const card = m.text ? parsePlanCard(m.text) : null
+          const mlevel = urgencyOf(m)
           return (
-            <li key={m.id} className={own ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
+            <li key={m.id} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
+              {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
               <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
               {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
               {m.photo && <DeferredImage name={m.fromName ?? ''} className="chat-msg__photo" src={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
               {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={() => { void load(); setBlockedVersion((v) => v + 1) }} />}
               {own && <p className="muted">{t(deliveryOf(m) === 'read' ? 'conv.read' : 'conv.sent')}</p>}
+              {own && mlevel === 'urgent' && (
+                <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : conversation?.kind === 'direct' ? t('urgent.ackedBy', { names: conversation.name }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
+              )}
+              {!own && mlevel === 'urgent' && (m.acked
+                ? <p className="muted">{t('urgent.youAcked')}</p>
+                : <Button disabled={ack.busy} onClick={() => void ack.run(m.id)}>{t('urgent.gotIt')}</Button>)}
             </li>
           )
         })}
@@ -307,17 +346,27 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
         <form className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+          <fieldset className="urgency-pick">
+            <legend>{t('urgent.pick')}</legend>
+            {levelsFor(mayUrgent).map((l) => (
+              <label key={l} className="urgency-pick__option">
+                <input type="radio" name="urgency" value={l} checked={level === l} onChange={() => setLevel(l)} /> {t(`urgent.level.${l}`)}
+              </label>
+            ))}
+            <p className="muted">{t(`urgent.explain.${level}`)}</p>
+          </fieldset>
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => { setText(e.target.value); if (problem) setProblem(null) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } }} />
-          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : 'conv.failed')}</p>}
-          {problem && problem !== 'blocked' && <p className="muted">{t('chat.kept')}</p>}
+          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : 'conv.failed')}</p>}
+          {problem && problem !== 'blocked' && problem !== 'urgency' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
         </form>
       )}
       {conversation && <Options conversation={conversation} muteBusy={mute.busy} onMute={(on) => void mute.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
+      <ActionError error={ack.error} />
     </section>
   )
 }

@@ -28,7 +28,7 @@ export function relationNote(relation: ChatRelation): 'asked' | 'waiting' | 'app
 /** The number on the Chat tab: things that need the guest (requests, approvals, answers, new connections) and later unread messages. */
 export function chatBadge(s: ChatSummary | null): number {
   if (!s) return 0
-  return Math.max(0, s.incoming) + Math.max(0, s.approvals) + Math.max(0, s.answers) + Math.max(0, s.newlyConnected) + Math.max(0, s.unread)
+  return Math.max(0, s.incoming) + Math.max(0, s.approvals) + Math.max(0, s.answers) + Math.max(0, s.newlyConnected) + Math.max(Math.max(0, s.unread), Math.max(0, s.urgentUnacked))
 }
 
 /** "2 people want to chat": the banner on the conversation list counts requests waiting for the guest and for their children. */

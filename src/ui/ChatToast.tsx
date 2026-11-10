@@ -4,17 +4,58 @@ import { NOTICE_MS, noticePath, type ChatNotice } from '../domain/chatNotice'
 import { t } from '../i18n'
 import { api } from '../runtime'
 import { chatChanged } from '../hooks/useChatSummary'
+import { unackedUrgent } from '../domain/chatUrgency'
 import { Button } from './Button'
-import { Chat, X } from './icons'
+import { Chat, OctagonAlert, X } from './icons'
 
 /**
  * A small notice at the top of the screen for a chat request or message that arrived while the guest is elsewhere in the app. It never takes focus and has no sound,
  * goes away by itself (and waits while the keyboard is on it), and Escape closes it. Tapping the sentence opens the chat, as Open does. A request can be accepted from it; declining and blocking stay in the list.
+ * An urgent message is different (docs/chat-urgency-plan.md): it is announced at once, never goes away by itself or on Escape, and waits for **Got it**.
  */
 export function ChatToast({ notice, onClose }: { notice: ChatNotice | null; onClose: () => void }) {
   return (
-    <div className="chat-toast-region" role="status" aria-live="polite">
-      {notice && <Toast key={notice.key} notice={notice} onClose={onClose} />}
+    <>
+      <div className="chat-toast-region" role="status" aria-live="polite">
+        {notice && !notice.urgent && <Toast key={notice.key} notice={notice} onClose={onClose} />}
+      </div>
+      <div className="chat-toast-region" role="alert">
+        {notice?.urgent && <UrgentToast key={notice.key} notice={notice} onClose={onClose} />}
+      </div>
+    </>
+  )
+}
+
+function UrgentToast({ notice, onClose }: { notice: ChatNotice; onClose: () => void }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const id = notice.conversationId
+  const gotIt = async () => {
+    if (!id) return
+    setBusy(true)
+    setFailed(false)
+    try {
+      const th = await api.chatConversations.thread(id)
+      await Promise.all(unackedUrgent(th.messages).map((m) => api.chatConversations.ack(id, m.id)))
+      chatChanged()
+      onClose()
+    } catch { setFailed(true) } finally { setBusy(false) }
+  }
+  const to = noticePath(notice)
+  return (
+    <div className="chat-toast chat-toast--urgent" role="group" aria-label={t('urgent.label')}>
+      <OctagonAlert className="chat-toast__icon chat-toast__icon--urgent" aria-hidden="true" />
+      <p className="chat-toast__text">
+        <button type="button" className="chat-toast__main" onClick={() => { navigate(to) }}>
+          <span className="chat-toast__label">{t('urgent.label')}</span> {t('urgent.notice', { name: notice.name })}
+        </button>
+        {failed && <span className="field__error" role="alert"> {t('urgent.ackFailed')}</span>}
+      </p>
+      <div className="chat-toast__actions">
+        <Button onClick={() => void gotIt()} disabled={busy}>{t('urgent.gotIt')}</Button>
+        <Button variant="secondary" onClick={() => { navigate(to) }}>{t('notice.open')}</Button>
+      </div>
     </div>
   )
 }

@@ -154,6 +154,7 @@ public sealed class ChatConversationRow : ChatMemberRow
     public long? LastFromUserId { get; set; }
     public string? LastText { get; set; }
     public bool LastPhoto { get; set; }
+    public string LastUrgency { get; set; } = "normal";
     public DateTime? LastAt { get; set; }
     public int Unread { get; set; }
 }

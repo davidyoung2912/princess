@@ -300,7 +300,7 @@ public sealed class InMemoryChatStore(InMemoryUserStore users) : IChatStore
                 GroupId = x.C.Id, GroupPublicId = x.C.PublicId, Kind = x.C.Kind, Name = x.C.Name, UserId = userId, Status = x.Me.Status, JoinedAt = x.Me.JoinedAt, LeftAt = x.Me.LeftAt,
                 Muted = x.Me.Muted, LastReadMessageId = x.Me.LastRead, DirectEnded = x.C.DirectEnded, CreatedAt = x.C.CreatedAt, Unread = UnreadIn(x.C, x.Me),
             };
-            if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastAt = last.At; }
+            if (last is not null) { r.LastMessageId = last.Id; r.LastFromUserId = last.FromUserId; r.LastText = last.Text; r.LastPhoto = last.Photo is not null; r.LastUrgency = last.Urgency; r.LastAt = last.At; }
             return r;
         }).OrderByDescending(r => r.LastAt ?? r.CreatedAt).ThenByDescending(r => r.GroupId).ToList());
 

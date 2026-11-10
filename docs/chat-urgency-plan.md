@@ -66,12 +66,21 @@ As built:
 - `ChatNotifier.AckedAsync`: a live nudge (kind `acked`, never a phone notice) to the sender and to the acknowledger's other devices.
 - Not in this phase: any front-end change, list ordering or pinning (phase 3).
 
-### Phase 3: presentation (front end)
+### Phase 3: presentation (front end) — built
 
 - `src/api` types and `httpApi.ts`; a pure `domain/chatUrgency.ts` (labels, sort, announce mode) with tests.
 - Message bubble label and icon; list ordering and pin; the badge; the composer's urgency control (shown only to people who may send urgent; important for everyone) with a clear explanation.
 - `ChatToast`: persistent urgent notice with **Got it**, assertive announcement, ignores calm mode and the pop-ups setting; static under reduced motion. Contrast checked in both themes.
 - Text in `en.ts` only.
+
+As built:
+
+- Two small server additions the screen needed: `ChatThreadDto.MayUrgent` (staff or a guardian here, so the composer knows whether to offer urgent) and `ChatLastDto.Urgency` (the last message's level, so the list can raise unread important chats). Not built or tested here; the owner runs the server tests.
+- `domain/chatUrgency.ts` (levels offered, announce mode, list order, unacknowledged messages, acknowledgement count) and `chatUrgency.test.ts`; `chooseUrgentNotice` and `mayNotifyUrgent` in `chatNotice.ts`.
+- List: urgent conversations (from `urgentConversations` in the summary) are pinned first, then unread important ones; each carries an icon-and-word tag and a heavier border; the unread badge turns red for urgent. The Chat tab badge counts an urgent message that was read but not acknowledged.
+- Thread: tag and border on messages; **Got it** on urgent messages from others, "Nobody has confirmed this yet" or "Seen and confirmed by …" on your own; an urgent arrival is announced through a separate `role="alert"` line. The composer shows a Normal/Important(/Urgent) choice with a plain explanation, resets to Normal after each send, and keeps the level when a send is held in the outbox.
+- `ChatToast`: urgent notices go in their own `role="alert"` region, have no timer, no close button and no Escape; **Got it** acknowledges every unacknowledged urgent message in that conversation, and **Open** goes to the chat. They ignore calm mode and the pop-ups setting, and are hidden only while the guest is inside Chat. No animation, so reduced motion needs nothing more.
+- Group chats show a count of who confirmed rather than names (the thread carries only public ids and the member list has names only for direct chats).
 
 ### Phase 4: do not disturb, limits and audit
 

@@ -14,6 +14,8 @@ export interface ChatNotice {
   /** A request the guest can accept from the notice (never a guardian approval). */
   requestId: string | null
   conversationId: string | null
+  /** An unacknowledged urgent message: it stays until "Got it", ignores calm mode and the pop-ups setting, and is announced at once. */
+  urgent?: boolean
 }
 
 export interface Arrivals { requests: number; messages: number }
@@ -32,6 +34,9 @@ export function mayNotify(o: { popups: boolean; calm: boolean; path: string }): 
   return o.popups && !o.calm && o.path !== '/chat' && !o.path.startsWith('/chat/')
 }
 
+/** An urgent notice shows unless the guest is already in Chat, where the pinned row and the message itself say it. Calm mode and the pop-ups setting do not apply. */
+export const mayNotifyUrgent = (path: string): boolean => path !== '/chat' && !path.startsWith('/chat/')
+
 const newest = <T extends { at: number }>(rows: readonly T[]): T | null => rows.reduce<T | null>((best, r) => (!best || r.at > best.at ? r : best), null)
 
 /** The notice for what arrived: a request wins over a message because it needs an answer. Null when nothing visible matches (a muted chat, a closed one, text sent by me). */
@@ -47,6 +52,14 @@ export function chooseNotice(a: Arrivals, connections: ChatConnections | null, c
     if (c) return { key: `message:${c.id}`, kind: 'message', name: c.kind === 'direct' ? c.name : (c.last?.fromName || c.name), count: c.unread, requestId: null, conversationId: c.id }
   }
   return null
+}
+
+/** The notice for the newest conversation with an unacknowledged urgent message (muted or closed does not matter), or null when the list does not have it. */
+export function chooseUrgentNotice(urgentIds: readonly string[], conversations: readonly ChatConversation[] | null): ChatNotice | null {
+  if (!conversations || urgentIds.length === 0) return null
+  const c = newest(conversations.filter((x) => urgentIds.includes(x.id)).map((x) => ({ ...x, at: x.last?.at ?? x.at })))
+  if (!c) return null
+  return { key: `urgent:${c.id}`, kind: 'message', name: c.last?.fromName || c.name, count: Math.max(1, urgentIds.length), requestId: null, conversationId: c.id, urgent: true }
 }
 
 const request = (c: ChatConnection, canAccept: boolean): ChatNotice =>

@@ -265,3 +265,7 @@ textarea { max-width: min(100%, 32rem); }
 @media (max-width: 30rem) { .chat-toast { grid-template-columns: auto 1fr; } .chat-toast__actions { grid-column: 1 / -1; justify-content: flex-start; } }
 .chat-toast__main { display: block; width: 100%; padding: var(--space-2) 0; background: none; border: 0; color: inherit; font: inherit; text-align: start; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; }
 .chat-toast__main:hover { text-decoration-color: currentColor; }
+
+/* An urgent chat notice: it stays until "Got it". Static (no entrance animation), so reduced motion needs nothing more. */
+.chat-toast--urgent { border: 3px double var(--danger); animation: none; }
+.chat-toast__icon--urgent { color: var(--danger); }

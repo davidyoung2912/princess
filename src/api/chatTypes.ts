@@ -31,7 +31,14 @@ export interface ChatConnections {
   approvals: ChatConnection[]
 }
 
-export interface ChatSummary { incoming: number; approvals: number; answers: number; newlyConnected: number; unread: number }
+/** How much a message matters (docs/chat-urgency-plan.md). Only `urgent` breaks through do not disturb; only staff and a guardian of a child in the chat may send it. */
+export type ChatUrgency = 'normal' | 'important' | 'urgent'
+
+/** `urgentUnacked` counts urgent messages from others that this guest has not acknowledged; `urgentConversations` are the conversations they are in (the same on every device). */
+export interface ChatSummary {
+  incoming: number; approvals: number; answers: number; newlyConnected: number; unread: number
+  urgentUnacked: number; urgentConversations: string[]
+}
 
 export interface ChatSettings { findable: boolean; showPreview: boolean }
 
@@ -68,7 +75,7 @@ export interface ChatConnectionsApi {
 export type ConversationKind = 'party' | 'direct' | 'group'
 
 /** The last line of a conversation, for the list. `fromName` is empty for your own message. */
-export interface ChatLast { text: string; photo: boolean; mine: boolean; fromName: string; at: number }
+export interface ChatLast { text: string; photo: boolean; mine: boolean; fromName: string; at: number; /** Of the last message; absent when normal. */ urgency?: ChatUrgency }
 
 export interface ChatConversation {
   id: string
@@ -102,10 +109,17 @@ export interface ChatMessage {
   system?: boolean
   /** It came in by text from someone ashore. */
   viaSms?: boolean
+  /** Absent when normal. */
+  urgency?: ChatUrgency
+  /** Urgent, yours: the public ids of members who have acknowledged it. */
+  ackedBy?: string[]
+  /** Urgent, from someone else: whether you have acknowledged it. */
+  acked?: boolean
 }
 
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
-export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[] }
+/** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */
+export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean }
 
 export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
 
@@ -115,11 +129,13 @@ export interface ChatConversationsApi {
   thread(id: string, before?: string): Promise<ChatThread>
   /**
    * `clientId` makes a retry safe: a repeat returns the stored message. Rejects `invalid` (`blocked`: the word filter, nothing was sent; `text`; `contactInfo`),
-   * `conflict` (`closed`) or `notFound`.
+   * `conflict` (`closed`) or `notFound`. `urgency` is normal when left out; urgent rejects `forbidden` (`urgency`) unless you may send it, and an unknown level rejects `invalid` (`urgency`).
    */
-  send(id: string, text: string, clientId: string): Promise<ChatMessage>
+  send(id: string, text: string, clientId: string, urgency?: ChatUrgency): Promise<ChatMessage>
   /** Rejects `invalid` (`type`, `size`, `empty`, `contactInfo`, `blocked`), `forbidden` (`age`), `conflict` (`closed`) or `notFound`. */
   sendPhoto(id: string, input: ChatPhotoInput): Promise<ChatMessage>
+  /** "Got it" on an urgent message from someone else; repeating it changes nothing. Rejects `invalid` (`notUrgent`) or `notFound`. */
+  ack(id: string, messageId: string): Promise<void>
   /** Marks everything read, on every device. */
   read(id: string): Promise<void>
   /** Returns the new state. */

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConnection, ChatConnections, ChatConversation, ChatSummary } from '../api/chatTypes'
-import { arrivals, chooseNotice, mayNotify, noticePath, requestsWaiting } from './chatNotice'
+import { arrivals, chooseNotice, chooseUrgentNotice, mayNotify, mayNotifyUrgent, noticePath, requestsWaiting } from './chatNotice'
 
-const sum = (o: Partial<ChatSummary> = {}): ChatSummary => ({ incoming: 0, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, ...o })
+const sum = (o: Partial<ChatSummary> = {}): ChatSummary => ({ incoming: 0, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, urgentUnacked: 0, urgentConversations: [], ...o })
 const conn = (o: Partial<ChatConnection>): ChatConnection => ({ id: 'r1', kind: 'incoming', personId: 'p', name: 'Sam L', conversationId: null, childId: null, childName: null, isNew: false, at: 1, expiresAt: 9, ...o })
 const none: ChatConnections = { connected: [], incoming: [], outgoing: [], answers: [], approvals: [] }
 const convo = (o: Partial<ChatConversation> & { at?: number; mine?: boolean }): ChatConversation => ({
@@ -56,5 +56,21 @@ describe('paths and counts', () => {
   it('counts requests including approvals', () => {
     expect(requestsWaiting(null)).toBe(0)
     expect(requestsWaiting(sum({ incoming: 2, approvals: 1, unread: 9 }))).toBe(3)
+  })
+})
+
+describe('urgent notice', () => {
+  it('ignores muted and closed, and picks the newest conversation named as urgent', () => {
+    const rows = [convo({ id: 'a', muted: true, at: 1 }), convo({ id: 'b', closed: true, at: 5 }), convo({ id: 'c', at: 9 })]
+    const n = chooseUrgentNotice(['a', 'b'], rows)
+    expect(n).toMatchObject({ key: 'urgent:b', urgent: true, conversationId: 'b', count: 2 })
+    expect(chooseUrgentNotice([], rows)).toBeNull()
+    expect(chooseUrgentNotice(['zzz'], rows)).toBeNull()
+    expect(chooseUrgentNotice(['a'], null)).toBeNull()
+  })
+  it('shows everywhere except inside Chat, whatever calm mode says', () => {
+    expect(mayNotifyUrgent('/plan')).toBe(true)
+    expect(mayNotifyUrgent('/chat')).toBe(false)
+    expect(mayNotifyUrgent('/chat/x')).toBe(false)
   })
 })

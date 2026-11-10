@@ -19,8 +19,10 @@ describe('chat connections', () => {
   })
   it('adds the badge from the server numbers and never goes below zero', () => {
     expect(chatBadge(null)).toBe(0)
-    expect(chatBadge({ incoming: 2, approvals: 1, answers: 1, newlyConnected: 1, unread: 3 })).toBe(8)
-    expect(chatBadge({ incoming: -1, approvals: 0, answers: 0, newlyConnected: 0, unread: 0 })).toBe(0)
+    expect(chatBadge({ incoming: 2, approvals: 1, answers: 1, newlyConnected: 1, unread: 3, urgentUnacked: 0, urgentConversations: [] })).toBe(8)
+    expect(chatBadge({ incoming: -1, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, urgentUnacked: 0, urgentConversations: [] })).toBe(0)
+    // An urgent message that was read but not acknowledged still counts.
+    expect(chatBadge({ incoming: 0, approvals: 0, answers: 0, newlyConnected: 0, unread: 0, urgentUnacked: 1, urgentConversations: ['c'] })).toBe(1)
   })
   it('counts requests waiting for the guest and for their children', () => {
     expect(waitingCount({ ...empty, incoming: [row('incoming')], approvals: [row('approval'), row('approval')] })).toBe(3)

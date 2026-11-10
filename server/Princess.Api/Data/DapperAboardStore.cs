@@ -387,12 +387,12 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, me.Muted, me.LastReadMessageId, g.CreatedAt,
                    CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded,
                    lm.Id AS LastMessageId, lm.FromUserId AS LastFromUserId, lm.[Text] AS LastText,
-                   CAST(CASE WHEN lm.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, lm.[At] AS LastAt,
+                   CAST(CASE WHEN lm.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, lm.[At] AS LastAt, lm.Urgency AS LastUrgency,
                    (SELECT COUNT(*) FROM dbo.ChatMessages m
                     WHERE m.GroupId = g.Id AND m.IsSystem = 0 AND m.FromUserId <> me.UserId AND m.Id > ISNULL(me.LastReadMessageId, 0) AND {Window}) AS Unread
             FROM dbo.ChatGroupMembers me
             JOIN dbo.ChatGroups g ON g.Id = me.GroupId
-            OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At] FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND {Window} ORDER BY m.Id DESC) lm
+            OUTER APPLY (SELECT TOP 1 m.Id, m.FromUserId, m.[Text], m.Photo, m.[At], m.Urgency FROM dbo.ChatMessages m WHERE m.GroupId = g.Id AND {Window} ORDER BY m.Id DESC) lm
             WHERE me.UserId = @userId AND me.Status = 'active'
             ORDER BY ISNULL(lm.[At], g.CreatedAt) DESC, g.Id DESC
             """, new { userId }, null, ct))).ToList();
