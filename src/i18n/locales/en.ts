@@ -15334,6 +15334,7 @@ export const en = {
   'conv.read': 'Read',
   'conv.blocked': 'That message cannot be sent. Please reword it.',
   'conv.contact': 'Please do not share phone numbers or links in chat. Ask a parent to do it.',
+  'conv.stale': 'You are offline. This is what was here last time.',
   'conv.gone': 'This chat is no longer available.',
   'conv.failed': 'The message could not be sent.',
   'conv.options': 'Chat options',

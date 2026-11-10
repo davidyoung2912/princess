@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import type { ChatConversation, ChatMessage } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
+import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
 import {
   conversationFromSearch, deliveryOf, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
   type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
+import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
 import { chatChanged, useChatLive } from '../../hooks/useChatSummary'
@@ -14,6 +16,7 @@ import { useAction } from '../../hooks/useAction'
 import { useMemory } from '../../hooks/useMemory'
 import { useMine } from '../../hooks/useMine'
 import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
+import { useLatest } from '../../hooks/useLatest'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
 import { useOwnerId, usePersona } from '../../hooks/useDemo'
 import { api } from '../../runtime'
@@ -23,7 +26,7 @@ import { Button } from '../Button'
 import { Chip } from '../Chip'
 import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
-import { ActionError, Load } from '../account/parts'
+import { ActionError } from '../account/parts'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
 import { useShipTime } from './shipTime'
 
@@ -39,39 +42,51 @@ export function Conversations() {
 
 function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   const shipTime = useShipTime()
-  const list = useMine(() => api.chatConversations.list())
-  useChatLive(list.retry)
-  useVisibleInterval(list.retry, 30_000)
+  const owner = useOwnerId() ?? 'none'
+  // The copy from last time shows at once; the server's answer replaces it behind it.
+  const [rows, setRows] = useState<ChatConversation[] | null>(() => readList(chatStorage(), owner))
+  const [failed, setFailed] = useState(false)
+  const load = useCallback(() => {
+    api.chatConversations.list().then(
+      (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list) },
+      () => setFailed(true),
+    )
+  }, [owner])
+  // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
+  useEffect(() => { load() }, [load])
+  useChatLive(load)
+  useVisibleInterval(load, 30_000)
   return (
     <section aria-labelledby="conv-h">
       <h2 id="conv-h">{heading('conv.title')}</h2>
-      <Load state={list}>
-        {(rows) => rows.length === 0 ? <p>{t('conv.none')}</p> : (
-          <ul className="conv-list" aria-label={t('conv.title')}>
-            {rows.map((c) => (
-              <li key={c.id}>
-                <button type="button" className={c.unread > 0 ? 'conv conv--unread' : 'conv'} onClick={() => onOpen(c.id)}>
-                  <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>
-                  <span className="conv__body">
-                    <span className="conv__top">
-                      <strong>{c.name}</strong>
-                      {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
-                    </span>
-                    <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || ' '}</span>
-                    {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
+      {failed && rows && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
+      {failed && !rows && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={load}>{t('ref.retry')}</Button>} />}
+      {!rows && !failed && <p role="status" className="muted">{t('account.loading')}</p>}
+      {rows && (rows.length === 0 ? <p>{t('conv.none')}</p> : (
+        <ul className="conv-list" aria-label={t('conv.title')}>
+          {rows.map((c) => (
+            <li key={c.id}>
+              <button type="button" className={c.unread > 0 ? 'conv conv--unread' : 'conv'} onClick={() => onOpen(c.id)}>
+                <span className="conv__avatar" aria-hidden="true">{initials(c.name)}</span>
+                <span className="conv__body">
+                  <span className="conv__top">
+                    <strong>{c.name}</strong>
+                    {c.last && <span className="muted conv__time">{shipTime(c.last.at)}</span>}
                   </span>
-                  {c.unread > 0 && (
-                    <span className="conv__unread">
-                      <span aria-hidden="true">{c.unread}</span>
-                      <span className="visually-hidden">{t('conv.unread', { count: c.unread })}</span>
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Load>
+                  <span className="conv__last muted">{lastLine(c, t('conv.you'), t('conv.photo')) || '\u00a0'}</span>
+                  {(c.muted || c.closed) && <span className="conv__tags muted">{[c.muted && t('conv.muted'), c.closed && t('conv.closed')].filter(Boolean).join(' · ')}</span>}
+                </span>
+                {c.unread > 0 && (
+                  <span className="conv__unread">
+                    <span aria-hidden="true">{c.unread}</span>
+                    <span className="visually-hidden">{t('conv.unread', { count: c.unread })}</span>
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ))}
     </section>
   )
 }
@@ -90,10 +105,14 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const me = usePersona()
   const ownerId = useOwnerId()
   const shipTime = useShipTime()
-  const [phase, setPhase] = useState<Phase>('loading')
-  const [conversation, setConversation] = useState<ChatConversation | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [hasMore, setHasMore] = useState(false)
+  const owner = ownerId ?? 'none'
+  // The copy from last time (text only) shows at once; the server's answer replaces it behind it.
+  const [cached] = useState(() => readThread(chatStorage(), owner, id))
+  const [phase, setPhase] = useState<Phase>(cached ? 'ready' : 'loading')
+  const [offline, setOffline] = useState(false)
+  const [conversation, setConversation] = useState<ChatConversation | null>(cached?.conversation ?? null)
+  const [messages, setMessages] = useState<ChatMessage[]>(cached?.messages ?? [])
+  const [hasMore, setHasMore] = useState(cached?.hasMore ?? false)
   const [chip, setChip] = useState(false)
   const [announce, setAnnounce] = useState('')
   const [blockedVersion, setBlockedVersion] = useState(0)
@@ -107,14 +126,20 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     try {
       const th = await api.chatConversations.thread(id)
       setConversation(th.conversation)
-      setMessages((cur) => withLatest(cur, th.messages))
+      setMessages((cur) => {
+        // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
+        const next = first.current ? th.messages : withLatest(cur, th.messages)
+        saveThread(chatStorage(), owner, id, { ...th, messages: next })
+        return next
+      })
       if (first.current) { setHasMore(th.hasMore); first.current = false }
+      setOffline(false)
       setPhase('ready')
     } catch (e) {
       if (isApiError(e) && e.code === 'notFound') setPhase('gone')
-      else setPhase((p) => (p === 'ready' ? p : 'error'))
+      else { setOffline(true); setPhase((p) => (p === 'ready' ? p : 'error')) }
     }
-  }, [id])
+  }, [id, owner])
   // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
   useEffect(() => { void load() }, [load])
   useChatLive(() => void load())
@@ -124,8 +149,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
 
   // New arrivals follow the guest only when they are already at the bottom; otherwise a chip says so and nothing moves. Focus is never touched.
   const wasNear = useRef(true)
+  const userScrolled = useRef(false)
   useEffect(() => {
-    const onScroll = () => { wasNear.current = nearBottom(); if (wasNear.current) setChip(false) }
+    const onScroll = () => { userScrolled.current = true; wasNear.current = nearBottom(); if (wasNear.current) setChip(false) }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -151,13 +177,35 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     void api.chatConversations.read(id).then(chatChanged, () => { lastRead.current = null })
   }, [phase, messages, id])
 
+  // Older messages load when the guest scrolls to the top (and by the button, for keyboard and screen reader use). The page keeps its place as they are added above.
+  const anchor = useRef<{ height: number; y: number } | null>(null)
+  const loadingOlder = useRef(false)
   const older = useAction(async () => {
     const before = messages[0]?.id
-    if (!before) return
-    const th = await api.chatConversations.thread(id, before)
-    setMessages((cur) => withOlder(cur, th.messages))
-    setHasMore(th.hasMore)
+    if (!before || loadingOlder.current) return
+    loadingOlder.current = true
+    try {
+      const th = await api.chatConversations.thread(id, before)
+      anchor.current = { height: document.documentElement.scrollHeight, y: window.scrollY }
+      setMessages((cur) => withOlder(cur, th.messages))
+      setHasMore(th.hasMore)
+    } finally { loadingOlder.current = false }
   })
+  const runOlder = useLatest(() => void older.run())
+  const top = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = top.current
+    if (!el || !hasMore || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting && userScrolled.current) runOlder() })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [hasMore, runOlder])
+  useLayoutEffect(() => {
+    const a = anchor.current
+    if (!a) return
+    anchor.current = null
+    window.scrollTo(0, a.y + (document.documentElement.scrollHeight - a.height))
+  }, [messages])
 
   const mute = useAction(async (on: boolean) => {
     await optimistic(() => setConversation((c) => (c ? { ...c, muted: on } : c)), () => api.chatConversations.mute(id, on), () => setConversation((c) => (c ? { ...c, muted: !on } : c)))
@@ -215,7 +263,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       )}
       <p role="status" className="visually-hidden">{announce}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
+      {offline && phase === 'ready' && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
+      <div ref={top} />
       {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
       <ActionError error={older.error} />
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
