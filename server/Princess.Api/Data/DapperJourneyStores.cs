@@ -526,8 +526,8 @@ public sealed class DapperPrivacyStore(IDbConnectionFactory db, IHttpContextAcce
                 "documents" => "DELETE FROM dbo.GuestDocuments WHERE UserId IN @guestUserIds",
                 "illness" => "DELETE FROM dbo.HealthReports WHERE BookingId = @bookingId",
                 "clubReg" => "DELETE FROM dbo.ClubRegistrations WHERE BookingId = @bookingId",
-                // A chat every member agreed to keep (phase 5) stays until its own date; the daily sweep deletes it then.
-                "message" => $"DELETE m FROM dbo.ChatMessages m WHERE m.FromUserId IN @guestUserIds AND NOT EXISTS (SELECT 1 FROM dbo.ChatGroups g WHERE g.Id = m.GroupId AND {ChatKeepSql.IsKept("g")})",
+                // A chat every member agreed to keep (phase 5) stays until its own date; the daily sweep deletes it then. A room's posts follow the room's own retention (phase 8: ChatRoomRetention), not the guest's cruise.
+                "message" => $"DELETE m FROM dbo.ChatMessages m WHERE m.FromUserId IN @guestUserIds AND NOT EXISTS (SELECT 1 FROM dbo.ChatGroups g WHERE g.Id = m.GroupId AND ({ChatKeepSql.IsKept("g")} OR g.Kind IN ('room','channel')))",
                 _ => throw new InvalidOperationException($"Unknown retention kind {kind}"),
             };
             await c.ExecuteAsync(Sql.Cmd(sql, new { bookingId, guestUserIds, now }, tx, ct));

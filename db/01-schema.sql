@@ -3593,3 +3593,92 @@ CREATE TABLE dbo.ChatGroupStanley (
 );
 END
 GO
+
+-- Chat phase 8: channels and rooms beyond the ship (docs/chat-features-research.md, section 8).
+-- A channel ('channel': staff post, followers read) and a room ('room': guests with a booking post) are ordinary ChatGroups, so reading, sending, reactions, reports and retention are the existing paths.
+-- Following a channel and joining a room are ChatGroupMembers rows, muted by default (a room never alerts a phone unless the guest turns it on or is mentioned).
+-- RoomKind: 'sailing' (booked on SailingId) or 'interest' (any current or past booking, named by Topic). RoomClosed is staff turning one off; SlowMode is staff switching one message per 30 s on.
+-- RoomRefOffset is the minutes from UTC of the room's reference time: moderator hours (08:00 to 23:00 there) decide when slow mode turns on by itself.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups') AND definition NOT LIKE N'%channel%')
+  ALTER TABLE dbo.ChatGroups DROP CONSTRAINT CK_ChatGroups_Kind;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ChatGroups_Kind' AND parent_object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  ALTER TABLE dbo.ChatGroups ADD CONSTRAINT CK_ChatGroups_Kind CHECK (Kind IN ('party','direct','group','stanley','channel','room'));
+GO
+IF COL_LENGTH(N'dbo.ChatGroups', N'RoomKind') IS NULL
+BEGIN
+  ALTER TABLE dbo.ChatGroups ADD
+    RoomKind VARCHAR(8) NULL CONSTRAINT CK_ChatGroups_RoomKind CHECK (RoomKind IS NULL OR RoomKind IN ('sailing','interest')),
+    Topic VARCHAR(30) NULL,
+    SailingId NVARCHAR(40) NULL CONSTRAINT FK_ChatGroups_Sailings REFERENCES ref.Sailings (Id),
+    RoomClosed BIT NOT NULL CONSTRAINT DF_ChatGroups_RoomClosed DEFAULT 0,
+    SlowMode BIT NOT NULL CONSTRAINT DF_ChatGroups_SlowMode DEFAULT 0,
+    RoomRules NVARCHAR(600) NULL,
+    RoomRefOffset INT NOT NULL CONSTRAINT DF_ChatGroups_RoomRefOffset DEFAULT 0,
+    MemberCap INT NOT NULL CONSTRAINT DF_ChatGroups_MemberCap DEFAULT 500;
+END
+GO
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'RulesAcceptedAt') IS NULL
+  ALTER TABLE dbo.ChatGroupMembers ADD RulesAcceptedAt DATETIME2(0) NULL, ModMutedUntil DATETIME2(0) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ChatGroups_Kind_Sailing' AND object_id = OBJECT_ID(N'dbo.ChatGroups'))
+  CREATE INDEX IX_ChatGroups_Kind_Sailing ON dbo.ChatGroups (Kind, SailingId) WHERE Kind IN ('channel','room');
+GO
+
+-- The moderator rota of a room: the named staff who answer for it. A room cannot open with fewer than two (ChatRoomRules.MinModerators).
+IF OBJECT_ID(N'dbo.ChatRoomModerators', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatRoomModerators (
+  GroupId BIGINT NOT NULL, UserId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatRoomModerators_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatRoomModerators PRIMARY KEY (GroupId, UserId),
+  CONSTRAINT FK_ChatRoomModerators_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatRoomModerators_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+
+-- Every staff action in a room. No message text: who did what to which person or message, and when.
+IF OBJECT_ID(N'dbo.ChatRoomActions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatRoomActions (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatRoomActions PRIMARY KEY,
+  GroupId BIGINT NOT NULL, ByUserId BIGINT NOT NULL, Action VARCHAR(10) NOT NULL, TargetUserId BIGINT NULL, MessageId BIGINT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatRoomActions_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT FK_ChatRoomActions_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatRoomActions_Users FOREIGN KEY (ByUserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_ChatRoomActions_GroupId_At ON dbo.ChatRoomActions (GroupId, [At]);
+END
+GO
+
+-- A post held for staff because it carries a link or a phone number. Not a message until staff release it; rejected ones keep nothing but the fact.
+IF OBJECT_ID(N'dbo.ChatHeldMessages', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatHeldMessages (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatHeldMessages PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatHeldMessages_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatHeldMessages_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, FromUserId BIGINT NOT NULL, [Text] NVARCHAR(2000) NOT NULL, Reason VARCHAR(10) NOT NULL,
+  Status VARCHAR(8) NOT NULL CONSTRAINT DF_ChatHeldMessages_Status DEFAULT 'held' CONSTRAINT CK_ChatHeldMessages_Status CHECK (Status IN ('held','released','rejected')),
+  [At] DATETIME2(0) NOT NULL, ResolvedBy BIGINT NULL, ResolvedAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatHeldMessages_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatHeldMessages_Users FOREIGN KEY (FromUserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_ChatHeldMessages_Status_At ON dbo.ChatHeldMessages (Status, [At]);
+END
+GO
+
+-- Chat phase 8 follow-up: "suggest a question" for a room's curated preview. A guest suggests; staff mark it popular (shown in the preview) or reject it. Text is cleared when rejected.
+IF OBJECT_ID(N'dbo.ChatRoomQuestions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatRoomQuestions (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatRoomQuestions PRIMARY KEY,
+  PublicId UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ChatRoomQuestions_PublicId DEFAULT NEWID() CONSTRAINT UX_ChatRoomQuestions_PublicId UNIQUE,
+  GroupId BIGINT NOT NULL, FromUserId BIGINT NOT NULL, [Text] NVARCHAR(200) NOT NULL,
+  Status VARCHAR(9) NOT NULL CONSTRAINT DF_ChatRoomQuestions_Status DEFAULT 'suggested' CONSTRAINT CK_ChatRoomQuestions_Status CHECK (Status IN ('suggested','popular','rejected')),
+  [At] DATETIME2(0) NOT NULL, ResolvedBy BIGINT NULL, ResolvedAt DATETIME2(0) NULL,
+  CONSTRAINT FK_ChatRoomQuestions_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatRoomQuestions_Users FOREIGN KEY (FromUserId) REFERENCES dbo.Users (Id)
+);
+CREATE INDEX IX_ChatRoomQuestions_Group_Status ON dbo.ChatRoomQuestions (GroupId, Status);
+END
+GO

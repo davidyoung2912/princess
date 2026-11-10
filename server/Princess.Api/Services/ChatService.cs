@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, StanleyReminderService? reminders = null)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, ChatRoomService rooms, StanleyReminderService? reminders = null)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -48,17 +48,20 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return new(r.LastDeleted ? ChatControlRules.DeletedText : ChatConversationRules.Preview(r.LastText), r.LastPhoto, mine, mine || from is null ? "" : ShortName(from), Shipboard.Ms(r.LastAt ?? r.CreatedAt), Flag(r.LastUrgency));
     }
 
-    private static ChatConversationDto Conversation(UserRecord actor, ChatMemberRow m, List<ChatPeerRow> members, int unread, ChatLastDto? last, DateTime at)
+    private ChatConversationDto Conversation(UserRecord actor, ChatMemberRow m, List<ChatPeerRow> members, int unread, ChatLastDto? last, DateTime at)
     {
-        var others = members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
+        // A channel or room has hundreds of members: the list names none of them (they are public to each other only through what they post).
+        var roomy = ChatRoomRules.IsRoomKind(m.Kind);
+        var others = roomy ? [] : members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(ShortName).ToList();
         return new(m.GroupPublicId, m.Kind, ChatConversationRules.DisplayName(m.Kind, m.Name, others), others, last, unread, m.Muted,
             ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded), Shipboard.Ms(at),
             ChatSafetyRules.GuardianCanRead(members.Select(p => (p.Status, p.IsSupervised))), m.NotifyAway,
             Permanent: ChatConversationRules.IsPermanent(m.Kind), Voice: m.Persona, Subtitle: m.Subtitle,
-            People: ChatConversationRules.IsPermanent(m.Kind) ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatMemberDto(p.PublicId, ShortName(p)))],
+            People: ChatConversationRules.IsPermanent(m.Kind) || roomy ? null : [.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => new ChatMemberDto(p.PublicId, ShortName(p)))],
             Archived: m.ArchivedAt is not null, MutedUntil: m.Muted && m.MutedUntil is { } until ? Shipboard.Ms(until) : null, MentionsOnly: m.MentionsOnly,
             CanPin: ChatCardRules.MayPin(m.Kind, ChatPlanningService.AdminOf(m, actor.Id)) && !ChatConversationRules.IsClosed(m.Kind, m.Status, m.DirectEnded),
-            AnnouncementOnly: m.Kind == ChatConversationRules.Group && m.AnnouncementOnly, Admin: ChatPlanningService.AdminOf(m, actor.Id));
+            AnnouncementOnly: m.Kind == ChatConversationRules.Group && m.AnnouncementOnly, Admin: ChatPlanningService.AdminOf(m, actor.Id),
+            Room: rooms.InfoOf(m, actor.Role == "admin", roomy ? members.Count(p => p.Status == ChatConversationRules.Active) : 0, DateTime.UtcNow));
     }
 
     /// <summary>The caller's place in the conversation, or a 404 that is the same whether it does not exist or is someone else's.</summary>
@@ -97,13 +100,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         }
         var size = ChatConversationRules.ClampPage(limit);
         var members = await store.ListMembersAsync(member.GroupId, ct);
-        var mine = await store.GetReceiptsAsync(actor.Id, ct);
+        var roomy = ChatRoomRules.IsRoomKind(member.Kind);
+        var mine = !roomy && await store.GetReceiptsAsync(actor.Id, ct);   // no read receipts in a channel or room
         var page = await store.ListMessagesAsync(member.GroupId, actor.Id, before, size, ct);
         var more = page.Count > size;
         var now = await userClock.NowAsync(actor, ct);
         if (more) page.RemoveAt(0);   // the extra, oldest one was only read to know there is more
         var byId = members.ToDictionary(p => p.UserId);
-        var receiptsOf = (long id) => id == actor.Id ? mine : byId.TryGetValue(id, out var p) && p.ReceiptsOn;
+        var receiptsOf = (long id) => !roomy && (id == actor.Id ? mine : byId.TryGetValue(id, out var p) && p.ReceiptsOn);
         var publicOf = (long id) => id == actor.Id ? actor.PublicId : byId.TryGetValue(id, out var p) ? p.PublicId : (Guid?)null;
         // Phase 1: reactions (a block hides the blocked person's reactions as it hides their messages), the quote above a reply, and Delivered. Blocks are read only when some message has a reaction.
         var blocked = page.Any(m => m.Reactions.Count > 0) ? new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)) : new HashSet<long>();
@@ -155,14 +159,14 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
-        var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
-        var mayUrgent = ChatUrgencyRules.MaySend(ChatUrgencyRules.Urgent, actor.Role == "admin",
+        var ashore = roomy ? new HashSet<long>() : await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
+        var mayUrgent = !roomy && ChatUrgencyRules.MaySend(ChatUrgencyRules.Urgent, actor.Role == "admin",
             ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId))));
         // The pin bar comes with the latest page only; an older page is a scroll back and needs none.
         var pins = before is null ? PinDtos(await store.ListPinsAsync(member.GroupId, actor.Id, ct), actor.Id, byId) : null;
         // Who is back on the ship, for the header (latest page only): only people who chose to tell this chat, and only what the away rules let this reader know.
         List<string>? back = null;
-        if (before is null && !ChatConversationRules.IsPermanent(member.Kind))
+        if (before is null && !ChatConversationRules.IsPermanent(member.Kind) && !roomy)
         {
             var seen = (await store.ListPresenceAsync(member.GroupId, actor.Id, ct)).Where(r => byId.ContainsKey(r.UserId)).Select(r => (ShortName(byId[r.UserId]), (string?)r.Status));
             back = ChatAwayRules.BackNames(seen);
@@ -177,6 +181,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         var kind = body?.Kind is null or "" ? ChatCardRules.Text : body.Kind;
         if (kind is not (ChatCardRules.Text or ChatCardRules.Card or ChatCardRules.Place or ChatCardRules.Plan or ChatPlanningRules.Poll)) throw ApiException.Invalid("kind");
+        // A channel or room carries plain words only for now (cards, places, plans and polls are for people who know each other; photos wait for the media phase).
+        var inRoom = ChatRoomRules.IsRoomKind(member.Kind);
+        if (inRoom && kind != ChatCardRules.Text) throw ApiException.Invalid("kind");
         // An announcement-only group is read by everyone and posted to by its admins; votes, answers and reactions are not messages and stay open.
         if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var now = await userClock.NowAsync(actor, ct);
@@ -222,6 +229,12 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
         }
         var urgency = ChatUrgencyRules.Parse(body?.Urgency) ?? throw ApiException.Invalid("urgency");
+        if (inRoom)
+        {
+            // No important or urgent message in a room: anything urgent belongs with staff, not a public room. The room's own gate (booking, rules, mute, slow mode, link and number hold) runs after the word filter above.
+            if (urgency != ChatUrgencyRules.Normal) throw ApiException.Invalid("urgency");
+            await rooms.GuardPostAsync(actor, member, text, now, ct);
+        }
         await EnforceRateAsync(actor, member, now, ct);
         // A reply names a message the sender may read in this conversation (their window, nobody they blocked) that a person said; anything else is refused the same way.
         ChatMessageRow? quoted = null;
@@ -260,6 +273,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatRoomRules.IsRoomKind(member.Kind)) throw ApiException.Forbidden("room");   // a channel or room is never bridged to text
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var text = ChatConversationRules.CleanText(body) ?? throw ApiException.Invalid("text");
@@ -271,6 +285,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatRoomRules.IsRoomKind(member.Kind)) throw ApiException.Forbidden("room");   // photos in rooms wait for the media phase
         if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
         if (!ChatPlanningRules.MayPost(member.Kind, member.AnnouncementOnly, ChatPlanningService.AdminOf(member, actor.Id))) throw ApiException.Forbidden("announcementOnly");
         var now = await userClock.NowAsync(actor, ct);
@@ -330,7 +345,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     /// </summary>
     private async Task TellAsync(UserRecord actor, ChatMemberRow member, ChatMessageRow message)
     {
-        var job = new ChatFanoutJob(actor.Id, member.GroupId, member.GroupPublicId, message);
+        var job = new ChatFanoutJob(actor.Id, member.GroupId, member.GroupPublicId, message, member.Kind);
         if (!fanoutQueue.TryEnqueue(job)) await fanout.RunAsync(job, CancellationToken.None);
     }
 
@@ -527,6 +542,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     {
         var member = await MemberAsync(actor, conversationId, ct);
         if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatRoomRules.IsRoomKind(member.Kind)) return;   // no typing bubble in a channel or room: in a crowd it is noise
         if (member.Status != ChatConversationRules.Active || ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) return;
         if (!(await store.GetTypingAsync(actor.Id, ct))) return;
         if (!typing.Touch(member.GroupId, actor.Id, DateTime.UtcNow)) return;
@@ -539,7 +555,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     public async Task<List<string>> TypingNowAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
     {
         var member = await MemberAsync(actor, conversationId, ct);
-        if (ChatConversationRules.IsPermanent(member.Kind) || !await store.GetTypingAsync(actor.Id, ct)) return [];
+        if (ChatConversationRules.IsPermanent(member.Kind) || ChatRoomRules.IsRoomKind(member.Kind) || !await store.GetTypingAsync(actor.Id, ct)) return [];
         var active = typing.Active(member.GroupId, actor.Id, DateTime.UtcNow);
         if (active.Count == 0) return [];
         var blocked = new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));

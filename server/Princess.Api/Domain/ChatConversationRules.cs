@@ -11,6 +11,9 @@ public static class ChatConversationRules
     public const string Group = "group";
     /// <summary>Every account's permanent 1:1 chat with Stanley (docs/chat-features-research.md, section 15).</summary>
     public const string Stanley = "stanley";
+    /// <summary>Phase 8: a staff-written channel and a guest room (docs/chat-features-research.md, section 8). Both are public to their members, so a late joiner reads what came before.</summary>
+    public const string Channel = "channel";
+    public const string Room = "room";
 
     public const string Active = "active";
 
@@ -33,11 +36,11 @@ public static class ChatConversationRules
     /// The booking's "My group" is the exception: it keeps showing everything, as before (the old chat had no join time).
     /// </summary>
     public static bool CanRead(string kind, DateTime sentAt, DateTime joinedAt, DateTime? leftAt) =>
-        kind is Party or Stanley || (sentAt >= joinedAt && (leftAt is null || sentAt <= leftAt));
+        kind is Party or Stanley or Channel or Room || (sentAt >= joinedAt && (leftAt is null || sentAt <= leftAt));
 
-    /// <summary>Whether sending is closed to this member: they are no longer an active member, or a direct chat has ended.</summary>
+    /// <summary>Whether sending is closed to this member: they are no longer an active member, or a direct chat has ended or staff closed a channel or room (the store reports both as "ended").</summary>
     public static bool IsClosed(string kind, string memberStatus, bool directEnded) =>
-        kind != Stanley && (memberStatus != Active || (kind == Direct && directEnded));
+        kind != Stanley && (memberStatus != Active || (kind is Direct or Channel or Room && directEnded));
 
     /// <summary>
     /// What a member may do to a conversation. The permanent Stanley chat cannot be left, ended, archived, muted, hidden, blocked, renamed or given an away notice,

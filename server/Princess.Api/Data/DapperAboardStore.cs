@@ -357,16 +357,22 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
 {
     // The messages a member may read: sent in their window (the booking's "My group" keeps showing everything) and not from someone they blocked.
     private const string Window = """
-        (g.Kind IN ('party','stanley') OR (m.[At] >= me.JoinedAt AND (me.LeftAt IS NULL OR m.[At] <= me.LeftAt)))
+        (g.Kind IN ('party','stanley','channel','room') OR (m.[At] >= me.JoinedAt AND (me.LeftAt IS NULL OR m.[At] <= me.LeftAt)))
         AND NOT EXISTS (SELECT 1 FROM dbo.ChatBlocks b WHERE b.UserId = me.UserId AND b.BlockedUserId = m.FromUserId)
         """;
 
     /// <summary>A mute is on only until its end (real UTC), so every reader of the flag agrees without a job to turn it off.</summary>
     private const string MutedNow = "CAST(CASE WHEN me.Muted = 1 AND (me.MutedUntil IS NULL OR me.MutedUntil > SYSUTCDATETIME()) THEN 1 ELSE 0 END AS bit)";
 
+    /// <summary>A direct chat is "ended" when its connection ended; a channel or room is "ended" when staff closed it. Both close sending and nothing else.</summary>
+    private const string DirectEndedExpr = "CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 WHEN g.Kind IN ('channel','room') AND g.RoomClosed = 1 THEN 1 ELSE 0 END AS bit)";
+
+    /// <summary>Phase 8: what a channel or room adds to a member's place in it (all null or false for any other conversation).</summary>
+    private const string RoomCols = "g.RoomKind, g.Topic, g.SailingId, CAST(ISNULL(g.SlowMode, 0) AS bit) AS SlowMode, g.RoomRules AS Rules, ISNULL(g.RoomRefOffset, 0) AS RefOffsetMinutes, me.RulesAcceptedAt, me.ModMutedUntil";
+
     private const string MemberSelect = $$"""
         SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, {{MutedNow}} AS Muted, me.MutedUntil, me.ArchivedAt, me.NotifyAway, me.MentionsOnly, me.IsAdmin, g.AnnouncementOnly, me.LastReadMessageId, g.CreatedByUserId, g.CreatedAt,
-               CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded,
+               {{DirectEndedExpr}} AS DirectEnded, {{RoomCols}},
                sp.Persona AS Persona, sp.Subtitle AS Subtitle
         FROM dbo.ChatGroupMembers me
         JOIN dbo.ChatGroups g ON g.Id = me.GroupId
@@ -607,7 +613,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatConversationRow>(Sql.Cmd($"""
             SELECT g.Id AS GroupId, g.PublicId AS GroupPublicId, g.Kind, g.Name, me.UserId, me.Status, me.JoinedAt, me.LeftAt, {MutedNow} AS Muted, me.MutedUntil, me.ArchivedAt, me.NotifyAway, me.MentionsOnly, me.IsAdmin, g.AnnouncementOnly, me.LastReadMessageId, g.CreatedByUserId, g.CreatedAt,
-                   CAST(CASE WHEN g.Kind = 'direct' AND EXISTS (SELECT 1 FROM dbo.ChatConnections cc WHERE cc.GroupId = g.Id AND cc.Status = 'ended') THEN 1 ELSE 0 END AS bit) AS DirectEnded,
+                   {DirectEndedExpr} AS DirectEnded, {RoomCols},
                    sp.Persona AS Persona, sp.Subtitle AS Subtitle,
                    lm.Id AS LastMessageId, ISNULL(lm.FromUserId, 0) AS LastFromUserId, CASE WHEN lm.DeletedAt IS NULL THEN lm.[Text] ELSE N'' END AS LastText,
                    CAST(CASE WHEN lm.Photo IS NULL OR lm.DeletedAt IS NOT NULL THEN 0 ELSE 1 END AS bit) AS LastPhoto, CAST(CASE WHEN lm.DeletedAt IS NULL THEN 0 ELSE 1 END AS bit) AS LastDeleted, lm.[At] AS LastAt, lm.Urgency AS LastUrgency,

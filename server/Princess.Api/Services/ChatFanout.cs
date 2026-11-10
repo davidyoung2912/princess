@@ -5,7 +5,8 @@ using Princess.Api.Domain;
 namespace Princess.Api.Services;
 
 /// <summary>What to tell people about one stored message. Plain ids and the stored row, so it can wait in a queue after the sender's request has finished.</summary>
-public sealed record ChatFanoutJob(long ActorId, long GroupId, Guid GroupPublicId, ChatMessageRow Message);
+/// <param name="Kind">The conversation's kind: a channel or room is never bridged to text, whatever its size.</param>
+public sealed record ChatFanoutJob(long ActorId, long GroupId, Guid GroupPublicId, ChatMessageRow Message, string Kind = "");
 
 /// <summary>
 /// The waiting line between a send and the notices it causes. A send stores the message, answers the sender and joins the line, so how long it takes does not depend on how many people are in
@@ -41,7 +42,8 @@ public sealed class ChatFanout(IChatStore store, ChatNotifier notifier, ChatSmsS
                 var mentioned = job.Message.Mentions.Contains(r.UserId);
                 return notifier.MessageAsync(r.UserId, job.GroupPublicId, job.Message.PublicId, from, job.Message.Text, r.ShowPreview, !ChatCardRules.AlertsRecipient(r.Muted, r.MentionsOnly, mentioned), ct, job.Message.Urgency, job.ActorId, mentioned);
             }));
-            await sms.MessageAsync(job.GroupId, from, job.Message, recipients, ct);
+            // A channel or room has hundreds of members and the text bridge is for people ashore in a small chat: it is never used here.
+            if (!ChatRoomRules.IsRoomKind(job.Kind)) await sms.MessageAsync(job.GroupId, from, job.Message, recipients, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

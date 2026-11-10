@@ -194,8 +194,18 @@ public class ChatMemberRow
     public long? LastReadMessageId { get; set; }
     /// <summary>The guest who made a group (null for the booking's group, a direct chat and Stanley's): the one who may pin in it.</summary>
     public long? CreatedByUserId { get; set; }
-    /// <summary>A direct chat whose connection has ended: readable, but sending is closed.</summary>
+    /// <summary>A direct chat whose connection has ended, or a channel or room staff closed: readable, but sending is closed.</summary>
     public bool DirectEnded { get; set; }
+    /// <summary>Phase 8, channels and rooms only: <c>sailing</c> or <c>interest</c> for a room, the sailing it belongs to, its topic, whether slow mode is on, the pinned rules and the offset of its reference time.</summary>
+    public string? RoomKind { get; set; }
+    public string? Topic { get; set; }
+    public string? SailingId { get; set; }
+    public bool SlowMode { get; set; }
+    public string? Rules { get; set; }
+    public int RefOffsetMinutes { get; set; }
+    /// <summary>When the member accepted the rules (a room asks on the first post); when a moderator muted them until (null when not muted).</summary>
+    public DateTime? RulesAcceptedAt { get; set; }
+    public DateTime? ModMutedUntil { get; set; }
     public DateTime CreatedAt { get; set; }
     /// <summary>The permanent Stanley chat only: who he last spoke for, and the subtitle shown. Null for every other conversation.</summary>
     public string? Persona { get; set; }

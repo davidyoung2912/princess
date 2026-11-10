@@ -147,6 +147,17 @@ public sealed class RetentionPurgeService(IServiceScopeFactory scopes, IOptions<
                     log.LogInformation("Deleted {Messages} message(s) of kept chats past their date", keptGone);
                     await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(new AuditEntry { Category = AuditCategory.System, Action = "retention.chatKeep", Outcome = AuditOutcome.Success, ActorRole = "system", Detail = AuditContext.Json(new { messages = keptGone }) }, stoppingToken);
                 }
+                // Posts in sailing rooms (30 days after the sailing) and interest rooms (12 months old) go on their own dates (chat phase 8).
+                // Its own try: a room purge that fails (for example a database not yet given the phase 8 schema) is logged and must not stop the purges below it.
+                try
+                {
+                    var roomsGone = await ChatRoomRetention.DeleteOldAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow, stoppingToken);
+                    if (roomsGone > 0) log.LogInformation("Deleted {Messages} room post(s) past their retention", roomsGone);
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    log.LogWarning(e, "The room retention purge failed; the other purges carry on");
+                }
                 if (options.Value.NetworkDataDays > 0)
                 {
                     var (a, r) = await NetworkDataRetention.BlankOlderThanAsync(scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>(), DateTime.UtcNow.AddDays(-options.Value.NetworkDataDays), stoppingToken);
