@@ -88,13 +88,16 @@ export function initials(name: string): string {
   return letters.join('').toUpperCase()
 }
 
-export type SendProblem = 'blocked' | 'closed' | 'contact' | 'text' | 'age' | 'gone' | 'urgency' | 'urgencyLimit' | 'rate' | 'other'
+export type SendProblem = 'blocked' | 'closed' | 'contact' | 'text' | 'age' | 'gone' | 'urgency' | 'urgencyLimit' | 'rate' | 'staffOnly' | 'muted' | 'slow' | 'held' | 'rules' | 'emergency' | 'other'
 
 /** What a failed send means for the guest, from the server's code and title. `blocked` keeps the text in the box and asks them to reword it. */
 export function sendProblem(code: string, title?: string): SendProblem {
   if ((code === 'forbidden' || code === 'invalid') && title === 'urgency') return 'urgency'
   if (code === 'forbidden' && title === 'urgencyLimit') return 'urgencyLimit'
   if (title === 'rate') return 'rate'
+  // Channels and rooms (phase 8)
+  if (title === 'staffOnly' || title === 'muted' || title === 'slow' || title === 'held' || title === 'emergency') return title
+  if (title === 'rulesNotAccepted') return 'rules'
   if (code === 'invalid') return title === 'blocked' ? 'blocked' : title === 'contactInfo' ? 'contact' : 'text'
   if (code === 'conflict') return 'closed'
   if (code === 'forbidden') return 'age'

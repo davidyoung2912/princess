@@ -1,5 +1,5 @@
 import type { AboardApi } from './aboardTypes'
-import type { ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi } from './chatTypes'
+import type { ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
@@ -772,6 +772,7 @@ export interface Api {
   chatConnections: ChatConnectionsApi
   chatConversations: ChatConversationsApi
   chatGroups: ChatGroupsApi
+  chatRooms: ChatRoomsApi
   chatGuardian: ChatGuardianApi
   ahead: AheadApi
   disembark: DisembarkApi

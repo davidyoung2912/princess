@@ -21,15 +21,16 @@ import { ActionError, Load, SupervisedNote } from '../account/parts'
 import { duration, useShipTime } from './shipTime'
 import { personFirstName } from '../../account/context'
 import { People, RequestsBanner } from './ChatPeople'
+import { Rooms } from './ChatRooms'
 import { Conversations } from './ChatConversations'
 import { Children } from './ChatGuardian'
 import { canFindPeople, canUseGuestServices } from '../../domain/chatKeep'
 
-type Mode = 'chats' | 'people' | 'service' | 'children'
+type Mode = 'chats' | 'people' | 'rooms' | 'service' | 'children'
 
 /** Chat (MSG-01, MSG-02, SUP-08): free messages with the travel party, and Guest Services by topic with visible response times and a phone call when waiting is too long. */
 export function ChatScreen() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   // A chat notice for a request opens straight on People (`?mode=people`).
   const [mode, setMode] = useState<Mode>(params.get('mode') === 'people' ? 'people' : 'chats')
   // Only someone who supervises a child sees the guardian view; a failed check (offline, or acting as a child) just hides it.
@@ -39,7 +40,7 @@ export function ChatScreen() {
   const eligibility = useMine(() => api.chatConnections.eligibility())
   const people = canFindPeople(eligibility.data)
   const service = canUseGuestServices(eligibility.data)
-  const shown: Mode = (!people && mode === 'people') || (!service && mode === 'service') ? 'chats' : mode
+  const shown: Mode = (!people && (mode === 'people' || mode === 'rooms')) || (!service && mode === 'service') ? 'chats' : mode
   return (
     <div className="page">
       <p>{t('chat.free')}</p>
@@ -48,10 +49,11 @@ export function ChatScreen() {
       <div className="chip-row" role="group" aria-label={t('chat.who')}>
         <Chip pressed={shown === 'chats'} onToggle={() => setMode('chats')}>{t('chat.chats')}</Chip>
         {people && <Chip pressed={shown === 'people'} onToggle={() => setMode('people')}>{t('chat.people')}</Chip>}
+        {people && <Chip pressed={shown === 'rooms'} onToggle={() => setMode('rooms')}>{t('room.chip')}</Chip>}
         {guardian && <Chip pressed={shown === 'children'} onToggle={() => setMode('children')}>{t('guard.chip')}</Chip>}
         {service && <Chip pressed={shown === 'service'} onToggle={() => setMode('service')}>{t('chat.service')}</Chip>}
       </div>
-      {shown === 'chats' ? <Conversations /> : shown === 'people' ? <People /> : shown === 'children' ? <Children /> : <Service />}
+      {shown === 'chats' ? <Conversations /> : shown === 'people' ? <People /> : shown === 'rooms' ? <Rooms onOpen={(id) => { setMode('chats'); setParams({ c: id }) }} /> : shown === 'children' ? <Children /> : <Service />}
       <Card info>
         <p><Phone aria-hidden="true" /> {t('chat.urgent', { number: GUEST_SERVICES_NUMBER })} <a href={`tel:${GUEST_SERVICES_NUMBER}`}>{GUEST_SERVICES_NUMBER}</a></p>
       </Card>

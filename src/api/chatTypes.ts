@@ -115,7 +115,7 @@ export interface ChatConnectionsApi {
 // ---- Conversations and messages (docs/chat-plan.md, phase 4) ----
 
 /** `stanley` is every account's permanent 1:1 chat with Stanley (docs/chat-features-research.md, section 15): it cannot be left, muted, ended or removed. */
-export type ConversationKind = 'party' | 'direct' | 'group' | 'stanley'
+export type ConversationKind = 'party' | 'direct' | 'group' | 'stanley' | 'channel' | 'room'
 
 /** Who Stanley speaks for: the company before and after the trip, the ship while aboard. The server decides; the screen shows the subtitle it is given. */
 export type StanleyVoice = 'company' | 'ship'
@@ -160,6 +160,8 @@ export interface ChatConversation {
   /** The permanent Stanley chat only: who he speaks for now, and the name shown under his. */
   voice?: StanleyVoice
   subtitle?: string
+  /** Phase 8, a channel or room only: its rules, whether slow mode applies now and whether you may post. */
+  room?: ChatRoomInfo
 }
 
 /** Someone else in a conversation: their public id and first name with last initial. */
@@ -421,4 +423,29 @@ export interface ChatGuardianApi {
   keep(childId: string, conversationId: string): Promise<ChatKeep>
   /** The guardian agrees to keep the child's conversation, or takes that back. Rejects `conflict` (`closed`, `noTrip`, `tooLate`) or `notFound`. */
   setKeep(childId: string, conversationId: string, on: boolean): Promise<ChatKeep>
+}
+
+
+// ---- Channels and rooms (docs/chat-features-research.md, phase 8) ----
+
+/** What a channel or room adds to its conversation. `why` (when `canPost` is false): off, left, closed, staffOnly, muted. `rulesAccepted` is false until the guest has said yes to `rules` (asked on the first post). */
+export interface ChatRoomInfo { roomKind: string; topic?: string; rules: string; slow: boolean; rulesAccepted: boolean; canPost: boolean; why?: string; staffOnly: boolean; members: number }
+
+/** A channel or room in the directory. `joined`: you follow or are in it. `blocked`: why you cannot join (off, child, closed, noBooking, full, removed), absent when you can. */
+export interface ChatRoomListItem { id: string; kind: 'channel' | 'room'; roomKind?: 'sailing' | 'interest'; name: string; topic?: string; members: number; joined: boolean; blocked?: string; closed: boolean }
+
+/** What you may read of a room before joining: its rules and what staff chose to show. Never a guest's own post. */
+export interface ChatRoomPreview { id: string; kind: 'channel' | 'room'; name: string; rules: string; lines: { text: string; at: number }[]; questions: string[] }
+
+export interface ChatRoomsApi {
+  list(): Promise<ChatRoomListItem[]>
+  /** Rejects `notFound` for a room that is not open to you. */
+  preview(id: string): Promise<ChatRoomPreview>
+  /** Follows a channel or joins a room, muted. Rejects `forbidden` (`child`, `noBooking`, `removed`), `notFound` or `conflict` (`off`, `closed`, `full`). */
+  join(id: string): Promise<unknown>
+  leave(id: string): Promise<void>
+  /** Says yes to the rules. */
+  acceptRules(id: string): Promise<void>
+  /** Suggests a question for the room's popular ones. Rejects `invalid` (`text`, `contactInfo`, `blocked`), `forbidden` (`child`), `notFound` or `tooMany`. */
+  suggestQuestion(id: string, text: string): Promise<void>
 }

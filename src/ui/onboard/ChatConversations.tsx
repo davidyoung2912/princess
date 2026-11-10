@@ -54,6 +54,8 @@ import { useShipTime } from './shipTime'
 import { GroupDetails, NewGroup } from './ChatGroups'
 import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './ChatCards'
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
+import { RoomDetails, RulesDialog } from './ChatRooms'
+import { isRoomChat, needsRules, roomPostState } from '../../domain/chatRooms'
 import { canPost, isPlan, isPoll, readAnswerJob, type AnswerJob } from '../../domain/chatPlanning'
 
 /**
@@ -222,6 +224,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [level, setLevel] = useState<ChatUrgency>('normal')
   const [blockedVersion, setBlockedVersion] = useState(0)
   const [details, setDetails] = useState(false)
+  const [askRules, setAskRules] = useState(false)
   // The first message you had not read when this thread opened: the divider stays where it was even after reading clears it.
   const [firstUnread, setFirstUnread] = useState<string | null>(null)
   const [jumped, setJumped] = useState(false)
@@ -512,6 +515,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     const body = (quick ?? text).trim()
     if (!body) return
     setProblem(null)
+    // A room asks for its rules on the first post; the words stay in the box meanwhile.
+    if (conversation && needsRules(conversation)) { setAskRules(true); return }
     setFull(false)
     const clientId = newClientId()
     const sendLevel = mayUrgent || level !== 'urgent' ? level : 'normal'
@@ -530,7 +535,8 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       } else {
         // The text stays in the box so the guest does not lose it (a quick reply was never in the box). A reply to a message that is gone is sent as a plain message next time.
         const why = isApiError(e) ? sendProblem(e.code, e.message) : 'other'
-        if (quick === undefined) { setText((cur) => cur || body); setLevel(why === 'urgency' ? 'normal' : sendLevel) }
+        // A held post is with the team now, so the box is not given the words back; everything else keeps them.
+        if (quick === undefined && why !== 'held') { setText((cur) => cur || body); setLevel(why === 'urgency' ? 'normal' : sendLevel) }
         setProblem(why)
         if (isApiError(e) && e.code === 'notFound') setPhase('gone')
       }
@@ -553,6 +559,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
   const permanent = conversation !== null && isStanleyChat(conversation)
+  const room = conversation !== null && isRoomChat(conversation) ? conversation : null
   // Offline, the copy says how old it is, so a guest reads "As of 3:10" rather than taking old notices for current ones.
   const age = copyAge(fetchedAt, shipTime)
   const staleTitle = permanent && age ? `${t('conv.stale')} ${t('stanley.notice.asOf', { time: age })}` : t('conv.stale')
@@ -561,17 +568,21 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
       <h2 id="thread-h">{name}</h2>
       {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
-      {conversation && conversation.kind !== 'direct' && !permanent && (
+      {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>
       )}
       {back && !offline && <p className="muted">{t('conv.backOnShip', { names: back })}</p>}
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
+      {room?.room && <RoomNotes room={room} />}
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
+      {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
       {conversation && !permanent && phase === 'ready' && (
         <ChatMenu conversation={conversation} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} />
       )}
-      {details && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
+      {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
+      {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
+      {details && !room && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
       <p role="status" className="visually-hidden">{announce}</p>
       <p role="alert" className="visually-hidden">{alertText}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
@@ -608,7 +619,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <div ref={end} />
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
-      {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
+      {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && room && roomPostState(room) !== 'open' ? <p className="muted" role="note">{t(roomClosedKey(roomPostState(room)))}</p> : phase === 'ready' && !room && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
         <>
         <form ref={form} className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
           {replyTo?.id && (
@@ -617,7 +628,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               <Button variant="tertiary" onClick={() => setReplyTo(null)}>{t('conv.replyCancel')}</Button>
             </div>
           )}
-          <fieldset className="urgency-pick">
+          {!room && <fieldset className="urgency-pick">
             <legend>{t('urgent.pick')}</legend>
             {levelsFor(mayUrgent).map((l) => (
               <label key={l} className="urgency-pick__option">
@@ -625,7 +636,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               </label>
             ))}
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
-          </fieldset>
+          </fieldset>}
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
@@ -634,7 +645,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               if (problem) setProblem(null)
               // Tell the others, at most every three seconds, only while there is something written and the guest has the indicator on.
               const tick = Date.now()
-              if (typingOn && e.target.value.trim() && shouldSendTyping(typingSentAt.current, tick)) { typingSentAt.current = tick; api.chatConversations.typing(id).catch(() => { typingSentAt.current = null }) }
+              if (typingOn && !room && e.target.value.trim() && shouldSendTyping(typingSentAt.current, tick)) { typingSentAt.current = tick; api.chatConversations.typing(id).catch(() => { typingSentAt.current = null }) }
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
             onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
@@ -648,20 +659,20 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               requestAnimationFrame(() => box?.setSelectionRange(next.caret, next.caret))
             }} />
           )}
-          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : problem === 'rate' ? 'conv.rate' : 'conv.failed')}</p>}
-          {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && <p className="muted">{t('chat.kept')}</p>}
+          {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : problem === 'rate' ? 'conv.rate' : (['staffOnly', 'muted', 'slow', 'held', 'rules', 'emergency'] as const).some((r) => r === problem) ? `room.problem.${problem}` as StringKey : 'conv.failed')}</p>}
+          {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
-          <div role="group" aria-label={t('conv.quick')} className="chat-quick">
+          {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
             {QUICK_REPLY_KEYS.map((k) => <button key={k} type="button" className="chat-quick__btn" onClick={() => void submit(t(`conv.quick.${k}`))}>{t(`conv.quick.${k}`)}</button>)}
-          </div>
+          </div>}
         </form>
-        <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />
-        {conversation!.kind !== 'direct' && <PlanTools conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
+        {!room && <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
+        {!room && conversation!.kind !== 'direct' && <PlanTools conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
         </>
       ))}
       {conversation && permanent && <StanleyNotices />}
-      {conversation && !permanent && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      {conversation && !permanent && !room && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
       <ActionError error={archive.error} />
       <ActionError error={notifyAway.error} />
@@ -1077,7 +1088,7 @@ function ChatMenu({ conversation, now, busy, onMute, onArchive, onBlocked }: {
           )}
           <p className="muted">{t('conv.muteBody')}</p>
           <div className="button-row"><Button variant="secondary" disabled={busy} onClick={() => onArchive(!conversation.archived)}>{t(conversation.archived ? 'conv.unarchive' : 'conv.archive')}</Button></div>
-          {!conversation.permanent && !conversation.closed && <KeepSection conversationId={conversation.id} />}
+          {!conversation.permanent && !conversation.closed && !isRoomChat(conversation) && <KeepSection conversationId={conversation.id} />}
           {person && (
             <>
               <h3>{t('conv.menuPerson')}</h3>
@@ -1195,4 +1206,21 @@ function PlanCardSender({ conversationId, onSent }: { conversationId: string; on
       </form>
     </details>
   )
+}
+
+/** What a channel or room says about itself above the thread: its topic, a note on plain text, and slow mode when it applies. */
+function RoomNotes({ room }: { room: ChatConversation }) {
+  const info = room.room
+  if (!info) return null
+  return (
+    <>
+      {info.topic && <p className="muted">{info.topic} · {t('room.members', { count: info.members })}</p>}
+      {info.slow && <p className="muted" role="note">{t('room.slow')}</p>}
+      {room.kind === 'room' && <p className="muted" role="note">{t('room.noRoom')}</p>}
+    </>
+  )
+}
+
+function roomClosedKey(state: ReturnType<typeof roomPostState>): StringKey {
+  return state === 'staffOnly' ? 'room.staffOnly' : state === 'muted' ? 'room.muted' : state === 'off' ? 'room.offNow' : 'room.closedNow'
 }
