@@ -146,7 +146,14 @@ export interface ChatMessage {
 
 /** The lane decides how a relayed notice looks and behaves; the server sets it and the screen only shows it. */
 export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info'
-export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean }
+/**
+ * `expiresAt` (ship milliseconds) lets a copy held on the device stop offering actions when the time passes without asking the server. `actions` are ids the screen turns into buttons
+ * (`confirmMuster` calls the muster service; the rest open the screen that does the job) and `replies` are the chips; both are empty once the notice is replaced or expired.
+ */
+export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[] }
+export type NoticeReply = 'why' | 'what' | 'later'
+/** Stanley's answer to a chip. `remindAt` is set when the reply was Remind me later. */
+export interface NoticeReplyAnswer { text: string; remindAt?: number }
 
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
 /** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */
@@ -167,6 +174,8 @@ export interface ChatConversationsApi {
   sendPhoto(id: string, input: ChatPhotoInput): Promise<ChatMessage>
   /** "Got it" on an urgent message from someone else; repeating it changes nothing. Rejects `invalid` (`notUrgent`) or `notFound`. */
   ack(id: string, messageId: string): Promise<void>
+  /** A chip on a relayed Stanley notice. Rejects `invalid` (`reply`, `notNotice`), `notFound` or `conflict` (`expired`, for Remind me later). */
+  noticeReply(id: string, messageId: string, reply: NoticeReply): Promise<NoticeReplyAnswer>
   /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
   photo(id: string, messageId: string): Promise<string>
   /** Marks everything read, on every device. */

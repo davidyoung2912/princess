@@ -117,7 +117,14 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatNoticeDto? Notice = null);
 
 /// <summary>What a relayed company or ship notice adds to its message (phase 0b): the lane, the screen it links to, and whether it is still actionable. The text is the message's own.</summary>
-public sealed record ChatNoticeDto(string Lane, string Kind, string Path, bool Expired, bool Superseded);
+/// <summary>A relayed notice. <c>ExpiresAt</c> (ship milliseconds) lets a stale copy on the device drop the actions itself; <c>Actions</c> and <c>Replies</c> are empty once it is expired or replaced.</summary>
+public sealed record ChatNoticeDto(string Lane, string Kind, string Path, bool Expired, bool Superseded, long? ExpiresAt = null, IReadOnlyList<string>? Actions = null, IReadOnlyList<string>? Replies = null);
+
+/// <summary>A chip on a notice: <c>why</c>, <c>what</c> or <c>later</c>.</summary>
+public sealed record ChatNoticeReplyRequest(string? Reply);
+
+/// <summary>Stanley's answer to a chip. <c>RemindAt</c> (ship milliseconds) is set when the reply was Remind me later.</summary>
+public sealed record ChatNoticeReplyDto(string Text, long? RemindAt = null);
 
 /// <summary>The photo of one message, as the data URL it was sent as.</summary>
 public sealed record ChatPhotoDto(string Photo);

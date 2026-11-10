@@ -178,4 +178,40 @@ public class StanleyNoticeRelayTests
         var n = StanleyNoticeRules.Build(Notice("p", "payment") with { Title = "Stanley: your payment is due soon", Body = "Pay by Friday." }, Now);
         Assert.Equal("Your payment is due soon\nPay by Friday.", n.Text);
     }
+
+    // ---- Phase 0c ----
+
+    [Fact]
+    public void CriticalNoticesAreNeverPutOffAndInformationOnlyExplainsItself()
+    {
+        Assert.DoesNotContain(StanleyNoticeRules.ReplyLater, StanleyNoticeRules.RepliesOf(StanleyNoticeRules.Critical));
+        Assert.Equal([StanleyNoticeRules.ReplyWhy], StanleyNoticeRules.RepliesOf(StanleyNoticeRules.Info));
+        Assert.Contains(StanleyNoticeRules.ReplyLater, StanleyNoticeRules.RepliesOf(StanleyNoticeRules.Important));
+    }
+
+    [Fact]
+    public void AnExpiredOrReplacedNoticeOffersNoAction()
+    {
+        Assert.Equal(["confirmMuster"], StanleyNoticeRules.ActionsFor("muster", false, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", true, false));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("muster", false, true));
+        Assert.Empty(StanleyNoticeRules.ActionsFor("reminder", false, false));
+    }
+
+    [Theory]
+    [InlineData("why", false, false)]
+    [InlineData("what", false, false)]
+    public void WhyAndWhatAreAnsweredFromTheNoticeKind(string reply, bool expired, bool superseded)
+    {
+        foreach (var kind in PushRules.Kinds) Assert.False(string.IsNullOrWhiteSpace(StanleyNoticeRules.AnswerTo(reply, kind, expired, superseded)));
+    }
+
+    [Fact]
+    public void ARepliedNoticeThatNoLongerAppliesSaysSoAndLaterIsNotAnAnswer()
+    {
+        Assert.Contains("newer", StanleyNoticeRules.AnswerTo("what", "muster", false, true));
+        Assert.Contains("no longer", StanleyNoticeRules.AnswerTo("what", "muster", true, false));
+        Assert.Null(StanleyNoticeRules.AnswerTo(StanleyNoticeRules.ReplyLater, "payment", false, false));
+        Assert.Null(StanleyNoticeRules.AnswerTo("nonsense", "payment", false, false));
+    }
 }

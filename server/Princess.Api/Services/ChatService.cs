@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, StanleyReminderService? reminders = null)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -86,7 +86,11 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             // Stanley has no user: his messages (and the lines marking a change of voice) are shown as his, under the subtitle they were sent with.
             if (m.FromStanley)
             {
-                var notice = m.Lane is null ? null : new ChatNoticeDto(m.Lane, m.NoticeKind ?? "", m.NoticePath ?? "", m.ExpiresAt is { } e && e <= now, m.SupersededAt is not null);
+                var expired = m.ExpiresAt is { } e && e <= now;
+                var replaced = m.SupersededAt is not null;
+                var notice = m.Lane is null ? null : new ChatNoticeDto(m.Lane, m.NoticeKind ?? "", m.NoticePath ?? "", expired, replaced,
+                    m.ExpiresAt is { } until ? Shipboard.Ms(until) : null,
+                    StanleyNoticeRules.ActionsFor(m.NoticeKind ?? "", expired, replaced), expired || replaced ? [] : StanleyNoticeRules.RepliesOf(m.Lane));
                 // A relayed notice asks for Got it when it is critical or important; the guest sees whether they have, and a replaced or expired one no longer asks.
                 var asks = notice is not null && ChatUrgencyRules.CanAck(m.Urgency, m.IsSystem, false, true) && !notice.Expired && !notice.Superseded;
                 messages.Add(new ChatMessageDto(m.PublicId, Guid.Empty, m.Text, Shipboard.Ms(m.At), FromName: StanleyPersonaRules.Name, System: m.IsSystem, Stanley: true, Subtitle: m.Subtitle,
@@ -219,6 +223,33 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         if (!await store.AddAckAsync(message.Id, actor.Id, await userClock.NowAsync(actor, ct), ct)) return;
         if (!message.FromStanley) await notifier.AckedAsync(message.FromUserId, conversationId, messageId, ct);   // Stanley has no one to tell
         await notifier.AckedAsync(actor.Id, conversationId, messageId, ct);
+    }
+
+    /// <summary>
+    /// A chip on a relayed notice (phase 0c): "Why?" and "What should I do?" are answered from the notice's own kind and state, not from the chat history, and are written to the thread as
+    /// Stanley's lines. "Remind me later" sets a reminder an hour on (the existing reminder service, so it reaches the phone with the app closed) and is refused for a critical notice.
+    /// 400 reply or notNotice; 404 for a message the caller cannot read; 409 expired for Remind me later on a notice that no longer applies.
+    /// </summary>
+    public async Task<ChatNoticeReplyDto> NoticeReplyAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatNoticeReplyRequest? body, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (member.Status != ChatConversationRules.Active || !ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.NotFound();
+        var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
+        if (!message.FromStanley || message.Lane is null) throw ApiException.Invalid("notNotice");
+        var reply = body?.Reply ?? "";
+        if (!StanleyNoticeRules.RepliesOf(message.Lane).Contains(reply)) throw ApiException.Invalid("reply");
+        var now = await userClock.NowAsync(actor, ct);
+        var expired = message.ExpiresAt is { } e && e <= now;
+        var replaced = message.SupersededAt is not null;
+        if (reply == StanleyNoticeRules.ReplyLater)
+        {
+            if (expired || replaced) throw ApiException.Conflict("expired");
+            if (reminders is null) throw ApiException.Invalid("reply");
+            var headline = message.Text.Split('\n', 2)[0];
+            var due = await reminders.SetInAsync(actor, TimeSpan.FromMinutes(StanleyNoticeRules.LaterMinutes), headline, ct);
+            return new("I will remind you in an hour.", Shipboard.Ms(due));
+        }
+        return new(StanleyNoticeRules.AnswerTo(reply, message.NoticeKind ?? "", expired, replaced) ?? throw ApiException.Invalid("reply"));
     }
 
     public async Task<bool> MuteAsync(UserRecord actor, Guid conversationId, ChatMuteRequest? body, CancellationToken ct)

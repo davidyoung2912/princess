@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
 import { en } from '../i18n/locales/en'
-import { isStanleyChat, mentionsAI, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, startsDay, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
+import { copyAge, IN_THREAD_ACTIONS, isStanleyChat, mentionsAI, noticeOffers, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, startsDay, safeNoticePath, subtitleOf, threadItems } from './stanleyThread'
 import { sortConversations } from './chatUrgency'
 
 const conv = (id: string, o: Partial<ChatConversation> = {}): ChatConversation =>
@@ -118,5 +118,48 @@ describe('relayed notices in the Stanley thread', () => {
     const day1 = new Date(2027, 2, 24, 9).getTime()
     const items = [{ at: day1 }, { at: day1 + 3_600_000 }, { at: new Date(2027, 2, 25, 8).getTime() }]
     expect([0, 1, 2].map((i) => startsDay(items, i))).toEqual([true, false, true])
+  })
+})
+
+describe('notice actions, replies and offline copies (phase 0c)', () => {
+  const notice = (o: Partial<NonNullable<ChatMessage['notice']>> = {}): ChatMessage =>
+    msg('m', 1, { notice: { lane: 'critical', kind: 'muster', path: '/ship/muster', expired: false, superseded: false, actions: ['confirmMuster'], replies: ['why', 'what'], ...o } })
+
+  it('offers what the server listed while the notice is current', () => {
+    expect(noticeOffers(notice())).toEqual({ actions: ['confirmMuster'], replies: ['why', 'what'] })
+  })
+
+  it('offers nothing once the notice is replaced or the server says it expired', () => {
+    expect(noticeOffers(notice({ superseded: true }))).toEqual({ actions: [], replies: [] })
+    expect(noticeOffers(notice({ expired: true }))).toEqual({ actions: [], replies: [] })
+  })
+
+  it('loses its buttons by itself when a copy held on the device passes its time, even offline', () => {
+    const m = notice({ expiresAt: 1000 })
+    expect(noticeOffers(m, 999).actions).toEqual(['confirmMuster'])
+    expect(noticeOffers(m, 1000)).toEqual({ actions: [], replies: [] })
+    expect(noticeState(m, 1001)).toBe('expired')
+    expect(noticeState(m)).toBe('active')
+  })
+
+  it('offers nothing on a message that is not a notice', () => {
+    expect(noticeOffers(msg('x', 1, { notice: undefined }))).toEqual({ actions: [], replies: [] })
+  })
+
+  it('keeps an expired notice out of the Needs you strip', () => {
+    const m = notice({ expiresAt: 500, lane: 'critical' })
+    m.acked = false
+    expect(needsYou([m], 100)).toHaveLength(1)
+    expect(needsYou([m], 600)).toHaveLength(0)
+  })
+
+  it('runs only the muster confirmation in the thread; everything else opens its own screen', () => {
+    expect(IN_THREAD_ACTIONS).toEqual(['confirmMuster'])
+  })
+
+  it('shows the age of an offline copy, and nothing when it is not known', () => {
+    expect(copyAge(5, (at) => `at ${at}`)).toBe('at 5')
+    expect(copyAge(undefined, (at) => `at ${at}`)).toBeNull()
+    expect(copyAge(Number.NaN, (at) => `at ${at}`)).toBeNull()
   })
 })

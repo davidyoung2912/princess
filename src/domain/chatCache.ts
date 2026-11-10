@@ -37,10 +37,15 @@ export const saveList = (store: Store | null, owner: string, list: readonly Chat
 
 export const readThread = (store: Store | null, owner: string, id: string): ChatThread | null => read(store, key(owner, `thread.${id}`), isThread)
 
+/** A cached thread with when it was saved on this device (epoch milliseconds), so an offline copy can say how old it is. `savedAt` is absent on a copy written before this was kept. */
+export type CachedThread = ChatThread & { savedAt?: number }
+export const readCachedThread = (store: Store | null, owner: string, id: string): CachedThread | null =>
+  read(store, key(owner, `thread.${id}`), (v): v is CachedThread => isThread(v) && (!('savedAt' in v) || typeof v.savedAt === 'number'))
+
 /** Text only: a photo is a large data URL, so it is dropped from the copy and fetched live. Only the latest messages are kept, and `hasMore` says older ones exist. */
-export function saveThread(store: Store | null, owner: string, id: string, thread: ChatThread): void {
+export function saveThread(store: Store | null, owner: string, id: string, thread: ChatThread, now: number = Date.now()): void {
   const kept: ChatMessage[] = thread.messages.slice(-MAX_CACHED_MESSAGES).map(({ photo: _photo, ...m }) => m)
-  write(store, key(owner, `thread.${id}`), { ...thread, messages: kept, hasMore: thread.hasMore || thread.messages.length > kept.length })
+  write(store, key(owner, `thread.${id}`), { ...thread, messages: kept, hasMore: thread.hasMore || thread.messages.length > kept.length, savedAt: now })
 }
 
 /** Removes every chat copy for the person (sign-out, hide me). */

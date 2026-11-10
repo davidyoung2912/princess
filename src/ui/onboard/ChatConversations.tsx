@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router'
 import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
-import { isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
+import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
 import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
@@ -17,7 +17,7 @@ import { ashoreNames } from '../../domain/chatSms'
 import { dndChoices, dndEndsAt } from '../../domain/chatDnd'
 import { useChatDnd } from '../../hooks/useChatDnd'
 import { ackedCount, announceMode, levelsFor, sortConversations, urgencyOf } from '../../domain/chatUrgency'
-import { readList, readThread, saveList, saveThread } from '../../domain/chatCache'
+import { readCachedThread, readList, saveList, saveThread } from '../../domain/chatCache'
 import { addPlanCard, encodePlanCard, hasPlanCard, newPlanCard, parsePlanCard, PLACE_MAX, planCardSentence, type PlanCard } from '../../domain/planCard'
 import { MAX_PLAN_DAY } from '../../domain/nightsRules'
 import { chatChanged, fetchChatSummary, isChatLive, useChatLive } from '../../hooks/useChatSummary'
@@ -28,13 +28,14 @@ import { sendWithin, useOutbox, worthRetrying } from '../../hooks/useOutbox'
 import { useLatest } from '../../hooks/useLatest'
 import { closeChatNotice } from '../../push/browser'
 import { useVisibleInterval } from '../../hooks/useVisibleInterval'
-import { useOwnerId, usePersona } from '../../hooks/useDemo'
+import { useNow, useOwnerId, usePersona } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t, th as heading } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
+import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { OctagonAlert, TriangleAlert } from '../icons'
 import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
@@ -156,7 +157,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const shipTime = useShipTime()
   const owner = ownerId ?? 'none'
   // The copy from last time (text only) shows at once; the server's answer replaces it behind it.
-  const [cached] = useState(() => readThread(chatStorage(), owner, id))
+  const [cached] = useState(() => readCachedThread(chatStorage(), owner, id))
+  // When the server last answered for this thread (epoch ms): the age an offline copy shows. A fresh answer replaces it.
+  const [fetchedAt, setFetchedAt] = useState<number | undefined>(cached?.savedAt)
   const [phase, setPhase] = useState<Phase>(cached ? 'ready' : 'loading')
   const [offline, setOffline] = useState(false)
   const [conversation, setConversation] = useState<ChatConversation | null>(cached?.conversation ?? null)
@@ -184,6 +187,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       setAshore(ashoreNames(th.ashore))
       setMayUrgent(th.mayUrgent === true)
       latestAnswer.current = th
+      setFetchedAt(Date.now())
       // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
       setMessages((cur) => (first.current ? th.messages : withLatest(cur, th.messages)))
       if (first.current) { setHasMore(th.hasMore); first.current = false }
@@ -198,9 +202,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   useEffect(() => {
     const th = latestAnswer.current
     if (phase !== 'ready' || !th) return
-    const h = setTimeout(() => saveThread(chatStorage(), owner, id, { ...th, messages }), 400)
+    const h = setTimeout(() => saveThread(chatStorage(), owner, id, { ...th, messages }, fetchedAt), 400)
     return () => clearTimeout(h)
-  }, [phase, messages, owner, id])
+  }, [phase, messages, owner, id, fetchedAt])
   // oxlint-disable-next-line react/set-state-in-effect -- loading from the server is the external system this effect synchronizes with
   useEffect(() => { void load() }, [load])
   useChatLive(() => void load())
@@ -278,6 +282,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
 
   // Stable, so a keystroke in the composer does not re-render the messages above it.
   const runAck = useLatest((messageId: string) => void ack.run(messageId))
+  const runChanged = useLatest(() => void load())
   const onBlocked = useLatest(() => { void load(); setBlockedVersion((v) => v + 1) })
 
   const mute = useAction(async (on: boolean) => {
@@ -336,6 +341,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
   const permanent = conversation !== null && isStanleyChat(conversation)
+  // Offline, the copy says how old it is, so a guest reads "As of 3:10" rather than taking old notices for current ones.
+  const age = copyAge(fetchedAt, shipTime)
+  const staleTitle = permanent && age ? `${t('conv.stale')} ${t('stanley.notice.asOf', { time: age })}` : t('conv.stale')
   return (
     <section aria-labelledby="thread-h">
       <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
@@ -351,7 +359,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <p role="status" className="visually-hidden">{announce}</p>
       <p role="alert" className="visually-hidden">{alertText}</p>
       {phase === 'loading' && <p role="status" className="muted">{t('account.loading')}</p>}
-      {offline && phase === 'ready' && <Banner kind="offline" title={t('conv.stale')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
+      {offline && phase === 'ready' && <Banner kind="offline" title={staleTitle} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {phase === 'error' && <Banner kind="offline" title={t('conv.offline')} action={<Button variant="secondary" onClick={() => void load()}>{t('ref.retry')}</Button>} />}
       {permanent && <NeedsYouStrip messages={messages} ackBusy={ack.busy} onAck={runAck} />}
       <div ref={top} />
@@ -360,7 +368,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
-          ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
+          ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
           : messages.map((m) => (
             <MessageRow key={m.id} m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
           ))}
@@ -407,15 +415,15 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
  * The permanent Stanley chat's log: the notices and lines the server holds, and the questions and answers held on this device, in time order. A second device shows the notices only.
  * The device's history is the Ask dialog's, so a question asked there appears here and the other way round.
  */
-function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck, onBlocked }: {
-  messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onBlocked: () => void
+function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck, onChanged, onBlocked }: {
+  messages: ChatMessage[]; mine: string; shipTime: (at: number) => string; conversationId: string; ackBusy: boolean; onAck: (messageId: string) => void; onChanged: () => void; onBlocked: () => void
 }) {
   const device = useSyncExternalStore(subscribeStanley, getStanleyThread)
   const items = threadItems(messages, device)
   return items.map((item, i) => {
     const heading = startsDay(items, i) ? <li key={`h:${item.key}`} className="chat-day"><h3>{new Date(item.at).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h3></li> : null
     const row = ((): ReactNode => {
-    if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} />
+    if (item.kind === 'server') return <MessageRow key={item.key} m={item.message} mine={mine} shipTime={shipTime} conversationId={conversationId} kind="stanley" peerName="" ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} onBlocked={onBlocked} />
     const asked = item.kind === 'question'
     return (
       <li key={item.key} className={asked ? 'chat-msg chat-msg--mine' : 'chat-msg'}>
@@ -432,7 +440,8 @@ const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley
 
 /** The strip at the top of Stanley's thread: critical and important notices still waiting for Got it, so a guest who scrolled past forty messages still sees what is outstanding. */
 function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; ackBusy: boolean; onAck: (messageId: string) => void }) {
-  const waiting = needsYou(messages)
+  const now = useNow()
+  const waiting = needsYou(messages, now)
   if (waiting.length === 0) return null
   return (
     <section className="chat-needs" aria-labelledby="needs-h">
@@ -513,11 +522,13 @@ interface MessageRowProps {
   peerName: string
   ackBusy: boolean
   onAck: (messageId: string) => void
+  /** A notice's action changed something (the muster was confirmed): reload the thread. */
+  onChanged?: () => void
   onBlocked: () => void
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -541,7 +552,8 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
         <p><strong>{noticeHeadline(m.text)}</strong></p>
         {body && <p>{body}</p>}
         {state !== 'active' && <p className="muted">{t(state === 'superseded' ? 'stanley.notice.superseded' : 'stanley.notice.expired')}</p>}
-        {link && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+        {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+        {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
         {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
       </li>
     )

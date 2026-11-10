@@ -99,6 +99,17 @@ public sealed class StanleyReminderService(IStanleyReminderStore store, IClock c
         return row.PublicId;
     }
 
+    /// <summary>Sets a reminder a set time from now (Remind me later on a thread notice). 403 supervised; 409 tooMany. Returns when it is due (UTC).</summary>
+    public async Task<DateTime> SetInAsync(UserRecord user, TimeSpan after, string? text, CancellationToken ct)
+    {
+        if (user.IsSupervised) throw ApiException.Forbidden();
+        var now = clock.UtcNow;
+        if ((await store.ListAsync(user.Id, now, ct)).Count >= StanleyReminderRules.MaxPending) throw ApiException.Conflict("tooMany");
+        var row = new StanleyReminderRow { PublicId = Guid.NewGuid(), UserId = user.Id, DueAt = now + after, Text = StanleyReminderRules.Clean(text), CreatedAt = now };
+        await store.AddAsync(row, ct);
+        return row.DueAt;
+    }
+
     /// <summary>The guest's reminders that are due to be sent now, for the push dispatch.</summary>
     public async Task<List<StanleyReminderDue>> DueAsync(long userId, DateTime now, CancellationToken ct)
     {

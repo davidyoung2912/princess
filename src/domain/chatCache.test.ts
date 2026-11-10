@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatThread } from '../api/chatTypes'
-import { clearChatCache, MAX_CACHED_MESSAGES, readList, readThread, saveList, saveThread, type Store } from './chatCache'
+import { clearChatCache, MAX_CACHED_MESSAGES, readCachedThread, readList, readThread, saveList, saveThread, type Store } from './chatCache'
 
 const memory = (): Store & { data: Map<string, string> } => {
   const data = new Map<string, string>()
@@ -49,5 +49,12 @@ describe('the chat copy', () => {
     expect(readList(s, 'a')).toBeNull()
     expect(readThread(s, 'a', 'c1')).toBeNull()
     expect(readList(s, 'b')).not.toBeNull()
+  })
+
+  it('keeps when the copy was saved, so an offline thread can say how old it is', () => {
+    const s = memory()
+    saveThread(s, 'a', 'c1', thread(2), 1234)
+    expect(readCachedThread(s, 'a', 'c1')?.savedAt).toBe(1234)
+    expect(readThread(s, 'a', 'c1')?.messages).toHaveLength(2)
   })
 })

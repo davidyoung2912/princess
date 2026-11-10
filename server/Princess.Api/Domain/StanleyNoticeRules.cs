@@ -85,4 +85,73 @@ public static class StanleyNoticeRules
             list.Add(new($"ticket:{id:N}", "service", "checkin", false, 60, "/me/help", "Guest Services has answered", "Your request has been answered. Open Help to read the reply.", new() { ["ticket"] = id.ToString("N") }));
         return list;
     }
+
+    // ---- Phase 0c: actions and replies ----
+
+    /// <summary>The replies a notice offers as chips. Remind me later is never offered for a critical notice: safety is not put off.</summary>
+    public const string ReplyWhy = "why", ReplyWhat = "what", ReplyLater = "later";
+    public const int LaterMinutes = 60;
+
+    public static IReadOnlyList<string> RepliesOf(string lane) => lane switch
+    {
+        Critical => [ReplyWhy, ReplyWhat],
+        Info => [ReplyWhy],
+        _ => [ReplyWhy, ReplyWhat, ReplyLater],
+    };
+
+    /// <summary>
+    /// The things a guest can do from the thread, by id. The front end turns an id into a button: <c>confirmMuster</c> calls the muster service the muster screen calls; the rest open the screen that
+    /// already does the job (check in, pay, boarding pass), so the thread never has a second way to change anything. A notice that is expired or replaced offers none.
+    /// </summary>
+    public static IReadOnlyList<string> ActionsOf(string kind) => kind switch
+    {
+        "muster" => ["confirmMuster"],
+        "checkin" => ["checkIn"],
+        "payment" => ["pay"],
+        "travel" => ["boardingPass"],
+        "scheduleChange" => ["addToPlan"],
+        _ => [],
+    };
+
+    public static IReadOnlyList<string> ActionsFor(string kind, bool expired, bool superseded) => expired || superseded ? [] : ActionsOf(kind);
+
+    private static string WhyOf(string kind) => kind switch
+    {
+        "muster" => "Everyone on board must attend the safety drill, so I tell each guest until they have confirmed.",
+        "allAboard" or "backAboard" => "The ship sails at the all-aboard time, so I tell you before it.",
+        "disruption" => "Something changed on your trip that affects you.",
+        "payment" => "A payment on your booking needs attention before its due date.",
+        "travel" => "Your flight changed or is coming up.",
+        "scheduleChange" => "Something in your plan moved.",
+        "documents" or "passportProblem" => "Your travel documents must be complete before you board.",
+        "checkin" or "checkinSoon" => "Online check-in has a window, and you need it for your boarding pass.",
+        "service" => "Guest Services answered a request you made.",
+        "reminder" => "You asked me to remind you.",
+        _ => "This is an automatic notice about your trip.",
+    };
+
+    private static string WhatOf(string kind) => kind switch
+    {
+        "muster" => "Go to your muster station and confirm that you have been, or tap Confirm in this message.",
+        "allAboard" or "backAboard" => "Be back on board before the all-aboard time.",
+        "payment" => "Open Payments and check the instalment.",
+        "travel" => "Open the travel screen to see your flight and boarding pass.",
+        "scheduleChange" => "Open your plan to see what moved and whether to keep it.",
+        "documents" or "passportProblem" => "Open Documents and add or fix what is missing.",
+        "checkin" => "Check in now to get your boarding pass.",
+        "service" => "Open Help to read the reply.",
+        _ => "Nothing is needed unless the message asks for something.",
+    };
+
+    /// <summary>
+    /// The answer to "Why?" or "What should I do?": built from the notice's own kind and state, never from the chat history. A notice that is no longer current says so instead of repeating
+    /// an instruction that could be wrong now. Null for a reply that is not one of these (Remind me later is handled by the service).
+    /// </summary>
+    public static string? AnswerTo(string reply, string kind, bool expired, bool superseded)
+    {
+        if (reply is not (ReplyWhy or ReplyWhat)) return null;
+        if (superseded) return "A newer message replaced this one. Please follow that one.";
+        if (reply == ReplyWhy) return WhyOf(kind);
+        return expired ? "This is no longer needed." : WhatOf(kind);
+    }
 }

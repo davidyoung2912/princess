@@ -2,7 +2,7 @@
  * The permanent Stanley chat (docs/chat-features-research.md, section 15, phase 0a). Framework-free: which conversation it is, how the notices the server holds and the questions the device holds
  * are shown in one time-ordered thread, and the one wording rule: nothing the guest reads says "AI" (owner decision, 2026-11-10).
  */
-import type { ChatConversation, ChatMessage, NoticeLane } from '../api/chatTypes'
+import type { ChatConversation, ChatMessage, NoticeLane, NoticeReply } from '../api/chatTypes'
 
 /** The question and answer history Stanley keeps on the device (the shape the Ask dialog holds, narrowed to what the thread shows). */
 export interface DeviceTurn { id: string; role: 'user' | 'assistant'; text: string; at: number }
@@ -40,8 +40,23 @@ export const questionFrom = (text: string): string | null => {
 
 /** Whether a relayed notice can still be acted on, or why not: replaced by a newer one, or past its time. Messages that are not notices are always 'active'. */
 export type NoticeState = 'active' | 'superseded' | 'expired'
-export const noticeState = (m: Pick<ChatMessage, 'notice'>): NoticeState =>
-  m.notice?.superseded ? 'superseded' : m.notice?.expired ? 'expired' : 'active'
+export const noticeState = (m: Pick<ChatMessage, 'notice'>, now?: number): NoticeState =>
+  m.notice?.superseded ? 'superseded' : m.notice?.expired || (now !== undefined && m.notice?.expiresAt !== undefined && m.notice.expiresAt <= now) ? 'expired' : 'active'
+
+/**
+ * What a notice offers right now: its action ids and reply chips, nothing once it is replaced or past its time. `now` is the clock the notice's `expiresAt` is on (ship milliseconds), so a copy
+ * kept on the device loses its buttons by itself when the time passes, even offline.
+ */
+export function noticeOffers(m: Pick<ChatMessage, 'notice'>, now?: number): { actions: string[]; replies: NoticeReply[] } {
+  if (!m.notice || noticeState(m, now) !== 'active') return { actions: [], replies: [] }
+  return { actions: m.notice.actions ?? [], replies: m.notice.replies ?? [] }
+}
+
+/** Whether an action runs in the thread itself (calls the same service its own screen calls) rather than opening that screen. */
+export const IN_THREAD_ACTIONS: readonly string[] = ['confirmMuster']
+
+/** The words for the age of the copy shown when the server cannot be reached: "As of 3:10". `savedAt` is epoch milliseconds on this device; `format` shows a time. */
+export const copyAge = (savedAt: number | undefined, format: (at: number) => string): string | null => (savedAt === undefined || !Number.isFinite(savedAt) ? null : format(savedAt))
 
 /** The lane's order for sorting a strip, most pressing first. */
 const LANE_RANK: Record<NoticeLane, number> = { critical: 0, important: 1, reminder: 2, info: 3 }
@@ -54,9 +69,9 @@ export const noticeBody = (text: string): string => text.includes('\n') ? text.s
  * The "Needs you" strip: critical and important notices that are still actionable and that the guest has not confirmed with Got it, most pressing first, then oldest first.
  * `acked === undefined` means the notice does not ask for Got it, so it is not outstanding.
  */
-export function needsYou(messages: readonly ChatMessage[]): ChatMessage[] {
+export function needsYou(messages: readonly ChatMessage[], now?: number): ChatMessage[] {
   return messages
-    .filter((m) => m.stanley === true && m.notice !== undefined && (m.notice.lane === 'critical' || m.notice.lane === 'important') && noticeState(m) === 'active' && m.acked === false)
+    .filter((m) => m.stanley === true && m.notice !== undefined && (m.notice.lane === 'critical' || m.notice.lane === 'important') && noticeState(m, now) === 'active' && m.acked === false)
     .sort((a, b) => LANE_RANK[a.notice!.lane] - LANE_RANK[b.notice!.lane] || a.at - b.at)
 }
 
