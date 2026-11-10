@@ -124,6 +124,17 @@ public static class AboardEndpoints
             .WithSummary("A device of the caller has the messages others sent in this conversation. The senders see Delivered (when both sides have read receipts on), once; repeating it changes nothing. Never a phone alert. 404 not a member.");
         chat.MapPost("/conversations/{id:guid}/messages/{messageId:guid}/reply", async (Guid id, Guid messageId, ChatNoticeReplyRequest body, ICurrentUser me, ChatService svc, CancellationToken ct) => Results.Ok(await svc.NoticeReplyAsync(await me.LoadAsync(ct), id, messageId, body, ct)))
             .WithSummary("A chip on a relayed Stanley notice: reply `why`, `what` or `later`. Why and what are answered from the notice's kind and state, not from chat history; later sets a reminder an hour on (never for a critical notice). Returns { text, remindAt? }. 400 reply or notNotice; 404; 409 expired.");
+        chat.MapPost("/conversations/{id:guid}/messages/{messageId:guid}/moment", async (Guid id, Guid messageId, MomentActionRequest body, ICurrentUser me, StanleyMomentService svc, IUserClock clock, CancellationToken ct) =>
+            {
+                var actor = await me.LoadAsync(ct);
+                await svc.PutAwayAsync(actor, id, messageId, body?.Action, await clock.NowAsync(actor, ct), ct);
+                return Results.NoContent();
+            })
+            .WithSummary("Puts away a Stanley suggestion card in the caller's own Stanley chat: `snooze` (Not now: it may come back tomorrow) or `dismiss` (Don't show again, until what it is about changes). The card stops offering its action. 400 action or notMoment; 403 stanley; 404.");
+        chat.MapGet("/stanley/prefs", async (ICurrentUser me, StanleyMomentService svc, CancellationToken ct) => Results.Ok(await svc.PrefsAsync(await me.LoadAsync(ct), ct)))
+            .WithSummary("The topics Stanley may suggest in the chat, the ones the caller turned off and the mode their Stanley level gives (off, trip, suggest or guide).");
+        chat.MapPut("/stanley/prefs", async (StanleyChatPrefsRequest body, ICurrentUser me, StanleyMomentService svc, CancellationToken ct) => Results.Ok(await svc.SetPrefsAsync(await me.LoadAsync(ct), body, ct)))
+            .WithSummary("Saves the suggestion topics the caller turned off. 400 topics for a name that is not a topic.");
         chat.MapGet("/do-not-disturb", async (ICurrentUser me, PushService svc, CancellationToken ct) => Results.Ok(await svc.DndAsync(await me.LoadAsync(ct), ct)))
             .WithSummary("Whether do-not-disturb is on and when it ends (`until`, milliseconds; 0 when off or ended).");
         chat.MapPut("/do-not-disturb", async (ChatDndRequest body, ICurrentUser me, PushService svc, CancellationToken ct) => Results.Ok(await svc.SetDndAsync(await me.LoadAsync(ct), body, ct)))

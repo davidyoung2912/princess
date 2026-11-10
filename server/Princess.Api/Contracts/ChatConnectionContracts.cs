@@ -125,3 +125,11 @@ public sealed record ChatKeepDto(Guid Id, bool Available, bool Mine, bool Kept, 
 
 /// <summary>Agree to keep a conversation (<c>On</c> true) or take the agreement back.</summary>
 public sealed record ChatKeepBody(bool On);
+
+/// <summary>Chat phase 6: the topics Stanley may suggest, the ones the guest turned off, and the mode their Stanley level gives (off, trip, suggest or guide).</summary>
+public sealed record StanleyChatPrefsDto(IReadOnlyList<string> Topics, IReadOnlyList<string> TopicsOff, string Mode);
+
+public sealed record StanleyChatPrefsRequest(List<string>? TopicsOff);
+
+/// <summary>Not now (snooze) or Don't show again (dismiss) on a suggestion card.</summary>
+public sealed record MomentActionRequest(string? Action);

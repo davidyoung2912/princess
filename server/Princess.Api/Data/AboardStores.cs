@@ -373,6 +373,15 @@ public interface IChatStore
     /// <summary>Counts of delivery events since <paramref name="since"/> by kind, lane and event: aggregates only, no person and no text.</summary>
     Task<List<NoticeDeliveryCount>> NoticeDeliverySummaryAsync(DateTime since, CancellationToken ct);
     Task<bool> AddStanleyNoticeAsync(long userId, Domain.StanleyNotice notice, string voice, string subtitle, DateTime at, CancellationToken ct);
+    /// <summary>Phase 6: what the person has been shown as suggestion cards and what they did with each (no text), for the engine's caps and "don't show again unless the facts change".</summary>
+    Task<List<Domain.MomentHistory>> ListMomentsAsync(long userId, CancellationToken ct);
+    /// <summary>Records that a card was posted: a new row, or the existing one with its post time, expiry and facts renewed and any put-away or snooze cleared.</summary>
+    Task SaveMomentAsync(long userId, Domain.MomentHistory moment, CancellationToken ct);
+    /// <summary>Puts a card away: <c>Not now</c> (a snooze) or <c>Don't show again</c> (dismissed with the facts it was about). The message is marked replaced so it stops offering its action. False when the person has no such moment.</summary>
+    Task<bool> PutAwayMomentAsync(long userId, long messageId, string momentKey, DateTime? dismissedAt, DateTime? snoozedUntil, DateTime at, CancellationToken ct);
+    /// <summary>The suggestion topics the person turned off, as a space-separated list (empty when none).</summary>
+    Task<string> GetTopicsOffAsync(long userId, CancellationToken ct);
+    Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct);
     /// <summary>The person's active conversations, newest activity first, each with its last visible message and unread count.</summary>
     Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct);
     /// <summary>The person's place in one conversation, or null when they are not (or never were) a member. The check behind every other call.</summary>

@@ -531,6 +531,49 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return true;
     }
 
+    public async Task<List<MomentHistory>> ListMomentsAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<MomentHistory>(Sql.Cmd(
+            "SELECT MomentKey AS [Key], Topic, PostedAt, ExpiresAt, DismissedAt, SnoozedUntil, FactsHash FROM dbo.StanleyMoments WHERE UserId = @userId", new { userId }, null, ct))).ToList();
+    }
+
+    public async Task SaveMomentAsync(long userId, MomentHistory m, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyMoments WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId, @key AS MomentKey) AS s ON t.UserId = s.UserId AND t.MomentKey = s.MomentKey
+            WHEN MATCHED THEN UPDATE SET Topic = @topic, PostedAt = @postedAt, ExpiresAt = @expiresAt, DismissedAt = NULL, SnoozedUntil = NULL, FactsHash = @factsHash
+            WHEN NOT MATCHED THEN INSERT (UserId, MomentKey, Topic, PostedAt, ExpiresAt, FactsHash) VALUES (@userId, @key, @topic, @postedAt, @expiresAt, @factsHash);
+            """, new { userId, key = m.Key, topic = m.Topic, postedAt = m.PostedAt, expiresAt = m.ExpiresAt, factsHash = m.FactsHash }, null, ct));
+    }
+
+    public async Task<bool> PutAwayMomentAsync(long userId, long messageId, string momentKey, DateTime? dismissedAt, DateTime? snoozedUntil, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        var rows = await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.StanleyMoments SET DismissedAt = @dismissedAt, SnoozedUntil = @snoozedUntil WHERE UserId = @userId AND MomentKey = @momentKey",
+            new { userId, momentKey, dismissedAt, snoozedUntil }, null, ct));
+        if (rows == 0) return false;
+        await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatMessages SET SupersededAt = @at WHERE Id = @messageId AND SupersededAt IS NULL", new { messageId, at }, null, ct));
+        return true;
+    }
+
+    public async Task<string> GetTopicsOffAsync(long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT TopicsOff FROM dbo.StanleyChatPrefs WHERE UserId = @userId", new { userId }, null, ct)) ?? "";
+    }
+
+    public async Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        await c.ExecuteAsync(Sql.Cmd("""
+            MERGE dbo.StanleyChatPrefs WITH (HOLDLOCK) AS t USING (SELECT @userId AS UserId) AS s ON t.UserId = s.UserId
+            WHEN MATCHED THEN UPDATE SET TopicsOff = @topics
+            WHEN NOT MATCHED THEN INSERT (UserId, TopicsOff) VALUES (@userId, @topics);
+            """, new { userId, topics }, null, ct));
+    }
+
     public async Task<List<ChatConversationRow>> ListConversationsAsync(long userId, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

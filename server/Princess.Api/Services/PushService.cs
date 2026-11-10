@@ -16,7 +16,7 @@ namespace Princess.Api.Services;
 public sealed class PushService(
     IPushStore store, IPushSender sender, IInboxStore inbox, TripService trips, IUserClock clock, ScopeLoader scopes,
     IShipboardStore shipboard, IPortRowStore portRows, IProgramChanges program, IStateStore state, TripWatchService watchService, InstalmentChargeService instalments,
-    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null)
+    IEmailSender email, ISmsSender sms, IAccountStore profiles, IOptions<JwtOptions> jwt, IConfiguration config, PhoneCheckService phoneCheck, EmailCheckService emailCheck, StanleyChangeService changes, StanleyReminderService? stanleyReminders = null, StanleyActionService? stanleyActions = null, StanleyNoticeRelay? relay = null, IOnboardStore? onboard = null, StanleyMomentService? moments = null)
 {
     private byte[] NoticeKey => NoticeEmailRules.KeyFrom(jwt.Value.SigningKey);
 
@@ -135,6 +135,7 @@ public sealed class PushService(
         var built = PushRules.Build(input).Select(n => PushRules.WithLink(n, booking?.Number)).ToList();
         // The thread keeps the full text (the guest is in the app); the phone gets the lock-screen version. Writing to the thread never holds the push back.
         if (relay is not null) await relay.RelayAsync(actor, [.. built, .. await ScreenNoticesAsync(actor, booking, departure, now, ct)], now, ct);
+        if (moments is not null) await PostMomentAsync(actor, booking, now, local, ct);
         var notices = built.Select(PushRules.Redact).ToList();
         if (notices.Count == 0) return;
 
@@ -321,6 +322,24 @@ public sealed class PushService(
             return StanleyNoticeRules.ScreenNotices(new(now, AboardRules.DrillAt(dep), musterDone, trip.Documents?.Missing ?? 0, trip.Documents?.PassportProblems ?? 0, trip.Checkin.State, opens, answered));
         }
         catch (Exception e) when (e is not OperationCanceledException) { return []; }
+    }
+
+    /// <summary>
+    /// The proactive engine (chat phase 6): at most one suggestion card in the Stanley thread, from this guest's own trip facts. Quiet hours and do-not-disturb hold it (it waits for the next check).
+    /// A failure to read the trip leaves the thread as it is.
+    /// </summary>
+    private async Task PostMomentAsync(UserRecord actor, BookingRow? booking, DateTime now, DateTime local, CancellationToken ct)
+    {
+        try
+        {
+            if (booking is null) return;
+            var held = PushRules.QuietOrDnd(await PrefsAsync(actor.Id, ct), TimeOnly.FromDateTime(local), Shipboard.Ms(now));
+            var trip = await trips.BuildAsync(booking, current: true, now, ct);
+            var stage = StageRules.Derive(new(now, [], [], null, null, new StageTrip(booking.SailingId, DateOnly.FromDateTime(booking.Departure), trip.Plan.Balance <= 0, trip.Checkin.State == "done"))).Stage;
+            var due = DateOnly.TryParse(trip.Plan.FinalDue, out var f) ? f : (DateOnly?)null;
+            await moments!.PostAsync(actor, new(now, stage, trip.DaysToDeparture, trip.Plan.Balance > 0, due), held, ct);
+        }
+        catch (Exception e) when (e is not OperationCanceledException) { /* a suggestion is never worth stopping a notice for */ }
     }
 
     /// <summary>The postcards the guest has not read yet (ids and the sailing each was written on), from their own <c>postcards</c> document; empty when there is none.</summary>

@@ -59,7 +59,7 @@ export const IN_THREAD_ACTIONS: readonly string[] = ['confirmMuster', 'reviewCha
 export const copyAge = (savedAt: number | undefined, format: (at: number) => string): string | null => (savedAt === undefined || !Number.isFinite(savedAt) ? null : format(savedAt))
 
 /** The lane's order for sorting a strip, most pressing first. */
-const LANE_RANK: Record<NoticeLane, number> = { critical: 0, important: 1, reminder: 2, info: 3 }
+const LANE_RANK: Record<NoticeLane, number> = { critical: 0, important: 1, reminder: 2, info: 3, suggestion: 4 }
 
 /** First line of a notice: its headline. The rest is the body. */
 export const noticeHeadline = (text: string): string => text.split('\n', 1)[0] ?? ''

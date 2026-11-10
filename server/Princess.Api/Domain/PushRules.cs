@@ -208,6 +208,14 @@ public static class PushRules
         return [.. list.OrderByDescending(n => n.Bypass).ThenByDescending(n => n.Priority)];
     }
 
+    /// <summary>Whether the guest's own quiet hours or do-not-disturb are on. Used to hold a suggestion card (chat phase 6); it never holds a notice that bypasses.</summary>
+    public static bool QuietOrDnd(JsonObject prefs, TimeOnly local, long nowMs)
+    {
+        var quiet = prefs["quiet"] as JsonObject;
+        if (InQuiet(local, Flag(quiet?["on"]), Text(quiet?["from"], "22:00"), Text(quiet?["to"], "07:00"))) return true;
+        return (prefs["dnd"] as JsonObject)?["until"] is JsonValue d && d.TryGetValue<long>(out var until) && ChatUrgencyRules.DndOn(until, nowMs);
+    }
+
     /// <summary>Whether a local time of day (HH:mm) falls in quiet hours, which may cross midnight.</summary>
     public static bool InQuiet(TimeOnly local, bool on, string from, string to)
     {

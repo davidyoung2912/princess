@@ -96,6 +96,10 @@ export interface ChatConnectionsApi {
   /** Rejects `forbidden` (`supervised`). */
   setDnd(mode: ChatDndMode): Promise<ChatDnd>
   settings(): Promise<ChatSettings>
+  /** The suggestion topics Stanley may use in the chat, the ones switched off and the mode the guest's Stanley level gives. */
+  stanleyPrefs(): Promise<StanleyChatPrefs>
+  /** Saves the topics switched off. Rejects `invalid` (`topics`). */
+  saveStanleyPrefs(topicsOff: string[]): Promise<StanleyChatPrefs>
   saveSettings(settings: ChatSettings): Promise<ChatSettings>
   sms(): Promise<ChatSms>
   /** Rejects `invalid` (`noPhone`, `unverified`, `off`) or `forbidden` (`supervised`) when it cannot be turned on. */
@@ -252,13 +256,16 @@ export interface ChatReaction { emoji: string; count: number; mine: boolean; nam
 export interface ChatQuote { id?: string; text: string; fromName?: string; mine?: boolean; removed?: boolean }
 
 /** The lane decides how a relayed notice looks and behaves; the server sets it and the screen only shows it. */
-export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info'
+export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info' | 'suggestion'
 /**
  * `expiresAt` (ship milliseconds) lets a copy held on the device stop offering actions when the time passes without asking the server. `actions` are ids the screen turns into buttons
  * (`confirmMuster` calls the muster service, `reviewChange` shows the change card named by `subject` with its options; the rest open the screen that does the job) and `replies` are the chips; both are empty once the notice is replaced or expired.
  */
 export interface ChatNotice { lane: NoticeLane; kind: string; path: string; expired: boolean; superseded: boolean; expiresAt?: number; actions?: string[]; replies?: NoticeReply[]; subject?: string }
 export type NoticeReply = 'why' | 'what' | 'later'
+/** What the guest's Stanley level gives: `off` posts no suggestion, `trip` only what affects the trip, `suggest` adds suggestions, `guide` adds a step-by-step. */
+export type MomentMode = 'off' | 'trip' | 'suggest' | 'guide'
+export interface StanleyChatPrefs { topics: string[]; topicsOff: string[]; mode: MomentMode }
 /** Stanley's answer to a chip. `remindAt` is set when the reply was Remind me later. */
 export interface NoticeReplyAnswer { text: string; remindAt?: number }
 
@@ -317,6 +324,8 @@ export interface ChatConversationsApi {
   ack(id: string, messageId: string): Promise<void>
   /** A chip on a relayed Stanley notice. Rejects `invalid` (`reply`, `notNotice`), `notFound` or `conflict` (`expired`, for Remind me later). */
   noticeReply(id: string, messageId: string, reply: NoticeReply): Promise<NoticeReplyAnswer>
+  /** Not now (`snooze`: it may come back tomorrow) or Don't show again (`dismiss`: until what it is about changes) on a Stanley suggestion card. Rejects `invalid` (`action`, `notMoment`), `forbidden` or `notFound`. */
+  momentAction(id: string, messageId: string, action: 'snooze' | 'dismiss'): Promise<void>
   /** The photo of one message as a data URL. A photo never changes, so it can be kept. Rejects `notFound`. */
   photo(id: string, messageId: string): Promise<string>
   /** Marks everything read, on every device. */

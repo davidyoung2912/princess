@@ -154,6 +154,7 @@ public static class StanleyNoticeRules
     {
         Critical => [ReplyWhy, ReplyWhat],
         Info => [ReplyWhy],
+        ChatProactiveRules.Lane => [],   // a suggestion card has Not now and Don't show again instead (phase 6)
         _ => [ReplyWhy, ReplyWhat, ReplyLater],
     };
 

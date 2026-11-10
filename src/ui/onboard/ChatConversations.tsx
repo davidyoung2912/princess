@@ -44,6 +44,7 @@ import { Banner } from '../Banner'
 import { Button, LinkButton } from '../Button'
 import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
+import { MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
 import { DeferredImage } from '../DeferredImage'
 import { Field, TextArea } from '../Field'
@@ -698,7 +699,7 @@ function StanleyItems({ messages, mine, shipTime, conversationId, ackBusy, onAck
   })
 }
 
-const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley.notice.lane.important', reminder: 'stanley.notice.lane.reminder', info: 'stanley.notice.lane.info' } as const
+const LANE_KEY = { critical: 'stanley.notice.lane.critical', important: 'stanley.notice.lane.important', reminder: 'stanley.notice.lane.reminder', info: 'stanley.notice.lane.info', suggestion: 'stanley.notice.lane.suggestion' } as const
 
 /** The strip at the top of Stanley's thread: critical and important notices still waiting for Got it, so a guest who scrolled past forty messages still sees what is outstanding. */
 function NeedsYouStrip({ messages, ackBusy, onAck }: { messages: ChatMessage[]; ackBusy: boolean; onAck: (messageId: string) => void }) {
@@ -749,6 +750,7 @@ function StanleyNotices() {
       <summary>{t('stanley.chat.noticesTitle')}</summary>
       <p className="muted">{t('stanley.chat.noticesBody')}</p>
       <p><Link to="/me/notifications">{t('stanley.chat.noticesLink')}</Link></p>
+      <StanleySuggestions />
     </details>
   )
 }
@@ -826,8 +828,9 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
       <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
       <p><strong>{noticeHeadline(m.text)}</strong></p>
       {body && <p>{body}</p>}
-      {state !== 'active' && <p className="muted">{t(state === 'superseded' ? 'stanley.notice.superseded' : 'stanley.notice.expired')}</p>}
+      {state !== 'active' && <p className="muted">{t(state === 'superseded' ? (n.lane === 'suggestion' ? 'stanley.moment.putAway' : 'stanley.notice.superseded') : 'stanley.notice.expired')}</p>}
       {link && (n.actions ?? []).length === 0 && <LinkButton to={link} variant="secondary">{t('stanley.notice.open')}</LinkButton>}
+      {state === 'active' && onChanged && n.lane === 'suggestion' && <MomentButtons m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && onChanged && <ChatNoticeOffers m={m} conversationId={conversationId} onChanged={onChanged} />}
       {state === 'active' && m.acked !== undefined && (m.acked ? <p className="muted">{t('urgent.youAcked')}</p> : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
     </li>

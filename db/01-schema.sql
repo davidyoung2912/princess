@@ -3539,3 +3539,34 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_ChatGroups_Booking' AND object_id = OBJECT_ID(N'dbo.ChatGroups'))
   CREATE UNIQUE INDEX UX_ChatGroups_Booking ON dbo.ChatGroups (BookingId) WHERE BookingId IS NOT NULL;
 GO
+
+-- Chat phase 6: the proactive engine. A moment is a suggestion card in the guest's permanent Stanley chat: lane 'suggestion', NoticeKey 'moment:<key>:<day>'. The lane column was one character
+-- too short for the word, so its check is dropped and the column widened.
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.ChatMessages') AND name = N'Lane' AND max_length < 10)
+BEGIN
+  ALTER TABLE dbo.ChatMessages DROP CONSTRAINT CK_ChatMessages_Lane;
+  ALTER TABLE dbo.ChatMessages ALTER COLUMN Lane VARCHAR(10) NULL;
+  ALTER TABLE dbo.ChatMessages ADD CONSTRAINT CK_ChatMessages_Lane CHECK (Lane IS NULL OR Lane IN ('critical','important','reminder','info','suggestion'));
+END
+GO
+-- One row per guest and moment: when it was posted, when it stops being useful, when the guest put it away (and the facts it was about, so it comes back only when they change), and a snooze.
+-- It holds no text. FactsHash is a hash of the facts (a due date, a count), never the facts.
+IF OBJECT_ID(N'dbo.StanleyMoments', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyMoments (
+  UserId BIGINT NOT NULL, MomentKey VARCHAR(40) NOT NULL, Topic VARCHAR(20) NOT NULL,
+  PostedAt DATETIME2(0) NOT NULL, ExpiresAt DATETIME2(0) NULL, DismissedAt DATETIME2(0) NULL, SnoozedUntil DATETIME2(0) NULL, FactsHash VARCHAR(16) NOT NULL,
+  CONSTRAINT PK_StanleyMoments PRIMARY KEY (UserId, MomentKey),
+  CONSTRAINT FK_StanleyMoments_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO
+-- Chat-only switches for Stanley's suggestions: the topics the guest turned off (a space-separated list of topic names). The level of proactivity is the existing Stanley memory setting.
+IF OBJECT_ID(N'dbo.StanleyChatPrefs', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.StanleyChatPrefs (
+  UserId BIGINT NOT NULL CONSTRAINT PK_StanleyChatPrefs PRIMARY KEY, TopicsOff VARCHAR(200) NOT NULL CONSTRAINT DF_StanleyChatPrefs_TopicsOff DEFAULT '',
+  CONSTRAINT FK_StanleyChatPrefs_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+END
+GO

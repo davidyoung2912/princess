@@ -363,6 +363,34 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(true);
     }
 
+    public Dictionary<(long, string), MomentHistory> Moments { get; } = [];
+    public Dictionary<long, string> TopicsOff { get; } = [];
+
+    public Task<List<MomentHistory>> ListMomentsAsync(long userId, CancellationToken ct) =>
+        Task.FromResult(Moments.Where(kv => kv.Key.Item1 == userId).Select(kv => kv.Value).ToList());
+
+    public Task SaveMomentAsync(long userId, MomentHistory m, CancellationToken ct)
+    {
+        Moments[(userId, m.Key)] = m with { DismissedAt = null, SnoozedUntil = null };
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> PutAwayMomentAsync(long userId, long messageId, string momentKey, DateTime? dismissedAt, DateTime? snoozedUntil, DateTime at, CancellationToken ct)
+    {
+        if (!Moments.TryGetValue((userId, momentKey), out var m)) return Task.FromResult(false);
+        Moments[(userId, momentKey)] = m with { DismissedAt = dismissedAt, SnoozedUntil = snoozedUntil };
+        foreach (var x in Messages.Where(x => x.Row.Id == messageId && x.Row.SupersededAt is null)) x.Row.SupersededAt = at;
+        return Task.FromResult(true);
+    }
+
+    public Task<string> GetTopicsOffAsync(long userId, CancellationToken ct) => Task.FromResult(TopicsOff.GetValueOrDefault(userId, ""));
+
+    public Task SetTopicsOffAsync(long userId, string topics, CancellationToken ct)
+    {
+        TopicsOff[userId] = topics;
+        return Task.CompletedTask;
+    }
+
     public Task EnsurePartyAsync(long userId, CancellationToken ct)
     {
         if (!Mine(userId).Any(c => c.Kind == "party")) Group(userId);
