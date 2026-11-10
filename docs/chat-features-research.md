@@ -244,7 +244,7 @@ The Chat tab badge, summary and push behaviour follow the same rules at every st
 5. **Guest controls the volume.** Three modes (below), quiet hours, per-topic off switches, and "Don't show again" that sticks unless the facts change.
 6. **Private by default, shared by consent.** A moment goes to the guest's **permanent Stanley chat** (section 15), in its suggestion lane. It reaches a group only if the group's admin turned on "Stanley helps this group" **and** the moment is about the group (a plan, a poll, a shared deadline). Every member can mute his lines.
 7. **No pressure.** No countdown timers, false scarcity or shaming (rule 7 of the journey doc). Offers never outrank required tasks.
-8. **Children.** Stanley is off in any conversation a supervised child belongs to (as in the Stanley plan). A child's proactive moments, if any, go to the guardian's Stanley conversation, never to the child, until a guardian opts in.
+8. **Children.** Stanley is off in any conversation a supervised child belongs to (as in the Stanley plan). A child's own permanent Stanley chat is **notice-only** (section 15.7): scripted company and ship notices, no suggestions, offers or free text. Any proactive moment about a child goes to the guardian's Stanley chat, never to the child.
 
 ### 7.2 Proactivity setting
 
