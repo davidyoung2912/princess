@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatConversation, ChatMessage } from '../api/chatTypes'
-import { conversationFromSearch, deliveryOf, incomingSince, initials, isNearBottom, lastLine, mergeMessages, newClientId, pendingFor, sendProblem, totalUnread, withLatest, withOlder } from './chatThread'
+import { canTarget, conversationFromSearch, deliveryOf, dividerBefore, QUICK_REPLY_KEYS, quoteSummary, incomingSince, initials, isNearBottom, lastLine, mergeMessages, newClientId, pendingFor, sendProblem, totalUnread, withLatest, withOlder } from './chatThread'
 
 const m = (id: string, from = 'sam'): ChatMessage => ({ id, from, text: id, at: 1 })
 const ids = (list: ChatMessage[]) => list.map((x) => x.id)
@@ -47,6 +47,8 @@ describe('delivery and the outbox', () => {
     expect(deliveryOf({})).toBe('sent')
     expect(deliveryOf({ seenBy: [] })).toBe('sent')
     expect(deliveryOf({ seenBy: ['sam'] })).toBe('read')
+    expect(deliveryOf({ delivered: true })).toBe('delivered')
+    expect(deliveryOf({ delivered: true, seenBy: ['sam'] })).toBe('read')   // read beats delivered
   })
 
   it('shows only the waiting messages of this conversation, under their client id', () => {
@@ -103,5 +105,32 @@ describe('links', () => {
     expect(conversationFromSearch('?c=3f2504e0-4f89-41d3-9a0c-0305e82c3301')).toBe('3f2504e0-4f89-41d3-9a0c-0305e82c3301')
     expect(conversationFromSearch('?c=<script>')).toBeNull()
     expect(conversationFromSearch('')).toBeNull()
+  })
+})
+
+describe('replies, quick replies and the unread divider', () => {
+  it('lets only a person\'s message be replied to or reacted to', () => {
+    expect(canTarget({})).toBe(true)
+    expect(canTarget({ system: true })).toBe(false)
+    expect(canTarget({ stanley: true })).toBe(false)
+  })
+
+  it('puts the divider above the first unread message only when it is on screen', () => {
+    const list = [m('a'), m('b'), m('c')]
+    expect(dividerBefore(list, 'b')).toBe('b')
+    expect(dividerBefore(list, 'zzz')).toBeNull()
+    expect(dividerBefore(list, undefined)).toBeNull()
+    expect(dividerBefore(list, null)).toBeNull()
+  })
+
+  it('reads a quote as who then what, with You for your own', () => {
+    expect(quoteSummary({ text: 'Pool at three', fromName: 'Sam R.' }, 'You')).toBe('Sam R.: Pool at three')
+    expect(quoteSummary({ text: 'Pool at three', mine: true }, 'You')).toBe('You: Pool at three')
+    expect(quoteSummary({ text: 'Message removed' }, 'You')).toBe('Message removed')
+  })
+
+  it('has a fixed set of six quick replies', () => {
+    expect(QUICK_REPLY_KEYS).toHaveLength(6)
+    expect(new Set(QUICK_REPLY_KEYS).size).toBe(6)
   })
 })

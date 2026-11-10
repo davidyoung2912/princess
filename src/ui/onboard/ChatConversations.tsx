@@ -5,14 +5,17 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatMessage, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatMessage, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
 import {
-  conversationFromSearch, deliveryOf, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
-  type PendingMessage, type SendProblem,
+  canTarget, conversationFromSearch, deliveryOf, dividerBefore, incomingSince, initials, isNearBottom, lastLine, MAX_TEXT, mergeMessages, newClientId, pendingFor, sendProblem, withLatest, withOlder,
+  QUICK_REPLY_KEYS, quoteSummary, type PendingMessage, type SendProblem,
 } from '../../domain/chatThread'
+import { chipLabel, myReaction, REACTIONS, toggleReaction, withReactions } from '../../domain/chatReactions'
+import { readDraft, saveDraft } from '../../domain/chatDrafts'
+import { useLongPress } from '../../hooks/useLongPress'
 import { ashoreNames } from '../../domain/chatSms'
 import { dndChoices, dndEndsAt } from '../../domain/chatDnd'
 import { useChatDnd } from '../../hooks/useChatDnd'
@@ -54,6 +57,20 @@ export function Conversations() {
   return open ? <Thread key={open} id={open} onBack={() => setParams({})} /> : <ConversationList onOpen={(id) => setParams({ c: id })} />
 }
 
+/** Conversations this device has already said it received messages for (by id and last message time), so a refresh of the list does not ask again. */
+const deliveredSeen = new Set<string>()
+
+/** The list reaching the device is itself delivery: each conversation with something unread tells its senders once. Quiet on failure; the thread says it again when opened. */
+function tellDelivered(list: readonly ChatConversation[]): void {
+  for (const c of list) {
+    if (c.unread <= 0 || isStanleyChat(c) || !c.last) continue
+    const k = `${c.id}:${c.last.at}`
+    if (deliveredSeen.has(k)) continue
+    deliveredSeen.add(k)
+    api.chatConversations.delivered(c.id).catch(() => deliveredSeen.delete(k))
+  }
+}
+
 function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   const shipTime = useShipTime()
   const owner = useOwnerId() ?? 'none'
@@ -65,7 +82,7 @@ function ConversationList({ onOpen }: { onOpen: (id: string) => void }) {
   const load = useCallback(() => {
     fetchChatSummary().then((s) => setUrgentIds(s.urgentConversations), () => undefined)
     api.chatConversations.list().then(
-      (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list) },
+      (list) => { setRows(list); setFailed(false); saveList(chatStorage(), owner, list); tellDelivered(list) },
       () => setFailed(true),
     )
   }, [owner])
@@ -174,6 +191,10 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const [level, setLevel] = useState<ChatUrgency>('normal')
   const [blockedVersion, setBlockedVersion] = useState(0)
   const [details, setDetails] = useState(false)
+  // The first message you had not read when this thread opened: the divider stays where it was even after reading clears it.
+  const [firstUnread, setFirstUnread] = useState<string | null>(null)
+  const [jumped, setJumped] = useState(false)
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
   const end = useRef<HTMLDivElement>(null)
   const lastSeen = useRef<string | null>(null)
@@ -192,7 +213,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       setFetchedAt(Date.now())
       // The first live answer replaces the copy; later ones refresh the latest page and keep older pages already loaded.
       setMessages((cur) => (first.current ? th.messages : withLatest(cur, th.messages)))
-      if (first.current) { setHasMore(th.hasMore); first.current = false }
+      if (first.current) { setHasMore(th.hasMore); setFirstUnread(th.firstUnread ?? null); first.current = false }
       setOffline(false)
       setPhase('ready')
     } catch (e) {
@@ -276,6 +297,40 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     window.scrollTo(0, a.y + (document.documentElement.scrollHeight - a.height))
   }, [messages])
 
+  // This device has what others sent: say so once per newest message from someone else, so their screens can show Delivered. Quiet on failure.
+  const deliveredTo = useRef<string | null>(null)
+  useEffect(() => {
+    if (phase !== 'ready' || offline || conversation?.kind === 'stanley') return
+    const latest = [...messages].reverse().find((x) => x.from !== mine && canTarget(x))?.id ?? null
+    if (!latest || latest === deliveredTo.current) return
+    deliveredTo.current = latest
+    api.chatConversations.delivered(id).catch(() => { deliveredTo.current = null })
+  }, [phase, offline, messages, mine, id, conversation?.kind])
+
+  // A reaction shows at once and the server's answer replaces it; if the server refuses, the thread is read again so the screen tells the truth.
+  const react = useAction(async (messageId: string, emoji: string) => {
+    setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, toggleReaction(x.reactions, emoji)) : x)))
+    try {
+      const chips = await api.chatConversations.react(id, messageId, emoji)
+      setMessages((cur) => cur.map((x) => (x.id === messageId ? withReactions(x, chips) : x)))
+      const held = myReaction(chips)
+      setAnnounce(held ? t('conv.youReacted', { emoji: held }) : t('conv.reactionRemoved'))
+    } catch (e) {
+      void load()
+      throw e
+    }
+  })
+  const runReact = useLatest((messageId: string, emoji: string) => void react.run(messageId, emoji))
+  const form = useRef<HTMLFormElement>(null)
+  const runReply = useLatest((m: ChatMessage) => { setReplyTo(m); form.current?.querySelector('textarea')?.focus() })
+  const jumpToUnread = () => {
+    const el = document.getElementById('chat-unread')
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    el.focus({ preventScroll: true })
+    setJumped(true)
+  }
+
   const ack = useAction(async (messageId: string) => {
     await api.chatConversations.ack(id, messageId)
     chatChanged()
@@ -296,33 +351,36 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   })
 
   // ---- Sending ----
-  const [text, setText] = useState('')
+  // A half-typed message is kept on this device for this conversation, so leaving does not lose it.
+  const [text, setText] = useState(() => readDraft(chatStorage(), owner, id))
+  useEffect(() => { saveDraft(chatStorage(), owner, id, text) }, [text, owner, id])
   const [problem, setProblem] = useState<SendProblem | null>(null)
   const [full, setFull] = useState(false)
   const [sending, setSending] = useState<PendingMessage[]>([])
-  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined) : Promise.resolve()), () => void load())
-  const submit = async () => {
-    const body = text.trim()
+  const outbox = useOutbox(ownerId ?? 'none', 'chat', (p) => (p.conversation ? api.chatConversations.send(p.conversation, p.text, p.clientId, (p.urgency as ChatUrgency | undefined) || undefined, p.replyTo || undefined) : Promise.resolve()), () => void load())
+  // A quick reply sends its own words and leaves the box (and any draft in it) alone.
+  const submit = async (quick?: string) => {
+    const body = (quick ?? text).trim()
     if (!body) return
     setProblem(null)
     setFull(false)
     const clientId = newClientId()
     const sendLevel = mayUrgent || level !== 'urgent' ? level : 'normal'
-    setLevel('normal')   // each message chooses again: a habit of urgent would stop meaning anything
-    setText('')   // typing is never blocked: the message is on screen at once, marked Sending
+    const answering = replyTo?.id ?? ''
+    setReplyTo(null)
+    if (quick === undefined) { setLevel('normal'); setText('') }   // each message chooses again: a habit of urgent would stop meaning anything; typing is never blocked
     setSending((s) => [...s, { id: clientId, text: body, state: 'sending' }])
     try {
-      const sent = await sendWithin(api.chatConversations.send(id, body, clientId, sendLevel))
+      const sent = await sendWithin(api.chatConversations.send(id, body, clientId, sendLevel, answering || undefined))
       setMessages((cur) => mergeMessages(cur, [sent]))
       wasNear.current = true
     } catch (e) {
       if (worthRetrying(e)) {
-        if (!outbox.hold({ conversation: id, text: body, clientId, urgency: sendLevel })) { setText((cur) => cur || body); setLevel(sendLevel); setFull(true) }
+        if (!outbox.hold({ conversation: id, text: body, clientId, urgency: sendLevel, replyTo: answering })) { if (quick === undefined) { setText((cur) => cur || body); setLevel(sendLevel) } setFull(true) }
       } else {
-        // The text stays in the box so the guest does not lose it.
-        setText((cur) => cur || body)
+        // The text stays in the box so the guest does not lose it (a quick reply was never in the box). A reply to a message that is gone is sent as a plain message next time.
         const why = isApiError(e) ? sendProblem(e.code, e.message) : 'other'
-        setLevel(why === 'urgency' ? 'normal' : sendLevel)
+        if (quick === undefined) { setText((cur) => cur || body); setLevel(why === 'urgency' ? 'normal' : sendLevel) }
         setProblem(why)
         if (isApiError(e) && e.code === 'notFound') setPhase('gone')
       }
@@ -339,6 +397,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       </section>
     )
   }
+  const dividerId = dividerBefore(messages, firstUnread)
   const queued = pendingFor(id, outbox.items).filter((q) => !messages.some((m) => m.id === q.id))
   const bubbles: PendingMessage[] = [...sending, ...queued.filter((q) => !sending.some((s) => s.id === q.id))]
   const name = conversation?.name ?? ''
@@ -370,12 +429,17 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <div ref={top} />
       {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
       <ActionError error={older.error} />
+      {dividerId && !jumped && <Button variant="secondary" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
           ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
           : messages.map((m) => (
-            <MessageRow key={m.id} m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked} />
+            <Fragment key={m.id}>
+              {m.id === dividerId && <li id="chat-unread" className="chat-divider" tabIndex={-1} aria-label={t('conv.newMessagesDivider')}><span>{t('conv.newMessagesDivider')}</span></li>}
+              <MessageRow m={m} mine={mine} shipTime={shipTime} conversationId={id} kind={conversation?.kind} peerName={conversation?.name ?? ''} ackBusy={ack.busy} onAck={runAck} onBlocked={onBlocked}
+                canAct={!conversation?.closed} onReact={runReact} onReply={runReply} />
+            </Fragment>
           ))}
         {bubbles.map((b) => (
           <li key={b.id} className="chat-msg chat-msg--mine chat-msg--pending">
@@ -388,7 +452,13 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && (
-        <form className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+        <form ref={form} className="composer" onSubmit={(e) => { e.preventDefault(); void submit() }}>
+          {replyTo?.id && (
+            <div className="chat-replying" role="group" aria-label={t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}>
+              <p className="chat-replying__text"><strong>{t('conv.replyingTo', { who: replyTo.from === mine ? t('chat.you') : (replyTo.fromName ?? '') })}</strong><span className="muted"> {replyTo.text || t('conv.photo')}</span></p>
+              <Button variant="tertiary" onClick={() => setReplyTo(null)}>{t('conv.replyCancel')}</Button>
+            </div>
+          )}
           <fieldset className="urgency-pick">
             <legend>{t('urgent.pick')}</legend>
             {levelsFor(mayUrgent).map((l) => (
@@ -405,6 +475,9 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && <p className="muted">{t('chat.kept')}</p>}
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
+          <div role="group" aria-label={t('conv.quick')} className="chat-quick">
+            {QUICK_REPLY_KEYS.map((k) => <button key={k} type="button" className="chat-quick__btn" onClick={() => void submit(t(`conv.quick.${k}`))}>{t(`conv.quick.${k}`)}</button>)}
+          </div>
         </form>
       ))}
       {conversation && permanent && <StanleyNotices />}
@@ -412,6 +485,7 @@ function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       <ActionError error={mute.error} />
       <ActionError error={notifyAway.error} />
       <ActionError error={ack.error} />
+      {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
     </section>
   )
 }
@@ -538,6 +612,10 @@ interface MessageRowProps {
   /** A notice's action changed something (the muster was confirmed): reload the thread. */
   onChanged?: () => void
   onBlocked: () => void
+  /** Reacting and replying need a conversation that is still open. */
+  canAct?: boolean
+  onReact?: (messageId: string, emoji: string) => void
+  onReply?: (m: ChatMessage) => void
 }
 
 /** A relayed notice. It reads the clock itself, so a copy held on the device stops showing Got it and the actions when its time passes, even offline. */
@@ -562,7 +640,7 @@ function NoticeRow({ m, n, shipTime, conversationId, ackBusy, onAck, onChanged }
 }
 
 /** One message. Memoised: it re-renders only when its own message or the few things it shows change, not on every keystroke in the composer or every refresh of the thread. */
-const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked }: MessageRowProps) {
+const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onChanged, onBlocked, canAct = false, onReact, onReply }: MessageRowProps) {
   if (m.system) return <li className="chat-msg chat-msg--system"><p className="muted">{m.text} · {shipTime(m.at)}</p></li>
   if (m.stanley) {
     // Stanley's own message: his name and the voice it was sent under, nothing to report, block or receipt.
@@ -577,17 +655,45 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     }
     return <NoticeRow m={m} n={n} shipTime={shipTime} conversationId={conversationId} ackBusy={ackBusy} onAck={onAck} onChanged={onChanged} />
   }
+  return <PersonMessage m={m} mine={mine} shipTime={shipTime} conversationId={conversationId} kind={kind} peerName={peerName} ackBusy={ackBusy} onAck={onAck} onBlocked={onBlocked} canAct={canAct} onReact={onReact} onReply={onReply} />
+})
+
+/** A person's message: the quote of what it answers, the text or photo, the chips, and the React and Reply buttons (a long press with a finger opens the reactions too). */
+function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackBusy, onAck, onBlocked, canAct, onReact, onReply }: Omit<MessageRowProps, 'onChanged'>) {
   const own = m.from === mine
   const card = m.text ? parsePlanCard(m.text) : null
   const mlevel = urgencyOf(m)
+  const [picking, setPicking] = useState(false)
+  const reactButton = useRef<HTMLButtonElement>(null)
+  const press = useLongPress(() => { if (canAct && onReact) setPicking(true) })
+  const closePicker = () => { setPicking(false); reactButton.current?.focus() }
+  const you = t('conv.youLower')
+  const youCap = t('chat.you')
   return (
-    <li className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
+    // A long press is a shortcut for touch; the React and Reply buttons below do the same for keyboard and screen reader.
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <li id={`msg-${m.id}`} tabIndex={-1} {...press} className={['chat-msg', own && 'chat-msg--mine', mlevel !== 'normal' && `chat-msg--${mlevel}`].filter(Boolean).join(' ')}>
+      {m.replyTo && <ReplyQuote q={m.replyTo} you={youCap} />}
       {mlevel !== 'normal' && <p className="chat-msg__level"><UrgencyTag level={mlevel} /></p>}
       <p className="chat-msg__meta"><strong>{own ? t('chat.you') : (m.fromName ?? '')}</strong> <span className="muted">{shipTime(m.at)}</span>{m.viaSms && <> <span className="muted">· {t('conv.viaSms')}</span></>}</p>
       {m.text && (card ? <PlanCardView card={card} /> : <p>{m.text}</p>)}
       {(m.photo || m.hasPhoto) && <MessagePhoto conversationId={conversationId} messageId={m.id} name={m.fromName ?? ''} sent={m.photo} alt={t('chat.photoAlt', { name: own ? t('chat.you') : (m.fromName ?? '') })} />}
       {!own && <MessageSafety messageId={m.id} from={m.from} name={m.fromName} onBlocked={onBlocked} />}
-      {own && <p className="muted">{t(deliveryOf(m) === 'read' ? 'conv.read' : 'conv.sent')}</p>}
+      {m.reactions && m.reactions.length > 0 && (
+        <ul className="chat-reactions" aria-label={t('conv.reactions')}>
+          {m.reactions.map((r) => <ReactionChip key={r.emoji} r={r} you={you} disabled={!canAct || !onReact} onPick={() => onReact?.(m.id, r.emoji)} />)}
+        </ul>
+      )}
+      {canAct && canTarget(m) && (
+        <div className="chat-msg__actions">
+          <button ref={reactButton} type="button" className="chat-act" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>{t('conv.react')}</button>
+          <button type="button" className="chat-act" onClick={() => onReply?.(m)}>{t('conv.reply')}</button>
+        </div>
+      )}
+      {picking && onReact && (
+        <ReactionPicker held={myReaction(m.reactions)} onPick={(emoji) => { onReact(m.id, emoji); closePicker() }} onClose={closePicker} />
+      )}
+      {own && <p className="muted">{t(({ read: 'conv.read', delivered: 'conv.delivered', sent: 'conv.sent' } as const)[deliveryOf(m)])}</p>}
       {own && mlevel === 'urgent' && (
         <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : kind === 'direct' ? t('urgent.ackedBy', { names: peerName }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
       )}
@@ -596,7 +702,49 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
         : <Button disabled={ackBusy} onClick={() => onAck(m.id)}>{t('urgent.gotIt')}</Button>)}
     </li>
   )
-})
+}
+
+/** The quote above a reply. A tap goes to the original when it is on screen; one the reader may not read any more shows only "Message removed". */
+function ReplyQuote({ q, you }: { q: ChatQuote; you: string }) {
+  const who = q.mine ? you : q.fromName
+  const body = <>{who && <strong>{who}</strong>} <span>{q.text}</span></>
+  if (!q.id || q.removed) return <p className="chat-quote chat-quote--gone muted">{body}</p>
+  const target = q.id
+  const jump = () => {
+    const el = document.getElementById(`msg-${target}`)
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+    el.focus({ preventScroll: true })
+  }
+  return <button type="button" className="chat-quote" aria-label={`${t('conv.quoteJump')}. ${quoteSummary(q, you)}`} onClick={jump}>{body}</button>
+}
+
+/** One chip under a message: the emoji and its count, pressed when it is yours. Tapping it adds or takes away your reaction. */
+function ReactionChip({ r, you, disabled, onPick }: { r: ChatReaction; you: string; disabled: boolean; onPick: () => void }) {
+  return (
+    <li>
+      <button type="button" className="reaction-chip" aria-pressed={r.mine} aria-label={chipLabel(r, you)} disabled={disabled} onClick={onPick}>
+        <span aria-hidden="true">{r.emoji} {r.count}</span>
+      </button>
+    </li>
+  )
+}
+
+/** The six reactions. Focus moves in when it opens; Escape closes it and returns focus to the React button. */
+function ReactionPicker({ held, onPick, onClose }: { held: string | null; onPick: (emoji: string) => void; onClose: () => void }) {
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => { (box.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]') ?? box.current?.querySelector<HTMLButtonElement>('button'))?.focus() }, [])
+  return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape is a shortcut for a group whose buttons all work by themselves
+    <div ref={box} className="chat-picker" role="group" aria-label={t('conv.reactPick')} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
+      {REACTIONS.map((emoji) => (
+        <button key={emoji} type="button" className="chat-picker__btn" aria-pressed={held === emoji} aria-label={t('conv.reactWith', { emoji })} onClick={() => onPick(emoji)}>
+          <span aria-hidden="true">{emoji}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
 
 /** Everything that is not the message itself: mute, read receipts, a plan card, a photo, and who you have hidden. */
 function Options({ conversation, muteBusy, onMute, awayBusy, onAway, onSent, blockedVersion, reload }: {

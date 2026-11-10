@@ -142,7 +142,19 @@ export interface ChatMessage {
   subtitle?: string
   /** On a relayed company or ship notice (phase 0b): its lane, the screen it links to and whether it can still be acted on. */
   notice?: ChatNotice
+  /** The chips under it (phase 1), one per emoji in use. Absent when there are none. */
+  reactions?: ChatReaction[]
+  /** What it answers (phase 1): a quote of the original, or "Message removed" when you may not read the original any more. */
+  replyTo?: ChatQuote
+  /** Yours: a device of someone else has it (both of you have read receipts on). `read` beats it. */
+  delivered?: boolean
 }
+
+/** One of the six reactions in use on a message. `names` are the others (first name and last initial) for a screen reader; yours is counted and marked by `mine`, not named. */
+export interface ChatReaction { emoji: string; count: number; mine: boolean; names: string[] }
+
+/** The quote above a reply. `id` is absent when `removed`; `fromName` is absent for your own message. */
+export interface ChatQuote { id?: string; text: string; fromName?: string; mine?: boolean; removed?: boolean }
 
 /** The lane decides how a relayed notice looks and behaves; the server sets it and the screen only shows it. */
 export type NoticeLane = 'critical' | 'important' | 'reminder' | 'info'
@@ -157,7 +169,8 @@ export interface NoticeReplyAnswer { text: string; remindAt?: number }
 
 /** `ashore`: people in it who are ashore and answer by text, so a reply is not expected at once. */
 /** `mayUrgent`: you may send an urgent message here (staff, or a guardian of a child in it). */
-export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean }
+/** `firstUnread`: the first message from someone else you had not read when the thread was fetched (latest page only), for the "New messages" divider. */
+export interface ChatThread { conversation: ChatConversation; messages: ChatMessage[]; hasMore: boolean; ashore?: string[]; mayUrgent?: boolean; firstUnread?: string }
 
 export interface ChatPhotoInput { type: string; bytes: number; dataUrl: string; caption: string }
 
@@ -167,9 +180,16 @@ export interface ChatConversationsApi {
   thread(id: string, before?: string): Promise<ChatThread>
   /**
    * `clientId` makes a retry safe: a repeat returns the stored message. Rejects `invalid` (`blocked`: the word filter, nothing was sent; `text`; `contactInfo`),
-   * `conflict` (`closed`) or `notFound`. `urgency` is normal when left out; urgent rejects `forbidden` (`urgency`) unless you may send it, and an unknown level rejects `invalid` (`urgency`).
+   * `conflict` (`closed`) or `notFound`. `urgency` is normal when left out; urgent rejects `forbidden` (`urgency`) unless you may send it, and an unknown level rejects `invalid` (`urgency`). `replyTo` is the message being answered; one you cannot read rejects `invalid` (`replyTo`).
    */
-  send(id: string, text: string, clientId: string, urgency?: ChatUrgency): Promise<ChatMessage>
+  send(id: string, text: string, clientId: string, urgency?: ChatUrgency, replyTo?: string): Promise<ChatMessage>
+  /**
+   * Reacts with one of the six emoji (`REACTIONS`): a different one replaces yours, the same one again takes it away. Returns the chips now under the message.
+   * Rejects `invalid` (`emoji`, `notMessage`), `forbidden` (`stanley`), `notFound` or `conflict` (`closed`).
+   */
+  react(id: string, messageId: string, emoji: string): Promise<ChatReaction[]>
+  /** This device has the messages others sent here, so their senders can show Delivered. Idempotent; rejects `notFound`. */
+  delivered(id: string): Promise<void>
   /** Rejects `invalid` (`type`, `size`, `empty`, `contactInfo`, `blocked`), `forbidden` (`age`), `conflict` (`closed`) or `notFound`. */
   sendPhoto(id: string, input: ChatPhotoInput): Promise<ChatMessage>
   /** "Got it" on an urgent message from someone else; repeating it changes nothing. Rejects `invalid` (`notUrgent`) or `notFound`. */

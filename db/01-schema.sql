@@ -3409,3 +3409,35 @@ CREATE TABLE dbo.StanleyNoticeDeliveries (
 CREATE INDEX IX_StanleyNoticeDeliveries_At ON dbo.StanleyNoticeDeliveries ([At]);
 END
 GO
+
+-- Chat phase 1 (docs/chat-features-research.md, section 11): a modern thread.
+-- A reply points at the message it answers (the quote is read back through the reader's own membership window, so it can never show a message the reader could not read). No foreign key: a self-reference would complicate the cascade that deletes a group's messages, and every read checks the group.
+IF COL_LENGTH(N'dbo.ChatMessages', N'ReplyToId') IS NULL
+  ALTER TABLE dbo.ChatMessages ADD ReplyToId BIGINT NULL;
+GO
+-- One reaction per person per message (a new one replaces the old; the same one again takes it away). Emoji is one of the six in ChatReactionRules.
+IF OBJECT_ID(N'dbo.ChatReactions', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatReactions (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL, Emoji NVARCHAR(8) NOT NULL,
+  [At] DATETIME2(0) NOT NULL CONSTRAINT DF_ChatReactions_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatReactions PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT FK_ChatReactions_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatReactions_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatReactions_UserId ON dbo.ChatReactions (UserId);
+END
+GO
+-- A device of the recipient has the message (the app was open and answered the live nudge, or fetched the thread). Weaker than a read, so it is its own table.
+IF OBJECT_ID(N'dbo.ChatMessageDeliveries', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatMessageDeliveries (
+  MessageId BIGINT NOT NULL, UserId BIGINT NOT NULL,
+  DeliveredAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatMessageDeliveries_At DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT PK_ChatMessageDeliveries PRIMARY KEY (MessageId, UserId),
+  CONSTRAINT FK_ChatMessageDeliveries_ChatMessages FOREIGN KEY (MessageId) REFERENCES dbo.ChatMessages (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatMessageDeliveries_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatMessageDeliveries_UserId ON dbo.ChatMessageDeliveries (UserId);
+END
+GO

@@ -45,10 +45,29 @@ export function incomingSince(previousLastId: string | null, messages: readonly 
   return last
 }
 
-/** Where one of your own messages stands. `sending` is in flight, `waiting` is held until there is signal, `read` needs both sides to have receipts on. */
-export type Delivery = 'sending' | 'waiting' | 'sent' | 'read'
+/** Where one of your own messages stands. `sending` is in flight, `waiting` is held until there is signal, `delivered` and `read` each need both sides to have receipts on. */
+export type Delivery = 'sending' | 'waiting' | 'sent' | 'delivered' | 'read'
 
-export const deliveryOf = (m: Pick<ChatMessage, 'seenBy'>): Exclude<Delivery, 'sending' | 'waiting'> => (m.seenBy && m.seenBy.length > 0 ? 'read' : 'sent')
+/** Read beats Delivered and Delivered beats Sent. */
+export const deliveryOf = (m: Pick<ChatMessage, 'seenBy' | 'delivered'>): Exclude<Delivery, 'sending' | 'waiting'> =>
+  m.seenBy && m.seenBy.length > 0 ? 'read' : m.delivered ? 'delivered' : 'sent'
+
+/** The fixed English quick replies shown under the composer (keys into the strings; a tap sends the text at once). */
+export const QUICK_REPLY_KEYS = ['yes', 'no', 'omw', 'thanks', 'late', 'ok'] as const
+export type QuickReplyKey = (typeof QUICK_REPLY_KEYS)[number]
+
+/** A person's message can be replied to or reacted to; a line about the group and a Stanley notice cannot. */
+export const canTarget = (m: Pick<ChatMessage, 'system' | 'stanley'>): boolean => !m.system && !m.stanley
+
+/** The message the "New messages" divider goes above: the server's `firstUnread` if that message is on screen, else none (the divider describes the first page only). */
+export const dividerBefore = (messages: readonly Pick<ChatMessage, 'id'>[], firstUnread: string | null | undefined): string | null =>
+  firstUnread && messages.some((m) => m.id === firstUnread) ? firstUnread : null
+
+/** The words of a quote for a screen reader: who, then what. "You" for your own message. */
+export const quoteSummary = (q: { text: string; fromName?: string; mine?: boolean }, you: string): string => {
+  const who = q.mine ? you : q.fromName
+  return who ? `${who}: ${q.text}` : q.text
+}
 
 /** What the list shows under a conversation's name: "Sam: lunch at one?", "You: On my way", "Photo", or nothing to say yet. */
 export function lastLine(c: Pick<ChatConversation, 'last'>, you: string, photo: string): string {

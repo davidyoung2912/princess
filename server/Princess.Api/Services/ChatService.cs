@@ -61,6 +61,20 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
     private async Task<ChatMemberRow> MemberAsync(UserRecord actor, Guid conversationId, CancellationToken ct) =>
         await store.GetMemberAsync(actor.Id, conversationId, ct) ?? throw ApiException.NotFound();
 
+    /// <summary>The chips under a message, with the others' names for a screen reader. People the reader blocked are left out.</summary>
+    private static List<ChatReactionDto> ReactionDtos(IEnumerable<ChatReactionRow> rows, long reader, Dictionary<long, ChatPeerRow> byId, ISet<long> blocked) =>
+        [.. ChatReactionRules.Summarise(rows.Select(r => (r.UserId, r.Emoji, byId.TryGetValue(r.UserId, out var p) ? ShortName(p) : "")), reader, blocked)
+            .Select(t => new ChatReactionDto(t.Emoji, t.Count, t.Mine, [.. t.Names]))];
+
+    /// <summary>The quote above a reply. An original the reader may no longer read (outside their window, from someone they blocked, or not a person's message) shows only "Message removed".</summary>
+    private static ChatQuoteDto QuoteDto(ChatQuoteRow? q, long reader, Dictionary<long, ChatPeerRow> byId)
+    {
+        if (q is null || q.IsSystem) return new(null, ChatReactionRules.RemovedText, Removed: true);
+        var mine = q.FromUserId == reader;
+        var from = q.FromUserId == 0 ? StanleyPersonaRules.Name : mine ? null : byId.TryGetValue(q.FromUserId, out var p) ? ShortName(p) : null;
+        return new(q.PublicId, ChatReactionRules.QuoteText(q.Text, q.HasPhoto), from, mine);
+    }
+
     /// <summary>The latest page of a conversation, or the page before the message <paramref name="before"/>.</summary>
     public async Task<ChatThreadDto> ThreadAsync(UserRecord actor, Guid conversationId, Guid? before, int? limit, CancellationToken ct)
     {
@@ -80,6 +94,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var byId = members.ToDictionary(p => p.UserId);
         var receiptsOf = (long id) => id == actor.Id ? mine : byId.TryGetValue(id, out var p) && p.ReceiptsOn;
         var publicOf = (long id) => id == actor.Id ? actor.PublicId : byId.TryGetValue(id, out var p) ? p.PublicId : (Guid?)null;
+        // Phase 1: reactions (a block hides the blocked person's reactions as it hides their messages), the quote above a reply, and Delivered. Blocks are read only when some message has a reaction.
+        var blocked = page.Any(m => m.Reactions.Count > 0) ? new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)) : new HashSet<long>();
+        var firstUnread = before is null ? page.FirstOrDefault(m => !m.IsSystem && ChatConversationRules.IsUnread(m.Id, m.FromUserId, actor.Id, member.LastReadMessageId))?.PublicId : null;
         var messages = new List<ChatMessageDto>();
         foreach (var m in page)
         {
@@ -105,13 +122,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             var urgent = m.Urgency == ChatUrgencyRules.Urgent;
             var ackedBy = urgent && m.FromUserId == actor.Id ? m.AckedBy.Select(publicOf).OfType<Guid>().ToList() : null;
             bool? acked = urgent && m.FromUserId != actor.Id ? m.AckedBy.Contains(actor.Id) : null;
-            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto));
+            var reactions = m.Reactions.Count == 0 ? null : ReactionDtos(m.Reactions, actor.Id, byId, blocked);
+            var delivered = m.FromUserId == actor.Id && receiptsOf(actor.Id) && m.DeliveredBy.Any(id => id != actor.Id && receiptsOf(id));
+            messages.Add(new ChatMessageDto(m.PublicId, from, m.Text, Shipboard.Ms(m.At), m.Photo, seen, name, ViaSms: m.ViaSms, Urgency: Flag(m.Urgency), AckedBy: ackedBy, Acked: acked, HasPhoto: m.HasPhoto,
+                Reactions: reactions, ReplyTo: m.ReplyToId is null ? null : QuoteDto(m.Reply, actor.Id, byId), Delivered: delivered));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
         var mayUrgent = ChatUrgencyRules.MaySend(ChatUrgencyRules.Urgent, actor.Role == "admin",
             ChatUrgencyRules.IsGuardianHere(actor.Id, actor.IsSupervised, members.Select(p => (p.Status, p.IsSupervised, p.BookerUserId))));
-        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent);
+        return new(Conversation(actor, member, members, 0, null, member.CreatedAt), messages, more, [.. members.Where(p => ashore.Contains(p.UserId)).Select(ShortName)], mayUrgent, firstUnread);
     }
 
     public async Task<ChatMessageDto> SendAsync(UserRecord actor, Guid conversationId, SendChatRequest? body, CancellationToken ct)
@@ -125,6 +145,13 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         // Not sent, not stored, not logged; the matched word is never returned.
         if (ProfanityFilter.IsBlocked(text)) throw ApiException.Invalid("blocked");
         var urgency = ChatUrgencyRules.Parse(body?.Urgency) ?? throw ApiException.Invalid("urgency");
+        // A reply names a message the sender may read in this conversation (their window, nobody they blocked) that a person said; anything else is refused the same way.
+        ChatMessageRow? quoted = null;
+        if (body?.ReplyTo is { } replyTo)
+        {
+            quoted = await store.FindMessageAsync(member.GroupId, actor.Id, replyTo, ct);
+            if (quoted is null || !ChatReactionRules.CanTarget(quoted.IsSystem, quoted.FromStanley)) throw ApiException.Invalid("replyTo");
+        }
         if (urgency == ChatUrgencyRules.Urgent)
         {
             var members = await store.ListMembersAsync(member.GroupId, ct);
@@ -133,7 +160,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         }
         // The hourly limit for important and urgent messages (urgent is already limited to staff and guardians).
         if (urgency != ChatUrgencyRules.Normal && ChatUrgencyRules.OverLimit(urgency, await store.CountSentAsync(actor.Id, urgency, now.AddHours(-1), ct))) throw ApiException.TooMany("urgencyLimit");
-        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency);
+        var sent = await StoreAsync(actor, member, text, null, body?.ClientId, now, ct, urgency: urgency, quoted: quoted);
         // Who sent an urgent message and where, never what it said.
         if (urgency == ChatUrgencyRules.Urgent)
             await audit.RecordAsync(new AuditEntry { Category = AuditCategory.Domain, Action = "chat.urgent.send", Outcome = AuditOutcome.Success, Target = "conversation:" + conversationId, Detail = actor.Role == "admin" ? "staff" : "guardian" }, ct);
@@ -172,10 +199,16 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return await StoreAsync(actor, member, caption, url, null, now, ct);
     }
 
-    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal)
+    private async Task<ChatMessageDto> StoreAsync(UserRecord actor, ChatMemberRow member, string text, string? photo, Guid? clientId, DateTime now, CancellationToken ct, bool viaSms = false, string urgency = ChatUrgencyRules.Normal, ChatMessageRow? quoted = null)
     {
-        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency);
-        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null);
+        var sent = await store.AddMessageAsync(member.GroupId, actor.Id, text, photo, clientId, now, ct, viaSms, urgency, quoted?.Id);
+        ChatQuoteDto? quote = null;
+        if (quoted is not null)
+        {
+            var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
+            quote = QuoteDto(new ChatQuoteRow { Id = quoted.Id, PublicId = quoted.PublicId, FromUserId = quoted.FromUserId, Text = quoted.Text, HasPhoto = quoted.Photo is not null, IsSystem = quoted.IsSystem }, actor.Id, peers);
+        }
+        var dto = new ChatMessageDto(sent.Row.PublicId, actor.PublicId, sent.Row.Text, Shipboard.Ms(sent.Row.At), sent.Row.Photo, ViaSms: viaSms, Urgency: Flag(sent.Row.Urgency), HasPhoto: sent.Row.Photo is not null, ReplyTo: quote);
         if (!sent.Created) return dto;   // a retry of a message that already went out: nobody is told twice
         await TellAsync(actor, member, sent.Row);
         return dto;
@@ -208,6 +241,42 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var member = await MemberAsync(actor, conversationId, ct);
         await store.MarkReadAsync(member.GroupId, actor.Id, await store.GetReceiptsAsync(actor.Id, ct), await userClock.NowAsync(actor, ct), ct);
         await notifier.ReadAsync(actor.Id, conversationId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), ct);
+    }
+
+    /// <summary>
+    /// Reacts to a message with one of the six emoji (phase 1): a different one replaces the caller's old reaction, the same one again takes it away. Returns the chips now under the message.
+    /// The other members' open apps are nudged to refetch; no phone alert is ever sent for a reaction. 400 emoji or notMessage (a line about the group, or a notice); 403 stanley; 404 for a message the caller cannot read; 409 closed.
+    /// </summary>
+    public async Task<List<ChatReactionDto>> ReactAsync(UserRecord actor, Guid conversationId, Guid messageId, ChatReactRequest? body, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        if (ChatConversationRules.IsPermanent(member.Kind)) throw ApiException.Forbidden("stanley");
+        if (ChatConversationRules.IsClosed(member.Kind, member.Status, member.DirectEnded)) throw ApiException.Conflict("closed");
+        if (!ChatReactionRules.IsAllowed(body?.Emoji)) throw ApiException.Invalid("emoji");
+        var message = await store.FindMessageAsync(member.GroupId, actor.Id, messageId, ct) ?? throw ApiException.NotFound();
+        if (!ChatReactionRules.CanTarget(message.IsSystem, message.FromStanley)) throw ApiException.Invalid("notMessage");
+        var now = await userClock.NowAsync(actor, ct);
+        await store.SetReactionAsync(message.Id, actor.Id, ChatReactionRules.Toggle(await store.GetReactionAsync(message.Id, actor.Id, ct), body!.Emoji!), now, ct);
+        await TellThreadChangedAsync(actor, member, "reaction", ct);
+        var peers = (await store.ListMembersAsync(member.GroupId, ct)).ToDictionary(p => p.UserId);
+        return ReactionDtos(await store.ListReactionsAsync(message.Id, ct), actor.Id, peers, new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct)));
+    }
+
+    /// <summary>
+    /// A device of the caller has the conversation's messages (phase 1): everything others sent is marked delivered, and the senders are nudged once to show Delivered. Repeating it changes nothing and tells no one.
+    /// </summary>
+    public async Task DeliveredAsync(UserRecord actor, Guid conversationId, CancellationToken ct)
+    {
+        var member = await MemberAsync(actor, conversationId, ct);
+        var senders = await store.MarkDeliveredAsync(member.GroupId, actor.Id, await userClock.NowAsync(actor, ct), ct);
+        await Task.WhenAll(senders.Where(id => id != actor.Id).Select(id => notifier.ThreadChangedAsync(id, conversationId, "delivered", ct)));
+    }
+
+    /// <summary>A live nudge to the other active members (who have not blocked the caller) and the caller's other devices, so their threads refetch. Never a phone alert.</summary>
+    private async Task TellThreadChangedAsync(UserRecord actor, ChatMemberRow member, string kind, CancellationToken ct)
+    {
+        var recipients = await store.ListRecipientsAsync(member.GroupId, actor.Id, ct);
+        await Task.WhenAll(recipients.Select(r => r.UserId).Append(actor.Id).Select(id => notifier.ThreadChangedAsync(id, member.GroupPublicId, kind, ct)));
     }
 
     /// <summary>

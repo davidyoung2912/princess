@@ -114,7 +114,19 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool HasPhoto = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Stanley = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Subtitle = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatNoticeDto? Notice = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatNoticeDto? Notice = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<ChatReactionDto>? Reactions = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatQuoteDto? ReplyTo = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Delivered = false);
+
+/// <summary>One chip under a message: the emoji, how many chose it, whether the reader did, and the others' names (first name and last initial) for a screen reader.</summary>
+public sealed record ChatReactionDto(string Emoji, int Count, bool Mine, List<string> Names);
+
+/// <summary>The quote above a reply. <c>Id</c> is null and <c>Removed</c> true when the reader may not read the original any more (outside their window, from someone they blocked, or gone); the text is then "Message removed".</summary>
+public sealed record ChatQuoteDto(Guid? Id, string Text, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? FromName = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Mine = false, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Removed = false);
+
+/// <summary>A reaction to a message: one of the six in <see cref="Princess.Api.Domain.ChatReactionRules.Allowed"/>. Picking the one already held takes it away.</summary>
+public sealed record ChatReactRequest(string? Emoji);
 
 /// <summary>What a relayed company or ship notice adds to its message (phase 0b): the lane, the screen it links to, and whether it is still actionable. The text is the message's own.</summary>
 /// <summary>A relayed notice. <c>ExpiresAt</c> (ship milliseconds) lets a stale copy on the device drop the actions itself; <c>Actions</c> and <c>Replies</c> are empty once it is expired or replaced.</summary>
@@ -129,8 +141,8 @@ public sealed record ChatNoticeReplyDto(string Text, long? RemindAt = null);
 /// <summary>The photo of one message, as the data URL it was sent as.</summary>
 public sealed record ChatPhotoDto(string Photo);
 
-/// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message. <c>Urgency</c> is normal (default), important or urgent; urgent is for staff and guardians only.</summary>
-public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null);
+/// <summary>A message to send into one conversation. <c>ClientId</c> is made by the app so a retry never doubles the message. <c>Urgency</c> is normal (default), important or urgent; urgent is for staff and guardians only. <c>ReplyTo</c> is the message being answered.</summary>
+public sealed record SendChatRequest(string? Text, Guid? ClientId = null, string? Urgency = null, Guid? ReplyTo = null);
 
 public sealed record ChatReceiptsRequest(bool On);
 

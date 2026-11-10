@@ -192,6 +192,26 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .urgency-pick legend { font-weight: 600; padding: 0; }
 .urgency-pick__option { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; margin-inline-end: var(--space-4); }
 
+/* Phase 1 thread: reactions, replies, quick replies and the unread divider. State is carried by aria-pressed, a border weight and the count, never colour alone. */
+.chat-reactions { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: var(--space-2) 0 0; padding: 0; }
+.reaction-chip { display: inline-flex; align-items: center; min-height: var(--target-min); min-width: var(--target-min); padding: 0 var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-pill); background: var(--bg); color: var(--text); cursor: pointer; }
+.reaction-chip[aria-pressed='true'] { border: 3px solid var(--primary); font-weight: 700; background: var(--brand-tint); }
+.chat-msg__actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+.chat-act { min-height: var(--target-min); padding: 0 var(--space-3); border: 0; background: none; color: var(--primary); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.chat-picker { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.chat-picker__btn { min-height: var(--target-min); min-width: var(--target-min); font-size: 1.5rem; line-height: 1; border: var(--border-width) solid var(--border); border-radius: var(--radius-pill); background: var(--bg); cursor: pointer; }
+.chat-picker__btn[aria-pressed='true'] { border: 3px solid var(--primary); background: var(--brand-tint); }
+.chat-quote { display: block; width: 100%; margin: 0 0 var(--space-2); padding: var(--space-2) var(--space-3); text-align: start; font: inherit; font-size: var(--fs-caption); color: var(--text); border: 0; border-inline-start: 4px solid var(--primary); border-radius: var(--radius-card); background: var(--sky-tint); overflow-wrap: anywhere; }
+button.chat-quote { cursor: pointer; }
+.chat-quote--gone { border-inline-start-style: dashed; font-style: italic; }
+.chat-replying { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); padding: var(--space-2) var(--space-3); border-inline-start: 4px solid var(--primary); background: var(--sky-tint); }
+.chat-replying__text { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-quick { display: flex; gap: var(--space-2); margin-top: var(--space-3); overflow-x: auto; padding-bottom: var(--space-1); }
+.chat-quick__btn { flex: none; min-height: var(--target-min); padding: 0 var(--space-4); border: 2px solid var(--primary); border-radius: var(--radius-pill); background: var(--sky-tint); color: var(--text); font: inherit; cursor: pointer; }
+.chat-divider { display: flex; align-items: center; gap: var(--space-3); list-style: none; font-weight: 700; color: var(--primary); }
+.chat-divider::before, .chat-divider::after { content: ''; flex: 1; border-top: 2px solid var(--primary); }
+.chat-msg:focus-visible, .chat-divider:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
 /* One-tap do not disturb on the Chat list. The word and the border say it is on, not colour alone. */
 .dnd { margin: var(--space-3) 0; padding: var(--space-3); border: 1px solid var(--border, currentColor); border-radius: var(--radius-2, 0.5rem); }
 .dnd--on { border-width: 2px; border-style: dashed; }

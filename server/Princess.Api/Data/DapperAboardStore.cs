@@ -547,7 +547,7 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         await using var c = await db.OpenAsync(ct);
         // The window is applied here through the member row so a caller cannot widen it; only the conversation id and cursor come from the request.
         var messages = (await c.QueryAsync<ChatMessageRow>(Sql.Cmd($"""
-            SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle,
+            SELECT TOP (@take) m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At], m.IsSystem, m.ViaSms, m.Urgency, m.Persona, m.Subtitle, m.ReplyToId,
                    m.Lane, m.NoticeKind, m.NoticePath, m.NoticeSubject, m.ExpiresAt, m.SupersededAt
             FROM dbo.ChatMessages m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
@@ -562,6 +562,23 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         var reads = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatReads WHERE MessageId IN @ids", new { ids }, null, ct))).ToList();
         var readBy = reads.ToLookup(r => r.MessageId, r => r.UserId);
         foreach (var m in messages) m.SeenBy = [.. readBy[m.Id]];
+        // Phase 1: who has a device with it, everyone's reaction, and the quoted message when this reader may read it. Each is one query for the whole page.
+        var delivered = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatMessageDeliveries WHERE MessageId IN @ids", new { ids }, null, ct))).ToLookup(r => r.MessageId, r => r.UserId);
+        var reactions = (await c.QueryAsync<ChatReactionRow>(Sql.Cmd("SELECT MessageId, UserId, Emoji FROM dbo.ChatReactions WHERE MessageId IN @ids", new { ids }, null, ct))).ToLookup(r => r.MessageId);
+        foreach (var m in messages) { m.DeliveredBy = [.. delivered[m.Id]]; m.Reactions = [.. reactions[m.Id]]; }
+        var replyIds = messages.Where(m => m.ReplyToId is not null).Select(m => m.ReplyToId!.Value).Distinct().ToArray();
+        if (replyIds.Length > 0)
+        {
+            // The quote goes through the same window and block rule as the thread itself, so a reply can never reveal a message its reader could not open.
+            var quotes = (await c.QueryAsync<ChatQuoteRow>(Sql.Cmd($"""
+                SELECT m.Id, m.PublicId, ISNULL(m.FromUserId, 0) AS FromUserId, m.[Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.IsSystem
+                FROM dbo.ChatMessages m
+                JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+                JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+                WHERE m.GroupId = @groupId AND m.Id IN @replyIds AND {Window}
+                """, new { groupId, userId, replyIds }, null, ct))).ToDictionary(q => q.Id);
+            foreach (var m in messages) if (m.ReplyToId is { } r && quotes.TryGetValue(r, out var q)) m.Reply = q;
+        }
         var urgentIds = messages.Where(m => m.Urgency == "urgent" || m.Lane is not null && m.Urgency == "important").Select(m => m.Id).ToArray();
         if (urgentIds.Length == 0) return messages;   // nothing to ask: most threads have no urgent message
         var acks = (await c.QueryAsync<(long MessageId, long UserId)>(Sql.Cmd("SELECT MessageId, UserId FROM dbo.ChatMessageAcks WHERE MessageId IN @ids", new { ids = urgentIds }, null, ct))).ToList();
@@ -570,18 +587,18 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return messages;
     }
 
-    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal")
+    public async Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null)
     {
         await using var c = await db.OpenAsync(ct);
-        const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At], ViaSms, Urgency FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
+        const string existing = "SELECT Id, PublicId, FromUserId, [Text], Photo, [At], ViaSms, Urgency, ReplyToId FROM dbo.ChatMessages WHERE GroupId = @groupId AND FromUserId = @userId AND ClientId = @clientId";
         if (clientId is not null && await c.QuerySingleOrDefaultAsync<ChatMessageRow>(Sql.Cmd(existing, new { groupId, userId, clientId }, null, ct)) is { } again) return new(again, false);
         try
         {
             var (id, publicId) = await c.QuerySingleAsync<(long, Guid)>(Sql.Cmd("""
-                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At], ViaSms, Urgency) OUTPUT INSERTED.Id, INSERTED.PublicId
-                VALUES (@groupId, @userId, @text, @photo, @clientId, @at, @viaSms, @urgency)
-                """, new { groupId, userId, text, photo, clientId, at, viaSms, urgency }, null, ct));
-            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency }, true);
+                INSERT INTO dbo.ChatMessages (GroupId, FromUserId, [Text], Photo, ClientId, [At], ViaSms, Urgency, ReplyToId) OUTPUT INSERTED.Id, INSERTED.PublicId
+                VALUES (@groupId, @userId, @text, @photo, @clientId, @at, @viaSms, @urgency, @replyToId)
+                """, new { groupId, userId, text, photo, clientId, at, viaSms, urgency, replyToId }, null, ct));
+            return new(new ChatMessageRow { Id = id, PublicId = publicId, FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId }, true);
         }
         catch (DbException e) when (e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } && clientId is not null)
         {
@@ -681,6 +698,50 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
             JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
             WHERE m.GroupId = @groupId AND m.PublicId = @messagePublicId AND {Window}
             """, new { groupId, userId, messagePublicId }, null, ct));
+    }
+
+    public async Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.QuerySingleOrDefaultAsync<string>(Sql.Cmd("SELECT Emoji FROM dbo.ChatReactions WHERE MessageId = @messageId AND UserId = @userId", new { messageId, userId }, null, ct));
+    }
+
+    public async Task SetReactionAsync(long messageId, long userId, string? emoji, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        if (emoji is null) { await c.ExecuteAsync(Sql.Cmd("DELETE FROM dbo.ChatReactions WHERE MessageId = @messageId AND UserId = @userId", new { messageId, userId }, null, ct)); return; }
+        // One row per person per message: update the row if there is one, else add it. A race between two taps ends on one of them, never two rows (the key forbids it).
+        var changed = await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatReactions SET Emoji = @emoji, [At] = @at WHERE MessageId = @messageId AND UserId = @userId", new { messageId, userId, emoji, at }, null, ct));
+        if (changed > 0) return;
+        try { await c.ExecuteAsync(Sql.Cmd("INSERT INTO dbo.ChatReactions (MessageId, UserId, Emoji, [At]) VALUES (@messageId, @userId, @emoji, @at)", new { messageId, userId, emoji, at }, null, ct)); }
+        catch (DbException e) when (e is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 })
+        {
+            await c.ExecuteAsync(Sql.Cmd("UPDATE dbo.ChatReactions SET Emoji = @emoji, [At] = @at WHERE MessageId = @messageId AND UserId = @userId", new { messageId, userId, emoji, at }, null, ct));
+        }
+    }
+
+    public async Task<List<ChatReactionRow>> ListReactionsAsync(long messageId, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatReactionRow>(Sql.Cmd("SELECT MessageId, UserId, Emoji FROM dbo.ChatReactions WHERE MessageId = @messageId", new { messageId }, null, ct))).ToList();
+    }
+
+    public async Task<List<long>> MarkDeliveredAsync(long groupId, long userId, DateTime at, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        // Only messages the person may read (their window, nobody they blocked), only from others, and only those not yet marked. OUTPUT cannot hold a subquery, so the senders are read after.
+        var marked = (await c.QueryAsync<long>(Sql.Cmd($"""
+            INSERT INTO dbo.ChatMessageDeliveries (MessageId, UserId, DeliveredAt)
+            OUTPUT INSERTED.MessageId
+            SELECT m.Id, @userId, @at
+            FROM dbo.ChatMessages m
+            JOIN dbo.ChatGroups g ON g.Id = m.GroupId
+            JOIN dbo.ChatGroupMembers me ON me.GroupId = g.Id AND me.UserId = @userId
+            WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.FromUserId IS NOT NULL AND m.FromUserId <> @userId AND {Window}
+              AND NOT EXISTS (SELECT 1 FROM dbo.ChatMessageDeliveries d WHERE d.MessageId = m.Id AND d.UserId = @userId)
+            """, new { groupId, userId, at }, null, ct))).ToArray();
+        if (marked.Length == 0) return [];
+        return (await c.QueryAsync<long>(Sql.Cmd("SELECT DISTINCT FromUserId FROM dbo.ChatMessages WHERE Id IN @marked AND FromUserId IS NOT NULL", new { marked }, null, ct))).ToList();
     }
 
     public async Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct)

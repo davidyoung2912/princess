@@ -75,6 +75,14 @@ public sealed class ChatNotifier(PushService push, IUserStore users, IRealtimeHu
         Deliver(userId, "read", new PushNotice($"chat:read:{conversationId:N}:{userId}:{atMs}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
             new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
 
+    /// <summary>
+    /// A reaction was added, changed or removed, or a device received messages: a live nudge only, never a phone notice (docs/chat-features-research.md, phase 1), so the other members' screens refetch and show it.
+    /// Nobody with the app closed hears anything, and nothing is lost: the next thread read carries it.
+    /// </summary>
+    public Task ThreadChangedAsync(long userId, Guid conversationId, string kind, CancellationToken ct) =>
+        Deliver(userId, kind, new PushNotice($"chat:{kind}:{conversationId:N}:{userId}:{Guid.NewGuid():N}", "chat", "chat", false, 50, ChatConversationRules.NoticePath(conversationId), "", "",
+            new() { ["conversation"] = conversationId.ToString("N") }), false, ct);
+
     private Task Send(long userId, string kind, Guid connectionId, (string Title, string Body) text, CancellationToken ct) =>
         Deliver(userId, kind, new PushNotice(ChatConnectionRules.NoticeKey(kind, connectionId), "chat", "chat", false, 50, "/chat", text.Title, text.Body, new() { ["connection"] = connectionId.ToString("N") }), true, ct);
 

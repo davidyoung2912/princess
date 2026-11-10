@@ -706,6 +706,107 @@ public class AboardApiTests : JourneyWorld
         Assert.True((await ChatGet("conversations", daniel)).Json.EnumerateArray().First(c => c.GetProperty("id").GetString() == direct.PublicId.ToString()).GetProperty("closed").GetBoolean());
     }
 
+    private static JsonElement Message(JsonElement thread, string id) => thread.GetProperty("messages").EnumerateArray().First(m => m.GetProperty("id").GetString() == id);
+
+    [Fact]
+    public async Task AReactionIsOnePerPersonAndThePickedOneAgainTakesItAway()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Priya, "Dinner at eight?", 0);
+        var daniel = await DanielToken();
+        var react = (string emoji) => ChatPost($"conversations/{group.PublicId}/messages/{said}/react", daniel, new { emoji });
+        var first = (await react("👍")).Json.EnumerateArray().Single();
+        Assert.Equal((1, true), (first.GetProperty("count").GetInt32(), first.GetProperty("mine").GetBoolean()));
+        var replaced = (await react("❤️")).Json.EnumerateArray().Single();
+        Assert.Equal("❤️", replaced.GetProperty("emoji").GetString());   // one per person: the new one replaced the old
+        var seenByPriya = Message((await ChatGet(Msgs(group), await SignIn(Priya))).Json, said).GetProperty("reactions").EnumerateArray().Single();
+        Assert.Equal(["Daniel U."], seenByPriya.GetProperty("names").EnumerateArray().Select(n => n.GetString()!).ToArray());
+        Assert.False(seenByPriya.GetProperty("mine").GetBoolean());
+        Assert.Empty((await react("❤️")).Json.EnumerateArray());   // the same one again clears it
+        Assert.False(Message((await ChatGet(Msgs(group), daniel)).Json, said).TryGetProperty("reactions", out _));
+        Is(HttpStatusCode.BadRequest, "emoji", await react("🔥"));
+    }
+
+    [Fact]
+    public async Task AReactionOrAReplyNeverReachesAMessageOfAConversationTheCallerIsNotIn()
+    {
+        var mine = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var theirs = F.Chat.Direct(Paul.Id, Stranger.Id);
+        var theirMessage = await Say(theirs, Paul, "Private", 0);
+        var daniel = await DanielToken();
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/messages/{theirMessage}/react", daniel, new { emoji = "👍" })).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await ChatPost($"conversations/{theirs.PublicId}/delivered", daniel)).Status);
+        // Naming their message from my own conversation is refused as if it did not exist, and nothing is stored.
+        Is(HttpStatusCode.BadRequest, "replyTo", await ChatPost(Msgs(mine), daniel, new { text = "Hi", replyTo = theirMessage }));
+        Assert.DoesNotContain(F.Chat.Messages, m => m.GroupId == mine.Id);
+        Assert.Empty(F.Chat.ReactionsBy);
+        // And a member cannot react to a message of their own conversation that is not a person's (a line about the group).
+        F.Chat.Messages.Add(new InMemoryChatStore.Stored(mine.Id, new ChatMessageRow { Id = 9001, PublicId = Guid.NewGuid(), FromUserId = Priya.Id, Text = "Priya joined", IsSystem = true, At = SeaDay }, null));
+        var line = F.Chat.Messages.Last().Row.PublicId;
+        Is(HttpStatusCode.BadRequest, "notMessage", await ChatPost($"conversations/{mine.PublicId}/messages/{line}/react", daniel, new { emoji = "👍" }));
+    }
+
+    [Fact]
+    public async Task AReactionIsRefusedOnAnEndedDirectChat()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var said = await Say(direct, Priya, "Bye", 0);
+        direct.DirectEnded = true;
+        Is(HttpStatusCode.Conflict, "closed", await ChatPost($"conversations/{direct.PublicId}/messages/{said}/react", await DanielToken(), new { emoji = "👍" }));
+    }
+
+    [Fact]
+    public async Task AReplyCarriesAQuoteAndShowsMessageRemovedWhenTheOriginalIsOutOfTheReadersWindow()
+    {
+        var direct = F.Chat.Direct(Daniel.Id, Priya.Id);
+        var original = await Say(direct, Priya, "Meet at the pool at three", 0);
+        SetNow(SeaDay.AddMinutes(1));
+        var sent = (await ChatPost(Msgs(direct), await DanielToken(), new { text = "On my way", replyTo = original })).Json;
+        var quote = sent.GetProperty("replyTo");
+        Assert.Equal((original, "Meet at the pool at three", "Priya U."), (quote.GetProperty("id").GetString(), quote.GetProperty("text").GetString(), quote.GetProperty("fromName").GetString()));
+        var priya = await SignIn(Priya);
+        Assert.True(Message((await ChatGet(Msgs(direct), priya)).Json, sent.GetProperty("id").GetString()!).GetProperty("replyTo").GetProperty("mine").GetBoolean());
+        // Priya's window moves past her own original (say she re-joined): she can no longer open it, so the quote does not reveal it.
+        direct.Members.First(m => m.UserId == Priya.Id).JoinedAt = SeaDay.AddMinutes(1);
+        var removed = Message((await ChatGet(Msgs(direct), priya)).Json, sent.GetProperty("id").GetString()!).GetProperty("replyTo");
+        Assert.Equal(("Message removed", true), (removed.GetProperty("text").GetString(), removed.GetProperty("removed").GetBoolean()));
+        Assert.False(removed.TryGetProperty("id", out _));
+    }
+
+    [Fact]
+    public async Task DeliveredShowsOnlyWhenBothSidesHaveReceiptsOnAndTheAckIsIdempotent()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        var said = await Say(group, Daniel, "Anyone for cards?", 0);
+        var daniel = await DanielToken();
+        var priya = await SignIn(Priya);
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{group.PublicId}/delivered", priya)).Status);
+        Assert.False(Message((await ChatGet(Msgs(group), daniel)).Json, said).TryGetProperty("delivered", out _));   // receipts are off on both sides
+        await ChatPut("receipts", daniel, new { on = true });
+        Assert.False(Message((await ChatGet(Msgs(group), daniel)).Json, said).TryGetProperty("delivered", out _));   // only the sender has them on
+        await ChatPut("receipts", priya, new { on = true });
+        Assert.True(Message((await ChatGet(Msgs(group), daniel)).Json, said).GetProperty("delivered").GetBoolean());
+        Assert.Equal(HttpStatusCode.NoContent, (await ChatPost($"conversations/{group.PublicId}/delivered", priya)).Status);   // a repeat changes nothing
+        Assert.Single(F.Chat.MessageDeliveries);
+        // The sender's own device does not mark their own message delivered.
+        await ChatPost($"conversations/{group.PublicId}/delivered", daniel);
+        Assert.Single(F.Chat.MessageDeliveries);
+    }
+
+    [Fact]
+    public async Task TheThreadNamesTheFirstUnreadMessageFromSomeoneElse()
+    {
+        var group = F.Chat.Group(Daniel.Id, Priya.Id);
+        await Say(group, Priya, "Old", 0);
+        var daniel = await DanielToken();
+        await ChatPost($"conversations/{group.PublicId}/read", daniel);
+        var first = await Say(group, Priya, "New one", 1);
+        await Say(group, Priya, "New two", 2);
+        Assert.Equal(first, (await ChatGet(Msgs(group), daniel)).Json.GetProperty("firstUnread").GetString());
+        await ChatPost($"conversations/{group.PublicId}/read", daniel);
+        Assert.False((await ChatGet(Msgs(group), daniel)).Json.TryGetProperty("firstUnread", out _));
+    }
+
     [Fact]
     public async Task AConversationCanBeMutedAndTheListSaysSo()
     {

@@ -251,6 +251,10 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     public List<Conversation> Conversations { get; } = [];
     public sealed record Stored(long GroupId, ChatMessageRow Row, Guid? ClientId);
 
+    /// <summary>One reaction per (message id, person), like the real table's key.</summary>
+    public Dictionary<(long MessageId, long UserId), string> ReactionsBy { get; } = [];
+    public HashSet<(long MessageId, long UserId)> MessageDeliveries { get; } = [];
+
     public List<Stored> Messages { get; } = [];
     public HashSet<long> Receipts { get; } = [];
     public HashSet<long> Previews { get; } = [];
@@ -386,16 +390,20 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         return Task.FromResult(all.TakeLast(limit + 1).Select(m => new ChatMessageRow
         {
             Id = m.Id, PublicId = m.PublicId, FromUserId = m.FromUserId, Text = m.Text, HasPhoto = m.Photo is not null, At = m.At, IsSystem = m.IsSystem, ViaSms = m.ViaSms, Urgency = m.Urgency,
-            SeenBy = m.SeenBy, AckedBy = m.AckedBy, Persona = m.Persona, Subtitle = m.Subtitle,
+            SeenBy = m.SeenBy, AckedBy = m.AckedBy, Persona = m.Persona, Subtitle = m.Subtitle, ReplyToId = m.ReplyToId,
+            // Like the real store: the quote is the original only when this reader may read it.
+            Reply = m.ReplyToId is { } r && Visible(c, me).FirstOrDefault(x => x.Id == r) is { } q ? new ChatQuoteRow { Id = q.Id, PublicId = q.PublicId, FromUserId = q.FromUserId, Text = q.Text, HasPhoto = q.Photo is not null, IsSystem = q.IsSystem } : null,
+            Reactions = [.. ReactionsBy.Where(x => x.Key.MessageId == m.Id).Select(x => new ChatReactionRow(m.Id, x.Key.UserId, x.Value))],
+            DeliveredBy = [.. MessageDeliveries.Where(x => x.MessageId == m.Id).Select(x => x.UserId)],
             Lane = m.Lane, NoticeKind = m.NoticeKind, NoticePath = m.NoticePath, ExpiresAt = m.ExpiresAt, SupersededAt = m.SupersededAt,
         }).ToList());
     }
 
-    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal")
+    public Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null)
     {
         if (clientId is not null && Messages.FirstOrDefault(m => m.GroupId == groupId && m.Row.FromUserId == userId && m.ClientId == clientId) is { } again)
             return Task.FromResult(new ChatSentRow(again.Row, false));
-        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency };
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, Photo = photo, At = at, ViaSms = viaSms, Urgency = urgency, ReplyToId = replyToId };
         Messages.Add(new Stored(groupId, row, clientId));
         return Task.FromResult(new ChatSentRow(row, true));
     }
@@ -456,6 +464,28 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
         var c = Of(groupId);
         var me = c.Members.First(m => m.UserId == userId);
         return Task.FromResult(Visible(c, me).FirstOrDefault(m => m.PublicId == messagePublicId));
+    }
+
+    public Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct) =>
+        Task.FromResult(ReactionsBy.TryGetValue((messageId, userId), out var e) ? e : null);
+
+    public Task SetReactionAsync(long messageId, long userId, string? emoji, DateTime at, CancellationToken ct)
+    {
+        if (emoji is null) ReactionsBy.Remove((messageId, userId)); else ReactionsBy[(messageId, userId)] = emoji;
+        return Task.CompletedTask;
+    }
+
+    public Task<List<ChatReactionRow>> ListReactionsAsync(long messageId, CancellationToken ct) =>
+        Task.FromResult(ReactionsBy.Where(x => x.Key.MessageId == messageId).Select(x => new ChatReactionRow(messageId, x.Key.UserId, x.Value)).ToList());
+
+    public Task<List<long>> MarkDeliveredAsync(long groupId, long userId, DateTime at, CancellationToken ct)
+    {
+        var c = Of(groupId);
+        var me = c.Members.First(m => m.UserId == userId);
+        var senders = new HashSet<long>();
+        foreach (var m in Visible(c, me).Where(m => !m.IsSystem && m.FromUserId != 0 && m.FromUserId != userId))
+            if (MessageDeliveries.Add((m.Id, userId))) senders.Add(m.FromUserId);
+        return Task.FromResult(senders.ToList());
     }
 
     public Task<int> CountSentAsync(long userId, string urgency, DateTime since, CancellationToken ct) =>

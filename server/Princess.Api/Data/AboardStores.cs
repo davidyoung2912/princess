@@ -131,6 +131,14 @@ public sealed class ChatMessageRow
     public List<long> SeenBy { get; set; } = [];
     /// <summary>The people who have acknowledged it (urgent messages only).</summary>
     public List<long> AckedBy { get; set; } = [];
+    /// <summary>The message this one answers (phase 1), as stored; <see cref="Reply"/> is what the reader may see of it.</summary>
+    public long? ReplyToId { get; set; }
+    /// <summary>The replied-to message, filled by <see cref="IChatStore.ListMessagesAsync"/> only when the reader may read it (their window, not from someone they blocked); null otherwise.</summary>
+    public ChatQuoteRow? Reply { get; set; }
+    /// <summary>Everyone's reaction to it (one each), filled by <see cref="IChatStore.ListMessagesAsync"/>.</summary>
+    public List<ChatReactionRow> Reactions { get; set; } = [];
+    /// <summary>The people whose device has it, filled by <see cref="IChatStore.ListMessagesAsync"/>.</summary>
+    public List<long> DeliveredBy { get; set; } = [];
     /// <summary>A message from Stanley carries who he spoke for (company or ship) and the subtitle shown then; null for a person's message. Stanley has no user, so his <see cref="FromUserId"/> is 0.</summary>
     public string? Persona { get; set; }
     public string? Subtitle { get; set; }
@@ -206,6 +214,20 @@ public sealed class ChatAwayRecipientRow
     public Guid GroupPublicId { get; set; }
     public long UserId { get; set; }
     public bool Muted { get; set; }
+}
+
+/// <summary>One person's reaction to one message.</summary>
+public sealed record ChatReactionRow(long MessageId, long UserId, string Emoji);
+
+/// <summary>The part of a replied-to message a quote shows.</summary>
+public sealed class ChatQuoteRow
+{
+    public long Id { get; set; }
+    public Guid PublicId { get; set; }
+    public long FromUserId { get; set; }
+    public string Text { get; set; } = "";
+    public bool HasPhoto { get; set; }
+    public bool IsSystem { get; set; }
 }
 
 /// <summary>A message stored by <see cref="IChatStore.AddMessageAsync"/>. <c>Created</c> is false when the same <c>clientId</c> had been sent before and the stored message came back.</summary>
@@ -316,7 +338,19 @@ public interface IChatStore
     /// </summary>
     Task<List<ChatMessageRow>> ListMessagesAsync(long groupId, long userId, Guid? before, int limit, CancellationToken ct);
     /// <summary>Stores a message in the conversation. With a <paramref name="clientId"/> a repeat returns the stored message and creates nothing.</summary>
-    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal");
+    /// <param name="replyToId">The stored id of the message this one answers (already checked to be in the same conversation and readable by the sender), or null.</param>
+    Task<ChatSentRow> AddMessageAsync(long groupId, long userId, string text, string? photo, Guid? clientId, DateTime at, CancellationToken ct, bool viaSms = false, string urgency = "normal", long? replyToId = null);
+    /// <summary>The person's reaction to the message, or null when they have none.</summary>
+    Task<string?> GetReactionAsync(long messageId, long userId, CancellationToken ct);
+    /// <summary>Sets the person's one reaction to the message (replacing any), or clears it when <paramref name="emoji"/> is null.</summary>
+    Task SetReactionAsync(long messageId, long userId, string? emoji, DateTime at, CancellationToken ct);
+    /// <summary>Everyone's reaction to one message.</summary>
+    Task<List<ChatReactionRow>> ListReactionsAsync(long messageId, CancellationToken ct);
+    /// <summary>
+    /// Records that a device of the person has every message in the conversation that others sent (in their window). Returns the senders of the messages that were newly marked, so a repeat tells no one:
+    /// only those senders need a nudge.
+    /// </summary>
+    Task<List<long>> MarkDeliveredAsync(long groupId, long userId, DateTime at, CancellationToken ct);
     /// <summary>The members to tell about a message from <paramref name="senderId"/>: active, not the sender, and not having blocked the sender.</summary>
     Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct);
     /// <summary>Marks everything in the conversation read for the person; with <paramref name="receipts"/> also records who read each message.</summary>

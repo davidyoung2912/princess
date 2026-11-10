@@ -215,7 +215,9 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
   const chatConversations: HttpGroups['chatConversations'] = {
     list: () => get('/me/chat/conversations'),
     thread: (id, before) => get(`/me/chat/conversations/${seg(id)}/messages${before ? `?before=${seg(before)}` : ''}`),
-    send: (id, text, clientId, urgency) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}) }),
+    send: (id, text, clientId, urgency, replyTo) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { text, clientId, ...(urgency && urgency !== 'normal' ? { urgency } : {}), ...(replyTo ? { replyTo } : {}) }),
+    react: (id, messageId, emoji) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/react`, { emoji }),
+    delivered: async (id) => { await send('post', `/me/chat/conversations/${seg(id)}/delivered`) },
     ack: async (id, messageId) => { await send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/ack`) },
     noticeReply: (id, messageId, reply) => send('post', `/me/chat/conversations/${seg(id)}/messages/${seg(messageId)}/reply`, { reply }),
     sendPhoto: (id, input) => send('post', `/me/chat/conversations/${seg(id)}/photos`, input),
