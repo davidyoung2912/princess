@@ -3463,8 +3463,24 @@ IF COL_LENGTH(N'dbo.ChatGroupMembers', N'ArchivedAt') IS NULL
   ALTER TABLE dbo.ChatGroupMembers ADD ArchivedAt DATETIME2(0) NULL, MutedUntil DATETIME2(0) NULL;
 GO
 -- The typing indicator switch: off means the person neither sends "is typing" nor sees anyone else's. On unless turned off.
+-- The pictures a guest chooses from (50, drawn by DiceBear and stored here by scripts/seed_avatars.py; the app never calls DiceBear). The Svg is plain drawing, served by the API as an image.
+IF OBJECT_ID(N'dbo.ChatAvatars', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatAvatars (
+  Id NVARCHAR(30) NOT NULL CONSTRAINT PK_ChatAvatars PRIMARY KEY,          -- style and number, e.g. bottts-31
+  Label NVARCHAR(60) NOT NULL,                                             -- what a screen reader says, e.g. "Robot 1"
+  GroupName NVARCHAR(20) NOT NULL,                                         -- people, sketch, robots or critters
+  Style NVARCHAR(30) NOT NULL, Seed NVARCHAR(60) NOT NULL,                 -- how it was made, so it can be made again
+  Creator NVARCHAR(80) NOT NULL, Licence NVARCHAR(60) NOT NULL,
+  SortOrder INT NOT NULL,
+  Svg NVARCHAR(MAX) NOT NULL,
+  CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_ChatAvatars_CreatedAt DEFAULT SYSUTCDATETIME()
+);
+END
+GO
+-- The guest's chosen picture (null until they choose; the chat then shows their initials). Removing a catalogue row a guest uses is refused.
 IF COL_LENGTH(N'dbo.UserPrefs', N'ChatAvatar') IS NULL
-  ALTER TABLE dbo.UserPrefs ADD ChatAvatar NVARCHAR(20) NULL;   -- phase 9c: 'colour:icon', see ChatAvatarRules
+  ALTER TABLE dbo.UserPrefs ADD ChatAvatar NVARCHAR(30) NULL CONSTRAINT FK_UserPrefs_ChatAvatars FOREIGN KEY REFERENCES dbo.ChatAvatars (Id);
 IF COL_LENGTH(N'dbo.UserPrefs', N'ChatTyping') IS NULL
   ALTER TABLE dbo.UserPrefs ADD ChatTyping BIT NOT NULL CONSTRAINT DF_UserPrefs_ChatTyping DEFAULT 1;
 GO

@@ -1,5 +1,5 @@
 import type { AboardApi } from './aboardTypes'
-import type { ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
+import type { AvatarChoice, ChatConnectionsApi, ChatConversationsApi, ChatGroupsApi, ChatGuardianApi, ChatRoomsApi, ChatRoomsStaffApi } from './chatTypes'
 import type { AheadApi } from './aheadTypes'
 import type { BudgetApi, PrivacyApi, ShowsApi, UpdatesApi, WaitsApi } from './careTypes'
 import type { Entitlements, Balance, BalanceKey } from '../domain/entitlements'
@@ -756,7 +756,9 @@ export interface Api {
     /** Whether the signed-in person shows and sees read receipts. */
     receipts(): Promise<boolean>
     setReceipts(on: boolean): Promise<boolean>
-    /** The person's chat avatar as `colour:icon` (see `src/domain/chatAvatar.ts`), or null for the initials. */
+    /** The avatars to choose from (about 50, stored in the database). */
+    avatars(): Promise<AvatarChoice[]>
+    /** The id of the person's chosen avatar, or null when they have not chosen one. */
     avatar(): Promise<string | null>
     setAvatar(avatar: string | null): Promise<string | null>
   }

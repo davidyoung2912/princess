@@ -93,6 +93,14 @@ public sealed class GroupTableRow
     public List<(int Seq, string Name, string Cabin)> Friends { get; set; } = [];
 }
 
+/// <summary>One picture in the avatar catalogue, without its drawing.</summary>
+public sealed class ChatAvatarRow
+{
+    public string Id { get; set; } = "";
+    public string Label { get; set; } = "";
+    public string GroupName { get; set; } = "";
+}
+
 /// <summary>Someone who shares a conversation with the person: the public id and short name the screens use, and whether they show read receipts.</summary>
 public sealed class ChatPeerRow
 {
@@ -529,6 +537,10 @@ public interface IChatStore
     Task<bool> GetReceiptsAsync(long userId, CancellationToken ct);
     Task SetReceiptsAsync(long userId, bool on, CancellationToken ct);
     Task<string?> GetAvatarAsync(long userId, CancellationToken ct);
+    /// <summary>The catalogue the guest chooses from, in display order (no drawings).</summary>
+    Task<List<ChatAvatarRow>> ListAvatarsAsync(CancellationToken ct);
+    /// <summary>One picture's drawing, or null when there is no such id.</summary>
+    Task<string?> GetAvatarSvgAsync(string id, CancellationToken ct);
     Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct);
     Task<List<long>> ListBlocksAsync(long userId, CancellationToken ct);
     Task SetBlockAsync(long userId, long blockedUserId, bool on, CancellationToken ct);

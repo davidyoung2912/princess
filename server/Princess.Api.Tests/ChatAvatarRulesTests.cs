@@ -5,18 +5,23 @@ namespace Princess.Api.Tests;
 public class ChatAvatarRulesTests
 {
     [Fact]
-    public void A_known_colour_and_icon_is_kept() => Assert.Equal("coral:anchor", ChatAvatarRules.Normalise(" Coral:Anchor "));
-
-    [Fact]
-    public void Initials_is_an_icon() => Assert.Equal("sea:initials", ChatAvatarRules.Normalise("sea:initials"));
+    public void An_id_is_trimmed_and_lower_cased() => Assert.Equal("bottts-31", ChatAvatarRules.Normalise(" Bottts-31 "));
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("red:anchor")]
-    [InlineData("sea:skull")]
-    [InlineData("sea")]
-    [InlineData("sea:anchor:extra")]
-    [InlineData("<script>:x")]
-    public void Anything_else_is_refused(string? value) => Assert.Null(ChatAvatarRules.Normalise(value));
+    [InlineData("   ")]
+    public void Blank_means_the_initials(string? value) => Assert.Null(ChatAvatarRules.Normalise(value));
+
+    [Theory]
+    [InlineData("sea:anchor")]
+    [InlineData("../etc")]
+    [InlineData("bottts_31")]
+    [InlineData("<script>")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    public void A_malformed_id_is_refused(string value)
+    {
+        Assert.False(ChatAvatarRules.WellFormed(value));
+        Assert.Null(ChatAvatarRules.Normalise(value));
+    }
 }

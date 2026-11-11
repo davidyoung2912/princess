@@ -157,7 +157,8 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
                 Kind: ChatCardRules.IsTyped(m.Kind) || m.Kind == ChatPlanningRules.Poll ? m.Kind : null, Card: ChatCardRules.IsTyped(m.Kind) && ChatCardRules.Parse(m.Payload) is { } card ? CardDto(card, nowMs, stillBooked) : null,
                 Pinned: pinned.Contains(m.Id), MentionsYou: m.Mentions.Contains(actor.Id), Mentions: m.Mentions.Count == 0 ? null : [.. m.Mentions.Select(publicOf).OfType<Guid>()],
                 Poll: m.Kind == ChatPlanningRules.Poll && ChatPlanningRules.ParsePoll(m.Payload) is { } poll ? new ChatPollDto(poll.Question, poll.Options) : null,
-                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null));
+                Tally: answerable.Contains(m.Id) ? ChatPlanningService.TallyOf(m, [.. answersOf[m.Id]], actor.Id, now, adminHere, byId, blockedForAnswers) : null,
+                Avatar: name is null ? null : byId.GetValueOrDefault(m.FromUserId)?.Avatar));
         }
         // Who is ashore and answers by text: only people with the bridge on are looked at, so a thread with none costs one query.
         var ashore = roomy ? new HashSet<long>() : await sms.AshoreAsync([.. members.Where(p => p.UserId != actor.Id && p.Status == ChatConversationRules.Active).Select(p => p.UserId)], ct);
@@ -644,12 +645,18 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         return body?.On == true;
     }
 
+    public async Task<List<ChatAvatarDto>> AvatarsAsync(CancellationToken ct) => [.. (await store.ListAvatarsAsync(ct)).Select(a => new ChatAvatarDto(a.Id, a.Label, a.GroupName))];
+
+    /// <summary>The drawing for the image route, or null for an id that is malformed or not in the catalogue.</summary>
+    public Task<string?> AvatarSvgAsync(string id, CancellationToken ct) => ChatAvatarRules.WellFormed(id) ? store.GetAvatarSvgAsync(id, ct) : Task.FromResult<string?>(null);
+
     public Task<string?> AvatarAsync(UserRecord actor, CancellationToken ct) => store.GetAvatarAsync(actor.Id, ct);
 
     public async Task<string?> SetAvatarAsync(UserRecord actor, ChatAvatarRequest? body, CancellationToken ct)
     {
         var avatar = ChatAvatarRules.Normalise(body?.Avatar);
         if (avatar is null && !string.IsNullOrWhiteSpace(body?.Avatar)) throw ApiException.Invalid("avatar");
+        if (avatar is not null && await store.GetAvatarSvgAsync(avatar, ct) is null) throw ApiException.Invalid("avatar");
         await store.SetAvatarAsync(actor.Id, avatar, ct);
         return avatar;
     }

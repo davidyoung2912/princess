@@ -709,6 +709,12 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Dictionary<long, string> Avatars { get; } = [];
 
+    public List<ChatAvatarRow> AvatarCatalogue { get; } = [new() { Id = "bottts-31", Label = "Robot 1", GroupName = "robots" }, new() { Id = "avataaars-01", Label = "Person 1, short hair", GroupName = "people" }];
+
+    public Task<List<ChatAvatarRow>> ListAvatarsAsync(CancellationToken ct) => Task.FromResult(AvatarCatalogue.ToList());
+
+    public Task<string?> GetAvatarSvgAsync(string id, CancellationToken ct) => Task.FromResult(AvatarCatalogue.Any(a => a.Id == id) ? "<svg xmlns=\"http://www.w3.org/2000/svg\"/>" : null);
+
     public Task<string?> GetAvatarAsync(long userId, CancellationToken ct) => Task.FromResult(Avatars.TryGetValue(userId, out var a) ? a : null);
 
     public Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct)

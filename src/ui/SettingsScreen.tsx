@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { t, th } from '../i18n'
+import { AvatarPicker } from './AvatarPicker'
 import { Card } from './Card'
 import { DataSettings } from './DataSettings'
 import { DiagnosticsSettings } from './DiagnosticsSettings'
@@ -11,6 +12,11 @@ export function SettingsScreen() {
   return (
     <div className="page">
       <DisplaySettings />
+      <Card labelledBy="avatar-h">
+        <h2 id="avatar-h">{th('avatar.title')}</h2>
+        <p>{t('avatar.intro')}</p>
+        <AvatarPicker />
+      </Card>
       <StanleySettings />
       <TipsSettings />
       <DataSettings />

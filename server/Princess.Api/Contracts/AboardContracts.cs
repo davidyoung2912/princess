@@ -128,7 +128,9 @@ public sealed record ChatMessageDto(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatPollDto? Poll = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ChatTallyDto? Tally = null,
     /// <summary>How many photos the message has, only when there are two or more (the first is <c>hasPhoto</c>; phase 9b).</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? PhotoCount = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? PhotoCount = null,
+    /// <summary>The id of the sender's chosen avatar (phase 9c), only on someone else's message and only when they chose one; the name beside it always says who.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
 
 /// <summary>A poll (phase 4): the question and its two to five options.</summary>
 public sealed record ChatPollDto(string Question, List<string> Options);
@@ -212,8 +214,11 @@ public sealed record ChatMentionsOnlyRequest(bool On);
 
 public sealed record ChatReceiptsRequest(bool On);
 
-/// <summary>Phase 9c: the caller's avatar as <c>colour:icon</c>; null or empty goes back to the initials. 400 <c>avatar</c> for anything that is not a known colour and icon.</summary>
+/// <summary>Phase 9c: the caller's avatar as the id of a catalogue picture; null or empty goes back to the initials. 400 <c>avatar</c> for an id that is not in the catalogue.</summary>
 public sealed record ChatAvatarRequest(string? Avatar);
+
+/// <summary>One avatar to choose from: its id (the picture is at <c>/public/avatars/{id}</c>), what a screen reader says, and its group (people, sketch, robots or critters).</summary>
+public sealed record ChatAvatarDto(string Id, string Label, string Group);
 
 public sealed record ChatBlockRequest(bool On);
 

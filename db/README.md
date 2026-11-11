@@ -47,6 +47,10 @@ It runs, in order, stopping at the first error: `00-drop-all.sql`, `01-schema.sq
 
 It asks no question: it destroys all data in the Princess tables as soon as it runs, so use it on test databases only. It stores no connection string and writes nothing to disk.
 
+## Chat avatars (`seed/avatars`)
+
+`seed/avatars/01-avatars.sql` holds the 50 pictures a guest chooses from (people, sketch people, robots and critters) as `MERGE` statements into `dbo.ChatAvatars`; `reset-db.ps1` runs it after the reference seeds. It is **generated outside the app** by `python3 scripts/seed_avatars.py`, which asks the DiceBear web API for each picture with fixed seeds and options (so a rerun gives the same pictures), refuses any style that is not free for commercial use without attribution, strips the picture's metadata and writes the SQL and `avatars.json` (the list without the pictures). The app itself never calls DiceBear. To change the set, change the script and run it again.
+
 ## Reference seeds (`seed/reference`)
 
 ```

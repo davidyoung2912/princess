@@ -162,7 +162,7 @@ export interface ChatConversation {
   subtitle?: string
   /** Phase 8, a channel or room only: its rules, whether slow mode applies now and whether you may post. */
   room?: ChatRoomInfo
-  /** Direct chat only: the other person's chosen avatar (`colour:icon`); absent for the initials. */
+  /** Direct chat only: the id of the other person's chosen avatar (see `src/domain/chatAvatar.ts`); absent for the initials. */
   avatar?: string
 }
 
@@ -174,6 +174,8 @@ export interface ChatMessage {
   from: string
   /** First name and last initial of someone else; absent for your own message. */
   fromName?: string
+  /** The id of the sender's chosen avatar (see `src/domain/chatAvatar.ts`); only on someone else's message, and only when they chose one. */
+  avatar?: string
   text: string
   at: number
   photo?: string
@@ -517,4 +519,14 @@ export interface ChatRoomsStaffApi {
   questions(): Promise<ChatSuggestedQuestion[]>
   decideQuestion(id: string, decision: 'popular' | 'reject'): Promise<void>
   summary(days?: number): Promise<ChatRoomSummary>
+}
+
+export type AvatarGroup = 'people' | 'sketch' | 'robots' | 'critters'
+
+/** One picture in the chat avatar catalogue (phase 9c); the picture itself is at `/public/avatars/{id}`. */
+export interface AvatarChoice {
+  id: string
+  /** What a screen reader says, for example "Robot 1". */
+  label: string
+  group: AvatarGroup
 }

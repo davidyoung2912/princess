@@ -1,17 +1,12 @@
 namespace Princess.Api.Domain;
 
-/// <summary>A guest's chat avatar (phase 9c): a colour and a ship icon, shown with their initials as the fallback. No photo is ever uploaded (moderation, children). Stored as <c>colour:icon</c>.</summary>
+/// <summary>A guest's chat avatar (phase 9c): one of the pictures in <c>dbo.ChatAvatars</c> (50, drawn by DiceBear and stored by <c>scripts/seed_avatars.py</c>), never an upload. The choice is the picture's id, for example <c>bottts-31</c>.</summary>
 public static class ChatAvatarRules
 {
-    public static readonly string[] Colours = ["sea", "teal", "coral", "gold", "plum", "green"];
-    /// <summary><c>initials</c> means no icon: the letters of the name.</summary>
-    public static readonly string[] Icons = ["initials", "anchor", "wheel", "lifebuoy", "wave", "star", "compass", "funnel"];
+    /// <summary>The shape of an id, checked before the database is asked, so nothing free-form reaches a query or a URL.</summary>
+    public static bool WellFormed(string? id) =>
+        id is { Length: > 0 and <= 30 } && id.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-');
 
-    /// <summary>The stored text for a choice, or null when it is not one of the known colours and icons (so nothing free-form is kept).</summary>
-    public static string? Normalise(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        var parts = value.Trim().ToLowerInvariant().Split(':');
-        return parts.Length == 2 && Colours.Contains(parts[0]) && Icons.Contains(parts[1]) ? $"{parts[0]}:{parts[1]}" : null;
-    }
+    /// <summary>The id to keep: trimmed and lower-cased, or null for blank (back to the initials). Null also for a malformed id, which the caller refuses.</summary>
+    public static string? Normalise(string? id) => string.IsNullOrWhiteSpace(id) ? null : id.Trim().ToLowerInvariant() is var v && WellFormed(v) ? v : null;
 }

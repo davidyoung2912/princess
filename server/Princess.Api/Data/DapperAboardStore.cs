@@ -1152,6 +1152,18 @@ public sealed class DapperChatStore(IDbConnectionFactory db) : IChatStore
         return await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT ChatAvatar FROM dbo.UserPrefs WHERE UserId = @userId", new { userId }, null, ct));
     }
 
+    public async Task<List<ChatAvatarRow>> ListAvatarsAsync(CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return (await c.QueryAsync<ChatAvatarRow>(Sql.Cmd("SELECT Id, Label, GroupName FROM dbo.ChatAvatars ORDER BY SortOrder", new { }, null, ct))).ToList();
+    }
+
+    public async Task<string?> GetAvatarSvgAsync(string id, CancellationToken ct)
+    {
+        await using var c = await db.OpenAsync(ct);
+        return await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT Svg FROM dbo.ChatAvatars WHERE Id = @id", new { id }, null, ct));
+    }
+
     public async Task SetAvatarAsync(long userId, string? avatar, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);

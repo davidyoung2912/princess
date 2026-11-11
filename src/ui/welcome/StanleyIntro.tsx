@@ -6,6 +6,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { Card } from '../Card'
 import { LinkButton } from '../Button'
 import { StanleyPose } from '../StanleyPose'
+import { AvatarPicker } from '../AvatarPicker'
 
 /** What Stanley can do, in the order shown. The words are `stanleyIntro.can.<n>`. */
 const CAN = [1, 2, 3, 4] as const
@@ -39,6 +40,12 @@ export function StanleyIntro() {
         <ul className="stanley-intro__can">
           {CAN.map((n) => <li key={n}>{t(`stanleyIntro.can.${n}` as StringKey)}</li>)}
         </ul>
+      </Card>
+      <Card labelledBy="stanley-intro-avatar-h">
+        <h2 id="stanley-intro-avatar-h">{th('avatar.title')}</h2>
+        <p>{t('avatar.intro')}</p>
+        <AvatarPicker />
+        <p className="muted">{t('avatar.skip')}</p>
       </Card>
       <Card hero labelledBy="stanley-intro-level-h">
         <h2 id="stanley-intro-level-h">{th('stanleyIntro.h.level')}</h2>
