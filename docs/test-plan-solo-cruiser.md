@@ -230,7 +230,7 @@ Steps: **Date → Room → Fare → Guests → Dining → Review → Pay**.
    - Enter date of birth, gender as shown on the passport.
    - Add one need (for example a dietary note) as optional.
    - **Expect:** a note that passport scanning is not available in this concept.
-   - Try to add a **second** guest who is under 21 into a one-guest room. **Expect:** it is blocked or the 21+ rule note shows. Remove them again.
+   - **Expect:** the note "At least one guest in the stateroom must be 21 or older on the day of sailing." Per the code this is an **attestation** the guest ticks at Review ("at least one guest in each stateroom is 21 or older"), not a date-of-birth block, so record what actually happens (see section 17.1).
 5. **Dining:** choose a dining time (and table size if offered). Pick "just me" or the smallest table.
 6. **Review:** **Expect:** sailing, room, fare, guests, dining, **price with the solo supplement**, "This price is held for you until {time}", the cancellation terms, any onboard credit shown separately ("It goes on your onboard account. It does not lower the price"), and a deposit-and-balance plan. Use **Change** beside each section and return.
 7. Accept the documents (contract and terms) and continue.
@@ -434,8 +434,8 @@ Either **pay the balance** from `H19` Pay Your Balance, or jump the testing date
    - Jump the testing time forward 16 minutes. **Expect:** "Time is up… Check in now." Jump forward 30 more. **Expect:** "Over time… If you need help, use the emergency screen." and a path to **Emergency Card**.
    - Press **I'm back and safe**. **Expect:** the timer clears.
    - Start another with a blank place. **Expect:** "somewhere on the ship". Reload while it runs. **Expect:** it persists.
-2. **I'm OK Check** (`S46`): do the three-tap check-in; confirm the result is recorded.
-3. **Services and Meet-Ups** (`S44`): **Expect:** the list of hosted activities, with an honest note that this is not roommate matching. Sign up for one.
+2. **I'm OK Check** (`S46`): **Expect:** "A quick tap to say you are fine." and "Nothing is sent to anyone. This only reminds you, here on this phone." Status starts "You have not tapped yet." Choose **Remind me every** 1 hour, press **I'm OK** (status "Tapped. Fine for now."). Jump the testing time forward past the interval. **Expect:** "It is time to tap again." Tap again to clear it.
+3. **Services and Meet-Ups** (`S44`): record what it lists. **Expect:** nothing that implies roommate matching. Sign up for one if offered.
 4. **Games** (`S43`): open one.
 5. **Photos** (`S48`) and **Read Aloud** (`S49`): open.
 6. **You Said, We Did** (`S47`): open.
@@ -586,4 +586,112 @@ Spot check three screens each (for example Deck Map, Order Food and Drinks, Emer
 - **Stanley** answers from scripts unless a model key is set, so the exact wording will differ between environments. Check meaning and accuracy, not wording.
 - **Roommate matching and solo staterooms do not exist.** The app must say so plainly. A screen that implies otherwise is a defect.
 - **Screen names and labels** were taken from the English locale file and the screen registry. If a button is worded differently on screen, trust the screen and fix this plan.
+- **Verification pass (2026-11-10).** Checked against the code: stage tabs and Home tiles (from the registry matrix), the safety timer and I'm OK strings, the 21+ rule, the card rules and the check-in window. Corrected: I'm OK Check is a timed reminder, not a "three-tap" flow; the 21+ rule is an attestation. **Still unverified:** what `S44` lists, whether the timer and I'm OK state live on the server or only on one device (section 17.2 asks you to find out), and the chat connection flow for strangers (17.3).
 - **Not covered:** multi-traveller parties, children, accessibility-specific bookings, group chats between multiple real accounts, and the three other ships in depth. Those need their own plans.
+
+---
+
+## 17. Solo-specific deep dives
+
+Run these after the main walk-through. Each is independent. Use throwaway accounts where it says so.
+
+### 17.1 Age and eligibility boundaries
+Use a fresh account and booking for each birth date (the date must make the guest this age **on sailing day**).
+
+| Guest is | Try | Record |
+|---|---|---|
+| 17 | Register | Blocked: "An account holder must be 18 or over…" |
+| exactly 18 | Register, book a solo room | Does the booking go through? Is the 21+ attestation at Review honest for this guest? |
+| 20 | Same, plus buy a **Drinks package** | Drinks package is `minAge 21`: expect it refused or hidden |
+| 20, turns 21 **during** the cruise | Jump the date past the birthday | Does an adult-only item (drinks, adult-only orders) become available? Does the folio treat the guest as 21 only from that day? |
+| exactly 21 on sailing day | Book and buy a Drinks package | Allowed |
+| 65+ | Book, check large text and accessibility defaults | Layout and options suit the guest |
+
+Also test: a first name or surname that differs from the passport (use **Documents** to add a passport with a different spelling). **Expect:** a warning at check-in or in Readiness, not a silent pass.
+
+### 17.2 Safety features under stress
+1. **Where the state lives.** Start the Solo Safety Timer and an I'm OK reminder. Sign in on a second device. Record whether either appears there. (They may be per device. Neither outcome is wrong by itself, but the screen must not promise more than it does.)
+2. **Survival.** Start a timer, then each of these in turn: reload; sign out and in; go offline for two minutes; close the app and reopen it after the due time. **Expect:** the timer shows the right state (running, due or overdue) from the clock, not from how long the screen was open.
+3. **Clock jumps.** Start a 15-minute timer, jump forward 10 minutes, then **backward** 20 minutes. **Expect:** no crash and a sensible state.
+4. **Zone change.** With a timer running, jump across a ship time zone change. **Expect:** the "Back by {time}" shown is still correct in ship time.
+5. **Honest wording.** Read every line on S45, S46 and the overdue state. **Expect:** none says a person, the crew or a contact has been alerted. The only escalation is the pointer to **Emergency Card** (`S26`).
+6. **Escalation path.** From the overdue state, follow the link to Emergency Card and Medical Help Now (`S27`). **Expect:** each is one tap, and works offline.
+7. **Emergency contact.** Remove it from Traveller Details and try check-in (**expect:** blocked or clearly flagged). Put it back.
+8. **Medical privacy.** Add a note in Medical Card (`P08`). **Expect:** nothing in the app shares it with anyone else, since the party has one member.
+9. **Muster.** At Embark, confirm your station shows, and that Muster Drill is gone at Disembark.
+
+### 17.3 Meeting people (needs a second account)
+Register a second solo account, `solo.tester+2@example.com`, on the **same sailing**, and put both in the demo clock at Sea.
+1. **Connecting.** Find how one guest finds or invites the other (Chat, connections, invitations). Record every step. Groups need members who are already connected (a chat group needs 2 to 24 invitees who are all connected with the creator).
+2. **First message.** Send a message each way. **Expect:** delivery, a read state and a notification; a profanity filter on the text.
+3. **Group.** Create a group of both guests. Rename it with a blocked word. **Expect:** it is refused.
+4. **Block and report.** Block the second account. **Expect:** messages stop and the blocked guest isn't told. Unblock.
+5. **Privacy.** From account 2, confirm you can see only the name and chosen picture of account 1: no email, cabin number, birth date or location.
+6. **Leaving.** Remove yourself from a group. **Expect:** a system message and no further messages.
+7. **Find My Family** (`S40`) for a guest with no family: **Expect:** a clear empty state with no suggestion that a stranger can be tracked.
+8. **After the cruise.** Jump to Remember. **Expect:** what happens to the chat connection is stated, not silent.
+9. Delete account 2 at the end of the session.
+
+### 17.4 Dining alone
+1. **Dining Favourites and Table** (`S19`): choose "table for one" if offered, then "share a table". Reload; the choice persists.
+2. **Dining Reservations** (`P38`): book a table for 1 at each available time. Try a time that is full. **Expect:** waitlist offer; accept it later and see the reservation appear with "From the waitlist".
+3. **Allergy Pre-Flag** (`P11`) set to a real allergen. **Expect:** it shows on the booked dining reservation and in **Allergy Confidence** (`S33`) at Sea and Port.
+4. Cancel a reservation inside and outside the cancellation window. **Expect:** the refund or fee is stated before you confirm.
+
+### 17.5 Ashore alone
+1. In **Safe Ashore for You** (`S32`), read the advice for three ports. Note any content marked unverified.
+2. Book a **ship excursion** and an **independent** plan for the same port. Compare the all-aboard guidance in each.
+3. Start the safety timer with a due time **after** the all-aboard time. **Expect:** a warning or a clear note that the ship will not wait (check the wording on `S37`).
+4. Report a late return in **I'm Delayed** (`H25`). **Expect:** wording that does not promise a wait.
+5. Tender port, if the itinerary has one: **expect** tender notes on the port screens.
+6. Offline ashore: with the network off, open Emergency Card, boarding pass, your excursion's meeting point and the all-aboard time.
+
+---
+
+## 18. Persona variants (short runs)
+
+Each reuses the main plan but changes one thing. Do the stages named, not all eleven.
+
+| Variant | Do these stages | Key checks |
+|---|---|---|
+| **Mobility or accessibility need** | 3, 4, 6, 7, 9 | Accessibility Profile and Special Assistance saved at booking; accessible stateroom available in the room step; Assistance shows at check-in and Embark; accessible excursions flagged in Port |
+| **First-time, anxious** | 1, 4, 6, 7 | **Feeling anxious** and **Calm and inclusion** screens reachable from Me; Stanley answers "What if I miss the boat?" calmly and accurately; Embark steps are small and reassuring |
+| **Large text and reduced motion** | all | Text at the maximum size and reduced-motion on: no clipped text, no moving content |
+| **Screen reader only** | 2 (register), 5 (book), 8 (check-in) | Every field labelled; errors announced; step progress ("Step n of 7") announced; dialogs trap focus |
+| **Phone only** | 1 to 11 | The whole journey on a phone-width screen, including the tester bar and dialogs |
+| **Booked by an advisor** | 4 to 11 | Account starts at **Manage** with no Discover or Book history; booking appears under My Trips |
+| **Loyalty member** | 4, 11 | Rewards and tier shown on Me; points appear after the cruise |
+| **Late booker (inside 14 days)** | 3 to 6 | No Manage or Prebook stretch of any length; **full payment** required ("Sailing is close, so the full amount is due when you book") |
+
+---
+
+## 19. Failure and timing paths
+
+1. **Payment interrupted.** Start a payment, then switch off the network before pressing pay, and press pay. **Expect:** "You are offline", no charge. Turn the network on and pay once. Check **Payments** for exactly one receipt.
+2. **Double tap.** Press the pay button twice quickly. **Expect:** one charge.
+3. **Price lock.** At Review, jump the testing clock past the lock time ("This price is held for you until {time}"). **Expect:** a clear message and the current price, not a silent change.
+4. **Step-up.** Pay $3,000 or more by card, and pay with a card that is not the default. **Expect:** a code prompt; `123456` succeeds, a wrong code fails with a clear message and no charge.
+5. **Token expiry.** Stay signed in past the token lifetime in the middle of a stage (jump the clock, or wait). **Expect:** a quiet refresh, or a sign-in that returns you to the same screen with nothing lost.
+6. **Missed check-in.** Never check in online. Jump to sailing day after 10:00. **Expect:** Get to the ship, with the Terminal check-in as the way forward. Tap **I'm at the terminal** and go to Embark.
+7. **Late to the ship.** Jump to after sailaway without boarding. Record what the app says. It should not claim you are aboard.
+8. **Sold out.** Book a room type until it has no availability (use a second account). **Expect:** a clear message and an alternative, with your draft intact.
+9. **Cancellation after check-in.** Cancel after Get to the ship begins. **Expect:** the terms shown before you confirm, and the stage returns to Discover.
+
+---
+
+## 20. Making the plan easier to run
+
+### 20.1 The 30-minute smoke path
+Use when you only need to know the main route still works.
+1. Register (R2 and R3). 2. Quiz with **Just me** (3.1). 3. Save a sailing (4.1). 4. Open cost with 1 guest and confirm the solo supplement line (4.5). 5. Book, declined card, then `4242` deposit (5.1 to 5.6). 6. Make the account a demo account and jump to 14 days out (7.1). 7. Jump to check-in open and finish check-in (8.1, 8.2). 8. Jump to boarding (9.1). 9. Jump to a sea day, start and finish the Solo Safety Timer (10.4). 10. Jump to a port day, check the all-aboard time (11.2). 11. Jump to the final morning (12.1). 12. Jump to noon and submit a rating (13.1, 13.4).
+
+### 20.2 Screen coverage checklist
+`docs/stage-menus-matrix.md` lists every screen per stage (37 to 93 screens each). For a full-coverage run, copy that stage's list into a checklist and tick each screen once as "opens, has a unique title and subtext, no error". The sections above name the solo-relevant ones; this proves nothing was missed.
+
+### 20.3 Back-end spot checks
+Where the screen alone cannot prove a result, ask the API (`GET /me/context` or the equivalent) for:
+- **the stage and its reason code** at each trigger: `noSailing`, `sailingSaved`, `draftStarted`, `bookingConfirmed`, `paidInFull` or `twoWeeksOut`, `checkinOpened`, `atTerminal` or `boardingBegan`, `seaDay`, `portDay`, `finalMorning`, `tripEnded`
+- **the bill total**: add up your orders and compare with My Bill and Final Bill
+
+### 20.4 Result columns
+Copy the tables in sections 3 to 13 into a spreadsheet with columns **Step, Pass, Fail, Blocked, Notes, Build or commit**, so runs can be compared.
