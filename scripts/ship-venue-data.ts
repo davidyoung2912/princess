@@ -119,7 +119,7 @@ export function shipVenueRows(c: CatalogueSource): ShipVenueRows {
   const venues: string[][] = []
   const menu: string[][] = []
   const extras: string[][] = []
-  const dishId = (venue: string, name: string) => `${venue}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+  const dishId = (venue: string, name: string) => `${venue}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`.slice(0, 40).replace(/-$/, "")   // ref.MenuItems.Id is NVARCHAR(40)
   for (const b of shipVenueBundles().filter((x) => known.has(x.shipId))) {
     for (const v of b.directory) {
       const room = b.venues.find((x) => x.id === v.id)

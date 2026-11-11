@@ -148,7 +148,12 @@ public static class NavigationRules
 
     private sealed record Stop(string Port, DateTime? Arrive, DateTime? Depart);
 
-    private static List<Stop> Stops(Timeline timeline)
+    // The stops of a timeline never change, and a request resolves the ship's position several times (and every feed minute again), so they are built once per timeline.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Timeline, List<Stop>> StopsOf = new();
+
+    private static List<Stop> Stops(Timeline timeline) => StopsOf.GetValue(timeline, BuildStops);
+
+    private static List<Stop> BuildStops(Timeline timeline)
     {
         var list = new List<Stop>();
         foreach (var d in timeline.Days)

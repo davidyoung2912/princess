@@ -48,12 +48,21 @@ public sealed class SailingCache(IMemoryCache cache)
     public static readonly TimeSpan Ttl = TimeSpan.FromMinutes(10);
     private const string Key = "ref:sailings";
 
+    // One load at a time: a page that asks for several feeds at once (all needing the sailings) must not run the same queries in parallel on a cold cache.
+    private readonly SemaphoreSlim _gate = new(1, 1);
+
     public async Task<List<SailingRow>> GetOrLoadAsync(Func<Task<List<SailingRow>>> load)
     {
         if (cache.TryGetValue(Key, out List<SailingRow>? hit) && hit is not null) return Copy(hit);
-        var rows = await load();
-        cache.Set(Key, Copy(rows), Ttl);
-        return rows;
+        await _gate.WaitAsync();
+        try
+        {
+            if (cache.TryGetValue(Key, out hit) && hit is not null) return Copy(hit);   // another caller loaded it while this one waited
+            var rows = await load();
+            cache.Set(Key, Copy(rows), Ttl);
+            return rows;
+        }
+        finally { _gate.Release(); }
     }
 
     public void Invalidate() => cache.Remove(Key);
