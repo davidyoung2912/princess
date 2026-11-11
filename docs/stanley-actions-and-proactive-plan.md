@@ -1,6 +1,6 @@
 # Stanley beyond answers: actions, watching and proactive help
 
-Status: **draft for review (2026-11-10).** Nothing here is built. It answers: *what can Stanley do for the guest other than answer questions, can he take actions, and what new proactive or suggestive help could save time, catch problems and get more out of the app?* It ends with phases and a proposal for explaining all of it on the Stanley welcome page.
+Status: **draft for review (2026-11-10), revised the same day after owner feedback round 2** (guest-chosen support level, a welcome-page checklist, and a per-stage deep dive of everything Stanley could do if allowed; see sections 11 to 13, which supersede parts of sections 2, 3, 8 and 10 where marked). Nothing here is built. It answers: *what can Stanley do for the guest other than answer questions, can he take actions, and what new proactive or suggestive help could save time, catch problems and get more out of the app?* It ends with phases and a proposal for explaining all of it on the Stanley welcome page.
 
 Companion documents: `docs/stanley-reminders-requirements.md` (the reminders deep dive, which is one track of this plan), `docs/chat-features-research.md` section 15 (the permanent 1:1 Stanley chat that carries all of this), `docs/stanley-gap-analysis-and-plan.md` (what Stanley already is) and `docs/stanley-data-inventory.md` (what he may read).
 
@@ -37,8 +37,8 @@ Stanley is already more than a Q&A box. The pattern is **prepare, preview, confi
 
 ## 2. Principles (the guardrails every new capability keeps)
 
-1. **People decide, Stanley prepares.** Every change goes through the existing preview and confirm token. New capability widens *what he can prepare and watch*, not *what he may do unasked*.
-2. **An autonomy ladder, with a hard ceiling** (section 3). Nothing above "reversible and pre-authorised" exists. Pay, cancel, change cabin, share data and message another person are **never** automated.
+1. **People decide how much Stanley may do; inside that, he acts.** *(Revised, round 2.)* By default every change goes through the existing preview and confirm token. A guest may choose to let him go further (sections 11 and 12): standing rules that prepare for them, and a short list of free, reversible things he does and reports. He never acts outside what the guest switched on, and never above the ceiling.
+2. **An autonomy ladder, with a hard ceiling** (section 3, widened in section 11). Nothing above "reversible and pre-authorised" exists. Pay, cancel, change cabin, share data and message another person are **never** automated.
 3. **Deterministic first, model last.** Rules find the problem; a template words it; a model is used only to word or plan when a template is not enough, on the cheapest tier that works, behind the existing meter.
 4. **Trip facts, not eavesdropping.** Proactive help comes from the booking, plan, programme, folio, documents, weather and ship data, never from reading conversations.
 5. **Few, timed, explained.** Every proactive item has a trigger, a purpose, an expiry and a "Why am I seeing this?". The existing caps hold (one proactive element per screen, three per session, a dismissed item stays dismissed until its facts change).
@@ -60,10 +60,10 @@ Today's behaviour is rung 2. The plan adds rungs 1 and 3 only for narrow, safe c
 | 1 | **Notice** | Flags something unprompted, in the right lane | "Your passport expires within six months of the return date" | volume level, per-topic off |
 | 2 | **Prepare** | Builds a preview; the guest confirms each time | Add excursion, move dinner, draft case (exists) | Confirm or Not now |
 | 3 | **Standing preparation** | The guest sets a **rule** once; when it fires Stanley prepares the preview and notifies; still one tap to confirm | "If my tour is cancelled, find me a replacement the same day" | Rule list, pause, delete |
-| 4 | **Pre-authorised and reversible** | For a short list of low-stakes, undoable actions the guest has explicitly allowed, Stanley acts and tells them, with an undo window | Move a **reminder** when its anchor moves; move a reminder when its anchor moves (the only rung 4 class) | Per-class switch (off by default), undo, activity ledger |
+| 4 | **Pre-authorised and reversible** | For the **classes the guest switched on** (section 11.4: AUT-01 to AUT-09), Stanley acts and tells them, with an undo window. *(Widened in round 2 from one class to nine; every class still meets the five tests below.)* | Set my deadline reminders; add free items to my plan marked "Stanley's pick"; reserve a free main-dining table I always want; keep my dinner when the show moves | Per-class switch (off unless the chosen support level includes it), daily cap, undo, activity ledger, one master pause |
 | Never | | Pay, cancel a booking, change cabin or cruise, share personal data, send a message to another person, answer for the guest to staff | | not available |
 
-**Rung 4 candidates must meet all of:** free, reversible within the guest's own window, affects only the guest, no commercial effect, no data leaves the account. The initial list is short on purpose (reminders that follow a moved anchor). Anything else needs a new decision.
+**Rung 4 candidates must meet all of:** free, reversible within the guest's own window, affects only the guest, no commercial effect, no data leaves the account. *(Round 2: the list is now the nine classes in section 11.4. Anything not on it still needs a new decision.)*
 
 ---
 
@@ -145,6 +145,8 @@ Rule limits: at most 10 active; each shows what it did and last fired; expires a
 
 ### 6.2 Proposed structure (same page, richer, still one screen on a phone)
 
+> **Round 2:** the page now also asks the guest what level of support they want and walks them through a short checklist (section 11.2 and 11.3). Steps 4 and 5 below are replaced by that flow; steps 1 to 3 stay.
+
 1. **Hero:** Stanley's wave pose and "Hello, I am Stanley" (kept).
 2. **Four short cards, one idea each,** each with a **Try it** chip that opens Stanley with the words ready (the existing prefill API) and then returns:
    - **I answer.** "Ask me about your ship, the ports, your plans and your bill, in plain words." *Try: "What time must I be back in Cozumel?"*
@@ -178,6 +180,7 @@ Rule limits: at most 10 active; each shows what it did and last fired; expires a
 | Area | Rule |
 |---|---|
 | **New stored data** | Rules (per guest, max 10, deleted at disembark and with the account), availability watches, activity ledger entries (kind, outcome, receipt number, never message text), pre-authorisation switches. All added to `docs/stanley-data-inventory.md` in the same change |
+| **Permissions and consent** *(round 2)* | Per account on the server: support level, one row per ability (state, wording version, source, time), a consent history, the pause switch, and per-class counters for caps and the circuit breaker. Wording shown is stored by version so we can prove what the guest agreed to. Lapses three days after disembark. Added to `docs/stanley-data-inventory.md` in P0a |
 | **Check-up and lint inputs** | The same PII-free facts the packet already allows; documents are read as validity facts (expiry date, match yes or no), never document numbers |
 | **Sensitive needs** | Mobility, diet and allergy stay off by default and reach a model only when switched on; checks that use them run on the server by rule, not by model |
 | **Notices** | Delivered under the thread's lanes, quiet hours, calm mode and budget; critical list is small, published and under change control; a `Bypass` without a safety or deadline reason fails a gate test |
@@ -189,6 +192,8 @@ Rule limits: at most 10 active; each shows what it did and last fired; expires a
 ---
 
 ## 8. Phases (commit and stop after each; server code is written with tests and run by the owner)
+
+> **Round 2 changed this plan: use the revised phases in section 13.** The table below is kept as the record of the first draft.
 
 | Phase | Scope | Closes | Done when |
 |---|---|---|---|
@@ -235,17 +240,334 @@ Rule limits: at most 10 active; each shows what it did and last fired; expires a
 
 **Decided on my judgement (change if wrong):**
 
-4. **Standing rules: build, but narrow and late.** Rules are the most powerful and riskiest idea, so P9 ships only rung 3 (Stanley *prepares and tells*, the guest confirms) with four templates: RUL-01 replacement for a cancelled or moved excursion, RUL-02 keep my dinner if the show moves, RUL-03/04 tell me when check-in opens or tenders are delayed, RUL-06 reminder before formal night. **RUL-05 (hold a table) and VAL-03 (availability watch) are dropped for now** because the catalogue has no real availability to hold, and a "hold" that is not real would break the honesty rule. Rung 4 shrinks to one class: **reminders that follow a moved anchor.** P9 only starts after P3 and P7 have shown usage numbers.
+4. **Standing rules: build, but narrow and late.** *(Superseded in part by decisions 10 to 15: the guest now chooses how far, and the rule list grows to per-stage packs. RUL-05 and VAL-03 are reinstated as watch-and-prepare, not hold.)* Rules are the most powerful and riskiest idea, so P9 ships only rung 3 (Stanley *prepares and tells*, the guest confirms) with four templates: RUL-01 replacement for a cancelled or moved excursion, RUL-02 keep my dinner if the show moves, RUL-03/04 tell me when check-in opens or tenders are delayed, RUL-06 reminder before formal night. **RUL-05 (hold a table) and VAL-03 (availability watch) are dropped for now** because the catalogue has no real availability to hold, and a "hold" that is not real would break the honesty rule. Rung 4 shrinks to one class: **reminders that follow a moved anchor.** P9 only starts after P3 and P7 have shown usage numbers.
 5. **Order.** Reminders first within the first slice: **P0, P1, then reminders R1 and R2, then P3**, with reminder delivery (R3) built after P3 and released only when real push exists. This lets the explanation, the control screen and the better creation flow land without waiting for the push deployment.
 6. **Briefs and nudges:** off until the guest chooses, except the check-in and payment notices that already exist; Stanley offers the morning brief once, at the end of Embark.
 7. **Value finder (VAL-01):** strictly "what you already have". Paid options appear only if the guest asks "what else is there?".
 8. **Check-up depth (CHK-01):** document-validity and name-match rules are mocked behind an interface now, with the rule table authored per country, labelled in the card as the rule applied ("6 months beyond return"), and never described as an official check.
-9. **The ceiling (section 3)** stands as written: rung 4 only for free, reversible, own-account actions; never pay, cancel, change cabin, share data or message another person.
+9. **The ceiling (section 3)** stands as written *(still true after round 2; rung 4 is wider but meets the same five tests)*: rung 4 only for free, reversible, own-account actions; never pay, cancel, change cabin, share data or message another person.
 
 **Revised order:** P0, P1, P2a (reminders R1 and R2), P3, P2b (reminders R3, released with real push), P7, P6, P4, P5, P8, P9, P10, P11.
 
 ---
 
-## 11. Requirement index
+## 11. Owner feedback round 2: let the guest choose how far Stanley goes
 
-ACT-01 to 08 (save time), CHK-01 to 08 (catch issues), VAL-01 to 07 (get more), RUL-01 to 06 (rules), plus REM-* in `docs/stanley-reminders-requirements.md`.
+**The feedback (2026-11-10).** The first draft is a great start, but Stanley can do more *if allowed*. Ask the guest on the Stanley welcome page what level of support they want and be more aggressive when they choose it (the autonomy ladder is the reference). Give them a quick checklist on that page to switch abilities on, which they manage later in Settings. Take a deeper dive across **all 11 stages**, especially the **standing rules** that could be offered at each one.
+
+### 11.1 Findings from the deep dive
+
+1. **Two separate dials, not one.** Today's `stanleyLevel` (chatty, helpful, asked, off; `settings.ts`) is **voice**: how much he *says*. What the feedback asks for is **authority**: how much he may *do* without being asked. They must stay separate. A guest can want a quiet Stanley who quietly handles things, or a chatty one who never touches anything.
+2. **Authority must live on the server, per account.** The voice level is a per-device display setting, which is right for voice. Authority is a *permission to act when the app is closed*, so it must be stored on the server against the account (a guest on a second device, or a helper, sees the same grants), checked by the server on **every** action path, and recorded with the wording version the guest agreed to. The front end only renders the catalogue and sends switches (thin-client rule).
+3. **Rules need a clock.** `StanleyReminderService` evaluates only when the app calls `/me/push/dispatch`. Every rung 3 and 4 behaviour needs a **server scheduler** (a hosted service ticking each minute with a per-guest lock). This is the single biggest piece of new plumbing and it comes before any rule.
+4. **The classifier is the real safety feature.** Whether a thing may be rung 4 depends on facts the data must carry per item: *free or paid*, *cancellable without fee until when*, *affects only this guest or others too*. The catalogues (dining, shows, excursions, services) need those flags, and the executor must refuse a rung 4 action on any item that fails them. Without the flags nothing above rung 3 should ship.
+5. **Some "forms" are attestations.** Online check-in, customs and health declarations are statements the guest signs. Stanley may **pre-fill and save a draft**; he must never submit them.
+6. **One of the earlier "dropped" ideas was dropped for the wrong reason.** Availability watch (VAL-03) and RUL-05 were dropped because "a hold that is not real breaks honesty". The backend already simulates dining and excursion capacity behind an interface. A **watch that notifies and prepares a booking** (no hold) is honest with simulated data and with a real provider alike. Reinstated as watch-and-prepare. "Hold a table for me" stays dropped.
+7. **Most of the power is in standing rules, and rules are mostly stage-shaped.** Section 12 finds about **70 rules and abilities** across the 11 stages; roughly half are rung 3 and a quarter qualify for rung 4. They share about a dozen server building blocks (scheduler, trigger types, preview builder, classifier, ledger), so the cost is in the platform, not each rule.
+8. **Consent fatigue is the risk on the welcome page.** Eleven stages of choices at sign-up would be ignored. Ask the **cross-journey** choices once on the welcome page (ten items, one screen), and ask each **stage's** extras when the guest enters that stage, using the stage welcome that already exists (`stage-welcome-plan.md`).
+9. **Autonomy needs a brake.** Powerful automation without a circuit breaker will eventually do something a guest dislikes. Add caps per class per day, a global "acted without a tap" ceiling, an automatic pause of a class when its undo rate passes a threshold, and a visible "Pause everything" switch.
+
+### 11.2 Four support levels (the first question on the welcome page)
+
+Plain words, no "AI", one radio group. Each level includes the one above it; the guest can fine-tune in the checklist that follows. The ladder rung each maps to is shown for the design team only.
+
+| Level | Guest-facing name and line | Rungs | What changes |
+|---|---|---|---|
+| **1** | **Just answer.** "I answer when you ask, and nothing else." | 0, 2 on request | No unprompted notices, no rules. Today's *asked* voice plus actions he is asked for |
+| **2** | **Keep watch.** "I check your trip, warn you about problems and tell you what changed. You decide everything." | 0 to 2, plus 1 | Check-ups, change explanations, deadline notices, briefs the guest sets. **Default for a new guest** (matches today's behaviour) |
+| **3** | **Do the legwork.** "When something happens, I line up the fix and ask for your yes. Rules I offer you at each stage." | 0 to 3 | Standing rules from the stage packs; bundles; drafts and pre-filled forms; watches that prepare a booking. Still one tap to confirm each |
+| **4** | **Handle the small stuff.** "For small free things you can undo, I just do them and tell you. I never pay or cancel." | 0 to 4 | Adds the nine rung 4 classes (11.4), each separately switchable, with caps, undo and a ledger |
+
+Interplay with **voice** (the existing dial): Voice *off* means authority is capped at level 1. Voice *asked* (and calm and simple mode, which already cap voice) keeps rung 3 and 4 working but their notices go to the thread and Stanley activity **without a push**, except critical items. A level 3 or 4 guest on *asked* therefore finds a prepared fix waiting in the thread, never a buzz. Level changes take effect for new events only; nothing already prepared is cancelled silently.
+
+The **ceiling is unchanged at every level**: Stanley never pays, cancels a booking, changes a cabin or cruise, shares personal data, messages another person on his own, answers for the guest to staff, or submits a signed declaration. (Section 14, decision 13, records the one future option, a capped spend, as *not built*.)
+
+### 11.3 The welcome-page checklist (and the same list in Settings)
+
+**Flow on the welcome page** (still `StanleyIntro`): hero, the four ability cards and the "never do" card (section 6), then **Step 1: choose a level** (11.2), **Step 2: the checklist**, then **Continue**. It is skippable at every step; skipping leaves level 2 with the three safest items on. Target time: under 60 seconds.
+
+**Step 2 is pre-ticked from the chosen level**, one switch per row, plain sentence plus a one-line example, grouped under three headings. Rows above the chosen level are shown switched off and marked "needs level 3" (or 4) so the guest sees what more is available and can raise the level with one tap.
+
+| ID | Row (guest wording) | Example shown | Needs level | Rung | Built from |
+|---|---|---|---|---|---|
+| **Watching** |
+| CL-01 | Check my trip for problems | "Your passport expires within 6 months of the return date." | 2 | 1 | CHK-01, CHK-02 |
+| CL-02 | Tell me when something changes and what it means | "Your tour moved to 9:30. You now have 20 minutes less in port." | 2 | 1 | change engine |
+| CL-03 | Watch my bill and what I already have | "A charge appears twice." "Your package includes the pool bar drink." | 2 | 1 | CHK-04, VAL-01 |
+| CL-04 | Morning brief and evening look-ahead (choose the times) | "Today at a glance, and tomorrow's early start." | 2 | 1 | ACT-06 |
+| **Preparing** |
+| CL-05 | Line up a fix when a plan breaks, for my yes | "Your tour is cancelled. Here is the best replacement today." | 3 | 3 | RUL-01, 02, 04 |
+| CL-06 | Fill in forms and drafts for me to check | "Check-in is open. I filled it in; please check and send." | 3 | 3 | ACT-03, ACT-04 |
+| CL-07 | Tell me when a table or space opens, with a ready booking | "A table for four opened on Thursday at 7:30." | 3 | 3 | VAL-03 reinstated |
+| **Handling** |
+| CL-08 | Set my reminders for me (deadlines, check-in, bag night, all aboard) | "I added 6 reminders for your trip. Change any of them." | 4 | 4 | AUT-02 |
+| CL-09 | Plan my days and keep the plan up to date with free things | "I added a free show at 8:30 as Stanley's pick. Remove it if you like." | 4 | 4 | AUT-03 |
+| CL-10 | Book the free things I always want (main dining, free shows) | "I booked your usual table for four at 6:00. Undo for 2 hours." | 4 | 4 | AUT-04 |
+
+Per-stage extras (section 12) are **not** in this list; they are offered at stage entry.
+
+**Rules for every row.** The consent sentence is shown in full and versioned; the switch writes one server record (guest, ability, state, wording version, source `welcome`, `settings` or `stage`, time). Every row says what it will **never** do. Turning a row on never retro-fires on old events. A row's example must work, or the build fails (as in 6.4). Rows are served by the **capability catalogue** (P0) so a provider switch-off or a kill switch hides a row with no front-end change.
+
+**Settings: "What Stanley may do"** (under Settings and help, plum, linked from the welcome page, Stanley activity and the thread header):
+
+1. Level radio (11.2) with a plain note when voice limits it.
+2. The ten rows above, then **each stage's extras** in stage order (current stage first, future stages collapsed), each with switch, one-line example, **last used** and **times used**.
+3. **Pause everything** (one switch; rules and rung 4 stop, notices and answers continue; reversible).
+4. Changing the level that would switch on new rows asks once: "This also turns on 3 more things: [list]. Turn on?" Lowering the level asks nothing and switches the rows off at once.
+5. **Consent history** (what was switched on or off, when, from where) and a link to Stanley activity (Did, Watching, Remembers).
+6. A new guest on a second device sees the same state. A **helper** can see it but not change it. A **supervised child** has level 1 only; the guardian chooses for them.
+
+**Expiry and re-asking.** Level 3 and 4 grants lapse three days after disembark and are asked again on the guest's next trip. The first time a rung 3 or 4 ability acts, one line explains what happened, how to undo it and where to switch it off. Never repeated.
+
+### 11.4 Rung 4: the nine classes a guest can allow ("Handle the small stuff")
+
+Each class is a separate server switch, off unless the level includes it, with a daily cap, a ledger line per act, an undo window (default 2 hours, and never past the point the thing becomes non-refundable), and the five tests (free, reversible, only the guest, no commercial effect, no data leaves the account). A class fires only on items the **classifier** (finding 4) marks eligible.
+
+| ID | Class | What Stanley does alone | Cap | Never |
+|---|---|---|---|---|
+| AUT-01 | **Reminders that follow** | Moves a reminder when its anchor moves (earlier plan, kept) | none | Fires a reminder earlier than the guest set without telling them |
+| AUT-02 | **Deadline reminders** | Creates reminders for the dates that matter (final payment, check-in opens, documents, dining freeze, bag night, all aboard, exit time), with the guest's usual lead times | 20 per trip | Creates a recurring reminder or one that is not tied to a trip date |
+| AUT-03 | **My plan, topped up** | Adds free events, walks and meeting points to the guest's own plan, labelled "Stanley's pick", and removes his own picks that no longer fit; **never** removes anything the guest added | 4 per day | Adds anything with a cost, or a time that overlaps a booked item |
+| AUT-04 | **Free reservations I always want** | Reserves free, fee-free-to-cancel items the guest has a standing preference for (main-dining table, free shows) when the window opens | 2 per day | Specialty dining with a cover charge, paid shows, anything for another person's name |
+| AUT-05 | **Lists kept current** | Updates the guest's packing list, document "bring" list, trip checklist, shortlist and comparison when facts change (forecast, itinerary, a document added) | none | Deletes a guest's own entry |
+| AUT-06 | **Drafts saved** | Saves pre-filled forms and drafts (check-in, customs, feedback, a note to the party) as drafts the guest reviews | 1 draft per form | Submits, signs or sends |
+| AUT-07 | **Saved for me** | Saves the boarding pass to Wallet when ready, downloads the offline pack on Wi-Fi before a port, saves receipts and the recap, builds the photo album | none | Anything that uses data the guest has not already given |
+| AUT-08 | **Keep my timings** | Moves the guest's own **same-price** booking (a dinner) when a show or port time shifts and the move keeps it free; otherwise prepares a fix (rung 3) | 2 per day | Moves a paid booking, or one for another person |
+| AUT-09 | **My standing order** | Repeats a free stateroom request the guest has made three times (ice, towels, an extra pillow) at the time they chose | 1 per day | Orders anything with a charge |
+
+AUT-04 and AUT-09 have a real-world effect on staff, so they ship last and only after usage numbers.
+
+---
+
+## 12. Per-stage deep dive: what Stanley can do at each of the 11 stages if allowed
+
+**How to read it.** Stages and tabs come from `docs/stage-experience-plan.md` 5.1. **Today** is what exists (section 1). **Stage welcome ask** is the two to four extras offered when the guest enters the stage (the stage welcome screen), shown only for abilities the chosen level allows. Rule IDs are `SR-<stage>.<n>`. Rung is the **highest** rung the rule uses; a level 3 guest gets it as "prepare", a level 4 guest gets it as "act" only where an AUT class is named. "Needs" lists a gap that must exist first (all rows also need the scheduler, finding 3). Rules expire at disembark unless stated.
+
+Cross-journey abilities (CL-01 to CL-10) apply at every stage from Manage on; they are not repeated below.
+
+### 12.1 Dream (Explore, Ask)
+
+**Today:** quiz, grounded planner chat, compare, dream board, favourites and price alerts.
+**Stage welcome ask:** SR-1.1, SR-1.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-1.1 | **Shortlist for me.** Keeps a shortlist of up to three sailings that fit the quiz answers; refreshes weekly; tells the guest what changed | Weekly clock, new sailing published | 4 (AUT-05) | Sailing feed (mock) |
+| SR-1.2 | **Dream-board referee.** Tells the party when two people's picks disagree and prepares a poll | Board edit | 3 | Polls, group diplomat |
+| SR-1.3 | **Price watch on favourites** with a plain "price fell 8%" note and the reason | Fare change | 1 | Mock fare feed |
+| SR-1.4 | **What would change my mind.** After a week, a short brief: decided, left, what could change it | 7 days | 1 | Decision brief |
+| SR-1.5 | **Trial day.** Offers the five-minute "a day aboard" once after the second save | Second save | 1 | Trial-day simulator (NEW in journey priorities) |
+
+### 12.2 Discover (Sailing, Cabin, Cost)
+
+**Today:** cabin chooser, sailing compare, cost calculator, decision brief, 48-hour hold.
+**Stage welcome ask:** SR-2.1, SR-2.2.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-2.1 | **Cabin like this.** Watches for a cabin that matches the guest's remembered needs (quiet, midship, not under a pool, accessible) and prepares a side-by-side with the one they like | Inventory change | 3 | Mock inventory |
+| SR-2.2 | **Keep my cost honest.** Refreshes the cost calculator when fares, taxes or the package price change and says what moved | Fare change | 4 (AUT-05) | Mock fare feed |
+| SR-2.3 | **Hold before it goes.** When the guest has compared the same two sailings twice, offers a 48-hour hold, never a countdown | Behaviour | 3 | Hold flow |
+| SR-2.4 | **Tell me what I'd regret.** For any shortlisted sailing or cabin, the top three things past guests wished they had known | Open of a card | 1 | Review notes (priority list NEW) |
+| SR-2.5 | **Package break-even.** Works out if a drinks or dining package pays for the guest's stated habits and says when it does not | Calculator edit | 1 | Entitlement data |
+
+### 12.3 Book (Booking, Travellers, Pay)
+
+**Today:** draft-safe checkout, split payments, plain contract, name capture.
+**Stage welcome ask:** SR-3.1, SR-3.2.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-3.1 | **Check before I pay.** Compares each traveller's name with their document and flags dietary, allergy and accessibility needs not yet captured | Before the pay step | 1 (blocks nothing) | Document facts |
+| SR-3.2 | **Fill the travellers for me** from remembered details, with the source on every field | Travellers step | 3, 4 for the draft (AUT-06) | Memory, party |
+| SR-3.3 | **What happens if.** Turns the cancellation policy into "cancel on 12 Jan costs $420" for the guest's real dates | On request, and at pay | 1 | Policy rules |
+| SR-3.4 | **Share-the-cost links.** Prepares the pay-your-share links for each payer; the guest sends them | Booking with 2+ payers | 3 | Payer links |
+| SR-3.5 | **Deposit reminder** before a hold lapses | Hold clock | 4 (AUT-02) | Hold flow |
+| SR-3.6 | **Price-drop re-pricing.** If the fare drops after booking, prepares the re-price request | Fare change | 3 | Re-pricing rules |
+
+### 12.4 Manage (Trip, Needs, Group)
+
+**Today:** documents engine, payment calendar, change handling, special assistance, phone-at-sea guide, helper role, packing.
+**Stage welcome ask:** SR-4.1, SR-4.2, SR-4.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-4.1 | **Document guard.** When a passport or visa is missing, near expiry or does not cover the return date, prepares the upload or renewal reminder per traveller | Weekly, document change | 3 | Rule table per country |
+| SR-4.2 | **Payment ladder.** Reminders at 30, 14, 7 and 2 days before final payment, with the amount and what happens if missed; prepares the pay screen, never pays | Payment dates | 4 (AUT-02) | Payment calendar |
+| SR-4.3 | **Assistance deadlines.** Starts special-assistance and dietary requests early enough for the notice period and tracks the confirmation | Cut-off minus lead | 3 | Needs tracker |
+| SR-4.4 | **Itinerary change responder.** On a change, explains the effect, lists the choices and prepares the one that fits the guest's rules | Change event | 3 | Change engine (exists) |
+| SR-4.5 | **Weekly what to expect**, one note, one action, tuned to the guest | Weekly | 1 | Persona |
+| SR-4.6 | **Packing kept current** as forecast and itinerary change | Forecast, itinerary | 4 (AUT-05) | Packing |
+| SR-4.7 | **Family-at-home page refresh** reminder, never posted without the guest | Before sailing | 3 | Family page |
+| SR-4.8 | **Helper summary.** A weekly "what is left" for a helper the guest authorised | Weekly | 1 | Helper role |
+
+### 12.5 Prebook (Plan, Prepare, Group)
+
+**Today:** dining, excursions, shows, spa, packages, plan and polls.
+**Stage welcome ask:** SR-5.1, SR-5.2, SR-5.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-5.1 | **First-night booking.** When the booking window opens, books or prepares the main-dining table the guest usually wants (timing, party size, seating) | Window opens | 4 (AUT-04) | Window dates, fee-free flag |
+| SR-5.2 | **Plan my days.** Builds a day-by-day plan from interests, pace and mobility with free picks and gaps; keeps it current | Plan edit, change | 4 (AUT-03) | Planner, route finder |
+| SR-5.3 | **Space opens.** Watches a named excursion, specialty table, spa slot or show and, on a hit, prepares the booking with one tap | Inventory change | 3 | Mock inventory (VAL-03) |
+| SR-5.4 | **Dinner for everyone.** Starts a poll for the party, then prepares the reservations for each person for their own confirmation | Party of 3+ | 3 | Polls |
+| SR-5.5 | **Package check.** Compares buying a package now with paying as you go and says if it is worth it | Package view | 1 | Entitlements |
+| SR-5.6 | **Excursion fit.** Flags a tour that clashes with all-aboard, pace or access need and offers two alternatives | Add to cart | 3 | Excursion fit |
+| SR-5.7 | **Occasion helper.** For a birthday or anniversary, prepares the cake, table decoration or celebration request for the guest to send | Occasion in profile | 3 | Services |
+
+### 12.6 Get to the ship (Board, Travel, Plan)
+
+**Today:** online check-in, boarding pass, flight and traffic, travel plan, arrival window, phrases, onward travel; the boarding-day mode.
+**Stage welcome ask:** SR-6.1, SR-6.2, SR-6.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-6.1 | **Check-in ready.** The moment check-in opens, pre-fills it from the documents and saves it as a draft to check and send; **never submits** | Check-in opens | 4 for the draft (AUT-06), submit is 2 | Check-in flow |
+| SR-6.2 | **Leave on time.** Sets the leave-for-the-terminal reminder and moves it when traffic or a flight changes | Travel plan, traffic | 4 (AUT-01) | Traffic and flight (mock) |
+| SR-6.3 | **Boarding pass saved** to Wallet and offline the moment it exists | Pass issued | 4 (AUT-07) | Wallet |
+| SR-6.4 | **Flight watch.** If a flight is late or cancelled enough to threaten the ship, says so, shows the missed-ship path and drafts the "running late" note to the cruise line | Flight status | 3 (draft) | Flight (mock) |
+| SR-6.5 | **Terminal ETA draft** for the party, one tap to send | Leave time | 3 | Party chat |
+| SR-6.6 | **Phone and money set-up.** The roaming and card checklist, ticked off from what is done | 3 days out | 1 | Phone guide |
+
+### 12.7 Embark (Board, Ship, Plan)
+
+**Today:** terminal and arrival help, muster, medallion, first-four-hours mode, ship explorer, route finder.
+**Stage welcome ask:** SR-7.1, SR-7.2.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-7.1 | **First night, sorted.** Builds the first evening (muster, a walk to dinner, a sailaway spot) from what the guest booked and adds the free parts | Boarding | 4 (AUT-03) | Planner |
+| SR-7.2 | **Muster, never missed.** A reminder at the guest's lead time with the station and the walk from the cabin | Muster time | 4 (AUT-02) | Muster data |
+| SR-7.3 | **Cabin ready.** Tells the guest when the cabin is ready and where it is | Cabin status | 1 | Ship feed (mock) |
+| SR-7.4 | **First-night ordering.** Prepares the usual stateroom items (ice, towels) for the evening | Boarding | 3, 4 (AUT-09) | Stateroom service |
+| SR-7.5 | **Set the ship up.** Offers the offline pack, the route finder and chat once, at the moment each is useful | Aboard | 1 | Coach |
+
+### 12.8 Sea (Today, Ship, People)
+
+**Today:** day plan, events, dining, spa, packages, spend pace, people and chat; the sea-day mode.
+**Stage welcome ask:** SR-8.1, SR-8.2, SR-8.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-8.1 | **Build my day.** Each morning, tops up the day with free picks that fit pace, interests and walking, leaving gaps | 7:00 ship time | 4 (AUT-03) | Planner |
+| SR-8.2 | **Nothing late.** A reminder before each item in the plan with the walk time; moved when the item moves | Plan items | 4 (AUT-01, AUT-02) | Walk times |
+| SR-8.3 | **Keep dinner and show in step.** If the show or dinner moves, moves the dinner when it is free and fits; otherwise prepares a fix | Programme change | 4 (AUT-08) | Same-price flag |
+| SR-8.4 | **Free hour ideas.** Three real things to do now, with walk time and cost | A gap in the plan | 1 | Planner |
+| SR-8.5 | **Spend guard.** Tells the guest at 80% of the daily budget they set and shows what is already included | Folio | 1 | Spend pace (exists) |
+| SR-8.6 | **Space opens at the spa or a specialty table** | Inventory | 3 | Mock inventory |
+| SR-8.7 | **Formal night, ready.** Reminds the evening before and lists the dress code | Programme | 4 (AUT-02) | Programme |
+| SR-8.8 | **Tomorrow's port, prepared.** The evening before a port, prepares the shore plan and the tender outlook | 18:00 | 3 | Port pilot |
+| SR-8.9 | **Party digest.** A shared card the guest posts for the party | Daily | 3 | Group |
+
+### 12.9 Port (Port, Ship, People)
+
+**Today:** port pilot, all-aboard and tender outlook, excursions, shore plan, phrases, weather, the port-day mode.
+**Stage welcome ask:** SR-9.1, SR-9.2, SR-9.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-9.1 | **Missed-ship guard.** Watches the guest's return buffer against all-aboard, tender and walk time; a quiet nudge as it shrinks, critical when gone; always in more than chat | Port clock | 1 | Port pilot |
+| SR-9.2 | **Back on time.** Sets "head back" at the buffer time and moves it when the tender or traffic changes | Buffer | 4 (AUT-01) | Tender (mock) |
+| SR-9.3 | **Tour cancelled? Replacement.** When a booked excursion is cancelled or moved, prepares the best same-day option and the alternatives | Change event | 3 | Excursion inventory |
+| SR-9.4 | **Rain plan.** When the forecast turns, prepares an indoor alternative for the day | Forecast | 3 | Weather (mock) |
+| SR-9.5 | **Port pack ready.** Downloads the offline pack on Wi-Fi before arrival | Day before | 4 (AUT-07) | Offline pack |
+| SR-9.6 | **Local rules.** Dress, currency, tipping and photo rules for this port, once | Port day start | 1 | Port data |
+| SR-9.7 | **Tender tickets.** Prepares the tender ticket request when the ship uses tendering | Tender day | 3 | Tender flow |
+| SR-9.8 | **Meet-me-here.** Prepares the shared meeting point and a "running late" note | On request | 3 | Meeting points |
+
+### 12.10 Disembark (Leave, Ship, People)
+
+**Today:** bags, exit time, customs, tips, folio, last-morning mode.
+**Stage welcome ask:** SR-10.1, SR-10.2, SR-10.3.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-10.1 | **Bag night.** Reminds the guest in time and prepares the bag tags and the exit time pick for the guest's own confirmation | Last evening | 4 (AUT-02), pick is 3 | Disembark data |
+| SR-10.2 | **Final-bill review.** Reads the folio before disembark, flags duplicates, unexpected items and unused credit, and drafts the billing question | Last evening | 3 | Bill watch |
+| SR-10.3 | **Customs ready.** Pre-fills the customs declaration as a draft; never submits | Last full day | 4 for the draft (AUT-06) | Customs flow |
+| SR-10.4 | **Tips explained.** Shows suggested tips and what changing them costs; any change is rung 2 | Last evening | 2 | Gratuity rules |
+| SR-10.5 | **Onward travel watch.** Watches the flight and transfer and tells the guest when to leave | Flight status | 1, 4 for the reminder (AUT-01) | Flight (mock) |
+| SR-10.6 | **Leave nothing behind.** A last-look checklist (safe, drawers, charger, passport, bag tags) | Final morning | 1 | Checklist |
+
+### 12.11 Remember (Memories, Next, Feedback)
+
+**Today:** storyteller, photos, feedback, keep chats, next trip, diary.
+**Stage welcome ask:** SR-11.1, SR-11.2.
+
+| ID | Standing rule or ability | Trigger | Rung | Needs |
+|---|---|---|---|---|
+| SR-11.1 | **Recap and album built.** Builds the recap, the photo album and the receipts pack from the guest's own data | Disembark + 1 day | 4 (AUT-07) | Storyteller |
+| SR-11.2 | **Feedback drafted.** Drafts the survey answers and a thank-you for a crew member for the guest to edit; never sends | Disembark + 2 days | 4 for the draft (AUT-06) | Feedback |
+| SR-11.3 | **Keep my chats.** Prompts before chats are cleared | Retention clock | 1 | Chat retention |
+| SR-11.4 | **Next voyage, from what I liked.** Suggests a trip built from the preferences left on; offers are a separate opt-in; paused while a serious case is open | 10 days | 1 | Memory |
+| SR-11.5 | **Loyalty explained** in plain words, with what the guest has earned | Disembark | 1 | Loyalty |
+| SR-11.6 | **Expense export.** A tidy trip cost summary on request | On request | 1 | Folio |
+
+### 12.12 Patterns, risks and what the deep dive says about build order
+
+- **Three shapes cover almost everything:** *watch then tell* (rung 1), *watch then prepare* (rung 3: a trigger, a preview, a notice) and *keep a thing of mine current* (rung 4: AUT-02, 03, 05, 07). Only AUT-04, 08 and 09 touch a booking or a person other than the guest.
+- **The first two stages are rule-poor on purpose.** Before booking the guest has no money at stake and no trip to protect; the honest value there is a better decision, not automation.
+- **The densest stages are Prebook, Sea and Port.** They carry the most rules and the largest share of time saved. They are also where a wrong automatic act would hurt most, so they get their rung 4 classes last.
+- **Shared rooms and parties.** Rung 4 touches only the guest's own items. Anything for the party (a dinner for all, a digest, a meeting point) stops at rung 3, and in a shared room the **booker** owns dining plan and excursion changes.
+- **Dependencies, in order:** scheduler; classifier flags (free, fee-free until, only-me); preview and ledger generalised beyond the nine action kinds (new kinds for *save_shortlist*, *watch*, *prefill_form*, *set_deadline_reminders*); mock fare and inventory feeds behind interfaces; document-validity rule table.
+
+---
+
+## 13. Revised phases (replaces section 8 for planning)
+
+The first three phases of section 8 stay (P0 explain, P1 activity, P2 reminders). New phases are inserted where they unlock the most, and P9 and P10 are broken up so each stage pack ships, is measured and can be stopped on its own.
+
+| Phase | Scope | Done when |
+|---|---|---|
+| **P0: Explain what exists** | As in section 8 (welcome copy, Try-it chips, capability catalogue, What Stanley can do) | A new guest sees what Stanley answers, does, watches and will never do |
+| **P0a: Support level and permissions** *(new)* | `StanleyPermissions` table (guest, ability, state, wording version, source, time) and consent history; the catalogue now carries rung, level, stage and wording version; **one enforcement point** every action and rule path calls; level radio and the ten-row checklist on the welcome page; Settings "What Stanley may do" with Pause everything; a test that **no action path runs without the check**; voice and authority interplay (11.2) | A guest sets a level and checklist in under a minute, changes it in Settings, and the server refuses everything switched off |
+| **P1: Stanley activity** | As in section 8, now also lists permissions, Pause everything and the consent history | A guest sees and stops everything Stanley did or is doing |
+| **P2a, P2b: Reminders** | As in section 8 | See the reminders document |
+| **P2c: The scheduler** *(new)* | Server clock service with per-guest locking, trigger types (time, change event, inventory, state), a rules table, firing and expiry, circuit breaker on undo rate; tests with a fake clock | A rule fires on time with the app closed, and a runaway rule is paused automatically |
+| **P3: Trip check-up and plan lint** | As in section 8 | Ranked findings with a fix each, no false alarm on a clean fixture |
+| **P3a: Classifier flags** *(new)* | Free, fee-free-until and only-me flags on dining, shows, excursions, services; "reversible until" on every action; executor refuses a rung 4 act on an ineligible item | A paid or shared item can never be acted on at rung 4 |
+| **P7, P6, P4, P5, P8** | As in section 8 | As in section 8 |
+| **P9a: Rules engine and cross-journey rules** | Rung 3 engine, templates RUL-01 to RUL-04, RUL-06 and the reinstated watch-and-prepare (VAL-03, RUL-05 as *notify and prepare*, not hold) | A cancelled-tour and a space-opens fixture each prepare the right preview |
+| **P9b to P9f: Stage packs** | Rung 3 and 1 rules from section 12, one pack per phase: **B** Manage and Prebook (SR-4, SR-5), **C** Get to the ship and Embark (SR-6, SR-7), **D** Sea, Port and Disembark (SR-8 to SR-10), **E** Remember (SR-11), **A** Dream, Discover, Book (SR-1 to SR-3, built last because it earns least) | Each pack's rules fire on fixtures and the stage welcome ask offers them |
+| **P10a to P10c: Rung 4 classes** | In this order, each behind its switch, cap and ledger: **a** AUT-01, 02, 05, 07; **b** AUT-03, 06; **c** AUT-08 then AUT-04 then AUT-09, only after P10a and P10b have run for a season with an undo rate under 5% | Each class acts only on eligible items, tells the guest, and undoes cleanly |
+| **P11: Group and voice** | As in section 8 | A shared brief is posted only after the organiser confirms |
+
+**Order:** P0, P0a, P1, P2a, P2c, P3, P3a, P2b, P7, P6, P4, P5, P8, P9a, P9b, P9c, P9d, P9e, P10a, P10b, P9f, P10c, P11. **Stop points:** after P0a the welcome page works end to end with levels 1 and 2 meaning what they do today; after P9a a level 3 guest has real standing rules. Rung 4 classes should not begin until the scheduler, classifier and ledger have run on rung 3 and the undo and abandon numbers are known.
+
+---
+
+## 14. Decisions
+
+**Decided on my judgement for round 2 (change if wrong; numbering continues from section 10):**
+
+10. **Two dials.** Voice (exists, per device) and authority (new, per account on the server) stay separate; authority is capped by voice as in 11.2.
+11. **Default for a new guest is level 2, Keep watch,** which is today's behaviour. Levels 3 and 4 are one tap away on the welcome page but never pre-selected.
+12. **Where to ask.** Ten cross-journey rows on the welcome page; stage extras at stage entry through the stage welcome; everything in Settings at any time. Grants lapse three days after disembark.
+13. **Spending stays out.** "Delegate with a cap" (for example, replace a cancelled tour up to the same price) was considered and **is not built**. It breaks the ceiling, needs strong authentication and refund rules, and carries the highest harm if wrong. Revisit only with usage numbers, a refund policy and the owner's explicit decision; if ever built it would be a fifth level with a per-item and per-trip cap, a two-factor set-up, a receipt and a cancel window.
+14. **Availability watch is reinstated as watch-and-prepare** (VAL-03, RUL-05 reworded to "tell me and line it up"); "hold a table for me" stays dropped.
+15. **Rung 4 is nine classes** (11.4), shipped in the P10 order. AUT-04, AUT-08 and AUT-09, which touch a booking or staff, come last and only on measured safety.
+16. **A guest-facing "AI" word test** (decision 1) now also covers the checklist and Settings strings.
+
+**Open for the owner:** whether the level names (Just answer, Keep watch, Do the legwork, Handle the small stuff) read well to guests; whether AUT-09 (standing stateroom order) is worth the staff-facing risk or should be dropped; whether level 3 should be the preselected choice instead of level 2 for guests who arrive from a booking rather than from Dream.
+
+---
+
+## 15. Measures added in round 2
+
+| Measure | Target | Review when |
+|---|---|---|
+| Guests who choose level 3 or 4 | Reported by level | Under 10% (not compelling) or over 60% (check they understood) |
+| Guests who change the level in Settings in the first week | Under 20% | Over 35% (wrong default or confusing) |
+| Rule or class paused by the circuit breaker | Zero | Any |
+| Undo rate per rung 4 class | Under 5% | Over 10% |
+| Guest switches a row off after its first firing | Under 15% | Over 25% (wrong action) |
+| "Stanley did something I did not expect" reports | Zero | Any |
+| Time saved: taps avoided per guest per trip (acts at rung 4 plus rung 3 confirmed) | Reported | Flat after launch |
+| Rows still unanswered after welcome (skipped) | Reported | Over 50% (flow too long) |
+
+---
+
+## 16. Requirement index
+
+ACT-01 to 08 (save time), CHK-01 to 08 (catch issues), VAL-01 to 07 (get more), RUL-01 to 06 (rules), CL-01 to 10 (welcome checklist), AUT-01 to 09 (rung 4 classes), SR-1.1 to SR-11.6 (per-stage rules, section 12), plus REM-* in `docs/stanley-reminders-requirements.md`.
