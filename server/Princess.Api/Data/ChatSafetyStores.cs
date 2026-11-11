@@ -91,8 +91,9 @@ public sealed class DapperChatSafetyStore(IDbConnectionFactory db) : IChatSafety
     {
         await using var c = await db.OpenAsync(ct);
         // A message its sender deleted shows staff what it said (OriginalText): that is what the report is about.
-        const string cols = "m.Id, m.PublicId, pr.FirstName, pr.LastName, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE ISNULL(m.OriginalText, N'') END AS [Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At]";
-        const string from = "FROM dbo.ChatMessages m JOIN dbo.Profiles pr ON pr.UserId = m.FromUserId";
+        const string cols = "m.Id, m.PublicId, ISNULL(pr.FirstName, N'Stanley') AS FirstName, ISNULL(pr.LastName, N'') AS LastName, CASE WHEN m.DeletedAt IS NULL THEN m.[Text] ELSE ISNULL(m.OriginalText, N'') END AS [Text], CAST(CASE WHEN m.Photo IS NULL THEN 0 ELSE 1 END AS bit) AS HasPhoto, m.[At]";
+        // A LEFT join: Stanley's answers have no sender, and a reported one must still show with the question before it.
+        const string from = "FROM dbo.ChatMessages m LEFT JOIN dbo.Profiles pr ON pr.UserId = m.FromUserId";
         var before = (await c.QueryAsync<ChatCaseLineRow>(Sql.Cmd($"SELECT TOP (@span) {cols} {from} WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.Id < @messageId ORDER BY m.Id DESC", new { span, groupId, messageId }, null, ct))).Reverse();
         var it = await c.QueryAsync<ChatCaseLineRow>(Sql.Cmd($"SELECT {cols} {from} WHERE m.Id = @messageId AND m.GroupId = @groupId", new { groupId, messageId }, null, ct));
         var after = await c.QueryAsync<ChatCaseLineRow>(Sql.Cmd($"SELECT TOP (@span) {cols} {from} WHERE m.GroupId = @groupId AND m.IsSystem = 0 AND m.Id > @messageId ORDER BY m.Id", new { span, groupId, messageId }, null, ct));

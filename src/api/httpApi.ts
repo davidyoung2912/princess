@@ -6,6 +6,7 @@ import type { BudgetApi, PrivacyApi, ShowsApi, WaitsApi } from './careTypes'
 import type { AboardApi } from './aboardTypes'
 import type { Api, Booking, Identity, ProgramView, TripsView } from './types'
 import type { Tier } from '../domain/people'
+import type { ChatTerm } from './chatTypes'
 
 /** The groups of the `Api` that Phase 13 serves from the REST API (account, trips, payments, documents, notifications, support, privacy, budget). */
 export interface HttpGroups {
@@ -226,6 +227,13 @@ export function createHttpGroups(http: Http): { groups: HttpGroups; reset: () =>
     sendTyped: (id, input, clientId, mentions) => send('post', `/me/chat/conversations/${seg(id)}/messages`, { ...input, clientId, ...(mentions && mentions.length > 0 ? { mentions } : {}) }),
     search: (query, conversation, before) => get(`/me/chat/search?q=${seg(query)}${conversation ? `&conversation=${seg(conversation)}` : ''}${before ? `&before=${seg(before)}` : ''}`),
     exportChat: (id) => get(`/me/chat/conversations/${seg(id)}/export`),
+    stanleyTap: (id) => get(`/me/chat/conversations/${seg(id)}/stanley`),
+    setStanleyOff: (id, off) => send('put', `/me/chat/conversations/${seg(id)}/stanley`, { off }),
+    setStanleyMuted: (id, muted) => send('put', `/me/chat/conversations/${seg(id)}/stanley/mute`, { muted }),
+    catchUp: (id) => send('post', `/me/chat/conversations/${seg(id)}/stanley/catch-up`),
+    makePlan: (id, messageId) => send('post', `/me/chat/conversations/${seg(id)}/stanley/plan`, { messageId }),
+    explainWords: async (id, messageId) => (await send<{ terms: ChatTerm[] }>('post', `/me/chat/conversations/${seg(id)}/stanley/words`, { messageId })).terms,
+    draftMessage: async (input) => (await send<{ text: string }>('post', '/me/chat/stanley/draft', input)).text,
     shareable: () => get('/me/chat/shareable'),
     pin: (id, messageId, on) => send(on ? 'put' : 'delete', `/me/chat/conversations/${seg(id)}/pins/${seg(messageId)}`),
     mentionsOnly: (id, on) => send('put', `/me/chat/conversations/${seg(id)}/mentions-only`, { on }),

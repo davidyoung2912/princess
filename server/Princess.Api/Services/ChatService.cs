@@ -12,7 +12,7 @@ namespace Princess.Api.Services;
 /// Read receipts show only when both the sender and the reader have them on. A message that fails <see cref="ProfanityFilter"/> is not stored and the sender is told. Under-18s cannot pass on phone numbers or links, and cannot send photos.
 /// A repeated <c>clientId</c> returns the stored message, so a message queued offline never doubles.
 /// </summary>
-public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, ChatRoomService rooms, StanleyReminderService? reminders = null)
+public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserClock userClock, ChatNotifier notifier, ChatSmsService sms, ChatFanoutQueue fanoutQueue, ChatFanout fanout, IAuditLog audit, StanleyThreadService stanley, ChatTypingTracker typing, ChatShareService share, ChatRoomService rooms, StanleyReminderService? reminders = null, ChatAskQueue? askQueue = null)
 {
     private static string Describe(string? text) => (text ?? "").Trim();
 
@@ -129,6 +129,7 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
             // Stanley has no user: his messages (and the lines marking a change of voice) are shown as his, under the subtitle they were sent with.
             if (m.FromStanley)
             {
+                if (!ChatConversationRules.IsPermanent(member.Kind) && member.StanleyMuted) continue;   // this member chose not to see his answers here
                 var expired = m.ExpiresAt is { } e && e <= now;
                 var replaced = m.SupersededAt is not null;
                 var notice = m.Lane is null ? null : new ChatNoticeDto(m.Lane, m.NoticeKind ?? "", m.NoticePath ?? "", expired, replaced,
@@ -339,6 +340,9 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         typing.Clear(member.GroupId, actor.Id);   // the message is the end of "is typing"
         await store.UnarchiveOthersAsync(member.GroupId, actor.Id, ct);
         await TellAsync(actor, member, sent.Row);
+        // A message that starts with @Stanley is also a question to him (docs/chat-stanley-plan.md, 3.5): the answer is made after this request ends and never delays it. A card, photo or text from ashore never asks.
+        if (kind == ChatCardRules.Text && photo is null && !viaSms && askQueue is not null && ChatAskStanleyRules.IsAsk(text))
+            askQueue.TryEnqueue(new ChatAskJob(actor.Id, member.GroupId, member.GroupPublicId, sent.Row.PublicId, member.Kind));
         return dto;
     }
 
@@ -575,7 +579,10 @@ public sealed class ChatService(IChatStore store, IAccountStore accounts, IUserC
         var active = typing.Active(member.GroupId, actor.Id, DateTime.UtcNow);
         if (active.Count == 0) return [];
         var blocked = new HashSet<long>(await store.ListBlocksAsync(actor.Id, ct));
-        return [.. (await store.ListMembersAsync(member.GroupId, ct)).Where(p => active.Contains(p.UserId) && p.Status == ChatConversationRules.Active && !blocked.Contains(p.UserId)).Select(ShortName)];
+        var names = (await store.ListMembersAsync(member.GroupId, ct)).Where(p => active.Contains(p.UserId) && p.Status == ChatConversationRules.Active && !blocked.Contains(p.UserId)).Select(ShortName).ToList();
+        // Stanley, working on an answer, shows as typing too (he has no user id: the tracker keeps him as 0), unless this member muted him here.
+        if (active.Contains(0) && !member.StanleyMuted) names.Add(StanleyPersonaRules.Name);
+        return names;
     }
 
     /// <summary>

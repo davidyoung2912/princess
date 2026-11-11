@@ -5,7 +5,7 @@ import stanleyPicture from '../../assets/stanley-small.png'
 import { requestStanley } from '../../ai/stanleyOpen'
 import { getStanleyThread, subscribeStanley } from '../../ai/stanley'
 import { copyAge, isStanleyChat, needsYou, noticeBody, noticeHeadline, noticeState, pushPrompt, mayAsk, questionFrom, safeNoticePath, startsDay, subtitleOf, threadItems } from '../../domain/stanleyThread'
-import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatThread, ChatUrgency } from '../../api/chatTypes'
+import type { ChatConversation, ChatKeep, ChatMessage, ChatPin, ChatRsvp, ChatQuote, ChatReaction, ChatStanleyTap, ChatThread, ChatUrgency } from '../../api/chatTypes'
 import { isApiError } from '../../api/errors'
 import { chatStorage } from '../../data/chatStorage'
 import { optimistic } from '../../data/optimistic'
@@ -55,6 +55,8 @@ import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
+import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeWrite, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
+import { showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar } from './ChatLooks'
 import { EmojiPicker } from './ChatEmoji'
@@ -240,6 +242,15 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const [firstUnread, setFirstUnread] = useState<string | null>(null)
   const [jumped, setJumped] = useState(false)
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
+  // Whether Stanley's help (catch me up, make a plan, plain words) is on here; asked once per conversation, and only where it can ever be on.
+  const [tap, setTap] = useState<ChatStanleyTap | undefined>(undefined)
+  const tapKind = conversation?.kind
+  useEffect(() => {
+    if (tapKind !== 'party' && tapKind !== 'direct' && tapKind !== 'group') return
+    let live = true
+    api.chatConversations.stanleyTap(id).then((x) => { if (live) setTap(x) }, () => undefined)
+    return () => { live = false }
+  }, [id, tapKind])
   const [pins, setPins] = useState<ChatPin[]>(cached?.pins ?? [])
   const [ashore, setAshore] = useState(() => ashoreNames(cached?.ashore))
   // Who is back on the ship, from people who chose to tell this chat. Never kept on the device: presence is only worth showing when it is fresh.
@@ -593,6 +604,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   const age = copyAge(fetchedAt, shipTime)
   const staleTitle = permanent && age ? `${t('conv.stale')} ${t('stanley.notice.asOf', { time: age })}` : t('conv.stale')
   return (
+    <StanleyTapProvider value={tap}>
     <section aria-labelledby="thread-h">
       <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
       <h2 id="thread-h" className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</h2>
@@ -609,6 +621,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {conversation && !permanent && phase === 'ready' && (
         <ChatMenu conversation={conversation} messages={messages} now={now} busy={mute.busy || archive.busy} onMute={(on, length) => void mute.run(on, length)} onArchive={(on) => void archive.run(on)} onBlocked={onBlocked} onFind={goToPin} />
       )}
+      {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
+      {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
       {details && !room && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
@@ -692,6 +706,21 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
               }} />}
             </>
           )}
+          <AskStanleyButton onAsk={() => {
+            const next = withAsk(text).slice(0, MAX_TEXT)
+            setText(next)
+            setCaret(next.length)
+            const box = form.current?.querySelector('textarea')
+            requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
+          }} />
+          <AskStanleyNote text={text} />
+          {tap?.available && <HelpMeWrite onUse={(draft) => {
+            const next = draft.slice(0, MAX_TEXT)
+            setText(next)
+            setCaret(next.length)
+            const box = form.current?.querySelector('textarea')
+            requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
+          }} />}
           {typedMention && (
             <MentionList people={people} query={typedMention.query} onPick={(person) => {
               const next = insertMention(text, caret, typedMention.start, person)
@@ -725,6 +754,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ActionError error={jump.error} />
       {react.error && <p role="alert" className="field__error">{t('conv.reactFailed')}</p>}
     </section>
+    </StanleyTapProvider>
   )
 }
 
@@ -870,7 +900,7 @@ const MessageRow = memo(function MessageRow({ m, mine, shipTime, conversationId,
     if (!n) {
       return (
         <li className="chat-msg chat-msg--stanley">
-          <p className="chat-msg__meta"><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
+          <p className="chat-msg__meta"><img className="chat-msg__stanley" src={stanleyPicture} alt="" width={20} height={20} /><strong>{t('stanley.chat.from')}</strong>{m.subtitle && <span className="muted"> · {m.subtitle}</span>} <span className="muted">{shipTime(m.at)}</span></p>
           <p>{m.text}</p>
         </li>
       )
@@ -922,6 +952,7 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
           <button ref={reactButton} type="button" className="chat-act" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>{t('conv.react')}</button>
           <button type="button" className="chat-act" onClick={() => onReply?.(m)}>{t('conv.reply')}</button>
           {pinning && onPin && <button type="button" className="chat-act" onClick={() => onPin(m.id, pinning === 'pin')}>{t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')}</button>}
+          <StanleyMessageActions conversationId={conversationId} message={m} onPosted={onChanged ?? noop} />
         </div>
       )}
       {picking && onReact && (

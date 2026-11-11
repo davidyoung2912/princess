@@ -374,7 +374,33 @@ export interface ChatConversationsApi {
   search(query: string, conversation?: string, before?: string): Promise<ChatSearchResult>
   /** Everything you may read of one of your chats, for saving as a file. Rejects `forbidden` (`notExportable`) or `notFound`. */
   exportChat(id: string): Promise<ChatExport>
+  /** Whether Stanley's help (catch me up, make a plan, plain words) is on in this conversation, and whether you may switch it. Rejects `notFound`. */
+  stanleyTap(id: string): Promise<ChatStanleyTap>
+  /** The guest who made a group, or either person in a direct chat, turns Stanley's help off or on (asking him with `@Stanley` and the catch-up). Rejects `forbidden` (`notCreator`) or `notFound`. */
+  setStanleyOff(id: string, off: boolean): Promise<ChatStanleyTap>
+  /** You stop seeing Stanley's answers in this conversation (or see them again). Nobody is told. Rejects `forbidden` (`kind`) or `notFound`. */
+  setStanleyMuted(id: string, muted: boolean): Promise<ChatStanleyTap>
+  /**
+   * A private summary of what you may read here. Never posted. Rejects `forbidden` (`kind`, `child`, `off`), `conflict` (`tooShort`), `invalid` with message `catchUpLimit` (three an hour) or `notFound`.
+   */
+  catchUp(id: string): Promise<ChatCatchUp>
+  /** A poll preview made from one message; nothing is posted. Rejects `invalid` (`notMessage`, `noPlan`), `forbidden` (`kind`, `child`, `off`) or `notFound`. */
+  makePlan(id: string, messageId: string): Promise<ChatPlanPreview>
+  /** The cruise words in one message, in plain words. Rejects `invalid` (`notMessage`), `forbidden` (`kind`, `child`, `off`) or `notFound`. */
+  explainWords(id: string, messageId: string): Promise<ChatTerm[]>
+  /** A short message to edit before sending. Nothing is sent. Rejects `invalid` (`draft`). */
+  draftMessage(input: ChatDraftInput): Promise<string>
 }
+
+// ---- Stanley on tap in a thread (docs/chat-features-research.md, phase 10) ----
+
+/** `reason` is `kind` (his own chat, a channel or a room), `child` (a supervised child is a member) or `off` (the creator turned it off) when `available` is false. */
+export interface ChatStanleyTap { available: boolean; canSwitch: boolean; off: boolean; reason?: 'kind' | 'child' | 'off'; /** You chose not to see his answers in this conversation. */ muted?: boolean }
+/** A private catch-up: short quotes with their speakers. `since` is the time of the oldest message it read. */
+export interface ChatCatchUp { label: string; messages: number; since: number; decided: string[]; open: string[]; latest: string[] }
+export interface ChatPlanPreview { question: string; options: string[] }
+export interface ChatTerm { word: string; meaning: string }
+export interface ChatDraftInput { kind: 'late' | 'meet'; minutes?: number; place?: string; time?: string }
 
 // ---- Search and export (docs/chat-features-research.md, phase 9) ----
 

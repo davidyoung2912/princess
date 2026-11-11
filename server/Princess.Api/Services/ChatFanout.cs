@@ -33,8 +33,10 @@ public sealed class ChatFanout(IChatStore store, ChatNotifier notifier, ChatSmsS
         try
         {
             var members = await store.ListMembersAsync(job.GroupId, ct);
-            var from = members.FirstOrDefault(p => p.UserId == job.ActorId) is { } me ? ChatConnectionRules.ShortName(me.FirstName, me.LastName) : "Guest";
-            var recipients = await store.ListRecipientsAsync(job.GroupId, job.ActorId, ct);
+            // Stanley's answer (no sender, ActorId 0) is told to everyone who has not muted him in this conversation.
+            var fromStanley = job.ActorId == 0;
+            var from = fromStanley ? StanleyPersonaRules.Name : members.FirstOrDefault(p => p.UserId == job.ActorId) is { } me ? ChatConnectionRules.ShortName(me.FirstName, me.LastName) : "Guest";
+            var recipients = (await store.ListRecipientsAsync(job.GroupId, job.ActorId, ct)).Where(r => !(fromStanley && r.StanleyMuted)).ToList();
             // Each recipient is independent (a lookup and a nudge), so a large group is told together rather than one after another.
             // A mention breaks through a mute and through mentions-only (never through do-not-disturb, which the notifier applies); a member on mentions-only hears nothing else.
             await Task.WhenAll(recipients.Select(r =>

@@ -197,7 +197,7 @@ section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-
 .chat-reactions { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: var(--space-2) 0 0; padding: 0; }
 .reaction-chip { display: inline-flex; align-items: center; min-height: var(--target-min); min-width: var(--target-min); padding: 0 var(--space-3); border: var(--border-width) solid var(--border); border-radius: var(--radius-pill); background: var(--bg); color: var(--text); cursor: pointer; }
 .reaction-chip[aria-pressed='true'] { border: 3px solid var(--primary); font-weight: 700; background: var(--brand-tint); }
-.chat-msg__actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+.chat-msg__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .chat-act { min-height: var(--target-min); padding: 0 var(--space-3); border: 0; background: none; color: var(--primary); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .chat-picker { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
 .chat-picker__btn { min-height: var(--target-min); min-width: var(--target-min); font-size: 1.5rem; line-height: 1; border: var(--border-width) solid var(--border); border-radius: var(--radius-pill); background: var(--bg); cursor: pointer; }
@@ -315,3 +315,9 @@ button.chat-quote { cursor: pointer; }
 .person-line > .conv__avatar { flex: none; }
 .avatar-picker__pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
 .avatar-picker__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 24rem; }
+
+/* Stanley on tap in a thread (chat phase 10) */
+.cst-list { margin: 0 0 var(--space-3); padding-inline-start: var(--space-4); }
+.cst-list li { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.chat-act__problem { flex-basis: 100%; }
+.chat-msg__stanley { border-radius: 50%; vertical-align: middle; margin-inline-end: var(--space-2); object-fit: cover; }

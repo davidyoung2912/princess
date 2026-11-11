@@ -199,6 +199,8 @@ public class ChatMemberRow
     public bool NotifyAway { get; set; }
     /// <summary>Phase 3: the member is alerted only for a message that mentions them (the conversation still shows and counts everything).</summary>
     public bool MentionsOnly { get; set; }
+    /// <summary>Stanley answers in the thread: this member chose not to see them (hidden on their devices, no notice sent).</summary>
+    public bool StanleyMuted { get; set; }
     /// <summary>Phase 4: the second admin of a made group (the creator is always one, and is not flagged).</summary>
     public bool IsAdmin { get; set; }
     /// <summary>Phase 4: only admins post in this group.</summary>
@@ -264,6 +266,8 @@ public sealed class ChatRecipientRow
     public bool Typing { get; set; } = true;
     /// <summary>Phase 3: the recipient chose to be alerted only when mentioned.</summary>
     public bool MentionsOnly { get; set; }
+    /// <summary>The recipient chose not to see Stanley's answers in this conversation, so is not told about one.</summary>
+    public bool StanleyMuted { get; set; }
 }
 
 /// <summary>One conversation's presence change for a member: what the chat last knew (<c>Previous</c>) and whether the member wants the chat told.</summary>
@@ -520,6 +524,11 @@ public interface IChatStore
     Task<List<ChatAwayRecipientRow>> ListAwayRecipientsAsync(long userId, IReadOnlyCollection<long> groupIds, CancellationToken ct);
     /// <summary>Adds a system line in the conversation, attributed to the person it is about.</summary>
     Task AddSystemLineAsync(long groupId, long userId, string text, DateTime at, CancellationToken ct);
+    /// <summary>
+    /// Stanley speaks in a conversation between people (docs/chat-stanley-plan.md, 3.5): a message with no sender (<c>FromUserId</c> is null, so <see cref="ChatMessageRow.FromStanley"/>). With <paramref name="system"/> it is a short status line
+    /// ("Stanley needs a minute"), never unread and never announced; otherwise it is an answer, counted and told like any message. Returns the stored row.
+    /// </summary>
+    Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct);
     /// <summary>One message the person may read in the conversation (their window, not from someone they blocked), or null.</summary>
     Task<ChatMessageRow?> FindMessageAsync(long groupId, long userId, Guid messagePublicId, CancellationToken ct);
     /// <summary>The photo after the first of a message (<paramref name="position"/> 1 is the second photo); null when there is none. The caller has already checked the message is readable.</summary>

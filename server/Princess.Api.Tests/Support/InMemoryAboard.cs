@@ -311,7 +311,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         Persona = PersonaOf(c)?.Persona, Subtitle = PersonaOf(c)?.Subtitle,
         GroupId = c.Id, GroupPublicId = c.PublicId, Kind = c.Kind, Name = c.Name, UserId = me.UserId, Status = me.Status, JoinedAt = me.JoinedAt, LeftAt = me.LeftAt,
-        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, MentionsOnly = me.MentionsOnly, IsAdmin = me.IsAdmin, AnnouncementOnly = c.AnnouncementOnly, CreatedByUserId = c.CreatedByUserId, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
+        Muted = MutedNow(me), MutedUntil = me.MutedUntil, ArchivedAt = me.ArchivedAt, MentionsOnly = me.MentionsOnly, StanleyMuted = StanleyMuted.Contains((c.Id, me.UserId)), IsAdmin = me.IsAdmin, AnnouncementOnly = c.AnnouncementOnly, CreatedByUserId = c.CreatedByUserId, LastReadMessageId = me.LastRead, DirectEnded = c.DirectEnded, CreatedAt = c.CreatedAt,
     };
 
     private IEnumerable<ChatMessageRow> Visible(Conversation c, Member me) => Messages.Where(m => m.GroupId == c.Id && Readable(c, me, m.Row)).Select(m => m.Row).OrderBy(m => m.Id);
@@ -488,7 +488,7 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
 
     public Task<List<ChatRecipientRow>> ListRecipientsAsync(long groupId, long senderId, CancellationToken ct) =>
         Task.FromResult(Of(groupId).Members.Where(m => m.Status == "active" && m.UserId != senderId && !Blocks.Contains((m.UserId, senderId)))
-            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = MutedNow(m), ShowPreview = Previews.Contains(m.UserId), Typing = !TypingOff.Contains(m.UserId), MentionsOnly = m.MentionsOnly }).ToList());
+            .Select(m => new ChatRecipientRow { UserId = m.UserId, Muted = MutedNow(m), ShowPreview = Previews.Contains(m.UserId), Typing = !TypingOff.Contains(m.UserId), MentionsOnly = m.MentionsOnly, StanleyMuted = StanleyMuted.Contains((groupId, m.UserId)) }).ToList());
 
     public Task MarkReadAsync(long groupId, long userId, bool receipts, DateTime at, CancellationToken ct)
     {
@@ -638,6 +638,15 @@ public class InMemoryChatStore(InMemoryUserStore users) : IChatStore
     {
         Messages.Add(new Stored(groupId, new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = userId, Text = text, At = at, IsSystem = true }, null));
         return Task.CompletedTask;
+    }
+
+    public readonly HashSet<(long GroupId, long UserId)> StanleyMuted = [];
+
+    public Task<ChatMessageRow> AddGroupStanleyMessageAsync(long groupId, string text, bool system, DateTime at, CancellationToken ct)
+    {
+        var row = new ChatMessageRow { Id = _next++, PublicId = Guid.NewGuid(), FromUserId = 0, Text = text, At = at, IsSystem = system };
+        Messages.Add(new Stored(groupId, row, null));
+        return Task.FromResult(row);
     }
 
     public readonly Dictionary<long, List<string>> Extras = [];

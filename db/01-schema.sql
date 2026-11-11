@@ -3711,3 +3711,33 @@ CREATE TABLE dbo.ChatRoomQuestions (
 CREATE INDEX IX_ChatRoomQuestions_Group_Status ON dbo.ChatRoomQuestions (GroupId, Status);
 END
 GO
+
+-- Chat phase 10: Stanley on tap in a thread (docs/chat-features-research.md, phase 10).
+-- ChatGroups.StanleyTapOff is the creator's switch for "anyone here can ask Stanley to summarise this chat" (on unless the guest who made a group turns it off).
+-- ChatStanleyUses counts catch-ups per person for the hourly cap. It holds no text, no message and no person's words: only who asked, where and when. Rows older than a day are removed as new ones are added.
+IF COL_LENGTH(N'dbo.ChatGroups', N'StanleyTapOff') IS NULL
+BEGIN
+  ALTER TABLE dbo.ChatGroups ADD StanleyTapOff BIT NOT NULL CONSTRAINT DF_ChatGroups_StanleyTapOff DEFAULT 0;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ChatStanleyUses', N'U') IS NULL
+BEGIN
+CREATE TABLE dbo.ChatStanleyUses (
+  Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ChatStanleyUses PRIMARY KEY,
+  UserId BIGINT NOT NULL, GroupId BIGINT NOT NULL, [At] DATETIME2(0) NOT NULL,
+  CONSTRAINT FK_ChatStanleyUses_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE,
+  CONSTRAINT FK_ChatStanleyUses_Groups FOREIGN KEY (GroupId) REFERENCES dbo.ChatGroups (Id) ON DELETE CASCADE
+);
+CREATE INDEX IX_ChatStanleyUses_User_At ON dbo.ChatStanleyUses (UserId, [At]);
+END
+GO
+
+-- Chat Stanley plan phase 3: asking Stanley in a conversation (docs/chat-stanley-plan.md, 3.5).
+-- ChatGroupMembers.StanleyMuted: this member does not see Stanley's answers in this conversation (they are hidden on their devices and no alert is sent). The off switch for everyone is ChatGroups.StanleyTapOff (phase 10).
+-- Stanley's answers are ChatMessages with FromUserId NULL in an ordinary conversation, like the lines in his own chat; IsSystem = 1 marks his short status lines.
+IF COL_LENGTH(N'dbo.ChatGroupMembers', N'StanleyMuted') IS NULL
+BEGIN
+  ALTER TABLE dbo.ChatGroupMembers ADD StanleyMuted BIT NOT NULL CONSTRAINT DF_ChatGroupMembers_StanleyMuted DEFAULT 0;
+END
+GO
