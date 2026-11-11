@@ -64,7 +64,7 @@ public sealed class AnthropicConciergeModel(HttpClient http, IOptions<ConciergeO
     {
         var o = options.Value;
         var (name, maxTokens) = stanley.Value.For(tier);
-        var body = new JsonObject { ["model"] = name, ["max_tokens"] = maxTokens, ["system"] = system, ["messages"] = messages };
+        var body = new JsonObject { ["model"] = name, ["max_tokens"] = maxTokens, ["system"] = system, ["messages"] = messages.DeepClone() };   // a copy: the caller's tool loop sends the same array on every turn, and a node can have only one parent
         if (JsonNode.Parse(toolsJson) is JsonArray { Count: > 0 } tools) body["tools"] = tools;   // Stanley asks with no tools: the API refuses an empty list
         using var req = new HttpRequestMessage(HttpMethod.Post, o.Endpoint) { Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json") };
         req.Headers.Add("x-api-key", o.ApiKey);
