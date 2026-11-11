@@ -229,7 +229,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         var other = mine ? (r.TargetPublicId, ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast), r.TargetAvatar) : (r.RequesterPublicId, ChatConnectionRules.ShortName(r.RequesterFirst, r.RequesterLast), r.RequesterAvatar);
         var isNew = r.Status == ChatConnectionRules.Accepted && mine && r.RequesterSeenAt is null;
         ChatConnectionDto Make(string kind, Guid? child = null, string? childName = null) =>
-            new(r.PublicId, kind, other.Item1, other.Item2, r.ConversationId, child, childName, isNew, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), other.Item3);
+            new(r.PublicId, kind, other.Item1, other.Item2, r.ConversationId, child, childName, isNew, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), other.Item3, ChatStanleyVoice.Note(kind, other.Item2));
 
         if (r.GuardianUserId == me && r.Status == ChatConnectionRules.AwaitingGuardian && !mine && me != r.TargetId)
         {
@@ -261,5 +261,5 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
 
     /// <summary>What a sender sees for a request to someone who blocked them: an ordinary waiting request that goes nowhere and expires.</summary>
     private static ChatConnectionDto QuietlyUndelivered(UserRecord actor, UserRecord target, DateTime now) =>
-        new(Guid.NewGuid(), "outgoing", target.PublicId, "Guest", null, null, null, false, TripRules.ToMs(now), TripRules.ToMs(now + ChatConnectionRules.Lifetime));
+        new(Guid.NewGuid(), "outgoing", target.PublicId, "Guest", null, null, null, false, TripRules.ToMs(now), TripRules.ToMs(now + ChatConnectionRules.Lifetime), null, ChatStanleyVoice.Waiting);
 }

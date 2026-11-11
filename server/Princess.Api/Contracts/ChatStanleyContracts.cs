@@ -32,3 +32,18 @@ public sealed record ChatTermsDto(List<ChatTermDto> Terms);
 public sealed record ChatDraftBody(string? Kind, int? Minutes, string? Place, string? Time);
 
 public sealed record ChatDraftDto(string Text);
+
+/// <summary>Whether Stanley's chat help is on for this guest, and the lines the screens show (keyed by what each is for), so the app renders wording the server wrote.</summary>
+public sealed record ChatStanleyStatusDto(bool On, Dictionary<string, string> Lines);
+
+/// <summary><c>Mode</c> is <c>reword</c> (a blocked message), <c>friendlier</c> or <c>shorter</c>.</summary>
+public sealed record ChatRewordBody(string? Text, string? Mode);
+
+/// <summary>One suggestion, or none. <c>Reason</c> (when there is none) is <c>unavailable</c>, <c>limit</c>, <c>safety</c> or <c>none</c>; <c>Message</c> is what Stanley says either way.</summary>
+public sealed record ChatRewordDto([property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Suggestion, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Reason, string Message);
+
+/// <summary><c>More</c>: the guest tapped "More ideas", so a model may be used.</summary>
+public sealed record ChatIcebreakersBody(bool More = false);
+
+/// <summary>Up to three openers. <c>CanMore</c>: another set can be asked for.</summary>
+public sealed record ChatIcebreakersDto(List<string> Lines, bool CanMore);

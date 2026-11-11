@@ -1,9 +1,12 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import stanleyPicture from '../../assets/stanley-small.png'
 import type { ApiError } from '../../api/errors'
-import type { ChatCatchUp, ChatMessage, ChatPlanPreview, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
+import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
 import { newClientId } from '../../domain/chatThread'
 import { canDraft, catchUpAnnouncement, isAskStanley, cleanMinutes, hasHighlights, LATE_MAX, LATE_MIN, mayHelpWith, PLACE_MAX, stanleyProblem, TIME_MAX } from '../../domain/chatStanley'
+import { canAskReword, hasSuggestion, rewordProblem, showRewordHelp, MODE_LABEL } from '../../domain/chatWriting'
 import { useAction } from '../../hooks/useAction'
+import { useStanleyStatus } from '../../hooks/useStanleyStatus'
 import { api } from '../../runtime'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
@@ -200,4 +203,105 @@ export function AskStanleyNote({ text }: { text: string }) {
   const tap = useContext(TapContext)
   if (tap?.available !== true || !isAskStanley(text)) return null
   return <p className="muted" role="note">{t('cst.askWill')}</p>
+}
+
+/** One line from Stanley with his picture and name. Nothing is drawn when his chat help is off or there is nothing to say. */
+export function StanleyNote({ text }: { text: string | undefined }) {
+  const status = useStanleyStatus()
+  if (!text || status?.on !== true) return null
+  return (
+    <p className="cw-note">
+      <img className="cw-note__pic" src={stanleyPicture} alt="" width="24" height="24" />
+      <span><strong>{t('cw.from')}</strong> {text}</span>
+    </p>
+  )
+}
+
+/** The sentence for a failed call to Stanley's writing help. */
+function WritingProblem({ error }: { error: ApiError | null }) {
+  if (!error) return null
+  const why = rewordProblem(error.code, error.message)
+  return why === 'other' ? <ActionError error={error} /> : <p role="alert" className="field__error">{t(`cw.problem.${why}` as StringKey)}</p>
+}
+
+/**
+ * One suggestion from Stanley for a draft, in a dialog. "Use this" puts it in the message box; the guest still presses Send and can change it first. The draft is sent only because the guest tapped; nothing is stored.
+ */
+function RewordSheet({ text, mode, onUse, onClose }: { text: string; mode: ChatRewordMode; onUse: (suggestion: string) => void; onClose: () => void }) {
+  const [result, setResult] = useState<ChatReword | null>(null)
+  const ask = useAction(async () => { setResult(await api.chatConversations.reword(text, mode)) })
+  const { run } = ask
+  // Asked once, when the sheet opens.
+  useEffect(() => { void run().catch(() => undefined) }, [run])
+  return (
+    <Dialog title={t(MODE_LABEL[mode])} onClose={onClose}>
+      <p role="status">{result ? result.message : t('cw.thinking')}</p>
+      {result && hasSuggestion(result) && <p><strong>{result.suggestion}</strong></p>}
+      <div className="button-row">
+        {result && hasSuggestion(result) && <Button onClick={() => { onUse(result.suggestion); onClose() }}>{t('cw.use')}</Button>}
+        <Button variant="secondary" onClick={onClose}>{t(result && hasSuggestion(result) ? 'cw.ignore' : 'cw.close')}</Button>
+      </div>
+      <WritingProblem error={ask.error} />
+    </Dialog>
+  )
+}
+
+/** A button that opens a suggestion for the draft in the given mode. */
+function RewordButton({ text, mode, variant = 'tertiary', onUse }: { text: string; mode: ChatRewordMode; variant?: 'secondary' | 'tertiary'; onUse: (suggestion: string) => void }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button type="button" variant={variant} onClick={() => setOpen(true)}>{t(MODE_LABEL[mode])}</Button>
+      {open && <RewordSheet text={text} mode={mode} onUse={onUse} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+/** "Help me reword", under the note for a message the word filter refused. The text stays in the box either way. */
+export function HelpMeReword({ problem, text, onUse }: { problem: string | null; text: string; onUse: (suggestion: string) => void }) {
+  const tap = useContext(TapContext)
+  const status = useStanleyStatus()
+  if (!showRewordHelp(problem, status?.on === true && tap?.available === true, text)) return null
+  return <RewordButton text={text} mode="reword" variant="secondary" onUse={onUse} />
+}
+
+/** "Make it friendlier" and "Make it shorter" for a draft, in the message box area. Only where Stanley's help is on and something is written. */
+export function PolishDraft({ text, onUse }: { text: string; onUse: (suggestion: string) => void }) {
+  const tap = useContext(TapContext)
+  const status = useStanleyStatus()
+  if (status?.on !== true || tap?.available !== true || !canAskReword(text)) return null
+  return (
+    <>
+      <RewordButton text={text} mode="friendlier" onUse={onUse} />
+      <RewordButton text={text} mode="shorter" onUse={onUse} />
+    </>
+  )
+}
+
+/**
+ * "Say hello with an icebreaker": up to three friendly openers. With `onPick` (an empty chat) a tap puts one in the message box; without it (after a request is sent) they are ideas for when the person says yes.
+ * "More ideas" may ask the model. Nothing is sent for the guest.
+ */
+export function Icebreakers({ onPick }: { onPick?: (line: string) => void }) {
+  const status = useStanleyStatus()
+  const [shown, setShown] = useState<ChatIcebreakers | null>(null)
+  const ask = useAction(async (more: boolean) => { setShown(await api.chatConversations.icebreakers(more)) })
+  if (status?.on !== true) return null
+  return (
+    <div className="cw-ice">
+      <Button type="button" variant="tertiary" disabled={ask.busy} onClick={() => void ask.run(false).catch(() => undefined)}>{t('cw.ice')}</Button>
+      {shown && (
+        <>
+          <p className="muted">{t(onPick ? 'cw.iceBody' : 'cw.iceIdeas')}</p>
+          <ul className="plain-list">
+            {shown.lines.map((line) => (
+              <li key={line}>{onPick ? <button type="button" className="chat-act" onClick={() => onPick(line)}>{line}</button> : line}</li>
+            ))}
+          </ul>
+          {shown.canMore && <Button type="button" variant="tertiary" disabled={ask.busy} onClick={() => void ask.run(true).catch(() => undefined)}>{t('cw.more')}</Button>}
+        </>
+      )}
+      <WritingProblem error={ask.error} />
+    </div>
+  )
 }

@@ -19,6 +19,8 @@ export interface ChatConnection {
   childName: string | null
   /** The other person's chosen avatar id; absent for initials. */
   avatar?: string
+  /** Stanley's line for this request (what happens next, or a kind word after a no). Absent for a connection or an approval. */
+  note?: string
   /** Agreed, and the sender has not yet seen that. */
   isNew: boolean
   at: number
@@ -390,6 +392,12 @@ export interface ChatConversationsApi {
   explainWords(id: string, messageId: string): Promise<ChatTerm[]>
   /** A short message to edit before sending. Nothing is sent. Rejects `invalid` (`draft`). */
   draftMessage(input: ChatDraftInput): Promise<string>
+  /** Whether Stanley's friendly chat help is on for you, and the lines the request screens show. */
+  stanleyStatus(): Promise<ChatStanleyStatus>
+  /** One suggestion for a draft, only on your tap. Nothing is sent or stored. Rejects `invalid` (`mode`, `empty`) or `forbidden` (`supervised`). */
+  reword(text: string, mode: ChatRewordMode): Promise<ChatReword>
+  /** Up to three openers. `more` may use the model. Rejects `forbidden` (`supervised`). */
+  icebreakers(more: boolean): Promise<ChatIcebreakers>
 }
 
 // ---- Stanley on tap in a thread (docs/chat-features-research.md, phase 10) ----
@@ -400,6 +408,12 @@ export interface ChatStanleyTap { available: boolean; canSwitch: boolean; off: b
 export interface ChatCatchUp { label: string; messages: number; since: number; decided: string[]; open: string[]; latest: string[] }
 export interface ChatPlanPreview { question: string; options: string[] }
 export interface ChatTerm { word: string; meaning: string }
+/** `lines` are Stanley's wording keyed by what each is for: waiting, sent, expired, cooldown, tooManyOpen, tooMany, alreadyAsked, blocked. */
+export interface ChatStanleyStatus { on: boolean; lines: Record<string, string> }
+export type ChatRewordMode = 'reword' | 'friendlier' | 'shorter'
+/** One suggestion, or none with a `reason` (`unavailable`, `limit`, `safety`, `none`). `message` is what Stanley says either way. */
+export interface ChatReword { suggestion?: string; reason?: 'unavailable' | 'limit' | 'safety' | 'none'; message: string }
+export interface ChatIcebreakers { lines: string[]; canMore: boolean }
 export interface ChatDraftInput { kind: 'late' | 'meet'; minutes?: number; place?: string; time?: string }
 
 // ---- Search and export (docs/chat-features-research.md, phase 9) ----

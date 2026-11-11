@@ -11,6 +11,17 @@ public static class ChatStanleyEndpoints
     {
         var chat = api.MapGroup("/me/chat").WithTags("Chat Stanley");
 
+        chat.MapGet("/stanley", async (ICurrentUser me, ChatHelpService svc, CancellationToken ct) => Results.Ok(svc.Status(await me.LoadAsync(ct))))
+            .WithSummary("Whether Stanley's friendly chat help is on for the caller (never for a supervised child), and the lines the request screens show.");
+
+        chat.MapPost("/stanley/reword", async (ChatRewordBody body, ICurrentUser me, ChatHelpService svc, CancellationToken ct) => Results.Ok(await svc.RewordAsync(await me.LoadAsync(ct), body, ct)))
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("One suggestion for a draft (`mode`: reword, friendlier or shorter), on the small model, only on the guest's tap. The draft is not stored or logged and nothing is sent. 200 with a `suggestion` or a `reason` (unavailable, limit, safety, none) and Stanley's `message`; 400 mode|empty; 403 supervised.");
+
+        chat.MapPost("/stanley/icebreakers", async (ChatIcebreakersBody body, ICurrentUser me, ChatHelpService svc, CancellationToken ct) => Results.Ok(await svc.IcebreakersAsync(await me.LoadAsync(ct), body, ct)))
+            .RequireRateLimiting(ChatConnectionEndpoints.SearchLimiter)
+            .WithSummary("Up to three short openers. Scripted unless `more` is true, which may use the small model. 403 supervised.");
+
         chat.MapGet("/conversations/{id:guid}/stanley", async (Guid id, ICurrentUser me, ChatStanleyService svc, CancellationToken ct) => Results.Ok(await svc.TapAsync(await me.LoadAsync(ct), id, ct)))
             .WithSummary("Whether Stanley's help (catch me up, make a plan, plain words) is on in the conversation, why not (`kind`: his own chat, a channel or a room; `child`: a supervised child is a member; `off`: the creator turned it off), and whether the caller may switch it. 404 not a member.");
 

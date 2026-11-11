@@ -55,7 +55,7 @@ import { CardMessage, MentionList, MessageWords, PinBar, ShareChooser } from './
 import { PlanMessage, PlanTools, PollMessage } from './ChatPlanning'
 import { RoomDetails, RulesDialog } from './ChatRooms'
 import { ChatSearch, SaveChat } from './ChatSearch'
-import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeWrite, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
+import { AskStanleyButton, AskStanleyNote, CatchUpButton, HelpMeReword, HelpMeWrite, Icebreakers, PolishDraft, StanleyMessageActions, StanleyTapNote, StanleyTapProvider } from './ChatStanley'
 import { showCatchUp, unreadAfter, withAsk } from '../../domain/chatStanley'
 import { MessagePhotos, PhotosGallery } from './ChatPhotos'
 import { ChatAvatar } from './ChatLooks'
@@ -551,6 +551,14 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   })
   const runReact = useLatest((messageId: string, emoji: string) => void react.run(messageId, emoji))
   // A quick reply sends its own words and leaves the box (and any draft in it) alone.
+  // Puts a draft or suggestion in the message box and the caret at its end. Nothing is sent: the guest changes it and presses Send.
+  const putInBox = (draft: string) => {
+    const next = draft.slice(0, MAX_TEXT)
+    setText(next)
+    setCaret(next.length)
+    const box = form.current?.querySelector('textarea')
+    requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
+  }
   const submit = async (quick?: string) => {
     const body = (quick ?? text).trim()
     if (!body) return
@@ -640,6 +648,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       <ActionError error={older.error} />
       {dividerId && !jumped && <Button variant="secondary" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
+      {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && tap?.available === true && !room && <Icebreakers onPick={putInBox} />}
       {!permanent && <PinBar pins={pins} canPin={conversation?.canPin === true} busy={pin.busy} onGo={goToPin} onUnpin={(messageId) => void pin.run(messageId, false)} />}
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
@@ -714,13 +723,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
           }} />
           <AskStanleyNote text={text} />
-          {tap?.available && <HelpMeWrite onUse={(draft) => {
-            const next = draft.slice(0, MAX_TEXT)
-            setText(next)
-            setCaret(next.length)
-            const box = form.current?.querySelector('textarea')
-            requestAnimationFrame(() => { box?.focus(); box?.setSelectionRange(next.length, next.length) })
-          }} />}
+          {tap?.available && <HelpMeWrite onUse={putInBox} />}
+          <PolishDraft text={text} onUse={putInBox} />
           {typedMention && (
             <MentionList people={people} query={typedMention.query} onPick={(person) => {
               const next = insertMention(text, caret, typedMention.start, person)
@@ -733,6 +737,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           )}
           {problem && <p role="alert" className="field__error">{t(problem === 'blocked' ? 'conv.blocked' : problem === 'contact' ? 'conv.contact' : problem === 'gone' ? 'conv.gone' : problem === 'urgency' ? 'urgent.denied' : problem === 'urgencyLimit' ? 'urgent.limit' : problem === 'rate' ? 'conv.rate' : (['staffOnly', 'muted', 'slow', 'held', 'rules', 'emergency'] as const).some((r) => r === problem) ? `room.problem.${problem}` as StringKey : 'conv.failed')}</p>}
           {problem && problem !== 'blocked' && problem !== 'urgency' && problem !== 'urgencyLimit' && problem !== 'held' && <p className="muted">{t('chat.kept')}</p>}
+          <HelpMeReword problem={problem} text={text} onUse={putInBox} />
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">

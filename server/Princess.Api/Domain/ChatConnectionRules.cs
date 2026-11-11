@@ -70,7 +70,7 @@ public static class ChatConnectionRules
     public static string NoticeKey(string kind, Guid connectionId) => $"chat:{kind}:{connectionId:N}";
 
     // The words a phone shows on a locked screen. They name a person only by first name and last initial and say nothing about why an answer is no.
-    public static (string Title, string Body) RequestNotice(string requester) => ($"{requester} wants to chat", "Open Princess to accept or decline.");
+    public static (string Title, string Body) RequestNotice(string requester) => ($"{requester} wants to chat", "Open Princess to say yes, or not now.");
     public static (string Title, string Body) AcceptedNotice(string target) => ($"{target} accepted your chat request", "You can message each other now.");
     public static (string Title, string Body) DeclinedNotice() => ("Your chat request has an answer", "Open Princess to see it.");
     public static (string Title, string Body) ApprovalNotice(string child) => ("A chat request needs your approval", $"Open Princess to review it for {child}.");

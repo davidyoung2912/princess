@@ -73,6 +73,7 @@ services.AddScoped<ChatKeepService>();
 services.AddScoped<ChatSearchService>();
 services.AddScoped<IChatStanleyStore, DapperChatStanleyStore>();
 services.AddScoped<ChatStanleyService>();
+services.AddScoped<ChatHelpService>();
 services.AddSingleton<ChatAskQueue>();
 services.AddScoped<ChatAskStanleyService>();
 services.AddHostedService<ChatAskWorker>();

@@ -6,7 +6,7 @@ namespace Princess.Api.Contracts;
 // Another guest is only ever shown as a first name and a last initial.
 
 /// <summary>A search result. <c>Relation</c> is none, asked (the caller already asked), waiting (they asked the caller), connected or approval (waiting for a guardian).</summary>
-public sealed record ChatPersonDto(Guid Id, string Name, string Relation, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
+public sealed record ChatPersonDto(Guid Id, string Name, string Relation, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
 
 /// <summary>
 /// One request or connection from the caller's point of view. <c>Kind</c>: <c>connected</c>, <c>incoming</c> (waiting for the caller), <c>outgoing</c> (the caller is waiting),

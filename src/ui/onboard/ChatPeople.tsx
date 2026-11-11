@@ -18,6 +18,9 @@ import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import { GroupInvites } from './ChatGroups'
+import { Icebreakers, StanleyNote } from './ChatStanley'
+import { useStanleyStatus } from '../../hooks/useStanleyStatus'
+import { problemLine } from '../../domain/chatWriting'
 import { ChatAvatar } from './ChatLooks'
 import type { ApiError } from '../../api/errors'
 
@@ -57,7 +60,7 @@ export function People() {
             {c.approvals.length > 0 && <Group id="approvals" rows={c.approvals} render={(r) => <Approval row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
             {c.incoming.length > 0 && <Group id="incoming" rows={c.incoming} render={(r) => <Incoming row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
             {c.outgoing.length > 0 && <Group id="outgoing" rows={c.outgoing} render={(r) => <Outgoing row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
-            {c.answers.length > 0 && <Group id="answers" rows={c.answers} render={(r) => <p>{t('people.declined', { name: r.name })}</p>} />}
+            {c.answers.length > 0 && <Group id="answers" rows={c.answers} render={(r) => <AnswerLine row={r} />} />}
             {c.connected.length > 0 && <Group id="connected" rows={c.connected} render={(r) => <Connected row={r} onDone={(text) => { setNote(text); refresh() }} />} />}
           </>
         )}
@@ -84,14 +87,21 @@ function Incoming({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   return (
     <>
       <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{t('people.incoming', { name: row.name })}</strong></p>
+      <StanleyNote text={row.note} />
       <div className="button-row">
         <Button disabled={answer.busy} onClick={() => void answer.run(true, false)}>{t('people.accept')}<span className="visually-hidden"> {row.name}</span></Button>
-        <Button variant="secondary" disabled={answer.busy} onClick={() => void answer.run(false, false)}>{t('people.decline')}<span className="visually-hidden"> {row.name}</span></Button>
+        <Button variant="secondary" disabled={answer.busy} onClick={() => void answer.run(false, false)}>{t('people.notNow')}<span className="visually-hidden"> {row.name}</span></Button>
         <Button variant="tertiary" disabled={answer.busy} onClick={() => void answer.run(false, true)}>{t('people.block')}<span className="visually-hidden"> {row.name}</span></Button>
       </div>
       <ActionError error={answer.error} />
     </>
   )
+}
+
+/** A request that was not taken up: Stanley's kind line when his chat help is on, otherwise the plain one. It never says who or why. */
+function AnswerLine({ row }: { row: ChatConnection }) {
+  const status = useStanleyStatus()
+  return status?.on === true && row.note ? <StanleyNote text={row.note} /> : <p>{t('people.declined', { name: row.name })}</p>
 }
 
 function Approval({ row, onDone }: { row: ChatConnection; onDone: (note: string) => void }) {
@@ -114,6 +124,7 @@ function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   return (
     <>
       <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong> <span className="muted">{t('people.waitingForReply')}</span></p>
+      <StanleyNote text={row.note} />
       <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
       <ActionError error={cancel.error} />
     </>
@@ -163,6 +174,8 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
     onDone(t('people.asked', { name: p.name }))
   })
   const why = problem ? requestProblem(problem.code, problem.message) : null
+  const status = useStanleyStatus()
+  const kind = why ? problemLine(status, why) : undefined
   return (
     <Dialog title={t('people.new')} onClose={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); if (query) void find.run() }}>
@@ -187,7 +200,8 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
             })}
           </ul>
         ))}
-      {why ? <p role="alert" className="field__error">{t(`people.problem.${why}` as StringKey)}</p> : <ActionError error={ask.error} />}
+      {why ? <p role="alert" className="field__error">{kind ?? t(`people.problem.${why}` as StringKey)}</p> : <ActionError error={ask.error} />}
+      {sent.size > 0 && <><StanleyNote text={status?.lines.sent} /><Icebreakers /></>}
     </Dialog>
   )
 }

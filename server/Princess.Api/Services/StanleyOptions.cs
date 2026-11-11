@@ -26,6 +26,8 @@ public sealed class StanleySwitches
     public bool Changes { get; set; } = true;
     /// <summary>Entitlement, spend and loyalty coach (phase 12): the money answers in chat, the spend pace and the endpoints under <c>/me/stanley/money</c>.</summary>
     public bool Money { get; set; } = true;
+    /// <summary>Stanley's friendly chat help (docs/chat-stanley-plan.md, phases 1 and 2): his wording on requests, reword and polish, and icebreakers. Off, chat works exactly as before and the app hides his buttons.</summary>
+    public bool Chat { get; set; } = true;
     /// <summary>Asking Stanley in a conversation (<c>@Stanley</c>, docs/chat-stanley-plan.md, 3.5). Off, a message that starts with his name is an ordinary message and he says nothing.</summary>
     public bool ChatAsk { get; set; } = true;
     /// <summary>The notice relay's lanes (phase 0d): each can be stopped on its own (<c>Stanley:Switches:ThreadCritical=false</c>). The phone push never depends on these, so with the critical lane off the direct push still goes.</summary>
@@ -35,7 +37,7 @@ public sealed class StanleySwitches
     public bool ThreadInfo { get; set; } = true;
 
     /// <summary>The names of the routes that are off, for the reply.</summary>
-    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money), ("chatAsk", ChatAsk) }.Where(x => !x.On).Select(x => x.Name)];
+    public List<string> Off() => [.. new (string Name, bool On)[] { ("library", Library), ("resolver", Resolver), ("model", Model), ("tools", Tools), ("actions", Actions), ("handoff", Handoff), ("changes", Changes), ("money", Money), ("chatAsk", ChatAsk), ("chat", Chat) }.Where(x => !x.On).Select(x => x.Name)];
 }
 
 /// <summary>
