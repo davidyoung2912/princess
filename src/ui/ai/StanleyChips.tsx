@@ -11,7 +11,6 @@ import { t, th } from '../../i18n'
 import { useSettings } from '../../hooks/useSettings'
 import { Dialog } from '../Dialog'
 import { DialogHeader } from '../DialogHeader'
-import { WhyThis } from './WhyThis'
 
 /**
  * Question chips at the foot of a page (docs/experience-extension-ideas.md 13.2). A tap opens the authored answer in a small sheet, which costs nothing:
@@ -23,8 +22,6 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
   const level = stanleyLevelFor(settings)
   if (level === 'asked' || level === 'off') return null
   const chips = chipsFor(screenId, stage)
-  const screenDef = screenId ? SCREEN_BY_ID.get(screenId) : undefined
-  const why = screenDef ? t('stanley.why.fact.chip', { page: t(screenDef.titleKey) }) : t('stanley.why.fact.home')
   if (chips.length === 0) return null
   return (
     <aside className="page stanley-chips no-print" aria-labelledby="stanley-chips-h">
@@ -34,7 +31,7 @@ export function StanleyChips({ screenId, stage, onAsk }: { screenId: string | un
           <h2 id="stanley-chips-h" className="stanley-card__title">{t('stanley.chips.intro')}</h2>
         </div>
         <ul className="stanley-chips__list" aria-label={t('stanley.chips.label')}>
-          {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}>{questionOf(e)}</button><WhyThis kind="chip" fact={why} what={questionOf(e)} /></li>)}
+          {chips.map((e) => <li key={e.id}><button type="button" className="chip-q" onClick={() => setOpen(e)}>{questionOf(e)}</button></li>)}
           <li><button type="button" className="chip-q chip-q--more" onClick={onAsk}>{t('stanley.chips.more')}</button></li>
         </ul>
       </div>

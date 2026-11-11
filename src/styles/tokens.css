@@ -27,8 +27,8 @@
   --space-7: 3.25rem;
   --gutter: 1rem;
 
-  /* Shape: pill buttons, 8px cards and fields, a large top-left corner for hero cards. */
-  --radius-pill: 100px;
+  /* Shape: buttons and pills share one radius, 8px cards and fields, a large top-left corner for hero cards. */
+  --radius-pill: var(--radius-button);
   --radius-button: 12px;
   --radius-card: 8px;
   --radius-hero: 48px 8px 8px 8px;

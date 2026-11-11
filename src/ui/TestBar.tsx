@@ -11,17 +11,18 @@ import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
-import { CloudSun, Compass, Drama, Plan, RouteMap, ShoppingBag, UtensilsCrossed } from './icons'
+import { CloudSun, Compass, Drama, MessagesSquare, Plan, RouteMap, ShoppingBag, UtensilsCrossed } from './icons'
 import { Field } from './Field'
 
 const AT_LINKS = [
+  { to: '/chat', Icon: MessagesSquare, label: 'testbar.at.chat' },
   { to: '/today', Icon: Plan, label: 'testbar.at.today' },
-  { to: '/itinerary', Icon: RouteMap, label: 'testbar.at.itinerary' },
-  { to: '/entertainment', Icon: Drama, label: 'testbar.at.entertainment' },
   { to: '/dining-today', Icon: UtensilsCrossed, label: 'testbar.at.dining' },
+  { to: '/entertainment', Icon: Drama, label: 'testbar.at.entertainment' },
   { to: '/shopping-today', Icon: ShoppingBag, label: 'testbar.at.shopping' },
   { to: '/weather', Icon: CloudSun, label: 'testbar.at.weather' },
   { to: '/nautical', Icon: Compass, label: 'testbar.at.nautical' },
+  { to: '/itinerary', Icon: RouteMap, label: 'testbar.at.itinerary' },
 ] as const
 
 function dayText(stage: string, day: DayOfStage | null): string {

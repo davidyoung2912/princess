@@ -55,7 +55,7 @@
 
 /* Stanley's question chips, answer sheet and empty states (SG1). */
 .stanley-chips { margin-top: var(--space-4); }
-.stanley-card { display: grid; gap: var(--space-3); padding: var(--space-4); background: color-mix(in srgb, var(--warning-tint) 45%, var(--surface, var(--bg))); border: var(--border-width) solid var(--warning); border-radius: var(--radius-card); color: var(--text); box-shadow: var(--shadow-card); }
+.stanley-card { display: grid; gap: var(--space-3); padding: var(--space-4); background: color-mix(in srgb, var(--sec-tint) 60%, var(--surface, var(--bg))); border: var(--border-width) solid color-mix(in srgb, var(--sec) 45%, var(--surface, var(--bg))); border-radius: var(--radius-card); color: var(--text); box-shadow: var(--shadow-card); }
 .stanley-card__head { display: flex; align-items: center; gap: var(--space-3); }
 .stanley-card__face { width: 3rem; height: 3rem; border-radius: 50%; flex: none; background: var(--bg); }
 .stanley-card__title { margin: 0; font-size: var(--fs-body, 1rem); }
@@ -124,7 +124,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 
 .stanley-mode__name { margin: 0 0 var(--space-3); }
 .stanley-mode__strip { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: 0 0 var(--space-4); padding: 0; font-size: var(--fs-small); }
-.stanley-mode__pip { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); border-radius: 999px; border: 1px solid var(--border); }
+.stanley-mode__pip { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); border-radius: var(--radius-button); border: 1px solid var(--border); }
 .stanley-mode__pip--done { opacity: 0.75; }
 .stanley-mode__pip--now { border-color: var(--primary); font-weight: 600; }
 .stanley-mode__now { padding: var(--space-4); background: var(--surface-info); border-radius: var(--radius-card); border-inline-start: 4px solid var(--primary); margin-bottom: var(--space-4); }
@@ -134,7 +134,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-mode__time { margin: 0 0 var(--space-3); font-weight: 600; }
 .stanley__actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0 0; }
 .stanley__follow { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0 0; padding: 0; }
-.stanley__chip { min-height: 2.75rem; padding: var(--space-1) var(--space-2); border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: var(--fs-caption); cursor: pointer; text-align: left; }
+.stanley__chip { min-height: 2.75rem; padding: var(--space-1) var(--space-2); border: 1px solid currentColor; border-radius: var(--radius-button); background: transparent; color: inherit; font: inherit; font-size: var(--fs-caption); cursor: pointer; text-align: left; }
 .stanley__confirm { margin-top: var(--space-1); }
 .stanley-empty .stanley-pose { flex: none; }
 .success-line:empty { display: none; }
@@ -151,7 +151,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 .stanley-card2__title { margin: 0 0 var(--space-1); font-size: 1.0625rem; }
 .stanley-card2__flag, .stanley-card2__line { margin: 0 0 var(--space-1); }
 .stanley-card2__chips { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0; padding: 0; }
-.stanley-card2__chip { padding: 0 var(--space-2); border: 1px solid currentColor; border-radius: 999px; font-size: var(--fs-caption); font-weight: 600; }
+.stanley-card2__chip { padding: 0 var(--space-2); border: 1px solid currentColor; border-radius: var(--radius-button); font-size: var(--fs-caption); font-weight: 600; }
 .stanley-card2__based { margin: var(--space-1) 0; }
 .stanley-card2__based summary { min-height: var(--target-min); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 .stanley-card2__facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-1) var(--space-3); margin: 0 0 var(--space-1); }

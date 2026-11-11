@@ -1,5 +1,6 @@
 import { useCatalogue } from '../../hooks/useCatalogue'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { DECKS, ELEVATORS, elevatorsNear, MUSTER_STATIONS, placeById, placesOnDeck, searchPlaces, type Place, type Section } from '../../domain/deck'
 import { t, th, type StringKey } from '../../i18n'
 import { Banner } from '../Banner'
@@ -117,6 +118,7 @@ export function DeckMapScreen() {
         <ul className="plain-bullets">{Object.values(MUSTER_STATIONS).map((m) => <li key={m.letter}><strong>{t('map.station', { letter: m.letter })}</strong>: {m.name}, {t('map.deckShort', { deck: m.deck })}</li>)}</ul>
         <p className="muted">{t('map.accessibleNote')}</p>
       </Card>
+      <p><Link to="/deck-plans">{t('route.deckPlans')}</Link></p>
       <BackLink to="/ship" label={t('route.ship')} />
     </div>
   )

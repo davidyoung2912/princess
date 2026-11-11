@@ -227,6 +227,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/today', titleKey: 'route.todayPlan', tab: null, phase: 0 },
   { path: '/itinerary', titleKey: 'route.itinerary', tab: null, phase: 0 },
   { path: '/shopping-today', titleKey: 'route.shoppingToday', tab: null, phase: 0 },
+  { path: '/deck-plans', titleKey: 'route.deckPlans', tab: null, phase: 0 },
   { path: '/dining-today', titleKey: 'route.diningToday', tab: null, phase: 0 },
   { path: '/trial-day', titleKey: 'route.trialDay', tab: null, phase: 28, public: true },
   { path: '/at-sea/:token', titleKey: 'route.atSea', tab: null, phase: 22, public: true },

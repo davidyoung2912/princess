@@ -326,3 +326,25 @@ button.chat-quote { cursor: pointer; }
 .cw-note { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-2) 0; }
 .cw-note__pic { flex: none; border-radius: 50%; }
 .cw-ice { margin-block: var(--space-2); }
+
+/* Deck plan viewer: a framed, pannable and zoomable picture. */
+.deckview { display: grid; gap: var(--space-2); }
+.deckview__bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.deckview__btn { min-width: 44px; min-height: 44px; padding: 0; display: inline-grid; place-items: center; }
+.deckview__zoom { margin-inline-start: auto; font-variant-numeric: tabular-nums; }
+.deckview__frame {
+  position: relative;
+  overflow: hidden;
+  height: min(75vh, 900px);
+  border: 1px solid var(--color-border, currentColor);
+  border-radius: var(--radius-md, 8px);
+  background: #fff;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.deckview__frame:active { cursor: grabbing; }
+.deckview__frame:focus-visible { outline: 3px solid var(--color-focus, Highlight); outline-offset: 2px; }
+.deckview__img { position: absolute; top: 0; left: 0; max-width: none; transform-origin: 0 0; pointer-events: none; image-rendering: auto; }
+.deckview__note { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: var(--space-3); text-align: center; color: #333; }
+.deckview__hint { margin: 0; }

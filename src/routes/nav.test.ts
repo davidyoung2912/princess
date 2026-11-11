@@ -16,7 +16,7 @@ describe('navigation model', () => {
   it('has unique route paths and every route in a tab or the kit', () => {
     const paths = ROUTES.map((r) => r.path)
     expect(new Set(paths).size).toBe(paths.length)
-    for (const r of ROUTES) expect(r.tab !== null || r.path === '/kit' || r.path === '/welcome' || r.path === '/entertainment' || r.path === '/weather' || r.path === '/nautical' || r.path === '/nautical/glossary' || r.path === '/today' || r.path === '/itinerary' || r.path === '/dining-today' || r.path === '/shopping-today' || r.path === '/tab/:slug' || r.public === true, r.path).toBe(true)
+    for (const r of ROUTES) expect(r.tab !== null || r.path === '/kit' || r.path === '/welcome' || r.path === '/entertainment' || r.path === '/weather' || r.path === '/nautical' || r.path === '/nautical/glossary' || r.path === '/today' || r.path === '/itinerary' || r.path === '/dining-today' || r.path === '/shopping-today' || r.path === '/deck-plans' || r.path === '/tab/:slug' || r.public === true, r.path).toBe(true)
   })
 
   it('finds the tab for a location, including parameterised screens', () => {

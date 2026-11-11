@@ -29,7 +29,7 @@ export function SignInScreen() {
 function PasswordSignIn({ go }: { go: (m: Mode) => void }) {
   const [identifier, setIdentifier] = useState(DEV_LOGIN)
   const [password, setPassword] = useState(DEV_LOGIN)
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [missing, setMissing] = useState<{ id?: string; pw?: string }>({})

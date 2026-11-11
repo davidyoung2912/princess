@@ -198,7 +198,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .stage-tile__icon { width: 1.75rem; height: 1.75rem; color: var(--sec); }
 .stage-tile__title { font-size: 1.125rem; font-weight: 700; }
 .stage-tile--attention { border-color: var(--warning); border-width: 2px; }
-.stage-tile__badge { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); border-radius: 999px; background: var(--warning-tint); color: var(--text); border: 1px solid var(--warning); font-size: 0.75rem; font-weight: 600; }
+.stage-tile__badge { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); border-radius: var(--radius-button); background: var(--warning-tint); color: var(--text); border: 1px solid var(--warning); font-size: 0.75rem; font-weight: 600; }
 
 /* Stanley's speech dot: shown when he has something urgent to say. Position is relative to the button. */
 .topbar__stanley, .tabs__stanley { position: relative; }
@@ -278,7 +278,7 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
    because the card repeats it; it stays in the page for screen readers. */
 @media (min-width: 1024px) and (hover: hover) {
   .screen-list__more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .tile-preview { position: absolute; z-index: 5; inset-inline: 0; top: 100%; display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-card); background: var(--bg); box-shadow: var(--elev-2, 0 4px 12px rgba(0, 0, 0, 0.2)); font-size: 1.05rem; }
+  .tile-preview { pointer-events: none; position: absolute; z-index: 5; inset-inline: 0; top: 100%; display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-card); background: color-mix(in srgb, #ffe66d 28%, var(--bg)); box-shadow: var(--elev-2, 0 4px 12px rgba(0, 0, 0, 0.2)); font-size: 1.05rem; }
   .tile-preview__icon { color: var(--trip); }
   .tile-preview__icon svg { width: 2rem; height: 2rem; }
 }

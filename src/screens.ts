@@ -216,6 +216,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/today': screen(() => import('./ui/onboard/TodayPlanScreen'), 'TodayPlanScreen'),
   '/itinerary': screen(() => import('./ui/onboard/ItineraryScreen'), 'ItineraryScreen'),
   '/shopping-today': screen(() => import('./ui/onboard/ShoppingTodayScreen'), 'ShoppingTodayScreen'),
+  '/deck-plans': screen(() => import('./ui/onboard/DeckPlansScreen'), 'DeckPlansScreen'),
   '/dining-today': screen(() => import('./ui/onboard/DiningTodayScreen'), 'DiningTodayScreen'),
   '/kit': screen(() => import('./ui/Kit'), 'Kit'),
 }
