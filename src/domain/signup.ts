@@ -5,7 +5,7 @@ import { limit } from './limits'
 export const MIN_PASSWORD = 10
 export let MIN_ACCOUNT_AGE = 18
 
-export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'tooYoung'
+export type SignupProblem = 'email' | 'password' | 'firstName' | 'lastName' | 'dob' | 'tooYoung' | 'confirm'
 
 export const isEmail = (s: string): boolean => /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/.test(s.trim()) && s.trim().length <= 254
 
@@ -21,11 +21,12 @@ export function isAdult(dob: string, today: string): boolean {
   return isRealDate(dob) && dob <= `${+today.slice(0, 4) - MIN_ACCOUNT_AGE}${today.slice(4)}`
 }
 
-/** Every problem with a sign-up form, in field order. Empty means it can be sent. */
-export function signupProblems(r: Registration, today: string): SignupProblem[] {
+/** Every problem with a sign-up form, in field order. Empty means it can be sent. `confirm`, when given, is the password typed a second time and must match. */
+export function signupProblems(r: Registration, today: string, confirm?: string): SignupProblem[] {
   const out: SignupProblem[] = []
   if (!isEmail(r.email)) out.push('email')
   if (r.password.length < MIN_PASSWORD || r.password.length > 200) out.push('password')
+  else if (confirm !== undefined && confirm !== r.password) out.push('confirm')
   if (!r.firstName.trim() || r.firstName.trim().length > 60) out.push('firstName')
   if (!r.lastName.trim() || r.lastName.trim().length > 60) out.push('lastName')
   if (!isRealDate(r.dob)) out.push('dob')

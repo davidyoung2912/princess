@@ -4,6 +4,11 @@ import { cleanCode, isAdult, isCode, isEmail, signupProblems } from './signup'
 const good = { email: 'a@example.com', password: 'a-long-password', firstName: 'Ana', lastName: 'Lee', dob: '1990-05-01' }
 
 describe('signupProblems', () => {
+  it('needs the confirmed password to match', () => {
+    expect(signupProblems(good, '2026-11-01', good.password)).toEqual([])
+    expect(signupProblems(good, '2026-11-01', 'something-else')).toEqual(['confirm'])
+    expect(signupProblems(good, '2026-11-01', '')).toEqual(['confirm'])
+  })
   it('accepts a complete adult sign-up', () => expect(signupProblems(good, '2026-11-01')).toEqual([]))
   it('lists every problem in field order', () => {
     expect(signupProblems({ email: 'nope', password: 'short', firstName: ' ', lastName: '', dob: 'x' }, '2026-11-01')).toEqual(['email', 'password', 'firstName', 'lastName', 'dob'])

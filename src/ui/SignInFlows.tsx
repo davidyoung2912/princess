@@ -26,7 +26,7 @@ const today = () => new Date().toISOString().slice(0, 10)
 
 /** Sign-up (ACT-01). On success the provider signs the person in and the gate swaps this page for the app. */
 export function SignUpForm({ onBack }: { onBack: () => void }) {
-  const [v, setV] = useState({ email: '', password: '', firstName: '', lastName: '', dob: '' })
+  const [v, setV] = useState({ email: '', password: '', confirm: '', firstName: '', lastName: '', dob: '' })
   const [problems, setProblems] = useState<SignupProblem[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -36,13 +36,14 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
 
   const submit = async (e: FormEvent, confirmedDifferent = false) => {
     e.preventDefault()
-    const found = signupProblems(v, today())
+    const { confirm, ...form } = v
+    const found = signupProblems(form, today(), confirm)
     setProblems(found)
     setError('')
     if (found.length) return
     setBusy(true)
     try {
-      await actions()?.register({ ...v, email: v.email.trim(), firstName: v.firstName.trim(), lastName: v.lastName.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
+      await actions()?.register({ ...form, email: form.email.trim(), firstName: form.firstName.trim(), lastName: form.lastName.trim(), ...(confirmedDifferent ? { confirmedDifferent: true } : {}) })
     } catch (err) {
       if (err instanceof AuthError && err.code === 'possibleDuplicate') setTwin(true)
       else setError(failText(err))
@@ -78,8 +79,9 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
           <Field label={t('signin.signup.first')} help={t('helptip.passportName')} value={v.firstName} onChange={set('firstName')} autoComplete="given-name" error={err('firstName')} />
           <Field label={t('signin.signup.last')} help={t('helptip.passportName')} value={v.lastName} onChange={set('lastName')} autoComplete="family-name" error={err('lastName')} />
           <Field label={t('signin.signup.email')} help={t('helptip.signupEmail')} value={v.email} onChange={set('email')} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} error={err('email')} />
-          <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} value={v.dob} onChange={set('dob')} autoComplete="bday" inputMode="numeric" placeholder="YYYY-MM-DD" error={err('dob') ?? err('tooYoung')} />
+          <Field label={t('signin.signup.dob')} hint={t('signin.signup.dob.hint')} type="date" min="1900-01-01" max={today()} value={v.dob} onChange={set('dob')} autoComplete="bday" error={err('dob') ?? err('tooYoung')} />
           <Field label={t('signin.signup.password')} hint={t('signin.signup.password.hint')} type="password" value={v.password} onChange={set('password')} autoComplete="new-password" error={err('password')} />
+          <Field label={t('signin.signup.confirm')} type="password" value={v.confirm} onChange={set('confirm')} autoComplete="new-password" error={err('confirm')} />
           <Button type="submit" block disabled={busy}>{busy ? t('signin.signup.busy') : t('signin.signup.submit')}</Button>
         </form>
       </Card>
