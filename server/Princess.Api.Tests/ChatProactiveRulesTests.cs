@@ -452,8 +452,8 @@ public class GroupMeetAndLunchTests
         var meet = Assert.Single(sea, c => c.Key == ChatGroupMomentRules.GroupMeetKey);
         Assert.Equal(g.ToString(), meet.Subject);
         Assert.True(ChatGroupMomentRules.IsSharedKey(meet.Key));
-        Assert.Empty(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, MeetGroup: g)).Where(c => c.Key == ChatGroupMomentRules.GroupMeetKey));
-        Assert.Empty(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, LunchGroup: g, ShipHour: 11)).Where(c => c.Key == ChatGroupMomentRules.GroupLunchKey));
+        Assert.DoesNotContain(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, MeetGroup: g)), c => c.Key == ChatGroupMomentRules.GroupMeetKey);
+        Assert.DoesNotContain(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, LunchGroup: g, ShipHour: 11)), c => c.Key == ChatGroupMomentRules.GroupLunchKey);
         var lunch = Assert.Single(ChatProactiveRules.AboardToDisembark(new(Now, StageRules.Port, 0, false, null, LunchGroup: g, ShipHour: 12)), c => c.Key == ChatGroupMomentRules.GroupLunchKey);
         Assert.Equal(g.ToString(), lunch.Subject);
         Assert.False(ChatGroupMomentRules.IsSharedKey("sea.today"));

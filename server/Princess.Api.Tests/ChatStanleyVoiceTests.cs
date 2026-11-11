@@ -41,7 +41,7 @@ public class ChatStanleyVoiceTests
     [Fact]
     public void AWaitingRequestAndABlockedOneReadTheSame() =>
         // The sender of a request to someone who blocked them is shown the ordinary waiting line (the service builds it from the same constant).
-        Assert.Equal(ChatStanleyVoice.Note("outgoing", "Anyone"), ChatStanleyVoice.Waiting);
+        Assert.Equal(ChatStanleyVoice.Waiting, ChatStanleyVoice.Note("outgoing", "Anyone"));
 
     [Theory]
     [InlineData("cooldown")]

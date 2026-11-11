@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Princess.Api.Audit;
 using Princess.Api.Auth;
 using Princess.Api.Contracts;
+using Princess.Api.Data;
 using Princess.Api.Domain;
 
 namespace Princess.Api.Services;

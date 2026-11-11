@@ -6,7 +6,7 @@ namespace Princess.Api.Contracts;
 // Another guest is only ever shown as a first name and a last initial.
 
 /// <summary>A search result. <c>Relation</c> is none, asked (the caller already asked), waiting (they asked the caller), connected or approval (waiting for a guardian).</summary>
-public sealed record ChatPersonDto(Guid Id, string Name, string Relation, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
+public sealed record ChatPersonDto(Guid Id, string Name, string Relation, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
 
 /// <summary>
 /// One request or connection from the caller's point of view. <c>Kind</c>: <c>connected</c>, <c>incoming</c> (waiting for the caller), <c>outgoing</c> (the caller is waiting),
@@ -14,7 +14,7 @@ public sealed record ChatPersonDto(Guid Id, string Name, string Relation, [prope
 /// <c>ConversationId</c> is the direct conversation once connected. <c>ChildId</c> and <c>ChildName</c> are set for an approval, and say which child and what they asked.
 /// <c>IsNew</c> is a connection the sender has not yet seen accepted.
 /// </summary>
-public sealed record ChatConnectionDto(Guid Id, string Kind, Guid PersonId, string Name, Guid? ConversationId, Guid? ChildId, string? ChildName, bool IsNew, long At, long ExpiresAt, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
+public sealed record ChatConnectionDto(Guid Id, string Kind, Guid PersonId, string Name, Guid? ConversationId, Guid? ChildId, string? ChildName, bool IsNew, long At, long ExpiresAt, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null, [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Note = null);
 
 public sealed record ChatConnectionsDto(
     List<ChatConnectionDto> Connected, List<ChatConnectionDto> Incoming, List<ChatConnectionDto> Outgoing,
