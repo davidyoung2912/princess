@@ -1,6 +1,6 @@
 # Stanley beyond answers: actions, watching and proactive help
 
-Status: **draft for review (2026-11-10), revised the same day after owner feedback round 2** (guest-chosen support level, a welcome-page checklist, and a per-stage deep dive of everything Stanley could do if allowed; see sections 11 to 13, which supersede parts of sections 2, 3, 8 and 10 where marked). Nothing here is built. It answers: *what can Stanley do for the guest other than answer questions, can he take actions, and what new proactive or suggestive help could save time, catch problems and get more out of the app?* It ends with phases and a proposal for explaining all of it on the Stanley welcome page.
+Status: **draft for review (2026-11-10), revised the same day after owner feedback round 2** (guest-chosen support level, a welcome-page checklist, and a per-stage deep dive; sections 11 to 15) **and extended in round 3 into a complete plan** (validation before coding, persona walkthroughs, mistakes and trust repair, staff and operations, offline, rule arbitration, test harness, cost, accessibility, privacy and security, delivery plan; sections 16 to 31). Sections 11 to 31 supersede parts of sections 2, 3, 8 and 10 where marked; **the delivery plan in section 27 replaces the phase tables in sections 8 and 13.** Nothing here is built. It answers: *what can Stanley do for the guest other than answer questions, can he take actions, and what new proactive or suggestive help could save time, catch problems and get more out of the app?* It ends with phases and a proposal for explaining all of it on the Stanley welcome page.
 
 Companion documents: `docs/stanley-reminders-requirements.md` (the reminders deep dive, which is one track of this plan), `docs/chat-features-research.md` section 15 (the permanent 1:1 Stanley chat that carries all of this), `docs/stanley-gap-analysis-and-plan.md` (what Stanley already is) and `docs/stanley-data-inventory.md` (what he may read).
 
@@ -328,7 +328,7 @@ Each class is a separate server switch, off unless the level includes it, with a
 | AUT-01 | **Reminders that follow** | Moves a reminder when its anchor moves (earlier plan, kept) | none | Fires a reminder earlier than the guest set without telling them |
 | AUT-02 | **Deadline reminders** | Creates reminders for the dates that matter (final payment, check-in opens, documents, dining freeze, bag night, all aboard, exit time), with the guest's usual lead times | 20 per trip | Creates a recurring reminder or one that is not tied to a trip date |
 | AUT-03 | **My plan, topped up** | Adds free events, walks and meeting points to the guest's own plan, labelled "Stanley's pick", and removes his own picks that no longer fit; **never** removes anything the guest added | 4 per day | Adds anything with a cost, or a time that overlaps a booked item |
-| AUT-04 | **Free reservations I always want** | Reserves free, fee-free-to-cancel items the guest has a standing preference for (main-dining table, free shows) when the window opens | 2 per day | Specialty dining with a cover charge, paid shows, anything for another person's name |
+| AUT-04 | **Free reservations I always want** | Reserves free, fee-free-to-cancel items the guest has a standing preference for (main-dining table, free shows) when the window opens | 2 per day | Specialty dining with a cover charge, paid shows, anything on another adult's own account. The one exception is the **booker reserving on the booking** (decision 18) |
 | AUT-05 | **Lists kept current** | Updates the guest's packing list, document "bring" list, trip checklist, shortlist and comparison when facts change (forecast, itinerary, a document added) | none | Deletes a guest's own entry |
 | AUT-06 | **Drafts saved** | Saves pre-filled forms and drafts (check-in, customs, feedback, a note to the party) as drafts the guest reviews | 1 draft per form | Submits, signs or sends |
 | AUT-07 | **Saved for me** | Saves the boarding pass to Wallet when ready, downloads the offline pack on Wi-Fi before a port, saves receipts and the recap, builds the photo album | none | Anything that uses data the guest has not already given |
@@ -514,7 +514,7 @@ Cross-journey abilities (CL-01 to CL-10) apply at every stage from Manage on; th
 
 ---
 
-## 13. Revised phases (replaces section 8 for planning)
+## 13. Revised phases (round 2; superseded by section 27)
 
 The first three phases of section 8 stay (P0 explain, P1 activity, P2 reminders). New phases are inserted where they unlock the most, and P9 and P10 are broken up so each stage pack ships, is measured and can be stopped on its own.
 
@@ -568,6 +568,726 @@ The first three phases of section 8 stay (P0 explain, P1 activity, P2 reminders)
 
 ---
 
-## 16. Requirement index
+---
 
-ACT-01 to 08 (save time), CHK-01 to 08 (catch issues), VAL-01 to 07 (get more), RUL-01 to 06 (rules), CL-01 to 10 (welcome checklist), AUT-01 to 09 (rung 4 classes), SR-1.1 to SR-11.6 (per-stage rules, section 12), plus REM-* in `docs/stanley-reminders-requirements.md`.
+## 16. Validate before coding: test the weakest assumptions first
+
+The whole round 2 design rests on three guesses: guests will *understand* four support levels, a meaningful share will *choose* more than "Keep watch", and they will *forgive* the occasional wrong act. All three are cheap to test before any server work. This section is the pre-build research plan; its outcome can change sections 11 and 12.
+
+### 16.1 What the welcome flow looks like (static wireframes for the test)
+
+Four screens, one column, phone first. These are the screens shown to test guests as plain pictures or a click-through; no server needed.
+
+```
+ SCREEN A: LEVEL                         SCREEN B: CHECKLIST (level 3 chosen)
++--------------------------------+      +--------------------------------+
+|  [Stanley waves]               |      |  Here is what I will do        |
+|  How much help do you want?    |      |  Change anything you like.     |
+|                                |      |                                |
+|  ( ) Just answer               |      |  WATCHING                      |
+|      I answer when you ask.    |      |  [on ] Check my trip for       |
+|  (o) Keep watch  (recommended) |      |        problems                |
+|      I warn you; you decide.   |      |        e.g. "Passport expires  |
+|  ( ) Do the legwork            |      |        within 6 months"        |
+|      I line up fixes; you say  |      |  [on ] Tell me what changed    |
+|      yes.                      |      |  ...                           |
+|  ( ) Handle the small stuff    |      |  PREPARING                     |
+|      Small free things I just  |      |  [on ] Line up a fix when a    |
+|      do and tell you. I never  |      |        plan breaks             |
+|      pay or cancel.            |      |  HANDLING  (needs level 4)     |
+|                                |      |  [off] Set my reminders  [Raise]|
+|  What I never do >             |      |  [Continue]  [Skip for now]    |
++--------------------------------+      +--------------------------------+
+
+ SCREEN C: SUMMARY (before leaving)       SCREEN D: SETTINGS "What Stanley may do"
++--------------------------------+      +--------------------------------+
+|  You chose: Do the legwork     |      |  Level: Do the legwork   [Change]|
+|  7 things are on. 3 are off.   |      |  [ Pause everything ]          |
+|  You can change this any time  |      |  Now: Prebook                  |
+|  in Settings > What Stanley    |      |   [on] Book first-night table  |
+|  may do.                       |      |        last used: 2 days ago   |
+|  [Try it: Check my trip]       |      |  Later stages (collapsed) >    |
+|  [Done]                        |      |  History of changes >          |
++--------------------------------+      +--------------------------------+
+```
+
+### 16.2 The research plan
+
+| Step | What | Who and how many | Pass mark | If it fails |
+|---|---|---|---|---|
+| **R1: Comprehension** | Show screens A to C cold; ask "what did you just choose?", "what will Stanley never do?", "could he spend your money?" | 6 to 8 people per persona: a first-time family parent, a solo traveller, two friends, an over-65 traveller, one screen-reader user, one on 200% text | At least 80% say what they chose; 90% say he cannot pay; nobody believes "Handle the small stuff" includes paying | Reword. Test the alternate level names below |
+| **R2: Choice** | Ask them to pick a level for *their own* next cruise and say why | Same group | A real spread (not all level 1 or all level 4); reasons mention time saved or fear of mistakes, not confusion | If nearly all pick level 1: the pitch is weak; lead with examples, not levels |
+| **R3: Forgiveness** | Tell a story ("Stanley booked a dinner you did not want; here is the undo"); show the receipt and the apology | Same group | At least 80% would still use level 3 or 4 after the story | If under 60%: ship practice mode (19.2) as the default for levels 3 and 4 |
+| **R4: Examples** | Show ten section 12 rules as one-line cards; rate "useful", "neutral", "creepy" | Same group | Each kept rule is "useful" for at least half of the personas it applies to and "creepy" for under 10% | Cut or demote to rung 1 |
+| **R5: Dry run on the three test plans** | Walk `test-plan-solo-cruiser`, `test-plan-family-of-four` and `test-plan-two-friends` against section 12 (done on paper in section 17) | Owner and me | Every finding triaged | See section 17 |
+
+**Alternate level names** to test against the current set (one reads better for a given audience; pick by R1):
+
+| Set | Level 1 | Level 2 | Level 3 | Level 4 |
+|---|---|---|---|---|
+| **A (current)** | Just answer | Keep watch | Do the legwork | Handle the small stuff |
+| **B** | Only when asked | Keep an eye on things | Sort things out with me | Take care of the small things |
+| **C** | Ask me | Warn me | Prepare for me | Do it for me (small, free things) |
+
+**Copy tests in the same session:** whether "never pays" should come before or after the levels; whether a short worked example under each level helps; whether "Handle" or "Take care of" signals too much trust.
+
+**No code needed:** the wireframes are images; the sessions can be run on a click-through prototype. Findings are written into this document, not into a backlog.
+
+---
+
+## 17. Walkthroughs on paper: the three test-plan personas
+
+Method: read each persona's journey in `docs/test-plan-*.md` against section 12, and for each stage ask *which rules would fire, which would be noise, which would feel creepy, and what in the app stops the rule from working.* The test plans are the right fixtures because they are the real journeys the team already runs by hand.
+
+### 17.1 Facts from the test plans that constrain the design
+
+| Fact (from the test plans) | What it means for Stanley's authority |
+|---|---|
+| **Sign-up is adults only; children are guests on the booker's account** (family plan 0) | Stanley's permission record belongs to an *account*. A child has no account and no level; anything for a child is the guardian's decision on the guardian's account, or the supervised-child notice-only rule |
+| **Only the booker sees the money; other adults on a direct booking have no account** (friends plan 0) | A non-booker adult may have **no Stanley at all**, or a Stanley that sees no booking. Rules about payment, dining plan and bookings run **only on the booker's account** |
+| **Linking a booking works only for agent bookings** (both plans) | A second adult who registers may land on an **empty** Stanley: the welcome checklist must say "I have nothing of yours to watch yet; link a booking" rather than offer switches that do nothing |
+| **The fare split is a notebook, kept on the device** (friends plan) | No rule may touch cost splitting; there is no money movement to automate |
+| **Cabin parties stop at 23:00** | Party rules (digest, invites) respect existing quiet hours |
+| **Demo clock only for `IsDemo` accounts** (solo plan 0.2) | The rule scheduler needs an injectable clock so the same demo jump works for rules (essential for testing every stage; see 23.1) |
+
+### 17.2 Solo cruiser (Sam, one adult)
+
+| Stage | Rules that fire | Noise or risk | Finding |
+|---|---|---|---|
+| Dream, Discover | SR-1.1 shortlist, SR-1.3 price watch, SR-2.2 | SR-1.4 and SR-1.5 add little | **Cut** SR-1.4 (brief) and SR-1.5 (trial-day nudge) as separate rules; fold the brief into SR-1.1's weekly note |
+| Book | SR-3.1, SR-3.3, SR-3.5 | none | Keep. SR-3.2 (fill travellers) is trivial for one traveller; it is a **smart default** at level 2, not a rule |
+| Manage | SR-4.1, SR-4.2, SR-4.6 | SR-4.2 at four lead times is four notices | **Compress** the payment ladder to 14 days, 2 days and the day itself |
+| Prebook | SR-5.1, 5.2, 5.3, 5.6 | SR-5.4 (poll), SR-5.7 never apply | **Hide party rules** when the booking has one traveller. Dining for one: ask early if she wants shared tables (a solo-persona preference) |
+| Get to the ship, Embark | SR-6.1, 6.2, 6.3, 7.1, 7.2 | none | Strong. This is where level 4 saves most taps |
+| Sea, Port | SR-8.1 to 8.3, 9.1 to 9.3 | SR-8.9 (party digest) never fires | Solo guests need a **meet-people** rule instead: suggest a solo meet-up or a shared table (opt-in; ties to chat) |
+| Disembark, Remember | SR-10.1 to 10.3, 11.1, 11.2 | none | Keep |
+
+**Solo-specific additions:** SR-S.1 *Safety check-in*: a daily "all well?" nudge she can switch on, and a gentle prompt to share her whereabouts with a person at home (consented, revocable; ties to family-at-home page). SR-S.2 *Eating alone, comfortably*: prefer shared tables or counter seating when she says so. SR-S.3 *Single supplement honesty*: explain it where it appears.
+
+### 17.3 Family of four (Dad, Mom, 16, 12)
+
+| Topic | Finding | Decision |
+|---|---|---|
+| **Whose Stanley?** Only Dad (booker) sees the trip; Mom's own account may see nothing | Mom's Stanley has no data. Mom can still be given a **view** of the trip if Dad adds her as helper (existing helper role) | Show Mom a clear "link or ask Dad to add you" state. Rules never fire against a booking the account is not on |
+| **Who consents?** Dad's level governs actions on the booking | Mom's items (her own plan items) are hers only if she has an account; otherwise they are the booking's | Booking-wide acts need the **booker's** level. Anything affecting another adult's own items is **rung 3 only** (prepare for their yes) |
+| **The 16 and the 12** | No account, so no consent. Teen and child rules must be set by the guardian | Add a **family pack** below. Supervised children never receive proactive items directly |
+| **"My plan, topped up" (AUT-03)** in a shared plan | A topped-up plan the whole family sees is not "only the guest" | AUT-03 applies to a **personal plan** only. Family plan items from Stanley are rung 3 (prepare, the booker confirms) |
+| **Dinner (AUT-04)** | Reserving for four includes people who did not consent | AUT-04 allowed only for the **booker acting on the booking** (the same authority the booker has in the app today), showing the party names and the usual size; never for a non-booker account |
+| **Noise** | A parent receiving every rule for four people gets four times the notices | **Roll up** per booking: "3 things for the family today", not twelve |
+
+**Family pack (new rules, level 3, guardian only):**
+
+| ID | Rule | Trigger | Rung |
+|---|---|---|---|
+| SR-F.1 | **Kids club ready.** Reminds about registration, age bands and times; prepares the registration for the guardian to confirm | Stage entry, club opens | 3 |
+| SR-F.2 | **Age-fit check.** Flags a tour, activity or show with an age limit that a child on the booking does not meet | Add to cart or plan | 1 |
+| SR-F.3 | **Teen check-in time.** Reminds the guardian of agreed meet-up times set by the guardian (nothing sent to the teen by Stanley) | Guardian's rule | 3 |
+| SR-F.4 | **Everyone's muster.** Lists each family member's station and the walk from the cabin; flags a child not yet marked done | Muster | 1 |
+| SR-F.5 | **Find my family.** Prepares the meeting-point card (not a message) | On request | 3 |
+| SR-F.6 | **Kid-safe port day.** Filters excursions for ages, strollers and heat; prepares two options | Port day | 3 |
+| SR-F.7 | **Bedtime and quiet hours.** Reminds the guardian of the quiet-hours window for the cabin and family programme | Evening | 1 |
+
+### 17.4 Two friends (Alex booker, Jordan no account)
+
+| Topic | Finding | Decision |
+|---|---|---|
+| **Jordan has no Stanley.** Everything runs on Alex's account | A rule that says "your friend" acts on Jordan's behalf | **Never** act on Jordan's own items. Reservations on the booking for both are the booker's authority only (as AUT-04 above). Digests and party cards are rung 3 |
+| **Everything on the booking is shared** | AUT-03 (plan top-up) and AUT-08 (keep timings) could change what Jordan expects | Both apply only to Alex's **personal** items; shared plan items are rung 3 |
+| **"Do everything" persona** | They want maximum fill, so the plan lint (CHK-02) and travel-time warnings matter most | A **fill the day** bundle (ACT-01) with a "pace" setting (relaxed, balanced, packed) and a check that every pair of bookings has a real walk time |
+| **Late nights** | Party rules, quiet hours 23:00, late return from port | **Late-night guard:** a missed-ship nudge scales with the "I stay out late" memory; party rules honour the 23:00 quiet start |
+| **Settling costs** | The split is a notebook; no money moves | A **settle-up note** at disembark (rung 1) that reads the notebook and says who owes what; nothing is paid or sent |
+| **Two accounts via Route 2 or 3** | Only then can both receive Stanley | A "second adult joins" nudge: when a second account links, Stanley asks *them* for their own level (their consent, not Alex's) |
+
+### 17.5 Persona packs from other test fixtures and plans (also needed)
+
+| Persona | Source | Pack | Notes |
+|---|---|---|---|
+| **Older guest managed by a relative** (the Gerald test) | `customer-journey-priorities` MNG, INC-01 | **Helper pack:** a helper can prepare, never confirm; weekly "what is left" (SR-4.8); the guest's level governs, the helper cannot raise it | The helper sees ledger and rules read-only |
+| **Accessibility and medical needs** (the Linda test) | CHK-06, S3-05 | **Needs pack:** assistance deadlines (SR-4.3), tender and deck-route checks, medical card, dining allergy confirmation tracking | Sensitive data never reaches a model unless switched on (section 7) |
+| **Celebration** (milestone trips) | S0-09, SR-5.7 | **Occasion pack:** table and cake requests as drafts, a shared plan for the family | Sensitive wording for bereavement trips |
+| **Group or reunion** (10 or more) | XG-01 | **Organiser pack:** poll roll-ups, who-has-not-answered, group meeting points; all rung 3 | Roll-ups only, never one notice per person |
+
+### 17.6 Net result of the walkthroughs
+
+- **Cut or fold:** SR-1.4, SR-1.5, the four-step payment ladder, the SR-5.4 poll for a one-person booking.
+- **Add:** family pack (7), solo additions (3), late-night guard, settle-up note, fill-the-day bundle with pace, helper, needs, occasion and organiser packs.
+- **Change the model:** every ability gets an **applies-when** clause (traveller count, ages, role, persona) so it is invisible when it does not apply; ownership of items is *personal* or *booking*, and rung 4 touches only personal items, with the one booker exception (AUT-04 on the booking).
+- **New first-class idea: roll-ups.** Several rules for several people become one item per booking per period.
+- **Honesty about empty states:** a guest with nothing linked sees what Stanley *would* do once a booking is linked, not dead switches.
+
+---
+
+## 18. When Stanley gets it wrong: mistakes, apology and repair
+
+Autonomy earns trust only if the failure is cheap and visible. This section is the missing half of the design.
+
+### 18.1 The scenarios and what the guest sees
+
+| # | What went wrong | Guest sees | Undo and repair | System response |
+|---|---|---|---|---|
+| M1 | An auto-booked dinner clashes with something the guest did **outside** the app (a show booked at the desk) | A notice: "Your 6:00 table clashes with Show X. Keep which?" | One-tap move or cancel the auto-booking | Rule re-reads the plan before every act and again at the start of the undo window |
+| M2 | A reminder fires at the wrong clock time (ship time versus home time) | "I got the time wrong. It should have been 4:15 ship time." | Reminder corrected and re-fired | Time-zone fixture test (23.2); the zone is always shown with the time |
+| M3 | A "Stanley's pick" in the plan is not wanted | Chips on the item: Not for me, Fewer like this, Stop adding | Removed; memory updated with scope and why | "Not for me" teaches memory (visible and forgettable) |
+| M4 | A wrong replacement tour was prepared | Nothing was done; the preview just was not wanted | Not now | Rung 3, no harm; still counted in the quality measure |
+| M5 | A rule fires **twice** (duplicate event) | One item with a note, never two | Idempotency key per (rule, trigger, subject) prevents the second act | Property test in the harness |
+| M6 | A prepared fix is **stale** when confirmed (tour already refilled) | "That option has gone; here is the next best" | New preview; the old one cannot confirm | Previews expire and re-validate at confirm |
+| M7 | The **data was wrong** (a time the provider published incorrectly) | "I was wrong about this. Here is the right time and what I changed." | Affected acts are listed with one-tap undo of all | A data-correction notice type; the audit event links all acts that used the bad fact |
+| M8 | **Undo is impossible** (past the free window, venue already used it) | Honest message, not an error: "This is past the free change time. I can ask Guest Services to look." | Hand-off case drafted with consent text | An undo failure opens a hand-off case automatically with the guest's consent |
+| M9 | A **notification storm** after reconnection at sea | A single catch-up card, ranked | Dismiss all, or open Activity | Arbitration (section 22) and the "what did I miss" card that exists |
+| M10 | **Someone else** raises the level on a shared or stolen device | An email and an in-app notice on other devices: "Your level changed to X. Not you? Switch back." | One-tap revert link; step-up needed to raise again | Step-up authentication to raise a level (section 26) |
+| M11 | A proactive item reaches a **supervised child** | It cannot: the item goes to the guardian | n/a | Gate test: no non-critical Stanley output addressed to a supervised account |
+| M12 | A **simulated** fact is described as verified | Never allowed; every claim has source and as-of | n/a | Existing provenance rule plus a string test |
+| M13 | A rung 4 act during a **serious case** or a bereavement flag | Pause: no cheerful acts or suggestions | Resume when closed | The "paused while a serious case is open" rule (VAL-06) applies to every rung 3 and 4 class |
+| M14 | An act during an **emergency** (muster, medical, ship alert) | All non-critical Stanley acts pause; critical info appears first | Resume after | A platform-wide "ship alert" suppression flag checked by the scheduler |
+| M15 | A **provider outage** (flights, weather, inventory mock off) | One honest notice: "I cannot check flights right now; rules that need it are paused." | Auto-resume with a quiet "back" note | Per-provider health flag; rules degrade to paused, never to guessing |
+| M16 | The guest says "**stop** doing that" in chat | Stanley switches off the class, says which, and offers undo | Reverse via the switch | A natural-language control path (19.4) with confirmation; guest words never *raise* authority without the explicit checklist step |
+| M17 | An auto-booked table is a **no-show** twice | "You did not use two tables I booked. I have paused this; want me to ask first?" | One tap to resume | A no-show counter pauses AUT-04 for that guest |
+| M18 | The guest is **annoyed** by volume | A "too much" chip anywhere lowers level or turns off the class that fired | Immediate | "Too much" is always one tap on any Stanley item |
+
+### 18.2 The five-step repair pattern (the wording and flow for every error)
+
+1. **Say it plainly and first**: what Stanley did, what is wrong, in one sentence (no apology theatre, no "AI").
+2. **Fix or offer the fix in the same card**: undo, replace, or ask a person.
+3. **Explain why it happened** only if the guest taps "Why": the rule, the fact, the time.
+4. **Prevent**: pause the class or ask before the next one, and say so.
+5. **Record**: the ledger shows the mistake and the fix; the measure "guest-reported errors" counts it; a repeat becomes a bug with the rule id attached.
+
+### 18.3 Severity and who is called
+
+| Sev | Meaning | Examples | Automatic action | Human action |
+|---|---|---|---|---|
+| **S1** | A wrong act affects many guests or touches a safety fact | A bad time published for a muster-linked reminder; a rule firing for everyone | Global pause of rung 4 and the affected rule | On-call engineer and product owner, notice to affected guests, post-incident note |
+| **S2** | A class misbehaves | Undo rate over 10%, no-show pattern, duplicate acts | Class paused for all, flag in the console | Fix in the next release; message to affected guests |
+| **S3** | One guest harmed or upset | A wrong dinner, a bad reminder | None | Guest Services case with the ledger entry |
+| **S4** | Cosmetic | Wording, ordering | None | Normal backlog |
+
+---
+
+## 19. Trust features: explainability, practice mode, week in review and control
+
+These are the features that make levels 3 and 4 *safe to choose*. Most of them are cheap and share the ledger.
+
+### 19.1 "Why did you do that?" on everything Stanley does
+
+Every rung 3 preview and rung 4 act carries one receipt with the same six fields. This is the guest's answer to *"what has he been doing?"* and the support agent's answer to *"what happened?"*
+
+| Field | Example |
+|---|---|
+| **What I did** | "Added a free show at 8:30 to your plan." |
+| **Why** | "Because you switched on *Plan my days* and you like live music." |
+| **Facts I used and when** | "Programme, as of 10:42 ship time. Your plan has a gap from 8:00 to 10:00." |
+| **Who it affects** | "Only you." |
+| **How to undo** | "Remove it, any time. Free until the show starts." |
+| **How to stop this kind of thing** | "Turn off *Plan my days*" (one tap) |
+
+Stored in the ledger as typed fields (rule id, trigger, fact ids and as-of, class, undo-until). Never stored: message text or free text the guest wrote.
+
+### 19.2 Practice mode: "Show me what you would do"
+
+When a guest first turns on a rung 3 or 4 class, Stanley can run it in **practice** for the rest of the current stage (or 24 hours, whichever is longer): he works out what he *would* have done and lists it in Stanley activity ("I would have added 2 free items today. Want me to do it for real?") without acting. The guest graduates each class with one tap. Practice mode is **on by default for level 4 classes** and **optional for level 3 rules**. It doubles as our own shadow-mode data (23.5).
+
+### 19.3 A level suggestion, never an automatic change
+
+After three or more confirmations of the same kind of prepared item and no undo, Stanley may offer once: "You have said yes to my dinner suggestions three times. Want me to book your usual table myself next time?" One tap enables the class (with step-up where required). The reverse also works: after two undos, "Want me to ask first from now on?" Stanley **never** raises authority on his own.
+
+### 19.4 Control in plain words
+
+Guest sentences map to a fixed set of controls, shown back for confirmation:
+
+| Guest says | What changes |
+|---|---|
+| "Stop booking dinners" | Turns off AUT-04; confirmed |
+| "Be more careful" | Drops one level for the stage |
+| "Do more" | Offers the checklist rows above the current level (never enables silently) |
+| "Pause everything for today" | Pause until midnight ship time |
+| "Undo everything you did today" | Lists acts with one-tap undo for each; one confirm undoes all that are still free |
+| "Why did you do that?" | Opens the receipt for the last act |
+
+### 19.5 Week in review ("Stanley's trip so far")
+
+At the end of each sea or port day (and in Remember), one card: how many things he did, how many the guest confirmed, how many were undone, what changed because of him ("you saved 3 taps and one overlap"), and **one question**: "More, the same, or less?" The answer adjusts level suggestions (19.3); it never changes authority by itself. Honest numbers only; no claims of "time saved" that we cannot measure (we count taps avoided and conflicts caught).
+
+### 19.6 Act-or-ask gate (how a rung 4 act decides)
+
+A rung 4 act happens only when **all** are true; otherwise it falls back to a rung 3 preview. This is the code form of the five tests.
+
+1. The class is on, not paused, not in practice mode, and within its daily cap.
+2. The item passed the classifier (free, fee-free, only-me, reversible until a known time).
+3. Every fact used is **fresh** (as-of within the class's limit) and from a source marked healthy.
+4. Nothing it touches overlaps a booked or confirmed item of the guest's.
+5. No serious case, ship alert, quiet period (reservations only 07:00 to 22:00 ship time; reminders any time) or supervised-child flag applies.
+6. The guest has not undone or declined this *kind* of act twice.
+7. A step-up check was passed at the time the class was enabled.
+
+---
+
+## 20. Staff and operations: seeing, stopping and supporting Stanley
+
+The first draft had nothing for the people who support guests. Autonomous acts create effects on dining, shows and stateroom service, and a guest will phone Guest Services when something is odd.
+
+### 20.1 Roles and what each sees
+
+| Role | Sees | Cannot see | Why |
+|---|---|---|---|
+| **Guest Services agent** | For a guest with an **open case and the guest's consent in the hand-off**, the last 7 days of Stanley receipts (what, when, rule, undo state) | Chat text, free-text reminders, drafts, anything about sensitive needs unless the case needs it | Support must answer "what did Stanley do" without reading the guest's mind |
+| **Supervisor** | The same, plus the per-class state for that guest and a button to pause a class for that guest | Other guests' data | Quick relief without engineering |
+| **Venue staff** (dining, spa, stateroom) | A neutral tag on a reservation: "made by the guest's assistant" and the cancel route | Why or rule | Lets venues reconcile no-shows and tell Guest Services |
+| **Product operations** | **Aggregates only**: fire rate, undo rate, pause events, error rates, cost, by rule, class, stage, level | Individuals | Run the product without personal data |
+| **Engineer on call** | Redacted event replays (ids, not names), kill switches | Personal data by default | Debug without PII |
+
+### 20.2 The operations console
+
+| Screen | Content |
+|---|---|
+| **Health** | Per rule and class: fires per hour, acts, confirms, undos, pauses, errors, p95 latency, model calls, cost against the ceiling, provider status |
+| **Switches** | Global, per lane, per class and per ability, per **cohort** (sailing, ship, stage, level). Every change records who, why and when; a global switch needs two people |
+| **Circuit breakers** | The state of each: closed, tripped (reason, since, affected guests), with the one-button reset after review |
+| **Replay** | Re-run a rule from stored inputs (redacted) against the engine to reproduce what it would do now |
+| **Venue view** | Auto-booked reservations, no-show counters, upcoming load from Stanley |
+| **Announcement** | Post a platform "ship alert" suppression and release it; every guest gets a calm "I am quiet while the ship talks" status |
+| **Cohorts and flags** | Rollout percent per ability and class, and a read-only list of what each cohort has |
+
+### 20.3 Guest Services playbook
+
+A one-page script, and a new case type **"Stanley did something I did not expect"** with fields: which act, which receipt, what the guest wants (undo, explain, stop). Agents can undo for the guest while they are on the phone (with the guest's agreement recorded), pause a class, and file a defect that carries the rule id. Training line: *"I can see what the assistant did and I can undo it. Tell me what you would like."*
+
+### 20.4 Audit
+
+Every act, pause, switch and console action is an audit event (action kind, outcome, ids); never message text, never personal fields beyond ids. The audit trail keeps the existing "never fails the guest" rule.
+
+---
+
+## 21. Offline, ships and time: what runs where
+
+A ship is the worst place for a cloud-only automation: slow, expensive, intermittent connectivity, and two clocks.
+
+### 21.1 Where each ability runs
+
+| Behaviour | Server | Device | When offline |
+|---|---|---|---|
+| Rules and rung 4 acts | **Yes** (scheduler) | No | They keep running on the server; results wait in the thread |
+| Reminders (AUT-01, AUT-02) | Source of truth | **Mirrored as local notifications** (the existing local reminders) | The device fires them without a network. Anchor moves cannot arrive until reconnect, so the reminder shows "may have moved, last checked 10:42" |
+| Check-ups and plan lint | Yes | Cached last result with cached-at | Shows the last result and its age |
+| Missed-ship guard (CHK-03, SR-9.1) | Computes the buffer | **Local timer** for "head back" using cached all-aboard time | A local nudge fires at the cached buffer time; if the time is stale, the card says so |
+| Previews and confirms | Create and validate | Confirm taps are **queued** | "Waiting to send" with an expiry; applied on reconnect only if still valid (re-validated); never applied silently |
+| Offline answers | Library in the bundle | On-device safety screen, offline library | Existing behaviour; "ask a crew member" fallback always visible |
+
+### 21.2 Rules for the offline case
+
+1. **Never apply a queued confirm blindly.** On reconnect, re-validate; if the facts changed, show the new preview.
+2. **Show age on every number** (existing rule). Offline cards say "last checked".
+3. **Critical things never depend on Stanley's connection:** muster and all-aboard are shown by the ship's own screens too.
+4. **Catch-up on reconnect is one card**, ranked (M9), not a flood.
+5. **Offline pack** (offline capsule) is built when the class is on and Wi-Fi is available; storage cap and clear-out at disembark.
+
+### 21.3 Time
+
+- **Pre-trip anchors** (payments, check-in) use the guest's home zone; **onboard anchors** (muster, dining, shows, all-aboard) use **ship time**. Every time on screen names its zone when the two differ.
+- A **time-zone jump** (ship clock change, the guest's phone clock) re-evaluates every pending reminder; a test fixture covers a clock change and a daylight-saving day.
+- Rules fire in **ship time** onboard, even if the phone clock is wrong.
+
+---
+
+## 22. Arbitration, conflicts and multi-traveller ownership
+
+### 22.1 Many rules, one guest: the arbiter
+
+Without arbitration, ten rules produce ten notices. All proactive output passes one **arbiter** per guest per booking.
+
+| Concern | Rule |
+|---|---|
+| **Priority** | Safety, then money and deadlines, then missed-ship, then plan problems, then convenience, then suggestions. Within a rank, soonest consequence first |
+| **Budget** | The guest's `nudgesPerDay` and the existing caps (one per screen, three per session) hold. Items beyond budget wait in the thread; critical ignores budget |
+| **Roll-up** | Items about the same booking in the same period combine ("3 things for the family today") |
+| **Dedupe** | The same fact from a rule and from the check-up becomes one item with one source list |
+| **One fix per problem** | A cancelled tour gets one primary replacement with alternatives, not three previews |
+| **Quiet hours** | Per section 19.6 (reservations 07:00 to 22:00 ship time); anything else queues |
+| **Calm and simple mode** | Cap voice at "asked" (existing); rung 3 and 4 notices go to the thread without a push |
+
+### 22.2 Conflicts between rules
+
+1. **Precedence:** guest's explicit action, then a guest's rule, then a Stanley default. A guest's manual edit of an item **locks** it: no rule moves or removes it.
+2. **No cascades:** an act by a rule cannot trigger another rule (depth one). A trigger caused by Stanley's own act is marked and ignored by rules.
+3. **One owner per slot:** two rules wanting the same time slot resolve by precedence; the loser prepares nothing and logs why.
+4. **Loop guard:** the same rule cannot act on the same item more than twice in a day.
+
+### 22.3 Who owns what (the multi-traveller rule)
+
+| Item owned by | Examples | Highest rung Stanley may use |
+|---|---|---|
+| **The account holder alone** (personal plan, reminders, lists, drafts, shortlist) | Own plan items, own reminders | 4 |
+| **The booking** (shared plan, dining plan, shared dinners) | Family plan, a dinner for four | 3, and the booker's confirm; **AUT-04 only for the booker acting on the booking** |
+| **Another adult's account** | Mom's own items | 3, **only if Stanley is on that adult's account**; never from another account |
+| **A child** | A supervised child's items | 1 (notice to guardian) or 3 (guardian confirms) |
+| **A helper's authority** | An older guest's items | The helper can **prepare**, the guest confirms |
+
+A second adult who links to a booking is asked for **their own** level when they first open Stanley; the booker's level never applies to them.
+
+---
+
+## 23. The test harness: how we prove it before a guest sees it
+
+Everything below is written to work under `CLAUDE.md`: Vitest, `npm run lint`, `npx tsc -b`, `npm run build` for the front end; server tests are written with the code and **run by the owner, targeted, never a full `dotnet test`**.
+
+### 23.1 Foundations
+
+| Piece | What it is |
+|---|---|
+| **Injectable clock** | The scheduler never reads the system time; tests (and demo accounts, via the existing test bar) move it |
+| **Trip fixtures** | The three test-plan journeys (solo, family, friends), the seeded supervised family, a helper-managed older guest, a needs guest, plus scenario fixtures: tour cancelled, tender delayed, show moved, duplicate folio charge, flight cancelled, provider outage |
+| **Event scripts** | A small typed format: *at T, do X* (advance the clock, change a fact, withdraw inventory, a guest confirm or undo). Each fixture is a script |
+| **Golden outputs** | For each script: the expected previews, acts, notices, ledger lines and ordering as stored JSON; a change to a golden is a reviewed diff |
+| **Rule cards** | Every rule is one file (23.2) |
+
+### 23.2 The rule card (the unit of authoring and of review)
+
+Each ability or rule has one card holding: id, name, stage, level, rung, class, **applies-when**, trigger, inputs and freshness limit, output kind, wording keys, classifier needs, caps, undo window, kill-switch name, metrics, example prompt (used by the "example works" test), fixtures it must pass, privacy inputs (cross-check with the data inventory), accessibility notes, and the "never" line. A rule is **not mergeable** without every field and its fixtures.
+
+### 23.3 What is tested
+
+| Layer | Tests |
+|---|---|
+| **Pure rule logic** (TypeScript or C#, no I/O) | Table tests per rule: trigger in, decision out; applies-when; freshness; overlap; cap |
+| **Invariants (property tests)** | For every action kind and class: **never** charges, **never** messages another person, **never** touches a paid or shared item at rung 4, **never** runs when its switch is off or the level is below it, **never** acts for a supervised child, **never** acts during pause, a ship alert or a serious case; each act has a ledger entry and an undo or a stated reason |
+| **Idempotency and ordering** | Duplicate events, out-of-order events, restart mid-run: one act only |
+| **Clock** | Ship-time versus home-time, a daylight-saving day, a clock jump, rules at the edges of quiet hours |
+| **Arbiter** | Storm fixture: 30 events in a minute produce one ranked card and respect budgets |
+| **Permissions** | Table test over every path (chat, screen, scheduler, helper, hand-off) that the switch is checked: the P0a gate |
+| **Authorisation** | A guest cannot read or change another guest's rules; a helper cannot confirm; a supervised child cannot enable anything |
+| **Wording** | The model-wording layer is covered by the existing `src/ai/eval` style (golden prompts, banned words including "AI", length, reading age) with a fixed model stub in unit tests |
+| **Examples work** | Each welcome-page and checklist example runs through the real router and returns a card (6.4) |
+| **Accessibility** | The existing `stanleyAccessibility.test.ts` pattern extended to the checklist and ledger components |
+| **Soak and cost** | A simulated fleet (for example 10,000 guests over a 14-day trip on the fake clock): tick time, queue depth, model calls and cost against the ceiling |
+| **Chaos** | Provider outage, slow provider, duplicate webhook, partial DB failure: rules pause and recover with one notice |
+| **Red team** | Prompt injection through reminder text, a chat message, a draft, a port description: the executor takes only typed, validated arguments |
+
+### 23.4 Gates in the pipeline
+
+`npm run test` (all Vitest), `npm run lint`, `npx tsc -b`, `npm run build`, and (owner, targeted) the new Stanley server test classes. A rule card without fixtures fails a test; a string with "AI" fails a test; a missing kill switch fails a test.
+
+### 23.5 Shadow mode and rollout in production
+
+1. **Shadow:** the engine computes what it *would* do for a random 100% of level 3 and 4 guests and logs it (no acts, no notices). Compare with what the guest did next ("would we have been right?").
+2. **Canary:** 1% of eligible guests, then 10%, then 50%, then 100%, per class, each step gated on the measures in section 29 for at least a week.
+3. **Per-cohort kill:** a ship, a sailing or a stage can be switched off without a release.
+4. **Holdback:** a small fixed group never receives rung 3 and 4 so we can measure the real effect.
+
+---
+
+## 24. Cost model (planning assumptions, to be replaced by measurement)
+
+All figures below are **counts and shapes, not prices**; model prices change and are set by the existing tiers and the daily ceiling. They are the numbers to check in shadow mode.
+
+### 24.1 What costs what
+
+| Work | Kind | Frequency driver |
+|---|---|---|
+| Scheduler tick, trigger match, classifier, arbiter | Code and a database read; **no model** | One indexed "next due" queue, not a scan per guest; cost grows with events, not with guests |
+| Notices | **Templates**; a model only for a novel word choice | Mostly zero model calls |
+| Plans (build my day, bundles, replacement ranking) | A model on a mid tier, once per plan, cached by inputs | Once per day per guest at level 4, per request at level 3 |
+| Check-up | Code | Weekly plus on demand |
+| Chat | Existing router and tiers | On request |
+| Practice mode | Same as the live path, no acts | Once during practice |
+
+### 24.2 Expected shape per guest for a 7-night trip (assumptions to measure)
+
+| Level | Proactive items | Rung 4 acts | Model calls (planning and wording) |
+|---|---|---|---|
+| 1 | 0 | 0 | Only chat |
+| 2 | About 10 | 0 | About 2 |
+| 3 | About 35 (incl. previews) | 0 | About 8 |
+| 4 | About 35 items and 20 to 30 acts | 20 to 30 | About 15 |
+
+### 24.3 Controls
+
+- **Daily per-guest model ceiling** (existing): when reached, wording falls back to templates and plans are not rebuilt; **safety, deadlines and missed-ship never degrade.**
+- **Per-class budget** in the console, with an alert at 80% and an automatic degrade at 100%.
+- **Cache keys** for plans (the plan is rebuilt only when its inputs change).
+- **Cheapest tier that passes the golden wording evals** per output type; promote only with evidence.
+- **Soak test** (23.3) reports calls and tick time per 1,000 guests; the number goes in the release scorecard.
+
+---
+
+## 25. Accessibility of the checklist and every autonomous surface
+
+The checklist asks guests to give consent, so it must be the *most* accessible page in the app. Target WCAG 2.2 AA (`CLAUDE.md`), with these specifics.
+
+### 25.1 The welcome flow and Settings
+
+| Need | Design |
+|---|---|
+| **Structure** | One column. Each group (Watching, Preparing, Handling) is a `fieldset` with a `legend`; the level choice is a `radiogroup`; each row is a labelled switch (checkbox with `role="switch"` semantics) with the consent sentence linked by `aria-describedby` |
+| **Order** | Heading, level, checklist, summary, Continue; the summary is announced politely after any change ("7 things on, 3 off") |
+| **Consent text** | Visible, not in a tooltip, full sentence, plain words at about a grade 6 to 8 reading level; "never" line always visible |
+| **Target size** | 44 px minimum (above the 24 px minimum of 2.5.8) |
+| **No timers** | No timeouts or countdowns anywhere in the flow (2.2.1) |
+| **Focus** | Focus stays on the toggled switch; sticky headers never cover focus (2.4.11); focus returns to the row after a "Raise level" dialog closes |
+| **Dialogs** | The raise-level step-up is a focus-trapped dialog closing on Escape |
+| **Consistent help** | The Help button stays in the same place (3.2.6) |
+| **No repeated entry** | The checklist never asks again for something already known (3.3.7) |
+| **Authentication** | Step-up uses the existing emailed code, no puzzle or memory test (3.3.8) |
+| **Colour and motion** | State shown by words and shape, not colour; reduced motion respected; high contrast mode checked |
+| **Zoom and reflow** | Works at 200% text and 320 px width with no horizontal scrolling |
+| **Read aloud** | The consent text and summary can be read aloud (existing read-aloud) |
+| **Cognitive load** | A one-tap **"Keep it simple"**: pick a level and skip the checklist; the pre-ticked rows follow the level. An easy-read version of the consent text is a first-class setting |
+| **Screen reader names** | "Check my trip for problems, on" (state in the name), not "toggle 1" |
+
+### 25.2 Autonomous output
+
+- **Receipts** (19.1) are structured text, readable standalone, with no information in images only.
+- **Undo** is a real button, reachable by keyboard from the thread, the receipt and the push action, with a label that names the thing ("Undo: free show at 8:30").
+- **Undo time** is shown as a clock time ("until 4:30 pm"), never as a ticking countdown (no false urgency).
+- **Push text** is complete without opening the app and never says only "Stanley did something".
+- **Live regions:** acts are announced politely in the thread, not as alerts, except critical.
+- **Practice mode and mistakes** use the same card patterns, so a screen reader user learns one shape.
+- **Reading age and tone** are checked by the wording evals (23.3).
+
+### 25.3 Verification
+
+`jsx-a11y` lint, the extended Vitest accessibility tests, contrast checks on the new components, and a **manual screen-reader and 200% zoom pass by the owner** (no browser testing from here, per `CLAUDE.md`) listed as a phase gate. A user with a screen reader is part of research R1.
+
+---
+
+## 26. Privacy and security review
+
+*This is a design review, not legal advice. A privacy and legal review of the final wording and consent flow is a launch gate (section 27).*
+
+### 26.1 What the new capability reads and keeps
+
+| Data | Source | Purpose | Kept | Never |
+|---|---|---|---|---|
+| Trip facts (booking, plan, programme, folio, documents as validity facts, weather, ship data) | Existing, listed in `stanley-data-inventory.md` | Triggers and wording | As today | Document numbers, conversation text |
+| Permission records and consent history | New | Prove what the guest agreed | The life of the account; wording versions kept | Free text |
+| Ledger | New | Receipts, undo, support | **Detail for 90 days after disembark, then counters only** (proposal; set by retention policy) | Message text, drafts |
+| Rules (a guest's own) | New | Evaluate | To disembark plus 3 days | Anything about others |
+| Practice-mode and shadow logs | New | Calibration | Aggregated, without ids after 30 days | Personal fields |
+
+### 26.2 Threats and controls
+
+| Threat | Control |
+|---|---|
+| **Stolen or shared session raises the level** | **Step-up authentication** (emailed one-time code) to raise to level 3 or 4 or enable any rung 4 class; notice by email and on other devices; one-tap revert link |
+| **Someone with a device acts as the guest** | Rung 4 bounded by caps and the five tests; no money; undo; a lost-device "pause Stanley" from any signed-in device |
+| **Prompt injection** via reminder text, chat, drafts, port data | Typed arguments validated against the catalogue; guest free text is data in a delimited block; models produce wording, never actions |
+| **Confirm-token replay** | Single-use, expiring, bound to the guest and the preview |
+| **Cross-guest access (IDOR)** | Every rule and ledger endpoint scoped to the account, with a test per endpoint |
+| **Venue spam** (rules that flood a restaurant) | Per-class and per-venue rate limits; AUT-04 cap; no-show breaker |
+| **Helper abuse** | Helper can prepare, never confirm; sees but cannot change level or rules; the guest is told when a helper prepares something |
+| **Insider browsing** | Role-scoped views (20.1), every view audited, case-scoped access with the guest's consent |
+| **Model provider data** | The existing provider retention and training terms decision (AI-SEC-07); sensitive needs reach a model only when switched on |
+| **Children** | No rung 3 or 4 on a supervised account; nothing proactive reaches a child |
+| **Dark patterns** | Levels are never pre-selected above 2; "no" is as easy as "yes"; no countdowns; consent is not bundled with a purchase |
+
+### 26.3 Consent and rights
+
+- Consent is **specific** (per row), **informed** (the sentence shown, versioned), **freely given** (the guest can skip and still use everything at level 2), **recorded** (who, what, when, from where, wording version) and **withdrawable** at any time with the same ease.
+- **Export:** the guest can download their ledger and permission history as a file; **delete** with the account.
+- **Region:** wording is held per region (settings has `region`); a regional variant can be added without code.
+- **Expiry:** grants lapse after the trip (11.3) so old consent does not carry to a future trip.
+
+### 26.4 Tests for this section
+
+Authorisation per endpoint, step-up required, revert link works once, confirm token cannot be replayed, ledger contains no text fields (schema test), expiry job, export contains what is stored and nothing else.
+
+---
+## 27. Delivery plan: phases, gates, technical design and risks
+
+**This section replaces the phase tables in sections 8 and 13.** Sizes are relative effort (S about one week, M two to three, L four or more) for planning order only. As always, each phase commits and stops; server code is written with tests and run by the owner (targeted, never a full `dotnet test`).
+
+### 27.1 Phases
+
+| Phase | Scope | Size | Depends on | Done when |
+|---|---|---|---|---|
+| **R: Research and copy** | Section 16: wireframes, R1 to R5, level-name test, copy decisions; findings written into sections 11 and 12 | S | none (no code) | Gate **G0** passed |
+| **P0: Explain what exists** | Welcome page rewrite (6.2, 6.3), Try-it chips, capability catalogue endpoint, **What Stanley can do** screen, example-works test, "AI" word test | M | R | A new guest sees what Stanley answers, does, watches and never does, and can try each in one tap |
+| **P0a: Levels, permissions and checklist** | `StanleyPermissions`, consent history, step-up authentication, the enforcement point and its path test, level radio and ten-row checklist (welcome and Settings), Pause everything, empty-state for an account with nothing linked, helper and child rules | L | P0, R | Gate **G1** passed: the server refuses everything switched off, on every path |
+| **P1: Stanley activity and receipts** | The ledger (typed fields only), the six-field receipt (19.1), Did, Watching, Remembers, undo, stop buttons, consent history view, "Why did you do that?" | M | P0a | A guest can see, explain and stop everything Stanley did or watches |
+| **P2a, P2b: Reminders** | As in `stanley-reminders-requirements.md` | M, M | P1 | See that document |
+| **P2c: Scheduler and arbiter** | Worker with a due-queue and leases, injectable clock, trigger types (time, change, inventory, state), arbiter (22.1), circuit breakers, kill switches, ship-alert suppression | L | P0a | A rule fires on time with the app closed; a storm is one card; a runaway class pauses itself |
+| **P2d: Harness** | 23.1 and 23.2: fixtures, event scripts, goldens, invariant tests, rule-card format and its test | M | P2c (in step) | Every later phase adds cards and fixtures to this harness |
+| **P3: Trip check-up and plan lint** | CHK-01, CHK-02, CHK-08 and the "Fix this" actions | M | P2c | Ranked findings with a fix each; no false alarm on a clean fixture |
+| **P3a: Classifier flags** | Free, fee-free-until, only-me, reversible-until on dining, shows, excursions, services; the act-or-ask gate (19.6) | M | P2c | A paid or shared item can never be acted on at rung 4 |
+| **P3b: Staff and operations** | Section 20: Guest Services view and case type, supervisor pause, venue tag, health, switches, breakers, replay, announcement | L | P1, P2c | Gate **G2** staff prerequisites met |
+| **P3c: Offline and ship time** | Section 21: reminder mirroring, cached last results, queued confirms with re-validation, ship-time rules, time-zone fixtures | M | P2a, P2c | A guest offline at sea gets the right reminder and no blind applies |
+| **P2b release** | Reminder delivery R3 with real push | M | real push | As in the reminders document |
+| **P7 Briefs, P6 Value and bill, P4 Bundles and drafts, P5 Checklist concierge and smart defaults, P8 Missed-ship and group gaps** | As in section 8 (ACT-06, VAL-01, CHK-04, CHK-05, ACT-01, ACT-03, ACT-02, ACT-04, CHK-03, CHK-07) | M each | P3, P3a | As in section 8; all of these run under the arbiter |
+| **P9a: Rules engine, practice mode, cross-journey rules** | Rung 3 engine, RUL-01 to RUL-04, RUL-06, watch-and-prepare (VAL-03, RUL-05 reworded), **practice mode** (19.2), level suggestions (19.3), plain-words control (19.4), week in review (19.5) | L | P3a, P3b, P2d | Gate **G2** passed (shadow, then canary) |
+| **P9b: Manage and Prebook pack** | SR-4.x, SR-5.x, helper and needs packs | M | P9a | Each rule's fixtures and goldens pass; stage welcome ask offers them |
+| **P9c: Get to the ship and Embark pack** | SR-6.x, SR-7.x | M | P9a | As above |
+| **P9d: Sea, Port, Disembark pack** | SR-8.x, SR-9.x, SR-10.x, late-night guard, settle-up note | L | P9a | As above |
+| **P9e: Family, solo, occasion and organiser packs** | Section 17.3 to 17.5 | M | P9b to P9d | As above |
+| **P9f: Remember pack, then Dream, Discover, Book packs** | SR-11.x, then SR-1.x to SR-3.x (last; earn least) | M | P9a | As above |
+| **P10a: Rung 4 safe classes** | AUT-01, 02, 05, 07 | M | P9a, **G3** | Gate **G3** passed; each class acts only on eligible items |
+| **P10b: Rung 4 plan classes** | AUT-03, 06 | M | P10a | Undo rate under 5% for a full cohort season |
+| **P10c: Rung 4 booking and staff classes** | AUT-08, then AUT-04, then AUT-09 | M | P10b, gate **G4** | Venue sign-off, no-show breaker proven, undo under 5% |
+| **P11: Group, voice, shared briefs** | VAL-07, ACT-07, REM-D01 | M | P9 | A shared brief is posted only after the organiser confirms |
+| **P12: Hardening and launch checks** (also run before each gate) | Manual screen-reader and 200% zoom pass, privacy and legal review of final wording, soak and cost report, chaos and red-team runs, S1 runbook rehearsal, support training | M | any gate | Section 29 targets met |
+
+**Stop points that each stand alone:** after P0a (levels 1 and 2 mean what they do today and the guest can see and set them); after P3 and P7 (the best value for the least risk); after P9a (real standing rules at level 3); after P10a (the safest automation).
+
+### 27.2 Gates (go or no-go)
+
+| Gate | Before | Must be true |
+|---|---|---|
+| **G0** | P0a screens are final | Research R1 and R3 pass marks met, or the copy and defaults changed and re-tested |
+| **G1** | Any rung 3 code path runs for a real guest | The permission path test passes; step-up works; consent history is written; the checklist passes the manual accessibility pass; privacy review signed off |
+| **G2** | Rung 3 for guests | Staff view, switches, breakers and playbook live and rehearsed; shadow mode ran for at least two weeks with a wrong-prepare rate under 10%; canary at 1% then 10% each held for a week with abandon under 50% and no S1 or S2 |
+| **G3** | Rung 4 for guests | Rung 3 undo and complaint numbers within target for a season; practice mode default on; classifier proven by the invariant tests; soak within the cost ceiling; legal review of consent wording; S1 rehearsal passed |
+| **G4** | AUT-04, 08, 09 | Venue and stateroom operations agree in writing; no-show breaker proven; undo under 5% for AUT-01 to 07 |
+
+### 27.3 Technical design notes (so the plan is buildable)
+
+**Tables (SQL Server scripts in `db/`):** `StanleyPermissions` (account, ability, state, wording version, source, changed at, by), `StanleyConsentLog` (append only), `StanleyRules` (a guest's rules, template id, typed arguments, expires), `StanleyRuleDue` (the due queue: account, rule, due at, **idempotency key unique**, lease owner and expiry, state), `StanleyLedger` (typed receipt fields, rule, class, undo-until, outcome; no text), `StanleyClassState` (per account per class: paused, practice, counters, last undo), `StanleyBreaker` (per class and platform), `StanleyPractice` (would-have-done entries), `StanleyOpsFlags` (switches and cohorts), `StanleyNoShow` (counters).
+
+**Scheduler:** a worker process (preferred) or hosted service sharing the same domain library as the API, claiming due rows with `UPDLOCK, READPAST` leases so several instances can run, an **injectable clock**, per-account serialisation, idempotency keys (rule, trigger, subject), retries with backoff, a dead-letter table, and a "ship alert" suppression read at every claim.
+
+**Endpoints (sketch; the front end renders what the server says):**
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /me/stanley/capabilities` | The catalogue: ability, stage, level, rung, wording, example, applies-when, state for this account |
+| `GET /me/stanley/permissions`, `PUT /me/stanley/permissions/{ability}` | Read and set; raising requires a step-up token |
+| `POST /me/stanley/permissions/stepup`, `.../stepup/verify` | The emailed code |
+| `POST /me/stanley/permissions/revert/{token}` | One-tap revert link |
+| `POST /me/stanley/pause` and `DELETE` | Pause everything or a class, with until |
+| `GET /me/stanley/ledger`, `POST /me/stanley/ledger/{id}/undo`, `POST /me/stanley/ledger/undo-today` | Receipts and undo |
+| `GET /me/stanley/practice`, `POST /me/stanley/practice/{class}/graduate` | Practice mode |
+| `GET`, `POST`, `DELETE /me/stanley/rules` | A guest's own rules, from templates |
+| `GET /staff/stanley/cases/{id}/ledger` | Case-scoped receipts (role and consent checked) |
+| `/ops/stanley/*` | Health, switches, breakers, replay, cohorts, announcement |
+
+**New action kinds** for the existing preview and confirm pipeline: `save_shortlist`, `watch`, `prefill_form`, `set_deadline_reminders`, `settle_up_note`, `family_card`, each with typed arguments, preview, receipt and (where it qualifies) an undo.
+
+**Front end (thin):** one `useStanleyCapabilities` hook, one checklist component used by the welcome page and Settings, one receipt component used by the thread, Activity and the case view; no ability list in the bundle. Plain TypeScript modules for anything pure (the level-to-rows mapping the page uses for pre-ticking is **served by the server**, not hard-coded).
+
+**Documents updated in the same change as each phase:** `stanley-data-inventory.md` (every new table and the retention), `audit-trail.md` (new event kinds), `runbook.md` (S1 to S4, switches, replay), `functional-requirements.md` and `requirements-clauses.md` (new requirement ids), `server/README.md` (endpoints), the Stanley welcome strings, and the test plans (a Stanley section for each: solo, family, friends).
+
+### 27.4 Definition of ready and done for a rule or class
+
+**Ready:** a rule card with every field (23.2), an owner, applies-when written, fixtures sketched, classifier needs known, privacy inputs listed.
+**Done:** card merged; fixtures and goldens pass; invariants pass; example works; kill switch, cohort flag and metrics exist; strings in English with no "AI"; accessibility notes met; docs updated; canary plan written.
+
+### 27.5 Risk register
+
+| # | Risk | L | I | Mitigation |
+|---|---|---|---|---|
+| 1 | Guests do not understand or do not want the levels | M | H | Research R1 to R3 before P0a; examples-first copy; default level 2 |
+| 2 | A wrong autonomous act harms a guest or a venue | M | H | Five tests, classifier, caps, practice mode, undo, breakers, staged classes |
+| 3 | Notification overload erodes trust | H | M | Arbiter, roll-ups, budgets, "too much" chip, level suggestions |
+| 4 | Scheduler reliability (missed or double fires) | M | H | Leases, idempotency keys, dead-letter, soak and chaos tests, fake-clock goldens |
+| 5 | Data provider (mock now, real later) is wrong or down | M | M | Freshness limits, provider health flags, rules pause not guess, correction notices |
+| 6 | Consent or privacy complaint | L | H | Specific, versioned, withdrawable consent; step-up; ledger without text; legal review |
+| 7 | Model cost grows beyond the ceiling | M | M | Templates first, cache, per-class budgets, degrade to templates, soak report |
+| 8 | Staff are surprised by autonomous bookings | M | M | Venue tag, console, playbook, venue sign-off for AUT-04 and AUT-09 |
+| 9 | Real push is late, so reminders and notices are weak | M | M | P2b release is separate; in-thread delivery works first; local mirror |
+| 10 | Rule list becomes unmaintainable | M | M | Rule cards, one test per card, packs by stage, retire rules with low "useful" rating |
+| 11 | The existing server code has never been compiled or run here | H | H | Owner build and targeted test run before P2c; no phase depends on unrun code |
+| 12 | Simulated data (no real inventory) makes watches feel fake | M | M | Honest "as of" labels; rules say "tell me and line it up", never "hold"; the real provider swaps in behind the interface |
+| 13 | Scope: this plan is large | H | M | Stop points (27.1), cut list (17.6), P9f and P10c last, each pack ships alone |
+
+### 27.6 Launch and communication
+
+- **Staff training** before G2: a one-page playbook (20.3) and a short walkthrough using the three test plans.
+- **Guest explainer pages:** *What Stanley may and may not do* (public page, no "AI" wording), *How to turn things off*, *What happens if Stanley gets it wrong*.
+- **In-app first-use lines** (never repeated), a "What is new from Stanley" note when an ability is added (one line, once, counts against the caps).
+- **No overclaiming:** marketing and the welcome page never say Stanley "handles everything", never promise time saved we cannot measure, and always say he does not pay or cancel.
+
+---
+
+## 28. Further improvements to this area worth pursuing
+
+Ranked inside each band; items marked **(P)** are parked until there are usage numbers.
+
+### 28.1 Do soon (cheap, raise the quality of everything above)
+
+| ID | Idea | Why |
+|---|---|---|
+| IMP-01 | **Pre-trip interview** (a two-minute conversation in Manage: pace, interests, dining style, late nights, party, anything Stanley should never do) | Feeds applies-when, AUT-04's usual table and plan quality; makes levels 3 and 4 feel right from day one. Answers are visible and forgettable memories |
+| IMP-02 | **Rule cards generate the catalogue and the help page** | One source for the welcome page, Settings, the help page and tests; stops copy drifting from behaviour |
+| IMP-03 | **Human review sample:** each week a product owner reviews 50 random acts and previews | Catches quality problems the counts miss |
+| IMP-04 | **Game days:** rehearse S1 to S3 with a fake bad rule and a fake provider outage | The first real incident should not be the first practice |
+| IMP-05 | **Trust pages** (27.6) published with the welcome page | Honest, easy to find, linkable by staff |
+| IMP-06 | **Feedback chips on every item** (Good, Not for me, Too much, Stop) | The cheapest tuning signal there is |
+
+### 28.2 Do with the main build
+
+| ID | Idea | Why |
+|---|---|---|
+| IMP-07 | **Venue no-show loop** (counters to the venue view; auto-pause) | Protects staff and guests from automation noise |
+| IMP-08 | **Booking-time email** explaining the levels with a link; consent captured only in the app | Gets guests thinking before the first sign-in |
+| IMP-09 | **Preferences travel with the guest** across trips; grants do not | Better second trips with no re-consent risk |
+| IMP-10 | **Per-traveller readiness score** feeding Stanley Next and the check-up | One honest measure the guest, the helper and staff all understand |
+| IMP-11 | **Spoken level control** ("be quieter") through existing speech input | Helps guests who find forms hard |
+| IMP-12 | **Anniversary and occasion memory** (visible and forgettable) | Improves the occasion pack |
+
+### 28.3 Parked, with the reason **(P)**
+
+| ID | Idea | Why parked |
+|---|---|---|
+| IMP-13 | Phone location as a trigger | A privacy cost the plan can avoid; ship position comes from ship data. Revisit only with explicit consent and a clear gain |
+| IMP-14 | Spending on the guest's behalf under a cap | Breaks the ceiling; see decision 13 |
+| IMP-15 | Read-only capability API for outside assistants (journey priorities note Princess is in external assistants) | Valuable, but it needs its own security review and no authority |
+| IMP-16 | Anonymous "people like you did X" suggestions | Privacy and fairness risk; needs real volume |
+| IMP-17 | Voice calls or messages to staff for the guest | Never; a person is reached through the existing hand-off |
+| IMP-18 | Reading chats to trigger anything | Breaks "trip facts, not eavesdropping" (principle 4) |
+
+---
+
+## 29. Measures and gates (consolidated)
+
+Sections 9 and 15 hold the first targets; this adds research and rollout.
+
+| Measure | Target | Gate or review |
+|---|---|---|
+| Research R1: guests who say what they chose | 80% | G0 |
+| Research R1: guests who say he cannot pay | 90% | G0 |
+| Research R3: would still use level 3 or 4 after a mistake story | 80% | G0; under 60% makes practice mode the default |
+| Welcome flow completion time | Under 60 s | Review if over 90 s |
+| Guests who skip the checklist | Reported | Over 50%: flow too long |
+| Wrong-prepare rate in shadow mode (a prepared fix the guest would not have wanted) | Under 10% | G2 |
+| Rung 3 abandon (previews not confirmed) | Under 50% | G2 |
+| Undo rate by rung 4 class | Under 5% | G3, G4; over 10% trips the breaker |
+| Guest-reported errors per 1,000 acts | Under 2 | Any S3 reviewed |
+| S1 and S2 incidents | Zero | Any halts the next gate |
+| Duplicate or missed fires (soak and production) | Zero | Any is a defect |
+| Model calls per guest per trip (by level) | Within 24.2 | Review at the first canary |
+| Cost per guest per trip | Within the daily ceiling | Median rising week on week |
+| Staff time to answer "what did Stanley do" | Under 2 minutes | Review if over 5 |
+| Level 3 or 4 share | Reported | Under 10% or over 60% needs a look |
+| Manual accessibility pass | Zero blockers | G1, G3 |
+
+---
+
+## 30. Decisions and open questions (round 3)
+
+**Decided on my judgement (change if wrong; numbering continues from section 14):**
+
+17. **Research comes first.** Run section 16 before the P0a screens are final; names, defaults and order may change from the result.
+18. **Ownership rule (22.3).** Rung 4 touches only the account holder's personal items, with one exception: AUT-04 for the **booker acting on the booking**. Anything affecting another adult or a child stops at rung 3.
+19. **Step-up to raise.** Raising to level 3 or 4, or enabling any rung 4 class, needs the emailed code; lowering needs nothing. Changes notify other devices and the email with a one-tap revert.
+20. **Practice mode** is on by default for rung 4 classes and optional for rung 3 rules.
+21. **Stanley never raises his own authority.** He may offer after three confirmations; the guest decides.
+22. **Staff and operations (section 20) are a prerequisite of rung 3, not a follow-up.**
+23. **Reservation quiet window** 07:00 to 22:00 ship time for any act that books something; reminders any time.
+24. **Ledger retention** proposed as detail for 90 days after disembark, then counters only; confirm with the retention policy.
+25. **Rollout** by shadow, then canary (1%, 10%, 50%, 100%), per class, with a small permanent holdback.
+26. **Cut and fold** per 17.6; **add** the family, solo, helper, needs, occasion and organiser packs.
+27. **No phone-location triggers** (IMP-13).
+28. **Public explanation pages** ship with the welcome page (27.6).
+29. **Scheduler is a worker** sharing the domain library, using SQL Server leases and an injectable clock (27.3), unless the owner prefers a hosted service in the API.
+
+**Open for the owner:**
+
+1. Who owns the **legal and privacy review** of the consent wording, and when (G1 and G3)?
+2. Will **dining, spa and stateroom operations** be involved before AUT-04, AUT-08 and AUT-09 (G4)? If not, drop those three.
+3. Should the **persona packs** (family, solo, occasion, organiser) ship in the first rung 3 release, or follow the stage packs? I recommend following.
+4. **Where do research participants come from** (staff families, past guests, a panel)?
+5. Do you want **Set A, B or C** level names tested, or all three?
+6. Is **real push** on a date? P2b release and several notices depend on it.
+7. Do you accept that **no phase after P2c starts until the owner has built and run the earlier Stanley server code** (risk 11)?
+
+---
+
+## 31. Requirement index
+
+ACT-01 to 08 (save time), CHK-01 to 08 (catch issues), VAL-01 to 07 (get more), RUL-01 to 06 (rules), CL-01 to 10 (welcome checklist), AUT-01 to 09 (rung 4 classes), SR-1.1 to SR-11.6 (per-stage rules, section 12), SR-F.1 to F.7 (family pack), SR-S.1 to S.3 (solo additions), M1 to M18 (mistake scenarios, section 18), IMP-01 to 18 (further improvements), R1 to R5 (research), G0 to G4 (gates), plus REM-* in `docs/stanley-reminders-requirements.md`.
