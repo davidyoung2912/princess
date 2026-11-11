@@ -13,6 +13,9 @@ import { crowdFeed } from '../feeds/portCrowd'
 import { tenderFeed } from '../feeds/tender'
 import type { TenderOutlook } from '../domain/tender'
 
+const MAX_RETRIES = 3
+const RETRY_MS = 2000
+
 /**
  * Any feed from `src/feeds`: the server's answer, else the last one kept on this device, else null (loading). `args` must be plain values (they key the
  * cache). `enabled` false asks for nothing and gives null.
@@ -20,13 +23,21 @@ import type { TenderOutlook } from '../domain/tender'
 export function useServedFeed<A extends unknown[], V>(enabled: boolean, feed: Feed<A, V>, args: A): V | null {
   const [tick, setTick] = useState(0)
   const k = JSON.stringify(args)
+  // A request that fails is tried again a few times, a little later each time, so one dropped answer does not leave the screen waiting for good.
+  const [retry, setRetry] = useState({ k, n: 0 })
+  const attempt = retry.k === k ? retry.n : 0
   useEffect(() => {
     if (!enabled) return
     let live = true
-    void feed.load(...args).then((fresh) => { if (live && fresh) setTick((n) => n + 1) })
-    return () => { live = false }
+    let timer: ReturnType<typeof setTimeout> | undefined
+    void feed.load(...args).then((fresh) => {
+      if (!live) return
+      if (fresh) setTick((n) => n + 1)
+      else if (attempt < MAX_RETRIES && feed.now(...args) === null) timer = setTimeout(() => setRetry({ k, n: attempt + 1 }), RETRY_MS * (attempt + 1))
+    })
+    return () => { live = false; clearTimeout(timer) }
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, feed, k])
+  }, [enabled, feed, k, attempt])
   // oxlint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => (enabled ? feed.now(...args) : null), [enabled, feed, k, tick])
 }

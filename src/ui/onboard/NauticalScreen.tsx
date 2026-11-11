@@ -1,18 +1,15 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
 import { Compass, LandmarkList, TimeCard } from './NavigationScreens'
 import { depthGauge, depthText, distanceParts, speedParts, waterTempText, waveText } from '../../domain/navigation'
 import type { AlongTheWay, SeaConditions, ShipPosition } from '../../domain/navigation'
+import { nauticalPageFeed, type NauticalPage } from '../../feeds/nauticalPage'
 import { degreesMinutes, headingText, knotsText, lengthText, tonnageText, turnText, utcTime, type Nautical } from '../../domain/nautical'
 import type { Units } from '../../domain/readiness'
 import type { SkyNight } from '../../domain/sky'
 import { pressureText, tempText, visibilityText, windText, type ShipWeather } from '../../domain/weather'
-import { alongFeed, positionFeed, seaFeed } from '../../feeds/navigation'
-import { nauticalFeed } from '../../feeds/nautical'
-import { skyNightFeed } from '../../feeds/skyNight'
-import { weatherFeed } from '../../feeds/weather'
 import { useCurrentDay } from '../../hooks/useDayPlan'
 import { useNow, useSailing } from '../../hooks/useDemo'
 import { useSettings } from '../../hooks/useSettings'
@@ -21,7 +18,6 @@ import { t, th, type StringKey } from '../../i18n'
 import { compassWord, portName, positionLine } from './navigationText'
 
 const MINUTE = 60_000
-const HOUR = 3_600_000
 
 const SECTIONS = ['position', 'voyage', 'clocks', 'sea', 'air', 'light', 'vessel', 'plant', 'bridge', 'radar', 'around'] as const
 
@@ -35,12 +31,17 @@ export function NauticalScreen() {
   const sailing = useSailing()
   const minute = Math.floor(useNow() / MINUTE) * MINUTE
   const day = useCurrentDay()
-  const p = useFeed(positionFeed, sailing.id, minute)
-  const s = useFeed(seaFeed, sailing.id, minute)
-  const n = useFeed(nauticalFeed, sailing.id, minute)
-  const a = useFeed(alongFeed, sailing.id, minute)
-  const w = useFeed(weatherFeed, sailing.id, Math.floor(minute / HOUR) * HOUR)
-  const sky = useFeed(skyNightFeed, sailing.id, day)
+  // One request brings everything on the page. The last answer stays on screen while the next minute's is on its way, so the page never empties.
+  const fresh = useFeed(nauticalPageFeed, sailing.id, minute, day)
+  const [kept, setKept] = useState<NauticalPage | null>(null)
+  if (fresh && fresh !== kept) setKept(fresh)
+  const page = fresh ?? kept
+  const p = page?.position ?? null
+  const s = page?.sea ?? null
+  const n = page?.nautical ?? null
+  const a = page?.along ?? null
+  const w = page?.weather ?? null
+  const sky = page?.sky ?? null
   const units = settings.units
   return (
     <div className="page">

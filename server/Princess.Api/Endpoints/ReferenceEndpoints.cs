@@ -204,6 +204,25 @@ public static class ReferenceEndpoints
             })
             .WithTags("Reference").WithSummary("What the bridge and engine room would report at a moment: the ship's particulars, heading true and magnetic, course and speed over the ground and through the water, the current, the nearest land and the water under the keel, the next port and its pilot, the tide, the noon run, power, fuel, stabilisers and motion, the bridge watch, and other vessels on the radar. Metric and nautical units. A simulated feed; `source` says so. Name the sailing with `sailing` (an id).");
 
+        // Everything the Nautical details page shows, in one answer: one sailings lookup and one timeline instead of six requests.
+        api.MapGet("/feeds/nautical-page", async (string sailing, long now, int day, IShipNavigation nav, IShipTelemetry ship, ITripStore trips, CancellationToken ct) =>
+            {
+                var departure = await DepartureOfAsync(sailing, trips, ct);
+                var hour = now - now % 3_600_000L;
+                if (!NavigationRules.ValidQuery(departure, now) || !NavigationRules.ValidQuery(departure, hour) || !OnboardFeedRules.ValidSkyQuery(departure, day)) throw ApiException.Invalid("badFeedQuery");
+                var timeline = TimelineBook.For(sailing, DateOnly.ParseExact(departure, "yyyy-MM-dd"));
+                return Results.Ok(new
+                {
+                    position = nav.Position(timeline, now),
+                    sea = nav.Sea(timeline, now),
+                    along = nav.Along(timeline, now),
+                    weather = nav.Weather(timeline, hour),
+                    nautical = nav.Nautical(timeline, now, AboardPlans.ShipOfSailing(sailing)),
+                    sky = ship.SkyNight(departure, day, sailing),
+                });
+            })
+            .WithTags("Reference").WithSummary("The position, sea, nautical, along-the-way, weather and sky answers for the Nautical details page in one response (the same as the separate feeds). A simulated feed; each part's `source` says so. Name the sailing with `sailing` (an id).");
+
         api.MapGet("/feeds/loungers", (long now, IShipTelemetry ship) =>
             {
                 if (!OnboardFeedRules.ValidMoment(now)) throw ApiException.Invalid("badFeedQuery");
