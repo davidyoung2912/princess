@@ -50,6 +50,7 @@ export function NauticalScreen() {
           {SECTIONS.map((id) => <li key={id}><a href={`#naut-${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(`naut-${id}`)?.scrollIntoView({ block: 'start' }); document.getElementById(`naut-${id}`)?.focus() }}>{t(`naut.${id}` as StringKey)}</a></li>)}
         </ul>
       </nav>
+      <p><Link to="/nautical/glossary">{t('route.glossary')}</Link></p>
       {!p && !n && <FeedWaiting />}
       {p && n && <Position p={p} n={n} units={units} />}
       {p && n && <Voyage p={p} n={n} units={units} />}

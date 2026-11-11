@@ -60,6 +60,7 @@ export {
   Sun,
   MapPin,
   KeyRound,
+  ShoppingBag,
   Mail,
   UserPlus,
   Map as RouteMap,

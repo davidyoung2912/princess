@@ -69,26 +69,38 @@ public sealed class DapperBookingStore(IDbConnectionFactory db) : IBookingStore
     public async Task<DraftRecord> SaveDraftAsync(long userId, DraftRecord d, string newId, DateTime now, CancellationToken ct)
     {
         await using var c = await db.OpenAsync(ct);
-        var existing = await c.ExecuteScalarAsync<string?>(Sql.Cmd("SELECT Id FROM dbo.BookingDrafts WHERE UserId = @userId", new { userId }, null, ct));
-        d.Id = existing ?? newId;
         d.UpdatedAt = now;
-        if (existing is null)
+
+        // Update first; insert only when there is no draft yet. Concurrent saves (autosave) can both reach the
+        // insert, so a duplicate-key loss falls back to the update instead of failing the request.
+        var id = await UpdateDraftAsync(c, userId, d, ct);
+        if (id is null)
         {
-            await c.ExecuteAsync(Sql.Cmd("""
-                INSERT INTO dbo.BookingDrafts (Id, UserId, SailingId, CategoryId, Guests, CabinMode, CabinNumber, FareId, Dining, Occasion, LoyaltyNumber, UseCredit, Accepted, People, Contact, UpdatedAt)
-                VALUES (@Id, @userId, @SailingId, @CategoryId, @Guests, @CabinMode, @CabinNumber, @FareId, @Dining, @Occasion, @LoyaltyNumber, @UseCredit, @AcceptedJson, @PeopleJson, @ContactJson, @UpdatedAt)
-                """, new { d.Id, userId, d.SailingId, d.CategoryId, d.Guests, d.CabinMode, d.CabinNumber, d.FareId, d.Dining, d.Occasion, d.LoyaltyNumber, d.UseCredit, d.AcceptedJson, d.PeopleJson, d.ContactJson, d.UpdatedAt }, null, ct));
+            try
+            {
+                await c.ExecuteAsync(Sql.Cmd("""
+                    INSERT INTO dbo.BookingDrafts (Id, UserId, SailingId, CategoryId, Guests, CabinMode, CabinNumber, FareId, Dining, Occasion, LoyaltyNumber, UseCredit, Accepted, People, Contact, UpdatedAt)
+                    VALUES (@Id, @userId, @SailingId, @CategoryId, @Guests, @CabinMode, @CabinNumber, @FareId, @Dining, @Occasion, @LoyaltyNumber, @UseCredit, @AcceptedJson, @PeopleJson, @ContactJson, @UpdatedAt)
+                    """, new { Id = newId, userId, d.SailingId, d.CategoryId, d.Guests, d.CabinMode, d.CabinNumber, d.FareId, d.Dining, d.Occasion, d.LoyaltyNumber, d.UseCredit, d.AcceptedJson, d.PeopleJson, d.ContactJson, d.UpdatedAt }, null, ct));
+                id = newId;
+            }
+            catch (SqlException e) when (IsDuplicate(e))
+            {
+                id = await UpdateDraftAsync(c, userId, d, ct) ?? throw new InvalidOperationException("Draft vanished during save.");
+            }
         }
-        else
-        {
-            await c.ExecuteAsync(Sql.Cmd("""
-                UPDATE dbo.BookingDrafts SET SailingId = @SailingId, CategoryId = @CategoryId, Guests = @Guests, CabinMode = @CabinMode, CabinNumber = @CabinNumber, FareId = @FareId,
-                       Dining = @Dining, Occasion = @Occasion, LoyaltyNumber = @LoyaltyNumber, UseCredit = @UseCredit, Accepted = @AcceptedJson, People = @PeopleJson, Contact = @ContactJson, UpdatedAt = @UpdatedAt
-                WHERE UserId = @userId
-                """, new { userId, d.SailingId, d.CategoryId, d.Guests, d.CabinMode, d.CabinNumber, d.FareId, d.Dining, d.Occasion, d.LoyaltyNumber, d.UseCredit, d.AcceptedJson, d.PeopleJson, d.ContactJson, d.UpdatedAt }, null, ct));
-        }
+        d.Id = id;
         return d;
     }
+
+    /// <summary>Updates the user's draft and returns its Id, or null when the user has no draft.</summary>
+    private static Task<string?> UpdateDraftAsync(DbConnection c, long userId, DraftRecord d, CancellationToken ct) =>
+        c.ExecuteScalarAsync<string?>(Sql.Cmd("""
+            UPDATE dbo.BookingDrafts SET SailingId = @SailingId, CategoryId = @CategoryId, Guests = @Guests, CabinMode = @CabinMode, CabinNumber = @CabinNumber, FareId = @FareId,
+                   Dining = @Dining, Occasion = @Occasion, LoyaltyNumber = @LoyaltyNumber, UseCredit = @UseCredit, Accepted = @AcceptedJson, People = @PeopleJson, Contact = @ContactJson, UpdatedAt = @UpdatedAt
+            OUTPUT inserted.Id
+            WHERE UserId = @userId
+            """, new { userId, d.SailingId, d.CategoryId, d.Guests, d.CabinMode, d.CabinNumber, d.FareId, d.Dining, d.Occasion, d.LoyaltyNumber, d.UseCredit, d.AcceptedJson, d.PeopleJson, d.ContactJson, d.UpdatedAt }, null, ct));
 
     public async Task DeleteDraftAsync(long userId, CancellationToken ct)
     {

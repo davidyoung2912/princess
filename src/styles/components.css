@@ -270,3 +270,47 @@ main.signin { margin-inline: auto; }
 /* An urgent chat notice: it stays until "Got it". Static (no entrance animation), so reduced motion needs nothing more. */
 .chat-toast--urgent { border: 3px double var(--danger); animation: none; }
 .chat-toast__icon--urgent { color: var(--danger); }
+
+/* Top bar: the current stage bubble and the hub icon buttons lift with a glow on hover or focus; the icons give a small tilt and grow. Off for reduced motion. */
+.testbar__stage--current, .testbar__at-link {
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.testbar__at-link .lucide { transition: transform var(--t-mid) var(--ease); }
+.testbar__stage--current:is(:hover, :focus-visible), .testbar__at-link:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+}
+.testbar__at-link:is(:hover, :focus-visible) .lucide { transform: scale(1.15) rotate(-8deg); }
+.testbar__stage--current:active, .testbar__at-link:active { transform: translateY(0) scale(0.97); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .testbar__stage--current, .testbar__at-link, .testbar__at-link .lucide { transition: none; }
+  .testbar__stage--current:is(:hover, :focus-visible, :active), .testbar__at-link:is(:hover, :focus-visible, :active), .testbar__at-link:is(:hover, :focus-visible) .lucide { transform: none; }
+}
+:root[data-motion='reduced'] :is(.testbar__stage--current, .testbar__at-link):is(:hover, :focus-visible, :active), :root[data-motion='reduced'] .testbar__at-link:is(:hover, :focus-visible) .lucide { transform: none; }
+
+/* Stage welcome: the current stage lifts with a glow on hover, like the stage bubble in the top bar. */
+.welcome__stage--now { transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease); }
+.welcome__stage--now:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome__stage--now { transition: none; }
+  .welcome__stage--now:hover { transform: none; }
+}
+:root[data-motion='reduced'] .welcome__stage--now:hover { transform: none; }
+
+/* Ask Stanley and Help buttons: the same rollover as .btn (soft glow, small lift, settle on press). */
+.tabs__stanley, .tabs__help, .topbar__stanley {
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.tabs__stanley:hover, .tabs__help:hover, .topbar__stanley:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 14px color-mix(in srgb, var(--primary-bright, var(--primary)) 35%, transparent);
+}
+.tabs__stanley:active, .tabs__help:active, .topbar__stanley:active { transform: translateY(0) scale(0.98); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tabs__stanley, .tabs__help, .topbar__stanley { transition: none; }
+  .tabs__stanley:is(:hover, :active), .tabs__help:is(:hover, :active), .topbar__stanley:is(:hover, :active) { transform: none; }
+}
+:root[data-motion='reduced'] :is(.tabs__stanley, .tabs__help, .topbar__stanley):is(:hover, :active) { transform: none; }
