@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChatMessage } from '../api/chatTypes'
-import { galleryOf, gridColumns, MAX_PHOTOS_PER_MESSAGE, photoCountOf, planPicks, stepIndex, swipeDelta } from './chatPhotos'
+import { galleryOf, touchCache, trimCache, gridColumns, MAX_PHOTOS_PER_MESSAGE, photoCountOf, planPicks, stepIndex, swipeDelta } from './chatPhotos'
 
 const msg = (o: Partial<ChatMessage>): ChatMessage => ({ id: 'm', from: 'a', text: '', at: 1, ...o })
 
@@ -56,5 +56,15 @@ describe('galleryOf', () => {
     expect(list.map((g) => `${g.messageId}${g.index}`)).toEqual(['c0', 'a0', 'a1'])
     expect(list[0].fromName).toBe('You')
     expect(list[1]).toMatchObject({ fromName: 'Sam R.', count: 2 })
+  })
+})
+
+describe('the photo cache', () => {
+  it('drops the oldest beyond its limit and keeps what was just used', () => {
+    const c = new Map<string, number>([['a', 1], ['b', 2], ['c', 3]])
+    expect(touchCache(c, 'a')).toBe(1)
+    trimCache(c, 2)
+    expect([...c.keys()]).toEqual(['c', 'a'])
+    expect(touchCache(c, 'zzz')).toBeUndefined()
   })
 })

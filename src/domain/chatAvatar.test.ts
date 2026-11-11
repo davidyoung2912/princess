@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { avatarImageUrl, groupAvatars, isAvatarId, type AvatarChoice } from './chatAvatar'
+import { avatarImageUrl, avatarPage, avatarPageCount, avatarPageOf, groupAvatars, isAvatarId, stepAvatarPage, type AvatarChoice } from './chatAvatar'
 
 describe('chat avatars', () => {
   it('accepts catalogue ids and nothing else', () => {
@@ -19,5 +19,22 @@ describe('chat avatars', () => {
       { id: 'x-1', label: 'Odd', group: 'weird' },
     ] as unknown as AvatarChoice[]
     expect(groupAvatars(list).map((g) => [g.group, g.choices.map((c) => c.id)])).toEqual([['people', ['avataaars-01']], ['robots', ['bottts-31']], ['critters', ['thumbs-43']]])
+  })
+})
+
+describe('avatar pages', () => {
+  const list = Array.from({ length: 10 }, (_, i) => ({ id: `a-${i}` }))
+  it('counts pages and shows four at a time', () => {
+    expect(avatarPageCount(50)).toBe(13)
+    expect(avatarPageCount(0)).toBe(1)
+    expect(avatarPage(list, 2).map((c) => c.id)).toEqual(['a-8', 'a-9'])
+  })
+  it('wraps round at both ends', () => {
+    expect(stepAvatarPage(2, 3, 1)).toBe(0)
+    expect(stepAvatarPage(0, 3, -1)).toBe(2)
+  })
+  it('opens on the page of the chosen picture', () => {
+    expect(avatarPageOf(list, 'a-5')).toBe(1)
+    expect(avatarPageOf(list, null)).toBe(0)
   })
 })

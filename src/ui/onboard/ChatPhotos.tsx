@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '../../api/chatTypes'
-import { galleryOf, gridColumns, photoCountOf, stepIndex, swipeDelta, type GalleryPhoto } from '../../domain/chatPhotos'
+import { galleryOf, gridColumns, photoCountOf, stepIndex, swipeDelta, touchCache, trimCache, type GalleryPhoto } from '../../domain/chatPhotos'
 import { useSettings } from '../../hooks/useSettings'
 import { api } from '../../runtime'
 import { t } from '../../i18n'
@@ -8,14 +8,15 @@ import { Button } from '../Button'
 import { Dialog } from '../Dialog'
 import { useShipTime } from './shipTime'
 
-/** A photo is not in the thread page (it is large); each is fetched once and kept for the life of the page. */
+/** A photo is not in the thread page (it is large); each is fetched once and the 40 most recently used are kept. */
 const photos = new Map<string, Promise<string>>()
 const photoFor = (conversationId: string, messageId: string, index: number): Promise<string> => {
   const key = `${messageId}:${index}`
-  let p = photos.get(key)
+  let p = touchCache(photos, key)
   if (!p) {
     p = api.chatConversations.photo(conversationId, messageId, index)
     photos.set(key, p)
+    trimCache(photos)
     // A failed fetch is forgotten so the next render can try again.
     p.catch(() => photos.delete(key))
   }

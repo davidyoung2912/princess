@@ -21,7 +21,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
         foreach (var p in people)
         {
             var open = await store.FindOpenBetweenAsync(actor.Id, p.UserId, ct);
-            list.Add(new(p.PublicId, ChatConnectionRules.ShortName(p.FirstName, p.LastName), Relation(open, actor.Id)));
+            list.Add(new(p.PublicId, ChatConnectionRules.ShortName(p.FirstName, p.LastName), Relation(open, actor.Id), p.Avatar));
         }
         return list;
     }
@@ -226,10 +226,10 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     private static ChatConnectionDto? View(long me, ChatConnectionRow r)
     {
         var mine = me == r.RequesterId;
-        var other = mine ? (r.TargetPublicId, ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast)) : (r.RequesterPublicId, ChatConnectionRules.ShortName(r.RequesterFirst, r.RequesterLast));
+        var other = mine ? (r.TargetPublicId, ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast), r.TargetAvatar) : (r.RequesterPublicId, ChatConnectionRules.ShortName(r.RequesterFirst, r.RequesterLast), r.RequesterAvatar);
         var isNew = r.Status == ChatConnectionRules.Accepted && mine && r.RequesterSeenAt is null;
         ChatConnectionDto Make(string kind, Guid? child = null, string? childName = null) =>
-            new(r.PublicId, kind, other.Item1, other.Item2, r.ConversationId, child, childName, isNew, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt));
+            new(r.PublicId, kind, other.Item1, other.Item2, r.ConversationId, child, childName, isNew, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), other.Item3);
 
         if (r.GuardianUserId == me && r.Status == ChatConnectionRules.AwaitingGuardian && !mine && me != r.TargetId)
         {
@@ -239,7 +239,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
             var childName = forRequester ? r.RequesterFirst : r.TargetFirst;
             var personPublic = forRequester ? r.TargetPublicId : r.RequesterPublicId;
             var personName = forRequester ? ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast) : ChatConnectionRules.ShortName(r.RequesterFirst, r.RequesterLast);
-            return new(r.PublicId, "approval", personPublic, personName, null, childPublic, childName, false, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt));
+            return new(r.PublicId, "approval", personPublic, personName, null, childPublic, childName, false, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), forRequester ? r.TargetAvatar : r.RequesterAvatar);
         }
         return r.Status switch
         {
@@ -255,7 +255,7 @@ public sealed class ChatConnectionService(IChatConnectionStore store, IChatStore
     private static ChatConnectionDto Answer(long me, ChatConnectionRow r) =>
         View(me, r) ?? new(r.PublicId,
             r.Status switch { ChatConnectionRules.Accepted => "connected", ChatConnectionRules.Declined => "declined", _ => "outgoing" },
-            r.TargetPublicId, ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast), r.ConversationId, null, null, false, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt));
+            r.TargetPublicId, ChatConnectionRules.ShortName(r.TargetFirst, r.TargetLast), r.ConversationId, null, null, false, TripRules.ToMs(r.CreatedAt), TripRules.ToMs(r.ExpiresAt), r.TargetAvatar);
 
     private static string ChildFirstName(ChatConnectionRow r, string guardianFor) => guardianFor == "requester" ? r.RequesterFirst : r.TargetFirst;
 

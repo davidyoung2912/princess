@@ -31,6 +31,25 @@ export function planPicks(picks: readonly PhotoPick[], allowed: readonly string[
 /** Columns of the grid for a message with this many photos. */
 export const gridColumns = (count: number): 1 | 2 | 3 => (count <= 1 ? 1 : count === 2 || count === 4 ? 2 : 3)
 
+/** How many fetched photos the screen keeps (each can be several megabytes as a data URL); the oldest used are forgotten first and fetched again if needed. */
+export const PHOTO_CACHE_MAX = 40
+
+/** Keeps a map to at most `max` entries by dropping the oldest. Reading an entry with `touch` moves it to the newest end. */
+export function trimCache<V>(cache: Map<string, V>, max = PHOTO_CACHE_MAX): void {
+  while (cache.size > max) {
+    const oldest = cache.keys().next()
+    if (oldest.done) return
+    cache.delete(oldest.value)
+  }
+}
+
+/** Marks an entry as just used, so it is the last to be dropped. */
+export function touchCache<V>(cache: Map<string, V>, key: string): V | undefined {
+  const v = cache.get(key)
+  if (v !== undefined) { cache.delete(key); cache.set(key, v) }
+  return v
+}
+
 /** The viewer moves one photo at a time and stops at the ends (it never wraps, so the end is clear to everyone). */
 export const stepIndex = (index: number, count: number, delta: number): number => Math.min(Math.max(index + delta, 0), Math.max(count - 1, 0))
 

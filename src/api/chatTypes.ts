@@ -3,7 +3,7 @@
 /** How a found person relates to the caller. `asked`: the caller already asked. `waiting`: they asked the caller. `approval`: waiting for a guardian. */
 export type ChatRelation = 'none' | 'asked' | 'waiting' | 'approval' | 'connected'
 
-export interface ChatPerson { id: string; name: string; relation: ChatRelation }
+export interface ChatPerson { id: string; name: string; relation: ChatRelation; /** Their chosen avatar id (see `src/domain/chatAvatar.ts`); absent for initials. */ avatar?: string }
 
 export type ChatConnectionKind = 'connected' | 'incoming' | 'outgoing' | 'declined' | 'approval'
 
@@ -17,6 +17,8 @@ export interface ChatConnection {
   /** For an approval: which child, and who they asked. */
   childId: string | null
   childName: string | null
+  /** The other person's chosen avatar id; absent for initials. */
+  avatar?: string
   /** Agreed, and the sender has not yet seen that. */
   isNew: boolean
   at: number
@@ -384,7 +386,7 @@ export interface ChatExport { name: string; at: number; lines: ChatExportLine[];
 
 // ---- Groups (docs/chat-plan.md, phase 5) ----
 
-export interface ChatGroupMember { id: string; name: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean }
+export interface ChatGroupMember { id: string; name: string; avatar?: string; you: boolean; creator: boolean; /** The second admin (the creator is always one). Absent when not. */ admin?: boolean }
 
 /** An invitation the creator is still waiting on. `needsGuardian`: the person is a child and their guardian must say yes. */
 export interface ChatGroupWaiting { inviteId: string; personId: string; name: string; needsGuardian: boolean }

@@ -18,6 +18,7 @@ import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import { GroupInvites } from './ChatGroups'
+import { ChatAvatar } from './ChatLooks'
 import type { ApiError } from '../../api/errors'
 
 /** The banner at the top of Chat: "2 people want to chat", one tap to the People area. */
@@ -82,7 +83,7 @@ function Incoming({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   const answer = useAction(async (accept: boolean, block: boolean) => { await api.chatConnections.respond(row.id, accept, block); onDone(accept ? t('people.nowConnected', { name: row.name }) : t('people.answered')) })
   return (
     <>
-      <p><strong>{t('people.incoming', { name: row.name })}</strong></p>
+      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{t('people.incoming', { name: row.name })}</strong></p>
       <div className="button-row">
         <Button disabled={answer.busy} onClick={() => void answer.run(true, false)}>{t('people.accept')}<span className="visually-hidden"> {row.name}</span></Button>
         <Button variant="secondary" disabled={answer.busy} onClick={() => void answer.run(false, false)}>{t('people.decline')}<span className="visually-hidden"> {row.name}</span></Button>
@@ -97,7 +98,7 @@ function Approval({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   const answer = useAction(async (accept: boolean) => { await api.chatConnections.respond(row.id, accept, false); onDone(t('people.answered')) })
   return (
     <>
-      <p><strong>{t('people.approval', { child: row.childName ?? '', name: row.name })}</strong></p>
+      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{t('people.approval', { child: row.childName ?? '', name: row.name })}</strong></p>
       <p className="muted">{t('people.approvalBody')}</p>
       <div className="button-row">
         <Button disabled={answer.busy} onClick={() => void answer.run(true)}>{t('people.allow')}<span className="visually-hidden"> {row.name}</span></Button>
@@ -112,7 +113,7 @@ function Outgoing({ row, onDone }: { row: ChatConnection; onDone: (note: string)
   const cancel = useAction(async () => { await api.chatConnections.cancel(row.id); onDone(t('people.cancelled', { name: row.name })) })
   return (
     <>
-      <p><strong>{row.name}</strong> <span className="muted">{t('people.waitingForReply')}</span></p>
+      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong> <span className="muted">{t('people.waitingForReply')}</span></p>
       <Button variant="tertiary" disabled={cancel.busy} onClick={() => void cancel.run()}>{t('people.cancel')}<span className="visually-hidden"> {row.name}</span></Button>
       <ActionError error={cancel.error} />
     </>
@@ -124,7 +125,7 @@ function Connected({ row, onDone }: { row: ChatConnection; onDone: (note: string
   const end = useAction(async () => { await api.chatConnections.end(row.id); setConfirm(false); onDone(t('people.ended', { name: row.name })) })
   return (
     <>
-      <p><strong>{row.name}</strong>{row.isNew && <> <span className="tag">{t('people.new.tag')}</span></>}</p>
+      <p className="person-line"><ChatAvatar avatar={row.avatar} name={row.name} small /><strong>{row.name}</strong>{row.isNew && <> <span className="tag">{t('people.new.tag')}</span></>}</p>
       <p className="muted">{t('people.connectedBody')}</p>
       <Button variant="tertiary" onClick={() => setConfirm(true)}>{t('people.end')}<span className="visually-hidden"> {row.name}</span></Button>
       {confirm && (
@@ -178,7 +179,7 @@ function Search({ onClose, onDone }: { onClose: () => void; onDone: (note: strin
               const note = relationNote(p.relation)
               return (
                 <li key={p.id} className="row">
-                  <span><strong>{p.name}</strong>{note && <> <span className="muted">{t(`people.rel.${note}` as StringKey)}</span></>}{sent.has(p.id) && <> <span className="muted">{t('people.rel.asked')}</span></>}</span>
+                  <span className="person-line"><ChatAvatar avatar={p.avatar} name={p.name} small /><strong>{p.name}</strong>{note && <> <span className="muted">{t(`people.rel.${note}` as StringKey)}</span></>}{sent.has(p.id) && <> <span className="muted">{t('people.rel.asked')}</span></>}</span>
                   {action === 'ask' && !sent.has(p.id) && <Button variant="secondary" disabled={ask.busy} onClick={() => void ask.run(p)}>{t('people.ask')}<span className="visually-hidden"> {p.name}</span></Button>}
                   {action === 'open' && <Link to="/chat">{t('people.openChat')}<span className="visually-hidden"> {p.name}</span></Link>}
                 </li>

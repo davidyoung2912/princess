@@ -24,6 +24,7 @@ public sealed class ChatGroupPersonRow
     public bool IsSupervised { get; set; }
     /// <summary>Phase 4: the second admin (the creator is always one and is not flagged).</summary>
     public bool IsAdmin { get; set; }
+    public string? Avatar { get; set; }
 }
 
 /// <summary>One invitation, with the group and the names of the inviter and invitee.</summary>
@@ -125,11 +126,12 @@ public sealed class DapperChatGroupStore(IDbConnectionFactory db) : IChatGroupSt
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatGroupPersonRow>(Sql.Cmd("""
-            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, m.IsAdmin
+            SELECT u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, m.IsAdmin, up.ChatAvatar AS Avatar
             FROM dbo.ChatGroupMembers m
             JOIN dbo.ChatGroups g ON g.Id = m.GroupId
             JOIN dbo.Users u ON u.Id = m.UserId
             JOIN dbo.Profiles p ON p.UserId = u.Id
+            LEFT JOIN dbo.UserPrefs up ON up.UserId = u.Id
             WHERE m.GroupId = @groupId AND m.Status = 'active'
             ORDER BY CASE WHEN u.Id = g.CreatedByUserId THEN 0 ELSE 1 END, m.JoinedAt, u.Id
             """, new { groupId }, null, ct))).ToList();

@@ -20,3 +20,21 @@ export const avatarImageUrl = (apiBase: string, id: string | null | undefined): 
 export function groupAvatars(choices: readonly AvatarChoice[]): { group: AvatarGroup; choices: AvatarChoice[] }[] {
   return AVATAR_GROUPS.map((group) => ({ group, choices: choices.filter((c) => c.group === group && isAvatarId(c.id)) })).filter((g) => g.choices.length > 0)
 }
+
+/** How many pictures the picker shows at once. */
+export const AVATAR_PAGE_SIZE = 4
+
+/** The number of pages for `count` pictures (at least one). */
+export const avatarPageCount = (count: number, size = AVATAR_PAGE_SIZE): number => Math.max(1, Math.ceil(count / size))
+
+/** Moves a page by `delta` and wraps round at both ends, so Next on the last page goes back to the first. */
+export const stepAvatarPage = (page: number, pages: number, delta: number): number => (((page + delta) % pages) + pages) % pages
+
+/** The page that holds the picture with `id`, or the first page when it is not in the list. */
+export function avatarPageOf(choices: readonly { id: string }[], id: string | null | undefined, size = AVATAR_PAGE_SIZE): number {
+  const at = choices.findIndex((c) => c.id === id)
+  return at < 0 ? 0 : Math.floor(at / size)
+}
+
+/** The pictures on one page, in catalogue order (people, sketch, robots, then critters). */
+export const avatarPage = <T,>(choices: readonly T[], page: number, size = AVATAR_PAGE_SIZE): T[] => choices.slice(page * size, page * size + size)

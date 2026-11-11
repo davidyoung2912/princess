@@ -11,6 +11,8 @@ public sealed class ChatPersonRow
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public bool IsSupervised { get; set; }
+    /// <summary>The id of the picture they chose in chat, or null for initials.</summary>
+    public string? Avatar { get; set; }
 }
 
 /// <summary>One request to chat, with the names of both people. The two people's guid public ids are what the screens use.</summary>
@@ -23,11 +25,13 @@ public sealed class ChatConnectionRow
     public string RequesterFirst { get; set; } = "";
     public string RequesterLast { get; set; } = "";
     public bool RequesterSupervised { get; set; }
+    public string? RequesterAvatar { get; set; }
     public long TargetId { get; set; }
     public Guid TargetPublicId { get; set; }
     public string TargetFirst { get; set; } = "";
     public string TargetLast { get; set; } = "";
     public bool TargetSupervised { get; set; }
+    public string? TargetAvatar { get; set; }
     public string Status { get; set; } = "";
     public long? GuardianUserId { get; set; }
     public string? GuardianFor { get; set; }
@@ -84,11 +88,12 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
 
     private const string Select = """
         SELECT c.Id, c.PublicId, c.RequesterId, r.PublicId AS RequesterPublicId, rp.FirstName AS RequesterFirst, rp.LastName AS RequesterLast, r.IsSupervised AS RequesterSupervised,
-               c.TargetId, t.PublicId AS TargetPublicId, tp.FirstName AS TargetFirst, tp.LastName AS TargetLast, t.IsSupervised AS TargetSupervised,
+               c.TargetId, t.PublicId AS TargetPublicId, tp.FirstName AS TargetFirst, tp.LastName AS TargetLast, t.IsSupervised AS TargetSupervised, rup.ChatAvatar AS RequesterAvatar, tup.ChatAvatar AS TargetAvatar,
                c.Status, c.GuardianUserId, c.GuardianFor, g.PublicId AS ConversationId, c.EndedByUserId, c.RequesterSeenAt, c.RespondedAt, c.ExpiresAt, c.CreatedAt
         FROM dbo.ChatConnections c
         JOIN dbo.Users r ON r.Id = c.RequesterId JOIN dbo.Profiles rp ON rp.UserId = r.Id
         JOIN dbo.Users t ON t.Id = c.TargetId JOIN dbo.Profiles tp ON tp.UserId = t.Id
+        LEFT JOIN dbo.UserPrefs rup ON rup.UserId = r.Id LEFT JOIN dbo.UserPrefs tup ON tup.UserId = t.Id
         LEFT JOIN dbo.ChatGroups g ON g.Id = c.GroupId
         """;
 
@@ -99,7 +104,7 @@ public sealed class DapperChatConnectionStore(IDbConnectionFactory db) : IChatCo
     {
         await using var c = await db.OpenAsync(ct);
         return (await c.QueryAsync<ChatPersonRow>(Sql.Cmd($"""
-            SELECT TOP (@max) u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised
+            SELECT TOP (@max) u.Id AS UserId, u.PublicId, p.FirstName, p.LastName, u.IsSupervised, up.ChatAvatar AS Avatar
             FROM dbo.Users u
             JOIN dbo.Profiles p ON p.UserId = u.Id
             LEFT JOIN dbo.UserPrefs up ON up.UserId = u.Id

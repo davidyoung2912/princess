@@ -14,7 +14,7 @@ public sealed record ChatGroupRenameBody(string? Name);
 public sealed record ChatGroupRemoveBody(Guid PersonId);
 
 /// <summary>A person in the group. <c>Creator</c> can rename, invite and remove.</summary>
-public sealed record ChatGroupMemberDto(Guid Id, string Name, bool You, bool Creator, bool Admin = false);
+public sealed record ChatGroupMemberDto(Guid Id, string Name, bool You, bool Creator, bool Admin = false, [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? Avatar = null);
 
 /// <summary>An invitation still waiting, seen by the creator. <c>NeedsGuardian</c>: the person is a child and their guardian must say yes.</summary>
 public sealed record ChatGroupWaitingDto(Guid InviteId, Guid PersonId, string Name, bool NeedsGuardian);

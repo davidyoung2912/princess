@@ -205,7 +205,7 @@ public sealed class ChatGroupService(IChatGroupStore store, IUserStore users, IU
             : new List<ChatGroupWaitingDto>();
         var admin = ChatPlanningRules.IsAdmin(creator, members.Any(m => m.UserId == actor.Id && m.IsAdmin));
         return new(group.PublicId, group.Name,
-            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin))],
+            [.. members.Select(m => new ChatGroupMemberDto(m.PublicId, Short(m), m.UserId == actor.Id, m.UserId == group.CreatedByUserId, m.IsAdmin, m.Avatar))],
             waiting, creator, ChatGroupRules.MaxMembers, group.AnnouncementOnly, admin);
     }
 

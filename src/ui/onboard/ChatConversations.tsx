@@ -595,7 +595,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   return (
     <section aria-labelledby="thread-h">
       <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
-      <h2 id="thread-h">{name}</h2>
+      <h2 id="thread-h" className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</h2>
       {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
         <p className="muted">{conversation.members.length > 0 ? t('conv.members', { names: conversation.members.join(', ') }) : t('conv.alone')}</p>

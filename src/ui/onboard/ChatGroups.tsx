@@ -13,6 +13,7 @@ import { Dialog } from '../Dialog'
 import { Field } from '../Field'
 import { ActionError, Load } from '../account/parts'
 import type { ApiError } from '../../api/errors'
+import { ChatAvatar } from './ChatLooks'
 
 /** Words for a group action that failed, or nothing when the error is not one we have a sentence for. */
 function Problem({ error }: { error: ApiError | null }) {
@@ -90,7 +91,7 @@ export function GroupDetails({ id, onClose, onLeft, onChanged }: { id: string; o
             <ul className="plain-list">
               {g.members.map((m) => (
                 <li key={m.id}>
-                  <span><strong>{m.you ? t('conv.you') : m.name}</strong>{m.creator && <> <span className="muted">{t('cgroup.creator')}</span></>}{m.admin && <> <span className="muted">{t('cgroup.admin')}</span></>}</span>
+                  <span className="person-line"><ChatAvatar avatar={m.avatar} name={m.name} small /><strong>{m.you ? t('conv.you') : m.name}</strong>{m.creator && <> <span className="muted">{t('cgroup.creator')}</span></>}{m.admin && <> <span className="muted">{t('cgroup.admin')}</span></>}</span>
                   {g.isCreator && !m.you && !m.creator && <Button variant="tertiary" disabled={admin.busy} onClick={() => void admin.run(m.id, !m.admin)}>{t(m.admin ? 'cgroup.admin.remove' : 'cgroup.admin.make')}<span className="visually-hidden"> {m.name}</span></Button>}
                   {g.isCreator && !m.you && <Button variant="tertiary" disabled={remove.busy} onClick={() => void remove.run(m.id, m.name)}>{t('cgroup.remove')}<span className="visually-hidden"> {m.name}</span></Button>}
                 </li>
