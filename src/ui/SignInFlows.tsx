@@ -157,7 +157,6 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
         </form>
         {sent && <p><Button variant="secondary" onClick={() => { setSent(false); setCode(''); setErrors([]) }}>{t('signin.code.again')}</Button></p>}
       </Card>
-      {!import.meta.env.PROD && <p className="muted">{t('signin.code.dev')}</p>}
       <p><Button variant="secondary" onClick={onBack}>{t('signin.mode.back')}</Button></p>
       </div>
     </>

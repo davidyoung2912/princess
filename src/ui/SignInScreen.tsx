@@ -19,6 +19,8 @@ const DEV_LOGIN = import.meta.env.PROD ? '' : 'dream'
 
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')
+  // Switching mode swaps the page in place, so start the new one at the top (its header card included).
+  useEffect(() => { window.scrollTo(0, 0) }, [mode])
   if (mode === 'signup') return <main className="signin" id="main"><SignUpForm onBack={() => setMode('signin')} /></main>
   if (mode === 'forgot' || mode === 'magic') return <main className="signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
   return <PasswordSignIn go={setMode} />

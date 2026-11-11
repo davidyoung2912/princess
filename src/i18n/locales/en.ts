@@ -1185,7 +1185,6 @@ export const en = {
   'signin.code.reset': 'Set new password',
   'signin.code.signin': 'Sign in',
   'signin.code.done': 'Your password is changed and every other sign-in has ended. Sign in with the new one.',
-  'signin.code.dev': 'Development builds: the stub sender writes the code to the server log; nothing is emailed.',
   'signin.error.invalid': 'We could not do that. Check what you entered and try again.',
   'signin.signOut': 'Sign out',
   'signin.signup.twin.title': 'Is this you already?',
