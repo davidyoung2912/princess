@@ -11,11 +11,14 @@ import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
-import { CloudSun, Compass, Drama } from './icons'
+import { CloudSun, Compass, Drama, Plan, RouteMap, UtensilsCrossed } from './icons'
 import { Field } from './Field'
 
 const AT_LINKS = [
+  { to: '/today', Icon: Plan, label: 'testbar.at.today' },
+  { to: '/itinerary', Icon: RouteMap, label: 'testbar.at.itinerary' },
   { to: '/entertainment', Icon: Drama, label: 'testbar.at.entertainment' },
+  { to: '/dining-today', Icon: UtensilsCrossed, label: 'testbar.at.dining' },
   { to: '/weather', Icon: CloudSun, label: 'testbar.at.weather' },
   { to: '/nautical', Icon: Compass, label: 'testbar.at.nautical' },
 ] as const

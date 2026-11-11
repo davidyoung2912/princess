@@ -241,6 +241,9 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'X08', path: '/entertainment', titleKey: 'screen.X08.title', subtextKey: 'screen.X08.subtext', family: 'X' },
   { id: 'X09', path: '/weather', titleKey: 'screen.X09.title', subtextKey: 'screen.X09.subtext', family: 'X' },
   { id: 'X10', path: '/nautical', titleKey: 'screen.X10.title', subtextKey: 'screen.X10.subtext', family: 'X' },
+  { id: 'X11', path: '/today', titleKey: 'screen.X11.title', subtextKey: 'screen.X11.subtext', family: 'X' },
+  { id: 'X12', path: '/itinerary', titleKey: 'screen.X12.title', subtextKey: 'screen.X12.subtext', family: 'X' },
+  { id: 'X13', path: '/dining-today', titleKey: 'screen.X13.title', subtextKey: 'screen.X13.subtext', family: 'X' },
 ]
 
 /** Settings and help: the same group under Me at every stage, and always plum. */

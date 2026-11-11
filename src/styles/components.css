@@ -148,7 +148,8 @@
 input:not([type='checkbox'], [type='radio'], [type='range']), select { max-width: var(--form-max); }
 textarea { max-width: min(100%, 32rem); }
 /* Sign-in and onboarding pages are a single narrow column. */
-.page.signin { max-width: 34rem; }
+.page.signin, main.signin { max-width: 34rem; }
+main.signin { margin-inline: auto; }
 
 /* Button rollovers: a soft glow and a small lift; pressing settles back down. Off for reduced motion. */
 .btn, .topbar__help, .topbar__search, .chip, .page-header__back {

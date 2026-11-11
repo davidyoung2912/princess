@@ -19,8 +19,8 @@ const DEV_LOGIN = import.meta.env.PROD ? '' : 'dream'
 
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')
-  if (mode === 'signup') return <main className="page signin" id="main"><SignUpForm onBack={() => setMode('signin')} /></main>
-  if (mode === 'forgot' || mode === 'magic') return <main className="page signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
+  if (mode === 'signup') return <main className="signin" id="main"><SignUpForm onBack={() => setMode('signin')} /></main>
+  if (mode === 'forgot' || mode === 'magic') return <main className="signin" id="main"><CodeFlow purpose={mode === 'forgot' ? 'reset' : 'magic'} onBack={() => setMode('signin')} /></main>
   return <PasswordSignIn go={setMode} />
 }
 

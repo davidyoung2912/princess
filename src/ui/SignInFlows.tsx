@@ -5,6 +5,8 @@ import { t, th, headingCase, type StringKey } from '../i18n'
 import { auth } from '../runtime'
 import { Button } from './Button'
 import { Card } from './Card'
+import { KeyRound, Mail, UserPlus } from './icons'
+import { PageHeader } from './PageHeader'
 import { ErrorSummary, Field } from './Field'
 
 const actions = (): AccountActions | undefined => auth.account
@@ -52,7 +54,8 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
   if (twin) {
     return (
       <>
-        <h1>{th('signin.signup.twin.title')}</h1>
+        <PageHeader title={th('signin.signup.twin.title')} subtext={t('signin.signup.twin.body')} icon={UserPlus} />
+        <div className="page">
         <Card>
           <p role="alert">{t('signin.signup.twin.body')}</p>
           <p>{t('signin.signup.twin.ifYou')}</p>
@@ -61,13 +64,14 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
         </Card>
         <p><Button variant="secondary" onClick={onBack}>{t('signin.signup.twin.signIn')}</Button></p>
         <p><Button variant="secondary" onClick={() => setTwin(false)}>{t('signin.signup.twin.edit')}</Button></p>
+        </div>
       </>
     )
   }
   return (
     <>
-      <h1>{th('signin.signup.title')}</h1>
-      <p>{t('signin.signup.intro')}</p>
+      <PageHeader title={th('signin.signup.title')} subtext={t('signin.signup.intro')} icon={UserPlus} />
+      <div className="page">
       <ErrorSummary title={t('signin.problems')} errors={summary} />
       <Card>
         <form onSubmit={(e) => void submit(e)} noValidate>
@@ -80,6 +84,7 @@ export function SignUpForm({ onBack }: { onBack: () => void }) {
         </form>
       </Card>
       <p><Button variant="secondary" onClick={onBack}>{t('signin.mode.back')}</Button></p>
+      </div>
     </>
   )
 }
@@ -122,17 +127,19 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
   if (done) {
     return (
       <>
-        <h1>{th('signin.code.title.forgot')}</h1>
-        <p role="status">{t('signin.code.done')}</p>
-        <Button block onClick={onBack}>{t('signin.mode.back')}</Button>
+        <PageHeader title={th('signin.code.title.forgot')} icon={KeyRound} />
+        <div className="page">
+          <p role="status">{t('signin.code.done')}</p>
+          <Button block onClick={onBack}>{t('signin.mode.back')}</Button>
+        </div>
       </>
     )
   }
   const title = t(purpose === 'reset' ? 'signin.code.title.forgot' : 'signin.code.title.magic')
   return (
     <>
-      <h1>{headingCase(title)}</h1>
-      <p>{t('signin.code.intro')}</p>
+      <PageHeader title={headingCase(title)} subtext={t('signin.code.intro')} icon={purpose === 'reset' ? KeyRound : Mail} />
+      <div className="page">
       <ErrorSummary title={t('signin.problems')} errors={errors} />
       <Card>
         <form onSubmit={(e) => void (sent ? finish(e) : ask(e))} noValidate>
@@ -152,6 +159,7 @@ export function CodeFlow({ purpose, onBack }: { purpose: CodePurpose; onBack: ()
       </Card>
       {!import.meta.env.PROD && <p className="muted">{t('signin.code.dev')}</p>}
       <p><Button variant="secondary" onClick={onBack}>{t('signin.mode.back')}</Button></p>
+      </div>
     </>
   )
 }
