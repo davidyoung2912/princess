@@ -226,6 +226,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/shopping-today': 'needs-connection',
   '/spa-explorer': 'needs-connection',
   '/exercise-explorer': 'needs-connection',
+  '/activities-explorer': 'needs-connection',
   '/trial-day': 'needs-connection',
   '/at-sea/:token': 'needs-connection',
   '/shared/:token': 'needs-connection',
