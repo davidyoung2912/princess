@@ -90,7 +90,7 @@ function Builder({ menu, placed }: { menu: OrderMenuView; placed: () => void }) 
           {KINDS.map((k) => (
             <label key={k} className="choice choice--pill">
               <input type="radio" name="ord-kind" checked={kind === k} onChange={() => switchKind(k)} />
-              <span>{t(`ord.kind.${k}` as StringKey)}</span>
+              <span>{th(`ord.kind.${k}` as StringKey)}</span>
             </label>
           ))}
         </div>

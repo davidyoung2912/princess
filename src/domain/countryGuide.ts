@@ -11,6 +11,10 @@ export interface CountryGuideData {
   /** Set for a territory or special-status place ("not a sovereign state"); empty for a country. */
   status: string
   atAGlance: string
+  /** The at-a-glance line split into labelled facts (population, area, GDP, capital, languages, currency); empty if it could not be split. */
+  facts: { label: string; value: string }[]
+  /** What follows the facts in the at-a-glance line: where the place is and its neighbours. */
+  about: string
   freedom: string
   government: string
   economy: string
@@ -30,6 +34,8 @@ export function countryProblems(g: CountryGuideData): string[] {
   if (!g.region) bad('no region')
   if (!g.cruiseCalls) bad('no cruise calls')
   if (!g.atAGlance) bad('no at-a-glance text')
+  for (const label of ['Population', 'Area', 'Economy', 'Capital', 'Language', 'Currency']) if (!g.facts.some((f) => (label === 'Language' ? f.label.endsWith('anguages') : f.label.startsWith(label)) && f.value)) bad(`no ${label.toLowerCase()} fact`)
+  if (!g.about) bad('no about sentence')
   if (!g.freedom) bad('no freedom score line')
   if (!g.government) bad('no government text')
   if (!g.economy) bad('no economy text')

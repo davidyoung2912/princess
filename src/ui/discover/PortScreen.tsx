@@ -82,7 +82,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
       {jumps.length > 1 && (
         <nav aria-label={t('portguide.jump')}>
           <ul className="naut-jump">
-            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{t(j.label)}</a></li>)}
+            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{th(j.label)}</a></li>)}
           </ul>
         </nav>
       )}

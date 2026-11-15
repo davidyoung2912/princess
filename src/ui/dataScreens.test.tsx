@@ -144,8 +144,8 @@ describe('top task: find my family', () => {
 describe('top task: order food', () => {
   it('offers the kinds of order, ready to start', async () => {
     await open('/ship/order')
-    await seen('Deck and stateroom delivery')
-    expect(within(main()).getByText('Room service')).toBeTruthy()
+    await seen('Deck and Stateroom Delivery')
+    expect(within(main()).getByText('Room Service')).toBeTruthy()
   })
 })
 

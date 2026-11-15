@@ -17,6 +17,7 @@ export function normalizeCountryGuide(raw: unknown): CountryGuideData | null {
   if (!/^[a-z]{2}$/.test(str(r.id)) || !str(r.name)) return null
   return {
     id: str(r.id), name: str(r.name), region: str(r.region), cruiseCalls: str(r.cruiseCalls), status: str(r.status), atAGlance: str(r.atAGlance),
+    facts: arr(r.facts).map(obj).filter((x) => str(x.label) && str(x.value)).map((x) => ({ label: str(x.label), value: str(x.value) })), about: str(r.about),
     freedom: str(r.freedom), government: str(r.government), economy: str(r.economy), timeline: str(r.timeline), people: str(r.people), culture: str(r.culture),
     links: arr(r.links).map(link).filter((l): l is CountryLink => l !== null),
     ports: arr(r.ports).map(obj).filter((p) => str(p.id) && str(p.name)).map((p) => ({ id: str(p.id), name: str(p.name) })),

@@ -18,6 +18,17 @@ describe('the generated country guides the server embeds', () => {
     expect(guides.flatMap((g) => countryProblems(g!))).toEqual([])
   })
 
+  it('splits every at-a-glance line into labelled facts and a closing sentence', () => {
+    for (const g of guides) {
+      expect(g!.facts.map((f) => f.label.replace(/^Official l/, 'L')), g!.id).toEqual(['Population', 'Area', 'Economy (GDP)', 'Capital', 'Languages', 'Currency'])
+      expect(g!.about, g!.id).not.toBe('')
+    }
+    const au = guides.find((g) => g!.id === 'au')!
+    expect(au.facts.find((f) => f.label === 'Capital')?.value).toBe('Canberra')
+    expect(au.facts.find((f) => f.label === 'Currency')?.value).toBe('Australian dollar (AUD)')
+    expect(au.about).toContain('nearby neighbours include Indonesia')
+  })
+
   it('has a flag file for every profile', () => {
     const missing = guides.filter((g) => !existsSync(new URL(`../assets/art/flags/${g!.id}.png`, import.meta.url))).map((g) => g!.id)
     expect(missing).toEqual([])
@@ -44,7 +55,8 @@ describe('normalizeCountryGuide', () => {
   it('drops what is not usable and refuses an answer with no code or name', () => {
     expect(normalizeCountryGuide(null)).toBeNull()
     expect(normalizeCountryGuide({ id: 'Mexico', name: 'x' })).toBeNull()
-    const g = normalizeCountryGuide({ id: 'mx', name: 'Mexico', links: [{ label: 'A', url: 'https://a.example' }, { label: 'B', url: 'javascript:1' }], ports: [{ id: 'cozumel', name: 'Cozumel' }, { id: '' }] })
+    const g = normalizeCountryGuide({ id: 'mx', name: 'Mexico', facts: [{ label: 'Capital', value: 'Mexico City' }, { label: '', value: 'x' }], links: [{ label: 'A', url: 'https://a.example' }, { label: 'B', url: 'javascript:1' }], ports: [{ id: 'cozumel', name: 'Cozumel' }, { id: '' }] })
+    expect(g?.facts).toEqual([{ label: 'Capital', value: 'Mexico City' }])
     expect(g?.links).toHaveLength(1)
     expect(g?.ports).toHaveLength(1)
   })

@@ -11,6 +11,43 @@ const catalogue: { id: string; name: string; countryCode: string }[] = JSON.pars
 const plain = (s: string) => s.replace(/\*\*/g, '').replace(/(^|[^\w])\*([^*]+)\*(?!\w)/g, '$1$2').replace(/\\([$~*_])/g, '$1').replace(/\s+/g, ' ').trim()
 const links = (s: string) => [...s.matchAll(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g)].map((m) => ({ label: plain(m[1]), url: m[2] }))
 
+/**
+ * Splits the "At a glance" line ("Population about 27.6 million; area ...; capital X; language Y; currency Z (ABC). Where it is.") into labelled facts and
+ * the closing sentences. A line it cannot read gives no facts, which the generator reports and the page covers by showing the whole line.
+ */
+export function splitGlance(line: string): { facts: { label: string; value: string }[]; about: string } {
+  const facts: { label: string; value: string }[] = []
+  const about: string[] = []
+  const parts = line.split('; ')
+  let seenCapital = false
+  let done = false
+  for (const raw of parts) {
+    let part = raw.trim()
+    if (done) { about.push(part); continue }
+    let m: RegExpExecArray | null
+    if ((m = /^Population\s+(.*)$/i.exec(part))) facts.push({ label: 'Population', value: m[1] })
+    else if ((m = /^(?:land )?area\s+(.*)$/i.exec(part))) facts.push({ label: 'Area', value: m[1] })
+    else if ((m = /^nominal GDP\s+(.*)$/i.exec(part))) facts.push({ label: 'Economy (GDP)', value: m[1] })
+    else if ((m = /^capital\s+(?:is\s+)?(.*)$/i.exec(part))) { facts.push({ label: 'Capital', value: m[1] }); seenCapital = true }
+    else if ((m = /^currency\s+(.*)$/i.exec(part))) {
+      // The currency is the last fact; the sentences after its full stop describe the place.
+      const cut = /^(.*?[)\w])\.\s+(.*)$/.exec(m[1])
+      facts.push({ label: 'Currency', value: (cut ? cut[1] : m[1]).replace(/\.$/, '') })
+      if (cut) about.push(cut[2])
+      done = true
+    } else if (seenCapital) {
+      const official = /^official\s+/i.test(part)
+      part = part.replace(/^(?:official\s+)?languages?\s+(?:include\s+)?/i, '')
+      const label = official ? 'Official languages' : 'Languages'
+      const prior = facts.find((x) => x.label.endsWith('anguages'))
+      if (prior) prior.value += `; ${part}`
+      else facts.push({ label, value: part })
+    } else about.push(part)
+  }
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  return { facts: facts.map((f) => ({ label: f.label, value: cap(f.value) })), about: about.join('; ').trim() }
+}
+
 const start = text.indexOf('\n# Caribbean')
 const end = text.indexOf('\n# Making this useful')
 if (start < 0 || end < 0) throw new Error('country guide: the region headings were not found')
@@ -33,7 +70,7 @@ for (const s of sections) {
   if (!profile) { unknown.push(s.heading); continue }
   const g: CountryGuideData = {
     id: profile.id, name: profile.name, region: s.region, cruiseCalls: '', status: '', atAGlance: '', freedom: '', government: '', economy: '',
-    timeline: '', people: '', culture: '', links: [], ports: catalogue.filter((p) => p.countryCode.toLowerCase() === profile.id).map((p) => ({ id: p.id, name: p.name })),
+    facts: [], about: '', timeline: '', people: '', culture: '', links: [], ports: catalogue.filter((p) => p.countryCode.toLowerCase() === profile.id).map((p) => ({ id: p.id, name: p.name })),
   }
   for (const line of s.lines) {
     const m = /^\*\*(.+?)\*\*\s*(.*)$/.exec(line.trim())
@@ -42,7 +79,7 @@ for (const s of sections) {
     const val = plain(m[2])
     if (label === 'cruise call' || label === 'cruise calls') g.cruiseCalls = val
     else if (label === 'status') g.status = val.replace(/^—\s*/, '')
-    else if (label === 'at a glance') g.atAGlance = val
+    else if (label === 'at a glance') { g.atAGlance = val; Object.assign(g, splitGlance(val)) }
     else if (label === 'freedom in the world 2026') g.freedom = val
     else if (label.startsWith('government')) g.government = val
     else if (label === 'economy') g.economy = val

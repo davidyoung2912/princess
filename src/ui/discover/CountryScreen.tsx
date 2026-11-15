@@ -25,7 +25,7 @@ export function CountryScreen() {
   }
   return (
     <div className="page port-details">
-      {guide ? <h2><Flag code={guide.id} />{guide.name}</h2> : <h2><Flag code={id} />{id.toUpperCase()}</h2>}
+      {guide ? <h2><Flag code={guide.id} large />{guide.name}</h2> : <h2><Flag code={id} large />{id.toUpperCase()}</h2>}
       {guide?.status && <p><span className="tag tag--alert">{t('country.status')}</span> {guide.status}</p>}
       {guide?.region && <p className="muted">{t('country.region', { region: guide.region })}</p>}
       {!guide && <FeedWaiting />}
@@ -51,13 +51,25 @@ function CountryBody({ guide }: { guide: CountryGuideData }) {
   ]
   return (
     <>
-      {guide.atAGlance && <p className="port-details__lead"><strong>{t('country.glance')}.</strong> {guide.atAGlance}</p>}
-      {guide.freedom && <p><strong>{t('country.freedom')}:</strong> {guide.freedom}</p>}
+      {(guide.facts.length > 0 || guide.atAGlance) && (
+        <section aria-labelledby="cd-glance-h">
+          <Card hero labelledBy="cd-glance-h">
+            <h2 id="cd-glance-h" className="card__title">{th('country.glance')}</h2>
+            {guide.facts.length > 0 ? (
+              <dl className="port-details__facts">
+                {guide.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
+                {guide.freedom && <div><dt>{t('country.freedom')}</dt><dd>{guide.freedom}</dd></div>}
+              </dl>
+            ) : <><p>{guide.atAGlance}</p>{guide.freedom && <p><strong>{t('country.freedom')}:</strong> {guide.freedom}</p>}</>}
+            {guide.about && <p>{guide.about}</p>}
+          </Card>
+        </section>
+      )}
 
       {jumps.length > 1 && (
         <nav aria-label={t('country.jump')}>
           <ul className="naut-jump">
-            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{t(j.label)}</a></li>)}
+            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{th(j.label)}</a></li>)}
           </ul>
         </nav>
       )}
