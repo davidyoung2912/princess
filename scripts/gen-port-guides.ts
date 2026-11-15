@@ -3,6 +3,7 @@
 // GET /reference/port-guides and GET /reference/port-guides/{id}. The markdown is the one copy to edit; the JSON is generated from it.
 // Ports in the documents that match no catalogue port are listed and left out; catalogue ports with no document entry are listed for information.
 import { readFileSync, writeFileSync } from 'node:fs'
+import { guideProblems } from '../src/domain/portGuide.ts'
 
 const read = (name: string) => readFileSync(new URL(`../docs/${name}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 
@@ -142,8 +143,12 @@ for (const { heading, lines } of numberedSections(read('port-tips.md'))) {
       else if (/^region/i.test(f[1]) && !g.area) g.area = plain(f[2])
       continue
     }
-    const tip = /^\s+\* \*\*(.+?):\*\*\s*(.*)$/.exec(line)
-    if (inTips && tip) g.tips.push({ title: plain(tip[1]), text: plain(tip[2]) })
+    const tip = /^ {1,3}\* \*\*(.+?):\*\*\s*(.*)$/.exec(line)
+    if (inTips && tip) { g.tips.push({ title: plain(tip[1]), text: plain(tip[2]) }); continue }
+    // A tip can list parts beneath it (the terminals of a port, say); they are joined into that tip's text.
+    const part = /^\s{4,}[*-] (.+)$/.exec(line)
+    const last = g.tips[g.tips.length - 1]
+    if (inTips && part && last) last.text = last.text ? `${last.text} ${plain(part[1])}` : plain(part[1])
   }
 }
 
@@ -202,17 +207,11 @@ const FLAG = /^(?:#{1,3}\s*)?[\u{1F1E6}-\u{1F1FF}]{2}\s+(.+?)\s*$/u
 }
 
 const out = [...guides.values()].sort((a, b) => a.id.localeCompare(b.id))
-const problems: string[] = []
-for (const g of out) {
-  if (!g.shortDescription) problems.push(`${g.id}: no short description (port-tips.md)`)
-  if (g.attractions.length === 0) problems.push(`${g.id}: no attractions (port-details.md)`)
-  if (!g.stats) problems.push(`${g.id}: no stats (port-stats.md)`)
-  else if (!g.stats.population || g.stats.timeline.length === 0) problems.push(`${g.id}: stats incomplete`)
-}
+const problems: string[] = out.flatMap(guideProblems)
 const missing = catalogue.filter((p) => !guides.has(p.id)).map((p) => `${p.id} (${p.name})`)
 
 writeFileSync(new URL('../server/Princess.Api/Content/port-guides.json', import.meta.url), '[\n' + out.map((g) => JSON.stringify(g)).join(',\n') + '\n]\n')
 console.log(`portguides:gen wrote ${out.length} port guides`)
 if (unmatched.length) console.log(`Document ports with no catalogue port (left out):\n  ${[...new Set(unmatched)].join('\n  ')}`)
 if (missing.length) console.log(`Catalogue ports with no document entry:\n  ${missing.join('\n  ')}`)
-if (problems.length) console.log(`Gaps:\n  ${problems.join('\n  ')}`)
+if (problems.length) { console.error(`Gaps (the guides were still written, but fix the documents):\n  ${problems.join('\n  ')}`); process.exitCode = 1 }

@@ -10,8 +10,8 @@ import { faresFeed } from '../feeds/fares'
 import { openingArgs, openingFeed } from '../feeds/onboard'
 import { minuteOf, pulseDayFeed, pulseFeed, withServed } from '../feeds/pulse'
 import { crowdFeed } from '../feeds/portCrowd'
-import { portGuideFeed } from '../feeds/portGuide'
-import type { PortGuideData } from '../domain/portGuide'
+import { portGuideFeed, portListFeed } from '../feeds/portGuide'
+import type { PortGuideData, PortSummary } from '../domain/portGuide'
 import { tenderFeed } from '../feeds/tender'
 import type { TenderOutlook } from '../domain/tender'
 
@@ -56,6 +56,11 @@ export function usePortCrowd(port: CrowdPort, date: string): PortCrowd | null {
 /** A port's guide (descriptions, tips, stats, attractions); null until the server's answer (or the copy kept on this device) is here. */
 export function usePortGuide(port: string): PortGuideData | null {
   return useServedFeed(!!port, portGuideFeed, [port])
+}
+
+/** Every port with a guide, by name; null until the server's answer (or the copy kept on this device) is here. */
+export function usePortList(): PortSummary[] | null {
+  return useFeed(portListFeed)
 }
 
 /** A booking's weekly fare history from the server; null until it is here. */

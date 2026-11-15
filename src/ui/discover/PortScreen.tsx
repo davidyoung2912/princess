@@ -46,7 +46,7 @@ export function PortScreen() {
 
       {!guide && <FeedWaiting />}
       {guide && <GuideBody guide={guide} />}
-      <p><Link to="/home/cruise">{t('discover.backToCruise')}</Link></p>
+      <p><Link to="/home/cruise">{t('discover.backToCruise')}</Link> · <Link to="/home/ports">{t('portguide.list.all')}</Link></p>
     </div>
   )
 }

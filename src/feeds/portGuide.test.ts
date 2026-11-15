@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { byTier, directionsUrl } from '../domain/portGuide'
-import { normalizePortGuide } from './portGuide'
+import { byTier, directionsUrl, filterPorts } from '../domain/portGuide'
+import { normalizePortGuide, normalizePortList } from './portGuide'
 
 describe('normalizePortGuide', () => {
   it('reads a guide and drops what is not usable', () => {
@@ -29,5 +29,23 @@ describe('port guide helpers', () => {
     expect(directionsUrl({ lat: 1.5, lng: -2 })).toBe('https://www.google.com/maps/dir/?api=1&destination=1.5,-2')
     const a = (name: string, tier: string) => ({ name, aka: '', tier, logistics: [], why: '', links: [], map: null })
     expect(byTier([a('1', 'A'), a('2', 'B'), a('3', 'A')]).map((g) => [g.tier, g.items.length])).toEqual([['A', 2], ['B', 1]])
+  })
+})
+
+describe('port list', () => {
+  const list = [
+    { id: 'a', name: 'Cádiz, Spain', area: 'Spain', shortDescription: 'Oldest city' },
+    { id: 'b', name: 'Nassau, Bahamas', area: 'Bahamas', shortDescription: 'Pirate history' },
+  ]
+  it('reads the list by name and drops unusable lines', () => {
+    expect(normalizePortList({ ports: [{ id: 'b', name: 'Nassau' }, { id: 'a', name: 'Cádiz' }, { id: '', name: 'x' }] })?.map((p) => p.id)).toEqual(['a', 'b'])
+    expect(normalizePortList({ ports: [] })).toBeNull()
+    expect(normalizePortList(null)).toBeNull()
+  })
+  it('filters on every word, ignoring accents and case', () => {
+    expect(filterPorts(list, 'cadiz').map((p) => p.id)).toEqual(['a'])
+    expect(filterPorts(list, 'pirate bah').map((p) => p.id)).toEqual(['b'])
+    expect(filterPorts(list, 'pirate spain')).toEqual([])
+    expect(filterPorts(list, '  ')).toHaveLength(2)
   })
 })

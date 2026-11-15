@@ -22,6 +22,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/home/cruise/cost': screen(() => import('./ui/discover/TripCostScreen'), 'TripCostScreen'),
   '/home/sailings': screen(() => import('./ui/discover/SailingsScreen'), 'SailingsScreen'),
   '/home/sailings/:id': screen(() => import('./ui/discover/SailingScreen'), 'SailingScreen'),
+  '/home/ports': screen(() => import('./ui/discover/PortsScreen'), 'PortsScreen'),
   '/home/ports/:id': screen(() => import('./ui/discover/PortScreen'), 'PortScreen'),
   '/home/ship': screen(() => import('./ui/discover/ShipScreen'), 'ShipScreen'),
   '/home/ships': screen(() => import('./ui/discover/ShipsScreen'), 'ShipsScreen'),

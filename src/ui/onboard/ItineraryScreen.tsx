@@ -20,7 +20,7 @@ export function ItineraryScreen() {
           return (
             <li key={d.day} className={`event${isToday ? ' event--now' : ''}`} aria-current={isToday ? 'date' : undefined}>
               <p className="event__time"><strong>{t('itin.day', { day: d.day })}</strong> <span className="muted">{formatDate(d.date)}</span> {isToday && <StatusBadge kind="booked" label={t('itin.today')} />}</p>
-              <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : PORTS[d.port]?.name ?? d.port}</h3>
+              <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : <Link to={`/home/ports/${d.port}`}>{PORTS[d.port]?.name ?? d.port}</Link>}</h3>
               {d.arrive && <p className="event__where">{t('itin.times', { arrive: formatTime(d.arrive), aboard: d.allAboard ? formatTime(d.allAboard) : '', depart: d.depart ? formatTime(d.depart) : '' })}</p>}
             </li>
           )

@@ -1,4 +1,4 @@
-import type { GuideAttraction, GuideLink, GuideStats, PortGuideData } from '../domain/portGuide'
+import type { GuideAttraction, GuideLink, GuideStats, PortGuideData, PortSummary } from '../domain/portGuide'
 import { createFeed } from './feed'
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
@@ -53,3 +53,12 @@ export function normalizePortGuide(raw: unknown): PortGuideData | null {
 
 /** One port's guide, kept on the device after the first read so it shows with no signal. */
 export const portGuideFeed = createFeed<[port: string], PortGuideData>((p) => p, normalizePortGuide, 'port-guide')
+
+/** Reads the server's list of ports with a guide, by name; entries with no id or name are dropped, and an answer with no usable port gives null. */
+export function normalizePortList(raw: unknown): PortSummary[] | null {
+  const ports = arr(obj(raw).ports).map(obj).filter((p) => str(p.id) && str(p.name)).map((p) => ({ id: str(p.id), name: str(p.name), area: str(p.area), shortDescription: str(p.shortDescription) }))
+  return ports.length > 0 ? ports.sort((a, b) => a.name.localeCompare(b.name)) : null
+}
+
+/** Every port with a guide, kept on the device after the first read. */
+export const portListFeed = createFeed<[], PortSummary[]>(() => 'all', normalizePortList, 'port-guide-list')

@@ -28,6 +28,7 @@ export function TodayPlanScreen() {
       <Card hero labelledBy="tp-where">
         <h2 id="tp-where" className="card__title">{th('plan.today.where')}</h2>
         <p>{t('plan.today.day', { day, place: portName })}</p>
+        {today && today.port !== 'sea' && <p><Link to={`/home/ports/${today.port}`}>{t('port.guide', { port: portName })}</Link></p>}
       </Card>
       <section aria-labelledby="tp-acts">
         <h2 id="tp-acts">{th('plan.today.acts')}</h2>

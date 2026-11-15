@@ -50,6 +50,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'H48', path: '/home/ships/compare', titleKey: 'screen.H48.title', subtextKey: 'screen.H48.subtext', family: 'H' },
   { id: 'H49', path: '/home/ships/:id', titleKey: 'screen.H49.title', subtextKey: 'screen.H49.subtext', family: 'H' },
   { id: 'H50', path: '/home/explore', titleKey: 'screen.H50.title', subtextKey: 'screen.H50.subtext', family: 'H' },
+  { id: 'H52', path: '/home/ports', titleKey: 'screen.H52.title', subtextKey: 'screen.H52.subtext', family: 'H' },
   { id: 'H51', path: '/home/saved/compare', titleKey: 'screen.H51.title', subtextKey: 'screen.H51.subtext', family: 'H' },
   { id: 'H11', path: '/home/saved', titleKey: 'screen.H11.title', subtextKey: 'screen.H11.subtext', family: 'H' },
   { id: 'H12', path: '/home/cruise/cost', titleKey: 'screen.H12.title', subtextKey: 'screen.H12.subtext', family: 'H' },
@@ -260,7 +261,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Let\'s find a cruise you\'ll love. Start with the quiz.',
     tiles: ['H02', 'H13', 'H07', 'H04', 'P49', 'H11'],
     tabs: [
-      { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02'] },
+      { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H52', 'H09', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02'] },
       { label: 'Ask', colour: 'pink', subtext: 'Get answers and advice before you decide.', screens: ['C01', 'H04', 'H03', 'H02', 'H13', 'P21', 'P49', 'P50'] },
     ],
     me: { subtext: 'Your details and the sailings you have saved.', screens: ['H11', 'H51', ...SETTINGS_AND_HELP] },
@@ -269,7 +270,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your sailing, its real cost and your room, in one place.',
     tiles: ['H08', 'H12', 'H14', 'H10', 'H11', 'H03'],
     tabs: [
-      { label: 'Sailing', colour: 'teal', subtext: 'Everything about the sailing you are considering.', screens: ['H08', 'H07', 'H50', 'H09', 'H06', 'H10', 'H47', 'H49', 'H48', 'S01', 'S02', 'S03', 'H13', 'X02'] },
+      { label: 'Sailing', colour: 'teal', subtext: 'Everything about the sailing you are considering.', screens: ['H08', 'H07', 'H50', 'H52', 'H09', 'H06', 'H10', 'H47', 'H49', 'H48', 'S01', 'S02', 'S03', 'H13', 'X02'] },
       { label: 'Cabin', colour: 'pink', subtext: 'Pick the room that suits you.', screens: ['H14', 'P19', 'H13'] },
       { label: 'Cost', colour: 'gold', subtext: 'The real, all-in price, and ways to pay less.', screens: ['C01', 'H12', 'H15', 'P17', 'P18', 'H16', 'H03', 'H04'] },
     ],

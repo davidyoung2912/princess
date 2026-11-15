@@ -35,6 +35,7 @@ export const SCREEN_WORDS: Record<string, string> = {
   '/home/cruise/cost': 'trip cost; total price; how much; budget for the trip',
   '/home/sailings': 'sailing dates; when can I go; dates and prices; calendar',
   '/home/ship': 'sun princess; the ship; ship facts; about the ship',
+  '/home/ports': 'ports; port guides; destinations; where the ship calls; things to do ashore',
   '/home/ships': 'ships; fleet; sky princess; sapphire princess; which ship',
   '/home/ships/compare': 'compare ships; ship against ship; which ship is bigger',
   '/home/explore': 'explore; by region; by month; where can I go; when can I go',
