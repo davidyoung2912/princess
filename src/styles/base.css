@@ -118,6 +118,7 @@ legend { font-weight: 600; color: var(--primary); padding: 0 var(--space-2); }
 [data-area='pink'] { --sec: var(--pink); --sec-tint: var(--pink-tint); --hdr-a: var(--header-pink-start); --hdr-b: var(--header-pink-end); }
 [data-area='gold'] { --sec: var(--gold-text); --sec-tint: var(--gold-tint); --hdr-a: var(--header-gold-start); --hdr-b: var(--header-gold-end); }
 [data-area='plum'] { --sec: var(--plum); --sec-tint: var(--plum-tint); --hdr-a: var(--header-plum-start); --hdr-b: var(--header-plum-end); }
+[data-area='explorer'] { --sec: var(--explorer); --sec-tint: var(--explorer-tint); --hdr-a: var(--header-explorer-start); --hdr-b: var(--header-explorer-end); }
 
 /* Page header: a band in the area's colour with a pink and gold glow, white bold title and the subtext under it. */
 .shell__main .page > h1, .page-header {

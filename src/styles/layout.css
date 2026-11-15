@@ -254,6 +254,10 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .testbar__at-link:hover { border-color: var(--primary); }
 .testbar__at-link[aria-current='page'] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .testbar__at-link .lucide { width: 1.5rem; height: 1.5rem; }
+/* The six Explorer pages (entertainment, dining, shopping, spa, exercise, activities) wear the shared Explorer green. */
+.testbar__at-link--explorer { color: var(--explorer); }
+.testbar__at-link--explorer:hover { border-color: var(--explorer); }
+.testbar__at-link--explorer[aria-current='page'] { background: var(--explorer); border-color: var(--explorer); color: var(--on-primary); }
 
 /* L7: desktop and tablet. */
 .deck-plan__place--dim { opacity: 0.25; }

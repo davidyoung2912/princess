@@ -4,7 +4,7 @@ import { TOP_TASKS } from './nav'
 import { ROUTES } from './routes'
 import { SCREEN_BY_ID, SCREEN_LIST, STAGE_TABS, stageUses } from './screens'
 import { SCREEN_WORDS, isFromEarlier, screenHits, visibleAt } from './screenWords'
-import { ALL_TAB_KEYS, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
+import { ALL_TAB_KEYS, EXPLORER_PATHS, shellArea, accessAt, earlierAt, groupShip, shipGroupOf, activeTabKey, areaAt, linkFor, listedScreens, navTabs, newTabLabels, tabAtPath, tabKey, tabPathFor, tabScreenIds } from './stageNav'
 import { tabText } from '../ui/tabText'
 import { searchContent } from '../domain/searchIndex'
 
@@ -175,5 +175,16 @@ describe('search at a stage', () => {
       const labels = STAGE_TABS[stage].tabs.map((x) => x.label)
       expect(new Set(labels).size).toBe(labels.length)
     }
+  })
+})
+
+describe('the Explorer colour', () => {
+  it('belongs to the six Explorer pages only, and every one is a real route', () => {
+    expect(EXPLORER_PATHS).toHaveLength(6)
+    for (const p of EXPLORER_PATHS) {
+      expect(ROUTES.some((r) => r.path === p)).toBe(true)
+      expect(shellArea(p, 'blue')).toBe('explorer')
+    }
+    for (const p of ['/ship-explorer', '/weather', '/today', '/nautical', '/itinerary', '/chat']) expect(shellArea(p, 'teal')).toBe('teal')
   })
 })

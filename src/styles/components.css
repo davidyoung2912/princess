@@ -275,6 +275,9 @@ main.signin { margin-inline: auto; }
 .testbar__stage--current, .testbar__at-link {
   transition: transform var(--t-fast) var(--ease), box-shadow var(--t-mid) var(--ease), border-color var(--t-fast) var(--ease);
 }
+.testbar__at-link.testbar__at-link--explorer:is(:hover, :focus-visible) {
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--explorer) 55%, transparent), 0 0 14px color-mix(in srgb, var(--explorer) 35%, transparent);
+}
 .testbar__at-link .lucide { transition: transform var(--t-mid) var(--ease); }
 .testbar__stage--current:is(:hover, :focus-visible), .testbar__at-link:is(:hover, :focus-visible) {
   transform: translateY(-2px);

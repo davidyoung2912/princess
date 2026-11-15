@@ -18,7 +18,7 @@ import { useChatSummary } from '../hooks/useChatSummary'
 import { useChatNotice } from '../hooks/useChatNotice'
 import { ChatToast } from './ChatToast'
 import { chatBadge } from '../domain/chatConnections'
-import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, tabAtPath } from '../routes/stageNav'
+import { accessAt, activeTabKey, areaAt, earlierAt, navTabs, shellArea, tabAtPath } from '../routes/stageNav'
 import { applyPageMeta, seoFor } from '../seo'
 import { Help, Search } from './icons'
 import { SCREEN_ICONS } from './screenIcons'
@@ -167,7 +167,7 @@ export function Shell() {
   const headerIcon = (!landing && screen ? SCREEN_ICONS[screen.id] : undefined) ?? (activeKey ? (TAB_ICONS[activeKey] ?? FALLBACK_ICON) : undefined)
 
   return (
-    <div className="shell" data-area={area}>
+    <div className="shell" data-area={shellArea(pathname, area)}>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>{t('shell.skip')}</a>
       <div className="shell__top">
         <header className="topbar no-print">

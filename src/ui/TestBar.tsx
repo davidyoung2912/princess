@@ -6,6 +6,7 @@ import { dayLabel, dayLabelLong, timeIn, zonedToEpoch } from '../domain/timezone
 import { clockTime } from '../domain/syncAge'
 import type { DayOfStage } from '../domain/journeyPosition'
 import { JOURNEY_STAGES } from '../routes/hubs'
+import { isExplorerPath } from '../routes/stageNav'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
 import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
@@ -81,7 +82,7 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
       )}
       <nav className="testbar__at" aria-label={t('testbar.at.label')}>
         {AT_LINKS.map(({ to, Icon, label }) => (
-          <Link key={to} to={to} className="testbar__at-link" aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined}>
+          <Link key={to} to={to} className={isExplorerPath(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined}>
             <Icon aria-hidden="true" />
           </Link>
         ))}
