@@ -29,6 +29,7 @@ export function createFeed<A extends unknown[], V>(key: (...args: A) => string, 
   let fetcher: ((...args: A) => Promise<unknown>) | null = null
   const served = new Map<string, V>()
   const fetched = new Set<string>()
+  const inflight = new Map<string, Promise<boolean>>()
   const cacheKind = kind ? `feed-${kind}` : null
   return {
     now(...args) {
@@ -39,26 +40,37 @@ export function createFeed<A extends unknown[], V>(key: (...args: A) => string, 
       const copy = cacheGet(store(), cacheKind, k, normalize, Date.now())
       return copy ? copy.value : null
     },
-    async load(...args) {
+    load(...args) {
       const k = key(...args)
-      if (!fetcher || fetched.has(k)) return false
+      if (!fetcher) return Promise.resolve(false)
+      // A caller that asks while the first request is still out shares it, so a screen that re-runs its effect (or two screens) still hears the answer.
+      const pending = inflight.get(k)
+      if (pending) return pending
+      if (fetched.has(k)) return Promise.resolve(false)
       fetched.add(k)
-      try {
-        const raw = await fetcher(...args)
-        const value = normalize(raw)
-        if (value === null) { fetched.delete(k); return false }
-        served.set(k, value)
-        if (cacheKind) cachePut(store(), cacheKind, k, raw, Date.now())
-        return true
-      } catch {
-        fetched.delete(k)
-        return false
-      }
+      const run = (async () => {
+        try {
+          const raw = await fetcher!(...args)
+          const value = normalize(raw)
+          if (value === null) { fetched.delete(k); return false }
+          served.set(k, value)
+          if (cacheKind) cachePut(store(), cacheKind, k, raw, Date.now())
+          return true
+        } catch {
+          fetched.delete(k)
+          return false
+        } finally {
+          inflight.delete(k)
+        }
+      })()
+      inflight.set(k, run)
+      return run
     },
     setFetcher: (f) => { fetcher = f },
     forget() {
       served.clear()
       fetched.clear()
+      inflight.clear()
       const s = store()
       if (!s || !cacheKind) return
       const prefix = `${CACHE_PREFIX}${cacheKind}:`
