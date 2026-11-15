@@ -13,7 +13,16 @@ type Search = { kind: 'none' } | { kind: 'missing'; query: string } | { kind: 'f
 
 /** Deck plan pictures for Sun, Sky and Sapphire Princess: find a cabin, or pick a ship and a deck, then pan and zoom the plan. */
 export function DeckPlansScreen() {
-  const [ship, setShip] = useState<DeckPlanShip>('sun')
+  return (
+    <div className="page page--wide">
+      <DeckPlansPanel />
+    </div>
+  )
+}
+
+/** The deck plan picker and viewer, shared by the Deck Plans page and the Ship Explorer page. */
+export function DeckPlansPanel({ initialShip = 'sun' }: { initialShip?: DeckPlanShip }) {
+  const [ship, setShip] = useState<DeckPlanShip>(initialShip)
   const plans = deckPlansFor(ship)
   const [deck, setDeck] = useState(plans[0].deck)
   const [query, setQuery] = useState('')
@@ -39,7 +48,7 @@ export function DeckPlansScreen() {
   const found = search.kind === 'found' ? search.at : null
   const pin = found && found.ship === ship && found.deck === plan.deck ? { x: found.x, y: found.y } : undefined
   return (
-    <div className="page page--wide">
+    <>
       <p>{t('dv.intro')}</p>
       <form onSubmit={find} className="deckfind">
         <div className="field">
@@ -84,6 +93,6 @@ export function DeckPlansScreen() {
       <DeckPlanViewer key={plan.src} src={plan.src} label={label} pin={pin} />
       <p className="muted">{t('dv.credit')}</p>
       <p><Link to="/ship/map">{t('route.deckMap')}</Link></p>
-    </div>
+    </>
   )
 }

@@ -218,6 +218,7 @@ export const SCREENS: Record<string, ComponentType | Screen> = {
   '/nautical/glossary': screen(() => import('./ui/onboard/GlossaryScreen'), 'GlossaryScreen'),
   '/today': screen(() => import('./ui/onboard/TodayPlanScreen'), 'TodayPlanScreen'),
   '/itinerary': screen(() => import('./ui/onboard/ItineraryScreen'), 'ItineraryScreen'),
+  '/ship-explorer': screen(() => import('./ui/onboard/ShipExplorerScreen'), 'ShipExplorerScreen'),
   '/activities-explorer': screen(() => import('./ui/onboard/ActivitiesExplorerScreen'), 'ActivitiesExplorerScreen'),
   '/exercise-explorer': screen(() => import('./ui/onboard/ExerciseExplorerScreen'), 'ExerciseExplorerScreen'),
   '/spa-explorer': screen(() => import('./ui/onboard/SpaExplorerScreen'), 'SpaExplorerScreen'),

@@ -76,6 +76,7 @@ export {
   Flower2 as Spa,
   Dumbbell as Exercise,
   Gamepad2 as Activities,
+  Ship as ShipExplorer,
   Star,
   QrCode,
   Printer,

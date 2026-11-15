@@ -11,7 +11,7 @@ import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
-import { CloudSun, Compass, Drama, MessagesSquare, Plan, RouteMap, Activities, Exercise, ShoppingBag, Spa, UtensilsCrossed } from './icons'
+import { CloudSun, Compass, Drama, MessagesSquare, Plan, RouteMap, Activities, ShipExplorer, Exercise, ShoppingBag, Spa, UtensilsCrossed } from './icons'
 import { Field } from './Field'
 
 const AT_LINKS = [
@@ -23,6 +23,7 @@ const AT_LINKS = [
   { to: '/spa-explorer', Icon: Spa, label: 'testbar.at.spa' },
   { to: '/exercise-explorer', Icon: Exercise, label: 'testbar.at.exercise' },
   { to: '/activities-explorer', Icon: Activities, label: 'testbar.at.activities' },
+  { to: '/ship-explorer', Icon: ShipExplorer, label: 'testbar.at.ship' },
   { to: '/weather', Icon: CloudSun, label: 'testbar.at.weather' },
   { to: '/nautical', Icon: Compass, label: 'testbar.at.nautical' },
   { to: '/itinerary', Icon: RouteMap, label: 'testbar.at.itinerary' },
