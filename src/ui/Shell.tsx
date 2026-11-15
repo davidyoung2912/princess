@@ -101,6 +101,18 @@ export function Shell() {
   const title = landingWords ? landingWords.label : screen ? t(screen.titleKey) : route ? t(route.titleKey) : t('shell.notFound.title')
 
   useEffect(() => { recordVisit(pathname + search, navigationType) }, [pathname, search, navigationType])
+  // The header sticks to the top, so tell the page how tall it is: scrolling to an anchor or a focused section then stops below it (see scroll-padding-top in base.css).
+  useEffect(() => {
+    const bar = document.querySelector('.shell__top')
+    if (!bar) return
+    const root = document.documentElement
+    const apply = () => root.style.setProperty('--sticky-top', `${bar.getBoundingClientRect().height}px`)
+    apply()
+    if (typeof ResizeObserver === 'undefined') return
+    const watch = new ResizeObserver(apply)
+    watch.observe(bar)
+    return () => { watch.disconnect(); root.style.removeProperty('--sticky-top') }
+  }, [])
 
   const personId = useSyncExternalStore(subscribeContext, getContext, getContext)?.person.id ?? null
   useRecentVisit(personId, pathname, navigationType, stale)

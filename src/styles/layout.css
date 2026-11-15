@@ -162,7 +162,7 @@
   border: 2px solid transparent; border-radius: var(--radius-md, 0.5rem); cursor: pointer;
 }
 .testbar__item:hover { border-color: var(--primary); }
-.testbar__item--time { align-items: flex-end; text-align: end; }
+.testbar__item--time { align-items: flex-start; text-align: start; }
 .testbar__main { font-weight: 700; }
 .testbar__item--date { cursor: default; border-color: transparent; }
 .testbar__pick { background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: start; border: 2px solid transparent; border-radius: var(--radius-md, 0.5rem); min-height: var(--target-min); padding: 0 var(--space-1); cursor: pointer; }

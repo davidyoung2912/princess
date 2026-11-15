@@ -92,10 +92,10 @@ describe('discover screens', () => {
     expect(decode(render('/home/sailings/never'))).toContain(t('discover.notFound.sailing'))
   })
 
-  it('puts the tender warning and access note on the Belize page before the rest', () => {
+  it('shows the tender warning on the Belize page and waits politely for the server guide', () => {
     const html = decode(render('/home/ports/belize'))
     expect(html).toContain(t('discover.tender'))
-    expect(html.indexOf(th('discover.gettingAshore'))).toBeLessThan(html.indexOf(th('discover.thingsToDo')))
+    expect(html).toContain(t('feed.waiting'))
   })
 })
 

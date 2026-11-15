@@ -13,6 +13,7 @@
     <EmbeddedResource Include="Content\reference-content.json" LogicalName="reference-content.json" />
     <EmbeddedResource Include="Content\ship-venues.json" LogicalName="ship-venues.json" />
     <EmbeddedResource Include="Content\ship-programmes.json" LogicalName="ship-programmes.json" />
+    <EmbeddedResource Include="Content\port-guides.json" LogicalName="port-guides.json" />
   </ItemGroup>
 
   <ItemGroup>

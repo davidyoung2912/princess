@@ -69,6 +69,12 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
           {next && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${next}`)}</span>}
         </span>
       </div>
+      {isDemo && (
+        <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
+          <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
+          <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
+        </button>
+      )}
       <nav className="testbar__at" aria-label={t('testbar.at.label')}>
         {AT_LINKS.map(({ to, Icon, label }) => (
           <Link key={to} to={to} className="testbar__at-link" aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined}>
@@ -76,12 +82,6 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
           </Link>
         ))}
       </nav>
-      {isDemo && (
-        <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
-          <span className="testbar__main">{clockTime(new Date(now), position.zone)}</span>
-          <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
-        </button>
-      )}
       {isDemo && open && <PickerDialog now={now} zone={position.zone} onClose={() => setOpen(false)} />}
     </div>
   )

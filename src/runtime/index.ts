@@ -29,6 +29,7 @@ import { flightFeed } from '../feeds/flight'
 import { conditionsFeed } from '../feeds/route'
 import { skyFeed } from '../feeds/sky'
 import { weekFeed } from '../feeds/week'
+import { portGuideFeed } from '../feeds/portGuide'
 import { dayPlanFeed } from '../feeds/dayPlan'
 import { trialDayFeed } from '../feeds/trialDay'
 import { markAccount, refreshContext, setContext } from '../account/context'
@@ -256,6 +257,7 @@ export const partyShare = {
   // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
   setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))
   conditionsFeed.setFetcher((sailing, crowd) => http.get<unknown>('/feeds/route', { query: { sailing, crowd } }))
+  portGuideFeed.setFetcher((port) => http.get<unknown>(`/reference/port-guides/${encodeURIComponent(port)}`))
   crowdFeed.setFetcher((port, date) => http.get<unknown>('/feeds/port-crowd', { query: { port, date } }))
   faresFeed.setFetcher((number, total, booked, today) => http.get<unknown>('/feeds/fares', { query: { number, total, booked, today } }))
   pulseFeed.setFetcher((sailing, now) => http.get<unknown>('/feeds/pulse', { query: { sailing, now } }))

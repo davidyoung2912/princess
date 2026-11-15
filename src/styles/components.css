@@ -324,3 +324,25 @@ main.signin { margin-inline: auto; }
 .page.signin .language-switch { margin-bottom: var(--space-2); }
 .page.signin .plain-list { margin-bottom: 0; }
 .page.signin .plain-list > li { padding: var(--space-1) 0; }
+
+/* Left nav and tab bar: the icon gives the same small tilt and grow as the top-right icons on hover or focus, and the label goes bolder. Off for reduced motion. */
+.tabs__item .lucide { transition: transform var(--t-mid) var(--ease); }
+.tabs__item:is(:hover, :focus-visible) .lucide { transform: scale(1.15) rotate(-8deg); }
+.tabs__item:not([aria-current='page']):is(:hover, :focus-visible) { font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .tabs__item .lucide { transition: none; }
+  .tabs__item:is(:hover, :focus-visible) .lucide { transform: none; }
+}
+:root[data-motion='reduced'] .tabs__item:is(:hover, :focus-visible) .lucide { transform: none; }
+
+/* Page-level navigation lists (.link-list, including the screen lists): the icon beside each title tilts and grows when its row is hovered or focused. Off for reduced motion. */
+.link-list a .lucide { transition: transform var(--t-mid) var(--ease); }
+.link-list li:is(:hover, :focus-within) a .lucide { transform: scale(1.15) rotate(-8deg); }
+@media (prefers-reduced-motion: reduce) {
+  .link-list a .lucide { transition: none; }
+  .link-list li:is(:hover, :focus-within) a .lucide { transform: none; }
+}
+:root[data-motion='reduced'] .link-list li:is(:hover, :focus-within) a .lucide { transform: none; }
+
+/* Choice buttons (jump links, chips, Stanley's suggested questions, pill choices): the label goes bold on hover or keyboard focus. */
+:is(.chip, .chip-q, .naut-jump a, .stanley__chip, .choice--pill):is(:hover, :focus-visible) { font-weight: 700; }

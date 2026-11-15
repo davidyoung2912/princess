@@ -1,6 +1,7 @@
 * { box-sizing: border-box; }
 
 html, body, #root { min-height: 100%; margin: 0; }
+html { scroll-padding-top: calc(var(--sticky-top, 0px) + var(--space-3)); }
 
 body {
   background: var(--bg);

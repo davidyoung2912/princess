@@ -36,6 +36,15 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> log) : IExc
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken ct)
     {
+        // The client went away (navigated, refetched, closed the tab). SqlClient reports that as a
+        // SqlException ("Operation cancelled by user"), not an OperationCanceledException, so test the token.
+        if (http.RequestAborted.IsCancellationRequested || exception is OperationCanceledException)
+        {
+            log.LogDebug("Request cancelled by the client: {Path}", http.Request.Path);
+            http.Response.StatusCode = 499;
+            return true;
+        }
+
         switch (exception)
         {
             case ApiException api:

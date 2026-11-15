@@ -105,3 +105,12 @@ textarea.field__input { resize: vertical; }
 .price-cal__bar span { display: block; height: 100%; background: var(--trip, var(--accent)); }
 .price-cal__compare { padding: var(--space-3); border: 2px solid var(--border-strong); border-radius: var(--radius-md, 0.5rem); margin-bottom: var(--space-3); }
 .price-cal__compare p { margin: 0 0 var(--space-2); }
+
+/* Port Details */
+.port-details__lead { font-size: var(--fs-lead, 1.125rem); font-weight: 600; }
+.port-details__tips, .port-details__timeline { padding-inline-start: var(--space-5); display: grid; gap: var(--space-2); }
+.port-details__place h4 { margin: 0 0 var(--space-2); }
+.port-details__logistics, .port-details__facts { display: grid; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.port-details__logistics dt, .port-details__facts dt { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 700; }
+.port-details__logistics dd, .port-details__facts dd { margin: 0; }
+.port-details__place .row a { overflow-wrap: anywhere; }

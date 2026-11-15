@@ -10,6 +10,8 @@ import { faresFeed } from '../feeds/fares'
 import { openingArgs, openingFeed } from '../feeds/onboard'
 import { minuteOf, pulseDayFeed, pulseFeed, withServed } from '../feeds/pulse'
 import { crowdFeed } from '../feeds/portCrowd'
+import { portGuideFeed } from '../feeds/portGuide'
+import type { PortGuideData } from '../domain/portGuide'
 import { tenderFeed } from '../feeds/tender'
 import type { TenderOutlook } from '../domain/tender'
 
@@ -49,6 +51,11 @@ export function useFeed<A extends unknown[], V>(feed: Feed<A, V>, ...args: A): V
 /** How busy a port is on a date; null until the server's answer (or the last one kept on this device) is here. */
 export function usePortCrowd(port: CrowdPort, date: string): PortCrowd | null {
   return useServedFeed(!!date, crowdFeed, [port, date])
+}
+
+/** A port's guide (descriptions, tips, stats, attractions); null until the server's answer (or the copy kept on this device) is here. */
+export function usePortGuide(port: string): PortGuideData | null {
+  return useServedFeed(!!port, portGuideFeed, [port])
 }
 
 /** A booking's weekly fare history from the server; null until it is here. */

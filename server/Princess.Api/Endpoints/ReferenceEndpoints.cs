@@ -73,6 +73,12 @@ public static class ReferenceEndpoints
         api.MapGet("/reference/ports", () => Results.Ok(PortsReference.Get()))
             .WithTags("Reference").WithSummary("The port guides (landing, access, what to do, excursion summaries), the port knowledge (fair taxi prices, scam alerts, phrases, allergy cards, walks, day passes, family notes, vendors) and the map coordinates, by port id. `version` changes when any of it does.");
 
+        api.MapGet("/reference/port-guides", () => Results.Text(PortGuides.ListJson, "application/json"))
+            .WithTags("Reference").WithSummary("Every port with a guide: `{ version, ports: [{ id, name, area, shortDescription }] }`. `version` changes when any guide does.");
+
+        api.MapGet("/reference/port-guides/{id}", (string id) => PortGuides.Json(id) is { } json ? Results.Text(json, "application/json") : throw ApiException.NotFound())
+            .WithTags("Reference").WithSummary("One port's guide for the Port Details page: area, currency and language, official links, getting ashore, attractions (access tier, logistics, why visit, links, map point), short and long descriptions, traveller tips and general stats (population, size, neighbours, safety, government, economy, famous people, local vibe, timeline). Not found for a port with no guide.");
+
         api.MapGet("/reference/packages", () => Results.Ok(PackageRules.Reference()))
             .WithTags("Reference").WithSummary("The add-ons (name, blurb, unit, base price, price change, minimum age), the average drink and cover figures the worth-it screens use, and the refund window in days. Prices a guest pays are still worked out by the server.");
 
