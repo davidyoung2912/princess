@@ -50,6 +50,7 @@ export const SCREEN_LIST: readonly ScreenDef[] = [
   { id: 'H48', path: '/home/ships/compare', titleKey: 'screen.H48.title', subtextKey: 'screen.H48.subtext', family: 'H' },
   { id: 'H49', path: '/home/ships/:id', titleKey: 'screen.H49.title', subtextKey: 'screen.H49.subtext', family: 'H' },
   { id: 'H50', path: '/home/explore', titleKey: 'screen.H50.title', subtextKey: 'screen.H50.subtext', family: 'H' },
+  { id: 'H54', path: '/home/countries', titleKey: 'screen.H54.title', subtextKey: 'screen.H54.subtext', family: 'H' },
   { id: 'H53', path: '/home/countries/:id', titleKey: 'screen.H53.title', subtextKey: 'screen.H53.subtext', family: 'H' },
   { id: 'H52', path: '/home/ports', titleKey: 'screen.H52.title', subtextKey: 'screen.H52.subtext', family: 'H' },
   { id: 'H51', path: '/home/saved/compare', titleKey: 'screen.H51.title', subtextKey: 'screen.H51.subtext', family: 'H' },
@@ -262,7 +263,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Let\'s find a cruise you\'ll love. Start with the quiz.',
     tiles: ['H02', 'H13', 'H07', 'H04', 'P49', 'H11'],
     tabs: [
-      { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H52', 'H09', 'H53', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02'] },
+      { label: 'Explore', colour: 'teal', subtext: 'Browse the cruise, the sailings and the ports.', screens: ['H06', 'H07', 'H50', 'H08', 'H52', 'H54', 'H09', 'H53', 'H47', 'H49', 'H48', 'H11', 'H51', 'P04', 'X02'] },
       { label: 'Ask', colour: 'pink', subtext: 'Get answers and advice before you decide.', screens: ['C01', 'H04', 'H03', 'H02', 'H13', 'P21', 'P49', 'P50'] },
     ],
     me: { subtext: 'Your details and the sailings you have saved.', screens: ['H11', 'H51', ...SETTINGS_AND_HELP] },

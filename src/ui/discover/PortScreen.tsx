@@ -59,7 +59,7 @@ function Area({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }
   const rest = at >= 0 ? guide.area.slice(at + 3) : ''
   return (
     <p className="muted port-details__area">
-      <Flag code={guide.countryId} /><Link to={`/home/countries/${guide.countryId}`}>{guide.countryName}</Link>{rest && ` — ${rest}`}
+      <Flag code={guide.countryId} large /><Link to={`/home/countries/${guide.countryId}`}>{guide.countryName}</Link>{rest && ` — ${rest}`}
     </p>
   )
 }

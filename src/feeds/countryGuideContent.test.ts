@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { countryProblems } from '../domain/countryGuide'
-import { normalizeCountryGuide } from './countryGuide'
+import { countryProblems, filterCountries } from '../domain/countryGuide'
+import { normalizeCountryGuide, normalizeCountryList } from './countryGuide'
 
 const file = JSON.parse(readFileSync(new URL('../../server/Princess.Api/Content/country-guides.json', import.meta.url), 'utf8')) as unknown[]
 const ports = JSON.parse(readFileSync(new URL('../../server/Princess.Api/Content/port-guides.json', import.meta.url), 'utf8')) as { id: string; countryId: string; countryName: string }[]
@@ -47,5 +47,23 @@ describe('normalizeCountryGuide', () => {
     const g = normalizeCountryGuide({ id: 'mx', name: 'Mexico', links: [{ label: 'A', url: 'https://a.example' }, { label: 'B', url: 'javascript:1' }], ports: [{ id: 'cozumel', name: 'Cozumel' }, { id: '' }] })
     expect(g?.links).toHaveLength(1)
     expect(g?.ports).toHaveLength(1)
+  })
+})
+
+describe('country list', () => {
+  const list = [
+    { id: 'tr', name: 'Türkiye', region: 'Eastern Mediterranean', status: '', cruiseCalls: 'Kuşadası' },
+    { id: 'hk', name: 'Hong Kong', region: 'Southeast Asia', status: 'Special Administrative Region — not a sovereign state', cruiseCalls: 'Hong Kong' },
+  ]
+  it('reads the list by name and drops unusable lines', () => {
+    expect(normalizeCountryList({ countries: [{ id: 'tr', name: 'T' }, { id: 'hk', name: 'H' }, { id: 'Bad', name: 'x' }, { id: 'xx' }] })?.map((c) => c.id)).toEqual(['hk', 'tr'])
+    expect(normalizeCountryList({ countries: [] })).toBeNull()
+    expect(normalizeCountryList(null)).toBeNull()
+  })
+  it('filters on every word, ignoring accents and case', () => {
+    expect(filterCountries(list, 'turkiye').map((c) => c.id)).toEqual(['tr'])
+    expect(filterCountries(list, 'asia sovereign').map((c) => c.id)).toEqual(['hk'])
+    expect(filterCountries(list, 'asia kusadasi')).toEqual([])
+    expect(filterCountries(list, ' ')).toHaveLength(2)
   })
 })

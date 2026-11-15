@@ -56,7 +56,7 @@ export const portGuideFeed = createFeed<[port: string], PortGuideData>((p) => p,
 
 /** Reads the server's list of ports with a guide, by name; entries with no id or name are dropped, and an answer with no usable port gives null. */
 export function normalizePortList(raw: unknown): PortSummary[] | null {
-  const ports = arr(obj(raw).ports).map(obj).filter((p) => str(p.id) && str(p.name)).map((p) => ({ id: str(p.id), name: str(p.name), area: str(p.area), shortDescription: str(p.shortDescription) }))
+  const ports = arr(obj(raw).ports).map(obj).filter((p) => str(p.id) && str(p.name)).map((p) => ({ id: str(p.id), name: str(p.name), area: str(p.area), countryId: /^[a-z]{2}$/.test(str(p.countryId)) ? str(p.countryId) : '', countryName: str(p.countryName), shortDescription: str(p.shortDescription) }))
   return ports.length > 0 ? ports.sort((a, b) => a.name.localeCompare(b.name)) : null
 }
 

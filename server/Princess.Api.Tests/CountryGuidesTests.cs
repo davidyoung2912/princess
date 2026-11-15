@@ -48,6 +48,19 @@ public class CountryGuidesRulesTests
     }
 
     [Fact]
+    public void TheListNamesEveryProfileByNameWithAVersion()
+    {
+        var list = Parse(CountryGuides.ListJson);
+        var rows = list.GetProperty("countries").EnumerateArray().ToList();
+        Assert.Equal(16, list.GetProperty("version").GetString()!.Length);
+        Assert.Equal(35, rows.Count);
+        Assert.Equal(CountryGuides.Ids.Order(), rows.Select(r => r.GetProperty("id").GetString()!).Order());
+        var names = rows.Select(r => r.GetProperty("name").GetString()!).ToList();
+        Assert.Equal(names.Order(StringComparer.Ordinal), names);
+        Assert.All(rows, r => Assert.False(string.IsNullOrWhiteSpace(r.GetProperty("region").GetString())));
+    }
+
+    [Fact]
     public void AnUnknownCodeHasNoProfile()
     {
         Assert.Null(CountryGuides.Json("zz"));
@@ -72,6 +85,15 @@ public class CountryGuidesApiTests : IDisposable
         var r = await http.GetAsync("/api/v1/reference/country-guides/mx");
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         Assert.Equal("Mexico", JsonDocument.Parse(await r.Content.ReadAsStringAsync()).RootElement.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task TheListIsServedWithNoSignIn()
+    {
+        using var http = _f.CreateClient();
+        var r = await http.GetAsync("/api/v1/reference/country-guides");
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Equal(35, JsonDocument.Parse(await r.Content.ReadAsStringAsync()).RootElement.GetProperty("countries").GetArrayLength());
     }
 
     [Fact]

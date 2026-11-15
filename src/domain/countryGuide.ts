@@ -40,3 +40,14 @@ export function countryProblems(g: CountryGuideData): string[] {
   if (g.ports.length === 0) bad('no catalogue port')
   return out
 }
+
+/** One line of the list of every country profile (`GET /reference/country-guides`). `status` is empty for a sovereign state. */
+export interface CountrySummary { id: string; name: string; region: string; status: string; cruiseCalls: string }
+
+/** The profiles whose name, region, status or cruise calls hold every word typed (accents and case ignored); all of them for no words. */
+export function filterCountries(list: readonly CountrySummary[], query: string): CountrySummary[] {
+  const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const words = plain(query).split(/\s+/).filter(Boolean)
+  if (words.length === 0) return [...list]
+  return list.filter((c) => { const hay = plain(`${c.name} ${c.region} ${c.status} ${c.cruiseCalls}`); return words.every((w) => hay.includes(w)) })
+}

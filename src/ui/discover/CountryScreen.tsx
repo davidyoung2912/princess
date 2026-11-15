@@ -30,7 +30,7 @@ export function CountryScreen() {
       {guide?.region && <p className="muted">{t('country.region', { region: guide.region })}</p>}
       {!guide && <FeedWaiting />}
       {guide && <CountryBody guide={guide} />}
-      <p><Link to="/home/ports">{t('country.back')}</Link></p>
+      <p><Link to="/home/countries">{t('country.list.all')}</Link> · <Link to="/home/ports">{t('country.back')}</Link></p>
     </div>
   )
 }

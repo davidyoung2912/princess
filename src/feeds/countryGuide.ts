@@ -1,4 +1,4 @@
-import type { CountryGuideData, CountryLink } from '../domain/countryGuide'
+import type { CountryGuideData, CountryLink, CountrySummary } from '../domain/countryGuide'
 import { createFeed } from './feed'
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
@@ -25,3 +25,13 @@ export function normalizeCountryGuide(raw: unknown): CountryGuideData | null {
 
 /** One country's profile, kept on the device after the first read so it shows with no signal. */
 export const countryGuideFeed = createFeed<[country: string], CountryGuideData>((c) => c, normalizeCountryGuide, 'country-guide')
+
+/** Reads the server's list of country profiles by name; entries with no usable code or name are dropped, and an answer with none gives null. */
+export function normalizeCountryList(raw: unknown): CountrySummary[] | null {
+  const list = arr(obj(raw).countries).map(obj).filter((c) => /^[a-z]{2}$/.test(str(c.id)) && str(c.name))
+    .map((c) => ({ id: str(c.id), name: str(c.name), region: str(c.region), status: str(c.status), cruiseCalls: str(c.cruiseCalls) }))
+  return list.length > 0 ? list.sort((a, b) => a.name.localeCompare(b.name)) : null
+}
+
+/** Every country profile, kept on the device after the first read. */
+export const countryListFeed = createFeed<[], CountrySummary[]>(() => 'all', normalizeCountryList, 'country-guide-list')

@@ -43,7 +43,7 @@ export function Explore() {
         </ul>
       </section>
 
-      <p><Link to="/home/ports">{t('portguide.list.all')}</Link></p>
+      <p><Link to="/home/ports">{t('portguide.list.all')}</Link> · <Link to="/home/countries">{t('country.list.all')}</Link></p>
 
       <section aria-labelledby="ship-h">
         <h2 id="ship-h">{th('discover.yourShip')}</h2>

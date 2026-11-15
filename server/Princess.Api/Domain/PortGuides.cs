@@ -16,7 +16,7 @@ public static class PortGuides
 
     private static readonly Lazy<Loaded> Data = new(Load);
 
-    /// <summary><c>{ version, ports: [{ id, name, area, shortDescription }] }</c>: enough to list and link every port.</summary>
+    /// <summary><c>{ version, ports: [{ id, name, area, countryId, countryName, shortDescription }] }</c>: enough to list and link every port.</summary>
     public static string ListJson => Data.Value.ListJson;
 
     /// <summary>One port's full guide as JSON, or null for an id with no guide.</summary>
@@ -41,6 +41,8 @@ public static class PortGuides
                 id,
                 name = port.GetProperty("name").GetString(),
                 area = port.GetProperty("area").GetString(),
+                countryId = port.GetProperty("countryId").GetString(),
+                countryName = port.GetProperty("countryName").GetString(),
                 shortDescription = port.GetProperty("shortDescription").GetString(),
             });
         }

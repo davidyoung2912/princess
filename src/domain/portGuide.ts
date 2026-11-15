@@ -26,14 +26,14 @@ export interface GuideStats {
 }
 
 /** One line of the list of every port with a guide (`GET /reference/port-guides`). */
-export interface PortSummary { id: string; name: string; area: string; shortDescription: string }
+export interface PortSummary { id: string; name: string; area: string; countryId: string; countryName: string; shortDescription: string }
 
 /** The ports whose name, area or short description holds every word typed (accents and case ignored); all of them for no words. */
 export function filterPorts(ports: readonly PortSummary[], query: string): PortSummary[] {
   const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   const words = plain(query).split(/\s+/).filter(Boolean)
   if (words.length === 0) return [...ports]
-  return ports.filter((p) => { const hay = plain(`${p.name} ${p.area} ${p.shortDescription}`); return words.every((w) => hay.includes(w)) })
+  return ports.filter((p) => { const hay = plain(`${p.name} ${p.area} ${p.countryName} ${p.shortDescription}`); return words.every((w) => hay.includes(w)) })
 }
 
 export interface PortGuideData {
@@ -102,4 +102,19 @@ export function guideProblems(g: PortGuideData): string[] {
     for (const l of a.links) if (!web(l.url)) bad(`${at} link is not a web address: ${l.url}`)
   }
   return out
+}
+
+/** The ports as one group per country (by country name, ports by name within each); a port with no country is grouped last under an empty name. */
+export function groupByCountry(ports: readonly PortSummary[]): { countryId: string; countryName: string; ports: PortSummary[] }[] {
+  const groups = new Map<string, { countryId: string; countryName: string; ports: PortSummary[] }>()
+  for (const p of ports) {
+    const key = p.countryId || ''
+    const g = groups.get(key) ?? { countryId: key, countryName: p.countryName, ports: [] }
+    g.ports.push(p)
+    groups.set(key, g)
+  }
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name)
+  return [...groups.values()]
+    .map((g) => ({ ...g, ports: [...g.ports].sort(byName) }))
+    .sort((a, b) => (a.countryId === '' ? 1 : b.countryId === '' ? -1 : a.countryName.localeCompare(b.countryName)))
 }

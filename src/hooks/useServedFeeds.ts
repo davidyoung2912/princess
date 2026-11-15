@@ -12,8 +12,8 @@ import { minuteOf, pulseDayFeed, pulseFeed, withServed } from '../feeds/pulse'
 import { crowdFeed } from '../feeds/portCrowd'
 import { portGuideFeed, portListFeed } from '../feeds/portGuide'
 import type { PortGuideData, PortSummary } from '../domain/portGuide'
-import { countryGuideFeed } from '../feeds/countryGuide'
-import type { CountryGuideData } from '../domain/countryGuide'
+import { countryGuideFeed, countryListFeed } from '../feeds/countryGuide'
+import type { CountryGuideData, CountrySummary } from '../domain/countryGuide'
 import { tenderFeed } from '../feeds/tender'
 import type { TenderOutlook } from '../domain/tender'
 
@@ -63,6 +63,11 @@ export function usePortGuide(port: string): PortGuideData | null {
 /** A country's profile; null until the server's answer (or the copy kept on this device) is here. */
 export function useCountryGuide(country: string): CountryGuideData | null {
   return useServedFeed(!!country, countryGuideFeed, [country])
+}
+
+/** Every country profile, by name; null until the server's answer (or the copy kept on this device) is here. */
+export function useCountryList(): CountrySummary[] | null {
+  return useFeed(countryListFeed)
 }
 
 /** Every port with a guide, by name; null until the server's answer (or the copy kept on this device) is here. */

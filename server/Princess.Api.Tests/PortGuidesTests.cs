@@ -23,6 +23,8 @@ public class PortGuidesRulesTests
             Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("id").GetString()));
             Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("name").GetString()));
             Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("shortDescription").GetString()));
+            Assert.Matches("^[a-z]{2}$", p.GetProperty("countryId").GetString()!);
+            Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("countryName").GetString()));
         });
     }
 

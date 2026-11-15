@@ -30,7 +30,7 @@ import { conditionsFeed } from '../feeds/route'
 import { skyFeed } from '../feeds/sky'
 import { weekFeed } from '../feeds/week'
 import { portGuideFeed, portListFeed } from '../feeds/portGuide'
-import { countryGuideFeed } from '../feeds/countryGuide'
+import { countryGuideFeed, countryListFeed } from '../feeds/countryGuide'
 import { dayPlanFeed } from '../feeds/dayPlan'
 import { trialDayFeed } from '../feeds/trialDay'
 import { markAccount, refreshContext, setContext } from '../account/context'
@@ -258,6 +258,7 @@ export const partyShare = {
   // Consented reports go to the server's telemetry route (signed-in only; the queue waits otherwise).
   setTelemetrySender((items) => (auth.current() ? http.post('/telemetry', { items }) : Promise.reject(new Error('signed out'))))
   conditionsFeed.setFetcher((sailing, crowd) => http.get<unknown>('/feeds/route', { query: { sailing, crowd } }))
+  countryListFeed.setFetcher(() => http.get<unknown>('/reference/country-guides'))
   countryGuideFeed.setFetcher((country) => http.get<unknown>(`/reference/country-guides/${encodeURIComponent(country)}`))
   portListFeed.setFetcher(() => http.get<unknown>('/reference/port-guides'))
   portGuideFeed.setFetcher((port) => http.get<unknown>(`/reference/port-guides/${encodeURIComponent(port)}`))

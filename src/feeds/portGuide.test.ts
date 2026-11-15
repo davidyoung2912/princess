@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { byTier, directionsUrl, filterPorts } from '../domain/portGuide'
+import { byTier, directionsUrl, filterPorts, groupByCountry } from '../domain/portGuide'
 import { normalizePortGuide, normalizePortList } from './portGuide'
 
 describe('normalizePortGuide', () => {
@@ -34,8 +34,8 @@ describe('port guide helpers', () => {
 
 describe('port list', () => {
   const list = [
-    { id: 'a', name: 'Cádiz, Spain', area: 'Spain', shortDescription: 'Oldest city' },
-    { id: 'b', name: 'Nassau, Bahamas', area: 'Bahamas', shortDescription: 'Pirate history' },
+    { id: 'a', name: 'Cádiz, Spain', area: 'Spain', countryId: 'es', countryName: 'Spain', shortDescription: 'Oldest city' },
+    { id: 'b', name: 'Nassau, Bahamas', area: 'Bahamas', countryId: 'bs', countryName: 'The Bahamas', shortDescription: 'Pirate history' },
   ]
   it('reads the list by name and drops unusable lines', () => {
     expect(normalizePortList({ ports: [{ id: 'b', name: 'Nassau' }, { id: 'a', name: 'Cádiz' }, { id: '', name: 'x' }] })?.map((p) => p.id)).toEqual(['a', 'b'])
@@ -47,5 +47,14 @@ describe('port list', () => {
     expect(filterPorts(list, 'pirate bah').map((p) => p.id)).toEqual(['b'])
     expect(filterPorts(list, 'pirate spain')).toEqual([])
     expect(filterPorts(list, '  ')).toHaveLength(2)
+  })
+})
+
+describe('groupByCountry', () => {
+  const p = (id: string, name: string, countryId: string, countryName: string) => ({ id, name, area: '', countryId, countryName, shortDescription: '' })
+  it('makes one group per country by name, ports by name within it, and a port with no country last', () => {
+    const groups = groupByCountry([p('n', 'Nassau', 'bs', 'The Bahamas'), p('c', 'Cádiz', 'es', 'Spain'), p('x', 'Odd', '', ''), p('b', 'Barcelona', 'es', 'Spain'), p('f', 'Freeport', 'bs', 'The Bahamas')])
+    expect(groups.map((g) => g.countryId)).toEqual(['es', 'bs', ''])
+    expect(groups.map((g) => g.ports.map((x) => x.id))).toEqual([['b', 'c'], ['f', 'n'], ['x']])
   })
 })

@@ -74,10 +74,13 @@ public static class ReferenceEndpoints
             .WithTags("Reference").WithSummary("The port guides (landing, access, what to do, excursion summaries), the port knowledge (fair taxi prices, scam alerts, phrases, allergy cards, walks, day passes, family notes, vendors) and the map coordinates, by port id. `version` changes when any of it does.");
 
         api.MapGet("/reference/port-guides", () => Results.Text(PortGuides.ListJson, "application/json"))
-            .WithTags("Reference").WithSummary("Every port with a guide: `{ version, ports: [{ id, name, area, shortDescription }] }`. `version` changes when any guide does.");
+            .WithTags("Reference").WithSummary("Every port with a guide: `{ version, ports: [{ id, name, area, countryId, countryName, shortDescription }] }`. `version` changes when any guide does.");
 
         api.MapGet("/reference/port-guides/{id}", (string id) => PortGuides.Json(id) is { } json ? Results.Text(json, "application/json") : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("One port's guide for the Port Details page: area, currency and language, official links, getting ashore, attractions (access tier, logistics, why visit, links, map point), short and long descriptions, traveller tips and general stats (population, size, neighbours, safety, government, economy, famous people, local vibe, timeline). Not found for a port with no guide.");
+
+        api.MapGet("/reference/country-guides", () => Results.Text(CountryGuides.ListJson, "application/json"))
+            .WithTags("Reference").WithSummary("Every country or territory profile: `{ version, countries: [{ id, name, region, status, cruiseCalls }] }`, by name. `status` is empty for a sovereign state. `version` changes when any profile does.");
 
         api.MapGet("/reference/country-guides/{id}", (string id) => CountryGuides.Json(id) is { } json ? Results.Text(json, "application/json") : throw ApiException.NotFound())
             .WithTags("Reference").WithSummary("One country or territory profile for the Country Details page, by lower-case ISO code (the same code a port guide gives as `countryId`): region, cruise calls, status, at a glance, freedom score line, government, economy, timeline, people, culture, explore-further links and the catalogue ports in the country. Not found for a code with no profile.");
