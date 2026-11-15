@@ -102,7 +102,7 @@
 .event--over:not(.event--cancelled) { opacity: 0.75; }
 .event:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
-/* Weather at sea. */
+/* Weather. */
 .wx-hero { display: flex; align-items: center; gap: var(--space-3); margin: 0; }
 .wx-hero__icon { width: 4rem; height: 4rem; color: var(--primary); }
 .wx-hero__temp { font-size: 3rem; font-weight: 700; line-height: 1; }

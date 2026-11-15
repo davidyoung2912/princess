@@ -22,7 +22,7 @@ const NIGHT_ICONS: Record<Condition, Icon> = { ...DAY_ICONS, sunny: Moon, partly
 const conditionWord = (c: Condition): string => t(`ship.wx.cond.${c}` as StringKey)
 const placeName = (place: string): string => (place === 'sea' ? t('onb.atSea') : (PORTS[place as Exclude<PortId, 'sea'>]?.name ?? place))
 
-/** Weather at sea: the weather at the ship now and the forecast for the rest of the sailing, as a picture and in words. */
+/** Weather: the weather at the ship now and the forecast for the rest of the sailing, as a picture and in words. */
 export function WeatherScreen() {
   const [settings] = useSettings()
   const sailing = useSailing()

@@ -73,6 +73,7 @@ export {
   DoorOpen,
   Images,
   Sparkles,
+  Flower2 as Spa,
   Star,
   QrCode,
   Printer,
