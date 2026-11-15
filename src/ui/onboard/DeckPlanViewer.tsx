@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { t } from '../../i18n'
 import { FitAll, FitWidth, ZoomIn, ZoomOut } from '../icons'
-import { clamp, fitAll, initial, panBy, percent, pinch, zoomAt, type Size, type Transform } from '../../deckPlans/viewport'
+import { centerOn, clamp, fitAll, initial, fitWidthScale, panBy, percent, pinch, zoomAt, type Size, type Transform } from '../../deckPlans/viewport'
 
 const STEP = 1.4
 const KEY_PAN = 80
@@ -10,7 +10,7 @@ const KEY_PAN = 80
  * A deck plan image the guest can drag to pan, pinch or scroll to zoom, double-tap to zoom in, and drive from the keyboard or the buttons.
  * Every gesture has a button or key equivalent (WCAG 2.5.1, 2.1.1); movement is never animated, so reduced-motion needs no special case.
  */
-export function DeckPlanViewer({ src, label }: { src: string; label: string }) {
+export function DeckPlanViewer({ src, label, pin }: { src: string; label: string; pin?: { x: number; y: number } }) {
   const frame = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<Size>({ width: 0, height: 0 })
   const [image, setImage] = useState<Size | null>(null)
@@ -44,6 +44,15 @@ export function DeckPlanViewer({ src, label }: { src: string; label: string }) {
       setTf((cur) => clamp(cur, view, image))
     }
   }, [ready, view, image])
+
+  // A new pin brings itself into view: zoomed in twice as far as full width, with the pin in the middle.
+  const pinKey = pin ? `${pin.x},${pin.y}` : null
+  const shownPin = useRef<string | null>(null)
+  useEffect(() => {
+    if (!ready || !pin || pinKey === shownPin.current) return
+    shownPin.current = pinKey
+    setTf((cur) => centerOn(cur, pin.x, pin.y, fitWidthScale(view, image) * 2, view, image))
+  }, [ready, pin, pinKey, view, image])
 
   // A non-passive wheel listener is needed to stop the page scrolling under the plan. Ctrl or Cmd with the wheel, and a trackpad pinch, zoom; the plain wheel pans.
   const wheel = useCallback((e: WheelEvent) => {
@@ -156,15 +165,34 @@ export function DeckPlanViewer({ src, label }: { src: string; label: string }) {
         onDoubleClick={doubleClick}
       >
         {loadFailed ? <p className="deckview__note" role="alert">{t('dv.failed')}</p> : (
-          <img
-            src={src}
-            alt={label}
-            draggable={false}
-            className="deckview__img"
+          <div
+            className="deckview__plane"
             style={ready ? { width: image.width, height: image.height, transform: `translate(${tf.x}px, ${tf.y}px) scale(${tf.scale})` } : { visibility: 'hidden' }}
-            onLoad={(e) => setImage({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight })}
-            onError={() => setLoadFailed(true)}
-          />
+          >
+            <img
+              src={src}
+              alt={label}
+              draggable={false}
+              className="deckview__img"
+              onLoad={(e) => setImage({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight })}
+              onError={() => setLoadFailed(true)}
+            />
+            {ready && pin && (
+              <svg
+                className="deckview__pin"
+                aria-hidden
+                width="44"
+                height="44"
+                viewBox="-22 -22 44 44"
+                style={{ left: pin.x, top: pin.y, transform: `translate(-50%, -50%) scale(${1 / tf.scale})` }}
+              >
+                <circle r="18" fill="none" stroke="#fff" strokeWidth="7" />
+                <circle r="18" fill="none" stroke="#b00020" strokeWidth="3.5" />
+                <path d="M-21 0H-9M9 0H21M0-21V-9M0 9V21" stroke="#fff" strokeWidth="6" strokeLinecap="round" />
+                <path d="M-21 0H-9M9 0H21M0-21V-9M0 9V21" stroke="#b00020" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            )}
+          </div>
         )}
         {!ready && !loadFailed && <p className="deckview__note" role="status">{t('dv.loading')}</p>}
       </div>

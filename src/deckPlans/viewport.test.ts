@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clamp, fitAll, fitAllScale, fitWidthScale, initial, maxScale, panBy, pinch, zoomAt } from './viewport'
+import { centerOn, clamp, fitAll, fitAllScale, fitWidthScale, initial, maxScale, panBy, pinch, zoomAt } from './viewport'
 
 const view = { width: 400, height: 600 }
 const image = { width: 330, height: 2400 }
@@ -44,5 +44,15 @@ describe('deck plan viewport', () => {
 
   it('measures a pinch', () => {
     expect(pinch({ x: 0, y: 0 }, { x: 6, y: 8 })).toEqual({ distance: 10, x: 3, y: 4 })
+  })
+})
+
+describe('centering on a point', () => {
+  it('puts the point in the middle of the view, zoomed in, within the plan edges', () => {
+    const t = centerOn(initial(view, image), 165, 1200, 2, view, image)
+    expect(t.scale).toBeCloseTo(2)
+    expect(165 * t.scale + t.x).toBeCloseTo(200)
+    expect(1200 * t.scale + t.y).toBeCloseTo(300)
+    expect(centerOn(initial(view, image), 165, 5, 2, view, image).y).toBe(0)
   })
 })

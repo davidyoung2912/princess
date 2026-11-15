@@ -60,3 +60,9 @@ export function percent(t: Transform): number {
 export function pinch(a: { x: number; y: number }, b: { x: number; y: number }) {
   return { distance: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
+
+/** Zooms to at least `minScale` and puts the plan point (x, y) in the middle of the view. */
+export function centerOn(t: Transform, x: number, y: number, minScale: number, view: Size, image: Size): Transform {
+  const scale = Math.max(t.scale, minScale)
+  return clamp({ scale, x: view.width / 2 - x * scale, y: view.height / 2 - y * scale }, view, image)
+}
