@@ -1,0 +1,42 @@
+// The 35 profiles of docs/cruise_country_reference_guide.md by their heading: the lower-case ISO code (also the flag file in src/assets/art/flags and the
+// page id) and the short name the app shows. Shared by the country and port guide generators.
+export const COUNTRY_PROFILES: Record<string, { id: string; name: string }> = {
+  'Dominican Republic': { id: 'do', name: 'Dominican Republic' },
+  'Belize': { id: 'bz', name: 'Belize' },
+  'The Bahamas': { id: 'bs', name: 'The Bahamas' },
+  'Mexico': { id: 'mx', name: 'Mexico' },
+  'United States': { id: 'us', name: 'United States' },
+  'Turks and Caicos Islands': { id: 'tc', name: 'Turks and Caicos Islands' },
+  'Honduras': { id: 'hn', name: 'Honduras' },
+  'Puerto Rico': { id: 'pr', name: 'Puerto Rico' },
+  'Spain': { id: 'es', name: 'Spain' },
+  'Italy': { id: 'it', name: 'Italy' },
+  'France': { id: 'fr', name: 'France' },
+  'Greece': { id: 'gr', name: 'Greece' },
+  'Montenegro': { id: 'me', name: 'Montenegro' },
+  'Türkiye (Turkey)': { id: 'tr', name: 'Türkiye' },
+  'Morocco': { id: 'ma', name: 'Morocco' },
+  'Portugal': { id: 'pt', name: 'Portugal' },
+  'United Kingdom': { id: 'gb', name: 'United Kingdom' },
+  'Belgium': { id: 'be', name: 'Belgium' },
+  'Iceland': { id: 'is', name: 'Iceland' },
+  'Norway': { id: 'no', name: 'Norway' },
+  'Denmark': { id: 'dk', name: 'Denmark' },
+  'Finland': { id: 'fi', name: 'Finland' },
+  'Sweden': { id: 'se', name: 'Sweden' },
+  'Estonia': { id: 'ee', name: 'Estonia' },
+  'Germany': { id: 'de', name: 'Germany' },
+  'Japan': { id: 'jp', name: 'Japan' },
+  'South Korea (Republic of Korea)': { id: 'kr', name: 'South Korea' },
+  'Indonesia': { id: 'id', name: 'Indonesia' },
+  'Vietnam': { id: 'vn', name: 'Vietnam' },
+  'Hong Kong': { id: 'hk', name: 'Hong Kong' },
+  'Taiwan': { id: 'tw', name: 'Taiwan' },
+  'Malaysia': { id: 'my', name: 'Malaysia' },
+  'Thailand': { id: 'th', name: 'Thailand' },
+  'Singapore': { id: 'sg', name: 'Singapore' },
+  'Australia': { id: 'au', name: 'Australia' },
+}
+
+/** The profile id for a catalogue port's two-letter country code (they are the same, lower-cased). */
+export const countryNameById = (id: string): string | undefined => Object.values(COUNTRY_PROFILES).find((p) => p.id === id)?.name

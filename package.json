@@ -17,6 +17,7 @@
     "bundle:check": "node scripts/check-bundle.mjs",
     "content:gen": "vite-node scripts/gen-content.ts",
     "portguides:gen": "vite-node scripts/gen-port-guides.ts",
+    "countryguides:gen": "vite-node scripts/gen-country-guides.ts",
     "db:seed:gen": "vite-node scripts/gen-reference-seed.ts",
     "db:seed:check": "vite-node scripts/check-reference-seed.ts",
     "shipvenues:gen": "vite-node scripts/gen-ship-venues.ts",

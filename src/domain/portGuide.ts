@@ -39,6 +39,9 @@ export function filterPorts(ports: readonly PortSummary[], query: string): PortS
 export interface PortGuideData {
   id: string
   name: string
+  /** The country profile this port belongs to (the id is the flag file and the Country Details page), and its short name. */
+  countryId: string
+  countryName: string
   area: string
   currencyLanguage: string
   officialLinks: GuideLink[]
@@ -77,6 +80,7 @@ export function guideProblems(g: PortGuideData): string[] {
   const web = (url: string) => /^https?:\/\/[^\s/]+\.[^\s/]+/.test(url)
   if (!g.id || !g.name) bad('no id or name')
   if (!g.area) bad('no area')
+  if (!g.countryId || !g.countryName) bad('no country profile')
   if (!g.shortDescription) bad('no short description')
   if (!g.longDescription) bad('no long description')
   if (!g.gettingAshore) bad('no getting-ashore text')

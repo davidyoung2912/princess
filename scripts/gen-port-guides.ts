@@ -4,6 +4,7 @@
 // Ports in the documents that match no catalogue port are listed and left out; catalogue ports with no document entry are listed for information.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { guideProblems } from '../src/domain/portGuide.ts'
+import { countryNameById } from './countryCodes.ts'
 
 const read = (name: string) => readFileSync(new URL(`../docs/${name}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 
@@ -33,6 +34,9 @@ export interface PortStats {
 export interface PortGuide {
   id: string
   name: string
+  /** The country profile this port belongs to (its page and flag), by lower-case ISO code, and the name to show. */
+  countryId: string
+  countryName: string
   area: string
   currencyLanguage: string
   officialLinks: GuideLink[]
@@ -60,7 +64,7 @@ function keysOf(name: string): string[] {
   return [...out]
 }
 
-interface Port { id: string; name: string }
+interface Port { id: string; name: string; countryCode: string }
 const catalogue: Port[] = JSON.parse(readFileSync(new URL('../db/seed/catalogue/ports.json', import.meta.url), 'utf8'))
 function portFor(heading: string): Port | undefined {
   const wanted = keysOf(heading)
@@ -78,7 +82,7 @@ function guide(heading: string): PortGuide | null {
   if (!port) { unmatched.push(clean); return null }
   let g = guides.get(port.id)
   if (!g) {
-    g = { id: port.id, name: port.name, area: '', currencyLanguage: '', officialLinks: [], gettingAshore: '', attractions: [], shortDescription: '', longDescription: '', tips: [], stats: null }
+    g = { id: port.id, name: port.name, countryId: port.countryCode.toLowerCase(), countryName: countryNameById(port.countryCode.toLowerCase()) ?? '', area: '', currencyLanguage: '', officialLinks: [], gettingAshore: '', attractions: [], shortDescription: '', longDescription: '', tips: [], stats: null }
     guides.set(port.id, g)
   }
   return g

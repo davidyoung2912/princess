@@ -47,6 +47,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/home/sailings', titleKey: 'route.sailings', tab: 'home', phase: 1 },
   { path: '/home/sailings/:id', titleKey: 'route.sailing', tab: 'home', phase: 1 },
   { path: '/home/ports', titleKey: 'route.ports', tab: 'home', phase: 1 },
+  { path: '/home/countries/:id', titleKey: 'route.country', tab: 'home', phase: 1 },
   { path: '/home/ports/:id', titleKey: 'route.port', tab: 'home', phase: 1 },
   { path: '/home/ship', titleKey: 'route.sunPrincess', tab: 'home', phase: 1 },
   { path: '/home/ships', titleKey: 'route.ships', tab: 'home', phase: 1 },

@@ -43,7 +43,7 @@ export function normalizePortGuide(raw: unknown): PortGuideData | null {
   const r = obj(raw)
   if (!str(r.id) || !str(r.name)) return null
   return {
-    id: str(r.id), name: str(r.name), area: str(r.area), currencyLanguage: str(r.currencyLanguage), officialLinks: links(r.officialLinks),
+    id: str(r.id), name: str(r.name), countryId: /^[a-z]{2}$/.test(str(r.countryId)) ? str(r.countryId) : '', countryName: str(r.countryName), area: str(r.area), currencyLanguage: str(r.currencyLanguage), officialLinks: links(r.officialLinks),
     gettingAshore: str(r.gettingAshore), attractions: arr(r.attractions).map(attraction).filter((a): a is GuideAttraction => a !== null),
     shortDescription: str(r.shortDescription), longDescription: str(r.longDescription),
     tips: arr(r.tips).map(obj).filter((t) => str(t.text)).map((t) => ({ title: str(t.title), text: str(t.text) })),

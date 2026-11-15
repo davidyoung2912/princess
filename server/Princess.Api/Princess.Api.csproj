@@ -14,6 +14,7 @@
     <EmbeddedResource Include="Content\ship-venues.json" LogicalName="ship-venues.json" />
     <EmbeddedResource Include="Content\ship-programmes.json" LogicalName="ship-programmes.json" />
     <EmbeddedResource Include="Content\port-guides.json" LogicalName="port-guides.json" />
+    <EmbeddedResource Include="Content\country-guides.json" LogicalName="country-guides.json" />
   </ItemGroup>
 
   <ItemGroup>

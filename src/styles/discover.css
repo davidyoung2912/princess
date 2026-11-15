@@ -114,3 +114,5 @@ textarea.field__input { resize: vertical; }
 .port-details__logistics dt, .port-details__facts dt { color: var(--text-muted); font-size: var(--fs-caption); font-weight: 700; }
 .port-details__logistics dd, .port-details__facts dd { margin: 0; }
 .port-details__place .row a { overflow-wrap: anywhere; }
+
+.flag { display: inline-block; width: 2rem; height: auto; aspect-ratio: 320 / 220; vertical-align: -0.2em; margin-inline-end: var(--space-2); border: 1px solid var(--border); border-radius: 3px; object-fit: cover; }

@@ -10,6 +10,7 @@ import { Card } from '../Card'
 import { FeedWaiting } from '../FeedWaiting'
 import { LinkButton } from '../Button'
 import { Anchor } from '../icons'
+import { Flag } from '../Flag'
 import { SaveShare } from './parts'
 import { StanleyExplain } from '../ai/StanleyExplain'
 import { TenderOutlook } from './TenderOutlook'
@@ -39,7 +40,7 @@ export function PortScreen() {
   return (
     <div className="page port-details">
       <h2>{name}</h2>
-      {guide?.area && <p className="muted">{guide.area}</p>}
+      {guide?.area && <Area guide={guide} />}
       <p><span className={`tag${tender ? ' tag--alert' : ''}`}><Anchor aria-hidden="true" /> {tender ? t('discover.tender') : t('discover.dock')}</span>{tender && <StanleyExplain term="tender" />}{day && <> <span className="muted">{t('portguide.calls', { date: day.date })}</span></>}</p>
       <SaveShare kind="port" id={id} name={name} favourites={favourites} />
       {tender && day && <TenderOutlook port={id} date={day.date} />}
@@ -51,17 +52,45 @@ export function PortScreen() {
   )
 }
 
+/** The port's country line: the flag, the country name as a link to its Country Details page, then the rest of the area text ("Quintana Roo; Cozumel Island."). */
+function Area({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }) {
+  if (!guide.countryId || !guide.countryName) return <p className="muted">{guide.area}</p>
+  const at = guide.area.indexOf(' — ')
+  const rest = at >= 0 ? guide.area.slice(at + 3) : ''
+  return (
+    <p className="muted port-details__area">
+      <Flag code={guide.countryId} /><Link to={`/home/countries/${guide.countryId}`}>{guide.countryName}</Link>{rest && ` — ${rest}`}
+    </p>
+  )
+}
+
 function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuide>> }) {
   const tiers = byTier(guide.attractions)
+  const rows = guide.stats ? FACTS.filter((f) => guide.stats?.[f.key]) : []
+  const jumps: { id: string; label: StringKey }[] = [
+    ...(guide.gettingAshore || guide.currencyLanguage || guide.officialLinks.length > 0 ? [{ id: 'pd-ashore-h', label: 'discover.gettingAshore' as StringKey }] : []),
+    ...(tiers.length > 0 ? [{ id: 'pd-do-h', label: 'discover.thingsToDo' as StringKey }] : []),
+    ...(guide.tips.length > 0 ? [{ id: 'pd-tips-h', label: 'portguide.tips' as StringKey }] : []),
+    ...(rows.length > 0 ? [{ id: 'pd-facts-h', label: 'portguide.facts' as StringKey }] : []),
+    ...(guide.stats && guide.stats.timeline.length > 0 ? [{ id: 'pd-history-h', label: 'portguide.history' as StringKey }] : []),
+  ]
   return (
     <>
       {guide.shortDescription && <p className="port-details__lead">{guide.shortDescription}</p>}
       {guide.longDescription && <p>{guide.longDescription}</p>}
 
+      {jumps.length > 1 && (
+        <nav aria-label={t('portguide.jump')}>
+          <ul className="naut-jump">
+            {jumps.map((j) => <li key={j.id}><a href={`#${j.id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(j.id); el?.scrollIntoView({ block: 'start' }); el?.focus() }}>{t(j.label)}</a></li>)}
+          </ul>
+        </nav>
+      )}
+
       {(guide.gettingAshore || guide.currencyLanguage || guide.officialLinks.length > 0) && (
         <section aria-labelledby="pd-ashore-h">
           <Card info labelledBy="pd-ashore-h">
-            <h2 id="pd-ashore-h">{th('discover.gettingAshore')}</h2>
+            <h2 id="pd-ashore-h" tabIndex={-1}>{th('discover.gettingAshore')}</h2>
             {guide.gettingAshore && <p>{guide.gettingAshore}</p>}
             {guide.currencyLanguage && <p><strong>{t('portguide.currencyLanguage')}</strong> {guide.currencyLanguage}</p>}
             {guide.officialLinks.length > 0 && <LinkRow label={t('portguide.official')} links={guide.officialLinks} />}
@@ -71,7 +100,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
 
       {tiers.length > 0 && (
         <section aria-labelledby="pd-do-h">
-          <h2 id="pd-do-h">{th('discover.thingsToDo')}</h2>
+          <h2 id="pd-do-h" tabIndex={-1}>{th('discover.thingsToDo')}</h2>
           <p className="muted">{t('portguide.attractionsNote')}</p>
           {tiers.map((g) => (
             <div key={g.tier} role="group" aria-label={g.tier}>
@@ -84,7 +113,7 @@ function GuideBody({ guide }: { guide: NonNullable<ReturnType<typeof usePortGuid
 
       {guide.tips.length > 0 && (
         <section aria-labelledby="pd-tips-h">
-          <h2 id="pd-tips-h">{th('portguide.tips')}</h2>
+          <h2 id="pd-tips-h" tabIndex={-1}>{th('portguide.tips')}</h2>
           <ul className="port-details__tips">{guide.tips.map((tip) => <li key={tip.title}>{tip.title && <strong>{tip.title}. </strong>}{tip.text}</li>)}</ul>
         </section>
       )}
@@ -133,14 +162,14 @@ function Facts({ stats }: { stats: GuideStats }) {
     <>
       {rows.length > 0 && (
         <section aria-labelledby="pd-facts-h">
-          <h2 id="pd-facts-h">{th('portguide.facts')}</h2>
+          <h2 id="pd-facts-h" tabIndex={-1}>{th('portguide.facts')}</h2>
           {stats.intro && <p>{stats.intro}</p>}
           <dl className="port-details__facts">{rows.map((f) => <div key={f.key}><dt>{t(f.label)}</dt><dd>{stats[f.key] as string}</dd></div>)}</dl>
         </section>
       )}
       {stats.timeline.length > 0 && (
         <section aria-labelledby="pd-history-h">
-          <h2 id="pd-history-h">{th('portguide.history')}</h2>
+          <h2 id="pd-history-h" tabIndex={-1}>{th('portguide.history')}</h2>
           <ol className="port-details__timeline">{stats.timeline.map((e) => <li key={`${e.when}${e.text}`}><strong>{e.when}</strong> {e.text}</li>)}</ol>
         </section>
       )}

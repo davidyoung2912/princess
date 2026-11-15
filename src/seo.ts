@@ -14,6 +14,7 @@ export const PUBLIC_PAGES: readonly SeoEntry[] = [
   { path: '/home/sailings', description: 'seo.sailings' },
   { path: '/home/sailings/:id', description: 'seo.sailing' },
   { path: '/home/ports', description: 'seo.ports' },
+  { path: '/home/countries/:id', description: 'seo.country' },
   { path: '/home/ports/:id', description: 'seo.port' },
   { path: '/home/ship', description: 'seo.ship' },
   { path: '/home/ships', description: 'seo.ships' },
