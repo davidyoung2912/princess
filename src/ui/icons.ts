@@ -74,6 +74,7 @@ export {
   Images,
   Sparkles,
   Flower2 as Spa,
+  Dumbbell as Exercise,
   Star,
   QrCode,
   Printer,

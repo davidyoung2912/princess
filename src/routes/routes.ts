@@ -229,6 +229,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/nautical/glossary', titleKey: 'route.glossary', tab: null, phase: 0 },
   { path: '/today', titleKey: 'route.todayPlan', tab: null, phase: 0 },
   { path: '/itinerary', titleKey: 'route.itinerary', tab: null, phase: 0 },
+  { path: '/exercise-explorer', titleKey: 'route.exerciseExplorer', tab: null, phase: 0 },
   { path: '/spa-explorer', titleKey: 'route.spaExplorer', tab: null, phase: 0 },
   { path: '/shopping-today', titleKey: 'route.shoppingToday', tab: null, phase: 0 },
   { path: '/deck-plans', titleKey: 'route.deckPlans', tab: null, phase: 0 },
