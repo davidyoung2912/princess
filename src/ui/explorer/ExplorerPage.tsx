@@ -21,7 +21,7 @@ import { ShipClockCard } from './ShipClockCard'
 import { WhatChanged } from './WhatChanged'
 import { ForYou } from './ForYou'
 import { forYouFirst, recommendEvents, recommendVenues } from '../../domain/explorer/recommend'
-import { usePilot } from '../../hooks/usePilot'
+import { useTaste } from '../../hooks/useTaste'
 import { StatusBadge } from '../StatusBadge'
 
 export interface ExplorerContext { data: ExplorerDay; state: ExplorerDayState; reload: () => void }
@@ -59,7 +59,7 @@ export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above
             <HappeningNow data={data} currentDay={state.currentDay} now={state.nowAt} basePath={basePath} />
             <WhatChanged data={data} now={state.nowAt} basePath={basePath} />
             {above?.({ data, state, reload: copy.retry })}
-            <VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} />
+            <VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} onChanged={copy.retry} />
           </>
         )}
       </Saved>
@@ -67,16 +67,16 @@ export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above
   )
 }
 
-function VenueList({ data, state, basePath, kindLabels }: { data: ExplorerDay; state: ExplorerDayState; basePath: string; kindLabels: Record<string, string> }) {
+function VenueList({ data, state, basePath, kindLabels, onChanged }: { data: ExplorerDay; state: ExplorerDayState; basePath: string; kindLabels: Record<string, string>; onChanged: () => void }) {
   const [kind, setKind] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const pins = useVenuePins(data.venues.map((v) => v.venue))
   const dining = data.explorer === 'dining'
   const [filter, setFilter] = useState<DiningFilter>(NO_DINING_FILTER)
   const [sort, setSort] = useState<DiningSort>('suggested')
-  const { state: pilot } = usePilot()
+  const { profile: taste } = useTaste()
   const pinnedIds = data.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id)
-  const picks = dining ? { events: [], venues: recommendVenues(data, pilot.taste, { pinnedVenueIds: pinnedIds }) } : { events: recommendEvents(data, pilot.taste, { now: state.nowAt, pinnedVenueIds: pinnedIds }), venues: [] }
+  const picks = dining ? { events: [], venues: recommendVenues(data, taste, { pinnedVenueIds: pinnedIds }) } : { events: recommendEvents(data, taste, { now: state.nowAt, pinnedVenueIds: pinnedIds }), venues: [] }
   const pickedVenues = dining ? picks.venues.map((p) => p.venueId) : [...new Set(picks.events.map((p) => p.venueId))]
   const flat = data.venues.map((v) => ({ ...v, ...v.venue }))
   const ordered = forYouFirst(pins.order(flat), pickedVenues, (v) => pins.isPinned(v.venue))
@@ -85,7 +85,7 @@ function VenueList({ data, state, basePath, kindLabels }: { data: ExplorerDay; s
     : filterVenues(ordered, { kind, query })
   return (
     <>
-    <ForYou data={data} events={picks.events} venues={picks.venues} venueTitles={Object.fromEntries(data.venues.map((v) => [v.venue.id, v.venue.title]))} basePath={basePath} />
+    <ForYou data={data} events={picks.events} venues={picks.venues} venueTitles={Object.fromEntries(data.venues.map((v) => [v.venue.id, v.venue.title]))} basePath={basePath} onChanged={onChanged} />
     <section aria-labelledby="exp-list-h">
       <h2 id="exp-list-h">{t('exp.list.title')}</h2>
       {dining && <DiningControls kinds={kindsOf(data.venues.map((v) => v.venue))} kindLabels={kindLabels} filter={filter} onFilter={setFilter} sort={sort} onSort={setSort} anyKidsMenu={data.venues.some((v) => hasKidsMenu(v.venue))} />}

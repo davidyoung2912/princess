@@ -140,6 +140,13 @@ public static class ExplorerRules
     public static VenueDayDto VenueDay(string shipId, ShipExplorer ship, ExplorerVenue v, Timeline timeline, int day, IReadOnlyList<ExplorerEventDto> dayEvents, bool withMenus) =>
         new(Dto(shipId, v), Hours(v.Hours, timeline, day), [.. dayEvents.Where(e => e.VenueId == v.Id)], withMenus ? MenusOn(ship, v.Id, timeline, day) : []);
 
+    /// <summary>The most taste keys of each kind (<c>taste:like.</c>, <c>taste:hide.</c>) a guest keeps; a new one past this makes the oldest room.</summary>
+    public const int MaxTaste = 60;
+
+    /// <summary>The prefix of the taste key's kind (<c>taste:like.</c> or <c>taste:hide.</c>), or null when the key is not a taste key.</summary>
+    public static string? TastePrefix(string key) =>
+        key.StartsWith("taste:like.", StringComparison.Ordinal) ? "taste:like." : key.StartsWith("taste:hide.", StringComparison.Ordinal) ? "taste:hide." : null;
+
     /// <summary>
     /// Whether a favourite key may be added to a guest's list, given the list as it is. Screen pins past <see cref="MaxScreenPins"/> are handled by the caller (the oldest goes);
     /// a venue pin must name a venue that exists and the Explorer must have room. Throws the error the app shows. Keys of other kinds pass.
@@ -150,6 +157,13 @@ public static class ExplorerRules
         {
             var id = key["screen:".Length..];
             if (id.Length is 0 or > 12 || !id.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' or '.')) throw ApiException.Invalid("screen");
+        }
+        else if (key.StartsWith("taste:", StringComparison.Ordinal))
+        {
+            // What the guest likes ("taste:like.<theme>") or has waved away ("taste:hide.<event or venue id>"): a word or an id, nothing else.
+            var prefix = TastePrefix(key) ?? throw ApiException.Invalid("taste");
+            var rest = key[prefix.Length..];
+            if (rest.Length is 0 or > 64 || !rest.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':')) throw ApiException.Invalid("taste");
         }
         else if (key.StartsWith("venue:", StringComparison.Ordinal))
         {

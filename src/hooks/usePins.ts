@@ -1,3 +1,4 @@
+import { toggleTasteKey } from '../domain/explorer/recommend'
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { pinsToUpload, reorderScreenKeys, screenIdsOf, screenPinKey, toggleScreenKey, toggleVenueKey, venueKeysOf, type VenuePinOutcome } from '../domain/pins'
 import { api } from '../runtime'
@@ -54,6 +55,10 @@ export interface Pins {
   toggleScreen: (id: string) => Promise<void>
   /** Puts the pinned screens in this order. */
   reorderScreens: (ids: readonly string[]) => Promise<void>
+  /** Every saved key, for the other kinds kept among them (the guest's taste for suggestions). */
+  keys: readonly string[]
+  /** Turns a taste key on or off; false when it could not be saved. */
+  toggleTaste: (key: string) => Promise<boolean>
   toggleVenue: (shipId: string, venueId: string, inExplorer: (key: string) => boolean) => Promise<VenuePinOutcome | 'failed'>
 }
 
@@ -116,6 +121,11 @@ export function usePins(): Pins {
     return ok ? r.outcome : 'failed'
   }, [mine, apply])
 
+  const toggleTaste = useCallback(async (key: string): Promise<boolean> => {
+    if (!mine) return false
+    return apply(toggleTasteKey(snap.keys, key), () => api.discover.toggleFavourite(key))
+  }, [mine, apply])
+
   const screens = screenIdsOf(keys)
-  return { ready: !!mine, failed: mine?.failed ?? false, screens, venueKeys: venueKeysOf(keys), isScreenPinned: (id) => screens.includes(id), toggleScreen, reorderScreens, toggleVenue }
+  return { keys, toggleTaste, ready: !!mine, failed: mine?.failed ?? false, screens, venueKeys: venueKeysOf(keys), isScreenPinned: (id) => screens.includes(id), toggleScreen, reorderScreens, toggleVenue }
 }

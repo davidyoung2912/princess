@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ExplorerDay, ExplorerEvent, VenueDay } from '../../api/explorerTypes'
-import { EMPTY_TASTE, forYouFirst, hide, normalizeTaste, recommendEvents, recommendVenues, restoreHidden, toggleLike } from './recommend'
+import { EMPTY_TASTE, MAX_TASTE, forYouFirst, hide, hideKey, isTasteKey, likeKey, normalizeTaste, tasteFromKeys, tasteToKeys, toggleTasteKey, recommendEvents, recommendVenues, restoreHidden, toggleLike } from './recommend'
 
 const ev = (id: string, interest: string, start: string, over: Partial<ExplorerEvent> = {}): ExplorerEvent => ({
   id, venueId: 'v', day: 1, date: '', start, minutes: 60, startAt: Number(start.slice(0, 2)) * 3_600_000, endAt: Number(start.slice(0, 2)) * 3_600_000 + 3_600_000,
@@ -74,5 +74,28 @@ describe('forYouFirst', () => {
   it('leaves pins first, then the suggested, then the rest', () => {
     const vs = ['a', 'b', 'c', 'd'].map((id) => ({ venue: { id } }))
     expect(forYouFirst(vs, ['d', 'c'], (v) => v.venue.id === 'b').map((v) => v.venue.id)).toEqual(['b', 'c', 'd', 'a'])
+  })
+})
+
+describe('taste kept on the server', () => {
+  it('round-trips through saved-item keys and ignores other keys', () => {
+    const p = { likes: ['music'], hidden: ['e1', 'venue:v1'] }
+    expect(tasteToKeys(p)).toEqual(['taste:like.music', 'taste:hide.e1', 'taste:hide.venue:v1'])
+    expect(tasteFromKeys(['screen:S1', ...tasteToKeys(p), 'venue:s.x'])).toEqual(p)
+    expect(isTasteKey(likeKey('x'))).toBe(true)
+    expect(isTasteKey('screen:x')).toBe(false)
+  })
+  it('does not keep what the server would refuse', () => {
+    expect(tasteToKeys({ likes: ['has space', 'x'.repeat(65)], hidden: [] })).toEqual([])
+  })
+  it('toggles a key and makes the oldest of its kind room when full', () => {
+    expect(toggleTasteKey(['a'], likeKey('m'))).toEqual(['a', 'taste:like.m'])
+    expect(toggleTasteKey(['taste:like.m'], likeKey('m'))).toEqual([])
+    const full = Array.from({ length: MAX_TASTE }, (_, i) => hideKey(`e${i}`))
+    const next = toggleTasteKey(['taste:like.m', ...full], hideKey('new'))
+    expect(next).not.toContain('taste:hide.e0')
+    expect(next).toContain('taste:like.m')
+    expect(next.at(-1)).toBe('taste:hide.new')
+    expect(next).toHaveLength(full.length + 1)
   })
 })

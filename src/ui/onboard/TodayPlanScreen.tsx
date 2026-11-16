@@ -8,6 +8,11 @@ import { PORTS, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useExplorerDay } from '../../hooks/useExplorer'
 import { useSailing } from '../../hooks/useDemo'
+import { eveningBundles } from '../../domain/explorer/evening'
+import { useAddToPlan } from '../../hooks/useAddToPlan'
+import { useTaste } from '../../hooks/useTaste'
+import { useVenuePins } from '../../hooks/useVenuePins'
+import { EveningBundles } from './EveningBundles'
 import { StanleyPose } from '../StanleyPose'
 import { useTodayPlan } from '../../hooks/useTodayPlan'
 import { t, type StringKey } from '../../i18n'
@@ -35,6 +40,11 @@ export function TodayPlanScreen() {
   const clashes = clashMap(plan.items)
   const hints = walkHints(plan.items)
   const changed = disrupted(plan.items)
+  const addToPlan = useAddToPlan(state.day, plan.retry)
+  const { profile: taste } = useTaste()
+  const pins = useVenuePins(plan.explorers.flatMap((d) => d.venues.map((v) => v.venue)))
+  const pinnedVenueIds = plan.explorers.flatMap((d) => d.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id))
+  const bundles = plan.ready ? eveningBundles(plan.explorers, plan.items, taste, { now: state.nowAt, pinnedVenueIds }) : []
   const choice = state.choices[state.day - 1]
   const portName = choice && !choice.atSea ? PORTS[choice.port]?.name ?? choice.port : ''
   const clockAt = (epoch: number) => formatTime(timeIn(epoch, shipZoneAt(sailing, epoch)))
@@ -67,10 +77,12 @@ export function TodayPlanScreen() {
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
               <h2 id={`tp-${g.period}`}>{t(PERIOD[g.period])}</h2>
               <ul className="exp-events">
-                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} />)}
+                {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} busy={addToPlan.busy} />)}
               </ul>
             </section>
           ))}
+          <EveningBundles bundles={bundles} day={state.day} clockAt={clockAt} busy={addToPlan.busy} onAdd={(e) => { void addToPlan.add(e) }} />
+          <p role="status" className="visually-hidden">{addToPlan.message}</p>
           {plan.items.some((i) => i.status !== 'cancelled') && <p><Button variant="secondary" onClick={addToCalendar}>{t('plan.today.calendar')}</Button></p>}
         </>
       )}
@@ -88,7 +100,7 @@ function changeText(i: PlanItem): string {
   return i.reason ? t('plan.today.movedWhy', { title: i.title, was, time: formatTime(i.start), reason: i.reason }) : t('plan.today.moved', { title: i.title, was, time: formatTime(i.start) })
 }
 
-function PlanRow({ item, day, clash, hint, clockAt, alternatives }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[] }) {
+function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
   const cancelled = item.status === 'cancelled'
   return (
     <li className={`exp-event${cancelled ? ' exp-event--cancelled' : ''}`}>
@@ -104,7 +116,7 @@ function PlanRow({ item, day, clash, hint, clockAt, alternatives }: { item: Plan
           <p className="muted">{t(item.status === 'cancelled' ? 'plan.alt.cancelled' : item.status === 'moved' ? 'plan.alt.moved' : 'plan.alt.clash')}</p>
           <ul className="plain-bullets">
             {alternatives.map((a) => (
-              <li key={a.id}><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link></li>
+              <li key={a.id}><Link to={`${EXPLORER_PATHS[a.explorer]}/${a.venueId}?day=${day}`}>{a.start ? t('plan.alt.event', { title: a.title, time: formatTime(a.start), venue: a.venueTitle }) : t('plan.alt.place', { title: a.title })}</Link>{a.start && <>{' '}<button type="button" className="link-button" disabled={busy} aria-label={t('exp.add.label', { title: a.title })} onClick={() => { void onAdd([{ id: a.id, title: a.title }]) }}>{t('exp.add.button')}</button></>}</li>
             ))}
           </ul>
         </div>

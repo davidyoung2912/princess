@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { ExplorerDay } from '../../api/explorerTypes'
 import { formatTime } from '../../domain/cruise'
-import { hide, interestsOf, restoreHidden, toggleLike, venueHideId, type EventPick, type RecommendWhy, type VenuePick } from '../../domain/explorer/recommend'
-import { usePilot } from '../../hooks/usePilot'
+import { interestsOf, venueHideId, type EventPick, type RecommendWhy, type VenuePick } from '../../domain/explorer/recommend'
+import { useAddToPlan } from '../../hooks/useAddToPlan'
+import { useTaste } from '../../hooks/useTaste'
 import { t, type StringKey } from '../../i18n'
 import { Card } from '../Card'
 import { Chip } from '../Chip'
@@ -18,15 +19,14 @@ const whyText = (why: RecommendWhy, about: string): string => t(WHY[why], { abou
  * The "For you" card of an Explorer: a few suggestions with the reason for each, a Not for me button on every one, and the interest themes the guest can change at any time.
  * Hidden suggestions can be brought back. With no interest chosen and nothing to go by, the card only offers the themes.
  */
-export function ForYou({ data, events, venues, venueTitles, basePath }: { data: ExplorerDay; events: EventPick[]; venues: VenuePick[]; venueTitles: Record<string, string>; basePath: string }) {
-  const { state, update } = usePilot()
+export function ForYou({ data, events, venues, venueTitles, basePath, onChanged }: { data: ExplorerDay; events: EventPick[]; venues: VenuePick[]; venueTitles: Record<string, string>; basePath: string; onChanged: () => void }) {
+  const plan = useAddToPlan(data.day, onChanged)
+  const { profile: taste, ready, hide, toggleLike, restoreHidden } = useTaste()
   const [message, setMessage] = useState('')
-  const taste = state.taste
   const themes = interestsOf(data)
-  if (themes.length === 0) return null
-  const dismiss = (id: string, title: string) => {
-    update((s) => ({ ...s, taste: hide(s.taste, id) }))
-    setMessage(t('exp.foryou.hidden', { title }))
+  if (themes.length === 0 || !ready) return null
+  const dismiss = async (id: string, title: string) => {
+    setMessage((await hide(id)) ? t('exp.foryou.hidden', { title }) : t('exp.foryou.failed'))
   }
   return (
     <Card labelledBy="exp-foryou-h">
@@ -38,7 +38,8 @@ export function ForYou({ data, events, venues, venueTitles, basePath }: { data: 
             <li key={p.event.id}>
               <Link to={`${basePath}/${p.venueId}?day=${data.day}`}>{t('exp.foryou.event', { title: p.event.title, time: formatTime(p.event.start), venue: p.venueTitle })}</Link>{' '}
               <span className="muted">{whyText(p.why, p.about)}</span>{' '}
-              <button type="button" className="link-button" onClick={() => dismiss(p.event.id, p.event.title)}>{t('exp.foryou.dismiss')}</button>
+              <button type="button" className="link-button" disabled={plan.busy} aria-label={t('exp.add.label', { title: p.event.title })} onClick={() => { void plan.add([{ id: p.event.id, title: p.event.title }]) }}>{t('exp.add.button')}</button>{' '}
+              <button type="button" className="link-button" onClick={() => { void dismiss(p.event.id, p.event.title) }}>{t('exp.foryou.dismiss')}</button>
             </li>
           ))}
         </ul>
@@ -49,18 +50,18 @@ export function ForYou({ data, events, venues, venueTitles, basePath }: { data: 
             <li key={p.venueId}>
               <Link to={`${basePath}/${p.venueId}?day=${data.day}`}>{venueTitles[p.venueId] ?? p.venueId}</Link>{' '}
               <span className="muted">{whyText(p.why, p.about)}</span>{' '}
-              <button type="button" className="link-button" onClick={() => dismiss(venueHideId(p.venueId), venueTitles[p.venueId] ?? p.venueId)}>{t('exp.foryou.dismiss')}</button>
+              <button type="button" className="link-button" onClick={() => { void dismiss(venueHideId(p.venueId), venueTitles[p.venueId] ?? p.venueId) }}>{t('exp.foryou.dismiss')}</button>
             </li>
           ))}
         </ul>
       )}
-      <p role="status" className="visually-hidden">{message}</p>
+      <p role="status" className="visually-hidden">{message || plan.message}</p>
       <details>
         <summary>{t('exp.foryou.tune')}</summary>
         <div className="chip-row" role="group" aria-label={t('exp.foryou.themes')}>
-          {themes.map((i) => <Chip key={i} pressed={taste.likes.includes(i)} onToggle={() => update((s) => ({ ...s, taste: toggleLike(s.taste, i) }))}>{interestLabel(i)}</Chip>)}
+          {themes.map((i) => <Chip key={i} pressed={taste.likes.includes(i)} onToggle={() => { void toggleLike(i).then((ok) => { if (!ok) setMessage(t('exp.foryou.failed')) }) }}>{interestLabel(i)}</Chip>)}
         </div>
-        {taste.hidden.length > 0 && <button type="button" className="link-button" onClick={() => { update((s) => ({ ...s, taste: restoreHidden(s.taste) })); setMessage(t('exp.foryou.restored')) }}>{t('exp.foryou.restore')}</button>}
+        {taste.hidden.length > 0 && <button type="button" className="link-button" onClick={() => { void restoreHidden().then((ok) => setMessage(ok ? t('exp.foryou.restored') : t('exp.foryou.failed'))) }}>{t('exp.foryou.restore')}</button>}
       </details>
     </Card>
   )

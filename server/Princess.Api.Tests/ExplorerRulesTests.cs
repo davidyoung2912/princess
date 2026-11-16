@@ -82,6 +82,12 @@ public class ExplorerRulesTests
         Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "screen:has space"));
         ExplorerRules.RequirePinAllowed([], "screen:S12");
         ExplorerRules.RequirePinAllowed([], "sailing:anything");
+        ExplorerRules.RequirePinAllowed([], "taste:like.music");
+        ExplorerRules.RequirePinAllowed([], "taste:hide.venue:main-dining");
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "taste:other.x"));
+        Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed([], "taste:like.has/slash"));
+        Assert.Equal("taste:like.", ExplorerRules.TastePrefix("taste:like.music"));
+        Assert.Null(ExplorerRules.TastePrefix("screen:S1"));
 
         var full = ExplorerCatalogue.For("sun-princess")!.Venues.Where(v => v.Explorer == venue.Explorer).Take(ExplorerRules.MaxVenuePins).Select(v => $"venue:sun-princess.{v.Id}").ToList();
         if (full.Count == ExplorerRules.MaxVenuePins && !full.Contains(key)) Assert.Throws<ApiException>(() => ExplorerRules.RequirePinAllowed(full, key));

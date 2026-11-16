@@ -146,6 +146,8 @@ public sealed partial class InboxService(IInboxStore inbox, TripService trips, I
         ExplorerRules.RequirePinAllowed(current, key);
         if (key.StartsWith("screen:", StringComparison.Ordinal) && current.Where(k => k.StartsWith("screen:", StringComparison.Ordinal)).ToList() is { } screens && screens.Count >= ExplorerRules.MaxScreenPins)
             await inbox.ToggleFavouriteAsync(actor.Id, screens[0], ct);   // the oldest pin makes room
+        if (ExplorerRules.TastePrefix(key) is { } taste && current.Where(k => k.StartsWith(taste, StringComparison.Ordinal)).ToList() is { } same && same.Count >= ExplorerRules.MaxTaste)
+            await inbox.ToggleFavouriteAsync(actor.Id, same[0], ct);   // the oldest of its kind makes room
         return await inbox.ToggleFavouriteAsync(actor.Id, key, ct);
     }
 

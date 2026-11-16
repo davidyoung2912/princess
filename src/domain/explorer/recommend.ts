@@ -1,6 +1,6 @@
 import type { ExplorerDay, ExplorerEvent, VenueDay } from '../../api/explorerTypes'
 
-/** What a guest has told the Explorers they like, and what they have waved away. Kept on this device with the rest of the guest's display choices. */
+/** What a guest has told the Explorers they like, and what they have waved away. Kept on the server among the guest's saved items (`taste:` keys), so it follows them to another device. */
 export interface TasteProfile {
   /** Interest themes the guest chose (the `interest` of an event, such as "music" or "family"). */
   likes: string[]
@@ -22,6 +22,35 @@ export function normalizeTaste(raw: unknown): TasteProfile {
 export const toggleLike = (p: TasteProfile, interest: string): TasteProfile => ({ ...p, likes: p.likes.includes(interest) ? p.likes.filter((i) => i !== interest) : [...p.likes, interest].slice(-MAX_LIST) })
 export const hide = (p: TasteProfile, id: string): TasteProfile => (p.hidden.includes(id) ? p : { ...p, hidden: [...p.hidden, id].slice(-MAX_LIST) })
 export const restoreHidden = (p: TasteProfile): TasteProfile => ({ ...p, hidden: [] })
+/** The most of each kind the server keeps; a new one past this makes the oldest room. */
+export const MAX_TASTE = MAX_LIST
+
+const LIKE = 'taste:like.'
+const HIDE = 'taste:hide.'
+/** A saved-item key must have no spaces and fit in 80 characters, so a theme or id that would not is not kept. */
+const keyable = (v: string): boolean => /^\S+$/.test(v) && v.length <= 64
+
+export const likeKey = (interest: string): string => `${LIKE}${interest}`
+export const hideKey = (id: string): string => `${HIDE}${id}`
+export const isTasteKey = (k: string): boolean => k.startsWith(LIKE) || k.startsWith(HIDE)
+
+/** The profile held in a saved-items list (order kept, so the oldest is first). Anything else in the list is ignored. */
+export function tasteFromKeys(keys: readonly string[]): TasteProfile {
+  return { likes: keys.filter((k) => k.startsWith(LIKE)).map((k) => k.slice(LIKE.length)), hidden: keys.filter((k) => k.startsWith(HIDE)).map((k) => k.slice(HIDE.length)) }
+}
+
+/** The saved-item keys a profile stands for, only those that can be kept. */
+export const tasteToKeys = (p: TasteProfile): string[] => [...p.likes.filter(keyable).map(likeKey), ...p.hidden.filter(keyable).map(hideKey)]
+
+/** The saved-items list after turning one taste key on or off, as the server will have it (a full kind drops its oldest). */
+export function toggleTasteKey(keys: readonly string[], key: string): string[] {
+  if (keys.includes(key)) return keys.filter((k) => k !== key)
+  const prefix = key.startsWith(LIKE) ? LIKE : HIDE
+  const same = keys.filter((k) => k.startsWith(prefix))
+  const drop = same.length >= MAX_TASTE ? same[0] : null
+  return [...keys.filter((k) => k !== drop), key]
+}
+
 export const venueHideId = (venueId: string): string => `venue:${venueId}`
 
 /** Why something is suggested, in the order the reasons are preferred. */
