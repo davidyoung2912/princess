@@ -294,6 +294,15 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 - Not verified: the C# changes (`ChatShareService.cs`, `ChatCardRules.cs`, `ExplorerCatalogue.cs`, the new tests) were not compiled or run (project rule); please build and run them.
 - Left for later: tours on the timeline (the server serves only today's port day); true pin coordinates on the deck-plan pictures; the plan composer's event picker still lists only programme events; share-to-chat for menus (DIN-143).
 
+### Phase 11b: Open items from Phases 10 and 11
+- Scope: everything left open by Phases 10 and 11, in one phase, built in this order. Commit once at the end; the C# changes are for you to build and test (npm checks only here).
+  1. Front end and light server work: the chat plan composer's event picker lists Explorer events as well as programme events; menu sharing (a `menu:<venueId>:<meal>` card opening the venue page); per-event reminder choices (ENT-089), stored with the plan item and overriding the `explorerLead` preference; the reminder check looks more than a day ahead.
+  2. Reminder pipeline: extend `PushRules` and `PushService` to dining reservations and spa appointments (DIN-245..248), then the waitlist-ready and order-status pushes (DIN-250, 251, with the galley and waitlist side mocked behind an interface), then notification action buttons (ENT-091, needs the service worker).
+  3. Tours on the Today's Plan timeline: a server endpoint that returns booked tours for any cruise day (today it serves only today's port day), merged in `planItems.ts`.
+  4. Deck-plan pin: venue coordinates on the deck-plan pictures. Open question for the user: place them by eye from the pictures for review, or keep the text note only.
+- Built: (to fill in)
+- Left for later: (to fill in)
+
 ### Phase 12: Event and venue detail fields
 - Scope: event performer, series, accessibility attributes, dress and arrival notes (ENT-013, 017, 019, 023, 129..130); Dining venue accessibility, children's menu and family facilities (DIN-047, 210, 214, 224). Small items that touch the same screens fit here: the "you have plans" dot on the date list.
 - Mostly content and schema; the content scripts under `scripts/ship-explorer-*.ts` carry the authored values for your review.
