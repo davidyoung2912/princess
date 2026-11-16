@@ -207,7 +207,9 @@ public static class OnboardFeedRules
         var dep = DateOnly.ParseExact(departure, "yyyy-MM-dd");
         var timeline = TimelineBook.For(sailing, dep);
         var d = timeline.Days[day - 1];
-        var (lat, lon) = Positions[day];
+        // The positions and headings are authored for the eight days of the reference week; a longer sailing repeats them.
+        var cycle = (day - 1) % Positions.Count + 1;
+        var (lat, lon) = Positions[cycle];
         var zone = timeline.ShipZoneOnDate(d.Date);
         var date = d.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var (sunrise, sunset) = SunTimes(date, lat, lon);
@@ -217,7 +219,7 @@ public static class OnboardFeedRules
         string Clock(long ms) => Itinerary.LocalAt(Utc(ms), zone).Time.ToString("HH:mm", CultureInfo.InvariantCulture);
         long? sailAt = d.Depart is { } dp ? new DateTimeOffset(Itinerary.LocalToUtc(d.Date, dp, !timeline.IsCall(d) ? zone : Itinerary.PortById(d.Port).Zone), TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
         return new SkyNightDto(
-            day, d.Port, Clock(sunrise), Clock(sunset), sunset, new MoonDto(moon.Phase, moon.Name, moon.Lit), AfternoonSide(Headings[day]),
+            day, d.Port, Clock(sunrise), Clock(sunset), sunset, new MoonDto(moon.Phase, moon.Name, moon.Lit), AfternoonSide(Headings[cycle]),
             d.Depart?.ToString("HH:mm", CultureInfo.InvariantCulture), sailAt is { } s && s <= sunset + 45 * Min && s >= sunset - 90 * Min, Season[d.Date.Month - 1], moon.Lit < 70, Clock(civilDawn), Clock(civilDusk), Clock(nauticalDusk), FeedRules.Sim);
     }
 

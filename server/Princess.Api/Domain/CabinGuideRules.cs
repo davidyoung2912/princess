@@ -80,7 +80,7 @@ public static class CabinGuideRules
         var days = Itinerary.Days(new DateOnly(2000, 1, 1));
         foreach (var d in days)
         {
-            var h = Headings[d.Day - 1];
+            var h = Headings[(d.Day - 1) % Headings.Length];
             if (SunSide(h, true) == side) mornings++;
             if (SunSide(h, false) == side)
             {
