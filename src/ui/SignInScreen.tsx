@@ -14,8 +14,8 @@ import { CodeFlow, SignUpForm } from './SignInFlows'
 type Mode = 'signin' | 'signup' | 'forgot' | 'magic'
 
 /** The sign-in page: email plus password, with sign-up, a forgotten-password reset and an emailed code (ACT-01). */
-// TEMPORARY, development builds only: pre-fill the "dream" test account so testing is one click.
-const DEV_LOGIN = import.meta.env.PROD ? '' : 'dream'
+// TEMPORARY, development builds only: pre-fill the "port-solo-1" test account (aboard in Cozumel, so every Explorer has data) so testing is one click.
+const DEV_LOGIN = import.meta.env.PROD ? '' : 'port-solo-1'
 
 export function SignInScreen() {
   const [mode, setMode] = useState<Mode>('signin')

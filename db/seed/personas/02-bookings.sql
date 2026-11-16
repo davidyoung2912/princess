@@ -43,9 +43,11 @@ DECLARE
   @u_grace BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'grace'),
   @u_harold BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'harold'),
   @u_cora BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'cora'),
+  @u_portsolo1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo1'),
+  @u_portsolo2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo2'),
   @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream');
 
--- dbo.Bookings: 22 rows
+-- dbo.Bookings: 24 rows
 INSERT INTO dbo.Bookings ([PublicId], [Number], [Kind], [AgentName], [BookerUserId], [SailingId], [CategoryId], [CabinNumber], [FareId], [Status], [Dining], [Occasion], [TotalCents], [DepositCents], [FinalDueDate], [FinalPaymentDays], [LoyaltyNumber], [DiscountCents], [CreditUsedCents], [ContactEmail], [ContactPhone], [ConfirmedAt], [CancelledAt], [CancelFeeCents], [CancelRefundCents]) VALUES
   ('5EBF7A51-DEA5-6CC9-8071-53203311A08E', N'PC163342', N'direct', NULL, @u_gerald, N'sun-2027-03-21', N'balcony', N'10177', N'standard', N'confirmed', N'early', N'none', 585950, 117200, CAST('2026-12-21' AS DATE), 90, N'PC1007919', 0, 0, N'gerald@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
   ('8B5B224B-7FE2-E866-641F-0CAA062D8D6C', N'PC179254', N'direct', NULL, @u_maria, N'sun-2027-03-21', N'oceanview', N'8199', N'standard', N'confirmed', N'anytime', N'none', 498550, 99700, CAST('2027-03-11' AS DATE), 10, NULL, 0, 0, N'maria@demo.princess.example', N'+1 305 555 0142', CAST('2027-01-10T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
@@ -68,7 +70,9 @@ INSERT INTO dbo.Bookings ([PublicId], [Number], [Kind], [AgentName], [BookerUser
   ('8C085E0C-7FE2-1E11-48EB-E5A0891A9422', N'PC492620', N'direct', NULL, @u_frank, N'sun-2027-03-21', N'balcony', N'12436', N'standard', N'confirmed', N'anytime', N'none', 585950, 117200, CAST('2026-12-21' AS DATE), 90, N'PC1245489', 0, 0, N'frank@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
   ('AF8DB9FD-DC1C-97D2-65A8-E1FEEB3C683F', N'PC508532', N'direct', NULL, @u_grace, N'sun-2027-03-21', N'balcony', N'14473', N'plus', N'confirmed', N'anytime', N'none', 616400, 123300, CAST('2026-12-21' AS DATE), 90, N'PC1253408', 0, 0, N'grace@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
   ('26C8E5E2-EF38-5BF7-7DF8-576B9D52AEDD', N'PC524444', N'direct', NULL, @u_harold, N'sun-2027-03-21', N'oceanview', N'8421', N'standard', N'confirmed', N'early', N'none', 498550, 99700, CAST('2026-12-21' AS DATE), 90, NULL, 0, 0, N'harold@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
-  ('82CC0442-06A9-2587-EC97-9E3FA8976DB7', N'PC540356', N'direct', NULL, @u_cora, N'sun-2027-03-21', N'interior', N'8373', N'standard', N'cancelled', N'anytime', N'none', 414950, 83000, CAST('2026-12-21' AS DATE), 90, NULL, 0, 0, N'cora@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), CAST('2027-02-08T15:00:00' AS DATETIME2(0)), 103738, 311212);
+  ('82CC0442-06A9-2587-EC97-9E3FA8976DB7', N'PC540356', N'direct', NULL, @u_cora, N'sun-2027-03-21', N'interior', N'8373', N'standard', N'cancelled', N'anytime', N'none', 414950, 83000, CAST('2026-12-21' AS DATE), 90, NULL, 0, 0, N'cora@demo.princess.example', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), CAST('2027-02-08T15:00:00' AS DATETIME2(0)), 103738, 311212),
+  ('97649FBC-E3F8-7E22-B46A-B978CAB472D1', N'PC556268', N'direct', NULL, @u_portsolo1, N'sun-2027-03-21', N'balcony', N'10177', N'standard', N'confirmed', N'anytime', N'none', 585950, 117200, CAST('2026-12-21' AS DATE), 90, N'PC1277165', 0, 0, N'port-solo-1', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL),
+  ('5B8B054B-4D6E-A60B-5E3D-8DBD620DE486', N'PC572180', N'direct', NULL, @u_portsolo2, N'sun-2027-03-21', N'balcony', N'10177', N'standard', N'confirmed', N'anytime', N'none', 585950, 117200, CAST('2026-12-21' AS DATE), 90, N'PC1285084', 0, 0, N'port-solo-2', N'+1 305 555 0142', CAST('2026-10-22T15:00:00' AS DATETIME2(0)), NULL, NULL, NULL);
 
 DECLARE
   @b_gerald BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC163342'),
@@ -92,9 +96,11 @@ DECLARE
   @b_frank BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC492620'),
   @b_grace BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC508532'),
   @b_harold BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC524444'),
-  @b_cora BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC540356');
+  @b_cora BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC540356'),
+  @b_portsolo1 BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC556268'),
+  @b_portsolo2 BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC572180');
 
--- dbo.BookingGuests: 30 rows
+-- dbo.BookingGuests: 32 rows
 INSERT INTO dbo.BookingGuests ([BookingId], [UserId], [Seq], [IsLead], [Printed]) VALUES
   (@b_gerald, @u_gerald, 1, 1, N'WHITFIELD/GERALD'),
   (@b_maria, @u_maria, 1, 1, N'DELGADO/MARIA'),
@@ -125,9 +131,11 @@ INSERT INTO dbo.BookingGuests ([BookingId], [UserId], [Seq], [IsLead], [Printed]
   (@b_frank, @u_frank, 1, 1, N'DALTON/FRANK'),
   (@b_grace, @u_grace, 1, 1, N'IMANI/GRACE'),
   (@b_harold, @u_harold, 1, 1, N'QUIST/HAROLD'),
-  (@b_cora, @u_cora, 1, 1, N'BELL/CORA');
+  (@b_cora, @u_cora, 1, 1, N'BELL/CORA'),
+  (@b_portsolo1, @u_portsolo1, 1, 1, N'SOLO ONE/PORT'),
+  (@b_portsolo2, @u_portsolo2, 1, 1, N'SOLO TWO/PORT');
 
--- dbo.BookingGuestDetails: 30 rows
+-- dbo.BookingGuestDetails: 32 rows
 INSERT INTO dbo.BookingGuestDetails ([BookingId], [Seq], [UserId], [FirstName], [LastName], [Dob], [Gender], [Citizenship], [DietaryStatus], [AllergyNote]) VALUES
   (@b_gerald, 1, @u_gerald, N'Gerald', N'Whitfield', CAST('1955-09-20' AS DATE), N'X', N'us', N'none', N''),
   (@b_maria, 1, @u_maria, N'Maria', N'Delgado', CAST('1988-08-17' AS DATE), N'X', N'us', N'none', N''),
@@ -158,7 +166,9 @@ INSERT INTO dbo.BookingGuestDetails ([BookingId], [Seq], [UserId], [FirstName], 
   (@b_frank, 1, @u_frank, N'Frank', N'Dalton', CAST('1967-08-17' AS DATE), N'X', N'us', N'none', N''),
   (@b_grace, 1, @u_grace, N'Grace', N'Imani', CAST('1984-08-17' AS DATE), N'X', N'us', N'none', N''),
   (@b_harold, 1, @u_harold, N'Harold', N'Quist', CAST('1952-09-20' AS DATE), N'X', N'us', N'none', N''),
-  (@b_cora, 1, @u_cora, N'Cora', N'Bell', CAST('1975-07-14' AS DATE), N'X', N'us', N'none', N'');
+  (@b_cora, 1, @u_cora, N'Cora', N'Bell', CAST('1975-07-14' AS DATE), N'X', N'us', N'none', N''),
+  (@b_portsolo1, 1, @u_portsolo1, N'Port', N'Solo One', CAST('1982-04-14' AS DATE), N'X', N'us', N'none', N''),
+  (@b_portsolo2, 1, @u_portsolo2, N'Port', N'Solo Two', CAST('1974-04-14' AS DATE), N'X', N'us', N'none', N'');
 
 -- dbo.BookingGuestTags: 14 rows
 INSERT INTO dbo.BookingGuestTags ([BookingId], [Seq], [Kind], [Code]) VALUES
@@ -177,7 +187,7 @@ INSERT INTO dbo.BookingGuestTags ([BookingId], [Seq], [Kind], [Code]) VALUES
   (@b_bea, 1, N'dietary', N'vegan'),
   (@b_bea, 1, N'need', N'vision');
 
--- dbo.Acceptances: 66 rows
+-- dbo.Acceptances: 72 rows
 INSERT INTO dbo.Acceptances ([BookingId], [LegalId], [Version], [At]) VALUES
   (@b_gerald, N'terms', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
   (@b_gerald, N'health', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
@@ -244,9 +254,15 @@ INSERT INTO dbo.Acceptances ([BookingId], [LegalId], [Version], [At]) VALUES
   (@b_harold, N'age', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
   (@b_cora, N'terms', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
   (@b_cora, N'health', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
-  (@b_cora, N'age', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0)));
+  (@b_cora, N'age', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'terms', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'health', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'age', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'terms', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'health', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'age', 202610, CAST('2026-10-22T15:00:00' AS DATETIME2(0)));
 
--- dbo.Payments: 46 rows
+-- dbo.Payments: 52 rows
 INSERT INTO dbo.Payments ([PublicId], [BookingId], [UserId], [Label], [AmountCents], [At], [Reference], [Status]) VALUES
   ('965E6585-9C6B-A477-AFC5-2692170F1D36', @b_gerald, @u_gerald, N'deposit', 117200, CAST('2026-10-22T15:00:00' AS DATETIME2(0)), N'PAY-PC163342-D', N'captured'),
   ('F7934BA0-597D-ED65-43A8-AD965F7FFBED', @b_gerald, @u_gerald, N'balance', 468750, CAST('2026-12-16T15:00:00' AS DATETIME2(0)), N'PAY-PC163342-B', N'captured'),
@@ -293,9 +309,15 @@ INSERT INTO dbo.Payments ([PublicId], [BookingId], [UserId], [Label], [AmountCen
   ('86F2F78F-3AAB-3175-4F4D-C1D886CAD1AB', @b_harold, @u_harold, N'deposit', 99700, CAST('2026-10-22T15:00:00' AS DATETIME2(0)), N'PAY-PC524444-D', N'captured'),
   ('C407B4D1-FB4F-A34D-C362-E57DD626B5E4', @b_harold, @u_harold, N'balance', 398850, CAST('2026-12-16T15:00:00' AS DATETIME2(0)), N'PAY-PC524444-B', N'captured'),
   ('5DC449A2-3B55-B38F-9399-3573B21A299A', @b_cora, @u_cora, N'full', 414950, CAST('2026-10-22T15:00:00' AS DATETIME2(0)), N'PAY-PC540356-F', N'captured'),
-  ('151F0BCC-1AA6-7CF0-A299-F322C21A321F', @b_cora, @u_cora, N'refund', -311212, CAST('2027-02-08T15:00:00' AS DATETIME2(0)), N'PAY-PC540356-R', N'captured');
+  ('151F0BCC-1AA6-7CF0-A299-F322C21A321F', @b_cora, @u_cora, N'refund', -311212, CAST('2027-02-08T15:00:00' AS DATETIME2(0)), N'PAY-PC540356-R', N'captured'),
+  ('F37248E5-855D-EC56-C6CD-A833F1BCB8F8', @b_portsolo1, @u_portsolo1, N'deposit', 117200, CAST('2026-10-22T15:00:00' AS DATETIME2(0)), N'PAY-PC556268-D', N'captured'),
+  ('E03F2E70-993A-84B5-83FC-B5617EC6FDEA', @b_portsolo1, @u_portsolo1, N'balance', 468750, CAST('2026-12-16T15:00:00' AS DATETIME2(0)), N'PAY-PC556268-B', N'captured'),
+  ('CF94C16F-9E5A-807E-9F50-4858BF23B2DC', @b_portsolo1, @u_portsolo1, N'tour', 6900, CAST('2027-02-14T15:00:00' AS DATETIME2(0)), N'PAY-PC556268-T-coz-ruins', N'captured'),
+  ('B61ED51A-4018-27DA-6028-8EE4D2C927ED', @b_portsolo2, @u_portsolo2, N'deposit', 117200, CAST('2026-10-22T15:00:00' AS DATETIME2(0)), N'PAY-PC572180-D', N'captured'),
+  ('FF313B49-D0E7-F737-E793-0BDB3CABC2E1', @b_portsolo2, @u_portsolo2, N'balance', 468750, CAST('2026-12-16T15:00:00' AS DATETIME2(0)), N'PAY-PC572180-B', N'captured'),
+  ('0C462747-77A8-3EB8-197E-2ABEC1018297', @b_portsolo2, @u_portsolo2, N'tour', 7500, CAST('2027-02-14T15:00:00' AS DATETIME2(0)), N'PAY-PC572180-T-rtb-snorkel', N'captured');
 
--- dbo.PaymentParts: 45 rows
+-- dbo.PaymentParts: 51 rows
 INSERT INTO dbo.PaymentParts ([PaymentId], [Seq], [Method], [CardId], [CardBrand], [Last4], [Cents], [ChallengeUsed]) VALUES
   ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC163342-D'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_gerald), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_gerald), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_gerald), 117200, 0),
   ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC163342-B'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_gerald), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_gerald), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_gerald), 468750, 0),
@@ -341,7 +363,13 @@ INSERT INTO dbo.PaymentParts ([PaymentId], [Seq], [Method], [CardId], [CardBrand
   ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC508532-B'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_grace), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_grace), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_grace), 493100, 0),
   ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC524444-D'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_harold), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_harold), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_harold), 99700, 0),
   ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC524444-B'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_harold), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_harold), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_harold), 398850, 0),
-  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC540356-F'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_cora), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_cora), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_cora), 414950, 0);
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC540356-F'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_cora), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_cora), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_cora), 414950, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC556268-D'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo1), 117200, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC556268-B'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo1), 468750, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC556268-T-coz-ruins'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo1), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo1), 6900, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC572180-D'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo2), 117200, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC572180-B'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo2), 468750, 0),
+  ((SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC572180-T-rtb-snorkel'), 1, N'card', (SELECT Id FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Brand FROM dbo.SavedCards WHERE UserId = @u_portsolo2), (SELECT Last4 FROM dbo.SavedCards WHERE UserId = @u_portsolo2), 7500, 0);
 
 -- dbo.BookingDrafts: 2 rows
 INSERT INTO dbo.BookingDrafts ([Id], [UserId], [SailingId], [CategoryId], [Guests], [CabinMode], [FareId], [Dining], [Occasion], [UseCredit], [Accepted], [People], [Contact], [Step], [UpdatedAt]) VALUES

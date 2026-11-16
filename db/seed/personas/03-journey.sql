@@ -43,6 +43,8 @@ DECLARE
   @u_grace BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'grace'),
   @u_harold BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'harold'),
   @u_cora BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'cora'),
+  @u_portsolo1 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo1'),
+  @u_portsolo2 BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'portsolo2'),
   @u_dream BIGINT = (SELECT Id FROM dbo.Users WHERE Slug = N'dream'),
   @b_gerald BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC163342'),
   @b_maria BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC179254'),
@@ -65,9 +67,11 @@ DECLARE
   @b_frank BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC492620'),
   @b_grace BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC508532'),
   @b_harold BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC524444'),
-  @b_cora BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC540356');
+  @b_cora BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC540356'),
+  @b_portsolo1 BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC556268'),
+  @b_portsolo2 BIGINT = (SELECT Id FROM dbo.Bookings WHERE Number = 'PC572180');
 
--- dbo.ChecklistTicks: 108 rows
+-- dbo.ChecklistTicks: 126 rows
 INSERT INTO dbo.ChecklistTicks ([BookingId], [ItemId], [Done], [At]) VALUES
   (@b_gerald, N'pay', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
   (@b_gerald, N'names', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
@@ -176,7 +180,25 @@ INSERT INTO dbo.ChecklistTicks ([BookingId], [ItemId], [Done], [At]) VALUES
   (@b_harold, N'insurance', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
   (@b_harold, N'checkin', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
   (@b_harold, N'packing', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
-  (@b_harold, N'phone', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0)));
+  (@b_harold, N'phone', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'pay', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'names', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'documents', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'insurance', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'tours', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'dining', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'checkin', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'packing', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'phone', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'pay', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'names', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'documents', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'insurance', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'tours', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'dining', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'checkin', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'packing', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'phone', 1, CAST('2027-02-25T15:00:00' AS DATETIME2(0)));
 
 -- dbo.AssistanceRequests: 3 rows
 INSERT INTO dbo.AssistanceRequests ([PublicId], [BookingId], [GuestUserId], [Kind], [Note], [Status], [At]) VALUES
@@ -184,14 +206,16 @@ INSERT INTO dbo.AssistanceRequests ([PublicId], [BookingId], [GuestUserId], [Kin
   ('235D1648-AEEC-7DF8-A38F-3A9284694CCA', @b_ruth, @u_ruth, N'tender', N'Walker. Needs a seat near the tender door and help on the gangway.', N'confirmed', CAST('2027-02-27T15:00:00' AS DATETIME2(0))),
   ('6660B285-4168-2479-F602-01E9FEA4D463', @b_colin, @u_colin, N'equipment', N'CPAP machine needs a power point beside the bed. Service dog travelling with me.', N'received', CAST('2027-02-27T15:00:00' AS DATETIME2(0)));
 
--- dbo.TourBookings: 4 rows
+-- dbo.TourBookings: 6 rows
 INSERT INTO dbo.TourBookings ([PublicId], [BookingId], [SailingId], [ExcursionId], [Day], [Source], [TotalCents], [CreditCents], [Status], [PaymentId], [At]) VALUES
   ('2CF5B386-F20C-019E-AF9F-76831EDCE0D6', @b_gerald, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_gerald), N'coz-ruins', 3, N'pre', 6900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC163342-T-coz-ruins'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
   ('4BD989FE-2DCB-2774-A67C-74452A3C0C4C', @b_daniel, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_daniel), N'coz-beach', 3, N'pre', 21800, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC243902-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
   ('9DF63AF6-6269-E973-2256-2485582F5967', @b_ruth, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_ruth), N'bze-walk', 4, N'pre', 9000, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC428972-T-bze-walk'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
-  ('9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D', @b_bea, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_bea), N'coz-beach', 3, N'pre', 5900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC476708-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0)));
+  ('9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D', @b_bea, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_bea), N'coz-beach', 3, N'pre', 5900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC476708-T-coz-beach'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
+  ('7AF3CC65-8B03-2D8F-EAF5-CD26949C5B3A', @b_portsolo1, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_portsolo1), N'coz-ruins', 3, N'pre', 6900, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC556268-T-coz-ruins'), CAST('2027-02-14T15:00:00' AS DATETIME2(0))),
+  ('5B12261F-F926-974A-DCF6-0B7A02656C11', @b_portsolo2, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_portsolo2), N'rtb-snorkel', 5, N'pre', 7500, 0, N'booked', (SELECT Id FROM dbo.Payments WHERE Reference = 'PAY-PC572180-T-rtb-snorkel'), CAST('2027-02-14T15:00:00' AS DATETIME2(0)));
 
--- dbo.TourBookingGuests: 8 rows
+-- dbo.TourBookingGuests: 10 rows
 INSERT INTO dbo.TourBookingGuests ([TourBookingId], [BookingId], [UserId]) VALUES
   ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '2CF5B386-F20C-019E-AF9F-76831EDCE0D6'), @b_gerald, @u_gerald),
   ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_daniel),
@@ -200,7 +224,9 @@ INSERT INTO dbo.TourBookingGuests ([TourBookingId], [BookingId], [UserId]) VALUE
   ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '4BD989FE-2DCB-2774-A67C-74452A3C0C4C'), @b_daniel, @u_maya),
   ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @b_ruth, @u_ruth),
   ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9DF63AF6-6269-E973-2256-2485582F5967'), @b_ruth, @u_paul),
-  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D'), @b_bea, @u_bea);
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '9940D4FA-C5E8-2120-D71B-27EFB1A4DD3D'), @b_bea, @u_bea),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '7AF3CC65-8B03-2D8F-EAF5-CD26949C5B3A'), @b_portsolo1, @u_portsolo1),
+  ((SELECT Id FROM dbo.TourBookings WHERE PublicId = '5B12261F-F926-974A-DCF6-0B7A02656C11'), @b_portsolo2, @u_portsolo2);
 
 -- dbo.TourCartLines: 2 rows
 INSERT INTO dbo.TourCartLines ([BookingId], [ExcursionId]) VALUES
@@ -216,19 +242,23 @@ INSERT INTO dbo.TourCartGuests ([BookingId], [ExcursionId], [UserId]) VALUES
   (@b_marcus, N'coz-snorkel', @u_elena),
   (@b_marcus, N'coz-snorkel', @u_sofia);
 
--- dbo.DiningReservations: 3 rows
+-- dbo.DiningReservations: 5 rows
 INSERT INTO dbo.DiningReservations ([PublicId], [BookingId], [SailingId], [VenueId], [Day], [TimeLocal], [Note], [ChargeCents], [Status]) VALUES
   ('ADA56D06-78E5-70D7-F168-3ACD358D2B6C', @b_gerald, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_gerald), N'crown', 2, CAST('19:00:00' AS TIME(0)), N'', 4500, N'booked'),
   ('BE30F651-2EC3-B683-6C2A-9C0E55CB6947', @b_daniel, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_daniel), N'sabatini', 4, CAST('19:30:00' AS TIME(0)), N'', 9000, N'booked'),
-  ('D6B4E417-0F3A-689E-F6AB-BF8544458875', @b_jordan, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_jordan), N'love', 5, CAST('20:00:00' AS TIME(0)), N'Honeymoon: a quiet table if possible.', 9000, N'booked');
+  ('D6B4E417-0F3A-689E-F6AB-BF8544458875', @b_jordan, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_jordan), N'love', 5, CAST('20:00:00' AS TIME(0)), N'Honeymoon: a quiet table if possible.', 9000, N'booked'),
+  ('86974F9C-820C-31F4-F460-A289629C9A9E', @b_portsolo1, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_portsolo1), N'crown', 2, CAST('19:00:00' AS TIME(0)), N'', 4500, N'booked'),
+  ('6C34D3F6-494B-97E0-6AF5-4999A5BBD602', @b_portsolo2, (SELECT SailingId FROM dbo.Bookings WHERE Id = @b_portsolo2), N'sabatini', 4, CAST('19:30:00' AS TIME(0)), N'', 4500, N'booked');
 
--- dbo.DiningReservationGuests: 5 rows
+-- dbo.DiningReservationGuests: 7 rows
 INSERT INTO dbo.DiningReservationGuests ([ReservationId], [BookingId], [UserId], [Covered]) VALUES
   ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'ADA56D06-78E5-70D7-F168-3ACD358D2B6C'), @b_gerald, @u_gerald, 0),
   ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @b_daniel, @u_daniel, 1),
   ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'BE30F651-2EC3-B683-6C2A-9C0E55CB6947'), @b_daniel, @u_priya, 1),
   ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @b_jordan, @u_jordan, 1),
-  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @b_jordan, @u_casey, 1);
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = 'D6B4E417-0F3A-689E-F6AB-BF8544458875'), @b_jordan, @u_casey, 1),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = '86974F9C-820C-31F4-F460-A289629C9A9E'), @b_portsolo1, @u_portsolo1, 0),
+  ((SELECT Id FROM dbo.DiningReservations WHERE PublicId = '6C34D3F6-494B-97E0-6AF5-4999A5BBD602'), @b_portsolo2, @u_portsolo2, 0);
 
 -- dbo.Purchases: 2 rows
 INSERT INTO dbo.Purchases ([PublicId], [BookingId], [Kind], [ItemId], [Units], [UnitCents], [TotalCents], [Status], [CreditedCents], [PaymentId], [At]) VALUES
@@ -240,7 +270,7 @@ INSERT INTO dbo.PurchaseGuests ([PurchaseId], [BookingId], [UserId]) VALUES
   ((SELECT Id FROM dbo.Purchases WHERE PublicId = '7A0C90E4-3821-5EDC-FD44-5AF910C6A21F'), @b_gerald, @u_gerald),
   ((SELECT Id FROM dbo.Purchases WHERE PublicId = 'F19F0941-9CC9-A488-8CE4-FE03FC4B3C6E'), @b_dev, @u_dev);
 
--- dbo.CheckinGuests: 110 rows
+-- dbo.CheckinGuests: 122 rows
 INSERT INTO dbo.CheckinGuests ([BookingId], [UserId], [Step], [DoneAt], [Data]) VALUES
   (@b_gerald, @u_gerald, N'confirm', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
   (@b_gerald, @u_gerald, N'document', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
@@ -351,9 +381,21 @@ INSERT INTO dbo.CheckinGuests ([BookingId], [UserId], [Step], [DoneAt], [Data]) 
   (@b_harold, @u_harold, N'photo', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
   (@b_harold, @u_harold, N'emergency', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"name":"Alex Contact","phone":"+1 305 555 0100"}'),
   (@b_harold, @u_harold, N'contract', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
-  (@b_harold, @u_harold, N'health', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"symptoms":false}');
+  (@b_harold, @u_harold, N'health', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"symptoms":false}'),
+  (@b_portsolo1, @u_portsolo1, N'confirm', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo1, @u_portsolo1, N'document', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo1, @u_portsolo1, N'photo', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo1, @u_portsolo1, N'emergency', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"name":"Alex Contact","phone":"+1 305 555 0100"}'),
+  (@b_portsolo1, @u_portsolo1, N'contract', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo1, @u_portsolo1, N'health', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"symptoms":false}'),
+  (@b_portsolo2, @u_portsolo2, N'confirm', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo2, @u_portsolo2, N'document', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo2, @u_portsolo2, N'photo', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo2, @u_portsolo2, N'emergency', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"name":"Alex Contact","phone":"+1 305 555 0100"}'),
+  (@b_portsolo2, @u_portsolo2, N'contract', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{}'),
+  (@b_portsolo2, @u_portsolo2, N'health', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), N'{"symptoms":false}');
 
--- dbo.CheckinBooking: 14 rows
+-- dbo.CheckinBooking: 16 rows
 INSERT INTO dbo.CheckinBooking ([BookingId], [PaymentLabel], [PaymentAt], [FinishedAt]) VALUES
   (@b_gerald, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_linda, N'Onboard account card', NULL, NULL),
@@ -368,9 +410,11 @@ INSERT INTO dbo.CheckinBooking ([BookingId], [PaymentLabel], [PaymentAt], [Finis
   (@b_bea, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_frank, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_grace, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
-  (@b_harold, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0)));
+  (@b_harold, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, N'Onboard account card', CAST('2027-03-18T15:00:00' AS DATETIME2(0)), CAST('2027-03-18T15:00:00' AS DATETIME2(0)));
 
--- dbo.BoardingPasses: 18 rows
+-- dbo.BoardingPasses: 20 rows
 INSERT INTO dbo.BoardingPasses ([BookingId], [UserId], [Seq], [Code], [InWallet], [IssuedAt]) VALUES
   (@b_gerald, @u_gerald, 1, N'PCPASS.PC163342.1.23ed103e2f27b4d5', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_alexander, @u_alexander, 1, N'PCPASS.PC211078.1.9007c9147b58d056', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
@@ -389,9 +433,11 @@ INSERT INTO dbo.BoardingPasses ([BookingId], [UserId], [Seq], [Code], [InWallet]
   (@b_bea, @u_bea, 1, N'PCPASS.PC476708.1.e6419c270556d312', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_frank, @u_frank, 1, N'PCPASS.PC492620.1.6e2997c7ef5b8019', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
   (@b_grace, @u_grace, 1, N'PCPASS.PC508532.1.077d5949fdfb9e3e', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
-  (@b_harold, @u_harold, 1, N'PCPASS.PC524444.1.6958d2fcd9b0e95b', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0)));
+  (@b_harold, @u_harold, 1, N'PCPASS.PC524444.1.6958d2fcd9b0e95b', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo1, @u_portsolo1, 1, N'PCPASS.PC556268.1.29a937414f010b24', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0))),
+  (@b_portsolo2, @u_portsolo2, 1, N'PCPASS.PC572180.1.28594b02c5fc345f', 0, CAST('2027-03-18T15:00:00' AS DATETIME2(0)));
 
--- dbo.EmbarkProgress: 13 rows
+-- dbo.EmbarkProgress: 15 rows
 INSERT INTO dbo.EmbarkProgress ([BookingId], [LuggageStatus], [LuggageDroppedAt], [Terminal]) VALUES
   (@b_gerald, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
   (@b_alexander, N'dropped', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
@@ -405,9 +451,11 @@ INSERT INTO dbo.EmbarkProgress ([BookingId], [LuggageStatus], [LuggageDroppedAt]
   (@b_bea, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
   (@b_frank, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
   (@b_grace, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
-  (@b_harold, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25');
+  (@b_harold, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
+  (@b_portsolo1, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25'),
+  (@b_portsolo2, N'delivered', CAST('2027-03-21T15:30:00' AS DATETIME2(0)), N'Terminal 25');
 
--- dbo.MusterConfirmations: 16 rows
+-- dbo.MusterConfirmations: 18 rows
 INSERT INTO dbo.MusterConfirmations ([BookingId], [UserId], [ConfirmedAt], [ByUserId]) VALUES
   (@b_gerald, @u_gerald, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_gerald),
   (@b_daniel, @u_daniel, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_daniel),
@@ -424,9 +472,11 @@ INSERT INTO dbo.MusterConfirmations ([BookingId], [UserId], [ConfirmedAt], [ByUs
   (@b_bea, @u_bea, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_bea),
   (@b_frank, @u_frank, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_frank),
   (@b_grace, @u_grace, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_grace),
-  (@b_harold, @u_harold, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_harold);
+  (@b_harold, @u_harold, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_harold),
+  (@b_portsolo1, @u_portsolo1, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_portsolo1),
+  (@b_portsolo2, @u_portsolo2, CAST('2027-03-21T20:00:00' AS DATETIME2(0)), @u_portsolo2);
 
--- dbo.FolioLines: 33 rows
+-- dbo.FolioLines: 39 rows
 INSERT INTO dbo.FolioLines ([PublicId], [BookingId], [UserId], [Day], [Category], [Description], [Cents], [CoveredBy], [SourceType], [At]) VALUES
   ('EDE1CA29-382C-AD80-CAC2-6D0AED01C013', @b_gerald, @u_gerald, 1, N'Dining', N'Specialty cover charge', 4500, NULL, N'manual', CAST('2027-03-21T23:00:00' AS DATETIME2(0))),
   ('79693152-EE0A-8EA7-4DD3-1079487AABDE', @b_gerald, @u_gerald, 2, N'Bar', N'Drinks at the Piazza Bar', 3150, NULL, N'manual', CAST('2027-03-22T23:00:00' AS DATETIME2(0))),
@@ -460,7 +510,13 @@ INSERT INTO dbo.FolioLines ([PublicId], [BookingId], [UserId], [Day], [Category]
   ('86E95E27-D8BF-BC93-AC70-0E066848371A', @b_grace, @u_grace, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0))),
   ('A004A9B1-0213-83EC-97B5-A43FD30D4B2D', @b_harold, @u_harold, 1, N'Dining', N'Specialty cover charge', 4500, NULL, N'manual', CAST('2027-03-21T23:00:00' AS DATETIME2(0))),
   ('E4E572E6-026F-D800-1ECD-2C0DFCC957C4', @b_harold, @u_harold, 2, N'Bar', N'Drinks at the Piazza Bar', 3150, NULL, N'manual', CAST('2027-03-22T23:00:00' AS DATETIME2(0))),
-  ('90E09806-DEE5-941E-992F-2D6D5A037504', @b_harold, @u_harold, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0)));
+  ('90E09806-DEE5-941E-992F-2D6D5A037504', @b_harold, @u_harold, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0))),
+  ('10761050-8639-1DE6-48BD-0607849B4DAE', @b_portsolo1, @u_portsolo1, 1, N'Dining', N'Specialty cover charge', 4500, NULL, N'manual', CAST('2027-03-21T23:00:00' AS DATETIME2(0))),
+  ('C42487EF-7B61-DECA-3F05-298FD02502A2', @b_portsolo1, @u_portsolo1, 2, N'Bar', N'Drinks at the Piazza Bar', 3150, NULL, N'manual', CAST('2027-03-22T23:00:00' AS DATETIME2(0))),
+  ('7B60ABE7-E63B-BDB7-4EB0-ECC26C8972FE', @b_portsolo1, @u_portsolo1, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0))),
+  ('A08600C8-C1A7-2721-3989-7911E1491EB9', @b_portsolo2, @u_portsolo2, 1, N'Dining', N'Specialty cover charge', 4500, NULL, N'manual', CAST('2027-03-21T23:00:00' AS DATETIME2(0))),
+  ('DA6A0FAB-FAF6-8CDA-AF4A-997656412D8B', @b_portsolo2, @u_portsolo2, 2, N'Bar', N'Drinks at the Piazza Bar', 3150, NULL, N'manual', CAST('2027-03-22T23:00:00' AS DATETIME2(0))),
+  ('3C2A8539-9CEE-01E8-9FF1-3DCD2F48C091', @b_portsolo2, @u_portsolo2, 3, N'Shops', N'Sunscreen and a hat', 2899, NULL, N'manual', CAST('2027-03-23T23:00:00' AS DATETIME2(0)));
 
 -- dbo.DisembarkChoices: 2 rows
 INSERT INTO dbo.DisembarkChoices ([BookingId], [OptionCode], [TagsOn], [DecidedAt]) VALUES
