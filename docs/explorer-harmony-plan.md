@@ -304,3 +304,466 @@ Each phase ends with: tests, lint, `tsc -b`, build green; commit; **stop for `/c
 5. **Backend testing is done by you.** I will not run `dotnet test`; each phase that touches `server/` ends with a list of the server files changed and what to try, and TypeScript-side contract tests cover the shapes.
 
 Still defaulting as recommended unless you say otherwise: bars live in Dining and their live music is also shown in Entertainment; casino in Entertainment and tech desks in Activities; spa booking shows price and charges the onboard account behind a mock payment interface; Today's Plan gets the same date picker; I author the start times that the docs omit and you review them in the data-file diffs.
+
+---
+
+## 7. Requirements review: Entertainment and Dining documents
+
+A line-by-line check of `docs/onboard-entertainment-management-requirements.md` (ENT, OPS, NFR) and `docs/onboard-dining-management-requirements.md` (DIN, OPS, NFR) against the code as it stands after Phase 9. OPS and NFR ids repeat across the two documents, so they are written `EOPS`/`ENFR` for Entertainment and `DOPS`/`DNFR` for Dining. A row may cover a range of ids that share one verdict. "Pri" is the priority the document gives (P0 essential to P3 future).
+
+How the verdicts were reached: by reading the requirement against the routes, domain modules, server services and strings in this repository, not by running the app (CLAUDE.md rules out browser testing). A requirement is "done" only when its main behaviour is present; "partial" says what is missing.
+
+**What counts as not applicable and ignored:**
+
+- Crew and shipboard operations tooling (all `OPS` ids except where the content pipeline or server already does the job). This is a guest app; the ship's systems are mocked behind interfaces (CLAUDE.md).
+- Anything that needs a live ship feed we do not have (point-of-sale, kitchen, scanners, indoor positioning, occupancy sensors).
+- Non-English content (English only for now).
+- P3 items, and P2 items that need data or operations we do not have. The documents themselves say P3 waits until the basics are excellent.
+
+### 7.1 Summary
+
+| Group | Not applicable | Done completely | Done partially | Not done but should be | Total |
+|---|---:|---:|---:|---:|---:|
+| Entertainment guest (ENT) | 41 | 41 | 56 | 28 | 166 |
+| Entertainment operations (OPS) | 33 | 0 | 5 | 0 | 38 |
+| Entertainment non-functional (NFR) | 1 | 16 | 8 | 0 | 25 |
+| Dining guest (DIN) | 81 | 88 | 82 | 42 | 293 |
+| Dining operations (OPS) | 54 | 3 | 7 | 0 | 64 |
+| Dining non-functional (NFR) | 0 | 17 | 10 | 0 | 27 |
+| **All** | **210** | **165** | **168** | **70** | **613** |
+
+Of the not-done-but-should-be items, by document priority: P0 10, P1 56, P2 4, P3 0. Of the partial items: P0 73, P1 82, P2 13, P3 0.
+
+### 7.2 Done completely
+
+| Id | Pri | Requirement | Evidence |
+|---|---|---|---|
+| ENT-001 | P0 | Entertainment entry point | `/entertainment` is a top-bar Explorer path. |
+| ENT-002 | P0 | Today view with ship day and time | `ShipClockCard`: day n of N, ship time, sea or port. |
+| ENT-003 | P0 | My Plan area separate from the programme | Today's Plan (`/today`) is the plan; Explorers show only toggles. |
+| ENT-005 | P0 | Event key facts at a glance | Title, time, length, venue, cost, age, status badges. |
+| ENT-006 | P0 | Schedule changes visible, with reason | Moved and cancelled badges carry the ship's reason (`exp.event.movedWhy`). |
+| ENT-014 | P0 | Fee, included or package status | `exp.event.cost` / `exp.event.included`. |
+| ENT-018 | P0 | Consistent date, time, venue, status everywhere | One served record feeds every surface. |
+| ENT-030 | P0 | Clear filters, active filter visible | Chips with `aria-pressed` and an All chip. |
+| ENT-034 | P1 | Starting soon respects ship time | `upcomingEvents` rule with a 15-minute grace. |
+| ENT-038 | P0 | Day-by-day calendar for the sailing | Pick a Date plus Today's Plan for any day. |
+| ENT-039 | P0 | Add to plan without booking, labelled planned | Plan toggle on every event. |
+| ENT-041 | P0 | Reservations alongside saved events | Dining and spa appear in the timeline. |
+| ENT-042 | P0 | Overlap detection | `overlapping()` in `planTimeline.ts`. |
+| ENT-055 | P0 | Reserve from the event page | Where a booking service exists (dining, spa, show seats ahead). Other events are not bookable by design. |
+| ENT-056 | P0 | Guests covered by the reservation | Party size and guest names on dining and spa. |
+| ENT-057 | P0 | Explicit success, failure or pending | `role="status"` result after every action. |
+| ENT-059 | P0 | Manage all reservations in one place | `/plan/reservations`. |
+| ENT-060 | P0 | Prevent duplicate bookings | `tableClash`, spa overlap rules. |
+| ENT-062 | P1 | Cancel and modify | Dining move and cancel; spa move, edit, cancel with policy. |
+| ENT-073 | P0 | Propagate changes to every surface | Single server record plus the mid-day change feed. |
+| ENT-075 | P0 | Stale and offline indicator | Saved copies show their age. |
+| ENT-081 | P1 | Staff explanation note | The reason field is served and shown. |
+| ENT-088 | P0 | Notification centre with read state | `NotificationsScreen` and updates inbox. |
+| ENT-090 | P1 | Quiet hours, separate controls | `QuietHours`, per-category channel prefs, offers separate. |
+| ENT-096 | P0 | Venue name and deck everywhere | Venue page and plan rows. |
+| ENT-099 | P0 | Names match ship signage | Authored from the ship docs. |
+| ENT-101 | P1 | Walking time | Estimated from the deck graph in the timeline. |
+| ENT-118 | P0 | Child data not exposed | Guardian controls in chat; events carry no child data. |
+| ENT-125..128 | P0 | WCAG 2.2 AA, screen readers, not colour alone, plain language | Phase 9 accessibility pass, contrast report, status badges with text and icon. |
+| ENT-143 | P1 | Screenings in the catalogue | Movies under the stars and screenings are events. |
+| ENT-157 | P0 | Core pages without general internet | PWA with offline copies. |
+| ENT-158 | P0 | Cache schedule, details, venues, plan | Saved copies for six Explorer days and the plan. |
+| ENT-159..160 | P0 | Last sync shown; cache readable | Saved copy shows its age. |
+| ENT-161..162 | P0 | No false completion; pending and retry states | Actions show errors and retry; nothing is queued as done. |
+| ENT-164 | P1 | Text-first, light media | No media on Explorer pages; bundle budgets enforced. |
+| ENT-165 | P1 | Fallback when push is missing | `localReminders` in-app fallback. |
+| ENFR-001..003 | P0 | Render speed, search without reload, text-first detail | Bundle budgets in `check-bundle`; client-side filters. |
+| ENFR-004 | P1 | Date-scoped loading | One day per request. |
+| ENFR-006 | P0 | Keep the plan through poor connectivity | Plan is on the server; saved copies offline. |
+| ENFR-007 | P0 | Authoritative results, safe timeouts | Server-confirmed actions. |
+| ENFR-009 | P0 | Graceful failure | Partial-failure retry banner. |
+| ENFR-011..012 | P0 | Encryption; authentication and authorisation | JWT, security headers, data protection. |
+| ENFR-015..016 | P0 | Child profiles hidden; privacy controls | Guardian rules and privacy screens. |
+| ENFR-018 | P1 | Audit trail | `/me/audit` and `/audit`. |
+| ENFR-019..022 | P0 | Responsive, installable PWA, cached shell, no push dependence | `vite-plugin-pwa`; in-app reminders. |
+| DIN-001..003 | P0 | Dining entry, ship time and day, Open now | `/dining-today`; `ShipClockCard`; `venueState` and `HoursBadge`. |
+| DIN-005 | P0 | Upcoming reservations prominent | Reservations card for the chosen day. |
+| DIN-007 | P0 | Open, opening soon, closed, unavailable, modified hours | Hours badge and `unavailableSince`. |
+| DIN-016 | P0 | Complete venue catalogue | All three ships. |
+| DIN-019 | P0 | Included, cover charge, package | Price kind and cover amount. |
+| DIN-020 | P0 | Hours by date and meal period, port-day exceptions | `HoursRule` by day kind. |
+| DIN-024 | P1 | Support for recorded dietary needs, with caveat | Diet filter and allergy note on menus. |
+| DIN-028 | P1 | Save a venue | Pins, synced to the server. |
+| DIN-034..035 | P0 | Current menu per venue and meal period; correct venue, ship, date | 7-day menus per ship. |
+| DIN-038 | P0 | Menu last updated | `ven.asOf`. |
+| DIN-039 | P0 | Approved allergen labels | Eight allergen tags (`CONTAINS`). |
+| DIN-041 | P0 | Never say allergen-free | `ven.allergyNote` and "suits" wording. |
+| DIN-042 | P1 | Verified diet filters | `dishesFor`. |
+| DIN-054 | P0 | Clear filters | All chip. |
+| DIN-059 | P1 | Only operating venues or next opening | Hours badge says "Opens 5:30 pm". |
+| DIN-066..067 | P0 | Reserve from venue; date, time, party | `ReservationEditor` with slots. |
+| DIN-068 | P0 | Guests covered | Party and names. |
+| DIN-070 | P0 | Explicit result | `role="status"`. |
+| DIN-071 | P0 | All reservations in one place | `/plan/reservations`. |
+| DIN-072 | P0 | Included, credit or cover charge shown | `mealCharge` with covered and pays. |
+| DIN-074 | P0 | No duplicate bookings | `tableClash`. |
+| DIN-075 | P0 | Windows, eligibility, packages | `diningWindow`, entitlements. |
+| DIN-076 | P0 | Traditional assigned dining | Early and late seatings (`DINING_PLAN`). |
+| DIN-077..078 | P1 | Modify, cancel; flexible daily times | Move, cancel, late. |
+| DIN-083 | P1 | Alternative times | Slot list. |
+| DIN-085 | P1 | Pre-cruise and onboard booking access | `/plan/dining`, slot watch. |
+| DIN-086 | P2 | Reservation waitlist | `Waits.tsx`. |
+| DIN-093 | P1 | Virtual queue | `QueueControl`. |
+| DIN-096 | P1 | Leave a queue | `leaveQueue`. |
+| DIN-106 | P0 | Dietary profile | Account dietary list and per-guest booking step. |
+| DIN-109 | P0 | Explain a request is not a guarantee | `ven.allergyNote`. |
+| DIN-118 | P1 | Verified dietary tags | As DIN-042. |
+| DIN-128 | P0 | Day-by-day dining view | Pick a Date. |
+| DIN-129 | P0 | Save a meal idea | Pins. |
+| DIN-130..131 | P0 | My dining; remove saved without cancelling | Pins and reservations are separate. |
+| DIN-132 | P0 | Conflicts with other commitments | Clash rules and plan timeline. |
+| DIN-139 | P1 | Voyage and daily views | Pick a Date. |
+| DIN-159..160 | P0 | Room-service hours, menu, fees; chargeable items | `/ship/order`, `orders.ts`. |
+| DIN-161..164 | P0 | Place order; confirmation; states; no false acceptance | Server `OrderService` drives stages. |
+| DIN-165..166 | P1 | Public-place delivery without tracking | `DELIVERY_ZONES`. |
+| DIN-167 | P1 | Delivery estimate | `etaAt`. |
+| DIN-168..169 | P1 | Modify, cancel; substitutions | `canCancel`, `needsChoice`. |
+| DIN-171 | P1 | Entitlements and fees | `priceOrder`. |
+| DIN-173..174 | P2 | Scheduled delivery; progress | `deliverAt`, breakfast slots. |
+| DIN-180 | P1 | No paid internet for menus | Offline copies. |
+| DIN-188 | P2 | Accessible digital menus | Plain text lists. |
+| DIN-193..195 | P0 | Included or chargeable; price and currency; fees shown first | Cover and `ConfirmCharge`. |
+| DIN-197 | P0 | Expected account charge | Before confirming. |
+| DIN-198 | P1 | Remaining credits | Entitlements. |
+| DIN-200 | P1 | Exceeds allowance, incremental charge | `mealCharge`. |
+| DIN-202 | P1 | Link to billing | Bill and folio. |
+| DIN-219..222 | P0 | WCAG, screen readers, not colour alone, plain language | Phase 9 pass. |
+| DIN-227 | P1 | Accessible menus and text equivalents | Text only. |
+| DIN-232 | P0 | Operational states | `venueState`. |
+| DIN-233 | P0 | Hours changes reach every view | Single source. |
+| DIN-236 | P0 | Cached info flagged | Saved copy age. |
+| DIN-237 | P0 | Closed venue not bookable | `venue.gone` and closed states. |
+| DIN-242 | P1 | Staff explanation | Reason served. |
+| DIN-249 | P0 | Notification centre | `NotificationsScreen`. |
+| DIN-252 | P1 | Quiet hours | `QuietHours`. |
+| DIN-262 | P1 | Include included dining beside paid | All venues listed with labels. |
+| DIN-273 | P1 | Staff fallback | Crew cards and assistance. |
+| DIN-283..288 | P0 | Local network, cache, sync time, offline reading, no false completion, retry | PWA copies, `offlineContract`. |
+| DIN-290..291 | P1 | Compact data; push fallback | No images; in-app reminders. |
+| DOPS-015..017 | P0 | Source of truth, booking rules, duplicate protection | Server rules. |
+| DNFR-001..004 | P0/P1 | Speed, search, text-first, scoping | As ENFR. |
+| DNFR-006..007 | P0 | Intermittent connectivity; authoritative results | Server-confirmed. |
+| DNFR-009 | P0 | Graceful failure | Retry banner. |
+| DNFR-010 | P0 | Stale data not shown as safe | Menu "as of" time and offline age. |
+| DNFR-012..013 | P0 | Security, authorisation | JWT and headers. |
+| DNFR-017..018 | P0 | Child data hidden; privacy controls | Guardian and privacy screens. |
+| DNFR-020 | P1 | Audit | Audit endpoints. |
+| DNFR-021..024 | P0 | Responsive, PWA, cache, no push dependence | PWA. |
+
+### 7.3 Done partially and needs more work
+
+"Needs" says what is still missing.
+
+| Id | Pri | Requirement | What is missing / needs |
+|---|---|---|---|
+| ENT-004 | P0 | Happening now / starting soon / tonight / all today | Happening Now strip and the day list exist; no Tonight or Starting soon shortcuts. |
+| ENT-012 | P0 | Searchable catalogue of all events | Search box finds venues only, not events or performers; the global search index lists venues. |
+| ENT-013 | P0 | Event detail page with the minimum fields | Events are rows on the venue page, not pages of their own. Missing: performer, dress, weather, language, series. |
+| ENT-015 | P0 | Mandatory age restriction vs suggestion | Age group is shown; formal and suggested are not distinguished. |
+| ENT-016 | P0 | Reservation rules in plain language | Dining and spa say it; show and class events give no rule. |
+| ENT-021 | P1 | What to expect, arrival advice | Free-text detail only; no come-and-go or arrival field. |
+| ENT-022 | P1 | What is and is not included | Cost shown; inclusions only in prose. |
+| ENT-027 | P0 | Keyword search incl. performer and venue | Venue names and descriptions only. |
+| ENT-028 | P0 | Category browsing | Interest filter (shows, music, games, family...) and venue kinds; not the doc's ten categories or icons. |
+| ENT-029 | P0 | Filter by day, time, category, venue, reservation | Day, venue and interest filters; no time range or reservation filter. |
+| ENT-040 | P0 | Remove, reschedule, change reminder | Remove works; no per-event reminder setting. |
+| ENT-043 | P0 | Hard vs soft conflicts | Overlap and walking-time notes exist; not named hard and soft. |
+| ENT-044 | P0 | Venue and route action from the plan | Each item links to its Explorer page; no Navigate button. |
+| ENT-045 | P1 | Combined day with dining, excursions, appointments | Dining and spa are in; tours are not (server serves only today's port day). |
+| ENT-046 | P1 | Warn when travel time is too short | Walk estimate and leave-by time shown; no explicit too-tight warning. |
+| ENT-049 | P1 | Voyage and daily views without reselecting the date | Date is shared and sticky; no voyage-wide calendar grid. |
+| ENT-054 | P0 | Reservation model shown | Dining, spa and book-ahead show seats are modelled; events do not state one. |
+| ENT-058 | P0 | Confirmation reference and arrival instructions | Reference shown; arrival and check-in text is thin. |
+| ENT-061 | P0 | Honest capacity | "Filling up" and "Full" badges from simulated capacity; no source or refresh time shown. |
+| ENT-063 | P1 | Waitlist or standby | Dining waitlists and walk-in queues exist (`Waits.tsx`); none for shows or classes. |
+| ENT-064 | P1 | Notify a waitlisted guest with deadline | Dining waitlist offers have a deadline and accept step; not for events. |
+| ENT-065 | P1 | Group reservations with partial result | Dining party booking; no "2 of 4 confirmed" wording. |
+| ENT-066 | P1 | Release policy | Spa 24-hour rule and dining cancel; not stated per event. |
+| ENT-067 | P1 | QR or digital confirmation with fallback | Show tickets exist in book-ahead (`Tickets.tsx`); not on Explorer events. |
+| ENT-072 | P0 | Operational statuses | On, moved, cancelled, plus filling up and full; no delayed, registration closed or completed. |
+| ENT-074 | P0 | Show what changed, old and new | New state and reason; old time or venue not always shown. |
+| ENT-076..077 | P0 | Notify guests of changes to booked and saved events | Plan banner and push exist for programme changes; Explorer-event changes are only a banner on Today's Plan. |
+| ENT-080 | P1 | "What changed today?" summary | Today's Plan lists moved and cancelled items; no whole-programme summary. |
+| ENT-084..085 | P0 | Enable reminders; configure timing | Global notification settings exist; planned Explorer events have no reminder yet and timing is fixed at 15 minutes. |
+| ENT-086 | P0 | Critical change alerts | As ENT-076. |
+| ENT-087 | P0 | No duplicate reminders | Dedup exists in the push pipeline; not verified for Explorer events (none are sent). |
+| ENT-091 | P1 | Action buttons and deep links | Links to the affected page; no action buttons. |
+| ENT-097 | P0 | Venue linked to deck plan | Opens the plan without placing a pin (venues have no coordinates on the pictures). |
+| ENT-098 | P0 | Navigate action from event, plan, reminder | `RouteFinder` exists under Ship; not linked from events or the plan. |
+| ENT-100 | P1 | Step-by-step, accessible routing | `RouteFinder` and deck graph exist; accessible-route coverage not confirmed. |
+| ENT-103 | P1 | Venue detail page | Description, hours, events, staffed hours; no seating or accessibility details. |
+| ENT-104 | P2 | Near this venue | "Other venues" list; not by proximity. |
+| ENT-107..110 | P1 | Shared shortlist, attendance, propose and invite, group reservation | Chat planning, polls and group day plans exist; not wired to Explorer events. |
+| ENT-112 | P1 | Group poll | Chat and Stanley polls exist; not on events. |
+| ENT-113..114 | P2 | Group schedule; meet-here pin | Group day plans and the meeting point screen exist. |
+| ENT-116 | P0 | Age suitability on family events | Age badge shown; no accompaniment wording. |
+| ENT-119 | P1 | Filter by children's ages | Kids, teens, adults chips only. |
+| ENT-120 | P1 | Youth hours and registration | Hours authored for the youth venues; no registration status. |
+| ENT-132 | P1 | Large text without truncation | Responsive layout; no large-text test. |
+| ENT-136 | P1 | How to take part | Instructions in event text only. |
+| ENT-144 | P1 | Link to stateroom TV catalogue | TV screen exists; not linked from Explorer. |
+| ENT-145 | P2 | Movie details | Title and time only. |
+| ENT-148 | P1 | Interest themes | Event interest filter; no saved profile. |
+| ENT-163 | P1 | Queue safe preference changes | Pins and plan toggles need a connection; not queued. |
+| ENT-166 | P2 | Printable daily summary | `.ics` export of the day; no print view. |
+| EOPS-004 | P0 | Validate required fields | A test fails when the generated file breaks a rule. |
+| EOPS-009 | P0 | Published changes update guest caches | Mid-day change feed reaches clients; no crew publish step. |
+| EOPS-011 | P1 | Copy-forward revalidated per sailing | `dayMapping.ts` reuses a 7-day schedule for any sailing length. |
+| EOPS-015..016 | P0 | Source of truth for capacity; protected transactions | Server is the source and booking rules are transactional for dining and spa; event capacity is simulated. |
+| ENFR-005 | P1 | Image sizing, video on demand | Few images on Explorer pages; no video. |
+| ENFR-008 | P0 | Schedule change service level | Feed exists; no stated service level. |
+| ENFR-010 | P1 | Monitoring | Provider health and operator alerts exist; no schedule-sync monitor. |
+| ENFR-014 | P0 | Permission before sharing plans | Chat and party sharing is consented; no event sharing yet. |
+| ENFR-017 | P1 | Minimise retention | `RetentionPurgeService` exists; attendance and location are not collected. |
+| ENFR-023 | P1 | Deep links | Routes carry `?day=N`; no notification or QR deep links for events. |
+| ENFR-024..025 | P1 | Rotation, low-power, PWA fallbacks | CLAUDE.md rules out browser and device testing; fallbacks designed, not tested. |
+| DIN-006 | P0 | Venue facts at a glance | Name, kind, hours, deck, cover; reservation need not on the card. |
+| DIN-008 | P0 | Menu from venue cards and reservations | Menu is on the venue page; not linked from a reservation row. |
+| DIN-010 | P1 | Next booked meal with actions | Reservation card has Change and Cancel; no menu or navigate action. |
+| DIN-011 | P1 | Dining changes summary | Moved and cancelled items show on Today's Plan only. |
+| DIN-014 | P2 | Voyage-wide special dining events | Events on any day via Pick a Date; no voyage list. |
+| DIN-017 | P0 | Venue detail with minimum info | No photos, accessibility or dining model fields. |
+| DIN-018 | P0 | Dining model (reservation, walk-in...) | Walk-in vs bookable only. |
+| DIN-021 | P0 | Deck, location and map action | Deck label shown; map link places no pin. |
+| DIN-022 | P0 | Age restrictions | `minAge` shown; no formal vs suggested. |
+| DIN-023 | P1 | Filter and compare by cuisine, ambience, price... | Kind chips and text search only. |
+| DIN-027 | P1 | Photos, sample menus, what to expect | Sample menus yes; venue art is illustrative, no photos. |
+| DIN-032 | P2 | Service notes (buffet layout, entrance) | Short text in the description. |
+| DIN-036 | P0 | Dish description and price | Dish names and tags; no descriptions or prices. |
+| DIN-037 | P0 | Mark menus as sample or subject to change | Intro text says it; no per-menu label. |
+| DIN-040 | P0 | Contains vs may contain vs unknown | Contains only. |
+| DIN-043 | P1 | Explain what labels mean | Short note only. |
+| DIN-046 | P1 | Modifications and substitutions | "Ask the maître d'" note for halal and kosher. |
+| DIN-051 | P0 | Search across venues, cuisine, dishes | Venue name and description; dishes not searched. |
+| DIN-052 | P0 | Consistent categories | Main, Specialty, Casual, Bars; no Buffet, Café, Room service. |
+| DIN-053 | P0 | Filter by date, meal period, status, type, price, reservation | Date and type only. |
+| DIN-060 | P1 | No-match alternatives | Empty message only. |
+| DIN-065 | P0 | Reservation model per venue and meal | Bookable or walk-in. |
+| DIN-069 | P0 | Confirmation details | Reference and time; arrival note thin. |
+| DIN-073 | P0 | Cancellation deadline and no-show fee shown | Spa shows its rule; dining does not. |
+| DIN-080 | P1 | Celebration details | Special occasion at booking time, not at reservation. |
+| DIN-084 | P1 | Package credits shown | Meals left in the cover calculation. |
+| DIN-088 | P2 | Times suggested around the schedule | `StanleyDiningPlan`. |
+| DIN-091..092 | P0 | Walk-in and check-in instructions | Walk-in flag; no check-in text. |
+| DIN-094 | P1 | Queue estimates labelled | Position and state shown; estimate wording not confirmed. |
+| DIN-095 | P1 | Table-ready notice with window | Ready state shown in-app. |
+| DIN-097 | P1 | Party and location on the queue | Venue shown; party size not. |
+| DIN-107..108 | P0 | Distinct allergy workflow with severity | Allergy tags and a note at booking; no separate workflow. |
+| DIN-116 | P0 | Contact the dining team | Service requests screen; not from venue pages. |
+| DIN-117 | P1 | Update dietary needs, status visible | Editable; no status. |
+| DIN-121 | P1 | Guardian-managed diet for children | Per-guest answers at booking. |
+| DIN-122 | P1 | Printable summary for crew | Crew cards ("I have a food allergy"). |
+| DIN-133 | P0 | Hard vs soft conflicts | As ENT-043. |
+| DIN-134 | P0 | Planner entry details and navigation | No navigate action. |
+| DIN-135 | P1 | Integrated day | Tours missing. |
+| DIN-136 | P1 | Travel-time warning | As ENT-046. |
+| DIN-143 | P0 | Share venue, menu, reservation | Reservations share to chat; venues and menus do not. |
+| DIN-144..145 | P1 | Share shortlists; invite companions | Chat and party exist; not wired. |
+| DIN-146 | P1 | Accepted and declined status | Group board only. |
+| DIN-147 | P1 | Group request | `GroupTable`. |
+| DIN-148 | P1 | Table-size limits | `MAX_PARTY` of 8; larger-party guidance missing. |
+| DIN-151 | P1 | Lightweight poll | Chat polls. |
+| DIN-152 | P1 | Share meeting point | `MeetingPointScreen`. |
+| DIN-170 | P1 | Contact about a late order | General requests screen. |
+| DIN-172 | P1 | Dietary instructions on orders | Free note per line. |
+| DIN-179 | P1 | QR or in-app menu | In-app; no QR or NFC. |
+| DIN-182 | P1 | Service assistance | Requests screen. |
+| DIN-196 | P0 | Package conditions in plain language | Packages screen; not on the venue page. |
+| DIN-199 | P1 | Entitlement states with last updated | Counts, no states. |
+| DIN-201 | P1 | Per-guest package rules | Per-guest entitlements are not fully shown. |
+| DIN-203 | P2 | Voyage view of specialty dining and credits | Packages screen. |
+| DIN-208 | P0 | Age and accompaniment rules | Age only. |
+| DIN-211 | P0 | Guardian allergy requests | See DIN-121. |
+| DIN-213 | P1 | Children in a reservation | Party size. |
+| DIN-223 | P0 | Readable at large text | As ENT-132. |
+| DIN-229 | P2 | Cultural and dietary labels | Halal, kosher via the maître d'. |
+| DIN-230 | P2 | Printable request summary | See DIN-122. |
+| DIN-234..235 | P0 | Notify and show what changed on a reservation | Plan banner; no old and new comparison. |
+| DIN-240 | P1 | Kitchen delay notices | Order stages. |
+| DIN-245 | P0 | Dining reminders on and off | Global settings only. |
+| DIN-246 | P0 | Configurable reservation reminders | Fixed 15 minutes. |
+| DIN-247 | P0 | Material change alerts | In-app banner and push for programme changes only. |
+| DIN-248 | P0 | No duplicate reminders | As ENT-087. |
+| DIN-250 | P1 | Waitlist-ready notice | In-app offer. |
+| DIN-251 | P1 | Order status updates | In-app progress; not push. |
+| DIN-253 | P1 | Suppress on cancel | Same gap as ENT-092. |
+| DIN-257 | P1 | Dining preferences (cuisine, price) | Diet only. |
+| DIN-269 | P1 | Contact action from venue, reservation, order | Not on each page. |
+| DIN-270..272 | P1 | Report issues, route with reference, status | Requests screen has reference and status. |
+| DIN-289 | P1 | Queue preference changes | Not queued. |
+| DIN-292 | P2 | Printable summary | Calendar export only. |
+| DIN-293 | P2 | Confirmed reservations offline with diet acknowledgement | Reservations yes; no acknowledgement. |
+| DOPS-003 | P0 | Date-specific hours | Authored per day kind; no per-date exceptions. |
+| DOPS-007 | P0 | Validate before publishing | Content tests. |
+| DOPS-010 | P0 | Cache invalidation | As EOPS-009. |
+| DOPS-019 | P0 | Traditional dining records | Early and late seating per guest. |
+| DOPS-024 | P1 | No-show and release policy | Late arrivals handled; no no-show policy. |
+| DOPS-025 | P1 | Linked reservations | Party only. |
+| DOPS-053 | P0 | Audit trail | Guest audit exists; no crew audit. |
+| DNFR-005 | P1 | Image sizing | Few images. |
+| DNFR-008 | P0 | Change propagation service level | No stated level. |
+| DNFR-011 | P1 | Monitoring | As ENFR-010. |
+| DNFR-014 | P0 | Least privilege on diet data | Server-side; crew access not built. |
+| DNFR-015 | P0 | Permission before sharing plans | Chat consent only. |
+| DNFR-016 | P0 | Protect allergy data | Stored with the account, no extra controls. |
+| DNFR-019 | P1 | Minimise retention | `RetentionPurgeService`. |
+| DNFR-025 | P1 | Deep links | Routes, not QR or notifications. |
+| DNFR-026..027 | P1 | Device tests; PWA fallbacks | Not tested, by working rule. |
+
+### 7.4 Not done but should be
+
+Ordered by document, then id. Each is an Explorer or account-level gap a guest would notice.
+
+| Id | Pri | Requirement | Note |
+|---|---|---|---|
+| ENT-007 | P1 | Recommended for you | No personalised area on the Entertainment page. |
+| ENT-008 | P1 | "You have time for..." gap suggestions | Not built; the plan timeline has walking times but no gap suggestions. |
+| ENT-017 | P0 | Recurring series vs single session | No series model. |
+| ENT-019..020 | P1 | Performer profiles; images and trailers | Not built (the data has no performer field). |
+| ENT-023 | P1 | Filterable accessibility attributes | `EventAccess` exists in the old programme code but is not wired to Explorer events. |
+| ENT-031 | P1 | Filters for age, price, language, access, indoor/outdoor | Only interest. |
+| ENT-032 | P1 | Sort orders | Time order and pins only. |
+| ENT-033 | P1 | Discovery prompts (Under an hour, Live music tonight) | Not built. |
+| ENT-047 | P1 | Alternatives on a conflict | Not built. |
+| ENT-048 | P1 | Multiple personal lists | One plan only. |
+| ENT-070 | P2 | Next-best session when full | Not built. |
+| ENT-078 | P1 | Alternatives after a cancellation | Not built. |
+| ENT-079 | P1 | Weather contingency, alternate venue | No weather rule on events. |
+| ENT-089 | P1 | Per-event choices | Not built. |
+| ENT-092 | P1 | Suppress reminders after cancel or removal | Needed once Explorer reminders exist. |
+| ENT-102 | P1 | Nearby amenities | Not built. |
+| ENT-106 | P0 | Share an event | Server builds share text only for tours and reservations. |
+| ENT-111 | P1 | Keep some items private | Not built for events. |
+| ENT-117 | P0 | Accompaniment, check-in, registration rules | Camp Discovery registration is not modelled. |
+| ENT-121 | P1 | Family activities in a shared planner | Not built. |
+| ENT-122 | P1 | Movie age guidance | Not authored. |
+| ENT-129..130 | P1 | Accessibility attributes and accommodations on events | Not authored or filterable. |
+| ENT-149..152 | P1 | Recommendation signals, reasons, dismiss, balance | No recommendation area (see ENT-007). |
+| DIN-004 | P0 | Quick access: Breakfast, Lunch, Dinner, Late night, Room service | Filters are by venue kind only; room service lives under Ship. |
+| DIN-009 | P1 | Good options right now | Happening Now is events only. |
+| DIN-012 | P1 | Dining that fits around a show | Not built. |
+| DIN-025 | P1 | Table and seating options | Not modelled. |
+| DIN-026 | P1 | Typical dining duration | 90 and 120 minutes used internally but not shown. |
+| DIN-030 | P2 | Alternatives when closed or full | Alternative slots on a full time exist; no alternative venues. |
+| DIN-044 | P1 | Menu photos | None. |
+| DIN-047 | P1 | Children's menu view | Not authored. |
+| DIN-055 | P1 | Cuisine, ambience, access filters | Not built. |
+| DIN-056 | P1 | Sort orders | Pins then authored order. |
+| DIN-057 | P1 | Dish-level search | Not built. |
+| DIN-058 | P1 | Discovery prompts | Not built. |
+| DIN-079 | P1 | Seating preferences | Not built. |
+| DIN-081..082 | P1 | Linked cabins; partial group result | Not built. |
+| DIN-098 | P1 | Stay-near guidance | Not stated. |
+| DIN-110 | P0 | Acknowledgement of the allergy process | Not built. |
+| DIN-111..112 | P0 | Special diet request with received, review, confirmed states | No request status. |
+| DIN-115 | P0 | Declared vs cross-contact vs unknown | Not modelled. |
+| DIN-119..120 | P1 | Attach request to a reservation; venue acknowledgement | Not built. |
+| DIN-137 | P1 | Alternatives on conflict | Not built. |
+| DIN-138 | P1 | Multiple lists | Not built. |
+| DIN-149 | P1 | Linked split reservations | Not built. |
+| DIN-150 | P1 | Private meal plans | Not built. |
+| DIN-175 | P2 | Repeat orders | Not built. |
+| DIN-176 | P2 | Contactless preference | Not built. |
+| DIN-209 | P0 | Children's menu | See DIN-047. |
+| DIN-210 | P0 | High chairs, boosters | Not authored. |
+| DIN-212 | P1 | Family-friendly filter | Not built. |
+| DIN-214 | P1 | Infant policies | Not authored. |
+| DIN-215 | P1 | Youth-club integration | Not built. |
+| DIN-224 | P1 | Venue accessibility attributes | Not authored. |
+| DIN-225 | P1 | Mobility needs in a reservation | Not built for dining. |
+| DIN-238 | P1 | Alternatives | Not built. |
+| DIN-239 | P1 | Weather changes to outdoor dining | Not built. |
+| DIN-241 | P1 | Dining updates summary | Not built. |
+| DIN-258..261 | P1 | Signals, reasons, dismiss, balance | No recommendation area. |
+
+### 7.5 Not applicable, ignored
+
+"Why" gives the reason.
+
+| Id | Pri | Requirement | Why |
+|---|---|---|---|
+| ENT-009 | P1 | Near me view | Needs indoor location; the app deliberately does not track position (ENT-105). |
+| ENT-010..011 | P2 | Editorial collections; voyage preview of signature events | P2, deferred. |
+| ENT-024..026 | P2/P3 | Similar events; editorial content; previews | P2/P3, deferred. |
+| ENT-035..037 | P2/P3 | Curated collections; reasoned recommendations; natural-language discovery | P2/P3, deferred. Stanley already answers grounded questions. |
+| ENT-050..053 | P2/P3 | Templates, pace, shareable itinerary, smart replanning | P2/P3, deferred (ENT-052 is partly covered by the .ics export). |
+| ENT-068..069 | P2 | Live standby queue; occupancy numbers | Needs trustworthy ship data; deferred. |
+| ENT-071 | P3 | Dynamic release of unused places | P3, needs operations. |
+| ENT-082 | P2 | Rebuild plan after a disruption | P2, deferred. |
+| ENT-083 | P2 | Crew communication status | Crew-side. |
+| ENT-093..095 | P2/P3 | Context reminders, digest, intensity | P2/P3, deferred. |
+| ENT-105 | P2 | Location-aware prompts | The app avoids location tracking by design. |
+| ENT-115 | P3 | Family locator integration | P3. |
+| ENT-123..124 | P2 | Child interest profiles; family together / adult time | P2. |
+| ENT-131 | P1 | Translations | English only for now (CLAUDE.md). |
+| ENT-133..135 | P2 | Captions; sensory info; low-stimulation filter | P2, data not available. |
+| ENT-137..142 | P2/P3 | Live polls, follow a series, post-event feedback, loyalty, keepsakes | P2/P3, deferred. |
+| ENT-146..147 | P2 | Sports broadcast schedule; watch-later flag | Needs a content system. |
+| ENT-153..156 | P2/P3 | Context, modes, learning, conversational recommendations | P2/P3 (Stanley is the conversational route). |
+| EOPS-001..003 | P0 | Crew event creation, publishing, templates | Crew tooling; content is authored in `scripts/ship-explorer-*.ts`. |
+| EOPS-005..008 | P0 | Preview, audit trail, review states, mobile crew edits | Crew tooling. |
+| EOPS-010 | P1 | Bulk upload | Crew tooling. |
+| EOPS-012..014 | P1/P2 | Operational conflicts, weather alternates, quality dashboard | Crew tooling. |
+| EOPS-017..022 | P0/P1/P2 | Crew check-in, manual fallback, live roster, standby | Crew-side. |
+| EOPS-023..029 | P0/P1/P2 | Content governance and approval workflow | Out of scope for a guest app. |
+| EOPS-030..038 | P0/P1/P2 | Analytics and experiments | No analytics store, by design (privacy); revisit only with a stated purpose. |
+| ENFR-013 | P0 | Crew least privilege | No crew tools. |
+| DIN-013 | P2 | Curated collections | P2. |
+| DIN-015 | P3 | "What should I eat?" flow | P3 (Stanley covers dining planning). |
+| DIN-029 | P2 | Curated collections | P2. |
+| DIN-031 | P2 | Chef profiles | P2. |
+| DIN-033 | P3 | Contextual recommendations | P3. |
+| DIN-045 | P1 | Sold-out status | Needs POS or kitchen feed. |
+| DIN-048..050 | P2/P3 | Nutrition; chef stories; ingredient exploration | P2/P3. |
+| DIN-061..064 | P2/P3 | Collections, comparison, reasons, natural language | P2/P3. |
+| DIN-087 | P2 | Ranked alternative times | P2. |
+| DIN-089..090 | P2/P3 | Preferred server; voyage dining itinerary | P2/P3. |
+| DIN-099 | P1 | Crew-assisted check-in fallback | Crew-side. |
+| DIN-100..105 | P2/P3 | Nearby alternative, occupancy, mobility needs, revalidation, predictive queue | P2/P3. |
+| DIN-113..114 | P0 | Staff access to allergy data | Crew-side. |
+| DIN-123..127 | P2/P3 | Identify to staff, cross-venue sharing, history, staff prompts, personalised | P2/P3. |
+| DIN-140..142 | P2/P3 | Templates, pace, smart replanning | P2/P3. |
+| DIN-153..158 | P2/P3 | Group schedule, per-member preferences, linked status, celebrations, suggestions, locator | P2/P3. |
+| DIN-177..178 | P3 | Contextual offers; predictive timing | P3. |
+| DIN-181 | P1 | Non-digital alternative | Physical menus are the ship's. |
+| DIN-183..187 | P2 | Table ordering, requests, table charges, item charges, bill disputes | Needs POS integration. |
+| DIN-189..192 | P3 | Split bill, tipping, table-side, post-meal feedback | P3 or POS. |
+| DIN-204..207 | P2/P3 | Compare included vs paid, promotions, insights, group allocation | P2/P3. |
+| DIN-216..218 | P2/P3 | Family suggestions and profiles | P2/P3. |
+| DIN-226 | P1 | Menu translations | English only for now. |
+| DIN-228 | P2 | Sensory information | P2. |
+| DIN-231 | P3 | Accessibility-aware discovery | P3. |
+| DIN-243..244 | P2 | Smart re-planning; staff acknowledgement | P2. |
+| DIN-254..256 | P2/P3 | Context reminders, digest, intensity | P2/P3. |
+| DIN-263..268 | P2/P3 | Context, modes, learning, group, conversational, voyage meal plan | P2/P3 (Stanley covers part). |
+| DIN-274..282 | P2/P3 | Meal feedback, reviews, recovery, themes, summaries | P2/P3; the end-of-cruise feedback screen exists. |
+| DOPS-001..002 | P0 | Crew venue management, templates | Crew tooling. |
+| DOPS-004..006 | P0 | Structured menus, approvals, versioning | Crew tooling; menus authored in scripts. |
+| DOPS-008..009 | P0 | Preview; urgent crew controls | Crew tooling. |
+| DOPS-011..014 | P1/P2 | Bulk menu upload, copy-forward, completeness, taxonomy | Crew tooling. |
+| DOPS-018 | P0 | Crew reservation tools | Crew-side. |
+| DOPS-020..023 | P0/P1 | Check-in, fallback, live view, table configuration | Crew-side. |
+| DOPS-026..028 | P1/P2 | Overbooking warnings, forecasts, host-stand mode | Crew-side. |
+| DOPS-029..040 | P0/P1/P2 | Allergy operations workflow | Crew and food-safety process. |
+| DOPS-041..049 | P0/P1/P2 | Queue, order and kitchen operations | Crew-side; the guest sees the simulated results. |
+| DOPS-050..052 | P0 | Content ownership, notes, approvals | Governance. |
+| DOPS-054..064 | P0/P1/P2 | Incidents, templates, analytics | Crew or analytics, by design. |
+
+### 7.6 What this review suggests doing next
+
+The not-done P0 and P1 items group into a few pieces of work, in the order they would help guests most:
+
+1. **Event reminders and change alerts for planned Explorer events** (ENT-084..092, DIN-245..253): the largest gap against the P0 list, and it is already in the outstanding issues.
+2. **Share to chat and a Navigate action for events, venues and menus** (ENT-098, ENT-106, DIN-143), plus the deck-plan pin.
+3. **Event detail fields**: performer, series, accessibility attributes, dress and arrival notes (ENT-013, 017, 019, 023, 129..130), and venue accessibility, children's menu and family facilities for Dining (DIN-047, 210, 214, 224).
+4. **Dietary request status** (DIN-110..112, 119..120): a request with received, under review and confirmed states, attached to a reservation. This is the only safety-related gap and needs server work you test.
+5. **Dining discovery**: meal-period quick filters, dish search, sort and a family-friendly filter (DIN-004, 055..058, 212).
+6. **Alternatives after a conflict, cancellation or full slot** (ENT-047, 070, 078, DIN-030, 137, 238), then the What changed summaries (ENT-080, DIN-011, 241).
+7. **Recommendations and interest profile** (ENT-007, 148..152, DIN-258..261), last, because the documents rank them below trust and planning.
