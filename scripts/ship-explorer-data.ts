@@ -15,6 +15,7 @@ import { entertainmentEvents, entertainmentVenues } from './ship-explorer-entert
 import { activitiesEvents, activitiesVenues } from './ship-explorer-activities.ts'
 import { exerciseEvents, exerciseVenues } from './ship-explorer-exercise.ts'
 import { shoppingEvents, shoppingVenues } from './ship-explorer-shopping.ts'
+import { extraEvents } from './ship-explorer-extra-events.ts'
 import { detailEvents, detailVenue } from './ship-explorer-details.ts'
 import { spaEvents, spaTreatments, spaVenues } from './ship-explorer-spa.ts'
 
@@ -137,7 +138,7 @@ function shipRows(shipId: string, directory: readonly DirectoryVenue[], rooms: r
   const barRows = diningBars(prefix, bars, dining.length + 1)
   const raw = [...dining, ...barRows, ...extraDiningVenues(shipId, prefix, dining.length + barRows.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1), ...exerciseVenues(shipId, 1), ...shoppingVenues(shipId, 1), ...activitiesVenues(shipId, 1)]
   const venues = raw.map(detailVenue)
-  const events = detailEvents([...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId), ...exerciseEvents(shipId), ...shoppingEvents(shipId), ...activitiesEvents(shipId)], venues)
+  const events = detailEvents([...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId), ...exerciseEvents(shipId), ...shoppingEvents(shipId), ...activitiesEvents(shipId), ...extraEvents(shipId, prefix)], venues)
   return { menuTemplate: MENU_TEMPLATE, venues, events, menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }
 }
 
