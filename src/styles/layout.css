@@ -2,7 +2,8 @@
  * The app frame. Phone: a top bar, the content, and a fixed five-tab bar along the bottom (primary actions in the
  * lower half). From 1024px the same five entries become a left rail. Everything respects the safe-area insets.
  */
-.shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+/* Phones and tablets: a plain block, so the sticky top bar can stay put for the whole page (a sticky grid item can only stick inside its own, bar-high, grid row). The grid returns with the side nav at 1024px. */
+.shell { min-height: 100dvh; }
 
 .shell__top { position: sticky; top: 0; z-index: 20; }
 .topbar {
@@ -89,7 +90,7 @@
 .shell__main { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); outline: none; }
 
 @media (min-width: 1024px) {
-  .shell { grid-template-columns: 14rem minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'rail top' 'rail main'; }
+  .shell { display: grid; grid-template-columns: 14rem minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'rail top' 'rail main'; }
   .shell__top { grid-area: top; }
   .tabs {
     grid-area: rail; position: sticky; top: 0; height: 100dvh; align-self: start;
@@ -212,6 +213,8 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .workspace__side { min-width: 0; }
 @media (min-width: 1280px) {
   .page--wide { max-width: 90rem; }
+  /* The header, tip card and Stanley chips are blocks of their own beside the screen, so on a wide screen they take the wide width too. */
+  .shell__main:has(.page--wide) > .page { max-width: 90rem; }
   .workspace { grid-template-columns: 16rem minmax(0, 1fr); align-items: start; gap: var(--space-5); }
   .workspace__side { position: sticky; top: var(--space-4); }
   .page--wide .table-scroll { max-height: 75dvh; overflow: auto; }
@@ -257,14 +260,16 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
   .testbar__stages { margin-top: 0; font-size: 0.75rem; flex-wrap: nowrap; }
   a.testbar__stage { min-height: 1.25rem; }
   .testbar__sub { font-size: 0.6875rem; }
-  .testbar__carousel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.25rem; flex: 1 0 100%; min-width: 0; }
+  .testbar__carousel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.25rem; min-width: 0;
+    /* Reaches out into the page gutter so the arrows sit near the screen edges and one more button fits. */
+    margin-inline: calc(-1 * var(--gutter) + 0.25rem); flex: 1 0 calc(100% + 2 * var(--gutter) - 0.5rem); }
   .testbar__arrow {
     display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 1.5rem; min-height: 2rem; padding: 0;
     border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer;
   }
   .testbar__arrow:disabled { opacity: 0.35; cursor: default; }
   .testbar__arrow .lucide { width: 1rem; height: 1rem; }
-  .testbar__at { flex: none; justify-self: center; max-width: 100%; margin-inline-start: 0; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .testbar__at { flex: none; justify-self: start; max-width: 100%; margin-inline-start: 0; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .testbar__at::-webkit-scrollbar { display: none; }
   .testbar__at-link { flex: none; min-width: 2rem; min-height: 2rem; scroll-snap-align: start; }
   .testbar__at-link .lucide { width: 1.25rem; height: 1.25rem; }

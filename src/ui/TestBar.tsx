@@ -70,13 +70,19 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
     const arrow = box?.querySelector<HTMLElement>('.testbar__arrow')
     const link = el?.firstElementChild as HTMLElement | null
     if (!el || !box || !arrow || !link) return
-    if (getComputedStyle(arrow).display === 'none') { el.style.width = ''; measure(); return }
+    if (getComputedStyle(arrow).display === 'none') { el.style.width = ''; el.style.marginInlineStart = ''; measure(); return }
     el.style.width = ''
+    el.style.marginInlineStart = ''
     const gap = parseFloat(getComputedStyle(el).columnGap) || 0
     const pitch = link.offsetWidth + gap
     const room = box.clientWidth - 2 * arrow.offsetWidth - 2 * (parseFloat(getComputedStyle(box).columnGap) || 0)
     const count = Math.max(1, Math.min(AT_LINKS.length, Math.floor((room + gap) / pitch)))
     el.style.width = `${count * pitch - gap}px`
+    // Start-aligned, then shift by half of the leftover room (measured from the real positions) so the space beside each arrow is the same.
+    const arrows = box.querySelectorAll<HTMLElement>('.testbar__arrow')
+    const left = el.getBoundingClientRect().left - arrows[0].getBoundingClientRect().right
+    const right = arrows[1].getBoundingClientRect().left - el.getBoundingClientRect().right
+    el.style.marginInlineStart = `${Math.max(0, (right - left) / 2)}px`
     measure()
   }, [measure])
   useEffect(() => {

@@ -93,7 +93,7 @@ describe('screen registry (P2)', () => {
 
   it('counts the screens each stage uses as the plan lists them (chat is one more at the five stages that had no way in)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 41, discover: 45, book: 44, manage: 58, prebook: 73, getToShip: 62, embark: 67, sea: 93, port: 89, disembark: 48, remember: 51 })
+    expect(counts).toEqual({ dream: 41, discover: 47, book: 44, manage: 61, prebook: 73, getToShip: 62, embark: 67, sea: 93, port: 92, disembark: 48, remember: 54 })
   })
 
   it('keeps ships out of Dream and the first ship screens in Discover', () => {

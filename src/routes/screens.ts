@@ -282,7 +282,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your sailing, its real cost and your room, in one place.',
     tiles: ['H08', 'H12', 'H14', 'H10', 'H11', 'H03'],
     tabs: [
-      { label: 'Sailing', colour: 'teal', subtext: 'Everything about the sailing you are considering.', screens: ['H08', 'H07', 'H50', 'H52', 'H09', 'H06', 'H10', 'H47', 'H49', 'H48', 'S01', 'S02', 'S03', 'H13', 'X02'] },
+      { label: 'Sailing', colour: 'teal', subtext: 'Everything about the sailing you are considering.', screens: ['H08', 'H07', 'H50', 'H52', 'H09', 'H53', 'H54', 'H06', 'H10', 'H47', 'H49', 'H48', 'S01', 'S02', 'S03', 'H13', 'X02'] },
       { label: 'Cabin', colour: 'pink', subtext: 'Pick the room that suits you.', screens: ['H14', 'P19', 'H13'] },
       { label: 'Cost', colour: 'gold', subtext: 'The real, all-in price, and ways to pay less.', screens: ['C01', 'H12', 'H15', 'P17', 'P18', 'H16', 'H03', 'H04'] },
     ],
@@ -302,7 +302,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your booking is confirmed. Here is what needs you next.',
     tiles: ['P14', 'M06', 'P12', 'H21', 'H10', 'P09'],
     tabs: [
-      { label: 'Trip', colour: 'teal', subtext: 'Your confirmed trip, and what changes.', screens: ['M02', 'M03', 'H20', 'H21', 'H23', 'H05', 'H08', 'H09', 'H10', 'S01', 'S02', 'S03', 'P01', 'P13', 'P14'] },
+      { label: 'Trip', colour: 'teal', subtext: 'Your confirmed trip, and what changes.', screens: ['M02', 'M03', 'H20', 'H21', 'H23', 'H05', 'H08', 'H09', 'H52', 'H53', 'H54', 'H10', 'S01', 'S02', 'S03', 'P01', 'P13', 'P14'] },
       { label: 'Needs', colour: 'pink', subtext: 'Documents, health and access for every traveller.', screens: ['M06', 'M05', 'P12', 'P08', 'P09', 'P10', 'P11', 'P07', 'H38'] },
       { label: 'Group', colour: 'gold', subtext: 'Your travel party and the people at home.', screens: ['C01', 'P47', 'P48', 'P49', 'P50', 'P43', 'P46', 'P51', 'P52', 'M14'] },
     ],
@@ -352,7 +352,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     homeSubtext: 'Your day ashore, and when to be back.',
     tiles: ['S37', 'S38', 'P37', 'S32', 'P31', 'S40'],
     tabs: [
-      { label: 'Port', colour: 'teal', subtext: 'Your day ashore, with the all-aboard time.', screens: ['S37', 'S50', 'S38', 'S39', 'H09', 'P37', 'P44', 'S32', 'P31', 'H38', 'S33', 'S45', 'S46', 'H25', 'H22', 'P34', 'P35'] },
+      { label: 'Port', colour: 'teal', subtext: 'Your day ashore, with the all-aboard time.', screens: ['S37', 'S50', 'S38', 'S39', 'H09', 'H52', 'H53', 'H54', 'P37', 'P44', 'S32', 'P31', 'H38', 'S33', 'S45', 'S46', 'H25', 'H22', 'P34', 'P35'] },
       { label: 'Ship', colour: 'pink', subtext: 'Everything aboard in one place, including safety.', screens: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'S24', 'S25', 'S26', 'S27', 'S28', 'S29', 'S30', 'S31', 'S33', 'S34', 'S35', 'S36'] },
       { label: 'People', colour: 'gold', subtext: 'Your family, your group and the community.', screens: ['C01', 'S40', 'S41', 'S42', 'S43', 'S44', 'S45', 'S46', 'S47', 'S48', 'S49', 'P27', 'P47', 'P43', 'P45'] },
     ],
@@ -373,7 +373,7 @@ export const STAGE_TABS: Record<JourneyStage, StageDef> = {
     tiles: ['M16', 'M17', 'M19', 'M09', 'M15', 'M22'],
     tabs: [
       { label: 'Memories', colour: 'teal', subtext: 'Your trip, kept.', screens: ['C01', 'M16', 'M17', 'M42', 'M18', 'S48', 'S47', 'M15'] },
-      { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['C01', 'M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09'] },
+      { label: 'Next', colour: 'pink', subtext: 'Where to next.', screens: ['C01', 'M22', 'H06', 'H07', 'H50', 'H08', 'H09', 'H52', 'H53', 'H54', 'H47', 'H11', 'H02', 'H13', 'H04', 'P28', 'P04', 'M09'] },
       { label: 'Feedback', colour: 'gold', subtext: 'Tell us how it went.', screens: ['M19', 'M21', 'M20', 'M23', 'M24'] },
     ],
     me: { subtext: 'Your history, receipts, rewards and settings.', screens: ['M15', 'M13', 'M09', 'M06', 'M02', 'M03', 'P13', 'H20', ...SETTINGS_AND_HELP] },
