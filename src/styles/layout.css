@@ -257,14 +257,14 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
   .testbar__stages { margin-top: 0; font-size: 0.75rem; flex-wrap: nowrap; }
   a.testbar__stage { min-height: 1.25rem; }
   .testbar__sub { font-size: 0.6875rem; }
-  .testbar__carousel { display: flex; align-items: center; gap: var(--space-1); flex: 1 0 100%; min-width: 0; }
+  .testbar__carousel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.25rem; flex: 1 0 100%; min-width: 0; }
   .testbar__arrow {
-    display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 2rem; min-height: 2rem; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 1.5rem; min-height: 2rem; padding: 0;
     border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer;
   }
   .testbar__arrow:disabled { opacity: 0.35; cursor: default; }
-  .testbar__arrow .lucide { width: 1.25rem; height: 1.25rem; }
-  .testbar__at { flex: 1 1 0; min-width: 0; margin-inline-start: 0; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .testbar__arrow .lucide { width: 1rem; height: 1rem; }
+  .testbar__at { flex: none; justify-self: center; max-width: 100%; margin-inline-start: 0; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .testbar__at::-webkit-scrollbar { display: none; }
   .testbar__at-link { flex: none; min-width: 2rem; min-height: 2rem; scroll-snap-align: start; }
   .testbar__at-link .lucide { width: 1.25rem; height: 1.25rem; }

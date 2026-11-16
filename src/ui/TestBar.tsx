@@ -63,14 +63,30 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
     const el = track.current
     if (el) setEdges({ start: el.scrollLeft > 1, end: Math.ceil(el.scrollLeft + el.clientWidth) < el.scrollWidth - 1 })
   }, [])
+  // The window shows a whole number of buttons, and scroll snapping lines the buttons up with its edges, so a drag that lets go never leaves a button cut in half.
+  const fit = useCallback(() => {
+    const el = track.current
+    const box = el?.parentElement
+    const arrow = box?.querySelector<HTMLElement>('.testbar__arrow')
+    const link = el?.firstElementChild as HTMLElement | null
+    if (!el || !box || !arrow || !link) return
+    if (getComputedStyle(arrow).display === 'none') { el.style.width = ''; measure(); return }
+    el.style.width = ''
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0
+    const pitch = link.offsetWidth + gap
+    const room = box.clientWidth - 2 * arrow.offsetWidth - 2 * (parseFloat(getComputedStyle(box).columnGap) || 0)
+    const count = Math.max(1, Math.min(AT_LINKS.length, Math.floor((room + gap) / pitch)))
+    el.style.width = `${count * pitch - gap}px`
+    measure()
+  }, [measure])
   useEffect(() => {
     const el = track.current
     if (!el) return
-    measure()
+    fit()
     el.addEventListener('scroll', measure, { passive: true })
-    window.addEventListener('resize', measure)
-    return () => { el.removeEventListener('scroll', measure); window.removeEventListener('resize', measure) }
-  }, [measure])
+    window.addEventListener('resize', fit)
+    return () => { el.removeEventListener('scroll', measure); window.removeEventListener('resize', fit) }
+  }, [fit, measure])
   // Smooth scrolling comes from CSS, which the reduced-motion rules turn off.
   const step = (dir: -1 | 1) => { const el = track.current; if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8 }) }
   const reveal = (e: { currentTarget: Element }) => e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' })
