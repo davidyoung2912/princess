@@ -9,8 +9,7 @@ import { ACTIVITIES, EXCURSIONS, filterExcursions, formatHours, guestPrice, INTE
 import type { PersonaId } from '../../domain/people'
 import { formatMoney } from '../../domain/money'
 import { fitTours, NO_FIT, type FitAnswers } from '../../domain/excursionFit'
-import { PORT_GUIDES } from '../../domain/ports'
-import { portById } from '../../domain/sailings'
+import { portLabel } from './portLabel'
 import { api } from '../../runtime'
 import { useAction } from '../../hooks/useAction'
 import { useMine } from '../../hooks/useMine'
@@ -30,8 +29,6 @@ import { StanleyExplain } from '../ai/StanleyExplain'
 import { StanleyTourCompare } from './StanleyTourCompare'
 import { useSailing } from '../../hooks/useDemo'
 
-/** A port's short name: its guide's, else the catalogue's. */
-const portLabel = (id: string): string => PORT_GUIDES[id]?.short ?? portById(id)?.name ?? id
 const PRICES = [50, 75, 100]
 
 /** Shore excursions: the catalogue, a cart, and what is booked, with clash and all-aboard checks (PRE-01, PRE-02). */
@@ -298,7 +295,7 @@ function Tour({ offer, view, busy, onAdd, concerns }: { offer: ExcursionOffer; v
   )
 }
 
-function GuestDialog({ title, view, initial, submit, error, busy, onClose, onSubmit }: { title: string; view: ExcursionsView; initial: PersonaId[]; submit: string; error: ReturnType<typeof useAction>['error']; busy: boolean; onClose: () => void; onSubmit: (guests: PersonaId[]) => Promise<void> }) {
+export function GuestDialog({ title, view, initial, submit, error, busy, onClose, onSubmit }: { title: string; view: ExcursionsView; initial: PersonaId[]; submit: string; error: ReturnType<typeof useAction>['error']; busy: boolean; onClose: () => void; onSubmit: (guests: PersonaId[]) => Promise<void> }) {
   const [guests, setGuests] = useState<PersonaId[]>(initial)
   return (
     <Dialog title={title} onClose={onClose}>
@@ -314,7 +311,7 @@ function GuestDialog({ title, view, initial, submit, error, busy, onClose, onSub
   )
 }
 
-function ChangeDialog({ booking, view, reload, onClose }: { booking: TourBooking; view: ExcursionsView; reload: () => void; onClose: () => void }) {
+export function ChangeDialog({ booking, view, reload, onClose }: { booking: TourBooking; view: ExcursionsView; reload: () => void; onClose: () => void }) {
   const change = useAction(async (guests: PersonaId[]) => { const v = await api.plan.excursions.changeGuests(booking.id, guests); reload(); return v })
   const here = view.party.filter((g) => booking.guests.includes(g.id))
   return (
@@ -331,7 +328,7 @@ function ChangeDialog({ booking, view, reload, onClose }: { booking: TourBooking
   )
 }
 
-function CancelDialog({ booking, offer, reload, onClose }: { booking: TourBooking; offer: ExcursionOffer; reload: () => void; onClose: () => void }) {
+export function CancelDialog({ booking, offer, reload, onClose }: { booking: TourBooking; offer: ExcursionOffer; reload: () => void; onClose: () => void }) {
   const cancel = useAction(async () => { const v = await api.plan.excursions.cancel(booking.id); reload(); return v })
   const free = booking.cancel.free
   return (
