@@ -12,7 +12,7 @@ import { useSailing } from '../../../hooks/useDemo'
 import { t } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
-import { Dialog } from '../../Dialog'
+import { BackLink } from '../../onboard/common'
 import { TextArea } from '../../Field'
 import { GuestPicker, PlanError } from '../../plan/common'
 
@@ -27,14 +27,17 @@ interface Props {
   day: number
   /** Present to change this appointment; absent to book a new one. */
   appointment?: SpaAppointment
+  /** Where Back and Close lead. */
+  backTo: string
+  backLabel: string
   onClose: () => void
   onDone: () => void
 }
 
 const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x))
 
-/** Book a treatment, or change an appointment's day, time, people and note: a dialog with the time grid, using the spa service. The price and the cancellation policy are shown before saving. */
-export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: startTreatment, day: startDay, appointment, onClose, onDone }: Props) {
+/** Book a treatment, or change an appointment's day, time, people and note: a page with the time grid, using the spa service. The price and the cancellation policy are shown before saving. */
+export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: startTreatment, day: startDay, appointment, backTo, backLabel, onClose, onDone }: Props) {
   const sailing = useSailing()
   const days = itinerary(sailing)
   const changing = appointment !== undefined
@@ -61,7 +64,8 @@ export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: star
     if (await save.run()) { onDone(); onClose() }
   }
   return (
-    <Dialog title={changing ? t('spa.changeTitle') : t('spa.newTitle')} onClose={onClose}>
+    <div className="page">
+      <h2>{changing ? t('spa.changeTitle') : t('spa.newTitle')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); void go() }}>
         {!changing && (
           <div className="field">
@@ -104,6 +108,7 @@ export function SpaEditor({ view, venues, venueId: fixedVenue, treatmentId: star
         </div>
         {blocked && <p className="muted">{blocked}</p>}
       </form>
-    </Dialog>
+      <BackLink to={backTo} label={backLabel} />
+    </div>
   )
 }

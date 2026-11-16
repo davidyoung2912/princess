@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import type { ExplorerDay } from '../../../api/explorerTypes'
 import type { SpaAppointment, SpaView } from '../../../api/spaTypes'
 import { formatTime } from '../../../domain/cruise'
@@ -14,7 +15,6 @@ import { Dialog } from '../../Dialog'
 import { PlanError } from '../../plan/common'
 import { names } from '../../plan/people'
 import { ReservationList, type ReservationItem } from '../Parts'
-import { SpaEditor } from './SpaEditor'
 
 interface Props {
   venues: ExplorerDay['venues']
@@ -27,13 +27,15 @@ interface Props {
   basePath?: string
 }
 
-type Editing = { mode: 'create'; treatmentId?: string } | { mode: 'change'; a: SpaAppointment }
+const BASE = '/spa-explorer'
 
 /** The guest's spa appointments for the chosen day, with Change, Cancel and a button to book, wired to the spa service. On a venue's page it also lists the treatments there. */
 export function SpaReservations({ venues, day, venueId, view, reload, basePath }: Props) {
   const sailing = useSailing()
   const days = itinerary(sailing)
-  const [editing, setEditing] = useState<Editing | null>(null)
+  const navigate = useNavigate()
+  // Booking and changing are their own page: `book=new` (with `treatment=<id>`) or `book=<appointment id>` on this screen's address (see SpaScreens).
+  const openEditor = (book: string, treatment?: string) => { void navigate(`${venueId ? `${BASE}/${venueId}` : BASE}?day=${day}&book=${encodeURIComponent(book)}${treatment ? `&treatment=${encodeURIComponent(treatment)}` : ''}`) }
   const [cancelling, setCancelling] = useState<SpaAppointment | null>(null)
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
   const mine = view.appointments.filter((a) => a.day === day && (!venueId || a.venueId === venueId)).sort((a, b) => a.time.localeCompare(b.time))
@@ -42,15 +44,14 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath }
     when: `${shortDate(days[a.day - 1]?.date ?? days[0].date)}, ${formatTime(a.time)}`,
     facts: [title(a.venueId), t('spa.minutes', { n: a.minutes }), names(a.guests), t('spa.total', { amount: formatMoney(a.price) }), ...(a.note ? [a.note] : [])],
   }))
-  const bookableVenues = venues.filter((v) => v.venue.bookable === 'spa').map((v) => ({ id: v.venue.id, title: v.venue.title }))
   const here = venueId ? view.treatments.filter((x) => x.venueId === venueId) : []
   return (
     <>
       <ReservationList
         heading={venueId ? t('spa.mineHere') : t('spa.mine')} items={items} empty={venueId ? t('spa.noneHere') : t('spa.none')} readOnly={!view.canBook}
-        onChange={(id) => { const a = mine.find((x) => x.id === id); if (a) setEditing({ mode: 'change', a }) }}
+        onChange={(id) => { const a = mine.find((x) => x.id === id); if (a) openEditor(a.id) }}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={view.canBook && <Button onClick={() => setEditing({ mode: 'create' })}>{t('spa.new')}</Button>}
+        action={view.canBook && <Button onClick={() => openEditor('new')}>{t('spa.new')}</Button>}
       />
       {here.length > 0 && (
         <section aria-labelledby="spa-here-h">
@@ -61,17 +62,11 @@ export function SpaReservations({ venues, day, venueId, view, reload, basePath }
                 <h3 className="card__title">{x.title}</h3>
                 <p>{x.detail}</p>
                 <p className="muted">{t('spa.minutes', { n: x.minutes })} · {formatMoney(x.price)}{x.minAge ? ` · ${t('exp.venue.minAge', { age: x.minAge })}` : ''}</p>
-                {view.canBook && <Button variant="secondary" onClick={() => setEditing({ mode: 'create', treatmentId: x.id })}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
+                {view.canBook && <Button variant="secondary" onClick={() => openEditor('new', x.id)}>{t('spa.bookThis')}<span className="visually-hidden"> {x.title}</span></Button>}
               </li>
             ))}
           </ul>
         </section>
-      )}
-      {editing && (
-        <SpaEditor
-          view={view} day={day} venues={bookableVenues} venueId={venueId} treatmentId={editing.mode === 'create' ? editing.treatmentId : undefined}
-          appointment={editing.mode === 'change' ? editing.a : undefined} onClose={() => setEditing(null)} onDone={reload}
-        />
       )}
       {cancelling && <CancelDialog a={cancelling} hours={view.cancelFreeHours} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); reload() }} />}
     </>
