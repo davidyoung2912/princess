@@ -7,9 +7,13 @@ import { t, type StringKey, headingCase } from '../../i18n'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
 import { Clock } from '../icons'
+import type { ExplorerKind } from '../../domain/explorer/types'
 
 const WHY: Record<RecommendWhy, StringKey> = { liked: 'exp.foryou.why.liked', similarSaved: 'exp.foryou.why.saved', pinnedVenue: 'exp.foryou.why.pinned', sameKind: 'exp.foryou.why.kind' }
 const TITLE: Record<Bundle['kind'], StringKey> = { morning: 'plan.bundle.morning', afternoon: 'plan.bundle.afternoon', evening: 'plan.bundle.evening', return: 'plan.bundle.return' }
+const PILL: Record<Bundle['kind'], StringKey> = { morning: 'plan.bundle.pill.morning', afternoon: 'plan.bundle.pill.afternoon', evening: 'plan.bundle.pill.evening', return: 'plan.bundle.return' }
+/** What kind of thing a suggestion is: the Explorer it comes from. */
+const EXPLORER_NAME: Record<ExplorerKind, StringKey> = { dining: 'route.diningToday', entertainment: 'route.entertainment', shopping: 'route.shoppingToday', spa: 'route.spaExplorer', exercise: 'route.exerciseExplorer', activities: 'route.activitiesExplorer' }
 const NOTE: Record<Exclude<Bundle['kind'], 'return'>, StringKey> = { morning: 'plan.bundle.morningWhy', afternoon: 'plan.bundle.afternoonWhy', evening: 'plan.bundle.eveningWhy' }
 
 /** "Plan my morning", "afternoon" and "evening", and the hours after a shore tour: a few things that fit the plan, each as a card with its reason, added one at a time or all together. */
@@ -19,14 +23,21 @@ export function DayBundles({ bundles, day, clockAt, busy, onAdd }: {
   if (bundles.length === 0) return null
   return (
     <>
+      <nav aria-label={t('plan.bundle.jump')}>
+        <ul className="naut-jump">
+          {[...bundles.map((b) => [`tp-bundle-${b.kind}`, t(PILL[b.kind])] as const), ['tp-add', t('plan.bundle.pill.explorers')] as const].map(([id, label]) => (
+            <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ block: 'start' }); document.getElementById(id)?.focus() }}>{label}</a></li>
+          ))}
+        </ul>
+      </nav>
       {bundles.map((b) => (
         <section key={b.kind} aria-labelledby={`tp-bundle-${b.kind}`}>
-          <h2 id={`tp-bundle-${b.kind}`}>{headingCase(t(TITLE[b.kind]))}</h2>
+          <h2 id={`tp-bundle-${b.kind}`} tabIndex={-1}>{headingCase(t(TITLE[b.kind]))}</h2>
           <p className="muted">{b.kind === 'return' ? t('plan.bundle.returnWhy', { time: b.tourEndsAt !== undefined ? clockAt(b.tourEndsAt) : '' }) : t(NOTE[b.kind])}</p>
           <ul className="event-list">
             {b.steps.map((s) => (
               <li key={s.event.id} className="event">
-                <p className="event__time"><ExplorerIcon kind={s.explorer} /><strong>{t('plan.today.kind.event')}</strong></p>
+                <p className="event__time"><ExplorerIcon kind={s.explorer} /><strong>{t(EXPLORER_NAME[s.explorer])}</strong></p>
                 <h3 className="event__title"><Link to={`${EXPLORER_PATHS[s.explorer]}/${s.venueId}?day=${day}`}>{s.event.title}</Link></h3>
                 <ul className="event__times">
                   <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(s.event.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(s.event.endAt) })}</li>

@@ -37,8 +37,8 @@ export function PickDateButton({ state }: { state: ExplorerDayState }) {
             {state.choices.map((c) => (
               <li key={c.day}>
                 <button type="button" className="exp-days__btn" aria-pressed={c.day === state.day} onClick={() => { state.setDay(c.day); setOpen(false) }}>
-                  <strong>{t('exp.date.option', { day: c.day, date: shortDate(c.date) })}</strong>
-                  <span>{placeOf(c)}{c.isToday && <span className="event__today"><StatusBadge kind="booked" label={t('exp.date.todayTag')} /></span>}</span>
+                  <span className="exp-days__head"><strong>{t('exp.date.option', { day: c.day, date: shortDate(c.date) })}</strong>{c.isToday && <StatusBadge kind="booked" label={t('exp.date.todayTag')} />}</span>
+                  <span>{placeOf(c)}</span>
                 </button>
               </li>
             ))}

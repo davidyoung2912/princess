@@ -14,7 +14,7 @@ const DayIcon = ({ day, last, sea }: { day: number; last: boolean; sea: boolean 
 }
 
 /** What one itinerary day says: kind-of-day icon, "Day N" and date, the Today badge, the port and its arrive, all-aboard and depart times. `to` makes the "Day N" part open that day's plan. */
-export function ItineraryDayInfo({ d, last, today, to }: { d: ItineraryDay; last: boolean; today: boolean; to?: string }) {
+export function ItineraryDayInfo({ d, last, today, to, badge = true }: { d: ItineraryDay; last: boolean; today: boolean; to?: string; badge?: boolean }) {
   const day = (
     <>
       <DayIcon day={d.day} last={last} sea={d.port === 'sea'} /><strong>{t('itin.day', { day: d.day })}</strong>
@@ -25,7 +25,7 @@ export function ItineraryDayInfo({ d, last, today, to }: { d: ItineraryDay; last
       <p className="event__time">
         {to ? <Link to={to} className="event__stretch" aria-label={t('itin.open', { day: d.day, date: formatDate(d.date) })}>{day}</Link> : day}{' '}
         <span className="muted">{formatDate(d.date)}</span>
-        {today && <span className="event__today"><StatusBadge kind="booked" label={t('itin.today')} /></span>}
+        {today && badge && <span className="event__today"><StatusBadge kind="booked" label={t('itin.today')} /></span>}
       </p>
       <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : <Link to={`/home/ports/${d.port}`} className="event__inner-link">{PORTS[d.port]?.name ?? d.port}</Link>}</h3>
       {d.port !== 'sea' && (d.arrive || d.depart) && (

@@ -65,8 +65,8 @@ function PlanDay({ details = false }: { details?: boolean }) {
     <div className="page">
       <Card hero labelledBy="tp-head">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
-        <h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
-        {itineraryDay && <ItineraryDayInfo d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} />}
+        <div className="tp-title-row"><h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>{state.day === state.currentDay && <StatusBadge kind="booked" label={t('itin.today')} />}</div>
+        {itineraryDay && <ItineraryDayInfo d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} badge={false} />}
       </Card>
       <PickDateButton state={state} />
       {changed.length > 0 && (
@@ -93,7 +93,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
         </>
       )}
       <section aria-labelledby="tp-add">
-        <h2 id="tp-add">{headingCase(t('plan.today.add'))}</h2>
+        <h2 id="tp-add" tabIndex={-1}>{headingCase(t('plan.today.add'))}</h2>
         <ul className="plain-bullets">{LINKS.map(([key, to]) => <li key={to}><Link to={`${to}?day=${state.day}`}>{t(key)}</Link></li>)}</ul>
       </section>
     </div>
