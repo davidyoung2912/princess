@@ -1,4 +1,4 @@
-import { allAboardEpoch, itinerary, PORTS, shipZoneAt, type PortId, type Sailing } from './sailings'
+import { allAboardEpoch, itinerary, portById, shipZoneAt, type PortId, type Sailing } from './sailings'
 import { clockTime } from './syncAge'
 import { zonedToEpoch } from './timezones'
 import { limit } from './limits'
@@ -56,13 +56,16 @@ export function portDayAt(s: Sailing, now: number): PortDay | null {
   const days = itinerary(s).filter((x) => x.port !== 'sea' && !!x.allAboard)
   for (const x of days) {
     if (x.port === 'sea') continue
-    const zone = PORTS[x.port].zone
+    // A port the tables do not know yet (the catalogue is still loading, or an older route) is skipped rather than crashing the page.
+    const port = portById(x.port)
+    if (!port) continue
+    const zone = port.zone
     const depart = zonedToEpoch(x.date, x.depart!, zone)
     if (now > depart) continue
     const allAboardAt = allAboardEpoch(s, x.day)!
     const shipZone = shipZoneAt(s, allAboardAt)
     return {
-      day: x.day, port: x.port, date: x.date, allAboardAt, shipZone, portZone: zone, tender: PORTS[x.port].tender,
+      day: x.day, port: x.port, date: x.date, allAboardAt, shipZone, portZone: zone, tender: port.tender,
       allAboardShip: clockTime(new Date(allAboardAt), shipZone), allAboardLocal: clockTime(new Date(allAboardAt), zone),
       arriveAt: zonedToEpoch(x.date, x.arrive!, zone), departAt: zonedToEpoch(x.date, x.depart!, zone),
     }

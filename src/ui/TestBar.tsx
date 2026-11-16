@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router'
-import { useState, useSyncExternalStore, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react'
 import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
 import { dayLabel, dayLabelLong, timeIn, zonedToEpoch } from '../domain/timezones'
@@ -12,7 +12,7 @@ import { useNow } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
-import { CloudSun, Compass, Drama, MessagesSquare, Plan, RouteMap, Activities, ShipExplorer, Exercise, ShoppingBag, Spa, UtensilsCrossed } from './icons'
+import { ChevronLeft, ChevronRight, CloudSun, Compass, Drama, MessagesSquare, Plan, RouteMap, Activities, ShipExplorer, Exercise, ShoppingBag, Spa, UtensilsCrossed } from './icons'
 import { Field } from './Field'
 
 const AT_LINKS = [
@@ -56,6 +56,24 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
   const at = JOURNEY_STAGES.indexOf(position.stage)
   const previous = JOURNEY_STAGES[at - 1]
   const next = JOURNEY_STAGES[at + 1]
+  // On phones the ship information links are a sideways carousel: the arrows page it, and choosing (or tabbing to) a button brings it fully into view.
+  const track = useRef<HTMLElement>(null)
+  const [edges, setEdges] = useState({ start: false, end: true })
+  const measure = useCallback(() => {
+    const el = track.current
+    if (el) setEdges({ start: el.scrollLeft > 1, end: Math.ceil(el.scrollLeft + el.clientWidth) < el.scrollWidth - 1 })
+  }, [])
+  useEffect(() => {
+    const el = track.current
+    if (!el) return
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    window.addEventListener('resize', measure)
+    return () => { el.removeEventListener('scroll', measure); window.removeEventListener('resize', measure) }
+  }, [measure])
+  // Smooth scrolling comes from CSS, which the reduced-motion rules turn off.
+  const step = (dir: -1 | 1) => { const el = track.current; if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8 }) }
+  const reveal = (e: { currentTarget: Element }) => e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   const dateWords = (
     <>
       <span className="testbar__short">{dayLabel(now, position.zone)}</span>
@@ -80,13 +98,17 @@ function TestBarBody({ isDemo }: { isDemo: boolean }) {
           <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
         </button>
       )}
-      <nav className="testbar__at" aria-label={t('testbar.at.label')}>
-        {AT_LINKS.map(({ to, Icon, label }) => (
-          <Link key={to} to={to} className={isExplorerPath(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined}>
-            <Icon aria-hidden="true" />
-          </Link>
-        ))}
-      </nav>
+      <div className="testbar__carousel">
+        <button type="button" className="testbar__arrow" aria-label={t('testbar.at.prev')} disabled={!edges.start} onClick={() => step(-1)}><ChevronLeft aria-hidden="true" /></button>
+        <nav className="testbar__at" ref={track} aria-label={t('testbar.at.label')}>
+          {AT_LINKS.map(({ to, Icon, label }) => (
+            <Link key={to} to={to} className={isExplorerPath(to) ? 'testbar__at-link testbar__at-link--explorer' : 'testbar__at-link'} aria-label={t(label)} title={t(label)} aria-current={pathname === to ? 'page' : undefined} onClick={reveal} onFocus={reveal}>
+              <Icon aria-hidden="true" />
+            </Link>
+          ))}
+        </nav>
+        <button type="button" className="testbar__arrow" aria-label={t('testbar.at.next')} disabled={!edges.end} onClick={() => step(1)}><ChevronRight aria-hidden="true" /></button>
+      </div>
       {isDemo && open && <PickerDialog now={now} zone={position.zone} onClose={() => setOpen(false)} />}
     </div>
   )

@@ -247,6 +247,29 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
 .welcome__need--done .welcome__tick span { text-decoration: line-through; opacity: 0.75; }
 .welcome__open { white-space: nowrap; }
 
+/* Phones: the date and time share the first row; the ship information links are a carousel on a second row, with arrows that page it and show it can be dragged. Targets stay 2rem, above the 24px minimum. */
+.testbar__carousel { display: contents; }
+.testbar__arrow { display: none; }
+@media (max-width: 599px) {
+  .testbar { flex-wrap: wrap; align-items: center; row-gap: var(--space-1); column-gap: var(--space-2); padding-block: var(--space-1); }
+  .testbar__item { min-height: 0; padding: 0 var(--space-1); font-size: var(--fs-small, 0.875rem); line-height: 1.2; white-space: nowrap; flex: none; }
+  .testbar__pick { min-height: 0; padding: 0; }
+  .testbar__stages { margin-top: 0; font-size: 0.75rem; flex-wrap: nowrap; }
+  a.testbar__stage { min-height: 1.25rem; }
+  .testbar__sub { font-size: 0.6875rem; }
+  .testbar__carousel { display: flex; align-items: center; gap: var(--space-1); flex: 1 0 100%; min-width: 0; }
+  .testbar__arrow {
+    display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 2rem; min-height: 2rem; padding: 0;
+    border: 2px solid var(--border); border-radius: var(--radius-md, 0.5rem); background: var(--bg); color: var(--primary); cursor: pointer;
+  }
+  .testbar__arrow:disabled { opacity: 0.35; cursor: default; }
+  .testbar__arrow .lucide { width: 1.25rem; height: 1.25rem; }
+  .testbar__at { flex: 1 1 0; min-width: 0; margin-inline-start: 0; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .testbar__at::-webkit-scrollbar { display: none; }
+  .testbar__at-link { flex: none; min-width: 2rem; min-height: 2rem; scroll-snap-align: start; }
+  .testbar__at-link .lucide { width: 1.25rem; height: 1.25rem; }
+}
+
 /* Ship information icons beside the clock: entertainment, weather, nautical. */
 .testbar__at { display: flex; align-items: center; gap: var(--space-1); margin-inline-start: auto; }
 .testbar__at-link {

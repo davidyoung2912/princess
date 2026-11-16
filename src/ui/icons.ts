@@ -10,6 +10,8 @@ export {
   UserRound as Me,
   LifeBuoy as Help,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   WifiOff,
   RefreshCw as Sync,
   Info,

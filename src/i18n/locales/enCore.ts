@@ -1466,6 +1466,8 @@ export const enCore = {
   'demo.clock.title': 'Time',
   'testbar.label': 'Testing date and time',
   'testbar.at.label': 'Ship information',
+  'testbar.at.prev': 'Show earlier ship information buttons',
+  'testbar.at.next': 'Show more ship information buttons',
   'testbar.at.entertainment': 'Entertainment Explorer',
   'testbar.at.weather': 'Weather',
   'testbar.at.nautical': 'Nautical details',
