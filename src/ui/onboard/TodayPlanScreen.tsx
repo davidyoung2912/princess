@@ -19,9 +19,10 @@ import { t, type StringKey, headingCase } from '../../i18n'
 import { Banner } from '../Banner'
 import { Button } from '../Button'
 import { ExplorerIcon } from '../explorer/ExplorerIcon'
+import { Clock, Compass } from '../icons'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
-import { ChosenDayNote, PickDateButton } from '../explorer/DateControls'
+import { PickDateButton } from '../explorer/DateControls'
 import { ItineraryDayCard } from './ItineraryScreen'
 import { LoadError } from '../discover/parts'
 
@@ -76,7 +77,6 @@ function PlanDay({ details = false }: { details?: boolean }) {
       </Card>
       {!details && itineraryDay && <ol className="event-list"><ItineraryDayCard d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} /></ol>}
       <PickDateButton state={state} />
-      <ChosenDayNote state={state} />
       {changed.length > 0 && (
         <Banner kind="warning" title={t('plan.today.changed')}>
           <ul className="plain-bullets">
@@ -90,7 +90,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
           {groups.length === 0 ? <p className="muted">{t('plan.today.empty')}</p> : groups.map((g) => (
             <section key={g.period} aria-labelledby={`tp-${g.period}`}>
               <h2 id={`tp-${g.period}`}>{headingCase(t(PERIOD[g.period]))}</h2>
-              <ul className="exp-events">
+              <ul className="event-list">
                 {g.items.map((i) => <PlanRow key={`${i.kind}-${i.id}`} item={i} day={state.day} clash={clashes.get(i.id)} hint={hints.get(i.id)} clockAt={clockAt} alternatives={needsAlternatives(i, clashes) ? alternativesFor(i, plan.explorers, plan.items, state.nowAt) : []} onAdd={addToPlan.add} busy={addToPlan.busy} />)}
               </ul>
             </section>
@@ -117,13 +117,19 @@ function changeText(i: PlanItem): string {
 function PlanRow({ item, day, clash, hint, clockAt, alternatives, onAdd, busy }: { item: PlanItem; day: number; clash?: PlanItem[]; hint?: WalkHint; clockAt: (epoch: number) => string; alternatives: Alternative[]; onAdd: (events: { id: string; title: string }[]) => Promise<boolean>; busy: boolean }) {
   const cancelled = item.status === 'cancelled'
   return (
-    <li className={`exp-event${cancelled ? ' exp-event--cancelled' : ''}`}>
+    <li className={`event${cancelled ? ' event--cancelled' : ''}`}>
       {hint && <p className="muted" role="note">{t(hint.tight ? 'plan.today.walkTight' : 'plan.today.walk', { minutes: hint.minutes, place: hint.from.venueTitle, time: clockAt(hint.leaveBy) })}</p>}
-      <p className="exp-event__time"><time>{formatTime(item.start)}</time> {t('plan.today.until', { time: clockAt(item.endAt) })}</p>
-      <p className="exp-event__title"><strong>{cancelled ? <s>{item.title}</s> : item.title}</strong></p>
-      {cancelled && <StatusBadge kind="cancelled" label={t('exp.event.cancelled')} />}
-      {item.status === 'moved' && <StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} />}
-      <p className="muted">{t(KIND[item.kind])}{item.venueTitle && item.venueTitle !== item.title && <> · <Link to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></>}</p>
+      <p className="event__time">
+        {item.kind === 'tour' ? <Compass className="explorer-icon" aria-hidden="true" focusable="false" /> : <ExplorerIcon kind={item.explorer} />}
+        <strong>{t(KIND[item.kind])}</strong>
+        {cancelled && <span className="event__today"><StatusBadge kind="cancelled" label={t('exp.event.cancelled')} /></span>}
+        {item.status === 'moved' && <span className="event__today"><StatusBadge kind="changed" label={t('exp.event.moved', { was: formatTime(item.was ?? item.start) })} /></span>}
+      </p>
+      <h3 className="event__title">{item.link ? <Link to={item.link}>{item.title}</Link> : item.title}</h3>
+      <ul className="event__times">
+        <li><Clock aria-hidden="true" focusable="false" /><time>{formatTime(item.start)}</time>&nbsp;{t('plan.today.until', { time: clockAt(item.endAt) })}</li>
+      </ul>
+      {item.venueTitle && item.venueTitle !== item.title && <p className="event__where"><Link to={item.link ?? `${EXPLORER_PATHS[item.explorer]}/${item.venueId}?day=${day}`}>{item.venueTitle}</Link></p>}
       {clash && clash.length > 0 && <p className="exp-event__clash" role="note">{t('exp.event.clash', { title: clash[0].title })}</p>}
       {alternatives.length > 0 && (
         <div role="group" aria-label={t('plan.alt.title')}>

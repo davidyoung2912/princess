@@ -5,6 +5,7 @@ import logo from '../assets/princess.webp'
 import { artUrl } from '../art/urls'
 import { t, th } from '../i18n'
 import { Dialog } from './Dialog'
+import { DialogHeader } from './DialogHeader'
 import { Help, Menu, Search } from './icons'
 
 /**
@@ -21,7 +22,7 @@ export function PhoneMenu({ stanleyOff, dot, onStanley, onHelp }: { stanleyOff: 
         {dot && <span className="stanley-dot" aria-hidden="true" />}
       </button>
       {open && (
-        <Dialog title={t('shell.menu.title')} onClose={close} backButton>
+        <Dialog title={t('shell.menu.title')} onClose={close} header={(titleId) => <DialogHeader titleId={titleId} title={t('shell.menu.title')} subtext={t('shell.menu.sub')} icon={Menu} onClose={close} />}>
           <ul className="phone-menu__list">
             <li><Link to="/ship/search" className="phone-menu__item" onClick={close}><Search aria-hidden="true" /><span>{t('shell.search')}</span></Link></li>
             {!stanleyOff && (

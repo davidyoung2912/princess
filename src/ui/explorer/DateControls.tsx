@@ -8,6 +8,7 @@ import { portById } from '../../domain/sailings'
 import { t } from '../../i18n'
 import { Button } from '../Button'
 import { Dialog } from '../Dialog'
+import { DialogHeader } from '../DialogHeader'
 
 const placeOf = (c: DayChoice): string => (c.atSea ? t('exp.clock.sea') : portById(c.port)?.name ?? c.port)
 
@@ -30,7 +31,7 @@ export function PickDateButton({ state }: { state: ExplorerDayState }) {
       <Button variant="tertiary" className="exp-date__step" onClick={() => state.step(1)} disabled={state.day >= state.total} aria-label={t('exp.date.next')}><ChevronRight aria-hidden="true" /></Button>
       <Button variant="tertiary" onClick={state.today} disabled={state.day === state.currentDay}><Plan aria-hidden="true" />{t('exp.date.today')}</Button>
       {open && (
-        <Dialog title={t('exp.date.title')} onClose={() => setOpen(false)}>
+        <Dialog title={t('exp.date.title')} onClose={() => setOpen(false)} header={(titleId) => <DialogHeader titleId={titleId} title={t('exp.date.title')} subtext={t('exp.date.sub')} icon={Plan} onClose={() => setOpen(false)} />}>
           <ul className="exp-days">
             {state.choices.map((c) => (
               <li key={c.day}>

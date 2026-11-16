@@ -38,7 +38,7 @@ export function buildPlanItems(o: { day: number; explorers: readonly ExplorerDay
     if (r.day !== o.day || !date) continue
     const v = venue('dining', r.venueId)
     const startAt = o.atMs(date, r.time)
-    items.push({ id: r.id, kind: 'dining', explorer: 'dining', venueId: r.venueId, title: v.title, venueTitle: v.title, placeId: v.placeId, start: r.time, startAt, endAt: startAt + DINNER_MINUTES * MIN, status: 'on' })
+    items.push({ id: r.id, kind: 'dining', explorer: 'dining', venueId: r.venueId, title: v.title, venueTitle: v.title, placeId: v.placeId, start: r.time, startAt, endAt: startAt + DINNER_MINUTES * MIN, status: 'on', link: `/plan/reservations/${r.id}` })
   }
   for (const a of o.spa?.appointments ?? []) {
     if (a.day !== o.day) continue
