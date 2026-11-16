@@ -543,11 +543,13 @@ export async function startRuntime(): Promise<void> {
 }
 
 /** Waits (up to 15 s) for the new guest's context and the sailing tables, then starts the trip clock for them. */
-function startAtTripWhenReady(who: string, tries = 30): void {
+function startAtTripWhenReady(who: string, tries = 30, pulled = false): void {
   if (auth.current()?.user?.id !== who || tries <= 0) return
+  // The controls the account saved come first, so a late answer from the server cannot undo the jump.
+  if (!pulled) { void pullDemoFromServer().catch(() => false).then(() => startAtTripWhenReady(who, tries, true)); return }
   let done = false
   try { done = startAtTripBeginning() } catch { done = true }
-  if (!done) setTimeout(() => startAtTripWhenReady(who, tries - 1), 500)
+  if (!done) setTimeout(() => startAtTripWhenReady(who, tries - 1, true), 500)
 }
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */
