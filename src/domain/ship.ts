@@ -17,7 +17,7 @@ export const SUN_SHIP: ShipFacts = {
   staterooms: 2157,
   accessibleStaterooms: 51,
   connectingStaterooms: 100,
-  decks: 17,
+  decks: 21,
   sanctuaryStaterooms: 215,
   intro: 'Princess’s newest ship, built around the Piazza, a three-level gathering place under a glass Sphere, and the Dome, a glass-roofed pool by day and a theatre by night.',
 }

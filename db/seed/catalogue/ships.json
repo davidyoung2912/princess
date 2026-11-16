@@ -4,11 +4,11 @@
     "name": "Sun Princess",
     "class": "Sphere class",
     "grossTonnage": 177882,
-    "decks": 17,
+    "decks": 21,
     "guests": 4300,
     "crew": 1600,
     "lengthFt": 1133,
-    "beamFt": 155,
+    "beamFt": 139,
     "homeZone": "America/New_York",
     "staterooms": 2157,
     "entered": 2024,
@@ -37,7 +37,7 @@
     "decks": 19,
     "guests": 3660,
     "crew": 1346,
-    "lengthFt": 1080,
+    "lengthFt": 1083,
     "beamFt": 126,
     "homeZone": "America/New_York",
     "staterooms": 1830,
@@ -66,13 +66,13 @@
   {
     "id": "sapphire-princess",
     "name": "Sapphire Princess",
-    "class": "Gem class",
+    "class": "Grand class (Gem sub-class)",
     "grossTonnage": 115875,
-    "decks": 13,
+    "decks": 18,
     "guests": 2670,
     "crew": 1100,
     "lengthFt": 951,
-    "beamFt": 121,
+    "beamFt": 123,
     "homeZone": "Asia/Tokyo",
     "entered": 2004,
     "intro": "A mid-sized Gem-class ship with an Italian-inspired Piazza, an adults-only Serenity pool and a long Asia and Australia season.",
@@ -94,6 +94,7 @@
         "body": "An outdoor screen on the pool deck."
       }
     ],
-    "depth": "aboard"
+    "depth": "aboard",
+    "staterooms": 1337
   }
 ]

@@ -73,7 +73,7 @@ describe('catalogueBrowse', () => {
     expect(savedSailingsToCompare(['ship:x', 'sailing:s2', 'sailing:nope', 'sailing:s1', 'sailing:s3', 'sailing:s4']).map((s) => s.id)).toEqual(['s2', 's1', 's3'])
   })
   it('compares ship facts and flags rows that differ', () => {
-    const rows = shipCompareRows([{ id: 'a', name: 'A', className: 'X', depth: 'aboard', decks: 17, tonnage: 1, guests: 1, intro: '', highlights: [] }, { id: 'b', name: 'B', className: 'X', depth: 'browse', decks: 19, tonnage: 1, guests: 1, intro: '', highlights: [] }])
+    const rows = shipCompareRows([{ id: 'a', name: 'A', className: 'X', depth: 'aboard', decks: 17, tonnage: 1, guests: 1, intro: '', highlights: [], facts: [], sections: [] }, { id: 'b', name: 'B', className: 'X', depth: 'browse', decks: 19, tonnage: 1, guests: 1, intro: '', highlights: [], facts: [], sections: [] }])
     expect(rows.find((r) => r.key === 'className')!.differs).toBe(false)
     expect(rows.find((r) => r.key === 'decks')!.differs).toBe(true)
   })

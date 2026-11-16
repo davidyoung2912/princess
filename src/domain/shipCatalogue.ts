@@ -12,6 +12,9 @@ export type DataStatus = 'served' | 'sample' | 'verified'
 
 export interface CatalogueHighlight { title: string; body: string }
 
+export interface ShipFact { label: string; value: string }
+export interface ShipSection { title: string; open: boolean; items: readonly { title?: string; body: string }[] }
+
 export interface ShipSummary {
   id: string
   name: string
@@ -26,6 +29,9 @@ export interface ShipSummary {
   lengthFt?: number
   intro: string
   highlights: readonly CatalogueHighlight[]
+  /** More fact rows and the detail sections (history, dining, tips) the server serves with the ship. */
+  facts: readonly ShipFact[]
+  sections: readonly ShipSection[]
 }
 
 export interface Region { id: string; name: string }
@@ -83,7 +89,12 @@ function ship(r: unknown): ShipSummary | null {
   for (const k of ['lengthFt', 'crew', 'staterooms', 'entered'] as const) if (!opt(r[k]) && !num(r[k])) return null
   const profile = rec(r.profile) ? r.profile : {}
   const highlights = Array.isArray(profile.highlights) ? profile.highlights.filter((h): h is Rec => rec(h) && str(h.title, 120) && str(h.body, 600)).map((h) => ({ title: h.title as string, body: h.body as string })) : []
-  const out: ShipSummary = { id: r.id, name: r.name, className: r.class, depth: r.depth, decks: r.decks, tonnage: r.tonnage, guests: r.capacity, intro: r.intro, highlights }
+  const facts = Array.isArray(profile.facts) ? profile.facts.filter((f): f is Rec => rec(f) && str(f.label, 60) && str(f.value, 200)).map((f) => ({ label: f.label as string, value: f.value as string })) : []
+  const sections = Array.isArray(profile.sections) ? profile.sections.filter((x): x is Rec => rec(x) && str(x.title, 80) && Array.isArray(x.items)).map((x) => ({
+    title: x.title as string, open: x.open === true,
+    items: (x.items as unknown[]).filter((i): i is Rec => rec(i) && str(i.body, 900) && (opt(i.title) || str(i.title, 120))).map((i) => (typeof i.title === 'string' ? { title: i.title, body: i.body as string } : { body: i.body as string })),
+  })).filter((x) => x.items.length > 0) : []
+  const out: ShipSummary = { id: r.id, name: r.name, className: r.class, depth: r.depth, decks: r.decks, tonnage: r.tonnage, guests: r.capacity, intro: r.intro, highlights, facts, sections }
   if (typeof r.lengthFt === 'number') out.lengthFt = r.lengthFt
   if (typeof r.crew === 'number') out.crew = r.crew
   if (typeof r.staterooms === 'number') out.staterooms = r.staterooms
@@ -226,7 +237,7 @@ export const sailingFor = (sailingId: string): Sailing | undefined => {
 }
 
 /** What a screen gets before the catalogue has arrived: no facts, so nothing is invented. */
-const NO_SHIP: ShipSummary = { id: '', name: '', className: '', depth: 'browse', decks: 0, tonnage: 0, guests: 0, intro: '', highlights: [] }
+const NO_SHIP: ShipSummary = { id: '', name: '', className: '', depth: 'browse', decks: 0, tonnage: 0, guests: 0, intro: '', highlights: [], facts: [], sections: [] }
 
 export const shipById = (id: string): ShipSummary | undefined => SHIPS.find((s) => s.id === id)
 

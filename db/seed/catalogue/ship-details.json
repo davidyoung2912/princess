@@ -1,0 +1,1428 @@
+{
+ "sun-princess": {
+  "facts": [
+   {
+    "label": "Ship code",
+    "value": "SU"
+   },
+   {
+    "label": "Sister ships",
+    "value": "Star Princess (2025)"
+   },
+   {
+    "label": "Maiden voyage",
+    "value": "February 2024 (delivered 14 Feb; departed Civitavecchia 28 Feb); christened Barcelona, 23 Apr 2024"
+   },
+   {
+    "label": "Last refurbished",
+    "value": "Newbuild"
+   },
+   {
+    "label": "Builder and shipyard",
+    "value": "Fincantieri, Monfalcone, Italy"
+   },
+   {
+    "label": "Country of registry",
+    "value": "Bermuda"
+   },
+   {
+    "label": "Approximate build cost",
+    "value": "About $1 billion USD"
+   },
+   {
+    "label": "Length",
+    "value": "1,133 ft (345 m)"
+   },
+   {
+    "label": "Beam (width)",
+    "value": "139 ft hull; 154-155 ft maximum"
+   },
+   {
+    "label": "Draft (below water)",
+    "value": "28 ft (8.5 m)"
+   },
+   {
+    "label": "Height (keel to funnel)",
+    "value": "200 ft"
+   },
+   {
+    "label": "Decks",
+    "value": "21 passenger decks (20 physical decks; highest is Deck 21; there is no Deck 13)"
+   },
+   {
+    "label": "Maximum guests",
+    "value": "About 5,189 with every berth full"
+   },
+   {
+    "label": "Guest-to-crew ratio",
+    "value": "2.7 : 1 at double occupancy (3.3 : 1 at maximum)"
+   },
+   {
+    "label": "Space ratio",
+    "value": "41.4 at double occupancy (spacious); 34.3 at maximum (busier on holidays)"
+   },
+   {
+    "label": "Balcony cabins",
+    "value": "About 70% of cabins"
+   },
+   {
+    "label": "Decks with cabins",
+    "value": "10 decks (Decks 5-17)"
+   },
+   {
+    "label": "Wheelchair-accessible cabins",
+    "value": "55"
+   },
+   {
+    "label": "Connecting cabins",
+    "value": "Yes, in several categories"
+   },
+   {
+    "label": "Cabin showers",
+    "value": "Glass-door showers"
+   },
+   {
+    "label": "Passenger elevators",
+    "value": "16 smart destination-dispatch elevators"
+   },
+   {
+    "label": "Speed",
+    "value": "22.0 knots"
+   },
+   {
+    "label": "Propulsion and fuel",
+    "value": "Dual-fuel Liquefied Natural Gas (LNG); the first LNG ship in the fleet"
+   },
+   {
+    "label": "Dining venues",
+    "value": "About 21-30 including bars and cafes (the most in the fleet)"
+   },
+   {
+    "label": "Main dining rooms",
+    "value": "Three-level Horizons, Eclipse and Soleil"
+   },
+   {
+    "label": "Swimming pools",
+    "value": "5, including The Dome (indoor/outdoor) and the Wake View infinity pool"
+   },
+   {
+    "label": "Whirlpools and hot tubs",
+    "value": "9-11"
+   },
+   {
+    "label": "Retractable-roof pool",
+    "value": "Yes (The Dome)"
+   },
+   {
+    "label": "360-degree promenade",
+    "value": "No (partial Promenade on Deck 9)"
+   },
+   {
+    "label": "Self-service launderettes",
+    "value": "Yes (Decks 5, 9-12 and 14-16)"
+   },
+   {
+    "label": "Typical itineraries",
+    "value": "Mediterranean in spring and summer; Caribbean out of Fort Lauderdale in fall and winter"
+   }
+  ],
+  "sections": [
+   {
+    "title": "Is This Ship for You?",
+    "open": true,
+    "items": [
+     {
+      "title": "Vibe and audience",
+      "body": "A modern mega-ship resort experience with dramatic glass architecture, expansive multi-story public hubs and celebrity-backed dining. A dramatic departure from the traditional, classic layouts Princess was known for."
+     },
+     {
+      "title": "Choose Sun Princess if",
+      "body": "You want the newest, boldest ship at sea with cutting-edge entertainment (The Dome), maximum dining variety (nearly 30 venues) and eco-friendly LNG propulsion, and you do not mind sharing the ship with 4,300+ fellow travelers."
+     },
+     {
+      "title": "The mega-ship feel",
+      "body": "With 4,300 guests at double occupancy and a maximum capacity pushing past 5,100 during school holidays, she operates on a true mega-resort scale."
+     },
+     {
+      "title": "Crowd dynamics",
+      "body": "Unprecedented variety, entertainment tech and family-friendly spaces (like the Park19 activity zone), but her passenger-to-space ratio is noticeably tighter than older Princess ships. At peak capacity, popular venues, elevators and pool loungers need advance planning or early arrival."
+     },
+     {
+      "title": "More multi-berth cabins",
+      "body": "She was engineered with more third- and fourth-berth pull-down beds to attract large families."
+     }
+    ]
+   },
+   {
+    "title": "Signature Features",
+    "items": [
+     {
+      "title": "The Dome",
+      "body": "A multi-level, geodesic glass-enclosed conservatory at the top forward deck, inspired by the cliffside terraces of Santorini, Greece. Indoor/outdoor, climate-controlled pool lounge by day; by night the pool covers over and it becomes an immersive stage for aerial and acrobatic productions by Cirque Eloize."
+     },
+     {
+      "title": "The Piazza and the glass Sphere",
+      "body": "A next-generation three-story central atrium enclosed by a massive suspended glass sphere that wraps the midship Piazza, flooding the interior with daylight and offering panoramic ocean views."
+     },
+     {
+      "title": "Princess Arena",
+      "body": "A technologically advanced, shapeshifting main theater whose movable seating banks reconfigure between cruises (and even between shows) into three layouts: traditional proscenium, keyhole and in-the-round. It seats about 1,000 guests."
+     },
+     {
+      "title": "Spellbound by Magic Castle",
+      "body": "A Victorian-themed speakeasy and magic experience on Deck 8, entered through a hidden, unmarked door. Created with Hollywood's private Magic Castle club, with a theatrical owl mascot named Artemis and cocktails that smoke, levitate or change color."
+     },
+     {
+      "title": "Park19",
+      "body": "A top-deck activity zone on Decks 19-21: sports court, jogging track, Sea Breeze Rollglider, Coastal Climb ropes course, hammock area and Splash Zone."
+     },
+     {
+      "title": "Smart elevators",
+      "body": "No Up/Down buttons inside the cars. Enter your destination deck on a touchscreen outside the bank and the system assigns a lettered elevator (A-F)."
+     }
+    ]
+   },
+   {
+    "title": "Cabins and Suites",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "2,157-2,162 cabins across Decks 5-17 (no Deck 13). Sanctuary Collection staterooms (Suites, Mini-Suites and Balconies) have private access to the Sanctuary Club, dedicated dining and bundled Princess Premier perks."
+     },
+     {
+      "title": "Signature Sky Suites (4 cabins)",
+      "body": "About 1,118-1,262 sq ft including a massive wrap-around veranda. Sleeps up to 5, 2 bedrooms and baths, access to the Signature Restaurant, Lounge and Sun Deck."
+     },
+     {
+      "title": "Signature Grand Suites (10 cabins)",
+      "body": "About 564 sq ft total, separate living and dining room, Sanctuary Club access."
+     },
+     {
+      "title": "Signature Vista Suites (36 cabins)",
+      "body": "About 364 sq ft total, aft or corner views, Sanctuary Club access."
+     },
+     {
+      "title": "Cabana Mini-Suites (76-146 cabins)",
+      "body": "About 267 sq ft plus a 62-95 sq ft private indoor/outdoor cabana lounge leading out to the balcony; access to the private Cabana Deck."
+     },
+     {
+      "title": "Mini-Suites (243 cabins)",
+      "body": "About 267-310 sq ft, sitting area with sofa bed, glass-door shower and tub combo."
+     },
+     {
+      "title": "Sanctuary and Deluxe Balconies (949 cabins)",
+      "body": "About 200-235 sq ft plus a 44 sq ft balcony; the Sanctuary tier reaches about 279 sq ft and bundles Princess Premier plus the Sanctuary Restaurant and Club."
+     },
+     {
+      "title": "Cove Balconies (100 cabins)",
+      "body": "About 200 sq ft, on lower decks closer to the waterline with steel-framed balconies for weather protection."
+     },
+     {
+      "title": "Premium Oceanview (186 cabins)",
+      "body": "About 175-212 sq ft with a large picture window."
+     },
+     {
+      "title": "Interior (460 cabins)",
+      "body": "About 136-145 sq ft."
+     }
+    ]
+   },
+   {
+    "title": "Dining",
+    "items": [
+     {
+      "title": "Included",
+      "body": "Horizons Main Dining Room (three stories), Eclipse and Soleil dining rooms, The Eatery (modern buffet), Americana Diner, International Cafe (24-hour), Alfredo's Slice, Coffee and Cones, The Promenade food court."
+     },
+     {
+      "title": "Specialty (extra fee)",
+      "body": "Love by Britto (art-inspired romance dining with Romero Britto), The Butcher's Block by Dario (Tuscan steakhouse with butcher Dario Cecchini), The Catch by Rudi (seafood), Makoto Ocean (sushi), Umai Teppanyaki and Hot Pot, Crown Grill, Sabatini's Italian Trattoria, O'Malley's Irish Pub."
+     },
+     {
+      "title": "Buffet surprise",
+      "body": "The Eatery is on Deck 9 (not the pool deck), and crew plate almost all food behind glass instead of guests using shared tongs."
+     }
+    ]
+   },
+   {
+    "title": "Entertainment and Wellness",
+    "items": [
+     {
+      "title": "Shows and venues",
+      "body": "Princess Arena, Spellbound by Magic Castle, Crooners Bar (piano bar), Bellini's Cocktail Bar, Wheelhouse Bar, Princess Live!, The Dome's aerial shows."
+     },
+     {
+      "title": "Lotus Spa and fitness",
+      "body": "Two-story Lotus Spa with the Enclave thermal suite, salon, 5 pools, 9 hot tubs, a fitness center and the Wake View Terrace infinity pool."
+     },
+     {
+      "title": "Casino and retail",
+      "body": "Princess's largest casino (over 200 slot machines, with a dedicated Buffalo Zone; 4,300 capacity) and 5,800 sq ft of two-deck retail with more than 200 luxury brands, the most the line has assembled at sea."
+     },
+     {
+      "title": "Families and teens",
+      "body": "The Treehouse (ages 3-7) and The Lodge (ages 8-12) on Deck 6; The Underground and Neon Grove (teens 13-17) on Deck 7."
+     }
+    ]
+   },
+   {
+    "title": "Deck by Deck",
+    "items": [
+     {
+      "title": "Deck 4",
+      "body": "Medical Center, tender and water shuttle embarkation."
+     },
+     {
+      "title": "Deck 5",
+      "body": "Lotus Spa and Enclave Thermal Suite (lower level), cabins."
+     },
+     {
+      "title": "Deck 6",
+      "body": "Horizons Main Dining Room, The Piazza (lower level), International Cafe (24-hour), Sabatini's, Umai Teppanyaki and Hot Pot, Makoto Ocean, Lotus Spa (upper level), The Treehouse, The Lodge."
+     },
+     {
+      "title": "Deck 7",
+      "body": "Princess Arena (lower level), Eclipse Dining Room, Crown Grill, The Catch by Rudi, The Butcher's Block by Dario, O'Malley's Irish Pub, Good Spirits at Sea, Bellini's, Wheelhouse Bar, Coffee Currents, Gelateria, Princess Live!, The Underground and Neon Grove, The Shops of Princess."
+     },
+     {
+      "title": "Deck 8",
+      "body": "Soleil / Sanctuary Restaurant (upper dining room level), Spellbound by Magic Castle, Crooners Bar, Princess Casino (smoking and non-smoking zones plus Buffalo Zone), Guest Services, Shore Excursions, The Shops of Princess (upper)."
+     },
+     {
+      "title": "Deck 9",
+      "body": "The Eatery, Alfredo's Pizzeria, The Promenade (outdoor walk with Promenade Slice, Bites, Coffee and Cones) and Promenade Bar."
+     },
+     {
+      "title": "Decks 10-15",
+      "body": "Staterooms; the Navigation Bridge is forward on Deck 15."
+     },
+     {
+      "title": "Deck 16",
+      "body": "Sea View Terrace (aft infinity-style views), suites and cabins."
+     },
+     {
+      "title": "Deck 17",
+      "body": "The Dome (lower level, indoor/outdoor pool), Lido Pools, Americana Diner, Lido Bar, SeaView Bar, The Mix, Lido Slice and Tacos."
+     },
+     {
+      "title": "Deck 18",
+      "body": "The Dome (upper level), Sanctuary Club (adults-only / Sanctuary guests), Wake View Terrace (aft infinity pool and bar), Fitness Center."
+     },
+     {
+      "title": "Decks 19-21",
+      "body": "Park19: sports court, jogging track, Sea Breeze Rollglider, Coastal Climb ropes course, hammock area, Splash Zone."
+     }
+    ]
+   },
+   {
+    "title": "Know Before You Go",
+    "items": [
+     {
+      "title": "Avoid Deck 16 below the Lido",
+      "body": "Cabins directly under the Lido Deck (Deck 17) often hear early-morning deck chair scraping and foot traffic."
+     },
+     {
+      "title": "Evening noise zones",
+      "body": "Cabins near the Promenade Grill (Decks 9-10), between the elevators and The Eatery on Deck 9, or directly below O'Malley's Irish Pub on Deck 6 can pick up extra evening noise."
+     },
+     {
+      "title": "Best quiet family zone",
+      "body": "Midship cabins on Decks 10-12 sit between passenger-only decks, minimizing venue noise while keeping you close to elevators."
+     },
+     {
+      "title": "In-room motion sensors",
+      "body": "Cabins have automatic nightlight motion sensors under side tables and inside bathroom cabinets. Great for solo travelers; light sleepers or parents of toddlers may want to cover them with painter's tape at night."
+     },
+     {
+      "title": "Arrive early for Princess Arena",
+      "body": "The arena seats about 1,000 on a 4,300-guest ship, so production shows fill 30-40 minutes before curtain."
+     },
+     {
+      "title": "Book Spellbound immediately",
+      "body": "Capacity is very limited and it sells out quickly once reservations open in the Princess Cruises app."
+     },
+     {
+      "title": "No self-serve buffet",
+      "body": "At The Eatery on Deck 9, crew serve almost all dishes behind glass."
+     },
+     {
+      "title": "Smart elevators",
+      "body": "Select your deck on the keypad outside; the system assigns a specific elevator car. Make sure your whole group taps the number of guests riding together."
+     }
+    ]
+   },
+   {
+    "title": "History and Timeline",
+    "items": [
+     {
+      "title": "Third ship of her name",
+      "body": "The third Princess vessel named Sun Princess. The 1974 ship (built 1972 as Spirit of London for P&O, transferred to Princess in 1974) appeared in the original Love Boat TV series before being sold to Premier Cruise Line as StarShip Majestic. The 1995 Sun Princess (lead ship of the 77,000-ton Sun Class and the world's largest cruise ship at her debut) introduced a high ratio of affordable private balcony cabins; she was sold in 2020 to Peace Boat and sails as Pacific World."
+     },
+     {
+      "title": "Order and design (2018)",
+      "body": "Ordered in 2018 as lead ship of the new Sphere Class at Fincantieri's yard in Monfalcone, Italy."
+     },
+     {
+      "title": "Float-out (8 March 2023)",
+      "body": "Floated out of dry dock in Monfalcone. Hotel General Manager Simona Stumberger was ceremonial Madrina (godmother of the float-out) and Captain Gennaro Arma took command of final outfitting."
+     },
+     {
+      "title": "Delivery delays (January 2024)",
+      "body": "Originally due to debut on 8 February 2024, delivery was postponed twice to complete interior systems, cancelling her first two planned Mediterranean sailings."
+     },
+     {
+      "title": "Handover and maiden voyage (February 2024)",
+      "body": "Delivered 14 February 2024; departed Civitavecchia (Rome) on her maiden passenger voyage on 28 February 2024."
+     },
+     {
+      "title": "Christening (23 April 2024)",
+      "body": "Christened in Barcelona by British actress and Ted Lasso star Hannah Waddingham, whose grandfather served in the Royal Navy in World War II."
+     },
+     {
+      "title": "First LNG ship",
+      "body": "The first Princess ship powered by Liquefied Natural Gas, one of the cleanest marine fossil fuels: nearly 99% lower sulfur oxide and particulate emissions, and lower greenhouse gas emissions than traditional marine fuels."
+     }
+    ]
+   },
+   {
+    "title": "Fun Facts",
+    "items": [
+     {
+      "title": "Celebrity godmother",
+      "body": "Hannah Waddingham, of Ted Lasso and Game of Thrones, christened the ship."
+     },
+     {
+      "title": "A Love Boat name",
+      "body": "The 1974 Sun Princess appeared in the original Love Boat series."
+     },
+     {
+      "title": "Inspired by Santorini",
+      "body": "The Dome's design comes from the cliffside terraces of Santorini."
+     },
+     {
+      "title": "The secret speakeasy",
+      "body": "Spellbound by Magic Castle hides behind an unmarked Victorian door on Deck 8, a candlelit parlor of 'haunted' tricks and levitating objects."
+     },
+     {
+      "title": "First shape-shifting theater",
+      "body": "Princess Arena's seating banks physically reconfigure into three layouts."
+     },
+     {
+      "title": "Record-breaking retail and casino",
+      "body": "The largest casino in Princess history and the most luxury retail brands the line has ever assembled at sea."
+     },
+     {
+      "title": "Submarine sighting (April 2026)",
+      "body": "Passengers spotted and filmed an unidentified military submarine surfacing alongside the ship."
+     },
+     {
+      "title": "Self-driving elevators",
+      "body": "No Up/Down buttons in the cars; a kiosk outside assigns lettered elevators, which often confuses first-time cruisers on embarkation day."
+     }
+    ]
+   },
+   {
+    "title": "Safety and Health Record",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "A relatively new vessel with no major structural or grounding incidents. A few operational and guest emergencies have been reported. Older 2017-2019 norovirus news refers to the previous Sun Princess, retired in 2020."
+     },
+     {
+      "title": "August 2026 swimming pool fatality",
+      "body": "A passenger suffered a severe cervical spinal cord injury after falling into an onboard pool and being found unresponsive. He was medically evacuated to a hospital in Naples, Italy, and died nearly three weeks later."
+     },
+     {
+      "title": "July 2026 smoke incident",
+      "body": "At about 2:00 a.m. smoke was detected in a Deck 14 hallway; the captain woke guests and assembled them at muster stations with life vests. Teams confirmed there was no active fire and operations resumed normally."
+     },
+     {
+      "title": "2024-2025 medical evacuations and delays",
+      "body": "Several standard Coast Guard medical evacuations (off Crete in May 2024, near Florida during Hurricane Milton in October 2024, and in the Caribbean/Atlantic in early 2025), and minor technical delays during the March 2024 maiden season that required skipping Santorini."
+     }
+    ]
+   },
+   {
+    "title": "On Every Princess Ship",
+    "items": [
+     {
+      "title": "MedallionClass wearable",
+      "body": "The quarter-sized OceanMedallion gives touchless boarding, keyless cabin unlocking, real-time shipmate locating and OceanNow (on-demand food and drink delivery anywhere on the ship). Order Medallions for all cabin guests in one transaction before the cruise to avoid duplicate shipping charges."
+     },
+     {
+      "title": "OceanNow delivery fee",
+      "body": "Ordering via OceanNow is complimentary with Princess Plus or Princess Premier, but standard-fare guests pay a one-time activation fee."
+     },
+     {
+      "title": "MedallionNet connectivity",
+      "body": "Wi-Fi powered by Starlink."
+     },
+     {
+      "title": "Self-service launderettes",
+      "body": "Washers, dryers, irons and ironing boards on cabin decks (rare on modern cruise lines and heavily searched by guests). Bring a few detergent pods and dryer sheets; tokens and detergent can be bought with your Medallion."
+     },
+     {
+      "title": "Youth and teen centers",
+      "body": "Complimentary Camp Discovery clubs by age: The Treehouse (ages 3-7), The Lodge (ages 8-12) and The Beach House (teens 13-17)."
+     },
+     {
+      "title": "Currency and voltage",
+      "body": "US dollars onboard; North American 110V (Type A/B) and European 220V outlets. Sun and Sky Princess also have bedside USB and USB-C ports."
+     },
+     {
+      "title": "The Love Boat horn",
+      "body": "Every Princess ship's custom horn plays the opening notes of The Love Boat theme ('Love, exciting and new...') when departing major ports."
+     },
+     {
+      "title": "No Deck 13",
+      "body": "All three ships skip Deck 13, jumping from Deck 12 to Deck 14, out of maritime superstition."
+     },
+     {
+      "title": "Stanley the Bear",
+      "body": "Princess's teddy bear mascot is named after Stanley McDonald, who founded Princess Cruises in 1965 with a single chartered ship, Princess Patricia, sailing to Mexico."
+     },
+     {
+      "title": "Coded announcements",
+      "body": "Like all major ships, these carry a small onboard morgue on the lower crew decks. Coded PA announcements such as 'Operation Bright Star' (medical emergency) or 'Operation Rising Star' (a passenger passing away) are what the crew is responding to."
+     },
+     {
+      "title": "The ghost lifeboat",
+      "body": "Cruise ships occasionally meet empty, adrift lifeboats from sunken cargo ships. In July 2026 sister ship Emerald Princess diverted off Alaska to investigate an unmanned orange lifeboat from a cargo ship that had sunk a year earlier."
+     },
+     {
+      "title": "Safety context",
+      "body": "Princess ships routinely score 95-100 on CDC Vessel Sanitation Program inspections (86 and above is passing). All three ships have modern man-overboard radar and infrared detection, SOLAS-compliant lifeboats and 24/7 staffed medical centers."
+     }
+    ]
+   }
+  ]
+ },
+ "sky-princess": {
+  "facts": [
+   {
+    "label": "Ship code",
+    "value": "YP"
+   },
+   {
+    "label": "Sister ships",
+    "value": "Royal, Regal, Majestic, Enchanted and Discovery Princess"
+   },
+   {
+    "label": "Maiden voyage",
+    "value": "October 2019 (7-night Mediterranean and Adriatic cruise, Athens to Barcelona, 20 Oct); christened Fort Lauderdale, 3 Dec 2019"
+   },
+   {
+    "label": "Last refurbished",
+    "value": "May 2023"
+   },
+   {
+    "label": "Builder and shipyard",
+    "value": "Fincantieri, Monfalcone, Italy"
+   },
+   {
+    "label": "Country of registry",
+    "value": "Bermuda"
+   },
+   {
+    "label": "Approximate build cost",
+    "value": "About $760 million USD"
+   },
+   {
+    "label": "Length",
+    "value": "1,083 ft (330 m)"
+   },
+   {
+    "label": "Beam (width)",
+    "value": "126 ft hull; 155 ft maximum"
+   },
+   {
+    "label": "Draft (below water)",
+    "value": "28 ft (8.5 m)"
+   },
+   {
+    "label": "Height (keel to funnel)",
+    "value": "217 ft"
+   },
+   {
+    "label": "Decks",
+    "value": "19 passenger decks (18 physical decks; highest is Deck 19; there is no Deck 13)"
+   },
+   {
+    "label": "Maximum guests",
+    "value": "About 4,438-4,610 with every berth full"
+   },
+   {
+    "label": "Guest-to-crew ratio",
+    "value": "2.7 : 1"
+   },
+   {
+    "label": "Space ratio",
+    "value": "39.6 at double occupancy (balanced); 31.8 at maximum (busier on holidays)"
+   },
+   {
+    "label": "Balcony cabins",
+    "value": "About 80-81% of cabins"
+   },
+   {
+    "label": "Decks with cabins",
+    "value": "11 decks (Decks 8-18)"
+   },
+   {
+    "label": "Wheelchair-accessible cabins",
+    "value": "38"
+   },
+   {
+    "label": "Connecting cabins",
+    "value": "Yes, in several categories"
+   },
+   {
+    "label": "Cabin showers",
+    "value": "Glass-door showers"
+   },
+   {
+    "label": "Passenger elevators",
+    "value": "14 with standard call buttons"
+   },
+   {
+    "label": "Speed",
+    "value": "22.0 knots"
+   },
+   {
+    "label": "Propulsion and fuel",
+    "value": "Diesel-electric (marine gas oil / heavy fuel oil)"
+   },
+   {
+    "label": "Dining venues",
+    "value": "About 16-20 including bars and cafes"
+   },
+   {
+    "label": "Main dining rooms",
+    "value": "3: Estrella, Cielo and Soleil"
+   },
+   {
+    "label": "Swimming pools",
+    "value": "4, including the adults-only Retreat Pool and the aft Wake View Pool"
+   },
+   {
+    "label": "Whirlpools and hot tubs",
+    "value": "8-11"
+   },
+   {
+    "label": "Retractable-roof pool",
+    "value": "No"
+   },
+   {
+    "label": "360-degree promenade",
+    "value": "No"
+   },
+   {
+    "label": "Self-service launderettes",
+    "value": "Yes, on passenger cabin decks"
+   },
+   {
+    "label": "Typical itineraries",
+    "value": "Northern Europe, the British Isles and Scandinavia out of Southampton in summer; the Caribbean in winter"
+   }
+  ],
+  "sections": [
+   {
+    "title": "Is This Ship for You?",
+    "open": true,
+    "items": [
+     {
+      "title": "Vibe and audience",
+      "body": "Polished, classic luxury cruising on a large scale, ideal for couples and families who like refined lounges, high-end specialty dining and wide outdoor decks. Many frequent cruisers consider the Royal Class the sweet spot of the fleet."
+     },
+     {
+      "title": "Choose Sky Princess if",
+      "body": "You want modern amenities, luxury suites and glass-floor walkways without the overwhelming crowds of a mega-ship, in a balanced, couples-oriented atmosphere."
+     },
+     {
+      "title": "Fewer multi-berth cabins",
+      "body": "The stateroom mix is geared toward couples and solo travelers, with fewer cabins holding three or four people. The ship rarely reaches her theoretical maximum of 4,610 guests and hovers close to her 3,660 double-occupancy baseline."
+     },
+     {
+      "title": "Smoother flow",
+      "body": "Travelers praise her for feeling spacious and unhurried; lines at the International Cafe, Piazza and main dining rooms are noticeably shorter than on the Sphere Class."
+     }
+    ]
+   },
+   {
+    "title": "Signature Features",
+    "items": [
+     {
+      "title": "SeaWalk",
+      "body": "A cantilevered, glass-bottomed walkway on Deck 16 extending 28 feet beyond the starboard edge of the ship, 128 feet above the ocean. At night LED lighting makes it look like a glowing glass bridge."
+     },
+     {
+      "title": "Sky Suites",
+      "body": "Two flagship suites on Deck 18, the first in the fleet, with the largest private balconies at sea (700+ sq ft) and 270-degree panoramic views overlooking the Movies Under the Stars screen."
+     },
+     {
+      "title": "The Piazza",
+      "body": "A dramatic three-deck central hub surrounded by wine bars, cafes and live street-style performers."
+     },
+     {
+      "title": "Adult-focused venues",
+      "body": "An expanded Sanctuary (adults-only sundeck retreat) and Take Five, the only dedicated jazz theater at sea, with live performances and curated cocktails."
+     },
+     {
+      "title": "Built for MedallionClass",
+      "body": "The first ship in the fleet designed from the keel up for the wearable OceanMedallion; earlier ships were retrofitted."
+     }
+    ]
+   },
+   {
+    "title": "Cabins and Suites",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "1,830-1,849 cabins across Decks 8-18 (no Deck 13); over 80% have balconies. Almost no standard Oceanview cabins: only 6 Deluxe Oceanview cabins at the very front. Beginning May 2027, select Suites, Mini-Suites and Deluxe Balconies transition into the Sanctuary Collection."
+     },
+     {
+      "title": "Sky Suites (2 cabins, Deck 18)",
+      "body": "About 1,012-1,260 sq ft including a ~700 sq ft 270-degree wrap-around balcony, 2 bedrooms, 2 bathrooms, sleeps 5, dedicated Suite Experience Manager."
+     },
+     {
+      "title": "Penthouse, Vista and Window Suites (38 cabins)",
+      "body": "About 440-682 sq ft plus an 83-338 sq ft balcony (Window Suites have no balcony); Reserve Collection dining and priority perks."
+     },
+     {
+      "title": "Reserve Collection and Standard Mini-Suites (312 cabins)",
+      "body": "About 299-323 sq ft including a 41-61 sq ft balcony, separate sitting area with sofa bed, bathtub and shower."
+     },
+     {
+      "title": "Deluxe Balconies (358 cabins)",
+      "body": "About 233-279 sq ft including a ~41 sq ft balcony; includes a loveseat or sofa, unlike Standard Balconies."
+     },
+     {
+      "title": "Standard Balconies (778 cabins)",
+      "body": "About 214-222 sq ft including a ~41 sq ft compact balcony for two chairs and a small table. Inside the room there is only a desk chair."
+     },
+     {
+      "title": "Deluxe Oceanview (6 cabins)",
+      "body": "About 200 sq ft, forward on Deck 8/16."
+     },
+     {
+      "title": "Interior (342 cabins)",
+      "body": "About 158-175 sq ft."
+     }
+    ]
+   },
+   {
+    "title": "Dining",
+    "items": [
+     {
+      "title": "Included",
+      "body": "Three Main Dining Rooms (Estrella, Cielo, Soleil), World Fresh Marketplace (buffet), International Cafe (24-hour), Salty Dog Grill (gourmet burgers and street food), Slice (poolside pizza), Swirls (ice cream), The Pastry Shop."
+     },
+     {
+      "title": "Specialty (extra fee)",
+      "body": "Crown Grill (steakhouse), Sabatini's Italian Trattoria, Alfredo's Pizzeria, Ocean Terrace Sushi Bar, Chef's Table Lumiere, Vines (wine bar), Gelato."
+     },
+     {
+      "title": "Three dining rooms, one menu",
+      "body": "Soleil (Deck 5 aft), Estrella (Deck 6 midship) and Cielo (Deck 6 aft) serve the same menu, so check wait times across all three in the app."
+     }
+    ]
+   },
+   {
+    "title": "Entertainment and Wellness",
+    "items": [
+     {
+      "title": "Venues",
+      "body": "Princess Theater (Broadway-style productions), Take Five (jazz lounge), Vista Lounge, Princess Live! (TV studio and game shows), Bellini's, Crooners, Churchill's Cigar Lounge, Phantom Bridge (digital and physical escape room)."
+     },
+     {
+      "title": "Pools and spa",
+      "body": "4 pools (2 top-deck pools, the adults-only Retreat Pool and the aft Wake View Pool), 8 hot tubs, The Sanctuary (adults-only retreat) and Lotus Spa with The Enclave, the largest thermal suite with a hydro-therapy pool."
+     },
+     {
+      "title": "Sports and play",
+      "body": "Center Court (basketball, volleyball, pickleball), Lawn Court (putting green), jogging track on Deck 17, and Camp Discovery: The Treehouse, The Lodge and The Beach House."
+     }
+    ]
+   },
+   {
+    "title": "Deck by Deck",
+    "items": [
+     {
+      "title": "Deck 4 (Gala)",
+      "body": "Medical Center, gangway and tender embarkation."
+     },
+     {
+      "title": "Deck 5 (Plaza)",
+      "body": "Soleil Dining Room (aft), The Piazza (lower level), International Cafe (24-hour), Sabatini's, Vines Wine Bar, Gelato, Good Spirits at Sea, Lotus Spa and Salon with The Enclave, Guest Services, Shore Excursions."
+     },
+     {
+      "title": "Deck 6 (Fiesta)",
+      "body": "Estrella Dining Room (midship), Cielo Dining Room (aft) and Chef's Table Lumiere, Princess Theater (lower level), Princess Casino, Churchill's Cigar Lounge, Take Five, Bellini's, The Shops of Princess (lower), Photo Gallery."
+     },
+     {
+      "title": "Deck 7 (Promenade)",
+      "body": "Princess Theater (upper level), Crown Grill and Bar, The Catch by Rudi, Alfredo's Pizzeria, Ocean Terrace Sushi/Seafood Bar, Princess Live! and Cafe, Vista Lounge (aft show lounge), Crooners Bar, The Shops of Princess (upper), Library and Internet Cafe."
+     },
+     {
+      "title": "Decks 8-15",
+      "body": "Staterooms; the Navigation Bridge is forward on Deck 14."
+     },
+     {
+      "title": "Deck 16 (Lido)",
+      "body": "Sky Pool and Fountain Pool (midship), Movies Under the Stars LED screen, SeaWalk (starboard) and SeaView Bar (port), World Fresh Marketplace and The Pastry Shop, Salty Dog Grill, Slice Pizzeria, Swirls, The MIX, Wake View Pool and Bar (aft)."
+     },
+     {
+      "title": "Deck 17 (Sun)",
+      "body": "The Sanctuary (adults-only, forward), Retreat Pool and Bar (adults-only), Fitness Center, Camp Discovery, jogging track."
+     },
+     {
+      "title": "Deck 18 (Sky)",
+      "body": "Sky Suites, Center Court, Lawn Court (putting green), Sun Deck."
+     },
+     {
+      "title": "Deck 19 (Vista)",
+      "body": "Sky Lounge and observation Sun Deck."
+     }
+    ]
+   },
+   {
+    "title": "Know Before You Go",
+    "items": [
+     {
+      "title": "Best quiet decks",
+      "body": "Staterooms on Decks 9-14 are buffered by passenger cabins above and below."
+     },
+     {
+      "title": "Skip Deck 15 and Deck 8",
+      "body": "Deck 15 sits directly under the Lido pool and buffet deck (morning chair dragging); Deck 8 sits over the Piazza and Princess Theater."
+     },
+     {
+      "title": "Partially obstructed balconies",
+      "body": "Some Balcony and Deluxe Balcony cabins on Decks 8, 15 and 16 have lifeboats or structural overhangs blocking downward views."
+     },
+     {
+      "title": "Standard versus Deluxe Balcony",
+      "body": "Standard Balconies have only a desk chair indoors; upgrade to a Deluxe Balcony for indoor lounge seating. A Standard balcony fits two chairs comfortably."
+     },
+     {
+      "title": "Wall soundproofing",
+      "body": "Some cruisers report thin walls in standard cabins where neighbors' TVs can be heard, though experiences vary by section."
+     },
+     {
+      "title": "No midship stairs above Deck 7",
+      "body": "The central staircase stops at Deck 7. Midship cabins on Decks 8-17 must use the midship elevators or walk to the forward or aft stairs."
+     },
+     {
+      "title": "No wrap-around promenade",
+      "body": "Deck 7 has only small outdoor smoking and muster sections; walkers and joggers must use the track on Deck 17."
+     },
+     {
+      "title": "Free adults-only sun",
+      "body": "The forward Retreat Pool (Deck 17) is adults-only and complimentary, unlike The Sanctuary next door, which charges a fee."
+     }
+    ]
+   },
+   {
+    "title": "History and Timeline",
+    "items": [
+     {
+      "title": "Second ship of her name",
+      "body": "Her predecessor, the first Sky Princess (1988-2000), was built as Fairsky for Sitmar Cruises (launched 1984, one of the last steam-turbine cruise ships ever built). Princess acquired Sitmar in 1988; she later moved to P&O Australia as Pacific Sky and was scrapped in 2013."
+     },
+     {
+      "title": "Steel cutting (2016-2017)",
+      "body": "Bow section steel cut in Castellammare di Stabia on 9 November 2016; main hull steel cut at Fincantieri's Monfalcone yard on 8 September 2017."
+     },
+     {
+      "title": "Name announcement (30 November 2017)",
+      "body": "Named Sky Princess, the fourth vessel of the Royal Class."
+     },
+     {
+      "title": "Keel laying (5 July 2018)",
+      "body": "Keel block laid in Monfalcone with traditional coin-welding ceremonies."
+     },
+     {
+      "title": "Float-out (14 February 2019)",
+      "body": "Touched water for the first time, marking the shift to interior fitting."
+     },
+     {
+      "title": "Sea trials and handover (2019)",
+      "body": "Sea trials in the Adriatic in September; handed over to Princess on 15 October 2019."
+     },
+     {
+      "title": "Maiden voyage (20 October 2019)",
+      "body": "A 7-night Mediterranean and Adriatic inaugural cruise from Athens (Piraeus) to Barcelona."
+     },
+     {
+      "title": "Christening (3 December 2019)",
+      "body": "Christened in Fort Lauderdale by NASA trailblazers Captain Kay Hire (retired U.S. Navy captain and Space Shuttle astronaut, STS-90 and STS-130) and Poppy Northcutt (first woman in an operational support role in Mission Control during Apollo). Her U.S. maiden voyage followed on 4 December."
+     },
+     {
+      "title": "Refurbishment (May 2023)",
+      "body": "A routine dry dock for hull maintenance, hotel updates and technical overhauls."
+     }
+    ]
+   },
+   {
+    "title": "Fun Facts",
+    "items": [
+     {
+      "title": "NASA trailblazer godmothers",
+      "body": "Unlike most ships christened by actresses or royalty, Sky Princess was christened by two pioneering women from NASA."
+     },
+     {
+      "title": "Largest private balconies at sea",
+      "body": "At launch, her two Sky Suites had the largest private balconies in the fleet, positioned so guests can watch Movies Under the Stars from their own balcony."
+     },
+     {
+      "title": "A nod to Sitmar",
+      "body": "Her name pays tribute to the original Sky Princess, built as Fairsky for Sitmar Cruises."
+     },
+     {
+      "title": "No midship stairs above Deck 7",
+      "body": "A ship-spotter classic: the ship's engineering and safety casing design eliminates a central stairwell through the upper cabin decks, leaving only elevator banks midship above Deck 7."
+     },
+     {
+      "title": "The 28-foot glass walk",
+      "body": "The SeaWalk extends 28 feet beyond the starboard edge, 128 feet above the waves, with a transparent glass floor."
+     },
+     {
+      "title": "The phantom bathroom cord",
+      "body": "Lore from her predecessor: a cabin steward repeatedly received emergency bathroom pull-cord alerts from an empty Penthouse suite, even after electricians found nothing wrong with the wiring."
+     }
+    ]
+   },
+   {
+    "title": "Safety and Health Record",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "A solid mechanical safety record, with reported incidents limited mainly to plumbing leaks, passenger emergencies and a post-pandemic illness cluster."
+     },
+     {
+      "title": "Piazza pipe leaks (February 2023 and April 2025)",
+      "body": "Burst pipes from upper-deck pool systems leaked into the Piazza Atrium (Decks 5-6) twice, with brief false fire alarms. Crew isolated the water quickly; no injuries or itinerary disruption."
+     },
+     {
+      "title": "December 2024 overboard incident",
+      "body": "A 48-year-old female passenger went overboard on 21 December 2024, investigated by authorities as an intentional act."
+     },
+     {
+      "title": "June 2022 COVID-19 outbreak",
+      "body": "On a Northern Europe and Norway sailing shortly after cruising resumed, over 200 passengers and crew tested positive."
+     },
+     {
+      "title": "Routine medical evacuations",
+      "body": "Periodic Coast Guard medevacs, including in Turks and Caicos in December 2024 and off Algeria in October 2025."
+     }
+    ]
+   },
+   {
+    "title": "On Every Princess Ship",
+    "items": [
+     {
+      "title": "MedallionClass wearable",
+      "body": "The quarter-sized OceanMedallion gives touchless boarding, keyless cabin unlocking, real-time shipmate locating and OceanNow (on-demand food and drink delivery anywhere on the ship). Order Medallions for all cabin guests in one transaction before the cruise to avoid duplicate shipping charges."
+     },
+     {
+      "title": "OceanNow delivery fee",
+      "body": "Ordering via OceanNow is complimentary with Princess Plus or Princess Premier, but standard-fare guests pay a one-time activation fee."
+     },
+     {
+      "title": "MedallionNet connectivity",
+      "body": "Wi-Fi powered by Starlink."
+     },
+     {
+      "title": "Self-service launderettes",
+      "body": "Washers, dryers, irons and ironing boards on cabin decks (rare on modern cruise lines and heavily searched by guests). Bring a few detergent pods and dryer sheets; tokens and detergent can be bought with your Medallion."
+     },
+     {
+      "title": "Youth and teen centers",
+      "body": "Complimentary Camp Discovery clubs by age: The Treehouse (ages 3-7), The Lodge (ages 8-12) and The Beach House (teens 13-17)."
+     },
+     {
+      "title": "Currency and voltage",
+      "body": "US dollars onboard; North American 110V (Type A/B) and European 220V outlets. Sun and Sky Princess also have bedside USB and USB-C ports."
+     },
+     {
+      "title": "The Love Boat horn",
+      "body": "Every Princess ship's custom horn plays the opening notes of The Love Boat theme ('Love, exciting and new...') when departing major ports."
+     },
+     {
+      "title": "No Deck 13",
+      "body": "All three ships skip Deck 13, jumping from Deck 12 to Deck 14, out of maritime superstition."
+     },
+     {
+      "title": "Stanley the Bear",
+      "body": "Princess's teddy bear mascot is named after Stanley McDonald, who founded Princess Cruises in 1965 with a single chartered ship, Princess Patricia, sailing to Mexico."
+     },
+     {
+      "title": "Coded announcements",
+      "body": "Like all major ships, these carry a small onboard morgue on the lower crew decks. Coded PA announcements such as 'Operation Bright Star' (medical emergency) or 'Operation Rising Star' (a passenger passing away) are what the crew is responding to."
+     },
+     {
+      "title": "The ghost lifeboat",
+      "body": "Cruise ships occasionally meet empty, adrift lifeboats from sunken cargo ships. In July 2026 sister ship Emerald Princess diverted off Alaska to investigate an unmanned orange lifeboat from a cargo ship that had sunk a year earlier."
+     },
+     {
+      "title": "Safety context",
+      "body": "Princess ships routinely score 95-100 on CDC Vessel Sanitation Program inspections (86 and above is passing). All three ships have modern man-overboard radar and infrared detection, SOLAS-compliant lifeboats and 24/7 staffed medical centers."
+     }
+    ]
+   }
+  ]
+ },
+ "sapphire-princess": {
+  "facts": [
+   {
+    "label": "Ship code",
+    "value": "SA"
+   },
+   {
+    "label": "Sister ships",
+    "value": "Diamond Princess (identical twin); broader Grand Class sisters"
+   },
+   {
+    "label": "Maiden voyage",
+    "value": "May 2004 (inaugural Alaska cruise 13 Jun); christened Seattle, 10 Jun 2004"
+   },
+   {
+    "label": "Last refurbished",
+    "value": "October 2025 (17-day dry dock, Vigor Shipyard, Portland, Oregon)"
+   },
+   {
+    "label": "Builder and shipyard",
+    "value": "Mitsubishi Heavy Industries, Nagasaki, Japan"
+   },
+   {
+    "label": "Country of registry",
+    "value": "United Kingdom"
+   },
+   {
+    "label": "Approximate build cost",
+    "value": "About $400 million USD"
+   },
+   {
+    "label": "Length",
+    "value": "951-952 ft (290 m)"
+   },
+   {
+    "label": "Beam (width)",
+    "value": "123 ft hull; 164 ft with bridge wings"
+   },
+   {
+    "label": "Draft (below water)",
+    "value": "28 ft (8.5 m)"
+   },
+   {
+    "label": "Height (keel to funnel)",
+    "value": "205 ft"
+   },
+   {
+    "label": "Decks",
+    "value": "18 passenger decks (17 physical decks; highest is Deck 18; there is no Deck 13)"
+   },
+   {
+    "label": "Maximum guests",
+    "value": "About 3,214-3,300 with every berth full"
+   },
+   {
+    "label": "Guest-to-crew ratio",
+    "value": "2.4 : 1 (the highest crew ratio of the three)"
+   },
+   {
+    "label": "Space ratio",
+    "value": "43.4 at double occupancy (most spacious per guest); 36.1 at maximum (holds up best when full)"
+   },
+   {
+    "label": "Balcony cabins",
+    "value": "About 55% of cabins"
+   },
+   {
+    "label": "Decks with cabins",
+    "value": "7 decks (Decks 5, 8-12 and 14-15)"
+   },
+   {
+    "label": "Wheelchair-accessible cabins",
+    "value": "27"
+   },
+   {
+    "label": "Connecting cabins",
+    "value": "Yes, including 2 Two-Bedroom Family Suites"
+   },
+   {
+    "label": "Cabin showers",
+    "value": "Shower curtains in standard cabins; tubs from Mini-Suites up"
+   },
+   {
+    "label": "Passenger elevators",
+    "value": "14 with standard call buttons"
+   },
+   {
+    "label": "Speed",
+    "value": "22.0 knots cruising (up to 24 knots maximum)"
+   },
+   {
+    "label": "Propulsion and fuel",
+    "value": "Gas turbine plus diesel-electric hybrid (CODAG, with a General Electric LM2500+ gas turbine)"
+   },
+   {
+    "label": "Dining venues",
+    "value": "About 13-15 including bars and cafes"
+   },
+   {
+    "label": "Main dining rooms",
+    "value": "5: International, Pacific Moon, Santa Fe, Savoy and Vivaldi (Savoy became Crown Grill in 2025)"
+   },
+   {
+    "label": "Swimming pools",
+    "value": "4, including the retractable glass-roof Conservatory Pool"
+   },
+   {
+    "label": "Whirlpools and hot tubs",
+    "value": "8"
+   },
+   {
+    "label": "Retractable-roof pool",
+    "value": "Yes (Conservatory Pool)"
+   },
+   {
+    "label": "360-degree promenade",
+    "value": "Yes (full Deck 7 teak loop)"
+   },
+   {
+    "label": "Self-service launderettes",
+    "value": "Yes, on passenger cabin decks"
+   },
+   {
+    "label": "Typical itineraries",
+    "value": "Alaska, South America and Antarctica, Japan and Asia, Canada and New England, and the South Pacific"
+   }
+  ],
+  "sections": [
+   {
+    "title": "Is This Ship for You?",
+    "open": true,
+    "items": [
+     {
+      "title": "Vibe and audience",
+      "body": "Intimate, traditional and spacious: favored by destination-focused travelers (especially in Japan, Southeast Asia and Alaska) who prefer lower passenger density and classic wrap-around promenade decks. A beloved classic for classic maritime elegance and quiet ocean views."
+     },
+     {
+      "title": "Choose Sapphire Princess if",
+      "body": "You prioritize the destination over onboard amusement parks, love walking a full outdoor promenade deck, appreciate classic ocean-liner charm, and want intimate, crowd-free service on bucket-list routes like Alaska, Japan or Antarctica."
+     },
+     {
+      "title": "Intimate scale and high crew ratio",
+      "body": "Roughly 2,670 guests at double occupancy (about 3,300 at most), nearly 2,000 fewer than Sun Princess. With a guest-to-crew ratio of about 2.4:1, travelers highlight warm, personal service where bartenders and stewards remember names by day two."
+     },
+     {
+      "title": "No crowds, better port access",
+      "body": "Virtually no lines for theater shows and plenty of deck seating. Her smaller footprint lets her dock in smaller, boutique ports and navigate narrow fjords that mega-ships cannot."
+     }
+    ]
+   },
+   {
+    "title": "Signature Features",
+    "items": [
+     {
+      "title": "Full wrap-around promenade",
+      "body": "A classic, unobstructed Deck 7 teak promenade that wraps all the way around the ship close to the waterline (with a staircase up to the bow), unlike Royal and Sphere class ships."
+     },
+     {
+      "title": "Skywalkers Nightclub",
+      "body": "An iconic observation lounge suspended 150+ feet above the stern (Decks 17-18), with panoramic daytime views and late-night dancing."
+     },
+     {
+      "title": "Covered Conservatory Pool",
+      "body": "A retractable glass roof over the midship Conservatory Pool (Deck 14) lets guests swim in cold or rainy weather, ideal for Alaska, Japan, Northern Europe and Patagonia."
+     },
+     {
+      "title": "Unique propulsion",
+      "body": "Distinctive external engine pods near the funnel and a CODAG (combined diesel and gas) system that helps minimize vibration on the passenger decks."
+     },
+     {
+      "title": "2025 dry-dock upgrades",
+      "body": "Refreshed in October 2025, adding Makoto Ocean (Deck 7, in the former Internet Cafe space; Edomae-style sushi and Japanese cocktails by Chef Makoto Okuwa) and Crown Grill (Deck 5, in the former Savoy Dining Room), both debuting in November 2025."
+     }
+    ]
+   },
+   {
+    "title": "Cabins and Suites",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "1,337-1,339 cabins across Decks 5, 8-12 and 14-15 (no Deck 13). Refurbished October 2025."
+     },
+     {
+      "title": "Grand Suite (1 cabin, Deck 12)",
+      "body": "About 1,314 sq ft with a large aft balcony, living room with fireplace, dining area, wet bar and whirlpool tub."
+     },
+     {
+      "title": "Two-Bedroom Family Suites (2 cabins, Deck 9)",
+      "body": "About 427-600+ sq ft; connects a Mini-Suite and an Interior cabin via a shared living room plus a ~92 sq ft balcony. Sleeps 6-8, 2 bathrooms."
+     },
+     {
+      "title": "Owner's, Penthouse, Premium and Vista Suites (27 cabins)",
+      "body": "About 305-410 sq ft plus a 155-180 sq ft balcony, priority embarkation and dining perks (28 suites in total including the Grand Suite)."
+     },
+     {
+      "title": "Mini-Suites (186 cabins)",
+      "body": "About 323 sq ft including a ~61 sq ft balcony, separate sitting area with sofa bed, 2 TVs, tub and shower."
+     },
+     {
+      "title": "Balcony cabins (522 cabins)",
+      "body": "About 237 sq ft including a ~46 sq ft balcony. Caribe Deck 10 balconies are extra deep (about 9 x 10 ft), half covered and half open."
+     },
+     {
+      "title": "Oceanview cabins (216 cabins)",
+      "body": "About 168-183 sq ft. Many on Emerald Deck 8 have fully or partially obstructed lifeboat views."
+     },
+     {
+      "title": "Interior cabins (366 cabins)",
+      "body": "About 158-162 sq ft."
+     }
+    ]
+   },
+   {
+    "title": "Dining",
+    "items": [
+     {
+      "title": "Included",
+      "body": "Four smaller themed Main Dining Rooms (International, Pacific Moon, Santa Fe, Vivaldi, with Savoy until 2025) for a more intimate feel than one massive hall; Horizon Court / World Fresh Marketplace buffet, International Cafe, Trident Grill, Prego Pizzeria, Swirls."
+     },
+     {
+      "title": "Specialty (extra fee)",
+      "body": "Crown Grill (added 2025), Makoto Ocean (sushi, added 2025), Sabatini's Italian Trattoria, Churrascaria Brazilian Grill, Alfredo's Pizzeria, Chef's Table."
+     },
+     {
+      "title": "Finding the International Dining Room",
+      "body": "It is on Deck 6 aft and cannot be reached by walking straight back from midship because the galley blocks the corridor. Walk aft on Deck 7 and take the aft stairs or elevators down one deck."
+     }
+    ]
+   },
+   {
+    "title": "Entertainment and Wellness",
+    "items": [
+     {
+      "title": "Pools",
+      "body": "4 pools: the Conservatory Pool (retractable glass roof), Neptune's Reef Pool, the adults-only Lotus Spa Pool and the aft Terrace Pool, plus 8 hot tubs."
+     },
+     {
+      "title": "Lounges and activities",
+      "body": "Princess Theater, Explorer's Lounge, Club Fusion, Wheelhouse Bar, Crooners, Grand Casino (an unusually large layout for her size), Movies Under the Stars, The Sanctuary, Lotus Spa, a full basketball court and the Lawn Court (putting and bocce)."
+     }
+    ]
+   },
+   {
+    "title": "Deck by Deck",
+    "items": [
+     {
+      "title": "Decks 4-7",
+      "body": "Medical and tender facilities (Deck 4), multiple dining rooms, the International Cafe and The Piazza on Deck 5; the Princess Theater, casino and lounges on Deck 6; a full 360-degree teak promenade, Sabatini's, Makoto Ocean and bars on Deck 7."
+     },
+     {
+      "title": "Decks 8-12",
+      "body": "Staterooms across the Emerald, Dolphin, Caribe, Baja and Aloha decks."
+     },
+     {
+      "title": "Decks 14-18",
+      "body": "Neptune's Reef and the glass-roof Conservatory Pool on Deck 14; the Lotus Spa, fitness center and Movies Under the Stars screen on Deck 15; The Sanctuary and Camp Discovery on Deck 16; the high-perch Skywalkers Nightclub on Decks 17-18."
+     }
+    ]
+   },
+   {
+    "title": "Know Before You Go",
+    "items": [
+     {
+      "title": "Caribe Deck balcony secret",
+      "body": "Standard balconies on Deck 10 (Caribe) are about 9 x 10 ft, roughly double the depth of Decks 9, 11 and 12, half covered for shade and half open for sun."
+     },
+     {
+      "title": "Emerald Deck obstructed views",
+      "body": "Many Oceanview cabins on Deck 8 look directly into orange lifeboats or tender davits. Check cabin obstruction photos before booking."
+     },
+     {
+      "title": "Forward cabins near the bridge",
+      "body": "Keep balcony lights off and curtains closed at night so light does not interfere with bridge visibility."
+     },
+     {
+      "title": "Older bathroom setup",
+      "body": "Unlike Sun and Sky Princess, standard cabins have compact showers with curtains rather than glass doors. Magnetic clips to weigh down the curtain are a classic cruiser hack."
+     },
+     {
+      "title": "Smoothest ride",
+      "body": "Decks 8 or 10 midship (or Deck 5 forward oceanviews) are the smoothest in rough seas such as the Drake Passage or North Pacific."
+     },
+     {
+      "title": "Best for cold weather",
+      "body": "She sails heavily in Alaska, Japan and Northern Europe, and the Conservatory Pool's retractable glass roof lets you swim even in freezing or rainy weather; the panoramic Skywalkers Lounge suits cooler climates too."
+     },
+     {
+      "title": "True 360-degree promenade",
+      "body": "Deck 7 offers a wide teak promenade that wraps completely around the ship (climbing briefly via stairs at the bow to Deck 8): the best of the three ships for scenic ocean-level walks."
+     },
+     {
+      "title": "2025 additions",
+      "body": "After the October 2025 dry dock you can book Makoto Ocean and Crown Grill onboard; they are not on older deck plans."
+     }
+    ]
+   },
+   {
+    "title": "History and Timeline",
+    "items": [
+     {
+      "title": "Original order (February 2000)",
+      "body": "Princess ordered two 115,000-ton sister ships from Mitsubishi Heavy Industries in Nagasaki, Japan, originally intended as Diamond Princess (Hull 2180) and Sapphire Princess (Hull 2181)."
+     },
+     {
+      "title": "Launch of Hull 2180 (25 February 2002)",
+      "body": "The original Diamond Princess was floated out first to begin interior outfitting."
+     },
+     {
+      "title": "The 19-hour fire (1 October 2002)",
+      "body": "At the Nagasaki fitting-out quay a massive fire broke out on Deck 5 and burned for 19 hours, gutting roughly 70% of the ship's superstructure."
+     },
+     {
+      "title": "The name swap (December 2002)",
+      "body": "To avoid delaying the Diamond Princess's scheduled debut, Princess swapped the two hull names. The undamaged hull was completed and launched on time as Diamond Princess; the fire-damaged hull was stripped, rebuilt over 19 months and delivered on 27 May 2004 as Sapphire Princess."
+     },
+     {
+      "title": "Christening and maiden voyage (June 2004)",
+      "body": "Christened in Seattle on 10 June 2004, the first cruise ship ever christened there, by Alaska First Lady Nancy Gore Murkowski, followed by her inaugural Alaska cruise on 13 June."
+     },
+     {
+      "title": "January 2012 (Victoria, BC)",
+      "body": "Princess Fleet Enhancements added the International Cafe, Vines Wine Bar, Alfredo's Pizzeria, The Sanctuary adults-only retreat and the Movies Under the Stars LED screen."
+     },
+     {
+      "title": "March 2018 (Singapore)",
+      "body": "Signature sea-witch hull livery, OceanMedallion hardware and sensors, Princess Luxury Beds in all staterooms and Camp Discovery youth centers."
+     },
+     {
+      "title": "2022-2023 post-pandemic refit",
+      "body": "Refreshed public lounges and carpets, and added MedallionNet Starlink connectivity."
+     },
+     {
+      "title": "October 2025 (Vigor Shipyard, Portland, Oregon)",
+      "body": "A 17-day dry dock converted the former Savoy Dining Room into Crown Grill (Deck 5) and the former Internet Cafe area into Makoto Ocean (Deck 7), with hull repainting and stateroom updates."
+     },
+     {
+      "title": "Upcoming (March-December 2027)",
+      "body": "A reunion with twin Diamond Princess for a historic dual-ship homeport season in Tokyo (Yokohama), Japan, back in the country where the swapped sisters were built."
+     }
+    ]
+   },
+   {
+    "title": "Fun Facts",
+    "items": [
+     {
+      "title": "The great name swap",
+      "body": "Sapphire Princess was meant to be Diamond Princess; the names were swapped after the Nagasaki fire."
+     },
+     {
+      "title": "Rare Japanese-built ship",
+      "body": "Unlike almost all modern mega-cruise ships (built in Italy, Germany, France or Finland), she and Diamond Princess are two of the only large Western cruise ships ever built in Japan."
+     },
+     {
+      "title": "First ship christened in Seattle",
+      "body": "On 10 June 2004, with Nancy Gore Murkowski, then First Lady of Alaska, as godmother."
+     },
+     {
+      "title": "Jet-engine booster",
+      "body": "A General Electric LM2500+ gas turbine, derived from jet-engine technology, sits in her funnel casing to give clean-burning extra speed on long Pacific and Alaska transits."
+     },
+     {
+      "title": "The shopping-cart-handle lounge",
+      "body": "Skywalkers Nightclub hangs 150+ feet above the aft deck. The older Grand-class sisters (Grand, Golden and Star Princess) had theirs removed in dry dock to improve fuel efficiency; Sapphire and Diamond kept theirs because their wider Japanese-built hulls were balanced differently."
+     },
+     {
+      "title": "Japanese cultural touches",
+      "body": "Built in Japan and frequently sailing Asian itineraries, she has an unusually large casino for her size and added Makoto Ocean sushi in 2025."
+     },
+     {
+      "title": "Fire-rebuilt hull rumor",
+      "body": "Because she was built from the charred hull of the original Diamond Princess, cruise forum rumors claim she is haunted, though no one died in the 2002 fire."
+     }
+    ]
+   },
+   {
+    "title": "Safety and Health Record",
+    "items": [
+     {
+      "title": "Overview",
+      "body": "Sailing for over two decades, she has a longer operational log, including two CDC-tracked norovirus outbreaks and several older incidents."
+     },
+     {
+      "title": "April 2024 norovirus outbreak",
+      "body": "On a 32-day voyage (5 April-7 May 2024), the CDC Vessel Sanitation Program reported a gastrointestinal outbreak affecting 123 passengers (4.86%) and 30 crew (2.81%). Princess applied enhanced disinfection and isolation protocols. A smaller outbreak in 2010 affected 114 guests."
+     },
+     {
+      "title": "April 2026 at-sea recovery",
+      "body": "Between Sardinia and Cartagena, Spain, crew spotted an orange life jacket and launched a fast rescue boat, recovering five deceased migrants in coordination with maritime rescue authorities before resuming the itinerary."
+     },
+     {
+      "title": "2014 pool drowning and safety reforms",
+      "body": "In August 2014 a passenger drowned in an onboard pool in the East China Sea. The UK Marine Accident Investigation Branch report noted the lack of dedicated pool attendants, leading to industry-wide improvements in pool signage, CCTV monitoring and emergency communication."
+     },
+     {
+      "title": "Older incidents (2009-2020)",
+      "body": "A lightning strike (2020) caused minor radar and navigation antenna damage that was promptly repaired. A temporary heavy list during a Pacific crossing (2010) was caused by a ballast or steering issue, with no serious injuries. Two separate passenger overboard fatalities were recorded (2009 and 2016)."
+     }
+    ]
+   },
+   {
+    "title": "On Every Princess Ship",
+    "items": [
+     {
+      "title": "MedallionClass wearable",
+      "body": "The quarter-sized OceanMedallion gives touchless boarding, keyless cabin unlocking, real-time shipmate locating and OceanNow (on-demand food and drink delivery anywhere on the ship). Order Medallions for all cabin guests in one transaction before the cruise to avoid duplicate shipping charges."
+     },
+     {
+      "title": "OceanNow delivery fee",
+      "body": "Ordering via OceanNow is complimentary with Princess Plus or Princess Premier, but standard-fare guests pay a one-time activation fee."
+     },
+     {
+      "title": "MedallionNet connectivity",
+      "body": "Wi-Fi powered by Starlink."
+     },
+     {
+      "title": "Self-service launderettes",
+      "body": "Washers, dryers, irons and ironing boards on cabin decks (rare on modern cruise lines and heavily searched by guests). Bring a few detergent pods and dryer sheets; tokens and detergent can be bought with your Medallion."
+     },
+     {
+      "title": "Youth and teen centers",
+      "body": "Complimentary Camp Discovery clubs by age: The Treehouse (ages 3-7), The Lodge (ages 8-12) and The Beach House (teens 13-17)."
+     },
+     {
+      "title": "Currency and voltage",
+      "body": "US dollars onboard; North American 110V (Type A/B) and European 220V outlets. Sun and Sky Princess also have bedside USB and USB-C ports."
+     },
+     {
+      "title": "The Love Boat horn",
+      "body": "Every Princess ship's custom horn plays the opening notes of The Love Boat theme ('Love, exciting and new...') when departing major ports."
+     },
+     {
+      "title": "No Deck 13",
+      "body": "All three ships skip Deck 13, jumping from Deck 12 to Deck 14, out of maritime superstition."
+     },
+     {
+      "title": "Stanley the Bear",
+      "body": "Princess's teddy bear mascot is named after Stanley McDonald, who founded Princess Cruises in 1965 with a single chartered ship, Princess Patricia, sailing to Mexico."
+     },
+     {
+      "title": "Coded announcements",
+      "body": "Like all major ships, these carry a small onboard morgue on the lower crew decks. Coded PA announcements such as 'Operation Bright Star' (medical emergency) or 'Operation Rising Star' (a passenger passing away) are what the crew is responding to."
+     },
+     {
+      "title": "The ghost lifeboat",
+      "body": "Cruise ships occasionally meet empty, adrift lifeboats from sunken cargo ships. In July 2026 sister ship Emerald Princess diverted off Alaska to investigate an unmanned orange lifeboat from a cargo ship that had sunk a year earlier."
+     },
+     {
+      "title": "Safety context",
+      "body": "Princess ships routinely score 95-100 on CDC Vessel Sanitation Program inspections (86 and above is passing). All three ships have modern man-overboard radar and infrared detection, SOLAS-compliant lifeboats and 24/7 staffed medical centers."
+     }
+    ]
+   }
+  ]
+ }
+}

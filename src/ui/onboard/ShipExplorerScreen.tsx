@@ -2,9 +2,9 @@ import { Link } from 'react-router'
 import { CATEGORIES, SUN_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { SHIP_NAMES, type DeckPlanShip } from '../../deckPlans/deckPlans'
 import { useShip } from '../../hooks/useShipCatalogue'
-import { t, th } from '../../i18n'
+import { headingCase, t, th } from '../../i18n'
 import { Card } from '../Card'
-import { DeckPlansPanel } from './DeckPlansScreen'
+import { LinkButton } from '../Button'
 
 const number = new Intl.NumberFormat('en-US')
 
@@ -36,6 +36,7 @@ export function ShipExplorerScreen() {
             <div><dt>{t('discover.ship.decks')}</dt><dd>{ship.decks}</dd></div>
             <div><dt>{t('cat.fact.tonnage')}</dt><dd>{number.format(ship.tonnage)}</dd></div>
             {ship.lengthFt !== undefined && <div><dt>{t('cat.fact.lengthFt')}</dt><dd>{number.format(ship.lengthFt)} ft</dd></div>}
+            {ship.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
           </dl>
           {highlights.length > 0 && (
             <section aria-labelledby="sx-hl">
@@ -45,6 +46,14 @@ export function ShipExplorerScreen() {
               </ul>
             </section>
           )}
+          {ship.sections.map((sec) => (
+            <details key={sec.title} className="card ship-section" open={sec.open}>
+              <summary><h2 className="ship-section__title">{headingCase(sec.title)}</h2></summary>
+              <ul className="plain-bullets">
+                {sec.items.map((i) => <li key={`${i.title ?? ''}${i.body}`}>{i.title && <strong>{i.title}. </strong>}{i.body}</li>)}
+              </ul>
+            </details>
+          ))}
           {isSun && (
             <section aria-labelledby="sx-rooms">
               <h2 id="sx-rooms">{th('discover.rooms')}</h2>
@@ -62,10 +71,7 @@ export function ShipExplorerScreen() {
           )}
         </>
       )}
-      <section aria-labelledby="sx-plans">
-        <h2 id="sx-plans">{th('shipex.deckPlans')}</h2>
-        <DeckPlansPanel initialShip={plansFor} />
-      </section>
+      <p><LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton></p>
       <p><Link to="/ship/venues">{t('shipex.venues')}</Link></p>
     </div>
   )

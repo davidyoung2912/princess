@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { spotFromQuery } from '../../domain/explorer/navigate'
 import { findCabin, type CabinLocation } from '../../deckPlans/cabinFinder'
 import { deckPlansFor, SHIP_NAMES, type DeckPlanShip } from '../../deckPlans/deckPlans'
+import { useShip } from '../../hooks/useShipCatalogue'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
 import { Chip } from '../Chip'
@@ -14,19 +15,21 @@ type Search = { kind: 'none' } | { kind: 'missing'; query: string } | { kind: 'f
 
 /** Deck plan pictures for Sun, Sky and Sapphire Princess: find a cabin, or pick a ship and a deck, then pan and zoom the plan. */
 export function DeckPlansScreen() {
+  const ship = useShip()
+  const first = ship.id.split('-')[0]
   return (
     <div className="page page--wide">
-      <DeckPlansPanel />
+      <DeckPlansPanel initialShip={first in SHIP_NAMES ? (first as DeckPlanShip) : undefined} />
     </div>
   )
 }
 
-/** The deck plan picker and viewer, shared by the Deck Plans page and the Ship Explorer page. */
+/** The deck plan picker and viewer: opens on the ship in the link (`?ship=`), else the guest's own ship. */
 export function DeckPlansPanel({ initialShip = 'sun' }: { initialShip?: DeckPlanShip }) {
   const [params] = useSearchParams()
   const target = spotFromQuery(params)
   const asked = params.get('ship') as DeckPlanShip | null
-  const [ship, setShip] = useState<DeckPlanShip>(target && asked && SHIPS.includes(asked) ? asked : initialShip)
+  const [ship, setShip] = useState<DeckPlanShip>(asked && SHIPS.includes(asked) ? asked : initialShip)
   const plans = deckPlansFor(ship)
   const [deck, setDeck] = useState(target && plans.some((p) => p.deck === target.deck) ? target.deck : plans[0].deck)
   const [query, setQuery] = useState('')

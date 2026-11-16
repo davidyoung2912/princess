@@ -6,10 +6,16 @@ export type PortTier = 'A' | 'B' | 'C'
 
 export interface CatalogueRegion { id: string; name: string }
 export interface CatalogueHighlight { title: string; body: string }
+/** One labelled fact row, shown with the ship's other facts. */
+export interface ShipFact { label: string; value: string }
+/** A titled block of items on the Ship Explorer page (history, dining, tips and so on); `open` starts it expanded. */
+export interface ShipSection { title: string; open?: boolean; items: { title?: string; body: string }[] }
 export interface CatalogueShip {
   id: string; name: string; class: string; grossTonnage: number; decks: number; guests: number; crew: number
   lengthFt?: number; beamFt?: number; homeZone?: string
   staterooms?: number; entered?: number; intro: string; highlights: CatalogueHighlight[]; depth: Depth
+  /** More facts and the detail sections, merged in from ship-details.json. */
+  facts?: ShipFact[]; sections?: ShipSection[]
 }
 export interface CataloguePort {
   id: string; name: string; country?: string; countryCode: string; region: string; zone: string; lat: number; lon: number
@@ -79,6 +85,11 @@ export function validateCatalogue(c: CatalogueSource): string[] {
     if (!s.name || !s.class || !s.intro) errors.push(`ship ${s.id}: name, class and intro are required`)
     if (!(s.depth === 'browse' || s.depth === 'aboard')) errors.push(`ship ${s.id}: depth must be browse or aboard`)
     if (s.grossTonnage <= 0 || s.decks <= 0 || s.guests <= 0 || s.crew <= 0) errors.push(`ship ${s.id}: tonnage, decks, guests and crew must be positive`)
+    for (const f of s.facts ?? []) if (!f.label || f.label.length > 60 || !f.value || f.value.length > 200) errors.push(`ship ${s.id}: fact "${f.label}" needs a label (60) and a value (200 characters)`)
+    for (const sec of s.sections ?? []) {
+      if (!sec.title || sec.title.length > 80 || !sec.items.length) errors.push(`ship ${s.id}: section "${sec.title}" needs a title (80 characters) and items`)
+      for (const it of sec.items) if (!it.body || it.body.length > 900 || (it.title?.length ?? 0) > 120) errors.push(`ship ${s.id}: section "${sec.title}" item "${it.title ?? ''}" has a missing or over-long text`)
+    }
   }
   for (const k of categories) {
     if (!ships.has(k.ship)) errors.push(`category ${k.id}: unknown ship "${k.ship}"`)
@@ -275,7 +286,7 @@ function profileJson(s: CatalogueShip): string {
   return JSON.stringify({
     id: s.id, name: s.name, className: s.class, entered: s.entered ?? null, tonnage: s.grossTonnage,
     length: s.lengthFt ? `${s.lengthFt.toLocaleString('en-US')} ft` : '', guests: s.guests, crew: s.crew, staterooms: s.staterooms ?? null, decks: s.decks,
-    intro: s.intro, highlights: s.highlights,
+    intro: s.intro, highlights: s.highlights, ...(s.facts ? { facts: s.facts } : {}), ...(s.sections ? { sections: s.sections } : {}),
   })
 }
 
@@ -301,9 +312,14 @@ export function renderCatalogueSql(c: CatalogueSource, own: ShipCabinRows = NO_S
       'ref.Ships', ['Id'],
       ['Id', 'Name', 'Class', 'Decks', 'Tonnage', 'Capacity', 'HomeZone', 'ProfileJson', 'LengthFt', 'BeamFt', 'Crew', 'Staterooms', 'Entered', 'Intro', 'Depth'],
       c.ships.map((s) => [q(s.id), q(s.name), q(s.class), String(s.decks), String(s.grossTonnage), String(s.guests), q(s.homeZone ?? 'America/New_York'), `CAST(${q(profileJson(s))} AS NVARCHAR(MAX))`, n(s.lengthFt), n(s.beamFt), String(s.crew), n(s.staterooms), n(s.entered), q(s.intro), q(s.depth)]),
-      ['LengthFt', 'BeamFt', 'Crew', 'Staterooms', 'Entered', 'Intro', 'Depth'], `${c.ships.length} rows (a seeded ship keeps its profile; only the catalogue columns are filled)`,
+      ['Class', 'Decks', 'LengthFt', 'BeamFt', 'Crew', 'Staterooms', 'Entered', 'Intro', 'Depth'], `${c.ships.length} rows (a seeded ship keeps its profile; only the catalogue columns are filled)`,
     ),
   )
+  // A seeded ship keeps its profile, so the facts and sections are merged into it key by key (a new ship already has them from its insert).
+  for (const sh of c.ships.filter((x) => x.facts || x.sections)) {
+    const set = ['facts', 'sections'].filter((k) => sh[k as 'facts' | 'sections']).reduce((expr, k) => `JSON_MODIFY(${expr}, '$.${k}', JSON_QUERY(CAST(${q(JSON.stringify(sh[k as 'facts' | 'sections']))} AS NVARCHAR(MAX))))`, 'ProfileJson')
+    out.push(`UPDATE ref.Ships SET ProfileJson = ${set} WHERE Id = ${q(sh.id)};`, 'GO', '')
+  }
   out.push(
     ...merge(
       'ref.CabinCategories', ['Id'], ['Id', 'Name', 'IsSuite', 'Capacity', 'SizeSqFt', 'Description', 'Features', 'SortOrder', 'ShipId'],
