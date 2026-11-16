@@ -46,11 +46,12 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
   }))
   return (
     <>
+      {venueId && view.canBook && <p className="exp-actions"><Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button></p>}
       <ReservationList
         heading={venueId ? t('exp.res.hereTitle') : t('exp.res.title')} items={items} empty={venueId ? t('exp.res.noneHere') : t('exp.res.none')} readOnly={!view.canBook}
         onChange={(id) => { const r = mine.find((x) => x.id === id); if (r) openEditor(r.id) }}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={view.canBook && <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button>}
+        action={!venueId && view.canBook && <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button>}
       />
       {cancelling && <CancelDialog r={cancelling} name={title(cancelling.venueId)} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); reload() }} />}
     </>
