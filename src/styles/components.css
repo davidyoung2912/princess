@@ -33,7 +33,10 @@
   background: var(--bg); color: var(--text);
   border-radius: var(--radius-card); box-shadow: var(--shadow-sheet); outline: none;
 }
-.dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+.dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* A popup scrolls with touch, wheel and keys, but never draws a vertical scroll bar. */
+.dialog, .dialog__body { scrollbar-width: none; -ms-overflow-style: none; }
+.dialog::-webkit-scrollbar, .dialog__body::-webkit-scrollbar, .dialog *::-webkit-scrollbar:vertical { display: none; width: 0; }
 .dialog > :is(.dialog__head, .dialog-header) { flex: none; }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .dialog__head h2 { margin: 0; }

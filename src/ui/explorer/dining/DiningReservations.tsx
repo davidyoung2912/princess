@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import type { DiningView, Reservation } from '../../../api/types'
 import type { ExplorerDay } from '../../../api/explorerTypes'
 import { formatTime } from '../../../domain/cruise'
@@ -14,7 +15,8 @@ import { PlanError } from '../../plan/common'
 import { useAction } from '../../../hooks/useAction'
 import { names } from '../../plan/people'
 import { ReservationList, type ReservationItem } from '../Parts'
-import { ReservationEditor } from './ReservationEditor'
+
+const VENUE_BASE = '/dining-today'
 
 interface Props {
   venues: ExplorerDay['venues']
@@ -31,7 +33,9 @@ interface Props {
 export function DiningReservations({ venues, day, venueId, view, reload, basePath }: Props) {
   const sailing = useSailing()
   const days = itinerary(sailing)
-  const [editing, setEditing] = useState<{ mode: 'create' } | { mode: 'move'; r: Reservation } | null>(null)
+  const navigate = useNavigate()
+  // Reserving and moving are their own page: `reserve=new` or `reserve=<reservation id>` on this screen's address (see DiningScreens).
+  const openEditor = (reserve: string) => { void navigate(`${venueId ? `${VENUE_BASE}/${venueId}` : VENUE_BASE}?day=${day}&reserve=${encodeURIComponent(reserve)}`) }
   const [cancelling, setCancelling] = useState<Reservation | null>(null)
   const title = (id: string) => venues.find((v) => v.venue.id === id)?.venue.title ?? id
   const mine = view.reservations.filter((r) => r.day === day && (!venueId || r.venueId === venueId)).sort((a, b) => a.time.localeCompare(b.time))
@@ -44,17 +48,10 @@ export function DiningReservations({ venues, day, venueId, view, reload, basePat
     <>
       <ReservationList
         heading={venueId ? t('exp.res.hereTitle') : t('exp.res.title')} items={items} empty={venueId ? t('exp.res.noneHere') : t('exp.res.none')} readOnly={!view.canBook}
-        onChange={(id) => { const r = mine.find((x) => x.id === id); if (r) setEditing({ mode: 'move', r }) }}
+        onChange={(id) => { const r = mine.find((x) => x.id === id); if (r) openEditor(r.id) }}
         onCancel={(id) => setCancelling(mine.find((x) => x.id === id) ?? null)}
-        action={view.canBook && <Button onClick={() => setEditing({ mode: 'create' })}>{t('exp.res.new')}</Button>}
+        action={view.canBook && <Button onClick={() => openEditor('new')}>{t('exp.res.new')}</Button>}
       />
-      {editing && (
-        <ReservationEditor
-          view={view} day={day} venues={venues.filter((v) => v.venue.bookable === 'dining').map((v) => ({ id: v.venue.id, title: v.venue.title }))}
-          venueId={venueId} reservation={editing.mode === 'move' ? editing.r : undefined}
-          onClose={() => setEditing(null)} onDone={() => { reload() }}
-        />
-      )}
       {cancelling && <CancelDialog r={cancelling} name={title(cancelling.venueId)} onClose={() => setCancelling(null)} onDone={() => { setCancelling(null); reload() }} />}
     </>
   )

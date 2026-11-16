@@ -11,7 +11,7 @@ import { useSailing } from '../../../hooks/useDemo'
 import { t } from '../../../i18n'
 import { api } from '../../../runtime'
 import { Button } from '../../Button'
-import { Dialog } from '../../Dialog'
+import { BackLink } from '../../onboard/common'
 import { TextArea } from '../../Field'
 import { GuestPicker, PlanError } from '../../plan/common'
 
@@ -24,12 +24,15 @@ interface Props {
   day: number
   /** Present to move this reservation; absent to make a new one. */
   reservation?: Reservation
+  /** Where Back and Close lead. */
+  backTo: string
+  backLabel: string
   onClose: () => void
   onDone: () => void
 }
 
-/** Reserve a table, or move one to another night or time: a dialog with the table grid, using the same dining service as the reservations page. */
-export function ReservationEditor({ view, venues, venueId: fixedVenue, day: startDay, reservation, onClose, onDone }: Props) {
+/** Reserve a table, or move one to another night or time: a page with the table grid, using the same dining service as the reservations page. */
+export function ReservationEditor({ view, venues, venueId: fixedVenue, day: startDay, reservation, backTo, backLabel, onClose, onDone }: Props) {
   const sailing = useSailing()
   const days = itinerary(sailing)
   const moving = reservation !== undefined
@@ -51,7 +54,8 @@ export function ReservationEditor({ view, venues, venueId: fixedVenue, day: star
     if (await save.run()) { setDone(t('exp.res.saved')); onDone(); onClose() }
   }
   return (
-    <Dialog title={moving ? t('exp.res.moveTitle') : t('exp.res.newTitle')} onClose={onClose}>
+    <div className="page">
+      <h2>{moving ? t('exp.res.moveTitle') : t('exp.res.newTitle')}</h2>
       <form onSubmit={(e) => { e.preventDefault(); void go() }}>
         {!moving && !fixedVenue && (
           <div className="field">
@@ -92,6 +96,7 @@ export function ReservationEditor({ view, venues, venueId: fixedVenue, day: star
         </div>
         {blocked && <p className="muted">{blocked}</p>}
       </form>
-    </Dialog>
+      <BackLink to={backTo} label={backLabel} />
+    </div>
   )
 }

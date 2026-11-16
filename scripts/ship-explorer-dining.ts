@@ -3,6 +3,7 @@
 import type { DirectoryVenue } from '../src/domain/menus.ts'
 import { dishCopy } from '../src/domain/dishCopy.ts'
 import type { HoursRule } from '../src/domain/explorer/types.ts'
+import { EXTRA_DINING, type ExtraDining } from './ship-explorer-extra-dining.ts'
 import type { ExplorerEventRow, ExplorerVenueRow, MealCourseRow, MealMenuRow } from './ship-explorer-data.ts'
 
 type Contains = 'meat' | 'pork' | 'fish' | 'shellfish' | 'dairy' | 'egg' | 'gluten' | 'nuts'
@@ -80,6 +81,10 @@ export function diningMenus(venues: readonly ExplorerVenueRow[], directory: read
       out.push({ venueId: v.id, meal: 'breakfast', from: '06:00', to: '11:00', templateDay: 0, title: 'Breakfast', courses: [course('Stations', BUFFET_BREAKFAST)] })
       out.push({ venueId: v.id, meal: 'lunch', from: '11:30', to: '15:00', templateDay: 0, title: 'Lunch', courses: [course('Stations', BUFFET_LUNCH)] })
       BUFFET_NIGHTS.forEach((n, i) => out.push({ venueId: v.id, meal: 'dinner', from: '17:30', to: '22:00', templateDay: i + 1, title: 'Dinner', theme: n.theme, courses: [course('Tonight’s stations', n.dishes)] }))
+    } else if (extraOf(v.id)) {
+      const x = extraOf(v.id)!
+      const names = x.kind === 'bar' ? (x.drinks ?? []) : (x.dishes ?? [])
+      out.push({ venueId: v.id, meal: 'allDay', from: x.kind === 'bar' ? '10:00' : '00:00', to: '24:00', templateDay: 0, title: x.kind === 'bar' ? 'Signature drinks' : 'The menu', courses: [course(x.kind === 'bar' ? 'Signatures' : 'Favourites', names)] })
     } else if (v.kind === 'bar') {
       out.push({ venueId: v.id, meal: 'allDay', from: '10:00', to: '24:00', templateDay: 0, title: 'Signature drinks', courses: [course('Signatures', BAR_DRINKS[v.id.replace(/^(sky|sapphire)-/, '')] ?? [])] })
     } else {
@@ -100,6 +105,19 @@ const BAR_DETAILS: Record<string, { name: string; deck: string; short: string; l
   bellinis: { name: 'Bellini’s', deck: 'Deck 7 midship', short: 'Sparkling Italian cocktails overlooking the Piazza.', long: 'A sparkling Italian cocktail bar with Bellinis, spritzes and Prosecco. Drinks are included with Plus and Premier.', hours: [{ kind: 'fixed', when: ['sea', 'night'], windows: [['10:00', '23:30']] }] },
   vines: { name: 'Vines Wine Bar', deck: 'Deck 5 Piazza', short: 'Wine by the glass, flights and small bites.', long: 'An intimate wine lounge with more than 30 wines by the glass, sommelier flights and tapas with your wine.', hours: [{ kind: 'fixed', when: ['sea', 'night'], windows: [['11:00', '23:30']] }] },
   wheelhouse: { name: 'Wheelhouse Bar', deck: 'Deck 7 midship', short: 'Single malts, bourbons and classic cocktails.', long: 'A traditional nautical lounge for single-malt Scotch, small-batch bourbon and classic pre-dinner cocktails.', hours: [{ kind: 'fixed', when: ['sea', 'night'], windows: [['11:00', '24:00']] }] },
+}
+
+const EXTRA_BY_ID = new Map<string, ExtraDining>()
+for (const [ship, list] of Object.entries(EXTRA_DINING)) for (const x of list) EXTRA_BY_ID.set(`${ship === 'sun-princess' ? '' : ship === 'sky-princess' ? 'sky-' : 'sapphire-'}${x.key}`, x)
+const extraOf = (id: string): ExtraDining | undefined => EXTRA_BY_ID.get(id)
+
+/** The venues the first pass missed (`ship-explorer-extra-dining.ts`), as Dining rows. */
+export function extraDiningVenues(shipId: string, prefix: string, firstOrder: number): ExplorerVenueRow[] {
+  return (EXTRA_DINING[shipId] ?? []).map((x, i) => ({
+    id: `${prefix}${x.key}`, explorer: 'dining', kind: x.kind, title: x.name, short: x.short, long: x.long, placeId: `${prefix}${x.key}`, deckLabel: x.deck, hours: x.hours,
+    ...(x.cover ? { cover: x.cover } : {}), bookable: 'none', order: firstOrder + i,
+    features: [x.kind === 'bar' ? 'Bar' : x.kind === 'specialty' ? (x.popup ? 'Pop-up' : 'Specialty restaurant') : 'Casual dining', ...(x.kind === 'bar' ? [] : ['Dress: casual'])], accessibility: [],
+  }))
 }
 
 /** The bars of a ship, which live in Dining. `prefix` is '' for Sun and 'sky-' or 'sapphire-' for the others. */

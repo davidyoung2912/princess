@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import type { StringKey } from '../../../i18n'
 import { zonedToEpoch } from '../../../domain/timezones'
 import { shipZoneOnDate } from '../../../domain/sailings'
@@ -9,6 +9,8 @@ import { ExplorerPage } from '../ExplorerPage'
 import { VenueDetailPage } from '../VenueDetailPage'
 import { DiningReservations } from './DiningReservations'
 import { reservationSpans, useDiningView } from './diningView'
+import { ReservationEditor } from './ReservationEditor'
+import { useExplorerData, useExplorerDay } from '../../../hooks/useExplorer'
 
 const BASE = '/dining-today'
 
@@ -18,6 +20,8 @@ const kindLabels = (): Record<string, string> => Object.fromEntries(Object.entri
 /** The Dining Explorer: your reservations for the day, then every place to eat and drink with what is on there next. */
 export function DiningExplorerScreen() {
   const view = useDiningView()
+  const [params] = useSearchParams()
+  if (params.get('reserve')) return <ReservePage />
   return (
     <ExplorerPage
       kind="dining" basePath={BASE} kindLabels={kindLabels()}
@@ -35,6 +39,8 @@ export function DiningVenueScreen() {
   const { venueId = '' } = useParams()
   const view = useDiningView()
   const sailing = useSailing()
+  const [params] = useSearchParams()
+  if (params.get('reserve')) return <ReservePage venueId={venueId} />
   return (
     <VenueDetailPage
       kind="dining" basePath={BASE} backLabel={t('route.diningToday')}
@@ -49,5 +55,30 @@ export function DiningVenueScreen() {
         return <DiningReservations venues={explorerDay?.venues ?? [venue]} day={state.day} venueId={venueId} view={view.data} reload={view.retry} />
       }}
     />
+  )
+}
+
+/** Reserve a table, or move one: its own page, opened by `?reserve=new` or `?reserve=<reservation id>` on the Dining Explorer or a venue's page. */
+function ReservePage({ venueId }: { venueId?: string }) {
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const state = useExplorerDay()
+  const view = useDiningView()
+  const data = useExplorerData('dining', state.day)
+  const reserve = params.get('reserve') ?? 'new'
+  const back = `${venueId ? `${BASE}/${venueId}` : BASE}?day=${state.day}`
+  const moving = reserve === 'new' ? undefined : view.data?.reservations.find((r) => r.id === reserve)
+  return (
+    <div className="page">
+      <Saved copy={view}>
+        {(v) => (
+          <ReservationEditor
+            view={v} day={state.day} venues={(data.data?.venues ?? []).filter((x) => x.venue.bookable === 'dining').map((x) => ({ id: x.venue.id, title: x.venue.title }))}
+            venueId={venueId} reservation={moving} backTo={back} backLabel={t('route.diningToday')}
+            onClose={() => { void navigate(back) }} onDone={() => { view.retry() }}
+          />
+        )}
+      </Saved>
+    </div>
   )
 }

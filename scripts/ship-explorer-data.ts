@@ -10,7 +10,7 @@ import { VENUES as SUN_VENUES, type Venue } from '../src/domain/dining.ts'
 import type { ExplorerKind, HoursRule } from '../src/domain/explorer/types.ts'
 import type { TemplateDayKind } from '../src/domain/explorer/dayMapping.ts'
 import { shipVenueBundles } from './ship-venue-data.ts'
-import { diningBars, diningEvents, diningMenus } from './ship-explorer-dining.ts'
+import { diningBars, diningEvents, diningMenus, extraDiningVenues } from './ship-explorer-dining.ts'
 import { entertainmentEvents, entertainmentVenues } from './ship-explorer-entertainment.ts'
 import { activitiesEvents, activitiesVenues } from './ship-explorer-activities.ts'
 import { exerciseEvents, exerciseVenues } from './ship-explorer-exercise.ts'
@@ -134,7 +134,8 @@ interface ShipRooms { anytime: string; crown: string; cafe: string; bar: string;
 
 function shipRows(shipId: string, directory: readonly DirectoryVenue[], rooms: readonly Venue[], prefix: string, bars: readonly string[], ids: ShipRooms): ShipExplorerRow {
   const dining = diningOf(directory, rooms)
-  const raw = [...dining, ...diningBars(prefix, bars, dining.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1), ...exerciseVenues(shipId, 1), ...shoppingVenues(shipId, 1), ...activitiesVenues(shipId, 1)]
+  const barRows = diningBars(prefix, bars, dining.length + 1)
+  const raw = [...dining, ...barRows, ...extraDiningVenues(shipId, prefix, dining.length + barRows.length + 1), ...spaVenues(shipId, 1), ...entertainmentVenues(shipId, 1), ...exerciseVenues(shipId, 1), ...shoppingVenues(shipId, 1), ...activitiesVenues(shipId, 1)]
   const venues = raw.map(detailVenue)
   const events = detailEvents([...diningEvents(ids), ...spaEvents(shipId), ...entertainmentEvents(shipId), ...exerciseEvents(shipId), ...shoppingEvents(shipId), ...activitiesEvents(shipId)], venues)
   return { menuTemplate: MENU_TEMPLATE, venues, events, menus: diningMenus(venues, directory), treatments: spaTreatments(shipId) }

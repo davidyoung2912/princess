@@ -128,7 +128,11 @@ export function Shell() {
   const welcomed = useSyncExternalStore(subscribeWelcome, () => getWelcome(personId), () => getWelcome(personId))
   const welcomeReady = useSyncExternalStore(subscribeWelcome, () => welcomeLoaded(personId), () => false)
   // A guest's very first sign-in opens Stanley's introduction before any stage welcome; once it is marked seen the stage's welcome follows when they continue.
-  const canWelcome = known && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
+  // If the guest has already gone somewhere before the server's copy arrived (after a reset it can be slow), the welcome must not pull them back: it waits for the next time they are at the start.
+  const firstPath = useRef(pathname)
+  const [wentOn, setWentOn] = useState(false)
+  useEffect(() => { if (!welcomeReady && pathname !== firstPath.current && pathname !== '/welcome') setWentOn(true) }, [pathname, welcomeReady])
+  const canWelcome = known && !wentOn && !!route && !route.public && pathname !== '/welcome' && pathname !== '/me/settings'
   const introDue = canWelcome && shouldShowStanleyIntro(welcomed, welcomeReady)
   const welcomeDue = canWelcome && !introDue && !stale && hasWelcomeCopy(stage) && shouldShowWelcome(stage, focusSailingId, welcomed, welcomeReady)
   // A tester who moves the date back to a stage they have seen sees its welcome again: with a demo account the stage changing is the point of the exercise.
