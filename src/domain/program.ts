@@ -26,9 +26,45 @@ export interface ShipEvent {
   extra: Cents
   /** Listed on a port day only after the ship is back aboard. */
   afterAllAboard?: boolean
+  /** What the event is, in a sentence or two. */
+  detail?: string
 }
 
-const ev = (id: string, when: readonly DayKind[], start: string, minutes: number, title: string, placeId: string, age: AgeGroup, interest: EventInterest, extra: Cents = 0): ShipEvent => ({ id, when, start, minutes, title, placeId, age, interest, extra })
+/** What each event is, in a sentence or two, by event id (the same words as `ProgramRules.Details` on the server). */
+const DETAILS: Record<string, string> = {
+  muster: 'The safety drill every guest attends before sailing: learn your muster station and how to use your life jacket. Go to your station as soon as the signal sounds.',
+  sailaway: 'Celebrate leaving port with music, drinks and the cruise staff, on deck as the ship pulls away.',
+  "welcome-piazza": 'Live music in the atrium to welcome you aboard. Grab a drink and settle in for the first evening.',
+  "welcome-show": 'Meet the ship’s entertainers in a short variety show on the first night of the cruise.',
+  "kids-open-house": 'Kids see the club, meet the youth staff and try a few games. Parents are welcome to look around.',
+  "teen-open-house": 'Teens meet each other and the staff at their own lounge, with music and games to break the ice.',
+  stretch: 'A gentle morning stretch to start the day. No experience needed, and the class is open to everyone.',
+  trivia: 'Teams compete for bragging rights in the ship’s trivia. No experience needed, just a team and a sense of humour.',
+  cooking: 'The executive chef shows how a favourite dish is made and shares a few kitchen secrets, with tastes to follow.',
+  bingo: 'Mark your numbers and shout when you win. Cards are on sale at the door and there are prizes for the lucky.',
+  "art-talk": 'A short talk about the art hanging around the ship, who made it and what to look for as you walk past it.',
+  craft: 'A relaxed craft hour for children, with supplies on the table. They make something to take home.',
+  "tween-games": 'Games and challenges for the 8 to 12s, run by the youth staff in their own space.',
+  "teen-night": 'A dance night for teens, with a DJ, lights and the lounge to themselves.',
+  "spa-tour": 'See the treatment rooms and the thermal suite, and try a taste of what the spa serves.',
+  "stage-show": 'The ship’s cast and band perform a full production on the main stage, with singers, dancers and lights.',
+  "stage-early": 'The first showing of the main stage production, an early start before dinner.',
+  jazz: 'Live jazz in the lounge, played for listening and for a slow dance.',
+  "piazza-band": 'A live band plays in the atrium while the evening gets going. Come for a song or stay for the set.',
+  "dome-show": 'Acrobats and aerial artists perform high above the stage in the Dome, a show for the whole family.',
+  "dome-dj": 'A DJ spins the beat and the dance floor does the rest. Come for one song or stay late.',
+  movie: 'A film on the big outdoor screen, with a deck chair and popcorn. Bring a blanket if the evening is cool.',
+  wine: 'A guided tasting of wines from around the world, led by the sommelier. Places are limited.',
+  "farewell-show": 'The cast and the band say goodbye with a show of favourites from the week.',
+  packing: 'How luggage, departure groups and customs work on the last morning, so you can leave without a fuss.',
+  "port-lecture": 'The shore team previews the next port: maps, tips and answers to your questions before you go ashore.',
+  "port-music": 'Steel drums and tropical music on deck as the ship sails away from port.',
+  "port-show": 'The ship’s cast and band perform a full production on the main stage, with singers, dancers and lights.',
+  "port-kids": 'An evening of games and crafts for children while the ship is in port, run by the youth staff.',
+  "port-quiet": 'A calm hour in the spa while most guests are ashore, with the thermal suite and quiet rooms to yourself.',
+}
+
+const ev = (id: string, when: readonly DayKind[], start: string, minutes: number, title: string, placeId: string, age: AgeGroup, interest: EventInterest, extra: Cents = 0): ShipEvent => ({ id, when, start, minutes, title, placeId, age, interest, extra, ...(DETAILS[id] ? { detail: DETAILS[id] } : {}) })
 
 const SEA: DayKind[] = ['sea']
 const PORT: DayKind[] = ['port']

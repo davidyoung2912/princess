@@ -373,3 +373,14 @@ main.signin { margin-inline: auto; }
 
 /* Choice buttons (jump links, chips, Stanley's suggested questions, pill choices): the label goes bold on hover or keyboard focus. */
 :is(.chip, .chip-q, .naut-jump a, .stanley__chip, .choice--pill):is(:hover, :focus-visible) { font-weight: 700; }
+
+/* Button icons: the same small tilt and grow the tab and link-list icons give on hover or focus. Off for reduced motion. */
+.btn__icon { transition: transform var(--t-mid) var(--ease); }
+@media (hover: hover) {
+  .btn:not(:disabled):is(:hover, :focus-visible) .btn__icon { transform: scale(1.15) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn__icon { transition: none; }
+  .btn:is(:hover, :focus-visible) .btn__icon { transform: none; }
+}
+:root[data-motion='reduced'] .btn:is(:hover, :focus-visible) .btn__icon { transform: none; }

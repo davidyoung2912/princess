@@ -151,6 +151,7 @@ function Event({ e, inPlan, canEdit, busy, info, onToggle }: { e: DatedEvent; in
     <li className={['event', cancelled ? 'event--cancelled' : ''].filter(Boolean).join(' ')}>
       <p className="event__time"><strong>{shipTime(e.startAt)}</strong> <span className="muted">{t('onb.until', { time: shipTime(e.endAt) })}</span></p>
       <h3 className="event__title">{e.title}</h3>
+      {e.detail && <p className="event__detail">{e.detail}</p>}
       <p className="event__where">{place(e)}</p>
       <p className="event__tags">
         {e.status === 'moved' && <StatusBadge kind="changed" label={t('onb.moved', { time: shipTime(e.startAt) })} />}

@@ -20,6 +20,7 @@ function event(r: unknown): ShipEvent | null {
   if (typeof r.extra !== 'number' || !Number.isInteger(r.extra) || r.extra < 0 || r.extra > 10_000_000) return null
   const e: ShipEvent = { id: r.id, when: r.when as DayKind[], start: r.start, minutes: r.minutes, title: r.title, placeId: r.placeId, age: r.age as AgeGroup, interest: r.interest as EventInterest, extra: r.extra }
   if (r.afterAllAboard === true) e.afterAllAboard = true
+  if (typeof r.detail === 'string' && r.detail.length > 0 && r.detail.length <= 400) e.detail = r.detail
   return e
 }
 

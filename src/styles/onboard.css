@@ -136,8 +136,8 @@
 
 /* Nautical details: a row of jumps to the parts of the page. */
 .naut-jump { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.naut-jump a { display: inline-flex; align-items: center; min-height: var(--target-min); padding: 0 var(--space-3); border: 2px solid var(--border); border-radius: var(--radius-pill); text-decoration: none; }
-.naut-jump a:hover { border-color: var(--primary); }
+.naut-jump a { display: inline-flex; align-items: center; min-height: var(--target-min); padding: 0 var(--space-3); background: var(--sky-tint); border: 2px solid var(--border); border-radius: var(--radius-pill); text-decoration: none; }
+.naut-jump a:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--sky-tint)); }
 section[id^='naut-']:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
 
 /* L7: side-view deck switcher, zoom, animated route and the two-pane deck map. */
@@ -438,3 +438,6 @@ button.chat-quote { cursor: pointer; }
 
 /* An event's description under its times on a card. */
 .event__detail { margin: 0 0 var(--space-2); color: var(--text); }
+
+/* "Send to chat" under a button or a card: room above it so the two do not touch. */
+.send-chat { margin-top: var(--space-3); }

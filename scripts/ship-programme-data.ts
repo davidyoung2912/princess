@@ -5,7 +5,7 @@
 import { EVENTS, type ShipEvent } from '../src/domain/program.ts'
 import { q, shipPrefix, type CatalogueSource } from './catalogue.ts'
 
-interface Change { place?: string; title?: string; id?: string }
+interface Change { place?: string; title?: string; id?: string; detail?: string }
 
 interface ShipSpec { shipId: string; changes: Record<string, Change> }
 
@@ -21,8 +21,8 @@ const SPECS: readonly ShipSpec[] = [
       'stage-show': { place: 'princess-theater' },
       'stage-early': { place: 'princess-theater' },
       jazz: { place: 'explorers-lounge' },
-      'dome-show': { id: 'late-show', place: 'seawalk', title: 'Aerial show on the SeaWalk' },
-      'dome-dj': { id: 'late-dj', place: 'sea-view', title: 'Dance party at the Sea View Bar' },
+      'dome-show': { id: 'late-show', place: 'seawalk', title: 'Aerial show on the SeaWalk', detail: 'Aerialists and acrobats perform above the SeaWalk, with the sea beneath and the night sky above. A show for the whole family.' },
+      'dome-dj': { id: 'late-dj', place: 'sea-view', title: 'Dance party at the Sea View Bar', detail: 'A DJ plays dance music in the Sea View Bar, a late-night party for adults.' },
       movie: { place: 'movies' },
       wine: { place: 'bellinis' },
       'farewell-show': { place: 'princess-theater' },
@@ -39,8 +39,8 @@ const SPECS: readonly ShipSpec[] = [
       'stage-show': { place: 'princess-theater' },
       'stage-early': { place: 'princess-theater' },
       jazz: { place: 'explorers-lounge' },
-      'dome-show': { id: 'late-show', place: 'princess-theater', title: 'Late show: comedy and magic' },
-      'dome-dj': { id: 'late-dj', place: 'sea-view', title: 'Dance party at the Sea View Bar' },
+      'dome-show': { id: 'late-show', place: 'princess-theater', title: 'Late show: comedy and magic', detail: 'An adults-only late show of stand-up comedy and magic. Expect some strong language.' },
+      'dome-dj': { id: 'late-dj', place: 'sea-view', title: 'Dance party at the Sea View Bar', detail: 'A DJ plays dance music in the Sea View Bar, a late-night party for adults.' },
       movie: { place: 'movies' },
       wine: { place: 'sabatini' },
       'farewell-show': { place: 'princess-theater' },
@@ -54,7 +54,7 @@ export interface ShipProgramme { shipId: string; events: ShipEvent[] }
 function build(spec: ShipSpec): ShipProgramme {
   const events = EVENTS.map((e) => {
     const c = spec.changes[e.id] ?? {}
-    return { ...e, when: [...e.when], id: c.id ?? e.id, placeId: c.place ?? e.placeId, title: c.title ?? e.title }
+    return { ...e, when: [...e.when], id: c.id ?? e.id, placeId: c.place ?? e.placeId, title: c.title ?? e.title, ...((c.detail ?? e.detail) ? { detail: c.detail ?? e.detail } : {}) }
   })
   return { shipId: spec.shipId, events }
 }
