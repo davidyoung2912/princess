@@ -223,6 +223,7 @@ export const OFFLINE_CONTRACT: Readonly<Record<string, OfflineMode>> = {
   '/deck-plans': 'offline',
   '/today': 'needs-connection',
   '/itinerary': 'needs-connection',
+  '/day-details': 'needs-connection',
   '/dining-today': 'view-only',
   '/dining-today/:venueId': 'view-only',
   '/shopping-today': 'view-only',

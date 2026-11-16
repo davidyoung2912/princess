@@ -173,7 +173,10 @@
 a.testbar__stage { text-decoration: none; display: inline-flex; align-items: center; min-height: 1.5rem; }
 .testbar__sub { font-size: var(--fs-small, 0.875rem); }
 .testbar__long, .testbar__stage--side { display: none; }
-.testbar__stages { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); font-size: var(--fs-small, 0.875rem); }
+.testbar__status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); margin: 0; font-size: var(--fs-small, 0.875rem); min-width: 0; }
+.testbar__day { font-weight: 700; }
+.testbar__status a:not(.testbar__stage) { color: var(--primary); }
+.testbar__hours { white-space: nowrap; }
 .testbar__stage { padding: 0 var(--space-2); border-radius: var(--radius-button); border: 2px solid var(--border); background: var(--sky-tint); color: var(--text-muted); }
 .testbar__stage--current { background: linear-gradient(135deg, var(--primary), var(--primary-bright)); border-color: var(--primary); color: var(--on-primary); font-weight: 700; }
 @media (min-width: 1024px) {
@@ -277,10 +280,10 @@ a.testbar__stage { text-decoration: none; display: inline-flex; align-items: cen
   .testbar { flex-wrap: wrap; align-items: center; row-gap: var(--space-1); column-gap: var(--space-2); padding-block: var(--space-1); }
   .testbar__item { min-height: 0; padding: 0 var(--space-1); font-size: var(--fs-small, 0.875rem); line-height: 1.2; white-space: nowrap; flex: none; }
   .testbar__pick { min-height: 0; padding: 0; }
-  .testbar__stages { margin-top: 0; font-size: 0.75rem; flex-wrap: nowrap; }
+  .testbar__status { order: 1; flex: 1 0 100%; font-size: 0.75rem; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
   a.testbar__stage { min-height: 1.25rem; }
   .testbar__sub { font-size: 0.6875rem; }
-  .testbar__carousel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.25rem; min-width: 0;
+  .testbar__carousel { order: 2; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 0.25rem; min-width: 0;
     /* Reaches out into the page gutter so the arrows sit near the screen edges and one more button fits. */
     margin-inline: calc(-1 * var(--gutter) + 0.25rem); flex: 1 0 calc(100% + 2 * var(--gutter) - 0.5rem); }
   .testbar__arrow {

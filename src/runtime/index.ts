@@ -6,7 +6,7 @@ import { ownerIdOf } from '../auth/provider'
 import { OWNER_KEY, UNSENT_PREFIXES, clearPersonCopies, clearSavedScreens, resetDemo, sweepExpiredCopies, wipeEverything } from '../data/lifecycle'
 import { setDemoRemote } from '../demo/publish'
 import { flushTelemetry, setTelemetrySender } from '../diagnostics/watch'
-import { pullDemoFromServer, resetDemoState, watchOtherTabs } from '../demo/store'
+import { pullDemoFromServer, resetDemoState, startAtTripBeginning, watchOtherTabs } from '../demo/store'
 import { onDemoSent } from '../demo/publish'
 import { startVisibleInterval } from '../hooks/visibleInterval'
 import { foundFeed, loungerFeed, openingFeed, sightingsFeed } from '../feeds/onboard'
@@ -526,13 +526,28 @@ export async function startRuntime(): Promise<void> {
   registerSyncBindings()
   stopWatchingDevice()
   stopWatchingDevice = watchDeviceReturn()
+  // A new sign-in (not the restore of an earlier session at start-up) of a demo guest who is boarding or at sea starts at the beginning of the trip.
+  let starting = true
+  let lastUser: string | null = null
   auth.subscribe(() => {
     switchSettingsOwner(null, ownerIdOf(auth.current()))
     syncAccount()
+    const who = auth.current()?.user?.id ?? null
+    if (who && who !== lastUser && !starting) startAtTripWhenReady(who)
+    lastUser = who
   })
   await auth.restore()
+  starting = false
   switchSettingsOwner(null, ownerIdOf(auth.current()))
   syncAccount()
+}
+
+/** Waits (up to 15 s) for the new guest's context and the sailing tables, then starts the trip clock for them. */
+function startAtTripWhenReady(who: string, tries = 30): void {
+  if (auth.current()?.user?.id !== who || tries <= 0) return
+  let done = false
+  try { done = startAtTripBeginning() } catch { done = true }
+  if (!done) setTimeout(() => startAtTripWhenReady(who, tries - 1), 500)
 }
 
 /** Sign out after sending any change still waiting to reach the account, so nothing typed just before is lost (a failed send does not block signing out). */

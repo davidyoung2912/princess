@@ -136,6 +136,8 @@ interface Booking {
   plan: Plan; finalDays?: number; kind?: 'direct' | 'agent'; agent?: string; accessible?: boolean
   checkin?: Checkin; luggage?: 'dropped' | 'delivered'; muster?: boolean
   tours?: Tour[]; cart?: Tour[]; dine?: Dine[]; buys?: Buy[]; folio?: boolean
+  /** A sailing of the served catalogue the booking is on, in place of the reference sailing, and how many days earlier it leaves: every day number and dated row of the booking moves with it. */
+  sailing?: { id: string; earlierDays: number }
   assist?: { who: string; kind: string; note: string }
   after?: 'walkoff' | 'billing' | 'quiet'
 }
@@ -162,11 +164,15 @@ const BOOKINGS: Booking[] = [
   { key: 'grace', number: 'PC508532', booker: 'grace', guests: ['grace'], category: 'balcony', fare: 'plus', dining: 'anytime', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, folio: true, after: 'billing' },
   { key: 'harold', number: 'PC524444', booker: 'harold', guests: ['harold'], category: 'oceanview', fare: 'standard', dining: 'early', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, folio: true, after: 'quiet' },
   { key: 'cora', number: 'PC540356', booker: 'cora', guests: ['cora'], category: 'interior', fare: 'standard', dining: 'anytime', plan: 'cancelled', checkin: 'none' },
-  { key: 'portsolo1', number: 'PC556268', booker: 'portsolo1', guests: ['portsolo1'], category: 'balcony', fare: 'standard', dining: 'anytime', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, tours: [{ ex: 'coz-ruins', who: ['portsolo1'] }], dine: [{ venue: 'crown', day: 2, time: '19:00', who: ['portsolo1'] }], folio: true },
-  { key: 'portsolo2', number: 'PC572180', booker: 'portsolo2', guests: ['portsolo2'], category: 'balcony', fare: 'standard', dining: 'anytime', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, tours: [{ ex: 'rtb-snorkel', who: ['portsolo2'] }], dine: [{ venue: 'sabatini', day: 4, time: '19:30', who: ['portsolo2'] }], folio: true },
+  { key: 'portsolo1', sailing: { id: 'sun-2027-03-14-14', earlierDays: 7 }, number: 'PC556268', booker: 'portsolo1', guests: ['portsolo1'], category: 'balcony', fare: 'standard', dining: 'anytime', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, tours: [{ ex: 'coz-ruins', who: ['portsolo1'] }], dine: [{ venue: 'crown', day: 2, time: '19:00', who: ['portsolo1'] }], folio: true },
+  { key: 'portsolo2', sailing: { id: 'sun-2027-03-14-14', earlierDays: 7 }, number: 'PC572180', booker: 'portsolo2', guests: ['portsolo2'], category: 'balcony', fare: 'standard', dining: 'anytime', plan: 'depBal', checkin: 'done', luggage: 'delivered', muster: true, tours: [{ ex: 'rtb-snorkel', who: ['portsolo2'] }], dine: [{ venue: 'sabatini', day: 4, time: '19:30', who: ['portsolo2'] }], folio: true },
 ]
 
 // ---------------------------------------------------------------- derived facts
+/** The sailing a booking is on, and the milliseconds its dated rows move by (the reference sailing's dates, moved to the booking's sailing). */
+const sailingIdOf = (b: Booking): string => b.sailing?.id ?? REF.id
+const shiftMs = (b: Booking): number => -(b.sailing?.earlierDays ?? 0) * 86_400_000
+const dayShift = (b: Booking): number => b.sailing?.earlierDays ?? 0
 const person = (slug: string): Person => PEOPLE.find((p) => p.slug === slug)!
 const bookingOf = (slug: string): Booking | undefined => BOOKINGS.find((b) => b.guests.includes(slug))
 const isAdult = (slug: string) => person(slug).age >= 18
@@ -349,7 +355,7 @@ function bookingsFile(): string {
       const confirmed = Date.parse(`${plan.booked}T15:00:00Z`)
       const cancelled = b.plan === 'cancelled'
       const fee = cancelled ? Math.round(plan.total * 0.25) : null
-      return [pub(`booking:${b.key}`), b.number, b.kind ?? 'direct', b.agent ?? null, U(b.booker), REF.id, b.category, cabinNumbers.get(b.key)!, b.fare, cancelled ? 'cancelled' : 'confirmed',
+      return [pub(`booking:${b.key}`), b.number, b.kind ?? 'direct', b.agent ?? null, U(b.booker), sailingIdOf(b), b.category, cabinNumbers.get(b.key)!, b.fare, cancelled ? 'cancelled' : 'confirmed',
         b.dining, b.occasion ?? 'none', plan.total, plan.deposit, dt(plan.finalDue), finalDaysOf(b), hasTier(p) ? loyaltyNo(p.slug) : null, 0, 0, emailOf(b.booker), '+1 305 555 0142',
         ts(confirmed), cancelled ? ts(Date.parse('2027-02-08T15:00:00Z')) : null, fee, cancelled ? plan.total - fee! : null] as V[]
     }
@@ -429,14 +435,14 @@ function journeyFile(): string {
       if (b.checkin === 'done') ids.push('checkin', 'packing', 'phone')
       return ids
     }
-    insert('dbo.ChecklistTicks', ['BookingId', 'ItemId', 'Done', 'At'], live.flatMap((b) => tick(b).map((id) => [B(b.key), id, true, ts(Date.parse('2027-02-25T15:00:00Z'))] as V[])))
+    insert('dbo.ChecklistTicks', ['BookingId', 'ItemId', 'Done', 'At'], live.flatMap((b) => tick(b).map((id) => [B(b.key), id, true, ts(Date.parse('2027-02-25T15:00:00Z') + shiftMs(b))] as V[])))
     insert('dbo.AssistanceRequests', ['PublicId', 'BookingId', 'GuestUserId', 'Kind', 'Note', 'Status', 'At'], live.filter((b) => b.assist).map((b) => [pub(`assist:${b.key}`), B(b.key), U(b.assist!.who), b.assist!.kind, b.assist!.note, b.key === 'ruth' ? 'confirmed' : 'received', ts(Date.parse('2027-02-27T15:00:00Z'))]))
 
     // Tours: booked, with guests; carts.
     const tours = live.flatMap((b) => (b.tours ?? []).map((t) => ({ b, t })))
     insert('dbo.TourBookings', ['PublicId', 'BookingId', 'SailingId', 'ExcursionId', 'Day', 'Source', 'TotalCents', 'CreditCents', 'Status', 'PaymentId', 'At'], tours.map(({ b, t }) => {
       const x = EXCURSIONS.find((e) => e.id === t.ex)!
-      return [pub(`tour:${b.key}:${t.ex}`), B(b.key), sailingOf(b.key), t.ex, dayOf(REF, x).day, 'pre', t.who.reduce((n, g) => n + guestPrice(x, person(g).age), 0), 0, 'booked', payId(b, `T-${t.ex}`), ts(Date.parse('2027-02-14T15:00:00Z'))] as V[]
+      return [pub(`tour:${b.key}:${t.ex}`), B(b.key), sailingOf(b.key), t.ex, dayOf(REF, x).day + dayShift(b), 'pre', t.who.reduce((n, g) => n + guestPrice(x, person(g).age), 0), 0, 'booked', payId(b, `T-${t.ex}`), ts(Date.parse('2027-02-14T15:00:00Z') + shiftMs(b))] as V[]
     }))
     insert('dbo.TourBookingGuests', ['TourBookingId', 'BookingId', 'UserId'], tours.flatMap(({ b, t }) => t.who.map((g) => [raw(`(SELECT Id FROM dbo.TourBookings WHERE PublicId = '${guid(`tour:${b.key}:${t.ex}`)}')`), B(b.key), U(g)] as V[])))
     const carts = live.flatMap((b) => (b.cart ?? []).map((t) => ({ b, t })))
@@ -445,7 +451,7 @@ function journeyFile(): string {
 
     // Dining.
     const dines = live.flatMap((b) => (b.dine ?? []).map((d) => ({ b, d })))
-    insert('dbo.DiningReservations', ['PublicId', 'BookingId', 'SailingId', 'VenueId', 'Day', 'TimeLocal', 'Note', 'ChargeCents', 'Status'], dines.map(({ b, d }) => [pub(`dine:${b.key}:${d.venue}`), B(b.key), sailingOf(b.key), d.venue, d.day, tm(d.time), b.occasion === 'honeymoon' ? 'Honeymoon: a quiet table if possible.' : '', d.venue === 'eclipse' ? 0 : 4500 * d.who.length, 'booked']))
+    insert('dbo.DiningReservations', ['PublicId', 'BookingId', 'SailingId', 'VenueId', 'Day', 'TimeLocal', 'Note', 'ChargeCents', 'Status'], dines.map(({ b, d }) => [pub(`dine:${b.key}:${d.venue}`), B(b.key), sailingOf(b.key), d.venue, d.day + dayShift(b), tm(d.time), b.occasion === 'honeymoon' ? 'Honeymoon: a quiet table if possible.' : '', d.venue === 'eclipse' ? 0 : 4500 * d.who.length, 'booked']))
     insert('dbo.DiningReservationGuests', ['ReservationId', 'BookingId', 'UserId', 'Covered'], dines.flatMap(({ b, d }) => d.who.map((g) => [raw(`(SELECT Id FROM dbo.DiningReservations WHERE PublicId = '${guid(`dine:${b.key}:${d.venue}`)}')`), B(b.key), U(g), b.fare !== 'standard'] as V[])))
 
     // Package and add-on purchases.
@@ -459,18 +465,18 @@ function journeyFile(): string {
     // Check-in, boarding, muster.
     const steps = ['confirm', 'document', 'photo', 'emergency', 'contract', 'health']
     const checkins = live.filter((b) => b.checkin && b.checkin !== 'none')
-    const doneAt = Date.parse('2027-03-18T15:00:00Z')
+    const doneAtOf = (b: Booking) => Date.parse('2027-03-18T15:00:00Z') + shiftMs(b)
     insert('dbo.CheckinGuests', ['BookingId', 'UserId', 'Step', 'DoneAt', 'Data'], checkins.flatMap((b) => b.guests.flatMap((g) =>
-      steps.slice(0, b.checkin === 'half' ? 2 : 6).map((s) => [B(b.key), U(g), s, ts(doneAt), json(s === 'emergency' ? { name: 'Alex Contact', phone: '+1 305 555 0100' } : s === 'health' ? { symptoms: false } : {})] as V[]))))
-    insert('dbo.CheckinBooking', ['BookingId', 'PaymentLabel', 'PaymentAt', 'FinishedAt'], checkins.map((b) => [B(b.key), 'Onboard account card', b.checkin === 'done' ? ts(doneAt) : null, b.checkin === 'done' ? ts(doneAt) : null]))
+      steps.slice(0, b.checkin === 'half' ? 2 : 6).map((s) => [B(b.key), U(g), s, ts(doneAtOf(b)), json(s === 'emergency' ? { name: 'Alex Contact', phone: '+1 305 555 0100' } : s === 'health' ? { symptoms: false } : {})] as V[]))))
+    insert('dbo.CheckinBooking', ['BookingId', 'PaymentLabel', 'PaymentAt', 'FinishedAt'], checkins.map((b) => [B(b.key), 'Onboard account card', b.checkin === 'done' ? ts(doneAtOf(b)) : null, b.checkin === 'done' ? ts(doneAtOf(b)) : null]))
     const boarded = checkins.filter((b) => b.checkin === 'done')
-    insert('dbo.BoardingPasses', ['BookingId', 'UserId', 'Seq', 'Code', 'InWallet', 'IssuedAt'], boarded.flatMap((b) => b.guests.map((g, i) => [B(b.key), U(g), i + 1, `PCPASS.${b.number}.${i + 1}.${createHash('sha1').update(`${b.number}${g}`).digest('hex').slice(0, 16)}`, false, ts(doneAt)] as V[])))
-    insert('dbo.EmbarkProgress', ['BookingId', 'LuggageStatus', 'LuggageDroppedAt', 'Terminal'], boarded.map((b) => [B(b.key), b.luggage ?? 'notDropped', b.luggage ? ts(stageAtMs('embarkation', 0.5)) : null, 'Terminal 25']))
-    insert('dbo.MusterConfirmations', ['BookingId', 'UserId', 'ConfirmedAt', 'ByUserId'], boarded.filter((b) => b.muster).flatMap((b) => b.guests.map((g) => [B(b.key), U(g), ts(stageAtMs('embarkation', 5)), U(b.booker)] as V[])))
+    insert('dbo.BoardingPasses', ['BookingId', 'UserId', 'Seq', 'Code', 'InWallet', 'IssuedAt'], boarded.flatMap((b) => b.guests.map((g, i) => [B(b.key), U(g), i + 1, `PCPASS.${b.number}.${i + 1}.${createHash('sha1').update(`${b.number}${g}`).digest('hex').slice(0, 16)}`, false, ts(doneAtOf(b))] as V[])))
+    insert('dbo.EmbarkProgress', ['BookingId', 'LuggageStatus', 'LuggageDroppedAt', 'Terminal'], boarded.map((b) => [B(b.key), b.luggage ?? 'notDropped', b.luggage ? ts(stageAtMs('embarkation', 0.5) + shiftMs(b)) : null, 'Terminal 25']))
+    insert('dbo.MusterConfirmations', ['BookingId', 'UserId', 'ConfirmedAt', 'ByUserId'], boarded.filter((b) => b.muster).flatMap((b) => b.guests.map((g) => [B(b.key), U(g), ts(stageAtMs('embarkation', 5) + shiftMs(b)), U(b.booker)] as V[])))
 
     // Folio.
     const folioDefs: [number, string, string, number, string | null][] = [[1, 'Dining', 'Specialty cover charge', 4500, null], [2, 'Bar', 'Drinks at the Piazza Bar', 3150, null], [3, 'Shops', 'Sunscreen and a hat', 2899, null]]
-    const folioRows = live.filter((b) => b.folio).flatMap((b) => folioDefs.map(([day, cat, desc, cents, cov], i) => [pub(`folio:${b.key}:${i}`), B(b.key), U(b.booker), day, cat, desc, b.fare === 'standard' || i === 2 ? cents : 0, b.fare !== 'standard' && i < 2 ? 'package' : cov, 'manual', ts(stageAtMs('embarkation', 24 * (day - 1) + 8))] as V[]))
+    const folioRows = live.filter((b) => b.folio).flatMap((b) => folioDefs.map(([day, cat, desc, cents, cov], i) => [pub(`folio:${b.key}:${i}`), B(b.key), U(b.booker), day + dayShift(b), cat, desc, b.fare === 'standard' || i === 2 ? cents : 0, b.fare !== 'standard' && i < 2 ? 'package' : cov, 'manual', ts(stageAtMs('embarkation', 24 * (day - 1) + 8) + shiftMs(b))] as V[]))
     insert('dbo.FolioLines', ['PublicId', 'BookingId', 'UserId', 'Day', 'Category', 'Description', 'Cents', 'CoveredBy', 'SourceType', 'At'], folioRows)
 
     // After the cruise.
@@ -511,7 +517,7 @@ export function catalogue(): string {
   return [
     '# Persona catalogue', '', 'GENERATED by `npm run db:persona:gen`. Every person is a demo user (`IsDemo = 1`) with a `Slug`.', '',
     `Shared demo password: \`${DEMO_PASSWORD}\` (except dream, port-solo-1 and port-solo-2, whose password is their login) (hashed per person, PBKDF2-HMAC-SHA512, ${PBKDF2_ITERATIONS.toLocaleString('en-US')} iterations, \`pbkdf2$iter$salt$hash\`). Supervised children have no password.`,
-    `Sailing for every booking: \`${REF.id}\` (${DEPARTURE}). Each person's demo clock (\`demo.DemoState\`) is set so that "now" equals the clock column below at the moment the seed runs.`, '',
+    `Sailing for every booking: \`${REF.id}\` (${DEPARTURE}), except port-solo-1 and port-solo-2, who are on \`sun-2027-03-14-14\` (their second week is the Cozumel, Belize and Roatan route, and their clocks fall on its days 10 and 12). Each person's demo clock (\`demo.DemoState\`) is set so that "now" equals the clock column below at the moment the seed runs.`, '',
     '| Person | Login | Booking | Stage | Demo clock (UTC) | Scenarios | What to test |', '| --- | --- | --- | --- | --- | --- | --- |', ...rows, '',
     '## Not seeded', '', 'No table is seeded for: travel-party chat, orders, kids club check-ins, health reports, room settings, photos, laundry, Wi-Fi, budgets, games, TV, parties, medallions, bag tags, upgrade bids, club registrations, waitlists and queues, show tickets. Those start empty for every persona and fill as the API is used. The two agent booking numbers in `src/domain/trip.ts` (`AG4K72Q`, `AG9M18T`) are link fixtures and are deliberately not seeded.', '',
   ].join('\n')

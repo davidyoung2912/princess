@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, useSyncExternalStore } from 'react'
+import { getContext, subscribeContext } from '../../account/context'
 import { Link } from 'react-router'
 import type { PackagesView } from '../../api/types'
 import { formatMoney } from '../../domain/money'
@@ -21,6 +22,9 @@ const asOfText = (at: number): string => new Intl.DateTimeFormat('en-GB', { hour
 const PACKAGE_NAMES = { plus: 'Princess Plus', premier: 'Princess Premier' } as const
 
 /** Is this included for me? (phase 12). The answer is worked out on the server from each traveller's own entitlements and what is left of them; nothing is bought or changed. */
+/** Whether the account has a booking: the server answers 404 to the pace and folio questions without one, so they are not asked. */
+const useHasBooking = (): boolean => !!useSyncExternalStore(subscribeContext, getContext, getContext)?.booking
+
 export function StanleyEntitlementCard({ people }: { people: { id: string; name: string }[] }) {
   const id = useId()
   const sailing = useSailing()
@@ -188,7 +192,9 @@ export function StanleyPaceCard() {
   const { state: memory } = useMemory()
   const [budget, setBudget] = useState<number | null | undefined>(undefined)
   const [typed, setTyped] = useState('')
-  const [pace, setPace] = useState<Pace | null>(null)
+  const [paceAnswer, setPace] = useState<Pace | null>(null)
+  const hasBooking = useHasBooking()
+  const pace = hasBooking ? paceAnswer : null
   const [failed, setFailed] = useState(false)
   useEffect(() => {
     let live = true
@@ -197,10 +203,11 @@ export function StanleyPaceCard() {
   }, [])
   useEffect(() => {
     if (budget === undefined) return
+    if (!hasBooking) return
     let live = true
     stanleyMoney.pace(sailing.id).then((raw) => { if (live) setPace(normalizePace(raw)) }, () => { if (live) setPace(null) })
     return () => { live = false }
-  }, [budget, sailing.id])
+  }, [budget, sailing.id, hasBooking])
   const save = async (cents: number | null) => {
     setFailed(false)
     try { setBudget(normalizeBudget(await stanleyMoney.setBudget(cents))); setTyped('') } catch { setFailed(true) }
@@ -275,12 +282,14 @@ export function StanleyFolioCard() {
   const [folio, setFolio] = useState<FolioExplain | null>(null)
   const [failed, setFailed] = useState(false)
   const [opened, setOpened] = useState<StanleyCase | null>(null)
+  const hasBooking = useHasBooking()
   const load = () => stanleyMoney.folio(sailing.id).then((raw) => { const f = normalizeFolio(raw); setFolio(f); setFailed(f === null) }, () => setFailed(true))
   useEffect(() => {
+    if (!hasBooking) return
     let live = true
     stanleyMoney.folio(sailing.id).then((raw) => { if (live) { const f = normalizeFolio(raw); setFolio(f); setFailed(f === null) } }, () => { if (live) setFailed(true) })
     return () => { live = false }
-  }, [sailing.id])
+  }, [sailing.id, hasBooking])
   return (
     <Card labelledBy={`${id}-h`}>
       <h2 id={`${id}-h`} className="card__title">{th(folio?.final ? 'mo12.folio.finalTitle' : 'mo12.folio.title')}</h2>

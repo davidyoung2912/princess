@@ -18,10 +18,11 @@ export function ItineraryScreen() {
         {days.map((d) => {
           const isToday = d.day === current
           return (
-            <li key={d.day} className={`event${isToday ? ' event--now' : ''}`} aria-current={isToday ? 'date' : undefined}>
-              <p className="event__time"><strong>{t('itin.day', { day: d.day })}</strong> <span className="muted">{formatDate(d.date)}</span> {isToday && <StatusBadge kind="booked" label={t('itin.today')} />}</p>
-              <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : <Link to={`/home/ports/${d.port}`}>{PORTS[d.port]?.name ?? d.port}</Link>}</h3>
-              {d.arrive && <p className="event__where">{t('itin.times', { arrive: formatTime(d.arrive), aboard: d.allAboard ? formatTime(d.allAboard) : '', depart: d.depart ? formatTime(d.depart) : '' })}</p>}
+            <li key={d.day} className={`event event--link${isToday ? ' event--now' : ''}`} aria-current={isToday ? 'date' : undefined}>
+              <p className="event__time"><Link to={`/day-details?day=${d.day}`} className="event__stretch" aria-label={t('itin.open', { day: d.day, date: formatDate(d.date) })}><strong>{t('itin.day', { day: d.day })}</strong></Link> <span className="muted">{formatDate(d.date)}</span> {isToday && <StatusBadge kind="booked" label={t('itin.today')} />}</p>
+              <h3 className="event__title">{d.port === 'sea' ? t('onb.atSea') : <Link to={`/home/ports/${d.port}`} className="event__inner-link">{PORTS[d.port]?.name ?? d.port}</Link>}</h3>
+              {d.port !== 'sea' && d.arrive && <p className="event__where">{t('itin.times', { arrive: formatTime(d.arrive), aboard: d.allAboard ? formatTime(d.allAboard) : '', depart: d.depart ? formatTime(d.depart) : '' })}</p>}
+              {d.port !== 'sea' && !d.arrive && d.depart && <p className="event__where">{t('itin.departs', { depart: formatTime(d.depart) })}</p>}
             </li>
           )
         })}

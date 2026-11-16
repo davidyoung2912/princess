@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { downloadText } from '../delights/cardTools'
-import { formatTime } from '../../domain/cruise'
+import { formatDate, formatTime } from '../../domain/cruise'
 import { EXPLORER_PATHS, planCalendar } from '../../domain/explorer/planItems'
 import { alternativesFor, needsAlternatives, type Alternative } from '../../domain/explorer/alternatives'
 import { clashMap, disrupted, groupByPeriod, walkHints, type Period, type PlanItem, type WalkHint } from '../../domain/explorer/planTimeline'
@@ -32,7 +32,12 @@ const LINKS = [
 ] as const
 
 /** Today's plan, the seventh page of the Explorer family: the ship's clock and date, then everything the guest has on that day in time order. */
-export function TodayPlanScreen() {
+export function TodayPlanScreen() { return <PlanDay /> }
+
+/** One trip day at a glance, reached from the trip itinerary (`?day=`): the same schedule as Today's plan, for the day chosen. */
+export function DayDetailsScreen() { return <PlanDay details /> }
+
+function PlanDay({ details = false }: { details?: boolean }) {
   const state = useExplorerDay()
   const sailing = useSailing()
   const plan = useTodayPlan(state.day)
@@ -56,11 +61,12 @@ export function TodayPlanScreen() {
     <div className="page">
       <Card hero labelledBy="tp-head">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
-        <h2 id="tp-head" className="card__title">{t('route.todayPlan')}</h2>
-        <p>{t('plan.today.purpose')}</p>
+        <h2 id="tp-head" className="card__title">{t(details ? 'route.dayDetails' : 'route.todayPlan')}</h2>
+        {details && plan.date && <p><strong>{t('plan.day.line', { day: t('itin.day', { day: state.day }), date: formatDate(plan.date), where: portName || t('onb.atSea') })}</strong></p>}
+        <p>{t(details ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
         {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}
       </Card>
-      <ShipClockCard state={state} />
+      {!details && <ShipClockCard state={state} />}
       <PickDateButton state={state} />
       <ChosenDayNote state={state} />
       {changed.length > 0 && (

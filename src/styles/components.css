@@ -36,6 +36,7 @@
 .dialog > :is(.dialog__head, .dialog-header) { flex: none; }
 .dialog__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .dialog__head h2 { margin: 0; }
+.dialog__back { margin-top: 0; flex: none; }
 @media (min-width: 600px) {
   .dialog-backdrop { padding: var(--space-5); }
 }
@@ -211,6 +212,20 @@ main.signin { margin-inline: auto; }
   .tabs__item[aria-current='page']:hover { animation: tab-wiggle 0.5s var(--ease); }
 }
 :root[data-motion='reduced'] .tabs__item[aria-current='page']:hover { animation: none; }
+
+/* A short shake of the icon: on the nav item just chosen (it starts when the item becomes the current one) and on the header card icon each time a new page is shown (its key changes per visit). */
+@keyframes icon-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  15% { transform: translateX(-3px) rotate(-12deg); }
+  30% { transform: translateX(3px) rotate(10deg); }
+  45% { transform: translateX(-2px) rotate(-8deg); }
+  60% { transform: translateX(2px) rotate(6deg); }
+  80% { transform: translateX(-1px) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs__item[aria-current='page'] .lucide, .page-header__row .page-header__icon { animation: icon-shake 0.5s var(--ease); }
+}
+:root[data-motion='reduced'] :is(.tabs__item[aria-current='page'] .lucide, .page-header__row .page-header__icon) { animation: none; }
 
 /* Cards in a grid lift and grow a little under the pointer, with a deeper shadow, to say "this one". Pointer devices only; no movement for reduced motion. */
 .card-grid > li > .card, .card-grid > li.card, .fare-grid > li.card, .stage-tile {

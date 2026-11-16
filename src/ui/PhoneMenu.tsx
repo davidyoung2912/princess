@@ -21,7 +21,7 @@ export function PhoneMenu({ stanleyOff, dot, onStanley, onHelp }: { stanleyOff: 
         {dot && <span className="stanley-dot" aria-hidden="true" />}
       </button>
       {open && (
-        <Dialog title={t('shell.menu.title')} onClose={close}>
+        <Dialog title={t('shell.menu.title')} onClose={close} backButton>
           <ul className="phone-menu__list">
             <li><Link to="/ship/search" className="phone-menu__item" onClick={close}><Search aria-hidden="true" /><span>{t('shell.search')}</span></Link></li>
             {!stanleyOff && (

@@ -1,7 +1,8 @@
 import { followsServer, getContext, serverNow } from '../account/context'
 import { sailingFor } from '../account/sailing'
 import { clockAt, clockNow, setClockSpeed, stepClock } from '../domain/clock'
-import { stageAt, timeForStage, type StageId } from '../domain/sailings'
+import { itinerary, shipHomeZone, stageAt, timeForStage, type StageId } from '../domain/sailings'
+import { zonedToEpoch } from '../domain/timezones'
 import { channel } from '../runtime/channel'
 import { demoFromAnswer, fetchDemo, onDemoAnswer, publishDemo, publishJump, publishReset, sameAnswer, type DemoAnswer } from './publish'
 import { defaultDemoState, loadDemoState, saveDemoState, type DemoState } from './state'
@@ -99,4 +100,19 @@ export function resetDemoState(): void {
   channel.post({ type: 'demo' })
   publishReset()
   publishJump(demoNow())
+}
+
+/**
+ * Signing in as a demo guest who is boarding or at sea starts them on the first day of the trip at 8 AM ship time. Returns false while the context or the
+ * itinerary has not arrived yet (the caller tries again), true once it is decided, whether or not the clock moved.
+ */
+export function startAtTripBeginning(): boolean {
+  const context = getContext()
+  if (!context) return false
+  if (!context.isDemo || (context.stage !== 'embark' && context.stage !== 'sea')) return true
+  const sailing = sailingFor(context, current.sailingId, demoNow())
+  const first = itinerary(sailing)[0]
+  if (!first) return false
+  jumpTo(zonedToEpoch(first.date, '08:00', first.zone ?? shipHomeZone(sailing)))
+  return true
 }

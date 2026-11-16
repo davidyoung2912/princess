@@ -4,11 +4,10 @@ import { getContext, subscribeContext } from '../account/context'
 import { jumpTo } from '../demo/store'
 import { dayLabel, dayLabelLong, timeIn, zonedToEpoch } from '../domain/timezones'
 import { clockTime } from '../domain/syncAge'
-import type { DayOfStage } from '../domain/journeyPosition'
-import { JOURNEY_STAGES } from '../routes/hubs'
+import { tripStatus } from '../domain/tripStatus'
 import { isExplorerPath } from '../routes/stageNav'
 import { useJourneyPosition } from '../hooks/useJourneyPosition'
-import { useNow } from '../hooks/useDemo'
+import { useNow, useSailing } from '../hooks/useDemo'
 import { t } from '../i18n'
 import { Button } from './Button'
 import { Dialog } from './Dialog'
@@ -30,13 +29,6 @@ const AT_LINKS = [
   { to: '/itinerary', Icon: RouteMap, label: 'testbar.at.itinerary' },
 ] as const
 
-function dayText(stage: string, day: DayOfStage | null): string {
-  if (!day) return stage
-  if (day.kind === 'cruiseDay') return t('testbar.day.cruise', { stage, day: day.day, of: day.of })
-  if (day.kind === 'daysToDeparture') return t('testbar.day.to', { stage, count: day.days })
-  return t('testbar.day.since', { stage, count: day.days })
-}
-
 /**
  * The ship date with the guest's stage under it (the stage opens the stage welcome page). For demo accounts only, the date and a time block (whose clock it is under it) open a
  * picker that moves the testing date, which changes the guest's stage and what every screen shows. Demo accounts only.
@@ -53,9 +45,8 @@ function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const stage = t(`journey.stage.${position.stage}`)
-  const at = JOURNEY_STAGES.indexOf(position.stage)
-  const previous = JOURNEY_STAGES[at - 1]
-  const next = JOURNEY_STAGES[at + 1]
+  const sailing = useSailing()
+  const status = tripStatus(sailing, position.day)
   // On phones the ship information links are a sideways carousel: the arrows page it, and choosing (or tabbing to) a button brings it fully into view.
   const track = useRef<HTMLElement>(null)
   const [edges, setEdges] = useState({ start: false, end: true })
@@ -108,11 +99,6 @@ function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
         {isDemo
           ? <button type="button" className="testbar__main testbar__pick" onClick={() => setOpen(true)} aria-label={`${t('testbar.date')}: ${dayLabelLong(now, position.zone)}`}>{dateWords}</button>
           : <span className="testbar__main">{dateWords}</span>}
-        <span className="testbar__stages" title={isDemo ? position.stageReason ?? undefined : undefined}>
-          {previous && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${previous}`)}</span>}
-          <Link to="/welcome" state={{ from: pathname }} className="testbar__stage testbar__stage--current" aria-current="step" aria-label={`${t('testbar.stage')}: ${dayText(stage, position.day)}`}>{dayText(stage, position.day)}</Link>
-          {next && <span className="testbar__stage testbar__stage--side">{t(`journey.stage.${next}`)}</span>}
-        </span>
       </div>
       {isDemo && (
         <button type="button" className="testbar__item testbar__item--time" onClick={() => setOpen(true)} aria-label={`${t('testbar.time')}: ${clockTime(new Date(now), position.zone)}`}>
@@ -120,6 +106,22 @@ function TestBarBody({ isDemo, menu }: { isDemo: boolean; menu?: ReactNode }) {
           <span className="testbar__sub">{t(position.clock === 'ship' ? 'testbar.ship' : 'testbar.local')}</span>
         </button>
       )}
+      <p className="testbar__status" aria-label={t('status.label')}>
+        <Link to="/welcome" state={{ from: pathname }} className="testbar__stage testbar__stage--current" aria-current="step" aria-label={`${t('testbar.stage')}: ${stage}`}>{stage}</Link>
+        {status.day !== null && <Link to="/itinerary" className="testbar__day">{t('status.day', { day: status.day })}</Link>}
+        {status.where?.kind === 'sea' && <span>{t('status.sea')}</span>}
+        {status.where?.kind === 'port' && (
+          <span className="testbar__port">
+            <Link to={`/home/ports/${status.where.id}`}>{status.where.name}</Link>
+            {status.where.from && status.where.to && <span className="testbar__hours"> {t('status.hours', { from: status.where.from, to: status.where.to })}</span>}
+          </span>
+        )}
+        {status.count && (
+          <Link to="/itinerary" className="testbar__count">
+            {status.count.kind === 'to' && status.count.days === 0 ? t('status.today') : status.count.kind === 'since' && status.count.days === 0 ? t('status.backToday') : t(status.count.kind === 'to' ? 'status.to' : 'status.since', { count: status.count.days })}
+          </Link>
+        )}
+      </p>
       {menu && <div className="testbar__menu">{menu}</div>}
       <div className="testbar__carousel">
         <button type="button" className="testbar__arrow" aria-label={t('testbar.at.prev')} disabled={!edges.start} onClick={() => step(-1)}><ChevronLeft aria-hidden="true" /></button>

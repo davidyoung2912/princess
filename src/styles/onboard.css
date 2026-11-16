@@ -10,6 +10,13 @@
 
 .event-list { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; gap: var(--space-3); }
 .event { padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.event--link { position: relative; }
+.event--link:hover { border-color: var(--primary); background: var(--sky-tint); }
+.event__stretch { color: inherit; text-decoration: none; }
+.event__stretch::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.event__stretch:focus-visible { outline: none; }
+.event--link:has(.event__stretch:focus-visible) { outline: 3px solid var(--primary); outline-offset: 2px; }
+.event__inner-link { position: relative; z-index: 1; }
 .event--cancelled .event__title { text-decoration: line-through; }
 .event__time { margin: 0 0 var(--space-1); }
 .event__title { margin: 0 0 var(--space-1); }

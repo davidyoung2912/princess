@@ -33,7 +33,7 @@ export function PageHeader(words: Words) {
         onAnimationEnd={() => setWiggling(false)}
       >
         <div className="page-header__row">
-          {words.icon && <words.icon aria-hidden="true" className="page-header__icon" />}
+          {words.icon && <words.icon key={key} aria-hidden="true" className="page-header__icon" />}
           <h1 className="page-header__title">{title}</h1>
           {words.art && <span className="page-header__art calm-hide"><StanleyPose pose={words.art.pose} head={words.art.head} size={56} /></span>}
         </div>
