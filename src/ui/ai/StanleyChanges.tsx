@@ -156,6 +156,20 @@ function Digest({ digest, sailingId, onDone }: { digest: Missed; sailingId: stri
 }
 
 /**
+ * The same delivery asked for twice at once (React's development double-run of effects, or a screen remounting) shares one request, so the server's per-guest
+ * record is not written by two calls at the same moment. The request is forgotten as soon as it finishes, so the next visit asks again.
+ */
+const inFlight = new Map<string, Promise<unknown>>()
+function deliverOnce(body: Parameters<typeof stanleyChanges.deliver>[0], who: string): Promise<unknown> {
+  const key = `${who}|${JSON.stringify(body)}`
+  const running = inFlight.get(key)
+  if (running) return running
+  const request = stanleyChanges.deliver(body).finally(() => { inFlight.delete(key) })
+  inFlight.set(key, request)
+  return request
+}
+
+/**
  * What Stanley has to say about changes on this screen, under the delivery rules the server applies: alerts (a deadline risk, a lost booking) apart from suggestions, quiet hours, one proactive element per
  * screen, three in a session, and nothing a guest dismissed unless its facts have changed. A guest who has turned Stanley off, or who is signed out, sees nothing here. The one element on a screen stays for
  * the visit; it is not shown again on other screens.
@@ -174,7 +188,7 @@ export function StanleyChanges({ screen }: { screen: ChangeScreen }) {
     let live = true
     const store = session()
     const before = loadSession(store)
-    stanleyChanges.deliver({ sailingId: sailing.id, screen, level, shown: shownElsewhere(before, screen), saved: saved() })
+    deliverOnce({ sailingId: sailing.id, screen, level, shown: shownElsewhere(before, screen), saved: saved() }, me.id)
       .then((raw) => {
         const d = normalizeDelivery(raw)
         if (!live || !d) return
