@@ -84,7 +84,7 @@ describe('stale addresses and the active tab', () => {
     expect(accessAt('/home/quiz', '/home/quiz', 'dream')).toBe('show')
     expect(accessAt('/ship/order', '/ship/order', 'dream')).toBe('home')
     for (const stage of JOURNEY_STAGES) {
-      for (const [pattern, path] of [['/home/ports/:id', '/home/ports/fll'], ['/home/ports', '/home/ports'], ['/home/countries/:id', '/home/countries/mx'], ['/home/countries', '/home/countries']] as const) {
+      for (const [pattern, path] of [['/home/ports/:id', '/home/ports/fll'], ['/home/ports', '/home/ports'], ['/home/countries/:id', '/home/countries/mx'], ['/home/countries', '/home/countries'], ['/home/cruise', '/home/cruise'], ['/home/cruise/cost', '/home/cruise/cost'], ['/home/sailings', '/home/sailings'], ['/home/sailings/:id', '/home/sailings/x'], ['/home/ships', '/home/ships'], ['/home/ships/:id', '/home/ships/x'], ['/home/ships/compare', '/home/ships/compare'], ['/home/explore', '/home/explore']] as const) {
         expect(accessAt(pattern, path, stage), `${path} at ${stage}`).toBe('show')
       }
     }

@@ -170,7 +170,7 @@ img.tip__icon { width: 2.25rem; height: 2.25rem; border-radius: 50%; }
 
 /* The Add pill under an event in the plan's suggestion lists: its own line, compact. */
 .plan-add { margin-top: var(--space-1); }
-.plan-add .btn { min-height: 2.5rem; padding: 0 var(--space-4); border-radius: 999px; }
+.plan-add .btn { min-height: 2rem; padding: 0 var(--space-3); border-radius: var(--radius-button); font-size: var(--fs-small, 0.875rem); }
 
 /* A list whose rows lead with the icon of the event's type instead of a bullet. */
 .icon-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; }

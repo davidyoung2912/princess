@@ -76,8 +76,8 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
   settings: ids.filter((id) => SETTINGS_AND_HELP.includes(id)),
 })
 
-/** Reference screens a guest can open at any stage, whichever tabs the stage lists: the ports and countries guides and their lists. */
-export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H09', 'H52', 'H53', 'H54']
+/** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists. */
+export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54']
 
 /**
  * What an address does at a stage. 'show' opens it; 'home' sends the guest Home (a stale address: a screen the stage does not use, or a tab it does not have).
