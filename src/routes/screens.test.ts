@@ -88,19 +88,21 @@ describe('screen registry (P2)', () => {
 
   it('leaves exactly the developer page, the account page, the stage overview and the two link-only pages outside every stage', () => {
     const outside = SCREEN_LIST.filter((s) => !JOURNEY_STAGES.some((st) => stageUses(s.id, st))).map((s) => s.id)
-    expect(outside.sort()).toEqual(['X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X13', 'X14', 'X15', 'X16', 'X17', 'X18', 'X19', 'X20', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27'])
+    expect(outside.sort()).toEqual(['X01', 'X03', 'X04', 'X05', 'X06', 'X07', 'X08', 'X09', 'X10', 'X11', 'X12', 'X13', 'X14', 'X15', 'X17', 'X18', 'X19', 'X21', 'X22', 'X23', 'X24', 'X25', 'X26', 'X27'])
   })
 
   it('counts the screens each stage uses as the plan lists them (chat is one more at the five stages that had no way in)', () => {
     const counts = Object.fromEntries(JOURNEY_STAGES.map((s) => [s, screensOfStage(s).length]))
-    expect(counts).toEqual({ dream: 41, discover: 47, book: 44, manage: 61, prebook: 73, getToShip: 62, embark: 67, sea: 93, port: 92, disembark: 48, remember: 54 })
+    expect(counts).toEqual({ dream: 45, discover: 49, book: 48, manage: 63, prebook: 77, getToShip: 66, embark: 69, sea: 95, port: 94, disembark: 50, remember: 56 })
   })
 
-  it('keeps ships out of Dream and the first ship screens in Discover', () => {
+  it('lets guests browse the ship from Dream on, but keeps the on-board services for on board', () => {
     const dream = screensOfStage('dream')
-    expect(dream.filter((id) => id.startsWith('S') && Number(id.slice(1)) < 40)).toEqual([])
-    expect(dream).not.toContain('H10')
+    expect(dream).toContain('X20')
+    expect(dream).toContain('X16')
+    expect(dream.filter((id) => id.startsWith('S') && Number(id.slice(1)) < 40)).toEqual(['S01', 'S02'])
     for (const id of ['S01', 'S02', 'S03', 'H10']) expect(stageUses(id, 'discover')).toBe(true)
+    expect(stageUses('S15', 'prebook')).toBe(false)
   })
 
   it('moves a screen between tabs by data alone: Chat (C01) is listed in a tab, not coded into one', () => {
@@ -145,6 +147,6 @@ describe('screen colour (P3)', () => {
   })
 
   it('uses the old tab colour for a screen the stage does not use', () => {
-    expect(areaFor('S01', 'dream', undefined, null, 'pink')).toBe('pink')
+    expect(areaFor('S15', 'dream', undefined, null, 'pink')).toBe('pink')
   })
 })

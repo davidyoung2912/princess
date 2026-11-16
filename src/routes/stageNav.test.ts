@@ -84,7 +84,7 @@ describe('stale addresses and the active tab', () => {
     expect(accessAt('/home/quiz', '/home/quiz', 'dream')).toBe('show')
     expect(accessAt('/ship/order', '/ship/order', 'dream')).toBe('home')
     for (const stage of JOURNEY_STAGES) {
-      for (const [pattern, path] of [['/home/ports/:id', '/home/ports/fll'], ['/home/ports', '/home/ports'], ['/home/countries/:id', '/home/countries/mx'], ['/home/countries', '/home/countries'], ['/home/cruise', '/home/cruise'], ['/home/cruise/cost', '/home/cruise/cost'], ['/home/sailings', '/home/sailings'], ['/home/sailings/:id', '/home/sailings/x'], ['/home/ships', '/home/ships'], ['/home/ships/:id', '/home/ships/x'], ['/home/ships/compare', '/home/ships/compare'], ['/home/explore', '/home/explore']] as const) {
+      for (const [pattern, path] of [['/home/ports/:id', '/home/ports/fll'], ['/home/ports', '/home/ports'], ['/home/countries/:id', '/home/countries/mx'], ['/home/countries', '/home/countries'], ['/home/cruise', '/home/cruise'], ['/home/cruise/cost', '/home/cruise/cost'], ['/home/sailings', '/home/sailings'], ['/home/sailings/:id', '/home/sailings/x'], ['/home/ships', '/home/ships'], ['/home/ships/:id', '/home/ships/x'], ['/home/ships/compare', '/home/ships/compare'], ['/home/explore', '/home/explore'], ['/ship/map', '/ship/map'], ['/ship/venues', '/ship/venues'], ['/ship/venues/:id', '/ship/venues/crown'], ['/ship/wifi', '/ship/wifi'], ['/ship/access', '/ship/access']] as const) {
         expect(accessAt(pattern, path, stage), `${path} at ${stage}`).toBe('show')
       }
     }
@@ -168,10 +168,11 @@ describe('search at a stage', () => {
     expect(all.length).toBeGreaterThan(dream.length)
   })
 
-  it('filters content results by stage, so a dream-stage search never finds a restaurant menu', () => {
+  it('filters content results by stage: a dream-stage search finds the ship\'s venues, but never an on-board service', () => {
     const allow = (stage: (typeof JOURNEY_STAGES)[number]) => (to: string) => visibleAt(stage, to)
     expect(searchContent('crown grill', [], allow('sea')).length).toBeGreaterThan(0)
-    expect(searchContent('crown grill', [], allow('dream'))).toEqual([])
+    expect(searchContent('crown grill', [], allow('dream')).length).toBeGreaterThan(0)
+    expect(visibleAt('dream', '/ship/order')).toBe(false)
     expect(Object.keys(SCREEN_WORDS).length).toBeGreaterThan(100)
   })
 

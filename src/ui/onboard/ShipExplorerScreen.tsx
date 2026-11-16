@@ -1,4 +1,3 @@
-import { Link } from 'react-router'
 import { CATEGORIES, SUN_SHIP, SHIP_ACCESSIBILITY, SHIP_HIGHLIGHTS } from '../../domain/ship'
 import { SHIP_NAMES, type DeckPlanShip } from '../../deckPlans/deckPlans'
 import { useShip } from '../../hooks/useShipCatalogue'
@@ -26,7 +25,10 @@ export function ShipExplorerScreen() {
         <>
           <h2>{ship.name}</h2>
           <p>{ship.intro}</p>
-          <p><LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton></p>
+          <p className="button-row">
+            <LinkButton to="/ship/venues" variant="secondary">{th('shipex.venues')}</LinkButton>{' '}
+            <LinkButton to={plansFor ? `/deck-plans?ship=${plansFor}` : '/deck-plans'} variant="secondary">{th('shipex.deckPlans')}</LinkButton>
+          </p>
           <nav aria-label={t('shipex.jump')}>
             <ul className="naut-jump">
               {parts.map((x) => <li key={x.id}><a href={`#${x.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(x.id)?.scrollIntoView({ block: 'start' }); document.getElementById(x.id)?.focus() }}>{x.title}</a></li>)}
@@ -84,7 +86,6 @@ export function ShipExplorerScreen() {
           )}
         </>
       )}
-      <p><Link to="/ship/venues">{t('shipex.venues')}</Link></p>
     </div>
   )
 }

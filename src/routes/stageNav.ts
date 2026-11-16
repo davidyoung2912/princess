@@ -76,8 +76,8 @@ export const splitMe = (ids: readonly string[]): { main: string[]; settings: str
   settings: ids.filter((id) => SETTINGS_AND_HELP.includes(id)),
 })
 
-/** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists. */
-export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54']
+/** Reference screens a guest can open at any stage, whichever tabs the stage lists: the cruise, sailings, ships, explore, trip cost, ports and countries guides and their lists, and the ship's reference pages (deck map, venues, shops, Wi-Fi, laundry, accessibility, allergy and family information). */
+export const ALWAYS_OPEN_SCREENS: readonly string[] = ['H06', 'H07', 'H08', 'H09', 'H12', 'H47', 'H48', 'H49', 'H50', 'H52', 'H53', 'H54', 'S01', 'S02', 'S03', 'S16', 'S17', 'S20', 'S23', 'S24', 'S31', 'S33', 'S35', 'S41', 'S42']
 
 /**
  * What an address does at a stage. 'show' opens it; 'home' sends the guest Home (a stale address: a screen the stage does not use, or a tab it does not have).
@@ -124,8 +124,9 @@ export function earlierAt(pattern: string | null, stage: JourneyStage): boolean 
 export const SHIP_GROUPS = ['find', 'services', 'safety'] as const
 export type ShipGroup = (typeof SHIP_GROUPS)[number]
 
-/** Find: S01–S14 (maps, places, the ship and the sea); Services: S15–S24 (order, shops, requests); Safety: S25–S36 (muster, emergency, help, health, lost and found). */
+/** Find: S01–S14 plus the Ship Explorer and Deck Plans (maps, places, the ship and the sea); Services: S15–S24 (order, shops, requests); Safety: S25–S36 (muster, emergency, help, health, lost and found). */
 export function shipGroupOf(id: string): ShipGroup | null {
+  if (id === 'X20' || id === 'X16') return 'find' // the Ship Explorer and Deck Plans belong with the maps and places
   const n = /^S(\d+)$/.exec(id)?.[1]
   if (!n) return null
   const k = Number(n)
