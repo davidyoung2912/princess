@@ -17,9 +17,9 @@ export interface BundleStep {
   about?: string
 }
 
-/** A short run of things that fit around what the guest already has: the evening, or the hours after a shore tour. */
+/** A short run of things that fit around what the guest already has: a part of the day (morning, afternoon or evening), or the hours after a shore tour. */
 export interface Bundle {
-  kind: 'evening' | 'return'
+  kind: 'morning' | 'afternoon' | 'evening' | 'return'
   /** For a return bundle, when the last tour ends. */
   tourEndsAt?: number
   steps: BundleStep[]
@@ -31,6 +31,10 @@ export const RETURN_BUFFER_MIN = 60
 /** The evening runs from 5 pm to 11 pm (an event may start in that time). */
 export const EVENING_FROM = '17:00'
 export const EVENING_UNTIL = '23:00'
+/** The morning is everything that starts before noon; the afternoon runs from noon until the evening bundle takes over. */
+export const MORNING_UNTIL = '11:59'
+export const AFTERNOON_FROM = '12:00'
+export const AFTERNOON_UNTIL = '16:59'
 export const MAX_STEPS = 3
 /** The least time between two things, whatever the walk. */
 const MIN_GAP = 10
@@ -94,24 +98,28 @@ function pick(days: readonly ExplorerDay[], plan: readonly PlanItem[], taste: Ta
 const isPast = (days: readonly ExplorerDay[]): boolean => days.some((d) => d.currentDay !== undefined && d.day < d.currentDay)
 
 /**
- * Suggested bundles for one cruise day. On a port day with a shore tour on the plan, a "return" bundle of things that start an hour after the last tour ends (time to get back
- * and freshen up). An "evening" bundle of things between 5 pm and 11 pm that fit round the plan and the return bundle. Empty for a past day or when nothing fits.
+ * Suggested bundles for the whole of one cruise day, in time order: a "morning" bundle (before noon), then either a "return" bundle (on a port day with a shore tour on the plan:
+ * things that start an hour after the last tour ends, time to get back and freshen up) or an "afternoon" bundle (noon to 5 pm), then an "evening" bundle (5 pm to 11 pm). Each fits
+ * round the plan and the bundles before it. Empty for a past day, or for a part of the day that has passed or where nothing fits.
  */
-export function eveningBundles(days: readonly ExplorerDay[], plan: readonly PlanItem[], taste: TasteProfile, ctx: { now: number; pinnedVenueIds: readonly string[] }): Bundle[] {
+export function dayBundles(days: readonly ExplorerDay[], plan: readonly PlanItem[], taste: TasteProfile, ctx: { now: number; pinnedVenueIds: readonly string[] }): Bundle[] {
   if (days.length === 0 || isPast(days)) return []
   const out: Bundle[] = []
+  const extra: Busy[] = []
+  const take = (kind: Bundle['kind'], steps: BundleStep[], more: Partial<Bundle> = {}) => {
+    if (steps.length === 0) return
+    out.push({ kind, ...more, steps })
+    extra.push(...steps.map((s) => ({ placeId: s.placeId, startAt: s.event.startAt, endAt: s.event.endAt })))
+  }
+  take('morning', pick(days, plan, taste, ctx, { fromAt: 0, untilClock: MORNING_UNTIL }, extra, MAX_STEPS))
   const tours = plan.filter((p) => p.kind === 'tour' && p.status !== 'cancelled')
   const atPort = days.some((d) => d.port !== '')
-  const extra: Busy[] = []
   if (atPort && tours.length > 0) {
     const tourEndsAt = Math.max(...tours.map((t) => t.endAt))
-    const steps = pick(days, plan, taste, ctx, { fromAt: tourEndsAt + RETURN_BUFFER_MIN * MIN, untilClock: '16:59' }, [], 2)
-    if (steps.length > 0) {
-      out.push({ kind: 'return', tourEndsAt, steps })
-      extra.push(...steps.map((s) => ({ placeId: s.placeId, startAt: s.event.startAt, endAt: s.event.endAt })))
-    }
+    take('return', pick(days, plan, taste, ctx, { fromAt: tourEndsAt + RETURN_BUFFER_MIN * MIN, untilClock: '16:59' }, extra, 2), { tourEndsAt })
+  } else {
+    take('afternoon', pick(days, plan, taste, ctx, { fromAt: 0, fromClock: AFTERNOON_FROM, untilClock: AFTERNOON_UNTIL }, extra, MAX_STEPS))
   }
-  const steps = pick(days, plan, taste, ctx, { fromAt: 0, fromClock: EVENING_FROM, untilClock: EVENING_UNTIL }, extra, MAX_STEPS)
-  if (steps.length > 0) out.push({ kind: 'evening', steps })
+  take('evening', pick(days, plan, taste, ctx, { fromAt: 0, fromClock: EVENING_FROM, untilClock: EVENING_UNTIL }, extra, MAX_STEPS))
   return out
 }

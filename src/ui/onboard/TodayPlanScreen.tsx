@@ -1,18 +1,18 @@
 import { Link } from 'react-router'
 import { downloadText } from '../delights/cardTools'
-import { formatDate, formatTime } from '../../domain/cruise'
+import { formatTime } from '../../domain/cruise'
 import { EXPLORER_PATHS, planCalendar } from '../../domain/explorer/planItems'
 import { alternativesFor, needsAlternatives, type Alternative } from '../../domain/explorer/alternatives'
 import { clashMap, disrupted, groupByPeriod, walkHints, type Period, type PlanItem, type WalkHint } from '../../domain/explorer/planTimeline'
-import { PORTS, itinerary, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
+import { itinerary, shipZoneAt, shipZoneOnDate } from '../../domain/sailings'
 import { timeIn } from '../../domain/timezones'
 import { useExplorerDay } from '../../hooks/useExplorer'
 import { useSailing } from '../../hooks/useDemo'
-import { eveningBundles } from '../../domain/explorer/evening'
+import { dayBundles } from '../../domain/explorer/evening'
 import { useAddToPlan } from '../../hooks/useAddToPlan'
 import { useTaste } from '../../hooks/useTaste'
 import { useVenuePins } from '../../hooks/useVenuePins'
-import { EveningBundles } from './EveningBundles'
+import { DayBundles } from './DayBundles'
 import { StanleyPose } from '../StanleyPose'
 import { useTodayPlan } from '../../hooks/useTodayPlan'
 import { t, type StringKey, headingCase } from '../../i18n'
@@ -23,7 +23,7 @@ import { Clock, Compass } from '../icons'
 import { Card } from '../Card'
 import { StatusBadge } from '../StatusBadge'
 import { PickDateButton } from '../explorer/DateControls'
-import { ItineraryDayCard } from './ItineraryScreen'
+import { ItineraryDayInfo } from './ItineraryScreen'
 import { LoadError } from '../discover/parts'
 
 const PERIOD: Record<Period, StringKey> = { morning: 'plan.today.morning', afternoon: 'plan.today.afternoon', evening: 'plan.today.evening' }
@@ -51,9 +51,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
   const { profile: taste } = useTaste()
   const pins = useVenuePins(plan.explorers.flatMap((d) => d.venues.map((v) => v.venue)))
   const pinnedVenueIds = plan.explorers.flatMap((d) => d.venues.filter((v) => pins.isPinned(v.venue)).map((v) => v.venue.id))
-  const bundles = plan.ready ? eveningBundles(plan.explorers, plan.items, taste, { now: state.nowAt, pinnedVenueIds }) : []
-  const choice = state.choices[state.day - 1]
-  const portName = choice && !choice.atSea ? PORTS[choice.port]?.name ?? choice.port : ''
+  const bundles = plan.ready ? dayBundles(plan.explorers, plan.items, taste, { now: state.nowAt, pinnedVenueIds }) : []
   const clockAt = (epoch: number) => formatTime(timeIn(epoch, shipZoneAt(sailing, epoch)))
   const addToCalendar = () => {
     if (!plan.date) return
@@ -67,15 +65,9 @@ function PlanDay({ details = false }: { details?: boolean }) {
     <div className="page">
       <Card hero labelledBy="tp-head">
         <span className="landing-pose calm-hide"><StanleyPose head="scheduler" size={88} /></span>
-        <div className="tp-title-row">
-          <h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
-          {state.day === state.currentDay && <StatusBadge kind="booked" label={t('itin.today')} />}
-        </div>
-        {dayCard && plan.date && <p><strong>{t('plan.day.line', { day: t('itin.day', { day: state.day }), date: formatDate(plan.date), where: portName || t('onb.atSea') })}</strong></p>}
-        <p>{t(dayCard ? 'plan.day.purpose' : 'plan.today.purpose')}</p>
-        {portName && <p><Link to={`/home/ports/${choice.port}`}>{t('port.guide', { port: portName })}</Link></p>}
+        <h2 id="tp-head" className="card__title">{headingCase(t(dayCard ? 'route.dayDetails' : 'route.todayPlan'))}</h2>
+        {itineraryDay && <ItineraryDayInfo d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} />}
       </Card>
-      {!details && itineraryDay && <ol className="event-list"><ItineraryDayCard d={itineraryDay} last={state.day === days.length} today={state.day === state.currentDay} /></ol>}
       <PickDateButton state={state} />
       {changed.length > 0 && (
         <Banner kind="warning" title={t('plan.today.changed')}>
@@ -95,7 +87,7 @@ function PlanDay({ details = false }: { details?: boolean }) {
               </ul>
             </section>
           ))}
-          <EveningBundles bundles={bundles} day={state.day} clockAt={clockAt} busy={addToPlan.busy} onAdd={(e) => { void addToPlan.add(e) }} />
+          <DayBundles bundles={bundles} day={state.day} clockAt={clockAt} busy={addToPlan.busy} onAdd={(e) => { void addToPlan.add(e) }} />
           <p role="status" className="visually-hidden">{addToPlan.message}</p>
           {plan.items.some((i) => i.status !== 'cancelled') && <p><Button variant="secondary" onClick={addToCalendar}>{t('plan.today.calendar')}</Button></p>}
         </>

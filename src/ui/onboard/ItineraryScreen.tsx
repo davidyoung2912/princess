@@ -13,15 +13,15 @@ const DayIcon = ({ day, last, sea }: { day: number; last: boolean; sea: boolean 
   return <Icon className="event__day-icon" aria-hidden="true" focusable="false" />
 }
 
-/** One day of the itinerary as a card: kind-of-day icon, "Day N" and date, the Today badge, the port and its arrive, all-aboard and depart times. `to` makes the whole card open that day's plan. */
-export function ItineraryDayCard({ d, last, today, to }: { d: ItineraryDay; last: boolean; today: boolean; to?: string }) {
+/** What one itinerary day says: kind-of-day icon, "Day N" and date, the Today badge, the port and its arrive, all-aboard and depart times. `to` makes the "Day N" part open that day's plan. */
+export function ItineraryDayInfo({ d, last, today, to }: { d: ItineraryDay; last: boolean; today: boolean; to?: string }) {
   const day = (
     <>
       <DayIcon day={d.day} last={last} sea={d.port === 'sea'} /><strong>{t('itin.day', { day: d.day })}</strong>
     </>
   )
   return (
-    <li className={`event${to ? ' event--link' : ''}${today ? ' event--now' : ''}`} aria-current={today ? 'date' : undefined}>
+    <>
       <p className="event__time">
         {to ? <Link to={to} className="event__stretch" aria-label={t('itin.open', { day: d.day, date: formatDate(d.date) })}>{day}</Link> : day}{' '}
         <span className="muted">{formatDate(d.date)}</span>
@@ -35,6 +35,15 @@ export function ItineraryDayCard({ d, last, today, to }: { d: ItineraryDay; last
           {d.depart && <li><Depart aria-hidden="true" focusable="false" />{t('itin.departs', { depart: formatTime(d.depart) })}</li>}
         </ul>
       )}
+    </>
+  )
+}
+
+/** One day of the itinerary as a card; `to` makes the whole card open that day's plan. */
+export function ItineraryDayCard({ d, last, today, to }: { d: ItineraryDay; last: boolean; today: boolean; to?: string }) {
+  return (
+    <li className={`event${to ? ' event--link' : ''}${today ? ' event--now' : ''}`} aria-current={today ? 'date' : undefined}>
+      <ItineraryDayInfo d={d} last={last} today={today} to={to} />
     </li>
   )
 }
