@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import type { ExplorerEvent, HoursDay, MealMenu } from '../../api/explorerTypes'
+import type { ExplorerDay, ExplorerEvent, HoursDay, MealMenu } from '../../api/explorerTypes'
 import type { DietaryId } from '../../domain/account'
 import { formatTime } from '../../domain/cruise'
 import { NEEDS_ASKING, dishSuits, type Dish } from '../../domain/menus'
 import { formatMoney } from '../../domain/money'
 import { fillingUp, openState, type Span } from '../../domain/explorer/presentation'
+import { happeningNow } from '../../domain/explorer/planTimeline'
 import { eventPhase } from '../../domain/explorer/upcoming'
 import { t, type StringKey } from '../../i18n'
 import { Button } from '../Button'
@@ -145,6 +146,25 @@ export function ReservationList({ heading, items, empty, onChange, onCancel, act
         </ul>
       )}
       {action}
+    </section>
+  )
+}
+
+/** What is on right now across one Explorer, with the time left in each; only on the ship's own day. */
+export function HappeningNow({ data, currentDay, now, basePath }: { data: ExplorerDay; currentDay: number; now: number; basePath: string }) {
+  if (data.day !== currentDay) return null
+  const running = data.venues.flatMap((v) => happeningNow(v.events, now).map((r) => ({ ...r, venue: v.venue }))).sort((a, b) => a.event.startAt - b.event.startAt)
+  if (running.length === 0) return null
+  return (
+    <section aria-labelledby="exp-now-h">
+      <h2 id="exp-now-h">{t('exp.now.title')}</h2>
+      <ul className="exp-now">
+        {running.map((r) => (
+          <li key={r.event.id} className="card">
+            <Link to={`${basePath}/${r.venue.id}?day=${data.day}`}>{t('exp.now.left', { title: r.event.title, venue: r.venue.title, minutes: r.minutesLeft })}</Link>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

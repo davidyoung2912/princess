@@ -9,7 +9,7 @@ import { t } from '../../i18n'
 import { Card } from '../Card'
 import { Saved } from '../onboard/common'
 import { ChosenDayNote, PickDateButton } from './DateControls'
-import { EventRow, FilterChips, HoursBadge } from './Parts'
+import { EventRow, FilterChips, HappeningNow, HoursBadge } from './Parts'
 import { useVenuePins, type VenuePins } from '../../hooks/useVenuePins'
 import { PinButton } from './Pins'
 import { ShipClockCard } from './ShipClockCard'
@@ -45,6 +45,7 @@ export function ExplorerPage({ kind, title, purpose, basePath, kindLabels, above
       <Saved copy={copy}>
         {(data) => (
           <>
+            <HappeningNow data={data} currentDay={state.currentDay} now={state.nowAt} basePath={basePath} />
             {above?.({ data, state, reload: copy.retry })}
             <VenueList data={data} state={state} basePath={basePath} kindLabels={kindLabels} />
           </>

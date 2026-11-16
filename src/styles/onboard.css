@@ -367,6 +367,7 @@ button.chat-quote { cursor: pointer; }
 .exp-pin { z-index: 1; }
 .exp-card:has(.exp-card__link:focus-visible) { outline: 3px solid var(--explorer); outline-offset: 2px; }
 .exp-events { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+.exp-now { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .exp-event { padding-block-start: var(--space-2); border-block-start: 1px solid var(--border); }
 .exp-event p { margin: 0 0 var(--space-1); }
 .exp-event--cancelled { color: var(--text-muted); }
