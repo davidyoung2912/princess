@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { CalendarPlus, Lightbulb } from 'lucide-react'
 import stanleyPicture from '../../assets/stanley-small.png'
 import type { ApiError } from '../../api/errors'
 import type { ChatCatchUp, ChatIcebreakers, ChatMessage, ChatPlanPreview, ChatReword, ChatRewordMode, ChatStanleyTap, ChatTerm } from '../../api/chatTypes'
@@ -134,8 +135,8 @@ export function StanleyMessageActions({ conversationId, message, onPosted }: { c
   if (!mayHelpWith(tap, message)) return null
   return (
     <>
-      <button type="button" className="chat-act" disabled={plan.busy} onClick={() => void plan.run()}>{t('cst.plan')}</button>
-      <button type="button" className="chat-act" disabled={words.busy} onClick={() => void words.run()}>{t('cst.words')}</button>
+      <button type="button" className="chat-act chat-act--icon" disabled={plan.busy} aria-label={t('cst.plan')} title={t('cst.plan')} onClick={() => void plan.run()}><CalendarPlus aria-hidden="true" /></button>
+      <button type="button" className="chat-act chat-act--icon" disabled={words.busy} aria-label={t('cst.words')} title={t('cst.words')} onClick={() => void words.run()}><Lightbulb aria-hidden="true" /></button>
       {(plan.error || words.error) && <span className="chat-act__problem"><Problem error={plan.error ?? words.error} /></span>}
       {preview && <PlanDialog conversationId={conversationId} preview={preview} onPosted={onPosted} onClose={() => setPreview(null)} />}
       {terms && <WordsDialog terms={terms} onClose={() => setTerms(null)} />}

@@ -46,6 +46,10 @@ import { Chip } from '../Chip'
 import { ChatNoticeOffers } from './ChatNoticeOffers'
 import { GroupStanleySwitch, MomentButtons, StanleySuggestions } from './ChatMoments'
 import { OctagonAlert, TriangleAlert } from '../icons'
+import { Check, CircleCheck, Clock, Pencil, Pin as PinIcon, PinOff, Reply as ReplyIcon, Smile, ThumbsUp, Trash2, X, Footprints, type LucideIcon } from 'lucide-react'
+
+/** A small icon for each quick reply; the words are its label. */
+const QUICK_ICONS: Record<(typeof QUICK_REPLY_KEYS)[number], LucideIcon> = { yes: Check, no: X, omw: Footprints, thanks: ThumbsUp, late: Clock, ok: CircleCheck }
 import { Field, TextArea } from '../Field'
 import { ActionError } from '../account/parts'
 import { BlockedList, MessageSafety, PhotoSender } from '../aboard/ChatSafe'
@@ -214,10 +218,8 @@ function UrgencyTag({ level }: { level: Exclude<ChatUrgency, 'normal'> }) {
 
 const prefersReducedMotion = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-const nearBottom = (): boolean => {
-  const el = document.documentElement
-  return isNearBottom(window.scrollY, window.innerHeight, el.scrollHeight)
-}
+/** Whether the message history (its own scrolling box) is at its end. */
+const nearBottom = (box: HTMLElement | null): boolean => (box ? isNearBottom(box.scrollTop, box.clientHeight, box.scrollHeight) : true)
 
 type Phase = 'loading' | 'ready' | 'error' | 'gone'
 
@@ -328,16 +330,19 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   })
   useEffect(() => () => { if (typingTimer.current) clearTimeout(typingTimer.current) }, [])
 
-  const toEnd = useCallback(() => { end.current?.scrollIntoView({ block: 'end', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); setChip(false) }, [])
+  const logBox = useRef<HTMLDivElement>(null)
+  const toEnd = useCallback(() => { const b = logBox.current; if (b) b.scrollTo({ top: b.scrollHeight, behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); setChip(false) }, [])
 
   // New arrivals follow the guest only when they are already at the bottom; otherwise a chip says so and nothing moves. Focus is never touched.
   const wasNear = useRef(true)
   const userScrolled = useRef(false)
   useEffect(() => {
-    const onScroll = () => { userScrolled.current = true; wasNear.current = nearBottom(); if (wasNear.current) setChip(false) }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    const box = logBox.current
+    if (!box) return
+    const onScroll = () => { userScrolled.current = true; wasNear.current = nearBottom(box); if (wasNear.current) setChip(false) }
+    box.addEventListener('scroll', onScroll, { passive: true })
+    return () => box.removeEventListener('scroll', onScroll)
+  }, [phase])
   useEffect(() => {
     if (phase !== 'ready') return
     const incoming = incomingSince(lastSeen.current, messages, mine)
@@ -378,7 +383,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     loadingOlder.current = true
     try {
       const th = await api.chatConversations.thread(id, before)
-      anchor.current = { height: document.documentElement.scrollHeight, y: window.scrollY }
+      anchor.current = { height: logBox.current?.scrollHeight ?? 0, y: logBox.current?.scrollTop ?? 0 }
       setMessages((cur) => withOlder(cur, th.messages))
       setHasMore(th.hasMore)
     } finally { loadingOlder.current = false }
@@ -388,7 +393,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   useEffect(() => {
     const el = top.current
     if (!el || !hasMore || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting && userScrolled.current) runOlder() })
+    const io = new IntersectionObserver((entries) => { if (entries[0]?.isIntersecting && userScrolled.current) runOlder() }, { root: logBox.current })
     io.observe(el)
     return () => io.disconnect()
   }, [hasMore, runOlder])
@@ -396,7 +401,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
     const a = anchor.current
     if (!a) return
     anchor.current = null
-    window.scrollTo(0, a.y + (document.documentElement.scrollHeight - a.height))
+    const b = logBox.current
+    if (b) b.scrollTop = a.y + (b.scrollHeight - a.height)
   }, [messages])
 
   // This device has what others sent: say so once per newest message from someone else, so their screens can show Delivered. Quiet on failure.
@@ -622,7 +628,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
   return (
     <StanleyTapProvider value={tap}>
     <section aria-labelledby="thread-h">
-      <Button variant="tertiary" onClick={onBack}>{t('conv.back')}</Button>
       <h2 id="thread-h" className="person-line">{conversation?.kind === 'direct' && <ChatAvatar avatar={conversation.avatar} name={name} />}{name}</h2>
       {permanent && <><p className="muted">{t('stanley.chat.speaking', { name: subtitleOf(conversation) })}</p><p className="muted" role="note">{t('stanley.chat.permanent')}</p></>}
       {conversation && conversation.kind !== 'direct' && !permanent && !room && (
@@ -632,6 +637,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {ashore && <p className="muted">{t('conv.ashore', { names: ashore })}</p>}
       {conversation?.guardianCanRead && <p className="muted" role="note">{t('conv.guardian')}</p>}
       {room?.room && <RoomNotes room={room} />}
+      <details className="chat-more">
+        <summary>{t('conv.tools')}</summary>
       {conversation?.kind === 'group' && <Button variant="secondary" onClick={() => setDetails(true)}>{t('cgroup.details')}</Button>}
       {room && <Button variant="secondary" onClick={() => setDetails(true)}>{t(room.kind === 'channel' ? 'room.channelDetails' : 'room.details')}</Button>}
       {conversation && !permanent && phase === 'ready' && (
@@ -639,6 +646,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       )}
       {conversation && !permanent && !room && phase === 'ready' && <StanleyTapNote conversationId={id} tap={tap} onChanged={setTap} />}
       {conversation && !permanent && !room && phase === 'ready' && !offline && showCatchUp(tap, unreadAfter(messages, firstUnread, mine)) && <CatchUpButton conversationId={id} />}
+      {conversation && !permanent && !room && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
+      </details>
       {details && room && <RoomDetails conversation={room} onClose={() => setDetails(false)} onLeft={() => { setDetails(false); onBack() }} />}
       {askRules && room && <RulesDialog conversation={room} onClose={() => setAskRules(false)} onAccepted={() => { setAskRules(false); setConversation((c) => (c?.room ? { ...c, room: { ...c.room, rulesAccepted: true } } : c)); setAnnounce(t('room.rulesAccepted')); void load() }} />}
       {details && !room && <GroupDetails id={id} onClose={() => setDetails(false)} onChanged={() => void load()} onLeft={() => { setDetails(false); onBack() }} />}
@@ -651,13 +660,15 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       {permanent && supervisedChild && <p className="muted" role="note">{t('stanley.chat.noticeOnly')}</p>}
       {permanent && <PushPromptNote prompt={pushPrompt(currentSupport(), supervisedChild, messages.some((m) => m.notice !== undefined && m.acked === false && noticeState(m, now) === 'active'))} />}
       {permanent && <NeedsYouStrip messages={messages} ackBusy={ack.busy} onAck={runAck} />}
-      <div ref={top} />
       {hasMore && <Button variant="secondary" disabled={older.busy} onClick={() => void older.run()}>{t('conv.earlier')}</Button>}
       <ActionError error={older.error} />
       {dividerId && !jumped && <Button variant="secondary" onClick={jumpToUnread}>{t('conv.jumpUnread')}</Button>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && <p>{t('chat.none')}</p>}
       {phase === 'ready' && messages.length === 0 && bubbles.length === 0 && tap?.available === true && !room && <Icebreakers onPick={putInBox} />}
       {!permanent && <PinBar pins={pins} canPin={conversation?.canPin === true} busy={pin.busy} onGo={goToPin} onUnpin={(messageId) => void pin.run(messageId, false)} />}
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must take focus so the keyboard can scroll it */}
+      <div ref={logBox} className="chat-scroll" tabIndex={0} role="region" aria-label={t('conv.messages', { name })}>
+      <div ref={top} />
       <ol className="chat-log" aria-label={t('conv.messages', { name })}>
         {permanent
           ? <StanleyItems messages={messages} mine={mine} shipTime={shipTime} conversationId={id} ackBusy={ack.busy} onAck={runAck} onChanged={runChanged} onBlocked={onBlocked} />
@@ -677,6 +688,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
       </ol>
       <TypingLine names={typers} />
       <div ref={end} />
+      </div>
       {chip && <div className="chat-chip"><Button variant="secondary" onClick={toEnd}>{t('conv.newMessages')}</Button></div>}
       {permanent && phase === 'ready' && mayAsk(supervisedChild) && <AskStanley />}
       {!permanent && (conversation?.closed ? <Banner kind="info" title={t('conv.closed')}><p>{t('conv.closedBody')}</p></Banner> : phase === 'ready' && room && roomPostState(room) !== 'open' ? <p className="muted" role="note">{t(roomClosedKey(roomPostState(room)))}</p> : phase === 'ready' && !room && !canPost(conversation) ? <p className="muted" role="note">{t('announce.only')}</p> : phase === 'ready' && (
@@ -688,15 +700,18 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
               <Button variant="tertiary" onClick={() => setReplyTo(null)}>{t('conv.replyCancel')}</Button>
             </div>
           )}
-          {!room && <fieldset className="urgency-pick">
-            <legend>{t('urgent.pick')}</legend>
+          {!room && <details className="chat-more chat-more--inline">
+          <summary>{t('urgent.pick')}</summary>
+          <fieldset className="urgency-pick">
+            <legend className="visually-hidden">{t('urgent.pick')}</legend>
             {levelsFor(mayUrgent).map((l) => (
               <label key={l} className="urgency-pick__option">
                 <input type="radio" name="urgency" value={l} checked={level === l} onChange={() => setLevel(l)} /> {t(`urgent.level.${l}`)}
               </label>
             ))}
             <p className="muted">{t(`urgent.explain.${level}`)}</p>
-          </fieldset>}
+          </fieldset>
+          </details>}
           <TextArea label={t('chat.message')} value={text} rows={2} maxLength={MAX_TEXT} autoComplete="off"
             onChange={(e) => {
               setText(e.target.value)
@@ -709,6 +724,8 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
             }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void submit() } else if (e.key === 'Escape' && typedMention) { e.preventDefault(); setMentionOff(true) } }}
             onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)} />
+          <details className="chat-more chat-more--inline">
+            <summary>{t('conv.writeMore')}</summary>
           {emojiOk && (
             <>
               <Button type="button" variant="tertiary" aria-expanded={emojiOpen} onClick={() => setEmojiOpen((o) => !o)}>{t('emoji.button')}</Button>
@@ -733,6 +750,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           <AskStanleyNote text={text} />
           {tap?.available && <HelpMeWrite onUse={putInBox} />}
           <PolishDraft text={text} onUse={putInBox} />
+          </details>
           {typedMention && (
             <MentionList people={people} query={typedMention.query} onPick={(person) => {
               const next = insertMention(text, caret, typedMention.start, person)
@@ -749,7 +767,7 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
           {full && <p role="alert" className="field__error">{t('outbox.full')}</p>}
           <Button type="submit" disabled={!text.trim()}>{t('chat.send')}</Button>
           {!room && <div role="group" aria-label={t('conv.quick')} className="chat-quick">
-            {QUICK_REPLY_KEYS.map((k) => <button key={k} type="button" className="chat-quick__btn" onClick={() => void submit(t(`conv.quick.${k}`))}>{t(`conv.quick.${k}`)}</button>)}
+            {QUICK_REPLY_KEYS.map((k) => { const Icon = QUICK_ICONS[k]; return <button key={k} type="button" className="chat-quick__btn" aria-label={t(`conv.quick.${k}`)} title={t(`conv.quick.${k}`)} onClick={() => void submit(t(`conv.quick.${k}`))}><Icon aria-hidden="true" /></button> })}
           </div>}
         </form>
         {!room && <ShareChooser conversation={conversation!} onSent={(sent) => { setMessages((cur) => mergeMessages(cur, [sent])); wasNear.current = true; void load() }} />}
@@ -757,7 +775,6 @@ function Thread({ id, onBack, jumpTo }: { id: string; onBack: () => void; jumpTo
         </>
       ))}
       {conversation && permanent && <StanleyNotices />}
-      {conversation && !permanent && !room && <Options conversation={conversation} awayBusy={notifyAway.busy} onAway={(on) => void notifyAway.run(on)} mentionsBusy={mentionsOnly.busy} onMentionsOnly={(on) => void mentionsOnly.run(on)} onSent={() => void load()} blockedVersion={blockedVersion} reload={() => void load()} />}
       <ActionError error={mute.error} />
       <ActionError error={archive.error} />
       <ActionError error={notifyAway.error} />
@@ -960,19 +977,23 @@ function PersonMessage({ m, mine, shipTime, conversationId, kind, peerName, ackB
           {m.reactions.map((r) => <ReactionChip key={r.emoji} r={r} you={you} disabled={!canAct || !onReact} onPick={() => onReact?.(m.id, r.emoji)} />)}
         </ul>
       )}
-      {canAct && canTarget(m) && (
-        <div className="chat-msg__actions">
-          <button ref={reactButton} type="button" className="chat-act" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>{t('conv.react')}</button>
-          <button type="button" className="chat-act" onClick={() => onReply?.(m)}>{t('conv.reply')}</button>
-          {pinning && onPin && <button type="button" className="chat-act" onClick={() => onPin(m.id, pinning === 'pin')}>{t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')}</button>}
-          <StanleyMessageActions conversationId={conversationId} message={m} onPosted={onChanged ?? noop} />
-        </div>
-      )}
+      {canAct && canTarget(m) && (() => {
+        const lead = (
+          <>
+            <button ref={reactButton} type="button" className="chat-act chat-act--icon" aria-expanded={picking} aria-label={t('conv.react')} title={t('conv.react')} onClick={() => setPicking((v) => !v)}><Smile aria-hidden="true" /></button>
+            <button type="button" className="chat-act chat-act--icon" aria-label={t('conv.reply')} title={t('conv.reply')} onClick={() => onReply?.(m)}><ReplyIcon aria-hidden="true" /></button>
+            {pinning && onPin && <button type="button" className="chat-act chat-act--icon" aria-label={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} title={t(pinning === 'pin' ? 'pin.pin' : 'pin.unpin')} onClick={() => onPin(m.id, pinning === 'pin')}>{pinning === 'pin' ? <PinIcon aria-hidden="true" /> : <PinOff aria-hidden="true" />}</button>}
+            <StanleyMessageActions conversationId={conversationId} message={m} onPosted={onChanged ?? noop} />
+          </>
+        )
+        return own && onEdit && onDelete
+          ? <OwnChange m={m} onEdit={onEdit} onDelete={onDelete} lead={lead} />
+          : <div className="chat-msg__tools">{lead}</div>
+      })()}
       {picking && onReact && (
         <ReactionPicker held={myReaction(m.reactions)} onPick={(emoji) => { onReact(m.id, emoji); closePicker() }} onClose={closePicker} />
       )}
-      {own && canAct && onEdit && onDelete && <OwnChange m={m} onEdit={onEdit} onDelete={onDelete} />}
-      {own && <p className="muted">{t(({ read: 'conv.read', delivered: 'conv.delivered', sent: 'conv.sent' } as const)[deliveryOf(m)])}</p>}
+      {own && deliveryOf(m) !== 'sent' && <p className="muted">{t(({ read: 'conv.read', delivered: 'conv.delivered' } as const)[deliveryOf(m) as 'read' | 'delivered'])}</p>}
       {own && mlevel === 'urgent' && (
         <p className="muted">{ackedCount(m) === 0 ? t('urgent.notAcked') : kind === 'direct' ? t('urgent.ackedBy', { names: peerName }) : t('urgent.ackedCount', { count: ackedCount(m) })}</p>
       )}
@@ -1050,7 +1071,7 @@ const PROBLEM_KEY: Record<ChangeProblem, StringKey> = {
  * Edit and Delete under your own message, only while the 15-minute window is open. The window closes live: the buttons go away and, if you were in the middle of a change, a message says it is too late.
  * Delete asks first, because it is for everyone. Escape closes the editor and focus goes back to the button that opened it.
  */
-function OwnChange({ m, onEdit, onDelete }: { m: ChatMessage; onEdit: (messageId: string, text: string) => Promise<void>; onDelete: (messageId: string) => Promise<void> }) {
+function OwnChange({ m, onEdit, onDelete, lead }: { lead: ReactNode; m: ChatMessage; onEdit: (messageId: string, text: string) => Promise<void>; onDelete: (messageId: string) => Promise<void> }) {
   const now = useNow()
   const open = windowLeft(m.at, now) > 0
   const [mode, setMode] = useState<'idle' | 'edit' | 'delete'>('idle')
@@ -1065,15 +1086,14 @@ function OwnChange({ m, onEdit, onDelete }: { m: ChatMessage; onEdit: (messageId
     setProblem(null)
     try { await job(); setMode('idle'); back(after) } catch (e) { setProblem(isApiError(e) ? changeProblem(e.code, e.message) : 'other') } finally { setBusy(false) }
   }
-  if (!open) return mode !== 'idle' || problem === 'tooLate' ? <p role="status" className="muted">{t('conv.tooLate')}</p> : null
+  if (!open) return <>{<div className="chat-msg__tools">{lead}</div>}{mode !== 'idle' || problem === 'tooLate' ? <p role="status" className="muted">{t('conv.tooLate')}</p> : null}</>
   return (
     <div ref={root} className="chat-msg__actions-wrap">
-      {mode === 'idle' && (
-        <div className="chat-msg__actions">
-          {canEdit(m) && <button type="button" className="chat-act" data-act="edit" onClick={() => { setDraft(m.text); setMode('edit'); back('textarea') }}>{t('conv.edit')}</button>}
-          <button type="button" className="chat-act" data-act="delete" onClick={() => setMode('delete')}>{t('conv.delete')}</button>
-        </div>
-      )}
+      <div className="chat-msg__tools">
+        {lead}
+        {mode === 'idle' && canEdit(m) && <button type="button" className="chat-act chat-act--icon" data-act="edit" aria-label={t('conv.edit')} title={t('conv.edit')} onClick={() => { setDraft(m.text); setMode('edit'); back('textarea') }}><Pencil aria-hidden="true" /></button>}
+        {mode === 'idle' && <button type="button" className="chat-act chat-act--icon" data-act="delete" aria-label={t('conv.delete')} title={t('conv.delete')} onClick={() => setMode('delete')}><Trash2 aria-hidden="true" /></button>}
+      </div>
       {mode === 'edit' && (
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape is a shortcut; Cancel does the same
         <form className="chat-edit" onSubmit={(e) => { e.preventDefault(); void run(() => onEdit(m.id, draft.trim()), '[data-act="edit"]') }}

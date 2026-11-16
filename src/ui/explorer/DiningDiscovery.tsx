@@ -45,7 +45,7 @@ export function DiningControls({ kinds, kindLabels, filter, onFilter, sort, onSo
           {DINING_SORTS.map((s) => <option key={s} value={s}>{t(SORT[s])}</option>)}
         </select>
       </div>
-      {isFiltering(filter) && <Button variant="secondary" onClick={() => onFilter(NO_DINING_FILTER)}>{t('exp.dining.clear')}</Button>}
+      {isFiltering(filter) && <Button variant="secondary" className="exp-clear" onClick={() => onFilter(NO_DINING_FILTER)}>{t('exp.dining.clear')}</Button>}
     </>
   )
 }

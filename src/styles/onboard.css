@@ -24,7 +24,7 @@
 .event__tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); }
 
 .chat-log { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-3); }
-.chat-msg { content-visibility: auto; contain-intrinsic-size: auto 6rem; max-width: 34rem; padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
+.chat-msg { position: relative; content-visibility: auto; contain-intrinsic-size: auto 6rem; max-width: 34rem; padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); background: var(--bg); }
 .chat-msg--mine { justify-self: end; background: var(--brand-tint); border-color: var(--primary); }
 .chat-msg p { margin: 0 0 var(--space-1); }
 .chat-msg__meta { font-size: var(--fs-caption); }
@@ -456,3 +456,49 @@ button.chat-quote { cursor: pointer; }
 .nav-landmarks h3, .nav-landmarks h4 { margin: 0 0 var(--space-1); }
 .nav-landmarks__title { display: flex; align-items: center; gap: var(--space-2); }
 .nav-landmarks__title svg { flex: none; width: 1.25rem; height: 1.25rem; color: var(--primary); }
+
+/* The chat page keeps the history and the new message in view; everything else sits in these dropdowns. */
+.chat-more { margin: var(--space-2) 0; }
+.chat-more > summary { cursor: pointer; min-height: var(--target-min); display: flex; align-items: center; font-weight: 600; color: var(--primary); }
+.chat-more[open] > summary { margin-bottom: var(--space-2); }
+.chat-more > :not(summary) + :not(summary) { margin-top: var(--space-3); }
+.chat-more--inline { border: 0; }
+
+/* A message shows React, Reply and More; the rest (pin, plan, explain, edit, delete) opens under More. */
+.chat-more-act { display: inline-block; }
+.chat-more-act > summary { list-style: none; cursor: pointer; }
+.chat-more-act > summary::-webkit-details-marker { display: none; }
+.chat-more-act[open] { display: block; width: 100%; }
+.chat-more-act[open] > summary { margin-bottom: var(--space-1); }
+
+/* Message actions are small icon buttons at the top right of the card. */
+.chat-msg__tools { position: absolute; top: var(--space-1); inset-inline-end: var(--space-2); display: flex; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; gap: 0; }
+.chat-act.chat-act--icon { display: inline-grid; place-items: center; min-height: 2rem; min-width: 2rem; padding: 0; border-radius: 50%; text-decoration: none; }
+.chat-act--icon svg { width: 1.1rem; height: 1.1rem; }
+.chat-act--icon:hover, .chat-act--icon:focus-visible { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.chat-msg:has(> .chat-msg__tools) > .chat-msg__meta, .chat-msg:has(> .chat-msg__actions-wrap) > .chat-msg__meta { padding-inline-end: 8rem; }
+
+/* The new-message area is compact: the box, the send button and two small dropdowns, with little air between them. */
+.composer { display: grid; gap: var(--space-1); padding: var(--space-2) 0; }
+.composer .field { margin-bottom: 0; }
+.composer .field label { margin-bottom: var(--space-1); }
+.composer .chat-more { margin: 0; }
+.composer .chat-more > summary { min-height: 1.75rem; font-size: var(--fs-caption); }
+.composer .chat-more[open] > summary { margin-bottom: 0; }
+.composer .chat-more > :not(summary) + :not(summary) { margin-top: var(--space-1); }
+.composer .chat-more--inline[open] { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.composer .chat-more--inline[open] > summary { flex-basis: 100%; }
+.composer .chat-more--inline[open] > * + * { margin-top: 0; }
+.composer .btn { min-height: 2.25rem; padding-block: 0; }
+.composer .chat-quick { margin-top: var(--space-1); }
+.composer .urgency-pick { margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; }
+.composer .urgency-pick .muted { flex-basis: 100%; margin: 0; }
+
+/* The message history scrolls in its own box above the message area; the message area no longer floats over it. */
+.chat-scroll { max-height: calc(100dvh - 21rem); min-height: 12rem; overflow-y: auto; overscroll-behavior: contain; padding-inline-end: var(--space-1); }
+.composer { position: static; }
+.chat-quick__btn { min-height: 2rem; min-width: 2rem; padding: 0; display: inline-grid; place-items: center; border-radius: 50%; }
+.chat-quick__btn svg { width: 1.1rem; height: 1.1rem; }
+
+/* Clear filters sits above the venue cards with a gap between. */
+.btn.exp-clear { margin-bottom: var(--space-4); }
